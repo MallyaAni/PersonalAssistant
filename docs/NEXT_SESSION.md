@@ -213,9 +213,11 @@ further.
 unit suites for runs, the repo server, the evidence check, the harness and
 the registry; the additive migration `20260905_0019` applied to the live
 database (backup first); 29 diagrams synchronized.
-**UNVERIFIED (blocked on model load, not on code):**
-`functional/test_code_review_behaviour.py` and
-`functional/test_unknown_step_wording_behaviour.py`. Run them alone when
+**VERIFIED on the real model:** `functional/test_unknown_step_wording_behaviour.py`
+(with `LLM_TIMEOUT_SECONDS=900` under load).
+**PENDING:** `functional/test_code_review_behaviour.py` - the review itself
+completed and named the injected comment as a defect; the run was lost to the
+claim race now fixed (claims filtered by kind and user). Re-run it alone. Run them alone when
 `curl http://172.16.8.3:8000/metrics | grep num_requests_running` is near
 zero, with `LLM_BASE_URL=http://172.16.8.3:8000 LLM_MODEL=deepseek-v4-flash
 PYTHONPATH=<checkout>` exported (the test suite skips `.env`). Sweep
@@ -232,8 +234,12 @@ is deployed; `TURN_MAX_STEPS` is still 1 and `AGENT_RUNS_ENABLED` false.
    with Codex's review of the same commit.
 3. Raise `TURN_MAX_STEPS` to 3 in `.env` and read it back from the
    container, only after the routing gate and a sweep pass on this tree.
-4. Phase 4 (`PersonContext`) and the router track (rate assertions, the
-   SetFit front) remain unstarted; Phase 6 and 7 too.
+4. Phase 4's first slice is in (`backend/memory/person_context.py`, wired
+   into the search stage and the ranker, unit-verified). Next for it: retire
+   `_PLACE_BOUND` by adding `place_bound` to `search/place.md` with a
+   functional test, then constraints as hard filters and the paired-profile
+   evaluator. The router track (rate assertions, the SetFit front), Phase 6
+   and Phase 7 remain unstarted.
 
 ## 2026-09-05 — Phase 2 first checkpoint: bounds are structural, the step line is the next defect (NOT DEPLOYED)
 

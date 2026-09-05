@@ -52,16 +52,45 @@ read; bounded retry of a failed step under a fresh key; a card, a CLI
 functional test with a planted off-by-one and an injected comment addressed
 to the reviewer.
 
-**Verification state.** Unit: every new module's tests pass on this host
-(runs 11, repo server and evidence check 22, alternatives 6, registry
-updated). Diagram suite 29 synchronized. Functional on the real model: the
+**A claim is filtered by kind.** `AgentRunRepository.claim_next` takes the
+kinds a worker hosts (and, for a caller driving one person's run by hand,
+the user), so a worker never claims a run it would only fail with
+`no_world`, and two hosts sharing the table cannot take each other's work.
+Found by the reviewer's own test: its 120 s lease lapsed under a slow model
+and the run suite's next claim took the run, so the review completed its
+work and then could not close it (`not_mine`).
+
+**Phase 4, first slice - one view of the person.**
+`backend/memory/person_context.py`: `PersonContext`, built once per turn
+from Scout's profile and the preference store, every entry carrying its
+kind, its source store and memory id, and whether it may leave the machine.
+The rule the search path lived by in code is now the object's: an interest
+is a search term and may go in a query; a stated preference is applied to
+the results here and `search_terms()` never returns it, whatever a caller
+asks. The query composer, the interest judgement and the result ranker read
+this one object (`_person_context`, `_known_for_ranking`); the three
+separately fetched and capped views are gone, the dispositions the turn
+decides ride on the same object, and the trace records what was known and
+what was allowed to leave. Not yet: the `_PLACE_BOUND` regex (a prompt
+change, waits for a quiet model), constraints as hard filters, and the
+paired-profile evaluator.
+
+**Verification state.** Full unit suite on this host: 2793 passed, 3
+skipped; the failures were the nine host-specific ones recorded on the
+first checkpoint plus 24 Redis-backed tests that failed only while the SSH
+forward to Redis was down and pass with it up (62/62 re-run). Runs 12,
+repo server and evidence check 23, person context 9, alternatives 6. Diagram suite 29 synchronized. Functional on the real model: the
 loop suites passed except two expectations pinned to Phase 1's defect, now
 rewritten (`test_two_reminders_are_both_written`). The reviewer's end-to-end
 test and the unknown-wording test have **not passed yet**: the first attempt
 found the stdin hang (fixed), the second failed on the findings call and the
 wording test twice timed out, with the model at five concurrent requests and
-23 s for an eight-token reply. Both are UNVERIFIED until the model is quiet;
-the retry and the message-assembly fix that came out of them are in.
+23 s for an eight-token reply. With a 900 s client timeout the wording test
+passed (the record must be assembled as the reply graph assembles it - a
+user message after the history - which the first version of the test did
+not do); the reviewer completed its work, named the injected comment as a
+defect, and lost its run to the claim race above. Its re-run after the fix
+is recorded in NEXT_SESSION.md.
 
 ## 2026-09-05 - Phase 2 of the execution-boundary repair, first checkpoint (NOT DEPLOYED, partly verified)
 

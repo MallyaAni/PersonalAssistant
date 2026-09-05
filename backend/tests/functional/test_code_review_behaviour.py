@@ -118,7 +118,11 @@ async def _review_once(structured_llm, root: Path, sha: str, user: str) -> tuple
             user, "agent:review", "code_review", f"review commit {sha}",
             ["read", "verified"], budget_seconds=300.0, max_steps=12, max_creates=1,
         )
-        claimed = await repo.claim_next("review-test", 120.0)
+        # A long lease and this run only: a review under a loaded model takes
+        # minutes, and nothing else may take the run from under the test.
+        claimed = await repo.claim_next(
+            "review-test", 1_800.0, kinds=("code_review",), user_id=user
+        )
     assert claimed is not None
     assert claimed["id"] == created["id"]
     world = ReviewWorld(claimed, _invocation(), ReviewPrompts(structured_llm))

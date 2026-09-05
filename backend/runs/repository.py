@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
@@ -194,21 +195,35 @@ class AgentRunRepository:
 
     # Take the oldest claimable run: queued, or running with a lapsed lease. A
     # run waiting for approval is not claimable until a decision wakes it.
+    #
+    # `kinds` is what this worker can run; a worker never claims a run it
+    # would only fail with `no_world`, and two workers hosting different
+    # agents share the table without taking each other's work. `user_id`
+    # narrows further, for a caller driving one person's run by hand.
     async def claim_next(
-        self, worker_id: str, lease_seconds: float, now: datetime | None = None
+        self,
+        worker_id: str,
+        lease_seconds: float,
+        now: datetime | None = None,
+        kinds: Iterable[str] | None = None,
+        user_id: str | None = None,
     ) -> dict[str, Any] | None:
         moment = now or datetime.now(UTC)
+        conditions = [
+            or_(
+                AgentRun.status == "queued",
+                (AgentRun.status == "running") & (AgentRun.lease_expires_at < moment),
+            )
+        ]
+        if kinds is not None:
+            conditions.append(AgentRun.kind.in_(tuple(kinds)))
+        if user_id is not None:
+            conditions.append(AgentRun.user_id == user_id)
         run = cast(
             AgentRun | None,
             await self.session.scalar(
                 select(AgentRun)
-                .where(
-                    or_(
-                        AgentRun.status == "queued",
-                        (AgentRun.status == "running")
-                        & (AgentRun.lease_expires_at < moment),
-                    )
-                )
+                .where(*conditions)
                 .order_by(AgentRun.created_at.asc())
                 .with_for_update(skip_locked=True)
                 .limit(1)

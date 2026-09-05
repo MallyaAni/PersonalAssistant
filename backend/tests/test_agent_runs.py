@@ -138,9 +138,12 @@ async def _make_run(user_id: str, **overrides) -> dict[str, Any]:
         )
 
 
+# Claim only this suite's kind, so a review run driven from another process
+# against the same table is never taken from under it (which happened: a
+# review's lease lapsed under a slow model and this suite claimed it).
 async def _claim(worker_id: str) -> dict[str, Any] | None:
     async with AsyncSessionLocal() as db:
-        return await AgentRunRepository(db).claim_next(worker_id, 60.0)
+        return await AgentRunRepository(db).claim_next(worker_id, 60.0, kinds=("scripted",))
 
 
 async def _get(user_id: str, run_id: str) -> dict[str, Any]:
@@ -221,7 +224,7 @@ async def test_a_kill_after_the_effect_does_not_redo_it_on_resume():
         # The lease lapses and another worker picks it up.
         async with AsyncSessionLocal() as db:
             resumed = await AgentRunRepository(db).claim_next(
-                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120)
+                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120), kinds=("scripted",)
             )
         assert resumed and resumed["id"] == run["id"]
         outcome = await RunController(AsyncSessionLocal, "w2").execute(resumed, world)
@@ -248,7 +251,7 @@ async def test_an_unreconcilable_step_stops_the_run_instead_of_repeating():
             await RunController(AsyncSessionLocal, "w1").execute(claimed, world)
         async with AsyncSessionLocal() as db:
             resumed = await AgentRunRepository(db).claim_next(
-                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120)
+                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120), kinds=("scripted",)
             )
         outcome = await RunController(AsyncSessionLocal, "w2").execute(resumed, world)
         assert outcome.status == "failed"
@@ -274,7 +277,7 @@ async def test_a_step_the_world_says_never_happened_is_done_once():
             await RunController(AsyncSessionLocal, "w1").execute(claimed, world)
         async with AsyncSessionLocal() as db:
             resumed = await AgentRunRepository(db).claim_next(
-                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120)
+                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120), kinds=("scripted",)
             )
         outcome = await RunController(AsyncSessionLocal, "w2").execute(resumed, world)
         assert outcome.status == "completed", outcome
@@ -417,7 +420,7 @@ async def test_a_lapsed_lease_is_reclaimed_and_a_stale_worker_cannot_close():
         assert await _claim("w2") is None or (await _claim("w2"))["id"] != run["id"]
         async with AsyncSessionLocal() as db:
             reclaimed = await AgentRunRepository(db).claim_next(
-                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120)
+                "w2", 60.0, now=datetime.now(UTC) + timedelta(seconds=120), kinds=("scripted",)
             )
             assert reclaimed is not None
             assert reclaimed["id"] == run["id"]
@@ -427,3 +430,31 @@ async def test_a_lapsed_lease_is_reclaimed_and_a_stale_worker_cannot_close():
             assert await AgentRunRepository(db).renew_lease(run["id"], "w2", 60.0) is True
     finally:
         await _clean(user)
+
+
+# A worker claims only the kinds it hosts, and a caller driving one person's
+# run by hand claims only theirs: two workers, or a test and a review, share
+# the table without taking each other's work.
+async def test_a_claim_is_filtered_by_kind_and_user():
+    user = _user()
+    other = _user()
+    try:
+        mine = await _make_run(user)
+        async with AsyncSessionLocal() as db:
+            repo = AgentRunRepository(db)
+            foreign = await repo.create(
+                other, "agent:review", "code_review", "review commit abc1234", [],
+                budget_seconds=10.0, max_steps=3, max_creates=1,
+            )
+            assert await repo.claim_next("w1", 60.0, kinds=("nothing_hosts_this",)) is None
+            by_user = await repo.claim_next("w1", 60.0, kinds=("code_review",), user_id=user)
+            assert by_user is None
+            reviewer = await repo.claim_next("w1", 60.0, kinds=("code_review",), user_id=other)
+            assert reviewer is not None
+            assert reviewer["id"] == foreign["id"]
+            scripted = await repo.claim_next("w2", 60.0, kinds=("scripted",))
+            assert scripted is not None
+            assert scripted["id"] == mine["id"]
+    finally:
+        await _clean(user)
+        await _clean(other)

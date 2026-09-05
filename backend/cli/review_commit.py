@@ -51,7 +51,9 @@ async def review(commit: str, user_id: str, run_id: str | None, server_id: str) 
                 max_creates=1,
             )
             run_id = created["id"]
-        claimed = await repo.claim_next("review-cli", settings.AGENT_RUN_LEASE_SECONDS)
+        claimed = await repo.claim_next(
+            "review-cli", settings.AGENT_RUN_LEASE_SECONDS, kinds=("code_review",), user_id=user_id
+        )
     if claimed is None or claimed["id"] != run_id:
         print("could not claim the run (another worker holds it?)", file=sys.stderr)
         return 3

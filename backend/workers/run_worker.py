@@ -62,12 +62,15 @@ class RunWorker:
     async def run_once(self) -> bool:
         async with AsyncSessionLocal() as db:
             run = await AgentRunRepository(db).claim_next(
-                self.worker_id, settings.AGENT_RUN_LEASE_SECONDS
+                self.worker_id, settings.AGENT_RUN_LEASE_SECONDS, kinds=self.worlds.keys()
             )
         if run is None:
             return False
         factory = self.worlds.get(str(run["kind"]))
         if factory is None:
+            # Unreachable while the claim is filtered by kind; kept as the
+            # second wall so a run of a kind this process cannot host is
+            # closed rather than left running.
             async with AsyncSessionLocal() as db:
                 await AgentRunRepository(db).finish(
                     run["id"], "failed", error_code="no_world", worker_id=self.worker_id

@@ -117,6 +117,13 @@ from backend.services.checkin_arming import (
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.services.turn_steps import UNAPPLIED, Decision, run_steps
 from backend.core.effects import EffectContract
+from backend.memory.person_context import (
+    COMPOSER_INTERESTS,
+    JUDGEMENT_INTERESTS,
+    PersonContext,
+    PersonSources,
+    build_person_context,
+)
 from backend.tools import (
     action_creates,
     action_key,
@@ -839,6 +846,11 @@ _how_they_choose: ContextVar[tuple[str, ...]] = ContextVar("how_they_choose", de
 _turn_image_matches: ContextVar[tuple[dict[str, Any], ...]] = ContextVar(
     "turn_image_matches", default=()
 )
+# What this turn knows about the person, built once and read by every stage
+# that personalises - the query composer, the interest judgement, the result
+# ranker. Three views of one person used to be fetched and capped in three
+# places (docs/AGENT_PLATFORM_PLAN.md, D7).
+_turn_person: ContextVar[PersonContext | None] = ContextVar("turn_person", default=None)
 
 
 # The words of one recalled memory item, whatever field the store put them in.
@@ -2774,21 +2786,16 @@ class ConversationService:
                 # serially behind the same loop.
                 # Their interests travel with the question; the prompt
                 # spends them only on a request about things to do.
-                likes: tuple[str, ...] = ()
-                try:
-                    known_interests = await self._known_interests(
-                        str(context.get("user_id") or "")
-                    )
-                    # All of them, not a shortlist. Narrowing here with word
-                    # overlap put "exploring new things" and "unique local
-                    # events" in front of salsa, bachata, swing dancing,
-                    # karaoke and breweries, and the model that judges which
-                    # ones fit never saw the ones worth searching for. A
-                    # weaker chooser must not stand in front of a better one;
-                    # the cap is only so the list stays a list.
-                    likes = tuple(known_interests)[:40]
-                except Exception:
-                    likes = ()
+                # One view of the person for the whole turn. Only what may
+                # leave the machine reaches a query: interests are search
+                # terms, a stated preference is applied to the results here
+                # and never sent. All the interests, not a shortlist:
+                # narrowing by word overlap once put "exploring new things"
+                # in front of salsa and the judgement never saw what was
+                # worth searching for; the cap is only so the list stays a
+                # list.
+                person = await self._person_context(context)
+                likes = person.search_terms(JUDGEMENT_INTERESTS)
                 # Composed and personalised together: neither reads the
                 # other, and run in sequence they cost a search turn two model
                 # calls back to back. Measured 2026-09-04: compose ~1.7s and
@@ -2800,7 +2807,7 @@ class ConversationService:
                         self.search_planner.compose,
                         query,
                         _planner_history(history, str(context.get("timezone") or "")),
-                        likes[:8],
+                        likes[:COMPOSER_INTERESTS],
                     ),
                     asyncio.to_thread(
                         self.search_planner.relevant_interests, query, likes
@@ -2833,6 +2840,7 @@ class ConversationService:
                 if terms or disposition:
                     _trace("personalized", {"terms": list(terms), "as": list(disposition)})
                 _how_they_choose.set(disposition)
+                _turn_person.set(person.with_dispositions(tuple(disposition)))
             outbound_query = _image_aware_search_query(chosen_query, image_matches)
             _trace("query", outbound_query[:200])
             screened = self.search_privacy.sanitize(outbound_query)
@@ -3237,61 +3245,51 @@ class ConversationService:
                 logger.info("Trace %s: results judged off the asked subject", trace_id)
         return gathered, succeeded
 
-    # What this turn already retrieved about the person, as short lines for
-    # the result ranker: their interests, then the facts and moments memory
-    # recalled for this question. Nothing is fetched anew; a ranker fed the
-    # same memory the reply sees cannot know more than the reply does.
-    async def _known_for_ranking(self, context: dict[str, Any]) -> tuple[str, ...]:
-        lines: list[str] = []
+    # What this turn knows about the person, built once per turn from the
+    # profile and the preference store and read by every stage that
+    # personalises. A stage that needs it before the turn built it builds it;
+    # every later one gets the same object.
+    async def _person_context(self, context: dict[str, Any]) -> PersonContext:
+        known = _turn_person.get()
         user_id = str(context.get("user_id") or "")
-        if user_id:
-            try:
-                interests = await self._known_interests(user_id)
-            except Exception:
-                interests = ()
-            if interests:
-                # Who they are first, then what this question is about.
-                #
-                # The list alone could not say that seven of twenty entries
-                # meant "social dancer", so whoever read it got six tags and
-                # no picture. The characterization is rebuilt only when the
-                # interests themselves change, so it costs one call per person
-                # per change rather than one per turn.
-                from backend.core.persona import characterize
+        if known is not None and known.user_id == user_id:
+            return known
+        # An anonymous turn knows nobody: no store is asked anything.
+        if not user_id:
+            person = PersonContext(user_id="")
+            _turn_person.set(person)
+            return person
+        local_now = context.get("local_now")
+        person = await build_person_context(
+            user_id,
+            PersonSources(
+                discovery_profile=getattr(self, "discovery_profile", None),
+                memory=getattr(self, "memory", None),
+                llm=getattr(self, "llm", None),
+            ),
+            place=str(context.get("place") or ""),
+            timezone=str(context.get("timezone") or ""),
+            local_now=local_now if isinstance(local_now, datetime) else None,
+        )
+        _turn_person.set(person)
+        if person.described:
+            # Traced, so it can be read back: the literature's argument for a
+            # written profile over a vector is that a person can see it,
+            # disagree with it and correct it.
+            _trace("who_they_are", person.described[:300])
+        _trace("person", person.as_trace())
+        return person
 
-                try:
-                    described = await characterize(self.llm, tuple(interests))
-                except Exception:
-                    described = ""
-                if described:
-                    lines.append(f"who they are: {described}")
-                    # Traced, so it can be read back. The literature's whole
-                    # argument for a written profile over a vector is that a
-                    # person can see it, disagree with it and correct it -
-                    # scrutability - and a description nobody can read is the
-                    # one benefit thrown away. This is the smallest version of
-                    # it: `explain_turn` now shows what the system thinks of
-                    # someone on the turn it used it. Showing it to the person
-                    # themselves, and letting them edit it, is the rest.
-                    _trace("who_they_are", described[:300])
-                lines.append(
-                    "interests: "
-                    + ", ".join(_interests_for(str(context.get("query") or ""), interests))
-                )
-            # Standing preferences, selected by kind rather than by distance.
-            #
-            # This is deliberately narrow about where they land. `known` feeds
-            # two things: the result ranker, where the prompt says it may break
-            # a tie and must never outrank answering the question, and the
-            # per-event description on a turn already judged to be events. It
-            # does not reach the reply prompt, which is where a standing
-            # interest list once bent unrelated answers toward hiking - the
-            # reason interests are kept out of it to this day.
-            try:
-                preferences = await self._known_preferences(user_id)
-            except Exception:
-                preferences = ()
-            lines.extend(preferences)
+    # What this turn knows about the person, as short lines for the result
+    # ranker: who they are, their interests, their stated preferences, then
+    # the facts and moments memory recalled for this question. Deliberately
+    # narrow about where they land: `known` feeds the ranker, where the prompt
+    # says it may break a tie and must never outrank answering the question,
+    # and the per-event description. It does not reach the reply prompt, where
+    # a standing interest list once bent unrelated answers toward hiking.
+    async def _known_for_ranking(self, context: dict[str, Any]) -> tuple[str, ...]:
+        person = await self._person_context(context)
+        lines = list(person.ranking_lines(str(context.get("query") or "")))
         for kind in ("semantic", "episodic"):
             for item in list(context.get(kind) or [])[:4]:
                 text = _memory_text(item)
@@ -3426,6 +3424,7 @@ class ConversationService:
         _results_were_travel.set(False)
         _results_off_subject.set(False)
         _turn_image_matches.set(())
+        _turn_person.set(None)
         limit = await self._search_limit()
         if limit is not None:
             current_search_limit.set(limit)
