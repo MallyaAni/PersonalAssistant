@@ -49,13 +49,28 @@ traded, top/bottom 20%, all through the same harness:**
 | gru, raw | 10 | 213 | -0.005 | -0.35 | -0.27 |
 | xsect, raw | 10 | 213 | 0.012 | 0.79 | -0.36 |
 | mlp, alpha, rank label | 10 | 213 | 0.018 | 1.30 | -0.26 |
-| lightgbm, alpha, rank label | 10 | 213 | 0.002 | 0.10 | -0.67 |
-| master, alpha, rank label | 10 | 213 | -0.005 | -0.29 | -0.70 |
-| lightgbm, alpha, rank label | 20 | 107 | 0.003 | 0.14 | -0.53 |
-| mlp, raw (spark1 GPU) | 20 | 107 | -0.006 | -0.30 | -0.51 |
+| lightgbm, alpha, rank | 10 | 213 | 0.002 | 0.10 | -0.67 |
+| master, alpha, rank | 10 | 213 | -0.005 | -0.29 | -0.70 |
+| xsect, alpha, rank | 10 | 213 | -0.001 | -0.08 | -0.63 |
+| momentum 12-1 (reference) | 5 | 425 | 0.020 | — | 0.09 |
+| lightgbm, alpha, rank | 5 | 425 | -0.003 | -0.21 | -0.92 |
+| mlp, alpha, rank | 5 | 425 | 0.017 | 1.59 | -0.10 |
+| xsect, alpha, rank | 5 | 425 | 0.013 | 1.01 | -0.30 |
+| lightgbm, alpha, rank | 20 | 107 | 0.003 | 0.14 | -0.53 |
+| master, alpha, rank (spark1) | 20 | 107 | -0.014 | -0.64 | -0.73 |
+| mlp, raw (spark1) | 20 | 107 | -0.006 | -0.30 | -0.51 |
+| lightgbm, alpha, rank | 60 | 34 | 0.018 | 0.38 | -0.03 |
+| mlp, alpha, rank | 60 | 34 | -0.072 | -1.98 | -0.63 |
+| master, alpha, rank | 60 | 34 | -0.033 | -0.84 | -0.46 |
 
-Nothing beats momentum at ten sessions, and momentum itself is nothing
-there. **The positive control explains why.** Run through the unchanged
+Full rows with hit rate, net per period and cost: `data/market/models/
+sweep.tsv` on each machine (the LightGBM h10/h20 rows there show NaN IC
+from before the harness fix; recomputed from their saved scores above).
+
+No encoder, feature set, label or horizon beats the reference on the
+same sessions, and at sixty sessions the fitted models are *inverted*
+out of sample (the relation learned in each training window flips in its
+test window: regime dependence, on 34 periods). **The positive control explains why.** Run through the unchanged
 harness on the same panel:
 
 | known effect | horizon | periods | rank IC | t | Sharpe @0 bps | @10 bps |
