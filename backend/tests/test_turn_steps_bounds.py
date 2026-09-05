@@ -305,3 +305,39 @@ async def test_a_bare_action_is_still_understood_as_a_decision():
 )
 async def test_status_reads_the_outcome_vocabulary(kind, status):
     assert status_of({"kind": kind}) == status
+
+
+# A world may count a failed attempt into the next key. The key recorded as
+# seen is the one the action was chosen under, so a bounded retry under a
+# fresh key is not read as a repeat (the reviewer's diff, 2026-09-05).
+async def test_a_key_that_moves_after_a_failure_does_not_make_the_retry_a_repeat():
+    failures = {"read": 0}
+    outcomes = iter([{"kind": "failed"}, {"kind": "done"}])
+    applied: list = []
+
+    async def apply(action):
+        applied.append(action)
+        outcome = dict(next(outcomes))
+        if outcome["kind"] == "failed":
+            failures["read"] += 1
+        return "read", outcome
+
+    async def decide(lines):
+        return "read" if len(lines) == 1 else None
+
+    def key(action):
+        return f"{action}#{failures['read']}"
+
+    result = await run_steps(
+        "read",
+        apply=apply,
+        decide=decide,
+        describe=_describe,
+        creates=lambda a: False,
+        max_steps=3,
+        budget_seconds=5.0,
+        key=key,
+    )
+    assert applied == ["read", "read"]
+    assert result.stopped == DECLINED
+    assert [step.status for step in result.steps] == [FAILED, SUCCEEDED]

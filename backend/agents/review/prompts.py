@@ -22,7 +22,6 @@ MAX_DIFF_CHARS_SHOWN = 40_000
 MAX_FILE_CHARS_SHOWN = 24_000
 
 _CHOOSE = render("review/choose_files", MAX_FILES=MAX_FILES)
-_FINDINGS = render("review/findings", MAX_FINDINGS=MAX_FINDINGS)
 
 SEVERITIES = ("low", "medium", "high")
 
@@ -135,11 +134,20 @@ def _render_files(contents: dict[str, str]) -> str:
 
 
 class ReviewPrompts:
-    """The review's two model calls."""
+    """The review's two model calls. `findings_prompt` names which question
+    the findings step asks - the code review's by default, the security
+    investigation's for that agent - so the mechanism is shared and the
+    judgement is each agent's own."""
 
-    def __init__(self, writer: TextWriter, max_tokens: int = 2_048) -> None:
+    def __init__(
+        self,
+        writer: TextWriter,
+        max_tokens: int = 2_048,
+        findings_prompt: str = "review/findings",
+    ) -> None:
         self.writer = writer
         self.max_tokens = max_tokens
+        self.findings_system = render(findings_prompt, MAX_FINDINGS=MAX_FINDINGS)
 
     # Which changed files to read in full; only paths the commit changed
     # survive, whatever the model wrote.
@@ -176,7 +184,7 @@ class ReviewPrompts:
             answer = await asyncio.to_thread(
                 self.writer.chat,
                 [
-                    {"role": "system", "content": _FINDINGS},
+                    {"role": "system", "content": self.findings_system},
                     {
                         "role": "user",
                         "content": _render_change(summary, diff_text)

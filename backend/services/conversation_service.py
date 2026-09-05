@@ -484,18 +484,15 @@ async def _rerank_web_results(
 
 
 
-# Questions whose answer depends on where the person is. A search for one
-# of these that names no place finds what is on anywhere - which is nowhere.
-# Time words alone ("this week", "tonight") are not in this list: "what did
-# the Fed decide this week?" got "Arlington Virginia" appended on the
-# first live run (2026-09-03), and a place on a question that has none of
-# its own skews the results toward local news.
-_PLACE_BOUND = re.compile(
-    r"\b(what'?s on|events?|happening|going on|things to do|near me|nearby|around here|"
-    r"in the area|in my area|my city|open now|restaurants?|bars?|brunch|weather|"
-    r"traffic|drive time)\b",
-    re.IGNORECASE,
-)
+# Whether a question depends on where the person is used to be a word list
+# ("events", "near me", "brunch", "weather", ...), which is the pattern-
+# decides-meaning rule this repository forbids and which missed every
+# phrasing its author had not imagined. It is the model's judgement now
+# (`SearchPlanner.place_judgement`, prompts/search/place.md), made once per
+# search turn with the question in front of it; the holds below take the
+# verdict. "What did the Fed decide this week?" is not about here, and a
+# place on a question that has none of its own skews the results toward
+# local news (2026-09-03).
 
 
 # A search for a place-bound question is held to the person's place: when
@@ -505,8 +502,8 @@ _PLACE_BOUND = re.compile(
 # 2026-09-03 - and a later round is another model's guess. Decided in code
 # for every round, whoever wrote the query. A question that is not about
 # here, or a place unknown, is left alone.
-def _hold_to_place(query: str, question: str, place: str) -> str:
-    if not query or not place or not _PLACE_BOUND.search(question or ""):
+def _hold_to_place(query: str, bound: bool | None, place: str) -> str:
+    if not query or not place or not bound:
         return query
     parts = [part.strip() for part in place.split(",") if part.strip()]
     if not parts:
@@ -532,22 +529,24 @@ def _hold_to_place(query: str, question: str, place: str) -> str:
 # weeks out. `prompts/search/compose.md` already asks for them and the model
 # still wrote the month, so this is the same structural correction the place
 # gets rather than another sentence in the prompt.
-def _hold_to_dates(query: str, question: str, now: datetime) -> str:
+def _hold_to_dates(query: str, question: str, now: datetime, bound: bool | None) -> str:
     from backend.core.event_window import window_for
 
     window = window_for(question, now)
-    if not query or window is None or not _PLACE_BOUND.search(question or ""):
+    if not query or window is None or not bound:
         return query
     # A query that already names a day is left alone; two date ranges are
     # worse than one.
     if re.search(r"\b\d{1,2}\s*[-–]\s*\d{1,2}\b|\b\d{4}-\d{2}-\d{2}\b", query):
         return query
+    # Day numbers are formatted by hand: `%-d` is glibc's and not Windows's,
+    # and a format string one platform rejects fails the whole hold there.
     if window.start == window.end:
-        span = f"{window.start:%B %-d %Y}"
+        span = f"{window.start:%B} {window.start.day} {window.start.year}"
     elif window.start.month == window.end.month:
         span = f"{window.start:%B} {window.start.day}-{window.end.day} {window.end.year}"
     else:
-        span = f"{window.start:%B %-d} - {window.end:%B %-d %Y}"
+        span = f"{window.start:%B} {window.start.day} - {window.end:%B} {window.end.day} {window.end.year}"
     return f"{query} {span}".strip()
 
 
@@ -626,22 +625,24 @@ def _keep_the_place(proposed: str, first_query: str, place: str) -> str:
 # after a listing full of Colonial Heights searched "Colonial Heights ...
 # Courthouse Virginia" for a person in Courthouse (2026-09-04), and a query
 # with two towns comes back from the wrong one. The model names the foreign
-# places; this drops them and re-holds the person's place. No model call when
-# the question is not place-bound, no known place, or the planner is absent.
+# places; this drops them and re-holds the person's place. Nothing happens
+# when the judgement says the question is not about here, or no place is
+# known, or the planner is absent.
 async def _drop_foreign_places(
-    planner: Any, query: str, question: str, home: str
+    planner: Any, query: str, question: str, home: str, judgement: Any = None
 ) -> str:
-    if not query or not home or planner is None or not _PLACE_BOUND.search(question or ""):
+    if not query or not home or planner is None:
         return query
-    try:
-        foreign = await asyncio.to_thread(planner.foreign_places, query, home)
-    except Exception:
-        return query
-    if not foreign:
+    if judgement is None:
+        try:
+            judgement = await asyncio.to_thread(planner.place_judgement, question, query, home)
+        except Exception:
+            return query
+    if not judgement.bound or not judgement.foreign:
         return query
     from backend.services.search_planner import strip_phrases
 
-    return _hold_to_place(strip_phrases(query, foreign), question, home)
+    return _hold_to_place(strip_phrases(query, judgement.foreign), True, home)
 
 
 # The question the reranker judges results against: what was asked, and
@@ -3043,14 +3044,20 @@ class ConversationService:
                 home = found_home[0] if found_home else ""
             except Exception:
                 home = ""
+        # Whether this question depends on where they are: the model's
+        # judgement, once for the turn, with the question in front of it.
+        # Every round's hold below follows it.
+        judgement = await self._place_judgement(question, first_query, home)
+        bound = judgement.bound if judgement is not None else None
+        _trace("place_bound", bound)
         # The first query is held to the place before it is ever sent.
-        first_query = _hold_to_place(first_query, question, home)
-        first_query = _hold_to_dates(first_query, question, datetime.now(UTC))
+        first_query = _hold_to_place(first_query, bound, home)
+        first_query = _hold_to_dates(first_query, question, datetime.now(UTC), bound)
         # And a place compose pulled out of a previous answer is dropped, so a
         # query with two towns never goes out (2026-09-04). The person's own
         # place is re-held afterwards.
         first_query = await _drop_foreign_places(
-            self.search_planner, first_query, question, home
+            self.search_planner, first_query, question, home, judgement
         )
         current = first_query
         first_round: list[dict[str, Any]] = []
@@ -3108,8 +3115,8 @@ class ConversationService:
             # Virginia this week" searched without Arlington on 2026-09-02
             # and a New York page won the listing. If the first query named
             # the place and this one does not, the place goes back on.
-            better = _hold_to_place(_keep_the_place(better, first_query, home), question, home)
-            better = _hold_to_dates(better, question, datetime.now(UTC))
+            better = _hold_to_place(_keep_the_place(better, first_query, home), bound, home)
+            better = _hold_to_dates(better, question, datetime.now(UTC), bound)
             screened = self.search_privacy.sanitize(better)
             if not screened.allowed:
                 logger.info(
@@ -3682,6 +3689,19 @@ class ConversationService:
         if scout_outcomes:
             outcomes["scout_schedule_outcomes"] = scout_outcomes
         return outcomes or None
+
+    # The model's judgement of whether the question depends on where the
+    # person is, and which names in the query are elsewhere - one call per
+    # search turn, None when there is no planner to ask.
+    async def _place_judgement(self, question: str, query: str, home: str) -> Any:
+        planner = getattr(self, "search_planner", None)
+        if planner is None or not query:
+            return None
+        try:
+            return await asyncio.to_thread(planner.place_judgement, question, query, home)
+        except Exception:
+            logger.warning("The place judgement failed; the query is left as composed", exc_info=True)
+            return None
 
     # The contract of the MCP tool behind a toolbox action, or None for any
     # other action - the registry reads a built-in's off its row.

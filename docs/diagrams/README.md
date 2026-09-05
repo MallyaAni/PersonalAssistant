@@ -48,6 +48,7 @@ decide, and what is decided for it?**
 | Memory capture | What is worth offering to save. Whether it is saved is the user's. | [source](agent-memory.mmd) | [view](agent-memory.svg) |
 | Trading | What a person's own trading history keeps doing, and what to stop, start, and keep. What a cost may be stated as is decided for it: a number only when one is in the record. | [source](agent-trading.mmd) | [view](agent-trading.svg) |
 | Reviewer agent | How is one commit reviewed - fixed read stages through the read-only repo server, two model judgements, and an evidence check in code that drops a finding whose quoted line is not at that line? | [agent-review.mmd](agent-review.mmd) | [agent-review.svg](agent-review.svg) |
+| Security agent | How is a commit of an authorized asset investigated - scope checked before any read, secret and dangerous-call shapes found by code, one model judgement over the flagged lines, and the same evidence check as the reviewer? | [agent-security.mmd](agent-security.mmd) | [agent-security.svg](agent-security.svg) |
 
 ## Readability contract
 

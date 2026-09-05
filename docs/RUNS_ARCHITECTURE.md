@@ -82,10 +82,22 @@ a kind nobody registered fails the run with `no_world` rather than guessing.
   decide an approval (`runs:act`). Every route checks the session owns the
   user and holds the scope.
 
+## Worlds that exist
+
+- `code_review` - the reviewer (`backend/agents/review/`): a read-only review
+  of one commit, verified on the real model against a planted defect and an
+  injected instruction.
+- `security_review` - the security agent (`backend/agents/security/`): the
+  reviewer's stages under a scope check and with shape searches, refusing
+  any asset not in `SECURITY_AUTHORIZED_ASSETS` before a tool is called.
+
+Both are created by `backend.cli.review_commit` today. A worker claims only
+the kinds it hosts (`claim_next(kinds=...)`), so hosts sharing the table
+never take each other's work.
+
 ## Not yet
 
-- No world exists. The first is the read-only code-review agent (Phase 5);
-  a chat turn that exceeds its budget creating a run is Phase 3's remaining
+- A chat turn that exceeds its budget creating a run is Phase 3's remaining
   slice and needs a conversation world.
 - Approvals are rows; nothing yet asks the person in chat or on the phone.
 - Restart mid-run is tested in-process (a `BaseException` in the step); a

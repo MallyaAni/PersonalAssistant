@@ -168,7 +168,9 @@ class ReviewWorld:
             state = self.state
             if state.summary is None or state.diff is None:
                 return "analysis", {"kind": "failed", "error": "nothing read yet"}
-            review = await self.prompts.findings(state.summary, state.diff, state.contents)
+            review = await self.prompts.findings(
+                state.summary, state.diff, await self._findings_contents()
+            )
             if review is None:
                 return "analysis", {"kind": "failed", "error": "the model did not answer"}
             kept, rejected = self._check(review)
@@ -180,6 +182,12 @@ class ReviewWorld:
                 "unknowns": list(review.unknowns),
             }
         return None
+
+    # What the findings step is shown beside the diff: the files read, and
+    # whatever else a variant of this world gathered (the security agent adds
+    # its pattern hits). Anything added here is material, never a finding.
+    async def _findings_contents(self) -> dict[str, str]:
+        return dict(self.state.contents)
 
     # One read through the boundary; a refusal is a failed step, not a crash.
     async def _call(self, tool: str, arguments: dict[str, Any]) -> dict[str, Any]:

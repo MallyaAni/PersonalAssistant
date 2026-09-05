@@ -705,6 +705,10 @@ services:
       - TURN_STEP_BUDGET_SECONDS=${TURN_STEP_BUDGET_SECONDS:-45}
       - TURN_MAX_CREATES=${TURN_MAX_CREATES:-3}
       - AGENT_RUNS_ENABLED=${AGENT_RUNS_ENABLED:-false}
+      # The repository the reviewer's read-only repo MCP server is rooted at;
+      # empty means no repo server can start (backend/mcp/servers/repo.py).
+      - REPO_MCP_ROOT=${REPO_MCP_ROOT:-}
+      - SECURITY_AUTHORIZED_ASSETS=${SECURITY_AUTHORIZED_ASSETS:-}
       - AGENT_RUN_POLL_SECONDS=${AGENT_RUN_POLL_SECONDS:-5}
       - AGENT_RUN_LEASE_SECONDS=${AGENT_RUN_LEASE_SECONDS:-300}
       - AGENT_RUN_MAX_ATTEMPTS=${AGENT_RUN_MAX_ATTEMPTS:-3}

@@ -313,6 +313,40 @@ review.
 the run), a report artifact beyond the run's result, and the measured
 precision floor on a labelled corpus of diffs the plan calls for.
 
+## Security — a scoped, read-only investigation of one commit
+
+The first shape of the security agent (Phase 6 of
+[AGENT_PLATFORM_PLAN.md](AGENT_PLATFORM_PLAN.md)): the reviewer's stages
+with a different question - does this change widen what an attacker can do -
+plus deterministic searches of the commit for lines shaped like a secret or
+a dangerous call, which the model then judges with the code around them.
+The scope is checked before anything is read: a run naming an asset not in
+`SECURITY_AUTHORIZED_ASSETS` fails with the refusal recorded and no tool
+called.
+
+| | |
+| --- | --- |
+| Registry id | `security` |
+| Run kind | `security_review` (`backend/workers/run_worker.py::WORLDS`) |
+| Diagram | [agent-security.svg](diagrams/agent-security.svg) · [source](diagrams/agent-security.mmd) |
+| Agent folder | `backend/agents/security/` |
+| Domain package | `backend/runs/` · `backend/mcp/servers/repo.py` · the reviewer's stages in `backend/agents/review/world.py` |
+| Prompts | `prompts/security/findings.md` (the reviewer's `review/choose_files` for which files to read) |
+| Card | `agents/security/card.py` |
+| Functional tests | `test_security_review_behaviour.py` |
+| Entry point | `python -m backend.cli.review_commit --kind security_review --asset <name> --commit <sha> --user <id>` |
+
+**What the model decides:** which files to read in full, and whether each
+flagged line and each hunk is a weakness. **What is decided for it:** the
+scope, the stages, that every tool is a read, which shapes are searched
+(`SECRET_SHAPES`, `DANGEROUS_CALL_SHAPES` - shapes, never intent), and
+whether a finding stands (the reviewer's evidence check). The card reads
+`needs_setup` until an asset is authorized.
+
+**Not yet:** alert enrichment and an asset inventory beyond the repositories
+the repo server can be rooted at; remediation tools (they will carry
+`approval: always`); a labelled corpus and a precision floor.
+
 ## Adding an agent
 
 1. `backend/agents/<name>/` with `prompts.py`, and `card.py` if it belongs in the

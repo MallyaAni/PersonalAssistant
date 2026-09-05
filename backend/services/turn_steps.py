@@ -263,6 +263,11 @@ async def run_steps(
 
     action = first
     while action is not None:
+        # The key of the action as it was chosen. Read before it runs, because
+        # a world may count a failed attempt into the next key: read after,
+        # the retry's fresh key was already the one recorded as seen, and a
+        # bounded retry read as a repeat (the reviewer, 2026-09-05).
+        chosen_key = fingerprint(action)
         limit = remaining() if (steps or bound_first) else None
         if limit is not None and limit <= 0:
             logger.info("Turn step budget spent before step %d", len(steps) + 1)
@@ -287,7 +292,7 @@ async def run_steps(
             return TurnResult(tuple(steps), UNAPPLIED)
         kind, outcome = applied
         steps.append(Step(action, kind, outcome, describe(action, kind, outcome)))
-        seen.add(fingerprint(action))
+        seen.add(chosen_key)
         # A creation that failed created nothing and does not spend the
         # allowance; one whose outcome is unknown may have, and does.
         if creates(action) and status_of(outcome) != FAILED:

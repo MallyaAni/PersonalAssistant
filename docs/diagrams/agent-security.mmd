@@ -1,0 +1,29 @@
+---
+title: Security - a read-only investigation of one commit, scoped to authorized assets
+---
+flowchart LR
+    Ask([Operator or an alert<br/>investigate asset: name at sha]) --> Run[(agent_runs<br/>kind security_review)]
+    Run --> Controller[RunController<br/>record before · replay by key · verify]
+    Controller --> Scope{Authorized?<br/>SECURITY_AUTHORIZED_ASSETS<br/>checked before any read}
+    Scope -->|no| Refused[Run fails: asset not authorized<br/>no tool called, refusal recorded]
+    Scope -->|yes| World[SecurityWorld<br/>the reviewer's stages plus shape searches]
+    World -->|repo_show_commit · repo_diff<br/>repo_read_file · repo_grep| Boundary[MCP invocation boundary<br/>read_only · per-tool contract]
+    Boundary --> Repo[repo MCP server<br/>rooted by REPO_MCP_ROOT · reads only]
+    World -->|shapes by code: AKIA, BEGIN PRIVATE KEY,<br/>shell=True, eval, verify=False ...| Hits[Flagged lines<br/>material, not verdicts]
+    Hits --> Findings{Structured model<br/>security/findings<br/>judge each flagged line in its code}
+    World --> Findings
+    Findings --> Check[Evidence check in code<br/>quoted line is that line of a read file]
+    Check --> Report[Run result<br/>asset · shapes searched · hits<br/>findings · rejected · unknowns]
+    Report --> Person([Person<br/>/api/v1/runs · Agents tab card])
+    Later[Later: alert enrichment, asset inventory,<br/>remediation tools with approval: always] -.-> World
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef store fill:#eef7ee,stroke:#5c9c5c,color:#173117;
+    classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
+    class Ask,Person interface;
+    class Controller,Scope,World,Boundary,Repo,Hits,Check,Report,Later application;
+    class Findings model;
+    class Run store;
+    class Refused failure;

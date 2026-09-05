@@ -115,6 +115,10 @@ class Settings(BaseSettings):
     AGENT_RUN_APPROVAL_TTL_SECONDS: float = Field(default=86_400.0, gt=0, le=604_800)
     AGENT_RUN_DEFAULT_BUDGET_SECONDS: float = Field(default=600.0, ge=10, le=7_200)
     AGENT_RUN_DEFAULT_MAX_STEPS: int = Field(default=12, ge=1, le=100)
+    # Assets the security agent may investigate, comma-separated names a run's
+    # objective must match ("asset: <name>"). Empty means none: a run naming
+    # anything is refused before a tool is called.
+    SECURITY_AUTHORIZED_ASSETS: str = ""
     ROUTING_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"

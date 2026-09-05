@@ -2,6 +2,51 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - The place-bound word list is gone; the security agent's first shape; the reviewer's two pilot defects (NOT DEPLOYED)
+
+**Meaning decided by a model, not a pattern.** `_PLACE_BOUND` - the word
+list in `conversation_service.py` that decided whether a question depends on
+where the person is - is deleted. `SearchPlanner.place_judgement` asks the
+model once per search turn, with the question in front of it, and answers
+both `place_bound` and the foreign place names in one call
+(`prompts/search/place.md`); the three code holds (place, dates, foreign
+names) take the verdict. An unjudged question is left as composed. Measured
+on the real model, `functional/test_place_bound_judgement_behaviour.py`:
+9/9 - "anything fun going on this weekend?", "where should the two of us go
+for dinner on friday?", "how long will it take me to get to dulles at 5" are
+about here; the Fed, a PS5's price, a prime minister and a TV finale are not;
+an unknown place still yields a verdict and names nothing foreign. The
+`%-d` date format that failed the hold on Windows is written by hand.
+
+**The security agent, first shape** (`backend/agents/security/`,
+`docs/AGENT_CATALOG.md`): the reviewer's stages under a scope check - a run
+naming an asset not in `SECURITY_AUTHORIZED_ASSETS` fails with the refusal
+recorded and no tool called - plus deterministic searches of the commit for
+lines shaped like a secret or a dangerous call (`SECRET_SHAPES`,
+`DANGEROUS_CALL_SHAPES`; shapes, never intent), handed to the model as
+material for `prompts/security/findings.md`. Registered as run kind
+`security_review`, with a card, a diagram, and `review_commit --kind
+security_review --asset <name>`. Unit-verified (scope refusal, stage order,
+hits reaching the findings step); its real-model test
+(`functional/test_security_review_behaviour.py`: a planted AWS-style key, a
+shell built from a request parameter, a harmless literal call, an injected
+comment) has not been run yet.
+
+**Two defects the reviewer's pilot found, fixed.** Reviewing this
+repository's own commit `7cdd4af4`: the diff came back cut mid-JSON, because
+the repo server's 60k bound exceeds the invocation boundary's 32k result cap
+- every payload is now bounded under it, and a file slice reports
+`truncated`. Then the bounded retry read as a repeat, because `run_steps`
+recorded a step's key after it ran, when the world's attempt counter had
+already moved; the key is read when the action is chosen now
+(`test_a_key_that_moves_after_a_failure_does_not_make_the_retry_a_repeat`).
+
+**Also:** `/api/v1/runs` isolation pinned (`test_runs_api_isolation.py`: a
+stranger gets 403 on another's path and 404 under their own; a `runs:read`
+token cannot cancel or approve; a `runs:act` token cannot list);
+`REPO_MCP_ROOT` and `SECURITY_AUTHORIZED_ASSETS` forwarded to
+`discovery-worker`; the runs architecture doc names both worlds.
+
 ## 2026-09-05 - Phase 2 closed on the measurement; Phase 3 (durable runs) and the first Phase 5 slice (the reviewer) built and unit-verified (NOT DEPLOYED)
 
 **Phase 2 closed.** The step line the router reads back now carries the

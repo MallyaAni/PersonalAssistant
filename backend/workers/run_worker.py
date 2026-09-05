@@ -39,7 +39,25 @@ def _code_review(run: dict) -> RunWorld:
     )
 
 
-WORLDS: dict[str, WorldFactory] = {"code_review": _code_review}
+def _security_review(run: dict) -> RunWorld:
+    from backend.agents.review.prompts import ReviewPrompts
+    from backend.agents.security.world import SecurityWorld
+    from backend.core.dependencies import (
+        get_mcp_invocation_service,
+        get_structured_llm_client,
+    )
+
+    return SecurityWorld(
+        run,
+        get_mcp_invocation_service(),
+        ReviewPrompts(get_structured_llm_client(), findings_prompt="security/findings"),
+    )
+
+
+WORLDS: dict[str, WorldFactory] = {
+    "code_review": _code_review,
+    "security_review": _security_review,
+}
 
 
 class RunWorker:

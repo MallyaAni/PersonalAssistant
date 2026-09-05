@@ -29,9 +29,12 @@ from backend.runs.repository import AgentRunRepository
 
 
 # Create the run (or reuse one) and drive it to its next stop.
-async def review(commit: str, user_id: str, run_id: str | None, server_id: str) -> int:
+async def review(
+    commit: str, user_id: str, run_id: str | None, server_id: str, kind: str = "code_review", asset: str = ""
+) -> int:
     from backend.agents.review.prompts import ReviewPrompts
     from backend.agents.review.world import ReviewWorld
+    from backend.agents.security.world import SecurityWorld
 
     invocation = get_mcp_invocation_service()
     if not invocation.can_auto_invoke(server_id):
@@ -43,8 +46,8 @@ async def review(commit: str, user_id: str, run_id: str | None, server_id: str) 
             created = await repo.create(
                 user_id,
                 "agent:review",
-                "code_review",
-                f"review commit {commit}",
+                kind,
+                f"investigate asset: {asset} at {commit}" if kind == "security_review" else f"review commit {commit}",
                 ["the commit, its diff and the chosen files were read", "every finding cites a line that exists"],
                 budget_seconds=settings.AGENT_RUN_DEFAULT_BUDGET_SECONDS,
                 max_steps=settings.AGENT_RUN_DEFAULT_MAX_STEPS,
@@ -52,12 +55,17 @@ async def review(commit: str, user_id: str, run_id: str | None, server_id: str) 
             )
             run_id = created["id"]
         claimed = await repo.claim_next(
-            "review-cli", settings.AGENT_RUN_LEASE_SECONDS, kinds=("code_review",), user_id=user_id
+            "review-cli", settings.AGENT_RUN_LEASE_SECONDS, kinds=(kind,), user_id=user_id
         )
     if claimed is None or claimed["id"] != run_id:
         print("could not claim the run (another worker holds it?)", file=sys.stderr)
         return 3
-    world = ReviewWorld(claimed, invocation, ReviewPrompts(get_structured_llm_client()), server_id)
+    if kind == "security_review":
+        world = SecurityWorld(
+            claimed, invocation, ReviewPrompts(get_structured_llm_client(), findings_prompt="security/findings"), server_id
+        )
+    else:
+        world = ReviewWorld(claimed, invocation, ReviewPrompts(get_structured_llm_client()), server_id)
     outcome = await RunController(AsyncSessionLocal, "review-cli").execute(claimed, world)
     async with AsyncSessionLocal() as db:
         final = await AgentRunRepository(db).get_owned(user_id, run_id)
@@ -73,11 +81,18 @@ def main() -> int:
     parser.add_argument("--user", required=True)
     parser.add_argument("--run-id", default=None, help="resume an existing run instead of creating one")
     parser.add_argument("--server", default="repo")
+    parser.add_argument("--kind", default="code_review", choices=("code_review", "security_review"))
+    parser.add_argument("--asset", default="", help="security_review: the authorized asset name the run investigates")
     arguments = parser.parse_args()
     if not os.environ.get("REPO_MCP_ROOT"):
         print("set REPO_MCP_ROOT to the repository the repo server is rooted at", file=sys.stderr)
         return 2
-    return asyncio.run(review(arguments.commit, arguments.user, arguments.run_id, arguments.server))
+    if arguments.kind == "security_review" and not arguments.asset:
+        print("--asset is required for a security_review", file=sys.stderr)
+        return 2
+    return asyncio.run(
+        review(arguments.commit, arguments.user, arguments.run_id, arguments.server, arguments.kind, arguments.asset)
+    )
 
 
 if __name__ == "__main__":

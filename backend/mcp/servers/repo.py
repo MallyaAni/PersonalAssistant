@@ -25,8 +25,13 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("AniOS Repository (read-only)")
 
-MAX_DIFF_CHARS = 60_000
+# Every payload stays under the invocation boundary's result cap
+# (MCP_MAX_RESULT_CHARS, 32k by default): a diff bounded at 60k came back cut
+# mid-JSON and read as nothing (the pilot review, 2026-09-05). The bounds
+# leave room for the JSON around the text.
+MAX_DIFF_CHARS = 20_000
 MAX_FILE_LINES = 400
+MAX_FILE_CHARS = 20_000
 MAX_GREP_MATCHES = 50
 MAX_LOG_ENTRIES = 30
 _GIT_TIMEOUT_SECONDS = 20
@@ -145,13 +150,24 @@ def read_file(path: str, commit: str, start: int = 1, end: int | None = None, ro
     lines = text.splitlines()
     first = max(1, int(start or 1))
     last = min(len(lines), int(end) if end else first + MAX_FILE_LINES - 1, first + MAX_FILE_LINES - 1)
-    numbered = [f"{number:5d}| {lines[number - 1]}" for number in range(first, last + 1)]
+    numbered: list[str] = []
+    size = 0
+    truncated = False
+    for number in range(first, last + 1):
+        line = f"{number:5d}| {lines[number - 1]}"
+        if size + len(line) + 1 > MAX_FILE_CHARS:
+            truncated = True
+            last = number - 1
+            break
+        numbered.append(line)
+        size += len(line) + 1
     return {
         "sha": sha,
         "path": clean,
         "start": first,
         "end": last,
         "total_lines": len(lines),
+        "truncated": truncated,
         "content": "\n".join(numbered),
     }
 

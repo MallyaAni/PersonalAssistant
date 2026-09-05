@@ -16,6 +16,7 @@ the one that should say what it needs and whether it got it.
 import json
 import logging
 import re
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
@@ -104,6 +105,15 @@ def strip_phrases(query: str, phrases) -> str:
         if text:
             out = re.sub(re.escape(text), " ", out, flags=re.IGNORECASE)
     return re.sub(r"\s{2,}", " ", out).strip()
+
+
+@dataclass(frozen=True, slots=True)
+class PlaceJudgement:
+    """Whether a question depends on where the person is (None when the model
+    could not be asked), and the place names in the query that are elsewhere."""
+
+    bound: bool | None
+    foreign: tuple[str, ...]
 
 
 class SearchPlanner:
@@ -319,20 +329,32 @@ class SearchPlanner:
     # judgement; the caller strips what this names and re-holds the person's
     # own place. A failure here leaves the query as composed.
     def foreign_places(self, query: str, place: str) -> tuple[str, ...]:
-        if not query or not place:
-            return ()
+        return self.place_judgement(query, query, place).foreign
+
+    # Whether the question depends on where the person is, and which place
+    # names in the query are somewhere else. One call answers both: a word
+    # list used to decide the first ("events", "near me", "brunch"), and
+    # a list is what fails on phrasing its author did not anticipate, so the
+    # judgement is the model's with the conversation's question in front of
+    # it. A failed call is `bound=None`: the caller leaves the query as
+    # composed, which is what it did for an unrecognised phrasing before.
+    def place_judgement(self, question: str, query: str, place: str) -> "PlaceJudgement":
+        if not query:
+            return PlaceJudgement(None, ())
         schema = {
             "type": "object",
             "properties": {
+                "place_bound": {"type": "boolean"},
                 "places": {
                     "type": "array",
                     "items": {"type": "string"},
                     "maxItems": 6,
                 },
             },
-            "required": ["places"],
+            "required": ["place_bound", "places"],
             "additionalProperties": False,
         }
+        where = place or "not known"
         try:
             answer = self.llm.chat(
                 [
@@ -340,7 +362,8 @@ class SearchPlanner:
                     {
                         "role": "user",
                         "content": (
-                            f"The person is in: {place}\n\nSearch query: {query}"
+                            f"The person is in: {where}\n\nTheir question: {question}\n\n"
+                            f"Search query: {query}"
                         ),
                     },
                 ],
@@ -349,11 +372,8 @@ class SearchPlanner:
                 0.0,
             )
         except Exception:
-            logger.warning(
-                "Could not judge which places in the query are foreign",
-                exc_info=True,
-            )
-            return ()
+            logger.warning("Could not judge the place of the question", exc_info=True)
+            return PlaceJudgement(None, ())
         payload = (
             answer.get("content")
             if isinstance(answer, dict) and "content" in answer
@@ -363,9 +383,13 @@ class SearchPlanner:
             try:
                 payload = json.loads(payload)
             except ValueError:
-                return ()
+                return PlaceJudgement(None, ())
         if not isinstance(payload, dict):
-            return ()
+            return PlaceJudgement(None, ())
+        bound = payload.get("place_bound")
+        bound = bool(bound) if isinstance(bound, bool) else None
+        if not place:
+            return PlaceJudgement(bound, ())
         # The person's own words - city and region - are not foreign, whatever
         # the model names. A place sharing a word with them (their region) is
         # part of where they are.
@@ -379,7 +403,7 @@ class SearchPlanner:
                 continue
             if text not in foreign:
                 foreign.append(text)
-        return tuple(foreign)[:6]
+        return PlaceJudgement(bound, tuple(foreign))
 
     def _ask(self, system: str, user: str, what: str) -> str:
         try:

@@ -34,20 +34,28 @@ class StubLLM:
         )
         if self.fail:
             raise RuntimeError("inference runtime unreachable")
-        return {"content": __import__("json").dumps({"places": list(self.places)})}
+        return {
+            "content": __import__("json").dumps(
+                {"place_bound": True, "places": list(self.places)}
+            )
+        }
 
 
 class StubPlanner:
-    """The planner as the search path sees it: only foreign_places matters."""
+    """The planner as the search path sees it: one place judgement - whether
+    the question is about here, and which names in the query are elsewhere."""
 
-    def __init__(self, foreign=("Colonial Heights",), fail=False) -> None:
+    def __init__(self, foreign=("Colonial Heights",), fail=False, bound=True) -> None:
         self.foreign = foreign
         self.fail = fail
+        self.bound = bound
 
-    def foreign_places(self, query, place):
+    def place_judgement(self, question, query, place):
+        from backend.services.search_planner import PlaceJudgement
+
         if self.fail:
             raise RuntimeError("inference runtime unreachable")
-        return self.foreign
+        return PlaceJudgement(self.bound, self.foreign)
 
 
 def test_strip_phrases_removes_the_named_phrases_and_tidies_the_gap():
@@ -103,9 +111,10 @@ async def test_the_search_path_drops_a_foreign_place_and_holds_the_own():
 
 @pytest.mark.asyncio
 async def test_a_non_place_bound_question_is_left_alone():
+    # The judgement, not a word list, says the question is not about here.
     query = "how much does a PS5 cost now"
     out = await _drop_foreign_places(
-        StubPlanner(), query, "how much does a PS5 cost now", "Courthouse, Virginia"
+        StubPlanner(bound=False), query, "how much does a PS5 cost now", "Courthouse, Virginia"
     )
     assert out == query
 

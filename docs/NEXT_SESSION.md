@@ -202,6 +202,37 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — Place judgement live (9/9); security agent's first shape; pilot defects fixed (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the
+security world (`backend/agents/security/world.py`) and the two pilot
+fixes (`backend/mcp/servers/repo.py` bounds, `turn_steps.py` key-before-step).
+
+**VERIFIED on the real model:** `functional/test_place_bound_judgement_behaviour.py`
+9/9. **VERIFIED (unit, this host):** security world 4, API isolation 3,
+repo server + evidence check 23, loop bounds 15, search place suites, the
+coverage and prompt suites; 30 diagrams synchronized.
+**UNVERIFIED:** `functional/test_security_review_behaviour.py` (not run; the
+model is at six concurrent requests) and a completed pilot review of a real
+commit of this repository (`review_commit --commit 7cdd4af4 --user
+ani.mallya`; the second attempt was mid-run at this checkpoint). The local
+`.env`'s internet server entry was behind the Spark's (17 of 23 forwarded
+names) and is refreshed; the deployment was never affected.
+
+**Next atomic tasks, in order:**
+1. Run the security functional test alone; read the pilot review's result
+   from its run row (`agent_runs` for `ani.mallya`) and compare with what
+   Codex says about `7cdd4af4`.
+2. Configure on the Spark: the `repo` server in `.env`'s `MCP_SERVERS_JSON`,
+   `REPO_MCP_ROOT`, `SECURITY_AUTHORIZED_ASSETS`, then `AGENT_RUNS_ENABLED=true`
+   on `discovery-worker` once one hosted run has been watched end to end.
+3. Raise `TURN_MAX_STEPS` to 3 after the routing gate and a sweep pass on
+   this tree.
+4. Phase 7: a restart drill that kills the worker process (the in-process
+   drill exists), retention for run events, fair scheduling per principal.
+   The router track (rate assertions, the SetFit front) remains unstarted.
+5. Then the gap audit the operator asked for.
+
 ## 2026-09-05 — Phase 2 closed (15/18); Phase 3 built; the reviewer built; two functional tests wait on a quiet model (NOT DEPLOYED)
 
 Read `docs/CHANGELOG.md` (this date, second entry) for what was built and

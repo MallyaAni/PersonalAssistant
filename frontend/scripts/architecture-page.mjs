@@ -274,6 +274,12 @@ const publishedDiagrams = [
     change: "How one commit is reviewed: fixed read stages through the repo MCP server, two model judgements, and an evidence check in code that drops any finding whose quoted line is not there.",
   },
   {
+    name: "agent-security",
+    title: "Security agent",
+    scope: "Scoped read-only investigation of a commit",
+    change: "How a commit of an authorized asset is investigated: scope checked before any read, shape searches by code, one model judgement over the flagged lines, and the evidence check.",
+  },
+  {
     name: "market-data",
     title: "Market data — the snapshot and what a model must beat",
     scope: "Immutable as-of history, the aligned panel, baselines, and the walk-forward harness",
