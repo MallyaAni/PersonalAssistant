@@ -51,14 +51,28 @@ def test_it_describes_itself_and_waits_in_character():
     assert waiting_line(action)
 
 
-def test_the_action_survives_to_the_reply_path():
-    # The reply path can execute exactly three action kinds; everything else
-    # is dropped when its branch cannot run. History recall must be the third
-    # or the router's choice silently becomes a plain reply.
-    from backend.services.conversation_service import _runnable
+@pytest.mark.asyncio
+async def test_the_action_survives_to_the_reply_path():
+    # The turn's step loop carries out a history recall as a step of its own;
+    # an action the executor does not run comes back as None and the router's
+    # choice silently becomes a plain reply. With no memory wired the step
+    # reports itself unavailable - a recorded outcome, never a dropped action.
+    from backend.services.conversation_service import ConversationService, _StepFrame
 
-    action = RecallHistoryAction("anything")
-    assert _runnable(action) is action
+    service = ConversationService.__new__(ConversationService)
+    frame = _StepFrame(
+        context={"user_id": "u", "query": "that book"},
+        query="that book",
+        conversation_id="",
+        trace_id="",
+        query_embedding=None,
+        history=[],
+        emit=lambda event: None,
+        image_matches=[],
+        unattended=False,
+    )
+    applied = await service._execute_step("u", RecallHistoryAction("anything"), {}, frame)
+    assert applied == ("recall", {"kind": "unavailable"})
 
 
 def test_found_excerpts_render_as_the_users_own_record():

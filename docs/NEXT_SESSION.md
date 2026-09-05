@@ -104,11 +104,15 @@ next step. The plan is `docs/AGENT_PLATFORM_PLAN.md`; this is its Phase 2.
 `test_routing_decisions`) - 366 + 147 passed. `test_tool_catalog_page` and
 `test_discuss_image_tool` updated for the new column and the removed
 `_runnable`. Diagram check: 27 synchronized.
-**UNVERIFIED:** the full unit suite was still running at checkpoint (read
-`docs/CHANGELOG.md` and re-run `pytest backend/tests --ignore=backend/tests/functional`;
-one pre-existing failure, `test_settings_reach_their_consumer[internet.py]`,
-is unrelated - HEAD's compose lacks the same keys). The sweep journeys and the
-routing matrix have not been run on this change. Nothing is deployed.
+**VERIFIED (full unit suite, this host):** 2744 passed, 3 skipped, 9 failed
+in 8m11s. One failure was this change (`test_history_recall` imported the
+removed `_runnable`; rewritten against the executor in the follow-up commit).
+The other eight are this Windows host, not the change: six need the parser or
+Drive services (`ConnectError`), one is `_hold_to_dates`'s `%-d` format that
+Windows `strftime` rejects, and `test_settings_reach_their_consumer[internet.py]`
+fails at HEAD too. Re-run in the container before deploying.
+**UNVERIFIED:** the sweep journeys and the routing matrix have not been run
+on this change. Nothing is deployed.
 **MEASURED:** `evaluate_trajectories --reps 3` on the real router: 10/18,
 unchanged; one acceptance breach (a duplicate in `search-then-remind`).
 
