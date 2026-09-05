@@ -1,0 +1,102 @@
+{
+  "at": "2026-09-05T00:23:29+00:00",
+  "commit": "",
+  "extra": {
+    "failures": [
+      {
+        "name": "cancel-and-reschedule",
+        "path": [
+          "manage_tasks",
+          "manage_tasks"
+        ],
+        "stopped": "the router named no further tool"
+      },
+      {
+        "name": "cancel-and-reschedule",
+        "path": [
+          "manage_tasks",
+          "manage_tasks",
+          "manage_tasks"
+        ],
+        "stopped": "the step ceiling was reached"
+      },
+      {
+        "name": "cancel-and-reschedule",
+        "path": [
+          "manage_tasks",
+          "manage_tasks"
+        ],
+        "stopped": "the router repeated a step"
+      },
+      {
+        "name": "search-then-remind",
+        "path": [
+          "search_history"
+        ],
+        "stopped": "the router repeated a step"
+      },
+      {
+        "name": "search-then-remind",
+        "path": [
+          "search_web"
+        ],
+        "stopped": "the router repeated a step"
+      },
+      {
+        "name": "two-reminders",
+        "path": [
+          "schedule_task"
+        ],
+        "stopped": "the router repeated a step"
+      },
+      {
+        "name": "two-reminders",
+        "path": [
+          "schedule_task"
+        ],
+        "stopped": "the router repeated a step"
+      },
+      {
+        "name": "two-reminders",
+        "path": [
+          "schedule_task"
+        ],
+        "stopped": "the router repeated a step"
+      }
+    ],
+    "floors_breached": []
+  },
+  "floor": null,
+  "name": "trajectories",
+  "notes": "6 labelled trajectories; 8 did not complete",
+  "reps": 3,
+  "right": 10,
+  "scores": [
+    {
+      "name": "mixed_tools",
+      "right": 1,
+      "total": 6
+    },
+    {
+      "name": "multiple_writes",
+      "right": 0,
+      "total": 3
+    },
+    {
+      "name": "partial_failure",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "reference",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "single_step",
+      "right": 3,
+      "total": 3
+    }
+  ],
+  "total": 18
+}

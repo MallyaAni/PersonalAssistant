@@ -8,14 +8,14 @@ world.
 """
 import pytest
 
-from backend.tests.functional.loops import (
+from backend.services.trajectory_harness import (
     CEILING,
     DECLINED,
     World,
     repeat,
     walk,
 )
-from backend.tools.actions import ManageTasksAction, ScheduleTaskAction
+from backend.tools.actions import ScheduleTaskAction
 
 pytestmark = pytest.mark.asyncio
 
@@ -77,7 +77,9 @@ async def test_a_failed_step_is_visible_to_the_next_decision(selector):
     if trip.shown:
         # Whatever the model then decides, it was told the truth about the
         # step rather than being shown it as done.
-        assert any("found nothing to act on" in line for line in trip.shown[0]), trip.shown
+        assert any(
+            "found nothing to act on" in line for line in trip.shown[0]
+        ), trip.shown
 
 
 # Loops compound: three steps at ninety percent each is seventy-three percent

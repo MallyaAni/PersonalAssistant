@@ -2,6 +2,52 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - Phase 1 of the execution-boundary repair: a versioned trajectory baseline
+
+Before repairing the loop, measure it. The first-tool matrix scores one
+decision and cannot see a turn that needs two tools and stops after one, a
+failed step counted as done, or two legitimate writes cut to one by the
+repeat guard - all properties of the whole path. This adds the harness that
+measures them and records the baseline the repair moves:
+
+- `backend/services/trajectory_harness.py` (promoted from the loop-harness
+  tests so the evaluator and the functional suite drive the same code):
+  `walk` runs the real router and the real `run_steps` over a scripted world,
+  `score_trajectory` turns one trajectory into completion, argument carrying,
+  unauthorized tools, duplicate effects, failed steps, and cost.
+- `backend/services/trajectory_cases.py`: six labelled trajectories across the
+  four shapes - mixed tools (cancel-and-reschedule, search-then-remind),
+  partial failure (cancel-nothing-found), reference
+  (move-the-stretch-reminder), multiple writes (two-reminders) - plus the
+  easy middle (one-reminder). `only=None` on search-then-remind offers every
+  tool, so the live loop's narrowing to automation bookkeeping is measured
+  rather than assumed.
+- `backend/cli/evaluate_trajectories.py`: walks every case, records a
+  versioned run under `docs/evals/runs/trajectories/`, reports per-category
+  completion/carrying/unauthorized/duplicates/cost, and gates on floors.
+- `backend/tests/functional/test_trajectory_evaluation_behaviour.py`:
+  deterministic scoring pinned as a pure function, a drift test keeping the
+  harness's tool names in step with the matrix, and one rate test against the
+  real router. Added to the deploy gate (scripts/gate.sh).
+
+Measured baseline (2026-09-04, two runs identical; runs recorded pre-commit
+as `*-nocommit.json`): **overall completion 10/18 (0.556)**.
+
+| category | measured | floor | what the paths show |
+| --- | --- | --- | --- |
+| single_step | 3/3 | 0.67 | the easy middle works |
+| reference | 3/3 | 0.67 | "the stretch reminder" resolves and is managed, not re-created |
+| partial_failure | 3/3 | 0.67 | a not-found step is seen, never reported as done |
+| mixed_tools | 1/6 | 0.0 | the router does the first tool and stops or repeats it - it never sequences to the second |
+| multiple_writes | 0/3 | 0.0 | two reminders become one: the repeat guard cuts the second write |
+
+The mixed_tools and multiple_writes numbers are the measured forms of the
+review's two critical findings (the loop carries only automation tools, and
+the repeat guard blocks legitimate double writes); the floors start at zero
+because a floor that has never been seen to hold is not a floor, and Phase 2/3
+raise them by fixing the loop. Cost: ~2 steps / ~2 decisions per turn, 6-17 s
+per rep.
+
 ## 2026-09-04 - A follow-up's query keeps the person's place, not the previous answer's
 
 The first bad "fun things to do in the area" answer shipped on pre-fix code

@@ -53,6 +53,10 @@ compose=(docker compose -f "$root/docker-compose.yml" --profile test)
 #                            in it that no structural test could see.
 #   burst_readiness        - the judgement that decides whether to answer at
 #                            all, including whether a tapback accepts an offer.
+#   trajectory_evaluation  - Phase 1 of the execution-boundary repair: whole
+#                            turns against the real loop, not just the first
+#                            tool. One measured-rate test against the real
+#                            router plus the deterministic scoring; ~95s.
 #
 # Everything else stays out until it earns a place the same way: a real failure
 # that reached a person, and a measured cost.
@@ -61,6 +65,7 @@ targets=(
     "backend/tests/functional/test_diagram_generation_behaviour.py"
     "backend/tests/functional/test_saying_yes_behaviour.py"
     "backend/tests/functional/test_burst_readiness_behaviour.py"
+    "backend/tests/functional/test_trajectory_evaluation_behaviour.py"
 )
 unit=false
 case "${1:-}" in

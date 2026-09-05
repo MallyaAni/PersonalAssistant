@@ -1,13 +1,34 @@
 # Next session
 
-Verified state as of 2026-09-03. `deep-matter.com` serves from spark1. The
+Verified state as of 2026-09-05. `deep-matter.com` serves from spark1. The
 Windows desktop is powered on again and holds the GPU for image work; when
 it is off, image requests get an honest "try again later". Everything below
 was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
-## 2026-09-04 — the "try again" that still searched the wrong town (in working tree, NOT DEPLOYED)
+## 2026-09-05 — Phase 1 of the execution-boundary repair: measured and pushed
+
+The trajectory baseline is built, measured, and on `main`
+(`python -m backend.cli.evaluate_trajectories --reps 3`). It drives the real
+router + `run_steps` over six labelled trajectories and measures whole-turn
+completion, argument carrying, unauthorized tools, duplicate effects, and
+cost. Baseline (stable across two runs): **10/18 overall (0.556)** —
+single_step 3/3, reference 3/3, partial_failure 3/3, but mixed_tools 1/6
+(the router does the first tool and stops or repeats it) and multiple_writes
+0/3 (two reminders become one: the repeat guard cuts the second write). Both
+failing categories are floored at 0 until Phase 2/3 moves them. Runs recorded
+under `docs/evals/runs/trajectories/` (pre-commit, `*-nocommit.json`).
+
+Next is Phase 2, the repair the baseline was built to measure: typed
+decision/result states (distinguish finished / needs clarification / model
+failure / no tool), deadline enforcement (re-check before executing the
+returned action), complete nested MCP schema validation, recursive outbound
+screening, cache identity on full tool definitions, and per-tool retry rules.
+Phase 3 then makes the run durable (storage, idempotency, cancellation,
+recovery). The user will have codex review each phase's work.
+
+## 2026-09-04 — the "try again" fix is deployed (8116e7d); the search-place fix is live
 
 The first bad "fun things to do in the area" answer shipped on pre-fix code
 (the distance filter was not yet in the built image). The retry ran on the
@@ -24,8 +45,9 @@ measured" claim for `search/personalize` had no passing test behind it. The
 corrected test passes on the real model.
 
 Verified: unit suite 2620 passed / 9 skipped; `functional/test_search_compose_behaviour.py`
-13 passed against the real model. Not yet deployed — the deploy clone
-(`~/deploy/anios`) is at `b698485`; this fix is in the `~/anios` working tree.
+13 passed against the real model. **Deployed and live** as `8116e7d` on
+2026-09-04: unit gate 2620 passed, routing gate 83 passed, sweep journeys and
+search harness passed after deploy.
 
 ## 2026-09-03 — model-serving docs corrected, and the Trading agent's first capability (NOT DEPLOYED)
 
