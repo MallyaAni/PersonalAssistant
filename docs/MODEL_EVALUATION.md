@@ -237,7 +237,7 @@ Regenerate a row with:
 
 ```
 python -m backend.cli.measure_inference_profile \
-    --base-url http://animallya-spark1.local:8899 --model qwen3.8-27b \
+    --base-url http://spark1.local:8899 --model qwen3.8-27b \
     --label "bf16 mtp3" --append docs/MODEL_EVALUATION.md
 ```
 
@@ -393,10 +393,10 @@ diffusion on the 5080.
 
 ## Operating the Spark
 
-SSH as `animallya96` with `~/.ssh/id_ed25519_spark`.
+SSH as `sparkuser` with `~/.ssh/id_ed25519_spark`.
 
 ```
-hostname   animallya-spark1.local     (mDNS - can resolve to an IPv6 link-local
+hostname   spark1.local     (mDNS - can resolve to an IPv6 link-local
                                  address, which ssh then cannot use)
 address    172.16.8.3
 MAC        F8-3D-C6-F1-23-64
@@ -422,9 +422,9 @@ ordinary `systemctl` mental model leaves it stopped with no obvious way back.
 The restore command is:
 
 ```
-/home/animallya96/.local/bin/ds4-serve --cuda \
-  -m /home/animallya96/gguf/DeepSeek-V4-Flash-IQ2XXS-...-0731.gguf \
-  -c 1000000 --port 8888 --host 0.0.0.0 >> /home/animallya96/ds4-server.log 2>&1
+/home/sparkuser/.local/bin/ds4-serve --cuda \
+  -m /home/sparkuser/gguf/DeepSeek-V4-Flash-IQ2XXS-...-0731.gguf \
+  -c 1000000 --port 8888 --host 0.0.0.0 >> /home/sparkuser/ds4-server.log 2>&1
 ```
 
 **`pkill -f "ds4-server"` kills the shell running it**, because `-f` matches
@@ -447,7 +447,7 @@ only the new cases.
 ## The current reply engine, measured rather than assumed (2026-08-22)
 
 Prompted by "is ds4's prefill cache actually better than vLLM's", every number
-below was measured against the live server on `animallya-spark1`, not quoted.
+below was measured against the live server on `spark1`, not quoted.
 
 **What is actually deployed.** `ds4-server v0.5.6.3` (github.com/Entrpi/ds4,
 a fork of DwarfStar, GGML-based, purpose-built for this model family), started

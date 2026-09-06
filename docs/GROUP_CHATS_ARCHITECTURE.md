@@ -154,7 +154,7 @@ rows. Everything the group owns lives under that `user_id`.
   "Jen: thai?" where a one-to-one turn is the bare query, byte for byte.
 - `backend/memory/tastes.py` (`TasteProjection`): the only door from a member's
   store to a group prompt - profile name (or the account's username as a first
-  name, "ani.mallya" → "Ani", when no name is on record; the first live turn
+  name, "operator" → "the operator", when no name is on record; the first live turn
   addressed the operator as "Member 2"), Scout interest labels (at most 8),
   the city-level home locality, and up to 6 remembered statements: first the
   member's memories nearest the message (the same relevance search a

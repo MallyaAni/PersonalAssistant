@@ -1,0 +1,580 @@
+{
+  "at": "2026-09-05T18:10:53+00:00",
+  "commit": "62668863",
+  "extra": {
+    "arguments": {
+      "floor": 1.0,
+      "held": 0,
+      "judged": 0,
+      "missed": []
+    },
+    "failures": [
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 0"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 1"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 10"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 11"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 12"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 13"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 14"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 15"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 16"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 17"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 18"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 19"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 2"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 20"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 21"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 22"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 23"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 24"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 25"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 26"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 27"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 28"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 29"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 3"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 30"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 31"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 32"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 33"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 34"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 35"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 36"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 37"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 38"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 39"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 4"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 40"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 41"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 42"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 43"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 44"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 45"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 46"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 47"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 48"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 49"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 5"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 6"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 7"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 8"
+      },
+      {
+        "category": "measured",
+        "chose": {
+          "none": 1,
+          "search_web": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 2,
+        "query": "case none 9"
+      }
+    ],
+    "floors_breached": [
+      "none 0.50 < 0.55"
+    ]
+  },
+  "floor": 0.7,
+  "name": "tool-selection",
+  "notes": "117 labelled cases, 50 failing",
+  "reps": 1,
+  "right": 450,
+  "scores": [
+    {
+      "name": "measured",
+      "right": 450,
+      "total": 500
+    }
+  ],
+  "total": 500
+}

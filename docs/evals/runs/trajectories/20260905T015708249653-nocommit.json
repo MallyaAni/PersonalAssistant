@@ -5,7 +5,7 @@
     "case_fingerprint": "b18764a227ffc317",
     "environment": "component evaluation: real router + run_steps, scripted apply; production dispatch out of scope",
     "floors_breached": [],
-    "model": "http://animallya-spark1.local:8000 deepseek-v4-flash",
+    "model": "http://spark1.local:8000 deepseek-v4-flash",
     "observations": [
       {
         "carried": true,

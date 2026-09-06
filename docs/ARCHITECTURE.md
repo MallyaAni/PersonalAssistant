@@ -983,7 +983,7 @@ Image and presentation paths:
 
 | Stage | Model | Runs on |
 | --- | --- | --- |
-| Image generation / slide image | `flux-2-klein-9b-fp8.safetensors` (`IMAGE_MODEL`) via ComfyUI | desktop RTX 5080, only while it is on |
+| Image generation / slide image | `flux-2-klein-4b-fp8.safetensors` (`IMAGE_MODEL`) via ComfyUI | desktop RTX 5080, only while it is on |
 | Image editing by instruction | FLUX.1 Kontext (`IMAGE_EDIT_MODEL`, GGUF) via ComfyUI; Klein when that is unset | desktop |
 | Refinement prompt merge, learned-style distillation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`) | Sparks |
 | Image vision analysis (ask) | `qwen3-vl-8b` (`VISION_MODEL`) | spark2 (`anios-vlm`) |
@@ -1395,7 +1395,7 @@ changing one role never silently moves another.
 
 | Role | Setting prefix | Model today | What calls it |
 | --- | --- | --- | --- |
-| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash, vLLM tensor-parallel across spark1+spark2 (`animallya-spark1.local:8000`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
+| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash, vLLM tensor-parallel across spark1+spark2 (`spark1.local:8000`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
 | Routing / tool-calling | `ROUTING_LLM_*` | DeepSeek (same deployment), temperature 0 | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
 | Vision | `VISION_*` | Qwen3-VL-8B (`anios-vlm` on spark2, `:8001`) | Canonical image observation and question-specific answers |
 | Vision escalation | `VISION_ESCALATION_*` | Unconfigured | One specialist retry only when the primary reports visible diagnostic evidence it cannot interpret |
@@ -2064,7 +2064,7 @@ authentication is required and does not mount private product views until
 `/auth/session` returns
 the server-derived owner. It contains a responsive light-neutral shell with search-first Chat, Personal Memory, Visual Artifacts, and Presentations views. Empty chat centers one dominant query composer; active chat presents each user query and assistant response as a left-aligned result flow rather than opposing message bubbles. Request trace/conversation identifiers remain available through an answer-level three-dot metadata popover instead of the primary answer text. The native font stack selects SF Pro through the Apple system aliases where available and the platform `system-ui` font elsewhere; the composer explicitly inherits that same stack. The memory screen explicitly applies user changes, cancels obsolete reads, edits profile/preferences, lists and deletes records, confirms delete-all, keeps manual event/fact creation behind an advanced plain-language disclosure, and renders live counts for every implemented short- and long-term memory form. Chat validates text, memory, search, MCP tool, image, and artifact SSE lifecycles; each tool shows running, succeeded, refused, or failed state without exposing arguments or results. Assistant text is rendered as styled CommonMark through ReactMarkdown with raw HTML interpretation disabled, while user messages remain literal text. Chat lazily loads Mermaid only for ready diagrams, renders under strict settings with HTML labels disabled, exposes editable source, and shows generation/render failures. The Artifacts view lists recent owned ready diagrams, reuses strict rendering, downloads Mermaid or the locally rendered SVG without another provider call, exposes refresh/load failures, and deletes owned records. The Presentations view lists persisted decks, creates a deck from a brief, shows reconnectable named-stage progress plus the latest partial slide, previews the promoted typed specification in a main canvas and thumbnails, applies feedback only to a selected slide, displays append-only revision history, downloads a named `.pptx`, and exposes loading and failure states. The browser persists only per-owner conversation and presentation job IDs across reloads; it keeps the in-memory transcript mounted across view switches, restores a bounded owned transcript and its diagram artifacts after a full reload, rotates it through `New conversation`, and clears the visible transcript when the authenticated owner or conversation changes.
 
-Trusted-local mode uses configured owner `ani.mallya` without a login. It is a
+Trusted-local mode uses configured owner `operator` without a login. It is a
 single-user development convenience, not authentication, and must not be
 exposed through a public ingress.
 

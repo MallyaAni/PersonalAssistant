@@ -382,7 +382,7 @@ class Settings(BaseSettings):
     # Local visual generation and binary artifact storage
     IMAGE_PROVIDER_BASE_URL: str = "http://127.0.0.1:8188"
     IMAGE_PROVIDER_NAME: str = "comfyui"
-    IMAGE_MODEL: str = "flux-2-klein-9b-fp8.safetensors"
+    IMAGE_MODEL: str = "flux-2-klein-4b-fp8.safetensors"
     IMAGE_TEXT_ENCODER: str = "qwen_3_8b_fp8mixed.safetensors"
     IMAGE_VAE: str = "flux2-vae.safetensors"
     IMAGE_GENERATION_STEPS: int = Field(default=4, ge=1, le=100)
@@ -617,7 +617,9 @@ class Settings(BaseSettings):
     OPERATOR_ALERT_PHONE: str = ""
     # The trading desk belongs to one person: the operator's own user id.
     # Every other user id is refused by the desk route, whatever its token.
-    MARKET_DESK_USER: str = "ani.mallya"
+    # Whose desk it is. The real identity is set in .env, which is not in
+    # the repository, so no personal name lives in source or in docs.
+    MARKET_DESK_USER: str = "operator"
     # Scheduled tasks: anything a person asked to have done later or on a
     # schedule, run as a chat turn under their identity and delivered on the
     # channel they asked from. The loop shares the discovery worker process.
@@ -1028,7 +1030,7 @@ class Settings(BaseSettings):
     AUTH_COOKIE_SECURE: bool = False
     AUTH_COOKIE_SAMESITE: Literal["lax", "strict"] = "lax"
     AUTH_TRUSTED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
-    AUTH_LOCAL_USER_ID: str = "ani.mallya"
+    AUTH_LOCAL_USER_ID: str = "operator"
     AUTH_LOGIN_MAX_FAILURES: int = Field(default=8, ge=2, le=100)
     AUTH_LOGIN_FAILURE_WINDOW_SECONDS: int = Field(default=900, ge=60, le=86_400)
     AUTH_LOGIN_GLOBAL_MAX_ATTEMPTS: int = Field(default=120, ge=10, le=10_000)

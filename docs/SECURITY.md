@@ -14,7 +14,7 @@ This document separates current security facts from future requirements. A contr
   disable, and must use `Secure=true` for HTTPS deployment. There is an
   invitation-gated registration endpoint, not unrestricted public signup.
 - Login names and owned data identities are separate even when their values are
-  equal. The current primary account uses `ani.mallya` for both; every protected
+  equal. The current primary account uses `operator` for both; every protected
   handler uses that server-derived owner and rejects a different path/body user
   with 403. Authentication is enabled in the current local `.env` and the live
   backend was re-verified with `AUTH_REQUIRED=true`; an owner-token cross-read
@@ -59,7 +59,7 @@ This document separates current security facts from future requirements. A contr
 - The private UI obtains its user identity from `/api/v1/auth/session`; it does
   not accept a local-storage user switch. Browser local storage contains only
   per-owner conversation and presentation job identifiers. Trusted-local mode
-  deliberately returns configured owner `ani.mallya` without login, so it must
+  deliberately returns configured owner `operator` without login, so it must
   not be exposed to another person or a public URL. The mobile navigation
   drawer displays the active account beside a labeled logout action so account
   switching does not depend on recognizing a compact header icon.

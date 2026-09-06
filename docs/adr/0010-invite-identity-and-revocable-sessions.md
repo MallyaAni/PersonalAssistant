@@ -30,7 +30,7 @@ auth-disabled mode remains an explicit single-user development option.
 
 ## Consequences
 
-- A login such as `admin` can authorize stable owner `ani.mallya`; the login
+- A login such as `admin` can authorize stable owner `operator`; the login
   identifier is not used as a foreign key for owned data.
 - Browser local storage cannot choose the active user. All private API calls use
   the authenticated subject and existing ownership checks.

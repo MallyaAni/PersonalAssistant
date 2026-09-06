@@ -2043,7 +2043,7 @@ expired, which is what had aimed the hiking query at "easy scenic nature
 walks" and put a hiking-guide page ahead of the dance events the account
 actually asks for.
 
-Measured: a rehearsal sweep for `ani.mallya` now returns line-dancing and
+Measured: a rehearsal sweep for `operator` now returns line-dancing and
 social-dance finds in Courthouse, Virginia (the previous run's sole candidate
 was the Devon walk). `evaluate_discovery_ranking` stays green (filtering
 0.857/1.0, geography retention 1.0) with the Devon item added as a labelled
@@ -3300,7 +3300,7 @@ of its own - left one behind permanently.
     weather here is the speaker's here").
   - The operator, who has no profile name, was addressed as "Member 2"; a
     member without a name is called by their account name as a first name
-    ("ani.mallya" → "Ani").
+    ("operator" → "the operator").
   - A message that found the backend away (a deploy's restart; the database
     unreachable) was apologised for and dropped. It is now parked in Redis
     and retried every poll for 10 minutes, with one "give me a minute"
@@ -4693,7 +4693,7 @@ synchronized.
 
 - Replaced the persistent request-details row with an accessible answer-level three-dot popover containing trace and conversation IDs.
 - Made the composer explicitly inherit the shell's native font stack, using SF Pro aliases on Apple platforms and the native `system-ui` fallback elsewhere.
-- Migrated missing or legacy `dev_user_001` browser state to the requested `ani.mallya` default with a fresh conversation while preserving every non-legacy stored identity unchanged.
+- Migrated missing or legacy `dev_user_001` browser state to the requested `operator` default with a fresh conversation while preserving every non-legacy stored identity unchanged.
 - Isolated and cleaned up the generic live Gemma validation user so automated tests do not add conversations to the primary user.
 - Verified 12 deterministic Chromium workflows, all four live Gemma/Nomic workflows, rendered metadata/default-user inspection, and the TypeScript/Vite production build.
 
@@ -6871,12 +6871,12 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - Kept genuinely undated links but changed the digest to say plainly that Scout
   could not confirm their dates instead of using the mechanical `Worth a look —
   no date given` heading.
-- Repeated the authenticated `ani.mallya` acceptance through live MCP/Tavily,
+- Repeated the authenticated `operator` acceptance through live MCP/Tavily,
   Nomic ranking, the rebuilt API, and Chromium's real **Try it** interaction;
   the stale candidate was rejected, the new copy rendered, and no blocking
   browser or backend error occurred.
 - Verified 286 discovery tests, Ruff, strict MyPy, focused Scout browser tests,
-  and the frontend production build. Cleared only the 28 `ani.mallya`
+  and the frontend production build. Cleared only the 28 `operator`
   `discovery_seen_items` rows afterward at the user's request so the next test
   begins with an empty seen set.
 
@@ -6884,14 +6884,14 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 
 - Traced a reported cross-user 9:30 PM Scout delivery through schedules, runs,
   profile interests, subscribers, and delivery records. The 9:30 schedule and
-  successful phone delivery both belonged to `ani.mallya`; `jenos1` retained a
+  successful phone delivery both belonged to `operator`; `jenos1` retained a
   separate 7:45 schedule, subscriber address, and disjoint interest profile.
 - Found the actual isolation failure at deployment: the running backend was a
   stale container with authentication disabled despite current Compose and
   `.env` configuration requiring it. Recreated the backend with
   `AUTH_REQUIRED=true` and restarted the gateway.
 - Verified live API ownership: each user can read their own Scout state, an
-  `ani.mallya` token receives 403 for the `jenos1` profile, and an anonymous
+  `operator` token receives 403 for the `jenos1` profile, and an anonymous
   request receives 401. Backend logs contain both decisions without exceptions.
 - Added an explicit two-user delivery regression proving a digest selects only
   the requested owner's approved subscriber.
@@ -7416,7 +7416,7 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   guide and agent instructions. A real authenticated Chromium run against
   `https://deep-matter.com` restored an owned image and completed its grounded
   main-composer follow-up with clean Console/page/required-Network state.
-- Traced `ani.mallya`'s exact **can you make it a straw hat instead?** turn from
+- Traced `operator`'s exact **can you make it a straw hat instead?** turn from
   its 201 refinement response to the ready child artifact and found that the
   image card updated while a separate generation placeholder remained active.
   Refinement completion now retires that one placeholder, and successful image
@@ -7562,7 +7562,7 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   the turn-based retirement grace period, and the ten REST `approve*` client
   functions they called) was removed entirely; the reply-adjacent card is now
   a read-only "Saved X as Y memory" notice that clears on the next question.
-- Investigated at the user's request from `ani.mallya`'s real conversation
+- Investigated at the user's request from `operator`'s real conversation
   history (decrypted read-only from the dev database): a chat turn that
   merely referenced a previously generated photo for context (a style
   question, no "show me" language) re-attached the full image card to the
@@ -8034,7 +8034,7 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   identified after DeepSeek's presentation schema failure: officially
   supported on Spark, native CUDA graphs, real `--enable-auto-tool-choice`
   with a proper parser, not a bespoke community engine. Needed adding
-  `animallya96` to the Spark's `docker` group (one-time `sudo`, credential
+  `sparkuser` to the Spark's `docker` group (one-time `sudo`, credential
   given directly by the user, not stored); the container's own startup
   error revealed `ds4-server` from the DeepSeek evaluation was still
   resident holding ~115 of 121 GiB - stopped it and removed its crontab
@@ -8110,7 +8110,7 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 
 ## 2026-08-16 — Native tool decisions made deterministic
 
-- Reproduced the exact `ani.mallya` Scout confirmation with its real recent history: the unchanged request selected web search 5/10 times, presentation delegation 1/10, and correctly selected no tool only 4/10. `chat_with_tools` omitted temperature, so vLLM used its sampling default for an application decision.
+- Reproduced the exact `operator` Scout confirmation with its real recent history: the unchanged request selected web search 5/10 times, presentation delegation 1/10, and correctly selected no tool only 4/10. `chat_with_tools` omitted temperature, so vLLM used its sampling default for an application decision.
 - Set native tool decisions to `temperature: 0.0` at the provider boundary so built-in routing and MCP tool selection cannot silently re-enable sampling at another call site.
 - Added provider-contract coverage and a real-model functional regression that repeats the reported Scout confirmation five times. All five now select no external tool, while the existing labelled search-routing quality floor still passes.
 - Evidence: 27 structural provider/action/MCP tests pass; both targeted real-model functional tests pass against `qwen/qwen3.5-4b` in 213.55 seconds; Ruff passes. Rebuilt and recreated the backend from the working tree and restarted the gateway. A real authenticated `testuser` chat through the gateway completed with start/delta/done and emitted neither `search_started` nor `image_matches`; its backend trace completed without a web-search routing log.

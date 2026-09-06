@@ -766,7 +766,7 @@ The history below is kept as the evidence trail that led here.
   still runs entirely on the RTX 5080's Qwen model.
 - `DONE` (2026-08-14): tested this engine's native tool-calling directly —
   a standalone script built a real `MainActionSelector` pointed at
-  `http://animallya-spark1.local:8888`/`deepseek-v4-flash`, never touching the
+  `http://spark1.local:8888`/`deepseek-v4-flash`, never touching the
   running app's `MAIN_LLM_BASE_URL`. No regex, no hardcoded routing anywhere
   in this evaluation or in `MainActionSelector` itself — every decision is
   the model's own native tool call, exactly as for Qwen today.
@@ -873,7 +873,7 @@ The history below is kept as the evidence trail that led here.
   identified after the DeepSeek presentation failure - officially supported
   on Spark, native CUDA graphs, real `--enable-auto-tool-choice` with a
   proper tool-call parser, not a bespoke community engine. Real
-  infrastructure work along the way, not assumed: `animallya96` needed
+  infrastructure work along the way, not assumed: `sparkuser` needed
   adding to the `docker` group (one-time `sudo`, credential provided by the
   user directly, not stored anywhere); the container's own weight-loading
   error surfaced that `ds4-server` from the DeepSeek evaluation was still

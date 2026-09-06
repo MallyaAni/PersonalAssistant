@@ -66,7 +66,7 @@ tied to the same 16 GB card as vLLM's.
 
 Hostnames and fabric, all measured rather than assumed:
 
-| | animallya-spark1 | animallya-spark2 |
+| | spark1 | spark2 |
 |---|---|---|
 | LAN (WiFi `wlP9s9`) | 172.16.8.3 | 172.16.8.5 |
 | RoCE rail 1 `enp1s0f1np1` / `rocep1s0f1` | 192.168.100.1/24 | 192.168.100.2/24 |
@@ -182,17 +182,17 @@ bearer credential for the hostname.
 ### mDNS does not work inside a container, and fails deceptively
 
 Every service reaches Postgres, Redis and the models through
-`animallya-sparkN.local`. That resolves on the Windows and Ubuntu *hosts* and
+`sparkN.local`. That resolves on the Windows and Ubuntu *hosts* and
 does not resolve inside a container - Docker's embedded resolver forwards to
 the host's upstream nameservers, and the mDNS responder is not one of them.
 
 The failure is worse than a clean `NXDOMAIN`:
 
 ```
-$ getent hosts animallya-spark1.local     # inside the container
-fe80::68b8:42ff:fef0:8a6f   animallya-spark1.local
+$ getent hosts spark1.local     # inside the container
+fe80::68b8:42ff:fef0:8a6f   spark1.local
 ...eight link-local IPv6 addresses...
-$ getent hosts animallya-spark2.local
+$ getent hosts spark2.local
 (nothing)
 ```
 

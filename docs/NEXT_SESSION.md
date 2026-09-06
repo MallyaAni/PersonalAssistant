@@ -37,7 +37,7 @@ the app already reaches).
 
 Continues the entry below it. Commits `5d02eac5`, `90871287`.
 
-**One person's desk.** `MARKET_DESK_USER` (default `ani.mallya`) names
+**One person's desk.** `MARKET_DESK_USER` (default `operator`) names
 whose it is. The desk route answers 403 for any other user id whatever
 its token, the Desk view and its sidebar entry render only for the
 operator session, and the trading card carries the desk only for that
@@ -1025,7 +1025,7 @@ fixes (`backend/mcp/servers/repo.py` bounds, `turn_steps.py` key-before-step).
 repo server + evidence check 23, loop bounds 15, search place suites, the
 coverage and prompt suites; 30 diagrams synchronized.
 **VERIFIED on the live model:** the pilot review of `7cdd4af4` completed
-(run `2aeb5927-6526-4596-9d23-eca7c62d4bfe` for `ani.mallya`: six files
+(run `2aeb5927-6526-4596-9d23-eca7c62d4bfe` for `operator`: six files
 read, one finding kept, seven rejected for a quote one line off - the
 evidence check now tolerates two lines). **UNVERIFIED:**
 `functional/test_security_review_behaviour.py` (running at this checkpoint
@@ -1484,7 +1484,7 @@ asks for.
 `scripts/deploy.sh`):**
 
 - **Region**: `_apply_locality` collapses a repeated region segment
-  (projection.py); ani.mallya's locality corrected to `Courthouse, Virginia`
+  (projection.py); operator's locality corrected to `Courthouse, Virginia`
   (approved fact + `discovery_localities`), which re-arms the US-state guard
   and fixes the queries.
 - **Locate judge sees the URL** (describing.py + prompts/scout/locate.md):
@@ -1494,11 +1494,11 @@ asks for.
   `visual_artifact_analysis`), so durable demographics/preferences fill the
   bounded context.
 - **Transient facts expire** (proposal_agent.py `semantic_fact_is_transient`
-  + conversation_service save path, `TRANSIENT_FACT_DAYS=7`); ani.mallya's
+  + conversation_service save path, `TRANSIENT_FACT_DAYS=7`); operator's
   stale "tired today" row expired.
 
 **Rehearsal proof** (`DiscoveryRunner.sweep(...persist=False)` for
-ani.mallya, worker image with the tree mounted): query now
+operator, worker image with the tree mounted): query now
 "Courthouse, Virginia"; shortlist all line-dancing/social-dance finds;
 reranker (memory) orders NVCDA social dances, Virginia Line Dance Festival,
 DanceSportVA — no Devon, no hiking guide.
@@ -1517,7 +1517,7 @@ reranker's exclusion of an explicit restriction (e.g. "55+") is deliberately
 conservative and flaky (see reranking.py) — ordering, not exclusion, is the
 memory mechanism.
 
-**Deploy**: `bash scripts/deploy.sh`, then confirm the next ani.mallya sweep
+**Deploy**: `bash scripts/deploy.sh`, then confirm the next operator sweep
 (19:00 UTC) recommends local dance/social finds. After deploy, re-check
 `docker compose exec backend` has the new code (it is image-baked).
 
@@ -1546,7 +1546,7 @@ task below is deliberately assigned to it.
 | Mac | iMessage bridge only | `allow_recipient`, `send_imessage`, `read_messages` |
 | desktop | `172.16.8.6` (Wi-Fi) | RTX 5080, **16 GB VRAM**; revived to host ComfyUI. Image work only while it is on |
 
-User `animallya96` on both Sparks, same password on both. No BMC and no
+User `sparkuser` on both Sparks, same password on both. No BMC and no
 wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
 
 ## Search spend and providers — 2026-08-29
@@ -1866,10 +1866,10 @@ Still open, in order of risk:
 ## What is still open
 
 **A third backup copy on the Mac — LIVE 2026-08-25.** Remote Login is on,
-spark1's `spark1-backup-mirror` key is authorized for `animallya@172.16.8.2`,
+spark1's `spark1-backup-mirror` key is authorized for `sparkuser@172.16.8.2`,
 and spark1's `.env` lists both mirrors. Proven with a real run: the same
 dump (`anios_db-20260824-222902.sql.gz`, 37 tables) landed on spark1, spark2,
-and `/Users/animallya/anios-backups`, 534 sealed values inside and zero key
+and `/Users/sparkuser/anios-backups`, 534 sealed values inside and zero key
 material. The first three-copy run mirrored to nobody: the `.env` parser
 stripped spaces along with carriage returns and fused the two hosts into one
 name — fixed in `backup-db.sh` the same night. **The Mac still holds
@@ -2663,7 +2663,7 @@ is a physical button press.
 
 **Binding a published port to the host's loopback silently cuts off every
 container that dials the host's LAN address.** Applied 2026-08-25 to
-db/redis: services hardcoding `POSTGRES_HOST=animallya-spark1.local` kept
+db/redis: services hardcoding `POSTGRES_HOST=spark1.local` kept
 their established connections and refused all new ones - health answered 200
 throughout, the failure lived only in the logs. Container-to-container
 traffic must use compose service names (`db`, `redis`); anything that

@@ -281,7 +281,7 @@ Key settings are:
 | --- | --- | --- |
 | `SECRET_KEY` | none; required | Set a non-production development value before importing the backend |
 | `AUTH_REQUIRED` | `false` | Set `true` outside trusted-local mode; private UI/API requests then require a password session or supported bearer token |
-| `AUTH_LOCAL_USER_ID` | `ani.mallya` | Stable owner returned only in trusted-local auth-disabled mode |
+| `AUTH_LOCAL_USER_ID` | `operator` | Stable owner returned only in trusted-local auth-disabled mode |
 | `AUTH_SESSION_TTL_HOURS` | `168` | Password-browser-session lifetime before re-login |
 | `AUTH_COOKIE_SECURE` | `false` | Keep false only for loopback HTTP; set true for HTTPS ingress |
 | `AUTH_COOKIE_SAMESITE` | `lax` | Browser CSRF boundary; supported values are `lax` and `strict` |
@@ -393,7 +393,7 @@ For host development, a minimal root `.env` is:
 ```dotenv
 SECRET_KEY=local-development-only
 AUTH_REQUIRED=false
-AUTH_LOCAL_USER_ID=ani.mallya
+AUTH_LOCAL_USER_ID=operator
 AUTH_SESSION_TTL_HOURS=168
 AUTH_COOKIE_SECURE=false
 AUTH_COOKIE_SAMESITE=lax
@@ -544,7 +544,7 @@ As of 2026-08-14 it serves AniOS's `PRESENTATION_LLM_BASE_URL` (see below);
 RTX 5080 — see Milestone 9 in `ROADMAP.md` for what has and has not been
 attempted.
 
-- Hostname: `animallya-spark1.local` (mDNS). SSH as `animallya96`, key-based
+- Hostname: `spark1.local` (mDNS). SSH as `sparkuser`, key-based
   (`~/.ssh/id_ed25519_spark` on the dev machine, no passphrase).
 - The device's own DGX Dashboard (`dashboard-service -port 11000 serve`)
   binds `127.0.0.1` only — it is not reachable directly over the LAN. A
@@ -558,7 +558,7 @@ attempted.
   are hardcoded inside that script — Task Scheduler's launch environment
   does not set `$HOME` or inherit `PATH` the way an interactive shell does,
   and both silently broke the tunnel on first setup.
-- `http://animallya-spark1.local/` (the setup-hotspot onboarding page) stops
+- `http://spark1.local/` (the setup-hotspot onboarding page) stops
   working once first-boot setup (`dgx-oobe.service`) completes and disables
   itself — that is expected, not a fault.
 - NVIDIA's own vLLM container for this hardware requires `--enforce-eager`:
@@ -579,7 +579,7 @@ attempted.
   traps are in `docs/MODEL_EVALUATION.md` and `docs/ML_SYSTEM_DESIGN.md`.
   Two things about the current engine are easy to get wrong a second time:
   - **It resolves by IP, not by the `.local` name, from inside containers.**
-    `animallya-spark1.local` resolves to unroutable link-local IPv6 inside
+    `spark1.local` resolves to unroutable link-local IPv6 inside
     Docker, so the compose `x-spark-hosts` anchor pins both Sparks by IP
     (spark1 = 172.16.8.3, spark2 = 172.16.8.5). Verify a migration by
     exercising the dependency from inside a container, never by curling
@@ -993,7 +993,7 @@ routing does not depend on descriptor sync:
 
 ```powershell
 docker compose up -d --build local-capabilities backend
-docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id ani.mallya
+docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id operator
 ```
 
 **Pin server versions.** Fetching a server with `npx -y <package>` resolves to
@@ -1238,9 +1238,9 @@ For a non-persisting quality rehearsal against an existing signed-in profile,
 issue a short-lived token without printing it and run the focused browser path:
 
 ```powershell
-$token = (docker compose exec -T backend python -m backend.cli.issue_token --user ani.mallya --ttl-seconds 900 | Select-Object -Last 1).Trim()
+$token = (docker compose exec -T backend python -m backend.cli.issue_token --user operator --ttl-seconds 900 | Select-Object -Last 1).Trim()
 $env:ANIOS_E2E_LIVE='1'
-$env:ANIOS_E2E_USERNAME='ani.mallya'
+$env:ANIOS_E2E_USERNAME='operator'
 $env:ANIOS_E2E_BEARER_TOKEN=$token
 cd frontend
 .\node_modules\.bin\playwright.cmd test --grep "future-safe Scout wording"
@@ -1332,7 +1332,7 @@ Provision invite accounts through the non-echoing operator prompt. Keep the
 stable owner attached to existing data even when the login name is different:
 
 ```powershell
-python -m backend.cli.manage_user create --user ani.mallya
+python -m backend.cli.manage_user create --user operator
 ```
 
 For a friend to choose their own username and password in the browser, create a
@@ -1368,9 +1368,9 @@ boundary.
 curl -c anios-cookie.txt -X POST http://localhost:8000/api/v1/auth/login \
   -H "Origin: http://localhost:5173" \
   -H "Content-Type: application/json" \
-  -d '{"username":"ani.mallya","password":"<enter a strong test password>"}'
+  -d '{"username":"operator","password":"<enter a strong test password>"}'
 curl -b anios-cookie.txt http://localhost:8000/api/v1/auth/session
-curl -b anios-cookie.txt http://localhost:8000/api/v1/memory/ani.mallya
+curl -b anios-cookie.txt http://localhost:8000/api/v1/memory/operator
 ```
 
 Delete the temporary cookie file after the check. Confirm a different user's
@@ -1700,7 +1700,7 @@ submit the documented create body:
 ```powershell
 $conversationId = [guid]::NewGuid()
 $create = @{
-  user_id = 'ani.mallya'
+  user_id = 'operator'
   conversation_id = $conversationId
   prompt = 'Create an architecture deck with a native chart and table, 3 slides.'
 } | ConvertTo-Json
@@ -1710,7 +1710,7 @@ $response = Invoke-WebRequest `
   -ContentType 'application/json' `
   -Body $create
 $job = $response.Content | ConvertFrom-Json
-$jobUri = "http://localhost:8000/api/v1/presentations/jobs/ani.mallya/$($job.id)"
+$jobUri = "http://localhost:8000/api/v1/presentations/jobs/operator/$($job.id)"
 do {
   Start-Sleep -Milliseconds 500
   $current = Invoke-RestMethod -Uri $jobUri
@@ -1846,16 +1846,16 @@ Agent-memory route groups are:
 Operational commands default to safe/read-only behavior where applicable:
 
 ```powershell
-python -m backend.cli.purge_memory --user-id ani.mallya
-python -m backend.cli.purge_memory --user-id ani.mallya --apply
-python -m backend.cli.reembed_memory --user-id ani.mallya
-python -m backend.cli.reembed_memory --user-id ani.mallya --apply --batch-size 50
+python -m backend.cli.purge_memory --user-id operator
+python -m backend.cli.purge_memory --user-id operator --apply
+python -m backend.cli.reembed_memory --user-id operator
+python -m backend.cli.reembed_memory --user-id operator --apply --batch-size 50
 python -m backend.cli.migrate_vector_dimension --target-dimension 768 --target-model text-embedding-nomic-embed-text-v1.5 --target-version nomic-embed-text-v1.5
-python -m backend.cli.check_memory_operations --user-id ani.mallya --strict
-python -m backend.cli.run_memory_maintenance --user-id ani.mallya --strict
+python -m backend.cli.check_memory_operations --user-id operator --strict
+python -m backend.cli.run_memory_maintenance --user-id operator --strict
 python -m backend.cli.run_memory_maintenance --all-users --strict --interval-seconds 3600
 python -m backend.cli.soak_memory --duration-seconds 60 --concurrency 4 --chat-every 20
-python -m backend.cli.evaluate_memory_retrieval --user-id ani.mallya --query 'unique query' --expected-content 'expected text'
+python -m backend.cli.evaluate_memory_retrieval --user-id operator --query 'unique query' --expected-content 'expected text'
 ```
 
 Apply across all users requires the explicit `--all-users` flag. Re-embedding is resumable by stale metadata and rejects provider dimensions other than the configured 768 before committing a batch. The maintenance command applies retention, optionally re-embeds with `--reembed`, performs final health inspection, emits one non-content JSON event per cycle, survives transient failures in interval mode, and returns monitoring-friendly exit codes in one-shot mode. `docker compose --profile maintenance up` enables the opt-in hourly runner. Deployments can scrape the metrics route and alert on `anios_memory_healthy == 0`; delivery to a particular external alert service remains deployment configuration.
