@@ -46,6 +46,11 @@ class Graded:
     grades: np.ndarray  # (T, N) ordinal in {0, 1, 2, 3}
     votes: np.ndarray  # (T, N) the weighted sum of stances
     stances: dict[str, np.ndarray]  # analyst -> (T, N) stance
+    # The same sum over the analysts' continuous convictions. The grade
+    # is what a person reads and what sizes a position; this is what
+    # orders the names, because a rank built from four buckets throws
+    # away most of what the analysts actually said.
+    conviction: np.ndarray | None = None
 
     # The letter grade of one name on one session.
     def letter(self, t: int, column: int) -> str:
@@ -54,7 +59,9 @@ class Graded:
 
     # A score for the harness: the grade first, the vote total as tie-break.
     def as_scores(self, tie_break: np.ndarray | None = None) -> np.ndarray:
-        """Return (T, N) scores ordered by grade, then by `tie_break`."""
+        """Return (T, N) scores: the summed conviction, or the grade."""
+        if self.conviction is not None:
+            return self.conviction
         scores = self.grades.astype(float)
         if tie_break is not None:
             with np.errstate(all="ignore"):
@@ -79,12 +86,22 @@ def grade(
     value: Opinion | None = None,
 ) -> Graded:
     """Return the Graded panel."""
+    convictions = {
+        "fundamental": fundamental.conviction(),
+        "technical": technical.conviction(),
+        "sentiment": sentiment.conviction(),
+    }
+    if rotation is not None:
+        convictions["rotation"] = rotation.conviction()
+    if value is not None:
+        convictions["value"] = value.conviction()
     return grade_stances(
         fundamental.stances(),
         technical.stances(),
         sentiment.stances(),
         None if rotation is None else rotation.stances(),
         None if value is None else value.stances(),
+        convictions,
     )
 
 
@@ -95,6 +112,7 @@ def grade_stances(
     s: np.ndarray,
     r: np.ndarray | None = None,
     v: np.ndarray | None = None,
+    convictions: dict[str, np.ndarray] | None = None,
 ) -> Graded:
     """Return the Graded panel from (T, N) stance arrays."""
     stances = {"fundamental": f, "technical": t, "sentiment": s}
@@ -116,9 +134,16 @@ def grade_stances(
     )
     grades[a_grade] = ORDINAL[A]
     grades[release_bullish & (votes >= 2)] = ORDINAL[A_PLUS]
+    # The continuous counterpart of `votes`, weighted the same way.
+    summed = None
+    if convictions:
+        summed = np.zeros(votes.shape)
+        for name, values in convictions.items():
+            weight = ROTATION_WEIGHT if name == "rotation" else 1.0
+            summed = summed + weight * np.nan_to_num(values)
     # A bearish core analyst vetoes the top grades: the trade is at most B.
     vetoed = (f == BEARISH) | (t == BEARISH) | (s == BEARISH)
     if v is not None:
         vetoed = vetoed | (v == BEARISH)
     grades[vetoed & (grades > ORDINAL[B])] = ORDINAL[B]
-    return Graded(grades, votes, stances)
+    return Graded(grades, votes, stances, summed)
