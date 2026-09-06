@@ -8,6 +8,10 @@ The rule is fixed in advance and then measured, never fitted:
   bullish), or a bullish release with the others neutral on balance.
 * B: one analyst bullish, nobody bearish.
 * C: no bullish view, or the views cancel.
+The valuation analyst votes like a core analyst and can veto: the desk
+was buying names the market already priced richly, and cheapness against
+the side of the book is information none of the other analysts had.
+
 * Any bearish core analyst caps the grade at B: a bullish release and a
   strong tape over bearish filings was the losing trade in the history
   (IREN, January 2026), and measured, the cap raises the A grade's
@@ -72,6 +76,7 @@ def grade(
     technical: Opinion,
     sentiment: Opinion,
     rotation: Opinion | None = None,
+    value: Opinion | None = None,
 ) -> Graded:
     """Return the Graded panel."""
     return grade_stances(
@@ -79,6 +84,7 @@ def grade(
         technical.stances(),
         sentiment.stances(),
         None if rotation is None else rotation.stances(),
+        None if value is None else value.stances(),
     )
 
 
@@ -88,6 +94,7 @@ def grade_stances(
     t: np.ndarray,
     s: np.ndarray,
     r: np.ndarray | None = None,
+    v: np.ndarray | None = None,
 ) -> Graded:
     """Return the Graded panel from (T, N) stance arrays."""
     stances = {"fundamental": f, "technical": t, "sentiment": s}
@@ -95,6 +102,9 @@ def grade_stances(
     if r is not None:
         stances["rotation"] = r
         votes = votes + ROTATION_WEIGHT * r
+    if v is not None:
+        stances["value"] = v
+        votes = votes + v
     grades = np.zeros(votes.shape, dtype=int)
     release_bullish = s == BULLISH
     both_bullish = (f == BULLISH) & (t == BULLISH)
@@ -108,5 +118,7 @@ def grade_stances(
     grades[release_bullish & (votes >= 2)] = ORDINAL[A_PLUS]
     # A bearish core analyst vetoes the top grades: the trade is at most B.
     vetoed = (f == BEARISH) | (t == BEARISH) | (s == BEARISH)
+    if v is not None:
+        vetoed = vetoed | (v == BEARISH)
     grades[vetoed & (grades > ORDINAL[B])] = ORDINAL[B]
     return Graded(grades, votes, stances)

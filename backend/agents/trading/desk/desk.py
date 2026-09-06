@@ -18,6 +18,7 @@ from backend.agents.trading.desk import (
     risk,
     sentiment,
     technical,
+    value,
 )
 from backend.agents.trading.desk.grading import (
     GRADES,
@@ -102,6 +103,7 @@ def run(store: MarketStore, asof: date | None = None) -> DeskReport:
     """Return the DeskReport for the book as of `asof` (latest if None)."""
     # The loaders live next to the torch models; importing them here keeps
     # the desk importable where torch is absent (the gate container).
+    from backend.market.levels_pit import point_in_time_levels
     from backend.market.model import load_edgar_features, load_tone_features
 
     panel, sides = book_panel(store, asof)
@@ -112,12 +114,14 @@ def run(store: MarketStore, asof: date | None = None) -> DeskReport:
         fundamental.NAME: fundamental.opine(extra),
         technical.NAME: technical.opine(panel, view.ai_trend),
         sentiment.NAME: sentiment.opine(tone),
+        value.NAME: value.opine(panel, point_in_time_levels(store, panel, asof), sides),
     }
     graded = grading.grade(
         opinions[fundamental.NAME],
         opinions[technical.NAME],
         opinions[sentiment.NAME],
         view.rotation,
+        opinions[value.NAME],
     )
     scores = graded.as_scores(blended(opinions))
     last = len(panel.dates) - 1

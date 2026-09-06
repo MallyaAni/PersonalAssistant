@@ -57,7 +57,7 @@ def brief_text(report, ticker: str) -> str:
         f"Name: {ticker} ({view['side']} side). Session: {panel.dates[-1]}.",
         f"Grade: {view['grade']}. Votes: {view['votes']:+.1f}.",
     ]
-    for analyst in ("fundamental", "technical", "sentiment", "rotation"):
+    for analyst in ("fundamental", "technical", "sentiment", "value", "rotation"):
         stance = view["stances"].get(analyst)
         if stance is None:
             continue
