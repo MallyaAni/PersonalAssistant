@@ -356,9 +356,26 @@ def describe(resolution: Resolution, query: str) -> str:
         "none": "nothing earlier",
     }.get(resolution.refers_to, "something earlier in the conversation")
     subject = f" ({resolution.subject})" if resolution.subject else ""
+    # What a draft turn means for the tool choice, said out loud rather than
+    # left to be inferred. Told only that the message "refers to the text
+    # being written together", the router reached for whichever tool sat
+    # nearest a verb it recognised: "make it more casual and ask them to reply
+    # by Thursday at noon" after a drafted email went to edit_image
+    # (2026-08-28) and, once that was withheld, to create_document and to
+    # edit_document (post-deploy sweep, 2026-09-06). The withhold list cannot
+    # simply be widened to the document tools: "put that in a PDF" after a
+    # written-out plan is the same kind of turn and does want a file. What
+    # separates them is what the person asked for, so that is what is said.
+    consequence = (
+        "\nRewriting, shortening, or adding to that text is the reply itself and needs no tool."
+        " Take a tool only if the newest message asks for something a written reply cannot be:"
+        " a file to keep, a picture, a diagram, or a deck."
+        if resolution.refers_to == "draft"
+        else ""
+    )
     return (
         f"Read in context as: {resolution.self_contained}\n"
-        f"It refers to {about}{subject}."
+        f"It refers to {about}{subject}.{consequence}"
     )
 
 

@@ -39,6 +39,9 @@ for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; d
     # that assignment exit the script before it prints or pages - deploys
     # #6 and #7 ended silently at this line (2026-08-27).
     status=0
+    # The names that failed twice, when a retry loop ran. Empty otherwise,
+    # and reset every iteration so one check cannot report another's names.
+    confirmed=""
     output="$(timeout 2400 "${compose[@]}" exec -T backend python -m "$check" 2>&1)" || status=$?
     if [[ $status -eq 124 ]]; then
         output+=$'\n'"GAP  ${check##*.}: no result within 40 minutes"
@@ -96,6 +99,17 @@ for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; d
             if [[ $retried -ne $wanted ]]; then
                 echo "retry re-checked $retried of $wanted gaps; treating as failed" >&2
             fi
+            # Page for the ones that failed twice, not for everything the
+            # first pass gapped. On 2026-09-06 three journeys gapped, two
+            # passed on retry, and the operator was still handed all three
+            # names - so the one real regression (a draft rewrite answered
+            # with a Word file) arrived indistinguishable from two wobbles.
+            if [[ ${#still[@]} -gt 0 ]]; then
+                confirmed="$(IFS='; '; echo "${still[*]}")"
+                if [[ ${#flaky[@]} -gt 0 ]]; then
+                    echo "$check: flaky on retry: $(IFS='; '; echo "${flaky[*]}")"
+                fi
+            fi
         fi
     fi
     if [[ $status -eq 0 ]]; then
@@ -108,7 +122,7 @@ for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; d
         # gap lines themselves. "See the deploy log" paged the operator
         # once (2026-08-26) with nothing to act on from a phone.
         gaps="$(grep -E '^GAP |^FAIL ' <<<"$output" | sed -E 's/^(GAP |FAIL +[0-9a-z]* )//; s/: route=.*//; s/ \|.*//' | head -3 | paste -sd ';' -)"
-        summary+=("$short FAILED: ${gaps:-see log}")
+        summary+=("$short FAILED: ${confirmed:-${gaps:-see log}}")
     fi
 done
 
