@@ -33,6 +33,46 @@ families were measured, not the whole matrix - re-run `evaluate_tool_selection
 Diagram impact: NONE (no component added; the last listing rides the Redis
 the app already reaches).
 
+## 2026-09-06 (later) — the defaults now say what the backtests said (PUSHED, NOT DEPLOYED)
+
+Continues the entry below it. The operator asked "have you implemented
+your best solution given what you've learnt?" and the honest answer was
+not yet: the defaults still encoded the beliefs from before the backtests.
+Four changes, each measured after:
+
+* **Backtest rules default to no price stop and a 10-session grade exit**
+  (`backtest.Rules`), the set that measured best on every name; the
+  variants list now starts from it and switches rules on, not off.
+* **The book default is the top tenth at a 25% volatility target with a
+  15% name cap** (`risk.BOOK_CONFIG`). Since 2021-06 on the 90 names:
+  +31.6% a year, Sharpe 1.55, max drawdown -24.9% (the top fifth at 15%:
+  +16%, 1.25, -16.5%; equal weight +41%, 1.28, -39%; SPY +14%, 0.85,
+  -24.5%). `risk.size` rescales the engine's top fraction to the whole
+  universe, since the engine only sees graded names: without that, "top
+  tenth" meant three names on a day with 35 graded.
+* **The fundamental analyst scores from whichever legs exist** (at least
+  two of revenue growth, sequential growth, gross margin, acceleration), so
+  a young filer like SNDK gets a view from its second quarter rather than
+  its fifth.
+* **Stances persist three sessions** before they change a grade
+  (`opinions.persist`), which ends CRWD's daily B/C flicker on the
+  rotation half-vote.
+
+Calibration after all four: A+ 77 bp per 20 sessions (t 1.4), A 85 (t
+1.7), B 10, C 18; 295 / 223 / 88 / 55 at 60; graded score rank IC 0.034
+(t 2.3) at 20 and 0.052 (t 2.2) at 60. Persistence costs A+ some of the
+first sessions after a release (102 → 77 bp) and buys a cleaner order.
+Per-name backtests under the new defaults since 2021-06: the desk rules
+are the best or near-best rule set on every name (AVGO +176% vs hold
++214%, MU +182% vs 252%, PANW +40% vs 171%) and still trail holding,
+for the reasons in the entry below. Today's book: 9 names at the top
+tenth (SNDK, ANET, PANW, AAOI, HPE and four A names).
+
+**Next atomic task.** Whether the 15-minute bars improve the fill on an
+entry day (next open versus a pullback to the 15-minute 21 EMA), the one
+intraday question still open; then a desk narrative prompt with a
+functional test, if the operator wants the reasoning in words.
+
 ## 2026-09-06 — entries, exits, the trade backtest, and what the book is worth (PUSHED, NOT DEPLOYED)
 
 Continues the entry below it.
