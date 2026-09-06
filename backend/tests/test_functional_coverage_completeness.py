@@ -34,7 +34,7 @@ JOURNEY_EXEMPT = {
 
 
 def _functional_sources() -> dict[str, str]:
-    return {p.name: p.read_text() for p in FUNCTIONAL.glob("test_*.py")}
+    return {p.name: p.read_text(encoding="utf-8") for p in FUNCTIONAL.glob("test_*.py")}
 
 
 def _ways_to_name(module) -> set[str]:
@@ -71,12 +71,12 @@ def test_every_capability_is_walked_by_a_sweep_journey():
 
 def _sent_prompts() -> list[Path]:
     # README.md documents the marker; it is not a prompt.
-    return sorted(p for p in PROMPTS.rglob("*.md") if p.name != "README.md" and "===== PROMPT BELOW" in p.read_text())
+    return sorted(p for p in PROMPTS.rglob("*.md") if p.name != "README.md" and "===== PROMPT BELOW" in p.read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize("prompt", _sent_prompts(), ids=lambda p: p.relative_to(PROMPTS).as_posix())
 def test_every_prompt_declares_its_functional_pin(prompt: Path):
-    header = prompt.read_text().split("===== PROMPT BELOW")[0]
+    header = prompt.read_text(encoding="utf-8").split("===== PROMPT BELOW")[0]
     match = re.search(r"^pinned by:\s*(.+)$", header, flags=re.M)
     assert match, f"{prompt.relative_to(ROOT)}: no 'pinned by:' line in the header"
     declared = match.group(1).strip()
@@ -92,12 +92,12 @@ def test_every_prompt_declares_its_functional_pin(prompt: Path):
 def test_declared_debt_is_visible():
     debt = []
     for prompt in _sent_prompts():
-        header = prompt.read_text().split("===== PROMPT BELOW")[0]
+        header = prompt.read_text(encoding="utf-8").split("===== PROMPT BELOW")[0]
         match = re.search(r"^pinned by:\s*none yet - (.+)$", header, flags=re.M)
         if match:
             debt.append(f"{prompt.relative_to(PROMPTS).with_suffix('').as_posix()}: {match.group(1).strip()}")
     # Not a failure - a list. It must match what NEXT_SESSION admits to.
-    next_session = (ROOT / "docs" / "NEXT_SESSION.md").read_text()
+    next_session = (ROOT / "docs" / "NEXT_SESSION.md").read_text(encoding="utf-8")
     for item in debt:
         name = item.split(":")[0]
         assert name in next_session, f"{name} is unpinned but NEXT_SESSION does not say so"
