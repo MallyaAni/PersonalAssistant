@@ -99,7 +99,10 @@ def _cut(text: str, limit: int) -> str:
         return text
     head = text[:limit]
     end = max(head.rfind(". "), head.rfind(".\n"), head.rfind("; "))
-    return head[: end + 1].rstrip() if end > limit // 2 else head.rstrip()
+    if end > limit // 2:
+        return head[: end + 1].rstrip()
+    clause = max(head.rfind(", "), head.rfind(" "))
+    return (head[:clause] if clause > limit // 2 else head).rstrip(" ,;")
 
 
 def _schema() -> dict[str, Any]:

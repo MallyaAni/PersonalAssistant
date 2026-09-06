@@ -14,16 +14,17 @@ from backend.api.v1.agent_memory import router as agent_memory_router
 from backend.api.v1.agents import router as agents_router
 from backend.api.v1.artifacts import router as artifacts_router
 from backend.api.v1.auth import router as auth_router
-from backend.api.v1.chat_steps import router as chat_steps_router
 from backend.api.v1.automations import router as automations_router
-from backend.api.v1.runs import router as runs_router
+from backend.api.v1.chat_steps import router as chat_steps_router
 from backend.api.v1.conversations import router as conversations_router
 from backend.api.v1.discovery import calendar_router as discovery_calendar_router
 from backend.api.v1.discovery import feed_router as discovery_feed_router
 from backend.api.v1.discovery import router as discovery_router
 from backend.api.v1.images import router as images_router
+from backend.api.v1.market import router as market_router
 from backend.api.v1.memory import router as memory_router
 from backend.api.v1.presentations import router as presentations_router
+from backend.api.v1.runs import router as runs_router
 from backend.api.v1.tool_memory import router as tool_memory_router
 from backend.api.v1.tools import router as tools_router
 from backend.api.v1.vision import router as vision_router
@@ -34,7 +35,12 @@ from backend.core.auth import (
     authorize_user,
 )
 from backend.core.dependencies import DependencyConversationService, ModelGateDependency
-from backend.models.schemas import ChatRequest, ChatStreamEvent, ObserveRequest, ReadinessRequest
+from backend.models.schemas import (
+    ChatRequest,
+    ChatStreamEvent,
+    ObserveRequest,
+    ReadinessRequest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +52,7 @@ router.include_router(auth_router)
 router.include_router(tool_memory_router)
 router.include_router(agent_memory_router)
 router.include_router(memory_router)
+router.include_router(market_router)
 router.include_router(artifacts_router)
 router.include_router(conversations_router)
 router.include_router(images_router)

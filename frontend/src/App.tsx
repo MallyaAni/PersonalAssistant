@@ -9,6 +9,7 @@ import AutomationPanel from './components/AutomationPanel/AutomationPanel'
 import ChatWindow from './components/ChatWindow/ChatWindow'
 import LoginScreen from './components/LoginScreen/LoginScreen'
 import MemoryPanel from './components/MemoryPanel/MemoryPanel'
+import DeskPanel from './components/DeskPanel/DeskPanel'
 import PresentationPanel from './components/PresentationPanel/PresentationPanel'
 import Sidebar from './components/Sidebar/Sidebar'
 import {
@@ -42,7 +43,7 @@ interface AuthenticatedAppProps {
   onSignedOut: () => void;
 }
 
-type WorkspaceView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'automations' | 'admin'
+type WorkspaceView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'automations' | 'admin' | 'desk'
 
 const WORKSPACE_VIEWS: readonly WorkspaceView[] = [
   'chat',
@@ -51,7 +52,7 @@ const WORKSPACE_VIEWS: readonly WorkspaceView[] = [
   'presentations',
   'agents',
   'automations',
-  'admin',
+  'admin', 'desk',
 ]
 
 // Read the view the URL is pointing at, defaulting to chat.
@@ -210,6 +211,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
           />
         </div>
         {activeView === 'memory' && <MemoryPanel userId={userId} />}
+        {activeView === 'desk' && <DeskPanel userId={userId} />}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
         {/* Guarded twice: hidden unless the session says operator, and every
             route behind it re-checks against the database. */}

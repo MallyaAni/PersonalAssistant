@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { deleteConversation, listConversations, type ConversationSummary } from '../../services/api'
 import ThemeToggle from '../ThemeToggle/ThemeToggle'
-import { Bot, BrainCircuit, Image, LogOut, MessageCircle, Presentation, ShieldCheck, Trash2, Zap } from 'lucide-react'
+import { Bot, BrainCircuit, Image, LineChart, LogOut, MessageCircle, Presentation, ShieldCheck, Trash2, Zap } from 'lucide-react'
 
-type SidebarView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'automations' | 'admin'
+type SidebarView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'automations' | 'admin' | 'desk'
 
 interface SidebarProps {
   activeView: SidebarView
@@ -120,6 +120,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           <Zap size={19} className={activeView === 'automations' ? 'text-[#0071e3]' : ''} />
           <span className="inline">Automations</span>
+        </button>
+        <button
+          aria-label="Desk"
+          onClick={() => onViewChange('desk')}
+          className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'desk' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
+        >
+          <LineChart size={19} className={activeView === 'desk' ? 'text-[#0071e3]' : ''} />
+          <span className="inline">Desk</span>
         </button>
         <button
           aria-label="Memory"

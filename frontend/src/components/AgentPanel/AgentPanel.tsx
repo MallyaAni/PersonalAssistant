@@ -18,7 +18,7 @@ import ScoutSetup from './ScoutSetup'
 interface AgentPanelProps {
   userId: string;
   // Agents is a control surface; some agents' output lives in its own view.
-  onOpenView?: (view: 'presentations') => void;
+  onOpenView?: (view: 'presentations' | 'desk') => void;
 }
 
 // Each agent's live state is polled rather than pushed. A sweep runs on a
@@ -156,6 +156,15 @@ const AgentPanel = ({ userId, onOpenView }: AgentPanelProps) => {
                           {agent.trigger}
                         </span>
                         <span>Last active {formatLastActive(agent.last_active_at).toLowerCase()}</span>
+                        {agent.opens_view === 'desk' && onOpenView && (
+                          <button
+                            onClick={() => onOpenView('desk')}
+                            className="ml-auto flex items-center gap-1 text-xs font-medium text-[#0071e3]"
+                          >
+                            Open the desk
+                            <ArrowRight size={13} />
+                          </button>
+                        )}
                         {agent.opens_view === 'presentations' && onOpenView && (
                           <button
                             onClick={() => onOpenView('presentations')}

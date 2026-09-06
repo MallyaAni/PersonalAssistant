@@ -7,9 +7,13 @@ whether it can work is whether the person has shared any history at all: with
 none it is needs_setup, and with some it is idle and ready to be asked.
 """
 
+from pathlib import Path
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.cards import AgentFact, AgentStatus, AgentSummary, count_rows
+from backend.config.settings import settings
+from backend.market import deskrecord
 from backend.models.agent_memory import KnowledgeDocument
 
 
@@ -26,11 +30,32 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
         detail = "Ready. Ask it to analyze your trading."
     # The chunk count is only meaningful when there are documents; without any,
     # showing zero reads as "there is nothing here" rather than as a count.
-    facts = (
-        (AgentFact("Documents", str(documents)),)
-        if documents
-        else ()
-    )
+    facts = (AgentFact("Documents", str(documents)),) if documents else ()
+    # The desk's latest record, when the daily pipeline has written one:
+    # the session, the grade counts and the book, read from the file it
+    # wrote so the card cannot claim a book the desk does not hold.
+    latest, _previous = deskrecord.latest_pair(Path(settings.MARKET_DATA_ROOT))
+    opens_view = None
+    if latest is not None:
+        headline = deskrecord.summary(latest)
+        counts = headline["counts"]
+        facts = facts + (
+            AgentFact("Desk session", str(headline["session"])),
+            AgentFact(
+                "Grades",
+                f"{counts.get('A+', 0)} A+, {counts.get('A', 0)} A, "
+                f"{counts.get('B', 0)} B, {counts.get('C', 0)} C",
+            ),
+            AgentFact(
+                "Book",
+                f"{len(headline['names'])} names, gross {headline['gross']:.2f}",
+            ),
+        )
+        status = "idle"
+        detail = f"Desk as of {headline['session']}: " + (
+            ", ".join(headline["names"][:5]) or "nothing held"
+        )
+        opens_view = "desk"
 
     return AgentSummary(
         id="trading",
@@ -47,8 +72,8 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
         detail=detail,
         trigger="On request",
         setup_needs=(
-            "a statement or trade journal shared with it, so it has a record "
-            "to read"
+            "a statement or trade journal shared with it, so it has a record " "to read"
         ),
         facts=facts,
+        opens_view=opens_view,
     )

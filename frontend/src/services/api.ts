@@ -1841,6 +1841,81 @@ export const getAgents = async (userId: string): Promise<AgentSummary[]> => {
   return Array.isArray(payload.agents) ? payload.agents : [];
 };
 
+export interface DeskGrade {
+  grade: string;
+  votes: number;
+  stances: Record<string, number>;
+  score: number;
+  side: string;
+}
+
+export interface DeskBrief {
+  stance: string;
+  verdict: string;
+  reasoning: string;
+  risks: string;
+  watch: string;
+}
+
+export interface DeskRecord {
+  session: string;
+  written: string;
+  regime: {
+    ai_participation: number;
+    software_participation: number;
+    participation_percentile: number;
+    ai_vs_software_correlation: number;
+    correlation_z: number;
+    novelty_z: number;
+    rotation_leader: string;
+    rotation_spread: number;
+    ai_drawdown: number;
+    selection_confidence: number;
+    exposure: number;
+    flags: string[];
+    ai_trend_60?: number;
+  };
+  grades: Record<string, DeskGrade>;
+  book: { ticker: string; grade: string; weight: number; engine_weight: number; volatility: number; exposure: number }[];
+  briefs: Record<string, DeskBrief>;
+}
+
+export interface DeskOrder {
+  ticker: string;
+  action: string;
+  weight_from: number;
+  weight_to: number;
+  grade_from: string | null;
+  grade_to: string | null;
+  reason: string;
+}
+
+export interface DeskPayload {
+  latest: DeskRecord | null;
+  summary?: { session: string; counts: Record<string, number>; gross: number; names: string[]; flags: string[] };
+  changes?: {
+    since: string | null;
+    upgrades: { ticker: string; from: string; to: string }[];
+    downgrades: { ticker: string; from: string; to: string }[];
+    orders: DeskOrder[];
+    flags_raised: string[];
+    flags_cleared: string[];
+  };
+  sessions: string[];
+}
+
+// The trading desk's latest record and what changed since the one before.
+// Every field is read from the record the desk wrote for the session.
+export const getDesk = async (userId: string): Promise<DeskPayload> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`,
+  );
+  if (!response.ok) {
+    throw new Error('Could not load the desk.');
+  }
+  return (await response.json()) as DeskPayload;
+};
+
 export interface DiscoveryInterest {
   id: string;
   label: string;
