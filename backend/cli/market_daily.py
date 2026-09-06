@@ -1,0 +1,223 @@
+"""The desk's day: refresh the data, run the desk, write the record.
+
+    python -m backend.cli.market_daily --refresh            # data, then the desk
+    python -m backend.cli.market_daily                      # the desk on stored data
+    python -m backend.cli.market_daily --refresh --brief SNDK CRWV
+
+`--refresh` pulls daily bars for the book names, the benchmark and the
+macro series, the EDGAR events and facts for the book names, and scores any
+release not yet scored (only the new ones: earlier scores carry forward).
+Then the desk runs and prints the regime, the grades and the book, and the
+whole record is written to `data/market/desk/asof=DATE/desk.json` so a day
+can be read back later exactly as it was seen.
+"""
+
+import argparse
+import json
+from datetime import UTC, date, datetime
+from pathlib import Path
+
+from backend.agents.trading.desk import desk as trading_desk
+from backend.agents.trading.desk.narrative import DeskNarrator, brief_text
+from backend.cli import market_edgar, market_tone
+from backend.cli.market_desk import _print_book, _print_grades, _print_regime
+from backend.config.settings import settings
+from backend.market import snapshot
+from backend.market.macro import SERIES
+from backend.market.store import MarketStore
+from backend.market.universe import MARKET_BENCHMARK, book_sides, build_universe
+
+DESK_KIND = "desk"
+
+
+# Build the CLI parser.
+def build_parser() -> argparse.ArgumentParser:
+    """Return the argument parser."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data-dir", default=settings.MARKET_DATA_ROOT)
+    parser.add_argument("--asof", type=date.fromisoformat, default=None)
+    parser.add_argument("--refresh", action="store_true")
+    parser.add_argument(
+        "--skip-tone", action="store_true", help="refresh without scoring"
+    )
+    parser.add_argument("--llm-url", default="")
+    parser.add_argument("--llm-model", default="")
+    parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument(
+        "--brief", nargs="*", default=[], help="tickers to write briefs for"
+    )
+    parser.add_argument("--top", type=int, default=25)
+    return parser
+
+
+# The tickers the desk needs daily bars for: the book, the benchmark, the
+# macro series.
+def bar_tickers() -> tuple[str, ...]:
+    """Return the tickers the daily refresh pulls bars for."""
+    names = tuple(sorted(book_sides(build_universe())))
+    return names + (MARKET_BENCHMARK,) + tuple(SERIES.values())
+
+
+# The book names, for the filings and the releases.
+def book_tickers() -> tuple[str, ...]:
+    """Return the book's tickers."""
+    return tuple(sorted(book_sides(build_universe())))
+
+
+# Refresh every layer the desk reads, in the order it needs them.
+def refresh(
+    store: MarketStore,
+    asof: date,
+    *,
+    skip_tone: bool = False,
+    llm_url: str = "",
+    llm_model: str = "",
+    concurrency: int = 4,
+    bars=snapshot.refresh,
+    filings=market_edgar.refresh,
+    tone=market_tone.refresh_tickers,
+) -> None:
+    """Pull bars, filings and new release scores into the as-of partition."""
+    report = bars(store, bar_tickers(), asof=asof)
+    print(
+        f"bars: {report.stored_count} stored, {len(report.failed_tickers)} failed"
+        + (
+            " (" + ", ".join(report.failed_tickers) + ")"
+            if report.failed_tickers
+            else ""
+        )
+    )
+    filings(store, book_tickers(), asof)
+    if skip_tone:
+        print("tone: skipped")
+        return
+    try:
+        scored = tone(
+            store,
+            book_tickers(),
+            asof,
+            llm_url=llm_url,
+            llm_model=llm_model,
+            concurrency=concurrency,
+        )
+    except Exception as exc:  # the runtime being away must not stop the desk
+        print(f"tone: not scored ({type(exc).__name__}: {exc}); earlier scores carry")
+        return
+    print(f"tone: {scored} new releases scored")
+
+
+# The day's record, as plain data.
+def record(report, briefs: dict[str, dict] | None = None) -> dict:
+    """Return the JSON-ready record of a DeskReport."""
+    panel = report.panel
+    last = len(panel.dates) - 1
+    state = report.regime.today()
+    grades = {}
+    for column, ticker in enumerate(panel.tickers):
+        if ticker == panel.benchmark:
+            continue
+        grades[ticker] = {
+            "grade": report.graded.letter(last, column),
+            "votes": float(report.graded.votes[last, column]),
+            "stances": {
+                k: int(v[last, column]) for k, v in report.graded.stances.items()
+            },
+            "score": float(report.scores[last, column]),
+            "side": report.sides.get(ticker, ""),
+        }
+    return {
+        "session": str(panel.dates[last]),
+        "written": datetime.now(tz=UTC).isoformat(timespec="seconds"),
+        "regime": {
+            k: (v if not isinstance(v, tuple) else list(v))
+            for k, v in state.__dict__.items()
+        },
+        "grades": grades,
+        "book": [
+            {
+                "ticker": s.position.ticker,
+                "grade": s.grade,
+                "weight": s.weight,
+                "engine_weight": s.position.weight,
+                "volatility": s.position.volatility,
+                "exposure": s.exposure,
+            }
+            for s in report.book
+        ],
+        "briefs": briefs or {},
+    }
+
+
+# Where the day's record lives.
+def record_path(root: Path, session: str) -> Path:
+    """Return the path of the desk record for a session."""
+    return Path(root) / DESK_KIND / f"asof={session}" / "desk.json"
+
+
+# Write the record and return its path.
+def save(root: Path, data: dict) -> Path:
+    """Write the day's record as JSON."""
+    path = record_path(root, data["session"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, default=float), encoding="utf-8")
+    return path
+
+
+# Write and print the briefs for some names through the local model.
+def briefs_for(report, tickers, narrator: DeskNarrator) -> dict[str, dict]:
+    """Return {ticker: brief fields} for the names the model could brief."""
+    out: dict[str, dict] = {}
+    for ticker in tickers:
+        if ticker not in report.panel.tickers:
+            print(f"\n{ticker}: not in the book")
+            continue
+        grade = report.brief(ticker)["grade"]
+        brief = narrator.brief_sync(brief_text(report, ticker), grade)
+        if brief is None:
+            print(f"\n{ticker}: no brief (runtime away or the answer did not fit)")
+            continue
+        out[ticker] = {
+            "stance": brief.stance,
+            "verdict": brief.verdict,
+            "reasoning": brief.reasoning,
+            "risks": brief.risks,
+            "watch": brief.watch,
+        }
+        print(f"\n{ticker} ({grade}, {brief.stance}): {brief.verdict}")
+        print(f"  {brief.reasoning}")
+        print(f"  risks: {brief.risks}")
+        print(f"  watch: {brief.watch}")
+    return out
+
+
+# Run the day.
+def main() -> None:
+    """Entry point."""
+    args = build_parser().parse_args()
+    store = MarketStore(args.data_dir)
+    asof = args.asof or datetime.now(tz=UTC).date()
+    if args.refresh:
+        refresh(
+            store,
+            asof,
+            skip_tone=args.skip_tone,
+            llm_url=args.llm_url,
+            llm_model=args.llm_model,
+            concurrency=args.concurrency,
+        )
+    report = trading_desk.run(store, args.asof)
+    panel = report.panel
+    print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
+    _print_regime(report.regime.today())
+    _print_grades(report, args.top)
+    _print_book(report)
+    briefs: dict[str, dict] = {}
+    if args.brief:
+        readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
+        briefs = briefs_for(report, args.brief, DeskNarrator(readers[0].writer))
+    path = save(Path(store.root), record(report, briefs))
+    print(f"\nrecord written: {path}")
+
+
+if __name__ == "__main__":
+    main()

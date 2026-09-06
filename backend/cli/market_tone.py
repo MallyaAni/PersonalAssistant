@@ -20,7 +20,7 @@ runtime.
 import argparse
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from backend.agents.trading.release_tone import PROMPT_VERSION, ReleaseToneReader
@@ -60,14 +60,22 @@ def _select(args: argparse.Namespace) -> tuple[str, ...]:
 # One model client per worker thread: the provider serialises requests per
 # instance, so concurrency needs instances.
 def _clients(args: argparse.Namespace) -> tuple[list[ReleaseToneReader], str]:
+    return clients(args.llm_url, args.llm_model, args.concurrency)
+
+
+# One reader per concurrent call against the configured runtime.
+def clients(
+    llm_url: str = "", llm_model: str = "", concurrency: int = 4
+) -> tuple[list[ReleaseToneReader], str]:
+    """Return (readers, model name) for the runtime."""
     url = (
-        args.llm_url
+        llm_url
         or settings.ROUTING_LLM_BASE_URL
         or settings.MAIN_LLM_BASE_URL
         or settings.LLM_BASE_URL
     )
     model = (
-        args.llm_model
+        llm_model
         or settings.ROUTING_LLM_MODEL
         or settings.MAIN_LLM_MODEL
         or settings.LLM_MODEL
@@ -78,8 +86,50 @@ def _clients(args: argparse.Namespace) -> tuple[list[ReleaseToneReader], str]:
                 url, model, settings.LLM_API_KEY, timeout_seconds=600.0
             )
         )
-        for _ in range(max(1, args.concurrency))
+        for _ in range(max(1, concurrency))
     ], model
+
+
+# The scores already stored for a ticker in the newest partition before
+# `asof`, so a new day scores only the releases it has not seen. A change
+# of prompt version starts over: the old scores are not comparable.
+def prior_records(
+    store: MarketStore, ticker: str, asof: date
+) -> dict[str, language.ToneRecord]:
+    """Return {accession: ToneRecord} carried forward from earlier partitions."""
+    frame = store.read_frame(language.TONE_KIND, ticker, asof - timedelta(days=1))
+    if frame is None:
+        return {}
+    columns, meta = frame
+    if meta.get("prompt_version") != PROMPT_VERSION:
+        return {}
+    return {r.accession: r for r in language.records_from_frame(columns)}
+
+
+# Score every listed ticker's unscored releases; return how many were scored.
+def refresh_tickers(
+    store: MarketStore,
+    tickers: tuple[str, ...],
+    asof: date,
+    *,
+    since: date = date(2015, 1, 1),
+    llm_url: str = "",
+    llm_model: str = "",
+    concurrency: int = 4,
+) -> int:
+    """Refresh the tone layer for `tickers` into the as-of partition."""
+    readers, model = clients(llm_url, llm_model, concurrency)
+    pacer = edgar.Pacer()
+    total = 0
+    for ticker in tickers:
+        if store.has_frame(language.TONE_KIND, asof, ticker):
+            continue
+        scored, _missing, stored = _refresh_ticker(
+            store, ticker, asof, since, readers, model, pacer
+        )
+        if stored >= 0:
+            total += scored
+    return total
 
 
 # Score one ticker's unscored releases and store the frame when complete.
@@ -108,7 +158,8 @@ def _refresh_ticker(
     ]
     events = [e for e in events if e.filed >= since]
     partial = language.partial_path(store.root, asof, ticker)
-    done = language.read_partial(partial)
+    done = prior_records(store, ticker, asof)
+    done.update(language.read_partial(partial))
     todo = [e for e in events if e.accession not in done]
 
     # Fetch texts serially (SEC pacing), score concurrently.
