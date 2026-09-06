@@ -28,8 +28,15 @@ def test_no_module_uses_an_undefined_name():
         capture_output=True,
         text=True,
     )
+    # Ruff missing is not a licence to ship undefined names, and it must not
+    # read as "no undefined names found" either: it is installed in the test
+    # image for this check (Dockerfile, test stage) and is a dev dependency.
+    if "No module named ruff" in found.stderr or "No module named" in found.stderr:
+        raise AssertionError(
+            "ruff is not installed here, so undefined names went unchecked. "
+            "It is a dev dependency (pyproject.toml) and is installed in the "
+            f"Dockerfile's test stage.\n{found.stderr.strip()[:300]}"
+        )
     if found.returncode not in (0, 1):
-        # Ruff missing or unrunnable is not a licence to ship undefined names,
-        # but it is not this test's failure either; say which it was.
-        raise AssertionError(f"could not run ruff: {found.returncode}\n{found.stderr[:400]}")
+        raise AssertionError(f"could not run ruff: exit {found.returncode}\n{found.stderr.strip()[:400]}")
     assert found.returncode == 0, f"undefined names:\n{found.stdout.strip()[:2000]}"
