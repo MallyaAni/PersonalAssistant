@@ -368,6 +368,7 @@ def _book_stat(label: str, daily: np.ndarray) -> BookStat:
 # and the daily equal weight of the A-or-better and the C names.
 def book_backtest(report: DeskReport, since: date | None = None) -> list[BookStat]:
     """Return BookStats for the book variants and the references."""
+    from backend.agents.trading.desk import simulate
     from backend.market import sizing
 
     panel = report.panel
@@ -376,6 +377,13 @@ def book_backtest(report: DeskReport, since: date | None = None) -> list[BookSta
     bench = panel.index(panel.benchmark)
     names = np.array([t != panel.benchmark for t in panel.tickers])
     out: list[BookStat] = []
+    # The first row is the only one that runs the desk as it actually
+    # trades: graded sizes, the regime's exposure, the tightening tilt, a
+    # twenty-session rebalance and a cost on every move. The rows under it
+    # run the score matrix through the sizing engine alone, which is a
+    # narrower question and was for a long time the only one being asked.
+    full = simulate.run(report, since=since, use_exits=False)
+    out.append(_book_stat("the desk's rules, all of them", full.returns))
     variants = (
         ("desk book (default config)", risk.BOOK_CONFIG),
         ("top 20%, vol target 15%", sizing.SizingConfig(top_fraction=0.2)),

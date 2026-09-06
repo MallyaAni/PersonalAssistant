@@ -5,13 +5,13 @@ The rules are the ones that measured best, and nothing else:
 * Every `REBALANCE_EVERY` sessions the paper book is brought to the desk's
   target weights (buys and sells at the next open, whole shares, moves
   smaller than `MIN_TRADE` of equity skipped).
-* Between rebalances the book is left alone except for the exit analyst,
-  which sells a held name at the next open when the move looks finished: a
-  bearish candle at the top of its Bollinger band, or a band wider than it
-  has been almost all year with price near the top of it. There is no price
-  stop, because every stop measured worse than none on every name, and no
-  grade-based exit, because measuring one finally showed it was cutting
-  winners rather than protecting anything (see `desk/exit.py`).
+* Between rebalances the book is left alone. Nothing else trades. There
+  is no price stop, because every stop measured worse than none on every
+  name; no grade-based exit, because it cut winners; and no band exit,
+  because that cost 3.0% a year when it was finally measured inside these
+  rules rather than per trade. `plan` still accepts a `finished` map so a
+  trigger that does measure well can be given one, but none does yet. The
+  note at the top of `desk/exit.py` has the numbers.
 * The plan for a session is made once. Running the day twice submits
   nothing the second time.
 

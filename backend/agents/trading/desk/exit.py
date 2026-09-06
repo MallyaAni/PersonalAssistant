@@ -1,34 +1,72 @@
-"""The exit analyst: when a position the desk owns is done.
+"""The exit analyst: measured, and not currently trading.
 
-Entry and exit are different questions and were not treated that way here.
-Entry asks which of ninety-three names is best today, and a cross-sectional
-rank answers it. Exit asks whether this one position has finished, which no
-ranking can answer. The desk's original exit — sell after the grade has sat
-below B for ten sessions — was never measured against anything, and when it
-finally was, it sold at the 53rd percentile of the surrounding price range,
-which is no better than chance, and it performed no better than holding for
-a fixed period.
+Entry and exit are different questions. Entry asks which of ninety-three
+names is best today, and a cross-sectional rank answers it. Exit asks
+whether this one position has finished, which no ranking can answer. This
+module was built to ask the second question properly, and the rules in it
+are kept because the reasoning behind them is sound and the measurement
+that retired them is worth not repeating. **Nothing here trades.** The
+paper book passes no `finished` map (see `desk/paper.py`).
 
-Measured on 352 real entries the desk's own rules produced, holding every
-entry fixed and varying only the exit, over 2021-06 to 2026-09 and again on
-2024 onward alone:
+Why it was retired
+------------------
+The rules below were chosen on a per-trade study: hold each of 352 real
+entries fixed, vary only the exit, and compare. On that test the band
+rules looked clearly best, selling at the 62nd-67th percentile of the
+surrounding ten sessions against the 53rd for the old grade rule, with a
+median trade of +14.1% against +7.9%.
 
-| exit                                   | median | wins | where it sold |
-| the old rule (grade below B for 10)    |  +7.9% |  64% | 0.53          |
-| a fixed 120-session hold               | +11.6% |  66% | 0.45          |
-| a bearish candle at the upper band     | +14.1% |  72% | 0.62          |
-| a wide band with price near its top    | +12.4% |  74% | 0.67          |
-| either of those, after a month's grace | +12.2% |  73% | 0.66          |
+That study asked the wrong question. It compared the band exit against
+holding for up to 250 sessions. The book does not hold for 250 sessions;
+it rebalances every 20, and the rebalance is already an exit. Run inside
+the book's own rules (`desk/simulate.py`), from 2021-06:
 
-"Where it sold" is the percentile of the sale price within the ten sessions
-either side, so higher is a better sale. Two things in that table are worth
-keeping in mind. Adding the grade rule back to the band rules made them
-worse, from +14.1% to +9.4%: the old exit was cutting winners rather than
-protecting anything, so it is gone rather than kept as a floor. And named
-candlestick shapes, which measured nothing at all as a way of ranking names
-to buy, are the best single ingredient here — because "the move is extended
-and it has just turned" is an exit question, and it was only ever asked as
-an entry one.
+| the book                    | a year | vol   | Sharpe | worst | total   |
+| no exit overlay             | +31.6% | 17.5% |   1.81 | -18.3%| +384.4% |
+| the band rules, to cash     | +28.6% | 16.2% |   1.77 | -17.5%| +318.7% |
+| the band rules, redeployed  | +30.3% | 17.5% |   1.73 | -18.7%| +352.1% |
+
+The overlay costs 3.0% a year (t -1.99) and lowers Sharpe in every one of
+the six years. It helps only in 2022, the one falling year.
+
+The reason is direct. Over 86,209 sessions on which the book held a name
+graded B or better, that name beat the benchmark by 1.95% over the next 20
+sessions. Conditioning on an exit trigger raises that number rather than
+lowering it:
+
+| trigger                                    | fires | next 20 vs benchmark |
+| holding, no trigger (the baseline)         | 86209 | +1.95%   (t +42.7)   |
+| a wide band with price near its top        |  3977 | +3.10%   (t +14.0)   |
+| a bearish candle at the upper band         |   616 | +2.26%   (t  +4.1)   |
+| price closes below its 50-day average      |  2874 | +1.39%   (t  +6.5)   |
+| the 21-day average turns down              |  2575 | +1.99%   (t  +7.8)   |
+| the weekly average turns down              |  1519 | +1.90%   (t  +5.3)   |
+| the desk's rank falls below the middle     |  2097 | +1.24%   (t  +4.0)   |
+| the grade falls out of A or better         |  1165 | +1.49%   (t  +4.3)   |
+
+Twenty-one triggers were screened, from price crossing every average to
+the desk's own grade and rank falling, and not one is followed by a fall.
+The two the desk was using are the two worst of the set: "the band is wide
+and price sits near its top" is one of the strongest *buy* signals here.
+On these ninety-three names over this period the pattern is consistent —
+a technical sell trigger fires into a pause of about a week, after which
+the name resumes and beats the market.
+
+What this does not say
+----------------------
+It does not say exits are unimportant. It says the rebalance is the exit
+that works: 203 of 287 closes in the simulation are a name being replaced
+by a better-ranked one, which is a funding decision, not a protection
+decision. The triggers that came closest to earning their place are the
+ones where the desk changes its mind about the name, not the ones where
+the chart looks tired, and even those only match doing nothing.
+
+It is also one period, and a period in which these names rose a great
+deal. The 2022 column is the warning: in the only falling year the overlay
+helped on both return and Sharpe. The regime analyst already cuts gross
+exposure in that state, which is the same protection bought once rather
+than twice, so gating exits on the regime was not added — that would be
+fitting a rule to a single year.
 """
 
 from dataclasses import dataclass
