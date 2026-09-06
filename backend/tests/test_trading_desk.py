@@ -249,3 +249,51 @@ def test_analysts_withhold_without_data():
     assert np.isnan(fundamental.opine(extra).scores).all()
     tone = np.zeros((3, 2, len(language.FEATURE_NAMES)))
     assert np.isnan(sentiment.opine(tone).scores).all()
+
+
+# The tightening flag comes from the ten-year yield's own trend and reads
+# only the past; a missing series means no view rather than a guess.
+def test_tightening_from_yields():
+    yields = np.concatenate([np.full(60, 4.0), np.full(20, 4.5), np.full(20, 4.05)])
+    flags = regime.tightening_from(yields)
+    assert not flags[:60].any()  # no history yet to compare against
+    assert flags[60]  # 4.5 against 4.0 sixty sessions back is a 12.5% rise
+    assert not flags[-1]  # 4.05 against 4.5 is not a rise
+    assert regime.tightening_from(None) is None
+
+
+# While money is tightening the regime carries less of the book and says so,
+# and the risk manager shifts the same names toward the steadier ones.
+def test_tightening_cuts_exposure_and_steepens_the_book():
+    rng = np.random.default_rng(3)
+    t, n = 900, 6
+    themes = {f"AI{i}": (AI_COMPUTE,) for i in range(3)}
+    themes.update({f"SW{i}": (SOFTWARE,) for i in range(3)})
+    panel = _panel(rng.normal(scale=0.01, size=(t, n)), themes)
+    sides = {k: (AI_SIDE if k.startswith("AI") else SOFTWARE_SIDE) for k in themes}
+    calm = regime.opine(panel, sides)
+    tight = regime.opine(panel, sides, np.ones(t, dtype=bool))
+    assert not calm.today().tightening
+    assert tight.today().tightening
+    assert tight.today().exposure <= regime.TIGHTENING_EXPOSURE
+    assert "the ten-year yield is rising sharply" in tight.today().flags
+
+    # The same graded names, sized calm and sized tight: the steady name
+    # takes more of the book while money tightens, and the gross is the same.
+    wild = np.concatenate(
+        [rng.normal(scale=0.05, size=(t, 1)), rng.normal(scale=0.005, size=(t, 1))],
+        axis=1,
+    )
+    two = _panel(wild, {"WILD": (AI_COMPUTE,), "STEADY": (AI_COMPUTE,)})
+    # Every column carries a score so the engine's top fraction is not
+    # rescaled away; the benchmark is excluded by its grade.
+    scores = np.array([0.9, 0.8, 0.5])
+    grades = np.array([3, 3, 0])
+    config = risk.SizingConfig(top_fraction=1.0, short_fraction=0.0, name_cap=1.0)
+    calm_book = risk.size(scores, grades, two, calm.today(), config)
+    tight_book = risk.size(scores, grades, two, tight.today(), config)
+    calm_weights = {s.position.ticker: s.position.weight for s in calm_book}
+    tight_weights = {s.position.ticker: s.position.weight for s in tight_book}
+    assert tight_weights["STEADY"] > calm_weights["STEADY"]
+    assert sum(tight_weights.values()) == pytest.approx(sum(calm_weights.values()))
+    assert any("steadier" in s.position.note for s in tight_book)

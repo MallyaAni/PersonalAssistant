@@ -98,6 +98,21 @@ def blended(opinions: dict[str, Opinion]) -> np.ndarray:
     return baselines.rank_blend(*[o.scores for o in opinions.values()])
 
 
+# Whether money was tightening on each session, from the stored ten-year
+# yield series. A missing series means the desk simply has no view.
+def tightening_for(store: MarketStore, panel: Panel, asof=None):
+    """Return the (T,) tightening flags, or None."""
+    from backend.market.macro import SERIES, aligned_close
+
+    try:
+        yields = aligned_close(store, SERIES["tnx"], panel, asof)
+    except Exception:
+        return None
+    if yields is None or not np.isfinite(yields).any():
+        return None
+    return regime.tightening_from(yields)
+
+
 # Run the whole desk as of a date.
 def run(store: MarketStore, asof: date | None = None) -> DeskReport:
     """Return the DeskReport for the book as of `asof` (latest if None)."""
@@ -109,7 +124,7 @@ def run(store: MarketStore, asof: date | None = None) -> DeskReport:
     panel, sides = book_panel(store, asof)
     extra = load_edgar_features(store, panel, asof)
     tone = load_tone_features(store, panel, asof)
-    view = regime.opine(panel, sides)
+    view = regime.opine(panel, sides, tightening_for(store, panel, asof))
     opinions = {
         fundamental.NAME: fundamental.opine(extra),
         technical.NAME: technical.opine(panel, view.ai_trend),
