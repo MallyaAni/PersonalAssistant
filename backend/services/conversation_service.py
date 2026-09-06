@@ -94,6 +94,7 @@ from backend.services.main_action_selector import (
     ScheduleTaskAction,
     ManageCheckInsAction,
     ManageRunsAction,
+    SendEventLinksAction,
     SearchAction,
     ShowImageAction,
     ToolboxAction,
@@ -806,6 +807,19 @@ _events_found: ContextVar[Any] = ContextVar("events_found", default=None)
 # The assistant's previous reply in this conversation, for anything that has
 # to resolve "this" - the task picker first. Set per request.
 _previous_assistant_said: ContextVar[str] = ContextVar("previous_assistant_said", default="")
+
+
+# Last-resort shape match for a named event, used only when the picker
+# declined or missed: whether the person's words contain the event's name or
+# venue, or either word for word. Meaning was the picker's job; this rescues
+# a verbatim name the model did not return.
+def _name_matches(which: str, item: dict) -> bool:
+    words = which.casefold()
+    for field in ("name", "venue"):
+        value = str(item.get(field) or "").casefold()
+        if value and value in words:
+            return True
+    return False
 
 
 # The earlier message this turn is an explicit reply to, or empty. Distinct
@@ -3012,6 +3026,30 @@ class ConversationService:
                                 "events",
                                 f"listed:{len(found.events)} dropped:{found.dropped}",
                             )
+                            # Keep the typed records under the person's name so a
+                            # later "send me the links for the salsa night" can
+                            # build grounded links from them instead of trusting
+                            # whatever the model remembers of the words. A store
+                            # failure must not cost the listing, so it is best
+                            # effort here.
+                            try:
+                                from backend.services.last_listing_store import (
+                                    save_last_listing,
+                                )
+
+                                await save_last_listing(
+                                    str(context.get("user_id") or ""),
+                                    listing,
+                                    found.events,
+                                    calendar_base_url=calendar_base_url(
+                                        settings.DISCOVERY_CALENDAR_BASE_URL
+                                    ),
+                                )
+                            except Exception:
+                                logger.warning(
+                                    "last listing not saved",
+                                    exc_info=True,
+                                )
                         else:
                             context["events_format"] = True
                     # Fares get the trip shape first and every price labelled
@@ -3743,6 +3781,7 @@ class ConversationService:
         skill_outcomes = [s.outcome for s in steps if s.kind == "skill"]
         scout_outcomes = [s.outcome for s in steps if s.kind == "scout"]
         run_outcomes = [s.outcome for s in steps if s.kind == "run"]
+        link_outcomes = [s.outcome for s in steps if s.kind == "links"]
         _trace(
             "outcomes",
             [f"{s.kind}:{(s.outcome or {}).get('kind', '')}" for s in steps if s.outcome],
@@ -3767,6 +3806,8 @@ class ConversationService:
             outcomes["scout_schedule_outcomes"] = scout_outcomes
         if run_outcomes:
             outcomes["run_outcomes"] = run_outcomes
+        if link_outcomes:
+            outcomes["event_links"] = link_outcomes
         return outcomes or None
 
     # The person's answer to a run, decided through the runs repository -
@@ -3782,6 +3823,82 @@ class ConversationService:
         except Exception:
             logger.warning("Answering a run failed", exc_info=True)
             return {"kind": "failed"}
+
+    # Deliver the map, calendar and event-page links for the listed events the
+    # person just named. Which events they mean is the picker's judgement
+    # against the last listing this conversation showed; the links themselves
+    # are built by code from the typed records, so nothing is invented. With
+    # no listing on record, or nothing matching what they named, the outcome
+    # says so and the reply asks rather than guessing.
+    async def _apply_event_links(
+        self, user_id: str, action: SendEventLinksAction
+    ) -> dict[str, Any]:
+        try:
+            from backend.services.last_listing_store import load_last_listing
+
+            store = await load_last_listing(user_id)
+        except Exception:
+            logger.warning("loading last listing failed", exc_info=True)
+            store = None
+        if not store:
+            return {"kind": "no_listing"}
+        events = store["events"]
+        items = [
+            {
+                "id": str(index),
+                "name": event.name,
+                "venue": event.venue,
+                "area": event.area,
+            }
+            for index, event in enumerate(events)
+        ]
+
+        def _describe(item: dict[str, Any]) -> str:
+            name = str(item.get("name") or "")
+            where = ", ".join(
+                part for part in (item.get("venue") or "", item.get("area") or "") if part
+            )
+            return f"{name} at {where}" if where else name
+
+        try:
+            from backend.tasks.picker import pick_many
+
+            picker_llm = (
+                self.main_action_selector.llm
+                if self.main_action_selector is not None
+                else self.llm
+            )
+            picked = await pick_many(
+                picker_llm,
+                action.which,
+                items,
+                _describe,
+                hint=str(store.get("rendered") or ""),
+            )
+        except Exception:
+            logger.warning("picking listed events failed", exc_info=True)
+            picked = []
+        if not picked:
+            picked = [
+                index
+                for index, item in enumerate(items)
+                if _name_matches(action.which, item)
+            ]
+        if not picked:
+            return {"kind": "none"}
+        chosen = [
+            events[index]
+            for index in sorted({int(i) for i in picked})
+            if 0 <= int(index) < len(events)
+        ]
+        if not chosen:
+            return {"kind": "none"}
+        from backend.core.event_links import render_links_for
+
+        message = render_links_for(
+            chosen, calendar_base_url=str(store.get("calendar_base_url") or "") or None
+        )
+        return {"kind": "links", "message": message}
 
     # The runs waiting on this person's yes, for the reply to mention and the
     # next turn's router to see in the history; empty when runs are not hosted.
@@ -3922,7 +4039,8 @@ class ConversationService:
             | ManageTasksAction
             | ManageCheckInsAction
             | ManageRunsAction
-            | ScoutScheduleAction,
+            | ScoutScheduleAction
+            | SendEventLinksAction,
         ):
             # The second wall: nothing scheduled or taught changes on a firing.
             if frame.unattended:
@@ -3952,6 +4070,8 @@ class ConversationService:
             return None
         if isinstance(action, SearchAction):
             return "search", await self._search_step(frame, action)
+        if isinstance(action, SendEventLinksAction):
+            return "links", await self._apply_event_links(user_id, action)
         if isinstance(action, RecallHistoryAction):
             return "recall", await self._recall_step(user_id, frame, action)
         if isinstance(action, ToolboxAction):

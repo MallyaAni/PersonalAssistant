@@ -49,6 +49,8 @@ MANAGE_CHECK_INS = "manage_check_ins"
 SCOUT_SCHEDULE = "scout_schedule"
 SAVE_SKILL = "save_skill"
 MANAGE_SKILLS = "manage_skills"
+MANAGE_RUNS = "manage_runs"
+SEND_EVENT_LINKS = "send_event_links"
 NO_TOOL = "none"
 
 TOOL_NAMES: tuple[str, ...] = (
@@ -73,6 +75,8 @@ TOOL_NAMES: tuple[str, ...] = (
     SCOUT_SCHEDULE,
     SAVE_SKILL,
     MANAGE_SKILLS,
+    MANAGE_RUNS,
+    SEND_EVENT_LINKS,
     NO_TOOL,
 )
 
@@ -161,6 +165,35 @@ _EMAIL_DRAFT_HISTORY = (
     (
         "This Saturday, 8am to 7pm. Just one person.",
         "Here is the draft. Would you like a more casual or formal tone?",
+    ),
+)
+
+# A listing just shown, with the offer that replaced the inline links. A
+# follow-up naming events from it is what `send_event_links` exists for.
+_LISTING_HISTORY = (
+    (
+        "what's on this weekend?",
+        "Tomorrow, Sat 6 Sep\n"
+        "\n"
+        "• Salsa Night\n"
+        "  La Fonda\n"
+        "  9pm · price not listed\n"
+        "\n"
+        "• Wine Festival\n"
+        "  Riverview Park\n"
+        "  1pm · price not listed\n"
+        "\n"
+        "Want the map, the calendar link, or the event page for any of these? "
+        "Tell me which and I'll send them.",
+    ),
+)
+
+# A background run parked on the person's permission, so a yes or a no is an
+# answer to it rather than a fresh remark.
+_RUN_WAITING_HISTORY = (
+    (
+        "finish the market report and send the summary",
+        "I need your go-ahead before I send it. Shall I?",
     ),
 )
 
@@ -498,6 +531,53 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     ),
     # Asking what is configured is answered, not changed.
     SelectionCase("what agents do i have scheduled?", NO_TOOL, "agent_config"),
+    # --- links for events from a just-given listing: send_event_links --------
+    # The listing ends by offering links rather than printing them, so a
+    # follow-up naming events from it ("the salsa night", "the second one",
+    # "all of them") is its own tool. Before it existed the request had no way
+    # to be carried out in one turn, and the assistant answered as though it had.
+    SelectionCase(
+        "send me the links for the salsa night",
+        SEND_EVENT_LINKS,
+        "listed_event_links",
+        history=_LISTING_HISTORY,
+    ),
+    SelectionCase(
+        "can you get me the map and calendar for the second one",
+        SEND_EVENT_LINKS,
+        "listed_event_links",
+        history=_LISTING_HISTORY,
+    ),
+    SelectionCase(
+        "share the links for all of them",
+        SEND_EVENT_LINKS,
+        "listed_event_links",
+        history=_LISTING_HISTORY,
+    ),
+    # A request for a reminder about a listed event is not a links request.
+    SelectionCase(
+        "remind me about the second one",
+        SCHEDULE_TASK,
+        "task_create",
+        history=_LISTING_HISTORY,
+    ),
+    # --- the person's say over background runs: manage_runs ------------------
+    # A yes or a no that answers a run waiting for permission, or a question
+    # about what is running. These cases were missing entirely when the tool
+    # shipped, so the matrix could not see whether the router ever chose it.
+    SelectionCase(
+        "yes go ahead",
+        MANAGE_RUNS,
+        "run_answer",
+        history=_RUN_WAITING_HISTORY,
+    ),
+    SelectionCase(
+        "no, don't send that",
+        MANAGE_RUNS,
+        "run_answer",
+        history=_RUN_WAITING_HISTORY,
+    ),
+    SelectionCase("what's running in the background?", MANAGE_RUNS, "run_status"),
     # --- short answers continue the writing task already in progress --------
     SelectionCase(
         "This Saturday, 8am to 7pm",
@@ -848,6 +928,15 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     SCOUT_SCHEDULE: 0.80,
     SAVE_SKILL: 0.66,
     MANAGE_SKILLS: 0.66,
+    # Measured 9/9 on 2026-09-05 (three phrasings x 3, evaluate_tool_selection
+    # --expected manage_runs: run_answer 6/6, run_status 3/3) the day coverage
+    # was added. Held below the measurement so one wobble on a small router
+    # cannot fail a deploy that changed nothing about runs.
+    MANAGE_RUNS: 0.66,
+    # Measured 9/9 on 2026-09-05 (three phrasings x 3, evaluate_tool_selection
+    # --expected send_event_links: listed_event_links 9/9) the day coverage
+    # was added. Held below for the same reason.
+    SEND_EVENT_LINKS: 0.66,
     # Lowered from 0.85 to the measured 0.47 on 2026-08-23, deliberately and
     # not silently. Adding `reschedule` moved the four agent_config cases -
     # Scout's own sweep schedule - from no-tool to manage_tasks, and no wording

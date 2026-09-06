@@ -151,6 +151,20 @@ class ManageTasksAction:
 
 
 @dataclass(frozen=True, slots=True)
+class SendEventLinksAction:
+    """The model decided this turn wants links for events it already listed.
+
+    The listing now ends by offering the map, the calendar link or the event
+    page rather than printing them, and this is the follow-up that delivers:
+    `which` names the events the person means, resolved by the picker against
+    the last listing this conversation showed, and the links are built by
+    code from the typed records so nothing is invented.
+    """
+
+    which: str
+
+
+@dataclass(frozen=True, slots=True)
 class ScoutScheduleAction:
     """The model decided this turn sets when Scout's own sweep runs.
 

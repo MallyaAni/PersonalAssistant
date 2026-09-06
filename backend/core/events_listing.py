@@ -9,9 +9,8 @@ Now the model's part is over before this runs: it quoted, the extractor
 checked the quotations against the results, and what arrives here is a set of
 records whose every field some page actually stated
 (`backend/core/event_extraction.py`). This module turns those into the lines a
-person reads, and builds the links itself from the venue and the act - search
-boxes, not destinations, which is the one kind of address code can honestly
-construct (`backend/core/links.py`).
+person reads. The links the listing offers are built from the same records, on
+request, in `backend/core/event_links.py`.
 
 The count of what was dropped is part of the listing, not a footnote. "Nothing
 is on this week" and "four things turned up and none of them said when" are
@@ -25,7 +24,6 @@ from datetime import UTC, date, datetime, time
 
 from backend.core.event_extraction import Extraction, ListedEvent
 from backend.core.event_window import Window
-from backend.core.links import calendar_link, ics_link, maps_search, youtube_search
 
 # Longer than a phone shows at a glance, and past the point where a listing
 # stops being read. The rest is offered rather than printed.
@@ -100,7 +98,7 @@ def render_listing(
             if lines:
                 lines.append("")
             lines.append(_day_heading(day, moment))
-        lines.extend(_event_lines(event, calendar_base_url))
+        lines.extend(_event_lines(event))
     tail = _dropped_line(
         extraction,
         len(candidates) - len(events) - outside,
@@ -110,7 +108,16 @@ def render_listing(
     )
     if tail:
         lines.extend(["", tail])
-    lines.extend(["", "Tap Add on any of them, or tell me which one and I'll set a reminder."])
+    # The links are offered, not printed: a weekend answer used to carry a row
+    # of them under every event, and the content drowned. They come on request,
+    # as one follow-up, through the send_event_links tool.
+    lines.extend(
+        [
+            "",
+            "Want the map, the calendar link, or the event page for any of these? "
+            "Tell me which and I'll send them.",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -128,7 +135,10 @@ def _day_heading(day: date | None, now: datetime) -> str:
     return f"{day.strftime('%a')} {day.day} {day.strftime('%b')}"
 
 
-def _event_lines(event: ListedEvent, calendar_base_url: str | None = None) -> list[str]:
+# The lines a person reads for one event. The links are deliberately not
+# here: they are offered at the end of the listing and sent on request, built
+# by backend/core/event_links.py from the same typed records.
+def _event_lines(event: ListedEvent) -> list[str]:
     headline = event.name
     if event.artist and event.artist.casefold() not in event.name.casefold():
         headline = f"{headline} — {event.artist}"
@@ -141,26 +151,6 @@ def _event_lines(event: ListedEvent, calendar_base_url: str | None = None) -> li
     detail = " · ".join(part for part in (_when(event), _price(event)) if part)
     if detail:
         lines.append(f"  {detail}")
-    subject = " ".join(part for part in (event.venue, event.area) if part)
-    lines.append(f"  [Map]({maps_search(subject)})")
-    # One tap and it is in their calendar, with the name, the time and the
-    # place already filled in. The listing used to end by asking "want any of
-    # these in your calendar?" and then have no way to do it, which is the
-    # kind of offer that makes an assistant feel like a brochure.
-    #
-    # A native .ics is the "Add to iMessage calendar" mechanism, and the
-    # Google prefill is its web counterpart; both are grounded templates so
-    # the link fence keeps them. The native one needs a base to point at, so
-    # it is only offered where the caller can supply one.
-    lines.append(f"  [Add to Google calendar]({calendar_link(event.name, event.starts_at, location=subject)})")
-    if calendar_base_url:
-        lines.append(
-            f"  [Add to iMessage calendar]({ics_link(calendar_base_url, event.name, event.starts_at, location=subject)})"
-        )
-    if event.artist:
-        lines.append(f"  [Hear it]({youtube_search(event.artist)})")
-    if event.source_url:
-        lines.append(f"  [Details]({event.source_url})")
     return lines
 
 

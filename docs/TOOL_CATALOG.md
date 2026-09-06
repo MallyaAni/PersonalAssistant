@@ -50,6 +50,13 @@ outcome and means the turn is answered as an ordinary reply.
 | `edit_document` | Rewrite a Word file the user shared earlier in this conversation with revised text, keeping the file's own look - its fonts, colours, header, logo, and page setup - and hand the updated file back | `body_markdown`, `format`, `title` | catalogued | `write` · `expensive` |
 
 
+## Events
+
+| tool | what it does | arguments | loaded | effect |
+| --- | --- | --- | --- | --- |
+| `send_event_links` | Sends the map, calendar and event-page links for events already shown in a listing, for exactly the ones the person asks about - 'send me the links for the salsa night', 'maps for the first two', 'share the calendar for all of them' | `which` | always | `read` · `fast` |
+
+
 ## Memory
 
 | tool | what it does | arguments | loaded | effect |

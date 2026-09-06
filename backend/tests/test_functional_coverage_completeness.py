@@ -29,6 +29,7 @@ JOURNEY_EXEMPT = {
     "Edits to a shared file": "needs a Word file shared in the conversation; the sweep uploads nothing - walked by the live acceptance (scripts kept on the Spark) and the router functional test",
     "Presentations": "a deck build runs minutes in the presentation worker; frontend/e2e/presentations.spec.ts walks it",
     "Background runs": "needs a run parked on an approval, which the sweep cannot stage over HTTP; the router and reply are walked by functional/test_run_answers_behaviour.py and the answer path by test_run_answers.py on the real schema",
+    "Send links for listed events": "needs a listing rendered in a prior turn, which the sweep cannot stage over HTTP; the router and picker are walked by functional/test_send_event_links_behaviour.py",
 }
 
 

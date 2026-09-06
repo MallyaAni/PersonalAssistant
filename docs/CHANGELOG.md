@@ -2,6 +2,52 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - The events listing offers links instead of printing them, and the follow-up delivers them (NOT DEPLOYED)
+
+A weekend answer used to carry a row of links under every event - the map,
+two calendar links, a "hear it" search and the source page, forty links
+before any content. The listing now ends by offering the map, the calendar
+link or the event page, and the follow-up sends them for exactly the events
+the person names. The scheduled Scout digest is untouched: it always sent
+one bubble with its own links.
+
+**The listing is clean.** `backend/core/events_listing.py` no longer inlines
+per-event links; the offer is one sentence at the end. The per-event links
+moved to `backend/core/event_links.py`, the same grounded builders, called on
+request.
+
+**The offer is kept.** `send_event_links` (`backend/tools/send_event_links.py`,
+a new built-in row) is picked by the router when a follow-up asks for links
+for events from a listing. Which events the person means is resolved by the
+existing picker (`pick_many`) against the last listing this conversation
+showed, kept per user in Redis as typed records with a 72-hour TTL
+(`backend/services/last_listing_store.py`) - so nothing is rebuilt from what
+the model remembers of the words. The links are built by code from the typed
+records, so the link fence still holds. With no listing on record, or nothing
+matching what they named, the reply asks rather than guesses. Read-only,
+fast, withheld from a scheduled firing, and refused as a duplicate within a
+turn.
+
+**Measured.** Routing matrix, evaluate_tool_selection 3 reps: send_event_links
+9/9, floor 0.66 (one miss below). `functional/test_send_event_links_behaviour.py`
+on the real models: the router sent "send me the links for the sunset
+session" to send_event_links with `which='the sunset session'`, and the
+picker resolved "the sunset session at potato head" to the right record and
+built grounded links for it - not the first in the list.
+
+**The same coverage gap fixed for manage_runs.** `test_tool_coverage_completeness.py`
+was already red at HEAD: `manage_runs` (Phase 3) shipped with no TOOL_NAMES
+entry, no cases, no floor and no `_ACTION_TOOL` mapping - the exact
+self-concealing omission that test exists to catch. Coverage added the same
+day; measured 9/9 (run_answer 6/6, run_status 3/3), floor 0.66.
+
+Unit: events_listing 17, event_links 4, last_listing_store 5, send_event_links 3,
+tool coverage/catalogue wiring green; discovery, tools and reply suites 600
+passed.
+
+Diagram impact: NONE (no component, agent or store is added or removed; the
+last listing rides the per-user Redis the application already reaches).
+
 ## 2026-09-05 - A hard constraint filters a result; a preference only reorders (NOT DEPLOYED)
 
 Phase 4's remaining slice (D7 `constraints`). Until now everything known

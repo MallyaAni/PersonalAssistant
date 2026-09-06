@@ -46,9 +46,11 @@ from backend.services.main_action_selector import (
     ManageSkillsAction,
     ManageTasksAction,
     ManageCheckInsAction,
+    ManageRunsAction,
     ScoutScheduleAction,
     SaveSkillAction,
     ScheduleTaskAction,
+    SendEventLinksAction,
     RecallHistoryAction,
     SearchAction,
     ShowImageAction,
@@ -92,6 +94,8 @@ _ACTION_TOOL = {
     # Absent again for search_history (2026-08-25): the tool shipped and
     # the gap-catcher caught it.
     RecallHistoryAction: "search_history",
+    ManageRunsAction: "manage_runs",
+    SendEventLinksAction: "send_event_links",
 }
 
 

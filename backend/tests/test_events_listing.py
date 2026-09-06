@@ -49,6 +49,19 @@ def test_every_address_in_the_listing_is_one_code_could_build_or_a_source_gave()
         assert cleaned in sources or template_is_grounded(cleaned, EVIDENCE), cleaned
 
 
+def test_the_listing_offers_links_instead_of_printing_them():
+    # A weekend answer used to carry a row of links under every event - forty
+    # links before any content. The listing now ends by offering them, and
+    # sends them on request (backend/core/event_links.py). The offer is one
+    # sentence at the end, not a link per event.
+    text = render_listing(Extraction((_lawn(), _potato())), NOW)
+    assert "[Map](" not in text
+    assert "calendar.google.com" not in text
+    assert "youtube.com" not in text
+    assert "Tell me which and I'll send them." in text
+    assert text.index("Tell me which") > text.index(_potato().name)
+
+
 def test_a_dropped_count_is_said_out_loud():
     # "Nothing is on" and "four turned up and none said when" are different
     # answers. A listing that shows two and stays quiet about four is the
@@ -58,24 +71,23 @@ def test_a_dropped_count_is_said_out_loud():
     assert "opening hours" in text
 
 
-def test_every_event_carries_a_one_tap_calendar_link():
-    # The listing used to end by asking "want any of these in your calendar?"
-    # and then have no way to do it. An offer an assistant cannot fulfil is
-    # worse than no offer. A dated event now carries both a Google prefill and
-    # a native .ics (the "Add to iMessage calendar" tap).
-    text = render_listing(
-        Extraction((_lawn(),)),
-        NOW,
+def test_the_link_follow_up_carries_grounded_calendar_links():
+    # The listing's offer sends links on request, from the same typed records
+    # through backend/core/event_links.py. The dated event must carry the
+    # Google prefill and the native .ics (the "Add to iMessage calendar" tap),
+    # both built by code so the link fence keeps them.
+    from backend.core.event_links import render_links_for
+
+    text = render_links_for(
+        (_lawn(),),
         calendar_base_url="https://deep-matter.com/api/v1/discovery",
     )
-    assert "[Add to Google calendar](https://calendar.google.com/calendar/render?action=TEMPLATE" in text
+    assert "[Calendar](https://calendar.google.com/calendar/render?action=TEMPLATE" in text
     assert "text=Sunday+Sessions" in text
     assert "dates=20260830T160000Z" in text
     assert "location=The+Lawn+Batu+Bolong" in text
-    # The native .ics for a listing event points at the public builder route.
     assert "[Add to iMessage calendar](https://deep-matter.com/api/v1/discovery/ics/event?" in text
     assert "title=Sunday+Sessions" in text
-    # And it is grounded, so the link fence keeps it.
     assert template_is_grounded(
         [
             url
@@ -86,20 +98,28 @@ def test_every_event_carries_a_one_tap_calendar_link():
     )
 
 
-def test_a_listing_event_without_a_calendar_base_offers_only_google():
+def test_a_link_follow_up_without_a_calendar_base_offers_only_google():
     # Without a base to point a .ics at, the native link cannot be offered —
     # a link to a bare route would resolve on the wrong origin. The Google
     # prefill always works, so it always appears.
-    text = render_listing(Extraction((_lawn(),)), NOW)
-    assert "[Add to Google calendar](" in text
-    assert "[Add to iMessage calendar](" not in text
+    from backend.core.event_links import event_link_lines
+
+    links = "\n".join(event_link_lines(_lawn()))
+    assert "[Calendar](" in links
+    assert "[Add to iMessage calendar](" not in links
 
 
 def test_an_event_with_no_clock_time_gets_an_all_day_calendar_entry():
     # Never an invented start: a day nobody gave an hour for is an all-day
     # entry, which is what the source actually asserted.
-    text = render_listing(Extraction((_potato(start_time=None, starts_at=datetime(2026, 9, 5, 0, 0, tzinfo=UTC)),)), NOW)
-    assert "dates=20260905%2F20260906" in text, text
+    from backend.core.event_links import event_link_lines
+
+    lines = "\n".join(
+        event_link_lines(
+            _potato(start_time=None, starts_at=datetime(2026, 9, 5, 0, 0, tzinfo=UTC))
+        )
+    )
+    assert "dates=20260905%2F20260906" in lines, lines
 
 
 def test_a_clean_listing_says_nothing_about_drops():

@@ -743,6 +743,38 @@ def _render_scout_schedule_outcomes(outcomes: list[dict[str, Any]]) -> str:
     return "".join(_render_scout_schedule_outcome(outcome) for outcome in outcomes)
 
 
+# The event links this turn delivered, as the exact block the reply relays
+# verbatim. The links were built by code from typed records, so the reply must
+# not rewrite, re-order or invent any of them - the person asked for the links
+# and should get the links.
+def _render_event_links(outcomes: list[dict[str, Any]]) -> str:
+    if not outcomes:
+        return ""
+    lines: list[str] = []
+    for outcome in outcomes:
+        kind = str(outcome.get("kind") or "")
+        if kind == "links":
+            lines.append(
+                "Event links, exactly as built - relay them verbatim, one bubble, "
+                "no commentary:\n"
+                f"{outcome.get('message')}\n"
+            )
+        elif kind == "no_listing":
+            lines.append(
+                "- The person asked for links to listed events, but no listing "
+                "from this conversation is on record. Say you can't find the "
+                "list and offer to look again; do not invent events or links.\n"
+            )
+        elif kind == "none":
+            lines.append(
+                "- The person asked for links, but none of the listed events "
+                "matched what they named. Briefly restate the events that were "
+                "listed and ask which one they meant; do not send links for "
+                "something they did not point at.\n"
+            )
+    return "".join(lines) + "\n"
+
+
 # A recalled memory with the day it was noted, so the reply can weigh it
 # against today's date: "going to trivia today" noted on a Wednesday is not
 # a plan for Thursday. Without the day, the model had no way to tell.
@@ -931,6 +963,7 @@ def _build_turn_context(
         _render_scout_schedule_outcomes(
             _outcome_list(context_data, "scout_schedule_outcome")
         ),
+        _render_event_links(_outcome_list(context_data, "event_link")),
         _render_skill_context(context_data),
         _render_handed_off(context_data.get("handed_off") or {}),
         _render_run_context(context_data),

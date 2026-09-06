@@ -19,6 +19,7 @@ from . import (
     edit_image,
     generate_image,
     manage_check_ins,
+    manage_runs,
     manage_skills,
     manage_tasks,
     presentation,
@@ -26,8 +27,8 @@ from . import (
     schedule_task,
     scout_schedule,
     search_history,
+    send_event_links,
     show_image,
-    manage_runs,
 )
 from .actions import (
     CreateDiagramAction,
@@ -39,6 +40,7 @@ from .actions import (
     GenerateImageAction,
     MainAction,
     ManageCheckInsAction,
+    ManageRunsAction,
     ManageSkillsAction,
     ManageTasksAction,
     RecallHistoryAction,
@@ -46,10 +48,10 @@ from .actions import (
     ScheduleTaskAction,
     ScoutScheduleAction,
     SearchAction,
+    SendEventLinksAction,
     ShowImageAction,
     ToolboxAction,
     UseSkillAction,
-    ManageRunsAction,
 )
 from .base import BuiltinTool
 from .contracts import UNDECLARED, EffectContract
@@ -86,6 +88,7 @@ _MODULES: tuple[ModuleType, ...] = (
     save_skill,
     manage_skills,
     manage_runs,
+    send_event_links,
 )
 
 # Rows whose availability depends on a service being wired, by name.
@@ -140,7 +143,9 @@ AUTOMATION_TOOLS: frozenset[str] = frozenset(
 # history recall, "Remind me to stretch" in a thread with earlier turns was
 # routed to it and answered with "when would you like that reminder?"
 # (2026-08-26, found by exercise_search_scenarios).
-UNATTENDED_WITHHELD: frozenset[str] = AUTOMATION_TOOLS | frozenset((search_history.NAME,))
+UNATTENDED_WITHHELD: frozenset[str] = AUTOMATION_TOOLS | frozenset(
+    (search_history.NAME, send_event_links.NAME)
+)
 # Withheld when the newest message is about a draft - text being written
 # together. A draft is not a picture: "make it more casual" after a drafted
 # email was routed to edit_image (deploy #12's sweep, 2026-08-28) and, in an
@@ -257,6 +262,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     EditDocumentAction: edit_document.TOOL,
     DelegateAction: presentation.TOOL,
     RecallHistoryAction: search_history.TOOL,
+    SendEventLinksAction: send_event_links.TOOL,
     ScheduleTaskAction: schedule_task.TOOL,
     ManageTasksAction: manage_tasks.TOOL,
     ManageCheckInsAction: manage_check_ins.TOOL,
@@ -279,6 +285,8 @@ def _detail(action: MainAction) -> str:
         return action.about
     if isinstance(action, RecallHistoryAction):
         return action.query
+    if isinstance(action, SendEventLinksAction):
+        return action.which
     if isinstance(action, CreateDiagramAction | DelegateAction):
         return action.subject
     if isinstance(action, CreateDocumentAction | EditDocumentAction):
