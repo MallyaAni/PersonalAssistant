@@ -775,6 +775,11 @@ services:
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       - AUTH_REQUIRED=${AUTH_REQUIRED:-true}
       - AUTH_LOCAL_USER_ID=${AUTH_LOCAL_USER_ID:-ani.mallya}
+      # Whose desk it is. This service takes an explicit environment list
+      # and no env_file, so a value only present in .env never reaches the
+      # container: without this line the setting falls back to its code
+      # default and the Desk view answers 403 to the actual operator.
+      - MARKET_DESK_USER=${MARKET_DESK_USER:-${AUTH_LOCAL_USER_ID:-ani.mallya}}
       - AUTH_SESSION_TTL_HOURS=${AUTH_SESSION_TTL_HOURS:-168}
       - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false}
       - AUTH_COOKIE_SAMESITE=${AUTH_COOKIE_SAMESITE:-lax}

@@ -1923,7 +1923,19 @@ export const getDesk = async (userId: string): Promise<DeskPayload> => {
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`,
   );
   if (!response.ok) {
-    throw new Error('Could not load the desk.');
+    // One red string for every failure cost an afternoon once: a 403 from
+    // the operator check and a 500 from an unreadable record look the same
+    // on screen, and they are fixed in different places. Say which.
+    if (response.status === 403) {
+      throw new Error(
+        'The desk belongs to one account. The server does not think this is it '
+          + '- check MARKET_DESK_USER in the deployment environment.',
+      );
+    }
+    if (response.status === 401) {
+      throw new Error('Signed out. Sign in again to read the desk.');
+    }
+    throw new Error(`Could not load the desk (HTTP ${response.status}).`);
   }
   return (await response.json()) as DeskPayload;
 };

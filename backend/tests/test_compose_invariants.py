@@ -63,3 +63,28 @@ def test_every_service_survives_a_reboot(name: str):
 @pytest.mark.parametrize("name", sorted(_always_on()))
 def test_every_service_has_a_stable_container_name(name: str):
     assert _always_on()[name].get("container_name"), name
+
+
+# Settings the backend reads at request time and cannot fall back on. A
+# service with an explicit `environment:` list and no `env_file:` receives
+# exactly what that list names: a value present only in `.env` on the host
+# never reaches the container, and the code silently uses its own default.
+# `MARKET_DESK_USER` did that. Its default is "operator", the desk belongs
+# to a named account, and every request to the Desk view answered 403 while
+# `.env` on the deployment said the right thing all along.
+_MUST_REACH_THE_BACKEND = ("MARKET_DESK_USER", "AUTH_LOCAL_USER_ID")
+
+
+@pytest.mark.parametrize("name", _MUST_REACH_THE_BACKEND)
+def test_the_backend_is_handed_the_settings_it_cannot_default(name: str):
+    backend = _services().get("backend")
+    assert backend, "the compose file has no backend service"
+    assert "env_file" not in backend, (
+        "the backend takes an explicit environment list; adding env_file here "
+        "would change what this test means"
+    )
+    listed = backend.get("environment") or []
+    assert any(str(entry).split("=", 1)[0] == name for entry in listed), (
+        f"{name} is not passed to the backend container, so the code falls "
+        f"back to its own default no matter what .env on the host says"
+    )
