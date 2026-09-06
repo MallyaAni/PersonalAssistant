@@ -33,6 +33,39 @@ families were measured, not the whole matrix - re-run `evaluate_tool_selection
 Diagram impact: NONE (no component added; the last listing rides the Redis
 the app already reaches).
 
+## 2026-09-06 (night) — the 15-minute bars on entry days: fills and structure (NO CODE CHANGE)
+
+Continues the entry below it. The last open intraday question, measured
+on 9,968 entry days (grade A or better plus a dip or breakout trigger at
+the prior close) across all 90 names with a full 15-minute session, from
+the Alpaca bars in the store (scratch script `fill_study.py`).
+
+**Fills.** Against the session VWAP: the open -1.1 bp, 10:30 -2.4, a
+pullback to the 15-minute 21 EMA +1.4 (it happens on 83% of entry days
+but sits above the open on down-gap days), a break of the first bar's
+high +0.9, the close +2.5. On dip-entry days the first hour dips further
+(10:30 is 3 bp under the open, the close 19 bp over it); on breakout days
+nothing separates any fill. The 20-session return from every fill is
+within noise of the return from the open (every t against the open below
+1.1; the close on dip days is the one worse fill, t -1.9). Execution
+timing on the entry day is worth a few basis points against an expected
+move of 3.3% over 20 sessions: the backtest's next-open assumption stands,
+and a 10:30 entry on dip days is the only thing worth doing differently.
+
+**Structure as information.** Whether the entry day closed above its
+15-minute 21 EMA: all entries +3.49% vs +3.01% over the next 20 sessions
+(t 1.5); breakout entries +3.50% vs +2.91% (t 1.7); dip entries no
+difference (t 0.0), and on dip days a close below the open is followed by
+more (+3.99% vs +2.86%), the bounce not yet having happened. The
+operator's read that the 15-minute trend lines are worth respecting is
+mildly true on breakout entries and not on dips; at t 1.7 it does not
+enter a rule. The 15-minute layer is closed: session features, the tape
+encoder, fills and entry-day structure have all been measured.
+
+**Next atomic task.** A desk narrative prompt with a functional test if
+the operator wants the reasoning in words; otherwise the desk is complete
+as measured, and the work is running it daily and re-calibrating monthly.
+
 ## 2026-09-06 (later) — the defaults now say what the backtests said (PUSHED, NOT DEPLOYED)
 
 Continues the entry below it. The operator asked "have you implemented
