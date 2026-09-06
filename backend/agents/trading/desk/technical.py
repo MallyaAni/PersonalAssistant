@@ -68,7 +68,7 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
     idx = {n: i for i, n in enumerate(technical.TECHNICAL_NAMES)}
     loc = levels.level_features(panel)
     lidx = {n: i for i, n in enumerate(levels.LEVEL_NAMES)}
-    momentum = baselines.momentum(panel, MOMENTUM_SESSIONS, MOMENTUM_SKIP)
+    momentum = baselines.residual_momentum(panel, MOMENTUM_SESSIONS, MOMENTUM_SKIP)
     weekly = loc[:, :, lidx["weekly_trend"]]
     daily = loc[:, :, lidx["daily_trend"]]
     range_position = loc[:, :, lidx["range_position_60"]]
@@ -88,5 +88,5 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
         scores = np.where(up[:, None], rising, falling)
     evidence = {n: feats[:, :, idx[n]].astype(float) for n in CITED}
     evidence.update({n: loc[:, :, lidx[n]] for n in LOCATION_CITED})
-    evidence["momentum_120"] = momentum
+    evidence["residual_momentum_120"] = momentum
     return Opinion(NAME, scores, evidence)
