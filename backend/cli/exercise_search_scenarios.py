@@ -147,11 +147,19 @@ class Scenarios:
                 # other (backend/core/events_listing.py); the older markers
                 # stay for the prose fallback.
                 priced = any(mark in lowered for mark in ("price", "free", "$"))
+                # The listing offers the links rather than printing them
+                # (2026-09-05, backend/core/event_links.py): a wall of map,
+                # calendar and page URLs before any content was worse to read,
+                # and the links are sent on request from the same typed
+                # records. This check demanded a printed map URL until
+                # 2026-09-06 and failed every deploy after that change, while
+                # the listing was behaving exactly as intended.
+                offered = "want the map" in lowered
                 self.verdict(
                     "1b events are presented in the What's on format",
-                    "maps.google.com/?q=" in lowered and priced,
-                    f"map={'maps.google.com/?q=' in lowered} price={priced} "
-                    f"youtube={'youtube.com/results?search_query=' in lowered}",
+                    offered and priced,
+                    f"offers links={offered} price={priced} "
+                    f"printed map={'maps.google.com/?q=' in lowered}",
                 )
 
                 r = await self.chat(client, "try again")
