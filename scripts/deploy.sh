@@ -28,6 +28,12 @@
 # not evidence that anything works.
 
 set -euo pipefail
+
+# See scripts/gate.sh: Git Bash rewrites the paths inside a `-v` argument and
+# docker then creates a host directory named after the mangled result. This
+# script mounts migrations/ the same way. A no-op on Linux, where deploys run.
+export MSYS2_ARG_CONV_EXCL='*'
+export MSYS_NO_PATHCONV=1
 # A silent death names its line. Deploys #6-#8 (2026-08-27/28) ended at the
 # post-deploy step with nothing in the log; whatever the cause, the next one
 # says where it stopped and with what status.

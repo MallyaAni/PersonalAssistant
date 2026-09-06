@@ -32,6 +32,15 @@
 
 set -euo pipefail
 
+# Git Bash on Windows rewrites anything inside an argument that looks like a
+# Unix path, so `-v "$root/backend:/app/backend:ro"` reaches docker as
+# `-v ...backend;C:\...\app\backend;ro`. Docker takes that as a host path and
+# creates a directory literally named `backend;C` beside the checkout - one
+# per mount, eight of them on 2026-09-06, and a `backups;B` from an earlier
+# session that sat there for two weeks. Unset on Linux, where this is a no-op.
+export MSYS2_ARG_CONV_EXCL='*'
+export MSYS_NO_PATHCONV=1
+
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml" --profile test)
 
