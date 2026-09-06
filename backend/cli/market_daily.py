@@ -14,7 +14,8 @@ can be read back later exactly as it was seen.
 
 import argparse
 import json
-from datetime import UTC, date, datetime
+import shutil
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from backend.agents.trading.desk import desk as trading_desk
@@ -28,6 +29,10 @@ from backend.market.store import MarketStore
 from backend.market.universe import MARKET_BENCHMARK, book_sides, build_universe
 
 DESK_KIND = "desk"
+# The layers a day re-fetches in full, so old partitions of them are
+# only copies of what a newer one holds. Tone is never pruned: every
+# score in it cost a model call, and desk records are the track record.
+PRUNABLE = ("bars", "actions", "edgar_events", "edgar_facts")
 
 
 # Build the CLI parser.
@@ -47,6 +52,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--brief", nargs="*", default=[], help="tickers to write briefs for"
     )
     parser.add_argument("--top", type=int, default=25)
+    parser.add_argument(
+        "--brief-book",
+        action="store_true",
+        help="write briefs for every name in today's book",
+    )
+    parser.add_argument(
+        "--prune-days",
+        type=int,
+        default=0,
+        help="drop bar and filing partitions older than this many days (0 keeps all)",
+    )
     return parser
 
 
@@ -104,6 +120,32 @@ def refresh(
         print(f"tone: not scored ({type(exc).__name__}: {exc}); earlier scores carry")
         return
     print(f"tone: {scored} new releases scored")
+
+
+# Drop partitions of the re-fetched layers older than `days`, keeping the
+# newest partition of each layer whatever its age.
+def prune(root: Path, asof: date, days: int) -> list[Path]:
+    """Remove old bar and filing partitions; return what was removed."""
+    if days <= 0:
+        return []
+    cutoff = asof - timedelta(days=days)
+    removed: list[Path] = []
+    for kind in PRUNABLE:
+        base = Path(root) / kind
+        if not base.exists():
+            continue
+        partitions = sorted(
+            p for p in base.iterdir() if p.is_dir() and p.name.startswith("asof=")
+        )
+        for p in partitions[:-1]:
+            try:
+                stamp = date.fromisoformat(p.name[len("asof=") :])
+            except ValueError:
+                continue
+            if stamp < cutoff:
+                shutil.rmtree(p)
+                removed.append(p)
+    return removed
 
 
 # The day's record, as plain data.
@@ -212,11 +254,19 @@ def main() -> None:
     _print_grades(report, args.top)
     _print_book(report)
     briefs: dict[str, dict] = {}
-    if args.brief:
+    wanted = list(args.brief)
+    if args.brief_book:
+        wanted += [
+            s.position.ticker for s in report.book if s.position.ticker not in wanted
+        ]
+    if wanted:
         readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
-        briefs = briefs_for(report, args.brief, DeskNarrator(readers[0].writer))
+        briefs = briefs_for(report, wanted, DeskNarrator(readers[0].writer))
     path = save(Path(store.root), record(report, briefs))
     print(f"\nrecord written: {path}")
+    removed = prune(Path(store.root), asof, args.prune_days)
+    if removed:
+        print(f"pruned {len(removed)} old partitions")
 
 
 if __name__ == "__main__":

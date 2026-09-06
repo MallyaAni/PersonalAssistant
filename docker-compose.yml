@@ -1017,6 +1017,9 @@ services:
       # so a missing mount reads as "image search is off" with nothing logged.
       # Read-only: nothing should ever write here.
       - ./data/models:/app/data/models:ro
+      # The trading desk's daily records, written by market_daily on the host
+      # after each close; the Desk view reads them and nothing else.
+      - ./data/market/desk:/app/data/market/desk:ro
       - artifactdata:/app/data/artifacts
       - searchdata:/app/data/search
       # Context measurements accumulate across rebuilds here; docker logs do

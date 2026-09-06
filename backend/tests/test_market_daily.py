@@ -131,6 +131,29 @@ def test_record_and_save(tmp_path):
     assert json.loads(path.read_text(encoding="utf-8"))["session"] == "2026-09-03"
 
 
+# Pruning drops old bar and filing partitions but never the newest one of
+# a layer, never tone, and never the desk records.
+def test_prune_keeps_newest_tone_and_records(tmp_path):
+    for kind, stamps in (
+        ("bars", ("2026-07-01", "2026-08-30", "2026-09-06")),
+        ("edgar_tone", ("2026-07-01",)),
+        ("desk", ("2026-07-01",)),
+        ("edgar_facts", ("2026-06-01",)),
+    ):
+        for stamp in stamps:
+            (tmp_path / kind / f"asof={stamp}").mkdir(parents=True)
+    removed = market_daily.prune(tmp_path, date(2026, 9, 6), 30)
+    assert [p.name for p in removed] == ["asof=2026-07-01"]
+    assert sorted(p.name for p in (tmp_path / "bars").iterdir()) == [
+        "asof=2026-08-30",
+        "asof=2026-09-06",
+    ]
+    assert (tmp_path / "edgar_tone" / "asof=2026-07-01").exists()
+    assert (tmp_path / "desk" / "asof=2026-07-01").exists()
+    assert (tmp_path / "edgar_facts" / "asof=2026-06-01").exists()  # the newest
+    assert market_daily.prune(tmp_path, date(2026, 9, 6), 0) == []
+
+
 # A new day's tone refresh starts from the scores already stored, so only
 # unseen releases are scored; a different prompt version starts over.
 def test_prior_tone_records_carry_forward(tmp_path):
