@@ -161,8 +161,10 @@ async def saved_after(session: AsyncSession, turn: Turn, owners: tuple[str, ...]
     ]
 
 
-# The turns as the judge is shown them: numbered, dated, with the record.
-def render_turns(turns: list[Turn]) -> str:
+# The turns as the judge is shown them: numbered, dated, with the record,
+# and beneath each the facts the assistant saved from it, by id, so the
+# judge can say which should not stand.
+def render_turns(turns: list[Turn], saved: dict[int, list[Saved]] | None = None) -> str:
     lines: list[str] = []
     for turn in turns:
         when = turn.when.strftime("%a %d %b %H:%M") if turn.when else "?"
@@ -176,4 +178,6 @@ def render_turns(turns: list[Turn]) -> str:
         else:
             lines.append("  reply: (none)")
         lines.append(f"  record: {turn.record()}")
+        for item in (saved or {}).get(turn.number, []):
+            lines.append(f"  saved from this exchange: [{item.id}] {' '.join(item.content.split())[:200]}")
     return "\n".join(lines)

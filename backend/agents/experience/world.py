@@ -23,7 +23,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any, Callable
 
-from backend.agents.experience.prompts import ExperiencePrompts, Finding, Judgement
+from backend.agents.experience.prompts import ExperiencePrompts, Finding, Forget, Judgement
 from backend.agents.experience.sources import Saved, Turn, render_turns, rooms_of, saved_after, turns_since
 from backend.runs.worlds import Verification
 from backend.services.turn_steps import Act, Decision, Done, TurnResult, Unavailable
@@ -33,12 +33,12 @@ KIND = "experience_review"
 MAX_STEP_ATTEMPTS = 3
 # How far back a review reads when the objective names no start.
 DEFAULT_WINDOW_HOURS = 24
-# Friction kinds whose turn's saved memories are proposed for forgetting:
-# what a misread or a corrected exchange taught the assistant is suspect. A
-# wrong subject is a routing fault, not a wrong lesson, and is not here: the
-# first live run proposed forgetting a picture's description because the
-# turn beside it was misrouted (2026-09-05).
-FORGETTABLE_KINDS = frozenset({"correction", "unresolved_reference", "wrong_memory"})
+# The saved facts the judge is shown are those written near any exchange;
+# which of them should not stand is the judge's verdict, fact by fact. The
+# first design proposed forgetting everything saved near a flagged exchange,
+# and swept up "Ani is with Gubacchi" for being saved a minute before the
+# exchange it was judged on (the operator asked why, 2026-09-06). Proximity
+# now decides only what is shown; the judgement decides what goes.
 # Only what the person stated about themself may be proposed for forgetting.
 # A memory derived from a picture is the index that lets a later turn find
 # that picture; forgetting it would remove exactly the context the review
@@ -148,11 +148,12 @@ class ExperienceWorld:
         if isinstance(action, Judge):
             if not state.turns:
                 return "analysis", {"kind": "done", "findings": [], "rejected": [], "summary": "No exchanges in the window; nothing to review.", "proposals": []}
-            judgement = await self.prompts.judge(render_turns(state.turns))
+            candidates = await self._saved_near_turns()
+            judgement = await self.prompts.judge(render_turns(state.turns, candidates))
             if judgement is None:
                 return "analysis", {"kind": "failed", "error": "the model did not answer"}
             kept, rejected = self._check(judgement)
-            proposals = await self._forgettable(kept)
+            proposals = self._forgettable(judgement.forget, candidates)
             return "analysis", {
                 "kind": "done",
                 "findings": [f.as_dict() | {"turn_id": self._turn(f.turn).id if self._turn(f.turn) else None} for f in kept],
@@ -197,24 +198,32 @@ class ExperienceWorld:
             kept.append(Finding(finding.turn, finding.kind, finding.quote, cause, finding.explanation))
         return kept, rejected
 
-    # The memories saved from the exchanges the review found wrong, each a
-    # proposal to forget that needs the person's yes.
-    async def _forgettable(self, kept: list[Finding]) -> list[ForgetMemory]:
-        proposals: list[ForgetMemory] = []
+    # The person's own stated facts saved near each exchange, by exchange
+    # number: what the judge is shown, and all it may name.
+    async def _saved_near_turns(self) -> dict[int, list[Saved]]:
         owners = (self.user_id, *self.state.rooms)
+        shown: dict[int, list[Saved]] = {}
         seen: set[str] = set()
         async with self.sessions() as db:
-            for finding in kept:
-                if finding.kind not in FORGETTABLE_KINDS:
-                    continue
-                turn = self._turn(finding.turn)
-                if turn is None:
-                    continue
+            for turn in self.state.turns:
                 for saved in await saved_after(db, turn, owners):
                     if saved.id in seen or saved.purpose not in FORGETTABLE_PURPOSES:
                         continue
                     seen.add(saved.id)
-                    proposals.append(ForgetMemory(saved.id, saved.owner, saved.content[:200], f"saved from exchange {finding.turn}: {finding.kind} - {finding.explanation[:120]}"))
+                    shown.setdefault(turn.number, []).append(saved)
+        return shown
+
+    # The judge's verdicts as proposals, each needing the person's yes: only
+    # facts it was shown, only the person's own, with the judge's reason.
+    def _forgettable(self, verdicts: tuple[Forget, ...], candidates: dict[int, list[Saved]]) -> list[ForgetMemory]:
+        by_id = {saved.id: (number, saved) for number, group in candidates.items() for saved in group}
+        proposals: list[ForgetMemory] = []
+        for verdict in verdicts:
+            found = by_id.get(verdict.memory_id)
+            if found is None:
+                continue
+            number, saved = found
+            proposals.append(ForgetMemory(saved.id, saved.owner, saved.content[:200], f"saved from exchange {number}: {verdict.reason[:160]}"))
         return proposals
 
     def _turn(self, number: int) -> Turn | None:

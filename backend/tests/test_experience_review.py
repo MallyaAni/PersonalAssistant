@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from backend.agents.experience.prompts import Finding, Judgement
+from backend.agents.experience.prompts import Finding, Forget, Judgement
 from backend.agents.experience.sources import Saved, Turn, render_turns, saved_window
 from backend.agents.experience.world import (
     ExperienceWorld,
@@ -78,14 +78,11 @@ def _world(judgement: Judgement | None, turns: list[Turn] = TURNS, forgotten: li
     world.state.rooms = ("group:c1",)
     world.state.read = True
 
-    async def forgettable(kept):
-        proposals = []
-        for finding in kept:
-            for saved in SAVED.get(f"t{finding.turn}", []):
-                proposals.append(ForgetMemory(saved.id, saved.owner, saved.content, f"saved from exchange {finding.turn}: {finding.kind}"))
-        return proposals
+    # The saved facts near each exchange, as the database would give them.
+    async def saved_near_turns():
+        return {int(key[1:]): list(items) for key, items in SAVED.items()}
 
-    world._forgettable = forgettable  # type: ignore[method-assign]
+    world._saved_near_turns = saved_near_turns  # type: ignore[method-assign]
     return world
 
 
@@ -96,8 +93,9 @@ def test_the_window_comes_from_the_objective_or_defaults_to_a_day():
 
 
 def test_the_judge_is_shown_numbered_exchanges_with_their_record():
-    shown = render_turns(TURNS)
+    shown = render_turns(TURNS, {3: SAVED["t3"]})
     assert "[1]" in shown and "(not addressed to the assistant)" in shown
+    assert "saved from this exchange: [m3] Ani is going line dancing with a bird" in shown
     assert "'reminder_firing': True" in shown
     assert "'picture_in_view': False" in shown
 
@@ -111,6 +109,10 @@ async def test_the_stages_run_in_order_and_a_finding_must_quote_the_exchange():
             Finding(9, "repeat", "x", "unknown", "no such exchange"),
         ),
         "The assistant never saw the bird and mistook a reminder for a habit.",
+        forget=(
+            Forget("m3", "a sarcastic remark about a bird, taken literally"),
+            Forget("m-not-shown", "the judge cannot forget what it was not shown"),
+        ),
     )
     world = _world(judgement)
     assert (await world.decide([])) == Act(Judge(world.since.isoformat()))
@@ -125,8 +127,10 @@ async def test_the_stages_run_in_order_and_a_finding_must_quote_the_exchange():
     # cause stands: a firing is in the window.
     assert outcome["findings"][0]["cause"] == "missing_attachment"
     assert outcome["findings"][1]["cause"] == "reminder_read_as_habit"
-    # What the misread exchange saved is proposed for forgetting.
+    # Only what the judge named, of what it was shown: the sarcastic line's
+    # fact goes; "Ani is with Gubacchi" (m2), shown but not named, stays.
     assert [p["memory_id"] for p in outcome["proposals"]] == ["m3"]
+    assert "sarcastic" in outcome["proposals"][0]["because"]
     world.observe(Judge(world.since.isoformat()), kind, outcome)
     # Forgetting needs the person's yes; then the report; then done.
     forget = await world.decide([])
@@ -211,14 +215,14 @@ def test_the_saved_window_opens_before_the_turn_and_closes_after():
     assert saved_window(Turn(1, "t", None, "u", "u", "web", "x", "y", True)) is None
 
 
-# A picture's own description is never a forget candidate, and a routing
-# fault proposes nothing: only what the person stated may be forgotten.
-async def test_only_a_persons_own_stated_facts_are_proposed_for_forgetting():
-    from backend.agents.experience.world import FORGETTABLE_KINDS, FORGETTABLE_PURPOSES
+# The judge is shown only the person's own stated facts: a picture's own
+# description is never a candidate, however near a flagged exchange it was
+# written, so it can never be named.
+async def test_only_a_persons_own_stated_facts_are_shown_to_the_judge():
+    from backend.agents.experience.world import FORGETTABLE_PURPOSES
 
-    assert "wrong_subject" not in FORGETTABLE_KINDS
     assert "visual_artifact_analysis" not in FORGETTABLE_PURPOSES
-    world = _world(Judgement((Finding(2, "wrong_subject", "try again", "routing", "misrouted"),), "s"))
+    world = _world(Judgement((), "s"))
 
     async def saved(db, turn, owners):
         return [
@@ -231,11 +235,22 @@ async def test_only_a_persons_own_stated_facts_are_proposed_for_forgetting():
     original = module.saved_after
     module.saved_after = saved  # type: ignore[assignment]
     try:
-        # Restore the real method: the stub in _world is what this test is about.
-        world._forgettable = ExperienceWorld._forgettable.__get__(world)  # type: ignore[method-assign]
-        proposals = await world._forgettable([Finding(2, "wrong_subject", "try again", "routing", "misrouted")])
-        assert proposals == []
-        proposals = await world._forgettable([Finding(2, "wrong_memory", "try again", "memory_wrong", "a passing state saved")])
-        assert [p.memory_id for p in proposals] == ["f1"]
+        world._saved_near_turns = ExperienceWorld._saved_near_turns.__get__(world)  # type: ignore[method-assign]
+        shown = await world._saved_near_turns()
+        assert [item.id for group in shown.values() for item in group] == ["f1"]
     finally:
         module.saved_after = original
+    # And a verdict names only what was shown.
+    assert world._forgettable((Forget("v1", "x"), Forget("f1", "a passing state")), {1: [Saved("f1", "ani", "Ani is with Gubacchi", "user_explicit", _WHEN)]}) == [
+        ForgetMemory("f1", "ani", "Ani is with Gubacchi", "saved from exchange 1: a passing state")
+    ]
+
+
+# The classifier writes its rows during the turn and the turn's row lands
+# when the reply is done, so what a turn saved sits before its timestamp.
+def test_the_saved_window_opens_before_the_turn_and_closes_after():
+    turn = _turn(1, "x", "y", minutes=0)
+    start, end = saved_window(turn)
+    assert start == _WHEN.replace(tzinfo=None) - timedelta(seconds=420)
+    assert end == _WHEN.replace(tzinfo=None) + timedelta(seconds=180)
+    assert saved_window(Turn(1, "t", None, "u", "u", "web", "x", "y", True)) is None

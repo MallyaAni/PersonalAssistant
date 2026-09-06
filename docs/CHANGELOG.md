@@ -2,6 +2,47 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-06 - The first live message after the deploy, and what it taught the hand-off and the reviewer (DEPLOYED IN PART)
+
+**The hand-off's first live run texted a failure.** The first real message
+after the deploy hit the three-step ceiling, was handed to a run, which
+re-ran the turn's own search, tripped the repeat guard, failed, and my
+delivery texted the person "stopped without finishing (repeated)". Three
+rules, each pinned: a turn is handed off only when its wall clock ran out
+after a clean step, never at the step ceiling (`_task_turn_context`); a
+continuation whose router names a step the turn already took ends as done
+with nothing further (`ChatContinuationWorld.decide`); a failed continuation
+is not told (`delivery.QUIET_FAILURES`), and what a person does hear is in
+their words ("Done with the rest of what you asked."). The runs flag was
+turned off on the Spark within minutes and back on for the redeploy.
+
+**The reviewer's forget proposals are the judge's verdicts, fact by fact.**
+The first design proposed forgetting every fact saved near a flagged
+exchange, and swept up "Ani is with Gubacchi" for having been saved a minute
+before the exchange it was judged on; the operator asked why. Now the judge
+is shown the person's own stated facts beside each exchange, by id, and
+names the ones that should not stand with a reason - a passing state stored
+as durable, a misreading, a sarcastic line taken literally - and only those
+are proposed (`Judgement.forget`, `_saved_near_turns`, `_forgettable`).
+Proximity decides only what the judge is shown. The operator's own account
+of the evening is the case: "line dancing with a bird" was sarcasm, said
+because the assistant took Gubbachi for a person, never having seen the
+picture; that fact should go, and a true fact saved the same evening should
+stay.
+On the real structured model (`test_experience_review_behaviour.py`): shown
+the day with its saved facts, the judge found the bird and the reminder
+exchanges with words from them, named the "line dancing with a bird" fact
+for forgetting in at least two passes of three, and left "lives in
+Courthouse, right by the metro" standing in all three. An earlier fixture
+had attached that true fact to the "shut it with don titos" exchange, and
+the judge reasonably read it as inferred from a rejected suggestion; a fact
+is shown beside the exchange that stated it.
+
+Unit: delivery, continuation, runs, chat API and loop suites 113; the
+experience suite 10 and the prompt suites 201.
+
+Diagram impact: NONE.
+
 ## 2026-09-06 - A direct message can continue what was asked in a room; a file nothing reads is named, not dropped (NOT DEPLOYED)
 
 Two findings from the experience reviewer's first live run and the list

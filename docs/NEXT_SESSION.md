@@ -739,7 +739,15 @@ them 199. **VERIFIED on the real router:** `test_cross_chat_followup_behaviour.p
 goes out through `scripts/deploy.sh` on the Spark from this session, with
 `AGENT_RUNS_ENABLED`, `AGENT_EXPERIENCE_REVIEW_ENABLED` and
 `AGENT_EXPERIENCE_REVIEW_HOUR_UTC` added to the Spark `.env` first.
-<<DEPLOY_RESULT>>
+Deploy #1 failed its unit gate on a stale listing test (opencode's
+events-links change; fixed). Deploy #2 passed both gates, backed up,
+migrated and restarted; its post-deploy sweep died because the backend was
+recreated mid-sweep to stop the hand-off's texts (below); the marker was not
+written but the code is live. Deploy #3 <<DEPLOY3_RESULT>>
+
+**The hand-off's first live run** texted the operator a failure; see the
+changelog entry of this date. Its fixes and the reviewer's per-fact verdicts
+are committed and go out with the next deploy.
 
 ## 2026-09-05 — The bird, Don Tito's, and the experience reviewer (NOT DEPLOYED)
 

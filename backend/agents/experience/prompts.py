@@ -31,16 +31,25 @@ class Finding:
 
 
 @dataclass(frozen=True, slots=True)
+class Forget:
+    """One saved fact the judge says should not stand, and why."""
+
+    memory_id: str
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
 class Judgement:
     findings: tuple[Finding, ...]
     summary: str
+    forget: tuple[Forget, ...] = ()
 
 
 def _schema() -> dict[str, Any]:
     return {
         "type": "object",
         "additionalProperties": False,
-        "required": ["findings", "summary"],
+        "required": ["findings", "forget", "summary"],
         "properties": {
             "findings": {
                 "type": "array",
@@ -55,6 +64,23 @@ def _schema() -> dict[str, Any]:
                         "quote": {"type": "string", "minLength": 1, "maxLength": 300},
                         "cause": {"type": "string", "enum": list(CAUSES)},
                         "explanation": {"type": "string", "minLength": 5, "maxLength": 400},
+                    },
+                },
+            },
+            # The saved facts, by the id shown beside them, that should not
+            # stand: a passing state stored as durable, a misreading, a joke
+            # taken literally. Judged one by one; a fact beside a flagged
+            # exchange that is still true of the person is not listed.
+            "forget": {
+                "type": "array",
+                "maxItems": 12,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["memory_id", "reason"],
+                    "properties": {
+                        "memory_id": {"type": "string", "minLength": 1, "maxLength": 80},
+                        "reason": {"type": "string", "minLength": 5, "maxLength": 300},
                     },
                 },
             },
@@ -105,4 +131,10 @@ class ExperiencePrompts:
                 )
             except (KeyError, TypeError, ValueError):
                 continue
-        return Judgement(tuple(findings), str(payload.get("summary") or "").strip())
+        forget = []
+        for item in payload.get("forget") or []:
+            try:
+                forget.append(Forget(str(item["memory_id"]).strip(), str(item["reason"]).strip()))
+            except (KeyError, TypeError):
+                continue
+        return Judgement(tuple(findings), str(payload.get("summary") or "").strip(), tuple(forget))
