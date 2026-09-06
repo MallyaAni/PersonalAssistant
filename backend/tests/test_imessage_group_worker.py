@@ -787,3 +787,62 @@ async def test_a_room_document_is_also_the_sharers_own(monkeypatch):
     assert ACCOUNTS["5550100"] in owners[1:], owners
     assert len(owners) == 2, owners
     assert bridge.sent == [{"to": ROOM_GUID, "body": "Got it - I've read Itinerary.pdf (2 pages)."}]
+
+
+# --- A photo shared in the room without addressing the assistant is seen ---
+
+
+@pytest.mark.asyncio
+async def test_an_unaddressed_room_photo_is_described_stored_and_told_to_the_room(monkeypatch):
+    # Live, 2026-09-05: "i'm with gubacchi" plus a picture of the bird arrived
+    # as the words alone; three turns later "a bird" meant nothing.
+    message = _room_message("g1", "5550100", "i'm with gubacchi", addressed_by="")
+    message["attachments"] = [{"attachment_id": "a1", "media_type": "image/jpeg"}]
+    bridge = _Bridge({"messages": [message], "cursor": 5})
+    worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    analyzed: list[tuple] = []
+    observed: list[tuple] = []
+    remembered: list[tuple] = []
+
+    async def analyze(user_id, caption, attachment, conversation):
+        analyzed.append((user_id, caption, attachment["attachment_id"]))
+        return "A green parrot perched on someone's shoulder.", f"art-{user_id}"
+
+    async def observe(user_id, text, room):
+        observed.append((user_id, text))
+
+    async def remember_image(user_id, artifact_id):
+        remembered.append((user_id, artifact_id))
+
+    monkeypatch.setattr(worker, "_analyze_photo", analyze)
+    monkeypatch.setattr(worker, "_observe", observe)
+    monkeypatch.setattr(worker, "_remember_image", remember_image)
+    assert await worker.tick() == 0
+    # Described once for the room and once for the sharer, with the neutral
+    # prompt, never the caption; nothing answered, nothing sent.
+    assert analyzed == [("group:abc", "", "a1"), ("u-ani", "", "a1")]
+    assert remembered == [("group:abc", "art-group:abc"), ("u-ani", "art-u-ani")]
+    assert observed == [
+        ("group:abc", 'shared a photo: "A green parrot perched on someone\'s shoulder."'),
+        ("group:abc", "i'm with gubacchi"),
+    ]
+    assert conversed == [] and bridge.sent == []
+    assert await worker._already_seen("g1")
+
+
+@pytest.mark.asyncio
+async def test_an_unaddressed_room_photo_that_finds_the_backend_down_is_parked_whole(monkeypatch):
+    message = _room_message("g1", "5550100", "look at this", addressed_by="")
+    message["attachments"] = [{"attachment_id": "a1", "media_type": "image/jpeg"}]
+    bridge = _Bridge({"messages": [message], "cursor": 5})
+    worker, _, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+
+    async def analyze(user_id, caption, attachment, conversation):
+        raise BackendUnavailable("connection refused")
+
+    monkeypatch.setattr(worker, "_analyze_photo", analyze)
+    assert await worker.tick() == 0
+    assert not await worker._already_seen("g1")
+    parked = json.loads(worker.redis.store[_PARKED_KEY])
+    assert [p["guid"] for p in parked] == ["g1"]
+    assert parked[0].get("message", {}).get("attachments") == message["attachments"]

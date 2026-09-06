@@ -601,6 +601,23 @@ class IMessageChatWorker:
             # Not for the assistant: read for context (and memory), never
             # answered. The operator's decision, 2026-08-28: the whole room
             # is context; only what addresses the assistant gets a reply.
+            #
+            # A photo shared this way is context too, and was being dropped
+            # before anything looked at it: "i'm with gubacchi" plus a picture
+            # of the bird arrived as the words alone, and three turns later
+            # "a bird" meant nothing to the assistant (live, 2026-09-05). The
+            # picture is described and stored under the room, and under the
+            # sharer as their own, exactly as a shared document is; the room
+            # is told what was shared so the next "look above" resolves to it.
+            if attachments:
+                try:
+                    await self._observe_photos(group.user_id, room, attachments)
+                    speaker_id = str(room.get("speaker_user_id") or "")
+                    if speaker_id and speaker_id != group.user_id:
+                        await self._observe_photos(speaker_id, None, attachments)
+                except BackendUnavailable:
+                    await self._park(guid, group.user_id, reply_to, text, room=room, message=message)
+                    return 0
             if text:
                 await self._observe(group.user_id, text, room)
             await self._mark_seen(guid)
@@ -664,6 +681,25 @@ class IMessageChatWorker:
             )
         await self._mark_seen(guid)
         return answered
+
+    # Describe and store the photos an unaddressed message carried, so a
+    # later turn can find them by what they show. Under a room the thread
+    # is told what was shared, by description; under a person nothing is
+    # said, the picture is simply theirs now. The description asked for is
+    # the fixed neutral one, never the caption: the caption is the person's
+    # words about the picture, not a question for the vision model.
+    async def _observe_photos(self, user_id: str, room: dict | None, attachments: list[dict]) -> None:
+        conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
+        for attachment in attachments[:_MAX_PHOTOS_PER_MESSAGE]:
+            description, artifact_id = await self._analyze_photo(user_id, "", attachment, conversation)
+            if not artifact_id:
+                logger.info("imessage_room_photo_not_stored", extra={"user": user_id})
+                continue
+            await self._remember_conversation(user_id, conversation)
+            await self._remember_image(user_id, artifact_id)
+            if room is not None:
+                shown = " ".join(str(description or "").split())[:200]
+                await self._observe(user_id, f'shared a photo: "{shown}"', room)
 
     # Store one unaddressed room message under the group's conversation, so
     # the next answered turn's history holds it. Best effort: an observation

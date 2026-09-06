@@ -356,6 +356,49 @@ until an asset is authorized.
 the repo server can be rooted at; remediation tools (they will carry
 `approval: always`); a labelled corpus and a precision floor.
 
+## Experience review — where the assistant let a person down, found and put right
+
+Asked for by the operator on 2026-09-05 after two failures they had to report
+by hand: a photo of their bird shared in a room was dropped before anything
+looked at it, so "a bird" three turns later meant nothing; and a weekly
+reminder for one place was read back as a standing habit, so the assistant
+kept suggesting a place they had said they hated. Both were visible in the
+conversation and in each turn's own record. This agent reads them the way
+the operator did, daily, and acts on what it can.
+
+| | |
+| --- | --- |
+| Registry id | `experience` |
+| Run kind | `experience_review` (`backend/workers/run_worker.py::WORLDS`; created daily by `schedule_experience_reviews`, or by `backend.cli.review_experience`) |
+| Diagram | [agent-experience.svg](diagrams/agent-experience.svg) · [source](diagrams/agent-experience.mmd) |
+| Agent folder | `backend/agents/experience/` |
+| Domain package | `backend/runs/` · the conversation and memory stores read through `agents/experience/sources.py` |
+| Prompts | `prompts/experience/judge.md` |
+| Card | `agents/experience/card.py` |
+| Functional tests | `test_experience_review_behaviour.py` |
+| Entry point | `python -m backend.cli.review_experience --user <id> [--hours 24] [--run]` |
+
+**What the model decides:** where the experience degraded - a correction, a
+repeat, frustration, a reference to something the assistant never had, a
+wrong subject, an empty reply, a wrong memory - with an exact quote and the
+likely cause. **What is decided for it:** the stages; that a finding whose
+quote is not in the exchange is dropped; that a cause the turn's record
+contradicts is corrected (a "missing attachment" on a turn with a picture in
+view becomes "model"; a "reminder read as a habit" with no firing in the
+window becomes "unknown"); which saved memories are candidates for
+forgetting (those written within 180 seconds of a flagged exchange); and that
+forgetting never happens without the person's yes, asked through the run's
+approval and answerable from chat (`manage_runs`). Everything else is a
+finding delivered on the person's channel with the exchanges that show it,
+so a defect reaches the people who change code with its evidence the same
+day. Off until `AGENT_EXPERIENCE_REVIEW_ENABLED` is on beside
+`AGENT_RUNS_ENABLED`.
+
+**Not yet:** fixes beyond forgetting a memory (re-running a dropped
+attachment through the vision pipeline, correcting a fact in place); a
+labelled corpus of degraded days and a precision floor; grouping the same
+defect across people.
+
 ## Adding an agent
 
 1. `backend/agents/<name>/` with `prompts.py`, and `card.py` if it belongs in the

@@ -85,8 +85,23 @@ def said_at(turn: dict[str, Any], zone: str = "") -> str:
 # The timestamp is what was missing on 2026-08-29, when a reminder set the
 # evening before was described to the room as happening "tonight". Everything
 # the model needed was in the history; none of it was dated.
+# A turn that is a scheduled reminder firing, not the person speaking. Its
+# stored query is the instruction they gave once ("Remind me about salsa at
+# Don Tito's"), which replays as the user's line every time it fires - so a
+# weekly reminder read as a weekly request, and the reply called the place
+# "your usual move" to someone who had said they hated it (live, 2026-09-05).
+def is_a_firing(turn: dict[str, Any]) -> bool:
+    metadata = (turn or {}).get("metadata")
+    return bool(isinstance(metadata, dict) and metadata.get("scheduled_task"))
+
+
+FIRING_NOTE = "(a reminder they set earlier, firing on its schedule - not something they are asking now)"
+
+
 def user_content(turn: dict[str, Any], zone: str = "") -> str:
     query = str(turn.get("query") or "")
+    if is_a_firing(turn):
+        query = f"{FIRING_NOTE} {query}"
     name = speaker_name(turn)
     said = f"{name}: {query}" if name else query
     stamp = said_at(turn, zone)
@@ -105,6 +120,8 @@ def transcript_lines(
     lines: list[str] = []
     for turn in history or []:
         said = str((turn or {}).get("query") or "").strip()
+        if said and is_a_firing(turn):
+            said = f"{FIRING_NOTE} {said}"
         answered = _answer_line(turn)
         note = _attempt_note(turn)
         stamp = said_at(turn, zone)

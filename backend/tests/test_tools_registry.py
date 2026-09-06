@@ -48,6 +48,7 @@ def test_every_builtin_row_is_complete():
         "scout_schedule",
         "save_skill",
         "manage_skills",
+        "manage_runs",
     ]
     for row in rows:
         assert row.label

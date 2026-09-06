@@ -40,6 +40,7 @@ const diagramNames = [
   "agent-trading",
   "agent-review",
   "agent-security",
+  "agent-experience",
   "market-data",
   "tool-memory-subsystem",
   "visual-artifact-subsystem",

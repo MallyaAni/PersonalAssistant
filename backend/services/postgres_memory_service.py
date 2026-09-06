@@ -276,6 +276,12 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
                 break
             if _is_a_question(turn.query):
                 continue
+            # A reminder firing stores its instruction as the turn's query;
+            # recalled as "something they said", a weekly reminder became a
+            # standing preference for the place (live, 2026-09-05).
+            extra = getattr(turn, "extra_data", None)
+            if isinstance(extra, dict) and extra.get("scheduled_task"):
+                continue
             spoken = (turn.query or "").strip()
             if spoken.casefold() in seen:
                 continue

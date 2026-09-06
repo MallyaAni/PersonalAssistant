@@ -28,6 +28,7 @@ from backend.agents.cards import (
 from backend.agents.deck import card as deck_card
 from backend.agents.scout import card as scout_card
 from backend.agents.trading import card as trading_card
+from backend.agents.experience import card as experience_card
 from backend.agents.review import card as review_card
 from backend.agents.security import card as security_card
 
@@ -41,6 +42,7 @@ DESCRIBERS: tuple[AgentDescriber, ...] = (
     trading_card.describe,
     review_card.describe,
     security_card.describe,
+    experience_card.describe,
 )
 
 # Re-exported so callers depend on `backend.agents` for agent shapes rather than

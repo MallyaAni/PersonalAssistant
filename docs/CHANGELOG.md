@@ -2,6 +2,78 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - Two live failures fixed at their cause, and an agent that finds the next ones (NOT DEPLOYED)
+
+The operator reported two degraded exchanges from the day and asked for
+something that notices such degradation on its own. Read from the live
+database: the bird and Don Tito's.
+
+**A photo shared in a room without addressing the assistant was dropped.**
+"i'm with gubacchi" arrived with a picture of the bird; the room path read
+unaddressed messages as text only, so the picture never reached any turn,
+and "yeah i'm going line dancing with a bird" was answered as line dancing
+with a person. No artifact was stored; three text facts were. The room path
+now describes and stores an unaddressed photo under the room and under the
+sharer, exactly as a shared document is, remembers it as the room's latest
+image, and tells the thread `shared a photo: "..."` so the next reference
+resolves to it (`imessage_chat._observe_photos`; a backend that is away
+parks the message whole). Resolution was not the cause: photos are
+re-encoded on the way in. `test_imessage_group_worker.py` pins both paths.
+
+**A weekly reminder was read back as a habit.** Asked "what do i do this
+evening? i'm bored", the reply said "salsa at Don Tito's is your usual move"
+to a person who hates the place. Nothing in memory said so: the reminder's
+firings were stored with the instruction as the person's own line, so the
+history replayed "Remind me about salsa at Don Tito's" every week as a
+request. The transcript now marks a firing as one, in every rendering
+(`transcript.FIRING_NOTE`), and recall skips firings. Verified on the real
+reply model: shown three firings and asked the same question, the reply no
+longer presents the place as their habit (`test_reminder_is_not_a_habit_behaviour.py`).
+
+**A curt rejection is a preference.** "shut it with don titos, i don't care
+about that" proposed nothing (0 of 3): the classifier read it as an
+instruction to the assistant, which fills nothing. The proposal prompt now
+names a rejection of something suggested about the person's own life as a
+standing preference; on the real model the three phrasings each store a
+preference naming the place, and two rejections of the assistant's own
+behaviour still store nothing (`test_correction_capture_behaviour.py` 5/5).
+
+**The experience reviewer** (`backend/agents/experience/`, run kind
+`experience_review`). One run per person per day, created by the run worker
+at `AGENT_EXPERIENCE_REVIEW_HOUR_UTC` for everyone who spoke in the last
+day, or on demand by `backend.cli.review_experience`. It reads the person's
+turns and their rooms with each turn's record - route, whether a picture was
+in view, whether a reminder was firing, what was saved - asks one judgement
+for where the experience degraded (kind, exact quote, cause), and checks
+every finding in code: a quote not in the exchange is dropped; a cause the
+record contradicts is corrected. Memories written within 180 seconds of a
+flagged exchange are proposed for forgetting, each parked for the person's
+yes and answerable from chat; everything else is reported on the person's
+channel with the exchanges that show it. Card, diagram (`agent-experience`),
+catalogue row, grant (`turns_read`, `experience_judge`, `memory_forget`,
+`experience_report`). Unit: `test_experience_review.py` 8 on the real bird
+and reminder exchanges (stage order, the quote check, cause correction, the
+empty-reply guard, a judge that does not answer, an empty day, the grant).
+Functional, on the real structured model
+(`test_experience_review_behaviour.py` 2/2): shown the day as the review
+renders it, the judge found the bird exchange and the Don Tito's exchange
+with words from those exchanges in every pass, and found nothing in a quiet
+day. Live, on the operator's own last 36 hours through
+the tunnel: 16 turns read across the direct chat and the room, five findings
+kept with exact quotes - the ignored Don Tito's correction, the "line
+dancing with Gubacchi" memory as wrong, and two "try again" messages in the
+direct chat that were routed to an events search instead of the chess
+picture they meant - one rejected because the record shows the assistant did
+reply. The first run proposed nothing to forget: the classifier writes its
+rows during the turn and the turn's row lands at the end, so the wrong
+memories sat two minutes before the turn's timestamp, outside a window that
+only looked after it; the window now opens seven minutes before. The second
+run then proposed forgetting the chess picture's own description, because
+the turn beside it was misrouted: image-derived memories and routing faults
+are now excluded from forgetting. The third run parked, correctly, on
+"forget the memory 'Ani is with Gubacchi'", waiting for the person's yes.
+
+Diagram impact: UPDATED - `agent-experience` added and registered.
 ## 2026-09-05 - The events listing offers links instead of printing them, and the follow-up delivers them (NOT DEPLOYED)
 
 A weekend answer used to carry a row of links under every event - the map,

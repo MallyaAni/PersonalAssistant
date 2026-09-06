@@ -1,0 +1,28 @@
+---
+title: Experience review - each day's conversations, read for where the assistant let a person down
+---
+flowchart LR
+    Clock([Daily at AGENT_EXPERIENCE_REVIEW_HOUR_UTC<br/>or backend.cli.review_experience]) --> Create[schedule_experience_reviews<br/>one run per person who spoke in the last day<br/>idempotent on person + day]
+    Create --> Run[(agent_runs<br/>kind experience_review)]
+    Run --> Controller[RunController<br/>record before · replay by key · grant · verify]
+    Controller --> World[ExperienceWorld<br/>fixed stages: read · judge · fixes · report]
+    World -->|turns_read| Turns[(conversations<br/>the person's turns and their rooms<br/>with each turn's trace: route, picture in view,<br/>reminder firing, what was saved)]
+    World -->|experience_judge| Judge{Structured model<br/>experience/judge<br/>kind · exact quote · cause · explanation}
+    Judge --> Check[Evidence check in code<br/>quote is in that exchange ·<br/>cause agrees with the record, else corrected]
+    Check --> Saved[(semantic memories written<br/>within 180s of a flagged turn)]
+    Saved -->|memory_forget · approval: always| Approve[Parked for the person's yes<br/>answerable from chat or the runs API]
+    Approve -->|yes| Forget[Memory forgotten<br/>reconciled by lookup on resume]
+    Check -->|experience_report| Report[Run result<br/>findings · rejected · fixes · proposed<br/>summary for the person]
+    Report --> Delivery[RunDelivery<br/>the person's channel]
+    Delivery --> Person([Person<br/>and the operator, with the exchanges that show each defect])
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef store fill:#eef7ee,stroke:#5c9c5c,color:#173117;
+    classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
+    class Clock,Person interface;
+    class Create,Controller,World,Check,Forget,Report,Delivery application;
+    class Judge model;
+    class Run,Turns,Saved store;
+    class Approve failure;

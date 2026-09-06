@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections.abc import Mapping
+from datetime import UTC, datetime, timedelta
 
 from backend.config.settings import settings
 from backend.core.logging_config import get_logger
@@ -63,10 +64,19 @@ def _chat_continuation(run: dict) -> RunWorld:
     return ChatContinuationWorld(run, HttpStepClient())
 
 
+def _experience_review(run: dict) -> RunWorld:
+    from backend.agents.experience.prompts import ExperiencePrompts
+    from backend.agents.experience.world import ExperienceWorld
+    from backend.core.dependencies import get_structured_llm_client
+
+    return ExperienceWorld(run, AsyncSessionLocal, ExperiencePrompts(get_structured_llm_client()))
+
+
 WORLDS: dict[str, WorldFactory] = {
     "code_review": _code_review,
     "security_review": _security_review,
     "chat_continuation": _chat_continuation,
+    "experience_review": _experience_review,
 }
 
 
@@ -98,7 +108,81 @@ GRANTS: dict[str, Grant] = {
         "security_findings", "security_judge_hits",
     ),
     "chat_continuation": _chat_grant(),
+    "experience_review": grant_of("turns_read", "experience_judge", "memory_forget", "experience_report"),
 }
+
+
+# ------------------------------------------------------- the daily review
+#
+# One experience review per person per day, for everyone who spoke to the
+# assistant in the last day. Created, not run, here: the run loop claims it
+# like any other. Idempotent on (person, day), so a restart never doubles it.
+async def schedule_experience_reviews(now: datetime | None = None) -> int:
+    from sqlalchemy import func, select
+
+    from backend.models.agent_run import AgentRun
+    from backend.models.conversation import Conversation
+
+    moment = now or datetime.now(UTC)
+    if moment.hour != int(settings.AGENT_EXPERIENCE_REVIEW_HOUR_UTC):
+        return 0
+    since = moment - timedelta(hours=24)
+    day_start = moment.replace(hour=0, minute=0, second=0, microsecond=0)
+    created = 0
+    async with AsyncSessionLocal() as db:
+        spoke = (
+            await db.execute(
+                select(Conversation.user_id, func.max(Conversation.created_at))
+                .where(Conversation.created_at >= since.replace(tzinfo=None))
+                .group_by(Conversation.user_id)
+            )
+        ).all()
+        people = [str(user) for user, _ in spoke if not str(user).startswith("group:")]
+        repo = AgentRunRepository(db)
+        for person in people:
+            already = await db.scalar(
+                select(func.count(AgentRun.id)).where(
+                    AgentRun.user_id == person,
+                    AgentRun.kind == "experience_review",
+                    AgentRun.created_at >= day_start,
+                )
+            )
+            if already:
+                continue
+            latest = await db.scalar(
+                select(Conversation.extra_data)
+                .where(Conversation.user_id == person)
+                .order_by(Conversation.created_at.desc())
+                .limit(1)
+            )
+            channel = str((latest or {}).get("channel") or "web") if isinstance(latest, dict) else "web"
+            await repo.create(
+                person,
+                "agent:experience",
+                "experience_review",
+                f"review experience for {person} since {since.isoformat()}",
+                ["read", "judged", "reported"],
+                budget_seconds=float(settings.AGENT_RUN_DEFAULT_BUDGET_SECONDS),
+                max_steps=40,
+                max_creates=1,
+                channel=channel if channel in ("web", "imessage", "imessage_group") else "web",
+            )
+            created += 1
+    if created:
+        logger.info("experience_reviews_scheduled", extra={"count": created})
+    return created
+
+
+# Check once an hour whether today's reviews are due; the loop the worker
+# process starts beside the run loop.
+async def review_schedule_loop() -> None:
+    while True:
+        try:
+            if settings.AGENT_EXPERIENCE_REVIEW_ENABLED:
+                await schedule_experience_reviews()
+        except Exception:
+            logger.warning("experience_review_schedule_error", exc_info=True)
+        await asyncio.sleep(3600)
 
 
 # The address a person enrolled for a channel, from the discovery
@@ -229,6 +313,7 @@ class RunWorker:
 async def run_loop() -> None:
     worker = RunWorker()
     logger.info("run_worker_started", extra={"worker_id": worker.worker_id})
+    asyncio.create_task(review_schedule_loop())
     while True:
         try:
             handled = await worker.run_once()

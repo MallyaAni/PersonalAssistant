@@ -274,6 +274,12 @@ const publishedDiagrams = [
     change: "How one commit is reviewed: fixed read stages through the repo MCP server, two model judgements, and an evidence check in code that drops any finding whose quoted line is not there.",
   },
   {
+    name: "agent-experience",
+    title: "Experience review",
+    scope: "Each day's conversations, read for where the assistant let a person down",
+    change: "How a day of exchanges is reviewed: one model judgement over the words, a code check of each finding against the turn's own record, a wrong memory forgotten on the person's yes, and everything else reported with the exchanges that show it.",
+  },
+  {
     name: "agent-security",
     title: "Security agent",
     scope: "Scoped read-only investigation of a commit",

@@ -580,6 +580,39 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — The bird, Don Tito's, and the experience reviewer (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the
+room photo path (`imessage_chat._observe_photos`), the firing note
+(`services/transcript.py`), the proposal prompt's rejection rule, and the
+experience world's check (`agents/experience/world.py::_check`).
+
+**VERIFIED on the real models:** reminder-not-habit 1/1 (three replies),
+correction capture 5/5. **VERIFIED (unit):** room worker, transcript,
+recall, experience world and the suites around them 357.
+**VERIFIED on the real model:** `test_experience_review_behaviour.py` 2/2 (the bird and the reminder found, a quiet day clean). **VERIFIED live:** three reviews of the operator's last 36 hours
+(`backend.cli.review_experience --run`); the third, run `92af03ec`, is
+parked in the live `agent_runs` table on "forget the memory 'Ani is with
+Gubacchi'" and expires in 24 hours if nobody answers - the runs API and
+`manage_runs` are not deployed yet, so it can only be answered after the
+deploy or left to expire. Two earlier runs from the same session sit there
+completed and cancelled.
+
+**Deploy notes (operator):** the room photo fix and the firing note take
+effect with the next backend deploy; the reviewer needs
+`AGENT_EXPERIENCE_REVIEW_ENABLED=true` beside `AGENT_RUNS_ENABLED=true` on
+`discovery-worker` (both in compose now). The three wrong memories from the
+bird evening ("Ani is with Gubacchi" twice, "going line dancing with a
+bird") are still stored; the reviewer's first run proposes forgetting them,
+or `DELETE /api/v1/memory/{user}/semantic/{id}` removes them by hand.
+
+**Next atomic tasks, in order:**
+1. Deploy; turn the reviewer on; read its first daily report.
+2. Fixes beyond forgetting: re-run a dropped attachment through vision;
+   correct a fact in place with the person's yes.
+3. A labelled corpus of degraded days under `docs/evals/` and a precision
+   floor for `experience/judge`.
+
 ## 2026-09-05 — A hard constraint filters a result (NOT DEPLOYED)
 
 See `docs/CHANGELOG.md`, this date, newest entry. Codex should review

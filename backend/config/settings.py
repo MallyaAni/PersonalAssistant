@@ -117,6 +117,11 @@ class Settings(BaseSettings):
     AGENT_RUN_APPROVAL_TTL_SECONDS: float = Field(default=86_400.0, gt=0, le=604_800)
     AGENT_RUN_DEFAULT_BUDGET_SECONDS: float = Field(default=600.0, ge=10, le=7_200)
     AGENT_RUN_DEFAULT_MAX_STEPS: int = Field(default=12, ge=1, le=100)
+    # The experience reviewer (backend/agents/experience): one run per person
+    # per day over the last day's conversations, created by the run worker at
+    # this UTC hour. Off by default; needs AGENT_RUNS_ENABLED to be worked.
+    AGENT_EXPERIENCE_REVIEW_ENABLED: bool = False
+    AGENT_EXPERIENCE_REVIEW_HOUR_UTC: int = Field(default=11, ge=0, le=23)
     # How long a finished run and its audit trail are kept before the sweep
     # (backend.cli.sweep_runs) may delete them. Open runs are never swept.
     AGENT_RUN_RETENTION_DAYS: int = Field(default=90, ge=1, le=3_650)

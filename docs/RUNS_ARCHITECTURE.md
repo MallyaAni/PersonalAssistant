@@ -142,6 +142,13 @@ a kind nobody registered fails the run with `no_world` rather than guessing.
   not say. The reply of the cut-short turn says the rest continues
   (`reply/handed_off`), never that it is done.
 
+- `experience_review` - the experience reviewer (`backend/agents/experience/`):
+  one run per person per day over their last day's turns and rooms, one
+  model judgement checked against each turn's record, a wrong memory
+  forgotten on the person's yes, the rest reported with its evidence.
+  Created by `schedule_experience_reviews` in the run worker at
+  `AGENT_EXPERIENCE_REVIEW_HOUR_UTC`, or by `backend.cli.review_experience`.
+
 The reviews are created by `backend.cli.review_commit` today; the
 continuation by the turn itself, only while `AGENT_RUNS_ENABLED` is on in the
 API process (a promise nobody works is worse than none). A worker claims only
