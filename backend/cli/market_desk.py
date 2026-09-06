@@ -220,8 +220,8 @@ def _print_backtest(report, tickers, since) -> None:
                 f"{bt.sessions_in:4d}/{bt.sessions:<4d} {bt.equity * 100:+7.1f}% "
                 f"{bt.hold * 100:+7.1f}% {bt.benchmark * 100:+7.1f}%"
             )
-        main_run = results["chandelier 3 ATR, 10-day exit"]
-        print("  trades under chandelier 3 ATR, 10-day exit:")
+        main_run = results["desk rules (no stop, 10-day grade exit)"]
+        print("  trades under the desk rules:")
         print(
             f"  {'entry':11} {'exit':11} {'kind':9} {'grade':5} {'size':>5} "
             f"{'days':>4} {'return':>8} {'worst':>7} reason"

@@ -153,6 +153,9 @@ def test_risk_sizes_by_grade_and_exposure():
             s.position.weight * grading.SIZE_MULTIPLIER[s.grade] * regime.HYPE_EXPOSURE
         )
     assert risk.gross(sized) < sum(abs(s.position.weight) for s in sized)
+    # With half the names graded C, the top half of the candidates is still
+    # half of the whole universe: four names, not two.
+    assert len(sized) == 4
 
 
 # The technical analyst reads location: in a rising theme the name at the
@@ -210,6 +213,32 @@ def test_name_backtest_holds_only_while_graded():
     assert rows[10].grade == "A"
     assert rows[10].forward == pytest.approx(0.05)
     assert dc_replace(rows[0], grade="C").grade == "C"
+
+
+# A stance that flickers does not change until it has held three sessions.
+def test_stances_persist():
+    from backend.agents.trading.desk.opinions import persist
+
+    raw = np.array([[1], [0], [1], [0], [0], [0], [1], [1], [1]])
+    held = persist(raw, 3)[:, 0].tolist()
+    assert held == [1, 1, 1, 1, 1, 0, 0, 0, 1]
+
+
+# A young filer with sequential growth and a margin, but no year-over-year
+# figure yet, still gets a fundamental view.
+def test_fundamental_view_from_partial_legs():
+    from backend.agents.trading.desk import fundamental
+
+    names = edgar.FEATURE_NAMES
+    extra = np.zeros((1, 3, len(names)))
+    extra[0, :, names.index("has_fundamentals")] = 1
+    extra[0, :, names.index("revenue_qoq")] = [0.3, 0.1, -0.2]
+    extra[0, :, names.index("gross_margin")] = [0.6, 0.4, 0.2]
+    extra[0, :, names.index("revenue_yoy")] = np.nan
+    extra[0, :, names.index("revenue_acceleration")] = np.nan
+    scores = fundamental.opine(extra).scores[0]
+    assert np.isfinite(scores).all()
+    assert scores[0] > scores[1] > scores[2]
 
 
 # The analysts have no view where their layer has no data.

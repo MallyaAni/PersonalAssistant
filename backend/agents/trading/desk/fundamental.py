@@ -32,7 +32,13 @@ def opine(extra: np.ndarray) -> Opinion:
     legs = [
         np.where(has, extra[:, :, names.index(n)].astype(float), np.nan) for n in SCORED
     ]
-    scores = baselines.rank_blend(*legs)
+    # A young filer has no year-over-year figure for its first four
+    # quarters; it still has sequential growth and margins. The blend is
+    # the mean of the ranks that exist, with at least two of them.
+    ranked = np.stack([baselines.percentile_rank(leg) for leg in legs], axis=0)
+    known = np.isfinite(ranked).sum(axis=0)
+    with np.errstate(all="ignore"):
+        scores = np.where(known >= 2, np.nanmean(ranked, axis=0), np.nan)
     evidence = {
         n: np.where(has, extra[:, :, names.index(n)].astype(float), np.nan)
         for n in CITED

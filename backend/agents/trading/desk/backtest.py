@@ -27,7 +27,10 @@ from backend.agents.trading.desk.grading import ORDINAL, SIZE_MULTIPLIER, A, B, 
 from backend.market import levels
 
 STOP_BUFFER = 0.03
-PATIENCE = 3
+# Measured on eight names since 2024 and six since mid-2021: every price
+# stop trailed the same rules without one, and a three-session grade exit
+# trailed a ten-session one. The defaults are what measured best.
+PATIENCE = 10
 SUPPORT = "support"
 CHANDELIER = "chandelier"
 ATR_SESSIONS = 20
@@ -39,7 +42,7 @@ class Rules:
     """Which rules a backtest run applies."""
 
     entry_trigger: bool = True
-    stop: bool = True
+    stop: bool = False
     grade_exit: bool = True
     min_entry_grade: str = A
     hold_grade: str = B
@@ -309,21 +312,16 @@ def _letter(ordinal: int) -> str:
 def variants() -> list[Rules]:
     """Return the rule sets a report compares."""
     return [
-        Rules(label="support stop, 3-day grade exit"),
-        Rules(stop_kind=CHANDELIER, label="chandelier 3 ATR, 3-day grade exit"),
-        Rules(stop_kind=CHANDELIER, patience=10, label="chandelier 3 ATR, 10-day exit"),
+        Rules(label="desk rules (no stop, 10-day grade exit)"),
+        Rules(entry_trigger=False, label="desk rules, no entry trigger"),
+        Rules(patience=3, label="3-day grade exit"),
+        Rules(stop=True, patience=3, label="support stop, 3-day grade exit"),
+        Rules(stop=True, stop_kind=CHANDELIER, label="chandelier 3 ATR stop"),
         Rules(
+            stop=True,
             stop_kind=CHANDELIER,
             atr_multiple=5.0,
-            patience=10,
-            label="chandelier 5 ATR, 10-day exit",
+            label="chandelier 5 ATR stop",
         ),
-        Rules(stop=False, patience=10, label="no stop, 10-day grade exit"),
-        Rules(stop=False, grade_exit=False, label="hold to the end (no exits)"),
-        Rules(
-            stop_kind=CHANDELIER,
-            patience=10,
-            entry_trigger=False,
-            label="chandelier 3 ATR, 10-day, no trigger",
-        ),
+        Rules(grade_exit=False, label="hold to the end (no exits)"),
     ]

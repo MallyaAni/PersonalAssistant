@@ -75,7 +75,7 @@ def test_backtest_enters_next_open_and_stops():
     grades[150:, 0] = grading.ORDINAL["A"]
     report = _report(panel, grades)
     e = entry.entries(panel)
-    bt = backtest.run_name(report, e, "N0", backtest.Rules(cost_bps=0.0))
+    bt = backtest.run_name(report, e, "N0", backtest.Rules(stop=True, cost_bps=0.0))
     # The stop exits, then the dip re-triggers while the grade holds: two trades.
     assert len(bt.trades) == 2
     trade = bt.trades[0]

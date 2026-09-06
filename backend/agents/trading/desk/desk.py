@@ -352,21 +352,11 @@ def book_backtest(report: DeskReport, since: date | None = None) -> list[BookSta
     names = np.array([t != panel.benchmark for t in panel.tickers])
     out: list[BookStat] = []
     variants = (
-        ("desk book: top 20%, vol target 15%", risk.BOOK_CONFIG),
+        ("desk book (default config)", risk.BOOK_CONFIG),
+        ("top 20%, vol target 15%", sizing.SizingConfig(top_fraction=0.2)),
         (
-            "desk book: top 20%, vol target 25%",
-            sizing.SizingConfig(
-                top_fraction=0.2, short_fraction=0.0, target_volatility=0.25
-            ),
-        ),
-        (
-            "desk book: top 10%, vol target 25%",
-            sizing.SizingConfig(
-                top_fraction=0.1,
-                short_fraction=0.0,
-                target_volatility=0.25,
-                name_cap=0.15,
-            ),
+            "top 20%, vol target 25%",
+            sizing.SizingConfig(top_fraction=0.2, target_volatility=0.25),
         ),
     )
     for label, config in variants:
