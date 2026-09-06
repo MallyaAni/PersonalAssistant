@@ -29,18 +29,20 @@ def test_first_plan_rebalances_and_is_idempotent():
     ]
     assert orders[0].reason == "leaves the book"
     assert new.last_rebalance == "2026-09-04"
-    assert new.c_streak == {"MU": 1}
+    assert new.opened == {"SNDK": "2026-09-04", "PANW": "2026-09-04"}
     again, same, why = paper.plan("2026-09-04", new, 100_000.0, {}, {}, {}, {})
     assert again == []
     assert why == "already planned for this session"
     assert same is new
 
 
-# Between rebalances nothing trades except the exit: a held name graded
-# below B for ten sessions is sold; the rebalance clock advances.
-def test_hold_then_exit_after_patience():
+# Between rebalances nothing trades except the exits the exit analyst names,
+# and the rebalance clock advances.
+def test_hold_then_exit_when_the_analyst_says_so():
     state = paper.PaperState(
-        last_rebalance="2026-08-01", sessions_since_rebalance=3, c_streak={"MU": 9}
+        last_rebalance="2026-08-01",
+        sessions_since_rebalance=3,
+        opened={"MU": "2026-07-01", "SNDK": "2026-07-01"},
     )
     orders, new, what = paper.plan(
         "2026-09-04",
@@ -50,17 +52,16 @@ def test_hold_then_exit_after_patience():
         prices={"MU": 150.0, "SNDK": 200.0},
         targets={"SNDK": 0.08},
         grades={"MU": "C", "SNDK": "A+"},
+        finished={"MU": "a bearish candle at the top of its Bollinger band"},
     )
     assert what == "exits"
     assert [(o.symbol, o.side, o.qty) for o in orders] == [("MU", "sell", 40)]
-    assert "10 sessions" in orders[0].reason
+    assert "bearish candle" in orders[0].reason
     assert new.sessions_since_rebalance == 4
-    assert new.c_streak == {"MU": 10, "SNDK": 0}
+    assert "MU" not in new.opened
     quiet, _new, what2 = paper.plan(
         "2026-09-05",
-        paper.PaperState(
-            last_rebalance="2026-08-01", sessions_since_rebalance=3, c_streak={"MU": 2}
-        ),
+        paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3),
         100_000.0,
         {"MU": 40.0},
         {"MU": 150.0},

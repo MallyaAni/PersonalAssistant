@@ -5,10 +5,13 @@ The rules are the ones that measured best, and nothing else:
 * Every `REBALANCE_EVERY` sessions the paper book is brought to the desk's
   target weights (buys and sells at the next open, whole shares, moves
   smaller than `MIN_TRADE` of equity skipped).
-* Between rebalances the book is left alone except for the exit rule: a
-  held name whose grade has been C for `PATIENCE` consecutive sessions is
-  sold at the next open. No price stop, because every stop measured worse
-  than none on every name.
+* Between rebalances the book is left alone except for the exit analyst,
+  which sells a held name at the next open when the move looks finished: a
+  bearish candle at the top of its Bollinger band, or a band wider than it
+  has been almost all year with price near the top of it. There is no price
+  stop, because every stop measured worse than none on every name, and no
+  grade-based exit, because measuring one finally showed it was cutting
+  winners rather than protecting anything (see `desk/exit.py`).
 * The plan for a session is made once. Running the day twice submits
   nothing the second time.
 
@@ -24,10 +27,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from backend.agents.trading.desk.grading import ORDINAL, B
-
 REBALANCE_EVERY = 20
-PATIENCE = 10
 MIN_TRADE = 0.005
 PAPER_KIND = "paper"
 
@@ -39,7 +39,9 @@ class PaperState:
     sessions_seen: list[str] = field(default_factory=list)
     last_rebalance: str | None = None
     sessions_since_rebalance: int = 0
-    c_streak: dict[str, int] = field(default_factory=dict)
+    # When each held name was opened, so the exit analyst can leave a
+    # fresh position alone through its grace period.
+    opened: dict[str, str] = field(default_factory=dict)
     start_equity: float | None = None
     history: list[dict] = field(default_factory=list)
 
@@ -91,18 +93,15 @@ def plan(
     prices: dict[str, float],
     targets: dict[str, float],
     grades: dict[str, str],
+    finished: dict[str, str] | None = None,
 ) -> tuple[list[PaperOrder], PaperState, str]:
     """Return (orders, new state, what the day was)."""
     if session in state.sessions_seen:
         return [], state, "already planned for this session"
     new = PaperState(**asdict(state))
     new.sessions_seen = state.sessions_seen + [session]
-    # The run of C grades per held name.
-    streak = {}
-    for symbol in held:
-        below = ORDINAL.get(grades.get(symbol, "C"), 0) < ORDINAL[B]
-        streak[symbol] = state.c_streak.get(symbol, 0) + 1 if below else 0
-    new.c_streak = streak
+    new.opened = {s: d for s, d in state.opened.items() if s in held}
+    done = finished or {}
     orders: list[PaperOrder] = []
     rebalance = (
         state.last_rebalance is None
@@ -125,6 +124,7 @@ def plan(
                         symbol, "buy", delta, f"rebalance to {targets[symbol]:.3f}"
                     )
                 )
+                new.opened.setdefault(symbol, session)
             else:
                 reason = (
                     "leaves the book"
@@ -135,12 +135,11 @@ def plan(
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
-        for symbol, run in streak.items():
+        for symbol, why in done.items():
             qty = int(held.get(symbol, 0))
-            if run >= PATIENCE and qty > 0:
-                orders.append(
-                    PaperOrder(symbol, "sell", qty, f"grade below B for {run} sessions")
-                )
+            if qty > 0:
+                orders.append(PaperOrder(symbol, "sell", qty, why))
+                new.opened.pop(symbol, None)
         what = "hold" if not orders else "exits"
     # Sells first, so the buys have the cash.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))

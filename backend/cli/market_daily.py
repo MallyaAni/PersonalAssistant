@@ -163,6 +163,7 @@ def prune(root: Path, asof: date, days: int) -> list[Path]:
 # the account. Returns the day's entry for the desk record.
 def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
+    from backend.agents.trading.desk import exit as exit_analyst
     from backend.agents.trading.desk import paper
     from backend.market import alpaca_trading
 
@@ -183,8 +184,20 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
         if ticker != panel.benchmark
     }
     state = paper.load_state(store_root)
+    # Which held names look finished today, and why.
+    evidence = exit_analyst.evidence(panel)
+    positions_index = {d: i for i, d in enumerate(map(str, panel.dates))}
+    finished: dict[str, str] = {}
+    for symbol in held:
+        if symbol not in panel.tickers:
+            continue
+        opened = state.opened.get(symbol)
+        entry_index = positions_index.get(opened, 0) if opened else 0
+        column = panel.index(symbol)
+        if exit_analyst.should_exit(evidence, last, column, entry_index):
+            finished[symbol] = exit_analyst.reason(evidence, last, column)
     orders, new_state, what = paper.plan(
-        session, state, account.equity, held, prices, targets, grades
+        session, state, account.equity, held, prices, targets, grades, finished
     )
     print(f"\npaper book ({what}), equity {account.equity:,.0f}:")
     submitted = []
