@@ -33,6 +33,49 @@ families were measured, not the whole matrix - re-run `evaluate_tool_selection
 Diagram impact: NONE (no component added; the last listing rides the Redis
 the app already reaches).
 
+## 2026-09-06 (last) — the desk is the operator's; the paper book exists but is not armed (PUSHED, NOT DEPLOYED)
+
+Continues the entry below it. Commits `5d02eac5`, `90871287`.
+
+**One person's desk.** `MARKET_DESK_USER` (default `ani.mallya`) names
+whose it is. The desk route answers 403 for any other user id whatever
+its token, the Desk view and its sidebar entry render only for the
+operator session, and the trading card carries the desk only for that
+user. The card no longer asks for statements: the desk needs nothing from
+the person, and a statement or journal only feeds the autopsy of past
+trades, so `setup_needs` is empty and the status is idle either way.
+
+**The paper book.** `backend/market/alpaca_trading.py` (paper endpoint
+only; a non-paper base URL raises) and `desk/paper.py`. The rules are the
+measured ones: every 20 sessions the book is brought to the desk's target
+weights at the next open in whole shares; between rebalances the only
+sale is a held name graded below B for 10 consecutive sessions; there is
+no price stop, because every stop measured worse than none on every name;
+moves under half a percent of equity are skipped; a session is planned
+once. State lives in `data/market/paper/state.json` (rebalance clock, per
+name run of C grades, starting equity, equity history). `market_daily
+--paper-dry-run` prints the plan and the account; `--paper-trade` cancels
+yesterday's unfilled orders and submits. Both are off by default and the
+cron does not pass either.
+
+**Proven, not armed.** The dry run against the real paper account read
+equity 100,000 with no positions and planned nine buys (HPE 103, FTNT 31,
+ANET 26, AAOI 21, PLTR 20, PANW 18, MRVL 10, SNDK 4, LITE 2). Nothing was
+submitted. The Desk page shows the paper equity, cash, P/L since the
+paper book started, the orders submitted and each position's open profit
+or loss, whenever the record carries a paper entry.
+
+**To arm it** (the operator's call): add `--paper-trade` to
+`~/desk_daily.sh` on spark1 and put `APCA_API_KEY_ID` and
+`APCA_API_SECRET_KEY` in that script's environment (the desktop reads
+them from `.env`; spark1's checkout has no `.env`). The first live
+session rebalances from cash into the nine names; after that it trades
+about once a month plus exits.
+
+**Next atomic task.** The deploy (mount, backend rebuild, gateway), then
+arming the paper book if the operator says so, then a monthly
+`--calibrate` line on the page.
+
 ## 2026-09-06 (later still) — the desk runs itself on spark1 (PUSHED; DEPLOY STEP PENDING)
 
 Continues the entry below it. Commit `562cce2d`.
