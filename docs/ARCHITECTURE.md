@@ -297,6 +297,14 @@ delete-all.
    spawned four copies of itself") and exempt from memory capture ("the same
    fact 365 times a year, unattended").
 
+*Stored:* tasks, runs, taught skills. *The model decides:* that this is a
+scheduling request, the self-contained instruction, cadence fields, which
+existing task "the weather one" means. *Code decides:* cadence math and DST,
+exactly-once slots, leases, the walls above, and that a reply of exactly
+`NOTHING_TO_REPORT` is silence. *You control:* create, list,
+pause, resume, cancel in plain language; the Automations panel shows every
+task and skill.
+
 ### Scout, third shape - check-ins it arms itself ([design](CHECKIN_ARCHITECTURE.md), [ADR](adr/0019-a-check-in-is-a-scheduled-task.md))
 
 0. Nothing here happens until you ask for it. People did not like being
@@ -325,14 +333,6 @@ wellbeing check a week, never the same subject twice, never in a group room,
 never without a timezone, and the day and hour bounds. *You control:* on, off,
 one by name, and list, pause and cancel them in the same words as any other
 automation.
-
-*Stored:* tasks, runs, taught skills. *The model decides:* that this is a
-scheduling request, the self-contained instruction, cadence fields, which
-existing task "the weather one" means. *Code decides:* cadence math and DST,
-exactly-once slots, leases, the walls above, and that a reply of exactly
-`NOTHING_TO_REPORT` is silence. *You control:* create, list,
-pause, resume, cancel in plain language; the Automations panel shows every
-task and skill.
 
 ### Texting it - the iMessage bridge ([diagram](diagrams/imessage-bridge.svg))
 
@@ -1961,7 +1961,7 @@ stores only coordination keys and opaque lease tokens. This is bounded priority
 scheduling for one local model host, not GPU-capacity accounting or a general
 distributed-agent scheduler.
 
-The qualification that established this boundary (historical, single-GPU profile) consolidated main response, native tool selection, diagram, presentation, architecture-candidate, and vision roles on `qwen/qwen3.5-4b`, served in FP8 by `vllm-main`, with `vllm-embedding` serving Nomic text embeddings. Provider-level checks passed streaming termination, native tools, structured output, vision, and embedding dimensions; real acceptance then passed direct chat, live Chromium chat/restoration, uploaded-image analysis, real ComfyUI generation while both vLLM services remained resident, and three consecutive presentation jobs. The same promotion rule carried the text roles onto DeepSeek on the Sparks in 2026-08 (`MODEL_EVALUATION.md`, `DGX_MIGRATION.md`): the repeatable harness remains a promotion gate, not sufficient proof by itself.
+**Historical, on the single-GPU profile.** The qualification that established this boundary consolidated main response, native tool selection, diagram, presentation, architecture-candidate, and vision roles on `qwen/qwen3.5-4b`, served in FP8 by `vllm-main`, with `vllm-embedding` serving Nomic text embeddings. Provider-level checks passed streaming termination, native tools, structured output, vision, and embedding dimensions; real acceptance then passed direct chat, live Chromium chat/restoration, uploaded-image analysis, real ComfyUI generation while both vLLM services remained resident, and three consecutive presentation jobs. The same promotion rule carried the text roles onto DeepSeek on the Sparks in 2026-08 (`MODEL_EVALUATION.md`, `DGX_MIGRATION.md`): the repeatable harness remains a promotion gate, not sufficient proof by itself.
 
 ### Schema-constrained model boundaries
 
@@ -2079,10 +2079,52 @@ The model vector type follows the validated `EMBEDDING_DIMENSION` setting. Offli
 
 ## Frontend
 
-The React frontend begins at an invited sign-in/profile-creation screen when
-authentication is required and does not mount private product views until
-`/auth/session` returns
-the server-derived owner. It contains a responsive light-neutral shell with search-first Chat, Personal Memory, Visual Artifacts, and Presentations views. Empty chat centers one dominant query composer; active chat presents each user query and assistant response as a left-aligned result flow rather than opposing message bubbles. Request trace/conversation identifiers remain available through an answer-level three-dot metadata popover instead of the primary answer text. The native font stack selects SF Pro through the Apple system aliases where available and the platform `system-ui` font elsewhere; the composer explicitly inherits that same stack. The memory screen explicitly applies user changes, cancels obsolete reads, edits profile/preferences, lists and deletes records, confirms delete-all, keeps manual event/fact creation behind an advanced plain-language disclosure, and renders live counts for every implemented short- and long-term memory form. Chat validates text, memory, search, MCP tool, image, and artifact SSE lifecycles; each tool shows running, succeeded, refused, or failed state without exposing arguments or results. Assistant text is rendered as styled CommonMark through ReactMarkdown with raw HTML interpretation disabled, while user messages remain literal text. Chat lazily loads Mermaid only for ready diagrams, renders under strict settings with HTML labels disabled, exposes editable source, and shows generation/render failures. The Artifacts view lists recent owned ready diagrams, reuses strict rendering, downloads Mermaid or the locally rendered SVG without another provider call, exposes refresh/load failures, and deletes owned records. The Presentations view lists persisted decks, creates a deck from a brief, shows reconnectable named-stage progress plus the latest partial slide, previews the promoted typed specification in a main canvas and thumbnails, applies feedback only to a selected slide, displays append-only revision history, downloads a named `.pptx`, and exposes loading and failure states. The browser persists only per-owner conversation and presentation job IDs across reloads; it keeps the in-memory transcript mounted across view switches, restores a bounded owned transcript and its diagram artifacts after a full reload, rotates it through `New conversation`, and clears the visible transcript when the authenticated owner or conversation changes.
+**Getting in.** The React frontend opens on an invited sign-in and
+profile-creation screen when authentication is required, and mounts no private
+view until `/auth/session` returns the owner the server derived. Trusted-local
+mode skips that (see below) and is not authentication.
+
+**The shell.** A responsive light-neutral frame holds four views: Chat,
+Personal Memory, Visual Artifacts and Presentations. An empty chat centres one
+dominant composer; an active chat lays each question and answer out as a
+left-aligned flow of results rather than opposing bubbles. Trace and
+conversation identifiers sit behind a three-dot popover on the answer, not in
+the answer text. The font stack picks SF Pro through the Apple system aliases
+where they exist and the platform `system-ui` elsewhere, and the composer
+inherits it explicitly.
+
+**Chat.** It validates the text, memory, search, MCP-tool, image and artifact
+SSE lifecycles, showing each tool as running, succeeded, refused or failed
+without ever exposing its arguments or results. Assistant text renders as
+styled CommonMark through ReactMarkdown with raw HTML interpretation disabled;
+what the user typed stays literal text. Mermaid is loaded lazily and only for
+a diagram that is ready, rendered under strict settings with HTML labels off,
+with its source available to edit and its generation or render failures shown
+rather than swallowed.
+
+**Personal Memory.** Changes are applied explicitly and obsolete reads are
+cancelled. It edits the profile and preferences, lists and deletes records,
+asks twice before deleting everything, keeps manual event and fact creation
+behind a plain-language advanced disclosure, and shows live counts for every
+memory form that exists.
+
+**Visual Artifacts.** Recent owned diagrams that are ready, rendered by the
+same strict path, downloadable as Mermaid or as the SVG already rendered
+locally - no second call to a provider - with refresh and load failures
+visible and owned records deletable.
+
+**Presentations.** Persisted decks, a new deck from a brief, named-stage
+progress a browser can reconnect to along with the latest partial slide, a
+preview of the promoted specification in a main canvas with thumbnails,
+feedback applied only to the selected slide, append-only revision history, a
+named `.pptx` download, and its own loading and failure states.
+
+**What survives a reload.** Only per-owner conversation and presentation job
+identifiers are persisted in the browser. The transcript stays mounted in
+memory across view switches; after a full reload a bounded owned transcript
+and its diagram artifacts are restored. `New conversation` rotates it, and the
+visible transcript is cleared whenever the authenticated owner or the
+conversation changes.
 
 Trusted-local mode uses configured owner `operator` without a login. It is a
 single-user development convenience, not authentication, and must not be
@@ -2171,6 +2213,11 @@ Current runtime validation completes this flow through the qualified main and sp
 
 ## Capability boundaries
 
+What exists and what does not, one capability per entry. `PLANNED` means
+designed and not built; everything else on a **Shipped** line has been walked
+end to end, by a browser where a person would see it and by a functional test
+where a model decides it.
+
 - Personal profile, episodic memory, relevance-gated semantic search,
   management/export/correction/deletion UI, and invite-only password
   authentication: functionally implemented; the current local runtime has auth
@@ -2190,8 +2237,44 @@ Current runtime validation completes this flow through the qualified main and sp
   branch is deterministically verified but a real Google request is
   `UNVERIFIED` until a key is configured. Sensitive-query review, redacted
   audit storage, and provider hardening remain `PLANNED`.
-- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, source-conditioned FLUX editing of generated or uploaded images, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Qwen image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live local VLM call through the visual MCP facade are verified. Indexing the initial upload analysis into semantic memory, so an uploaded image's content is recalled by an ordinary conversation turn, is implemented and live-verified; indexing the interactive follow-up thread remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable diagram/image queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
-- Editable PowerPoint generation through a focused presentation graph, a durable leased worker, PostgreSQL job state, reconnectable progressive drafts, a Redis foreground-chat priority gate, strict typed specifications, model-declared ranked visual briefs, bounded best-effort default FLUX enrichment, persistent per-slide feedback conversations, additional FLUX generation and refinement of an attached slide image, selected-slide-only changes, append-only revision history, PptxGenJS native objects, OOXML inspection, LibreOffice validation, opaque storage, browser previews, named download, deletion, and metadata-only MCP tools: implemented and direct/live-browser verified. Raster images inside a slide remain replaceable image objects rather than decomposed editable pixels. Importing arbitrary existing PPTX files, distributed GPU-capacity scheduling, source-grounded deck research/citations, template/master libraries, automated visual-diff review, and a minimum-readable-font visual quality gate remain `PLANNED`.
+- **Diagrams and pictures.**
+  - *Shipped, browser-verified:* Mermaid diagrams through their own graph,
+    with user-scoped history and deletion, strict rendering, restoration after
+    a reload, Mermaid and SVG export, and recovery when the stream drops.
+  - *Shipped, browser-verified:* raster generation and bounded upload, source-
+    conditioned FLUX editing of either, opaque binary storage, owned reads and
+    deletion, aligned multimodal image embeddings, vision-model image
+    understanding, progress/retry/cancel in the browser, private rendering,
+    restoration, history and download.
+  - *Shipped:* follow-up questions on an owned picture reuse the stored bytes
+    and the same vision boundary in a bounded persisted thread, covered
+    deterministically and by a live VLM call through the visual MCP facade.
+    The first upload's analysis is indexed into semantic memory, so an
+    ordinary later turn recalls what the picture held.
+  - *Shipped:* the diagram, image, follow-up and artifact-status services are
+    also exposed through a metadata-only local FastMCP facade. Review-only
+    architecture candidates never update canonical source by themselves.
+  - *`PLANNED`:* indexing the follow-up thread as well as the first analysis;
+    approving and resuming an autonomous consequential call; automated binary
+    retention and export; durable diagram and image queues; GPU resource
+    leasing; general image agents.
+- **Slide decks.**
+  - *Shipped, browser-verified:* editable PowerPoint from a focused
+    presentation graph and a durable leased worker, with job state in
+    PostgreSQL, progressive drafts a browser can reconnect to, a Redis gate
+    that lets foreground chat go first, strict typed specifications,
+    model-declared ranked visual briefs, best-effort image enrichment,
+    per-slide feedback conversations that persist, generation and refinement
+    of an attached slide image, changes confined to the selected slide,
+    append-only revision history, native PptxGenJS objects, OOXML inspection,
+    LibreOffice validation, opaque storage, previews, named download,
+    deletion, and metadata-only MCP tools.
+  - *By design:* a raster image inside a slide stays a replaceable image
+    object; it is not decomposed into editable pixels.
+  - *`PLANNED`:* importing an existing PPTX, distributed GPU-capacity
+    scheduling, source-grounded research and citations in a deck,
+    template and master libraries, automated visual-diff review, and a
+    minimum-readable-font quality gate.
 - Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native main-model selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and general multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
 
 ## Architectural decision
@@ -2200,5 +2283,5 @@ Every decision record, its reasoning, and its status is catalogued in
 [Part II](#part-ii---the-engineering-decisions-and-why) above, including the
 reply graph ([ADR 0012](adr/0012-the-graph-answers-the-turn-it-does-not-run-it.md))
 and the two open briefs on a capability registry (0013) and the embedding
-models (0014). The summary that follows is the original index, kept for its
-links. The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries. [ADR 0008](adr/0008-provider-neutral-inference-boundary.md) records the provider-neutral inference adapters, role-level configuration, and deliberate separation from runtime lifecycle control. [ADR 0009](adr/0009-vllm-default-local-inference-runtime.md) records the pinned two-service vLLM deployment, consolidated Qwen/Nomic role profile, GPU-safe startup order, and remaining resource-management boundary. [ADR 0010](adr/0010-invite-identity-and-revocable-sessions.md) records the stable-owner/login-name split and revocable server-side browser-session boundary. [ADR 0011](adr/0011-sharing-by-copy-on-accept.md) records the decision that sharing between accounts copies on accept rather than granting access into another owner's store, keeping the single-owner invariant that deletion, export, and every scoped query already depend on.
+models (0014). Each record is linked from that table; the files themselves are in
+[docs/adr/](adr/).
