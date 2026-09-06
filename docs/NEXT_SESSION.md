@@ -33,6 +33,57 @@ families were measured, not the whole matrix - re-run `evaluate_tool_selection
 Diagram impact: NONE (no component added; the last listing rides the Redis
 the app already reaches).
 
+## 2026-09-06 — entries, exits, the trade backtest, and what the book is worth (PUSHED, NOT DEPLOYED)
+
+Continues the entry below it.
+
+**Two more of the operator's claims measured.** His mean-reversion entry
+(far below the short EMAs, near the lower Bollinger band) pays at one
+week among qualified names: more than 8% below the 21 EMA +1.2% in 5
+sessions (t 3.5, hit 0.58), below the lower band +0.9% (t 2.6), below the
+band while the AI basket falls +2.1% (t 4.3, hit 0.62); by 20 sessions the
+dip edge is gone and strength pays instead (more than 8% above the 21 EMA
++2.0%, t 2.6). Dips are entries, trend is the hold. And a learned model
+does not beat the fixed grade: walk-forward LightGBM on every desk feature
+(analyst ranks, levels, stretch, Bollinger, momentum, regime) gives
+out-of-sample IC 0.006 (t 0.4) against 0.035 (t 2.1) for the grade on the
+same sessions; it ranks tone, fundamentals and momentum highest and fits
+noise after that. Reinforcement learning was asked about and declined for
+the same reason: one path of 90 correlated names is not many episodes.
+
+**The entry analyst and the trade backtest.** `desk/entry.py` (dip and
+breakout triggers), `desk/backtest.py` (enter at the next open on A or
+better plus a trigger, sized by grade and exposure; exit on a support stop
+or a chandelier ATR stop or after N sessions below B; 10 bp a side;
+variants switch each rule off), `market_desk --backtest MU NVDA --since
+2021-06-01` and `--book-backtest`. **Result, on eight names since 2024 and
+six since mid-2021: every per-name timing rule trails holding the name,
+and the stops are the worst part** (AVGO since 2021: support stop +118%,
+chandelier 3 ATR +40%, no stop with a slow grade exit +173%, hold +214%;
+NVDA: +104% / +122% / +138% / +265%; PANW: -10% / +10% / +80% / +171%).
+Hit rates 30-60%. The best rule set everywhere is no price stop and an
+exit only after 10 sessions below B; even that trails buy-and-hold because
+the first A grade arrives late (fundamentals need a year of filings: SNDK
+entered 2025-11, CRWV never) and the position is out a third of the time.
+
+**The book.** The graded scores through the sizing engine on the 90
+names, monthly rebalance, no stops, since 2021-06: top 20% at a 15% vol
+target +16.1% a year, Sharpe 1.25, max drawdown -16.5%; top 10% at 25%
+vol +30.9%, Sharpe 1.55, -20.2%; equal weight of all 90 names +40.9%,
+Sharpe 1.28, -38.7%; SPY +14.3%, 0.85, -24.5%. The daily equal weight of
+A-or-better names +47.3% (Sharpe 1.22) against C names +42.0% (1.33): in
+raw terms the grades barely separate, because these names' returns were
+the AI theme, and the grade's measured edge (100 bp per 20 sessions,
+beta-adjusted) is small next to a 40%-a-year drift. What the desk adds is
+risk: a third of the drawdown at a similar Sharpe. That is the honest
+"hedge-fund implementation" on this history: own the theme, size by risk,
+rebalance monthly, exit on the grade, never on a price stop.
+
+**Next atomic task.** Hysteresis on stances; the per-name backtest on the
+book's 20-session clock; then whether the 15-minute bars improve the fill
+on an entry day (enter at the next open versus a pullback to the 15-minute
+21 EMA), which is the only intraday question still open.
+
 ## 2026-09-05 (later) — trade location; the technical analyst rebuilt on it (PUSHED, NOT DEPLOYED)
 
 Continues the entry below it. Commits `19a45009` (history), `34bd4af0`
