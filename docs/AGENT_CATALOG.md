@@ -195,34 +195,73 @@ projects a Scout fact where applicable, in the same turn, before the reply is
 generated — no approval step gates the write. A per-candidate save failure is
 dropped and logged, costing only that one candidate.
 
-## Trading — the personal autopsy
+## Trading — the desk, and the autopsy
 
-Reads a person's own trading history — uploaded statements, journals, notes —
-and names what repeats, what it has cost, and what to stop, start, and keep.
+Two capabilities in one folder that share nothing else. The desk grades a fixed
+book of AI-infrastructure and software names every session and sizes a portfolio
+from those grades. The autopsy reads the person's own trading history and names
+what repeats, what it has cost, and what to stop, start, and keep.
 
 | | |
 | --- | --- |
 | Registry id | `trading` |
 | Diagram | [agent-trading.svg](diagrams/agent-trading.svg) · [source](diagrams/agent-trading.mmd) |
-| Agent folder | `backend/agents/trading/` |
-| Domain package | `backend/memory/` (reads the person's knowledge store) |
-| Prompts | `prompts/trading/autopsy.md` — one |
+| Agent folder | `backend/agents/trading/`, and `backend/agents/trading/desk/` |
+| Domain package | `backend/market/` (the desk), `backend/memory/` (the autopsy) |
+| Prompts | `prompts/trading/release_tone.md`, `desk_brief.md`, `autopsy.md` — three |
 | Card | `agents/trading/card.py` |
-| Functional tests | `test_trading_autopsy_behaviour.py` |
+| Functional tests | `test_release_tone_behaviour.py`, `test_desk_brief_behaviour.py`, `test_trading_autopsy_behaviour.py` |
+| Runs | `python -m backend.cli.market_daily --refresh --brief-book`, on spark1 after each close |
+| Whose | one person's: `MARKET_DESK_USER`; every other user is refused |
 
-**What the model decides:** the behaviours that repeat in a person's record,
-which of their stated costs belong to which behaviour, and the stop/start/keep
-plan. **What is decided for it:** nothing numeric. A cost may only be stated
-when a number is actually present in the passages; a behaviour only counts as a
-pattern when it appears more than once. The numbers in the post-mortem come
-from the record, never from the model.
+### The desk
+
+Five analysts each read one kind of evidence and give an opinion on every name
+in the book:
+
+| Analyst | Reads | Module |
+| --- | --- | --- |
+| Fundamental | growth and margins from the filings, point in time | `desk/fundamental.py` |
+| Technical | trend, momentum, and where price sits against support and resistance | `desk/technical.py`, `market/levels.py` |
+| Sentiment | what the company said about its future in its last results release | `desk/sentiment.py`, `market/language.py` |
+| Value | how cheap the name is against the other names on its side of the book | `desk/value.py`, `market/valuation.py` |
+| Regime | participation, rotation, whether the yield is rising, and whether the theme's co-movement has changed shape | `desk/regime.py` |
+
+A fixed rule in `desk/grading.py` turns their agreement into an A+, A, B or C
+grade; any bearish core analyst caps the grade at B. `desk/risk.py` turns grades
+into sizes on top of a volatility-targeted engine, and cuts exposure and leans on
+steadier names while the ten-year yield is rising. `desk/backtest.py` and
+`desk/paper.py` walk the same rules through history and onto a paper brokerage
+account. Every number in every rule was measured in a walk-forward harness with a
+purge and an embargo, on beta-adjusted returns, after costs.
+
+**What the model decides:** only what a results release says about the future —
+its outlook, the demand it describes, its pricing, its capital spending and
+whether supply limits it — and the wording of the per-name brief. It never sees a
+price. **What is decided for it:** every grade, every size, every trade rule and
+every number.
+
+**Why the model is not in the decision.** Six neural networks were trained on
+price history during development — a multilayer perceptron, a recurrent encoder,
+a cross-name transformer, a market-gated encoder, an image model over rendered
+charts, and one over fifteen-minute bars — and every one measured zero out of
+sample once the label was adjusted for market drift. A cross-sectional network
+given the analysts' own outputs reproduces the fixed rule at 0.94 correlation,
+which says the rule is representable, not that a fitted version of it is better.
+The signal that does exist is in the documents, so that is where the model is.
+
+### The autopsy
+
+Reads uploaded statements, journals and notes from the shared knowledge store
+and names the behaviours that repeat. Nothing numeric is invented: a cost may
+only be stated when the number is actually present in the passages, and a
+behaviour only counts as a pattern when it appears more than once.
 
 **Why it is structured this way.** A single loss proves nothing; a behaviour
-that shows up again and again is what a person can change. The prompt is
-written to name the behaviour ("cut winners early", "added to a losing
-position"), not the person's character, because a post-mortem that reads as
-blame is one nobody acts on. It decides nothing for the person and trades
-nothing — it reports what their own record keeps doing.
+that shows up again and again is what a person can change. The prompt names the
+behaviour ("cut winners early", "added to a losing position"), not the person's
+character, because a post-mortem that reads as blame is one nobody acts on. It
+decides nothing for the person and trades nothing.
 
 ## Not agents — model calls that route
 

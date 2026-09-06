@@ -155,6 +155,8 @@ independently (`MAIN_LLM_*`, `ROUTING_LLM_*`, `VISION_*`, `EMBEDDING_*`,
   diagrams with zoom; [diagrams/README.md](diagrams/README.md) says which
   diagram answers which question. Mermaid sources are authoritative; SVGs are
   generated and fingerprint-checked.
+- The agents each have a subsection below, one per agent, saying what it
+  decides and what is decided for it.
 - Part II below explains *why* things are the way they are.
 - [ML_SYSTEM_DESIGN.md](ML_SYSTEM_DESIGN.md) is the ML systems engineering:
   quantisation, KV cache, parallelism, context against memory, thresholds,
@@ -472,6 +474,137 @@ digests, Argon2id, sessions, rate limits, origin allowlist, scopes ("ownership
 answers *who*; scopes answer *what*"). *You control:* asking, polling your
 request; the operator sees on approval whether the bridge grant and the
 welcome actually happened.
+
+## The agents, one by one
+
+An agent here is a folder that owns a decision. It holds what that agent
+*decides* — its prompts, its own orchestration, and the card that reports its
+live state — while the machinery it drives stays in a domain package. The
+dependency runs one way: `backend/agents/` imports domain packages and none of
+them import back, which is why Scout's sweep lives in `backend/discovery/`
+rather than under `agents/scout/`.
+
+Six agents have a card and appear in the workspace's Agents tab, served from
+`GET /api/v1/agents/{user_id}`. Two more have no card, because neither is
+something a person starts. [AGENT_CATALOG.md](AGENT_CATALOG.md) carries the
+per-agent tables of prompts, tests and diagrams; what follows is what each one
+is for and where the line between model and code falls.
+
+### Scout — standing work ([diagram](diagrams/agent-scout.svg))
+
+Three shapes of the same idea: work that continues when nobody is asking.
+Ambient discovery finds things happening near you, scheduled tasks run a skill
+on a clock, and check-ins are the ones it arms for itself after a conversation
+implies a follow-up. Each shape is described in full above.
+
+*The model decides:* what is worth surfacing, how to describe it, and whether a
+conversation implied a follow-up worth arming. *Code decides:* the schedule,
+the sources, the quotas, and every write. *Folder:* `agents/scout/`, driving
+`backend/discovery/`.
+
+### Deck — presentations ([diagram](diagrams/agent-deck.svg))
+
+Turns a request into an outline and then into slides, each slide written
+against the outline and never against the other slides, so the calls run
+together. Revision edits one slide in place rather than regenerating the deck.
+
+*The model decides:* the outline, each slide's content, and a revision.
+*Code decides:* the job lifecycle, concurrency, validation against the Office
+schema, and rendering. *Folder:* `agents/deck/`, driving
+`backend/presentations/`.
+
+### Diagram — architecture drawings ([diagram](diagrams/agent-diagram.svg))
+
+Answers a chat turn that asks for a drawing by writing Mermaid, which the
+frontend renders. It has no card because it is not something a person starts
+and stops; it is a turn.
+
+*The model decides:* the diagram source. *Code decides:* the fence, the render,
+and the failure path when the source does not parse. *Folder:* `agents/diagram/`.
+
+### Memory capture — what is worth remembering ([diagram](diagrams/agent-memory.svg))
+
+Classifies each turn for anything worth keeping and writes it immediately, with
+no approval card. It has no agent card for the same reason the diagram agent has
+none: it is a step inside every turn rather than a thing that runs.
+
+*The model decides:* whether a turn contains something durable and how to word
+it. *Code decides:* deduplication, storage, and what recall surfaces.
+*Folder:* `agents/memory/`.
+
+### Reviewer — a read-only review of one commit ([diagram](diagrams/agent-review.svg))
+
+Runs on the durable-run loop so it can outlive a turn. It reads a commit and
+reports findings; it changes nothing.
+
+*The model decides:* the findings and their severity. *Code decides:* the
+sandbox, the read-only boundary, and the run's lifecycle. *Folder:*
+`agents/review/`, driving `backend/runs/`.
+
+### Security — a scoped investigation of one commit ([diagram](diagrams/agent-security.svg))
+
+The same loop with a narrower brief and a harder boundary: it may read within
+its scope and nothing else, and it reports rather than fixes.
+
+*The model decides:* what to look at next within the scope, and what it found.
+*Code decides:* the scope itself, which is enforced rather than requested.
+*Folder:* `agents/security/`.
+
+### Experience review — where the assistant let someone down ([diagram](diagrams/agent-experience.svg))
+
+Reads real conversations for the moments the assistant failed a person, and
+proposes what would have to change. It is the one agent whose subject is the
+system itself.
+
+*The model decides:* which moments count and what the fix is. *Code decides:*
+which conversations it may read and how a proposal is recorded.
+*Folder:* `agents/experience/`.
+
+### Trading — the desk, and the autopsy ([diagram](diagrams/agent-trading.svg))
+
+Two capabilities that share a folder and share nothing else.
+
+**The desk** grades a fixed book of ninety-three AI-infrastructure and software
+names every session and sizes a portfolio from those grades. Five analysts each
+read one kind of evidence and give an opinion on every name — filings, the
+tape and where price sits against support and resistance, what the company said
+in its last results release, how cheap it is against its peers, and which side
+of the book money is rotating toward. A fixed rule turns the analysts'
+agreement into an A+, A, B or C grade, a risk manager turns grades into
+position sizes, and a regime analyst scales the whole book down when
+participation is thin or the ten-year yield is rising. `market_daily` runs the
+whole thing after each close, writes a record of the session, and the Desk view
+reads that record. The desk belongs to one person: `MARKET_DESK_USER` names
+them and every other user is refused.
+
+The only model in the desk's decision path reads documents, not prices. It
+scores each earnings release for what the company said about its outlook, and
+those scores become the sentiment analyst. It also writes the plain-English
+brief for each held name. Six neural networks were trained on price history
+during development and every one measured zero out of sample, which is why the
+grades are rules whose every number was measured in a walk-forward harness
+rather than weights fitted to the past.
+
+**The autopsy** is the older capability and reads the person's own uploaded
+statements, journals and notes to name the behaviours that repeat and what they
+have cost. Nothing numeric is invented: a cost is stated only when the number is
+present in the passages.
+
+*The model decides:* what a results release says about the future, the wording
+of each brief, and — in the autopsy — the behaviours and the plan. *Code
+decides:* every grade, every size, every trade rule, and every number.
+*Folder:* `agents/trading/` and `agents/trading/desk/`, driving
+`backend/market/`. *Prompts:* `prompts/trading/` — three.
+
+### Adding one
+
+Two steps, deliberately. A folder with a card, and an entry in the tuple in
+`backend/agents/registry.py`. The registry stores nothing: every field on a card
+is derived from tables the agent already writes, so the tab cannot claim a state
+the agent is not in, and an agent that stops working shows as stalled rather
+than showing whatever it last said about itself. Routing to a specialist is a
+separate two steps — a policy and a handler — because routing to something that
+cannot run is worse than not routing at all.
 
 ---
 
