@@ -345,11 +345,35 @@ function countCanonicalSources() {
     .length;
 }
 
+// Count what is on disk rather than repeat a number someone typed once. The
+// hardcoded "2052 collected" tile was eight hundred tests out of date by
+// 2026-09-06, and "Not deployed" under image generation had been wrong since
+// the desktop came back; both sat on the published page for weeks.
+function countTests(directory, { recurse = true } = {}) {
+  let total = 0;
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const full = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (recurse) total += countTests(full);
+      continue;
+    }
+    if (!entry.name.startsWith("test_") || !entry.name.endsWith(".py")) continue;
+    total += (readFileSync(full, "utf8").match(/^\s*(?:async )?def test_/gm) ?? [])
+      .length;
+  }
+  return total;
+}
+
+const backendTests = countTests(path.join(repositoryDirectory, "backend", "tests"));
+const functionalTests = countTests(
+  path.join(repositoryDirectory, "backend", "tests", "functional"),
+);
+
 const metrics = [
   {
     label: "Turn routing",
-    value: "Native tool call",
-    note: "MainActionSelector &middot; one model decision, all options",
+    value: "Up to 3 steps",
+    note: "the model chooses each step, then sees what it did &middot; 45s budget, repeat guard",
     good: false,
   },
   {
@@ -372,8 +396,8 @@ const metrics = [
   },
   {
     label: "Image generation",
-    value: "Not deployed",
-    note: "ComfyUI left with the desktop &middot; fails loudly, not silently",
+    value: "On the desktop GPU",
+    note: "FLUX.2 Klein through ComfyUI &middot; says so plainly when that machine is off",
     good: false,
   },
   {
@@ -384,14 +408,14 @@ const metrics = [
   },
   {
     label: "Backend suite",
-    value: "2052 collected",
-    note: "collected, not asserted passing &mdash; DB-backed tests need a host",
+    value: `${backendTests} tests`,
+    note: "counted on disk, not asserted passing &mdash; the database-backed ones need a host",
     good: true,
   },
   {
-    label: "Deploy gate",
-    value: "7 pass, 0 skip",
-    note: "routing matrix against the real router &middot; a skip counts as a failure",
+    label: "Against the real models",
+    value: `${functionalTests} tests`,
+    note: "real prompt, real runtime, judged on the answer &middot; a skip counts as a failure",
     good: true,
   },
 ];
@@ -606,23 +630,21 @@ ${proseStyles}
 <body>
 <div class="wrap">
 <p class="eyebrow">AniOS &middot; canonical suite &middot; ${publishedDiagrams.length} diagrams synchronized</p>
-<h1>How AniOS routes work, assigns models, and preserves authority</h1>
-<p class="lede">A manager-facing map of the implemented local-first system. Start with the
-full-system view, then use each subsystem diagram to trace ownership, model calls, persistence,
-trust boundaries, and user-visible lifecycle from entry point to result. Model choices here are
-decided by measurement, not model cards: the <a href="evals/index.html">evaluation record</a>
-holds the blind-judged comparisons, verbatim answers, and serving numbers behind each decision.</p>
-<p class="contract"><strong>Current orchestration contract:</strong>
-<code>MainActionSelector</code> offers live search, image generation/edit, diagrams, presentation
-delegation, and the user's own registered MCP tools to the main model as one native tool-calling
-decision per turn, made from genuine understanding rather than a regex or a narrow bounded
-classifier judging the question alone. Ordinary responses, the routing decision itself, presentation
-plans, diagram specifications, memory proposals and Scout's judgement calls all run on
-DeepSeek-V4-Flash at official FP8, served tensor-parallel across two DGX Sparks; the engine enforces
-JSON schemas, which is what allowed those callers to stop being pinned to a smaller grammar model.
-Vision is the one remaining Qwen role. Nomic supplies text embeddings through a separate vLLM
-service. Application code &mdash; never the models &mdash; owns
-authorization, persistence, provider policy, and execution.</p>
+<h1>How a message becomes an answer</h1>
+<p class="lede">Every drawing below traces one path through AniOS: where a request enters, which
+model is asked what, what is written down, and what the person finally sees. Start with the
+full-system view and follow whichever subsystem you care about. Where a model was chosen, it was
+chosen by measuring it against the alternatives &mdash; the <a href="evals/index.html">evaluation
+record</a> keeps the comparisons, the answers each model actually gave, and the serving numbers.</p>
+<p class="contract"><strong>How a turn is decided.</strong> The model is shown everything it could
+do &mdash; search the web, make or edit a picture, draw a diagram, build a deck, look through past
+conversations, set something for later, use one of the person's own connected tools &mdash; and it
+picks one, as a real tool call rather than a keyword match. It is then shown what that step did and
+may take another, up to three, inside a 45-second budget. One model does nearly all of this
+thinking: DeepSeek-V4-Flash, split across two DGX Sparks, which answers, routes, plans decks and
+diagrams, and decides what is worth remembering. Qwen3-VL reads images; Nomic turns text into
+vectors. The application, never the model, decides who is allowed to do what, what gets stored, and
+what actually runs.</p>
 
 <dl class="strip">
 ${cells}
