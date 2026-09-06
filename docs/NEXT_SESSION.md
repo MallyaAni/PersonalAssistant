@@ -33,6 +33,35 @@ families were measured, not the whole matrix - re-run `evaluate_tool_selection
 Diagram impact: NONE (no component added; the last listing rides the Redis
 the app already reaches).
 
+## 2026-09-06 (later still) — the desk runs itself on spark1 (PUSHED; DEPLOY STEP PENDING)
+
+Continues the entry below it. Commit `562cce2d`.
+
+**Scheduled.** `~/desk_daily.sh` on spark1, in the crontab at 17:30
+Eastern on weekdays: pulls origin/main into `~/deploy/anios`, then runs
+`market_daily --refresh --brief-book --prune-days 30 --llm-url
+http://127.0.0.1:8000 --llm-model deepseek-v4-flash` with the research
+venv (CUDA hidden, so nothing touches vLLM's memory). It writes bars,
+filings and any new release scores into a fresh partition, grades the
+book, briefs every held name through the local model, writes
+`data/market/desk/asof=<session>/desk.json`, and drops bar and filing
+partitions older than 30 days (a day is about 12 MB; tone and desk
+records are never pruned). The log is `~/desk_daily.log`. The first run
+was started by hand on 2026-09-06 to prove the path.
+
+**The one deploy step left.** `docker-compose.yml` now mounts
+`./data/market/desk` read-only into the backend container, so once the
+stack is rebuilt (`docker compose up -d --build backend` and the gateway
+for the new frontend view) the Desk view at deep-matter.com reads the
+records the cron writes. Until that rebuild the API answers `latest:
+None` and the page says so. Not done here: it restarts the production
+backend, which is the operator's call.
+
+**Next atomic task.** After the deploy: open #desk, confirm the record
+and the orders render; then the paper book on the operator's Alpaca
+paper account behind an explicit `--paper-trade` flag, and live P&L on
+the page from the account's positions.
+
 ## 2026-09-06 (night) — the Desk page, and the desk run for real (PUSHED, NOT DEPLOYED)
 
 Continues the entry below it. Commits `4ddb4873` (pipeline and brief),
