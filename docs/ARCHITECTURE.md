@@ -383,20 +383,21 @@ automation.
    otherwise, never in another member's on someone else's word; and the
    answer, digests, and reminders post back into the chat.
 
-*Stored:* durable state only through the normal chat path; the bridge and
-worker keep a cursor, seen IDs, pending bursts, parked turns, a day of
-turns that ended in a failure line (replayed once when the worker next
-starts - which a deploy is - so the fix a failure needed answers the people
-who hit it, without anyone noticing on their behalf),
-bubble-to-artifact maps, and the bounded recent-outgoing-bubble ledger in
-Redis. *Never lost to a restart:* the cursor
-moves only after a poll is handled and chat.db is the ledger, so a message
-that arrives while the worker or the Mac is down is read when they are
-back; one that finds the backend itself away (a deploy's restart, the
-database unreachable) is parked and retried every poll for ten minutes -
-one "give me a minute" bubble after the first - and only then apologised
-for. A turn that genuinely failed is apologised for at once; retrying a
-bug helps nobody. *The model decides:* the answer, whether one is wanted, and
+*Stored:* durable state only through the normal chat path. In Redis, the
+bridge and worker keep a cursor, seen IDs, pending bursts, parked turns,
+bubble-to-artifact maps, and a bounded ledger of recent outgoing bubbles.
+They also keep a day of turns that ended in a failure line, and replay them
+once when the worker next starts - which a deploy is. So the fix a failure
+needed answers the people who hit it, without anyone having to notice on
+their behalf.
+
+*Never lost to a restart:* the cursor moves only after a poll is handled, and
+chat.db is the ledger. A message that arrives while the worker or the Mac is
+down is read when they come back. One that finds the backend itself away - a
+deploy's restart, the database unreachable - is parked and retried every poll
+for ten minutes, with one "give me a minute" bubble after the first, and only
+then apologised for. A turn that genuinely failed is apologised for at once;
+retrying a bug helps nobody. *The model decides:* the answer, whether one is wanted, and
 whether a positive tapback unambiguously accepts an offered action -
 the recipient is always the bridge's `reply_to` handle, "never anything the
 model wrote". *Never leaves the Mac:* bodies from anyone not on the
@@ -889,20 +890,9 @@ The self-contained [manager-facing architecture page](architecture.html) publish
 
 AniOS currently has a modular FastAPI backend rather than independently deployed internal microservices. These concise orientation views show ownership, major components, and primary flows; exact endpoints, schemas, and exception paths remain in this document and the code. The [diagram catalog](diagrams/README.md) explains which view answers each common technical question.
 
-| Current view | Technical scope | Source | SVG |
-| --- | --- | --- | --- |
-| Runtime and deployment | Processes, ports, protocols, Compose, vLLM, database sessions, migration and maintenance paths | [source](diagrams/runtime-deployment.mmd) | [view](diagrams/runtime-deployment.svg) |
-| Inference scaling target | Implemented role/adapter authority plus planned capacity placement, replicated vLLM pools, specialist pools, serving control plane, and model SLOs | [source](diagrams/inference-scaling-target.mmd) | [view](diagrams/inference-scaling-target.svg) |
-| Chat orchestration | Request ownership, typed supervisor delegation, semantic artifact-recall gating, owner-scoped referent resolution for unselected image edits, memory planning, history, LangGraph streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
-| Search and research | Query minimization, cloud-worker isolation, Google/Tavily provider policy, quota, MCP serialization, and source provenance | [source](diagrams/search-research-subsystem.mmd) | [view](diagrams/search-research-subsystem.svg) |
-| Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
-| Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, auto-save with no approval step, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
-| Scout discovery | Approved home/interest facts, profile projection, travel locality, strength-weighted ranking, familiarity controls, durable sweeps, and outputs | [source](diagrams/discovery-subsystem.mmd) | [view](diagrams/discovery-subsystem.svg) |
-| Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, main-model selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
-| Visual artifacts | Diagram classification/rendering, FLUX generation and editing, validated uploads, opaque binary storage, integrity/deletion, Qwen vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
-| Visual memory and editing | Implemented source-aware immutable revisions and owner-scoped semantic resolution for unselected image edits, plus planned non-blocking generated-image observation, broader artifact sources, post-edit verification, and derived-data lifecycle | [source](diagrams/visual-memory-editing-target.mmd) | [view](diagrams/visual-memory-editing-target.svg) |
-| Architecture maintenance | Explicit repository evidence, local Qwen candidate generation, passive/required-label validation, pinned rendering, review, and manual canonical promotion | [source](diagrams/architecture-maintenance-subsystem.mmd) | [view](diagrams/architecture-maintenance-subsystem.svg) |
-| Frontend | Identity/conversation state, view lifecycle, chat components, memory management, typed API/SSE client, diagram rendering | [source](diagrams/frontend-subsystem.mmd) | [view](diagrams/frontend-subsystem.svg) |
+It lists all 31 views with links to each Mermaid source and rendered SVG. A
+partial copy of that index used to sit here, listing twelve of the twenty-three
+subsystem views; keeping one index is the reason it is gone.
 
 ## Runtime topology
 

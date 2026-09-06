@@ -176,7 +176,26 @@ This document separates current security facts from future requirements. A contr
   the same user before it can reach a prompt. Deleting the artifact deletes its
   derived description in the same PostgreSQL commit; legacy orphan rows remain
   inaccessible and cannot consume the live retrieval shortlist.
-- Presentation briefs and selected-slide feedback are sent only to DeepSeek on the Sparks. Creation briefs and progressive drafts are persisted on user-scoped durable jobs; `ENCRYPTION_KEY` seals those text fields through the same AES-256-GCM column boundary as the deck specification. Each feedback revision also stores the non-secret stable target slide ID needed to reconstruct its owned per-slide conversation. The model sees no storage keys and cannot authorize, lease, persist, render, or promote revisions. A dedicated worker receives database and vLLM access so it can claim jobs and invoke the focused LangGraph; it is a process boundary, not a security sandbox. A dedicated local renderer receives only a strict validated deck specification; it writes to an isolated temporary directory, serializes LibreOffice jobs, returns bounded PPTX bytes, and cleans the temporary files. PostgreSQL stores user-scoped job state, append-only revision metadata, and the canonical specification; the opaque artifact volume stores each revision's PPTX. Owned deletion removes the deck, job/revision rows, and linked binaries. Automated retention, package malware scanning, and process isolation remain planned; backups are tested and scheduled (`docs/RESTORE.md`).
+- Slide decks, by who holds what:
+  - *The model* is sent only the brief or the one selected slide, and only to
+    DeepSeek on the Sparks. It sees no storage keys and cannot authorize,
+    lease, persist, render or promote a revision.
+  - *The worker* holds database and model access so it can claim a job and
+    invoke the focused graph. **It is a process boundary, not a security
+    sandbox** - code running there is not contained by it.
+  - *The renderer* receives only a strict validated deck specification. It
+    writes into an isolated temporary directory, serializes LibreOffice jobs,
+    returns bounded PPTX bytes, and removes the directory afterwards.
+  - *At rest:* PostgreSQL holds user-scoped job state, append-only revision
+    metadata and the canonical specification; the opaque artifact volume holds
+    each revision's PPTX. Briefs and progressive drafts are sealed by
+    `ENCRYPTION_KEY` through the same AES-256-GCM column boundary as the
+    specification. A feedback revision also stores the non-secret stable slide
+    ID needed to rebuild its own per-slide conversation.
+  - *Deletion* by the owner removes the deck, its job and revision rows, and
+    the linked binaries.
+  - *Planned:* automated retention, package malware scanning, and process
+    isolation. Backups are tested and scheduled (`docs/RESTORE.md`).
 
 AniOS is therefore a local development scaffold, not a hardened system for sensitive production data.
 

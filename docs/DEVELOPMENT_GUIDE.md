@@ -42,7 +42,7 @@ part of the freshness fingerprint, so the checked suite is identical:
 ARCHITECTURE_DIAGRAM_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run docs:diagram
 ```
 
-The renderer maintains the full-system, runtime/deployment, chat, search, memory, tool-memory, current visual-artifact, planned visual-memory/editing target, presentation, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
+The renderer maintains every `.mmd` source under `docs/diagrams/` in one pass - 31 of them today, 23 subsystem views and one per agent - so a new diagram is picked up by adding the file, not by editing a list. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
 
 Treat diagrams as orientation maps, not exhaustive dependency graphs. Each view should answer one engineering question, use one main reading direction, and normally stay within 15 conceptual nodes and 18 primary edges. Prefer a named shared boundary over repeated component-to-provider or component-to-store lines. Move endpoint inventories, schemas, configuration, retries, and uncommon failure branches to prose; show model names only at actual model-call points. Split a view when it needs two independent stories.
 
@@ -111,7 +111,21 @@ for the kind of change it covers (AGENTS.md, completion rule).
 | Group chats | the room's rules on the real models: bursts (`test_burst_readiness_behaviour`), who a fact is about (`test_group_attribution_behaviour`), the room reply (`test_group_reply_behaviour`); over HTTP, `sweep_journeys --only group` provisions a room with a second member and checks the private-fact wall in the database | `bash scripts/gate.sh backend/tests/functional/test_group_attribution_behaviour.py` etc. |
 | Turn trace | why a turn did what it did, decrypted | `python -m backend.cli.explain_turn --user <id> --last 8` |
 | Coverage guard | every tool has a live test, every capability a journey, every prompt a pin | part of the unit gate: `backend/tests/test_functional_coverage_completeness.py` |
-| Deploy | all of the above in order, then the restart; the sweep and harness run **detached** against the deployed system (`scripts/post-deploy-checks.sh`), so the deploy returns once the system is live and healthy. A journey that fails once is re-run alone and logged as flaky if it passes; a red one pages, and the verdict lands in `data/.post-deploy-status` with the log beside it. `--wait-post` blocks on them as before; `--skip-post` skips them | `bash scripts/deploy.sh` |
+| Deploy | all of the above in order, then the restart | `bash scripts/deploy.sh` |
+
+**What a deploy does with the live checks.** The gates run first and nothing
+ships if one is red. After the restart, the deploy writes its marker and
+returns as soon as the system is live and healthy: the journey sweep and the
+search harness run **detached** against the already-deployed system
+(`scripts/post-deploy-checks.sh`), because waiting on them added forty minutes
+during which nothing about the running system changed.
+
+A journey that fails once is re-run on its own. If it passes, it is recorded
+as flaky and nobody is paged; a journey that fails twice pages, and only those
+are named in the verdict. The verdict lands in `data/.post-deploy-status` with
+the full log beside it, so the next session can read what happened without
+finding and grepping a log. `--wait-post` blocks on the checks the way the
+deploy used to; `--skip-post` skips them.
 
 ## Search routing evaluation
 
