@@ -40,6 +40,26 @@ gunzip -c data/backups/anios_db-<stamp>.sql.gz \
 statements it could not apply, which is how a partial restore passes for a
 complete one.
 
+## Settings a restored database does not bring with it
+
+`ALTER DATABASE` settings live in the server's catalogue, so they survive
+restarts and image rebuilds but not a database restored into a fresh volume.
+Re-apply this one after any such restore:
+
+```bash
+docker exec anios_db psql -U postgres -d anios_db   -c "ALTER DATABASE anios_db SET idle_in_transaction_session_timeout = '5min';"
+docker exec anios_db psql -U postgres -d anios_db -tc "show idle_in_transaction_session_timeout;"
+```
+
+Why it matters, measured: on 2026-09-06 one connection was left *idle in
+transaction* holding a row lock on `visual_artifacts`. Nothing ended it. It
+sat for fifteen hours, every `DELETE` on that table queued behind it, and
+three deploy gates hung - one ran for four and a half hours instead of two
+and a half minutes - until the owning container was restarted by hand. The
+timeout ends such a session after five minutes on its own. It cannot fire on
+a query that is doing work; only on a transaction whose client has stopped
+talking.
+
 ## Proving the restore before trusting it
 
 Two checks, because they fail independently.
