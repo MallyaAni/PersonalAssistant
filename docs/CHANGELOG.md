@@ -2,6 +2,39 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-06 - The deploy stops waiting on checks of a system that is already serving
+
+Measured on the deploy that ran end to end: image rebuild under a minute,
+unit suite 2,988 tests in 2m28s, routing gate 100 tests in 20m03s,
+post-deploy sweep to its 40-minute cap. About sixty of sixty-five minutes was
+spent talking to the model, and the last forty of those verified a system
+that had been live since the restart step twenty minutes earlier.
+
+`scripts/post-deploy-checks.sh` now holds the two live checks
+(`sweep_journeys`, `exercise_search_scenarios`) with their flaky-retry rules
+and their incident comments intact. `deploy.sh` writes the deployed marker
+straight after the health check - at that point the system is up and serving
+this commit - and launches the checks detached, printing the log path. A red
+check pages the operator exactly as before and writes its verdict to
+`data/.post-deploy-status`, so a later session reads one line instead of
+finding and grepping a log. `--wait-post` restores the blocking behaviour for
+a deploy someone wants to watch to the end; `--skip-post` is unchanged.
+
+The deploy now returns in roughly twenty-five minutes rather than sixty-five,
+and the checks get the model's six concurrent slots to themselves - which is
+why they timed out on three deploys that day with every individual check
+green.
+
+`test_deploy_scripts.py` parses every `scripts/*.sh` with `bash -n` (fed on
+stdin, and skipped where the host's bash cannot parse at all - a Windows
+developer's is often a WSL relay stub) and pins the ordering: the marker
+before the checks, the checks detached, the paging and the verdict file kept.
+Writing the script from Python had put CRLF endings in it, which Linux bash
+refuses at the first `do`; `.gitattributes` already forces LF on `*.sh` from
+an earlier incident, and the working copy now matches.
+
+Diagram impact: NONE.
+
 ## 2026-09-06 - The first live message after the deploy, and what it taught the hand-off and the reviewer (DEPLOYED IN PART)
 
 **The hand-off's first live run texted a failure.** The first real message

@@ -5,6 +5,7 @@
 #   bash scripts/deploy.sh --no-pull    # deploy the working tree as it stands
 #   bash scripts/deploy.sh --skip-gate  # ship without the unit suite and routing gate
 #   bash scripts/deploy.sh --skip-post  # ship without the post-deploy sweep and harness
+#   bash scripts/deploy.sh --wait-post  # wait for the sweep instead of detaching it
 #
 # This is the only deploy path. `docker compose up --build` by hand skips
 # every check below, and on 2026-08-26 a build shipped that way had a
@@ -38,11 +39,19 @@ compose=(docker compose -f "$root/docker-compose.yml")
 pull=true
 gate=true
 post=true
+# The live checks verify a system that is already serving, so the deploy no
+# longer blocks on them (2026-09-06): forty minutes of every deploy was spent
+# waiting on checks that could change nothing about what was running, and on
+# three deploys that day the wait ended in a timeout with every individual
+# check green. They run detached and page on red; --wait-post restores the
+# old behaviour for a deploy someone wants to watch to the end.
+wait_post=false
 for arg in "$@"; do
     case "$arg" in
         --no-pull)   pull=false ;;
         --skip-gate) gate=false ;;
         --skip-post) post=false ;;
+        --wait-post) wait_post=true ;;
     esac
 done
 
@@ -183,99 +192,27 @@ $ok || { echo "verification failed" >&2; exit 1; }
 # the deployed system; a failure here is reported loudly and paged, not
 # rolled back - the previous images are still present for a manual
 # `docker compose up -d` of them if the failure warrants it.
-step "Post-deploy checks"
-post_ok=true
-summary=()
-if $post; then
-    for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; do
-        # Bounded: a journey that waits on a machine that is off keeps its
-        # stream alive with heartbeats, and deploy #6's sweep never returned
-        # (2026-08-27). Forty minutes is twice a full sweep.
-        # Not `output="$(...)"` on its own: under `set -e` a red check makes
-        # that assignment exit the script before it prints or pages - deploys
-        # #6 and #7 ended silently at this line (2026-08-27).
-        status=0
-        output="$(timeout 2400 "${compose[@]}" exec -T backend python -m "$check" 2>&1)" || status=$?
-        if [[ $status -eq 124 ]]; then
-            output+=$'\n'"GAP  ${check##*.}: no result within 40 minutes"
-        fi
-        printf '%s\n' "$output"
-        short="${check##*.}"
-        # A journey that failed once and passes when re-run alone is a wobble
-        # in a model judgement, not a regression: recorded here as flaky, and
-        # the operator is not paged for it. Seven deploys in a day each paged
-        # for one such journey (2026-08-28). A journey that fails twice pages.
-        # The harness is judged by a model too, and it has no --only, so a
-        # single flaky scenario re-runs the whole set once. That is cheap now
-        # that repeated questions are served from the answer cache, and it
-        # stops one wobble paging the operator at midnight (deploy #24: the
-        # events format check wanted a map link and one reply left it out,
-        # while the pinned suite for that format passed).
-        if [[ $status -ne 0 && $check == backend.cli.exercise_search_scenarios ]]; then
-            echo "retrying the search harness once"
-            if timeout 1200 "${compose[@]}" exec -T backend python -m "$check" </dev/null 2>&1 | tail -8; then
-                echo "$check: passed on retry (flaky)"
-                summary+=("$short OK after retry (flaky)")
-                continue
-            fi
-        fi
-        if [[ $status -ne 0 && $check == backend.cli.sweep_journeys ]]; then
-            names="$(grep -o "gaps=\[.*\]" <<<"$output" | tail -1 | python3 -c "import sys,ast; raw=sys.stdin.read().strip(); print('\n'.join(ast.literal_eval(raw.split('=',1)[1])) if raw else '')" 2>/dev/null || true)"
-            if [[ -n "$names" ]]; then
-                still=()
-                flaky=()
-                # `</dev/null` is load-bearing: `docker compose exec -T` reads
-                # stdin, and inside `while read <<<"$names"` it swallowed the
-                # remaining names. Deploy #25 gapped two journeys, retried
-                # only the first, and reported the sweep green - a retry that
-                # hid a red, which is worse than no retry at all.
-                retried=0
-                while IFS= read -r name; do
-                    [[ -z "$name" ]] && continue
-                    retried=$((retried + 1))
-                    echo "retrying journey once: $name"
-                    if timeout 900 "${compose[@]}" exec -T backend python -m backend.cli.sweep_journeys --only "$name" </dev/null 2>&1 | tail -3; then
-                        flaky+=("$name")
-                    else
-                        still+=("$name")
-                    fi
-                done <<<"$names"
-                # Every gap must have been re-checked before this counts as a
-                # pass: a name the loop never reached is not a name that passed.
-                wanted=$(grep -c . <<<"$names")
-                if [[ ${#still[@]} -eq 0 && $retried -eq $wanted && $retried -gt 0 ]]; then
-                    echo "$check: passed on retry ($retried re-checked; flaky: $(IFS='; '; echo "${flaky[*]}"))"
-                    status=0
-                    summary+=("$short OK after retry (flaky: $(IFS='; '; echo "${flaky[*]}"))")
-                    continue
-                fi
-                if [[ $retried -ne $wanted ]]; then
-                    echo "retry re-checked $retried of $wanted gaps; treating as failed" >&2
-                fi
-            fi
-        fi
-        if [[ $status -eq 0 ]]; then
-            echo "$check: passed"
-            summary+=("$short OK")
-        else
-            echo "$check: FAILED" >&2
-            post_ok=false
-            # What actually failed, in the words the operator can act on: the
-            # gap lines themselves. "See the deploy log" paged the operator
-            # once (2026-08-26) with nothing to act on from a phone.
-            gaps="$(grep -E '^GAP |^FAIL ' <<<"$output" | sed -E 's/^(GAP |FAIL +[0-9a-z]* )//; s/: route=.*//; s/ \|.*//' | head -3 | paste -sd ';' -)"
-            summary+=("$short FAILED: ${gaps:-see log}")
-        fi
-    done
-    if ! $post_ok; then
-        bash "$root/scripts/notify-operator.sh" "AniOS $after is live and healthy; a post-deploy check is red: $(IFS='; '; echo "${summary[*]}")" || true
-    fi
-else
-    echo "WARNING: post-deploy checks skipped by request"
-fi
-
 step "Result"
+# Written before the live checks, not after: the system is up, healthy and
+# serving this commit at this point, and that is what the marker records. A
+# red check afterwards is a fault in what is deployed, not a claim that
+# something else is.
 mkdir -p "$(dirname "$deployed_marker")"
 printf '%s\n' "$after" > "$deployed_marker"
 echo "deployed $after"
-$post_ok || { echo "deployed, but a post-deploy check failed" >&2; exit 1; }
+
+step "Post-deploy checks"
+if ! $post; then
+    echo "WARNING: post-deploy checks skipped by request"
+elif $wait_post; then
+    bash "$root/scripts/post-deploy-checks.sh" "$after" \
+        || { echo "deployed, but a post-deploy check failed" >&2; exit 1; }
+else
+    checks_log="$root/data/post-deploy-$after-$(date +%Y%m%dT%H%M%S).log"
+    mkdir -p "$(dirname "$checks_log")"
+    # Detached from this shell and its process group, so the checks outlive
+    # the ssh session a deploy is usually run over.
+    setsid nohup bash "$root/scripts/post-deploy-checks.sh" "$after" > "$checks_log" 2>&1 < /dev/null &
+    echo "live checks running in the background: $checks_log"
+    echo "verdict: data/.post-deploy-status (a red one pages the operator)"
+fi
