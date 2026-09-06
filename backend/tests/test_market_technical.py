@@ -3,9 +3,10 @@
 from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
+import pytest
 
 from backend.market import technical
-from backend.market.panel import panel_from_histories
+from backend.market.panel import Panel, panel_from_histories
 from backend.market.yahoo import DailyBar, TickerHistory
 
 
@@ -95,7 +96,7 @@ def test_weekly_ema_is_carried_between_week_ends():
     weekly = technical._weekly_ema(panel, panel.adj_close, 4)
     a = panel.index("AAA")
     dates = panel.dates.astype("datetime64[D]")
-    weeks = dates.astype("datetime64[W]").astype(int)
+    weeks = (dates.astype(int) + 3) // 7  # Monday-to-Friday weeks
     changes = 0
     for t in range(1, len(dates)):
         if (
@@ -104,6 +105,53 @@ def test_weekly_ema_is_carried_between_week_ends():
             and weekly[t, a] != weekly[t - 1, a]
         ):
             changes += 1
-            # The weekly bar is known at the close of the week's last session.
-            assert t + 1 == len(dates) or weeks[t + 1] != weeks[t]
+            # The weekly bar is known at a Friday close, or at the last
+            # session of a week whose Friday is a holiday.
+            friday = (dates.astype(int) + 3) % 7 == 4
+            assert friday[t] or (t + 1 < len(dates) and weeks[t + 1] != weeks[t])
     assert changes >= 10
+
+
+# The weekly EMA must not change when later sessions are removed: the last
+# row of a panel is a forming week, not a closed one, so a mid-week session
+# carries the last completed week's value both live and in a backtest.
+def test_weekly_ema_does_not_change_when_the_future_is_removed():
+    from dataclasses import replace as dc_replace
+
+    from backend.market.technical import _weekly_ema
+
+    rng = np.random.default_rng(7)
+    days = 400  # enough weeks for a 21-week EMA to be defined
+    # Business days only, the way a session panel is shaped.
+    dates = np.busday_offset(
+        np.datetime64("2026-01-01"), np.arange(days), roll="forward"
+    ).astype("datetime64[D]")
+    close = 100.0 * np.exp(np.cumsum(rng.normal(scale=0.01, size=(days, 1)), axis=0))
+    panel = Panel(
+        dates=dates,
+        tickers=("AAA",),
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1e6),
+        themes={"AAA": ()},
+        benchmark="AAA",
+    )
+    full = _weekly_ema(panel, close, 21)
+    # Cut on a Wednesday, mid-week, and again on the following day.
+    for stop in (380, 381, 382, 383, 384):
+        short = dc_replace(
+            panel,
+            dates=dates[: stop + 1],
+            open=close[: stop + 1],
+            high=close[: stop + 1],
+            low=close[: stop + 1],
+            close=close[: stop + 1],
+            adj_close=close[: stop + 1],
+            volume=panel.volume[: stop + 1],
+        )
+        cut = _weekly_ema(short, close[: stop + 1], 21)
+        assert np.isfinite(full[stop, 0])
+        assert cut[stop, 0] == pytest.approx(full[stop, 0]), stop

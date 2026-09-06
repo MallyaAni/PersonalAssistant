@@ -173,11 +173,34 @@ def _weekly_series(panel: Panel, values: np.ndarray) -> np.ndarray:
 
 
 # EMA over weekly closes, evaluated only at week ends and carried forward.
+#
+# The last row of the panel is NOT treated as a week end. Live, the panel
+# ends today and today's week is usually still forming; counting it as a
+# close would give the newest session a weekly EMA that includes a partial
+# week, while every historical row uses completed weeks. The desk would
+# then read a different weekly trend live than the one measured in the
+# backtest. A mid-week session carries the last completed week's value,
+# which is the same thing a backtest at that row sees.
 def _weekly_ema(panel: Panel, close: np.ndarray, span: int) -> np.ndarray:
     dates = panel.dates.astype("datetime64[D]")
-    weeks = dates.astype("datetime64[W]").astype(int)
+    # NumPy's datetime64[W] buckets weeks from the epoch, a Thursday, so
+    # its "weeks" run Thursday to Wednesday and its week ends are
+    # Wednesdays. Shift by three days so a week is Monday to Friday,
+    # which is the week a trader means.
+    weeks = (dates.astype(int) + 3) // 7
     rows = close.shape[0]
-    ends = np.array([t + 1 == rows or weeks[t + 1] != weeks[t] for t in range(rows)])
+    # A session ends the week when it is a Friday, or when the next session
+    # on file starts a new week (a short week whose Friday is a holiday).
+    # The next-session test alone would fail on the newest row, where
+    # there is no next session yet; the weekday test is what a trader
+    # uses at a Friday close and needs no future.
+    friday = (dates.astype(int) + 3) % 7 == 4
+    ends = np.array(
+        [
+            bool(friday[t]) or (t + 1 < rows and weeks[t + 1] != weeks[t])
+            for t in range(rows)
+        ]
+    )
     week_rows = np.flatnonzero(ends)
     weekly = ema(close[week_rows], span)
     out = np.full_like(close, np.nan)
