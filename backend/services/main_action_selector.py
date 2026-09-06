@@ -790,7 +790,27 @@ class MainActionSelector:
             if message is None:
                 return Unavailable("the routing model did not answer the loaded tools")
             offered = {tool["function"]["name"] for tool in tools}
-        return self._parse(message, query, aliases, offered, offered_skills)
+        decision = self._parse(message, query, aliases, offered, offered_skills)
+        # Someone changing the wording of a draft is not asking what is
+        # running in the background. Measured on the real router 2026-09-06:
+        # "More casual" after a drafted email was answered with a report on
+        # background runs in two probes out of three - the reading was right
+        # ("it refers to the text being written together") and the router took
+        # the tool anyway, so telling it once more would not have helped.
+        #
+        # Only the status mode is refused. Approving or refusing a waiting run
+        # is a yes or a no, and a yes said while a draft is in play - "go
+        # ahead, send it" - is exactly the turn that must still reach the run;
+        # withholding the whole tool here would have lost it.
+        if (
+            drafting
+            and isinstance(decision, Act)
+            and isinstance(decision.action, ManageRunsAction)
+            and decision.action.mode == "status"
+        ):
+            logger.info("A draft continuation asks nothing about runs; taking no tool")
+            return Done("a draft continuation, which is not a question about runs")
+        return decision
 
     # One routing decision from the model, or None when it could not be had.
     async def _decide(

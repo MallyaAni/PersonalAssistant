@@ -629,3 +629,69 @@ async def test_asking_again_after_a_wrong_answer_is_decided_again():
         "ani", "what did we say about the trip?", answered, None, local_now=clock
     )
     assert len(llm.rounds) == 2, "the wrong answer is in the history, so this is a new question"
+
+
+# A draft continuation never asks what is running in the background.
+#
+# Measured on the real router 2026-09-06: "More casual", after the assistant
+# had drafted an email, was answered with a report on background runs in two
+# probes out of three. The follow-up reading was correct in all three - it
+# said the message referred to the text being written together - so the model
+# had the fact and took the tool regardless.
+#
+# Pinned here as well as in backend/tests/functional/, because the functional
+# one measures a model that is wrong only some of the time and this one is
+# never wrong: the guard either runs or it does not.
+_DRAFTED = [
+    {
+        "query": "draft an email asking my team for shift coverage",
+        "response": "Subject: Shift coverage\n\nHi team - I need cover on Saturday.",
+    }
+]
+
+
+def _reading(refers_to: str):
+    from backend.services.followup import Resolution
+
+    async def resolve(_llm, query, _history, _zone="", _replying_to=""):
+        return Resolution(f"{query} (restated)", refers_to, "the shift coverage email")
+
+    return resolve
+
+
+@pytest.mark.asyncio
+async def test_a_draft_turn_does_not_report_on_background_runs(monkeypatch):
+    import backend.services.main_action_selector as module
+
+    monkeypatch.setattr(module, "resolve_followup", _reading("draft"))
+    selector, _llm = _selector(_tool_call("manage_runs", {"mode": "status"}))
+
+    action = await selector.select("ani.mallya", "More casual", _DRAFTED, None)
+
+    assert action is None, action
+
+
+@pytest.mark.asyncio
+async def test_a_draft_turn_still_approves_a_waiting_run(monkeypatch):
+    import backend.services.main_action_selector as module
+    from backend.tools import ManageRunsAction
+
+    monkeypatch.setattr(module, "resolve_followup", _reading("draft"))
+    selector, _llm = _selector(_tool_call("manage_runs", {"mode": "approve"}))
+
+    action = await selector.select("ani.mallya", "go ahead, send it", _DRAFTED, None)
+
+    assert action == ManageRunsAction(mode="approve", which=""), action
+
+
+@pytest.mark.asyncio
+async def test_a_run_question_outside_a_draft_is_left_alone(monkeypatch):
+    import backend.services.main_action_selector as module
+    from backend.tools import ManageRunsAction
+
+    monkeypatch.setattr(module, "resolve_followup", _reading("subject"))
+    selector, _llm = _selector(_tool_call("manage_runs", {"mode": "status"}))
+
+    action = await selector.select("ani.mallya", "what's running?", _DRAFTED, None)
+
+    assert action == ManageRunsAction(mode="status", which=""), action
