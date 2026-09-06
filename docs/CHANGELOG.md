@@ -2,6 +2,47 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-06 - A filing reader built, measured, and given no vote
+
+Cohen, Malloy and Nguyen ("Lazy Prices", Journal of Finance, 2020) report a
+durable anomaly: filings are mostly copied forward, so a company that rewrites
+part of one is doing it for a reason, and the market is slow to read a document
+nobody wants to read. `backend/market/filings.py` and
+`backend.cli.market_filings` collect it - every 10-K and 10-Q the book filed
+since 2019, each reduced to word counts and compared with the same form a year
+earlier, the text discarded. 2,274 comparisons over the ninety-three names, a
+few kilobytes each, twenty minutes for the lot. A 10-Q meets the same quarter
+of last year rather than last quarter, and a reading reaches the panel only
+from the session after the document was filed; both are tested.
+
+It does not reproduce here, and nothing in the desk reads it. Beta-adjusted
+rank IC on the similarity is +0.026 (t 1.6) at twenty sessions and +0.048
+(t 1.5) at sixty - the paper's sign, neither significant. Given a vote in the
+desk's summed conviction it moves rank IC from 0.0459 to 0.0492 while dropping
+net Sharpe from 0.79 to 0.58: a slightly better ordering and a worse portfolio.
+
+The first look said something much stronger and in the opposite direction - the
+most-rewritten fifth beating the least by 5.05% over 120 sessions at t -12.58 -
+and both halves of that were artefacts of traps this repository has hit before.
+Twenty-seven thousand observations drawn from thirteen hundred sessions share
+almost all of their days, so the t-statistic described the overlap; stepping the
+windows so none overlap takes it to -1.74. And the names that rewrite most are
+the higher-beta ones, so in a rising market they earn more without earning
+anything a portfolio keeps; adjusting for beta reverses the sign to +0.38. The
+table with both corrections is in the module.
+
+The likely reason is the premise. The paper works across the whole US
+cross-section, where most names are small and thinly followed and nobody reads
+the document. Ninety-three large AI-infrastructure and software companies are
+read by many analysts within hours.
+
+The tool defaults to the book. It first ran over the whole universe because a
+missing `--roles` fell through to every name there, and spent twenty minutes
+collecting A through B before anyone noticed.
+
+Diagram impact: NONE - a research collector with no path into the desk's
+decisions changes no component, store, boundary or flow that any view shows.
+
 ## 2026-09-06 - The desk measured as it actually trades, and the exit that cost 3% a year
 
 **The book's reported numbers were never the book's rules.** `sizing.simulate`
