@@ -286,20 +286,27 @@ async def test_a_failed_hand_off_ends_the_turn_quietly(monkeypatch):
     assert await service._hand_off("ani", "q", {}, "", ["x"], BUDGET) is None
 
 
-def test_the_loop_hands_off_only_when_the_clock_ran_out_after_a_clean_step():
-    # The condition the loop applies, read from the source: the clock, never
-    # the ceiling (a ceiling stop is an answered turn; continuing it re-ran
-    # the same search and texted a failure, live, 2026-09-06), and never
-    # after a failed, refused or unknown last step.
-    import inspect
+def test_the_turn_is_worth_continuing_only_on_the_clock_after_a_clean_step():
+    # Executed, not read. The first version of this branch called an
+    # unimported name; the test that covered it asserted on the function's
+    # source text, so nothing ran the line and every turn that ran out its
+    # clock failed live for ten hours (2026-09-06).
+    from backend.services.conversation_service import worth_continuing
+    from backend.services.turn_steps import CEILING, DECLINED, Step, TurnResult
 
-    from backend.services import conversation_service as module
+    def _turn(stopped, outcome):
+        return TurnResult((Step("search", "search", outcome, "web search: ramen"),), stopped, "")
 
-    source = inspect.getsource(module.ConversationService._task_turn_context)
-    assert "turn.stopped == BUDGET" in source
-    assert "turn.stopped in (BUDGET, CEILING)" not in source
-    assert module._NOT_WORTH_CONTINUING == {"failed", "refused", "unknown"}
-    assert BUDGET != DECLINED and CEILING != DECLINED
+    found = {"kind": "found", "count": 3}
+    assert worth_continuing(_turn(BUDGET, found)) is True
+    # A ceiling stop is an answered turn, and a declined one is the clean end.
+    assert worth_continuing(_turn(CEILING, found)) is False
+    assert worth_continuing(_turn(DECLINED, found)) is False
+    # A last step that failed, was refused, or was cut leaves nothing to continue.
+    for outcome in ({"kind": "failed"}, {"kind": "refused"}, {"kind": "unknown"}):
+        assert worth_continuing(_turn(BUDGET, outcome)) is False, outcome
+    # No steps at all: nothing was started, so nothing continues.
+    assert worth_continuing(TurnResult((), BUDGET, "")) is False
 
 
 async def test_a_router_that_names_a_step_the_turn_already_took_ends_the_run_as_done():

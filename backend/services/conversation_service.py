@@ -9,7 +9,7 @@ from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 from anyio import CancelScope
@@ -119,7 +119,10 @@ from backend.services.checkin_arming import (
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.services.chat_steps import action_of, decision_view
 from backend.services.cross_chat import merged_for_routing, recent_room_turns
-from backend.services.turn_steps import UNAPPLIED, Decision, run_steps, BUDGET, CEILING, Unavailable
+from backend.services.turn_steps import UNAPPLIED, Decision, TurnResult, run_steps, BUDGET, CEILING, Unavailable, status_of
+
+if TYPE_CHECKING:  # names used only in annotations, never at runtime
+    from backend.services.readiness import Readiness
 from backend.core.effects import EffectContract
 from backend.memory.person_context import (
     COMPOSER_INTERESTS,
@@ -211,6 +214,19 @@ def _image_description(match: dict[str, Any]) -> str:
 # worse, because here the model is actively told not to try again.
 # Step statuses after which a cut-short turn is not handed to a run.
 _NOT_WORTH_CONTINUING = frozenset({"failed", "refused", "unknown"})
+
+
+# Whether what is left of this turn is worth continuing as a run: the wall
+# clock ran out (never the step ceiling - a ceiling stop is an answered turn,
+# and continuing one re-ran its own search and texted a failure, live
+# 2026-09-06), it took at least one step, and its last step was clean.
+def worth_continuing(turn: TurnResult) -> bool:
+    steps = turn.steps
+    return bool(
+        turn.stopped == BUDGET
+        and steps
+        and status_of(steps[-1].outcome) not in _NOT_WORTH_CONTINUING
+    )
 
 
 # The run that finishes a cut-short turn: the person's words as its
@@ -3807,12 +3823,7 @@ class ConversationService:
         # person a failure (live, the first message after the 2026-09-06
         # deploy). A clean last step, too: a loop that ended on a failed or
         # repeated step has nothing worth continuing.
-        if (
-            steppable
-            and turn.stopped == BUDGET
-            and steps
-            and status_of(steps[-1].outcome) not in _NOT_WORTH_CONTINUING
-        ):
+        if steppable and worth_continuing(turn):
             handed = await self._hand_off(
                 user_id, query, metadata, conversation_id, [s.line for s in steps], turn.stopped
             )
