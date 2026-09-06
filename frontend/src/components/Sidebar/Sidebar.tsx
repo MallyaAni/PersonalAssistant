@@ -121,6 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <Zap size={19} className={activeView === 'automations' ? 'text-[#0071e3]' : ''} />
           <span className="inline">Automations</span>
         </button>
+        {isAdmin && (
         <button
           aria-label="Desk"
           onClick={() => onViewChange('desk')}
@@ -129,6 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <LineChart size={19} className={activeView === 'desk' ? 'text-[#0071e3]' : ''} />
           <span className="inline">Desk</span>
         </button>
+        )}
         <button
           aria-label="Memory"
           onClick={() => onViewChange('memory')}

@@ -35,6 +35,7 @@ def _write(root, session, grades, book, flags):
 @pytest.mark.asyncio
 async def test_the_endpoint_returns_the_record_and_the_changes(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     _write(tmp_path, "2026-09-03", {"SNDK": "A", "MU": "A+"}, [("MU", 0.07)], [])
     _write(tmp_path, "2026-09-04", {"SNDK": "A+", "MU": "B"}, [("SNDK", 0.08)], ["x"])
     token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
@@ -75,6 +76,7 @@ async def test_the_endpoint_returns_the_record_and_the_changes(tmp_path, monkeyp
 @pytest.mark.asyncio
 async def test_no_record_is_an_empty_answer(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
@@ -100,3 +102,21 @@ async def test_another_users_token_is_refused(tmp_path, monkeypatch):
             headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code in (401, 403), response.text
+
+
+@pytest.mark.asyncio
+async def test_a_user_who_is_not_the_operator_is_refused_with_their_own_token(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "ani.mallya")
+    _write(tmp_path, "2026-09-04", {"SNDK": "A+"}, [("SNDK", 0.08)], [])
+    token = issue_user_token("someone_else", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/someone_else/desk",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 403, response.text

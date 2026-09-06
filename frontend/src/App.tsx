@@ -211,7 +211,8 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
           />
         </div>
         {activeView === 'memory' && <MemoryPanel userId={userId} />}
-        {activeView === 'desk' && <DeskPanel userId={userId} />}
+        {/* The desk is the operator's alone; the route refuses everyone else. */}
+        {activeView === 'desk' && auth.is_admin && <DeskPanel userId={userId} />}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
         {/* Guarded twice: hidden unless the session says operator, and every
             route behind it re-checks against the database. */}

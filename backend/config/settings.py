@@ -615,6 +615,9 @@ class Settings(BaseSettings):
     # was added to a group it must stay silent in (a participant is not an
     # approved user). Empty means nobody is told.
     OPERATOR_ALERT_PHONE: str = ""
+    # The trading desk belongs to one person: the operator's own user id.
+    # Every other user id is refused by the desk route, whatever its token.
+    MARKET_DESK_USER: str = "ani.mallya"
     # Scheduled tasks: anything a person asked to have done later or on a
     # schedule, run as a chat turn under their identity and delivered on the
     # channel they asked from. The loop shares the discovery worker process.

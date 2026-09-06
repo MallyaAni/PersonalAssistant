@@ -25,6 +25,13 @@ UserId = Annotated[str, PathParam(min_length=1, max_length=50)]
 Session = Annotated[str, PathParam(pattern=r"^\d{4}-\d{2}-\d{2}$")]
 
 
+# The desk is one person's. A valid token for any other user is refused
+# here, before a record is read.
+def _operator_only(user_id: str) -> None:
+    if user_id != settings.MARKET_DESK_USER:
+        raise HTTPException(status_code=403, detail="the desk is the operator's")
+
+
 # The root the records are read from.
 def _root() -> Path:
     return Path(settings.MARKET_DATA_ROOT)
@@ -34,6 +41,7 @@ def _root() -> Path:
 # summary, and the sessions on file.
 @router.get("/desk")
 async def latest_desk(user_id: UserId) -> dict[str, object]:
+    _operator_only(user_id)
     latest, previous = deskrecord.latest_pair(_root())
     if latest is None:
         return {"user_id": user_id, "latest": None, "sessions": []}
@@ -49,6 +57,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
 # One earlier session's record, as it was written.
 @router.get("/desk/{session}")
 async def desk_for_session(user_id: UserId, session: Session) -> dict[str, object]:
+    _operator_only(user_id)
     record = deskrecord.load(_root(), session)
     if record is None:
         raise HTTPException(status_code=404, detail="no desk record for that session")
