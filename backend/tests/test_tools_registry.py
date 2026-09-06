@@ -49,6 +49,7 @@ def test_every_builtin_row_is_complete():
         "save_skill",
         "manage_skills",
         "manage_runs",
+        "send_event_links",
     ]
     for row in rows:
         assert row.label

@@ -653,6 +653,21 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-06 — Cross-chat continuation and unsupported media (DEPLOYING)
+
+See `docs/CHANGELOG.md`, this date. Codex should review
+`backend/services/cross_chat.py` and `_history_for_routing`, and the media
+branches in `backend/workers/imessage_chat.py`.
+
+**VERIFIED (unit):** `test_cross_chat_and_media.py` 7 and the suites around
+them 199. **VERIFIED on the real router:** `test_cross_chat_followup_behaviour.py` 3/3, including the control without the room turn.
+
+**Deploy:** this batch and everything since `8116e7d2` (the deployed marker)
+goes out through `scripts/deploy.sh` on the Spark from this session, with
+`AGENT_RUNS_ENABLED`, `AGENT_EXPERIENCE_REVIEW_ENABLED` and
+`AGENT_EXPERIENCE_REVIEW_HOUR_UTC` added to the Spark `.env` first.
+<<DEPLOY_RESULT>>
+
 ## 2026-09-05 — The bird, Don Tito's, and the experience reviewer (NOT DEPLOYED)
 
 See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the

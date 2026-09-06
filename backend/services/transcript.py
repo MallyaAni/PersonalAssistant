@@ -31,7 +31,17 @@ def speaker_name(turn_or_metadata: dict[str, Any] | None) -> str | None:
 # The label for the user side of a stored turn: the member's name in a
 # group, "User" otherwise.
 def speaker_label(turn: dict[str, Any]) -> str:
-    return speaker_name(turn) or USER_LABEL
+    label = speaker_name(turn) or USER_LABEL
+    # A turn borrowed from one of the person's rooms for routing a direct
+    # message says where it happened, so "try again" can be read against a
+    # request made in the group without the group's words passing as the
+    # direct chat's own.
+    metadata = (turn or {}).get("metadata")
+    cross = (metadata or {}).get("cross_chat") if isinstance(metadata, dict) else None
+    if isinstance(cross, dict):
+        chat = str(cross.get("chat_name") or "").strip()
+        return f"{label} (in the group chat {chat!r})" if chat else f"{label} (in a group chat)"
+    return label
 
 
 # When a stored turn was said, in the reader's zone, or "" if unknown.

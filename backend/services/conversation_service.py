@@ -118,6 +118,7 @@ from backend.services.checkin_arming import (
 )
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.services.chat_steps import action_of, decision_view
+from backend.services.cross_chat import merged_for_routing, recent_room_turns
 from backend.services.turn_steps import UNAPPLIED, Decision, run_steps, BUDGET, CEILING, Unavailable
 from backend.core.effects import EffectContract
 from backend.memory.person_context import (
@@ -905,6 +906,9 @@ _how_they_choose: ContextVar[tuple[str, ...]] = ContextVar("how_they_choose", de
 _turn_image_matches: ContextVar[tuple[dict[str, Any], ...]] = ContextVar(
     "turn_image_matches", default=()
 )
+# The channel this turn came from ("web", "imessage", "imessage_group"), so
+# routing can tell a direct message from a room's.
+_turn_channel: ContextVar[str] = ContextVar("turn_channel", default="web")
 # What this turn knows about the person, built once and read by every stage
 # that personalises - the query composer, the interest judgement, the result
 # ranker. Three views of one person used to be fetched and capped in three
@@ -1446,6 +1450,23 @@ class ConversationService:
             "episodic": self._save_episodic_proposal,
         }
 
+    # The history the router reads for a direct message: the conversation's
+    # own turns with the person's recent room turns merged in by time. A
+    # room's own turn reads its room alone; a failure to read the rooms
+    # leaves the direct history as it was.
+    async def _history_for_routing(self, user_id: str, history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if str(_turn_channel.get() or "web") == "imessage_group" or not user_id:
+            return history
+        reader = getattr(self, "room_turns_reader", None) or recent_room_turns
+        try:
+            room_turns = await reader(user_id)
+        except Exception:
+            return history
+        if not room_turns:
+            return history
+        _trace("cross_chat", {"room_turns": len(room_turns)})
+        return merged_for_routing(history, room_turns)
+
     # Ask the model that is about to answer this turn what it actually needs,
     # in one native tool call. Every candidate -- live search, a new or edited
     # picture, a diagram, or a specialist handoff -- is offered together, so
@@ -1462,6 +1483,12 @@ class ConversationService:
     ) -> MainAction:
         if self.main_action_selector is None:
             return None
+        # A direct message that continues something the person just did in
+        # one of their rooms - "try again" after a picture asked for in the
+        # group - is routed against both; the room turns are marked as the
+        # room's. Twice on 2026-09-04/05 "try again" in the direct chat was
+        # searched as events because the request it retried was in the group.
+        history = await self._history_for_routing(user_id, history)
         try:
             return await self.main_action_selector.select(
                 user_id,
@@ -3527,6 +3554,7 @@ class ConversationService:
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
         _turn_zone.set(str((metadata or {}).get("timezone") or "").strip())
+        _turn_channel.set(str((metadata or {}).get("channel") or "web"))
         _turn_conversation.set(resolved_conversation_id)
         current_followup.set(None)
         account_charged_this_turn.set(False)
@@ -4393,6 +4421,7 @@ class ConversationService:
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
         _turn_zone.set(str((metadata or {}).get("timezone") or "").strip())
+        _turn_channel.set(str((metadata or {}).get("channel") or "web"))
         _turn_conversation.set(resolved_conversation_id)
         current_followup.set(None)
         history = await self.repository.get_history(resolved_conversation_id, user_id, self.history_turn_limit)

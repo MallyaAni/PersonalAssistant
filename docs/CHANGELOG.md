@@ -2,6 +2,45 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-06 - A direct message can continue what was asked in a room; a file nothing reads is named, not dropped (NOT DEPLOYED)
+
+Two findings from the experience reviewer's first live run and the list
+that followed it.
+
+**"try again" across chats.** Twice on 2026-09-04/05 the person asked the
+group for a chess picture, then wrote "try again" in the one-to-one chat,
+and both times it was routed to an events search: the direct chat's own
+history said nothing about a picture. For a direct message the router is
+now shown the person's recent room turns merged in by time with the direct
+ones (`backend/services/cross_chat.py`, last 45 minutes, bounded to twelve
+turns), each labelled in the transcript as having happened in that room
+(`speaker_label`: "Jenos (in the group chat 'Groupie')"). Only for routing
+and the follow-up reader; the reply's history stays the conversation the
+reply is in; a room's own turn reads its room alone; a failure to read the
+rooms leaves the direct history as it was (`_history_for_routing`).
+On the real router (`test_cross_chat_followup_behaviour.py` 3/3): shown the
+merged history, the follow-up reader read "try again" as the chess picture
+retry and the router chose a new image in every pass, never a search; shown
+the direct history alone, the same words were not read as a picture - the
+merge, not the words, is what changed the reading.
+
+**Media nothing here reads.** A video, voice note, sticker or other file
+on any message vanished silently: the bridge kept pictures and documents
+and dropped the rest before anything looked. Now a room is told
+`shared a video: IMG_2001.MOV` for an unaddressed one, and a person - or a
+room that addressed the assistant - with only such a file is told what can
+be opened, by kind (`_unsupported_media_reply`). A caption still gets
+answered. `test_cross_chat_and_media.py` 7; bridge, transcript, chat API
+and coverage suites 199.
+
+**Opencode's commit reviewed** (`153ec73a`, the events listing offers links
+and `send_event_links` delivers them): a model picker chooses the events,
+a name match stands in only when the picker fails, the listing is kept in
+Redis for 72 hours, a functional test pins the router; sound. It left
+`test_tools_registry`'s expected row list without the new row, fixed here.
+
+Diagram impact: NONE.
+
 ## 2026-09-05 - Two live failures fixed at their cause, and an agent that finds the next ones (NOT DEPLOYED)
 
 The operator reported two degraded exchanges from the day and asked for

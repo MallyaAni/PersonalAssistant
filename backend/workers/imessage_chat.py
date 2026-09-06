@@ -235,6 +235,31 @@ _UNSUPPORTED_FILE_REPLY = (
 )
 
 
+# A kind for a file nothing here reads, from its media type, for the words
+# the room and the sender are given.
+def _media_kind(item: dict) -> str:
+    media_type = str(item.get("media_type") or "").lower()
+    if media_type.startswith("video/"):
+        return "video"
+    if media_type.startswith("audio/"):
+        return "voice note"
+    return "file"
+
+
+def _media_name(item: dict) -> str:
+    return " ".join(str(item.get("name") or item.get("filename") or "").split())[:80] or "(unnamed)"
+
+
+# The line for a message that carried only files nothing here can open.
+def _unsupported_media_reply(media: list[dict]) -> str:
+    kinds = sorted({_media_kind(item) for item in media})
+    what = " and ".join(kinds) if kinds else "that kind of file"
+    return (
+        f"I can't open a {what} yet. A photo (JPEG, PNG, HEIC) or a PDF or "
+        "Word document works."
+    )
+
+
 # What to say when the Mac refused to hand over the attachment.
 def _refusal_reply(reason: str) -> str:
     if reason == "too_large":
@@ -410,16 +435,28 @@ class IMessageChatWorker:
             if isinstance(item, dict)
             and str(item.get("media_type") or "") in _DOCUMENT_TYPES
         ]
+        # Anything else attached - a video, a voice note, a sticker, a file of
+        # a kind nothing here reads. Dropped silently until 2026-09-06: the
+        # message vanished without a word to anyone. Now a room is told what
+        # was shared, and a person who sent only such a file is told what
+        # can be opened.
+        media = [
+            item
+            for item in (message.get("attachments") or [])
+            if isinstance(item, dict)
+            and item not in attachments
+            and item not in documents
+        ]
         # A photo with no caption is a valid message - the picture is the
-        # message - so emptiness only skips a row that carries neither.
-        if not guid or not reply_to or (not text and not attachments and not documents):
+        # message - so emptiness only skips a row that carries nothing at all.
+        if not guid or not reply_to or (not text and not attachments and not documents and not media):
             return 0
         if await self._already_seen(guid):
             return 0
         if message.get("chat_identifier"):
             # A room's message: the bridge already established it was
             # addressed to this account; the worker establishes the room.
-            return await self._handle_room_message(message, guid, text, reply_to, attachments, documents)
+            return await self._handle_room_message(message, guid, text, reply_to, attachments, documents, media)
         user_id = await self._account_for(str(message.get("sender") or ""))
         if user_id is None:
             # A stranger's row must not replay forever; it is finished.
@@ -437,6 +474,11 @@ class IMessageChatWorker:
         # wait can be acknowledged with "🔎 Rummaging through the internet…"
         # rather than a random pleasantry.
         status: list[str] = []
+        if not text and not attachments and not documents and media:
+            # Only a file nothing here can open: say so, once, by kind.
+            await self._deliver(reply_to, TurnResult(_unsupported_media_reply(media)), user_id=user_id)
+            await self._mark_seen(guid)
+            return 1
         if documents:
             turn = await self._with_ack(
                 self._document_turn(user_id, text, documents), reply_to, status
@@ -522,6 +564,7 @@ class IMessageChatWorker:
         reply_to: str,
         attachments: list[dict],
         documents: list[dict] | None = None,
+        media: list[dict] | None = None,
     ) -> int:
         chat_guid = str(message.get("chat_guid") or reply_to)
         chat_name = str(message.get("chat_name") or "")
@@ -618,6 +661,11 @@ class IMessageChatWorker:
                 except BackendUnavailable:
                     await self._park(guid, group.user_id, reply_to, text, room=room, message=message)
                     return 0
+            # A video, voice note or other file is not read, but the thread
+            # is told it was shared, so "the video I sent" resolves to
+            # something rather than to nothing.
+            for item in media or []:
+                await self._observe(group.user_id, f"shared a {_media_kind(item)}: {_media_name(item)}", room)
             if text:
                 await self._observe(group.user_id, text, room)
             await self._mark_seen(guid)
@@ -637,6 +685,9 @@ class IMessageChatWorker:
             except BackendUnavailable:
                 await self._park(guid, group.user_id, reply_to, text, pinned=pinned, room=room, message=message)
                 return 0
+        elif not text and media:
+            # Addressed with only a file nothing here can open: say so.
+            turn = TurnResult(_unsupported_media_reply(media))
         else:
             burst = await self._collect(
                 group.user_id, reply_to, guid, text, in_group=True, room=room, addressed_by=room["addressed_by"]
