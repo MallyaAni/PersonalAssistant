@@ -115,8 +115,15 @@ echo "    (a skipped test counts as a failure here)"
 # image: the image is rebuilt rarely, and on 2026-08-26 the internet-env
 # guard and the What's-on pack test were failing against an image from
 # 2026-08-24 that predated both files.
-if "${compose[@]}" run --rm --no-deps \
+# --build so the gate runs the image this commit describes. functional-tests
+# is behind the `test` profile and is not in deploy.sh's rebuild list, so
+# without it the gate runs whatever image was last built: on 2026-09-06 the
+# unit suite failed because ruff, added to the test stage in that same commit,
+# was missing from the stale image, and because scripts/ was the copy baked
+# into it rather than the checkout.
+if "${compose[@]}" run --rm --no-deps --build \
     -v "$root/backend:/app/backend:ro" \
+    -v "$root/scripts:/app/scripts:ro" \
     -v "$root/prompts:/app/prompts:ro" \
     -v "$root/docs:/app/docs:ro" \
     -v "$root/deploy:/app/deploy:ro" \

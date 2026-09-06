@@ -1061,3 +1061,60 @@ async def test_a_job_comfyui_dropped_still_fails_when_it_stays_away():
     with pytest.raises(httpx.RemoteProtocolError):
         await provider.generate(ImageGenerationRequest("a lamp", 1024, 1024, 1))
     assert len(posts) == 1, "no blind resubmission"
+
+
+class BlockingImageProvider:
+    # Never returns, so the caller can be cancelled mid-generation.
+    async def generate(self, request: ImageGenerationRequest) -> GeneratedImage:
+        await asyncio.Event().wait()
+        raise AssertionError("unreachable")
+
+
+class SlowFailingRepository(CapturingBinaryRepository):
+    # The failure write takes a moment, the way a real one does: it opens a
+    # transaction, sends an UPDATE and waits for the database.
+    async def mark_failed(self, artifact_id: str, user_id: str, error_code: str) -> dict[str, Any]:
+        await asyncio.sleep(0.05)
+        return await super().mark_failed(artifact_id, user_id, error_code)
+
+
+# A cancelled generation ends with its artifact marked failed, not left
+# pending. Pinned after 2026-09-06, when this exact write sat idle in
+# transaction for fifteen hours and blocked every delete on the table behind
+# it. Honest about its reach: it passes under both `asyncio.shield` and the
+# cancel scope the service now uses, because a single cancellation is
+# delivered once and both constructs survive it. It holds the property that
+# matters to a reader - the artifact does not stay pending - and would catch
+# the failure write being dropped altogether.
+@pytest.mark.asyncio
+async def test_a_cancelled_generation_finishes_its_failure_write_before_unwinding(
+    tmp_path: Path,
+) -> None:
+    repository = SlowFailingRepository()
+    service = ImageArtifactService(
+        BlockingImageProvider(),  # type: ignore[arg-type]
+        repository,  # type: ignore[arg-type]
+        LocalBinaryArtifactStore(tmp_path),
+        "test-provider",
+        "test-model",
+        1024 * 1024,
+        1000,
+    )
+    task = asyncio.create_task(
+        service.generate(
+            "image-user",
+            "11111111-1111-4111-8111-111111111111",
+            "22222222-2222-4222-8222-222222222222",
+            ImageGenerationRequest("blue square", 256, 256, 7),
+        )
+    )
+    # Let it reach the provider, then cancel it the way a disconnect does.
+    while repository.record is None:
+        await asyncio.sleep(0.01)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    # The moment the caller has unwound, the artifact is already failed - not
+    # left pending with a write still in flight somewhere.
+    assert repository.record["status"] == "failed"
+    assert repository.record["error_code"] == "cancelled"

@@ -4,6 +4,8 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from anyio import CancelScope
+
 from backend.artifacts.image import validate_image_bytes
 from backend.artifacts.types import (
     ImageEditRequest,
@@ -234,9 +236,20 @@ class ImageArtifactService:
         except asyncio.CancelledError:
             if storage_key:
                 await self.store.delete(storage_key)
-            await asyncio.shield(
-                self.repository.mark_failed(artifact_id, user_id, "cancelled")
-            )
+            # A cancel scope rather than asyncio.shield, matching the
+            # document path. Both keep the write alive under cancellation;
+            # the scope additionally holds this frame until the write has
+            # landed, so no caller can move on leaving the session
+            # mid-transaction. On 2026-09-06 exactly one such write - this
+            # statement - sat idle in transaction for fifteen hours, holding
+            # a row lock that queued every delete on the table behind it and
+            # hung three deploy gates. Which frame abandoned it was never
+            # proven, and the test below does not distinguish the two
+            # constructs; this removes the shape that could, and
+            # idle_in_transaction_session_timeout is the database-side net
+            # for any that cannot be found.
+            with CancelScope(shield=True):
+                await self.repository.mark_failed(artifact_id, user_id, "cancelled")
             raise
         except Exception:
             if storage_key:
@@ -334,9 +347,20 @@ class ImageArtifactService:
         except asyncio.CancelledError:
             if storage_key:
                 await self.store.delete(storage_key)
-            await asyncio.shield(
-                self.repository.mark_failed(artifact_id, user_id, "cancelled")
-            )
+            # A cancel scope rather than asyncio.shield, matching the
+            # document path. Both keep the write alive under cancellation;
+            # the scope additionally holds this frame until the write has
+            # landed, so no caller can move on leaving the session
+            # mid-transaction. On 2026-09-06 exactly one such write - this
+            # statement - sat idle in transaction for fifteen hours, holding
+            # a row lock that queued every delete on the table behind it and
+            # hung three deploy gates. Which frame abandoned it was never
+            # proven, and the test below does not distinguish the two
+            # constructs; this removes the shape that could, and
+            # idle_in_transaction_session_timeout is the database-side net
+            # for any that cannot be found.
+            with CancelScope(shield=True):
+                await self.repository.mark_failed(artifact_id, user_id, "cancelled")
             raise
         except Exception:
             if storage_key:
