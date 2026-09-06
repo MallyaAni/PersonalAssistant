@@ -7,6 +7,66 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 (later) — trade location; the technical analyst rebuilt on it (PUSHED, NOT DEPLOYED)
+
+Continues the entry below it. Commits `19a45009` (history), `34bd4af0`
+(levels), then the veto.
+
+**The operator's objection** was that the grades ignored technical
+analysis as he practises it: location between support and resistance,
+multi-timeframe agreement, reward-to-risk. The prior technical analyst
+scored momentum and stretch only, because EMA slopes and candles measured
+nothing as cross-sectional rankers. That was the wrong test. The right one
+is trade quality among names that already qualify on fundamentals and
+release tone, including entry risk. `backend/market/levels.py` computes
+confirmed swing lows and highs (strictly the extreme of five bars either
+side, stamped when confirmed), support as the nearest of those and the
+daily 50/200 and weekly 21 EMAs below the close, resistance as the nearest
+swing high above, reward-to-risk, position in the 60-session range, weekly
+and daily trend, and a confluence count. Measured on the 90 book names
+among qualified names, beta-adjusted, next 20 sessions, with the maximum
+adverse excursion inside the window: weekly trend up +1.0% (t 4.2) against
+-2.0% when flat; daily trend up +0.9% (t 3.3); top of the 60-session range
++1.3% (t 3.7, hit 0.56) against -0.5% at the bottom; more than 15% above
+support earns nothing with a -12% adverse excursion against -7.6% at
+support (support is an entry-risk fact, not a return fact); reward-to-risk
+from swing levels inverts (RR < 1 +0.7%, t 2.3: resistance close overhead
+means breakout on these names). The technical analyst now blends weekly
+trend, daily trend, momentum and the negative of stretch (falling theme)
+or range position (rising theme).
+
+**Calibration after it** (`market_desk --calibrate`): A+ 102 bp per 20
+sessions (t 1.9) and 343 per 60 (t 2.3, from 258); graded score rank IC
+0.031 (t 2.1) at 20 and 0.050 (t 2.3) at 60. **The veto**: a bearish core
+analyst caps the grade at B, which lifts A from 17 to 53 bp per 20
+sessions and removes the losing case (IREN, January 2026: bullish release
+and tape over bearish filings, then -22% and -26%).
+
+**Per-name history** (`market_desk --history SNDK MU --since 2026-01-01`)
+prints every grade change with the stances, the regime multipliers, the
+next 20 sessions raw and beta-adjusted, earnings reaction days marked, and
+a hold-while-graded backtest against buy-and-hold and SPY. 2026: SNDK A+
+every session (+184% held, SPY +12.5%); MU A+ 107 sessions averaging
++14.7% (hit 0.80) against B sessions -8.9%; CRWV C all year (-4.6% on C
+sessions); CRWD flickers between B and C daily on the rotation half-vote.
+Two things still to do there: stances need hysteresis (a view must persist
+before it changes a grade), and the per-name backtest switches daily where
+the book rebalances every 20 sessions.
+
+**What quant desks do with the same reads** (for the operator's question):
+moving-average distance (21 vs 200 day) predicts the cross-section with
+~9% annual alpha beyond momentum and the 52-week high (Avramov, Kaplanski,
+Subrahmanyam 2021); the 52-week high is an anchor (George and Hwang 2004);
+Lo, Mamaysky and Wang (2000) found chart patterns and levels carry
+information when detected mechanically; Osler (2000) found bank-published
+support and resistance levels in FX predict intraday reversals. None of
+them trade levels by eye: every one is a feature measured in a
+cross-section, which is what `levels.py` now is.
+
+**Next atomic task.** Hysteresis on stances (persist N sessions), then
+re-run `--calibrate` and the four histories; then the per-name backtest
+on the book's 20-session rebalance clock.
+
 ## 2026-09-05 (night) — the book is AI and software only; the desk (PUSHED, NOT DEPLOYED)
 
 Continues the entry below it. Commits `9a5aaac1` (merged as `4764b76b`)
