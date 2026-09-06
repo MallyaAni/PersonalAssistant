@@ -299,12 +299,12 @@ Key settings are:
 | `DATABASE_USE_NULL_POOL` | `false` | Keep `false` in runtime; tests set it to `true` because pytest creates multiple event loops |
 | `INFERENCE_ADAPTER` | `openai_compatible` | Global inference wire adapter; unsupported values fail during settings validation or factory construction |
 | `INFERENCE_PROVIDER_NAME` | `vllm` | Operator-facing provenance label only; it does not choose the adapter or manage model lifecycle |
-| `LLM_BASE_URL` | `http://127.0.0.1:8003` | Global OpenAI-compatible vLLM server root; role adapters append their endpoint paths |
-| `LLM_MODEL` | `qwen/qwen3.5-4b` | Served model name reported by `GET /v1/models` |
+| `LLM_BASE_URL` | `http://127.0.0.1:8003` | Global OpenAI-compatible vLLM server root; role adapters append their endpoint paths. Nothing listens on `8003` any more: the deployment sets `http://animallya-spark1.local:8000`, and a command run by hand that inherits the default gets a 404 from an empty port |
+| `LLM_MODEL` | `qwen/qwen3.5-4b` | Served model name reported by `GET /v1/models`. The default is the desktop-era one the code still ships; the deployment sets `deepseek-v4-flash` |
 | `LLM_REASONING_EFFORT` | `none` | Legacy/fallback OpenAI-compatible reasoning control |
 | `MAIN_INFERENCE_ADAPTER` | blank | Main-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `MAIN_LLM_BASE_URL` | blank | Main response and native-tool endpoint; blank falls back to `LLM_BASE_URL` |
-| `MAIN_LLM_MODEL` | blank | Main response/native-tool model; blank falls back to `LLM_MODEL`; current qualified setting is `qwen/qwen3.5-4b` |
+| `MAIN_LLM_MODEL` | blank | Main response/native-tool model; blank falls back to `LLM_MODEL`; the deployment sets `deepseek-v4-flash` on both Sparks |
 | `MAIN_LLM_REASONING_EFFORT` | `none` | Main-role reasoning control |
 | `ROUTING_INFERENCE_ADAPTER` | blank | Routing-role adapter; blank inherits `MAIN_INFERENCE_ADAPTER` then `INFERENCE_ADAPTER` |
 | `ROUTING_LLM_BASE_URL` | blank | `MainActionSelector`'s tool-calling decision only; blank falls back through `MAIN_LLM_BASE_URL` to `LLM_BASE_URL`, reproducing the one-model-does-both default exactly. Set only to split routing from the reply model - e.g. testing a main-model swap without inheriting its untested native tool-calling behaviour (2026-08-14, see `ROADMAP.md` Milestone 9) |
@@ -312,15 +312,15 @@ Key settings are:
 | `ROUTING_LLM_REASONING_EFFORT` | `none` | Routing-role reasoning control |
 | `PRESENTATION_INFERENCE_ADAPTER` | blank | Presentation-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `PRESENTATION_LLM_BASE_URL` | blank | Presentation specialist endpoint; blank falls back through main and global endpoints |
-| `PRESENTATION_LLM_MODEL` | blank | Progressive outline/slide/revision model; current qualified setting is `qwen/qwen3.5-4b` |
+| `PRESENTATION_LLM_MODEL` | blank | Progressive outline/slide/revision model; the deployment sets `deepseek-v4-flash` on both Sparks |
 | `PRESENTATION_LLM_REASONING_EFFORT` | `none` | Presentation-role reasoning control |
 | `DIAGRAM_INFERENCE_ADAPTER` | blank | Diagram-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `DIAGRAM_LLM_BASE_URL` | blank | Diagram specialist endpoint; blank falls back through main and global endpoints |
-| `DIAGRAM_LLM_MODEL` | blank | Mermaid planning model; current qualified setting is `qwen/qwen3.5-4b` |
+| `DIAGRAM_LLM_MODEL` | blank | Mermaid planning model; the deployment sets `deepseek-v4-flash` on both Sparks |
 | `DIAGRAM_LLM_REASONING_EFFORT` | `none` | Diagram-role reasoning control |
 | `MEMORY_PROPOSAL_INFERENCE_ADAPTER` | blank | Typed semantic-memory agent adapter; blank inherits `INFERENCE_ADAPTER` |
 | `MEMORY_PROPOSAL_LLM_BASE_URL` | blank | Typed semantic-memory endpoint; blank falls back through main and global endpoints |
-| `MEMORY_PROPOSAL_LLM_MODEL` | blank | Grammar-constrained memory-proposal model; current qualified setting is `qwen/qwen3.5-4b` |
+| `MEMORY_PROPOSAL_LLM_MODEL` | blank | Grammar-constrained memory-proposal model; the deployment sets `deepseek-v4-flash` on both Sparks |
 | `MEMORY_PROPOSAL_LLM_REASONING_EFFORT` | `none` | Keep `none` for this bounded call; reasoning can otherwise consume the answer budget |
 | `MEMORY_PROPOSAL_MAX_TOKENS` | `256` | Typed semantic-memory output budget, valid from 32 through 512 |
 | `LLM_API_KEY` | none | Optional Bearer token when the compatible inference server requires one |
@@ -345,7 +345,7 @@ Key settings are:
 | `IMAGE_EDIT_STEPS` | `4` | Qualified distilled edit step count; requalify quality and latency before changing |
 | `IMAGE_PROVIDER_TIMEOUT_SECONDS` | `600` | Whole image-job timeout including queue, sampling, and output fetch |
 | `IMAGE_PROVIDER_POLL_SECONDS` | `0.5` | Bounded terminal-history polling interval |
-| `IMAGE_MAX_CONCURRENCY` | `1` | Shared in-process image-generation gate for the current RTX 5080 |
+| `IMAGE_MAX_CONCURRENCY` | `1` | Shared in-process image-generation gate for the desktop GPU that draws the pictures |
 | `ARTIFACT_STORAGE_ROOT` | `data/artifacts` | Opaque local binary root; ignored by Git and volume-mounted in Compose |
 | `PRESENTATION_RENDERER_BASE_URL` | `http://127.0.0.1:8002` | PptxGenJS renderer root; Compose uses `http://presentation-renderer:8002` |
 | `PRESENTATION_RENDERER_TIMEOUT_SECONDS` | `60` | Whole render and Office-validation deadline |
@@ -369,7 +369,7 @@ Key settings are:
 | `VISION_INFERENCE_ADAPTER` | blank | Vision-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `VISION_LLM_BASE_URL` | blank | Vision endpoint; blank falls back to `LLM_BASE_URL` |
 | `VISION_LLM_REASONING_EFFORT` | `none` | Vision-role reasoning control |
-| `VISION_MODEL` | `qwen/qwen3.5-4b` | Local VLM served by `vllm-main`; independently replaceable from the chat setting |
+| `VISION_MODEL` | `qwen/qwen3.5-4b` | The default is desktop-era; the deployment sets `qwen3-vl-8b`, served on the second Spark at `:8001`, independently replaceable from the chat setting |
 | `VISION_MAX_TOKENS` | `512` | Maximum grounded analysis output tokens |
 | `VISION_ESCALATION_LLM_BASE_URL` | blank | Optional OpenAI-compatible specialist VLM endpoint; blank disables escalation |
 | `VISION_ESCALATION_MODEL` | blank | Specialist model identifier; both endpoint and model are required |
@@ -410,22 +410,29 @@ DATABASE_POOL_TIMEOUT_SECONDS=30
 DATABASE_USE_NULL_POOL=false
 INFERENCE_ADAPTER=openai_compatible
 INFERENCE_PROVIDER_NAME=vllm
-LLM_BASE_URL=http://127.0.0.1:8003
-LLM_MODEL=qwen/qwen3.5-4b
+LLM_BASE_URL=http://animallya-spark1.local:8000
+LLM_MODEL=deepseek-v4-flash
 LLM_REASONING_EFFORT=none
-MAIN_LLM_MODEL=qwen/qwen3.5-4b
+MAIN_LLM_BASE_URL=http://animallya-spark1.local:8000
+MAIN_LLM_MODEL=deepseek-v4-flash
 MAIN_LLM_REASONING_EFFORT=none
+ROUTING_LLM_BASE_URL=http://animallya-spark1.local:8000
+ROUTING_LLM_MODEL=deepseek-v4-flash
+ROUTING_LLM_REASONING_EFFORT=none
 PRESENTATION_INFERENCE_ADAPTER=openai_compatible
-PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
+PRESENTATION_LLM_BASE_URL=http://animallya-spark1.local:8000
+PRESENTATION_LLM_MODEL=deepseek-v4-flash
 PRESENTATION_LLM_REASONING_EFFORT=none
-DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
+DIAGRAM_LLM_BASE_URL=http://animallya-spark1.local:8000
+DIAGRAM_LLM_MODEL=deepseek-v4-flash
 DIAGRAM_LLM_REASONING_EFFORT=none
-MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b
+MEMORY_PROPOSAL_LLM_BASE_URL=http://animallya-spark1.local:8000
+MEMORY_PROPOSAL_LLM_MODEL=deepseek-v4-flash
 MEMORY_PROPOSAL_LLM_REASONING_EFFORT=none
 MEMORY_PROPOSAL_MAX_TOKENS=256
 VISION_INFERENCE_ADAPTER=openai_compatible
-VISION_LLM_BASE_URL=http://127.0.0.1:8003
-VISION_MODEL=qwen/qwen3.5-4b
+VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
+VISION_MODEL=qwen3-vl-8b
 EMBEDDING_INFERENCE_ADAPTER=openai_compatible
 EMBEDDING_BASE_URL=http://127.0.0.1:8004
 EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5

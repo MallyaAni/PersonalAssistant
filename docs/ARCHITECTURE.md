@@ -1887,7 +1887,7 @@ The active collaborators are:
 Notification and external-agent collaborators are not part of current dependency assembly. Internet search and guarded MCP execution are assembled; knowledge ingestion/retrieval is implemented as a local memory store, while a complete RAG pipeline remains `SCAFFOLDED`.
 
 Chat memory capture is auto-saved, with no approval boundary. One local
-`MemoryProposalAgent`, backed by Qwen 3.5 4B, semantically interprets the whole
+`MemoryProposalAgent`, backed by the main text model on the Sparks, semantically interprets the whole
 current utterance and returns grammar-constrained candidates for preferred name,
 response style, locality, interests, entity relationship, workflow, titled
 reference, semantic fact, and episodic event. Phrase matching and regular
@@ -1990,10 +1990,11 @@ briefs, attached image elements, and configured automatic-image budget. It
 shows named outline, slide-planning, visual-generation, and render/validation
 stages, survives navigation or reload through the stored job handle, and
 disappears only after terminal promotion or failure. This is completed-work
-progress rather than a wall-clock estimate. Text planning and FLUX execution
-remain serial on the current workstation because vLLM and ComfyUI share
-one RTX 5080 and both qualified provider paths have concurrency one; safe
-pipeline overlap requires a separate GPU or a capacity-aware resource lease.
+progress rather than a wall-clock estimate. Text planning and FLUX execution no longer share a
+GPU: text runs on the Sparks and FLUX on the desktop. They are still not
+overlapped, because the image path holds a concurrency of one and the deck
+worker asks for its visuals in sequence; overlapping them needs a
+capacity-aware resource lease rather than more hardware.
 
 The separate port-8002 renderer accepts only a validated `DeckSpec`. PptxGenJS creates native editable text, shape, chart, table, image, and notes objects; a Python OOXML inspector confirms slide count and required native-object kinds; and the worker opens the file through headless LibreOffice Impress and exports a PDF as an Office-readability check. The renderer uses an isolated temporary directory and removes it after each serialized job. The application writes the PPTX through the opaque binary store and promotes the pending revision only after both structural and Office validation succeed. A failure remains terminal on the pending revision and does not replace the prior current revision.
 

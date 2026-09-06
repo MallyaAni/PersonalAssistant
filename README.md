@@ -1,105 +1,106 @@
 # AniOS
 
-AniOS is an early-stage, local-first personal AI assistant project. Its long-term direction includes conversation, personal memory, retrieval, and agent workflows, but future capabilities are not current functionality unless the documentation labels them otherwise.
+AniOS is a personal assistant that runs on hardware in one house. Two DGX
+Sparks serve every model it uses, and the database sits beside them, so your
+conversations and everything it remembers about you stay on those machines.
+Only two kinds of traffic leave: web searches, screened first so personal
+facts are not sent out, and the messages it sends you.
 
-The repository contains:
+You use it in a browser at [deep-matter.com](https://deep-matter.com), or by
+text message, one to one or in a group.
 
-- a FastAPI backend;
-- a React and Vite developer console;
-- invited profile creation and login backed by one-time expiring codes,
-  Argon2id password hashes, shared attempt limits, revocable HttpOnly browser
-  sessions, server-derived ownership, and stable per-user data IDs;
-- Docker Compose definitions for PostgreSQL with pgvector, Redis, two pinned
-  vLLM inference services, the backend, frontend, local capability FastMCP
-  sidecar, presentation worker, and presentation renderer;
-- an OpenAI-compatible, provider-neutral inference boundary with independently
-  configurable text, vision, and embedding roles; the qualified RTX 5080
-  profile runs Qwen 3.5 4B and Nomic through pinned vLLM services and requires
-  no LM Studio process or model-management API;
-- a role-configurable model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph supervisor, assistant, diagram-agent, and presentation-agent boundaries;
-- main-model-native MCP tool selection over a semantic live-validated shortlist,
-  guarded execution, visible chat status, and a read-only internet-search MCP
-  server with an isolated Google ADK research worker, Tavily fallback, bounded
-  local quota protection and provider-attributed sources;
-- an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
-- free local four-step FLUX.2 Klein generation and source-aware editing through
-  ComfyUI for generated or uploaded images, plus validated Qwen
-  vision analysis in the chat composer, with natural-language creation intent,
-  immutable edit lineage,
-  in-place active revisions, grounded historical questions, guarded
-  referenced-image web comparison, private previews, retry/cancel, reload
-  restoration, history, download, owned deletion, semantic visual recall, and
-  one main chat composer with explicit image selection when several images are visible;
-- a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
-- a durable Scout agent - the scheduler for anything wanted later or on a cadence (reminders and recurring lookups through a leased task queue) and for its ambient discovery sweep, whose approved home and interests share the
-  personal-memory fact lifecycle, with editable ranking strength, reversible
-  travel mode, familiar-item undo, bounded sources, scheduled sweeps, digests,
-  and calendar artifacts;
-- a focused presentation subsystem where a separately qualified specialist model produces compact slide content,
-  a durable worker executes the presentation LangGraph independently of chat,
-  application code compiles strict editable deck specifications and ranked
-  visual briefs, the worker progressively adds the highest-value applicable
-  FLUX visuals by default without making imagery a deck-success dependency, PptxGenJS
-  renders native Office objects, and LibreOffice validates each revision before
-  reconnectable stage-weighted progress from outline through Office validation,
-  persistent per-slide feedback, additional FLUX generation and refinement
-  of an attached slide image, history, preview, download, deletion, and explicit
-  cleanup of failed decks without completed slides;
-- an agent-facing local FastMCP facade over the same visual and presentation
-  services, returning bounded metadata handles rather than private binary data;
-- a repeatable local-model qualification command for bounded supervisor/tool decisions and progressive presentation contracts, plus a local-only review-first command that uses explicit repository evidence to generate architecture-diagram candidates without automatically overwriting canonical documentation.
+It is a real system in daily use rather than a finished product. Anything that
+is planned rather than working is labelled as such; see
+[the roadmap](docs/ROADMAP.md) for what is next and
+[the handoff](docs/NEXT_SESSION.md) for the state of the running system today.
 
-See [the current session handoff](docs/NEXT_SESSION.md) for verified runtime state and active blockers. See [the roadmap](docs/ROADMAP.md) for milestone status and explicitly planned capabilities.
+## What it does
 
-## Quick orientation
+- **Remembers you.** What you like, where you live, what you cannot eat. It
+  saves those itself as you talk, uses them when the question calls for it,
+  and shows them to you so you can correct or delete any of them. A hard limit
+  like an allergy removes a suggestion outright rather than ranking it lower.
+- **Searches when it needs to.** It decides for itself whether a question needs
+  the internet, then answers from what it found and names the sources. When a
+  search finds nothing, it says so instead of filling the gap.
+- **Handles pictures.** It draws and edits images locally, reads photos you
+  send it, and can find an old picture again from a description of it.
+- **Makes things you can keep.** A chat can become an editable diagram, a Word
+  or PDF document, or a slide deck built from real Office objects.
+- **Does things later.** Reminders, recurring messages, and a weekly sweep for
+  events near you, on a queue that survives a restart.
+- **Works in a group chat.** It reads the whole room for context but answers
+  only when spoken to, and keeps each person's private facts to themselves.
+- **Runs agents on its own.** A code reviewer and a security reviewer read one
+  commit through a read-only window and report only findings whose evidence
+  they can point to in the code. A daily reviewer reads your own conversations
+  for places the assistant let you down, and asks before it changes anything.
 
-The supported development paths and required environment variables are documented in [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md). Do not start the Compose backend and a host Uvicorn process on port 8000 at the same time.
+## How it is put together
 
-Start the complete user-facing local stack, including host ComfyUI image
-generation, with:
+- **The models.** DeepSeek-V4-Flash spans both Sparks and does all the text
+  work: replying, choosing tools, writing decks. Qwen3-VL reads images on the
+  second Spark, and Nomic turns text into vectors for retrieval. Pictures are
+  drawn by FLUX.2 Klein on a Windows desktop with a consumer GPU, the one part
+  of the system that is not always on; when it is off, an image request says so
+  rather than hanging. Each role is configured
+  separately behind one OpenAI-compatible boundary, so a role can move to a
+  different model without touching the code that calls it.
+- **The backend.** FastAPI, with PostgreSQL and pgvector holding memory,
+  conversations and artifacts, and Redis holding queues and short-lived state.
+- **Choosing tools.** The model picks from a shortlist assembled per turn.
+  Every tool carries a contract saying what it changes, whether it is safe to
+  retry, and whether it needs your permission first, and the loop that runs
+  them is bounded by a clock, a step count and a repeat guard.
+- **Accounts.** Invitation only, with one-time expiring codes, Argon2id
+  password hashes, revocable browser sessions, and every record owned by a user
+  id the server derives rather than one the browser claims.
+- **The front.** A React and Vite console for development, and the public site
+  served through a local Nginx gateway and a Cloudflare tunnel. The database,
+  the model servers and the workers are not reachable from outside.
+
+## Running it
+
+The supported paths and the environment variables they need are in
+[the development guide](docs/DEVELOPMENT_GUIDE.md). Do not run the Compose
+backend and a host Uvicorn process on port 8000 at the same time.
+
+Start everything, including the image backend:
 
 ```bash
 bash scripts/start-anios.sh
 ```
 
-`docker compose up` starts the core services but intentionally does not start
-the profile-controlled or host ComfyUI process. Treat that command as an
-incomplete startup whenever image generation is part of the acceptance path.
+`docker compose up` on its own starts the core services but not the image
+backend, so treat it as an incomplete start whenever pictures are part of what
+you are testing.
 
-Common entry points are:
+Deploy a change with `bash scripts/deploy.sh`. It runs the unit suite and the
+routing gate first, backs the database up, migrates, restarts, and then runs
+the live checks in the background; nothing ships if a gate is red.
+
+On the machine running the stack:
 
 ```text
-Public UI:       https://deep-matter.com
-Backend health:  http://localhost:8000/health
-OpenAPI UI:      http://localhost:8000/docs
-Frontend:        http://localhost:5173
-Local gateway:   http://localhost:8080
-Authentication: http://localhost:8000/api/v1/auth/session
-Memory API:      http://localhost:8000/api/v1/memory/{user_id}
-Scout discovery: http://localhost:8000/api/v1/discovery/{user_id}
-Agent memory:    http://localhost:8000/api/v1/memory/{user_id}/agent
-Artifacts API:   http://localhost:8000/api/v1/artifacts/{user_id}/conversations/{conversation_id}
-Artifact history: http://localhost:8000/api/v1/artifacts/{user_id}
-Image generation: http://localhost:8000/api/v1/images/generate
-Image refinement: http://localhost:8000/api/v1/images/{artifact_id}/refine
-Image analysis:   http://localhost:8000/api/v1/vision/analyze
-Image followup:   http://localhost:8000/api/v1/vision/artifacts/{artifact_id}/ask
-Conversation:    http://localhost:8000/api/v1/conversations/{user_id}/{conversation_id}
-Tool invocation: http://localhost:8000/api/v1/tools/{user_id}/call
-Presentations:   http://localhost:8000/api/v1/presentations/{user_id}
-Capability MCP:  http://localhost:8001/mcp
-PPTX renderer:   http://localhost:8002/health
+Public UI:        https://deep-matter.com
+Backend health:   http://localhost:8000/health
+OpenAPI UI:       http://localhost:8000/docs
+Frontend:         http://localhost:5173
+Local gateway:    http://localhost:8080
+Capability MCP:   http://localhost:8001/mcp
+PPTX renderer:    http://localhost:8002/health
 ```
 
-`deep-matter.com` is the hosted product surface. Cloudflare terminates HTTPS
-and the named `anios` tunnel forwards only to the loopback Nginx gateway; the
-database, model servers, workers, MCP, and ComfyUI remain private.
+Reaching those addresses does not prove chat or persistence works. Two rules
+decide what counts as working, and both are older than any of this code:
 
-These addresses being reachable does not prove chat or persistence works. Follow the functional validation protocol in the development guide.
-
-User-visible behavior is considered verified only when the intended workflow is exercised through an automated browser test or a documented manual browser session. API reachability alone cannot verify the frontend.
-
-Model behavior is considered verified only when a functional test sends the real prompt to the real runtime and asserts on the answer (`backend/tests/functional/`). A passing structural test shows the call was made and parsed, which is not the same as it being right.
+- Anything a person sees is verified only when a browser exercises it, in an
+  automated test or a written-down manual session. An API answering is not the
+  page working.
+- Anything a model decides is verified only when a functional test sends the
+  real prompt to the real model and checks the answer
+  (`backend/tests/functional/`). A structural test proves the call happened,
+  never that the answer was any good.
 
 ## Documentation
 
