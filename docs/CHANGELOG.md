@@ -2,6 +2,86 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-06 - The desk measured as it actually trades, and the exit that cost 3% a year
+
+**The book's reported numbers were never the book's rules.** `sizing.simulate`
+runs a score matrix through the sizing engine and answers one narrow question:
+is this ranking worth anything. The desk is more than a ranking - it grades,
+multiplies each position by that grade, cuts exposure when the regime says so,
+leans on steadier names while money is tightening. None of that reached the
+backtest that reports the book, so every risk rule added over the last month
+was measured in a scratch script and never in the thing people read.
+
+`desk/simulate.py` walks the rules themselves, one session at a time, and is
+now the first row of `--book-backtest`. Since 2021-06 it makes 31.6% a year at
+Sharpe 1.81 and a -18.3% worst drawdown, against 31.4% at 1.55 and -23.6% for
+the sizing engine alone. The risk rules earn their place, which had been
+asserted and not shown. Eleven tests pin the walk: no lookahead (a price
+changed from session 120 leaves every earlier return identical), the rebalance
+clock, the grade and regime multipliers, costs, and where an exit's freed
+weight goes.
+
+**The first thing it measured contradicted a signal shipped a day earlier.**
+The band exit had been chosen on a per-trade study: hold 352 real entries
+fixed, vary only the exit. On that test it looked clearly best, selling at the
+62nd-67th percentile of the surrounding ten sessions against the 53rd for the
+rule it replaced. That study compared it against holding for up to 250
+sessions. The book does not hold for 250 sessions; it rebalances every 20, and
+the rebalance is already an exit. Inside the book's own rules the overlay costs
+3.0% a year (t -1.99) and lowers Sharpe in five of six years.
+
+The reason is direct rather than statistical. Over 86,209 sessions holding a
+name graded B or better, that name beat the benchmark by 1.95% over the next
+twenty sessions. Conditioning on the exit trigger raises that number instead of
+lowering it: 3.10% for "the band is wide and price sits near its top", one of
+the strongest buy signals in the set. Twenty-one triggers were screened, from
+price crossing every moving average to the desk's own grade and rank falling,
+and not one is followed by a fall. The two the desk was using are the worst of
+the twenty-one.
+
+So the paper book passes no exits, and `desk/exit.py` keeps the rules and the
+measurement that retired them. The rebalance is the exit that works: 203 of 287
+closes are a name replaced by a better-ranked one, a funding decision rather
+than a protection one. The caveat is written down too - 2022, the only falling
+year, is the one year the overlay helped, and the regime analyst already buys
+that protection once.
+
+**The liquidity test on release tone, settled.** The economic-restrictions test
+of Avramov, Cheng and Metzker appeared to catch the desk's most-claimed signal.
+Measured inside each liquidity third, so the cross-section size is held equal,
+tone decays gently and stays positive: 0.048, 0.031, 0.026 at twenty sessions
+from thinnest to most traded. Coverage is not the cause - 92-96% of names in
+every third carry a scored release. Reweighting does not pay: tilting tone
+toward the thin names at five strengths moves the desk's score from 0.0459 to
+at best 0.0470 while lowering net Sharpe. Two corrections came out of it: tone
+is not significant at sixty sessions in any subset, and its real edge is at
+twenty, which is the horizon the book rebalances on. Dropping tone costs the
+desk 0.046 to 0.038 and net Sharpe 0.79 to 0.51. The desk as a whole passes the
+test cleanly at 0.058, 0.054 and 0.051 across the three thirds.
+
+**The Desk view answered 403 to its own operator.** `backend` in
+`docker-compose.yml` takes an explicit `environment:` list and no `env_file:`,
+so a value present only in `.env` on the deployment host reaches nothing.
+`MARKET_DESK_USER` was not in that list, the code fell back to its default of
+"operator", and every request from the actual account was refused - while
+`.env` on the Spark said the right name all along, which is why an earlier
+attempt to fix it there could not have worked. The setting is passed through
+now, defaulting to the same account `AUTH_LOCAL_USER_ID` already defaults to;
+`test_compose_invariants.py` asserts the backend is handed the settings it
+cannot usefully default, and asserts the absence of `env_file:` that makes the
+list exhaustive. Checked against the file without the fix, the assertion fails.
+The Desk view also stops collapsing every failure into one red string: a 403
+names the setting to check, a 401 says the session expired, anything else
+carries its status code. Not yet deployed.
+
+**A Windows checkout could not run the test suite.** `Path.read_text()` with no
+encoding uses the platform code page, and a thumbs-up emoji in a routing prompt
+is not representable in cp1252, so the coverage test raised during collection
+and took all 3,700 tests with it.
+
+Diagram impact: NONE - a measurement harness, a retired rule, an environment
+passthrough and an error message change no component, store, boundary or flow.
+
 ## 2026-09-06 - The deploy stops waiting on checks of a system that is already serving
 
 Measured on the deploy that ran end to end: image rebuild under a minute,
