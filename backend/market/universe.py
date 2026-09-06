@@ -150,6 +150,14 @@ OVERLAY: tuple[UniverseMember, ...] = (
     UniverseMember("BE", MEMBER, (POWER_COOLING,), "Bloom Energy"),
     UniverseMember("POWL", MEMBER, (POWER_COOLING,), "Powell"),
     UniverseMember("MOD", MEMBER, (POWER_COOLING,), "Modine"),
+    # Steady large-capitalisation technology. Not here because they are
+    # expected to lead: they have already run a long way. They are the
+    # anchors the book rotates toward when rates rise, and the reference
+    # points that make "how correlated is this name with big technology"
+    # a question the data can answer.
+    UniverseMember("AAPL", MEMBER, (HYPERSCALER,), "Apple"),
+    UniverseMember("IBM", MEMBER, (SOFTWARE, AI_COMPUTE), "IBM"),
+    UniverseMember("ACN", MEMBER, (SOFTWARE,), "Accenture"),
     # Software the money leaves for, or comes back to.
     UniverseMember("SNOW", MEMBER, (SOFTWARE,), "Snowflake"),
     UniverseMember("DDOG", MEMBER, (SOFTWARE,), "Datadog"),
