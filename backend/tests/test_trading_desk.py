@@ -176,6 +176,40 @@ def test_technical_analyst_switches_on_theme_trend():
     assert np.allclose(analyst.opine(panel).scores[-1, :n], falling, equal_nan=True)
 
 
+# The name backtest holds a name only while it is graded, pays a cost on
+# each switch, and books buy-and-hold and the benchmark over the same span.
+def test_name_backtest_holds_only_while_graded():
+    from dataclasses import replace as dc_replace
+
+    from backend.agents.trading.desk import desk as trading_desk
+    from backend.agents.trading.desk.opinions import Opinion
+
+    t, n = 30, 2
+    themes = {"N0": (AI_COMPUTE,), "N1": (AI_COMPUTE,)}
+    returns = np.zeros((t, n))
+    returns[:, 0] = 0.01  # N0 gains 1% a session
+    panel = _panel(returns, themes)
+    grades = np.zeros((t, n + 1), dtype=int)
+    grades[10:20, 0] = grading.ORDINAL["A"]  # graded A for ten sessions
+    graded = grading.Graded(grades, grades.astype(float), {})
+    state = regime.RegimeState(0, 0, 0.9, 0, 0, 0, "ai", 0.1, 0, 1.0, 1.0, ())
+    view = regime.RegimeView(
+        [state] * t, Opinion("rotation", np.full((t, n + 1), np.nan))
+    )
+    report = trading_desk.DeskReport(
+        panel, {"N0": "ai", "N1": "ai"}, {}, view, graded, grades.astype(float), []
+    )
+    bt = trading_desk.name_backtest(report, "N0", "A", cost_bps=0.0)
+    assert bt.sessions_in == 10
+    assert bt.switches == 2
+    assert bt.rule_return == pytest.approx(0.75 * 0.10)
+    assert bt.hold_return == pytest.approx(0.01 * (t - 1))
+    rows = trading_desk.history(report, "N0", 5)
+    assert rows[10].grade == "A"
+    assert rows[10].forward == pytest.approx(0.05)
+    assert dc_replace(rows[0], grade="C").grade == "C"
+
+
 # The analysts have no view where their layer has no data.
 def test_analysts_withhold_without_data():
     from backend.agents.trading.desk import fundamental, sentiment

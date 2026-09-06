@@ -8,6 +8,8 @@ python -m backend.cli.market_desk --brief SNDK    # one name's evidence
 import argparse
 from datetime import date
 
+import numpy as np
+
 from backend.agents.trading.desk import desk as trading_desk
 from backend.agents.trading.desk.grading import GRADES
 from backend.config.settings import settings
@@ -29,6 +31,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--brief", nargs="*", default=[], help="tickers to print the evidence for"
     )
     parser.add_argument("--top", type=int, default=25)
+    parser.add_argument(
+        "--history", nargs="*", default=[], help="tickers to print the grade history of"
+    )
+    parser.add_argument(
+        "--since", type=date.fromisoformat, default=None, help="history start date"
+    )
     return parser
 
 
@@ -120,6 +128,64 @@ def _print_calibration(report) -> None:
         )
 
 
+# Print one name's grade history since a date: every grade change with the
+# stances behind it and what the name did over the next 20 sessions, then
+# the hold-while-graded backtest against buy-and-hold.
+def _print_history(report, ticker: str, since, horizon: int = 20) -> None:
+    if ticker not in report.panel.tickers:
+        print(f"\n{ticker}: not in the book")
+        return
+    rows = trading_desk.history(report, ticker, horizon, since)
+    if not rows:
+        print(f"\n{ticker}: no sessions since {since}")
+        return
+    print(f"\n{ticker} grade history since {rows[0].date} ({len(rows)} sessions)")
+    print(
+        f"{'date':11} {'grade':5} {'votes':>5}  F  T  S  R  {'exp':>4} {'conf':>4} "
+        f"{'next 20d':>9} {'beta-adj':>9}"
+    )
+    previous = None
+    for row in rows:
+        key = (row.grade, tuple(sorted(row.stances.items())))
+        if key == previous and not row.earnings:
+            continue
+        previous = key
+        marks = "  ".join(
+            {1: "+", 0: ".", -1: "-"}[row.stances.get(k, 0)]
+            for k in ("fundamental", "technical", "sentiment", "rotation")
+        )
+        fwd = f"{row.forward * 100:+8.1f}%" if np.isfinite(row.forward) else "        ?"
+        res = (
+            f"{row.forward_residual * 100:+8.1f}%"
+            if np.isfinite(row.forward_residual)
+            else "        ?"
+        )
+        tag = " earnings reaction day" if row.earnings else ""
+        print(
+            f"{str(row.date):11} {row.grade:5} {row.votes:5.1f}  {marks}  "
+            f"{row.exposure:4.2f} {row.confidence:4.2f} {fwd:>9} {res:>9}{tag}"
+        )
+    print(f"\nper grade, next {horizon} sessions (beta-adjusted), {ticker} only:")
+    for letter in GRADES:
+        vals = [r.forward_residual for r in rows if r.grade == letter]
+        vals = [v for v in vals if np.isfinite(v)]
+        if vals:
+            print(
+                f"  {letter:3} {len(vals):4d} sessions  mean "
+                f"{np.mean(vals) * 100:+.1f}%  "
+                f"hit {np.mean(np.array(vals) > 0):.2f}"
+            )
+    for min_grade in ("A+", "A", "B"):
+        bt = trading_desk.name_backtest(report, ticker, min_grade, since)
+        print(
+            f"hold while >= {min_grade:2}: in {bt.sessions_in}/{bt.sessions} sessions, "
+            f"{bt.switches} switches, rule {bt.rule_return * 100:+.1f}% vs hold "
+            f"{bt.hold_return * 100:+.1f}% vs SPY {bt.benchmark_return * 100:+.1f}%; "
+            f"annualised in {bt.in_annualised * 100:+.0f}% "
+            f"/ out {bt.out_annualised * 100:+.0f}%"
+        )
+
+
 # Run the desk and print everything asked for.
 def main() -> None:
     """Entry point."""
@@ -132,6 +198,8 @@ def main() -> None:
     _print_book(report)
     for ticker in args.brief:
         _print_brief(report, ticker)
+    for ticker in args.history:
+        _print_history(report, ticker, args.since)
     if args.calibrate:
         _print_calibration(report)
 
