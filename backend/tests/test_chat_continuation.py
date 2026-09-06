@@ -286,13 +286,40 @@ async def test_a_failed_hand_off_ends_the_turn_quietly(monkeypatch):
     assert await service._hand_off("ani", "q", {}, "", ["x"], BUDGET) is None
 
 
-def test_the_loop_only_hands_off_on_a_bound_stop():
-    # The condition the loop applies, pinned as data: a router that declined
-    # is the intended stop and hands nothing off.
+def test_the_loop_hands_off_only_when_the_clock_ran_out_after_a_clean_step():
+    # The condition the loop applies, read from the source: the clock, never
+    # the ceiling (a ceiling stop is an answered turn; continuing it re-ran
+    # the same search and texted a failure, live, 2026-09-06), and never
+    # after a failed, refused or unknown last step.
+    import inspect
+
+    from backend.services import conversation_service as module
+
+    source = inspect.getsource(module.ConversationService._task_turn_context)
+    assert "turn.stopped == BUDGET" in source
+    assert "turn.stopped in (BUDGET, CEILING)" not in source
+    assert module._NOT_WORTH_CONTINUING == {"failed", "refused", "unknown"}
     assert BUDGET != DECLINED and CEILING != DECLINED
-    for stopped in (BUDGET, CEILING):
-        assert stopped in (BUDGET, CEILING)
-    assert DECLINED not in (BUDGET, CEILING)
+
+
+async def test_a_router_that_names_a_step_the_turn_already_took_ends_the_run_as_done():
+    user = _user()
+    before = ["Web search: anything fun this weekend (8 results)"]
+    try:
+        await _make_run(user, before)
+        claimed = await _claim(user)
+        # The router asks for the very search the turn already ran.
+        assistant = ScriptedAssistant([_step(SearchAction(query="anything fun this weekend", max_results=None), label="Web search", detail="anything fun this weekend")])
+        world = ChatContinuationWorld(claimed, assistant)
+        outcome = await RunController(AsyncSessionLocal, "chat-w").execute(claimed, world, grant_of("search_web"))
+        assert outcome.status == "completed", outcome
+        assert assistant.applied == []
+        async with AsyncSessionLocal() as db:
+            found = await AgentRunRepository(db).get_owned(user, claimed["id"])
+        assert found["actions"] == []
+        assert "Nothing further" in found["result"]["summary"]
+    finally:
+        await _clean(user)
 
 
 def test_the_reply_is_shown_the_hand_off_as_a_record_and_a_rule():

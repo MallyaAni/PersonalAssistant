@@ -98,6 +98,16 @@ class ChatContinuationWorld:
             call = view.get("call")
             if not isinstance(call, dict):
                 return Unavailable("the router named a step with no call")
+            # A step the turn already took is not a continuation, it is the
+            # router circling: the run is done with nothing further. Live,
+            # 2026-09-06: the continuation re-ran the turn's own search and
+            # ended on the repeat guard as a failure.
+            label = str(view.get("label") or view.get("tool") or "step")
+            detail = str(view.get("detail") or "")
+            asked = f"{label}: {detail}" if detail else label
+            if any(line.startswith(asked) for line in [*self.before, *lines]):
+                self.stopped_by = "done"
+                return Done("the router named a step the turn already took")
             step = StepCall(
                 tool=str(view.get("tool") or ""),
                 call_json=json.dumps(call, sort_keys=True, default=str),

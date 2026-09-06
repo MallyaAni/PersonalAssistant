@@ -92,7 +92,23 @@ async def test_a_refusing_channel_is_a_failed_delivery_not_a_failed_run():
 
 def test_the_words_name_the_stop_and_stay_bounded():
     assert compose(_run(kind="code_review"), "completed", "one finding") == "Your code review finished. one finding"
-    assert compose(_run(error_code="unauthorized_tool"), "failed", "") == "Your security review stopped without finishing (unauthorized_tool)."
+    assert compose(_run(error_code="unauthorized_tool"), "failed", "") == "Your security review stopped without finishing."
+    assert compose(_run(kind="chat_continuation"), "completed", "found two more") == "Done with the rest of what you asked. found two more"
+    assert compose(_run(kind="chat_continuation"), "waiting_approval", "") == "The rest of what you asked needs your yes before it goes on."
     assert compose(_run(), "waiting_approval", "") == "Your security review is waiting for your approval before it goes on."
     long = compose(_run(), "completed", "x" * 2000)
     assert len(long) <= MAX_MESSAGE_CHARS and long.endswith("…")
+
+
+# A continuation that failed is not told: the turn already answered without
+# it, and its failure line reached the operator's phone on the first live
+# message after the 2026-09-06 deploy. Its completion still is.
+async def test_a_failed_continuation_is_silent_but_a_finished_one_is_told():
+    channel = _Channel(DeliveryResult(delivered=True))
+    repo = _Repo()
+    delivery = RunDelivery({"imessage": channel}, _address)
+    assert await delivery.deliver(repo, _run(kind="chat_continuation"), "failed", "repeated") == "quiet_failure"
+    assert channel.sent == []
+    assert repo.events[-1][1] == "delivery_skipped"
+    assert await delivery.deliver(repo, _run(kind="chat_continuation"), "completed", "found two more") == "delivered"
+    assert channel.sent[-1][1].startswith("Done with the rest of what you asked.")

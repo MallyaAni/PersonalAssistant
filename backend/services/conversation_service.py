@@ -209,6 +209,10 @@ def _image_description(match: dict[str, Any]) -> str:
 # the turn moved on and told the person it had happened. That is the same
 # defect as an unmarked failed attempt in the history, one level down and
 # worse, because here the model is actively told not to try again.
+# Step statuses after which a cut-short turn is not handed to a run.
+_NOT_WORTH_CONTINUING = frozenset({"failed", "refused", "unknown"})
+
+
 # The run that finishes a cut-short turn: the person's words as its
 # objective, the turn's step lines as what it starts from, the turn's
 # channel so the person is told where they asked.
@@ -3798,7 +3802,17 @@ class ConversationService:
         # same router, the same executor, in a worker with a budget of its
         # own. The reply is told, so it reports the steps taken and says the
         # rest is being finished - never that it is done.
-        if steppable and turn.stopped in (BUDGET, CEILING) and steps:
+        # Only the clock: a ceiling stop after three steps is a turn that was
+        # answered, and continuing it re-ran the same search and texted the
+        # person a failure (live, the first message after the 2026-09-06
+        # deploy). A clean last step, too: a loop that ended on a failed or
+        # repeated step has nothing worth continuing.
+        if (
+            steppable
+            and turn.stopped == BUDGET
+            and steps
+            and status_of(steps[-1].outcome) not in _NOT_WORTH_CONTINUING
+        ):
             handed = await self._hand_off(
                 user_id, query, metadata, conversation_id, [s.line for s in steps], turn.stopped
             )

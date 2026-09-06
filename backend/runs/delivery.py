@@ -28,7 +28,19 @@ logger = get_logger(__name__)
 # The stops a person hears about; a run that merely paused between attempts
 # is not one of them.
 NOTIFIED_STATUSES = frozenset({"completed", "failed", "waiting_approval"})
+# Kinds whose failure is not told: a continuation of a chat turn is extra
+# work the turn already answered without, and "stopped without finishing
+# (repeated)" reached the operator's phone on the first live message after
+# the 2026-09-06 deploy. Its completion and its approvals are still told.
+QUIET_FAILURES = frozenset({"chat_continuation"})
 MAX_MESSAGE_CHARS = 600
+# The kinds in the person's words, never the table's.
+KIND_WORDS = {
+    "chat_continuation": "the rest of what you asked",
+    "experience_review": "conversation review",
+    "code_review": "code review",
+    "security_review": "security review",
+}
 
 # Finds the address a person enrolled for a channel, or None.
 AddressResolver = Callable[[str, str], Awaitable[str | None]]
@@ -36,14 +48,20 @@ AddressResolver = Callable[[str, str], Awaitable[str | None]]
 
 # The words for one run's stop, bounded, with no evidence in them.
 def compose(run: Mapping[str, Any], outcome_status: str, summary: str) -> str:
-    kind = str(run.get("kind") or "run").replace("_", " ")
-    head = {
-        "completed": f"Your {kind} finished.",
-        "failed": f"Your {kind} stopped without finishing" + (
-            f" ({run.get('error_code')})." if run.get("error_code") else "."
-        ),
-        "waiting_approval": f"Your {kind} is waiting for your approval before it goes on.",
-    }.get(outcome_status, f"Your {kind} is {outcome_status}.")
+    raw = str(run.get("kind") or "run")
+    kind = KIND_WORDS.get(raw, raw.replace("_", " "))
+    if raw == "chat_continuation":
+        head = {
+            "completed": "Done with the rest of what you asked.",
+            "failed": "I couldn't finish the rest of what you asked.",
+            "waiting_approval": "The rest of what you asked needs your yes before it goes on.",
+        }.get(outcome_status, f"The rest of what you asked is {outcome_status}.")
+    else:
+        head = {
+            "completed": f"Your {kind} finished.",
+            "failed": f"Your {kind} stopped without finishing.",
+            "waiting_approval": f"Your {kind} is waiting for your approval before it goes on.",
+        }.get(outcome_status, f"Your {kind} is {outcome_status}.")
     body = " ".join(str(summary or "").split())
     text = f"{head} {body}".strip()
     if len(text) > MAX_MESSAGE_CHARS:
@@ -69,6 +87,9 @@ class RunDelivery:
         run_id = str(run["id"])
         if outcome_status not in NOTIFIED_STATUSES:
             return "not_a_stop"
+        if outcome_status == "failed" and str(run.get("kind") or "") in QUIET_FAILURES:
+            await repo.record_event(run_id, "delivery_skipped", {"reason": "a failed continuation is not told"})
+            return "quiet_failure"
         channel_id = str(run.get("channel") or "web")
         if channel_id == "web":
             await repo.record_event(run_id, "delivery_skipped", {"reason": "web: the runs API is the delivery"})
