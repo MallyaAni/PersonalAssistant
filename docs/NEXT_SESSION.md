@@ -33,6 +33,50 @@ families were measured, not the whole matrix - re-run `evaluate_tool_selection
 Diagram impact: NONE (no component added; the last listing rides the Redis
 the app already reaches).
 
+## 2026-09-06 (night) — the Desk page, and the desk run for real (PUSHED, NOT DEPLOYED)
+
+Continues the entry below it. Commits `4ddb4873` (pipeline and brief),
+`cf937dc3` (ranks in the evidence), then the page.
+
+**The desk ran end to end on real data.** `market_daily --refresh` pulled
+95 bar series and 90 filings into `asof=2026-09-06`; the tone step scored
+0 new releases because `prior_records` carried every earlier score
+forward by accession; the desk ran; briefs for SNDK, CRWV and AAOI came
+back from spark1's model (SNDK "own", CRWV "avoid", AAOI "own", each
+citing the analysts by rank among the book); the record is at
+`data/market/desk/asof=2026-09-04/desk.json` (the last session on file;
+the run was on a Sunday).
+
+**The operator's point: a printout is not a product.** What he acts on
+is the change list and the book, so the page shows those. `backend/
+market/deskrecord.py` diffs two records into upgrades, downgrades, the
+orders that turn yesterday's book into today's (buy, sell, add, trim,
+largest first) and the regime flags raised or cleared;
+`GET /api/v1/market/{user}/desk` serves the latest record with its
+summary, changes and sessions, `/desk/{session}` an earlier day; the
+trading agent's card carries the session, the grade counts and the book
+and opens the Desk view; `frontend/src/components/DeskPanel/DeskPanel.tsx`
+renders the regime and flags, the orders at the next open, the book, every
+grade with the four stances, and the brief per name, re-reading the record
+every five minutes. Backend tests: `test_market_deskrecord.py`,
+`test_market_desk_api.py` (including another user's token refused).
+The frontend builds (`npm run build`).
+
+**To deploy** (not done here): mount `./data/market` into the backend
+container (the compose file only mounts `data/models`), rebuild the
+gateway for the new view, and run `market_daily --refresh --brief <book>
+--llm-url http://127.0.0.1:8000 --llm-model deepseek-v4-flash` on spark1
+after the close (the research venv has curl_cffi, pyarrow and lightgbm;
+spark1 is on Eastern time). Until then the record is written on the
+desktop and the page reads it there.
+
+**What comes next for making money with it**, in order: a paper book on
+the operator's Alpaca paper account that places the page's orders at the
+open (an explicit `--paper-trade` flag, off by default, so the track
+record is real before any capital is), live P&L of that book on the page
+from Alpaca positions, and a monthly `--calibrate` line on the page so a
+grade that stops paying is seen.
+
 ## 2026-09-06 (night) — the 15-minute bars on entry days: fills and structure (NO CODE CHANGE)
 
 Continues the entry below it. The last open intraday question, measured
