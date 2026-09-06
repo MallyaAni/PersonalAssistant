@@ -19,10 +19,10 @@ reasons with, extended to what a document says.
 The design principle that makes it fit an always-on assistant:
 
 > **Parsing is bursty and lives where the GPU is (the desktop, sometimes off).
-> Retrieval is always-on and lives where the assistant runs (the Spark).**
+> Retrieval is always-on and lives where the assistant runs (spark1).**
 
 A document is parsed once, when the desktop is reachable; from then on it is
-answered from the Spark whether the desktop is awake or not. Ingestion tolerates
+answered from spark1 whether the desktop is awake or not. Ingestion tolerates
 the desktop being off (a durable queue); answering never depends on it.
 
 ## The five stages
@@ -41,7 +41,7 @@ the desktop being off (a durable queue); answering never depends on it.
 2. **Parse.** NEW: a Docling service (desktop GPU) converts the document to
    clean Markdown with page/slide anchors; Gotenberg renders Office formats to
    PDF first. Because the desktop is not always on, parsing is a durable job:
-   the raw bytes are stored on the Spark on arrival, a parse job is enqueued,
+   the raw bytes are stored on spark1 on arrival, a parse job is enqueued,
    and it runs when Docling is reachable. The person is told "got it - I'll have
    it ready shortly" and is followed up when it is indexed. Docling is the one
    component kept from the Specialized-Services drop; the rest of that stack
@@ -213,7 +213,7 @@ Drive. State (file id, checksum) lives beside the token file, no migration.
 2. Where a browser is at hand, `python -m backend.cli.google_connect`, open
    the URL, consent (Drive read-only), paste the code: it writes
    `GOOGLE_TOKEN_PATH` (`data/google/token.json`, mode 600). Copy the file to
-   the Spark's `data/google/` if it was made elsewhere.
+   spark1's `data/google/` if it was made elsewhere.
 3. Set `GOOGLE_DRIVE_FOLDER_ID` (the id in the folder's URL) and restart the
    backend. The source starts on its own; `google_drive_queued` in the log
    counts what it handed to the queue.

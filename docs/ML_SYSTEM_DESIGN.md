@@ -487,7 +487,7 @@ RTX 5080 (16 GB). Available only while that machine is on, and the assistant
 says so.
 
 **Why not the Sparks.** Bandwidth, not memory: the RTX 5080 has roughly 3.5x
-the Spark's memory bandwidth, and diffusion is memory traffic - 4-bit
+a Spark's memory bandwidth, and diffusion is memory traffic - 4-bit
 FLUX.2-dev is the *slowest* image model on a Spark at 397 s per image. And
 memory anyway: Klein needs 14-18 GB that neither node has while DeepSeek
 holds ~97 GiB on each.
@@ -590,7 +590,7 @@ Scout's ranking has its own labelled harness with floors
 | DuckDuckGo as a rung | No official web-results API; the HTML endpoint is scraping that breaks without notice | Not built on |
 | FAISS as the vector store | 439 vectors in 22 MB; top-10 in 0.5 ms without the index, 0.2 ms at 20k with it; FAISS would duplicate the store without the owner filter or the transaction | pgvector HNSW in the same database (section 5) |
 | RAGFlow (the uploaded Specialized-Services stack) as the document store | Its own Elasticsearch/MinIO/Redis/MySQL beside ours, a tenant with no embedding model, a build that crashed the desktop (XMP + a 24 GB WSL), and answers that would have lived outside the owner filter and the encryption | Docling for parsing only; passages in the same pgvector space as memory (section 13) |
-| Docling on the Spark | The parser wants a GPU and is bursty; the Spark's memory is spoken for by the reply model | Docling on the desktop, a durable queue on the Spark for the hours it is off |
+| Docling on a Spark | The parser wants a GPU and is bursty; the Sparks' memory is spoken for by the reply model | Docling on the desktop, a durable queue on spark1 for the hours it is off |
 | One timeout number for the parser client | The desktop drops connection attempts while Docling is stopped, so an upload waited out the kernel's ~2 minutes of retries before saying "queued" | A health probe before the inline parse (8 s at worst) and a 10 s connect timeout beside the 300 s read |
 | Embedding distance to collapse two facts from one turn | Two paraphrases of Jen's trivia habit sat at 0.278 apart while an unrelated fact sat at 0.136 - the space cannot make this call | A deterministic predicate key (subject normalised away); one statement, one fact |
 | A paragraph or document voice as a memory proposal | The classifier keeps one short first-person sentence and refuses paragraphs and third-person document text | A digest step writes the headline as one first-person sentence; the facts pass reads that |
@@ -809,12 +809,12 @@ documents at a scale where HNSW build time matters (section 5's FAISS
 numbers apply unchanged), or a need for hybrid lexical search that pgvector
 does not give.
 
-**Parsing: Docling on the desktop, everything else on the Spark.** The
-parser wants a GPU and works in bursts; the Spark's memory is the reply
+**Parsing: Docling on the desktop, everything else on the Sparks.** The
+parser wants a GPU and works in bursts; the Sparks' memory is the reply
 model's (section 2). Docling runs where the RTX 5080 is, behind
 `DOCLING_BASE_URL`, and turns PDF, Word and PowerPoint into Markdown with a
 page-break placeholder so every chunk knows its page. Plain text never
-leaves the Spark. Because the desktop is off for hours at a time, a document
+leaves spark1. Because the desktop is off for hours at a time, a document
 that arrives then is kept whole in `document_parse_jobs` and parsed when the
 parser answers again; each pass probes `/health` first and leaves every job
 untouched while it is down, so an overnight desktop burns no attempts, while

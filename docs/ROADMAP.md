@@ -762,8 +762,9 @@ The history below is kept as the evidence trail that led here.
   one, or another) through the same `backend.cli.qualify_models` harness the
   RTX 5080 profile used, particularly its native tool-calling behavior — the
   harness exists to catch exactly the class of routing regression this
-  project has repeatedly hit this way. Not started; `MainActionSelector`
-  still runs entirely on the RTX 5080's Qwen model.
+  project has repeatedly hit this way. Done by the migration instead:
+  `MainActionSelector` runs on DeepSeek across both Sparks, and the routing
+  matrix is a deploy gate (`scripts/gate.sh`).
 - `DONE` (2026-08-14): tested this engine's native tool-calling directly —
   a standalone script built a real `MainActionSelector` pointed at
   `http://spark1.local:8888`/`deepseek-v4-flash`, never touching the
@@ -974,8 +975,11 @@ The history below is kept as the evidence trail that led here.
     is stopped and does not restart itself (`unless-stopped` respects an
     explicit `docker stop`).
 
-- `DONE` (2026-08-14): made the Spark's being off survivable, after it took the
-  whole assistant down. `FallbackInferenceProvider` serves main-role work from
+- `REVERTED` (removed 2026-08; `MODEL_EVALUATION.md`). Both Sparks are always
+  on and the standby path was deleted, so the settings below no longer exist.
+  Kept for the reasoning, which would apply again if a host became optional.
+  Originally `DONE` (2026-08-14): made the Spark's being off survivable, after
+  it took the whole assistant down. `FallbackInferenceProvider` serves main-role work from
   `MAIN_LLM_STANDBY_*` (Qwen on `vllm-main`) when the primary host is
   unreachable, on transport errors only, and switches `stream_chat` only before
   its first token so a half-written reply is never continued by a second model.

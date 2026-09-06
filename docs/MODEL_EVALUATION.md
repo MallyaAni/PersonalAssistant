@@ -569,9 +569,11 @@ only to work around the old engine were deleted:
   nothing in the reply saying which model wrote it. Both Sparks are always
   on now, and a reachability problem should read as one.
 
-`VISION_MODEL` stays on `qwen/qwen3.5-4b`: it is the only vision-language
-model available here, and replacing it is a separate decision with its own
-memory budget (~27 GB free per Spark after the TP=2 weights).
+At the time of this change, `VISION_MODEL` stayed on `qwen/qwen3.5-4b`: it
+was the only vision-language model available here, and replacing it was a
+separate decision with its own memory budget (~27 GB free per Spark after the
+TP=2 weights). That decision was taken later in this same document - vision
+now runs on Qwen3-VL-8B on spark2 at `:8001`.
 
 Verified end to end after the change: a real chat turn routed on the new
 model chose `Scheduled tasks | weekdays at 18:00` for "remind me every
