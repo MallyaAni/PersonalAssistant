@@ -23,16 +23,22 @@ AniOS is a private personal assistant that runs entirely on hardware its owner
 controls. You talk to it in a browser (`deep-matter.com`, through a Cloudflare
 tunnel) or by texting it over iMessage (alone, or in a group with friends who are approved users). It remembers what you tell it, can find
 anything either of you has ever said, searches the web when a question needs
-it, makes pictures and edits them, draws diagrams, builds slide decks, runs
-scheduled tasks ("remind me every weekday at 7"), and - through an agent called
-Scout - handles anything you want done later or on a schedule, from "remind
-me every weekday at 7" to its own standing sweep for things happening near
-you that match what you care about.
+it, makes pictures and edits them, draws diagrams, and builds slide decks.
+An agent called Scout handles anything wanted later or on a schedule, from
+"remind me every weekday at 7" to its own standing sweep for things happening
+near you. Work that cannot finish inside one reply does not stop there: it
+becomes a durable run, which survives a restart, asks before it does anything
+consequential, and tells you when it is done
+([RUNS_ARCHITECTURE.md](RUNS_ARCHITECTURE.md)).
 
-Nothing about a conversation leaves the owner's machines except a deliberately
-minimised web-search query, and only when the assistant decides a search is
-needed. Every model that reads your words runs locally. That constraint shapes
-most of the architecture below.
+Every model that reads your words runs on those machines: no conversation is
+sent to a model provider, and that constraint shapes most of the architecture
+below. Three things do leave, and it is worth being exact about them. A
+web-search query goes out when the assistant decides a search is needed, cut
+back and screened first. A browser session reaches the site through a
+Cloudflare tunnel, which terminates HTTPS, so Cloudflare carries that traffic
+in the clear. And a text message is an iMessage: it travels through Apple like
+any other. The stored conversation, the memory, and every model stay put.
 
 ## The machines
 
@@ -57,14 +63,19 @@ treated as a hard safety margin rather than an optimisation.
    arrives on the Mac, where the bridge only accepts senders who have been
    allowlisted, and a worker on spark1 polls for it (every 3 s, tightening to
    1.5 s while a conversation is active). Images travel both ways.
-2. **One model call decides what kind of turn it is.** The router
-   (`MainActionSelector`) shows the main model a menu of tools - search the
-   web, generate or edit an image, draw a diagram, make a deck, search past
-   conversations, schedule a task, a taught skill, or one of the user's
-   connected MCP tools - and the model picks at most one with a native tool
-   call. There is no regex and no keyword list anywhere on this path; a rule of
-   this repository is that *intent is decided by a model, never by pattern
-   matching*.
+2. **The model decides what kind of turn it is, and may take more than one
+   step.** The router (`MainActionSelector`) shows the main model a menu of
+   tools - search the web, generate or edit an image, draw a diagram, make a
+   deck, search past conversations, schedule a task, a taught skill, or one of
+   the user's connected MCP tools - and the model picks one with a native tool
+   call. It is then asked again, shown what that step did, and may take
+   another: up to `TURN_MAX_STEPS` (3 in the deployment) inside
+   `TURN_STEP_BUDGET_SECONDS` (45), with a repeat guard and a limit on how
+   many new things one turn may create. A later step is offered only the tools
+   whose effect contracts allow one. A turn that runs out of clock with work
+   left hands the rest to a durable run rather than dropping it. There is no
+   regex and no keyword list anywhere on this path; a rule of this repository
+   is that *intent is decided by a model, never by pattern matching*.
 3. **Context is assembled.** The recent conversation window, a rolling digest
    of older turns, the typed long-term memories that match, images in view,
    and - if the router chose it - evidence found by searching every past
@@ -83,8 +94,10 @@ treated as a hard safety margin rather than an optimisation.
 6. **The reply is delivered** - streamed to the browser, or sent back through
    the Mac as a text pinned to the message it answers.
 
-A plain message costs about three model calls (routing, one embedding, the
-reply). The whole path is drawn in
+A plain message costs four model calls or so - reading what the message
+refers to, routing, one embedding, the reply - plus the memory classifier on a
+turn that states a fact, and one more call per extra step the loop takes. The
+whole path is drawn in
 [chat-orchestration.svg](diagrams/chat-orchestration.svg).
 
 ## The models, and why each is where it is
@@ -151,8 +164,8 @@ independently (`MAIN_LLM_*`, `ROUTING_LLM_*`, `VISION_*`, `EMBEDDING_*`,
 
 ## How to read the rest
 
-- The [published architecture page](architecture.html) shows all 23 canonical
-  diagrams with zoom; [diagrams/README.md](diagrams/README.md) says which
+- The [published architecture page](architecture.html) shows every canonical
+  diagram with zoom; [diagrams/README.md](diagrams/README.md) says which
   diagram answers which question. Mermaid sources are authoritative; SVGs are
   generated and fingerprint-checked.
 - The agents each have a subsection below, one per agent, saying what it
