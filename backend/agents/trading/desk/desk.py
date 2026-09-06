@@ -70,6 +70,12 @@ class DeskReport:
             "evidence": {
                 name: opinion.cite(t, column) for name, opinion in self.opinions.items()
             },
+            # Each analyst's percentile rank of the name among the book today,
+            # since a stance is relative to the other names.
+            "ranks": {
+                name: float(opinion.ranks()[t, column])
+                for name, opinion in self.opinions.items()
+            },
         }
 
 

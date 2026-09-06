@@ -66,7 +66,13 @@ def brief_text(report, ticker: str) -> str:
             evidence = ", ".join(f"{k} {v:+.3f}" for k, v in cited.items())
         else:
             evidence = "no data for this name"
-        lines.append(f"{analyst} analyst: stance {stance:+d}; {evidence}.")
+        rank = view.get("ranks", {}).get(analyst)
+        where = (
+            f" (rank {rank:.2f} among the book, 1.00 is best)"
+            if rank is not None and rank == rank
+            else ""
+        )
+        lines.append(f"{analyst} analyst: stance {stance:+d}{where}; {evidence}.")
     lines.append(
         "Regime: AI participation percentile "
         f"{state.participation_percentile:.2f}, AI-vs-software correlation "
@@ -83,6 +89,17 @@ def brief_text(report, ticker: str) -> str:
     else:
         lines.append("Not in today's book.")
     return "\n".join(lines)
+
+
+# Text held within `limit` characters, cut at the last sentence end inside
+# the limit rather than mid-word.
+def _cut(text: str, limit: int) -> str:
+    """Return `text` within `limit`, ending at a sentence when it must cut."""
+    if len(text) <= limit:
+        return text
+    head = text[:limit]
+    end = max(head.rfind(". "), head.rfind(".\n"), head.rfind("; "))
+    return head[: end + 1].rstrip() if end > limit // 2 else head.rstrip()
 
 
 def _schema() -> dict[str, Any]:
@@ -137,10 +154,10 @@ class DeskNarrator:
             payload = json.loads(result["content"])
             brief = DeskBrief(
                 stance=str(payload["stance"]),
-                verdict=str(payload["verdict"])[:200],
-                reasoning=str(payload["reasoning"])[:700],
-                risks=str(payload["risks"])[:300],
-                watch=str(payload["watch"])[:240],
+                verdict=_cut(str(payload["verdict"]), 200),
+                reasoning=_cut(str(payload["reasoning"]), 700),
+                risks=_cut(str(payload["risks"]), 300),
+                watch=_cut(str(payload["watch"]), 240),
             )
         except Exception:
             return None

@@ -31,6 +31,13 @@ Rules:
 - The numbers are the desk's measurements, not prices. A distance or a
   slope written with a plus sign is above or rising; with a minus sign,
   below or falling. Say "above" or "below" only when the sign says so.
+- A stance is relative to the other names in the book, not to zero: an
+  analyst can be bearish on a name whose numbers are positive because
+  the other names' numbers are stronger. When a rank is given, say
+  "ranks low among the book" or "ranks high among the book" rather
+  than calling positive numbers negative.
+- Keep each field well inside its length; a cut sentence is worse than
+  a short one.
 - Name the analysts by their stance: which are bullish, which neutral,
   which bearish, and the one or two pieces of evidence that matter most
   for each. A stance of +1 is bullish, 0 neutral, -1 bearish.

@@ -105,13 +105,16 @@ def _report() -> DeskReport:
 def test_brief_text_carries_the_evidence():
     text = brief_text(_report(), "SNDK")
     assert "Grade: A+" in text
-    assert "fundamental analyst: stance +1; revenue_yoy +1.551" in text
-    assert "sentiment analyst: stance +1; tone_guidance +1.000" in text
+    assert "fundamental analyst: stance +1 (rank 0.50 among the book" in text
+    assert "revenue_yoy +1.551" in text
+    assert "sentiment analyst: stance +1 (rank 0.50 among the book" in text
+    assert "tone_guidance +1.000" in text
     assert "participation below its two-year median" in text
     assert "Not in today's book" in text
     iren = brief_text(_report(), "IREN")
     assert "Grade: C" in iren
-    assert "sentiment analyst: stance +0; no data for this name" in iren
+    assert "sentiment analyst: stance +0 (rank 0.50 among the book" in iren
+    assert "no data for this name" in iren
 
 
 # The stance the grade implies.
@@ -144,3 +147,12 @@ def test_narrator_round_trip_and_refusals():
     assert DeskNarrator(writer).brief_sync("evidence", "C") is None
     assert DeskNarrator(_Writer("not json")).brief_sync("evidence", "A+") is None
     assert DeskNarrator(None).brief_sync("evidence", "A+") is None
+
+
+# A long field is cut at a sentence end, never mid-word.
+def test_cut_at_sentence():
+    from backend.agents.trading.desk.narrative import _cut
+
+    text = "First sentence is here. Second sentence follows. Third one is long."
+    assert _cut(text, 100) == text
+    assert _cut(text, 50) == "First sentence is here. Second sentence follows."
