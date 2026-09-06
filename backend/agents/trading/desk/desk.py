@@ -24,6 +24,7 @@ from backend.agents.trading.desk.grading import (
     ORDINAL,
     SIZE_MULTIPLIER,
     A,
+    C,
     Graded,
 )
 from backend.agents.trading.desk.opinions import Opinion
@@ -303,3 +304,89 @@ def name_backtest(
         in_annualised=float(np.mean(days_in) * ann) if days_in else float("nan"),
         out_annualised=float(np.mean(days_out) * ann) if days_out else float("nan"),
     )
+
+
+@dataclass(frozen=True)
+class BookStat:
+    """One book variant's outcome over a span."""
+
+    label: str
+    annual_return: float
+    annual_volatility: float
+    sharpe: float
+    max_drawdown: float
+    total_return: float
+
+
+# Summary statistics of a daily simple-return series.
+def _book_stat(label: str, daily: np.ndarray) -> BookStat:
+    daily = daily[np.isfinite(daily)]
+    if len(daily) == 0:
+        nan = float("nan")
+        return BookStat(label, nan, nan, nan, nan, nan)
+    annual = float(daily.mean() * 252)
+    vol = float(daily.std() * np.sqrt(252))
+    curve = np.cumprod(1 + daily)
+    drawdown = float((curve / np.maximum.accumulate(curve) - 1).min())
+    return BookStat(
+        label,
+        annual,
+        vol,
+        annual / vol if vol > 0 else float("nan"),
+        drawdown,
+        float(curve[-1] - 1),
+    )
+
+
+# The desk as a book from `since`: the graded scores through the sizing
+# engine at a few settings, against the equal-weight book universe, SPY,
+# and the daily equal weight of the A-or-better and the C names.
+def book_backtest(report: DeskReport, since: date | None = None) -> list[BookStat]:
+    """Return BookStats for the book variants and the references."""
+    from backend.market import sizing
+
+    panel = report.panel
+    start = int(np.searchsorted(panel.dates, np.datetime64(since))) if since else 0
+    simple = np.expm1(panel.log_returns())
+    bench = panel.index(panel.benchmark)
+    names = np.array([t != panel.benchmark for t in panel.tickers])
+    out: list[BookStat] = []
+    variants = (
+        ("desk book: top 20%, vol target 15%", risk.BOOK_CONFIG),
+        (
+            "desk book: top 20%, vol target 25%",
+            sizing.SizingConfig(
+                top_fraction=0.2, short_fraction=0.0, target_volatility=0.25
+            ),
+        ),
+        (
+            "desk book: top 10%, vol target 25%",
+            sizing.SizingConfig(
+                top_fraction=0.1,
+                short_fraction=0.0,
+                target_volatility=0.25,
+                name_cap=0.15,
+            ),
+        ),
+    )
+    for label, config in variants:
+        scores = report.scores.copy()
+        scores[:start] = np.nan
+        result = sizing.simulate(scores, panel, config)
+        out.append(_book_stat(label, np.asarray(result.returns)))
+    with np.errstate(all="ignore"):
+        equal = np.nanmean(np.where(names[None, :], simple, np.nan), axis=1)
+    out.append(_book_stat("equal weight of the book names", equal[start:]))
+    out.append(_book_stat("SPY", simple[start:, bench]))
+    for label, ordinal_ok in (
+        ("equal weight of A/A+ names, daily", report.graded.grades >= ORDINAL[A]),
+        ("equal weight of C names, daily", report.graded.grades == ORDINAL[C]),
+    ):
+        mask = ordinal_ok & names[None, :]
+        picked = np.where(mask[:-1], simple[1:], np.nan)
+        with np.errstate(all="ignore"):
+            daily = np.array(
+                [np.nanmean(r) if np.isfinite(r).any() else 0.0 for r in picked]
+            )
+        out.append(_book_stat(label, daily[max(start - 1, 0) :]))
+    return out

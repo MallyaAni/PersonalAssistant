@@ -37,6 +37,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--since", type=date.fromisoformat, default=None, help="history start date"
     )
+    parser.add_argument(
+        "--backtest", nargs="*", default=[], help="tickers to run the trade backtest on"
+    )
+    parser.add_argument(
+        "--book-backtest",
+        action="store_true",
+        help="simulate the graded book since --since against the references",
+    )
     return parser
 
 
@@ -186,6 +194,62 @@ def _print_history(report, ticker: str, since, horizon: int = 20) -> None:
         )
 
 
+# Print the trade-by-trade backtest of the desk's rules for some names, with
+# each rule switched off in turn so its contribution shows.
+def _print_backtest(report, tickers, since) -> None:
+    from backend.agents.trading.desk import backtest, entry
+    from backend.market import levels
+
+    location = levels.level_features(report.panel)
+    entries = entry.entries(report.panel, location)
+    for ticker in tickers:
+        if ticker not in report.panel.tickers:
+            print(f"\n{ticker}: not in the book")
+            continue
+        print(f"\n{ticker} backtest since {since or report.panel.dates[0]}")
+        print(
+            f"{'rules':30} {'trades':>6} {'hit':>5} {'in':>9} "
+            f"{'rule':>8} {'hold':>8} {'SPY':>8}"
+        )
+        results = {}
+        for rules in backtest.variants():
+            bt = backtest.run_name(report, entries, ticker, rules, since, location)
+            results[rules.label] = bt
+            print(
+                f"{rules.label:30} {len(bt.trades):6d} {bt.hit_rate():5.2f} "
+                f"{bt.sessions_in:4d}/{bt.sessions:<4d} {bt.equity * 100:+7.1f}% "
+                f"{bt.hold * 100:+7.1f}% {bt.benchmark * 100:+7.1f}%"
+            )
+        main_run = results["chandelier 3 ATR, 10-day exit"]
+        print("  trades under chandelier 3 ATR, 10-day exit:")
+        print(
+            f"  {'entry':11} {'exit':11} {'kind':9} {'grade':5} {'size':>5} "
+            f"{'days':>4} {'return':>8} {'worst':>7} reason"
+        )
+        for trade in main_run.trades:
+            exit_date = str(trade.exit_date) if trade.exit_date is not None else "open"
+            print(
+                f"  {str(trade.entry_date):11} {exit_date:11} {trade.entry_kind:9} "
+                f"{trade.entry_grade:5} {trade.size:5.2f} {trade.sessions:4d} "
+                f"{trade.log_return * 100:+7.1f}% {trade.worst * 100:+6.1f}% "
+                f"{trade.exit_reason}"
+            )
+
+
+# Print the graded book's simulation against the references.
+def _print_book_backtest(report, since) -> None:
+    print(f"\nbook backtest since {since or report.panel.dates[0]}")
+    print(
+        f"{'book':36} {'annual':>7} {'vol':>6} {'Sharpe':>6} {'max DD':>7} {'total':>8}"
+    )
+    for stat in trading_desk.book_backtest(report, since):
+        print(
+            f"{stat.label:36} {stat.annual_return * 100:+6.1f}% "
+            f"{stat.annual_volatility * 100:5.1f}% {stat.sharpe:6.2f} "
+            f"{stat.max_drawdown * 100:6.1f}% {stat.total_return * 100:+7.1f}%"
+        )
+
+
 # Run the desk and print everything asked for.
 def main() -> None:
     """Entry point."""
@@ -200,6 +264,10 @@ def main() -> None:
         _print_brief(report, ticker)
     for ticker in args.history:
         _print_history(report, ticker, args.since)
+    if args.backtest:
+        _print_backtest(report, args.backtest, args.since)
+    if args.book_backtest:
+        _print_book_backtest(report, args.since)
     if args.calibrate:
         _print_calibration(report)
 
