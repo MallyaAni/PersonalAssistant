@@ -27,7 +27,7 @@ from pathlib import Path
 from backend.config.settings import settings
 from backend.market import edgar, filings
 from backend.market.store import MarketStore
-from backend.market.universe import build_universe, tickers_with_role
+from backend.market.universe import book_sides, build_universe, tickers_with_role
 
 FRAME = "edgar_filings"
 
@@ -47,12 +47,19 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# The tickers a run applies to.
+# The tickers a run applies to. With nothing asked for, that is the book —
+# the ninety-three names the desk trades — and not the whole universe. The
+# universe is several hundred names and a run over it takes hours for data
+# no analyst reads, which is a mistake worth making impossible rather than
+# documenting.
 def _select(args: argparse.Namespace) -> tuple[str, ...]:
+    universe = build_universe()
     if args.tickers:
         return tuple(t.strip().upper() for t in args.tickers.split(",") if t.strip())
-    roles = tuple(r.strip() for r in args.roles.split(",") if r.strip())
-    return tickers_with_role(build_universe(), *roles)
+    if args.roles:
+        roles = tuple(r.strip() for r in args.roles.split(",") if r.strip())
+        return tickers_with_role(universe, *roles)
+    return tuple(sorted(book_sides(universe)))
 
 
 # Every 10-K and 10-Q a company filed on or after `since`, oldest first.
