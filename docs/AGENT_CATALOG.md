@@ -92,7 +92,7 @@ different results on different days.
 
 **The message is written, not assembled.** `digesting.py` composes the greeting
 and one line per find; `discovery/digest.py` supplies the facts and attaches the
-links. Two things stay in code because a 4B model must not hold them: the clock,
+links. Two things stay in code because no language model should hold them: the clock,
 rendered in the reader's zone and required back verbatim, after a concert listed
 for Oct 3 was once announced as "Fri Oct 2, 8:00pm"; and every URL, which comes
 from the typed record and is never asked of the model, because this string

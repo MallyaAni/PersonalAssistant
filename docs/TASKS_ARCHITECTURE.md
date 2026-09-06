@@ -106,7 +106,7 @@ What exists, and where:
   `backend/services/main_action_selector.py` (`ScheduleTaskAction`,
   `ManageTasksAction`). Gated on the live router in
   `backend/tests/functional/test_scheduled_task_behaviour.py` - both the
-  Spark reply model and the production 4B router pass all routing cases.
+  DeepSeek router passes all routing cases.
 - Bookkeeping: `ConversationService._apply_task_action` saves, lists,
   cancels, pauses, resumes; the result rides into the ordinary reply as
   `context["task_outcome"]` and the model words the confirmation from it
@@ -178,7 +178,7 @@ handed the current date, time, and weekday in the primary locality zone
 (`ConversationService._local_now` -> `select(local_now=...)`), and a stated
 once-date already in the past is discarded in favour of the time rule
 (`_once_date`). Both gated: `test_tomorrow_resolves_against_the_persons_clock`
-on the Spark reply model and the 4B router, and the structural repair test.
+on the DeepSeek router, and the structural repair test.
 
 ## Tools, skills, and what the person sees (2026-08-22, second pass)
 
@@ -239,7 +239,7 @@ was worse - the picker returns the single candidate without asking the
 model, so a hard delete followed. Fixed at two walls: `AUTOMATION_TOOLS`
 (`backend/tools/registry.py`) are withheld from the router when the turn
 is unattended, and `_task_turn_context` refuses to write on a fired turn
-whatever the router said. Gated live on the 4B router with five plausible
+whatever the router said. Gated live on the DeepSeek router with five plausible
 instructions, plus the converse - the same words typed by a person still
 schedule.
 

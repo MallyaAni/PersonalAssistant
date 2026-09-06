@@ -1,10 +1,17 @@
 # Durable runs: an agent's loop that outlives a turn
 
-Status: built and unit-verified 2026-09-05 (Phase 3 of
-[AGENT_PLATFORM_PLAN.md](AGENT_PLATFORM_PLAN.md)); no agent registers a
-kind of run yet, so the worker loop is off (`AGENT_RUNS_ENABLED=false`) and
-nothing creates a run in production. The migration (`20260905_0019`) is
-applied to the live database.
+Status: live. The worker loop is on (`AGENT_RUNS_ENABLED=true` on
+spark1) and the kinds registered in `backend/workers/run_worker.py` create
+runs in production - a turn that runs out of clock hands its remainder to
+one, and the review agents use them for work that outlives a request. Built
+and unit-verified 2026-09-05 as Phase 3 of
+[AGENT_PLATFORM_PLAN.md](AGENT_PLATFORM_PLAN.md); the migration
+(`20260905_0019`) is applied to the live database.
+
+The default in `backend/config/settings.py` is still `false`, so a checkout
+without the deployment's `.env` behaves as though runs do not exist. The
+deployment's settings live in `~/anios/.env` on spark1, not in this
+repository.
 
 ## The one sentence
 

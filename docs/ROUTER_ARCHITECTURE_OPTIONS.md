@@ -6,7 +6,10 @@ outside sources are linked at the end.
 
 ## What the router is today
 
-- **One model call per turn, on the main model.** `MainActionSelector.select`
+- **One model call per step, on the main model.** A turn takes up to
+  `TURN_MAX_STEPS` steps (3 in this deployment) inside
+  `TURN_STEP_BUDGET_SECONDS` (45), so a turn costs one to three of these
+  calls. `MainActionSelector.select`
   sends the message, recent history, a clock line and ~15-20 tool
   definitions (the built-ins, web search, the person's skills, any MCP
   aliases) to the reply model itself - DeepSeek V4 Flash at the official FP8
@@ -25,8 +28,8 @@ outside sources are linked at the end.
   conversation takes no tool; the check-in tool acts only on an ask; a
   tapback is complete by its nature; a search about "here" carries the
   place; the listing keeps to the asked window.
-- **A measured gate.** 114 labelled selection cases with per-tool floors
-  (0.60-0.80, each set below a measured rate), plus 86 functional test
+- **A measured gate.** 124 labelled selection cases with per-tool floors
+  (0.60-0.80, each set below a measured rate), plus 99 functional test
   files on the real models, 44 of which contain single-shot assertions on a
   judgement.
 

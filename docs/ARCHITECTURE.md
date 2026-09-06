@@ -94,9 +94,11 @@ treated as a hard safety margin rather than an optimisation.
 6. **The reply is delivered** - streamed to the browser, or sent back through
    the Mac as a text pinned to the message it answers.
 
-A plain message costs four model calls or so - reading what the message
-refers to, routing, one embedding, the reply - plus the memory classifier on a
-turn that states a fact, and one more call per extra step the loop takes. The
+A plain message costs four model calls: the embedding, the routing
+decision, the reply, and the classifier that decides whether anything said is
+worth remembering. A message that follows others costs a fifth, the reading of
+what it refers to, and every extra step the turn takes adds one more routing
+call. The
 whole path is drawn in
 [chat-orchestration.svg](diagrams/chat-orchestration.svg).
 
@@ -879,9 +881,9 @@ The absence of one of these labels does not imply runtime verification.
 
 ![AniOS current system architecture](diagrams/anios-system.svg)
 
-The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, Compose-managed vLLM inference, ComfyUI, Qwen vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
+The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, vLLM inference on the Sparks, ComfyUI on the desktop, vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
-The self-contained [manager-facing architecture page](architecture.html) publishes all 23 canonical views — nineteen subsystem views plus one per agent — with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Twenty views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainActionSelector` decides every turn's action with one native tool call made by the routing model, not a regex or a narrow bounded classifier.
+The self-contained [manager-facing architecture page](architecture.html) publishes all 31 canonical views — 23 subsystem drawings and one for each of the eight agents — with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. All but two describe the system as it is; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening says how a turn is decided: the model is shown everything it could do and picks one as a real tool call rather than a keyword match, then may take another step once it has seen what the first one did.
 
 ## Detailed subsystem diagrams
 
@@ -968,9 +970,10 @@ A chat turn, in order:
 | Response generation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), streamed | Sparks | ordinary non-delegated turns |
 | Typed memory proposal | `deepseek-v4-flash` (`MEMORY_PROPOSAL_LLM_MODEL`), grammar-constrained JSON, temperature 0 | Sparks | every ordinary chat turn; auto-saves what it classifies, with no write authority beyond the typed fields |
 
-A plain message ("my name is Ani") therefore makes about three model calls: one
-text embedding plus two main-role calls (the turn's action selection and the
-response).
+A plain message ("my name is Ani") therefore makes four model calls: the
+text embedding, the routing decision, the reply, and the memory classifier in
+the row above. A message that follows others makes a fifth, the reading of
+what it refers to, and each extra step the turn takes adds a routing call.
 
 One Scout sweep, in order. This is the densest model path in the system, and
 every stage degrades to the one before it rather than failing the sweep:
@@ -996,7 +999,7 @@ Image and presentation paths:
 
 | Stage | Model | Runs on |
 | --- | --- | --- |
-| Image generation / slide image | `flux-2-klein-4b-fp8.safetensors` (`IMAGE_MODEL`) via ComfyUI | desktop RTX 5080, only while it is on |
+| Image generation / slide image | `flux-2-klein-9b-Q6_K.gguf` (`IMAGE_MODEL`) via ComfyUI | the desktop, only while it is on |
 | Image editing by instruction | FLUX.1 Kontext (`IMAGE_EDIT_MODEL`, GGUF) via ComfyUI; Klein when that is unset | desktop |
 | Refinement prompt merge, learned-style distillation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`) | Sparks |
 | Image vision analysis (ask) | `qwen3-vl-8b` (`VISION_MODEL`) | spark2 (`anios-vlm`) |
@@ -1231,9 +1234,10 @@ Editing is a separate provider capability from understanding.
 `ImageRefinementService` re-reads owned, integrity-checked generated or
 uploaded source bytes,
 adds bounded preservation constraints to the exact user feedback, and invokes
-`ComfyUIImageEditProvider`. The provider runs the official-style FLUX.2 Klein
-4B Distilled FP8 single-reference workflow through ComfyUI with a Qwen 3 4B
-encoder, FLUX.2 VAE, four sampling steps, and one-job concurrency. Deterministic
+`ComfyUIImageEditProvider`. The provider re-renders the picture against
+that instruction through ComfyUI, using the same FLUX.2 Klein 9B the generator
+uses with the Qwen 3 8B text encoder and the FLUX.2 VAE: four sampling steps,
+one job at a time. Deterministic
 image validation precedes an immutable ready child carrying its parent ID,
 source SHA-256, exact feedback, model, seed, steps, and provider latency. The
 frontend replaces the active card in place while retaining both database
@@ -1408,7 +1412,7 @@ changing one role never silently moves another.
 
 | Role | Setting prefix | Model today | What calls it |
 | --- | --- | --- | --- |
-| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash, vLLM tensor-parallel across spark1+spark2 (`spark1.local:8000`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
+| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash, vLLM tensor-parallel across spark1+spark2 (`animallya-spark1.local:8000`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
 | Routing / tool-calling | `ROUTING_LLM_*` | DeepSeek (same deployment), temperature 0 | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
 | Vision | `VISION_*` | Qwen3-VL-8B (`anios-vlm` on spark2, `:8001`) | Canonical image observation and question-specific answers |
 | Vision escalation | `VISION_ESCALATION_*` | Unconfigured | One specialist retry only when the primary reports visible diagnostic evidence it cannot interpret |
@@ -1782,7 +1786,7 @@ per-account search budget, and a disabled, blocked, or failed search leaves the
 deck planned ungrounded rather than failing it. `PRESENTATION_RESEARCH_ENABLED`
 governs it, and it must reach `presentation-worker`, which is the process that
 plans decks. Grounding measurably reduces invented figures but does not remove
-them at the current 4B presentation role; see
+them at the DeepSeek presentation role; see
 [NEXT_SESSION.md](NEXT_SESSION.md) for the measured before/after.
 
 A slide takes one of seven shapes: bullets, section, statistic, quote,
@@ -1889,7 +1893,7 @@ The active collaborators are:
 | `DiagramArtifactService` | implemented local artifact boundary | Coordinates pending/ready/failed diagram records, invokes a replaceable bounded diagram provider, and never gives the model persistence authority |
 | `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, source-conditioned immutable refinements with parent/source-hash lineage, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
 | `ComfyUIImageProvider` | implemented free local provider | Submits a pinned four-step FLUX.2 Klein text-to-image workflow through ComfyUI, polls terminal history, fetches one output, validates it, and limits concurrent jobs to one |
-| `ComfyUIImageEditProvider` | implemented free local editor | Uploads the owned source to ComfyUI and runs a four-step FLUX.2 Klein 4B Distilled single-reference workflow with Qwen 3 4B text encoder and FLUX.2 VAE before bounded output validation |
+| `ComfyUIImageEditProvider` | implemented free local editor | Uploads the owned source to ComfyUI and re-renders it against the instruction in four sampling steps - FLUX.2 Klein 9B, Qwen 3 8B text encoder, FLUX.2 VAE - then validates what comes back |
 | `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload and obtains one schema-constrained primary inspection for routing, durable observation, immediate answer, evidence sufficiency, grounding, and reasoning need. Each relevant visible item carries its own high/medium/low confidence and evidence basis: high-confidence identities may enter derived visual memory, while supported weaker readings remain explicitly unconfirmed and contradicted readings may be omitted. Safety-sensitive identification remains strict; unresolved model uncertainty may retry once through an independently configured specialist VLM. Candidate-free uncertainty does not spend web or main-model reasoning. Followups re-read owned bytes and retain a bounded persisted thread. |
 | `ArchitectureCandidateService` | implemented review-only maintenance boundary | Combines registered canonical source with bounded explicit repository evidence, requires selected visible labels, and returns a candidate without canonical write authority |
 | `SQLAlchemyArtifactRepository` | implemented user-scoped persistence boundary | Stores diagram source, lifecycle, conversation/trace provenance, provider/model metadata, and supports conversation listing plus individual and forget-me bulk deletion |
@@ -1940,9 +1944,11 @@ application-supplied tool schemas, yields assistant deltas, and requires
 terminal `[DONE]` for streams. An in-process lock protects each shared client
 instance. Model discovery, loading, unloading, context/KV-cache selection, GPU
 offload, residency verification, and restoration are deliberately not part of
-the inference adapter. The qualified runtime is vLLM 0.23.0 in two pinned
-Compose services. Compose owns their model/revision/startup profile, while the
-adapter remains unaware of process lifecycle; another runtime must implement
+the inference adapter. The qualified runtime is vLLM 0.25.2. One
+service is pinned in Compose, the embedding server; the reply and vision
+engines are systemd units on the Sparks (`deploy/spark/`). Whichever owns a
+server owns its model, revision and startup profile, while the adapter remains
+unaware of process lifecycle; another runtime must implement
 the same inference contract and pass the owning subsystem acceptance paths
 before promotion.
 
@@ -1995,7 +2001,7 @@ boundary by default.
 
 Explicit diagram requests bypass ordinary memory retrieval and the assistant graph, then run through the dedicated `DiagramAgent` graph. `LLMDiagramProvider` asks `DIAGRAM_LLM_MODEL` for a bounded JSON/Mermaid specification, performs one correction retry for malformed local-model formatting, and accepts only allowlisted diagram declarations and passive source within size/line limits. The provider is behind `DiagramProvider`; the application owns routing, validation, persistence, and lifecycle events.
 
-Presentation creation and selected-slide feedback run through `PresentationAgent` and `LLMPresentationProvider` using `PRESENTATION_LLM_MODEL`. For creation, the specialist first returns a bounded `DeckOutline`; the provider then asks for one strict `PlannedSlide` at a time, compiles and checkpoints each partial `DeckSpec`, and releases the background model lease between those microtasks. Each planned slide can declare a concrete image brief plus a bounded priority. A deterministic application compiler owns coordinates, theme, editable object construction, stable slide/element IDs, and preservation of those visual briefs. After content planning, the durable worker selects at most `PRESENTATION_AUTO_IMAGE_MAX` highest-priority applicable slides, creates owned FLUX artifacts through the shared `ImageArtifactService`, and checkpoints each enriched specification so the browser can display visuals before final rendering. The current single-RTX-5080 profile defaults to one 1024-by-1024 hero image; operators can change both limits, and users can add or refine imagery per slide afterward. Image-provider failure is best-effort and leaves the editable text deck promotable. This keeps the model focused on content, makes progressive state durable, and gives waiting chat requests a preemption point without interrupting an in-flight generation. For feedback, the specialist receives only the selected slide and returns a strict `SlideEdit`; the application replaces only that stable slide ID and preserves all siblings exactly. Each model contract gets at most one bounded correction attempt.
+Presentation creation and selected-slide feedback run through `PresentationAgent` and `LLMPresentationProvider` using `PRESENTATION_LLM_MODEL`. For creation, the specialist first returns a bounded `DeckOutline`; the provider then asks for one strict `PlannedSlide` at a time, compiles and checkpoints each partial `DeckSpec`, and releases the background model lease between those microtasks. Each planned slide can declare a concrete image brief plus a bounded priority. A deterministic application compiler owns coordinates, theme, editable object construction, stable slide/element IDs, and preservation of those visual briefs. After content planning, the durable worker selects at most `PRESENTATION_AUTO_IMAGE_MAX` highest-priority applicable slides, creates owned FLUX artifacts through the shared `ImageArtifactService`, and checkpoints each enriched specification so the browser can display visuals before final rendering. The current profile defaults to one 1024-by-1024 hero image; operators can change both limits, and users can add or refine imagery per slide afterward. Image-provider failure is best-effort and leaves the editable text deck promotable. This keeps the model focused on content, makes progressive state durable, and gives waiting chat requests a preemption point without interrupting an in-flight generation. For feedback, the specialist receives only the selected slide and returns a strict `SlideEdit`; the application replaces only that stable slide ID and preserves all siblings exactly. Each model contract gets at most one bounded correction attempt.
 
 The browser derives an honest step-weighted completion percentage from the
 durable job's expected slide count, partial specification, declared visual
@@ -2011,7 +2017,7 @@ capacity-aware resource lease rather than more hardware.
 
 The separate port-8002 renderer accepts only a validated `DeckSpec`. PptxGenJS creates native editable text, shape, chart, table, image, and notes objects; a Python OOXML inspector confirms slide count and required native-object kinds; and the worker opens the file through headless LibreOffice Impress and exports a PDF as an Office-readability check. The renderer uses an isolated temporary directory and removes it after each serialized job. The application writes the PPTX through the opaque binary store and promotes the pending revision only after both structural and Office validation succeed. A failure remains terminal on the pending revision and does not replace the prior current revision.
 
-The maintainer-only architecture candidate command uses the same agent/provider boundary but remains outside the HTTP runtime. `ArchitectureCandidateService` reads the registered canonical source plus only explicitly selected, bounded repository text. The CLI requires a loopback model endpoint, currently `vllm-main` on port `8003`; rejects traversal, common secret-bearing names, unsupported types, existing outputs, and canonical output paths; can require implementation-backed visible labels with one bounded semantic correction; and invokes the pinned Mermaid renderer. Output is a new review candidate only. Technical and visual review, followed by an explicit manual canonical edit or promotion, remains mandatory because label presence and syntax cannot prove relationship accuracy.
+The maintainer-only architecture candidate command uses the same agent/provider boundary but remains outside the HTTP runtime. `ArchitectureCandidateService` reads the registered canonical source plus only explicitly selected, bounded repository text. The CLI requires an OpenAI-compatible model endpoint, which in this deployment is DeepSeek on spark1; rejects traversal, common secret-bearing names, unsupported types, existing outputs, and canonical output paths; can require implementation-backed visible labels with one bounded semantic correction; and invokes the pinned Mermaid renderer. Output is a new review candidate only. Technical and visual review, followed by an explicit manual canonical edit or promotion, remains mandatory because label presence and syntax cannot prove relationship accuracy.
 
 `backend/embeddings/lm_studio.py` retains its compatibility filename but implements the provider-neutral OpenAI-compatible `/v1/embeddings` boundary used by `vllm-embedding`. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search. The provider also supports a batch `embed_texts` call that embeds many documents in one request with index-ordered reassembly; knowledge ingestion uses it so a multi-chunk document embeds in a single call instead of one request per chunk. A chat turn embeds the query exactly once and reuses that vector across personal semantic, entity, knowledge, procedure, summary, and toolbox retrieval rather than re-embedding the same query per store. The same vector is stored on the turn itself, so what the user said is searchable later without a second embedding call.
 
@@ -2184,7 +2190,7 @@ Current runtime validation completes this flow through the qualified main and sp
   branch is deterministically verified but a real Google request is
   `UNVERIFIED` until a key is configured. Sensitive-query review, redacted
   audit storage, and provider hardening remain `PLANNED`.
-- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, source-conditioned FLUX editing of generated or uploaded images, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Qwen image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live local VLM call through the visual MCP facade are verified. Indexing the initial upload analysis into semantic memory, so an uploaded image's content is recalled by an ordinary conversation turn, is implemented and live-verified; indexing the interactive follow-up thread remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local Qwen architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable diagram/image queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
+- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, source-conditioned FLUX editing of generated or uploaded images, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Qwen image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live local VLM call through the visual MCP facade are verified. Indexing the initial upload analysis into semantic memory, so an uploaded image's content is recalled by an ordinary conversation turn, is implemented and live-verified; indexing the interactive follow-up thread remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable diagram/image queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
 - Editable PowerPoint generation through a focused presentation graph, a durable leased worker, PostgreSQL job state, reconnectable progressive drafts, a Redis foreground-chat priority gate, strict typed specifications, model-declared ranked visual briefs, bounded best-effort default FLUX enrichment, persistent per-slide feedback conversations, additional FLUX generation and refinement of an attached slide image, selected-slide-only changes, append-only revision history, PptxGenJS native objects, OOXML inspection, LibreOffice validation, opaque storage, browser previews, named download, deletion, and metadata-only MCP tools: implemented and direct/live-browser verified. Raster images inside a slide remain replaceable image objects rather than decomposed editable pixels. Importing arbitrary existing PPTX files, distributed GPU-capacity scheduling, source-grounded deck research/citations, template/master libraries, automated visual-diff review, and a minimum-readable-font visual quality gate remain `PLANNED`.
 - Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native main-model selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and general multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
 
