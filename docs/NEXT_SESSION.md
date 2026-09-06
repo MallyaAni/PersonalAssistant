@@ -7,6 +7,32 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 (evening) — the events listing offers links instead of printing them; the follow-up delivers them (PUSHED `153ec73`, NOT DEPLOYED)
+
+A weekend answer used to carry a row of links under every event. Now the
+listing ends with one offer line and `send_event_links` delivers the map,
+calendar and event-page links for exactly the events the person names, in
+one follow-up. The Scout digest is untouched. Which events the person means
+is resolved by the existing `pick_many` against the last listing this
+conversation showed, kept per user in Redis (`last_listing_store`, 72h TTL)
+as typed records; links are built by code (`backend/core/event_links.py`),
+so the link fence still holds. Read-only, fast, withheld from a firing.
+
+Measured: send_event_links 9/9 (evaluate_tool_selection 3 reps, floor 0.66);
+functional/test_send_event_links_behaviour.py on the real model - router
+sent "send me the links for the sunset session" to send_event_links, picker
+resolved "the sunset session at potato head" with grounded links. Same commit
+fixed the pre-existing red `test_tool_coverage_completeness`: `manage_runs`
+had shipped with no TOOL_NAMES entry, cases, floor or `_ACTION_TOOL` mapping
+(the exact gap the test catches); coverage added, measured 9/9, floor 0.66.
+Unit: discovery + tools + reply suites 600 passed; two real-model functional
+tests passed. Note: only the `send_event_links` and `manage_runs` routing
+families were measured, not the whole matrix - re-run `evaluate_tool_selection
+--reps 3` and the routing gate before raising `TURN_MAX_STEPS` to 3.
+
+Diagram impact: NONE (no component added; the last listing rides the Redis
+the app already reaches).
+
 ## 2026-09-05 (later) — trade location; the technical analyst rebuilt on it (PUSHED, NOT DEPLOYED)
 
 Continues the entry below it. Commits `19a45009` (history), `34bd4af0`
