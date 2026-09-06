@@ -1,31 +1,74 @@
-"""Periodic filings, and how much of one a company rewrote.
-
-The desk reads what a company *said* in its earnings press release. This
-reads something different and duller: how much of its 10-K or 10-Q it
-changed since the same filing a year ago.
+"""Periodic filings, how much of one a company rewrote, and why no analyst
+reads it.
 
 Cohen, Malloy and Nguyen ("Lazy Prices", Journal of Finance, 2020) report
-that this is one of the more durable anomalies in the literature. Filings
-are mostly copied forward, so a company that rewrites part of one is
-usually doing it for a reason, and the market is slow to read a document
-nobody wants to read. Firms whose filings changed the most went on to
-underperform those whose filings barely moved, and the effect was
-strongest in the risk-factor and management-discussion sections. It is a
-different question from tone: tone asks whether the news is good, this
-asks whether the boilerplate moved, and the two need not agree.
+one of the more durable anomalies in the literature. Filings are mostly
+copied forward, so a company that rewrites part of one is usually doing it
+for a reason, and the market is slow to read a document nobody wants to
+read. Firms whose filings changed the most went on to underperform those
+whose filings barely moved.
 
-Everything here is free and already reachable. The submissions document
-the desk already fetches for 8-K events lists every 10-K and 10-Q; the
-index page and document fetchers the tone reader uses work unchanged. The
-text itself is never stored, only the comparison: a filing is reduced to
-its term counts, compared with the same form a year earlier, and thrown
-away. That keeps the store small and means nothing here re-reads a
-document once it has been measured.
+It does not reproduce on this book. **Nothing here feeds the desk.** The
+collector is kept because it is cheap, tested, and the measurement below
+is worth not repeating.
 
-Point in time. The similarity of a filing is known on the day after it is
-filed and not before, and each filing is compared only with one already
-public. `filing_features` fills a panel forward from the session after the
-filing date, so nothing reads a document the market had not seen.
+What was measured
+-----------------
+Every 10-K and 10-Q the ninety-three names filed since 2019, each compared
+with the same form a year earlier: 2,274 comparisons, a median similarity
+of 0.9947 and a fifth percentile of 0.9311. Coverage is not the problem -
+83 of the book carry a reading on a median session.
+
+Beta-adjusted rank IC on the similarity is +0.026 (t 1.6) at twenty
+sessions and +0.048 (t 1.5) at sixty. The sign is the paper's, and neither
+number clears significance. The year-on-year *change* in similarity is
+nothing at all: -0.005 and +0.000.
+
+A first look appeared to say something much stronger and in the opposite
+direction - the most-rewritten fifth beating the least by 5.05% over 120
+sessions at t -12.58. Both halves of that were artefacts, and both are
+traps this book has fallen into before:
+
+| horizon | measured how                        | least minus most |
+| h20     | raw, overlapping windows            | -0.65% (t -5.11) |
+| h20     | raw, non-overlapping                | -0.74% (t -1.27) |
+| h20     | beta-adjusted, non-overlapping      | +0.35% (t +0.69) |
+| h120    | raw, overlapping windows            | -5.05% (t -12.58)|
+| h120    | raw, non-overlapping                | -7.82% (t -1.74) |
+| h120    | beta-adjusted, non-overlapping      | +1.26% (t +0.38) |
+
+Twenty-seven thousand observations drawn from thirteen hundred sessions
+share almost all of their days, so the t-statistic describes the overlap.
+And the names that rewrite their filings most are the higher-beta ones, so
+in a rising market they earn more without earning anything a portfolio can
+keep. Stepping the windows so none overlap costs the result its
+significance; adjusting for beta reverses its sign.
+
+Given a vote in the desk's summed conviction, the signal moves rank IC
+from 0.0459 to 0.0492 at twenty sessions while dropping net Sharpe from
+0.79 to 0.58. It buys a slightly better ordering and a worse portfolio.
+
+Why it probably fails here
+--------------------------
+The paper works on the whole US cross-section over two decades, where most
+names are small and thinly followed and the premise holds: nobody reads
+the document. Ninety-three large AI-infrastructure and software companies
+are not that population. Their filings are read by many analysts within
+hours, so the slow-diffusion story has nothing to be slow about.
+
+How it works
+------------
+The submissions document already fetched for 8-K events lists every 10-K
+and 10-Q; the index and document fetchers the tone reader uses work
+unchanged. A filing is reduced to its term counts, compared with the same
+form a year earlier, and the text thrown away, so the store gains a few
+kilobytes a name rather than gigabytes of HTML. A 10-Q meets the same
+quarter of last year rather than last quarter, so a seasonal difference in
+what a quarter discusses is not read as a change.
+
+Point in time. `filing_features` fills a panel forward from the session
+after the filing date, so nothing reads a document the market had not
+seen, and each filing is compared only with one already public.
 """
 
 import re
