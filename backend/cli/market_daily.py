@@ -58,6 +58,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="write briefs for every name in today's book",
     )
     parser.add_argument(
+        "--paper-trade",
+        action="store_true",
+        help="submit the book to the Alpaca PAPER account for the next open",
+    )
+    parser.add_argument(
+        "--paper-dry-run",
+        action="store_true",
+        help="print the paper orders and the account without submitting",
+    )
+    parser.add_argument(
         "--prune-days",
         type=int,
         default=0,
@@ -148,8 +158,85 @@ def prune(root: Path, asof: date, days: int) -> list[Path]:
     return removed
 
 
+# Carry the desk's book to the paper account: cancel yesterday's unfilled
+# orders, plan this session, submit the plan for the next open, then record
+# the account. Returns the day's entry for the desk record.
+def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
+    """Plan and (when `live`) submit the paper book; return the day's entry."""
+    from backend.agents.trading.desk import paper
+    from backend.market import alpaca_trading
+
+    client = alpaca_trading.client_from_env()
+    account = client.account()
+    held = {p.symbol: p.qty for p in client.positions()}
+    panel = report.panel
+    last = len(panel.dates) - 1
+    prices = {
+        ticker: float(panel.close[last, column])
+        for column, ticker in enumerate(panel.tickers)
+        if panel.close[last, column] == panel.close[last, column]
+    }
+    targets = {s.position.ticker: s.weight for s in report.book}
+    grades = {
+        ticker: report.graded.letter(last, column)
+        for column, ticker in enumerate(panel.tickers)
+        if ticker != panel.benchmark
+    }
+    state = paper.load_state(store_root)
+    orders, new_state, what = paper.plan(
+        session, state, account.equity, held, prices, targets, grades
+    )
+    print(f"\npaper book ({what}), equity {account.equity:,.0f}:")
+    submitted = []
+    if live and orders:
+        client.cancel_open_orders()
+    for order in orders:
+        line = f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
+        if not live:
+            print(line + "  [dry run]")
+            continue
+        try:
+            client.submit_market_on_open(order.symbol, order.qty, order.side)
+            submitted.append(
+                {
+                    "symbol": order.symbol,
+                    "side": order.side,
+                    "qty": order.qty,
+                    "reason": order.reason,
+                }
+            )
+            print(line)
+        except alpaca_trading.AlpacaTradingError as exc:
+            print(line + f"  REFUSED: {exc}")
+    if not orders:
+        print("  nothing to do")
+    positions = [
+        {
+            "symbol": p.symbol,
+            "qty": p.qty,
+            "market_value": p.market_value,
+            "avg_entry_price": p.avg_entry_price,
+            "current_price": p.current_price,
+            "unrealized_pl": p.unrealized_pl,
+        }
+        for p in client.positions()
+    ]
+    entry = paper.snapshot(new_state, session, account.equity, account.cash, positions)
+    entry["orders"] = submitted
+    entry["plan"] = what
+    if live:
+        paper.save_state(store_root, new_state)
+    print(
+        f"  equity {entry['equity']:,.0f}, P/L since the start "
+        f"{entry['pl']:+,.0f} ({entry['pl_pct'] * 100:+.1f}%)"
+    )
+    return entry
+
+
 # The day's record, as plain data.
-def record(report, briefs: dict[str, dict] | None = None) -> dict:
+def record(
+    report, briefs: dict[str, dict] | None = None, paper: dict | None = None
+) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     panel = report.panel
     last = len(panel.dates) - 1
@@ -187,6 +274,7 @@ def record(report, briefs: dict[str, dict] | None = None) -> dict:
             for s in report.book
         ],
         "briefs": briefs or {},
+        "paper": paper,
     }
 
 
@@ -262,7 +350,16 @@ def main() -> None:
     if wanted:
         readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
         briefs = briefs_for(report, wanted, DeskNarrator(readers[0].writer))
-    path = save(Path(store.root), record(report, briefs))
+    entry = None
+    if args.paper_trade or args.paper_dry_run:
+        session = str(panel.dates[-1])
+        try:
+            entry = paper_trade(
+                report, Path(store.root), session, live=args.paper_trade
+            )
+        except Exception as exc:  # the account being away must not lose the record
+            print(f"\npaper book: not traded ({type(exc).__name__}: {exc})")
+    path = save(Path(store.root), record(report, briefs, entry))
     print(f"\nrecord written: {path}")
     removed = prune(Path(store.root), asof, args.prune_days)
     if removed:

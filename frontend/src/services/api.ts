@@ -1878,6 +1878,18 @@ export interface DeskRecord {
   grades: Record<string, DeskGrade>;
   book: { ticker: string; grade: string; weight: number; engine_weight: number; volatility: number; exposure: number }[];
   briefs: Record<string, DeskBrief>;
+  paper: DeskPaper | null;
+}
+
+export interface DeskPaper {
+  session: string;
+  equity: number;
+  cash: number;
+  pl: number;
+  pl_pct: number;
+  plan: string;
+  positions: { symbol: string; qty: number; market_value: number; avg_entry_price: number; current_price: number; unrealized_pl: number }[];
+  orders: { symbol: string; side: string; qty: number; reason: string }[];
 }
 
 export interface DeskOrder {

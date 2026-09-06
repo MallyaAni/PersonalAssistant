@@ -20,6 +20,8 @@ const GRADE_STYLE: Record<string, string> = {
 const STANCE_MARK: Record<number, string> = { 1: '+', 0: '·', [-1]: '−' }
 
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`
+const money = (value: number) =>
+  value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 
 // The trading desk's day: the regime, what to do at the next open, the book
 // to hold, every grade, and the briefs the model wrote. Everything shown is
@@ -146,6 +148,53 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           </p>
         )}
       </section>
+
+      {latest.paper && (
+        <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+          <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Paper account</h3>
+          <p className="text-sm text-[#1d1d1f]">
+            Equity {money(latest.paper.equity)} · cash {money(latest.paper.cash)} ·{' '}
+            <span className={latest.paper.pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
+              P/L {money(latest.paper.pl)} ({(latest.paper.pl_pct * 100).toFixed(1)}%)
+            </span>{' '}
+            since the paper book started · {latest.paper.plan} day
+          </p>
+          {latest.paper.orders.length > 0 && (
+            <p className="mt-2 text-sm text-[#6e6e73]">
+              Submitted for the next open:{' '}
+              {latest.paper.orders.map((o) => `${o.side} ${o.qty} ${o.symbol}`).join(', ')}
+            </p>
+          )}
+          {latest.paper.positions.length > 0 && (
+            <table className="mt-2 w-full text-sm">
+              <thead className="text-left text-[#6e6e73]">
+                <tr>
+                  <th className="py-1">Name</th>
+                  <th>Shares</th>
+                  <th>Value</th>
+                  <th>Entry</th>
+                  <th>Last</th>
+                  <th>Open P/L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {latest.paper.positions.map((p) => (
+                  <tr key={p.symbol} className="border-t border-black/[0.05]">
+                    <td className="py-1 font-medium">{p.symbol}</td>
+                    <td>{p.qty}</td>
+                    <td>{money(p.market_value)}</td>
+                    <td>{money(p.avg_entry_price)}</td>
+                    <td>{money(p.current_price)}</td>
+                    <td className={p.unrealized_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
+                      {money(p.unrealized_pl)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      )}
 
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
         <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">The book</h3>
