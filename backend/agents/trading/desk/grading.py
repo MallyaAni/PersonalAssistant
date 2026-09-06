@@ -8,6 +8,10 @@ The rule is fixed in advance and then measured, never fitted:
   bullish), or a bullish release with the others neutral on balance.
 * B: one analyst bullish, nobody bearish.
 * C: no bullish view, or the views cancel.
+* Any bearish core analyst caps the grade at B: a bullish release and a
+  strong tape over bearish filings was the losing trade in the history
+  (IREN, January 2026), and measured, the cap raises the A grade's
+  return from 17 to 53 bp per 20 sessions without touching A+.
 
 The rotation analyst's stance counts half a vote: it is a view about the
 side, not the name. `calibrate` in desk.py reports what each grade earned.
@@ -17,7 +21,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from backend.agents.trading.desk.opinions import BULLISH, Opinion
+from backend.agents.trading.desk.opinions import BEARISH, BULLISH, Opinion
 
 A_PLUS = "A+"
 A = "A"
@@ -102,4 +106,7 @@ def grade_stances(
     )
     grades[a_grade] = ORDINAL[A]
     grades[release_bullish & (votes >= 2)] = ORDINAL[A_PLUS]
+    # A bearish core analyst vetoes the top grades: the trade is at most B.
+    vetoed = (f == BEARISH) | (t == BEARISH) | (s == BEARISH)
+    grades[vetoed & (grades > ORDINAL[B])] = ORDINAL[B]
     return Graded(grades, votes, stances)

@@ -31,7 +31,6 @@ from backend.agents.trading.desk.regime import RegimeView
 from backend.agents.trading.desk.risk import Sized
 from backend.market import baselines
 from backend.market.harness import HarnessReport, evaluate_scores
-from backend.market.model import load_edgar_features, load_tone_features
 from backend.market.panel import Panel, build_panel
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -94,6 +93,10 @@ def blended(opinions: dict[str, Opinion]) -> np.ndarray:
 # Run the whole desk as of a date.
 def run(store: MarketStore, asof: date | None = None) -> DeskReport:
     """Return the DeskReport for the book as of `asof` (latest if None)."""
+    # The loaders live next to the torch models; importing them here keeps
+    # the desk importable where torch is absent (the gate container).
+    from backend.market.model import load_edgar_features, load_tone_features
+
     panel, sides = book_panel(store, asof)
     extra = load_edgar_features(store, panel, asof)
     tone = load_tone_features(store, panel, asof)

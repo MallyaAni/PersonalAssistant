@@ -59,12 +59,14 @@ def test_stances_split_ranks_and_leave_unknown_neutral():
 # The grade rule: a bullish release plus agreement is A+; agreement without
 # the release is A; one voice is B; nothing or a split is C.
 def test_grade_rule():
-    f = np.array([[1, 1, 1, 0, 0, 1, -1]])
-    t = np.array([[1, 0, 1, 1, 0, -1, -1]])
-    s = np.array([[1, 1, 0, 0, 1, 0, 1]])
+    f = np.array([[1, 1, 1, 0, 0, 1, -1, -1]])
+    t = np.array([[1, 0, 1, 1, 0, -1, -1, 1]])
+    s = np.array([[1, 1, 0, 0, 1, 0, 1, 1]])
     graded = grading.grade_stances(f, t, s)
-    letters = [graded.letter(0, c) for c in range(7)]
-    assert letters == ["A+", "A+", "A", "B", "A", "C", "C"]
+    letters = [graded.letter(0, c) for c in range(8)]
+    # The last column: a bullish release and tape over bearish filings is
+    # capped at B by the veto.
+    assert letters == ["A+", "A+", "A", "B", "A", "C", "C", "B"]
     assert graded.as_scores()[0, 0] == 3.0
 
 
