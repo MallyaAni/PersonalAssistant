@@ -153,16 +153,16 @@ def test_risk_sizes_by_grade_and_exposure():
     assert risk.gross(sized) < sum(abs(s.position.weight) for s in sized)
 
 
-# The technical analyst switches playbook on the theme's trend: in a
-# rising theme the name nearest its 52-week high ranks first; in a falling
-# theme the most stretched name ranks last.
+# The technical analyst reads location: in a rising theme the name at the
+# top of its range with both trends up ranks first; in a falling theme
+# the most stretched name ranks lower than in a rising one.
 def test_technical_analyst_switches_on_theme_trend():
     from backend.agents.trading.desk import technical as analyst
 
-    t, n = 320, 4
+    t, n = 400, 4
     themes = {f"N{i}": (AI_COMPUTE,) for i in range(n)}
     returns = np.zeros((t, n))
-    # N0 climbs steadily to a fresh high and sits well above its 21 EMA.
+    # N0 climbs steadily to a fresh high and sits well above its support.
     returns[:, 0] = 0.004
     returns[-10:, 0] = 0.03
     # N1 is flat; N2 and N3 drift down.
