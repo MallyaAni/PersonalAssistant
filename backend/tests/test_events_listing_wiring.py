@@ -153,9 +153,11 @@ async def test_the_answer_is_the_rendered_listing_and_the_model_never_wrote_it()
 
     assert "Sunday Sessions" in answer, answer
     assert "The Lawn, Batu Bolong" in answer, answer
-    # Built by code from the venue, not written by a model.
-    assert "https://maps.google.com/?q=The+Lawn+Batu+Bolong" in answer, answer
-    assert "https://www.thelawncanggu.com/whats-on" in answer, answer
+    # The listing offers the links and sends them on request from the typed
+    # records (2026-09-05, backend/core/event_links.py); it no longer prints
+    # them, so the map and page URLs are not in the listing itself.
+    assert "Want the map, the calendar link, or the event page" in answer, answer
+    assert "https://maps.google.com/?q=The+Lawn+Batu+Bolong" not in answer, answer
     # The model was never asked for the listing, so what it would have said -
     # invented link and all - is nowhere in the reply.
     assert llm.streamed is False
