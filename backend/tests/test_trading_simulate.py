@@ -268,14 +268,17 @@ def test_stats_read_the_daily_series():
 # decision was made on and that open belongs to whoever held the name
 # overnight - never to a book that buys at the open.
 #
-# This was wrong: the first version of the simulator never read an opening
-# price and applied close-to-close returns, so a name it decided to buy on
-# Friday was paid Monday's gap. On news-driven names that is the whole
-# move, and it is the part a real fill cannot have.
+# The first version of the simulator never read an opening price and
+# applied close-to-close returns, so a name it decided to buy on Friday
+# was paid Monday's gap. On news-driven names that is the whole move, and
+# it is the part a real fill cannot have.
 #
-# The name here is graded C until the session the desk decides to buy it,
-# so it is genuinely bought at the gapped open rather than held into the
-# gap - a name already held does earn the gap, correctly.
+# The assertion is the position's own return and not a band around the
+# book's. A threshold of "less than 5%" was the first attempt and it was
+# worthless: a 7% position collecting a 20% gap moves the book 1.4%, which
+# is under 5%, so the broken simulator passed the test written to catch
+# it. The name is bought at 120 and never moves again, so the only honest
+# number is zero.
 def test_a_gap_before_the_fill_is_not_collected():
     rows, decide_at = 200, 160  # a rebalance session; the fill is at 161
     close = np.full((rows, NAMES), 100.0)
@@ -284,8 +287,8 @@ def test_a_gap_before_the_fill_is_not_collected():
         np.cumsum(rng.normal(0, 0.008, (rows, NAMES - 1)), axis=0)
     )
     opens = close.copy()
-    # N0 sits at 100, then gaps to 120 overnight into the fill session and
-    # does nothing during that day: its open and close are both 120.
+    # N0 sits at 100, gaps to 120 overnight into the fill session, and does
+    # nothing ever again: its open and close are 120 from then on.
     close[decide_at + 1 :, 0] = 120.0
     opens[decide_at + 1 :, 0] = 120.0
 
@@ -296,15 +299,37 @@ def test_a_gap_before_the_fill_is_not_collected():
     report.panel = replace(report.panel, open=opens)
     result = simulate.run(report, use_exits=False, rebalance=20, cost_bps=0.0)
 
-    column = report.panel.index("N0")
     bought = [t for t in result.trades if t.ticker == "N0"]
     assert bought, "N0 should have been bought once it was graded A+"
-    # It was filled at the gapped open, so the trade made nothing from the
-    # gap: its entry price is the price after the gap, not before it.
-    assert close[decide_at, column] == 100.0
-    assert result.returns[decide_at + 1] < 0.05, (
-        "the session of the fill must not carry N0's overnight gap"
+    # Bought at the gapped open of 120 and never moved: exactly nothing.
+    # Filled at the previous close of 100 it would read +20%.
+    assert bought[-1].ret == pytest.approx(0.0, abs=1e-9)
+    assert bought[-1].opened == str(report.panel.dates[decide_at + 1])
+
+
+# The quantity is decided at the price the decision could see, and the
+# fill happens later at whatever the open turns out to be.
+#
+# Sizing at the opening price is a smaller error than collecting the gap
+# and it is still an error: it spends exactly the target fraction however
+# the price moved overnight, which no order can do. With a 10% target, a
+# $100 close and a $120 open the paper planner submits 100 shares; the
+# simulator used to buy 83.33.
+def test_the_order_is_sized_at_the_decision_price():
+    book = simulate._Book(
+        3, equity=100_000.0, cost_bps=0.0, panel=None, report=None, stamps=[]
     )
+    decision_prices = np.array([100.0, 100.0, np.nan])
+    target = np.array([0.10, 0.0, 0.0])
+    order = book.plan(target, decision_prices)
+    assert order[0] == pytest.approx(100.0), "10% of 100,000 at 100 is 100 shares"
+
+    # The fill happens at a different price and the share count does not
+    # move to compensate: the order was already placed.
+    book.settle(order, np.array([120.0, 120.0, np.nan]), session=0, reason="x")
+    assert book.shares[0] == pytest.approx(100.0)
+    # It cost what 100 shares cost at the open, not the planned notional.
+    assert book.cash == pytest.approx(100_000.0 - 100.0 * 120.0)
 
 
 # Between rebalances the book holds shares, so a winner's weight grows

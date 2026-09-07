@@ -15,7 +15,12 @@ import numpy as np
 from backend.agents.trading.desk.grading import GRADES, SIZE_MULTIPLIER
 from backend.agents.trading.desk.regime import RegimeState
 from backend.market.panel import Panel
-from backend.market.sizing import Position, SizingConfig, size_today
+from backend.market.sizing import (
+    Position,
+    SizingConfig,
+    apply_name_cap,
+    size_today,
+)
 
 # The book's knobs. Measured since 2021-06 on the 90 names: the top tenth
 # at a 25% volatility target made 31% a year at Sharpe 1.55 and a -20%
@@ -74,7 +79,7 @@ def size(
     )
     positions = size_today(candidates, panel, scaled, held)
     if regime.tightening:
-        positions = _steepen(positions, TIGHTENING_POWER)
+        positions = _steepen(positions, TIGHTENING_POWER, scaled.name_cap)
     out: list[Sized] = []
     for position in positions:
         column = panel.index(position.ticker)
@@ -94,7 +99,16 @@ def size(
 # The same names, reweighted so the steadier ones take more of the book.
 # The engine already weights by the inverse of volatility; raising that
 # to `power` and renormalising keeps the gross exposure unchanged.
-def _steepen(positions: list[Position], power: float) -> list[Position]:
+#
+# The cap is re-applied afterwards. Renormalising moves weight onto the
+# calmest names, and `size_today` had already capped them, so without this
+# the tilt could carry a position past `name_cap` - 18.75% against a 15%
+# cap on the paper book, found by a review after the same defect had been
+# fixed in the simulator alone. Both paths call `apply_name_cap` now, so
+# the backtest and the book being traded obey the same limit.
+def _steepen(
+    positions: list[Position], power: float, cap: float | None = None
+) -> list[Position]:
     gross_before = sum(abs(p.weight) for p in positions)
     if gross_before <= 0:
         return positions
@@ -105,11 +119,13 @@ def _steepen(positions: list[Position], power: float) -> list[Position]:
     total = sum(adjusted)
     if total <= 0:
         return positions
+    scaled = np.array(adjusted, dtype=float) / total * gross_before
+    if cap:
+        scaled = apply_name_cap(scaled, cap, gross_before)
     out = []
-    for p, weight in zip(positions, adjusted, strict=True):
-        scaled = weight / total * gross_before
+    for p, weight in zip(positions, scaled, strict=True):
         note = p.note + "; steadier while money tightens"
-        out.append(replace(p, weight=scaled, note=note))
+        out.append(replace(p, weight=float(weight), note=note))
     out.sort(key=lambda p: -abs(p.weight))
     return out
 

@@ -295,5 +295,37 @@ def test_tightening_cuts_exposure_and_steepens_the_book():
     calm_weights = {s.position.ticker: s.position.weight for s in calm_book}
     tight_weights = {s.position.ticker: s.position.weight for s in tight_book}
     assert tight_weights["STEADY"] > calm_weights["STEADY"]
+
+    # And the tilt does not breach the name cap on its way there.
+    #
+    # It renormalises to the gross it started with, which moves weight onto
+    # the calmest names, and `size_today` had already capped those - so
+    # without a second pass a position could end up over the cap. A review
+    # found 18.75% against a 15% cap on the paper book after the same
+    # defect had been fixed in the simulator alone; both paths call one
+    # `apply_name_cap` now, and this is the paper one.
+    #
+    # The book needs enough names for the cap to be satisfiable at all. Two
+    # names cannot hold 15% each and stay fully invested, and the engine
+    # chooses full investment there; eight names can.
+    wide = np.concatenate(
+        [rng.normal(scale=v, size=(t, 1)) for v in np.linspace(0.004, 0.06, 8)],
+        axis=1,
+    )
+    wide_panel = _panel(wide, {f"N{i}": (AI_COMPUTE,) for i in range(8)})
+    wide_scores = np.linspace(0.9, 0.2, 9)
+    wide_grades = np.array([3] * 8 + [0])
+    capped = risk.SizingConfig(
+        top_fraction=1.0, short_fraction=0.0, name_cap=0.15, theme_cap=1.0
+    )
+    for state in (calm.today(), tight.today()):
+        book = risk.size(wide_scores, wide_grades, wide_panel, state, capped)
+        assert book, "the engine should hold something"
+        for sized in book:
+            assert abs(sized.position.weight) <= capped.name_cap + 1e-9, (
+                f"{sized.position.ticker} sized at {sized.position.weight:.4f}, "
+                f"over the {capped.name_cap} cap while "
+                f"{'tightening' if state.tightening else 'calm'}"
+            )
     assert sum(tight_weights.values()) == pytest.approx(sum(calm_weights.values()))
     assert any("steadier" in s.position.note for s in tight_book)

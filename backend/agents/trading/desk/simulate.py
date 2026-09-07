@@ -51,6 +51,7 @@ from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import risk
 from backend.market import sizing
 from backend.market.panel import Panel
+from backend.market.sizing import apply_name_cap
 
 REBALANCE = 20
 # Whether the cash an exit frees goes back to work in the names still held,
@@ -191,8 +192,11 @@ def run(
             reason = "rebalanced out"
             rebalances += 1
         else:
-            target, reason = book.between(evidence, opens[t + 1], t, redeploy)
-        book.settle(target, opens[t + 1], t + 1, reason)
+            target, reason = book.between(evidence, closes[t], t, redeploy)
+        # The quantity is decided from what the decision could see - t's
+        # close - and only then filled at t + 1's open.
+        order = book.plan(target, closes[t])
+        book.settle(order, opens[t + 1], t + 1, reason)
         equity[t + 1] = book.equity(closes[t + 1])
         returns[t + 1] = (
             equity[t + 1] / equity[t] - 1.0 if equity[t] > 0 else float("nan")
@@ -270,37 +274,59 @@ class _Book:
                 weights = weights * (1.0 + freed / remaining)
         return weights, reason
 
-    # Trade to `target` at `prices`, then write down what opened and closed.
-    def settle(self, target, prices, session: int, reason: str) -> None:
-        """Move the book to `target` and record the positions that changed."""
+    # How many shares of each name to end up holding, decided at `prices`.
+    #
+    # This is the order, and it is fixed before the fill. The simulator
+    # used to size at the opening price it was about to fill at, which is
+    # information the decision did not have: with a 10% target, a $100
+    # close and a $120 open, it bought 83.33 shares where the paper
+    # planner - working from the same close - had submitted 100. Sizing
+    # here and filling later is what the two paths have in common.
+    def plan(self, target: np.ndarray, prices: np.ndarray) -> np.ndarray:
+        """Return the share count wanted per name, decided at `prices`."""
+        total = self.equity(prices)
+        wanted = np.array(self.shares, dtype=float)
+        if total <= 0:
+            return wanted
+        tradable = np.isfinite(prices) & (prices > 0)
+        value_now = np.where(tradable, self.shares * np.nan_to_num(prices), 0.0)
+        value_want = np.where(tradable, target * total, 0.0)
+        # A move too small to be worth its cost is not ordered, the same
+        # rule the paper book applies.
+        move = np.where(
+            np.abs(value_want - value_now) < MIN_TRADE * total,
+            0.0,
+            value_want - value_now,
+        )
+        with np.errstate(all="ignore"):
+            shares = np.where(prices > 0, (value_now + move) / prices, self.shares)
+        wanted = np.where(tradable, shares, self.shares)
+        wanted = np.where(np.isfinite(wanted), wanted, 0.0)
+        return np.maximum(wanted, 0.0)
+
+    # Fill the planned order at `prices`, then write down what changed.
+    def settle(self, order, prices, session: int, reason: str) -> None:
+        """Fill `order` at `prices` and record the positions that changed."""
         before = self.shares > 0
-        self._trade_to(target, prices)
+        self._fill(order, prices)
         for column in np.flatnonzero((self.shares > 0) & ~before):
             self.opened[column] = session
             self.paid[column] = float(prices[column])
         for column in np.flatnonzero(before & (self.shares <= 0)):
             self._log(column, session, prices, reason)
 
-    # Buy and sell until the book matches `target`, skipping moves too
-    # small to be worth their cost and charging for the ones taken.
-    def _trade_to(self, target: np.ndarray, prices: np.ndarray) -> None:
-        total = self.equity(prices)
-        if total <= 0:
-            return
+    # Buy and sell the planned share difference at `prices`, charging for
+    # what moves. A name with no price that session cannot be traded and
+    # keeps the shares it has.
+    def _fill(self, order: np.ndarray, prices: np.ndarray) -> None:
         tradable = np.isfinite(prices) & (prices > 0)
-        wanted = np.where(tradable, target * total, 0.0)
-        current = np.where(tradable, self.shares * np.nan_to_num(prices), 0.0)
-        move = np.where(
-            np.abs(wanted - current) < MIN_TRADE * total, 0.0, wanted - current
-        )
+        wanted = np.where(tradable, order, self.shares)
+        move = wanted - self.shares
         if not move.any():
             return
-        self.cash -= float(move.sum()) + float(np.abs(move).sum()) * self.cost
-        with np.errstate(all="ignore"):
-            updated = np.where(prices > 0, (current + move) / prices, self.shares)
-        self.shares = np.where(tradable, updated, self.shares)
-        self.shares = np.where(np.isfinite(self.shares), self.shares, 0.0)
-        self.shares[self.shares < 0] = 0.0
+        notional = move * np.nan_to_num(prices)
+        self.cash -= float(notional.sum()) + float(np.abs(notional).sum()) * self.cost
+        self.shares = np.maximum(wanted, 0.0)
 
     # One position leaving, with what it made between its two fills.
     def _log(self, column: int, session: int, prices, reason: str) -> None:
@@ -367,24 +393,4 @@ def _steepen(target: np.ndarray, panel: Panel, config, t: int) -> np.ndarray:
     total = float(adjusted.sum())
     if total <= 0:
         return target
-    return _recap(adjusted / total * gross, config.name_cap, gross)
-
-
-# Bring every position under the cap, handing what comes off to the names
-# still below it, until the gross is restored or nothing can take more. A
-# book already at the cap everywhere keeps the remainder as cash rather
-# than breaching the cap to stay fully invested.
-def _recap(weights: np.ndarray, cap: float, gross: float) -> np.ndarray:
-    if not cap or cap <= 0:
-        return weights
-    out = np.minimum(weights, cap)
-    for _pass in range(8):
-        spare = gross - float(out.sum())
-        if spare <= 1e-12:
-            break
-        room = np.where(out > 0, np.maximum(cap - out, 0.0), 0.0)
-        available = float(room.sum())
-        if available <= 1e-12:
-            break
-        out = np.minimum(out + room / available * min(spare, available), cap)
-    return out
+    return apply_name_cap(adjusted / total * gross, config.name_cap, gross)

@@ -64,6 +64,35 @@ class SizingConfig:
     cost_bps: float = 10.0
 
 
+# Bring every weight under `cap`, handing what comes off to the names still
+# below it, until `gross` is restored or nothing can take more.
+#
+# A step that renormalises after the cap has been applied can undo it. The
+# tightening tilt does exactly that: it raises the weight of the calmest
+# names and rescales to the original gross, which carried a position to
+# 0.1626 against a 0.15 cap. A cap a later step can undo is not a cap, so
+# both the paper path and the simulator call this after tilting.
+#
+# A book already at the cap in every name keeps the remainder as cash. The
+# alternative is breaching the cap to stay fully invested, which is the
+# thing being prevented.
+def apply_name_cap(weights: np.ndarray, cap: float, gross: float) -> np.ndarray:
+    """Return `weights` with none above `cap`, summing to at most `gross`."""
+    if not cap or cap <= 0:
+        return weights
+    out = np.minimum(weights, cap)
+    for _pass in range(8):
+        spare = gross - float(out.sum())
+        if spare <= 1e-12:
+            break
+        room = np.where(out > 0, np.maximum(cap - out, 0.0), 0.0)
+        available = float(room.sum())
+        if available <= 1e-12:
+            break
+        out = np.minimum(out + room / available * min(spare, available), cap)
+    return out
+
+
 @dataclass(frozen=True, slots=True)
 class BookResult:
     """What holding the book would have been like."""
