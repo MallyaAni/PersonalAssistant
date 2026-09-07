@@ -393,3 +393,31 @@ def test_an_allocator_replaces_the_rules_targets():
     held = simulate.run(report, use_exits=False, rebalance=20, allocator=only_n1)
     assert {trade.ticker for trade in held.trades} == {"N1"}
     assert held.invested[150] > 0
+
+
+# The dip rule adds to a graded name between rebalances the session its
+# own sharp fall completes, filled at the next open, from cash; without
+# the rule the book holds through it. The fall is the name's own: the
+# rest of the book does not move that day.
+def test_the_dip_rule_adds_to_a_graded_name_on_its_own_fall():
+    rng = np.random.default_rng(3)
+    steps = rng.normal(loc=0.0, scale=0.002, size=(SESSIONS, NAMES))
+    close = 100.0 * np.exp(np.cumsum(steps, axis=0))
+    close[150:, 0] *= 0.88  # N0, the A+ name, falls 12% on session 150
+    report = _report(close)
+    without = simulate.run(report, use_exits=False, rebalance=20)
+    # A wide cap, so the add is the full 3% and not what the cap leaves.
+    rule = simulate.DipRule(fall=0.08, vs_book=0.05, add=0.03, name_cap=0.30)
+    with_rule = simulate.run(report, use_exits=False, rebalance=20, dip=rule)
+    assert without.dip_adds == 0
+    assert with_rule.dip_adds >= 1
+    # The add is in the book from the fill at 151's open until the next
+    # rebalance at 160, and not before the fall.
+    assert np.isclose(with_rule.invested[149], without.invested[149], atol=1e-9)
+    assert with_rule.invested[152] > without.invested[152] + 0.02
+    # A name graded C on the same fall gets nothing.
+    close_c = close.copy()
+    close_c[150:, 0] /= 0.88
+    close_c[150:, 3] *= 0.88  # N3 is C
+    with_c = simulate.run(_report(close_c), use_exits=False, rebalance=20, dip=rule)
+    assert with_c.dip_adds == 0

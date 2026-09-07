@@ -48,7 +48,7 @@ from datetime import date
 import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
-from backend.agents.trading.desk import risk
+from backend.agents.trading.desk import grading, risk
 from backend.market.panel import Panel
 
 REBALANCE = 20
@@ -83,6 +83,7 @@ class SimResult:
     trades: list[SimTrade] = field(default_factory=list)
     rebalances: int = 0
     equity: np.ndarray | None = None  # (T,) the account's value
+    dip_adds: int = 0  # mid-cycle adds the dip rule made
 
     # The usual four numbers, from the daily series.
     def stats(self) -> dict[str, float]:
@@ -117,6 +118,87 @@ def adjusted_open(panel: Panel) -> np.ndarray:
     with np.errstate(all="ignore"):
         factor = np.where(panel.close > 0, panel.adj_close / panel.close, np.nan)
     return panel.open * factor
+
+
+@dataclass(frozen=True)
+class DipRule:
+    """Buy a graded name's own sharp fall between rebalances.
+
+    Measured on the book: a fall of 8% or more within three sessions, at
+    least five points worse than the book's own move, in a name graded A
+    or A+ that day, bought at that close, earned +1.23% beta-adjusted over
+    the next ten sessions against +0.64% for an A name on an ordinary day;
+    waiting two sessions for the low to hold gave all of it back. So the
+    rule acts the day the fall completes and fills at the next open.
+    """
+
+    fall: float = 0.08  # the name's own fall over up to three sessions
+    vs_book: float = 0.05  # how much worse than the book's move
+    add: float = 0.03  # weight of equity added, from cash
+    min_grade: str = grading.A
+    name_cap: float = 0.15
+    # Funded: the add is taken pro rata from the other held names, so the
+    # gross the regime chose is unchanged and only the selection moves.
+    # Unfunded, it comes from cash and raises the gross.
+    funded: bool = False
+
+
+# Which (session, name) pairs the dip rule fires on: the name's fall over
+# one to three sessions, against the book's own move over the same
+# sessions, in a name graded at least `min_grade` that day.
+def _dip_signal(report, panel: Panel, rule: DipRule) -> np.ndarray:
+    logr = panel.log_returns()
+    rows = logr.shape[0]
+    in_book = np.array([t in report.sides for t in panel.tickers])
+    in_book[panel.index(panel.benchmark)] = False
+    with np.errstate(all="ignore"):
+        book = np.nanmean(np.where(in_book[None, :], logr, np.nan), axis=1)
+    book = np.where(np.isfinite(book), book, 0.0)
+    clean = np.where(np.isfinite(logr), logr, 0.0)
+    own = np.full(logr.shape, np.inf)
+    against = np.full(logr.shape, np.inf)
+    for k in (1, 2, 3):
+        own_k = np.zeros_like(clean)
+        book_k = np.zeros(rows)
+        own_k[k - 1 :] = (
+            np.cumsum(clean, axis=0)[k - 1 :]
+            - np.r_[np.zeros((1, clean.shape[1])), np.cumsum(clean, axis=0)][
+                : rows - k + 1
+            ]
+        )
+        book_k[k - 1 :] = (
+            np.cumsum(book)[k - 1 :] - np.r_[0.0, np.cumsum(book)][: rows - k + 1]
+        )
+        own = np.minimum(own, own_k)
+        against = np.minimum(against, own_k - book_k[:, None])
+    graded = report.graded.grades >= grading.ORDINAL[rule.min_grade]
+    fell = (own <= np.log(1.0 - rule.fall)) & (against <= np.log(1.0 - rule.vs_book))
+    return fell & graded & in_book[None, :]
+
+
+# Add the rule's weight to every firing name, from cash, inside the name
+# cap; returns the new target and how many names were added to.
+def _dip_add(target, fired, rule: DipRule, book, prices) -> tuple[np.ndarray, int]:
+    out = target.copy()
+    added = 0
+    taken = 0.0
+    for column in np.flatnonzero(fired):
+        if not np.isfinite(prices[column]) or prices[column] <= 0:
+            continue
+        room = rule.name_cap - out[column]
+        if room <= 1e-6:
+            continue
+        amount = min(rule.add, room)
+        out[column] += amount
+        taken += amount
+        added += 1
+    if rule.funded and added and taken > 0:
+        others = np.ones(len(out), dtype=bool)
+        others[np.flatnonzero(fired)] = False
+        pool = float(out[others].sum())
+        if pool > 0:
+            out[others] *= max(0.0, 1.0 - taken / pool)
+    return out, added
 
 
 # The target weight of every name on a rebalance session.
@@ -164,6 +246,7 @@ def run(
     use_exits: bool = True,
     redeploy: bool = REDEPLOY,
     allocator=None,
+    dip: "DipRule | None" = None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -173,6 +256,7 @@ def run(
     allocation is measured by the book it makes and nothing else.
     """
     decide = allocator or _targets
+    dips = _dip_signal(report, report.panel, dip) if dip else None
     panel: Panel = report.panel
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
@@ -189,6 +273,7 @@ def run(
     rebalances = 0
 
     equity[start] = book.equity(closes[start])
+    dip_adds = 0
     for t in range(start, rows - 1):
         # Decided on t's close, filled at t+1's open.
         if (t - start) % rebalance == 0:
@@ -197,6 +282,11 @@ def run(
             rebalances += 1
         else:
             target, reason = book.between(evidence, closes[t], t, redeploy)
+            if dips is not None and dips[t].any():
+                target, added = _dip_add(target, dips[t], dip, book, closes[t])
+                if added:
+                    reason = "dip add"
+                    dip_adds += added
         # The quantity is decided from what the decision could see - t's
         # close - and only then filled at t + 1's open.
         order = book.plan(target, closes[t])
@@ -214,6 +304,7 @@ def run(
         book.trades,
         rebalances,
         equity[start:],
+        dip_adds,
     )
 
 
