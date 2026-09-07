@@ -16,11 +16,16 @@ person is used to be a word list in conversation_service.py ("events",
 had not imagined and is the pattern-decides-meaning rule this repository
 forbids. The same call now answers it, with the question in front of it;
 the code holds (place, dates, foreign names) follow the verdict.
-2026-09-07: a place that contains theirs is not foreign. Told the person was
-in "Courthouse, Virginia", this named "Arlington" foreign on the query "events
-Arlington Virginia tomorrow" - Arlington is the city Courthouse is a
-neighbourhood of. The caller strips what is named, so a correct local query
-lost its city and searched the whole state. Measured on the deployed model.
+2026-09-07: asking this prompt to treat a containing city as not-foreign was
+tried and REVERTED. Told the person was in "Courthouse, Virginia", it named
+"Arlington" foreign on "events Arlington Virginia tomorrow" - Arlington is the
+city Courthouse is a neighbourhood of - and the caller strips what is named,
+so a correct local query lost its city and searched the whole state. Adding a
+paragraph saying containing places are not foreign moved it from 3/3 to 8/12,
+i.e. not at all: the model cannot reliably know which city a neighbourhood is
+in. Given the city in the place string it is perfect - 0/12. So the fix is the
+stored place, not this prompt: a locality that names only a neighbourhood and
+a state cannot be defended here.
 2026-09-07: `place_bound` is judged on the question ALONE, and the prompt now
 says so. Asked "whats going on in the area tomorrow?" from Arlington, compose
 wrote "tomorrow events Napa Valley September 7" - a town nobody had mentioned.
@@ -63,10 +68,7 @@ something works, a person or product. A time word alone - this week, tonight
 Then `places`: the place names in the query that are a location somewhere
 other than where the person is - a city, town, district, county or region
 that is not theirs. A name that is part of where they are, or that names the
-same place, is not listed. Neither is a place that CONTAINS where they are:
-the neighbourhood they gave you sits inside a city, that city inside a county
-and a state, and naming any of those is naming where they are, even when they
-did not say it themselves. A word that is not a place is not listed. When
+same place, is not listed. A word that is not a place is not listed. When
 where they are is not known, list nothing.
 
 Answer `place_bound`, then `places`.
