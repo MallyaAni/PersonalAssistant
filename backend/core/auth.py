@@ -14,10 +14,16 @@ from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
+from backend.core.harness_identity import is_harness_id
 from backend.database.session import get_db
 from backend.models.auth import UserAccount
 from backend.search.budgeted import SearchIdentity, current_search_identity
 from backend.services.auth_service import AuthService
+
+# An automated harness is verification, not a person on the metered allowance,
+# so it is not stopped by the person-scale daily search cap. The shared monthly
+# pool is still the real ceiling and bounds it like everyone else.
+HARNESS_DAILY_SEARCH_CAP = 10_000
 
 # Least-privilege scopes. A token may be restricted to a subset so a leaked or
 # narrowly-issued token cannot reach the whole account. A scope with a `parent`
@@ -194,7 +200,11 @@ async def _bind_search_identity(db: AsyncSession, user_id: str) -> None:
                 user_id=user_id,
                 is_operator=bool(account.is_admin),
                 monthly_limit=account.search_monthly_limit,
-                daily_limit=account.search_daily_limit,
+                daily_limit=(
+                    HARNESS_DAILY_SEARCH_CAP
+                    if is_harness_id(user_id)
+                    else account.search_daily_limit
+                ),
             )
         )
     except Exception:
