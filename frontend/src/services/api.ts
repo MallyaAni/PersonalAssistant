@@ -1885,10 +1885,35 @@ export interface DeskRecord {
   book: { ticker: string; grade: string; weight: number; engine_weight: number; volatility: number; exposure: number }[];
   briefs: Record<string, DeskBrief>;
   paper: DeskPaper | null;
+  // Absent on records written before the board existed.
+  actions?: DeskAction[];
 }
 
+// One row of the action board: what to do in a name at the next open, how
+// much, and what would make the desk leave. Sizes are weights of equity so
+// the row scales to any account; stops are risk controls, not signals.
+export interface DeskAction {
+  ticker: string;
+  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold';
+  grade: string;
+  rank: number | null;
+  score: number;
+  target_weight: number;
+  current_weight: number;
+  delta_weight: number;
+  last_close: number;
+  entry_price: number | null;
+  entry: string;
+  until_rebalance: number;
+  grade_margin: number;
+  leaves_if: string;
+  high_20: number;
+  stops: Record<string, number>;
+  why: string;
+}
 export interface DeskPaper {
   session: string;
+  until_rebalance?: number;
   equity: number;
   cash: number;
   pl: number;
@@ -1924,6 +1949,33 @@ export interface DeskPayload {
 
 // The trading desk's latest record and what changed since the one before.
 // Every field is read from the record the desk wrote for the session.
+// The current candle for every name on the board: the last fifteen-minute
+// close, the session's high and low. Empty outside the session or without
+// market-data keys; the board stands without it.
+export interface DeskQuote {
+  symbol: string;
+  last: number;
+  high: number;
+  low: number;
+  bar: string;
+  as_of: string;
+}
+export interface DeskLive {
+  as_of: string | null;
+  quotes: Record<string, DeskQuote>;
+  reason?: string;
+}
+
+export const getDeskLive = async (userId: string): Promise<DeskLive> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live`,
+  );
+  if (!response.ok) {
+    return { as_of: null, quotes: {} };
+  }
+  return (await response.json()) as DeskLive;
+};
+
 export const getDesk = async (userId: string): Promise<DeskPayload> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`,

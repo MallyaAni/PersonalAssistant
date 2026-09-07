@@ -780,6 +780,10 @@ services:
       # container: without this line the setting falls back to its code
       # default and the Desk view answers 403 to the actual operator.
       - MARKET_DESK_USER=${MARKET_DESK_USER:-${AUTH_LOCAL_USER_ID:-ani.mallya}}
+      # The desk's live board reads Alpaca's free market-data feed; the
+      # keys live in .env and reach the container here and nowhere else.
+      - APCA_API_KEY_ID=${APCA_API_KEY_ID:-}
+      - APCA_API_SECRET_KEY=${APCA_API_SECRET_KEY:-}
       - AUTH_SESSION_TTL_HOURS=${AUTH_SESSION_TTL_HOURS:-168}
       - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false}
       - AUTH_COOKIE_SAMESITE=${AUTH_COOKIE_SAMESITE:-lax}

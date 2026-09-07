@@ -20,8 +20,8 @@ from pathlib import Path
 
 import numpy as np
 
+from backend.agents.trading.desk import actions, plainly
 from backend.agents.trading.desk import desk as trading_desk
-from backend.agents.trading.desk import plainly
 from backend.agents.trading.desk.narrative import DeskNarrator, brief_text
 from backend.cli import market_edgar, market_tone
 from backend.cli.market_desk import _print_book, _print_grades, _print_regime
@@ -242,7 +242,7 @@ def _settled_rows(settled, panel) -> list[dict]:
 # the account. Returns the day's entry for the desk record.
 def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
-    from backend.agents.trading.desk import paper
+    from backend.agents.trading.desk import actions, paper
     from backend.market import alpaca_trading
 
     client = alpaca_trading.client_from_env()
@@ -352,6 +352,23 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     entry["refused"] = refused
     entry["plan"] = what
     entry["settled"] = _settled_rows(settled, panel)
+    entry["until_rebalance"] = max(
+        actions.REBALANCE - int(new_state.sessions_since_rebalance), 0
+    )
+    holdings = {
+        p["symbol"]: actions.Holding(
+            weight=float(p["market_value"]) / account.equity if account.equity else 0.0,
+            entry_price=float(p["avg_entry_price"]) if p["avg_entry_price"] else None,
+        )
+        for p in positions
+    }
+    entry["actions"] = actions.build(
+        report,
+        targets,
+        holdings,
+        int(new_state.sessions_since_rebalance),
+        {o.symbol: o.reason for o in orders},
+    )
     if live:
         paper.save_state(store_root, new_state)
     print(
@@ -412,6 +429,13 @@ def record(
         ],
         "briefs": briefs or {},
         "paper": paper,
+        "actions": (
+            paper.get("actions")
+            if paper and paper.get("actions") is not None
+            else actions.build(
+                report, {s.position.ticker: s.weight for s in report.book}, {}, 0
+            )
+        ),
     }
 
 
