@@ -271,6 +271,18 @@ def main() -> None:
         nets_by_year[year] = nets
         prob = _predict(nets, cache, all_rows[test])
         scores[sessions[test], columns[test]] = prob
+    saved = (
+        Path(args.data_dir)
+        / "charts"
+        / f"scores-{panel.dates[-1]}-{args.days}-{args.horizon}.npz"
+    )
+    np.savez_compressed(
+        saved,
+        scores=scores.astype(np.float32),
+        dates=panel.dates.astype("datetime64[D]"),
+        tickers=np.array(panel.tickers),
+    )
+    print(f"\nout-of-sample probabilities saved to {saved}")
     in_universe = np.array([t != panel.benchmark for t in panel.tickers])
     in_book = np.array([t in sides for t in panel.tickers])
     momentum = baselines.momentum(panel, 252, 21)
