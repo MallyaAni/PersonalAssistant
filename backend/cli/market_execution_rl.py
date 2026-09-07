@@ -495,8 +495,9 @@ def _stat(values: np.ndarray, days: np.ndarray) -> tuple[float, float]:
     per_day = np.add.reduceat(v, starts) / np.diff(np.r_[starts, len(v)])
     if len(per_day) < 3:
         return float(v.mean()), float("nan")
-    return float(v.mean()), float(
-        per_day.mean() / (per_day.std(ddof=1) / np.sqrt(len(per_day)))
+    spread = per_day.std(ddof=1) / np.sqrt(len(per_day))
+    return float(v.mean()), (
+        float(per_day.mean() / spread) if spread > 0 else float("inf")
     )
 
 

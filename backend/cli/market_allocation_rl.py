@@ -40,16 +40,25 @@ architectural: about 1,300 sessions at a twenty-session horizon is roughly
 
 Results
 -------
-Ten folds, three seeds, mean reward per rebalance window; the t is on the
-paired difference from the rule. Recorded above `risk.desk_targets`.
+Ten folds, three seeds averaged into one action per session, 2,164 test
+sessions, mean reward per rebalance window. Recorded above
+`risk.desk_targets`. The paired difference from the rule carries three t
+statistics: naive, Newey-West over the twenty-session reward window
+(consecutive sessions' rewards share nineteen days of returns), and on
+every twentieth session so that no two windows overlap.
 
-  the desk's rule                +0.611
-  equal weight, same names       +0.605  (t -1.28)
-  policy gradient (REINFORCE)    +0.579  (t +0.25)
-  cross-entropy search           +0.585  (t +0.69)
+                                mean    vs rule   naive   Newey-West   every 20th
+  the desk's rule              +0.611
+  equal weight, same names     +0.605   -0.006    -1.28     -0.46        +0.09
+  policy gradient (REINFORCE)  +0.579   -0.032    -2.43     -0.72        -0.33
+  cross-entropy search         +0.585   -0.026    -2.57     -0.79        -0.38
 
 Neither agent beat the rule; both were slightly worse and neither
-difference is distinguishable from zero. The line that matters is the
+difference is distinguishable from zero once the overlap is counted. The
+first run of this command printed t of +0.25 and +0.69 for the agents:
+its pairing tiled the rule's rewards against seed-major policy rewards
+and was misaligned across folds. The means, which carried the
+conclusion, were unchanged by the fix. The line that matters is the
 second: equal weight on the same names scored the same as the whole
 sizing apparatus. Together with the volatility result in
 `market_volatility`, the weighting is not where the risk-adjusted return
@@ -99,6 +108,8 @@ class Problem:
     regime: np.ndarray  # (T, 3) participation percentile, exposure, tightening
     rule: np.ndarray  # (T, M) the rule's weights, zero where it could not run
     dates: np.ndarray
+    cols: np.ndarray  # (M,) the book's columns in the panel
+    panel: object  # the panel, for the desk's own caps
 
     @property
     def features(self) -> int:
@@ -149,7 +160,9 @@ def _build(report) -> Problem:
             for s in report.regime.states
         ]
     )
-    return Problem(simple, states, regime, _rule_weights(report, cols), panel.dates)
+    return Problem(
+        simple, states, regime, _rule_weights(report, cols), panel.dates, cols, panel
+    )
 
 
 # The book's Sharpe-shaped reward over the window after `t`.
@@ -265,24 +278,38 @@ def _evaluate(problem: Problem, policy: Policy, sessions) -> list[float]:
     return out
 
 
-# Mean, spread and count, with a paired t against the rule where given.
-# A policy contributes one reward per seed per session, so the rule's
-# rewards are tiled to pair them.
+# A t statistic that survives overlapping windows: Newey-West with a
+# Bartlett kernel over `lag` autocovariances. Consecutive sessions' rewards
+# share REBALANCE - 1 days of returns, so the naive t overstates by about
+# the square root of REBALANCE.
+def _hac_t(diff: np.ndarray, lag: int) -> float:
+    n = len(diff)
+    d = diff - diff.mean()
+    var = float(d @ d) / n
+    for k in range(1, min(lag, n - 1) + 1):
+        var += 2.0 * (1.0 - k / (lag + 1)) * float(d[:-k] @ d[k:]) / n
+    return float(diff.mean() / np.sqrt(max(var, 1e-12) / n))
+
+
+# Mean, spread and count, and the paired difference from the rule on the
+# same sessions with three t statistics: naive, Newey-West over the reward
+# window, and on every REBALANCE-th session so no two windows overlap.
 def _summarise(name: str, values, reference=None) -> None:
     values = np.array(values, dtype=float)
-    values = values[np.isfinite(values)]
     if not len(values):
         print(f"{name:34} no observations")
         return
-    line = f"{name:34} {values.mean():+8.4f} {values.std():8.4f} {len(values):8d}"
-    if reference is not None and len(reference):
-        ref = np.array(reference, dtype=float)
-        ref = ref[np.isfinite(ref)]
-        n = min(len(ref), len(values))
-        if n > 2:
-            diff = values[:n] - np.tile(ref, len(values) // len(ref) + 1)[:n]
-            t_stat = diff.mean() / (diff.std(ddof=1) / np.sqrt(len(diff)) + 1e-12)
-            line += f"   vs rule {diff.mean():+8.4f} (t {t_stat:+5.2f})"
+    line = f"{name:34} {values.mean():+8.4f} {values.std():8.4f} {len(values):6d}"
+    if reference is not None:
+        diff = values - np.array(reference, dtype=float)
+        naive = diff.mean() / (diff.std(ddof=1) / np.sqrt(len(diff)) + 1e-12)
+        apart = diff[::REBALANCE]
+        sparse = apart.mean() / (apart.std(ddof=1) / np.sqrt(len(apart)) + 1e-12)
+        line += (
+            f"   vs rule {diff.mean():+8.4f}  t naive {naive:+5.2f}"
+            f"  Newey-West {_hac_t(diff, REBALANCE - 1):+5.2f}"
+            f"  every {REBALANCE}th {sparse:+5.2f}"
+        )
     print(line)
 
 
@@ -310,13 +337,18 @@ def main() -> None:
             equal = np.where(problem.rule[t] > 0, 1.0, 0.0)
             if equal.sum() > 0:
                 equal_rewards.append(_reward(problem, equal / equal.sum() * gross, t))
+        # One action per session: the seeds' rewards averaged, so every
+        # contender pairs with the rule session by session.
+        pg_seeds, ce_seeds = [], []
         for seed in range(args.seeds):
             pg = _policy_gradient(problem, train, seed, args.episodes)
-            pg_rewards.extend(_evaluate(problem, pg, test))
+            pg_seeds.append(_evaluate(problem, pg, test))
             ce = _cross_entropy(problem, train, seed)
-            ce_rewards.extend(_evaluate(problem, ce, test))
+            ce_seeds.append(_evaluate(problem, ce, test))
+        pg_rewards.extend(np.mean(pg_seeds, axis=0))
+        ce_rewards.extend(np.mean(ce_seeds, axis=0))
         print(f"  fold {number}/{len(cuts)} to {problem.dates[cut]}", flush=True)
-    print(f"\n{'policy':34} {'mean reward':>10} {'sd':>8} {'n':>8}")
+    print(f"\n{'policy':34} {'mean reward':>10} {'sd':>8} {'n':>6}")
     _summarise("the desk's rule", rule_rewards)
     _summarise("equal weight, same names", equal_rewards, rule_rewards)
     _summarise("policy gradient (REINFORCE)", pg_rewards, rule_rewards)
