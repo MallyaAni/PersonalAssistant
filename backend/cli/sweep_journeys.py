@@ -240,15 +240,23 @@ JOURNEYS = [
     # must cancel every paused task, not one of them. Two reminders are paused,
     # the set is deleted, and both rows are gone while no reminder is left
     # paused. A picker that returned a single id would leave one behind.
+    #
+    # 6 and 7 o'clock, and no other journey may use them. Every journey in this
+    # sweep runs against the same harness user, so state carries between them:
+    # this one used to arm 9am and 10am, and "schedule a reminder" leaves an
+    # enabled 9am "call the bank" behind while "move it to 10am" leaves a 10am.
+    # The second assertion then counted those and failed - but only in a full
+    # sweep, because run alone with --only there is no earlier journey to leave
+    # them. It read as flaky for three deploys and was never timing at all.
     Journey("delete the paused ones", "delete the paused ones", ("Manage scheduled tasks",),
-            before=("remind me tomorrow at 9am to call the bank",
-                    "remind me tomorrow at 10am to water the plants",
+            before=("remind me tomorrow at 6am to call the bank",
+                    "remind me tomorrow at 7am to water the plants",
                     "pause the bank reminder",
                     "pause the plants reminder"),
             holds=("The reply says the paused reminders were cancelled or deleted.",),
             does_not_hold=("The reply says only one reminder was cancelled or that nothing was cancelled.",),
             sql_holds=("select count(*) = 0 from scheduled_tasks where user_id = :u and kind = 'reminder' and not enabled",
-                       "select count(*) = 0 from scheduled_tasks where user_id = :u and kind = 'reminder' and hour in (9, 10)")),
+                       "select count(*) = 0 from scheduled_tasks where user_id = :u and kind = 'reminder' and hour in (6, 7)")),
     Journey("make it weekly (scout referent)", "make it weekly instead, on Sundays", ("Scout schedule",),
             before=("run scout every day at 3pm",),
             holds=("The reply says Scout's sweep is now weekly on Sunday.",),

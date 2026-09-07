@@ -58,3 +58,53 @@ def test_an_isolated_run_names_a_different_set():
     assert sweep_identities("b")[0] != sweep_identities()[0]
     assert sweep_identities("b")[1] != sweep_identities()[1]
     assert sweep_identities("b")[2] != sweep_identities()[2]
+
+
+# Every journey runs against the same harness user, so a reminder one journey
+# arms is still there when a later one counts rows.
+#
+# "delete the paused ones" asserts that no reminder remains at its own hours.
+# It used to arm 9am and 10am - the same hours "schedule a reminder" and "move
+# it to 10am" leave enabled behind - so the assertion counted their rows and
+# failed. Only in a full sweep: run alone with --only there is no earlier
+# journey, so it passed on every retry and was logged as flaky for three
+# deploys running. Nothing about it was timing.
+#
+# This pins the invariant rather than the fix: any journey that asserts an
+# hour is empty must own that hour.
+def test_a_journey_that_asserts_an_hour_is_empty_owns_that_hour():
+    import re
+
+    from backend.cli.sweep_journeys import JOURNEYS
+
+    def hours_armed(journey) -> set[int]:
+        said = " ".join((*journey.before, journey.message)).lower()
+        found = set()
+        for value, meridiem in re.findall(r"\b(\d{1,2})\s*(am|pm)\b", said):
+            hour = int(value) % 12
+            found.add(hour + 12 if meridiem == "pm" else hour)
+        return found
+
+    def hours_claimed_empty(journey) -> set[int]:
+        found = set()
+        for clause in journey.sql_holds or ():
+            if "count(*) = 0" not in clause:
+                continue
+            for group in re.findall(r"hour in \(([\d,\s]+)\)", clause):
+                found.update(int(part) for part in group.split(","))
+            for one in re.findall(r"hour = (\d+)", clause):
+                found.add(int(one))
+        return found
+
+    for journey in JOURNEYS:
+        claimed = hours_claimed_empty(journey)
+        if not claimed:
+            continue
+        for other in JOURNEYS:
+            if other.name == journey.name:
+                continue
+            clash = claimed & hours_armed(other)
+            assert not clash, (
+                f"{journey.name!r} asserts nothing remains at {sorted(claimed)}, "
+                f"but {other.name!r} arms {sorted(clash)} on the same user"
+            )
