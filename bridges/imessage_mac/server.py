@@ -843,6 +843,52 @@ def _replied_body(connection: sqlite3.Connection, guid: str) -> str:
     return str(extract_body(row[0], row[1]) or "").strip()[:2000]
 
 
+# Whether the bubble a reply is anchored on was itself addressed to this
+# account, and who sent it. Read while the connection is open, for the same
+# reason `_replied_body` is: the message loop runs after it closes.
+#
+# The reply branch of `_addressed_to_bot` recognises only bubbles this account
+# sent, which is right for "reply to what it said" and wrong for the other way
+# a person carries a thread on: quoting their own request. On 2026-09-07 "try
+# again", anchored on the asker's own unanswered question, addressed nobody.
+#
+# The anchor is judged only on how it addressed the assistant itself - never
+# on what it in turn replied to - so this cannot chain down a thread.
+def _quoted_anchor(
+    connection: sqlite3.Connection,
+    guid: str,
+    display_name: str,
+    addresses: frozenset[str],
+) -> tuple[bool, str]:
+    suffix = str(guid or "").strip()
+    if not suffix:
+        return False, ""
+    try:
+        row = connection.execute(
+            """
+            SELECT m.text, m.attributedBody, m.is_from_me, h.id
+            FROM message m
+            LEFT JOIN handle h ON h.ROWID = m.handle_id
+            WHERE m.guid LIKE ?
+            LIMIT 1
+            """,
+            (f"%{suffix[-36:]}",),
+        ).fetchone()
+    except sqlite3.Error:
+        return False, ""
+    if row is None or int(row[2] or 0) == 1:
+        # Sent by this account: already covered by the sent-bubble branch.
+        return False, ""
+    body = str(extract_body(row[0], row[1]) or "")
+    sender = normalize_recipient(str(row[3] or ""))
+    if addresses and mention_targets(row[1]) & addresses:
+        return True, sender
+    name = (display_name or "").strip()
+    if name and re.search(r"(?<![\w])" + re.escape(name) + r"(?![\w])", body, re.IGNORECASE):
+        return True, sender
+    return False, sender
+
+
 def _twins(
     connection: sqlite3.Connection, asked: tuple[tuple[str, str], ...]
 ) -> dict[str, str]:
@@ -1098,8 +1144,14 @@ def _addressed_to_bot(
     sent_guids: set[str],
     display_name: str,
     addresses: frozenset[str] = frozenset(),
+    own_anchor: bool = False,
 ) -> str | None:
     if originator and originator in sent_guids:
+        return "reply"
+    # The asker following up on their own request - "try again", quoting the
+    # question they wanted answered. Same person, and an anchor that was
+    # itself addressed here; see `_quoted_anchor`.
+    if originator and own_anchor:
         return "reply"
     if addresses and mention_targets(blob) & addresses:
         return "mention"
@@ -1196,6 +1248,15 @@ def incoming_messages(
             for row in rows
             if row[6]
         }
+        # Rooms only: a one-to-one message is addressed to the assistant by
+        # arriving at all, so nothing here changes what it answers.
+        anchors = {
+            str(row[6]): _quoted_anchor(
+                connection, str(row[6]), config.display_name, config.addresses
+            )
+            for row in rows
+            if row[6] and int(row[8] or 0) == 43
+        }
     except sqlite3.Error:
         return {"messages": [], "cursor": cursor}
     finally:
@@ -1261,6 +1322,9 @@ def incoming_messages(
             # whole room for context and replies only when addressed. How it
             # was addressed, when it was: a reply in a thread anchored on one
             # of its bubbles, a mention, or its name; empty otherwise.
+            anchored_addressed, anchored_sender = anchors.get(
+                str(originator or ""), (False, "")
+            )
             addressed_by = _addressed_to_bot(
                 str(originator or ""),
                 body or "",
@@ -1268,6 +1332,7 @@ def incoming_messages(
                 sent_in_room.get(int(chat_rowid), set()),
                 config.display_name,
                 config.addresses,
+                anchored_addressed and bool(anchored_sender) and anchored_sender == sender,
             ) or ""
         message: dict[str, object] = {
             "guid": str(guid),

@@ -1784,3 +1784,60 @@ def test_an_oversized_document_is_still_refused(tmp_path):
     attachment_id = _attach_file(config.incoming_db, message_id, document, "application/pdf", "big.pdf")
     payload = attachment_payload(config, str(attachment_id))
     assert payload["error"] == "too_large"
+
+
+# Carrying on your own request, which is how a person retries in a room.
+#
+# Groupie, 2026-09-07 01:36: "try again", sent as a reply anchored on the
+# asker's own earlier "Scout whats going on today to do in the area for us?".
+# The reply branch recognised only bubbles this account had sent, so quoting
+# your own question addressed nobody and the assistant read the room and said
+# nothing. Two minutes later the identical words, anchored on one of its own
+# bubbles, were answered - which is exactly why it looked like it had ignored
+# the first one.
+def test_a_reply_to_your_own_addressed_question_is_addressed(tmp_path):
+    config = _room_config(tmp_path)
+    db = config.incoming_db
+    _insert_incoming(
+        db, "+15550100", "Scout whats going on today to do in the area for us?",
+        _ns_ago(30), chat_identifier=_ROOM, participants=_PEOPLE, guid="ani-1",
+    )
+    _insert_incoming(
+        db, "+15550100", "try again", _ns_ago(5),
+        chat_identifier=_ROOM, reply_to_guid="ani-1",
+    )
+    addressed = [m["addressed_by"] for m in _room_messages(config)]
+    assert addressed == ["name", "reply"], addressed
+    # The question comes with it, so "try again" has something to retry.
+    assert _room_messages(config)[1]["reply_to_text"].startswith("Scout whats going on")
+
+
+# The bound on that rule, in both directions.
+def test_a_reply_to_your_own_ordinary_message_is_not_addressed(tmp_path):
+    config = _room_config(tmp_path)
+    db = config.incoming_db
+    _insert_incoming(
+        db, "+15550100", "pizza tonight?", _ns_ago(30),
+        chat_identifier=_ROOM, participants=_PEOPLE, guid="ani-2",
+    )
+    _insert_incoming(
+        db, "+15550100", "actually never mind", _ns_ago(5),
+        chat_identifier=_ROOM, reply_to_guid="ani-2",
+    )
+    assert [m["addressed_by"] for m in _room_messages(config)] == ["", ""]
+
+
+def test_somebody_else_replying_to_your_question_stays_between_them(tmp_path):
+    # The anchor was addressed to the assistant, but this is one member
+    # answering another. Reading the room is not being spoken to.
+    config = _room_config(tmp_path)
+    db = config.incoming_db
+    _insert_incoming(
+        db, "+15550100", "Scout what is on this weekend?", _ns_ago(30),
+        chat_identifier=_ROOM, participants=_PEOPLE, guid="ani-3",
+    )
+    _insert_incoming(
+        db, "+15550101", "i already know, the fair", _ns_ago(5),
+        chat_identifier=_ROOM, reply_to_guid="ani-3",
+    )
+    assert [m["addressed_by"] for m in _room_messages(config)] == ["name", ""]
