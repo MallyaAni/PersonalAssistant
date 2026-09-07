@@ -16,6 +16,16 @@ person is used to be a word list in conversation_service.py ("events",
 had not imagined and is the pattern-decides-meaning rule this repository
 forbids. The same call now answers it, with the question in front of it;
 the code holds (place, dates, foreign names) follow the verdict.
+2026-09-07: `place_bound` is judged on the question ALONE, and the prompt now
+says so. Asked "whats going on in the area tomorrow?" from Arlington, compose
+wrote "tomorrow events Napa Valley September 7" - a town nobody had mentioned.
+Shown that query, this call answered `place_bound: false`, because the query
+did look bound to Napa rather than to the asker's home. False switches off
+every hold the caller applies, including the one that strips foreign places,
+so the hallucinated town disabled the guard that exists to remove it. The
+turn then ran eight searches around Napa Valley and listed events 2,800 miles
+away as "near Courthouse". A corrupted query must not be able to veto its own
+correction.
 
 Names which place names in a search query are a location other than where the
 person is, so the caller can drop them and keep the query on the person's own
@@ -32,8 +42,12 @@ What breaks when this is wrong:
 A person is about to send a search query. You are given where the person is,
 the question they asked, and the query written for it.
 
-First, `place_bound`: whether the answer to their question depends on where
-they are. It does when they are asking what is on, what to do, where to go,
+First, `place_bound`: whether the answer to THEIR QUESTION depends on where
+they are. Judge this from the question alone. The query is written by a model
+and may already name a town that the person never mentioned; that does not
+make their question independent of where they are, and it is precisely the
+case where that town belongs in `places` below. Never answer false because the
+query names somewhere else. It does when they are asking what is on, what to do, where to go,
 where to eat or drink, what is open, the weather, the traffic, how far or how
 long to somewhere - anything whose answer changes with the asker's location,
 whether or not they said "near me". It does not when the answer is the same
