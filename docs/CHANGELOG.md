@@ -2,6 +2,33 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The action board, live by the candle
+
+The Desk view showed grades and a paper book; it did not say what to do. It
+now opens with an action board: for every name targeted or held, the action
+(sell and trim first, then buy and add, then hold), the size as a weight of
+equity and as shares at the equity typed into the view, the entry
+(market-on-open, since every later schedule measured cost more), and the exit
+plan - the rebalance clock, how far the grade sits above the line that keeps
+it, and stop levels off the twenty-session high given as risk controls with
+the measured trade-off beside them, not as signals. The record carries the
+board (`backend/agents/trading/desk/actions.py`) from the paper account's
+holdings, or from the targets alone without an account.
+
+A live layer follows the fifteen-minute candle: a route reads the session's
+bars from Alpaca's free feed for the board's names, remembers them for a
+candle, and the view shows each row's last print against the close and its
+room to the 12% stop, red when crossed. The candle adds risk facts and decides
+nothing, which is what the intraday measurements support. The backend
+container receives the two Alpaca keys from `.env` for this route.
+
+Alongside, on the same branch: `market_dip` (a trader's dip conditions,
+measured: no skill out of sample), `backend/market/charts.py` and
+`market_charts` (Jiang, Kelly and Xiu's chart-image network, to the paper's
+specification, training walk-forward), `market_position` (sizing and exit
+rules on a model's score), and `market_daytype` (whether the first hour says
+what kind of day it is). Their results are recorded when their runs finish.
+
 ## 2026-09-07 - The analysts are weighted; entry timing; a trailing-stop watcher
 
 **The analysts carry unequal weights now.** Equal weights were an assumption.
