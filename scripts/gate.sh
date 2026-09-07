@@ -106,8 +106,31 @@ ignores=(
     --ignore=/app/backend/tests/functional/test_gateway_follows_the_backend.py
     --ignore=/app/backend/tests/functional/test_image_text_language_behaviour.py
 )
+# The routing gate's five suites run at once, one worker per file.
+#
+# It was 19m18s of a 24-minute deploy: a hundred questions asked of the
+# model strictly one at a time while it served one request and idled on
+# the rest. Two changes fix it, and they are different in kind.
+#
+# `evaluate_tool_selection.collect` now asks its fifty-one cases
+# concurrently, which is where nine and a half of those minutes were.
+#
+# The rest is here. Distribution is BY FILE, never by test: four of the
+# five suites do their model work inside a module- or session-scoped
+# fixture, so splitting their tests across workers would run that
+# fixture once per worker and ask the model the same questions several
+# times over. `--dist loadfile` keeps every test in a file on one
+# worker, so each fixture runs exactly once and the five files overlap.
+#
+# The unit suite stays serial. It is 2m22s, so there is nothing to win,
+# and it shares a database with the running system - the
+# chat-continuation tests already race a live worker for a queued run,
+# and adding workers of our own to that is a way to make a green suite
+# flaky.
+parallel=(-n 5 --dist loadfile)
 if $unit; then
     ignores+=(--ignore=/app/backend/tests/functional)
+    parallel=()
     "${compose[@]}" up -d --wait redis db >/dev/null
 fi
 
@@ -141,7 +164,7 @@ if "${compose[@]}" run --rm --no-deps --build \
     -v "$root/.env.example:/app/.env.example:ro" \
     -e REDIS_URL=redis://redis:6379/0 \
     functional-tests \
-    python -m pytest "${targets[@]}" "${ignores[@]}" \
+    python -m pytest "${targets[@]}" "${ignores[@]}" "${parallel[@]}" \
         -q -p no:cacheprovider --no-header; then
     echo "==> Gate passed"
     exit 0

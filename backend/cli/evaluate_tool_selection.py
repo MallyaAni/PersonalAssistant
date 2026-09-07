@@ -160,52 +160,90 @@ def arguments_hold(case: SelectionCase, action: object) -> bool | None:
     return not any(word.casefold() in written for word in case.avoids)
 
 
+# How many cases may be in flight against the routing model at once.
+#
+# The deploy gate spent 9m30s of its 19m18s here, asking the model 51
+# questions strictly one after another while the model sat mostly idle.
+# These are independent questions - no case reads another's answer - so
+# the only reason they were serial was that the loop was written that way.
+# The cap exists because the model serves a fixed number of concurrent
+# requests and queueing far past that adds latency without throughput.
+SELECTION_CONCURRENCY = 6
+
+
+# One labelled case against the model, as its own task so the identity it
+# sets is its own. `current_search_identity` is a ContextVar, and a task
+# started by `gather` runs in a copy of the context, so concurrent cases
+# cannot see each other's identity. Run as bare coroutines in one task they
+# would, and a case routed as the operator would decide a guest's question.
+async def _observe(
+    selector: MainActionSelector,
+    case: SelectionCase,
+    limit: asyncio.Semaphore,
+) -> Observation:
+    history = [
+        {"query": query, "response": response} for query, response in case.history
+    ]
+    # Routed as the operator when the case says so: some tools are offered
+    # only to them, and a case for such a tool routed as a guest measures
+    # the withholding, not the choice.
+    identity = SearchIdentity(user_id="tool_selection_eval", is_operator=case.operator)
+    async with limit:
+        token = current_search_identity.set(identity)
+        try:
+            action = await selector.select(
+                "tool_selection_eval",
+                case.query,
+                history,
+                "active-image-id" if case.active_image else None,
+                local_now=case.local_now,
+                unattended=case.unattended,
+            )
+        finally:
+            current_search_identity.reset(token)
+    return Observation(
+        case.expected,
+        tool_of(action),
+        case.category,
+        case.query,
+        arguments_hold(case, action),
+        arguments_of(action)[:200],
+    )
+
+
 # Run every labelled case and return the chosen tool for each observation.
+#
+# One rep at a time, every case within it at once. The cache is cleared
+# once per rep rather than once per call, which is the same thing: a rep's
+# cases are all different questions, so no case can read another's answer
+# from the cache, and the clear that mattered was always the one between
+# repeated passes of the *same* question. The point of a repeated pass is
+# to sample the model's own variance, and the routing cache answers an
+# identical question from memory - every field of its key is fixed here,
+# so without the clear the second and third passes read back the first
+# one's answer and every rate measured is one observation wearing three
+# coats. True since the cache shipped in 82d0e9b8.
+#
+# Within a rep the observations are in case order whatever order the
+# answers arrive in. Across reps they are grouped by rep rather than by
+# case, which the original interleaved the other way; nothing reads them
+# positionally - `failures` tallies by query and the gate counts matches -
+# so the grouping is free to change and the counts are identical.
 async def collect(
     selector: MainActionSelector,
     reps: int,
     cases: tuple[SelectionCase, ...] = SELECTION_CASES,
+    concurrency: int = SELECTION_CONCURRENCY,
 ) -> list[Observation]:
-    observations: list[tuple[str, str, str]] = []
-    for case in cases:
-        history = [
-            {"query": query, "response": response} for query, response in case.history
-        ]
-        # Routed as the operator when the case says so: some tools are offered
-        # only to them, and a case for such a tool routed as a guest measures
-        # the withholding, not the choice.
-        identity = SearchIdentity(user_id="tool_selection_eval", is_operator=case.operator)
-        for _ in range(reps):
-            # The point of a repeated pass is to sample the model's own
-            # variance, and the routing cache answers an identical question
-            # from memory. Every field of its key is fixed here - same user,
-            # same query, same tools, same stated clock - so without this the
-            # second and third passes read back the first one's answer and
-            # every rate measured from this CLI is one observation wearing
-            # three coats. True since the cache shipped in 82d0e9b8.
-            clear_decision_cache()
-            token = current_search_identity.set(identity)
-            try:
-                action = await selector.select(
-                    "tool_selection_eval",
-                    case.query,
-                    history,
-                    "active-image-id" if case.active_image else None,
-                    local_now=case.local_now,
-                    unattended=case.unattended,
-                )
-            finally:
-                current_search_identity.reset(token)
-            observations.append(
-                Observation(
-                    case.expected,
-                    tool_of(action),
-                    case.category,
-                    case.query,
-                    arguments_hold(case, action),
-                    arguments_of(action)[:200],
-                )
+    limit = asyncio.Semaphore(max(1, concurrency))
+    observations: list[Observation] = []
+    for _rep in range(reps):
+        clear_decision_cache()
+        observations.extend(
+            await asyncio.gather(
+                *(_observe(selector, case, limit) for case in cases)
             )
+        )
     return observations
 
 

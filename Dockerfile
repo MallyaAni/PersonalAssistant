@@ -39,7 +39,11 @@ FROM base AS test
 # its F821 check over backend and scripts, because on 2026-09-06 a branch
 # calling an unimported name passed the whole suite and the gate, and failed
 # every clock-stopped turn live for ten hours.
-RUN pip install --no-cache-dir "pytest>=8.0.0" "pytest-asyncio>=0.23.0" "ruff>=0.4.0"
+# pytest-xdist runs the routing gate's five suites at once. See the
+# distribution note in scripts/gate.sh for why it is by file and not by
+# test.
+RUN pip install --no-cache-dir "pytest>=8.0.0" "pytest-asyncio>=0.23.0" \
+    "pytest-xdist>=3.5.0" "ruff>=0.4.0"
 
 # `runtime` is LAST on purpose. BuildKit's default target is the final stage and
 # it does not build stages that target does not depend on, so every `build: .`
