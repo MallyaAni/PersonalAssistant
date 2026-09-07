@@ -83,3 +83,45 @@ async def test_a_drifted_query_keeps_the_verdict_and_names_the_town(llm, questio
         if any(town in place.casefold() for place in verdict.foreign)
     )
     assert named >= 2, (question, drifted, [verdict.foreign for verdict in verdicts])
+
+
+# The city that contains where they are is where they are.
+#
+# 2026-09-07: told the person is in "Courthouse, Virginia" - which is what the
+# deployment passes, label and region joined - the judgement named "Arlington"
+# foreign on "events Arlington Virginia tomorrow". Arlington is the city
+# Courthouse is a neighbourhood of. The caller strips whatever is named, so a
+# correct local query lost its own city and searched the whole state: the
+# guard that exists to keep a search local was making it less local. Measured
+# 3/3 foreign before the prompt said containing places are not foreign, 0/3
+# after.
+_NEIGHBOURHOOD = "Courthouse, Virginia"
+
+
+async def test_the_city_that_contains_their_neighbourhood_is_not_foreign(llm):
+    planner = SearchPlanner(llm)
+    named = [
+        any("arlington" in place.casefold() for place in
+            planner.place_judgement(
+                "whats going on in the area tomorrow?",
+                "events Arlington Virginia tomorrow",
+                _NEIGHBOURHOOD,
+            ).foreign)
+        for _ in range(3)
+    ]
+    assert sum(named) == 0, named
+
+
+async def test_a_genuinely_distant_place_is_still_foreign_from_a_neighbourhood(llm):
+    # The other half: the exemption must not swallow real drift.
+    planner = SearchPlanner(llm)
+    named = [
+        any("napa" in place.casefold() for place in
+            planner.place_judgement(
+                "whats going on in the area tomorrow?",
+                "tomorrow events Napa Valley September 7",
+                _NEIGHBOURHOOD,
+            ).foreign)
+        for _ in range(3)
+    ]
+    assert sum(named) >= 2, named

@@ -169,10 +169,28 @@ class SearchPlanner:
             if likes
             else ""
         )
+        # Composed at zero, not sampled.
+        #
+        # An omitted temperature is 1.0 on this deployment with top_p 1.0 and
+        # top_k 0 - the whole tail reachable on every token, because the server
+        # runs --generation-config vllm and falls through to vLLM's own
+        # defaults. Measured 2026-09-07 over 64 composes per arm: at the
+        # default, 6 named a place that was in neither the question nor the
+        # history (San Francisco and Berkeley for a person in Virginia,
+        # "Arlington TX" for one who had said Arlington, London for a weather
+        # question naming nowhere); at 0.0, none did in 64. That is the defect
+        # that put a person in Arlington in front of a Napa Valley listing.
+        #
+        # A query is a decision, not prose - the same correction already made
+        # for chat_with_tools in backend/core/llm.py, where leaving it unset
+        # made one unchanged request alternate between three different tools.
+        # refine() and another_angle() keep sampling on purpose: their whole
+        # job is to try a different angle when the first one found nothing.
         return self._ask(
             self._dated(_COMPOSE),
             f"{asked}Their message: {question}{about}",
             "compose a search query",
+            temperature=0.0,
         )
 
     # A better query when the results fall short, or nothing when they do not.
@@ -405,7 +423,9 @@ class SearchPlanner:
                 foreign.append(text)
         return PlaceJudgement(bound, tuple(foreign))
 
-    def _ask(self, system: str, user: str, what: str) -> str:
+    def _ask(
+        self, system: str, user: str, what: str, temperature: float | None = None
+    ) -> str:
         try:
             reply = self.llm.chat(
                 [
@@ -413,6 +433,8 @@ class SearchPlanner:
                     {"role": "user", "content": user},
                 ],
                 200,
+                None,
+                temperature,
             )
         except Exception:
             logger.warning("Could not %s", what, exc_info=True)

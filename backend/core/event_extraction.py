@@ -51,6 +51,10 @@ _MAX_TOKENS = 2_000
 # that one event. The search already bounds a result at SEARCH_RESULT_CHARS
 # (2,500), so reading it all costs at most ten results of that.
 _CONTENT_CHARS = 2_500
+# How long one extraction attempt may take. Below the provider's own 120s, so
+# a slow call leaves the turn time to retry small and still answer; the
+# incident that set this spent the whole 120 and returned nothing.
+_EXTRACTION_SECONDS = 45.0
 _WHAT_WORDS = 24
 
 _WEEKDAYS = {
@@ -157,6 +161,13 @@ class Extraction:
     undated: int = 0
     opening_hours: int = 0
     unsourced: int = 0
+    # Whether the call itself failed, as against a page with nothing datable
+    # on it. The two produced the same empty Extraction until 2026-09-07,
+    # when a 120-second timeout was logged as "typed 0 events (0 dropped)" and
+    # the turn fell back to the model writing the listing - with no typed
+    # events, the distance filter had nothing to filter and Napa Valley was
+    # offered to somebody in Arlington.
+    failed: bool = False
 
     @property
     def dropped(self) -> int:
@@ -177,23 +188,49 @@ async def extract_events(
     if not usable or llm is None:
         return Extraction()
     moment = now or datetime.now(UTC)
-    listing = "\n\n".join(
-        f"[{index}] {str(item.get('title') or '')[:200]}\n"
-        f"{str(item.get('content') or '')[:_CONTENT_CHARS]}"
-        for index, item in enumerate(usable, start=1)
-    )
-    try:
+    # Bounded, and retried once on half the pages.
+    #
+    # The call inherits the provider's 120-second read timeout, and on a model
+    # shared with every other caller a ten-page payload can exceed it - which
+    # costs the turn two full minutes and then yields nothing. A shorter bound
+    # spends less before falling back, and the retry is worth having because
+    # the failure is one of size rather than of content: the same pages, fewer
+    # of them, usually answer.
+    async def attempt(pages: list[dict[str, Any]], seconds: float) -> Any:
+        body = "\n\n".join(
+            f"[{index}] {str(item.get('title') or '')[:200]}\n"
+            f"{str(item.get('content') or '')[:_CONTENT_CHARS]}"
+            for index, item in enumerate(pages, start=1)
+        )
         messages = [
             {"role": "system", "content": load("search/events")},
             {
                 "role": "user",
-                "content": f"Today: {moment.strftime('%A %Y-%m-%d')}\n\nResults:\n\n{listing}",
+                "content": f"Today: {moment.strftime('%A %Y-%m-%d')}\n\nResults:\n\n{body}",
             },
         ]
-        answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0)
+        return await asyncio.wait_for(
+            asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0), seconds
+        )
+
+    try:
+        answer = await attempt(usable, _EXTRACTION_SECONDS)
     except Exception:
-        logger.warning("Event extraction call failed; keeping the prose listing", exc_info=True)
-        return Extraction()
+        half = usable[: max(1, len(usable) // 2)]
+        logger.warning(
+            "Event extraction did not answer in %.0fs; retrying on %d of %d results",
+            _EXTRACTION_SECONDS,
+            len(half),
+            len(usable),
+        )
+        try:
+            answer = await attempt(half, _EXTRACTION_SECONDS)
+            usable = half
+        except Exception:
+            logger.warning(
+                "Event extraction call failed; keeping the prose listing", exc_info=True
+            )
+            return Extraction(failed=True)
     found = build_extraction(_parse(answer), usable, moment)
     # Which events exist is now settled, and only then is the reader mentioned.
     # Measured on the real model 2026-08-29: told about the reader during

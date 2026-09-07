@@ -257,3 +257,43 @@ async def test_a_followup_query_drops_the_previous_answers_town(llm):
     lowered = final.casefold()
     assert "colonial heights" not in lowered, (composed, final)
     assert "courthouse" in lowered, (composed, final)
+
+
+# A composed query is a decision, so it is composed at temperature zero.
+#
+# 2026-09-07: an omitted temperature is 1.0 on this deployment, with top_p 1.0
+# and top_k 0 - the whole tail reachable on every token. Measured over 64
+# composes per arm, the default named a place present in neither the question
+# nor the history 6 times; at 0.0 it did so 0 times in 64. One of those was
+# "Napa Valley" for a person in Arlington, which reached them as a listing of
+# Calistoga events described as nearby.
+#
+# The property is the absence of an invented place, not a fixed string: the
+# query may be worded any way at all as long as it does not introduce a town
+# nobody mentioned.
+_ELSEWHERE = (
+    "napa", "calistoga", "san francisco", "berkeley", "portland", "austin",
+    "london", "new york", "seattle", "chicago", "los angeles", "boston",
+)
+
+_ROOM = [
+    {"role": "user", "content": "try again"},
+    {"role": "assistant", "content": "What are we trying again? Line dancing was the last thread."},
+]
+
+
+@pytest.mark.parametrize(
+    ("question", "history"),
+    [
+        ("whats going on in the area tomorrow?", _ROOM),
+        ("what's on this weekend?", []),
+        ("is it going to rain tomorrow", []),
+        ("where should we eat tonight?", _ROOM),
+    ],
+)
+async def test_compose_never_invents_a_town(llm, question, history):
+    planner = SearchPlanner(llm)
+    for _ in range(3):
+        composed = planner.compose(question, history, ()).casefold()
+        invented = [town for town in _ELSEWHERE if town in composed]
+        assert not invented, (question, composed, invented)
