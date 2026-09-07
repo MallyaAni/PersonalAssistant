@@ -2,6 +2,47 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - Should the analysts be weighted equally? Measured
+
+The desk sums its analysts' convictions at equal weight, rotation at half, and
+nothing had measured that. The natural suggestion was a network that learns
+the weights; the networks tried here could not beat the rule, and the reason
+was sample size. Five weights are not thousands, so `market_weights` fits a
+five-weight linear combiner walk-forward with the horizon purged, shrunk toward
+the equal weights it replaces - infinite shrinkage is the desk, none is least
+squares - and prints the fitted weights per fold so a sign that flips is seen
+as noise.
+
+| horizon 20 | rank IC | t | net Sharpe |
+|---|---|---|---|
+| equal weights (the desk) | 0.0526 | 3.30 | 1.03 |
+| fitted, shrink 1 | 0.0536 | 3.59 | 1.08 |
+| fitted, least squares | 0.0382 | 2.53 | 0.51 |
+
+| horizon 60 | rank IC | t | net Sharpe |
+|---|---|---|---|
+| equal weights (the desk) | 0.0526 | 1.81 | 0.65 |
+| fitted, shrink 1 | 0.0631 | 2.25 | 0.78 |
+| fitted, least squares | 0.0402 | 1.39 | 0.54 |
+
+The data wants unequal weights and wants them stably - every fold agrees on
+every sign, spread a few hundredths: value 0.60, fundamental 0.50, sentiment
+0.42, technical 0.38, rotation 0.30, the ordering the analysts' individual
+measurements already gave. At the desk's horizon the gain is inside the noise;
+at sixty sessions it is not.
+
+The row that matters is least squares. Five free parameters lose to equal
+weights at both horizons, and by a lot. That is the sample-size argument made
+concrete: what wins on this data is the rule plus a nudge it can justify, not
+a fit, which is why nothing with more parameters has beaten it either.
+
+The weights are not changed. Choosing the shrinkage by reading these numbers is
+itself a fit, and the gain where the book trades is a thousandth of rank IC.
+The evidence for tilting toward value and away from the tape is recorded in
+the module; the forward paper record decides whether to act on it.
+
+Diagram impact: NONE - a research CLI.
+
 ## 2026-09-07 - The intraday experiment corrected and rerun; releases kept as text
 
 **Four verified defects in the intraday run below, fixed and rerun.** A review

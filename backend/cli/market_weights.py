@@ -34,7 +34,44 @@ across folds is seen for what it is - noise - rather than adopted.
 
 Results
 -------
-Recorded in the changelog for the run, and copied here once known.
+Seventeen folds at twenty sessions, sixteen at sixty, 750 training
+sessions each, a five-session embargo. `shrink` is in units of the data's
+own scale; 100 is nearly the desk, 0 is least squares.
+
+  horizon 20                  rank IC     t   net Sharpe
+  equal weights (the desk)     0.0526  3.30   1.03
+  fitted, shrink 100           0.0528  3.31   1.07
+  fitted, shrink 10            0.0532  3.36   1.09
+  fitted, shrink 1             0.0536  3.59   1.08
+  fitted, shrink 0             0.0382  2.53   0.51
+
+  horizon 60
+  equal weights (the desk)     0.0526  1.81   0.65
+  fitted, shrink 100           0.0531  1.83   0.67
+  fitted, shrink 10            0.0544  1.90   0.67
+  fitted, shrink 1             0.0631  2.25   0.78
+  fitted, shrink 0             0.0402  1.39   0.54
+
+The data wants unequal weights and wants them stably. At shrink 1 every
+fold agrees on every sign and the spread across folds is a few hundredths:
+value 0.60, fundamental 0.50, sentiment 0.42, technical 0.38, rotation
+0.30 - the same ordering the analysts' individual measurements gave. At
+the desk's own horizon the gain is inside the noise, 0.0526 to 0.0536. At
+sixty sessions it is not: 0.0526 to 0.0631 and net Sharpe 0.65 to 0.78.
+
+The row that matters is the last in each table. Least squares - five free
+parameters, nothing more - loses to equal weights at both horizons, and
+by a lot: 0.0382 against 0.0526 at twenty. Five parameters overfit this
+sample. That is the sample-size argument made concrete, and it is the
+reason no network over these same inputs has beaten the rule: what wins
+is the rule plus a nudge the data can justify, not a fit.
+
+The weights are not changed on this. Choosing the shrinkage by reading
+these out-of-sample numbers is itself a fit, and the gain at the horizon
+the book trades on is one thousandth of rank IC. The evidence for
+reweighting toward value and away from the tape is real and is recorded;
+the forward paper record is the place to see whether the longer horizon's
+gain is worth acting on.
 """
 
 import argparse
