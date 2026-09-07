@@ -71,6 +71,23 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   )
   const briefs = latest.briefs ?? {}
 
+  // Two names a hundredth of a point apart are not first and second, they
+  // are tied, and a sorted list says otherwise. The band is 2% of the
+  // book's own score range rather than a fixed number, because the score
+  // is a sum of convictions with no natural unit and its spread changes
+  // with the day. On a recent session the top two were 0.013 apart and
+  // the first to fifth were 1.205 apart: one of those gaps means
+  // something and the other does not.
+  const scores = grades.map(([, g]) => g.score)
+  const spread = scores.length > 1 ? scores[0] - scores[scores.length - 1] : 0
+  const tieBand = spread * 0.02
+  const tiedWithAbove = grades.map(([, g], i) =>
+    i > 0 && grades[i - 1][1].score - g.score <= tieBand,
+  )
+  // Where each held name sits in that ranking, so the book can say why the
+  // desk's best-liked name can be its smallest position.
+  const rankOf = new Map(grades.map(([ticker], i) => [ticker, i + 1]))
+
   return (
     <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
@@ -202,10 +219,17 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
         <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">The book</h3>
+        <p className="mb-2 text-xs text-[#6e6e73]">
+          Rank is where the name sits in the desk&rsquo;s conviction ordering; weight is
+          what it actually holds. They disagree on purpose &mdash; a name is sized by the
+          inverse of its volatility, so the desk&rsquo;s best-liked name can be its
+          smallest position when it is also its wildest.
+        </p>
         <table className="w-full text-sm">
           <thead className="text-left text-[#6e6e73]">
             <tr>
               <th className="py-1">Name</th>
+              <th>Rank</th>
               <th>Grade</th>
               <th>Weight</th>
               <th>Volatility</th>
@@ -215,13 +239,18 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             {latest.book.map((row) => (
               <tr key={row.ticker} className="border-t border-black/[0.05]">
                 <td className="py-1 font-medium">{row.ticker}</td>
+                <td className="font-mono text-xs text-[#6e6e73]">
+                  {rankOf.get(row.ticker) ?? '—'}
+                </td>
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade] ?? ''}`}>
                     {row.grade}
                   </span>
                 </td>
                 <td>{pct(row.weight)}</td>
-                <td>{pct(row.volatility)}</td>
+                <td className={row.volatility >= 1 ? 'text-[#b42318]' : undefined}>
+                  {pct(row.volatility)}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -237,20 +266,27 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
               <th className="py-1">Name</th>
               <th>Side</th>
               <th>Grade</th>
+              <th>Conviction</th>
               <th>F</th>
               <th>T</th>
               <th>S</th>
               <th>R</th>
-              <th>Brief</th>
+              <th>Why</th>
             </tr>
           </thead>
           <tbody>
-            {grades.map(([ticker, g]) => (
+            {grades.map(([ticker, g], i) => (
               <tr key={ticker} className="border-t border-black/[0.05] align-top">
                 <td className="py-1 font-medium">{ticker}</td>
                 <td className="text-[#6e6e73]">{g.side}</td>
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[g.grade] ?? ''}`}>{g.grade}</span>
+                </td>
+                <td className="whitespace-nowrap font-mono text-xs">
+                  {g.score.toFixed(2)}
+                  {tiedWithAbove[i] && (
+                    <span className="ml-1 text-[#6e6e73]" title="too close to the name above to call it a difference">tied</span>
+                  )}
                 </td>
                 {(['fundamental', 'technical', 'sentiment', 'rotation'] as const).map((k) => (
                   <td key={k} className="font-mono">{STANCE_MARK[g.stances[k] ?? 0]}</td>
