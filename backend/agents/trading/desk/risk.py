@@ -104,9 +104,7 @@ def desk_targets(
     for position in positions:
         column = panel.index(position.ticker)
         letter = GRADES[3 - int(graded_today[column])]
-        targets[column] = (
-            position.weight * SIZE_MULTIPLIER[letter] * regime.exposure
-        )
+        targets[column] = position.weight * SIZE_MULTIPLIER[letter] * regime.exposure
     if regime.tightening:
         targets = _steepen_weights(targets, panel, scaled, config.name_cap)
     return positions, targets
