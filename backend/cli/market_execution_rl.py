@@ -57,8 +57,10 @@ scored by policies that never saw it. Two populations. Every book name
 on every clean session, both sides, is the general answer. The desk's
 own orders - the positions the full-rule simulation opened and closed,
 on the sessions it filled them - is the answer that matters, with fewer
-observations. The t statistic clusters by session, since every order on
-a day shares that day's tape.
+observations; the rule re-decided every session gives every day a name
+would enter or leave the book, the same kind of order many times over.
+The t statistic clusters by session, since every order on a day shares
+that day's tape.
 
 What this cannot claim, written before the result: intraday fills are
 modelled at a bar's typical price, which a small market order gets in a
@@ -516,14 +518,16 @@ def _table(title, schedules: dict, rel, days, cost: float) -> None:
 
 
 # The desk's own orders from the full-rule simulation: a buy on the
-# session a position opened, a sell on the one it closed.
-def _desk_orders(data_dir: str) -> set[tuple[str, str, int]]:
-    from backend.agents.trading.desk import desk as trading_desk
+# session a position opened, a sell on the one it closed. At the desk's
+# own cadence that is a few hundred orders; re-decided every session it
+# is every day a name would enter or leave the book, the same kind of
+# order many times over.
+def _desk_orders(report, rebalance: int) -> set[tuple[str, str, int]]:
     from backend.agents.trading.desk import simulate
-    from backend.market.store import MarketStore
 
-    report = trading_desk.run(MarketStore(data_dir))
-    result = simulate.run(report, since=date(2021, 6, 1), use_exits=False)
+    result = simulate.run(
+        report, since=date(2021, 6, 1), use_exits=False, rebalance=rebalance
+    )
     out = set()
     for trade in result.trades:
         out.add((trade.ticker, str(trade.opened), 1))
@@ -533,7 +537,9 @@ def _desk_orders(data_dir: str) -> set[tuple[str, str, int]]:
 
 
 # Score every schedule on the desk's orders only, each on its own side.
-def _desk_table(orders: Orders, test, schedules, desk: set, cost: float) -> None:
+def _desk_table(
+    orders: Orders, test, schedules, desk: set, cost: float, title: str
+) -> None:
     keys = [
         (t, str(d), s)
         for t, d in zip(orders.tickers[test], orders.days[test], strict=True)
@@ -542,14 +548,14 @@ def _desk_table(orders: Orders, test, schedules, desk: set, cost: float) -> None
     side = np.array([k[2] for k in keys], dtype=float)
     keep = np.array([k in desk for k in keys])
     if keep.sum() < 20:
-        print(f"\nthe desk's own orders: {int(keep.sum())} matched, too few to score")
+        print(f"\n{title}: {int(keep.sum())} matched, too few to score")
         return
     rows = np.repeat(np.arange(int(test.sum())), 2)[keep]
     side = side[keep]
     rel = orders.rel[test][rows]
     days = orders.days[test][rows]
     matched, sessions = int(keep.sum()), len(np.unique(days))
-    print(f"\nthe desk's own orders: {matched:,} over {sessions:,} sessions")
+    print(f"\n{title}: {matched:,} over {sessions:,} sessions")
     print(
         f"{'schedule':26} {'all bps':>9} {'t':>7} {'buys bps':>9} {'t':>7} "
         f"{'sells bps':>10} {'t':>7}"
@@ -577,7 +583,14 @@ def main() -> None:
         f"{len(orders.rel):,} order-sessions, {len(set(orders.tickers))} names, "
         f"{orders.days.min()} to {orders.days.max()}, device {DEVICE}"
     )
-    desk = None if args.skip_desk else _desk_orders(args.data_dir)
+    desks = {}
+    if not args.skip_desk:
+        from backend.agents.trading.desk import desk as trading_desk
+        from backend.market.store import MarketStore
+
+        report = trading_desk.run(MarketStore(args.data_dir))
+        desks["the desk's own orders"] = _desk_orders(report, 20)
+        desks["the desk re-decided every session"] = _desk_orders(report, 1)
     x_all = torch.tensor(orders.x, device=DEVICE)
     rel_all = torch.tensor(orders.rel, device=DEVICE)
     fixed = _fixed(orders)
@@ -618,8 +631,8 @@ def main() -> None:
             orders.days[test],
             args.cost,
         )
-        if desk is not None:
-            _desk_table(orders, test, schedules, desk, args.cost)
+        for title, desk in desks.items():
+            _desk_table(orders, test, schedules, desk, args.cost, title)
         for name, pair in schedules.items():
             pooled.setdefault(name, []).append(pair)
         pooled_days.append(orders.days[test])
@@ -640,8 +653,10 @@ def main() -> None:
             np.concatenate(pooled_days),
             args.cost,
         )
-        if desk is not None:
-            _desk_table(orders, np.any(pooled_test, axis=0), joined, desk, args.cost)
+        for title, desk in desks.items():
+            _desk_table(
+                orders, np.any(pooled_test, axis=0), joined, desk, args.cost, title
+            )
 
 
 if __name__ == "__main__":

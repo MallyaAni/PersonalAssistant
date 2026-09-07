@@ -57,7 +57,7 @@ import torch
 from torch import nn
 
 from backend.agents.trading.desk import desk as trading_desk
-from backend.agents.trading.desk import risk
+from backend.agents.trading.desk import risk, simulate
 from backend.cli.market_allocation_rl import (
     DEVICE,
     MIN_TRAIN,
@@ -85,6 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Offline RL over the desk's history.")
     parser.add_argument("--candidates", type=int, default=CANDIDATES)
     parser.add_argument("--seeds", type=int, default=3)
+    parser.add_argument("--skip-simulation", action="store_true")
     parser.add_argument("--data-dir", default="data/market")
     return parser
 
@@ -232,6 +233,17 @@ def _capped(problem: Problem, book: np.ndarray) -> np.ndarray:
     return limited[problem.cols]
 
 
+# The learned book kept to as many names as the rule holds - its largest
+# ones, renormalised to the same gross - so its choice of names is
+# measured apart from the diffuse weighting a softmax gives everything.
+def _sparse(book: np.ndarray, count: int) -> np.ndarray:
+    count = max(int(count), 1)
+    out = np.zeros_like(book)
+    keep = np.argsort(book)[-count:]
+    out[keep] = book[keep]
+    return out / max(float(out.sum()), 1e-12) * float(book.sum())
+
+
 # How concentrated a book is: its largest weight and its effective number
 # of names, 1 / sum of squared shares.
 def _concentration(book: np.ndarray) -> tuple[float, float]:
@@ -240,7 +252,7 @@ def _concentration(book: np.ndarray) -> tuple[float, float]:
 
 
 # One fold: train on the purged history, act on the test sessions.
-def _fold(problem: Problem, train, test, args, out: dict, shape_of: dict) -> None:
+def _fold(problem, train, test, args, out, shape_of, chosen, chosen_sparse, leans):
     states, books, rewards, owner = _log(problem, train, args.candidates, seed=0)
     critics = [
         _train_critic(states, books, rewards, owner, s) for s in range(args.seeds)
@@ -265,16 +277,25 @@ def _fold(problem: Problem, train, test, args, out: dict, shape_of: dict) -> Non
                 policies
             )
             learned = (shape * gross).cpu().numpy()
+            capped = _capped(problem, learned)
+            sparse = _capped(
+                problem, _sparse(learned, int((problem.rule[t] > 0).sum()))
+            )
             books = {
                 "the desk's rule": problem.rule[t],
                 "equal weight, same names": family[1],
+                "equal weight, whole book": np.full(len(learned), gross / len(learned)),
                 "critic-selected book": picked,
                 "advantage-weighted policy": learned,
-                "advantage-weighted, capped": _capped(problem, learned),
+                "advantage-weighted, capped": capped,
+                "advantage-weighted, top names": sparse,
             }
             for name, book in books.items():
                 out[name].append(_reward(problem, book, t))
                 shape_of[name].append(_concentration(book))
+            chosen[t] = capped
+            chosen_sparse[t] = sparse
+            leans.append(_leans(problem, capped, t))
             out["best logged candidate (hindsight)"].append(
                 max(_reward(problem, b, t) for b in family)
             )
@@ -299,6 +320,60 @@ def _summarise(name: str, values, rule) -> None:
     print(line)
 
 
+# Rank correlation of a book's weights with each per-name input and with
+# the rule's weight on the same session: what the policy leans on.
+def _leans(problem: Problem, book: np.ndarray, t: int) -> np.ndarray:
+    from scipy.stats import spearmanr
+
+    columns = [problem.states[t][:, i] for i in range(problem.states.shape[-1])]
+    columns.append(problem.rule[t])
+    return np.array([spearmanr(book, c).statistic for c in columns])
+
+
+LEAN_NAMES = ("fundamental", "technical", "sentiment", "value", "log vol", "the rule")
+
+
+# The book-level test: the learned allocation behind the desk's own
+# full-rule simulation - the same fills, costs and holding rules - from
+# the first test session on, beside the rule and the whole-book null.
+def _simulated(report, problem: Problem, chosen: dict, chosen_sparse: dict) -> None:
+    first = min(chosen)
+    since = problem.dates[first].astype("datetime64[D]").astype(object)
+    width = len(problem.panel.tickers)
+
+    def from_books(books):
+        def allocator(report_, panel_, config, t):
+            if t in books:
+                full = np.zeros(width)
+                full[problem.cols] = books[t]
+                return full
+            return simulate._targets(report_, panel_, config, t)
+
+        return allocator
+
+    def whole_book(report_, panel_, config, t):
+        full = np.zeros(width)
+        full[problem.cols] = float(problem.rule[t].sum()) / len(problem.cols)
+        return full
+
+    print(
+        f"\nthe book from {since}, full rules: "
+        f"{'annual':>8} {'vol':>7} {'Sharpe':>7} {'maxDD':>8} {'total':>9}"
+    )
+    for name, allocator in (
+        ("the desk's rule", None),
+        ("equal weight, whole book", whole_book),
+        ("advantage-weighted, capped", from_books(chosen)),
+        ("advantage-weighted, top names", from_books(chosen_sparse)),
+    ):
+        result = simulate.run(report, since=since, use_exits=False, allocator=allocator)
+        s = result.stats()
+        print(
+            f"{name:36} {s['annual']:+8.1%} {s['volatility']:7.1%} {s['sharpe']:7.2f} "
+            f"{s['drawdown']:8.1%} {s['total']:+9.1%}"
+        )
+
+
 def main() -> None:
     """Entry point."""
     args = build_parser().parse_args()
@@ -312,13 +387,18 @@ def main() -> None:
         for k in (
             "the desk's rule",
             "equal weight, same names",
+            "equal weight, whole book",
             "critic-selected book",
             "advantage-weighted policy",
             "advantage-weighted, capped",
+            "advantage-weighted, top names",
             "best logged candidate (hindsight)",
         )
     }
     shape_of: dict[str, list] = {k: [] for k in out}
+    chosen: dict[int, np.ndarray] = {}
+    chosen_sparse: dict[int, np.ndarray] = {}
+    leans: list[np.ndarray] = []
     names, folds = problem.rule.shape[1], len(cuts)
     print(f"{names} names, {folds} folds, {args.candidates} candidates per session")
     for number, cut in enumerate(cuts, start=1):
@@ -326,7 +406,7 @@ def main() -> None:
         test = [t for t in range(cut, min(cut + REFIT, rows - REBALANCE)) if can_run[t]]
         if len(train) < 100 or not test:
             continue
-        _fold(problem, train, test, args, out, shape_of)
+        _fold(problem, train, test, args, out, shape_of, chosen, chosen_sparse, leans)
         print(f"  fold {number}/{len(cuts)} to {problem.dates[cut]}", flush=True)
     print(f"\n{'policy':36} {'mean reward':>10} {'sd':>8} {'n':>6}")
     for name, values in out.items():
@@ -336,6 +416,17 @@ def main() -> None:
         if shapes:
             largest, effective = np.mean(shapes, axis=0)
             print(f"{name:36} {largest:14.3f} {effective:16.1f}")
+    if leans:
+        mean = np.nanmean(np.array(leans), axis=0)
+        print(
+            "\nthe learned book's rank correlation with each input, mean over sessions:"
+        )
+        print(
+            "  "
+            + "  ".join(f"{n} {v:+.2f}" for n, v in zip(LEAN_NAMES, mean, strict=True))
+        )
+    if chosen and not args.skip_simulation:
+        _simulated(report, problem, chosen, chosen_sparse)
 
 
 if __name__ == "__main__":
