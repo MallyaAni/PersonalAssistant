@@ -88,7 +88,7 @@ class Sized:
 # Equal weight on the same names scored the same as this whole function -
 # inverse volatility, caps, grade multipliers and all. And a volatility
 # forecast 15.5% more accurate than the one used here changed the book's
-# Sharpe from 1.85 to 1.85 (see `sizing.realised_volatility`).
+# Sharpe from 1.85 to 1.82 (see `sizing.realised_volatility`).
 #
 # So the weighting is not where the risk-adjusted return is decided. That
 # does not make this function pointless: the caps bound what a single name

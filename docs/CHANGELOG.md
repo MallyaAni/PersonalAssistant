@@ -2,6 +2,44 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The daily experiments are commands now, and one was wrong
+
+The findings recorded above `sizing.realised_volatility` and `risk.desk_targets`
+came from scratch scripts that lived in a session's temporary directory. A
+reviewer asked that they be kept as reproducible scripts with their
+configuration and outputs, and that is what three new CLIs are:
+
+- `market_volatility families|fair|book` - the eleven-model volatility
+  comparison, the same network under three losses, and the forecast put behind
+  the desk's sizing in the full-rule simulator.
+- `market_allocation_rl` - the policy-gradient and cross-entropy agents choosing
+  the book's weights against the rule, equal weight beside them.
+- `market_xsect_net` - the four-step cross-sectional ladder with the ranking
+  loss, imitation first so a failure can be told from a bug.
+
+Each docstring carries the run's configuration and the recorded result.
+
+Making the volatility script a command exposed a defect in the original run.
+It stood the forecast in for `sizing.realised_volatility` by patching that
+module's attribute; the sizing inside `risk.desk_targets` reads the function
+by its imported name, and the simulator's two sites that read the attribute
+have no callers. The forecast never reached the book, and "Sharpe 1.85 to
+1.85" was two runs of the same thing. The command patches every site, and the
+rerun, twenty folds, the forecast on 148,596 name-sessions:
+
+| sizing volatility | annual | vol | Sharpe | max drawdown | total |
+|---|---|---|---|---|---|
+| trailing-60 (the desk's) | +31.8% | 17.2% | 1.85 | -19.0% | +389.6% |
+| the QLIKE network's forecast | +31.3% | 17.3% | 1.82 | -18.9% | +378.2% |
+
+The conclusion stands - a forecast 15.5% better by QLIKE does not improve the
+book, and the trailing window stays - and the figures in `sizing.py` and
+`risk.py` now say 1.82 rather than 1.85, with the reason. The two unreferenced
+simulator functions, `_engine_weights` and `_steepen`, are still there because
+their unit tests reference them; they are dead in the live path and duplicate
+`risk.desk_targets`, which is what the one-allocation change was meant to
+remove.
+
 ## 2026-09-07 - Should the analysts be weighted equally? Measured
 
 The desk sums its analysts' convictions at equal weight, rotation at half, and

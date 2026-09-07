@@ -230,8 +230,14 @@ class Position:
 #
 # Then it was put behind this function and the desk's own full-rule
 # simulation was run against it: same scores, grades, regime, costs and
-# constraints, only the volatility different. Sharpe 1.85 to 1.85, worst
-# drawdown -19.0% to -19.1%, 31.8% a year to 31.6%. Nothing.
+# constraints, only the volatility different. Sharpe 1.85 to 1.82, worst
+# drawdown -19.0% to -18.9%, 31.8% a year to 31.3%. Nothing gained.
+#
+# (The first run of that comparison recorded 1.85 to 1.85. Its stand-in
+# was patched onto this module's attribute, and the sizing inside
+# `risk.desk_targets` reads the function by its imported name, so the
+# forecast never reached the book; the figures above are from the rerun
+# in `backend.cli.market_volatility book`, which patches every site.)
 #
 # Not because the estimates agree - the cross-sectional rank correlation
 # between a sixty-session window and a twenty-session one is 0.854, and
