@@ -8,6 +8,11 @@ intraday experiment once had.
 """
 
 import numpy as np
+import pytest
+
+# The commands under test import torch at module level; the gate container
+# has none, and a research command is not what the gate is for.
+torch = pytest.importorskip("torch")
 
 from backend.cli import market_execution_rl as ex
 
