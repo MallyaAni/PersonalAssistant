@@ -22,7 +22,6 @@ file anyone can read.
 """
 
 import json
-import math
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -127,7 +126,15 @@ def plan(
             price = prices.get(symbol)
             if not price or price <= 0:
                 continue
-            target_qty = math.floor(targets.get(symbol, 0.0) * equity / price)
+            # Nearest whole share, not the floor. Market-on-open orders
+            # must be whole shares, and flooring always rounds toward
+            # holding less - which is worst exactly where it is least
+            # affordable. On a 100,000 book a 4.9% target in a 1,740 stock
+            # floors to 2 shares, 29% short of what was asked for, and the
+            # book came out 12% under its target gross with almost all of
+            # the miss in that one name. Rounding to nearest halves the
+            # error and does not bias it one way.
+            target_qty = round(targets.get(symbol, 0.0) * equity / price)
             delta = target_qty - int(held.get(symbol, 0))
             if abs(delta) * price < MIN_TRADE * equity:
                 continue

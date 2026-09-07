@@ -36,6 +36,31 @@ def test_first_plan_rebalances_and_is_idempotent():
     assert same is new
 
 
+# Whole shares are rounded to the nearest, not floored.
+#
+# Market-on-open orders must be whole shares, and flooring always rounds
+# toward holding less - which bites hardest where a share is expensive.
+# Measured on the real book: a 4.9% target in a 1,740 stock floored to 2
+# shares, 29% short of what was asked, and the book came out 12% under its
+# target gross with nearly all the miss in that one name.
+def test_share_counts_round_to_nearest_not_down():
+    orders, _new, _what = paper.plan(
+        "2026-09-07",
+        paper.PaperState(),
+        equity=100_000.0,
+        held={},
+        prices={"DEAR": 1740.0, "CHEAP": 52.0},
+        targets={"DEAR": 0.049, "CHEAP": 0.104},
+        grades={"DEAR": "A+", "CHEAP": "A+"},
+    )
+    counts = {o.symbol: o.qty for o in orders}
+    # 0.049 x 100,000 / 1,740 = 2.83 shares. Floor buys 2 and is 29% short;
+    # nearest buys 3 and is 6% over, which is less wrong.
+    assert counts["DEAR"] == 3
+    # A target that lands on a whole number is unaffected either way.
+    assert counts["CHEAP"] == 200
+
+
 # Between rebalances nothing trades except the exits the exit analyst names,
 # and the rebalance clock advances.
 def test_hold_then_exit_when_the_analyst_says_so():
