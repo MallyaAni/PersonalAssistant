@@ -73,13 +73,22 @@ def action_for(target: float, held: float) -> str:
     return "hold"
 
 
-# The plain-English headline for a name, or nothing where the report
-# cannot brief it (a bare report in a test has no evidence to write from).
-def _headline(report, ticker: str) -> str:
+# The plain-English headline and reason for a name, or nothing where the
+# report cannot brief it (a bare report in a test has no evidence).
+def _words(report, ticker: str, scale) -> tuple[str, str]:
     try:
-        return plainly.headline(report.brief(ticker))
+        view = report.brief(ticker)
+        return plainly.headline(view), plainly.reason(view, scale)
     except (AttributeError, KeyError, TypeError):
-        return ""
+        return "", ""
+
+
+# The book-relative scale the reasons are written against, once per board.
+def _scale(report):
+    try:
+        return plainly.spreads(report)
+    except (AttributeError, KeyError, TypeError):
+        return None
 
 
 # Build the board from the day's report, the targets and the holdings.
@@ -97,6 +106,7 @@ def build(
     ordered = sorted(in_book, key=lambda t: -float(report.scores[last, panel.index(t)]))
     rank = {t: i + 1 for i, t in enumerate(ordered)}
     reasons = reasons or {}
+    scale = _scale(report)
     rows = []
     for ticker in sorted(set(targets) | set(holdings)):
         if ticker not in report.sides:
@@ -107,14 +117,13 @@ def build(
         action = action_for(target, holding.weight)
         grade = report.graded.letter(last, column)
         votes = float(report.graded.votes[last, column])
-        sentiment = report.graded.stances.get("sentiment")
-        bullish = (
-            sentiment is not None and int(sentiment[last, column]) == grading.BULLISH
-        )
+        stances = {k: int(v[last, column]) for k, v in report.graded.stances.items()}
+        bullish = stances.get("sentiment") == grading.BULLISH
         highs = panel.high[max(0, last - HIGH_WINDOW + 1) : last + 1, column]
         with np.errstate(all="ignore"):
             high = float(np.nanmax(highs)) if np.isfinite(highs).any() else float("nan")
         close = float(panel.close[last, column])
+        headline, reason = _words(report, ticker, scale)
         rows.append(
             {
                 "ticker": ticker,
@@ -141,7 +150,9 @@ def build(
                     if np.isfinite(high)
                     else {}
                 ),
-                "why": reasons.get(ticker) or _headline(report, ticker),
+                "stances": stances,
+                "why": reasons.get(ticker) or headline,
+                "reason": reason,
             }
         )
     rows.sort(key=lambda r: (ORDER[r["action"]], -abs(r["delta_weight"]), r["ticker"]))

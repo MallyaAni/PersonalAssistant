@@ -1909,7 +1909,12 @@ export interface DeskAction {
   leaves_if: string;
   high_20: number;
   stops: Record<string, number>;
+  // The analysts' stances behind the grade (1 bullish, 0 neutral, -1
+  // bearish), the headline, and the plain-English reason written from the
+  // same evidence.
+  stances: Record<string, number>;
   why: string;
+  reason: string;
 }
 export interface DeskPaper {
   session: string;
@@ -1955,6 +1960,7 @@ export interface DeskPayload {
 export interface DeskQuote {
   symbol: string;
   last: number;
+  open: number;
   high: number;
   low: number;
   bar: string;

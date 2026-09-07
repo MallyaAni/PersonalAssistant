@@ -28,6 +28,7 @@ def test_bars_fold_into_last_high_and_low():
     )
     assert q is not None
     assert (q.last, q.high, q.low) == (45.8, 46.0, 43.5)
+    assert q.open == 44.0  # the session's first bar's open
     assert q.bar.startswith("2026-09-08T13:45")
     assert live_quotes.quote_from_bars("IREN", [], datetime.now(UTC)) is None
 

@@ -27,6 +27,7 @@ class Quote:
 
     symbol: str
     last: float
+    open: float  # the session's first bar's open
     high: float
     low: float
     bar: str  # the last bar's start, ISO
@@ -47,6 +48,7 @@ def quote_from_bars(symbol: str, bars: list, fetched_at: datetime) -> Quote | No
     return Quote(
         symbol=symbol,
         last=float(last.close),
+        open=float(bars[0].open),
         high=float(max(b.high for b in bars)),
         low=float(min(b.low for b in bars)),
         bar=(
