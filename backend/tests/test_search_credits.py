@@ -77,11 +77,23 @@ async def test_one_credit_left_does_not_fund_a_two_credit_search() -> None:
 #
 # Neither harness asserts anything that reads the extra depth or the later
 # rounds: they check which tool ran and how the answer is shaped.
-def test_a_harness_search_asks_for_the_cheap_depth():
+def _tavily(depth: str):
     from backend.search.tavily import TavilySearchProvider
+
+    return TavilySearchProvider(
+        base_url="https://api.tavily.com",
+        api_key="k",
+        max_results=5,
+        timeout_seconds=10.0,
+        max_content_chars=2000,
+        search_depth=depth,
+    )
+
+
+def test_a_harness_search_asks_for_the_cheap_depth():
     from backend.search.types import frugal_search
 
-    provider = TavilySearchProvider(api_key="k", search_depth="advanced")
+    provider = _tavily("advanced")
     token = frugal_search.set(True)
     try:
         assert provider._payload_depth() == "basic"
@@ -91,6 +103,4 @@ def test_a_harness_search_asks_for_the_cheap_depth():
 
 
 def test_a_person_keeps_the_depth_the_deployment_configured():
-    from backend.search.tavily import TavilySearchProvider
-
-    assert TavilySearchProvider(api_key="k", search_depth="advanced")._payload_depth() == "advanced"
+    assert _tavily("advanced")._payload_depth() == "advanced"
