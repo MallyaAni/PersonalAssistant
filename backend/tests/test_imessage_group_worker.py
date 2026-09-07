@@ -878,22 +878,24 @@ async def test_a_burst_flushed_by_the_cap_still_knows_what_was_quoted(monkeypatc
 
 @pytest.mark.asyncio
 async def test_a_quote_on_the_first_fragment_survives_a_bare_second(monkeypatch):
-    # The reply opened the burst and the fragment that completed it carries
-    # no quote of its own. The burst is still about what was long-pressed.
+    # The reply opened the burst and the fragment that completed it carries no
+    # quote of its own - it names Scout instead. The burst is still about what
+    # was long-pressed. (An unaddressed fragment cannot appear here: in a room
+    # it is observed rather than collected, so both fragments are addressed.)
     quoted = "Scout whats going on today to do in the area for us?"
     first = _room_message("g1", "5550100", "this", addressed_by="reply")
     first["reply_to_guid"] = "anchor-1"
     first["reply_to_text"] = quoted
     bridge = _Bridge({"messages": [first], "cursor": 5})
     worker, conversed, _ = _worker(
-        bridge, monkeypatch, ACCOUNTS, {"this\nor tomorrow": "Here's both."}, group=GROUP,
+        bridge, monkeypatch, ACCOUNTS, {"this\nScout or tomorrow": "Here's both."}, group=GROUP,
         readiness=[{"complete": False, "needs_reply": True}, {"complete": True, "needs_reply": True}],
     )
     assert await worker.tick() == 0
     worker.invoke_tool.payload = {
-        "messages": [_room_message("g2", "5550100", "or tomorrow", addressed_by="")],
+        "messages": [_room_message("g2", "5550100", "Scout or tomorrow")],
         "cursor": 6,
     }
     assert await worker.tick() == 1
-    assert conversed[0]["text"] == "this\nor tomorrow"
+    assert conversed[0]["text"] == "this\nScout or tomorrow"
     assert conversed[0]["replying_to"] == quoted, conversed[0]
