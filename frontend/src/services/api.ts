@@ -1885,10 +1885,35 @@ export interface DeskRecord {
   book: { ticker: string; grade: string; weight: number; engine_weight: number; volatility: number; exposure: number }[];
   briefs: Record<string, DeskBrief>;
   paper: DeskPaper | null;
+  // Absent on records written before the board existed.
+  actions?: DeskAction[];
 }
 
+// One row of the action board: what to do in a name at the next open, how
+// much, and what would make the desk leave. Sizes are weights of equity so
+// the row scales to any account; stops are risk controls, not signals.
+export interface DeskAction {
+  ticker: string;
+  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold';
+  grade: string;
+  rank: number | null;
+  score: number;
+  target_weight: number;
+  current_weight: number;
+  delta_weight: number;
+  last_close: number;
+  entry_price: number | null;
+  entry: string;
+  until_rebalance: number;
+  grade_margin: number;
+  leaves_if: string;
+  high_20: number;
+  stops: Record<string, number>;
+  why: string;
+}
 export interface DeskPaper {
   session: string;
+  until_rebalance?: number;
   equity: number;
   cash: number;
   pl: number;

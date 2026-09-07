@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { getDesk, type DeskPayload } from '../../services/api'
+import { getDesk, type DeskAction, type DeskPayload } from '../../services/api'
 
 interface DeskPanelProps {
   userId: string
@@ -19,6 +19,37 @@ const GRADE_STYLE: Record<string, string> = {
 
 const STANCE_MARK: Record<number, string> = { 1: '+', 0: '·', [-1]: '−' }
 
+const ACTION_STYLE: Record<string, string> = {
+  buy: 'bg-[#e6f4ea] text-[#1e7a3a]',
+  add: 'bg-[#e6f4ea] text-[#1e7a3a]',
+  trim: 'bg-[#fff6e5] text-[#9a6200]',
+  sell: 'bg-[#fdecea] text-[#b42318]',
+  hold: 'bg-[#f5f5f7] text-[#6e6e73]',
+}
+
+// The equity the board sizes to. The paper account's by default; the
+// person's own once typed, remembered in this browser only.
+const EQUITY_KEY = 'desk.equity'
+const readEquity = (): number | null => {
+  try {
+    const raw = window.localStorage.getItem(EQUITY_KEY)
+    return raw ? Number(raw) : null
+  } catch {
+    return null
+  }
+}
+const writeEquity = (value: number) => {
+  try {
+    window.localStorage.setItem(EQUITY_KEY, String(value))
+  } catch {
+    // a private window; the value lives for the page only
+  }
+}
+
+// Shares for a weight at an equity and a price, to the nearest share.
+const shares = (weight: number, equity: number, price: number) =>
+  price > 0 ? Math.round((weight * equity) / price) : 0
+
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`
 const money = (value: number) =>
   value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
@@ -31,6 +62,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [openBrief, setOpenBrief] = useState<string | null>(null)
+  const [equity, setEquity] = useState<number | null>(readEquity())
 
   const load = async () => {
     try {
@@ -106,6 +138,18 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           <RefreshCw size={14} /> Refresh
         </button>
       </header>
+
+      {latest.actions && latest.actions.length > 0 && (
+        <ActionBoard
+          actions={latest.actions}
+          equity={equity ?? latest.paper?.equity ?? 100000}
+          onEquity={(value) => {
+            setEquity(value)
+            writeEquity(value)
+          }}
+          untilRebalance={latest.paper?.until_rebalance ?? latest.actions[0].until_rebalance}
+        />
+      )}
 
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
         <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Regime</h3>
@@ -324,6 +368,119 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         </table>
       </section>
     </div>
+  )
+}
+
+interface ActionBoardProps {
+  actions: DeskAction[]
+  equity: number
+  onEquity: (value: number) => void
+  untilRebalance: number
+}
+
+// What to do at the next open, most urgent first: sells and trims before
+// buys and adds, holds last. Every row carries the size at the equity
+// typed above, the entry, and the exit plan - the rebalance clock, how far
+// the grade sits above the line, and the stop levels off the twenty-session
+// high for a person managing their own tail.
+const ActionBoard = ({ actions, equity, onEquity, untilRebalance }: ActionBoardProps) => {
+  const trades = actions.filter((a) => a.action !== 'hold')
+  const holds = actions.filter((a) => a.action === 'hold')
+  const row = (a: DeskAction) => {
+    const qty = shares(Math.abs(a.delta_weight), equity, a.last_close)
+    const atRisk = a.grade_margin <= 0 && a.target_weight > 0
+    return (
+      <tr key={a.ticker} className="border-t border-black/[0.05] align-top">
+        <td className="py-1.5 font-medium">{a.ticker}</td>
+        <td>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[a.action] ?? ''}`}>
+            {a.action}
+          </span>
+        </td>
+        <td className="whitespace-nowrap">
+          {a.action === 'hold' ? (
+            <span>{pct(a.current_weight)}</span>
+          ) : (
+            <span>
+              <span className="font-medium">{qty.toLocaleString()} sh</span>{' '}
+              <span className="text-[#6e6e73]">
+                {pct(a.current_weight)} → {pct(a.target_weight)}
+              </span>
+            </span>
+          )}
+        </td>
+        <td className="whitespace-nowrap text-[#6e6e73]">
+          {a.action === 'hold' || a.action === 'sell' || a.action === 'trim' ? 'open' : 'open'} · last {money(a.last_close)}
+        </td>
+        <td className="whitespace-nowrap">
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[a.grade] ?? ''}`}>{a.grade}</span>
+          <span className="ml-1 font-mono text-xs text-[#6e6e73]">#{a.rank ?? '—'}</span>
+          {atRisk && (
+            <span className="ml-1 text-xs text-[#9a6200]" title="one bearish stance from losing its grade">at risk</span>
+          )}
+        </td>
+        <td className="whitespace-nowrap text-xs text-[#6e6e73]">
+          {a.target_weight > 0 ? (
+            <>
+              rebalance in {untilRebalance}
+              {a.stops['12'] !== undefined && (
+                <>
+                  {' '}· stop 12% {money(a.stops['12'])}
+                  <span title={`8% ${money(a.stops['8'])}, 20% ${money(a.stops['20'])}, off the 20-session high ${money(a.high_20)}`}>
+                    {' '}▾
+                  </span>
+                </>
+              )}
+            </>
+          ) : (
+            'out of the book'
+          )}
+        </td>
+        <td className="text-xs text-[#6e6e73]">{a.why}</td>
+      </tr>
+    )
+  }
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-3">
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Action board · next open</h3>
+        <label className="flex items-center gap-2 text-xs text-[#6e6e73]">
+          size to equity
+          <input
+            type="number"
+            min={0}
+            step={1000}
+            value={Math.round(equity)}
+            onChange={(e) => onEquity(Number(e.target.value) || 0)}
+            className="w-28 rounded-md border border-black/[0.12] px-2 py-1 text-right text-sm text-[#1d1d1f]"
+          />
+        </label>
+      </div>
+      <table className="w-full text-sm">
+        <thead className="text-left text-[#6e6e73]">
+          <tr>
+            <th className="py-1">Name</th>
+            <th>Do</th>
+            <th>Size</th>
+            <th>Entry</th>
+            <th>Grade</th>
+            <th>Exit plan</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          {trades.map(row)}
+          {holds.map(row)}
+        </tbody>
+      </table>
+      <p className="mt-2 text-xs text-[#6e6e73]">
+        Sizes are shares at the equity above, entered market-on-open: every later schedule measured
+        cost more. The desk&rsquo;s own exit is the rebalance, when a name that no longer earns its
+        grade leaves; the stops are risk controls off the twenty-session high, not signals &mdash;
+        after a sharp rise a 12% stop cut the worst tenth of outcomes from &minus;25% to &minus;16%
+        and the average from +9% to +4%.
+      </p>
+    </section>
   )
 }
 
