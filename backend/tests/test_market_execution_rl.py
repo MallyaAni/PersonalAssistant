@@ -14,7 +14,7 @@ import pytest
 # has none, and a research command is not what the gate is for.
 torch = pytest.importorskip("torch")
 
-from backend.cli import market_execution_rl as ex
+from backend.cli import market_execution_rl as ex  # noqa: E402
 
 
 def _session(n: int = 25, bars: int = 26, seed: int = 0):
