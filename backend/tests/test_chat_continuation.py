@@ -138,11 +138,37 @@ async def _make_run(user: str, lines: list[str]) -> dict[str, Any]:
         )
 
 
-async def _claim(user: str) -> dict[str, Any]:
-    async with AsyncSessionLocal() as db:
-        claimed = await AgentRunRepository(db).claim_next("chat-w", 60.0, kinds=(KIND,), user_id=user)
-    assert claimed is not None
-    return claimed
+# The gate runs against the same database the deployment serves from
+# (`POSTGRES_HOST=db` in the compose test service), and the running
+# `anios_backend` hosts a RunWorker that polls the same table. That worker
+# claims by kind and by nothing else - `claim_next(worker_id, lease,
+# kinds=WORLDS.keys())`, no `user_id` - and `chat_continuation` is one of
+# its worlds. So between a create that commits and a claim in a second
+# session, the live worker can take the run, and a claim scoped to this
+# test's own user then finds nothing. That is what failed a deploy on
+# 2026-09-06 with `assert None is not None`, and it fails at random rather
+# than never.
+#
+# The run cannot be created and claimed in one transaction because the
+# repository commits inside `create`. So a stolen run is replaced and the
+# race re-run: the live worker is not doing anything wrong, and this test
+# is not about winning against it.
+async def _claim(user: str, lines: list[str] | None = None) -> dict[str, Any]:
+    for _attempt in range(5):
+        async with AsyncSessionLocal() as db:
+            claimed = await AgentRunRepository(db).claim_next(
+                "chat-w", 60.0, kinds=(KIND,), user_id=user
+            )
+        if claimed is not None:
+            return claimed
+        # Only replace the run when the caller told us how to build it; a
+        # caller that did not is asserting about a run it already made.
+        assert lines is not None, (
+            "the run was claimed by another worker before this test could "
+            "claim it, and no lines were given to make a replacement"
+        )
+        await _make_run(user, lines)
+    raise AssertionError("a live worker claimed every run this test created")
 
 
 async def _clean(user: str) -> None:
@@ -161,7 +187,7 @@ async def test_a_continuation_carries_out_the_routers_steps_and_completes_when_i
     before = ["web search: ramen near me (3 results)"]
     try:
         await _make_run(user, before)
-        claimed = await _claim(user)
+        claimed = await _claim(user, before)
         assistant = ScriptedAssistant([
             _step(SearchAction(query="weather tonight", max_results=None)),
         ])
@@ -200,7 +226,7 @@ async def test_a_toolbox_read_is_within_the_chat_grant_and_a_toolbox_write_is_no
     user = _user()
     try:
         await _make_run(user, [])
-        claimed = await _claim(user)
+        claimed = await _claim(user, [])
         writing = ToolboxAction(plan=MCPToolPlan("notes", "append_note", {"text": "x"}, "fp"))
         assistant = ScriptedAssistant([
             _step(ToolboxAction(plan=MCPToolPlan("weather", "forecast", {"city": "Boston"}, "fp")), effect="read"),
@@ -225,7 +251,7 @@ async def test_a_router_that_needs_input_ends_the_run_for_the_person_to_answer()
     user = _user()
     try:
         await _make_run(user, [])
-        claimed = await _claim(user)
+        claimed = await _claim(user, [])
         world = ChatContinuationWorld(claimed, ScriptedAssistant([{"kind": "needs_input", "tool": "schedule_task", "missing": "a time"}]))
         outcome = await RunController(AsyncSessionLocal, "chat-w").execute(claimed, world, grant_of("search_web"))
         assert outcome.status == "failed"
@@ -314,7 +340,7 @@ async def test_a_router_that_names_a_step_the_turn_already_took_ends_the_run_as_
     before = ["Web search: anything fun this weekend (8 results)"]
     try:
         await _make_run(user, before)
-        claimed = await _claim(user)
+        claimed = await _claim(user, before)
         # The router asks for the very search the turn already ran.
         assistant = ScriptedAssistant([_step(SearchAction(query="anything fun this weekend", max_results=None), label="Web search", detail="anything fun this weekend")])
         world = ChatContinuationWorld(claimed, assistant)
