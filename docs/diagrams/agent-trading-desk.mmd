@@ -1,0 +1,47 @@
+---
+title: Trading - the desk, from the close to the next open
+---
+flowchart TB
+    Close([After each close, on spark1:<br/>market_daily --refresh --brief-book --paper-trade]) --> Refresh[Refresh the layers the desk reads<br/>bars · EDGAR events and facts · release exhibits]
+    Refresh --> Store[(As-of parquet store<br/>bars, filings, release text, tone)]
+    Store --> Reader[Release reader<br/>DeepSeek V4 Flash: five fields per release<br/>outlook · demand · pricing · capex · supply]
+    Reader --> Store
+    Store --> Panel[Panel of the book<br/>93 AI-infra and software names,<br/>benchmark, themes]
+
+    Panel --> Analysts[Four analysts + rotation<br/>fundamental · technical · sentiment · value<br/>each a rank across the book that session]
+    Panel --> Regime[Regime<br/>participation percentile, exposure,<br/>tightening flag]
+    Analysts --> Grade[Grade<br/>equal-weight sum of convictions,<br/>A+ · A · B · C, participation gates]
+    Regime --> Grade
+    Grade --> Targets[risk.desk_targets - the one allocation<br/>engine weights → grade × exposure<br/>→ tightening tilt → name and theme caps last]
+    Regime --> Targets
+
+    Targets --> Plan[Plan, persisted before anything is sent<br/>shares sized at the close,<br/>one client order id per name and side]
+    Plan --> Broker[(Alpaca paper account<br/>market-on-open orders, 19:30 ET;<br/>a live endpoint is refused in code)]
+    Broker --> Reconcile[Next session: reconcile by order id<br/>settle fills, roll the clock back<br/>on anything unfilled]
+    Reconcile --> Plan
+
+    Grade --> Record[The day's record<br/>grades, targets, fills, and for each name<br/>a plain-English reason chosen by unusualness]
+    Reconcile --> Record
+    Record --> Briefs[Briefs<br/>DeepSeek V4 Flash writes the words;<br/>every number in them is the record's]
+    Briefs --> Record
+    Record --> Files[(Desk records<br/>one file per session, never pruned)]
+    Files --> View([Desk view<br/>one person only: MARKET_DESK_USER])
+
+    Rule[The model decides nothing numeric.<br/>Tone fields and prose are its;<br/>every rank, grade and weight is a rule,<br/>measured walk-forward before it was kept]
+    Rule -.-> Reader
+    Rule -.-> Briefs
+    Exit[No exit analyst: every exit trigger<br/>tested sold into a rise.<br/>The rebalance is the exit]
+    Exit -.-> Targets
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Close,View interface;
+    class Refresh,Panel,Analysts,Regime,Grade,Targets,Plan,Reconcile,Record application;
+    class Store,Files data;
+    class Broker external;
+    class Reader,Briefs model;
+    class Rule,Exit warning;

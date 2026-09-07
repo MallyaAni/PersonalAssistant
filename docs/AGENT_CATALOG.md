@@ -205,7 +205,7 @@ what repeats, what it has cost, and what to stop, start, and keep.
 | | |
 | --- | --- |
 | Registry id | `trading` |
-| Diagram | [agent-trading.svg](diagrams/agent-trading.svg) · [source](diagrams/agent-trading.mmd) |
+| Diagram | the desk: [agent-trading-desk.svg](diagrams/agent-trading-desk.svg) · [source](diagrams/agent-trading-desk.mmd); the autopsy: [agent-trading.svg](diagrams/agent-trading.svg) · [source](diagrams/agent-trading.mmd) |
 | Agent folder | `backend/agents/trading/`, and `backend/agents/trading/desk/` |
 | Domain package | `backend/market/` (the desk), `backend/memory/` (the autopsy) |
 | Prompts | `prompts/trading/release_tone.md`, `desk_brief.md`, `autopsy.md` — three |

@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The desk has a diagram, and the simulator one allocation
+
+`docs/diagrams/agent-trading-desk.mmd` is the desk's detailed view: the
+nightly run from the close through the four analysts and the regime, the
+grade, the one allocation in `risk.desk_targets`, the plan persisted before
+any order is sent, the paper account and its reconciliation by order id, the
+record and the briefs, and the one person who can see it. The trading diagram
+that existed covered only the autopsy. Registered in the renderer, the page
+and both catalogs; the other views' sources are untouched.
+
+The simulator's `_engine_weights` and `_steepen` are gone. Nothing live called
+them; their tests now exercise `_targets`, the path the simulator runs.
+
 ## 2026-09-07 - The release text, embedded and measured: the reader has it
 
 The earnings releases are stored as text now (3,401 over 93 names) and

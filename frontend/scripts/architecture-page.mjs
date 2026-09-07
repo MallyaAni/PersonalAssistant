@@ -268,6 +268,12 @@ const publishedDiagrams = [
     change: "What their own trading record keeps doing, and what to stop, start, and keep.",
   },
   {
+    name: "agent-trading-desk",
+    title: "Trading — the desk, from the close to the next open",
+    scope: "A fixed book graded every session by rules, sized by one allocation, carried to a paper account and reconciled by order id",
+    change: "The five tone fields of a release and the words of a brief. Every rank, grade, weight and order is a rule measured walk-forward before it was kept.",
+  },
+  {
     name: "agent-review",
     title: "Reviewer agent",
     scope: "Read-only commit review as a durable run",
