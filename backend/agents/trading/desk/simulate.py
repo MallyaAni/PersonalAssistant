@@ -49,9 +49,7 @@ import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import risk
-from backend.market import sizing
 from backend.market.panel import Panel
-from backend.market.sizing import apply_name_cap
 
 REBALANCE = 20
 # Whether the cash an exit frees goes back to work in the names still held,
@@ -119,28 +117,6 @@ def adjusted_open(panel: Panel) -> np.ndarray:
     with np.errstate(all="ignore"):
         factor = np.where(panel.close > 0, panel.adj_close / panel.close, np.nan)
     return panel.open * factor
-
-
-# Engine weights at session t: the graded names, inverse volatility, caps.
-def _engine_weights(report, t: int, config) -> np.ndarray:
-    from dataclasses import replace
-
-    panel = report.panel
-    scores = np.where(report.graded.grades[t] > 0, report.scores[t], np.nan)
-    total = max(int(np.isfinite(report.scores[t]).sum()) - 1, 1)
-    graded = max(int(np.isfinite(scores).sum()), 1)
-    scaled = replace(
-        config, top_fraction=min(1.0, config.top_fraction * total / graded)
-    )
-    simple = np.expm1(panel.log_returns())
-    simple = np.where(np.isfinite(simple), simple, 0.0)
-    window = simple[max(0, t - config.volatility_lookback + 1) : t + 1]
-    volatility = sizing.realised_volatility(panel, config.volatility_lookback)[t]
-    weights = sizing.target_weights(
-        scores, volatility, panel.themes, panel.tickers, scaled, history=window
-    )
-    weights[panel.index(panel.benchmark)] = 0.0
-    return weights
 
 
 # The target weight of every name on a rebalance session.
@@ -393,24 +369,3 @@ class _Book:
                     ret=ret,
                 )
             )
-
-
-# While money is tightening, the same names weighted so the steadier ones
-# take more of the book, holding the gross unchanged. This mirrors what
-# `risk.size` does live.
-#
-# It re-caps afterwards. The tilt renormalises to the same gross, which
-# moves weight onto the calmest names, and a review found that could carry
-# one past `name_cap` - 0.1626 against a 0.15 cap, at every concentration
-# tried. A cap a later step can undo is not a cap.
-def _steepen(target: np.ndarray, panel: Panel, config, t: int) -> np.ndarray:
-    volatility = sizing.realised_volatility(panel, config.volatility_lookback)[t]
-    gross = float(target.sum())
-    if gross <= 0:
-        return target
-    vol = np.where(np.isfinite(volatility) & (volatility > 0.10), volatility, 0.10)
-    adjusted = target * (0.10 / vol) ** (risk.TIGHTENING_POWER - 1.0)
-    total = float(adjusted.sum())
-    if total <= 0:
-        return target
-    return apply_name_cap(adjusted / total * gross, config.name_cap, gross)

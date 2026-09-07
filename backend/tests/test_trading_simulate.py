@@ -132,19 +132,18 @@ def test_the_rebalance_clock(every):
 # quarters, B a half, and C nothing at all.
 def test_the_grade_sizes_the_position():
     report = _report()
-    weights = simulate._engine_weights(report, 150, simulate.risk.BOOK_CONFIG)
+    targets = simulate._targets(report, report.panel, simulate.risk.BOOK_CONFIG, 150)
     held = simulate.run(report, use_exits=False, rebalance=20)
     assert held.invested[150] > 0
     # N3 and N4 are graded C and are never held.
     for trade in held.trades:
         assert trade.ticker not in {"N3", "N4", "SPY"}
-    # Among the names the engine wants, the A+ carries more than the B.
+    assert targets[report.panel.index("N3")] == 0.0
+    # Among the names the engine wants, the A+ carries more than the B: the
+    # grade multiplier is applied inside the one allocation the book uses.
     a_plus, b_grade = report.panel.index("N0"), report.panel.index("N2")
-    if weights[a_plus] > 0 and weights[b_grade] > 0:
-        assert (
-            weights[a_plus] * simulate.risk.SIZE_MULTIPLIER["A+"]
-            > weights[b_grade] * simulate.risk.SIZE_MULTIPLIER["B"]
-        )
+    if targets[a_plus] > 0 and targets[b_grade] > 0:
+        assert targets[a_plus] > targets[b_grade]
 
 
 # The regime's exposure scales the whole book, and an exposure of zero
@@ -365,15 +364,16 @@ def test_the_tightening_tilt_respects_the_name_cap():
     vols = np.linspace(0.002, 0.06, NAMES)
     steps = np.column_stack([rng.normal(0, v, rows) for v in vols])
     close = 100.0 * np.exp(np.cumsum(steps, axis=0))
-    report = _report(close, tightening=True)
+    tightening = _report(close, tightening=True)
+    calm = _report(close, tightening=False)
     config = simulate.risk.BOOK_CONFIG
     for fraction in (0.1, 0.3, 0.6):
         wide = replace(config, top_fraction=fraction)
-        weights = simulate._engine_weights(report, 240, wide)
-        tilted = simulate._steepen(weights.copy(), report.panel, wide, 240)
+        tilted = simulate._targets(tightening, tightening.panel, wide, 240)
+        untilted = simulate._targets(calm, calm.panel, wide, 240)
         assert tilted.max() <= wide.name_cap + 1e-9, (
             f"the tilt carried a position to {tilted.max():.4f}, over the "
             f"{wide.name_cap} cap"
         )
         # And it does not quietly raise the gross to compensate.
-        assert tilted.sum() <= weights.sum() + 1e-9
+        assert tilted.sum() <= untilted.sum() + 1e-9
