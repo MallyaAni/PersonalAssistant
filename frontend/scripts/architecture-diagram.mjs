@@ -38,6 +38,7 @@ const diagramNames = [
   "agent-diagram",
   "agent-memory",
   "agent-trading",
+  "agent-trading-desk",
   "agent-review",
   "agent-security",
   "agent-experience",

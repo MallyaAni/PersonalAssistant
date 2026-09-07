@@ -576,7 +576,7 @@ system itself.
 which conversations it may read and how a proposal is recorded.
 *Folder:* `agents/experience/`.
 
-### Trading — the desk, and the autopsy ([diagram](diagrams/agent-trading.svg))
+### Trading — the desk, and the autopsy ([the desk](diagrams/agent-trading-desk.svg) · [the autopsy](diagrams/agent-trading.svg))
 
 Two capabilities that share a folder and share nothing else.
 
