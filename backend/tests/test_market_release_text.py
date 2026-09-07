@@ -68,14 +68,20 @@ def test_clip_keeps_the_front():
     assert (short, cut) == ("short", False)
 
 
-# The embedding call batches, carries the document prefix nomic asks for,
-# and returns vectors in the caller's order however the server orders them.
-def test_embed_batches_and_keeps_order():
-    calls: list[dict] = []
-
+# A stub server: the tokenizer route counts `chars_per_token` characters as
+# one token, and the embeddings route answers in reverse order to prove the
+# index is honoured. Every request is kept, by route.
+def _server(chars_per_token: int, embeds: list[dict], counts: list[str]):
     def post(url, json, timeout):
-        calls.append(json)
-        # Answer in reverse order to prove the index is honoured.
+        if url.endswith("/tokenize"):
+            counts.append(json["prompt"])
+            count = -(-len(json["prompt"]) // chars_per_token)
+            return SimpleNamespace(
+                status_code=200,
+                raise_for_status=lambda: None,
+                json=lambda: {"count": count},
+            )
+        embeds.append(json)
         data = [
             {"index": i, "embedding": [float(i), float(len(text))]}
             for i, text in enumerate(json["input"])
@@ -84,11 +90,19 @@ def test_embed_batches_and_keeps_order():
             status_code=200, raise_for_status=lambda: None, json=lambda: {"data": data}
         )
 
+    return post
+
+
+# The embedding call batches, carries the document prefix nomic asks for,
+# and returns vectors in the caller's order however the server orders them.
+def test_embed_batches_and_keeps_order():
+    embeds: list[dict] = []
+    post = _server(4, embeds, [])
     texts = [f"release {i}" for i in range(release_text.EMBED_BATCH + 3)]
     vectors = release_text.embed(texts, "http://embed", "nomic", post=post)
-    assert len(calls) == 2
-    assert calls[0]["model"] == "nomic"
-    assert all(t.startswith(release_text.DOCUMENT_PREFIX) for t in calls[0]["input"])
+    assert len(embeds) == 2
+    assert embeds[0]["model"] == "nomic"
+    assert all(t.startswith(release_text.DOCUMENT_PREFIX) for t in embeds[0]["input"])
     assert len(vectors) == len(texts)
     # The first value is the in-batch index, so order is exactly the input's.
     assert [v[0] for v in vectors[: release_text.EMBED_BATCH]] == [
@@ -98,27 +112,46 @@ def test_embed_batches_and_keeps_order():
     assert release_text.embed([], "http://embed", "nomic", post=post) == []
 
 
-# What reaches the embedder is cut to what the server will take. The
-# deployment serves the model at 2,048 tokens and refuses a longer request
-# outright with a 400 - it does not truncate - so a release past the cap
-# would fail the whole batch it sat in. The cut keeps the front, where the
-# words are.
+# What reaches the embedder is cut to what the server will take, measured
+# in the server's own tokens. The deployment serves the model at 2,048 and
+# refuses a longer request outright with a 400 - it does not truncate - so
+# a release past the cap would fail the whole batch it sat in. Characters
+# are not a safe proxy: a table-dense release runs more tokens per
+# character than prose. The cut keeps the front, where the words are.
 def test_embed_cuts_each_text_to_what_the_server_accepts():
-    seen: list[str] = []
-
-    def post(url, json, timeout):
-        seen.extend(json["input"])
-        data = [{"index": i, "embedding": [0.0]} for i in range(len(json["input"]))]
-        return SimpleNamespace(
-            status_code=200, raise_for_status=lambda: None, json=lambda: {"data": data}
-        )
-
+    embeds: list[dict] = []
+    counts: list[str] = []
+    # Two characters a token: 7,000 characters would be 3,500 tokens, well
+    # past the cap, so the cut has to go below EMBED_CHARS.
+    post = _server(2, embeds, counts)
     long = "guidance " * 5_000  # 45,000 characters
     release_text.embed([long, "short"], "http://embed", "nomic", post=post)
     prefix = release_text.DOCUMENT_PREFIX
-    assert seen[0] == prefix + long[: release_text.EMBED_CHARS]
-    assert len(seen[0]) == len(prefix) + release_text.EMBED_CHARS
-    assert seen[1] == prefix + "short"
+    sent = embeds[0]["input"]
+    limit = release_text.EMBED_TOKENS - release_text.TOKEN_MARGIN
+    assert sent[0].startswith(prefix + "guidance guidance")
+    assert len(sent[0]) < len(prefix) + release_text.EMBED_CHARS
+    assert -(-len(sent[0]) // 2) <= limit  # what the stub would count
+    assert sent[0] == prefix + long[: len(sent[0]) - len(prefix)]  # the front
+    assert sent[1] == prefix + "short"
+    # Every measurement carried the prefix, because the server counts it.
+    assert all(c.startswith(prefix) for c in counts)
+
+
+# The fit converges from the character cap by measured overshoot and never
+# touches a text that already fits.
+def test_fit_shrinks_by_measured_overshoot():
+    calls: list[int] = []
+
+    def count(body: str) -> int:
+        calls.append(len(body))
+        return len(body) // 2
+
+    body = release_text.fit("x" * 10_000, 2_000, count)
+    assert len(body) <= 4_000
+    assert calls[0] == release_text.EMBED_CHARS  # starts at the character cap
+    assert len(calls) <= 3  # proportional shrink converges in a pass or two
+    assert release_text.fit("short", 2_000, count) == "short"
 
 
 # A vector record round-trips with its model name, so a vector made by one

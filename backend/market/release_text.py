@@ -50,13 +50,18 @@ MAX_CHARS = 30_000
 # The prefix nomic-embed asks for on documents, as opposed to queries.
 DOCUMENT_PREFIX = "search_document: "
 # What the embedder is given. The model reads 8,192 tokens; the deployment
-# serves it at 2,048, and a release past that is refused outright with a
-# 400 rather than truncated. Financial prose runs about four characters a
-# token, so this keeps the request under the cap with room to spare. It is
-# the headline and the guidance paragraphs - the words - and it is also a
-# quarter of what the tone reader sees, which is a caveat on any comparison
-# between the two until the server's context is raised.
+# serves it at 2,048 (`VLLM_EMBEDDING_MAX_MODEL_LEN`), and a release past
+# that is refused outright with a 400 rather than truncated. Characters are
+# not a safe proxy: one release ran 1,674 tokens at 7,000 characters and
+# another, table-heavy, ran past 2,048 at the same length. So each text is
+# cut to at most EMBED_CHARS and then measured with the server's own
+# tokenizer and cut again until it fits under the cap with a margin. What
+# survives is the headline and the guidance paragraphs - the words - and it
+# is a quarter or less of what the tone reader sees, which is a caveat on
+# any comparison between the two until the server's context is raised.
 EMBED_CHARS = 7_000
+EMBED_TOKENS = 2_048
+TOKEN_MARGIN = 32
 EMBED_BATCH = 16
 EMBED_TIMEOUT = 120.0
 
@@ -191,8 +196,33 @@ def vectors_from_frame(columns: Mapping[str, list]) -> tuple[ReleaseVector, ...]
     return tuple(sorted(rows, key=lambda r: r.reaction_date))
 
 
+# The longest front of `text` that `count` says fits in `limit` tokens.
+# Each pass shrinks in proportion to the overshoot with a tenth to spare,
+# so a table-dense release converges in one or two measurements.
+def fit(text: str, limit: int, count: Callable[[str], int]) -> str:
+    """Return the front of `text` that measures at most `limit` tokens."""
+    body = text[:EMBED_CHARS]
+    tokens = count(body)
+    while tokens > limit and body:
+        body = body[: int(len(body) * limit / tokens * 0.9)]
+        tokens = count(body)
+    return body
+
+
+# Ask the server how many tokens a prompt is, specials included.
+def _count_tokens(base_url: str, model: str, prompt: str, poster) -> int:
+    response = poster(
+        f"{base_url.rstrip('/')}/tokenize",
+        json={"model": model, "prompt": prompt},
+        timeout=EMBED_TIMEOUT,
+    )
+    response.raise_for_status()
+    return int(response.json()["count"])
+
+
 # Embed a batch of texts with an OpenAI-compatible embeddings endpoint.
-# `post` is the transport, so a test can hand in a stub.
+# `post` is the transport, so a test can hand in a stub; it serves both
+# the tokenizer and the embeddings routes.
 def embed(
     texts: Sequence[str],
     base_url: str,
@@ -203,10 +233,15 @@ def embed(
     if not texts:
         return []
     poster = post or _post
+
+    def measure(body: str) -> int:
+        return _count_tokens(base_url, model, DOCUMENT_PREFIX + body, poster)
+
+    limit = EMBED_TOKENS - TOKEN_MARGIN
     out: list[list[float]] = []
     for start in range(0, len(texts), EMBED_BATCH):
         chunk = [
-            DOCUMENT_PREFIX + t[:EMBED_CHARS]
+            DOCUMENT_PREFIX + fit(t, limit, measure)
             for t in texts[start : start + EMBED_BATCH]
         ]
         response = poster(
