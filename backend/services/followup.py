@@ -99,8 +99,8 @@ class Resolution:
     # decides what may be done.
     accepts_offer: bool = False
     # Whether this message is asking again for something the previous turn
-    # already answered - because the answer was wrong, off the subject, or
-    # not what was wanted.
+    # was supposed to provide - because the answer was wrong, off the
+    # subject, not what was wanted, or never arrived.
     #
     # This is the only signal in the system for the failure that reaches
     # people most. A tool that ran and returned the wrong content records a
@@ -112,9 +112,12 @@ class Resolution:
     # A judgement, so a model makes it: "try again", "no, I meant the
     # Arlington one" and "that's not what I asked" share no words, and the
     # four bounded classifiers this repository has deleted all died on
-    # phrasing their author did not anticipate. It is deliberately narrow -
-    # asking again for the *same* thing, not asking a next question - and
-    # false when in doubt, because a wrong true blames a turn that was fine.
+    # phrasing their author did not anticipate. It covers a failed execution
+    # as well as a wrong answer, because to the person saying "try again"
+    # those are the same thing - the last attempt did not work (2026-09-07;
+    # it used to exclude "visibly failed" and a group's four retries after a
+    # no-results listing were each read as a fresh question). False when in
+    # doubt, because a wrong true blames a turn that was fine.
     redoes_previous: bool = False
 
     # Whether the reading adds anything beyond the message itself.
@@ -339,44 +342,64 @@ def parse_resolution(answer: Any, query: str) -> Resolution | None:
 
 # One line for the router: the reading beside the person's own words.
 def describe(resolution: Resolution, query: str) -> str:
-    if not resolution.changes(query):
-        return ""
-    # `.get`, not `[]`. A category added to REFERS_TO and forgotten here raised
-    # KeyError inside the router and took the whole turn down - caught in
-    # measurement on 2026-08-30 when "diagram" was added. A reading nobody has
-    # written a phrase for is worth less than the reading; it is never worth
-    # the turn.
-    about = {
-        "picture": "a picture the assistant made or was sent",
-        "diagram": "a diagram the assistant drew, which is not a picture and is redrawn rather than edited",
-        "task": "a reminder or task the person set up",
-        "scout": "Scout's own sweep or its schedule",
-        "draft": "the text being written together",
-        "subject": "the thing under discussion",
-        "none": "nothing earlier",
-    }.get(resolution.refers_to, "something earlier in the conversation")
-    subject = f" ({resolution.subject})" if resolution.subject else ""
-    # What a draft turn means for the tool choice, said out loud rather than
-    # left to be inferred. Told only that the message "refers to the text
-    # being written together", the router reached for whichever tool sat
-    # nearest a verb it recognised: "make it more casual and ask them to reply
-    # by Thursday at noon" after a drafted email went to edit_image
-    # (2026-08-28) and, once that was withheld, to create_document and to
-    # edit_document (post-deploy sweep, 2026-09-06). The withhold list cannot
-    # simply be widened to the document tools: "put that in a PDF" after a
-    # written-out plan is the same kind of turn and does want a file. What
-    # separates them is what the person asked for, so that is what is said.
-    consequence = (
-        "\nRewriting, shortening, or adding to that text is the reply itself and needs no tool."
-        " Take a tool only if the newest message asks for something a written reply cannot be:"
-        " a file to keep, a picture, a diagram, or a deck."
-        if resolution.refers_to == "draft"
-        else ""
-    )
-    return (
-        f"Read in context as: {resolution.self_contained}\n"
-        f"It refers to {about}{subject}.{consequence}"
-    )
+    lines: list[str] = []
+    if resolution.changes(query):
+        # `.get`, not `[]`. A category added to REFERS_TO and forgotten here raised
+        # KeyError inside the router and took the whole turn down - caught in
+        # measurement on 2026-08-30 when "diagram" was added. A reading nobody has
+        # written a phrase for is worth less than the reading; it is never worth
+        # the turn.
+        about = {
+            "picture": "a picture the assistant made or was sent",
+            "diagram": "a diagram the assistant drew, which is not a picture and is redrawn rather than edited",
+            "task": "a reminder or task the person set up",
+            "scout": "Scout's own sweep or its schedule",
+            "draft": "the text being written together",
+            "subject": "the thing under discussion",
+            "none": "nothing earlier",
+        }.get(resolution.refers_to, "something earlier in the conversation")
+        subject = f" ({resolution.subject})" if resolution.subject else ""
+        # What a draft turn means for the tool choice, said out loud rather than
+        # left to be inferred. Told only that the message "refers to the text
+        # being written together", the router reached for whichever tool sat
+        # nearest a verb it recognised: "make it more casual and ask them to reply
+        # by Thursday at noon" after a drafted email went to edit_image
+        # (2026-08-28) and, once that was withheld, to create_document and to
+        # edit_document (post-deploy sweep, 2026-09-06). The withhold list cannot
+        # simply be widened to the document tools: "put that in a PDF" after a
+        # written-out plan is the same kind of turn and does want a file. What
+        # separates them is what the person asked for, so that is what is said.
+        consequence = (
+            "\nRewriting, shortening, or adding to that text is the reply itself and needs no tool."
+            " Take a tool only if the newest message asks for something a written reply cannot be:"
+            " a file to keep, a picture, a diagram, or a deck."
+            if resolution.refers_to == "draft"
+            else ""
+        )
+        lines.append(
+            f"Read in context as: {resolution.self_contained}\n"
+            f"It refers to {about}{subject}.{consequence}"
+        )
+    # The two flags the resolver sets are decisions the router must act on, and
+    # until 2026-09-07 they were resolved and then dropped: a bare "yes" after
+    # an offer read as nothing at all, and the router answered with another
+    # question instead of carrying the offer out; a "try again" was not told it
+    # was asking again for what was just answered. Each is its own line, and a
+    # line only when the flag is true.
+    if resolution.accepts_offer:
+        lines.append(
+            "This message accepts what the assistant just offered to do. "
+            "Call the tool that carries the offer out - the offer is the "
+            "assistant's own last message."
+        )
+    if resolution.redoes_previous:
+        lines.append(
+            "This message is asking again for what was just answered or "
+            "attempted, because what came back was wrong, off the subject, "
+            "or never arrived. Do that same thing again - never a new guess "
+            "at what they meant."
+        )
+    return "\n".join(lines)
 
 
 # Whether a message is nothing but assent.

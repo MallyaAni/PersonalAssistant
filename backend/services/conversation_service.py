@@ -596,6 +596,27 @@ def _hold_to_place(query: str, bound: bool | None, place: str) -> str:
 # weeks out. `prompts/search/compose.md` already asks for them and the model
 # still wrote the month, so this is the same structural correction the place
 # gets rather than another sentence in the prompt.
+# A date a query already names, in either of the two ways compose writes one:
+# a numeric span ("Sep 5-6", "2026-09-05") or a written-out month and day
+# ("September 7 2026"). The guard used to match only the numeric forms, so a
+# query already carrying "September 7 2026" was given the same span again and
+# the provider got "September 7 2026 September 7 2026" (2026-09-07, a group's
+# "what's going on in the area today" searched with the doubled date).
+_WRITTEN_MONTH = (
+    r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|"
+    r"dec(?:ember)?"
+)
+_ALREADY_DATED = re.compile(
+    r"\b\d{1,2}\s*[-–]\s*\d{1,2}\b"
+    r"|\b\d{4}-\d{2}-\d{2}\b"
+    rf"|\b(?:{_WRITTEN_MONTH})\.?\s+\d{{1,2}}(?:st|nd|rd|th)?\b"
+    rf"|\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:{_WRITTEN_MONTH})\.?\b"
+    rf"|\b(?:{_WRITTEN_MONTH})\.?\s+\d{{4}}\b",
+    re.IGNORECASE,
+)
+
+
 def _hold_to_dates(query: str, question: str, now: datetime, bound: bool | None) -> str:
     from backend.core.event_window import window_for
 
@@ -604,7 +625,7 @@ def _hold_to_dates(query: str, question: str, now: datetime, bound: bool | None)
         return query
     # A query that already names a day is left alone; two date ranges are
     # worse than one.
-    if re.search(r"\b\d{1,2}\s*[-–]\s*\d{1,2}\b|\b\d{4}-\d{2}-\d{2}\b", query):
+    if _ALREADY_DATED.search(query):
         return query
     # Day numbers are formatted by hand: `%-d` is glibc's and not Windows's,
     # and a format string one platform rejects fails the whole hold there.
@@ -3252,6 +3273,16 @@ class ConversationService:
             # Virginia this week" searched without Arlington on 2026-09-02
             # and a New York page won the listing. If the first query named
             # the place and this one does not, the place goes back on.
+            # The same screening the first query got, on the same judgement:
+            # a refined query is model-written and can pull a foreign town out
+            # of the results just as the first one did - "try again" after a
+            # Colonial Heights listing searched Colonial Heights for a person
+            # in Courthouse (2026-09-04). Only the first query was screened
+            # until 2026-09-07; the rounds after it re-held the place but
+            # never dropped the drifted town.
+            better = await _drop_foreign_places(
+                self.search_planner, better, question, home, judgement
+            )
             better = _hold_to_place(_keep_the_place(better, first_query, home), bound, home)
             better = _hold_to_dates(better, question, datetime.now(UTC), bound)
             screened = self.search_privacy.sanitize(better)
@@ -4784,7 +4815,21 @@ class ConversationService:
         trace_id: str,
         candidate: dict[str, Any],
     ) -> bool:
-        fact = locality_fact(candidate["label"], candidate.get("region"))
+        label = str(candidate["label"]).strip()
+        region = str(candidate.get("region") or "").strip()
+        # A locality the classifier caught with only a state or country in its
+        # region - "Courthouse, Virginia" - searches a whole state, so a
+        # listing in some other town in that state is judged near the person.
+        # This is the chat path, where the split was a model's guess and the
+        # city may have been dropped; the explicit profile endpoints store what
+        # the person gave, so the completion belongs here and only here. A
+        # failure keeps what the classifier wrote, because a wrong city anchors
+        # every future search to the wrong place.
+        if region and "," not in region:
+            completed = await self._complete_locality_region(label, region)
+            if completed:
+                region = completed
+        fact = locality_fact(label, region)
         await self.memory.approve_fact(
             user_id=user_id,
             fact_type=fact.fact_type,
@@ -4796,7 +4841,28 @@ class ConversationService:
             expires_at=None,
             metadata={"source": "chat_auto_save"},
         )
-        return {"kind": "discovery_locality", "fact_keys": [fact.fact_key], "value": str(candidate["label"])[:160]}
+        return {"kind": "discovery_locality", "fact_keys": [fact.fact_key], "value": str(label)[:160]}
+
+    # Name the city a bare-state locality sits in, or nothing.
+    #
+    # The model answers with the region to store; the answer is trusted only
+    # when it is non-empty and within the stored region's length bound - the
+    # resolver itself refuses anything that repeats the label. Anything else
+    # keeps what the classifier wrote.
+    async def _complete_locality_region(self, label: str, region: str) -> str:
+        from backend.core.dependencies import get_llm_client
+        from backend.discovery.locality_city import LocalityCityResolver
+        from backend.discovery.types import MAX_REGION_CHARS
+
+        try:
+            resolved = await LocalityCityResolver(get_llm_client()).resolve(
+                label, region
+            )
+        except Exception:
+            return ""
+        if not resolved or len(resolved) > MAX_REGION_CHARS:
+            return ""
+        return resolved
 
     # Save every classified Scout interest label in one projection.
     async def _save_discovery_interests_proposal(

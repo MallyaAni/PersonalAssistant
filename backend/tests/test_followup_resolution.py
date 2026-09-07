@@ -83,3 +83,32 @@ def test_a_missing_field_does_not_accuse_the_previous_turn():
         "what is the weather",
     )
     assert resolution is not None and resolution.redoes_previous is False
+
+
+def test_an_acceptance_and_a_redo_are_surfaced_to_the_router():
+    # A bare "yes" after an offer reads as nothing at all (`changes()` is
+    # False), so until the flags were surfaced the router was never told the
+    # offer had been accepted and answered with another question instead of
+    # carrying it out (2026-09-05, "Want me to pull options?" -> "yes" ->
+    # another question). Each flag earns its own line when true, and no line
+    # when false.
+    accepted = Resolution("yes", "none", "", accepts_offer=True)
+    line = describe(accepted, "yes")
+    assert "accepts what the assistant just offered" in line
+    assert "Read in context as" not in line
+
+    redone = Resolution("try again", "none", "", redoes_previous=True)
+    line = describe(redone, "try again")
+    assert "asking again for what was just answered" in line
+    assert "Read in context as" not in line
+
+    # Both on one turn, and neither on a plain question.
+    both = Resolution("yes again", "none", "", accepts_offer=True, redoes_previous=True)
+    line = describe(both, "yes again")
+    assert "accepts what the assistant just offered" in line
+    assert "asking again for what was just answered" in line
+    plain = describe(
+        Resolution("what is the capital of Peru?", "none", ""),
+        "what is the capital of Peru?",
+    )
+    assert plain == ""

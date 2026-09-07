@@ -67,3 +67,28 @@ def test_a_query_that_already_names_days_and_a_question_with_no_window_are_left_
     assert _hold_to_dates(already, "what's on this weekend?", WED, True) == already
     assert _hold_to_dates("PS5 price", "what does a PS5 cost?", WED, False) == "PS5 price"
     assert _hold_to_dates("jazz nights Arlington", "what jazz nights are there?", WED, True) == "jazz nights Arlington"
+
+
+# The guard that stops a second date range being appended used to see only
+# numeric forms, so a query compose had already dated in words - "Scout events
+# Courthouse September 7 2026" - was given the same span again and searched
+# with the date doubled (2026-09-07, a group's "what's going on in the area").
+def test_a_query_that_already_names_a_written_out_date_is_left_alone():
+    already = "Scout events Courthouse September 7 2026"
+    assert (
+        _hold_to_dates(already, "what's going on in the area today?", WED, True)
+        == already
+    )
+    short = "things to do Sep 7 2026 Arlington"
+    assert _hold_to_dates(short, "what's on today?", WED, True) == short
+    day_first = "events 7 September 2026 Arlington"
+    assert _hold_to_dates(day_first, "what's on today?", WED, True) == day_first
+    # A month-and-year alone is a date too: "events this September" is not
+    # given today's week on top of it.
+    month_year = "jazz nights Arlington September 2026"
+    assert _hold_to_dates(month_year, "what's on this month?", WED, True) == month_year
+    # A month word inside a longer word is not a date: "market" and "maybe"
+    # must not trip the guard (or every query with them would skip its dates).
+    assert _hold_to_dates(
+        "market roundup Arlington", "what's on this week?", WED, True
+    ) == ("market roundup Arlington September 2-6 2026")

@@ -32,14 +32,15 @@ def test_everything_too_far_says_so_instead_of_returning_nothing():
     # The failure was an empty string here, which the caller reads as "no
     # typed listing" and answers by letting the model write these same two up.
     assert listing, "an empty listing hands the far events back to the model"
-    assert "close enough" in listing and "2 listings" in listing
+    assert "close enough" in listing
+    assert "2 events" in listing
     # It must not name them: naming is recommending, and that is the bug.
     assert "Africa Fest" not in listing and "Colonial Heights" not in listing
 
 
 def test_one_far_listing_reads_as_one():
     listing = render_listing(Extraction(events=(_event("Africa Fest", near=False),)), NOW)
-    assert "1 listing," in listing and "1 listings" not in listing
+    assert "only event" in listing and "events I found" not in listing
 
 
 def test_something_near_is_still_listed_normally():

@@ -216,11 +216,21 @@ def _dropped_line(
 # replies from the person.
 def _nothing_near_line(far_away: int, window: Window | None = None) -> str:
     when = f" {window.label}" if window is not None else ""
-    listings = "listing" if far_away == 1 else "listings"
+    # "Nothing close enough is on" would assert the area is empty, which a thin
+    # result set cannot support - the old line said "Nothing ... I found 1
+    # listing, but they are all a long way" for a single far event (2026-09-07).
+    # The honest statement is that the few events found are too far, and the
+    # offer to widen is the point: a thin set is when the person wants the
+    # search widened, not a verdict on the area.
+    if far_away == 1:
+        return (
+            f"The only event I found{when} is a long way from you and not "
+            "close enough to be worth the trip. Want me to widen the search?"
+        )
     return (
-        f"Nothing{when} close enough to be worth the trip. I found {far_away} "
-        f"{listings}, but they are all a long way from you. Say the word and "
-        "I'll widen it or look at a particular one."
+        f"The {far_away} events I found{when} are all a long way from you, "
+        "and none are close enough to be worth the trip. Want me to widen "
+        "the search?"
     )
 
 

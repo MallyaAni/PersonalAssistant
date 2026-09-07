@@ -68,3 +68,25 @@ async def test_the_reading_never_answers_or_adds_facts(llm):
     restated = resolution.self_contained.casefold()
     assert "?" in resolution.self_contained, resolution
     assert not any(word in restated for word in ("yes", "no,", "winner is", "joel")), resolution
+
+
+async def test_a_try_again_reads_as_asking_for_the_same_thing_again(llm):
+    # A group, 2026-09-07: four "try again"s after a no-results listing were
+    # each read as a fresh question because the field excluded a failure that
+    # had visibly happened - and the group answered its own four retries with
+    # nothing. "Try again" is one request whatever the failure was.
+    no_results = [{"query": "what's going on in the area?", "response": "Nothing I can date from what came back."}]
+    resolution = await resolve_followup(get_routing_llm_client(), "try again", no_results)
+    assert resolution is not None and resolution.redoes_previous is True, resolution
+    # The same wording after a real answer is the same field: the person
+    # wants the thing done again, not a fresh question answered.
+    after_answer = await resolve_followup(get_routing_llm_client(), "try again", _SHOW)
+    assert after_answer is not None and after_answer.redoes_previous is True, after_answer
+    # But the assistant asking a question and the person answering it is not
+    # a redo of anything: "the waterfront" is a fresh answer.
+    answered = await resolve_followup(
+        get_routing_llm_client(),
+        "the waterfront",
+        [{"query": "where are you heading?", "response": "I can look at the schedule for any of these - where are you heading?"}],
+    )
+    assert answered is not None and answered.redoes_previous is False, answered

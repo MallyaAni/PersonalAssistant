@@ -91,12 +91,12 @@ When in doubt, false. The cost of false is one clarifying reply; the cost of tru
 
 And whether this message is asking again for what was already answered:
 
-redoes_previous: true only when this message asks for the *same* thing the previous turn already gave, because what came back was wrong, off the subject, or not what was wanted. "Try again", "no, I meant the Arlington one", "that's not what I asked", "can you redo that", "those aren't right" are all true when the assistant has just answered.
+redoes_previous: true when this message asks for the same thing the previous turn was supposed to provide, because what came back was wrong, off the subject, not what was wanted, or never arrived. "Try again", "retry", "redo it", "do it again", "no, I meant the Arlington one", "that's not what I asked", "those aren't right" are all true when the assistant has just answered or has just failed to deliver what was asked. From the person's side a failed execution and a wrong answer are the same thing: "try again" means the last attempt did not work, however it failed, and the assistant should do the same thing again, not a new guess at what they meant.
 
 It is false in every other case, and these are the ones that get mistaken for it:
 - A next question about the same subject. "And what about Saturday?" after a Friday answer is the conversation continuing, not the Friday answer being rejected.
 - A request to change or extend what was made: "make it shorter", "add Jen to it", "now do one for Sunday". The thing that was made was accepted; this asks for the next version of it.
-- A retry after something visibly failed or did not arrive - an error, a picture that never came, a search that found nothing. That failure is already recorded; this field is for the answer that arrived and was wrong anyway.
-- The first message of a conversation, or any message where the assistant has not just answered.
+- The assistant asked a question of its own and the person is answering it: "where are you heading?" answered with "the waterfront" is a fresh answer, not a request to redo anything.
+- The first message of a conversation, or any message where the assistant has not just answered and nothing was attempted.
 
-When in doubt, false. The cost of false is a signal not collected. The cost of true is blaming a turn that was fine, and the record of what this assistant does well is built out of these.
+When in doubt, false. The cost of false is a retry not being read as one, and the assistant replying with a question when the person wanted the same thing done again. The cost of true is blaming a turn that was fine, and the record of what this assistant does well is built out of these.
