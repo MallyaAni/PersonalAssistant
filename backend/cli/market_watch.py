@@ -31,13 +31,18 @@ so the tool's whole job is to notice a level and say so.
 """
 
 import argparse
+import os
 import sys
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
 
-from backend.market.alpaca import credentials
+from backend.market.alpaca import AlpacaUnavailableError, credentials
+
+ENV_FILE = Path(".env")
+KEYS = ("APCA_API_KEY_ID", "APCA_API_SECRET_KEY")
 
 LATEST_URL = "https://data.alpaca.markets/v2/stocks/{symbol}/trades/latest"
 TIMEOUT = 15.0
@@ -55,6 +60,35 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--interval", type=float, default=30.0, help="seconds")
     parser.add_argument("--once", action="store_true", help="one poll, then exit")
     return parser
+
+
+# The Alpaca keys from the environment, else from the repository's .env,
+# which is where the desk keeps them and is never committed. Nothing is
+# printed; the values go into this process only.
+def keys_from_env_file(path: Path = ENV_FILE) -> dict[str, str]:
+    """Return the APCA keys found in `path`, without touching the environment."""
+    found: dict[str, str] = {}
+    if not path.exists():
+        return found
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if "=" not in stripped or stripped.startswith("#"):
+            continue
+        name, _, value = stripped.partition("=")
+        if name.strip() in KEYS:
+            found[name.strip()] = value.strip().strip('"').strip("'")
+    return found
+
+
+# Headers for the feed: the environment first, the .env file second.
+def headers_for_feed() -> dict[str, str]:
+    """Return the auth headers, reading .env when the environment lacks them."""
+    try:
+        return credentials()
+    except AlpacaUnavailableError:
+        for name, value in keys_from_env_file(ENV_FILE).items():
+            os.environ.setdefault(name, value)
+        return credentials()
 
 
 # The latest trade price for one symbol, or None when the feed has none.
@@ -113,7 +147,7 @@ class Watch:
 def main() -> None:
     """Entry point."""
     args = build_parser().parse_args()
-    headers = credentials()
+    headers = headers_for_feed()
     watches = [Watch(s.upper(), args.stop, args.high, args.floor) for s in args.symbols]
     print(
         f"watching {', '.join(w.symbol for w in watches)}: {args.stop:.0%} off the high"
