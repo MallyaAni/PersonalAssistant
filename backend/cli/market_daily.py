@@ -159,7 +159,6 @@ def prune(root: Path, asof: date, days: int) -> list[Path]:
     return removed
 
 
-
 # Ask the broker what became of the orders written down last session, and
 # fold the answer back into the state.
 #
@@ -320,8 +319,13 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     entry["refused"] = refused
     entry["plan"] = what
     entry["settled"] = [
-        {"symbol": s.symbol, "side": s.side, "qty": s.qty,
-         "status": s.status, "filled": s.filled_qty}
+        {
+            "symbol": s.symbol,
+            "side": s.side,
+            "qty": s.qty,
+            "status": s.status,
+            "filled": s.filled_qty,
+        }
         for s in settled
     ]
     if live:

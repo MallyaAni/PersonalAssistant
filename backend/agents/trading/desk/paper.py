@@ -159,7 +159,6 @@ def plan(
     return orders, new, what
 
 
-
 # What the broker says became of each order this desk wrote down.
 #
 # An order that is accepted is not an order that is filled. It can be
