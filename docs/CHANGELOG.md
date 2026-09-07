@@ -2,6 +2,76 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - Reinforcement learning on the fifteen-minute bars, tested once and stopped
+
+**The question.** Three measurements on the daily book had said the same
+thing - the allocation is not where the value is, and nothing with thousands
+of parameters learns a market from roughly 65 independent periods. The
+fifteen-minute store is a different arithmetic: 20.8 million bars across 529
+names, the regime where RL has genuinely worked in finance. So it was tested
+rather than argued, on the 93 book names, with 2026 held out and never seen by
+anything until one final table.
+
+**What was built.** `backend/cli/market_intraday_rl.py`: 69,223 clean
+name-sessions of 26 bars, returns within the day only so overnight gaps,
+unadjusted splits and re-listings never reach an agent that is flat at the
+close; ten causal features standardised on training rows; every position
+bounded to [-1, 1] and forced flat at the close, so nothing wins by leverage or
+by holding overnight; cost charged on every unit of turnover. Two agents from
+the literature rather than invented - Lim, Zohren and Roberts' direct-Sharpe
+recurrent policy, which survived 2-3 bps on 88 futures, and PPO with the
+positional-context state of the one intraday DRL paper with concrete numbers
+(arXiv 2406.08013), which assumed 0.08 bps of cost, about forty times too low
+for equities. Two published intraday effects as unfitted baselines: Gao, Han,
+Li and Zhou's first-half-hour momentum and Heston, Korajczyk and Sadka's hourly
+reversal. Train 2020-2024, choose epochs and seeds on 2025, score 2026 once.
+
+**The answer, at 3 bps one-way, which is what spread plus slippage costs on
+liquid US large caps.** Sharpe on 11,312 held-out sessions:
+
+| strategy | turnover | @1bp | @3bp | @5bp | @10bp |
+|---|---|---|---|---|---|
+| long the session | 2.00 | 0.06 | -0.27 | -0.61 | -1.44 |
+| first-half-hour momentum | 1.99 | -2.56 | -5.01 | -7.46 | -13.56 |
+| hourly reversal | 11.51 | -1.10 | -3.82 | -6.62 | -13.92 |
+| direct Sharpe policy, best seed | 1.20 | -1.10 | -2.65 | -4.18 | -7.87 |
+| direct Sharpe policy, seed average | 0.90 | -0.39 | -1.44 | -2.47 | -5.03 |
+| PPO, positional context | 3.53 | -1.28 | -1.97 | -2.64 | -4.23 |
+
+Nothing is positive at a realistic cost, and the reason is in the first row.
+Holding these names open to close earned 3.6 bp per name-day in 2026 - the
+daily panel, from a different source, says 2.9 - and a round trip at 3 bps
+costs 6. The direct-Sharpe policy nearly learned the right lesson: validation
+Sharpe of +0.02 to +0.04 across seeds is a policy that found nothing worth
+paying for. PPO found something on 2025 (validation +1.10, +1.69, -0.29 across
+seeds) and lost all of it on 2026, which is what fitted noise looks like when
+the year changes.
+
+**The published effects fail in every year, not just the held-out one.** Both
+rules lose in each of 2020 through 2026 at 3 bps, and so do their inverses -
+the fade rule earns -1.2 bp/day at 1 bp across the training years. The
+underlying effect is about a basis point and the round trip is six. Those
+papers measured an index ETF from 1993-2013 and a broad cross-section at
+institutional costs; single-name AI and software stocks in 2020-2026 are not
+that population. The rules' 27% hit rates are cost exceeding signal on most
+days, not the signal pointing the wrong way - which was checked on training
+years before it was believed, because the alternative would have been a
+tempting thing to "discover" on the test set.
+
+**What it rules out.** An intraday sleeve on these names at retail-realistic
+costs, and intraday execution timing as a place to combine an agent with the
+desk - the desk trades about nine names a month with no market impact at its
+size, and there is no intraday edge to time into. Two agents, two rules and
+their inverses, seven years, eleven thousand held-out sessions: consistent
+enough to stop. It does not rule out the fifteen-minute data as *features* for
+the daily desk, which is a different question, and it says nothing about costs
+below a basis point, where "long the session" turns faintly positive.
+
+The result and its protocol are recorded in the module's docstring so the
+experiment is not run again from memory.
+
+Diagram impact: NONE - a research CLI with no path into the desk's decisions.
+
 ## 2026-09-07 - The paper book starts trading, and a better volatility forecast that changes nothing
 
 **The desk had never placed an order.** The nightly job wrote a record and
