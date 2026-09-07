@@ -47,3 +47,39 @@ async def test_an_unknown_place_still_yields_a_verdict_and_names_nothing_foreign
     )
     assert judgement.bound is True
     assert judgement.foreign == ()
+
+
+# A query that drifted must not be able to veto its own correction.
+#
+# 2026-09-07, live: asked "whats going on in the area tomorrow?" from
+# Courthouse, Virginia, compose sampled "tomorrow events Napa Valley
+# September 7" - a town in nobody's memory, history, interests or locality.
+# Shown that query, this judgement answered place_bound false, which is
+# defensible read narrowly: the query WAS bound to Napa rather than to the
+# asker's home. But false switches off every hold the caller applies,
+# including the one that strips foreign places, so the invented town disabled
+# the guard that exists to remove it. The turn then ran eight searches around
+# Napa Valley and listed Calistoga as being near Courthouse.
+#
+# Both halves are asserted here, because either alone leaves the hole open:
+# the verdict stays true, AND the drifted town is named foreign so the caller
+# has something to strip.
+_DRIFTED = [
+    ("whats going on in the area tomorrow?", "tomorrow events Napa Valley September 7", "napa"),
+    ("what's on this weekend?", "Portland Oregon events this weekend", "portland"),
+    ("where should we eat tonight?", "best dinner Austin Texas tonight", "austin"),
+]
+
+
+@pytest.mark.parametrize(("question", "drifted", "town"), _DRIFTED)
+async def test_a_drifted_query_keeps_the_verdict_and_names_the_town(llm, question, drifted, town):
+    planner = SearchPlanner(llm)
+    verdicts = [planner.place_judgement(question, drifted, _PLACE) for _ in range(3)]
+    bound = sum(1 for verdict in verdicts if verdict.bound is True)
+    assert bound >= 2, (question, drifted, [verdict.bound for verdict in verdicts])
+    named = sum(
+        1
+        for verdict in verdicts
+        if any(town in place.casefold() for place in verdict.foreign)
+    )
+    assert named >= 2, (question, drifted, [verdict.foreign for verdict in verdicts])
