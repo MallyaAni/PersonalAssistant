@@ -98,8 +98,8 @@ def _worker(bridge, monkeypatch, accounts: dict, replies: dict, *, group=None, r
 
     conversed: list[dict] = []
 
-    async def converse(user_id: str, text: str, active_image=None, status=None, room=None, **_):
-        conversed.append({"user_id": user_id, "text": text, "room": room})
+    async def converse(user_id: str, text: str, active_image=None, status=None, room=None, replying_to="", **_):
+        conversed.append({"user_id": user_id, "text": text, "room": room, "replying_to": replying_to})
         return TurnResult(replies.get(text, _FAILURE_REPLY))
 
     provisioned: list[tuple] = []
@@ -846,3 +846,54 @@ async def test_an_unaddressed_room_photo_that_finds_the_backend_down_is_parked_w
     parked = json.loads(worker.redis.store[_PARKED_KEY])
     assert [p["guid"] for p in parked] == ["g1"]
     assert parked[0].get("message", {}).get("attachments") == message["attachments"]
+
+
+# The message a reply quoted has to survive the burst that carries it.
+#
+# Groupie, 2026-09-07 03:20:43: "this", long-pressed onto "Scout whats going
+# on today to do in the area for us?". The bridge put the quote on the wire
+# correctly - reply_to_text was right - and the stored turn had replying_to
+# None, so the answer was "What's 'this,' Ani?".
+#
+# Two ways it was lost, one per test below. The turn was written 57 seconds
+# after the message, which is the safety cap rather than a later message
+# completing the burst, so it was the flush path that dropped it.
+@pytest.mark.asyncio
+async def test_a_burst_flushed_by_the_cap_still_knows_what_was_quoted(monkeypatch):
+    quoted = "Scout whats going on today to do in the area for us?"
+    message = _room_message("g1", "5550100", "this", addressed_by="reply")
+    message["reply_to_guid"] = "anchor-1"
+    message["reply_to_text"] = quoted
+    bridge = _Bridge({"messages": [message], "cursor": 5})
+    worker, conversed, _ = _worker(
+        bridge, monkeypatch, ACCOUNTS, {"this": "Here's what's on today."}, group=GROUP,
+        readiness=[{"complete": False, "needs_reply": True}],
+    )
+    assert await worker.tick() == 0
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_BURST_CAP_SECONDS", 0.0)
+    worker.invoke_tool.payload = {"messages": [], "cursor": 6}
+    assert await worker.tick() == 1
+    assert conversed[0]["replying_to"] == quoted, conversed[0]
+
+
+@pytest.mark.asyncio
+async def test_a_quote_on_the_first_fragment_survives_a_bare_second(monkeypatch):
+    # The reply opened the burst and the fragment that completed it carries
+    # no quote of its own. The burst is still about what was long-pressed.
+    quoted = "Scout whats going on today to do in the area for us?"
+    first = _room_message("g1", "5550100", "this", addressed_by="reply")
+    first["reply_to_guid"] = "anchor-1"
+    first["reply_to_text"] = quoted
+    bridge = _Bridge({"messages": [first], "cursor": 5})
+    worker, conversed, _ = _worker(
+        bridge, monkeypatch, ACCOUNTS, {"this\nor tomorrow": "Here's both."}, group=GROUP,
+        readiness=[{"complete": False, "needs_reply": True}, {"complete": True, "needs_reply": True}],
+    )
+    assert await worker.tick() == 0
+    worker.invoke_tool.payload = {
+        "messages": [_room_message("g2", "5550100", "or tomorrow", addressed_by="")],
+        "cursor": 6,
+    }
+    assert await worker.tick() == 1
+    assert conversed[0]["text"] == "this\nor tomorrow"
+    assert conversed[0]["replying_to"] == quoted, conversed[0]

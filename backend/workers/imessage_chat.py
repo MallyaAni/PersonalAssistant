@@ -498,9 +498,12 @@ class IMessageChatWorker:
             # Judged by meaning before a reply: unfinished fragments wait for
             # the rest, a closing "thanks!" gets no reply, and a finished
             # burst is answered as one message.
-            burst = await self._collect(user_id, reply_to, guid, text, in_group=False)
-            if burst is None:
+            collected = await self._collect(
+                user_id, reply_to, guid, text, in_group=False, anchor=answering
+            )
+            if collected is None:
                 return 0
+            burst, answering = collected
             try:
                 turn = await self._with_ack(
                     self._converse(
@@ -689,11 +692,19 @@ class IMessageChatWorker:
             # Addressed with only a file nothing here can open: say so.
             turn = TurnResult(_unsupported_media_reply(media))
         else:
-            burst = await self._collect(
-                group.user_id, reply_to, guid, text, in_group=True, room=room, addressed_by=room["addressed_by"]
+            collected = await self._collect(
+                group.user_id,
+                reply_to,
+                guid,
+                text,
+                in_group=True,
+                room=room,
+                addressed_by=room["addressed_by"],
+                anchor=answering,
             )
-            if burst is None:
+            if collected is None:
                 return 0
+            burst, answering = collected
             try:
                 turn = await self._with_ack(
                     self._converse(
@@ -867,10 +878,11 @@ class IMessageChatWorker:
         in_group: bool,
         room: dict | None = None,
         addressed_by: str = "",
-    ) -> str | None:
+        anchor: str = "",
+    ) -> tuple[str, str] | None:
         if not settings.IMESSAGE_CHAT_READINESS_ENABLED:
-            return text
-        pending = await self._pending_add(reply_to, user_id, guid, text, in_group, room)
+            return text, anchor
+        pending = await self._pending_add(reply_to, user_id, guid, text, in_group, room, anchor)
         fragments = [str(item.get("text") or "") for item in pending.get("fragments") or []]
         verdict = await self._readiness(user_id, reply_to, fragments, in_group, addressed_by)
         oldest = float((pending.get("fragments") or [{}])[0].get("at") or time.time())
@@ -890,7 +902,12 @@ class IMessageChatWorker:
             await self._mark_seen(guid)
             logger.info("imessage_chat_no_reply_needed", extra={"fragments": len(fragments)})
             return None
-        return "\n".join(fragment for fragment in fragments if fragment)
+        # The burst's own anchor, not just this message's: the reply may have
+        # been the fragment that opened the burst.
+        return (
+            "\n".join(fragment for fragment in fragments if fragment),
+            anchor or str(pending.get("replying_to") or ""),
+        )
 
     # The judgement itself, through the backend so the routing model is
     # asked the way every other judgement is. Fails open to "answer it".
@@ -1137,7 +1154,14 @@ class IMessageChatWorker:
 
     # Append a fragment to the address's pending burst and return the burst.
     async def _pending_add(
-        self, reply_to: str, user_id: str, guid: str, text: str, in_group: bool, room: dict | None
+        self,
+        reply_to: str,
+        user_id: str,
+        guid: str,
+        text: str,
+        in_group: bool,
+        room: dict | None,
+        anchor: str = "",
     ) -> dict:
         key = _PENDING_KEY.format(to=reply_to)
         record: dict = {"user_id": user_id, "reply_to": reply_to, "in_group": in_group, "room": room, "fragments": []}
@@ -1149,6 +1173,10 @@ class IMessageChatWorker:
             pass
         record["fragments"] = [*(record.get("fragments") or []), {"guid": guid, "text": text, "at": time.time()}][-12:]
         record["room"] = room or record.get("room")
+        # The newest quote wins, and an unquoted fragment does not erase the
+        # one before it: "this" after a long-press reply is still about the
+        # message that was long-pressed.
+        record["replying_to"] = anchor or str(record.get("replying_to") or "")
         try:
             await self.redis.set(key, json.dumps(record), ex=_PENDING_TTL_SECONDS)
             await self.redis.sadd(_PENDING_INDEX_KEY, reply_to)
@@ -1192,7 +1220,15 @@ class IMessageChatWorker:
             room = record.get("room") if record.get("in_group") else None
             status: list[str] = []
             turn = await self._with_ack(
-                self._converse(user_id, text, status=status, room=room), reply_to, status
+                self._converse(
+                    user_id,
+                    text,
+                    status=status,
+                    room=room,
+                    replying_to=str(record.get("replying_to") or ""),
+                ),
+                reply_to,
+                status,
             )
             try:
                 await self._deliver(reply_to, turn, user_id=user_id, room=room)
