@@ -48,7 +48,46 @@ which.
 
 Results
 -------
-Recorded in the changelog for the run, and copied here once known.
+3,401 releases over 88 names (five book names have none), nomic-embed
+v1.5 at width 768 over the front of each release cut to the server's
+2,048-token context - about a quarter of what the tone reader sees.
+Seventeen folds at twenty sessions, 160,403 out-of-sample cells; "fresh"
+is the 54,029 within twenty sessions of a release.
+
+  horizon 20                        rank IC     t   net Sharpe   fresh IC
+  ridge (lambda 100)                 0.0133  1.13       0.31      -0.0012
+  boosted trees                      0.0309  1.79       0.37      -0.0164
+  the sentiment analyst              0.0310  2.17       0.55       0.0024
+  the desk's score                   0.0549  3.37       1.02      -0.0003
+
+  the desk + text (trees) at 0.25    0.0573  3.46       0.95
+  the desk + text (trees) at 0.50    0.0590  3.59       0.83
+  the desk + text (trees) at 1.00    0.0578  3.46       0.70
+
+  horizon 60
+  ridge (lambda 100)                 0.0080  0.39      -0.36      -0.0375
+  boosted trees                      0.0168  0.53      -0.04      -0.0285
+  the sentiment analyst              0.0478  2.00       0.67       0.0212
+  the desk's score                   0.0582  1.99       0.63       0.0795
+
+  the desk + text (trees) at 0.25    0.0600  2.04       0.63
+  the desk + text (trees) at 1.00    0.0625  2.08       0.80
+
+Read plainly: the vector carries about as much cross-sectional
+information at twenty sessions as the five fields do, and no more. Trees
+reach the analyst's rank IC but not its t or its net Sharpe; ridge does
+not get close; and on the cells nearest a release, where new information
+would show, the text reads zero at both horizons while the desk reads
+0.0795 at sixty. Adding a vote for the text to the desk raises rank IC by
+a few thousandths and lowers net Sharpe at the horizon the book trades
+on, 1.02 to 0.83 at half weight, because the vector's ranking churns. At
+sixty sessions the vote helps Sharpe, 0.63 to 0.80, but the text alone is
+not significant there, so that is one reading of a noisy sum.
+
+The reader has it. Nothing is changed on this. The bounded caveat stands:
+the embedder saw a quarter of each release, and a server context of
+8,192 tokens (`VLLM_EMBEDDING_MAX_MODEL_LEN`) would let it read the whole
+thing; that is one `embed` run and one more evaluation, not new code.
 """
 
 import argparse

@@ -2,6 +2,35 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The release text, embedded and measured: the reader has it
+
+The earnings releases are stored as text now (3,401 over 93 names) and
+embedded with the deployment's nomic-embed v1.5 into 768-wide vectors, each
+release cut to the server's 2,048-token context by measuring it with the
+server's own tokenizer - characters were not a safe proxy, a table-heavy
+release ran past the cap at seven thousand of them. `market_release_eval`
+fits ridge and boosted trees walk-forward on the vector against the desk's
+beta-adjusted label and measures them on the same cells as the five-field
+sentiment analyst and the desk.
+
+| horizon 20, 160,403 cells | rank IC | t | net Sharpe | fresh IC |
+|---|---|---|---|---|
+| ridge (lambda 100) | 0.0133 | 1.13 | 0.31 | -0.0012 |
+| boosted trees | 0.0309 | 1.79 | 0.37 | -0.0164 |
+| the sentiment analyst (five fields) | 0.0310 | 2.17 | 0.55 | 0.0024 |
+| the desk's score | 0.0549 | 3.37 | 1.02 | -0.0003 |
+| the desk + text at 0.50 | 0.0590 | 3.59 | 0.83 | |
+
+At sixty sessions the text alone is not significant (trees 0.0168, t 0.53)
+and the desk reads 0.0795 on fresh-release cells where the text reads
+-0.0285. The vector carries about as much cross-sectional information as the
+five fields the reader extracts, and no more; it is not fresh-release
+information; and a vote for it lowers the book's net Sharpe at the horizon it
+trades on. Nothing is changed on this. It is a bounded test - the embedder saw
+a quarter of each release - and the whole release is one environment change on
+spark1 (`VLLM_EMBEDDING_MAX_MODEL_LEN=8192`, restart the embedding container),
+one `embed` run and one more evaluation away.
+
 ## 2026-09-07 - The daily experiments are commands now, and one was wrong
 
 The findings recorded above `sizing.realised_volatility` and `risk.desk_targets`
