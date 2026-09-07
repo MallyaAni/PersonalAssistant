@@ -67,10 +67,21 @@ def test_changes_between_records(tmp_path):
     assert changes.orders[0].ticker == "MU"  # the largest move first
     assert changes.flags_raised == ["theme co-movement structure has changed shape"]
     assert changes.flags_cleared == ["participation below its two-year median"]
+    # The first session on file has nothing to be compared against. It used
+    # to come back as a buy of every held name from a zero weight, which the
+    # Desk view rendered as a table of orders headed "At the next open" -
+    # an instruction to buy the whole book, produced by comparing it with
+    # nothing. `since` of None is how a reader tells that apart from a
+    # session where the book genuinely did not move.
     first = deskrecord.changes(latest, None)
     assert first.since is None
+    assert first.orders == []
     assert first.upgrades == []
-    assert {o.action for o in first.orders} == {"buy"}
+    assert first.downgrades == []
+    # The regime's flags are still worth reading on a first session; they
+    # describe today rather than a change.
+    assert first.flags_raised == ["theme co-movement structure has changed shape"]
+    assert first.flags_cleared == []
     data = changes.to_dict()
     assert data["orders"][0]["reason"].startswith("leaves the book")
 

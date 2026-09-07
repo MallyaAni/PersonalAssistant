@@ -135,7 +135,11 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             </tbody>
           </table>
         ) : (
-          <p className="text-sm text-[#6e6e73]">Nothing to trade: the book is unchanged.</p>
+          <p className="text-sm text-[#6e6e73]">
+            {changes?.since
+              ? 'Nothing to trade: the book is unchanged.'
+              : 'This is the first session on file, so there is nothing to compare it with. The book below is the desk’s target, not a list of trades. A second session gives this table something to say.'}
+          </p>
         )}
         {changes && (changes.upgrades.length > 0 || changes.downgrades.length > 0) && (
           <p className="mt-2 text-sm text-[#6e6e73]">

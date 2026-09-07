@@ -105,6 +105,15 @@ def _grades(record: dict | None) -> dict[str, str]:
 # buy and every grade is new.
 def changes(latest: dict, previous: dict | None, min_trade: float = 0.005) -> Changes:
     """Return the Changes from `previous` to `latest`."""
+    # With no earlier record there is no transition to describe. Comparing
+    # the book against an empty one makes every held name look like a fresh
+    # buy from a zero weight, and the Desk view then reads as an
+    # instruction to buy the whole book at the next open. It is not one:
+    # it is the first session on file. `since` stays None so a reader can
+    # tell this apart from a session where nothing moved.
+    if previous is None:
+        flags = sorted(set(latest.get("regime", {}).get("flags", [])))
+        return Changes(since=None, flags_raised=flags)
     before, after = _grades(previous), _grades(latest)
     upgrades, downgrades = [], []
     for ticker, grade in after.items():
