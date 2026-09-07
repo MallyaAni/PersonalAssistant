@@ -16,6 +16,11 @@ person is used to be a word list in conversation_service.py ("events",
 had not imagined and is the pattern-decides-meaning rule this repository
 forbids. The same call now answers it, with the question in front of it;
 the code holds (place, dates, foreign names) follow the verdict.
+2026-09-07: a place that contains theirs is not foreign. Told the person was
+in "Courthouse, Virginia", this named "Arlington" foreign on the query "events
+Arlington Virginia tomorrow" - Arlington is the city Courthouse is a
+neighbourhood of. The caller strips what is named, so a correct local query
+lost its city and searched the whole state. Measured on the deployed model.
 2026-09-07: `place_bound` is judged on the question ALONE, and the prompt now
 says so. Asked "whats going on in the area tomorrow?" from Arlington, compose
 wrote "tomorrow events Napa Valley September 7" - a town nobody had mentioned.
@@ -58,7 +63,10 @@ something works, a person or product. A time word alone - this week, tonight
 Then `places`: the place names in the query that are a location somewhere
 other than where the person is - a city, town, district, county or region
 that is not theirs. A name that is part of where they are, or that names the
-same place, is not listed. A word that is not a place is not listed. When
+same place, is not listed. Neither is a place that CONTAINS where they are:
+the neighbourhood they gave you sits inside a city, that city inside a county
+and a state, and naming any of those is naming where they are, even when they
+did not say it themselves. A word that is not a place is not listed. When
 where they are is not known, list nothing.
 
 Answer `place_bound`, then `places`.
