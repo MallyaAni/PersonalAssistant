@@ -86,7 +86,7 @@ def headers_for_feed() -> dict[str, str]:
     try:
         return credentials()
     except AlpacaUnavailableError:
-        for name, value in keys_from_env_file().items():
+        for name, value in keys_from_env_file(ENV_FILE).items():
             os.environ.setdefault(name, value)
         return credentials()
 
