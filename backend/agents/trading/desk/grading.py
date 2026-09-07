@@ -37,6 +37,23 @@ ORDINAL: dict[str, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
 # How much of a full position each grade earns.
 SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 0.75, B: 0.5, C: 0.0}
 ROTATION_WEIGHT = 0.5
+# The weight each analyst carries in the desk's sum. Equal weights were the
+# rule until 2026-09-07; these are the ridge fit toward equal weights at
+# shrinkage 1 from `market_weights`, the same ordering the analysts'
+# individual measurements gave - value strongest, the tape weakest - and
+# stable in sign across every walk-forward fold. Behind the full-rule
+# simulator from 2021-06-01 they made Sharpe 1.90 against 1.85 at the same
+# return with the worst drawdown 17.8% against 19.0%; at the desk's own
+# horizon the rank IC gain is inside the noise and at sixty sessions it is
+# not. `grade_stances` with no weights is still the equal-weight rule, so
+# the two can always be compared.
+ANALYST_WEIGHTS = {
+    "value": 0.60,
+    "fundamental": 0.50,
+    "sentiment": 0.42,
+    "technical": 0.38,
+    "rotation": 0.30,
+}
 
 
 @dataclass(frozen=True)
@@ -84,8 +101,9 @@ def grade(
     sentiment: Opinion,
     rotation: Opinion | None = None,
     value: Opinion | None = None,
+    weights: dict[str, float] | None = None,
 ) -> Graded:
-    """Return the Graded panel."""
+    """Return the Graded panel; `weights` per analyst, equal when None."""
     convictions = {
         "fundamental": fundamental.conviction(),
         "technical": technical.conviction(),
@@ -102,7 +120,21 @@ def grade(
         None if rotation is None else rotation.stances(),
         None if value is None else value.stances(),
         convictions,
+        weights,
     )
+
+
+# The weight each analyst's stance and conviction carry in the sum. Equal
+# weights, rotation at half, is the rule; a different set is scaled to the
+# same total so the grade thresholds keep their meaning.
+def analyst_weights(weights: dict[str, float] | None, names) -> dict[str, float]:
+    """Return {analyst: weight} over `names`, scaled to the equal-weight total."""
+    equal = {n: ROTATION_WEIGHT if n == "rotation" else 1.0 for n in names}
+    if not weights:
+        return equal
+    raw = {n: float(weights.get(n, equal[n])) for n in names}
+    scale = sum(equal.values()) / max(sum(raw.values()), 1e-12)
+    return {n: w * scale for n, w in raw.items()}
 
 
 # The rule itself, on stances already taken.
@@ -113,16 +145,18 @@ def grade_stances(
     r: np.ndarray | None = None,
     v: np.ndarray | None = None,
     convictions: dict[str, np.ndarray] | None = None,
+    weights: dict[str, float] | None = None,
 ) -> Graded:
     """Return the Graded panel from (T, N) stance arrays."""
     stances = {"fundamental": f, "technical": t, "sentiment": s}
-    votes = (f + t + s).astype(float)
     if r is not None:
         stances["rotation"] = r
-        votes = votes + ROTATION_WEIGHT * r
     if v is not None:
         stances["value"] = v
-        votes = votes + v
+    w = analyst_weights(weights, tuple(stances))
+    votes = np.zeros(f.shape, dtype=float)
+    for name, stance in stances.items():
+        votes = votes + w[name] * stance
     grades = np.zeros(votes.shape, dtype=int)
     release_bullish = s == BULLISH
     both_bullish = (f == BULLISH) & (t == BULLISH)
@@ -139,8 +173,7 @@ def grade_stances(
     if convictions:
         summed = np.zeros(votes.shape)
         for name, values in convictions.items():
-            weight = ROTATION_WEIGHT if name == "rotation" else 1.0
-            summed = summed + weight * np.nan_to_num(values)
+            summed = summed + w.get(name, 1.0) * np.nan_to_num(values)
     # A bearish core analyst vetoes the top grades: the trade is at most B.
     vetoed = (f == BEARISH) | (t == BEARISH) | (s == BEARISH)
     if v is not None:

@@ -2,6 +2,122 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The analysts are weighted; entry timing; a trailing-stop watcher
+
+**The analysts carry unequal weights now.** Equal weights were an assumption.
+`market_weights` had fit a five-weight ridge toward equal weights walk-forward
+and found value 0.60, fundamental 0.50, sentiment 0.42, technical 0.38,
+rotation 0.30, stable in sign across every fold, with a rank IC gain inside
+the noise at twenty sessions and outside it at sixty. The missing test was the
+book. `grading.grade` takes weights (equal when none, so the rule is always
+there to compare), and `market_weights --simulate` regrades the desk under a
+set and runs the full rules from 2021-06-01:
+
+| weights | annual | vol | Sharpe | max drawdown |
+|---|---|---|---|---|
+| equal (the rule until today) | +31.8% | 17.2% | 1.85 | -19.0% |
+| ridge, shrink 1 | +31.6% | 16.7% | 1.90 | -17.8% |
+| sentiment-led (the offline policy's lean) | +31.6% | 16.8% | 1.88 | -19.8% |
+
+The ridge set is `grading.ANALYST_WEIGHTS` and the desk uses it. The case is
+modest and consistent, and the set was fixed by the fit before the book test
+ran. On the day it was adopted it changed two of nine held names and moved
+five grades a notch. The forward record decides whether it earns its keep.
+
+**Entry timing.** Across 1,153 arrivals of an A or A+ grade, entering later
+than the next open cost 0.3% a session later, 0.7% five sessions later and
+1.4% ten sessions later, more after a run-up than after a flat week. The
+signal's momentum continues; the desk is not late at the open.
+
+**A trailing-stop watcher.** `market_watch` polls Alpaca's free feed for a
+name and says when it crosses a trailing stop or a floor. It places no order.
+It exists because the book's history says that after a five-session rise of
+25% nothing predicts the turn and the worst tenth gives back a quarter within
+twenty sessions, so the only decision left is how much tail to carry.
+
+## 2026-09-07 - Offline RL wins the proxy and loses the book; survivorship measured
+
+Three more measurements on the desk, all on the `execution-rl` branch.
+
+**Offline RL over the desk's own history.** `market_offline_rl` replays the
+rule on every session with thirty-two perturbed books beside it, each scored
+by the same Sharpe-shaped reward, and learns from that log two ways: a
+permutation-invariant critic that picks among candidates, and an
+advantage-weighted policy (AWR) that imitates the logged books weighted by
+how much better than their session's mean they did. Walk-forward, ten folds,
+seeds averaged into one action per session, and the paired t reported three
+ways because twenty-session rewards on consecutive days overlap: naive,
+Newey-West, and on every twentieth session.
+
+| policy | mean reward | vs rule | Newey-West t | every 20th |
+|---|---|---|---|---|
+| the desk's rule | +0.611 | | | |
+| equal weight, whole book | +0.582 | -0.029 | -0.66 | -0.29 |
+| critic-selected book | +0.562 | -0.049 | -3.49 | -1.39 |
+| advantage-weighted, capped | +0.651 | +0.040 | +2.62 | +1.09 |
+| advantage-weighted, top names | +0.648 | +0.037 | +2.58 | +0.57 |
+
+The AWR gain survives the checks built to kill it - it is not concentration,
+not survivorship, and holds at the rule's own count of names - and then loses
+where it counts. `simulate.run` now takes an allocator, and behind the desk's
+full rules from 2017-12-27 the learned book makes Sharpe 1.52 to 1.54 against
+the rule's 1.64, with a deeper drawdown. The proxy has no cost, volatility
+target, holding rule or minimum trade; the book has all four. Nothing changes.
+The policy leans on sentiment and the tape more than the rule and on the
+filings less, which is what the analyst-weight ridge found.
+
+The allocation command's own t statistics were wrong: its pairing tiled the
+rule's rewards against seed-major policy rewards. Fixed; the means stood and
+the corrected t's (Newey-West -0.72 and -0.79) say the same thing.
+
+**Survivorship.** `market_survivorship` puts the four hundred universe names
+outside the book on their own price panel. Equal weight over the common
+sessions: the book +34.2% a year at Sharpe 1.24, the control +15.6% at 0.88 -
+the choice of names was worth nineteen points a year before any signal, and
+every absolute return in the backtests carries that. Cross-sectionally the
+technical analyst's twenty-session edge is book-specific and its sixty-session
+edge is of the same order on the control; momentum is nothing on either. The
+sentiment and value analysts, which carry the desk, cannot be measured off the
+book: no filings, tone or levels are stored for those names. That is the
+honest next project if the selection is to be trusted beyond the names it was
+built on.
+
+**Execution, the larger population.** With the rule re-decided every session,
+2,394 entries and exits over 840 sessions: sells at the closing auction are 24
+bps better than at the open (t -2.77), buys at the open are best. Four of the
+five test years agree and 2026, the year being traded, reads the other way on
+325 orders, so the book does not move. Instead every settled order in the
+paper record now carries its fill price and what the closing auction of the
+fill session would have paid (`close_shortfall_bps`), so the paper account
+answers the sell question as sessions accumulate.
+
+## 2026-09-07 - When should an order fill? Measured; the open stays
+
+The desk fills market-on-open. `market_execution_rl` asks whether any other
+schedule across the day's twenty-six fifteen-minute bars does better: the
+close, TWAP, a VWAP shape, the first or last hour, a policy trained directly
+on the shortfall, and PPO on the same state and action. Fills at a bar's
+typical price, the two auctions free, two basis points inside a bar, no
+impact. Walk-forward by year, 2022 to 2026, t clustered by session. The
+session preparation the intraday experiments share now lives in
+`backend/market/intraday.py`, with tests for the New York clock and the
+session filter.
+
+| every book name, pooled | buys bps | t | sells bps | t |
+|---|---|---|---|---|
+| open (the desk) | 0.00 | | 0.00 | |
+| close | +5.31 | 1.15 | -5.31 | -1.15 |
+| first hour | +3.20 | 1.73 | +0.80 | 0.26 |
+| direct policy | +2.40 | 2.23 | -2.18 | -0.51 |
+| PPO | +3.17 | 1.48 | +0.20 | -0.04 |
+
+On the desk's own 344 orders the drift is ten times larger and runs the way
+the desk decided - buys keep rising through the day, sells keep falling - so
+the open is right for buys and later would be right for sells (first hour
+-41 bps, t -2.02 on 57 sessions). Neither agent found a schedule the fixed
+ones did not contain. Market-on-open stays; the sells are re-measured on the
+paper record, where fills are real.
+
 ## 2026-09-07 - The release text, embedded and measured: the reader has it
 
 The earnings releases are stored as text now (3,401 over 93 names) and

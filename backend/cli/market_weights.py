@@ -66,19 +66,31 @@ sample. That is the sample-size argument made concrete, and it is the
 reason no network over these same inputs has beaten the rule: what wins
 is the rule plus a nudge the data can justify, not a fit.
 
-The weights are not changed on this. Choosing the shrinkage by reading
-these out-of-sample numbers is itself a fit, and the gain at the horizon
-the book trades on is one thousandth of rank IC. The evidence for
-reweighting toward value and away from the tape is real and is recorded;
-the forward paper record is the place to see whether the longer horizon's
-gain is worth acting on.
+Then the book. `--simulate` regrades the desk under each weight set and
+runs the full-rule simulation from 2021-06-01:
+
+  equal weights (the rule)          +31.8%  17.2% vol  Sharpe 1.85  maxDD -19.0%
+  ridge, shrink 1                   +31.6%  16.7%       Sharpe 1.90  maxDD -17.8%
+  sentiment-led (the offline lean)  +31.6%  16.8%       Sharpe 1.88  maxDD -19.8%
+
+The ridge set is the desk's weights now (`grading.ANALYST_WEIGHTS`). The
+case for it is modest and consistent: a rank IC gain inside the noise at
+twenty sessions and outside it at sixty, a better book at the same return
+with a shallower drawdown, and a weight set that was fixed by the
+walk-forward fit before the book test was run, so the book test is
+confirmation rather than selection. On the day it was adopted it changed
+two of the nine names held and moved five grades by one notch. The
+forward paper record is where it earns its keep or does not.
 """
 
 import argparse
+from dataclasses import replace
+from datetime import date
 
 import numpy as np
 
 from backend.agents.trading.desk import desk as trading_desk
+from backend.agents.trading.desk import grading, simulate
 from backend.agents.trading.desk.grading import ROTATION_WEIGHT
 from backend.market.harness import evaluate_scores, walk_forward_folds
 from backend.market.store import MarketStore
@@ -99,7 +111,62 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--test", type=int, default=126)
     parser.add_argument("--embargo", type=int, default=5)
     parser.add_argument("--data-dir", default="data/market")
+    parser.add_argument("--simulate", action="store_true", help="run the book too")
+    parser.add_argument("--since", type=date.fromisoformat, default=date(2021, 6, 1))
     return parser
+
+
+# The weight sets the book is run under: the rule, the ridge fit at shrink
+# 1, and the order the offline policy leaned toward.
+WEIGHT_SETS = {
+    "equal weights (the rule until 2026-09-07)": {
+        "fundamental": 1.0,
+        "technical": 1.0,
+        "sentiment": 1.0,
+        "value": 1.0,
+        "rotation": ROTATION_WEIGHT,
+    },
+    "ridge, shrink 1 (the desk now)": grading.ANALYST_WEIGHTS,
+    "sentiment-led (the offline lean)": {
+        "sentiment": 0.51,
+        "technical": 0.39,
+        "value": 0.33,
+        "fundamental": 0.26,
+        "rotation": 0.20,
+    },
+}
+
+
+# The desk regraded under a weight set: the same analysts, a different
+# sum, and everything downstream - grade, score, sizing - recomputed.
+def _regraded(report, weights):
+    opinions = report.opinions
+    graded = grading.grade(
+        opinions["fundamental"],
+        opinions["technical"],
+        opinions["sentiment"],
+        report.regime.rotation,
+        opinions["value"],
+        weights,
+    )
+    scores = graded.as_scores(trading_desk.blended(opinions))
+    return replace(report, graded=graded, scores=scores)
+
+
+# The book under each weight set, full rules, from `since`.
+def _simulated(report, since: date) -> None:
+    print(
+        f"\nthe book from {since}, full rules: "
+        f"{'annual':>8} {'vol':>7} {'Sharpe':>7} {'maxDD':>8} {'total':>9}"
+    )
+    for name, weights in WEIGHT_SETS.items():
+        regraded = _regraded(report, weights)
+        result = simulate.run(regraded, since=since, use_exits=False)
+        s = result.stats()
+        print(
+            f"{name:36} {s['annual']:+8.1%} {s['volatility']:7.1%} {s['sharpe']:7.2f} "
+            f"{s['drawdown']:8.1%} {s['total']:+9.1%}"
+        )
 
 
 # The (T, N, 5) conviction block and the equal weights the desk uses.
@@ -159,6 +226,9 @@ def main() -> None:
     """Entry point."""
     args = build_parser().parse_args()
     report = trading_desk.run(MarketStore(args.data_dir))
+    if args.simulate:
+        _simulated(report, args.since)
+        return
     panel = report.panel
     in_book = np.array([t in report.sides for t in panel.tickers])
     in_book[panel.index(panel.benchmark)] = False

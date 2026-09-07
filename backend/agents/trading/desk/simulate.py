@@ -163,8 +163,16 @@ def run(
     cost_bps: float = COST_BPS,
     use_exits: bool = True,
     redeploy: bool = REDEPLOY,
+    allocator=None,
 ) -> SimResult:
-    """Return the SimResult of the desk's rules over the panel."""
+    """Return the SimResult of the desk's rules over the panel.
+
+    `allocator(report, panel, config, t)` replaces the rule's targets on
+    rebalance sessions when given; everything else - fills, costs, the
+    holding between rebalances - stays the desk's, so a learned
+    allocation is measured by the book it makes and nothing else.
+    """
+    decide = allocator or _targets
     panel: Panel = report.panel
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
@@ -184,7 +192,7 @@ def run(
     for t in range(start, rows - 1):
         # Decided on t's close, filled at t+1's open.
         if (t - start) % rebalance == 0:
-            target = _targets(report, panel, config, t)
+            target = decide(report, panel, config, t)
             reason = "rebalanced out"
             rebalances += 1
         else:

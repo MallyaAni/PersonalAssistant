@@ -377,3 +377,19 @@ def test_the_tightening_tilt_respects_the_name_cap():
         )
         # And it does not quietly raise the gross to compensate.
         assert tilted.sum() <= untilted.sum() + 1e-9
+
+
+# An allocator handed to the simulator replaces the rule's targets on
+# rebalance sessions and nothing else: the book holds what it asked for.
+def test_an_allocator_replaces_the_rules_targets():
+    report = _report()
+    n1 = report.panel.index("N1")
+
+    def only_n1(_report, panel, _config, _t):
+        target = np.zeros(len(panel.tickers))
+        target[n1] = 0.5
+        return target
+
+    held = simulate.run(report, use_exits=False, rebalance=20, allocator=only_n1)
+    assert {trade.ticker for trade in held.trades} == {"N1"}
+    assert held.invested[150] > 0

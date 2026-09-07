@@ -137,6 +137,7 @@ def run(store: MarketStore, asof: date | None = None) -> DeskReport:
         opinions[sentiment.NAME],
         view.rotation,
         opinions[value.NAME],
+        grading.ANALYST_WEIGHTS,
     )
     scores = graded.as_scores(blended(opinions))
     last = len(panel.dates) - 1

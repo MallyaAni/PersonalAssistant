@@ -123,23 +123,18 @@ assumed 0.08 bps of cost, roughly forty times too low for equities.
 import argparse
 import json
 import os
-from datetime import UTC, datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 import numpy as np
-import pyarrow.parquet as pq
 import torch
 from torch import nn
 
+from backend.market.intraday import BARS
+from backend.market.intraday import episodes as _episodes
+from backend.market.intraday import partition as _partition
 from backend.market.universe import book_sides, build_universe
 
-ROOT = Path("data/market/bars_15m")
 OUT = Path(os.environ.get("TMP", "/tmp")) / "intraday"
-NEW_YORK = ZoneInfo("America/New_York")
-BARS = 26
-OPEN_LOCAL = 9 * 60 + 30  # minutes after midnight, New York
-BAD_BAR = 0.30
 VOL_DAYS = 20
 COSTS_BPS = (1.0, 3.0, 5.0, 10.0)
 HEADLINE_BPS = 3.0
@@ -165,94 +160,6 @@ FEATURES = (
 
 
 # --- the dataset --------------------------------------------------------------
-
-
-# The newest partition of fifteen-minute bars.
-def _partition() -> Path:
-    parts = sorted(p for p in ROOT.glob("asof=*") if p.is_dir())
-    if not parts:
-        raise SystemExit("no bars_15m partition; run market_intraday --refresh")
-    return parts[-1]
-
-
-# Minutes after midnight New York for each bar, from its UTC start. The
-# offset is looked up once per calendar day, since it only changes on a
-# Sunday and no session spans one.
-def _local_minutes(start: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    day = start.astype("datetime64[D]")
-    utc_minute = (start - day).astype(int)
-    offsets = {}
-    for d in np.unique(day):
-        noon = datetime.fromtimestamp(
-            int(d.astype("datetime64[s]").astype(int)) + 12 * 3600, tz=UTC
-        )
-        offsets[d] = int(noon.astimezone(NEW_YORK).utcoffset().total_seconds() // 60)
-    offset = np.array([offsets[d] for d in day])
-    local = utc_minute + offset
-    # A bar before New York midnight in UTC terms lands on the previous day.
-    day = day + (local // (24 * 60)).astype("timedelta64[D]")
-    return day, local % (24 * 60)
-
-
-# One name's regular-session bars on the New York clock, with the slot
-# each occupies, and the last close of every day regardless of
-# completeness (for the overnight gap of the day after).
-def _load(root: Path, ticker: str):
-    d = pq.read_table(root / f"{ticker}.parquet").to_pydict()
-    start = np.array(d["start"], dtype="datetime64[m]")
-    day, local = _local_minutes(start)
-    keep = (local >= OPEN_LOCAL) & (local < OPEN_LOCAL + BARS * 15)
-    fields = {
-        k: np.array(d[k], dtype=float)[keep]
-        for k in ("open", "close", "high", "low", "volume")
-    }
-    slot = ((local[keep] - OPEN_LOCAL) // 15).astype(int)
-    day = day[keep]
-    last_close: dict = {}
-    for dd in np.unique(day):
-        m = day == dd
-        last_close[dd] = float(fields["close"][m][np.argmax(slot[m])])
-    return day, slot, fields, last_close
-
-
-# The full, clean sessions of one name as aligned arrays, plus each
-# session's opening price and the close of the trading day before it.
-def _episodes(root: Path, ticker: str):
-    day, slot, f, last_close = _load(root, ticker)
-    days_seen = np.array(sorted(last_close))
-    kept: dict[str, list] = {
-        k: [] for k in ("days", "close", "high", "low", "volume", "open0", "prev")
-    }
-    for i, d in enumerate(days_seen):
-        m = day == d
-        if m.sum() != BARS or not np.array_equal(np.sort(slot[m]), np.arange(BARS)):
-            continue
-        order = np.argsort(slot[m])
-        c = f["close"][m][order]
-        if not np.all(np.isfinite(c)) or np.any(c <= 0):
-            continue
-        if np.abs(np.diff(np.log(c))).max() > BAD_BAR:
-            continue
-        # The previous trading day's close, if that day is on file and
-        # within a long weekend of this one; otherwise the gap is unknown.
-        prev = np.nan
-        if i > 0 and (d - days_seen[i - 1]).astype(int) <= 4:
-            prev = last_close[days_seen[i - 1]]
-        kept["days"].append(d)
-        kept["close"].append(c)
-        kept["open0"].append(float(f["open"][m][order][0]))
-        kept["prev"].append(prev)
-        for k in ("high", "low", "volume"):
-            kept[k].append(f[k][m][order])
-    if not kept["days"]:
-        return None
-    stacked = [np.stack(kept[k]) for k in ("close", "high", "low", "volume")]
-    return (
-        np.array(kept["days"]),
-        *stacked,
-        np.array(kept["open0"]),
-        np.array(kept["prev"]),
-    )
 
 
 # Causal features for every bar of every session, what each bar paid, and

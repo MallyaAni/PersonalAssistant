@@ -79,11 +79,13 @@ class Sized:
 # seeds, two algorithms:
 #
 #   the desk's rule                +0.611
-#   equal weight, same names       +0.605  (t -1.28)
-#   policy gradient (REINFORCE)    +0.579  (t +0.25)
-#   cross-entropy search           +0.585  (t +0.69)
+#   equal weight, same names       +0.605  (Newey-West t -0.46)
+#   policy gradient (REINFORCE)    +0.579  (Newey-West t -0.72)
+#   cross-entropy search           +0.585  (Newey-West t -0.79)
 #
-# Neither agent beat the rule, and both were slightly worse.
+# Neither agent beat the rule, and both were slightly worse. The t is
+# Newey-West over the twenty-session reward window, since consecutive
+# sessions' rewards overlap; `market_allocation_rl` has the full table.
 #
 # Equal weight on the same names scored the same as this whole function -
 # inverse volatility, caps, grade multipliers and all. And a volatility
