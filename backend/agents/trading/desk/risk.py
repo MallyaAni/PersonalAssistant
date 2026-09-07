@@ -18,7 +18,7 @@ from backend.market.panel import Panel
 from backend.market.sizing import (
     Position,
     SizingConfig,
-    apply_name_cap,
+    apply_limits,
     realised_volatility,
     size_today,
 )
@@ -154,6 +154,8 @@ def size(
 def _steepen_weights(
     targets: np.ndarray, panel: Panel, config: SizingConfig, cap: float | None
 ) -> np.ndarray:
+    # The tilt moves weight between names, so it can lift a theme over its
+    # cap as easily as a name over its own. Both are re-checked below.
     gross = float(np.abs(targets).sum())
     if gross <= 0:
         return targets
@@ -169,9 +171,14 @@ def _steepen_weights(
     total = float(adjusted.sum())
     if total <= 0:
         return targets
-    out = adjusted / total * gross
-    if cap:
-        out = apply_name_cap(out, cap, gross)
+    out = apply_limits(
+        adjusted / total * gross,
+        panel.themes,
+        panel.tickers,
+        cap or 0.0,
+        config.theme_cap,
+        gross,
+    )
     return np.sign(targets) * out
 
 

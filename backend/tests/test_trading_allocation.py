@@ -101,7 +101,38 @@ CASES = [
     ("eight names, two themes", 8, [3, 2, 3, 2, 3, 2, 3, 2], False, 1.0, 2),
     ("eight names, two themes, tightening", 8, [3, 2, 3, 2, 3, 2, 3, 2], True, 0.75, 2),
     ("a book with only C grades", 5, [0, 0, 0, 0, 0], False, 1.0, 1),
+    ("a name in three themes", 9, [3, 3, 2, 3, 1, 3, 2, 3, 1], False, 1.0, 3),
+    (
+        "a name in three themes, tightening",
+        9,
+        [3, 3, 2, 3, 1, 3, 2, 3, 1],
+        True,
+        0.75,
+        3,
+    ),
 ]
+
+
+# Themes for `count` names. With more than one theme the first name
+# belongs to all of them, because a name in two themes is the case where
+# capping one theme changes another and the enforcement has to hold both.
+def _themes(count: int, theme_count: int) -> dict[str, tuple[str, ...]]:
+    every = tuple(f"theme-{k}" for k in range(theme_count))
+    out: dict[str, tuple[str, ...]] = {}
+    for i in range(count):
+        out[f"N{i}"] = (
+            every if i == 0 and theme_count > 1 else (every[i % theme_count],)
+        )
+    return out
+
+
+# What each theme adds up to under a set of weights.
+def _theme_totals(themes, tickers, weights) -> dict[str, float]:
+    totals: dict[str, float] = {}
+    for column, ticker in enumerate(tickers):
+        for theme in themes.get(ticker, ()):
+            totals[theme] = totals.get(theme, 0.0) + float(abs(weights[column]))
+    return totals
 
 
 @pytest.mark.parametrize(
@@ -112,7 +143,7 @@ CASES = [
 def test_the_paper_book_and_the_simulator_size_the_same_book(
     label, count, grade_list, tightening, exposure, theme_count
 ):
-    themes = {f"N{i}": (f"theme-{i % theme_count}",) for i in range(count)}
+    themes = _themes(count, theme_count)
     panel = _panel(count, themes)
     grade_row = np.array([*grade_list, 0])
     scores = np.linspace(0.9, 0.2, count + 1)
@@ -134,8 +165,15 @@ def test_the_paper_book_and_the_simulator_size_the_same_book(
         f"  paper     {np.round(paper_weights, 4)}\n"
         f"  simulator {np.round(sim, 4)}"
     )
-    # And whatever they agree on obeys the cap.
+    # And whatever they agree on obeys every limit, not just the name one.
+    # A test that checks the largest position and stops will pass a book
+    # that is 46% into a theme capped at 40%, which is what the first
+    # version of this file did.
     assert sim.max() <= config.name_cap + 1e-9
+    for theme, total in _theme_totals(themes, panel.tickers, sim).items():
+        assert total <= config.theme_cap + 1e-9, (
+            f"{label}: {theme} at {total:.4f} over the {config.theme_cap} cap"
+        )
 
 
 # The cap is a postcondition of sizing, not an attempt at one.
@@ -166,3 +204,40 @@ def test_no_book_is_ever_over_the_name_cap(count: int):
         # A book too small to spend its gross under the cap holds cash
         # rather than breaching, so the gross may be below the target.
         assert sum(weights) <= count * config.name_cap + 1e-9
+
+
+# Theme caps are a postcondition too, and the case that broke them is a
+# name belonging to more than one theme.
+#
+# `apply_name_cap` guaranteed one constraint at a time, which is not enough
+# when they interact: handing a capped name's excess to its neighbours
+# lifts every theme those neighbours are in. With one name in two themes
+# the book came back inside every name cap and 0.4376 into a theme capped
+# at 0.40 - and the two sizing paths agreed exactly on that breaching book,
+# so agreement between them proves nothing on its own.
+@pytest.mark.parametrize("count", [4, 8, 12])
+@pytest.mark.parametrize("theme_count", [2, 3])
+@pytest.mark.parametrize("tightening", [False, True])
+def test_no_theme_is_ever_over_its_cap(count, theme_count, tightening):
+    themes = _themes(count, theme_count)
+    panel = _panel(count, themes)
+    grade_row = np.array([3] * count + [0])
+    scores = np.linspace(0.9, 0.2, count + 1)
+    config = SizingConfig(
+        top_fraction=1.0, short_fraction=0.0, name_cap=0.15, theme_cap=0.40
+    )
+    book = risk.size(scores, grade_row, panel, _state(1.0, tightening), config)
+    weights = np.zeros(len(panel.tickers))
+    for sized in book:
+        weights[panel.index(sized.position.ticker)] = sized.weight
+
+    # The overlapping name is in every theme, so this is the case where
+    # capping one theme moves another.
+    assert len(themes["N0"]) == theme_count
+    assert weights.max() <= config.name_cap + 1e-9
+    for theme, total in _theme_totals(themes, panel.tickers, weights).items():
+        assert total <= config.theme_cap + 1e-9, (
+            f"{count} names in {theme_count} themes, "
+            f"{'tightening' if tightening else 'calm'}: {theme} at {total:.4f} "
+            f"over the {config.theme_cap} cap"
+        )

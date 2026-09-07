@@ -93,6 +93,54 @@ def apply_name_cap(weights: np.ndarray, cap: float, gross: float) -> np.ndarray:
     return out
 
 
+# Every limit the book has, made true at the same time.
+#
+# `apply_name_cap` guarantees one constraint. Guaranteeing one at a time is
+# not enough when they interact: scaling a theme down to its cap changes no
+# name cap, but redistributing a name's excess to its neighbours raises
+# every theme those neighbours belong to. With a name in two themes, the
+# book came back inside every name cap and 0.4376 into a theme capped at
+# 0.40.
+#
+# So the redistribution runs first, to use the budget where it can, and
+# then this reduces - and only reduces - until nothing is over. Clipping a
+# name and scaling a theme both move weights down, so the passes converge
+# rather than trading one breach for another. Where a limit cannot be met
+# while spending the gross, the gross is what gives way: the remainder
+# stays in cash, because a limit that yields to a target exposure is not a
+# limit.
+def apply_limits(
+    weights: np.ndarray,
+    themes: Mapping[str, tuple[str, ...]],
+    tickers: tuple[str, ...],
+    name_cap: float,
+    theme_cap: float,
+    gross: float,
+) -> np.ndarray:
+    """Return `weights` inside every name and theme cap, spending at most `gross`."""
+    out = apply_name_cap(weights, name_cap, gross) if name_cap else weights.copy()
+    if not theme_cap or theme_cap <= 0:
+        return out
+    members: dict[str, list[int]] = {}
+    for column, ticker in enumerate(tickers):
+        for theme in themes.get(ticker, ()):
+            members.setdefault(theme, []).append(column)
+    for _pass in range(60):
+        moved = False
+        for columns in members.values():
+            total = float(out[columns].sum())
+            if total > theme_cap + 1e-12:
+                out[columns] *= theme_cap / total
+                moved = True
+        over = out > name_cap + 1e-12 if name_cap else np.zeros(len(out), bool)
+        if over.any():
+            out = np.minimum(out, name_cap)
+            moved = True
+        if not moved:
+            break
+    return out
+
+
 @dataclass(frozen=True, slots=True)
 class BookResult:
     """What holding the book would have been like."""
@@ -276,8 +324,17 @@ def _apply_caps(
             )
             if not (changed_names or changed_themes):
                 break
-        held = magnitude[side]
-        magnitude[side] = apply_name_cap(held, config.name_cap, float(held.sum()))
+        held = magnitude.copy()
+        held[~side] = 0.0
+        held = apply_limits(
+            held,
+            themes,
+            tickers,
+            config.name_cap,
+            config.theme_cap,
+            float(magnitude[side].sum()),
+        )
+        magnitude[side] = held[side]
         out[side] = magnitude[side] * sign
     return out
 
