@@ -51,3 +51,21 @@ def test_latest_price_reads_the_feed_or_reports_none():
     assert market_watch.latest_price("IREN", {}, get=ok) == 44.67
     assert market_watch.latest_price("IREN", {}, get=refused) is None
     assert market_watch.latest_price("IREN", {}, get=empty) is None
+
+
+# The keys are read from a .env file only when the environment lacks them,
+# quotes stripped, comments and other lines ignored, and never printed.
+def test_keys_are_read_from_the_env_file_when_absent(tmp_path, monkeypatch):
+    env = tmp_path / ".env"
+    lines = ["# keys", 'APCA_API_KEY_ID="abc"', "OTHER=1", "APCA_API_SECRET_KEY='xyz'"]
+    env.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert market_watch.keys_from_env_file(env) == {
+        "APCA_API_KEY_ID": "abc",
+        "APCA_API_SECRET_KEY": "xyz",
+    }
+    assert market_watch.keys_from_env_file(tmp_path / "missing") == {}
+    monkeypatch.delenv("APCA_API_KEY_ID", raising=False)
+    monkeypatch.delenv("APCA_API_SECRET_KEY", raising=False)
+    monkeypatch.setattr(market_watch, "ENV_FILE", env)
+    headers = market_watch.headers_for_feed()
+    assert headers["APCA-API-KEY-ID"] == "abc"
