@@ -28,6 +28,7 @@ from backend.artifacts.lineage import Lineage
 from backend.artifacts.types import ImageGenerationRequest
 from backend.config.settings import settings
 from backend.core.egress import OutboundPrivacyPolicy
+from backend.core.harness_identity import is_harness_id
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
     ArtifactLineageStore,
@@ -3190,7 +3191,14 @@ class ConversationService:
         )
         current = first_query
         first_round: list[dict[str, Any]] = []
-        for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
+        # One round for a harness, however many the setting allows for a
+        # person. Each round is a separate billed search: the account is
+        # charged once for the question, the provider once per round, which is
+        # why the month's real spend ran far ahead of what the per-account
+        # counters showed. A harness asserts on the route and the shape of the
+        # answer, and a second round changes neither.
+        rounds = 1 if is_harness_id(user_id or "") else max(1, settings.SEARCH_MAX_ROUNDS)
+        for round_number in range(rounds):
             tried.append(current)
             logger.info("Trace %s search round %d: %s", trace_id, round_number + 1, current[:160])
             found, ok = await self._load_search_context(current, trace_id, max_results)
@@ -3204,7 +3212,7 @@ class ConversationService:
                     gathered.append(item)
             if self.search_planner is None:
                 break
-            if round_number + 1 >= max(1, settings.SEARCH_MAX_ROUNDS):
+            if round_number + 1 >= rounds:
                 break
             # Rounds up to the minimum are not negotiated. Asked whether the
             # results were sufficient, the model answered "yes" 8 times out of

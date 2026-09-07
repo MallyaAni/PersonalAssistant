@@ -3,7 +3,7 @@ from typing import Any
 import httpx
 
 from backend.core.interfaces import SearchProvider
-from backend.search.types import SearchResult, SearchResults
+from backend.search.types import SearchResult, SearchResults, frugal_search
 
 # Tavily accepts 0-20 results per request; clamp locally so a bad caller value
 # becomes a bounded request instead of a provider-side validation error.
@@ -67,6 +67,13 @@ class TavilySearchProvider(SearchProvider):
         )
 
     # Execute one bounded query against Tavily and return ranked results.
+    # What this request costs. Tavily bills an advanced search at two credits
+    # and a basic one at one, and a frugal caller - a deploy harness - gets
+    # the cheap one: it asserts which tool ran and how the answer reads, and
+    # neither improves with the deeper search.
+    def _payload_depth(self) -> str:
+        return "basic" if frugal_search.get() else self.search_depth
+
     async def search(
         self,
         query: str,
@@ -90,7 +97,7 @@ class TavilySearchProvider(SearchProvider):
         payload = {
             "query": query,
             "max_results": fetch,
-            "search_depth": self.search_depth,
+            "search_depth": self._payload_depth(),
         }
         # The key travels in the Authorization header, never in the body or logs.
         headers = {"Authorization": f"Bearer {self.api_key}"}

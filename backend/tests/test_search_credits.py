@@ -64,3 +64,33 @@ async def test_one_credit_left_does_not_fund_a_two_credit_search() -> None:
             await provider.search("anything")
     finally:
         current_search_identity.reset(token)
+
+
+# The deploy harnesses spend the same live Tavily allowance people do. On
+# 2026-09-06 they were three quarters of the month's searches: the journey
+# sweep and the search harness both run on every deploy and both ask real
+# questions of a real provider. Tavily bills an advanced search at two credits
+# and a basic one at one, and a question may take up to SEARCH_MAX_ROUNDS
+# separate searches - the account is charged once for the question, the
+# provider once per round, which is why the real spend ran so far ahead of the
+# per-account counters.
+#
+# Neither harness asserts anything that reads the extra depth or the later
+# rounds: they check which tool ran and how the answer is shaped.
+def test_a_harness_search_asks_for_the_cheap_depth():
+    from backend.search.tavily import TavilySearchProvider
+    from backend.search.types import frugal_search
+
+    provider = TavilySearchProvider(api_key="k", search_depth="advanced")
+    token = frugal_search.set(True)
+    try:
+        assert provider._payload_depth() == "basic"
+    finally:
+        frugal_search.reset(token)
+    assert provider._payload_depth() == "advanced"
+
+
+def test_a_person_keeps_the_depth_the_deployment_configured():
+    from backend.search.tavily import TavilySearchProvider
+
+    assert TavilySearchProvider(api_key="k", search_depth="advanced")._payload_depth() == "advanced"

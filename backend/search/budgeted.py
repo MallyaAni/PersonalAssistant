@@ -29,7 +29,8 @@ from typing import Any
 
 from backend.core.interfaces import SearchProvider
 from backend.discovery.search_budget import SearchBudget
-from backend.search.types import SearchResults
+from backend.core.harness_identity import is_harness_id
+from backend.search.types import SearchResults, frugal_search
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +151,11 @@ class BudgetedSearchProvider(SearchProvider):
         max_results: int | None = None,
     ) -> SearchResults:
         identity = current_search_identity.get()
+        # Set before anything can search: a harness spends the same live
+        # allowance a person does, and by 2026-09-06 the two deploy harnesses
+        # were three quarters of the month's Tavily credits. They check which
+        # tool ran and how the answer reads, so the cheap depth serves them.
+        frugal_search.set(identity is not None and is_harness_id(identity.user_id))
         await self._reconcile_if_stale()
         if identity is None:
             # Unattributed callers are unmetered per account by design, but the

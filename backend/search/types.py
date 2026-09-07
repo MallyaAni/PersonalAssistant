@@ -1,4 +1,15 @@
+from contextvars import ContextVar
 from dataclasses import dataclass
+
+# A search that must cost as little as the provider allows.
+#
+# The deploy harnesses spend the same live Tavily allowance people do, and by
+# 2026-09-06 they were three quarters of it: the journey sweep and the search
+# harness run on every deploy, each asking real questions of a real provider.
+# What they measure is which tool was chosen and how the answer is shaped -
+# neither of which improves with a deeper search. Set per request from the
+# caller's identity, read by the provider that bills.
+frugal_search: ContextVar[bool] = ContextVar("frugal_search", default=False)
 
 
 @dataclass(frozen=True, slots=True)
