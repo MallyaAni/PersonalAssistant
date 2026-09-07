@@ -2,6 +2,32 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The board says why, and its exit is the signal
+
+Two changes to the action board after use. Each row now carries the analysts
+that fired, as F T S V R marks, with the headline and the plain-English reason
+a click away, so the "why" is on the row and the separate tables fold behind
+one link. The exit plan reads the desk's own way first - a name leaves when
+its grade falls below A, at the next rebalance, with the clock beside it - and
+stop levels sit behind an off-by-default switch, because every price-based
+exit tested in this book cost mean return.
+
+Measured so the switch is a choice: across the universe since 2015, a day that
+trades through the prior twenty-session low and closes back above it (65,787
+cases) is followed by the same flat ten sessions as one that closes below it
+(73,169), -0.03% against -0.02% beta-adjusted; wicks are 47% of such days; the
+same holds at a 12% trailing level. Stops are not hunted here. They cost
+because they truncate a right-skewed path.
+
+The timing cell says what the measurements say: the open, with the note that
+the close was better for sells in 2022 to 2025 and not in 2026. The live cell
+reads the last print since the session's open, on the close, and on the entry.
+
+`market_daytype`: whether the first hour, two or three say what kind of day it
+is - green or red, AI or software - walk-forward against the naive
+continuation. No reader beats a coin by more than a point or two at any
+cut-off; the most any captures is three and a half basis points.
+
 ## 2026-09-07 - The action board, live by the candle
 
 The Desk view showed grades and a paper book; it did not say what to do. It
