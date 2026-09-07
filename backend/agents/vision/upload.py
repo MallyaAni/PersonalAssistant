@@ -37,6 +37,28 @@ class UploadInspectionDecision(BaseModel):
         "safety_sensitive",
     ]
     identified_items: list[UploadIdentifiedItem] = Field(max_length=12)
+    # Handles the user gives this image or its subject, kept so a later
+    # "the photo of gubacchi" can recall the picture by name. Empty when the
+    # request names nothing and no name is visible in the pixels.
+    names: list[str] = Field(default_factory=list, max_length=8)
+
+    # Normalize the user-given handles: strip, drop empties and over-long
+    # strings, and collapse case-variants so one subject is never stored twice.
+    @model_validator(mode="after")
+    def normalize_names(self) -> "UploadInspectionDecision":
+        seen: set[str] = set()
+        clean: list[str] = []
+        for raw in self.names:
+            value = " ".join(str(raw).split()).strip()
+            if not value or len(value) > 60:
+                continue
+            key = value.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            clean.append(value)
+        self.names = clean
+        return self
 
     # Normalize fields whose meaning is conditional on the grounding decision.
     @model_validator(mode="after")
@@ -62,6 +84,14 @@ class UploadInspectionDecision(BaseModel):
 
 
 UPLOAD_INSPECTION_SCHEMA = UploadInspectionDecision.model_json_schema()
+# The VLM must always emit `names` (an empty list when there is nothing): an
+# optional field in a strict response grammar is a field the model skips, and
+# a name it skips is a handle that can never be recalled. The Python default
+# stays so callers that build a decision without names keep working.
+UPLOAD_INSPECTION_SCHEMA["required"] = [
+    *(UPLOAD_INSPECTION_SCHEMA.get("required") or []),
+    "names",
+]
 
 
 # Join the fixed evidence contract to the user's bounded request.

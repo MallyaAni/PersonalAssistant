@@ -220,10 +220,19 @@ class VisionAnalysisService:
         raw_kind = str(artifact.get("kind") or "image")
         kind_label = raw_kind.removesuffix("_image") or "stored"
         artifact_id = str(artifact.get("id"))
+        # Fold the user-given names into the embedded text so a later mention
+        # of the name finds the picture by semantic recall as well as by the
+        # exact-name match in prefer_prompt_matches.
+        stored_names = (artifact.get("metadata") or {}).get("analysis_names") or []
+        if stored_names:
+            handles = ", ".join(str(name) for name in stored_names)
+            names_text = f" Names the user calls it: {handles}."
+        else:
+            names_text = ""
         try:
             content = (
                 f"Description of an image the user has ({kind_label}):"
-                f" {_indexable(analysis_text)}"
+                f" {_indexable(analysis_text)}{names_text}"
             )
             metadata = {
                 "artifact_id": artifact_id,
@@ -504,6 +513,7 @@ class VisionAnalysisService:
                 }
                 for item in inspection.identified_items
             ],
+            "analysis_names": list(inspection.names),
             **inspection.metadata,
         }
         if needs_user_answer:

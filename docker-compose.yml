@@ -134,6 +134,11 @@ services:
       - ROUTING_LLM_MODEL=${ROUTING_LLM_MODEL:-deepseek-v4-flash}
       - VISION_BASE_URL=${VISION_BASE_URL:-http://animallya-spark2.local:8001}
       - VISION_MODEL=${VISION_MODEL:-qwen3-vl-8b}
+      # The vision functional tests reach the real VLM through
+      # get_vision_provider(), which reads VISION_LLM_BASE_URL - the serving
+      # services set it literally below, and without it the test container
+      # fell back to 127.0.0.1:8003 and every vision test skipped (2026-09-07).
+      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
       # The picture tests reach the desktop's ComfyUI with the deployed
       # recipe; without these the test container asked for a model file the
       # desktop does not have (400) and read pictures back from a server

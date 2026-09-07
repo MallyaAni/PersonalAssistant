@@ -60,3 +60,11 @@ and `low` is weak. User-provided regional context can improve a label or suggest
 a possibility, but context alone can never make confidence high. Use an empty
 array for safety-sensitive identity requests. Do not lower a clearly recognized
 item merely because another item in the same image is ambiguous.
+
+Set `names` to the handles the user gives this image or its subject in their
+request - a pet, plant, person, or thing they call by name. A name the user
+supplies is the most recallable handle for the image, so include it even when
+it is not a real word and even when it appears nowhere in the pixels. Also
+include any name visibly written on the subject when the pixels establish it.
+Leave `names` as an empty array when the request gives no name and none is
+visible. Each name is a short handle, not a description.

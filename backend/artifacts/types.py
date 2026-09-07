@@ -97,3 +97,6 @@ class VisionUploadInspection:
     model: str
     metadata: dict[str, Any]
     identified_items: tuple[VisualIdentification, ...] = ()
+    # Handles the user gives the image or its subject, so a later mention of
+    # the name can recall the picture. Empty when nothing is named.
+    names: tuple[str, ...] = ()

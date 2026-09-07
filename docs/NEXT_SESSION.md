@@ -1,11 +1,73 @@
 # Next session
 
-Verified state as of 2026-09-05. `deep-matter.com` serves from spark1. The
-Windows desktop is powered on again and holds the GPU for image work; when
-it is off, image requests get an honest "try again later". Everything below
-was checked by running it, not by reading it. The seven image scenarios can
-be re-run any time with `python -m backend.cli.exercise_image_scenarios`
-inside the backend container.
+Verified state as of 2026-09-07. `deep-matter.com` serves from spark1.
+Everything below was checked by running it, not by reading it.
+
+## 2026-09-07 — events offer their links instead of printing them; the VLM records the names a user gives an upload (DEPLOYED `7e02167b`; this batch PUSHED)
+
+Two fixes, both with functional tests on the real models.
+
+**The events prose fallback offers links instead of printing them.** The
+typed listing moved to offering the map/calendar/page links on 2026-09-05,
+but the prose fallback (`prompts/reply/events_format.md`, used when the
+search results could not be typed into the code listing) still printed
+`Map: https://maps.google.com/?q=...` and `Hear it:`/`Details:` URLs, and
+the link fence let the grounded map searches through — so
+`exercise_search_scenarios` failed on **every deploy from 2026-09-06**
+(`offers links=False, printed map=True`). `events_format.md` now says no
+web address at all and finishes with the same offer the typed listing
+uses ("Want the map, the calendar link, or the event page for any of
+these? Tell me which and I'll send them."). `_apply_event_links`
+(conversation_service.py) already degrades gracefully (`no_listing` → the
+reply asks) so offering is honest on the prose path too.
+`test_events_format_behaviour.py` now asserts the property: no printed URL,
+an offer present.
+
+**The VLM records what a user names an uploaded subject.** Gubacchi is the
+operator's pet bird; the assistant once recorded the name as a person and
+had no picture bound to it. Now `UploadInspectionDecision.names` (required
+in the strict grammar — an optional field is a field the model skips) plus
+an instruction in `prompts/vision/upload_inspection.md` capture the handles
+the user gives in their request, even a made-up word like a pet's name and
+even when the pixels cannot show it. The names are stored on the artifact
+as `analysis_names`, folded into the embedded index text (semantic recall),
+and matched exactly by `prefer_prompt_matches` (`_TEXT_FIELDS` now includes
+`analysis_names`), so "do you know gubacchi?" can find the photo. Functional
+`test_vision_naming_behaviour.py` 2/2 on the real VLM: a bird caption "this
+is gubacchi, my pet bird" → `names` contains gubacchi and the observation
+describes the bird; a caption with no name → empty. Unit tests in
+`test_vision_provider.py`, `test_image_prompt_match.py`,
+`test_vision_memory_indexing.py`.
+
+**Gap fixed along the way:** the `functional-tests` compose service never
+set `VISION_LLM_BASE_URL`, so `get_vision_provider()` fell back to
+`127.0.0.1:8003` inside the container and **every vision functional test
+silently skipped**. The serving services set it literally
+(`http://animallya-spark2.local:8001`); the test service now does too, and
+the vision tests actually run.
+
+**KNOWN, pre-existing:** with the vision runtime now reachable, 4 tests in
+`test_visual_observation_behaviour.py` fail — proven identical at HEAD
+`3595b03` (before this batch), i.e. model-phrasing brittleness against the
+synthetic fixtures (the model transcribes "8 PM" as "p.m."; a refusal reads
+"no fish or biological subjects" rather than "cannot identify"), not a
+regression from this change. They only run under `bash scripts/gate.sh
+--all`; the deploy gate's five suites never see them. If `--all` is run,
+expect these four red until someone updates the assertions to the current
+model's phrasing.
+
+**Gates:** unit suite 3222 passed (the one `test_agent_runs` claim test
+races live agent workers — passes in isolation; same class as the
+documented `test_run_answers` flake); routing gate 100 passed. Both
+functional tests and the 57 vision unit tests pass.
+
+**Next atomic task.** Deploy this batch, re-run
+`exercise_search_scenarios` (expect the events check to pass now), then the
+gubacchi *entity* side is separate: no gubacchi photo exists yet, so a
+future upload of the bird with a naming caption is what binds the name to a
+picture. The person-misclassification ("i'm with gubacchi" recorded as a
+person) is still an open, wider issue and has no dedicated functional test
+yet.
 
 ## 2026-09-05 (evening) — the events listing offers links instead of printing them; the follow-up delivers them (PUSHED `153ec73`, NOT DEPLOYED)
 

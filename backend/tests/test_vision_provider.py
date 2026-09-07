@@ -109,6 +109,7 @@ async def test_structured_upload_inspection_uses_one_provider_call(monkeypatch):
         "needs_reasoning",
         "unsupported_reason",
         "identified_items",
+        "names",
     ]
     assert result.grounding == "unsupported"
     assert result.needs_reasoning is False
@@ -138,6 +139,26 @@ def test_unsupported_reason_is_inferred_from_item_uncertainty() -> None:
     )
 
     assert decision.unsupported_reason == "model_uncertain"
+
+
+# User-given names are normalized before they are stored: whitespace is
+# stripped, duplicates collapse, and empty or over-long handles are dropped.
+def test_names_are_normalized_and_deduplicated() -> None:
+    decision = UploadInspectionDecision.model_validate(
+        {
+            "intent": "ask",
+            "observation": "A small bird with a yellow collar.",
+            "answer": "A pet bird.",
+            "grounding": "not_needed",
+            "search_query": "",
+            "needs_reasoning": False,
+            "unsupported_reason": "not_applicable",
+            "identified_items": [],
+            "names": ["  Gubacchi ", "gubacchi", "", "gubacchi the bird", "  "],
+        }
+    )
+
+    assert decision.names == ["Gubacchi", "gubacchi the bird"]
 
 
 # A phone photo is scaled to fit the model before it is encoded; a small one
