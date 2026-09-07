@@ -59,6 +59,27 @@ async def test_a_first_person_arrangement_still_captures(llm: object) -> None:
     assert result.proposals, "a stated arrangement must produce a proposal"
 
 
+# A present-moment state - who the user is with, where they are, what they are
+# doing this instant - is the conversation's, not memory's. The 09-05 bird
+# evening stored "Ani is with Gubacchi" twice this way and read it back as if
+# the pet bird were a person; the rule must hold whatever the wording, and the
+# arrangement test above is the guard that it did not stop durable facts.
+@pytest.mark.parametrize(
+    "momentary",
+    [
+        "i'm with gubacchi",
+        "i am with gubacchi right now",
+        "i'm at the pharmacy",
+        "right now i'm waiting for the bus",
+    ],
+)
+async def test_a_present_moment_state_is_not_a_durable_fact(
+    llm: object, momentary: str
+) -> None:
+    result = await MemoryProposalAgent(get_llm_client()).propose(momentary)
+    assert result.proposals == (), result.proposals
+
+
 # One natural introduction can carry several compatible memories; none may vanish.
 async def test_profile_and_personal_fact_survive_the_same_message(llm: object) -> None:
     result = await MemoryProposalAgent(get_llm_client()).propose(
