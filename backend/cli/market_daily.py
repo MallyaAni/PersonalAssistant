@@ -19,6 +19,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from backend.agents.trading.desk import desk as trading_desk
+from backend.agents.trading.desk import plainly
 from backend.agents.trading.desk.narrative import DeskNarrator, brief_text
 from backend.cli import market_edgar, market_tone
 from backend.cli.market_desk import _print_book, _print_grades, _print_regime
@@ -245,9 +246,16 @@ def record(
     last = len(panel.dates) - 1
     state = report.regime.today()
     grades = {}
+    # Every name carries its own reason, written from the same evidence the
+    # grade came from. The model's brief covers only the names held, so
+    # without this the view answers "what" for ninety names and "why" for
+    # eight. Nothing here calls a model, so it costs nothing and cannot
+    # invent a figure.
+    scale = plainly.spreads(report)
     for column, ticker in enumerate(panel.tickers):
         if ticker == panel.benchmark:
             continue
+        view = report.brief(ticker)
         grades[ticker] = {
             "grade": report.graded.letter(last, column),
             "votes": float(report.graded.votes[last, column]),
@@ -256,6 +264,8 @@ def record(
             },
             "score": float(report.scores[last, column]),
             "side": report.sides.get(ticker, ""),
+            "headline": plainly.headline(view),
+            "reason": plainly.reason(view, scale),
         }
     return {
         "session": str(panel.dates[last]),

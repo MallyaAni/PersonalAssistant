@@ -1847,6 +1847,12 @@ export interface DeskGrade {
   stances: Record<string, number>;
   score: number;
   side: string;
+  // Written in code from the same evidence the grade came from, so every
+  // name has one. The model's brief is longer and better written but only
+  // covers the names actually held. Absent on records written before
+  // these fields existed.
+  headline?: string;
+  reason?: string;
 }
 
 export interface DeskBrief {

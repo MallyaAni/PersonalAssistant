@@ -256,22 +256,29 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
                   <td key={k} className="font-mono">{STANCE_MARK[g.stances[k] ?? 0]}</td>
                 ))}
                 <td>
-                  {briefs[ticker] ? (
+                  {briefs[ticker] || g.headline ? (
                     <button
                       type="button"
                       onClick={() => setOpenBrief(openBrief === ticker ? null : ticker)}
-                      className="text-[#0071e3] hover:underline"
+                      className="text-left text-[#0071e3] hover:underline"
                     >
-                      {openBrief === ticker ? 'hide' : briefs[ticker].verdict}
+                      {openBrief === ticker
+                        ? 'hide'
+                        : (briefs[ticker]?.verdict ?? g.headline)}
                     </button>
                   ) : (
                     <span className="text-[#6e6e73]">—</span>
                   )}
-                  {openBrief === ticker && briefs[ticker] && (
+                  {openBrief === ticker && (
                     <div className="mt-1 space-y-1 text-xs text-[#1d1d1f]">
-                      <p>{briefs[ticker].reasoning}</p>
-                      <p><span className="font-medium">Risks:</span> {briefs[ticker].risks}</p>
-                      <p><span className="font-medium">Watch:</span> {briefs[ticker].watch}</p>
+                      {g.reason && <p>{g.reason}</p>}
+                      {briefs[ticker] && (
+                        <>
+                          <p>{briefs[ticker].reasoning}</p>
+                          <p><span className="font-medium">Risks:</span> {briefs[ticker].risks}</p>
+                          <p><span className="font-medium">Watch:</span> {briefs[ticker].watch}</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </td>
