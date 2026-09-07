@@ -224,6 +224,51 @@ async def test_a_long_analysis_is_trimmed_before_it_is_indexed():
     assert "A magenta fox on a green platform." in content
 
 
+# A handle the user gave an uploaded subject is folded into the indexed
+# description, so a later mention of the name finds the picture by semantic
+# recall and not only by the exact-name match in prefer_prompt_matches.
+@pytest.mark.asyncio
+async def test_user_given_names_are_folded_into_the_indexed_description():
+    memory = RecordingMemory()
+    service = _service(memory)
+
+    await service._index_analysis(
+        "index_user",
+        {
+            "id": "44444444-4444-4444-8444-444444444444",
+            "kind": "uploaded_image",
+            "metadata": {"analysis_names": ["gubacchi"]},
+        },
+        "A small grey-and-white bird on a perch.",
+        "gemma-test",
+    )
+
+    assert len(memory.saved) == 1
+    assert "gubacchi" in memory.saved[0]["content"]
+    assert "A small grey-and-white bird on a perch." in memory.saved[0]["content"]
+
+
+# With no stored name the indexed description must not fabricate a handle.
+@pytest.mark.asyncio
+async def test_indexed_description_has_no_names_when_none_are_stored():
+    memory = RecordingMemory()
+    service = _service(memory)
+
+    await service._index_analysis(
+        "index_user",
+        {
+            "id": "44444444-4444-4444-8444-444444444444",
+            "kind": "uploaded_image",
+            "metadata": {},
+        },
+        "A vase of flowers on a table.",
+        "gemma-test",
+    )
+
+    assert len(memory.saved) == 1
+    assert "Names the user calls it" not in memory.saved[0]["content"]
+
+
 @pytest.mark.asyncio
 async def test_a_derived_description_is_not_listed_back_as_a_fact():
     from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE

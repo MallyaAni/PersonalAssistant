@@ -4,6 +4,13 @@ Arsalon's format, made the default for everyone: the operator's next events
 answer arrived through a plain web search without it (2026-08-26), because
 the format lived in a skill the router had not invoked. The result ranker
 now flags events and the reply renders prompts/reply/events_format.md.
+
+The links are offered, not printed - the typed listing moved to that on
+2026-09-05 (backend/core/event_links.py) and this prose fallback must hold
+the same line, which it had not until 2026-09-07 (it printed grounded map
+links, caught by exercise_search_scenarios on every deploy from 2026-09-06).
+The assertions are on the property - no printed address, an offer of the
+links, a stated price - so a reworded prompt survives.
 """
 
 from __future__ import annotations
@@ -43,8 +50,14 @@ async def test_events_come_back_in_the_agreed_shape(llm) -> None:
     messages.append({"role": "user", "content": "what events are happening in Arlington Virginia this weekend?"})
     text = str(llm.chat(messages, 700, None, 0.0)["content"])
     lowered = text.lower()
-    assert "maps.google.com/?q=" in lowered, text
-    assert "youtube.com/results?search_query=" in lowered, text
+    # No address is printed - the map, calendar and page links are offered and
+    # sent on request, never written into the listing.
+    assert "maps.google.com/?q=" not in lowered, text
+    assert "youtube.com/results?search_query=" not in lowered, text
+    assert not re.search(r"https?://", lowered), "printed a web address: " + text
+    # The links are offered at the end, in the same words the typed listing
+    # uses, so the prose fallback and the code listing hold one line.
+    assert "want the map" in lowered, "no offer of the links: " + text
     assert "$15" in text or "15" in text, text
     assert "free" in lowered, text
     assert not re.search(r"^#", text, re.M), "a header in a phone message: " + text

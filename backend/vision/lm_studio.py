@@ -165,6 +165,7 @@ class OpenAICompatibleVisionProvider(VisionProvider):
                 )
                 for item in decision.identified_items
             ),
+            names=tuple(decision.names),
         )
 
     # Answer a new question about one image given prior question/answer context.

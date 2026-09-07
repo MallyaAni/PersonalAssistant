@@ -89,8 +89,9 @@ def content_terms(query: str) -> set[str]:
 
 
 # Text an image can be matched against by subject: a generated image's prompt,
-# or an uploaded image's stored vision description.
-_TEXT_FIELDS = ("generation_prompt", "analysis")
+# an uploaded image's stored vision description, and the handles the user gave
+# it (a pet's name), which is the one place an exact, distinctive name lives.
+_TEXT_FIELDS = ("generation_prompt", "analysis", "analysis_names")
 
 
 # Prefer candidates whose describing text contains a distinctive query term.
@@ -98,9 +99,10 @@ _TEXT_FIELDS = ("generation_prompt", "analysis")
 # The cross-modal image embedding clusters by broad category - every car scores
 # as "a car" - so a specific query like "the porsche" cannot be resolved by
 # visual distance alone. Generated images name their subject in the prompt and
-# uploaded images in their vision description, so when the query carries
-# distinctive terms present in some candidates' text, restrict to those; a purely
-# descriptive query with no such term keeps the distance ranking unchanged.
+# uploaded images in their vision description or their user-given names, so
+# when the query carries distinctive terms present in some candidates' text,
+# restrict to those; a purely descriptive query with no such term keeps the
+# distance ranking unchanged.
 def prefer_prompt_matches(
     query: str, ranked: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
@@ -113,7 +115,14 @@ def prefer_prompt_matches(
 
 def _describing_text(hit: dict[str, Any]) -> str:
     metadata = hit.get("metadata") or {}
-    return " ".join(str(metadata.get(field) or "") for field in _TEXT_FIELDS).lower()
+    parts: list[str] = []
+    for field in _TEXT_FIELDS:
+        value = metadata.get(field)
+        if isinstance(value, (list, tuple)):
+            parts.extend(str(item) for item in value)
+        elif value:
+            parts.append(str(value))
+    return " ".join(parts).lower()
 
 
 def _text_matches(hit: dict[str, Any], terms: set[str]) -> bool:
