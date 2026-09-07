@@ -94,23 +94,45 @@ The desk's own orders, 344 over 57 sessions, each on its own side:
   direct policy          -15.13 -0.69     +1.43 -0.69    -30.93  -0.46
   PPO                     -0.19  0.28    +30.11  0.97    -29.12  -0.91
 
+The same kind of order many times over - the rule re-decided every
+session, 2,394 entries and exits over 840 sessions:
+
+  schedule              all bps      t   buys bps      t  sells bps      t
+  open (the desk)          0.00            0.00            0.00
+  close                   -9.82 -1.54     +4.03  0.92    -23.62  -2.77
+  TWAP                    -1.81 -0.17     +8.26  1.58    -11.84  -1.84
+  first hour              +4.53  1.62     +5.56  1.71     +3.51   0.24
+  last hour               -8.48 -1.45     +6.04  1.07    -22.96  -2.72
+  VWAP shape              -1.96 -0.27     +7.34  1.53    -11.23  -1.89
+  direct policy           -8.56 -1.98     +0.12  0.12    -17.21  -2.31
+  PPO                     +0.86  0.55     +5.70  1.67     -3.96  -1.10
+
+  sells at the close, by year   2022 -14   2023 -34   2024 -38   2025 -36   2026 +15
+                           t         -1.06      -2.27      -1.95      -1.47      -0.14
+
 Prices drifted up through the session over these years, five basis
 points open to close on average, so a buyer who waits pays and a seller
 who waits earns, and neither is significant across a thousand sessions.
-On the desk's own fill days the drift is ten times larger and runs the
-way the desk decided: names it buys keep rising through the day, names
-it sells keep falling. The day after a signal continues the signal. That
-makes the open right for buys and late right for sells - but 57 sessions
-and a t of two on one comparison in eight is not a basis to change how
-the book trades.
+On the desk's own fill days the drift runs the way the desk decided:
+names it buys keep rising through the day, names it sells keep falling.
+The day after a signal continues the signal. The open is right for
+buys - every later schedule pays two to eight basis points on them - and
+the closing auction is right for sells on the larger population, 24
+basis points better with t 2.8 over 840 sessions.
 
-Neither agent found a schedule the fixed ones did not contain. The direct
-policy learned to buy at the open and sell late, and paid two basis
-points on buys for the imperfection; PPO learned less. Market-on-open
-stays for both sides. The sells are the thing to re-measure on the paper
-record, where the fills are real and every desk sell could be a
-market-on-close instead; the answer there is one flag in `market_daily`
-if the record says so.
+But not in every year. Four of the five test years favour the close for
+sells and the fifth, 2026, the year the paper book trades, reads the
+other way on 325 orders. That is the regime question the desk keeps
+meeting, and the reason the book does not move on this: a change made on
+2023-2025 and contradicted by 2026 is a fit. Market-on-open stays for
+both sides. The forward record writes, beside every actual fill, what
+the closing auction would have paid, so the sell question is answered by
+the paper account itself as sessions accumulate. When that record agrees
+with the history, the change is one time-in-force flag on the sells.
+
+Neither agent found a schedule the fixed ones did not contain. The
+direct policy learned to buy at the open and sell late, and paid a
+little on buys for the imperfection; PPO learned less.
 """
 
 import argparse

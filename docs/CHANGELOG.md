@@ -2,6 +2,62 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - Offline RL wins the proxy and loses the book; survivorship measured
+
+Three more measurements on the desk, all on the `execution-rl` branch.
+
+**Offline RL over the desk's own history.** `market_offline_rl` replays the
+rule on every session with thirty-two perturbed books beside it, each scored
+by the same Sharpe-shaped reward, and learns from that log two ways: a
+permutation-invariant critic that picks among candidates, and an
+advantage-weighted policy (AWR) that imitates the logged books weighted by
+how much better than their session's mean they did. Walk-forward, ten folds,
+seeds averaged into one action per session, and the paired t reported three
+ways because twenty-session rewards on consecutive days overlap: naive,
+Newey-West, and on every twentieth session.
+
+| policy | mean reward | vs rule | Newey-West t | every 20th |
+|---|---|---|---|---|
+| the desk's rule | +0.611 | | | |
+| equal weight, whole book | +0.582 | -0.029 | -0.66 | -0.29 |
+| critic-selected book | +0.562 | -0.049 | -3.49 | -1.39 |
+| advantage-weighted, capped | +0.651 | +0.040 | +2.62 | +1.09 |
+| advantage-weighted, top names | +0.648 | +0.037 | +2.58 | +0.57 |
+
+The AWR gain survives the checks built to kill it - it is not concentration,
+not survivorship, and holds at the rule's own count of names - and then loses
+where it counts. `simulate.run` now takes an allocator, and behind the desk's
+full rules from 2017-12-27 the learned book makes Sharpe 1.52 to 1.54 against
+the rule's 1.64, with a deeper drawdown. The proxy has no cost, volatility
+target, holding rule or minimum trade; the book has all four. Nothing changes.
+The policy leans on sentiment and the tape more than the rule and on the
+filings less, which is what the analyst-weight ridge found.
+
+The allocation command's own t statistics were wrong: its pairing tiled the
+rule's rewards against seed-major policy rewards. Fixed; the means stood and
+the corrected t's (Newey-West -0.72 and -0.79) say the same thing.
+
+**Survivorship.** `market_survivorship` puts the four hundred universe names
+outside the book on their own price panel. Equal weight over the common
+sessions: the book +34.2% a year at Sharpe 1.24, the control +15.6% at 0.88 -
+the choice of names was worth nineteen points a year before any signal, and
+every absolute return in the backtests carries that. Cross-sectionally the
+technical analyst's twenty-session edge is book-specific and its sixty-session
+edge is of the same order on the control; momentum is nothing on either. The
+sentiment and value analysts, which carry the desk, cannot be measured off the
+book: no filings, tone or levels are stored for those names. That is the
+honest next project if the selection is to be trusted beyond the names it was
+built on.
+
+**Execution, the larger population.** With the rule re-decided every session,
+2,394 entries and exits over 840 sessions: sells at the closing auction are 24
+bps better than at the open (t -2.77), buys at the open are best. Four of the
+five test years agree and 2026, the year being traded, reads the other way on
+325 orders, so the book does not move. Instead every settled order in the
+paper record now carries its fill price and what the closing auction of the
+fill session would have paid (`close_shortfall_bps`), so the paper account
+answers the sell question as sessions accumulate.
+
 ## 2026-09-07 - When should an order fill? Measured; the open stays
 
 The desk fills market-on-open. `market_execution_rl` asks whether any other

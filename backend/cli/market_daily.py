@@ -18,6 +18,8 @@ import shutil
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
+import numpy as np
+
 from backend.agents.trading.desk import desk as trading_desk
 from backend.agents.trading.desk import plainly
 from backend.agents.trading.desk.narrative import DeskNarrator, brief_text
@@ -204,6 +206,37 @@ def _reconcile(client, state, store_root: Path, live: bool):
     return updated, settled
 
 
+# The settled orders as record rows, each with its fill price and what the
+# closing auction of the fill session would have paid instead. An order
+# planned on session s fills at the open of the next session on the panel,
+# so that session's close is the counterfactual.
+def _settled_rows(settled, panel) -> list[dict]:
+    from backend.agents.trading.desk import paper
+
+    rows = []
+    for s in settled:
+        close = float("nan")
+        planned = np.datetime64(s.session) if s.session else None
+        if planned is not None and s.symbol in panel.tickers:
+            later = np.flatnonzero(panel.dates > planned)
+            if len(later):
+                close = float(panel.close[later[0], panel.index(s.symbol)])
+        rows.append(
+            {
+                "symbol": s.symbol,
+                "side": s.side,
+                "qty": s.qty,
+                "status": s.status,
+                "filled": s.filled_qty,
+                "filled_price": s.filled_price,
+                "close_shortfall_bps": paper.close_shortfall_bps(
+                    s.side, s.filled_price, close
+                ),
+            }
+        )
+    return rows
+
+
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Returns the day's entry for the desk record.
@@ -318,16 +351,7 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     entry["orders"] = submitted
     entry["refused"] = refused
     entry["plan"] = what
-    entry["settled"] = [
-        {
-            "symbol": s.symbol,
-            "side": s.side,
-            "qty": s.qty,
-            "status": s.status,
-            "filled": s.filled_qty,
-        }
-        for s in settled
-    ]
+    entry["settled"] = _settled_rows(settled, panel)
     if live:
         paper.save_state(store_root, new_state)
     print(

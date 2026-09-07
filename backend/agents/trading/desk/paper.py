@@ -193,6 +193,7 @@ class Settled:
     session: str
     status: str  # filled, partial, dead, open, or missing
     filled_qty: int
+    filled_price: float = 0.0  # the broker's average fill, 0 when nothing filled
 
 
 # Pure: match what was written down against what the broker reports.
@@ -210,9 +211,10 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
         if order is None:
             # Never reached the broker, or reached it under another id.
             # Either way this desk cannot claim it traded.
-            status, filled = "missing", 0
+            status, filled, price = "missing", 0, 0.0
         else:
             filled = int(float(order.get("filled_qty") or 0))
+            price = float(order.get("filled_avg_price") or 0.0)
             raw = str(order.get("status") or "").lower()
             if raw in FILLED and filled >= wanted:
                 status = "filled"
@@ -231,9 +233,24 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
                 session=str(row.get("session") or ""),
                 status=status,
                 filled_qty=filled,
+                filled_price=price,
             )
         )
     return out
+
+
+# What the closing auction would have paid against an actual fill, in
+# basis points, signed so that positive means the close would have been
+# worse: a buy filled below the close, a sell filled above it. The
+# execution measurement found the close better for sells in four of five
+# years and worse in 2026; the record writes this beside every fill so the
+# paper account answers the question as sessions accumulate.
+def close_shortfall_bps(side: str, filled_price: float, close: float) -> float | None:
+    """Return the close's shortfall against the fill, or None without a fill."""
+    if filled_price <= 0 or not close or close != close:
+        return None
+    sign = 1.0 if side == "buy" else -1.0
+    return sign * (close - filled_price) / filled_price * 1e4
 
 
 # Fold the outcomes back into the state.

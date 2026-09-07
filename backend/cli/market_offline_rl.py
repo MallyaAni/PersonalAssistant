@@ -47,7 +47,53 @@ sessions.
 
 Results
 -------
-Recorded below once the run is read.
+Ten folds, 2,164 test sessions from 2017-12-27, thirty-two candidates
+per session, three seeds. Mean reward per twenty-session window, and the
+paired difference from the rule with three t statistics.
+
+                                 mean   vs rule   naive  Newey-West  every 20th
+  the desk's rule              +0.611
+  equal weight, same names     +0.605   -0.006   -1.28    -0.46       +0.09
+  equal weight, whole book     +0.582   -0.029   -2.24    -0.66       -0.29
+  critic-selected book         +0.562   -0.049   -5.53    -3.49       -1.39
+  advantage-weighted policy    +0.651   +0.040   +6.86    +2.62       +1.10
+  advantage-weighted, capped   +0.651   +0.040   +6.84    +2.62       +1.09
+  advantage-weighted, top names+0.648   +0.037   +6.33    +2.58       +0.57
+  best candidate (hindsight)   +1.130   +0.519
+
+                                 largest weight   effective names
+  the desk's rule                        0.089              7.3
+  advantage-weighted, capped             0.061             12.5
+  advantage-weighted, top names          0.076              8.0
+
+  the learned book leans on (rank correlation with each input):
+  sentiment +0.51  the rule +0.51  technical +0.39  value +0.33
+  fundamental +0.26  log volatility -0.10
+
+  the book from 2017-12-27, full rules   annual    vol  Sharpe   maxDD
+  the desk's rule                        +26.8%  16.4%    1.64  -16.7%
+  equal weight, whole book               +14.3%  11.2%    1.28  -15.2%
+  advantage-weighted, capped             +21.7%  14.3%    1.52  -19.4%
+  advantage-weighted, top names          +22.4%  14.6%    1.54  -20.3%
+
+On the proxy reward the advantage-weighted policy beats the rule, and
+the gain survives the checks that were built to kill it: it is not
+concentration (the capped book is identical and more diversified than
+the rule), not survivorship (equal weight over the whole book is below
+the rule), and it holds when the book is kept to the rule's own count
+of names. Newey-West says t 2.6; the non-overlapping subsample says
+1.1. The critic-selected book loses, because a critic that picks the
+extreme of a noisy family picks noise.
+
+Behind the desk's own full rules the same allocation makes a worse
+book: Sharpe 1.52 to 1.54 against the rule's 1.64, with a deeper
+drawdown. The proxy has no cost, no volatility target, no holding
+between rebalances and no minimum trade; the book has all four, and the
+policy optimised the proxy. This is the volatility result again from the
+other side. The policy leans harder on sentiment and the tape and less on
+the filings than the rule does, which is what the analyst-weight ridge
+also found, and it is worth exactly what that was worth: a nudge inside
+the noise at the horizon the book trades. Nothing is changed on this.
 """
 
 import argparse

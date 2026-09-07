@@ -174,3 +174,54 @@ def test_no_pending_orders_changes_nothing():
     after = paper.apply_settlements(state, paper.settle([], []))
     assert after.last_rebalance == "2026-09-07"
     assert after.sessions_since_rebalance == 4
+
+
+# The fill price the broker reports is kept, and the closing auction's
+# counterfactual is signed so that positive means the close would have
+# been worse than the fill: a buy filled below the close, a sell above it.
+def test_the_fill_price_is_kept_and_the_close_is_judged_against_it():
+    pending = _pending("2026-09-07", "AAA")
+    order = _broker("2026-09-07", "AAA", "filled", 10)
+    order["filled_avg_price"] = "100.0"
+    settled = paper.settle(pending, [order])
+    assert settled[0].filled_price == 100.0
+    assert paper.settle(pending, [])[0].filled_price == 0.0
+    assert paper.close_shortfall_bps("buy", 100.0, 101.0) == 100.0
+    assert paper.close_shortfall_bps("sell", 100.0, 101.0) == -100.0
+    assert paper.close_shortfall_bps("sell", 100.0, 99.0) == 100.0
+    assert paper.close_shortfall_bps("buy", 0.0, 99.0) is None
+    assert paper.close_shortfall_bps("buy", 100.0, float("nan")) is None
+
+
+# The record row takes the close of the session after the plan's, since
+# that is when a market-on-open order fills.
+def test_the_record_uses_the_close_of_the_fill_session():
+    import numpy as np
+
+    from backend.cli import market_daily
+    from backend.market.panel import Panel
+
+    dates = np.array(["2026-09-04", "2026-09-08", "2026-09-09"], dtype="datetime64[D]")
+    close = np.array([[100.0, 1.0], [110.0, 1.0], [120.0, 1.0]])
+    panel = Panel(
+        dates=dates,
+        tickers=("AAA", "SPY"),
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.ones_like(close),
+        themes={},
+        benchmark="SPY",
+    )
+    settled = [
+        paper.Settled("id", "AAA", "sell", 10, "2026-09-04", "filled", 10, 105.0),
+        paper.Settled("id2", "ZZZ", "buy", 10, "2026-09-04", "filled", 10, 50.0),
+    ]
+    rows = market_daily._settled_rows(settled, panel)
+    # Planned on the 4th, filled at the 8th's open; the 8th closed at 110,
+    # above the 105 fill, so the close would have been better for a sell.
+    assert rows[0]["filled_price"] == 105.0
+    assert np.isclose(rows[0]["close_shortfall_bps"], -(110.0 - 105.0) / 105.0 * 1e4)
+    assert rows[1]["close_shortfall_bps"] is None  # a name the panel lacks

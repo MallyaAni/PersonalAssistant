@@ -40,7 +40,36 @@ comparison is the order of magnitude, not equality.
 
 Results
 -------
-Recorded below once the run is read.
+Equal weight over the common sessions, benchmark excluded:
+
+  the book       +34.2% a year   27.5% vol   Sharpe 1.24
+  the control    +15.6% a year   17.8% vol   Sharpe 0.88
+
+The choice of names was worth about nineteen points a year before any
+signal. Every absolute return in the desk's backtests carries that, and
+so will the paper book for as long as the names keep winning.
+
+Cross-sectionally, rank IC / t / net Sharpe:
+
+  horizon 20                the book              the control
+  technical analyst     +0.0234  1.31  0.14    -0.0017 -0.12 -0.35
+    before 2024         +0.0165  0.85 -0.18    -0.0021 -0.12 -0.37
+    from 2024           +0.0617  1.53  0.86    +0.0247  0.91  0.18
+  momentum 252/21       -0.0164 -0.87 -0.05    -0.0076 -0.45 -0.17
+
+  horizon 60
+  technical analyst     +0.0326  1.28  0.71    +0.0207  0.89  0.15
+  momentum 252/21       -0.0140 -0.45  0.07    -0.0243 -0.81 -0.07
+
+The technical analyst's twenty-session edge is book-specific; at sixty
+sessions the control reads the same order. Plain momentum is nothing on
+either, at either horizon. The desk's two strongest analysts, sentiment
+(0.0372, t 2.96) and value (0.0377, t 2.64) at twenty sessions, cannot
+be measured off the book: no filings, tone or levels are stored for a
+name outside it. Getting that answer means fetching four hundred names'
+EDGAR facts and scoring their releases, some ten thousand model calls;
+it is the honest next step if the desk's selection is to be trusted
+beyond the names it was built on.
 """
 
 import argparse
