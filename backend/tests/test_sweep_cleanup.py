@@ -78,7 +78,7 @@ def test_a_journey_that_asserts_an_hour_is_empty_owns_that_hour():
     from backend.cli.sweep_journeys import JOURNEYS
 
     def hours_armed(journey) -> set[int]:
-        said = " ".join((*journey.before, journey.message)).lower()
+        said = " ".join((*journey.before, journey.query)).lower()
         found = set()
         for value, meridiem in re.findall(r"\b(\d{1,2})\s*(am|pm)\b", said):
             hour = int(value) % 12
