@@ -26,8 +26,28 @@ From 2021-06-01, the desk's weights, full rules:
   QQQ                         +19.1%  -33.1%  +53.8%  +24.8%  +20.2%  +17.0%
   (* partial years)
 
-The desk beat SPY every year and QQQ in five of six; the exception is
-2023, the recovery year. Against its own names it wins on risk and gives
+From 2017-12-27, the earliest session the desk can simulate:
+
+  total return by year   2018    2019    2020    2021    2022    2023    2024    2025   2026*
+  the desk, today      +17.9%  +32.5%  +24.6%  +29.7%   -6.1%  +40.0%  +28.9%  +43.3%  +46.2%
+  the desk, 50% vol    +19.8%  +38.1%  +32.6%  +34.9%   -9.5%  +46.4%  +40.2%  +50.6%  +77.6%
+  equal weight, 93      +1.7%  +45.2%  +69.6%  +41.3%  -31.0%  +87.7%  +58.4%  +60.0%  +53.6%
+  SPY                   -6.3%  +28.8%  +16.2%  +27.0%  -19.5%  +24.3%  +23.3%  +16.4%  +12.9%
+  QQQ                   -1.0%  +37.8%  +47.6%  +26.8%  -33.1%  +53.8%  +24.8%  +20.2%  +17.0%
+
+Eight of nine against SPY, six of nine against QQQ, no year worse than
+-6%. The profile is consistent: the desk wins the down years and the
+ordinary years and loses to QQQ in the explosive recovery years, 2019,
+2020 and 2023, because it runs half invested. Both bears in the sample,
+2018 and 2022, were rate-driven, and the rule that protected the book
+in both reads the ten-year yield; there is no AI-specific bust in the
+data, and a bubble popping while rates fall would not trip that rule.
+The defences for that case - the participation read, exposure scaling,
+the volatility target - are untested in it. The older years are the
+most flattered by survivorship.
+
+The desk beat SPY every year since 2021 and QQQ in five of six; the
+exception is 2023, the recovery year. Against its own names it wins on risk and gives
 up upside: half invested and risk-off while money tightens, it held 2022
 to -6% where its names lost 31%, then trailed them in the three strong
 years. Over the period, +388% against +529% for holding everything, with
