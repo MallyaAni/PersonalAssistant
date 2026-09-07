@@ -2,6 +2,33 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - When should an order fill? Measured; the open stays
+
+The desk fills market-on-open. `market_execution_rl` asks whether any other
+schedule across the day's twenty-six fifteen-minute bars does better: the
+close, TWAP, a VWAP shape, the first or last hour, a policy trained directly
+on the shortfall, and PPO on the same state and action. Fills at a bar's
+typical price, the two auctions free, two basis points inside a bar, no
+impact. Walk-forward by year, 2022 to 2026, t clustered by session. The
+session preparation the intraday experiments share now lives in
+`backend/market/intraday.py`, with tests for the New York clock and the
+session filter.
+
+| every book name, pooled | buys bps | t | sells bps | t |
+|---|---|---|---|---|
+| open (the desk) | 0.00 | | 0.00 | |
+| close | +5.31 | 1.15 | -5.31 | -1.15 |
+| first hour | +3.20 | 1.73 | +0.80 | 0.26 |
+| direct policy | +2.40 | 2.23 | -2.18 | -0.51 |
+| PPO | +3.17 | 1.48 | +0.20 | -0.04 |
+
+On the desk's own 344 orders the drift is ten times larger and runs the way
+the desk decided - buys keep rising through the day, sells keep falling - so
+the open is right for buys and later would be right for sells (first hour
+-41 bps, t -2.02 on 57 sessions). Neither agent found a schedule the fixed
+ones did not contain. Market-on-open stays; the sells are re-measured on the
+paper record, where fills are real.
+
 ## 2026-09-07 - The release text, embedded and measured: the reader has it
 
 The earnings releases are stored as text now (3,401 over 93 names) and
