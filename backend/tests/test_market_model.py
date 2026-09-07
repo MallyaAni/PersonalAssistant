@@ -21,6 +21,7 @@ from backend.market.model import (  # noqa: E402
     TrainConfig,
     _eligible,
     build_features,
+    inner_split,
     session_loss,
     walk_forward,
 )
@@ -108,6 +109,55 @@ def test_normalizer_is_fit_on_training_sessions_only():
     second = Normalizer.fit(features, range(10, 100), eligible)
     assert np.allclose(first.channel_mean, second.channel_mean)
     assert np.allclose(first.channel_std, second.channel_std)
+
+
+# The inner validation boundary is purged, and the normaliser never sees
+# past it.
+#
+# Both halves were wrong and both weakened model selection rather than the
+# outer test, which is purged separately. Training ran right up to the
+# split, so an example a few sessions before it carried a forward-return
+# label reaching into validation and early stopping chose an epoch partly
+# on data the training labels had seen. And `Normalizer.fit` was handed the
+# whole training range including the tail, while its own docstring said
+# "training sessions only".
+@pytest.mark.parametrize("horizon", [1, 5, 10, 20])
+def test_the_inner_validation_boundary_is_purged(horizon):
+    config = replace(TrainConfig(), horizon=horizon, validation_fraction=0.2)
+    train = range(100, 400)
+    fit_range, val_range = inner_split(train, config)
+    # Validation is the tail of the range and fitting stops a whole horizon
+    # before it, so no training label can reach into it.
+    assert val_range.stop == train.stop
+    assert fit_range.start == train.start
+    assert val_range.start - fit_range.stop >= horizon
+    assert fit_range.stop <= val_range.start
+    # Even a range too short to give the horizon away keeps a session to
+    # fit on rather than returning nothing.
+    tiny = inner_split(range(0, 3), config)[0]
+    assert len(tiny) >= 1
+
+
+# And the statistics come from the fit range, not the validation tail:
+# corrupting the tail must not move them.
+def test_the_normalizer_does_not_see_the_validation_tail():
+    panel = _panel(t=200, planted=False)
+    features = build_features(
+        panel, horizon=5, momentum_length=30, momentum_skip=5, lookback=10
+    )
+    eligible = _eligible(features, window_size=5, need_label=True)
+    config = replace(TrainConfig(), horizon=5, validation_fraction=0.2)
+    train = range(10, 150)
+    fit_range, val_range = inner_split(train, config)
+    clean = Normalizer.fit(features, fit_range, eligible)
+    features.channels[val_range.start : val_range.stop] *= 50.0
+    after = Normalizer.fit(features, fit_range, eligible)
+    assert np.allclose(clean.channel_mean, after.channel_mean)
+    assert np.allclose(clean.channel_std, after.channel_std)
+    # The same corruption does move a normaliser fit over the whole range,
+    # which is what the code used to do.
+    whole = Normalizer.fit(features, train, eligible)
+    assert not np.allclose(clean.channel_mean, whole.channel_mean)
 
 
 # The session loss is minimal when scores order the labels perfectly and

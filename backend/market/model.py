@@ -620,6 +620,32 @@ def _validation_ic(
     return float(np.nanmean(ics)) if ics else float("nan")
 
 
+# Where a training range stops and its validation tail begins, with the
+# label horizon purged between them.
+#
+# Two things were wrong here and both weakened model selection rather than
+# the outer test, which is purged separately.
+#
+# The fit range ran right up to the split, so a training example a few
+# sessions before it carried a forward-return label reaching into the
+# validation window. Early stopping then chose an epoch partly on data the
+# training labels had already seen. The horizon is dropped from the end of
+# the fit range so no training label overlaps validation.
+#
+# And the normaliser was fit over the whole range including the tail -
+# `Normalizer.fit(features, train, ...)` while its own docstring says
+# "training sessions only". Channel means and standard deviations from the
+# validation window are a small leak, but they are a leak, and they made
+# the validation score flattering in exactly the way that matters when it
+# is being used to pick a model.
+def inner_split(train: range, config: TrainConfig) -> tuple[range, range]:
+    """Return (the range to fit on, the range to validate on)."""
+    split = train.stop - max(1, int(len(train) * config.validation_fraction))
+    split = max(split, train.start + 1)
+    fit_stop = max(train.start + 1, split - config.horizon)
+    return range(train.start, fit_stop), range(split, train.stop)
+
+
 # Train one fold and return the fitted model plus its record. Sessions are
 # shuffled per epoch; each optimisation step averages the loss over a batch
 # of sessions so every step is a cross-sectional objective.
@@ -633,14 +659,10 @@ def train_fold(
     """Fit a Ranker on `train` sessions with validation on the range's tail."""
     torch.manual_seed(config.seed)
     rng = np.random.default_rng(config.seed)
-    normalizer = Normalizer.fit(features, train, eligible_labelled)
-    split = train.stop - max(1, int(len(train) * config.validation_fraction))
-    fit_sessions = [
-        t for t in range(train.start, split) if eligible_labelled[t].sum() >= 10
-    ]
-    val_sessions = [
-        t for t in range(split, train.stop) if eligible_labelled[t].sum() >= 10
-    ]
+    fit_range, val_range = inner_split(train, config)
+    normalizer = Normalizer.fit(features, fit_range, eligible_labelled)
+    fit_sessions = [t for t in fit_range if eligible_labelled[t].sum() >= 10]
+    val_sessions = [t for t in val_range if eligible_labelled[t].sum() >= 10]
     if not fit_sessions:
         raise ValueError("no training sessions with enough eligible names")
 
@@ -790,14 +812,10 @@ def _lgbm_fold(
 ) -> tuple[float, int]:
     import lightgbm as lgb
 
-    normalizer = Normalizer.fit(features, train, labelled)
-    split = train.stop - max(1, int(len(train) * config.validation_fraction))
-    x_fit, y_fit = _tabular_rows(
-        features, normalizer, range(train.start, split), labelled
-    )
-    x_val, y_val = _tabular_rows(
-        features, normalizer, range(split, train.stop), labelled
-    )
+    fit_range, val_range = inner_split(train, config)
+    normalizer = Normalizer.fit(features, fit_range, labelled)
+    x_fit, y_fit = _tabular_rows(features, normalizer, fit_range, labelled)
+    x_val, y_val = _tabular_rows(features, normalizer, val_range, labelled)
     params = {
         "objective": "regression",
         "learning_rate": 0.03,
@@ -823,7 +841,7 @@ def _lgbm_fold(
         booster = lgb.train(params, fit_set, num_boost_round=600)
     trees = max(1, int(booster.best_iteration or booster.num_trees()))
     ics: list[float] = []
-    for t in range(split, train.stop):
+    for t in val_range:
         cols = np.flatnonzero(labelled[t])
         if len(cols) < 10:
             continue
@@ -861,11 +879,11 @@ def _chart_cnn_fold(
 ) -> tuple[float, int]:
     from backend.market.chart_cnn import train_and_score
 
-    split = train.stop - max(1, int(len(train) * config.validation_fraction))
-    train_cells = np.argwhere(labelled[train.start : split])
-    train_cells[:, 0] += train.start
-    val_cells = np.argwhere(labelled[split : train.stop])
-    val_cells[:, 0] += split
+    fit_range, val_range = inner_split(train, config)
+    train_cells = np.argwhere(labelled[fit_range.start : fit_range.stop])
+    train_cells[:, 0] += fit_range.start
+    val_cells = np.argwhere(labelled[val_range.start : val_range.stop])
+    val_cells[:, 0] += val_range.start
     test_cells = np.argwhere(scorable[test.start : test.stop])
     test_cells[:, 0] += test.start
     # The CNN reads a fixed 20-session image; cap the fit set so a fold
