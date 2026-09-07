@@ -1949,6 +1949,33 @@ export interface DeskPayload {
 
 // The trading desk's latest record and what changed since the one before.
 // Every field is read from the record the desk wrote for the session.
+// The current candle for every name on the board: the last fifteen-minute
+// close, the session's high and low. Empty outside the session or without
+// market-data keys; the board stands without it.
+export interface DeskQuote {
+  symbol: string;
+  last: number;
+  high: number;
+  low: number;
+  bar: string;
+  as_of: string;
+}
+export interface DeskLive {
+  as_of: string | null;
+  quotes: Record<string, DeskQuote>;
+  reason?: string;
+}
+
+export const getDeskLive = async (userId: string): Promise<DeskLive> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live`,
+  );
+  if (!response.ok) {
+    return { as_of: null, quotes: {} };
+  }
+  return (await response.json()) as DeskLive;
+};
+
 export const getDesk = async (userId: string): Promise<DeskPayload> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`,

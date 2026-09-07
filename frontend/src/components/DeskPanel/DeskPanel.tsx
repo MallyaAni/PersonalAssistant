@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { getDesk, type DeskAction, type DeskPayload } from '../../services/api'
+import { getDesk, getDeskLive, type DeskAction, type DeskLive, type DeskPayload } from '../../services/api'
 
 interface DeskPanelProps {
   userId: string
@@ -9,6 +9,9 @@ interface DeskPanelProps {
 // How often the page asks for a fresh record while open. The desk writes
 // one record a session, so a few minutes is plenty and costs nothing.
 const REFRESH_MS = 5 * 60 * 1000
+// The live layer follows the fifteen-minute candle the board's stops are
+// judged against.
+const CANDLE_MS = 15 * 60 * 1000
 
 const GRADE_STYLE: Record<string, string> = {
   'A+': 'bg-[#e6f4ea] text-[#1e7a3a]',
@@ -63,6 +66,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [loading, setLoading] = useState(true)
   const [openBrief, setOpenBrief] = useState<string | null>(null)
   const [equity, setEquity] = useState<number | null>(readEquity())
+  const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
 
   const load = async () => {
     try {
@@ -80,6 +84,19 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
     const timer = window.setInterval(() => void load(), REFRESH_MS)
     return () => window.clearInterval(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
+
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        setLive(await getDeskLive(userId))
+      } catch {
+        // the board stands without the live layer
+      }
+    }
+    void poll()
+    const timer = window.setInterval(() => void poll(), CANDLE_MS)
+    return () => window.clearInterval(timer)
   }, [userId])
 
   if (loading) {
@@ -148,6 +165,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             writeEquity(value)
           }}
           untilRebalance={latest.paper?.until_rebalance ?? latest.actions[0].until_rebalance}
+          live={live}
         />
       )}
 
@@ -376,6 +394,28 @@ interface ActionBoardProps {
   equity: number
   onEquity: (value: number) => void
   untilRebalance: number
+  live: DeskLive
+}
+
+// The candle's verdict on a row: where the last print sits against the
+// close and against the 12% stop, and whether that stop has been crossed.
+const liveCell = (a: DeskAction, quote?: { last: number; high: number }) => {
+  if (!quote) return null
+  const stop = a.stops['12']
+  const high = Math.max(a.high_20, quote.high)
+  const trailing = stop !== undefined ? high * 0.88 : undefined
+  const hit = trailing !== undefined && quote.last <= trailing
+  const versusClose = a.last_close > 0 ? quote.last / a.last_close - 1 : 0
+  return (
+    <span className={hit ? 'font-medium text-[#b42318]' : undefined}>
+      {money(quote.last)} ({versusClose >= 0 ? '+' : ''}{(versusClose * 100).toFixed(1)}%)
+      {trailing !== undefined && (
+        <span className="text-[#6e6e73]">
+          {' '}· {hit ? 'STOP HIT' : `room ${((quote.last / trailing - 1) * 100).toFixed(1)}% to ${money(trailing)}`}
+        </span>
+      )}
+    </span>
+  )
 }
 
 // What to do at the next open, most urgent first: sells and trims before
@@ -383,7 +423,7 @@ interface ActionBoardProps {
 // typed above, the entry, and the exit plan - the rebalance clock, how far
 // the grade sits above the line, and the stop levels off the twenty-session
 // high for a person managing their own tail.
-const ActionBoard = ({ actions, equity, onEquity, untilRebalance }: ActionBoardProps) => {
+const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live }: ActionBoardProps) => {
   const trades = actions.filter((a) => a.action !== 'hold')
   const holds = actions.filter((a) => a.action === 'hold')
   const row = (a: DeskAction) => {
@@ -410,7 +450,8 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance }: ActionBoardP
           )}
         </td>
         <td className="whitespace-nowrap text-[#6e6e73]">
-          {a.action === 'hold' || a.action === 'sell' || a.action === 'trim' ? 'open' : 'open'} · last {money(a.last_close)}
+          open · close {money(a.last_close)}
+          {live.quotes[a.ticker] && <div className="text-xs">{liveCell(a, live.quotes[a.ticker])}</div>}
         </td>
         <td className="whitespace-nowrap">
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[a.grade] ?? ''}`}>{a.grade}</span>
@@ -443,7 +484,14 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance }: ActionBoardP
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-3">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">Action board · next open</h3>
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">
+          Action board · next open
+          {live.as_of && (
+            <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+              live candle {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </h3>
         <label className="flex items-center gap-2 text-xs text-[#6e6e73]">
           size to equity
           <input

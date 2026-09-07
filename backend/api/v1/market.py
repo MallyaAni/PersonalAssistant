@@ -6,6 +6,8 @@ desk did not write. The user path segment keeps the same authorization as
 every other per-user route; the records themselves are the operator's own.
 """
 
+from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -14,7 +16,7 @@ from fastapi import Path as PathParam
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
-from backend.market import deskrecord
+from backend.market import alpaca, deskrecord, live_quotes
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -55,6 +57,29 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
 
 
 # One earlier session's record, as it was written.
+# The current candle against the board's levels: the last fifteen-minute
+# close, the session's high and low, for every name on the board. Read
+# from Alpaca's free feed and remembered for a candle. Declared before the
+# session route so "live" is not taken for a session.
+@router.get("/desk/live")
+async def desk_live(user_id: UserId) -> dict[str, object]:
+    """Return live quotes for the names on the latest board."""
+    _operator_only(user_id)
+    latest, _previous = deskrecord.latest_pair(_root())
+    rows = (latest or {}).get("actions") or []
+    symbols = [str(r.get("ticker")) for r in rows if r.get("ticker")]
+    try:
+        headers = alpaca.credentials()
+    except alpaca.AlpacaUnavailableError:
+        return {"user_id": user_id, "as_of": None, "quotes": {}, "reason": "no keys"}
+    found = live_quotes.quotes(symbols, headers=headers)
+    return {
+        "user_id": user_id,
+        "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+        "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
+    }
+
+
 @router.get("/desk/{session}")
 async def desk_for_session(user_id: UserId, session: Session) -> dict[str, object]:
     _operator_only(user_id)
