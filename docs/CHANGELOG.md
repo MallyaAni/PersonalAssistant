@@ -2,6 +2,75 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The paper book starts trading, and a better volatility forecast that changes nothing
+
+**The desk had never placed an order.** The nightly job wrote a record and
+stopped; `--paper-trade` was not in it and no paper state file existed, so five
+months of grades produced no track record. It is on now, which matters more than
+any backtest here: forward paper trading is the only genuinely untouched sample
+this system can get, since every historical number has already informed dozens of
+choices.
+
+Three things had to be fixed before that meant anything.
+
+**An accepted order is not a filled one.** The book printed "submitted", saved
+the rebalance as done, and never looked again - so a rebalance the broker refused
+counted as one that happened, leaving the book twenty sessions from its next
+attempt at targets it never reached. Orders now carry an id chosen before they
+are sent, the whole plan is written to disk before anything goes out, and the
+next session asks the broker what became of each one: filled, partial, dead,
+still working, or never arrived. A rebalance whose orders did not fill puts the
+clock back so the next session plans it again. Sixteen tests cover every ending,
+the crash case, and a status of "filled" with a short fill count, which is a
+partial.
+
+**Whole shares were floored.** Flooring always rounds toward holding less, worst
+where a share is expensive: a 4.9% target in a 1,740 stock floored to 2 shares,
+29% short, and the book came out about 12% under its target gross with nearly
+all the miss in that one name. It rounds to nearest now. The tests that existed
+could not catch it because every price in them divided evenly.
+
+**Keys in a file reach nothing.** The Alpaca keys were in `.env` on the Spark and
+`client_from_env` reads `os.environ`, so cron - which starts with a bare
+environment - would have found nothing. The nightly script exports the two values
+explicitly. This is the third instance of the same defect class in two days, after
+`MARKET_DESK_USER` never reaching the backend container.
+
+The cron also moved from 17:30 to 19:30. Alpaca's market-on-open orders have a
+submission window and 17:30 sits in the gap after the close; 19:30 is inside it.
+Verified against the live paper account: an on-open order is accepted and cancels
+cleanly, and Alpaca's own clock confirmed 2026-09-07 is a holiday with the next
+open on the 8th.
+
+**Volatility: the network wins the forecast and the book does not move.** The desk
+sizes every position by the inverse of a trailing 60-session window. Eleven models
+were run against the next twenty sessions' realised volatility, walk-forward with
+the horizon purged, on 147,376 name-sessions. A small network trained on QLIKE
+beat it by 15.5%; HAR in levels by 7.0%; boosted trees, random forest, k-nearest
+neighbours, ridge and EWMA all lost to the trailing window. The same network
+trained on squared error was 2.9% *worse* than what it was replacing - a fact
+about objectives, not model classes, and one that had me report the opposite
+conclusion an hour earlier.
+
+Put behind `realised_volatility` and run through the desk's own rules: Sharpe 1.85
+to 1.85, drawdown -19.0% to -19.1%. Not because the estimates agree - their
+cross-sectional rank correlation is 0.854 and swapping them moves 8.4% of the book
+- but because the book is not sensitive to this input at the margin. The caps
+bind, the volatility target rescales whatever comes out, and the scores decide
+which names are held. The trailing window stays. The measurement is recorded next
+to it so it is not run again.
+
+**The Desk view stops implying precision it does not have.** The grades table is
+sorted by score, which reads as a ranking; on a recent session the top two names
+were 0.013 apart and first-to-fifth was 1.205. The score is now shown and names
+within 2% of the day's own spread are marked tied. The book table carries each
+name's conviction rank beside its weight, because the largest position is not the
+favourite name - the desk's top-ranked name is its smallest holding at 137%
+volatility - and nothing on the page said so.
+
+Diagram impact: NONE - execution bookkeeping, a measurement that changed nothing,
+and table columns.
+
 ## 2026-09-06 - A filing reader built, measured, and given no vote
 
 Cohen, Malloy and Nguyen ("Lazy Prices", Journal of Finance, 2020) report a

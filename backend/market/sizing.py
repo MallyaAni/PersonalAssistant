@@ -207,6 +207,44 @@ class Position:
 
 
 # Annualised trailing volatility per (session, name) from daily log returns.
+# A better forecast here does not make a better book, and it was worth
+# finding that out before replacing this.
+#
+# The desk sizes every position by the inverse of this number, so it is
+# read more often than any signal, and a trailing window is the crudest
+# estimator there is. Eleven models were run against the next twenty
+# sessions' realised volatility, walk-forward with the label horizon
+# purged, scored by QLIKE on 147,376 name-sessions:
+#
+#   trailing-60, what this returns          0.4361
+#   HAR in levels                           0.4055   -7.0%
+#   a small network on the QLIKE loss       0.3686  -15.5%
+#   the same network on squared error       0.4486   +2.9%
+#   gradient boosting, random forest,
+#   k-nearest neighbours, ridge, EWMA       all worse than trailing-60
+#
+# The network wins clearly - and only when trained on the loss it is
+# scored on. On squared error the identical network is worse than the
+# window it was meant to replace, which is a fact about objectives rather
+# than about model classes.
+#
+# Then it was put behind this function and the desk's own full-rule
+# simulation was run against it: same scores, grades, regime, costs and
+# constraints, only the volatility different. Sharpe 1.85 to 1.85, worst
+# drawdown -19.0% to -19.1%, 31.8% a year to 31.6%. Nothing.
+#
+# Not because the estimates agree - the cross-sectional rank correlation
+# between a sixty-session window and a twenty-session one is 0.854, and
+# swapping them moves about 8.4% of the book. The book is simply not
+# sensitive to this input at the margin: the name and theme caps bind, the
+# volatility target rescales whatever comes out, and which tenth of the
+# universe is held is decided by the scores. So a materially different
+# ordering of volatilities produces the same portfolio.
+#
+# The conclusion is not "networks do not work". It is that this input is
+# not where the book's risk-adjusted return is decided, so improving it
+# buys nothing, and the trailing window stays because it is simpler and
+# just as good here.
 def realised_volatility(panel: Panel, lookback: int) -> np.ndarray:
     """Return (T, N) annualised realised volatility, NaN until the window fills."""
     return _rolling_std(panel.log_returns(), lookback) * math.sqrt(SESSIONS_PER_YEAR)
