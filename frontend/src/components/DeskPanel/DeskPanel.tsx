@@ -33,6 +33,21 @@ const ACTION_STYLE: Record<string, string> = {
 // The equity the board sizes to. The paper account's by default; the
 // person's own once typed, remembered in this browser only.
 const EQUITY_KEY = 'desk.equity'
+const STOPS_KEY = 'desk.stops'
+const readStops = (): boolean => {
+  try {
+    return window.localStorage.getItem(STOPS_KEY) === 'on'
+  } catch {
+    return false
+  }
+}
+const writeStops = (on: boolean) => {
+  try {
+    window.localStorage.setItem(STOPS_KEY, on ? 'on' : 'off')
+  } catch {
+    // a private window
+  }
+}
 const readEquity = (): number | null => {
   try {
     const raw = window.localStorage.getItem(EQUITY_KEY)
@@ -67,6 +82,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [openBrief, setOpenBrief] = useState<string | null>(null)
   const [equity, setEquity] = useState<number | null>(readEquity())
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
+  const [stops, setStops] = useState<boolean>(readStops())
 
   const load = async () => {
     try {
@@ -166,6 +182,11 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           }}
           untilRebalance={latest.paper?.until_rebalance ?? latest.actions[0].until_rebalance}
           live={live}
+          stops={stops}
+          onStops={(on) => {
+            setStops(on)
+            writeStops(on)
+          }}
         />
       )}
 
@@ -395,20 +416,23 @@ interface ActionBoardProps {
   onEquity: (value: number) => void
   untilRebalance: number
   live: DeskLive
+  stops: boolean
+  onStops: (on: boolean) => void
 }
 
-// The candle's verdict on a row: where the last print sits against the
-// close and against the 12% stop, and whether that stop has been crossed.
-const liveCell = (a: DeskAction, quote?: { last: number; high: number }) => {
+// The candle's verdict on a row: the last print against the close and,
+// for a name held, against its entry. The stop level appears only when the
+// person has switched stops on, and is red when crossed.
+const liveCell = (a: DeskAction, stops: boolean, quote?: { last: number; high: number }) => {
   if (!quote) return null
-  const stop = a.stops['12']
-  const high = Math.max(a.high_20, quote.high)
-  const trailing = stop !== undefined ? high * 0.88 : undefined
-  const hit = trailing !== undefined && quote.last <= trailing
   const versusClose = a.last_close > 0 ? quote.last / a.last_close - 1 : 0
+  const versusEntry = a.entry_price && a.entry_price > 0 ? quote.last / a.entry_price - 1 : null
+  const trailing = stops && a.stops['12'] !== undefined ? Math.max(a.high_20, quote.high) * 0.88 : undefined
+  const hit = trailing !== undefined && quote.last <= trailing
   return (
     <span className={hit ? 'font-medium text-[#b42318]' : undefined}>
-      {money(quote.last)} ({versusClose >= 0 ? '+' : ''}{(versusClose * 100).toFixed(1)}%)
+      {money(quote.last)} ({versusClose >= 0 ? '+' : ''}{(versusClose * 100).toFixed(1)}% on the close
+      {versusEntry !== null && `, ${versusEntry >= 0 ? '+' : ''}${(versusEntry * 100).toFixed(1)}% on entry`})
       {trailing !== undefined && (
         <span className="text-[#6e6e73]">
           {' '}· {hit ? 'STOP HIT' : `room ${((quote.last / trailing - 1) * 100).toFixed(1)}% to ${money(trailing)}`}
@@ -423,7 +447,7 @@ const liveCell = (a: DeskAction, quote?: { last: number; high: number }) => {
 // typed above, the entry, and the exit plan - the rebalance clock, how far
 // the grade sits above the line, and the stop levels off the twenty-session
 // high for a person managing their own tail.
-const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live }: ActionBoardProps) => {
+const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, onStops }: ActionBoardProps) => {
   const trades = actions.filter((a) => a.action !== 'hold')
   const holds = actions.filter((a) => a.action === 'hold')
   const row = (a: DeskAction) => {
@@ -451,7 +475,7 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live }: Action
         </td>
         <td className="whitespace-nowrap text-[#6e6e73]">
           open · close {money(a.last_close)}
-          {live.quotes[a.ticker] && <div className="text-xs">{liveCell(a, live.quotes[a.ticker])}</div>}
+          {live.quotes[a.ticker] && <div className="text-xs">{liveCell(a, stops, live.quotes[a.ticker])}</div>}
         </td>
         <td className="whitespace-nowrap">
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[a.grade] ?? ''}`}>{a.grade}</span>
@@ -463,10 +487,13 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live }: Action
         <td className="whitespace-nowrap text-xs text-[#6e6e73]">
           {a.target_weight > 0 ? (
             <>
-              rebalance in {untilRebalance}
-              {a.stops['12'] !== undefined && (
+              leaves when the grade falls below A
+              <br />
+              next rebalance in {untilRebalance}
+              {stops && a.stops['12'] !== undefined && (
                 <>
-                  {' '}· stop 12% {money(a.stops['12'])}
+                  <br />
+                  stop 12% {money(a.stops['12'])}
                   <span title={`8% ${money(a.stops['8'])}, 20% ${money(a.stops['20'])}, off the 20-session high ${money(a.high_20)}`}>
                     {' '}▾
                   </span>
@@ -492,6 +519,10 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live }: Action
             </span>
           )}
         </h3>
+        <label className="flex items-center gap-2 text-xs text-[#6e6e73]">
+          <input type="checkbox" checked={stops} onChange={(e) => onStops(e.target.checked)} />
+          show stop levels
+        </label>
         <label className="flex items-center gap-2 text-xs text-[#6e6e73]">
           size to equity
           <input
@@ -523,10 +554,13 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live }: Action
       </table>
       <p className="mt-2 text-xs text-[#6e6e73]">
         Sizes are shares at the equity above, entered market-on-open: every later schedule measured
-        cost more. The desk&rsquo;s own exit is the rebalance, when a name that no longer earns its
-        grade leaves; the stops are risk controls off the twenty-session high, not signals &mdash;
-        after a sharp rise a 12% stop cut the worst tenth of outcomes from &minus;25% to &minus;16%
-        and the average from +9% to +4%.
+        cost more. The exit is the signal, not a price: a name leaves at a rebalance when it no
+        longer earns its grade, because every price-based exit tested in this book cost mean
+        return. Stop levels are off by default for that reason. They are not hunted &mdash; a
+        wick through a level and a close through it are followed by the same flat ten sessions
+        &mdash; they simply cut winners&rsquo; drawdowns along with losers&rsquo;: after a sharp
+        rise a 12% stop cut the worst tenth from &minus;25% to &minus;16% and the average from
+        +9% to +4%. Switch them on if your size needs the tail cut.
       </p>
     </section>
   )

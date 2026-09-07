@@ -11,10 +11,17 @@ entry is the next open - the execution study found every later schedule
 pays. The exit is the desk's own: a name leaves at a rebalance when it
 no longer earns its grade, so the row carries how far its votes sit
 above the line and how many sessions remain on the rebalance clock.
-Stop levels are given as risk controls, not signals: the book's history
-says a trailing stop trades the mean for the tail (a 12% stop after a
-sharp rise cut the worst tenth from -25% to -16% and the mean from +9%
-to +4%), and the person, knowing their size, chooses.
+Stop levels are given as risk controls, not signals, and the view shows
+them only when asked. The book's history says a trailing stop trades the
+mean for the tail (a 12% stop after a sharp rise cut the worst tenth
+from -25% to -16% and the mean from +9% to +4%). It also says the cost is
+not a predator at the level: across the universe since 2015, a day that
+trades through the prior twenty-session low and closes back above it
+(65,787 cases) is followed by the same flat ten sessions as one that
+closes below it (73,169 cases), -0.03% against -0.02% beta-adjusted, and
+wicks are 47% of such days; the same holds at a 12% trailing level. A
+stop costs because it truncates a right-skewed path, not because it is
+hunted. The person, knowing their size, chooses.
 """
 
 from dataclasses import dataclass
