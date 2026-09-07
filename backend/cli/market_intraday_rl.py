@@ -4,80 +4,111 @@
     python -m backend.cli.market_intraday_rl run            # both agents
     python -m backend.cli.market_intraday_rl run sharpe     # one of them
 
-What was asked, and the answer
-------------------------------
+What was asked
+--------------
 Whether a reinforcement-learning agent on the book's 15-minute bars could
-find an edge the daily desk cannot. The daily book has about 65
-independent twenty-session periods to learn from, which is why every
-network tried on it fit one price path. The fifteen-minute store has 20.8
-million bars across 529 names - a data regime where RL has genuinely
-worked in finance - so the question deserved a real test rather than an
-argument.
+find an edge the daily desk cannot. The daily book has few independent
+periods to learn from; the fifteen-minute store has 20.8 million bars
+across 529 names, closer to the regime where RL has worked in finance. So
+it was tested rather than argued, on the 93 book names, with 2026 held out
+and never seen by anything until one final table.
 
-It does not work here, and the reason is arithmetic that no algorithm can
-change. Scored once on 2026, which nothing saw until the final table, at
-the 3 basis points one-way that spread plus slippage costs on liquid US
-large caps. Sharpe by one-way cost, then annual return and worst drawdown
-at 3 bps:
+Four defects in the first version, and what they changed
+--------------------------------------------------------
+The first run reported every strategy negative at realistic cost and
+called intraday trading "ruled out". A review found four reproducible
+defects in that run. Each is fixed below; the conclusion is restated in
+the results section from a rerun, not carried over.
+
+* The session filter fixed the open at 13:30 UTC all year. New York opens
+  at 14:30 UTC in winter, so from November to March the window kept four
+  pre-market bars, dropped the last hour, and mis-slotted every bar in
+  between. Winter days either failed the completeness check or passed it
+  with the wrong bars in the wrong slots - including the first quarter of
+  the held-out year. Sessions are now selected on the New York clock.
+
+* The twenty-day volatility feature filled its warm-up rows with the
+  median over the name's whole history, which reads the future for the
+  first twenty sessions of every name. Those rows are dropped now rather
+  than filled, so every feature is causal, as the first version claimed
+  and was not.
+
+* The "published momentum" baseline was not the published strategy. Gao,
+  Han, Li and Zhou's signal is the return from the previous close to
+  10:00 - the overnight gap included - and the position is held through
+  the whole last half hour. The first version used the first fifteen
+  minutes without the gap and held fifteen minutes. Its failure said
+  nothing about the published effect. The gap is now a signal (known at
+  10:00, causal) even though it is never earned (the agent is flat at the
+  close), and the position covers both last-half-hour bars. "Long the
+  session" now runs from the first bar's open rather than its close.
+
+* The direct-Sharpe policy was trained on the Sharpe across stock-days in
+  a batch and scored on the Sharpe of daily portfolio returns. Those are
+  different objectives and can prefer different policies. Training
+  batches are now whole days, and the loss is the Sharpe across days of
+  the equal-weighted daily P&L - the same number the table reports.
+
+Results, from the corrected run
+-------------------------------
+Selecting sessions on the New York clock brought back every winter day:
+67,454 training sessions where the defective run had 45,308, and 15,151
+held-out sessions where it had 11,312. Sharpe by one-way cost, then annual
+return and worst drawdown at 3 bps:
 
   strategy                          turn   1bp    3bp    5bp   10bp    ann    maxDD
-  long the session                  2.00  0.06  -0.27  -0.61  -1.44   -8.3%  -25.1%
-  first-half-hour momentum (Gao)    1.99 -2.56  -5.01  -7.46 -13.56  -20.4%  -11.9%
-  hourly reversal (Heston et al.)  11.51 -1.10  -3.82  -6.62 -13.92  -81.7%  -45.5%
-  direct Sharpe GRU, best seed      1.20 -1.10  -2.65  -4.18  -7.87  -10.7%   -8.4%
-  direct Sharpe GRU, seed average   0.90 -0.39  -1.44  -2.47  -5.03   -6.5%   -5.9%
-  PPO, positional context           3.53 -1.28  -1.97  -2.64  -4.23  -54.4%  -28.4%
+  long the session (open to close)  2.00  0.12  -0.27  -0.67  -1.64   -7.1%  -23.8%
+  first-half-hour momentum (Gao)    2.00 -2.38  -4.86  -7.34 -13.55  -19.7%  -12.7%
+  hourly reversal (Heston)         11.49 -3.23  -8.48 -13.95 -28.74  -95.0%  -47.4%
+  direct Sharpe GRU, best seed      0.84 -0.24  -0.89  -1.54  -3.16   -5.8%   -8.0%
+  direct Sharpe GRU, seed average   0.61 -0.19  -0.98  -1.76  -3.73   -3.8%   -4.6%
+  PPO, positional context           2.65 -1.01  -1.52  -2.02  -3.24  -39.5%  -28.4%
 
-Nothing is positive at a realistic cost. The mechanism is visible in the
-first row: holding these names open to close earned +3.6 bp per name-day
-in 2026 (the daily panel, built from a different source, says +2.9), and
-a round trip at 3 bps costs 6. The best thing an intraday agent could do
-is not trade, and the direct-Sharpe policy nearly learned that: its
-validation Sharpe was +0.02 to +0.04 across seeds, which is a policy that
-found nothing worth paying for. PPO found something on 2025 - validation
-Sharpe +1.10, +1.69, -0.29 across seeds - and lost it entirely on 2026,
-which is what fitting noise looks like when the year changes.
+Nothing is positive at a realistic cost, and the shape of the failure is
+the same after the corrections as before them. Holding these names open
+to close earns a few basis points a session and a round trip costs six.
+The direct-Sharpe policy, now trained on the same portfolio Sharpe the
+table reports, put its validation Sharpe at -0.06, -0.03 and -0.01 across
+seeds and cut its turnover to 0.6-0.8 a session: a policy that learned
+there was nothing worth paying for and traded less. PPO found +0.55 on
+2025 with one seed and -0.85 and -1.20 with the other two, and the best
+of them lost on 2026. Gao et al.'s rule, implemented as published - the
+overnight gap in the signal, the whole last half hour held - loses at
+every cost, so its earlier failure was not the fault of the earlier
+mis-implementation.
 
-The two published intraday effects fail too, and not because 2026 is
-odd. Gao, Han, Li and Zhou's first-half-hour momentum and Heston,
-Korajczyk and Sadka's hourly reversal lose in every year from 2020 to
-2026 in these names at 3 bps, and so do their inverses: the fade rule
-earns -1.2 bp/day at 1 bp of cost across the training years, so the
-underlying effect is about a basis point and the round trip is six. Those
-papers measured an index ETF from 1993-2013 and a broad cross-section in
-the post-decimalisation years, at institutional costs. Single-name AI and
-software stocks in 2020-2026 are not that population, and the low hit
-rates - 27% of days positive for the rules - are the cost exceeding the
-signal on most days, not the signal pointing the wrong way.
+These implementations did not demonstrate an advantage. That is the
+claim, and the only one the evidence supports; the section below says why
+it is not a larger one.
 
-What this rules out and what it does not
-----------------------------------------
-It rules out an intraday sleeve on these names at retail-realistic costs,
-and it rules out intraday execution timing as a place to combine an agent
-with the desk: the desk trades about nine names a month with no market
-impact at its size, and there is no intraday edge to time into. Two
-agents, two published rules and their inverses, seven years, eleven
-thousand held-out sessions - the answer is consistent enough to stop.
-
-It does not rule out the fifteen-minute data being useful to the daily
-desk as features - realised variance, volume profile, close-to-close
-microstructure - which is a different question with a different test.
-And it does not say anything about names outside this book or about
-costs below a basis point, where "long the session" is the one row that
-turns faintly positive.
+What a result here can and cannot say
+-------------------------------------
+Two agents, two published rules, seven years and roughly eleven thousand
+held-out sessions is a fair test of *these implementations*. It is not a
+proof about intraday trading in general: an average session return below
+the round-trip cost rules out buying every session, not a conditional
+strategy with a different return distribution, and a profitable long-short
+sleeve is a different objective from improving the fill on a purchase the
+desk was going to make anyway. Neither is tested by the other. The honest
+form of a negative result here is "these implementations did not
+demonstrate an advantage", and that is the form used.
 
 The protocol
 ------------
-Regular session only, 09:30 to 16:00 New York, 26 bars, and only days with
-every bar present. Returns are within the day only, so overnight gaps,
-unadjusted splits and re-listings - which all happen between sessions -
-never reach an agent that is flat at the close. Any day with a bar move
-beyond 30% is dropped as a vendor error (NuScale was recorded rising 68x in
-fifteen minutes). Features are causal and standardised on training rows.
-Train 2020-2024, choose epochs and seeds on 2025, score 2026 exactly once.
-Every position is forced flat at the close and bounded to [-1, 1], so
-nothing wins by leverage or by holding overnight. Cost is charged on every
-unit of turnover including the first entry and the final exit.
+Regular session only, 09:30 to 16:00 New York by the New York clock, 26
+bars, and only days with every bar present. Returns are earned within the
+day only, so overnight gaps, unadjusted splits and re-listings - which all
+happen between sessions - never reach an agent that is flat at the close.
+Any day with a bar move beyond 30% is dropped as a vendor error (NuScale
+was recorded rising 68x in fifteen minutes). The first twenty sessions of
+every name are dropped rather than back-filled. Features are causal and
+standardised on training rows. Train 2020-2024, choose epochs and seeds on
+2025, score 2026 exactly once. Every position is forced flat at the close
+and bounded to [-1, 1], so nothing wins by leverage or by holding
+overnight. Cost is charged on every unit of turnover including the first
+entry and the final exit. The headline cost is 3 basis points one way,
+which is what spread plus slippage costs on liquid US large caps; 1, 5 and
+10 are reported beside it.
 
 The agents are from the literature rather than invented. The direct-Sharpe
 policy is Lim, Zohren and Roberts (2019): a recurrent policy trained by
@@ -92,7 +123,9 @@ assumed 0.08 bps of cost, roughly forty times too low for equities.
 import argparse
 import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pyarrow.parquet as pq
@@ -103,15 +136,16 @@ from backend.market.universe import book_sides, build_universe
 
 ROOT = Path("data/market/bars_15m")
 OUT = Path(os.environ.get("TMP", "/tmp")) / "intraday"
+NEW_YORK = ZoneInfo("America/New_York")
 BARS = 26
-OPEN_MINUTE = 13 * 60 + 30
+OPEN_LOCAL = 9 * 60 + 30  # minutes after midnight, New York
 BAD_BAR = 0.30
 VOL_DAYS = 20
 COSTS_BPS = (1.0, 3.0, 5.0, 10.0)
 HEADLINE_BPS = 3.0
 SEEDS = 3
 EPOCHS = 40
-BATCH = 512
+DAYS_PER_BATCH = 32
 SESSIONS_PER_YEAR = 252.0
 POSITIONAL = 4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -126,6 +160,7 @@ FEATURES = (
     "range_pos",
     "mkt_r4",
     "mkt_r_day",
+    "gap",  # previous close to this bar, in logs; the Gao signal at 10:00
 )
 
 
@@ -140,24 +175,55 @@ def _partition() -> Path:
     return parts[-1]
 
 
-# One name's regular-session bars, with the slot each one occupies.
+# Minutes after midnight New York for each bar, from its UTC start. The
+# offset is looked up once per calendar day, since it only changes on a
+# Sunday and no session spans one.
+def _local_minutes(start: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    day = start.astype("datetime64[D]")
+    utc_minute = (start - day).astype(int)
+    offsets = {}
+    for d in np.unique(day):
+        noon = datetime.fromtimestamp(
+            int(d.astype("datetime64[s]").astype(int)) + 12 * 3600, tz=UTC
+        )
+        offsets[d] = int(noon.astimezone(NEW_YORK).utcoffset().total_seconds() // 60)
+    offset = np.array([offsets[d] for d in day])
+    local = utc_minute + offset
+    # A bar before New York midnight in UTC terms lands on the previous day.
+    day = day + (local // (24 * 60)).astype("timedelta64[D]")
+    return day, local % (24 * 60)
+
+
+# One name's regular-session bars on the New York clock, with the slot
+# each occupies, and the last close of every day regardless of
+# completeness (for the overnight gap of the day after).
 def _load(root: Path, ticker: str):
     d = pq.read_table(root / f"{ticker}.parquet").to_pydict()
     start = np.array(d["start"], dtype="datetime64[m]")
-    day = start.astype("datetime64[D]")
-    minute = (start - day).astype(int)
-    keep = (minute >= OPEN_MINUTE) & (minute < OPEN_MINUTE + BARS * 15)
+    day, local = _local_minutes(start)
+    keep = (local >= OPEN_LOCAL) & (local < OPEN_LOCAL + BARS * 15)
     fields = {
-        k: np.array(d[k], dtype=float)[keep] for k in ("close", "high", "low", "volume")
+        k: np.array(d[k], dtype=float)[keep]
+        for k in ("open", "close", "high", "low", "volume")
     }
-    return day[keep], ((minute[keep] - OPEN_MINUTE) // 15).astype(int), fields
+    slot = ((local[keep] - OPEN_LOCAL) // 15).astype(int)
+    day = day[keep]
+    last_close: dict = {}
+    for dd in np.unique(day):
+        m = day == dd
+        last_close[dd] = float(fields["close"][m][np.argmax(slot[m])])
+    return day, slot, fields, last_close
 
 
-# The full, clean sessions of one name as aligned arrays.
+# The full, clean sessions of one name as aligned arrays, plus each
+# session's opening price and the close of the trading day before it.
 def _episodes(root: Path, ticker: str):
-    day, slot, f = _load(root, ticker)
-    kept: dict[str, list] = {k: [] for k in ("days", "close", "high", "low", "volume")}
-    for d in np.unique(day):
+    day, slot, f, last_close = _load(root, ticker)
+    days_seen = np.array(sorted(last_close))
+    kept: dict[str, list] = {
+        k: [] for k in ("days", "close", "high", "low", "volume", "open0", "prev")
+    }
+    for i, d in enumerate(days_seen):
         m = day == d
         if m.sum() != BARS or not np.array_equal(np.sort(slot[m]), np.arange(BARS)):
             continue
@@ -167,18 +233,31 @@ def _episodes(root: Path, ticker: str):
             continue
         if np.abs(np.diff(np.log(c))).max() > BAD_BAR:
             continue
+        # The previous trading day's close, if that day is on file and
+        # within a long weekend of this one; otherwise the gap is unknown.
+        prev = np.nan
+        if i > 0 and (d - days_seen[i - 1]).astype(int) <= 4:
+            prev = last_close[days_seen[i - 1]]
         kept["days"].append(d)
         kept["close"].append(c)
+        kept["open0"].append(float(f["open"][m][order][0]))
+        kept["prev"].append(prev)
         for k in ("high", "low", "volume"):
             kept[k].append(f[k][m][order])
     if not kept["days"]:
         return None
     stacked = [np.stack(kept[k]) for k in ("close", "high", "low", "volume")]
-    return np.array(kept["days"]), *stacked
+    return (
+        np.array(kept["days"]),
+        *stacked,
+        np.array(kept["open0"]),
+        np.array(kept["prev"]),
+    )
 
 
-# Causal features for every bar of every session, and what each bar paid.
-def _features(close, high, low, volume):
+# Causal features for every bar of every session, what each bar paid, and
+# which sessions have a full warm-up behind them.
+def _features(close, high, low, volume, prev):
     n = len(close)
     logc = np.log(close)
     r = np.zeros((n, BARS))
@@ -195,8 +274,7 @@ def _features(close, high, low, volume):
     vol20 = np.full(n, np.nan)
     for d in range(VOL_DAYS, n):
         vol20[d] = daily[d - VOL_DAYS : d].std()
-    fill = np.nanmedian(vol20) if np.isfinite(vol20).any() else 0.0
-    x[:, :, 4] = np.where(np.isfinite(vol20), vol20, fill)[:, None]
+    x[:, :, 4] = np.where(np.isfinite(vol20), vol20, 0.0)[:, None]
     ratio = np.ones((n, BARS))
     for d in range(VOL_DAYS, n):
         med = np.median(volume[d - VOL_DAYS : d], axis=0)
@@ -209,7 +287,13 @@ def _features(close, high, low, volume):
     with np.errstate(all="ignore"):
         pos = (close - run_low) / (run_high - run_low)
     x[:, :, 7] = np.where(np.isfinite(pos), pos, 0.5)
-    return x, nxt
+    with np.errstate(all="ignore"):
+        gap = logc - np.log(prev)[:, None]
+    x[:, :, 10] = np.where(np.isfinite(gap), gap, 0.0)
+    # The first VOL_DAYS sessions have no honest twenty-day history and
+    # are dropped, not back-filled from the future.
+    valid = np.arange(n) >= VOL_DAYS
+    return x, nxt, valid
 
 
 # Build the episode arrays for the book and write them to TMP.
@@ -224,22 +308,26 @@ def build() -> None:
         got = _episodes(root, ticker)
         if got is None:
             continue
-        days, close, high, low, volume = got
-        per_name[ticker] = (days, *_features(close, high, low, volume))
-        print(f"  {ticker:6} {len(days):5d} full sessions", flush=True)
+        days, close, high, low, volume, open0, prev = got
+        x, nxt, valid = _features(close, high, low, volume, prev)
+        session = np.log(close[:, -1]) - np.log(open0)
+        per_name[ticker] = (days[valid], x[valid], nxt[valid], session[valid])
+        print(f"  {ticker:6} {int(valid.sum()):5d} full sessions", flush=True)
     # The book's own average as the market, aligned by date.
-    all_days = sorted({d for days, _, _ in per_name.values() for d in days.tolist()})
+    all_days = sorted({d for days, *_ in per_name.values() for d in days.tolist()})
     index = {d: i for i, d in enumerate(all_days)}
     sums = np.zeros((2, len(all_days), BARS))
     count = np.zeros(len(all_days))
-    for days, x, _ in per_name.values():
+    for days, x, _, _ in per_name.values():
         rows = [index[d] for d in days.tolist()]
         sums[0, rows] += x[:, :, 1]
         sums[1, rows] += x[:, :, 2]
         count[rows] += 1
     market = sums / np.maximum(count, 1)[None, :, None]
-    xs, rs, names, dates = [], [], [], []
-    for k, (days, x, nxt) in enumerate(v for _t, v in sorted(per_name.items())):
+    xs, rs, names, dates, sessions = [], [], [], [], []
+    for k, (days, x, nxt, session) in enumerate(
+        v for _t, v in sorted(per_name.items())
+    ):
         rows = np.array([index[d] for d in days.tolist()])
         x[:, :, 8] = market[0, rows]
         x[:, :, 9] = market[1, rows]
@@ -247,9 +335,11 @@ def build() -> None:
         rs.append(nxt)
         names.append(np.full(len(days), k))
         dates.append(days)
+        sessions.append(session)
     np.save(OUT / "X.npy", np.concatenate(xs).astype(np.float32))
     np.save(OUT / "R.npy", np.concatenate(rs).astype(np.float32))
     np.save(OUT / "NAME.npy", np.concatenate(names))
+    np.save(OUT / "SESSION.npy", np.concatenate(sessions).astype(np.float32))
     stamp = np.concatenate(dates).astype("datetime64[D]").astype(np.int64)
     np.save(OUT / "DATE.npy", stamp)
     (OUT / "meta.json").write_text(
@@ -271,15 +361,19 @@ def pnl_of(positions: np.ndarray, returns: np.ndarray, cost: float) -> np.ndarra
     return (pos * returns).sum(axis=1) - cost * np.abs(pos - prev).sum(axis=1)
 
 
-# Daily P&L across the names traded each day, equal-weighted, then the
-# usual numbers.
-def score(episode_pnl: np.ndarray, dates: np.ndarray) -> dict:
+# Daily P&L across the names traded each day, equal-weighted.
+def daily_of(episode_pnl: np.ndarray, dates: np.ndarray) -> np.ndarray:
     days, inverse = np.unique(dates, return_inverse=True)
     daily = np.zeros(len(days))
     count = np.zeros(len(days))
     np.add.at(daily, inverse, episode_pnl)
     np.add.at(count, inverse, 1)
-    daily = daily / np.maximum(count, 1)
+    return daily / np.maximum(count, 1)
+
+
+# The usual numbers from a daily series.
+def score(episode_pnl: np.ndarray, dates: np.ndarray) -> dict:
+    daily = daily_of(episode_pnl, dates)
     annual = daily.mean() * SESSIONS_PER_YEAR
     vol = daily.std() * np.sqrt(SESSIONS_PER_YEAR)
     curve = np.cumprod(1 + daily)
@@ -288,7 +382,7 @@ def score(episode_pnl: np.ndarray, dates: np.ndarray) -> dict:
         "sharpe": float(annual / vol) if vol > 0 else float("nan"),
         "drawdown": float((curve / np.maximum.accumulate(curve) - 1).min()),
         "hit": float((daily > 0).mean()),
-        "days": int(len(days)),
+        "days": int(len(daily)),
     }
 
 
@@ -300,17 +394,23 @@ def turnover_of(positions: np.ndarray) -> float:
     return float(np.abs(pos - prev).sum(axis=1).mean())
 
 
-# The rules nothing is fitted for: buy-and-hold the session, the two
-# published intraday effects, and flat.
+# The rules nothing is fitted for, as positions on the bar grid: the two
+# published intraday effects, and flat. "Long the session" is not a grid
+# position - it runs from the first bar's open - and is scored separately.
 def baselines(x: np.ndarray) -> dict[str, np.ndarray]:
     n = len(x)
-    out = {"long the session": np.ones((n, BARS))}
+    out = {}
+    # Gao et al.: the return from the previous close to 10:00, gap included,
+    # predicts the last half hour; hold its sign through both closing bars.
     p = np.zeros((n, BARS))
-    p[:, 24] = np.sign(x[:, 1, 2])
-    out["first-half-hour momentum"] = p
+    signal = x[:, 1, 10]  # gap to the close of bar 1, i.e. through 10:00
+    p[:, 23] = np.sign(signal)
+    p[:, 24] = np.sign(signal)
+    out["first-half-hour momentum (Gao)"] = p
+    # Heston et al.: fade the last hour's move, re-decided every bar.
     p = np.zeros((n, BARS))
     p[:, 4:] = -np.sign(x[:, 4:, 1])
-    out["hourly reversal"] = p
+    out["hourly reversal (Heston)"] = p
     out["flat"] = np.zeros((n, BARS))
     return out
 
@@ -332,33 +432,58 @@ class SharpePolicy(nn.Module):
         return torch.tanh(self.head(h).squeeze(-1))
 
 
-# Minus the Sharpe of the batch's P&L, cost inside, flat at the close.
-def sharpe_loss(pos, ret, cost):
+# Minus the Sharpe across DAYS of the equal-weighted daily P&L - the same
+# quantity the table reports - with cost inside and flat at the close.
+# `day` maps each episode in the batch to a day index in [0, days).
+def sharpe_loss(pos, ret, cost, day, days: int):
     pos = torch.cat([pos[:, :-1], torch.zeros_like(pos[:, -1:])], dim=1)
     prev = torch.cat([torch.zeros_like(pos[:, :1]), pos[:, :-1]], dim=1)
     pnl = (pos * ret).sum(dim=1) - cost * (pos - prev).abs().sum(dim=1)
-    return -(pnl.mean() / (pnl.std() + 1e-6))
+    total = torch.zeros(days, device=pnl.device).index_add(0, day, pnl)
+    count = torch.zeros(days, device=pnl.device).index_add(0, day, torch.ones_like(pnl))
+    daily = total / count.clamp(min=1)
+    return -(daily.mean() / (daily.std() + 1e-6))
 
 
-# Fit the direct-Sharpe policy; the epoch is chosen on validation.
+# Fit the direct-Sharpe policy on whole-day batches; the epoch is chosen
+# on the validation days' portfolio Sharpe.
 def train_sharpe(split, seed: int, cost: float):
     torch.manual_seed(seed)
+    rng = np.random.default_rng(seed)
     policy = SharpePolicy(split.width).to(DEVICE)
     opt = torch.optim.Adam(policy.parameters(), lr=1e-3)
     best, state = -1e9, None
-    idx = torch.arange(len(split.z_train), device=DEVICE)
+    n_train_days = len(split.train_days)
     for _epoch in range(EPOCHS):
         policy.train()
-        perm = idx[torch.randperm(len(idx), device=DEVICE)]
-        for i in range(0, len(perm), BATCH):
-            b = perm[i : i + BATCH]
+        order = rng.permutation(n_train_days)
+        for i in range(0, n_train_days, DAYS_PER_BATCH):
+            picked = order[i : i + DAYS_PER_BATCH]
+            rows = np.concatenate([split.train_days[j] for j in picked])
+            day = np.concatenate(
+                [np.full(len(split.train_days[j]), k) for k, j in enumerate(picked)]
+            )
+            b = torch.tensor(rows, device=DEVICE)
             opt.zero_grad()
-            sharpe_loss(policy(split.z_train[b]), split.r_train[b], cost).backward()
+            loss = sharpe_loss(
+                policy(split.z_train[b]),
+                split.r_train[b],
+                cost,
+                torch.tensor(day, device=DEVICE),
+                len(picked),
+            )
+            loss.backward()
             nn.utils.clip_grad_norm_(policy.parameters(), 1.0)
             opt.step()
         policy.eval()
         with torch.no_grad():
-            v = -sharpe_loss(policy(split.z_valid), split.r_valid, cost).item()
+            v = -sharpe_loss(
+                policy(split.z_valid),
+                split.r_valid,
+                cost,
+                split.valid_day,
+                split.valid_day_count,
+            ).item()
         if v > best:
             best, state = v, {k: t.clone() for k, t in policy.state_dict().items()}
     policy.load_state_dict(state)
@@ -440,7 +565,7 @@ def advantages(rews, vals, gamma: float = 0.99, lam: float = 0.95):
 
 
 # One PPO update from one batch of rolled-out sessions.
-def ppo_update(model, opt, trail, cost, clip: float = 0.2) -> None:
+def ppo_update(model, opt, trail, clip: float = 0.2) -> None:
     rews, vals = torch.stack(trail["rews"], 1), torch.stack(trail["vals"], 1)
     adv, ret = advantages(rews, vals)
     states, acts = torch.cat(trail["states"], 0), torch.cat(trail["acts"], 0)
@@ -462,23 +587,24 @@ def ppo_update(model, opt, trail, cost, clip: float = 0.2) -> None:
         opt.step()
 
 
-# Fit PPO; the epoch is chosen on validation Sharpe.
+# Fit PPO; the epoch is chosen on validation portfolio Sharpe.
 def train_ppo(split, seed: int, cost: float):
     torch.manual_seed(seed)
     model = ActorCritic(split.width).to(DEVICE)
     opt = torch.optim.Adam(model.parameters(), lr=3e-4)
     best, state = -1e9, None
     idx = torch.arange(len(split.z_train), device=DEVICE)
+    batch = DAYS_PER_BATCH * 64
     for _epoch in range(EPOCHS // 2):
         perm = idx[torch.randperm(len(idx), device=DEVICE)]
-        for i in range(0, len(perm), BATCH * 4):
-            b = perm[i : i + BATCH * 4]
+        for i in range(0, len(perm), batch):
+            b = perm[i : i + batch]
             model.eval()
             with torch.no_grad():
                 _p, trail = rollout(
                     model, split.z_train[b], split.r_train[b], cost, True
                 )
-            ppo_update(model, opt, trail, cost)
+            ppo_update(model, opt, trail)
         model.eval()
         with torch.no_grad():
             pv, _ = rollout(model, split.z_valid, split.r_valid, cost, False)
@@ -501,6 +627,7 @@ class Split:
     def __init__(self) -> None:
         x_all = np.load(OUT / "X.npy")
         r_all = np.load(OUT / "R.npy")
+        session = np.load(OUT / "SESSION.npy")
         dates = np.load(OUT / "DATE.npy").astype("datetime64[D]")
         year = dates.astype("datetime64[Y]").astype(int) + 1970
         train, valid, test = year <= 2024, year == 2025, year == 2026
@@ -519,6 +646,16 @@ class Split:
             r_all[test],
             dates[test],
         )
+        self.session_test = session[test]
+        # Whole-day batching for the direct-Sharpe objective.
+        train_dates = dates[train]
+        _u, inverse = np.unique(train_dates, return_inverse=True)
+        self.train_days = [
+            np.flatnonzero(inverse == k) for k in range(inverse.max() + 1)
+        ]
+        _u, valid_inverse = np.unique(self.dates_valid, return_inverse=True)
+        self.valid_day = torch.tensor(valid_inverse, device=DEVICE)
+        self.valid_day_count = int(valid_inverse.max()) + 1
         self.counts = (int(train.sum()), int(valid.sum()), int(test.sum()))
 
 
@@ -534,6 +671,16 @@ def _row(split: Split, positions: np.ndarray) -> tuple[dict, float]:
         for c in COSTS_BPS
     }
     return scores, turnover_of(positions)
+
+
+# "Long the session" from the first bar's open to the last bar's close,
+# one round trip, which the bar grid cannot express.
+def _long_session_row(split: Split) -> tuple[dict, float]:
+    scores = {
+        c: score(split.session_test - 2.0 * c / 1e4, split.dates_test)
+        for c in COSTS_BPS
+    }
+    return scores, 2.0
 
 
 # Train the direct-Sharpe policy over the seeds and score the held-out year.
@@ -591,7 +738,9 @@ def run(which: list[str]) -> None:
         f"train {split.counts[0]:,} valid {split.counts[1]:,} "
         f"test {split.counts[2]:,}; {DEVICE}"
     )
-    results: dict[str, tuple[dict, float]] = {}
+    results: dict[str, tuple[dict, float]] = {
+        "long the session (open to close)": _long_session_row(split)
+    }
     for name, pos in baselines(split.x_test).items():
         results[name] = _row(split, pos)
     if "sharpe" in which:

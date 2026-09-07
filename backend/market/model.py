@@ -642,7 +642,18 @@ def inner_split(train: range, config: TrainConfig) -> tuple[range, range]:
     """Return (the range to fit on, the range to validate on)."""
     split = train.stop - max(1, int(len(train) * config.validation_fraction))
     split = max(split, train.start + 1)
-    fit_stop = max(train.start + 1, split - config.horizon)
+    fit_stop = split - config.horizon
+    # A range too short to hold a fit session, a full horizon of purge and
+    # a validation tail cannot be split honestly. The first version kept
+    # one fit session anyway, which silently let its label reach into
+    # validation - the exact leak this function exists to remove. Refusing
+    # is the only answer that does not lie about what was purged.
+    if fit_stop <= train.start:
+        raise ValueError(
+            f"a training range of {len(train)} sessions cannot be split with a "
+            f"{config.horizon}-session purge and a validation tail; nothing "
+            f"would be left to fit on"
+        )
     return range(train.start, fit_stop), range(split, train.stop)
 
 

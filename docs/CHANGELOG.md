@@ -2,6 +2,73 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The intraday experiment corrected and rerun; releases kept as text
+
+**Four verified defects in the intraday run below, fixed and rerun.** A review
+reproduced each of them; none survived checking.
+
+The session filter fixed the open at 13:30 UTC all year. New York opens at
+14:30 UTC in winter, so from November to March the window kept four pre-market
+bars, dropped the last hour, and mis-slotted every bar between - verified on
+2026-01-06, where it selected 22 of 26 regular bars plus four from 08:30. Winter
+days either failed the completeness check or passed it with the wrong bars in
+the wrong slots, including the first quarter of the held-out year. Sessions are
+now selected on the New York clock, and the population grew from 45,308 to
+67,454 training sessions and from 11,312 to 15,151 held-out ones.
+
+The twenty-day volatility feature back-filled its warm-up rows with a median
+over the name's whole history, reading the future for the first twenty sessions
+of every name; those rows are dropped now. The "published momentum" baseline
+was not the published strategy - Gao, Han, Li and Zhou's signal includes the
+overnight gap and the position is held through the whole last half hour; the
+first version had neither. And the direct-Sharpe policy was trained on the
+Sharpe across stock-days and scored on the Sharpe of daily portfolio returns,
+which can prefer different policies; training batches are now whole days and
+the loss is the number the table reports.
+
+The corrected held-out table, Sharpe at 1 / 3 / 5 / 10 bps one-way:
+
+| strategy | turnover | 1bp | 3bp | 5bp | 10bp |
+|---|---|---|---|---|---|
+| long the session, open to close | 2.00 | 0.12 | -0.27 | -0.67 | -1.64 |
+| first-half-hour momentum, as published | 2.00 | -2.38 | -4.86 | -7.34 | -13.55 |
+| hourly reversal | 11.49 | -3.23 | -8.48 | -13.95 | -28.74 |
+| direct Sharpe policy, best seed | 0.84 | -0.24 | -0.89 | -1.54 | -3.16 |
+| direct Sharpe policy, seed average | 0.61 | -0.19 | -0.98 | -1.76 | -3.73 |
+| PPO, positional context | 2.65 | -1.01 | -1.52 | -2.02 | -3.24 |
+
+Same shape as before the corrections: nothing positive at a realistic cost,
+the direct-Sharpe policy's validation Sharpe at -0.06, -0.03 and -0.01 across
+seeds and its turnover cut to under one unit a session - a policy that learned
+there was nothing worth paying for. The conclusion is restated in the form the
+evidence supports: *these implementations did not demonstrate an advantage.*
+An average session return below the round-trip cost rules out buying every
+session, not a conditional strategy; a profitable sleeve is a different
+objective from improving the fill on a purchase the desk was making anyway;
+and neither counting argument about sample size settles whether learning must
+fail. The earlier "ruled out" was too strong and is withdrawn.
+
+**The validation split refuses a range it cannot purge.** `inner_split` had
+kept one fit session even when its label reached into the validation tail -
+the leak it exists to remove, reintroduced for short ranges. It raises now;
+the test asserts the refusal at four horizons and that a range one session
+longer than the horizon splits cleanly.
+
+**Earnings releases are kept as text.** The desk's best signal is a model
+reading each release into five fields, and the release itself was fetched and
+discarded, so nothing further could be asked of it without a new prompt and a
+new functional test. `backend/market/release_text.py` stores the EX-99.1 text
+per release, dated by its reaction date, and turns it into a vector with the
+deployment's own embedding service (reachable from the desktop over the LAN);
+`market_release_text fetch|embed|status` collects it resumably. Nine tests cover
+the frames, the partial files, the batching and ordering of the embedding
+call, and that a vector reaches the panel from the reaction date and not before.
+What the vectors are worth is the next measurement, not this entry.
+
+Diagram impact: NONE - corrections to a research CLI, a guard in model
+selection, and two new store frame kinds with no path into the desk's
+decisions yet.
+
 ## 2026-09-07 - Reinforcement learning on the fifteen-minute bars, tested once and stopped
 
 **The question.** Three measurements on the daily book had said the same

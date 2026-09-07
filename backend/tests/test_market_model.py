@@ -132,10 +132,17 @@ def test_the_inner_validation_boundary_is_purged(horizon):
     assert fit_range.start == train.start
     assert val_range.start - fit_range.stop >= horizon
     assert fit_range.stop <= val_range.start
-    # Even a range too short to give the horizon away keeps a session to
-    # fit on rather than returning nothing.
-    tiny = inner_split(range(0, 3), config)[0]
-    assert len(tiny) >= 1
+    # A range too short to hold a fit session, a full purge and a validation
+    # tail is refused, not quietly relaxed. The first version kept one fit
+    # session whose label reached into validation - the leak this function
+    # exists to remove, reintroduced for small ranges. A review caught it
+    # with a three-session range at horizons of five and twenty.
+    # A range of horizon plus one sessions can never hold a fit session, a
+    # full purge and a validation tail, whatever the horizon. Three sessions
+    # at a horizon of one is fine (fit one, purge one, validate one), which
+    # is why the range scales with the horizon rather than being fixed.
+    with pytest.raises(ValueError, match="cannot be split"):
+        inner_split(range(0, horizon + 1), config)
 
 
 # And the statistics come from the fit range, not the validation tail:
