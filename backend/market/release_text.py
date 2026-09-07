@@ -49,6 +49,14 @@ RELEASE_VEC_KIND = "edgar_release_vec"
 MAX_CHARS = 30_000
 # The prefix nomic-embed asks for on documents, as opposed to queries.
 DOCUMENT_PREFIX = "search_document: "
+# What the embedder is given. The model reads 8,192 tokens; the deployment
+# serves it at 2,048, and a release past that is refused outright with a
+# 400 rather than truncated. Financial prose runs about four characters a
+# token, so this keeps the request under the cap with room to spare. It is
+# the headline and the guidance paragraphs - the words - and it is also a
+# quarter of what the tone reader sees, which is a caveat on any comparison
+# between the two until the server's context is raised.
+EMBED_CHARS = 7_000
 EMBED_BATCH = 16
 EMBED_TIMEOUT = 120.0
 
@@ -197,7 +205,10 @@ def embed(
     poster = post or _post
     out: list[list[float]] = []
     for start in range(0, len(texts), EMBED_BATCH):
-        chunk = [DOCUMENT_PREFIX + t for t in texts[start : start + EMBED_BATCH]]
+        chunk = [
+            DOCUMENT_PREFIX + t[:EMBED_CHARS]
+            for t in texts[start : start + EMBED_BATCH]
+        ]
         response = poster(
             f"{base_url.rstrip('/')}/v1/embeddings",
             json={"model": model, "input": chunk},
@@ -229,6 +240,44 @@ def _post(url: str, **kwargs) -> httpx.Response:
 
 
 # --- features ----------------------------------------------------------------
+
+
+# Which release each name carried on each session, as an index into
+# `records`, or -1 where there is none yet. The same alignment as
+# `vector_panel` without materialising a (sessions x names x width) array:
+# a year of 768-wide vectors for ninety names is over a gigabyte, and a
+# model wants the cell's vector looked up, not copied into every session.
+def active_index(
+    dates: np.ndarray,
+    tickers: Sequence[str],
+    records: Sequence[ReleaseVector],
+    ticker_of: Mapping[str, str],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return ((T, N) index into `records` or -1, (T, N) sessions since it)."""
+    rows = len(dates)
+    stamps = np.asarray(dates).astype("datetime64[D]")
+    column_of = {t: i for i, t in enumerate(tickers)}
+    index = np.full((rows, len(tickers)), -1, dtype=np.int64)
+    since = np.full((rows, len(tickers)), -1, dtype=np.int64)
+    by_column: dict[int, list[tuple[int, ReleaseVector]]] = {}
+    for k, record in enumerate(records):
+        column = column_of.get(ticker_of.get(record.accession, ""))
+        if column is not None:
+            by_column.setdefault(column, []).append((k, record))
+    for column, items in by_column.items():
+        items.sort(key=lambda kr: kr[1].reaction_date)
+        for j, (k, record) in enumerate(items):
+            start = int(
+                np.searchsorted(stamps, np.datetime64(record.reaction_date), "left")
+            )
+            stop = rows
+            if j + 1 < len(items):
+                nxt = np.datetime64(items[j + 1][1].reaction_date)
+                stop = int(np.searchsorted(stamps, nxt, "left"))
+            if start < stop:
+                index[start:stop, column] = k
+                since[start:stop, column] = np.arange(stop - start)
+    return index, since
 
 
 # The vector each name carried on each session: the newest release whose

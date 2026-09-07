@@ -1,0 +1,163 @@
+"""Should the analysts be weighted equally? Measured, not assumed.
+
+    python -m backend.cli.market_weights
+    python -m backend.cli.market_weights --horizons 20 60 --shrink 0 1 10 100
+
+The question
+------------
+The desk's score is the sum of its analysts' convictions at equal weight
+(rotation at half). Nothing measured that. The analysts are not equally
+good - valuation is the strongest at sixty sessions and tone at twenty,
+and the technical analyst is weakest at both - so a fixed equal weight is
+an assumption wearing a rule's clothes.
+
+The suggestion was a network that learns the weights. The networks tried
+here could not beat the rule, and the reason was sample size: about 65
+independent periods against thousands of parameters. But five weights are
+not thousands. A linear combiner over the five convictions, fit
+walk-forward with the label horizon purged and shrunk toward the equal
+weights it is replacing, is the smallest model that can answer the
+question, and it is the one this runs.
+
+The measurement
+---------------
+For every session, the five convictions (four analysts and rotation) and
+the beta-adjusted forward residual. Walk-forward folds from the harness,
+ridge with the penalty pulling the weights toward the equal-weight vector
+rather than toward zero - so with infinite shrinkage it *is* the desk, and
+with none it is unconstrained least squares. The fitted weights score the
+test range; the out-of-sample scores are measured by `evaluate_scores`
+against the desk's own equal-weight score on the same cells.
+
+Also reported: the fitted weights per fold, so a weight that changes sign
+across folds is seen for what it is - noise - rather than adopted.
+
+Results
+-------
+Recorded in the changelog for the run, and copied here once known.
+"""
+
+import argparse
+
+import numpy as np
+
+from backend.agents.trading.desk import desk as trading_desk
+from backend.agents.trading.desk.grading import ROTATION_WEIGHT
+from backend.market.harness import evaluate_scores, walk_forward_folds
+from backend.market.store import MarketStore
+
+ANALYSTS = ("fundamental", "technical", "sentiment", "value", "rotation")
+COST_BPS = 10.0
+MIN_NAMES = 15
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line parser."""
+    parser = argparse.ArgumentParser(description="Weight the analysts by evidence.")
+    parser.add_argument("--horizons", type=int, nargs="+", default=[20, 60])
+    parser.add_argument(
+        "--shrink", type=float, nargs="+", default=[0.0, 1.0, 10.0, 100.0]
+    )
+    parser.add_argument("--train", type=int, default=750)
+    parser.add_argument("--test", type=int, default=126)
+    parser.add_argument("--embargo", type=int, default=5)
+    parser.add_argument("--data-dir", default="data/market")
+    return parser
+
+
+# The (T, N, 5) conviction block and the equal weights the desk uses.
+def _convictions(report) -> tuple[np.ndarray, np.ndarray]:
+    blocks = []
+    for name in ANALYSTS:
+        source = report.regime.rotation if name == "rotation" else report.opinions[name]
+        blocks.append(np.nan_to_num(source.conviction()))
+    prior = np.array([ROTATION_WEIGHT if n == "rotation" else 1.0 for n in ANALYSTS])
+    return np.stack(blocks, axis=-1), prior
+
+
+# Ridge toward a prior weight vector rather than toward zero: with penalty
+# `shrink` the solution is the equal-weight desk plus whatever the data can
+# justify moving it by.
+def _fit(x, y, prior: np.ndarray, shrink: float) -> np.ndarray:
+    gram = x.T @ x
+    scale = np.trace(gram) / len(prior)  # so `shrink` is in units of the data
+    penalty = shrink * scale * np.eye(len(prior))
+    return np.linalg.solve(gram + penalty, x.T @ y + penalty @ prior)
+
+
+# Out-of-sample scores from walk-forward fits, and the weights per fold.
+def _fitted(conv, label, in_book, folds, prior, shrink):
+    rows, names, _ = conv.shape
+    scores = np.full((rows, names), np.nan)
+    weights = []
+    has = np.isfinite(label) & in_book[None, :]
+    for train_range, test_range in folds:
+        mask = np.zeros_like(has)
+        mask[train_range.start : train_range.stop] = has[
+            train_range.start : train_range.stop
+        ]
+        ft, fn = np.nonzero(mask)
+        if len(ft) < 500:
+            continue
+        w = _fit(conv[ft, fn], label[ft, fn], prior, shrink)
+        weights.append(w)
+        block = slice(test_range.start, test_range.stop)
+        scores[block] = conv[block] @ w
+    return scores, np.array(weights)
+
+
+# Rank IC and net Sharpe on given cells.
+def _measure(scores, cells, panel, horizon):
+    r = evaluate_scores(
+        np.where(cells, scores, np.nan),
+        panel,
+        horizon,
+        cost_bps=COST_BPS,
+        min_names=MIN_NAMES,
+    )
+    return r.mean_ic, r.ic_tstat, r.net_sharpe
+
+
+def main() -> None:
+    """Entry point."""
+    args = build_parser().parse_args()
+    report = trading_desk.run(MarketStore(args.data_dir))
+    panel = report.panel
+    in_book = np.array([t in report.sides for t in panel.tickers])
+    in_book[panel.index(panel.benchmark)] = False
+    conv, prior = _convictions(report)
+    equal = conv @ prior
+    for horizon in args.horizons:
+        label = panel.forward_residual(horizon)
+        folds = list(
+            walk_forward_folds(
+                len(panel.dates), args.train, args.test, horizon, args.embargo
+            )
+        )
+        print(f"\n=== horizon {horizon}, {len(folds)} folds ===")
+        print(f"{'weights':44} {'rank IC':>9} {'t':>7} {'net Sharpe':>11}")
+        cells = None
+        for shrink in sorted(args.shrink, reverse=True):
+            scores, weights = _fitted(conv, label, in_book, folds, prior, shrink)
+            if cells is None:
+                cells = np.isfinite(scores) & in_book[None, :]
+                ic, t, sh = _measure(equal, cells, panel, horizon)
+                print(
+                    f"{'equal weights (the desk)':44} {ic:+9.4f} {t:+7.2f} {sh:+11.2f}"
+                )
+            ic, t, sh = _measure(scores, cells, panel, horizon)
+            print(f"{f'fitted, shrink {shrink:g}':44} {ic:+9.4f} {t:+7.2f} {sh:+11.2f}")
+            if len(weights):
+                mean, sd = weights.mean(axis=0), weights.std(axis=0)
+                signs = (np.sign(weights) == np.sign(mean)).mean(axis=0)
+                print(
+                    "    "
+                    + "  ".join(
+                        f"{n[:5]} {m:+.2f}±{s:.2f} ({int(round(g * 100))}% same sign)"
+                        for n, m, s, g in zip(ANALYSTS, mean, sd, signs, strict=True)
+                    )
+                )
+
+
+if __name__ == "__main__":
+    main()

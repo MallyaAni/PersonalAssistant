@@ -98,6 +98,29 @@ def test_embed_batches_and_keeps_order():
     assert release_text.embed([], "http://embed", "nomic", post=post) == []
 
 
+# What reaches the embedder is cut to what the server will take. The
+# deployment serves the model at 2,048 tokens and refuses a longer request
+# outright with a 400 - it does not truncate - so a release past the cap
+# would fail the whole batch it sat in. The cut keeps the front, where the
+# words are.
+def test_embed_cuts_each_text_to_what_the_server_accepts():
+    seen: list[str] = []
+
+    def post(url, json, timeout):
+        seen.extend(json["input"])
+        data = [{"index": i, "embedding": [0.0]} for i in range(len(json["input"]))]
+        return SimpleNamespace(
+            status_code=200, raise_for_status=lambda: None, json=lambda: {"data": data}
+        )
+
+    long = "guidance " * 5_000  # 45,000 characters
+    release_text.embed([long, "short"], "http://embed", "nomic", post=post)
+    prefix = release_text.DOCUMENT_PREFIX
+    assert seen[0] == prefix + long[: release_text.EMBED_CHARS]
+    assert len(seen[0]) == len(prefix) + release_text.EMBED_CHARS
+    assert seen[1] == prefix + "short"
+
+
 # A vector record round-trips with its model name, so a vector made by one
 # model is never mistaken for another's.
 def test_vector_records_round_trip_with_their_model():
@@ -128,6 +151,42 @@ def test_vectors_reach_the_panel_only_from_the_reaction_date():
     assert panel[6, 0].tolist() == [2.0, 2.0]  # May 7, the second takes over
     assert panel[9, 0].tolist() == [2.0, 2.0]
     assert np.isnan(panel[:, 1]).all()  # a name with no releases
+
+
+# The index form of the same alignment: each cell names the release it
+# carries and how many sessions it has carried it, with -1 before any.
+def test_active_index_matches_the_panel_alignment():
+    dates = np.arange("2026-05-01", "2026-05-11", dtype="datetime64[D]")
+    records = [
+        release_text.ReleaseVector("a", date(2026, 5, 3), "m", (1.0,)),
+        release_text.ReleaseVector("b", date(2026, 5, 7), "m", (2.0,)),
+        release_text.ReleaseVector("z", date(2026, 5, 2), "m", (9.0,)),  # another name
+    ]
+    ticker_of = {"a": "AAA", "b": "AAA", "z": "ZZZ"}
+    index, since = release_text.active_index(
+        dates, ("AAA", "BBB", "ZZZ"), records, ticker_of
+    )
+    assert index.shape == since.shape == (10, 3)
+    assert index[:2, 0].tolist() == [-1, -1]
+    assert index[2:6, 0].tolist() == [0, 0, 0, 0]  # 'a' from May 3
+    assert index[6:, 0].tolist() == [1, 1, 1, 1]  # 'b' from May 7
+    assert since[2:6, 0].tolist() == [0, 1, 2, 3]
+    assert since[6, 0] == 0  # the counter restarts with the new release
+    assert (index[:, 1] == -1).all()  # a name with no releases
+    assert index[1, 2] == 2  # 'z' belongs to ZZZ, not AAA
+    # And it agrees with the dense panel wherever the panel has a vector.
+    panel = release_text.vector_panel(
+        dates,
+        ("AAA", "BBB", "ZZZ"),
+        {"AAA": records[:2], "ZZZ": records[2:]},
+        1,
+    )
+    dense = np.where(np.isfinite(panel[:, :, 0]), panel[:, :, 0], np.nan)
+    looked_up = np.where(
+        index >= 0, np.array([r.vector[0] for r in records])[index], np.nan
+    )
+    assert np.array_equal(np.isnan(dense), np.isnan(looked_up))
+    assert np.allclose(dense[np.isfinite(dense)], looked_up[np.isfinite(looked_up)])
 
 
 # The reaction date is the point-in-time rule, so a release accepted after
