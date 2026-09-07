@@ -157,8 +157,9 @@ def test_the_grade_sizes_the_position():
 # is the deterministic thing, so that is what the exactness is asserted on.
 def test_the_regime_scales_the_whole_book():
     config = simulate.risk.BOOK_CONFIG
-    full_target = simulate._targets(_report(exposure=1.0), None, config, 140)
-    half_target = simulate._targets(_report(exposure=0.5), None, config, 140)
+    full_report, half_report = _report(exposure=1.0), _report(exposure=0.5)
+    full_target = simulate._targets(full_report, full_report.panel, config, 140)
+    half_target = simulate._targets(half_report, half_report.panel, config, 140)
     assert half_target.sum() == pytest.approx(full_target.sum() * 0.5, rel=1e-9)
     assert np.allclose(half_target, full_target * 0.5)
 

@@ -19,6 +19,7 @@ from backend.market.sizing import (
     Position,
     SizingConfig,
     apply_name_cap,
+    realised_volatility,
     size_today,
 )
 
@@ -48,12 +49,67 @@ class Sized:
     grade: str
     multiplier: float
     exposure: float
+    # The weight the book actually targets. It used to be derived as
+    # position x multiplier x exposure, which was only true while nothing
+    # happened after those multipliers. The tightening tilt does, and the
+    # cap after it does, so the number is carried rather than recomputed.
+    final: float | None = None
 
-    # The weight after grade and regime multipliers.
+    # The weight after grade and regime multipliers, the tilt and the cap.
     @property
     def weight(self) -> float:
         """Return the final weight."""
+        if self.final is not None:
+            return self.final
         return self.position.weight * self.multiplier * self.exposure
+
+
+# The desk's target weight for every name, in one place.
+#
+# The paper book and the backtest used to compute this separately and in a
+# different order: the paper path tilted and capped the engine's weights
+# and then applied the grade and exposure multipliers, while the simulator
+# applied the multipliers first and tilted and capped the result. Capping
+# and scaling do not commute, so with the same inputs in a tightening
+# regime the two disagreed on every name - 0.1125 against 0.1500 on the
+# largest. A backtest that sizes differently from the book it is meant to
+# describe is not evidence about that book, so there is one calculation
+# now and both callers use it.
+#
+# The order is: the engine's weights, then the grade and the regime's
+# exposure, then the tightening tilt, then the cap. The cap is last on
+# purpose - it constrains what is actually held, which is what a position
+# limit is for.
+def desk_targets(
+    scores_today: np.ndarray,
+    graded_today: np.ndarray,
+    panel: Panel,
+    regime: RegimeState,
+    config: SizingConfig = BOOK_CONFIG,
+    held: np.ndarray | None = None,
+) -> tuple[list[Position], np.ndarray]:
+    """Return (the engine's positions, the final target weight per column)."""
+    # A C-grade name is not a candidate at all, so it cannot take a slot.
+    # The engine's top fraction counts the names it can see, so the
+    # fraction is rescaled to keep the book the size it would be over the
+    # whole universe (a tenth of 90 names, not a tenth of the graded ones).
+    candidates = np.where(graded_today > 0, scores_today, np.nan)
+    total = max(int(np.isfinite(scores_today).sum()) - 1, 1)
+    graded = max(int(np.isfinite(candidates).sum()), 1)
+    scaled = replace(
+        config, top_fraction=min(1.0, config.top_fraction * total / graded)
+    )
+    positions = size_today(candidates, panel, scaled, held)
+    targets = np.zeros(len(panel.tickers))
+    for position in positions:
+        column = panel.index(position.ticker)
+        letter = GRADES[3 - int(graded_today[column])]
+        targets[column] = (
+            position.weight * SIZE_MULTIPLIER[letter] * regime.exposure
+        )
+    if regime.tightening:
+        targets = _steepen_weights(targets, panel, scaled, config.name_cap)
+    return positions, targets
 
 
 # Size today's book: the sizing engine on the graded scores, then each name
@@ -67,29 +123,23 @@ def size(
     held: np.ndarray | None = None,
 ) -> list[Sized]:
     """Return the sized book, largest final weight first."""
-    # A C-grade name is not a candidate at all, so it cannot take a slot.
-    # The engine's top fraction counts the names it can see, so the
-    # fraction is rescaled to keep the book the size it would be over the
-    # whole universe (a tenth of 90 names, not a tenth of the graded ones).
-    candidates = np.where(graded_today > 0, scores_today, np.nan)
-    total = max(int(np.isfinite(scores_today).sum()) - 1, 1)
-    graded = max(int(np.isfinite(candidates).sum()), 1)
-    scaled = replace(
-        config, top_fraction=min(1.0, config.top_fraction * total / graded)
+    positions, targets = desk_targets(
+        scores_today, graded_today, panel, regime, config, held
     )
-    positions = size_today(candidates, panel, scaled, held)
-    if regime.tightening:
-        positions = _steepen(positions, TIGHTENING_POWER, scaled.name_cap)
     out: list[Sized] = []
     for position in positions:
         column = panel.index(position.ticker)
         letter = GRADES[3 - int(graded_today[column])]
+        note = position.note
+        if regime.tightening:
+            note = note + "; steadier while money tightens"
         out.append(
             Sized(
-                position=position,
+                position=replace(position, note=note),
                 grade=letter,
                 multiplier=SIZE_MULTIPLIER[letter],
                 exposure=regime.exposure,
+                final=float(targets[column]),
             )
         )
     out.sort(key=lambda s: -abs(s.weight))
@@ -97,37 +147,34 @@ def size(
 
 
 # The same names, reweighted so the steadier ones take more of the book.
-# The engine already weights by the inverse of volatility; raising that
-# to `power` and renormalising keeps the gross exposure unchanged.
+# The engine already weights by the inverse of volatility; raising that to
+# `TIGHTENING_POWER` and renormalising keeps the gross exposure unchanged.
 #
-# The cap is re-applied afterwards. Renormalising moves weight onto the
-# calmest names, and `size_today` had already capped them, so without this
-# the tilt could carry a position past `name_cap` - 18.75% against a 15%
-# cap on the paper book, found by a review after the same defect had been
-# fixed in the simulator alone. Both paths call `apply_name_cap` now, so
-# the backtest and the book being traded obey the same limit.
-def _steepen(
-    positions: list[Position], power: float, cap: float | None = None
-) -> list[Position]:
-    gross_before = sum(abs(p.weight) for p in positions)
-    if gross_before <= 0:
-        return positions
-    adjusted = []
-    for p in positions:
-        vol = max(p.volatility, 0.10)
-        adjusted.append(abs(p.weight) * (0.10 / vol) ** (power - 1.0))
-    total = sum(adjusted)
+# The cap is re-applied afterwards, because renormalising moves weight onto
+# the calmest names and those were already at the cap. Without it the tilt
+# carried a position to 0.3713 against a 0.15 cap.
+def _steepen_weights(
+    targets: np.ndarray, panel: Panel, config: SizingConfig, cap: float | None
+) -> np.ndarray:
+    gross = float(np.abs(targets).sum())
+    if gross <= 0:
+        return targets
+    volatility = realised_volatility(panel, config.volatility_lookback)[-1]
+    vol = np.where(
+        np.isfinite(volatility) & (volatility > config.min_volatility),
+        volatility,
+        config.min_volatility,
+    )
+    adjusted = np.abs(targets) * (config.min_volatility / vol) ** (
+        TIGHTENING_POWER - 1.0
+    )
+    total = float(adjusted.sum())
     if total <= 0:
-        return positions
-    scaled = np.array(adjusted, dtype=float) / total * gross_before
+        return targets
+    out = adjusted / total * gross
     if cap:
-        scaled = apply_name_cap(scaled, cap, gross_before)
-    out = []
-    for p, weight in zip(positions, scaled, strict=True):
-        note = p.note + "; steadier while money tightens"
-        out.append(replace(p, weight=float(weight), note=note))
-    out.sort(key=lambda p: -abs(p.weight))
-    return out
+        out = apply_name_cap(out, cap, gross)
+    return np.sign(targets) * out
 
 
 # Gross exposure of a sized book.

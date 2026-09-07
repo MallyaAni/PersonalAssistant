@@ -143,19 +143,39 @@ def _engine_weights(report, t: int, config) -> np.ndarray:
     return weights
 
 
-# The target weight of every name on a rebalance session: the engine's
-# weight, multiplied by the grade and by the regime's exposure, tilted
-# toward steadier names while money is tightening.
+# The target weight of every name on a rebalance session.
+#
+# This is `risk.desk_targets` and nothing else. The two used to be separate
+# calculations in a different order - the paper path tilted and capped
+# before the grade and exposure multipliers, this one after - and capping
+# and scaling do not commute, so in a tightening regime they disagreed on
+# every name. A backtest that sizes differently from the book it describes
+# is not evidence about that book.
+#
+# The panel is sliced to `t` so the engine's volatility and the tilt read
+# the session being decided rather than the end of history.
 def _targets(report, panel: Panel, config, t: int) -> np.ndarray:
-    weights = _engine_weights(report, t, config)
-    state = report.regime.states[t]
-    target = np.zeros(len(weights))
-    for column in np.flatnonzero(weights > 0):
-        letter = report.graded.letter(t, column)
-        target[column] = weights[column] * risk.SIZE_MULTIPLIER[letter] * state.exposure
-    if state.tightening:
-        target = _steepen(target, panel, config, t)
-    return target
+    from dataclasses import replace as _replace
+
+    window = _replace(
+        panel,
+        dates=panel.dates[: t + 1],
+        open=panel.open[: t + 1],
+        high=panel.high[: t + 1],
+        low=panel.low[: t + 1],
+        close=panel.close[: t + 1],
+        adj_close=panel.adj_close[: t + 1],
+        volume=panel.volume[: t + 1],
+    )
+    _positions, targets = risk.desk_targets(
+        report.scores[t],
+        report.graded.grades[t],
+        window,
+        report.regime.states[t],
+        config,
+    )
+    targets[window.index(window.benchmark)] = 0.0
+    return targets
 
 
 # Walk the desk's own rules from `since` to the end of the panel.

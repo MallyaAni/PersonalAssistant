@@ -242,7 +242,21 @@ def _normalise_sides(weights: np.ndarray) -> np.ndarray:
 
 # Enforce per-name and per-theme caps on one side of the book by clipping
 # and redistributing the excess to the names still under their caps, a few
-# rounds at most.
+# rounds at most - and then make the name cap true whatever those rounds
+# managed.
+#
+# The rounds alone were not enough. Clipping a name and handing its excess
+# to the others can push those others over, and with few names there is
+# nowhere for the excess to go: the loop shuffles it until it runs out of
+# passes and returns a book that breaches. Measured with a 15% cap, a
+# two-name book came back holding 42.5% of one name, a three-name book
+# 35%, a four-name book 16.4%. None of them were fully invested - the
+# two-name book held 57.5% gross - so this was never the engine choosing
+# full investment over the cap. It was the cap not being enforced.
+#
+# `apply_name_cap` finishes the job. Where the cap cannot be met while
+# keeping the gross, the gross gives way and the remainder stays in cash,
+# because a cap that yields to a target exposure is not a cap.
 def _apply_caps(
     weights: np.ndarray,
     themes: Mapping[str, tuple[str, ...]],
@@ -262,6 +276,8 @@ def _apply_caps(
             )
             if not (changed_names or changed_themes):
                 break
+        held = magnitude[side]
+        magnitude[side] = apply_name_cap(held, config.name_cap, float(held.sum()))
         out[side] = magnitude[side] * sign
     return out
 

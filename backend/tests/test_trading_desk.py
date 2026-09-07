@@ -292,9 +292,22 @@ def test_tightening_cuts_exposure_and_steepens_the_book():
     config = risk.SizingConfig(top_fraction=1.0, short_fraction=0.0, name_cap=1.0)
     calm_book = risk.size(scores, grades, two, calm.today(), config)
     tight_book = risk.size(scores, grades, two, tight.today(), config)
-    calm_weights = {s.position.ticker: s.position.weight for s in calm_book}
-    tight_weights = {s.position.ticker: s.position.weight for s in tight_book}
-    assert tight_weights["STEADY"] > calm_weights["STEADY"]
+    # The final weight, not the engine's. The tilt now happens after the
+    # grade and exposure multipliers - the same order the backtest uses -
+    # so `position.weight` is the engine's untilted number and says
+    # nothing about what the book holds.
+    calm_weights = {s.position.ticker: s.weight for s in calm_book}
+    tight_weights = {s.position.ticker: s.weight for s in tight_book}
+    # "Takes more of the book" is a share, not an absolute weight: the
+    # same regime that tilts toward the steady name also cuts exposure, so
+    # every position shrinks. The tilt moves how the remaining gross is
+    # split, and that is what this asserts.
+    calm_gross = sum(calm_weights.values())
+    tight_gross = sum(tight_weights.values())
+    assert (
+        tight_weights["STEADY"] / tight_gross
+        > calm_weights["STEADY"] / calm_gross
+    )
 
     # And the tilt does not breach the name cap on its way there.
     #
@@ -327,5 +340,7 @@ def test_tightening_cuts_exposure_and_steepens_the_book():
                 f"over the {capped.name_cap} cap while "
                 f"{'tightening' if state.tightening else 'calm'}"
             )
-    assert sum(tight_weights.values()) == pytest.approx(sum(calm_weights.values()))
+    # The tilt itself holds the gross: it redistributes, and the exposure
+    # cut is what changes the total.
+    assert tight_gross == pytest.approx(calm_gross * tight.today().exposure)
     assert any("steadier" in s.position.note for s in tight_book)
