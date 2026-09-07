@@ -64,6 +64,46 @@ class Sized:
         return self.position.weight * self.multiplier * self.exposure
 
 
+# Learning this allocation is worth nothing, and neither is improving the
+# volatility it divides by. The value is in which names are chosen, not in
+# how they are weighted.
+#
+# Three measurements say the same thing from different directions.
+#
+# A reinforcement-learning agent was given the desk's own state - each
+# name's four analyst convictions and its realised volatility, plus the
+# regime's participation, exposure and tightening flag - and asked to
+# choose the weights directly, rewarded on the book's Sharpe over the next
+# twenty sessions and capped at the gross this function would have carried,
+# so it could not win by holding more. Walk-forward, ten folds, three
+# seeds, two algorithms:
+#
+#   the desk's rule                +0.611
+#   equal weight, same names       +0.605  (t -1.28)
+#   policy gradient (REINFORCE)    +0.579  (t +0.25)
+#   cross-entropy search           +0.585  (t +0.69)
+#
+# Neither agent beat the rule, and both were slightly worse.
+#
+# Equal weight on the same names scored the same as this whole function -
+# inverse volatility, caps, grade multipliers and all. And a volatility
+# forecast 15.5% more accurate than the one used here changed the book's
+# Sharpe from 1.85 to 1.85 (see `sizing.realised_volatility`).
+#
+# So the weighting is not where the risk-adjusted return is decided. That
+# does not make this function pointless: the caps bound what a single name
+# or theme can cost, which is a risk decision rather than a return one, and
+# equal weight would fail that test in a concentrated book. It does mean
+# effort spent making the weights cleverer is effort in the wrong place.
+#
+# The reinforcement-learning result is a bounded one and worth reading as
+# such: two algorithms, one state representation, one reward shape. What it
+# does not do is contradict the arithmetic that predicted it - roughly
+# 1,300 sessions at a twenty-session horizon is about 65 independent
+# periods, and no policy with thousands of parameters learns a market from
+# 65 observations. Anything trained here is fitting one price path.
+
+
 # The desk's target weight for every name, in one place.
 #
 # The paper book and the backtest used to compute this separately and in a
