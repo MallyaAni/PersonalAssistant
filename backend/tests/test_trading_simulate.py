@@ -149,13 +149,26 @@ def test_the_grade_sizes_the_position():
 
 # The regime's exposure scales the whole book, and an exposure of zero
 # means the desk holds nothing and earns nothing.
+#
+# The halving is exact in what the desk asks for. What it ends up holding
+# is not exactly half a session later: the fill happens at the open and
+# `invested` is measured at the close, and the half-exposure book carries
+# more cash, so the two drift apart between those two prices. The target
+# is the deterministic thing, so that is what the exactness is asserted on.
 def test_the_regime_scales_the_whole_book():
+    config = simulate.risk.BOOK_CONFIG
+    full_target = simulate._targets(_report(exposure=1.0), None, config, 140)
+    half_target = simulate._targets(_report(exposure=0.5), None, config, 140)
+    assert half_target.sum() == pytest.approx(full_target.sum() * 0.5, rel=1e-9)
+    assert np.allclose(half_target, full_target * 0.5)
+
     full = simulate.run(_report(exposure=1.0), use_exits=False, rebalance=20)
     half = simulate.run(_report(exposure=0.5), use_exits=False, rebalance=20)
     flat = simulate.run(_report(exposure=0.0), use_exits=False, rebalance=20)
     assert flat.invested.max() == 0.0
     assert np.nan_to_num(flat.returns).sum() == 0.0
-    assert half.invested[150] == pytest.approx(full.invested[150] * 0.5, rel=1e-6)
+    # And the book that follows those targets holds about half as much.
+    assert half.invested[141] == pytest.approx(full.invested[141] * 0.5, rel=0.05)
 
 
 # While money is tightening the same names are held, weighted so the
@@ -228,9 +241,11 @@ def test_redeploy_puts_the_freed_weight_back_to_work():
             simulate.exit_analyst.should_exit,
             simulate.exit_analyst.reason,
         ) = original
-    # Parking the weight lowers the gross; redeploying holds it.
-    assert cash.invested[155] < back.invested[155]
-    assert back.invested[155] == pytest.approx(back.invested[154], rel=1e-6)
+    # An exit named on session 155 is filled at 156's open, like every
+    # other decision here, so 155 still shows the book that was held into
+    # it and the difference appears the session after.
+    assert cash.invested[155] == pytest.approx(back.invested[155], rel=1e-6)
+    assert cash.invested[156] < back.invested[156]
     assert any(t.reason == "the stub said so" for t in cash.trades)
 
 
@@ -247,3 +262,92 @@ def test_stats_read_the_daily_series():
     assert stats["drawdown"] == pytest.approx(0.0)
     assert stats["annual"] == pytest.approx(0.252)
     assert stats["total"] > 0.34
+
+
+# A decision is filled at the next open, so a gap between the session the
+# decision was made on and that open belongs to whoever held the name
+# overnight - never to a book that buys at the open.
+#
+# This was wrong: the first version of the simulator never read an opening
+# price and applied close-to-close returns, so a name it decided to buy on
+# Friday was paid Monday's gap. On news-driven names that is the whole
+# move, and it is the part a real fill cannot have.
+#
+# The name here is graded C until the session the desk decides to buy it,
+# so it is genuinely bought at the gapped open rather than held into the
+# gap - a name already held does earn the gap, correctly.
+def test_a_gap_before_the_fill_is_not_collected():
+    rows, decide_at = 200, 160  # a rebalance session; the fill is at 161
+    close = np.full((rows, NAMES), 100.0)
+    rng = np.random.default_rng(5)
+    close[:, 1:] = 100.0 * np.exp(
+        np.cumsum(rng.normal(0, 0.008, (rows, NAMES - 1)), axis=0)
+    )
+    opens = close.copy()
+    # N0 sits at 100, then gaps to 120 overnight into the fill session and
+    # does nothing during that day: its open and close are both 120.
+    close[decide_at + 1 :, 0] = 120.0
+    opens[decide_at + 1 :, 0] = 120.0
+
+    grades = np.zeros((rows, NAMES), dtype=int)
+    grades[:, 1:] = 1  # the rest of the book is only ever a B
+    grades[decide_at:, 0] = 3  # N0 becomes the desk's best name here
+    report = _report(close, grades=grades)
+    report.panel = replace(report.panel, open=opens)
+    result = simulate.run(report, use_exits=False, rebalance=20, cost_bps=0.0)
+
+    column = report.panel.index("N0")
+    bought = [t for t in result.trades if t.ticker == "N0"]
+    assert bought, "N0 should have been bought once it was graded A+"
+    # It was filled at the gapped open, so the trade made nothing from the
+    # gap: its entry price is the price after the gap, not before it.
+    assert close[decide_at, column] == 100.0
+    assert result.returns[decide_at + 1] < 0.05, (
+        "the session of the fill must not carry N0's overnight gap"
+    )
+
+
+# Between rebalances the book holds shares, so a winner's weight grows
+# instead of being sold back to target every session.
+#
+# The first version held a weight vector, which silently rebalanced daily:
+# a holding that quadrupled left the gross exactly where it started.
+def test_a_winner_grows_between_rebalances():
+    rows = 200
+    close = np.full((rows, NAMES), 100.0)
+    close[:, -1] = 100.0
+    rng = np.random.default_rng(9)
+    close = close * np.exp(np.cumsum(rng.normal(0, 0.005, (rows, NAMES)), axis=0))
+    before = close.copy()
+    close[160:, 0] = before[160:, 0] * 4.0
+    report = _report(close)
+    result = simulate.run(report, use_exits=False, rebalance=60, cost_bps=0.0)
+    # Sessions 121 to 180 are one holding period (the rebalance decided at
+    # 120 fills at 121, the next is decided at 180).
+    assert result.invested[170] > result.invested[150], (
+        "a holding that quadrupled should take up more of the book, not the "
+        "same fraction of it"
+    )
+
+
+# The name cap survives the tightening tilt. The tilt renormalises to the
+# same gross, which moves weight onto the calmest names; before the recap
+# that carried one to 0.1626 against a 0.15 cap.
+def test_the_tightening_tilt_respects_the_name_cap():
+    rows = 260
+    rng = np.random.default_rng(7)
+    vols = np.linspace(0.002, 0.06, NAMES)
+    steps = np.column_stack([rng.normal(0, v, rows) for v in vols])
+    close = 100.0 * np.exp(np.cumsum(steps, axis=0))
+    report = _report(close, tightening=True)
+    config = simulate.risk.BOOK_CONFIG
+    for fraction in (0.1, 0.3, 0.6):
+        wide = replace(config, top_fraction=fraction)
+        weights = simulate._engine_weights(report, 240, wide)
+        tilted = simulate._steepen(weights.copy(), report.panel, wide, 240)
+        assert tilted.max() <= wide.name_cap + 1e-9, (
+            f"the tilt carried a position to {tilted.max():.4f}, over the "
+            f"{wide.name_cap} cap"
+        )
+        # And it does not quietly raise the gross to compensate.
+        assert tilted.sum() <= weights.sum() + 1e-9

@@ -23,6 +23,7 @@ failure modes underneath were opposites, which a single number cannot show.
 import argparse
 import asyncio
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from typing import Any
@@ -168,6 +169,15 @@ def arguments_hold(case: SelectionCase, action: object) -> bool | None:
 # the only reason they were serial was that the loop was written that way.
 # The cap exists because the model serves a fixed number of concurrent
 # requests and queueing far past that adds latency without throughput.
+#
+# Concurrency needs its own clients to be worth anything. `LLMClient` holds
+# a mutex across the whole request - `chat` and `chat_with_tools` both take
+# `_request_lock` - so every caller sharing one instance is serialised no
+# matter how many tasks are waiting. Running the cases concurrently through
+# a single selector changed nothing at all; the first measured improvement,
+# 19m18s to 13m33s, came entirely from the gate running its five files at
+# once. `make_selector` is how a caller says "build me one of these per
+# slot", and each carries its own client and therefore its own lock.
 SELECTION_CONCURRENCY = 6
 
 
@@ -234,14 +244,25 @@ async def collect(
     reps: int,
     cases: tuple[SelectionCase, ...] = SELECTION_CASES,
     concurrency: int = SELECTION_CONCURRENCY,
+    make_selector: Callable[[], MainActionSelector] | None = None,
 ) -> list[Observation]:
-    limit = asyncio.Semaphore(max(1, concurrency))
+    # Without a factory there is one selector, so one client, so one lock,
+    # and asking more than one question at a time would only queue on it.
+    pool = (
+        [selector]
+        if make_selector is None
+        else [make_selector() for _ in range(max(1, concurrency))]
+    )
+    limit = asyncio.Semaphore(len(pool))
     observations: list[Observation] = []
     for _rep in range(reps):
         clear_decision_cache()
         observations.extend(
             await asyncio.gather(
-                *(_observe(selector, case, limit) for case in cases)
+                *(
+                    _observe(pool[i % len(pool)], case, limit)
+                    for i, case in enumerate(cases)
+                )
             )
         )
     return observations

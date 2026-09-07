@@ -1,13 +1,12 @@
-"""The whole desk walked through history, not just its scores.
+"""The whole desk walked through history as an account, not as a weight vector.
 
 `sizing.simulate` runs a score matrix through the sizing engine and answers
 a narrow question: is this ranking worth anything. The desk is more than a
 ranking. It grades, it multiplies each position by that grade, it cuts
-exposure when the regime says so, it leans on steadier names while money is
-tightening, and it now leaves a position when the exit analyst says the move
-is finished. None of that reached the book's own backtest, so every risk
-rule added here has been measured in a scratch script and never in the
-thing that reports the book's numbers.
+exposure when the regime says so, and it leans on steadier names while
+money is tightening. None of that reached the book's own backtest, so
+every risk rule was measured in a scratch script and never in the thing
+that reports the book's numbers.
 
 This walks the rules themselves, one session at a time:
 
@@ -15,14 +14,32 @@ This walks the rules themselves, one session at a time:
                                each multiplied by its grade and by the
                                regime's exposure for that session
   in between                   nothing trades except an exit the exit
-                               analyst names, and the weight that frees is
-                               either held as cash or spread over the names
-                               still held, depending on `redeploy`
-  always                       the decision on a session uses only what was
-                               known then, and is filled at the next open
+                               analyst names
+  always                       a decision on session t uses only what was
+                               known at t's close and is filled at t+1's
+                               open, at a cost
 
-It returns the daily series so the same statistics as everywhere else can
-be taken from it, and the trades so a run can be read rather than trusted.
+What it holds is shares and cash
+--------------------------------
+The first version of this file held a weight vector and applied
+close-to-close returns to it. Both were wrong, and a review caught them:
+
+* It never read an opening price. A decision made at Friday's close was
+  paid Monday's whole move including the overnight gap - the part a fill
+  at Monday's open cannot capture, and exactly the part that moves on
+  news the decision was made before.
+
+* Holding weights constant between rebalances is not holding anything. A
+  position that doubles has its weight sold back to target the next
+  session, so the book quietly rebalanced daily while claiming to
+  rebalance every twenty sessions. Turnover was understated and a
+  winner never compounded: a tenth of the book quadrupling should take
+  equity from 1.00 to 1.30, and it produced 1.21.
+
+So the ledger is shares and cash now. Prices are adjusted throughout - the
+opening price is scaled by the same factor that turns the close into the
+adjusted close, because mixing a raw open with an adjusted close puts a
+split in the middle of a return.
 """
 
 from dataclasses import dataclass, field
@@ -36,11 +53,12 @@ from backend.market import sizing
 from backend.market.panel import Panel
 
 REBALANCE = 20
-# Whether the weight an exit frees goes back to work in the names still
-# held, or sits as cash until the next rebalance. See the note in `run`.
+# Whether the cash an exit frees goes back to work in the names still held,
+# or waits until the next rebalance.
 REDEPLOY = True
 COST_BPS = 10.0
 MIN_TRADE = 0.005
+START_EQUITY = 1.0
 
 
 @dataclass(frozen=True)
@@ -62,21 +80,23 @@ class SimResult:
 
     dates: np.ndarray
     returns: np.ndarray  # (T,) daily, net of cost
-    invested: np.ndarray  # (T,) gross weight held
+    invested: np.ndarray  # (T,) the fraction of equity held in positions
     trades: list[SimTrade] = field(default_factory=list)
     rebalances: int = 0
+    equity: np.ndarray | None = None  # (T,) the account's value
 
     # The usual four numbers, from the daily series.
     def stats(self) -> dict[str, float]:
         """Return annual return, volatility, Sharpe and worst drawdown."""
         daily = self.returns[np.isfinite(self.returns)]
         if len(daily) < 2:
+            nan = float("nan")
             return {
-                "annual": float("nan"),
-                "volatility": float("nan"),
-                "sharpe": float("nan"),
-                "drawdown": float("nan"),
-                "total": float("nan"),
+                "annual": nan,
+                "volatility": nan,
+                "sharpe": nan,
+                "drawdown": nan,
+                "total": nan,
             }
         curve = np.cumprod(1.0 + daily)
         annual = float(daily.mean() * 252)
@@ -89,6 +109,15 @@ class SimResult:
             "drawdown": drawdown,
             "total": float(curve[-1] - 1.0),
         }
+
+
+# The opening price on the same basis as the adjusted close, so a return
+# from one to the other does not straddle a split or a dividend.
+def adjusted_open(panel: Panel) -> np.ndarray:
+    """Return (T, N) opening prices adjusted the way the close is."""
+    with np.errstate(all="ignore"):
+        factor = np.where(panel.close > 0, panel.adj_close / panel.close, np.nan)
+    return panel.open * factor
 
 
 # Engine weights at session t: the graded names, inverse volatility, caps.
@@ -113,6 +142,21 @@ def _engine_weights(report, t: int, config) -> np.ndarray:
     return weights
 
 
+# The target weight of every name on a rebalance session: the engine's
+# weight, multiplied by the grade and by the regime's exposure, tilted
+# toward steadier names while money is tightening.
+def _targets(report, panel: Panel, config, t: int) -> np.ndarray:
+    weights = _engine_weights(report, t, config)
+    state = report.regime.states[t]
+    target = np.zeros(len(weights))
+    for column in np.flatnonzero(weights > 0):
+        letter = report.graded.letter(t, column)
+        target[column] = weights[column] * risk.SIZE_MULTIPLIER[letter] * state.exposure
+    if state.tightening:
+        target = _steepen(target, panel, config, t)
+    return target
+
+
 # Walk the desk's own rules from `since` to the end of the panel.
 def run(
     report,
@@ -127,179 +171,192 @@ def run(
     panel: Panel = report.panel
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
-    simple = np.expm1(panel.log_returns())
-    simple = np.where(np.isfinite(simple), simple, 0.0)
     start = int(np.searchsorted(panel.dates, np.datetime64(since))) if since else 0
     evidence = exit_analyst.evidence(panel) if use_exits else None
     stamps = [str(d) for d in panel.dates]
+    opens = adjusted_open(panel)
+    closes = panel.adj_close
 
-    held = np.zeros(names)
-    opened: dict[int, int] = {}
-    entry_weight: dict[int, float] = {}
+    book = _Book(names, START_EQUITY, cost_bps, panel, report, stamps)
     returns = np.full(rows, np.nan)
     invested = np.zeros(rows)
-    trades: list[SimTrade] = []
+    equity = np.full(rows, np.nan)
     rebalances = 0
+
+    equity[start] = book.equity(closes[start])
     for t in range(start, rows - 1):
+        # Decided on t's close, filled at t+1's open.
         if (t - start) % rebalance == 0:
-            held, cost = _rebalance(
-                report,
-                panel,
-                config,
-                t,
-                held,
-                opened,
-                entry_weight,
-                stamps,
-                trades,
-                cost_bps,
-            )
+            target = _targets(report, panel, config, t)
+            reason = "rebalanced out"
             rebalances += 1
         else:
-            held, cost = _take_exits(
-                report,
-                panel,
-                evidence,
-                t,
-                held,
-                opened,
-                entry_weight,
-                stamps,
-                trades,
-                cost_bps,
-                redeploy,
-            )
-        invested[t] = float(held.sum())
-        returns[t + 1] = float((held * simple[t + 1]).sum()) - cost
-    for column in np.flatnonzero(held > 0):
-        trades.append(
-            _close(
-                panel,
-                trades,
-                column,
-                opened,
-                entry_weight,
-                rows - 1,
-                stamps,
-                report,
-                "still held",
-            )
+            target, reason = book.between(evidence, opens[t + 1], t, redeploy)
+        book.settle(target, opens[t + 1], t + 1, reason)
+        equity[t + 1] = book.equity(closes[t + 1])
+        returns[t + 1] = (
+            equity[t + 1] / equity[t] - 1.0 if equity[t] > 0 else float("nan")
         )
+        invested[t + 1] = book.invested(closes[t + 1])
+    book.finish(rows - 1)
     return SimResult(
-        panel.dates[start:], returns[start:], invested[start:], trades, rebalances
+        panel.dates[start:],
+        returns[start:],
+        invested[start:],
+        book.trades,
+        rebalances,
+        equity[start:],
     )
 
 
-# Bring the book to the desk's targets for session `t`, recording what left.
-def _rebalance(
-    report, panel, config, t, held, opened, entry_weight, stamps, trades, cost_bps
-):
-    weights = _engine_weights(report, t, config)
-    state = report.regime.states[t]
-    target = np.zeros(len(held))
-    for column in np.flatnonzero(weights > 0):
-        letter = report.graded.letter(t, column)
-        target[column] = weights[column] * risk.SIZE_MULTIPLIER[letter] * state.exposure
-    if state.tightening:
-        target = _steepen(target, panel, config, t)
-    # A move too small to be worth its cost is not made.
-    target = np.where(np.abs(target - held) < MIN_TRADE, held, target)
-    for column in np.flatnonzero((held > 0) & (target <= 0)):
-        trades.append(
-            _close(
-                panel,
-                trades,
-                column,
-                opened,
-                entry_weight,
-                t,
-                stamps,
-                report,
-                "rebalanced out",
+# The account: shares per name, cash, and the trades that moved between
+# them. It owns the trade log too, because when a position opened and what
+# it was filled at are the same facts a trade is written from.
+class _Book:
+    """Shares and cash, and a readable record of what changed them."""
+
+    def __init__(self, names, equity, cost_bps, panel, report, stamps) -> None:
+        self.shares = np.zeros(names)
+        self.cash = float(equity)
+        self.cost = cost_bps / 1e4
+        self.panel = panel
+        self.report = report
+        self.stamps = stamps
+        self.opened: dict[int, int] = {}
+        self.paid: dict[int, float] = {}
+        self.trades: list[SimTrade] = []
+
+    # The account's value at a set of prices, ignoring unpriced holdings.
+    def equity(self, prices: np.ndarray) -> float:
+        """Return cash plus the value of every priced holding."""
+        priced = (self.shares > 0) & np.isfinite(prices)
+        return float(self.cash + (self.shares[priced] * prices[priced]).sum())
+
+    # The fraction of the account in positions rather than cash.
+    def invested(self, prices: np.ndarray) -> float:
+        """Return the gross weight held."""
+        total = self.equity(prices)
+        if total <= 0:
+            return 0.0
+        priced = (self.shares > 0) & np.isfinite(prices)
+        return float((self.shares[priced] * prices[priced]).sum() / total)
+
+    # What to hold between rebalances: what is already held, less anything
+    # the exit analyst names.
+    def between(self, evidence, prices, t: int, redeploy: bool):
+        """Return (target weights, the reason anything leaves)."""
+        total = self.equity(prices)
+        priced = np.isfinite(prices) & (prices > 0)
+        value = np.where(priced, self.shares * np.nan_to_num(prices), 0.0)
+        weights = value / total if total > 0 else np.zeros_like(value)
+        if evidence is None:
+            return weights, "held"
+        leaving = np.zeros(len(weights), dtype=bool)
+        reason = "held"
+        for column in np.flatnonzero(self.shares > 0):
+            entry = self.opened.get(column, t)
+            if exit_analyst.should_exit(evidence, t, column, entry):
+                leaving[column] = True
+                reason = exit_analyst.reason(evidence, t, column)
+        if not leaving.any():
+            return weights, reason
+        freed = float(weights[leaving].sum())
+        weights = np.where(leaving, 0.0, weights)
+        if redeploy:
+            # The regime already decided how much of the book to carry, so
+            # an exit changes which names hold it, not how much is held.
+            remaining = float(weights.sum())
+            if remaining > 0:
+                weights = weights * (1.0 + freed / remaining)
+        return weights, reason
+
+    # Trade to `target` at `prices`, then write down what opened and closed.
+    def settle(self, target, prices, session: int, reason: str) -> None:
+        """Move the book to `target` and record the positions that changed."""
+        before = self.shares > 0
+        self._trade_to(target, prices)
+        for column in np.flatnonzero((self.shares > 0) & ~before):
+            self.opened[column] = session
+            self.paid[column] = float(prices[column])
+        for column in np.flatnonzero(before & (self.shares <= 0)):
+            self._log(column, session, prices, reason)
+
+    # Buy and sell until the book matches `target`, skipping moves too
+    # small to be worth their cost and charging for the ones taken.
+    def _trade_to(self, target: np.ndarray, prices: np.ndarray) -> None:
+        total = self.equity(prices)
+        if total <= 0:
+            return
+        tradable = np.isfinite(prices) & (prices > 0)
+        wanted = np.where(tradable, target * total, 0.0)
+        current = np.where(tradable, self.shares * np.nan_to_num(prices), 0.0)
+        move = np.where(
+            np.abs(wanted - current) < MIN_TRADE * total, 0.0, wanted - current
+        )
+        if not move.any():
+            return
+        self.cash -= float(move.sum()) + float(np.abs(move).sum()) * self.cost
+        with np.errstate(all="ignore"):
+            updated = np.where(prices > 0, (current + move) / prices, self.shares)
+        self.shares = np.where(tradable, updated, self.shares)
+        self.shares = np.where(np.isfinite(self.shares), self.shares, 0.0)
+        self.shares[self.shares < 0] = 0.0
+
+    # One position leaving, with what it made between its two fills.
+    def _log(self, column: int, session: int, prices, reason: str) -> None:
+        entry = self.opened.pop(column, session)
+        paid = self.paid.pop(column, float("nan"))
+        got = float(prices[column])
+        ret = got / paid - 1.0 if np.isfinite(paid) and paid > 0 else float("nan")
+        self.trades.append(
+            SimTrade(
+                ticker=self.panel.tickers[column],
+                opened=self.stamps[min(entry, len(self.stamps) - 1)],
+                closed=self.stamps[min(session, len(self.stamps) - 1)],
+                weight=float("nan"),
+                grade=self.report.graded.letter(
+                    min(entry, len(self.stamps) - 1), column
+                ),
+                reason=reason,
+                ret=ret,
             )
         )
-    for column in np.flatnonzero((held <= 0) & (target > 0)):
-        opened[column] = t
-        entry_weight[column] = float(target[column])
-    cost = float(np.abs(target - held).sum()) * cost_bps / 1e4
-    return target, cost
 
-
-# Between rebalances the only trade is an exit the exit analyst names.
-def _take_exits(
-    report,
-    panel,
-    evidence,
-    t,
-    held,
-    opened,
-    entry_weight,
-    stamps,
-    trades,
-    cost_bps,
-    redeploy=REDEPLOY,
-):
-    if evidence is None:
-        return held, 0.0
-    cost = 0.0
-    held = held.copy()
-    before = float(held.sum())
-    left = False
-    for column in np.flatnonzero(held > 0):
-        entry = opened.get(column, t)
-        if exit_analyst.should_exit(evidence, t, column, entry):
-            trades.append(
-                _close(
-                    panel,
-                    trades,
-                    column,
-                    opened,
-                    entry_weight,
-                    t,
-                    stamps,
-                    report,
-                    exit_analyst.reason(evidence, t, column),
+    # Everything still open when the walk ends.
+    def finish(self, last: int) -> None:
+        """Write a trade for each position the run ends holding."""
+        for column in np.flatnonzero(self.shares > 0):
+            entry = self.opened.get(column, last)
+            paid = self.paid.get(column, float("nan"))
+            price = float(self.panel.adj_close[last, column])
+            ret = (
+                price / paid - 1.0
+                if np.isfinite(paid) and paid > 0 and np.isfinite(price)
+                else float("nan")
+            )
+            self.trades.append(
+                SimTrade(
+                    ticker=self.panel.tickers[column],
+                    opened=self.stamps[min(entry, len(self.stamps) - 1)],
+                    closed=None,
+                    weight=float("nan"),
+                    grade=self.report.graded.letter(
+                        min(entry, len(self.stamps) - 1), column
+                    ),
+                    reason="still held",
+                    ret=ret,
                 )
             )
-            cost += float(held[column]) * cost_bps / 1e4
-            held[column] = 0.0
-            left = True
-    if left and redeploy:
-        # The book's gross is a risk decision the regime already made, so
-        # an exit changes which names hold it, not how much is held. The
-        # weight goes to the names still in the book, in their own
-        # proportions, and is charged for at the same rate.
-        remaining = float(held.sum())
-        if remaining > 0:
-            held = held * (before / remaining)
-            cost += (before - remaining) * cost_bps / 1e4
-    return held, cost
-
-
-# Record one position leaving, with what it did while it was held.
-def _close(panel, trades, column, opened, entry_weight, t, stamps, report, reason):
-    entry = opened.pop(column, t)
-    weight = entry_weight.pop(column, 0.0)
-    a, b = panel.adj_close[entry, column], panel.adj_close[t, column]
-    ret = (
-        float(b / a - 1.0)
-        if np.isfinite(a) and np.isfinite(b) and a > 0
-        else float("nan")
-    )
-    return SimTrade(
-        ticker=panel.tickers[column],
-        opened=stamps[entry],
-        closed=stamps[t] if t < len(stamps) - 1 else None,
-        weight=weight,
-        grade=report.graded.letter(entry, column),
-        reason=reason,
-        ret=ret,
-    )
 
 
 # While money is tightening, the same names weighted so the steadier ones
 # take more of the book, holding the gross unchanged. This mirrors what
 # `risk.size` does live.
+#
+# It re-caps afterwards. The tilt renormalises to the same gross, which
+# moves weight onto the calmest names, and a review found that could carry
+# one past `name_cap` - 0.1626 against a 0.15 cap, at every concentration
+# tried. A cap a later step can undo is not a cap.
 def _steepen(target: np.ndarray, panel: Panel, config, t: int) -> np.ndarray:
     volatility = sizing.realised_volatility(panel, config.volatility_lookback)[t]
     gross = float(target.sum())
@@ -308,4 +365,26 @@ def _steepen(target: np.ndarray, panel: Panel, config, t: int) -> np.ndarray:
     vol = np.where(np.isfinite(volatility) & (volatility > 0.10), volatility, 0.10)
     adjusted = target * (0.10 / vol) ** (risk.TIGHTENING_POWER - 1.0)
     total = float(adjusted.sum())
-    return adjusted / total * gross if total > 0 else target
+    if total <= 0:
+        return target
+    return _recap(adjusted / total * gross, config.name_cap, gross)
+
+
+# Bring every position under the cap, handing what comes off to the names
+# still below it, until the gross is restored or nothing can take more. A
+# book already at the cap everywhere keeps the remainder as cash rather
+# than breaching the cap to stay fully invested.
+def _recap(weights: np.ndarray, cap: float, gross: float) -> np.ndarray:
+    if not cap or cap <= 0:
+        return weights
+    out = np.minimum(weights, cap)
+    for _pass in range(8):
+        spare = gross - float(out.sum())
+        if spare <= 1e-12:
+            break
+        room = np.where(out > 0, np.maximum(cap - out, 0.0), 0.0)
+        available = float(room.sum())
+        if available <= 1e-12:
+            break
+        out = np.minimum(out + room / available * min(spare, available), cap)
+    return out

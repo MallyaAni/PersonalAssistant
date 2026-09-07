@@ -192,6 +192,7 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     )
     print(f"\npaper book ({what}), equity {account.equity:,.0f}:")
     submitted = []
+    refused: list[str] = []
     if live and orders:
         client.cancel_open_orders()
     for order in orders:
@@ -211,9 +212,24 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
             )
             print(line)
         except alpaca_trading.AlpacaTradingError as exc:
+            refused.append(f"{order.side} {order.symbol}: {exc}")
             print(line + f"  REFUSED: {exc}")
     if not orders:
         print("  nothing to do")
+    # A rebalance the broker would not take is not a rebalance. The clock
+    # used to advance anyway, because the state was saved whatever the
+    # broker said, so a session where every order bounced put the book
+    # twenty sessions away from its next attempt at the targets it had
+    # just failed to reach. The session is still recorded as seen, so
+    # nothing is submitted twice; only the rebalance clock is rolled back,
+    # and the next session plans the rebalance again.
+    if refused and what == "rebalance":
+        new_state.last_rebalance = state.last_rebalance
+        new_state.sessions_since_rebalance = state.sessions_since_rebalance
+        print(
+            f"  {len(refused)} of {len(orders)} orders refused: the rebalance "
+            f"clock is not advanced, so the next session tries again"
+        )
     positions = [
         {
             "symbol": p.symbol,
@@ -227,6 +243,7 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     ]
     entry = paper.snapshot(new_state, session, account.equity, account.cash, positions)
     entry["orders"] = submitted
+    entry["refused"] = refused
     entry["plan"] = what
     if live:
         paper.save_state(store_root, new_state)

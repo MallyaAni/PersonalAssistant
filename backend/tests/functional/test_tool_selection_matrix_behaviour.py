@@ -47,8 +47,13 @@ def scored():
     if not invocation.can_auto_invoke(settings.SEARCH_MCP_SERVER_ID):
         pytest.skip("internet MCP server is not configured as auto-invocable")
 
-    async def _run():
-        selector = MainActionSelector(
+    # One selector per concurrent slot, each with its own client. A single
+    # `LLMClient` takes a mutex across the whole request, so every case
+    # sharing one instance is answered strictly in turn however many are
+    # waiting - which is what made this fixture nine and a half minutes of
+    # a nineteen-minute gate while the model served one question at a time.
+    def _make():
+        return MainActionSelector(
             get_routing_llm_client(),
             invocation,
             settings.SEARCH_MCP_SERVER_ID,
@@ -57,7 +62,9 @@ def scored():
             diagram_enabled=True,
             presentation_enabled=True,
         )
-        return await collect(selector, _REPS)
+
+    async def _run():
+        return await collect(_make(), _REPS, make_selector=_make)
 
     return asyncio.run(_run())
 
