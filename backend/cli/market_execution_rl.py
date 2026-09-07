@@ -133,6 +133,25 @@ with the history, the change is one time-in-force flag on the sells.
 Neither agent found a schedule the fixed ones did not contain. The
 direct policy learned to buy at the open and sell late, and paid a
 little on buys for the imperfection; PPO learned less.
+
+Entry timing, the next question
+-------------------------------
+Is the next open, when a signal arrives, a good price against the days
+that follow? For every arrival of an A or A+ grade in the book, 1,153
+entries, the price of entering later against the next open (positive
+means later was cheaper):
+
+                              all arrivals   after a 10% run-up   after a flat week
+  enter 1 session later          -0.29%           -0.34%              -0.38%
+  enter 3 sessions later         -0.57%           -1.05%              -0.80%
+  enter 5 sessions later         -0.72%           -1.37%              -1.05%
+  enter 10 sessions later        -1.43%           -1.45%              -2.54%
+  spread over five closes        -0.49%           -0.92%              -0.70%
+  cheaper later, share              47%              46%                 47%
+
+Waiting for a pullback costs, and costs more after a run-up, not less:
+the signal's momentum continues. The desk is not late at the next open;
+it would be late a week after it.
 """
 
 import argparse

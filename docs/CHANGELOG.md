@@ -2,6 +2,39 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The analysts are weighted; entry timing; a trailing-stop watcher
+
+**The analysts carry unequal weights now.** Equal weights were an assumption.
+`market_weights` had fit a five-weight ridge toward equal weights walk-forward
+and found value 0.60, fundamental 0.50, sentiment 0.42, technical 0.38,
+rotation 0.30, stable in sign across every fold, with a rank IC gain inside
+the noise at twenty sessions and outside it at sixty. The missing test was the
+book. `grading.grade` takes weights (equal when none, so the rule is always
+there to compare), and `market_weights --simulate` regrades the desk under a
+set and runs the full rules from 2021-06-01:
+
+| weights | annual | vol | Sharpe | max drawdown |
+|---|---|---|---|---|
+| equal (the rule until today) | +31.8% | 17.2% | 1.85 | -19.0% |
+| ridge, shrink 1 | +31.6% | 16.7% | 1.90 | -17.8% |
+| sentiment-led (the offline policy's lean) | +31.6% | 16.8% | 1.88 | -19.8% |
+
+The ridge set is `grading.ANALYST_WEIGHTS` and the desk uses it. The case is
+modest and consistent, and the set was fixed by the fit before the book test
+ran. On the day it was adopted it changed two of nine held names and moved
+five grades a notch. The forward record decides whether it earns its keep.
+
+**Entry timing.** Across 1,153 arrivals of an A or A+ grade, entering later
+than the next open cost 0.3% a session later, 0.7% five sessions later and
+1.4% ten sessions later, more after a run-up than after a flat week. The
+signal's momentum continues; the desk is not late at the open.
+
+**A trailing-stop watcher.** `market_watch` polls Alpaca's free feed for a
+name and says when it crosses a trailing stop or a floor. It places no order.
+It exists because the book's history says that after a five-session rise of
+25% nothing predicts the turn and the worst tenth gives back a quarter within
+twenty sessions, so the only decision left is how much tail to carry.
+
 ## 2026-09-07 - Offline RL wins the proxy and loses the book; survivorship measured
 
 Three more measurements on the desk, all on the `execution-rl` branch.
