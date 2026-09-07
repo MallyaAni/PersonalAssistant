@@ -159,6 +159,52 @@ def prune(root: Path, asof: date, days: int) -> list[Path]:
     return removed
 
 
+
+# Ask the broker what became of the orders written down last session, and
+# fold the answer back into the state.
+#
+# Orders are looked up by the id chosen before they were sent, not by
+# comparing positions: a position moves for reasons that have nothing to
+# do with this desk, so it cannot say whether this desk's order filled.
+def _reconcile(client, state, store_root: Path, live: bool):
+    """Return (state after settlement, what settled)."""
+    from backend.agents.trading.desk import paper
+    from backend.market import alpaca_trading
+
+    if not state.pending:
+        return state, []
+    since = min(str(row.get("session") or "") for row in state.pending)
+    try:
+        broker = client.orders_since(f"{since}T00:00:00Z")
+    except alpaca_trading.AlpacaTradingError as exc:
+        print(f"  could not read the broker's orders: {exc}")
+        return state, []
+    settled = paper.settle(state.pending, broker)
+    if settled:
+        counts: dict[str, int] = {}
+        for row in settled:
+            counts[row.status] = counts.get(row.status, 0) + 1
+        print(
+            "  last session's orders: "
+            + ", ".join(f"{n} {k}" for k, n in sorted(counts.items()))
+        )
+        for row in settled:
+            if row.status not in ("filled", "open"):
+                print(
+                    f"    {row.side:4} {row.qty:5d} {row.symbol:6} "
+                    f"{row.status} ({row.filled_qty} filled)"
+                )
+    updated = paper.apply_settlements(state, settled)
+    if updated.last_rebalance != state.last_rebalance:
+        print(
+            "  the last rebalance did not fill; the clock is put back so the "
+            "next session plans it again"
+        )
+    if live:
+        paper.save_state(store_root, updated)
+    return updated, settled
+
+
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Returns the day's entry for the desk record.
@@ -184,6 +230,11 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
         if ticker != panel.benchmark
     }
     state = paper.load_state(store_root)
+    # What became of the last session's orders, before planning this one.
+    # An accepted order is not a filled one, and a rebalance whose orders
+    # did not fill has not happened - so this runs first and can put the
+    # clock back before the plan is made.
+    state, settled = _reconcile(client, state, store_root, live)
     # Nothing is passed for `finished`: the band exit that used to fill it
     # was measured inside the book's own rules and cost 3.0% a year. See
     # the note at the top of `desk/exit.py`.
@@ -193,7 +244,25 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     print(f"\npaper book ({what}), equity {account.equity:,.0f}:")
     submitted = []
     refused: list[str] = []
+    # The plan is written down before a single order is sent, with the id
+    # each one will carry. A crash between sending and recording then
+    # leaves a record the next session can ask the broker about, rather
+    # than a gap that has to be guessed at from positions.
     if live and orders:
+        new_state.pending = [
+            {
+                "client_order_id": paper.order_id(session, o.symbol, o.side),
+                "symbol": o.symbol,
+                "side": o.side,
+                "qty": int(o.qty),
+                "session": session,
+                "reason": o.reason,
+            }
+            for o in orders
+        ]
+        if what == "rebalance":
+            new_state.unconfirmed_rebalance = session
+        paper.save_state(store_root, new_state)
         client.cancel_open_orders()
     for order in orders:
         line = f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
@@ -201,7 +270,12 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
             print(line + "  [dry run]")
             continue
         try:
-            client.submit_market_on_open(order.symbol, order.qty, order.side)
+            client.submit_market_on_open(
+                order.symbol,
+                order.qty,
+                order.side,
+                paper.order_id(session, order.symbol, order.side),
+            )
             submitted.append(
                 {
                     "symbol": order.symbol,
@@ -245,6 +319,11 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     entry["orders"] = submitted
     entry["refused"] = refused
     entry["plan"] = what
+    entry["settled"] = [
+        {"symbol": s.symbol, "side": s.side, "qty": s.qty,
+         "status": s.status, "filled": s.filled_qty}
+        for s in settled
+    ]
     if live:
         paper.save_state(store_root, new_state)
     print(

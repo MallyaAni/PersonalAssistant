@@ -125,29 +125,46 @@ class AlpacaTradingClient:
         """Return the open orders."""
         return self._call("GET", "/orders?status=open&limit=500") or []
 
+    # Every order of any status since `after`, so a plan submitted on one
+    # session can be checked on the next.
+    #
+    # Submitting is not filling. An order can be accepted and then rejected
+    # at the open, expire unfilled, or fill in part - and until this
+    # existed the desk recorded "submitted" and never looked again, so a
+    # rebalance the broker never carried out counted as one that had been.
+    def orders_since(self, after: str, limit: int = 500) -> list[dict[str, Any]]:
+        """Return orders of any status submitted at or after `after` (ISO 8601)."""
+        query = f"/orders?status=all&limit={int(limit)}&after={after}&direction=asc"
+        return self._call("GET", query) or []
+
     # Cancel every open order, so a day's plan never stacks on the last one.
     def cancel_open_orders(self) -> None:
         """Cancel all open orders."""
         self._call("DELETE", "/orders")
 
     # A whole-share market order for the next open.
-    def submit_market_on_open(self, symbol: str, qty: int, side: str) -> dict[str, Any]:
+    def submit_market_on_open(
+        self, symbol: str, qty: int, side: str, client_order_id: str | None = None
+    ) -> dict[str, Any]:
         """Submit a market-on-open order and return the order as accepted."""
         if qty <= 0:
             raise AlpacaTradingError(f"{symbol}: quantity must be positive")
         if side not in ("buy", "sell"):
             raise AlpacaTradingError(f"{symbol}: side must be buy or sell")
-        return self._call(
-            "POST",
-            "/orders",
-            {
-                "symbol": symbol,
-                "qty": str(int(qty)),
-                "side": side,
-                "type": "market",
-                "time_in_force": "opg",
-            },
-        )
+        body = {
+            "symbol": symbol,
+            "qty": str(int(qty)),
+            "side": side,
+            "type": "market",
+            "time_in_force": "opg",
+        }
+        # An id chosen before the request is what makes a crash between the
+        # submission and the record recoverable: the next session can ask
+        # the broker whether this exact order exists rather than guessing
+        # from positions that may have moved for other reasons.
+        if client_order_id:
+            body["client_order_id"] = client_order_id
+        return self._call("POST", "/orders", body)
 
 
 # The client from the environment's keys, or an error naming the missing one.

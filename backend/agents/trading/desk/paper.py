@@ -44,6 +44,18 @@ class PaperState:
     opened: dict[str, str] = field(default_factory=dict)
     start_equity: float | None = None
     history: list[dict] = field(default_factory=list)
+    # Orders written down before they were sent, each with the id the
+    # broker was asked to use. Written first so a crash between the
+    # submission and the record is recoverable: the next session asks the
+    # broker whether these exact orders exist rather than inferring it from
+    # positions, which move for other reasons.
+    pending: list[dict] = field(default_factory=list)
+    # The session whose rebalance has been sent but not yet confirmed as
+    # filled. Until it is, the rebalance has not happened.
+    unconfirmed_rebalance: str | None = None
+    # What the previous rebalance was, so an unconfirmed one can be rolled
+    # back to it rather than guessed at.
+    previous_rebalance: str | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +120,7 @@ def plan(
         or state.sessions_since_rebalance + 1 >= REBALANCE_EVERY
     )
     if rebalance:
+        new.previous_rebalance = state.last_rebalance
         new.last_rebalance = session
         new.sessions_since_rebalance = 0
         for symbol in sorted(set(held) | set(targets)):
@@ -144,6 +157,119 @@ def plan(
     # Sells first, so the buys have the cash.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))
     return orders, new, what
+
+
+
+# What the broker says became of each order this desk wrote down.
+#
+# An order that is accepted is not an order that is filled. It can be
+# rejected at the open, expire unfilled when the auction does not cross,
+# or fill in part. Until this existed the desk printed "submitted", saved a
+# rebalance as done, and never looked again - so a rebalance the broker had
+# refused counted as one that had happened, and the book sat twenty
+# sessions from its next attempt at targets it had never reached.
+#
+# Statuses come from the broker rather than a guess about positions.
+# Positions move for reasons that have nothing to do with this desk, so
+# they cannot tell you whether your own order filled.
+FILLED = ("filled",)
+DEAD = ("canceled", "cancelled", "expired", "rejected", "done_for_day", "suspended")
+
+
+@dataclass(frozen=True)
+class Settled:
+    """One pending order, and what the broker did with it."""
+
+    client_order_id: str
+    symbol: str
+    side: str
+    qty: int
+    session: str
+    status: str  # filled, partial, dead, open, or missing
+    filled_qty: int
+
+
+# Pure: match what was written down against what the broker reports.
+def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
+    """Return the outcome of each pending order."""
+    by_id = {
+        str(order.get("client_order_id") or ""): order
+        for order in broker_orders
+        if order.get("client_order_id")
+    }
+    out: list[Settled] = []
+    for row in pending:
+        order = by_id.get(str(row.get("client_order_id") or ""))
+        wanted = int(row.get("qty") or 0)
+        if order is None:
+            # Never reached the broker, or reached it under another id.
+            # Either way this desk cannot claim it traded.
+            status, filled = "missing", 0
+        else:
+            filled = int(float(order.get("filled_qty") or 0))
+            raw = str(order.get("status") or "").lower()
+            if raw in FILLED and filled >= wanted:
+                status = "filled"
+            elif filled > 0:
+                status = "partial"
+            elif raw in DEAD:
+                status = "dead"
+            else:
+                status = "open"
+        out.append(
+            Settled(
+                client_order_id=str(row.get("client_order_id") or ""),
+                symbol=str(row.get("symbol") or ""),
+                side=str(row.get("side") or ""),
+                qty=wanted,
+                session=str(row.get("session") or ""),
+                status=status,
+                filled_qty=filled,
+            )
+        )
+    return out
+
+
+# Fold the outcomes back into the state.
+#
+# A rebalance whose orders did not all fill is not a rebalance. The clock
+# rolls back to the one before it, so the next session plans the rebalance
+# again instead of waiting out twenty sessions on a book that never
+# reached its targets. Orders still open are left pending and asked about
+# again next session; everything settled is cleared.
+def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
+    """Return the state after recording what the broker did."""
+    new = PaperState(**asdict(state))
+    still_open = [
+        row
+        for row in state.pending
+        if any(
+            s.client_order_id == str(row.get("client_order_id") or "")
+            and s.status == "open"
+            for s in settled
+        )
+    ]
+    new.pending = still_open
+    if state.unconfirmed_rebalance is None:
+        return new
+    of_rebalance = [s for s in settled if s.session == state.unconfirmed_rebalance]
+    if not of_rebalance or any(s.status == "open" for s in of_rebalance):
+        # Nothing to conclude yet; ask again next session.
+        return new
+    if all(s.status == "filled" for s in of_rebalance):
+        new.unconfirmed_rebalance = None
+        return new
+    # It did not go through. Put the clock back so it is tried again.
+    new.unconfirmed_rebalance = None
+    new.last_rebalance = state.previous_rebalance
+    new.sessions_since_rebalance = REBALANCE_EVERY
+    return new
+
+
+# A stable id for one order, chosen before it is sent.
+def order_id(session: str, symbol: str, side: str) -> str:
+    """Return the client order id for a symbol on a session."""
+    return f"anios-{session}-{side}-{symbol}".lower()
 
 
 # Record the account after the day's orders: equity, cash, and the profit
