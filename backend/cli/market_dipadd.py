@@ -20,7 +20,28 @@ at each add size, from 2021-06-01, with everything else unchanged.
 
 Results
 -------
-Recorded below once the run is read.
+The book from 2021-06-01, full rules, the desk's weights:
+
+  rule                                 annual    vol  Sharpe   maxDD    total   adds
+  the desk's rule                      +31.6%  16.7%    1.90  -17.8%   +388%      0
+  dip add 2% of equity, from cash      +41.0%  24.4%    1.68  -24.6%   +633%    701
+  dip add 3% of equity, from cash      +44.4%  28.1%    1.58  -28.0%   +735%    692
+  dip add 5% of equity, from cash      +48.8%  32.9%    1.48  -31.8%   +872%    658
+  funded dip add 2%, gross unchanged   +34.6%  20.8%    1.66  -23.8%   +448%    703
+  funded dip add 3%, gross unchanged   +34.3%  22.1%    1.55  -27.2%   +430%    697
+  dip add 3%, B names too, from cash   +57.9%  52.9%    1.09  -49.6%   +900%  1,957
+
+The event edge is real and the book says no. From cash, the adds raise
+the return by deploying idle equity into fallen, volatile names, and the
+volatility and drawdown rise faster than the return: every unit of risk
+earns less than the rule's own book earns. Funded from the other names
+with the gross held where the regime put it, the return rises three
+points and the volatility four, and the Sharpe still falls, because the
+adds concentrate the book into its most volatile moments. Including B
+names is a different book with half the Sharpe. Total gains are a
+function of the risk run; at the dip add's volatility the rule's book
+would have returned more. The rule stays as it is, and the lever for
+more total gain is the desk's exposure, not a second set of trades.
 """
 
 import argparse
