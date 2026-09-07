@@ -54,6 +54,8 @@ def test_board_orders_rows_and_carries_the_exit_plan():
     assert by["N0"]["action"] == "buy" and by["N0"]["delta_weight"] == 0.15
     assert by["N1"]["action"] == "hold" and by["N1"]["entry_price"] == 50.0
     for r in rows:
+        assert set(r["stances"]) == set(report.graded.stances)
+        assert "reason" in r and "why" in r
         assert r["until_rebalance"] == 15
         assert r["entry"] == "market-on-open"
         assert r["rank"] is not None and r["grade"] in ("A+", "A", "B", "C")

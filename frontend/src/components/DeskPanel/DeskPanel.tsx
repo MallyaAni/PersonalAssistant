@@ -83,6 +83,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [equity, setEquity] = useState<number | null>(readEquity())
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
   const [stops, setStops] = useState<boolean>(readStops())
+  const [details, setDetails] = useState(false)
+  const [openReason, setOpenReason] = useState<string | null>(null)
 
   const load = async () => {
     try {
@@ -161,6 +163,14 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           <p className="text-sm text-[#6e6e73]">
             Session {latest.session} · {summary?.counts['A+'] ?? 0} A+, {summary?.counts.A ?? 0} A,{' '}
             {summary?.counts.B ?? 0} B, {summary?.counts.C ?? 0} C · book gross {summary ? pct(summary.gross) : '—'}
+            {latest.paper && (
+              <>
+                {' '}· paper equity {money(latest.paper.equity)},{' '}
+                <span className={latest.paper.pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
+                  P/L {money(latest.paper.pl)} ({(latest.paper.pl_pct * 100).toFixed(1)}%)
+                </span>
+              </>
+            )}
           </p>
         </div>
         <button
@@ -187,6 +197,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             setStops(on)
             writeStops(on)
           }}
+          openReason={openReason}
+          onReason={(ticker) => setOpenReason(openReason === ticker ? null : ticker)}
         />
       )}
 
@@ -207,6 +219,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         )}
       </section>
 
+      {!(latest.actions && latest.actions.length > 0) && (
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
         <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">
           At the next open{changes?.since ? ` (since ${changes.since})` : ''}
@@ -252,6 +265,18 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           </p>
         )}
       </section>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setDetails(!details)}
+        className="self-start text-sm text-[#0071e3] hover:underline"
+      >
+        {details ? 'Hide the paper account, the book and every grade' : 'Show the paper account, the book and every grade'}
+      </button>
+
+      {details && (
+      <>
 
       {latest.paper && (
         <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
@@ -406,6 +431,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           </tbody>
         </table>
       </section>
+      </>
+      )}
     </div>
   )
 }
@@ -418,20 +445,46 @@ interface ActionBoardProps {
   live: DeskLive
   stops: boolean
   onStops: (on: boolean) => void
+  openReason: string | null
+  onReason: (ticker: string) => void
 }
+
+const TRIGGER_ORDER: [string, string][] = [
+  ['fundamental', 'F'],
+  ['technical', 'T'],
+  ['sentiment', 'S'],
+  ['value', 'V'],
+  ['rotation', 'R'],
+]
+
+// The analysts behind the grade, as marks: + bullish, · neutral, − bearish.
+const triggers = (stances: Record<string, number>) =>
+  TRIGGER_ORDER.filter(([k]) => k in stances)
+    .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
+    .join(' ')
+
+// What the measurements say about when to fill: buys at the open, sells at
+// the close in four of five years and not in 2026, so the open until the
+// paper record says otherwise.
+const timing = (a: DeskAction) =>
+  a.action === 'sell' || a.action === 'trim'
+    ? 'open (close was better 2022–25, not 2026)'
+    : 'open'
 
 // The candle's verdict on a row: the last print against the close and,
 // for a name held, against its entry. The stop level appears only when the
 // person has switched stops on, and is red when crossed.
-const liveCell = (a: DeskAction, stops: boolean, quote?: { last: number; high: number }) => {
+const liveCell = (a: DeskAction, stops: boolean, quote?: { last: number; open: number; high: number }) => {
   if (!quote) return null
   const versusClose = a.last_close > 0 ? quote.last / a.last_close - 1 : 0
+  const sinceOpen = quote.open > 0 ? quote.last / quote.open - 1 : 0
   const versusEntry = a.entry_price && a.entry_price > 0 ? quote.last / a.entry_price - 1 : null
   const trailing = stops && a.stops['12'] !== undefined ? Math.max(a.high_20, quote.high) * 0.88 : undefined
   const hit = trailing !== undefined && quote.last <= trailing
   return (
     <span className={hit ? 'font-medium text-[#b42318]' : undefined}>
-      {money(quote.last)} ({versusClose >= 0 ? '+' : ''}{(versusClose * 100).toFixed(1)}% on the close
+      {money(quote.last)} ({sinceOpen >= 0 ? '+' : ''}{(sinceOpen * 100).toFixed(1)}% since the open,{' '}
+      {versusClose >= 0 ? '+' : ''}{(versusClose * 100).toFixed(1)}% on the close
       {versusEntry !== null && `, ${versusEntry >= 0 ? '+' : ''}${(versusEntry * 100).toFixed(1)}% on entry`})
       {trailing !== undefined && (
         <span className="text-[#6e6e73]">
@@ -447,7 +500,7 @@ const liveCell = (a: DeskAction, stops: boolean, quote?: { last: number; high: n
 // typed above, the entry, and the exit plan - the rebalance clock, how far
 // the grade sits above the line, and the stop levels off the twenty-session
 // high for a person managing their own tail.
-const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, onStops }: ActionBoardProps) => {
+const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, onStops, openReason, onReason }: ActionBoardProps) => {
   const trades = actions.filter((a) => a.action !== 'hold')
   const holds = actions.filter((a) => a.action === 'hold')
   const row = (a: DeskAction) => {
@@ -474,7 +527,7 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
           )}
         </td>
         <td className="whitespace-nowrap text-[#6e6e73]">
-          open · close {money(a.last_close)}
+          {timing(a)} · close {money(a.last_close)}
           {live.quotes[a.ticker] && <div className="text-xs">{liveCell(a, stops, live.quotes[a.ticker])}</div>}
         </td>
         <td className="whitespace-nowrap">
@@ -504,7 +557,20 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
             'out of the book'
           )}
         </td>
-        <td className="text-xs text-[#6e6e73]">{a.why}</td>
+        <td className="text-xs text-[#6e6e73]">
+          <span className="font-mono text-[#1d1d1f]" title="F fundamental · T technical · S sentiment · V value · R rotation">
+            {triggers(a.stances ?? {})}
+          </span>
+          {' '}
+          {a.reason ? (
+            <button type="button" onClick={() => onReason(a.ticker)} className="text-left text-[#0071e3] hover:underline">
+              {openReason === a.ticker ? 'hide' : a.why || 'why'}
+            </button>
+          ) : (
+            a.why
+          )}
+          {openReason === a.ticker && <p className="mt-1 text-[#1d1d1f]">{a.reason}</p>}
+        </td>
       </tr>
     )
   }
@@ -544,7 +610,7 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
             <th>Entry</th>
             <th>Grade</th>
             <th>Exit plan</th>
-            <th>Why</th>
+            <th>Triggers · why</th>
           </tr>
         </thead>
         <tbody>
