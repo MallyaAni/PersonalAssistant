@@ -23,8 +23,18 @@ PERSISTENCE = 3
 # middle of the cross-section counts for less than the edges. Measured
 # on the ninety-three names, ranking by the summed conviction instead
 # of by the grade lifts rank IC from 0.038 to 0.047 at twenty sessions
-# and 0.060 to 0.076 at sixty, which is the whole of the gain a network
-# trained to imitate the rule found.
+# and 0.060 to 0.076 at sixty.
+#
+# That was the whole of the gain a network found, and re-running the
+# network against these analysts confirms it. A net trained only to
+# imitate the desk's own rule used to beat the rule it copied, which is
+# what pointed at the hard edges in the first place. Against the current
+# analysts it no longer does - 0.0537 (t 3.31) against the rule's 0.0530
+# at twenty sessions, and a lower net Sharpe, 1.00 against 1.03. Trained
+# on the real forward rank instead of on the rule, it finds nothing at
+# all: 0.0052 (t 0.42) at twenty sessions and 0.0137 (t 0.66) at sixty,
+# both at a negative Sharpe. Smoothing was the entire edge, it is in the
+# rule now, and there is no case left for a network here.
 SHARPNESS = 2.0
 
 
