@@ -10,14 +10,13 @@ them.
 
 import numpy as np
 import pytest
-import torch
 
 # The commands under test import torch at module level; the gate container
 # has none, and a research command is not what the gate is for.
 torch = pytest.importorskip("torch")
 
-from backend.cli import market_allocation_rl as alloc
-from backend.cli import market_offline_rl as off
+from backend.cli import market_allocation_rl as alloc  # noqa: E402
+from backend.cli import market_offline_rl as off  # noqa: E402
 
 
 # The family keeps the gross, holds nothing short, and includes the rule
