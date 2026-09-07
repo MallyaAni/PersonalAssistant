@@ -77,18 +77,24 @@ def test_a_journey_that_asserts_an_hour_is_empty_owns_that_hour():
 
     from backend.cli.sweep_journeys import JOURNEYS
 
+    # A turn about Scout writes discovery_schedules, not scheduled_tasks, so
+    # "run scout every day at 3pm" arms no task row and cannot collide with a
+    # count over tasks. Judged per turn: one journey may do both.
     def hours_armed(journey) -> set[int]:
-        said = " ".join((*journey.before, journey.query)).lower()
         found = set()
-        for value, meridiem in re.findall(r"\b(\d{1,2})\s*(am|pm)\b", said):
-            hour = int(value) % 12
-            found.add(hour + 12 if meridiem == "pm" else hour)
+        for said in (*journey.before, journey.query):
+            lowered = said.lower()
+            if "scout" in lowered:
+                continue
+            for value, meridiem in re.findall(r"\b(\d{1,2})\s*(am|pm)\b", lowered):
+                hour = int(value) % 12
+                found.add(hour + 12 if meridiem == "pm" else hour)
         return found
 
     def hours_claimed_empty(journey) -> set[int]:
         found = set()
         for clause in journey.sql_holds or ():
-            if "count(*) = 0" not in clause:
+            if "count(*) = 0" not in clause or "scheduled_tasks" not in clause:
                 continue
             for group in re.findall(r"hour in \(([\d,\s]+)\)", clause):
                 found.update(int(part) for part in group.split(","))
