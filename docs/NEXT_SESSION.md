@@ -3,6 +3,25 @@
 Verified state as of 2026-09-07. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-07 (end) — harness search identities are no longer capped like people (DEPLOYED `90c028d`)
+
+The post-deploy checks were reporting "used up the search allowance for
+today/this month" while real search stayed up. Root cause, found by probing
+the live meter: a deploy harness is an account `issue_user_token` creates on
+demand as an ordinary **guest**, so it drew the guest allowances - 40/day and
+60/month - and the post-deploy run's own searches spent them in a day. The
+assistant then told the harness (and it would tell a real account) its
+allowance was gone while Tavily had room and ani.mallya had used 2 of 80.
+`_bind_search_identity` in `backend/core/auth.py` now treats any
+`is_harness_id` as an operator with a 10 000/day and 2 000/month cap; the
+shared pool (Tavily, 1 000/month, the ceiling that actually runs out) still
+bounds everyone, and Brave (900/month, used 34) is the backup rung. **Verified
+live on `90c028d`:** a fresh guest harness account binds as operator with the
+high caps and searches (8 results), `sweep_journeys OK` with zero "used up"
+refusals and `sources=8` on every search journey, and `exercise_search_scenarios
+OK` (what's-on live, events offers links, try-again redoes the search, meter
+reads 44/1000 Tavily credits). Note for a new month: the pool resets October 1.
+
 ## 2026-09-07 (later) — the momentary-state memory rule closes the gubacchi pollution; the vision functional tests assert on properties (DEPLOYED `560d643a`)
 
 Continues the entry below it. Three changes, each verified against the real
