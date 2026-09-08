@@ -2,6 +2,18 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - Improving technicals into earnings, measured: the run-up is what gets sold
+
+A trader's claim: a 21/50 EMA turn with a report two weeks out has a
+reason behind it and should carry. `backend/cli/market_earnings.py`
+tests it with every results 8-K since 2016 (24,371 releases, 526
+names). On the universe the interaction is nothing (-0.17%, t -0.9). On
+the book it is the reverse: a rising 21/50 spread in the ten sessions
+before a report was followed by -1.38% over twenty sessions (t -2.7) and
+-0.55% into the close before the print (t -2.8), in nine of eleven
+years. The technical analyst keeps citing the convergence and not
+scoring it. Tests cover the reaction-session and distance logic.
+
 ## 2026-09-07 - The board against the person's own account
 
 The desk's action board was computed against the paper account, and the
