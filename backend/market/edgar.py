@@ -74,8 +74,25 @@ FACT_TAGS: dict[str, tuple[str, ...]] = {
 # Balance-sheet facts are instants (a value at a date, no span). Shares
 # outstanding live in the dei taxonomy on the cover page; the us-gaap tag
 # is the balance-sheet count. Either serves for growth in the share count.
+# Cash-flow statements in a 10-Q run from the start of the fiscal year, so
+# their spans are three, six and nine months; the quarter is the
+# difference between consecutive spans of the same year.
+YEAR_TO_DATE_NAMES: frozenset[str] = frozenset({"capex", "operating_cash_flow"})
 INSTANT_TAGS: dict[str, tuple[tuple[str, str], ...]] = {
     "assets": (("us-gaap", "Assets"), ("ifrs-full", "Assets")),
+    # For enterprise value: debt and cash as last reported. Filers tag
+    # debt several ways; the first with a history is read.
+    "debt": (
+        ("us-gaap", "LongTermDebtNoncurrent"),
+        ("us-gaap", "LongTermDebt"),
+        ("us-gaap", "LongTermDebtAndCapitalLeaseObligations"),
+        ("us-gaap", "DebtLongtermAndShorttermCombinedAmount"),
+    ),
+    "cash": (
+        ("us-gaap", "CashAndCashEquivalentsAtCarryingValue"),
+        ("us-gaap", "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"),
+        ("ifrs-full", "CashAndCashEquivalents"),
+    ),
     "equity": (
         ("us-gaap", "StockholdersEquity"),
         (
@@ -306,6 +323,61 @@ def fetch_events(
     return tuple(sorted(unique.values(), key=lambda e: e.accepted))
 
 
+# Six- and nine-month spans of a year-to-date fact, earliest filed.
+def _ytd_spans(
+    rows: Sequence[Mapping[str, Any]], name: str
+) -> dict[tuple[date, date], QuarterFact]:
+    out: dict[tuple[date, date], QuarterFact] = {}
+    for row in rows:
+        try:
+            start = date.fromisoformat(row["start"])
+            end = date.fromisoformat(row["end"])
+            filed = date.fromisoformat(row["filed"])
+            value = float(row["val"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        days = (end - start).days
+        if not (170 <= days <= 195 or 260 <= days <= 285):
+            continue
+        key = (start, end)
+        fact = QuarterFact(name, start, end, value, filed)
+        if key not in out or filed < out[key].filed:
+            out[key] = fact
+    return out
+
+
+# Quarters from year-to-date spans: the six-month span less the first
+# quarter of the same year gives the second quarter; the nine-month span
+# less the six-month gives the third. Each derived quarter is stamped with
+# the later filing of its two parts, so it is known when both were.
+def _with_year_to_date_quarters(
+    quarters: Mapping[tuple[date, date], QuarterFact],
+    ytd: Mapping[tuple[date, date], QuarterFact],
+) -> dict[tuple[date, date], QuarterFact]:
+    out = dict(quarters)
+    by_start: dict[date, list[QuarterFact]] = {}
+    for fact in list(quarters.values()) + list(ytd.values()):
+        by_start.setdefault(fact.start, []).append(fact)
+    for facts in by_start.values():
+        facts.sort(key=lambda f: f.end)
+        for earlier, later in zip(facts, facts[1:], strict=False):
+            kind = _span_kind(earlier.end + timedelta(days=1), later.end)
+            if kind != "quarter":
+                continue
+            key = (earlier.end + timedelta(days=1), later.end)
+            if key in out:
+                continue
+            out[key] = QuarterFact(
+                later.name,
+                key[0],
+                key[1],
+                later.value - earlier.value,
+                max(later.filed, earlier.filed),
+                derived=True,
+            )
+    return out
+
+
 # Whether a (start, end) span is one quarter, or one fiscal year.
 def _span_kind(start: date, end: date) -> str | None:
     days = (end - start).days
@@ -334,6 +406,10 @@ def parse_company_facts(payload: Mapping[str, Any]) -> list[QuarterFact]:
             for tag in tags:
                 rows = _rows_for(facts_root, taxonomy, tag)
                 quarters, years = _split_spans(rows, name)
+                if name in YEAR_TO_DATE_NAMES:
+                    quarters = _with_year_to_date_quarters(
+                        quarters, _ytd_spans(rows, name)
+                    )
                 if len(quarters) > best_count:
                     best_count = len(quarters)
                     chosen = _with_derived_fourth_quarters(quarters, years)

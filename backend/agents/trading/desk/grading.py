@@ -109,6 +109,7 @@ def grade(
     rotation: Opinion | None = None,
     value: Opinion | None = None,
     weights: dict[str, float] | None = None,
+    veto: bool = True,
 ) -> Graded:
     """Return the Graded panel; `weights` per analyst, equal when None."""
     convictions = {
@@ -128,6 +129,7 @@ def grade(
         None if value is None else value.stances(),
         convictions,
         weights,
+        veto,
     )
 
 
@@ -184,8 +186,9 @@ def grade_stances(
     v: np.ndarray | None = None,
     convictions: dict[str, np.ndarray] | None = None,
     weights: dict[str, float] | None = None,
+    veto: bool = True,
 ) -> Graded:
-    """Return the Graded panel from (T, N) stance arrays."""
+    """Return the Graded panel from (T, N) stance arrays; `veto` caps on a bear."""
     stances = {"fundamental": f, "technical": t, "sentiment": s}
     if r is not None:
         stances["rotation"] = r
@@ -216,5 +219,6 @@ def grade_stances(
     vetoed = (f == BEARISH) | (t == BEARISH) | (s == BEARISH)
     if v is not None:
         vetoed = vetoed | (v == BEARISH)
-    grades[vetoed & (grades > ORDINAL[B])] = ORDINAL[B]
+    if veto:
+        grades[vetoed & (grades > ORDINAL[B])] = ORDINAL[B]
     return Graded(grades, votes, stances, summed)

@@ -421,3 +421,25 @@ def test_the_dip_rule_adds_to_a_graded_name_on_its_own_fall():
     close_c[150:, 3] *= 0.88  # N3 is C
     with_c = simulate.run(_report(close_c), use_exits=False, rebalance=20, dip=rule)
     assert with_c.dip_adds == 0
+
+
+# The objective's numbers: compounded rate, notional traded per year over
+# the account, and the largest position the run held.
+def test_stats_carry_the_objectives_numbers():
+    from backend.agents.trading.desk.simulate import SimResult
+
+    daily = np.full(504, 0.001)
+    equity = 100_000.0 * np.cumprod(1.0 + daily)
+    result = SimResult(
+        dates=np.arange(504).astype("datetime64[D]"),
+        returns=daily,
+        invested=np.ones(504),
+        equity=equity,
+        traded=float(equity.mean()) * 4.0,
+        top_weight=np.linspace(0.05, 0.15, 504),
+    )
+    stats = result.stats()
+    assert stats["cagr"] == pytest.approx(1.001**252 - 1.0, rel=1e-6)
+    assert stats["turnover"] == pytest.approx(2.0)  # twice the account a year
+    assert stats["max_weight"] == pytest.approx(0.15)
+    assert stats["years"] == pytest.approx(2.0)

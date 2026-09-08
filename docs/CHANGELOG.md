@@ -2,6 +2,43 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - The review's list, finished: objective, interactions, cash flow, the challenger track
+
+Five things from the review, each measured or wired.
+
+The objective. `SimResult.stats` now carries the compounded rate,
+turnover (notional traded per year over the account) and the largest
+position; `desk/scorecard.py` prints every candidate on those numbers,
+at the rule's volatility, against a loss limit, with total return by
+year beside SPY and QQQ. `backend/cli/market_scorecard.py` runs it on
+the history and, with `--records`, on the nightly records priced
+forward.
+
+Learned combinations. `backend/cli/market_interactions.py`: ridge,
+ridge with every pairwise product, and a small network on the five
+analysts' convictions, the tape, sessions since the report and the
+expectations gap, walk-forward by year with the label purged from the
+training window; each as the rule's tie-break and as the whole
+selection, and the rule with its veto off (`grade_stances(veto=False)`).
+Results in its docstring.
+
+Cash flow, debt and cash. The EDGAR layer differences the filings'
+year-to-date cash-flow spans into quarters (`_with_year_to_date_quarters`)
+and reads debt and cash as instants; the trailing levels carry them and
+the second valuation analyst gains price to free cash flow and
+enterprise value to sales. Measured in `market_valuation`.
+
+The challenger track. `backend/market/challenger.py` runs the desk with
+the expectations gap blended into its valuation, never traded;
+`market_daily --challenger` writes its book and grades into the nightly
+record, and the scorecard's `--records` prices both tracks on the same
+days. The nightly run on spark1 carries the flag from tonight.
+
+The data. `backend/market/universe.py` states what the research data
+does not hold (point-in-time membership, delisted names, consensus
+history) and what it holds exactly (release acceptance times, filing
+dates).
+
 ## 2026-09-08 - An earnings-expectations model, and the gap to the price as a challenger
 
 `backend/cli/market_expectations.py` builds the expectation the review

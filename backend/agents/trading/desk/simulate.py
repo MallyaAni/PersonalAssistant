@@ -84,6 +84,8 @@ class SimResult:
     rebalances: int = 0
     equity: np.ndarray | None = None  # (T,) the account's value
     dip_adds: int = 0  # mid-cycle adds the dip rule made
+    traded: float = 0.0  # notional bought and sold over the run
+    top_weight: np.ndarray | None = None  # (T,) the largest position's share of equity
 
     # The usual four numbers, from the daily series.
     def stats(self) -> dict[str, float]:
@@ -102,12 +104,36 @@ class SimResult:
         annual = float(daily.mean() * 252)
         volatility = float(daily.std() * np.sqrt(252))
         drawdown = float((curve / np.maximum.accumulate(curve) - 1.0).min())
+        years = len(daily) / 252.0
+        # The objective's numbers: compounded money, what it cost to
+        # trade, and how concentrated the book got. `cagr` is the
+        # compounded rate, not the arithmetic mean `annual`; turnover is
+        # notional traded per year over the average account; max_weight
+        # the largest single position the run ever held.
+        cagr = float(curve[-1] ** (1.0 / years) - 1.0) if years > 0 else float("nan")
+        mean_equity = (
+            float(np.nanmean(self.equity)) if self.equity is not None else float("nan")
+        )
+        turnover = (
+            self.traded / mean_equity / years
+            if years > 0 and np.isfinite(mean_equity) and mean_equity > 0
+            else float("nan")
+        )
+        top = (
+            self.top_weight[np.isfinite(self.top_weight)]
+            if self.top_weight is not None
+            else np.array([])
+        )
         return {
             "annual": annual,
+            "cagr": cagr,
             "volatility": volatility,
             "sharpe": annual / volatility if volatility > 0 else float("nan"),
             "drawdown": drawdown,
             "total": float(curve[-1] - 1.0),
+            "turnover": turnover,
+            "max_weight": float(top.max()) if len(top) else float("nan"),
+            "years": years,
         }
 
 
@@ -284,6 +310,7 @@ def run(
     rebalances = 0
 
     equity[start] = book.equity(closes[start])
+    top = np.full(rows, np.nan)
     dip_adds = 0
     for t in range(start, rows - 1):
         # Decided on t's close, filled at t+1's open.
@@ -307,6 +334,7 @@ def run(
             equity[t + 1] / equity[t] - 1.0 if equity[t] > 0 else float("nan")
         )
         invested[t + 1] = book.invested(closes[t + 1])
+        top[t + 1] = book.top_weight(closes[t + 1])
     book.finish(rows - 1)
     return SimResult(
         panel.dates[start:],
@@ -316,6 +344,8 @@ def run(
         rebalances,
         equity[start:],
         dip_adds,
+        book.traded,
+        top[start:],
     )
 
 
@@ -328,6 +358,7 @@ class _Book:
     def __init__(self, names, equity, cost_bps, panel, report, stamps) -> None:
         self.shares = np.zeros(names)
         self.cash = float(equity)
+        self.traded = 0.0
         self.cost = cost_bps / 1e4
         self.panel = panel
         self.report = report
@@ -337,6 +368,15 @@ class _Book:
         self.trades: list[SimTrade] = []
 
     # The account's value at a set of prices, ignoring unpriced holdings.
+    # The largest position's share of the account at `prices`.
+    def top_weight(self, prices: np.ndarray) -> float:
+        """Return the biggest single weight, 0 when nothing is held."""
+        total = self.equity(prices)
+        priced = (self.shares > 0) & np.isfinite(prices)
+        if total <= 0 or not priced.any():
+            return 0.0
+        return float((self.shares[priced] * prices[priced]).max() / total)
+
     def equity(self, prices: np.ndarray) -> float:
         """Return cash plus the value of every priced holding."""
         priced = (self.shares > 0) & np.isfinite(prices)
@@ -432,6 +472,7 @@ class _Book:
             return
         notional = move * np.nan_to_num(prices)
         self.cash -= float(notional.sum()) + float(np.abs(notional).sum()) * self.cost
+        self.traded += float(np.abs(notional).sum())
         self.shares = np.maximum(wanted, 0.0)
 
     # One position leaving, with what it made between its two fills.

@@ -73,6 +73,8 @@ LEGS_V2 = (
     "cheap_vs_history",
     "cheap_earnings",
     "cheap_for_growth",
+    "cheap_free_cash_flow",
+    "cheap_ev_sales",
 )
 
 
@@ -118,8 +120,23 @@ def opine_v2(
         # Growth the price requires above the side, per year for five
         # years, for the multiple to come back to the side's: cited.
         implied = np.exp(valuation.relative_to_group(ps, side_groups) / 5.0) - 1.0
+    with np.errstate(all="ignore"):
+        cap = ratios.market_cap
+        fcf = trailing.get("operating_cash_flow", np.nan) - trailing.get("capex", 0.0)
+        p_fcf = np.log(cap / np.where(fcf > 0, fcf, np.nan))
+        debt = np.nan_to_num(trailing.get("debt", np.nan), nan=0.0)
+        cash = np.nan_to_num(trailing.get("cash", np.nan), nan=0.0)
+        ev = cap + debt - cash
+        ev_sales = np.log(
+            np.where(ev > 0, ev, np.nan)
+            / np.where(trailing["revenue"] > 0, trailing["revenue"], np.nan)
+        )
     evidence = {
         "cheap_vs_side": cheap_side,
+        "cheap_free_cash_flow": -valuation.relative_to_group(p_fcf, side_groups),
+        "cheap_ev_sales": -valuation.relative_to_group(ev_sales, side_groups),
+        "price_free_cash_flow": p_fcf,
+        "ev_sales": ev_sales,
         "cheap_vs_peers": -valuation.relative_to_group(ps, peer_groups),
         "cheap_vs_history": -history,
         "cheap_earnings": -valuation.relative_to_group(

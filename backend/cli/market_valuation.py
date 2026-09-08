@@ -68,10 +68,24 @@ book from 2021-06 with the growth-adjusted trailing multiple in place
 of the current analyst: +33.6% a year, Sharpe 1.83, worst drawdown
 -20.8%, against the rule's +31.8%, 1.85, -19.0%; and the rule scaled
 to the same volatility earns +33.9%. The extra return is extra risk.
-The current analyst stands. What would change this is data the store
-does not hold: cash flow by quarter (the filings carry it year to date),
-debt and cash for enterprise value, and forward expectations, which
-`market_expectations` builds from what is known.
+The current analyst stands.
+
+Later the same day, with cash flow by quarter (the filings' year-to-date
+spans differenced), debt and cash on file for every name:
+
+| leg                              | 20 sessions      | 60 sessions      |
+| trailing price to free cash flow | +0.025 (t 1.8)   | +0.045 (t 2.0)   |
+| enterprise value to sales        | +0.046 (t 3.6)   | +0.073 (t 3.1)   |
+
+Free cash flow is a weak leg (a third of the book has none). Enterprise
+value to sales is nearly the growth-adjusted multiple's equal in sample,
+and in the book from 2021-06 it earns +31.8% at 17.5% volatility
+against the rule's +31.8% at 17.2%: a wash. Blended with the
+growth-adjusted multiple: +33.2% at 18.4%, against the rule's +34.0% at
+that volatility. Better inputs made the valuation analyst a better
+forecaster on paper and the book no better at the same risk, three
+times over. The current analyst stands, and the forward expectations
+that `market_expectations` builds are where the book did move.
 """
 
 import argparse
@@ -292,7 +306,8 @@ def main() -> None:
         scale = second["volatility"] / rule["volatility"]
         print(
             f"{'the rule at the same volatility':34} {rule['annual'] * scale:+8.1%} "
-            f"{second['volatility']:7.1%} {rule['sharpe']:7.2f} {rule['drawdown'] * scale:8.1%}"
+            f"{second['volatility']:7.1%} {rule['sharpe']:7.2f} "
+            f"{rule['drawdown'] * scale:8.1%}"
         )
 
 

@@ -43,6 +43,11 @@ def build_parser() -> argparse.ArgumentParser:
     """Return the argument parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", default=settings.MARKET_DATA_ROOT)
+    parser.add_argument(
+        "--challenger",
+        action="store_true",
+        help="run the shadow desk (the expectations-gap challenger) into the record",
+    )
     parser.add_argument("--asof", type=date.fromisoformat, default=None)
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument(
@@ -407,8 +412,29 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
 
 
 # The day's record, as plain data.
+# The challenger's block for tonight, or None when it could not be run:
+# the shadow desk must never cost the record.
+def _challenger_block(store, report) -> dict | None:
+    from backend.market import challenger
+
+    try:
+        gap = challenger.expectations_gap(store, report.panel)
+        shadow = challenger.report_with_gap(report, gap)
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        print(f"\nchallenger: not run ({type(exc).__name__}: {exc})")
+        return None
+    block = challenger.record_block(shadow)
+    print(f"\nchallenger ({block['name']}): {len(block['book'])} names")
+    for row in block["book"]:
+        print(f"  {row['ticker']:6} {row['grade']:2} {row['weight']:.3f}")
+    return block
+
+
 def record(
-    report, briefs: dict[str, dict] | None = None, paper: dict | None = None
+    report,
+    briefs: dict[str, dict] | None = None,
+    paper: dict | None = None,
+    challenger: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     panel = report.panel
@@ -464,6 +490,9 @@ def record(
         ],
         "briefs": briefs or {},
         "paper": paper,
+        # The shadow desk, when one ran tonight: its book and grades, never
+        # traded, priced forward by the scorecard beside the rule's.
+        "challenger": challenger,
         # Levels for every book name, targeted or not, so the person's own
         # board can size a name the desk holds nothing of.
         "levels": {
@@ -574,7 +603,10 @@ def main() -> None:
             )
         except Exception as exc:  # the account being away must not lose the record
             print(f"\npaper book: not traded ({type(exc).__name__}: {exc})")
-    path = save(Path(store.root), record(report, briefs, entry))
+    shadow = None
+    if args.challenger:
+        shadow = _challenger_block(store, report)
+    path = save(Path(store.root), record(report, briefs, entry, shadow))
     print(f"\nrecord written: {path}")
     removed = prune(Path(store.root), asof, args.prune_days)
     if removed:

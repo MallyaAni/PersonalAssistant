@@ -76,14 +76,18 @@ def _four_quarters(by_end: dict) -> float:
 def trailing_levels(
     store: MarketStore, panel: Panel, asof=None
 ) -> dict[str, np.ndarray]:
-    """Return {"revenue", "earnings", "gross_profit", "shares", "equity", "revenue_growth"}."""
+    """Return the trailing levels per name, known at each session."""
     shape = (len(panel.dates), len(panel.tickers))
     names = (
         "revenue",
         "earnings",
         "gross_profit",
+        "operating_cash_flow",
+        "capex",
         "shares",
         "equity",
+        "debt",
+        "cash",
         "revenue_growth",
     )
     out = {name: np.full(shape, np.nan) for name in names}
@@ -106,8 +110,10 @@ def trailing_levels(
         out["gross_profit"][:, column] = ttm_series(
             record.facts, "gross_profit", panel.dates
         )
-        for name, key in (("shares", "shares"), ("equity", "equity")):
-            out[name][:, column] = edgar._known_series(record.facts, key, panel.dates)[
+        for name in ("operating_cash_flow", "capex"):
+            out[name][:, column] = ttm_series(record.facts, name, panel.dates)
+        for name in ("shares", "equity", "debt", "cash"):
+            out[name][:, column] = edgar._known_series(record.facts, name, panel.dates)[
                 0
             ][0]
         # Growth of the trailing sum against the trailing sum a year earlier,

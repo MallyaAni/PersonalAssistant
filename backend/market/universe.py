@@ -26,6 +26,17 @@ universe is biased toward survivors. The honest fix is a point-in-time
 constituent history, which no free source provides; until then every result
 is read with that caveat, and the constituent file records the date it was
 taken so the bias is at least dated.
+
+What the research data does not hold, and what that costs (2026-09-08):
+no point-in-time index membership and no delisted names, so a back-test
+over this universe is a test on survivors (measured: nineteen points a
+year of the book's return is name choice, `market_survivorship`); no
+history of analyst consensus, so expectations are built from what was
+known (`market_expectations`), not from what the street said; and cash
+flow by quarter only since the filings' year-to-date spans were
+differenced (the same day). What it does hold exactly: every results
+release's acceptance time and every fact's filing date, so nothing is
+read before the market could have.
 """
 
 import csv
