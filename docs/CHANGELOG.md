@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - The quality snapback, measured: the grading stands
+
+A trader's claim: a quality name stretched below its short-term
+averages, ideally on volume, is a buy for the snapback, and the
+technical analyst has the sign wrong on those names.
+`backend/cli/market_snapback.py` measures it on the book since 2018.
+Quality stretched names earned the same as quality names that were not
+(t 0.0); with volume, +0.5% over twenty sessions (t 0.8); the cells
+graded against earned less than the cells graded for. Two papers asked
+of the book: Medhat and Schmeling's short-term momentum does not
+appear; Nagel's stress dependence of the reversal does, in the
+five-session bounce. The stretch interacts with turnover (+0.98% in
+the high-turnover half, t 2.3), driven by 2022 and 2023. With the
+technical analyst neutral on those cells the book earns less
+(+31.2%/1.80 vs +31.8%/1.85 from 2021-06). Tests cover the study's
+pure functions.
+
 ## 2026-09-08 - Reasons as one line per analyst
 
 A reason is now one line per analyst, fewest words that carry the fact:
