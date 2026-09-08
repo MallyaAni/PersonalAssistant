@@ -2,6 +2,17 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The chart network on fifteen-minute bars: nothing, and one honest pattern
+
+`market_charts_intraday` draws the last twenty fifteen-minute bars at 10:30,
+12:30 and 14:30 for the book's names and asks whether the next hour is up,
+walk-forward by year, scored cross-sectionally against the next hour's return
+net of the universe's move. The network reads nothing (rank IC +0.002, a
+tenth of a basis point between its best and worst fifth). The plain hourly
+reversal on the same cells is real, t 8 over 3,486 cells, and worth 3.8 basis
+points between the fifths against a six-basis-point round trip: predictable
+and unprofitable. The fifteen-minute clock stays a risk layer on the board.
+
 ## 2026-09-07 - The chart network measured: no chart analyst
 
 Jiang, Kelly and Xiu's image model, trained to the paper's specification on

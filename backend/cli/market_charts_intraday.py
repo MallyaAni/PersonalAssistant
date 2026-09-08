@@ -33,7 +33,30 @@ points on these names, which is the bar any spread has to clear.
 
 Results
 -------
-Recorded below once the run is read.
+310,479 images of twenty fifteen-minute bars over 93 names at 10:30,
+12:30 and 14:30, 2020-08 to 2026-09; five test years, two seeds; the
+next hour's return net of the universe's move; 3,486 (session, slot)
+cells scored cross-sectionally:
+
+  signal                    rank IC      t   top less bottom fifth
+  chart network             +0.0024  +1.03      +0.1 bps
+  continuation, last hour   -0.0285  -8.09      -3.8 bps
+  reversal, last hour       +0.0285  +8.09      +3.8 bps
+  chart network at 10:30    +0.0044  +1.05      +0.4 bps
+  chart network at 12:30    -0.0033  -0.83      -0.8 bps
+  chart network at 14:30    +0.0060  +1.59      +0.6 bps
+
+The network reads nothing from the intraday chart: a tenth of a basis
+point between its best and worst fifth. The one pattern in these cells
+is the plain one, hourly reversal - a name that led the book over the
+last hour lags it over the next - and it is real, t 8 over 3,486 cells,
+and worth 3.8 basis points between the fifths against a round trip of
+six. Predictable and unprofitable at this cost, which is the common
+fate of intraday patterns. It is not tradable on its own; whether it
+is worth a few basis points as a timing nudge on an order that is
+happening anyway is a narrower question the execution study could ask.
+The fifteen-minute clock stays what the board makes of it: price
+against the levels the daily decision set.
 """
 
 import argparse
