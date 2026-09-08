@@ -44,7 +44,7 @@ LABELS: dict[str, str] = {
     "eps_change_yoy": "earnings growth over the year",
     "net_margin": "net margin",
     "capex_to_revenue": "capital spending against revenue",
-    "share_issuance": "new shares issued",
+    "share_issuance": "share issuance",
     "asset_growth": "asset growth",
     "book_to_market": "book value against market value",
     "sessions_since_earnings": "sessions since it last reported",
@@ -83,9 +83,135 @@ LABELS: dict[str, str] = {
     "price_earnings": "price against earnings",
     "price_book": "price against book value",
     "price_sales_growth": "price against sales, adjusted for growth",
-    "cheap_vs_side": "how cheap it is against its side of the book",
+    "cheap_vs_side": "discount to its side of the book",
     "market_cap": "its size",
 }
+
+# The release reader's fields, as the thing the release spoke about. A
+# reading is -1, 0 or +1, so it is said as downbeat, silent or upbeat.
+TONE_SUBJECT: dict[str, str] = {
+    "tone_guidance": "guidance",
+    "tone_demand": "demand",
+    "tone_pricing": "pricing",
+    "tone_capex": "capital spending",
+}
+TONE_CHANGE: dict[str, str] = {
+    "tone_guidance_change": "guidance",
+    "tone_demand_change": "demand",
+}
+# Readings that are a state, not a size: -1, 0 or +1.
+FLAG_WORDS: dict[str, tuple[str, str, str]] = {
+    "weekly_trend": (
+        "its weekly trend is down",
+        "its weekly trend is flat",
+        "its weekly trend is up",
+    ),
+    "daily_trend": (
+        "its daily trend is down",
+        "its daily trend is flat",
+        "its daily trend is up",
+    ),
+    "stack_order": (
+        "its moving averages are stacked for a downtrend",
+        "its moving averages are mixed",
+        "its moving averages are stacked for an uptrend",
+    ),
+    "weekly_stack": (
+        "its weekly averages are stacked for a downtrend",
+        "its weekly averages are mixed",
+        "its weekly averages are stacked for an uptrend",
+    ),
+    "converging_21_50": (
+        "its 21-day average is turning down toward its 50-day",
+        "its 21- and 50-day averages are not converging",
+        "its 21-day average is turning up toward its 50-day",
+    ),
+}
+# Distances from a level: said as where it sits against the book.
+DISTANCE_WORDS: dict[str, tuple[str, str, str]] = {
+    "high_52w_distance": (
+        "it sits farther below its 52-week high than most of the book",
+        "it sits about as far below its 52-week high as the book",
+        "it sits closer to its 52-week high than most of the book",
+    ),
+    "low_52w_distance": (
+        "it sits closer to its 52-week low than most of the book",
+        "it sits about as far above its 52-week low as the book",
+        "it sits farther above its 52-week low than most of the book",
+    ),
+    "ema21_distance": (
+        "it sits further below its 21-day average than most of the book",
+        "it sits near its 21-day average, like most of the book",
+        "it sits further above its 21-day average than most of the book",
+    ),
+    "ema50_distance": (
+        "it sits further below its 50-day average than most of the book",
+        "it sits near its 50-day average, like most of the book",
+        "it sits further above its 50-day average than most of the book",
+    ),
+    "ema200_distance": (
+        "it sits further below its 200-day average than most of the book",
+        "it sits near its 200-day average, like most of the book",
+        "it sits further above its 200-day average than most of the book",
+    ),
+    "sma200_distance": (
+        "it sits further below its 200-day simple average than most of the book",
+        "it sits near its 200-day simple average, like most of the book",
+        "it sits further above its 200-day simple average than most of the book",
+    ),
+    "support_distance": (
+        "it sits closer to support than most of the book",
+        "it sits about as far from support as the book",
+        "it is stretched further from support than most of the book",
+    ),
+    "resistance_distance": (
+        "it sits closer to resistance than most of the book",
+        "it sits about as far from resistance as the book",
+        "it has more room to resistance than most of the book",
+    ),
+    "spread_21_50": (
+        "its 21-day average sits further below its 50-day than most of the book",
+        "its 21- and 50-day averages sit about as close as the book's",
+        "its 21-day average sits further above its 50-day than most of the book",
+    ),
+    "range_position_60": (
+        "it sits near the bottom of its 60-day range",
+        "it sits in the middle of its 60-day range",
+        "it sits near the top of its 60-day range",
+    ),
+    "residual_momentum_120": (
+        "its six-month momentum, with the market's part removed, "
+        "is among the weakest in the book",
+        "its six-month momentum, with the market's part removed, is about the book's",
+        "its six-month momentum, with the market's part removed, "
+        "is among the strongest in the book",
+    ),
+    "ema21_slope": (
+        "its 21-day average is falling faster than most of the book",
+        "its 21-day average is moving about like the book's",
+        "its 21-day average is rising faster than most of the book",
+    ),
+    "ema50_slope": (
+        "its 50-day average is falling faster than most of the book",
+        "its 50-day average is moving about like the book's",
+        "its 50-day average is rising faster than most of the book",
+    ),
+    "spread_21_50_slope": (
+        "the gap between its 21- and 50-day averages "
+        "is closing faster than most of the book",
+        "the gap between its 21- and 50-day averages is moving about like the book's",
+        "the gap between its 21- and 50-day averages "
+        "is opening faster than most of the book",
+    ),
+}
+# Where a reading sits in the book, from its percentile.
+PLACE_WORDS = (
+    (0.10, "among the lowest in the book"),
+    (0.30, "below most of the book"),
+    (0.70, "around the middle of the book"),
+    (0.90, "above most of the book"),
+    (1.01, "among the highest in the book"),
+)
 
 # What the desk does at each grade, in the operator's own words.
 ACTION: dict[str, str] = {
@@ -155,6 +281,7 @@ def spreads(report) -> dict[tuple[str, str], tuple[float, float, int]]:
                 middle,
                 spread if spread > 0 else float("nan"),
                 lean,
+                np.sort(known),
             )
     return out
 
@@ -183,7 +310,7 @@ def _clause(
     cited: dict,
     scale: dict | None = None,
 ) -> str:
-    mood = {1: "likes it", 0: "is neutral on it", -1: "is against it"}[stance]
+    mood = {1: "is for it", 0: "is neutral on it", -1: "is against it"}[stance]
     where = ""
     if rank is not None and rank == rank:
         if rank >= 0.8:
@@ -191,28 +318,86 @@ def _clause(
         elif rank <= 0.2:
             where = ", ranking it near the bottom"
     if not cited:
-        return f"the {analyst} analyst has no data for it"
+        return f"The {analyst} analyst has no data for it"
     strongest = _notable(analyst, cited, scale, stance)
     if not strongest:
-        return f"the {analyst} analyst {mood}{where}"
+        return f"The {analyst} analyst {mood}{where}"
     parts = [_figure(analyst, k, v, scale) for k, v in strongest]
-    joined = parts[0] if len(parts) == 1 else f"{parts[0]} and {parts[1]}"
-    return f"the {analyst} analyst {mood}{where}, on {joined}"
+    joined = parts[0] if len(parts) == 1 else f"{parts[0]}, and {parts[1]}"
+    return f"The {analyst} analyst {mood}{where}: {joined}"
 
 
-# One reading as quoted. A reading of nothing is only a reason against a
-# book that reads something, so it is quoted with the book's middle.
+# One reading, in words a person can read: a release's tone as upbeat,
+# silent or downbeat; a state as the state it is in; a distance as where
+# it sits against the book; anything else by where it falls among the
+# book's readings. No figure is quoted. "capital spending against revenue
+# at +2.99" told a reader nothing about whether that was a lot; "among the
+# highest in the book" is the same fact as the desk used it.
 def _figure(analyst: str, measure: str, value: float, scale: dict | None) -> str:
-    text = f"{LABELS.get(measure, measure)} at {value:+.2f}"
     entry = (scale or {}).get((analyst, measure))
-    if (
-        entry
-        and abs(value) <= QUIET
-        and np.isfinite(entry[0])
-        and abs(entry[0]) > QUIET
-    ):
-        text += f" against the book's {entry[0]:+.2f}"
-    return text
+    middle = float(entry[0]) if entry and np.isfinite(entry[0]) else None
+    book = entry[3] if entry and len(entry) > 3 else None
+    spoken = _tone_words(measure, value, middle)
+    if spoken is not None:
+        return spoken
+    if measure in FLAG_WORDS:
+        down, flat, up = FLAG_WORDS[measure]
+        return up if value > 0.5 else down if value < -0.5 else flat
+    return _placed_words(measure, value, _place(value, book))
+
+
+# A reading of -1, 0 or +1 as its sign.
+def _sign(value: float) -> int:
+    return 1 if value > 0.5 else -1 if value < -0.5 else 0
+
+
+# The release reader's fields in words, or None for any other reading.
+def _tone_words(measure: str, value: float, middle: float | None) -> str | None:
+    sign = _sign(value)
+    if measure in TONE_SUBJECT:
+        subject = TONE_SUBJECT[measure]
+        if sign:
+            mood = "upbeat" if sign > 0 else "downbeat"
+            return f"its last release was {mood} on {subject}"
+        text = f"its last release said nothing about {subject}"
+        book = _sign(middle) if middle is not None else 0
+        if book:
+            mood = "upbeat" if book > 0 else "downbeat"
+            text += f", where most of the book was {mood}"
+        return text
+    if measure in TONE_CHANGE:
+        change = {1: "improved on", -1: "worsened on", 0: "was unchanged from"}[sign]
+        return f"its {TONE_CHANGE[measure]} talk {change} the last release"
+    if measure == "tone_supply_constrained":
+        did = "called" if sign > 0 else "did not call"
+        return f"it {did} itself supply constrained"
+    return None
+
+
+# A distance or a size, said by where it falls among the book's readings.
+def _placed_words(measure: str, value: float, place: float | None) -> str:
+    if measure in DISTANCE_WORDS:
+        low, mid, high = DISTANCE_WORDS[measure]
+        if place is None:
+            return high if value > 0 else low if value < 0 else mid
+        return low if place < 0.3 else high if place > 0.7 else mid
+    label = LABELS.get(measure, measure)
+    if place is None:
+        return f"its {label} is {'high' if value > 0 else 'low'}"
+    for cut, words in PLACE_WORDS:
+        if place < cut:
+            return f"its {label} is {words}"
+    return f"its {label} is {PLACE_WORDS[-1][1]}"
+
+
+# The share of the book's readings below this one, or None without a book.
+def _place(value: float, book) -> float | None:
+    if book is None or len(book) < 5:
+        return None
+    arr = np.asarray(book, dtype=float)
+    below = float((arr < value).mean())
+    equal = float((arr == value).mean())
+    return below + 0.5 * equal
 
 
 # The measurements that set this name apart from the book, largest first;
@@ -280,8 +465,8 @@ def reason(view: dict, scale: dict | None = None) -> str:
         clauses.append(_clause(analyst, int(stance), ranks.get(analyst), cited, scale))
     if not clauses:
         return f"Grade {grade}: {action}. No analyst had a view on it today."
-    body = "; ".join(clauses[:3])
-    return f"Grade {grade}: {action}, because {body}."
+    body = ". ".join(clauses[:3])
+    return f"Grade {grade}: {action}. {body}."
 
 
 # The one line a table can show without opening anything: the grade, the

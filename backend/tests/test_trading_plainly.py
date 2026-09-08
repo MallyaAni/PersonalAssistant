@@ -67,21 +67,42 @@ def test_the_biggest_number_is_not_automatically_the_reason():
     assert "net_margin" not in names
 
 
-# The figure quoted is the figure measured: never rescaled, converted or
-# rounded into something a reader cannot find in the evidence.
-def test_a_quoted_figure_is_the_measured_one():
+# No figure is quoted. "revenue growth over the year at -0.31" told a reader
+# nothing about whether that was a lot; where the reading falls among the
+# book's readings is the same fact as the desk used it.
+def test_a_reading_is_placed_in_the_book_not_quoted():
+    book = np.array([0.05, 0.10, 0.12, 0.20, 0.30, 0.45])
+    scale = {("fundamental", "revenue_yoy"): (0.16, 0.08, 1, book)}
     view = {
         "grade": "C",
         "stances": {"fundamental": -1},
         "ranks": {"fundamental": 0.05},
         "evidence": {"fundamental": {"revenue_yoy": -0.311}},
     }
-    text = plainly.reason(view)
-    assert "-0.31" in text
-    assert "revenue growth over the year" in text
+    text = plainly.reason(view, scale)
+    assert "revenue growth over the year is among the lowest in the book" in text
+    assert "-0.31" not in text
     assert "revenue_yoy" not in text
-    # Not turned into a percentage, which would read as a different figure.
-    assert "-31" not in text
+    assert text.startswith("Grade C: avoid it. The fundamental analyst is against it")
+    # Tone, states and distances have their own words.
+    assert plainly._figure("sentiment", "tone_guidance", 1.0, None) == (
+        "its last release was upbeat on guidance"
+    )
+    assert (
+        plainly._figure("technical", "weekly_trend", -1.0, None)
+        == "its weekly trend is down"
+    )
+    far = {
+        ("technical", "high_52w_distance"): (
+            -0.2,
+            0.1,
+            1,
+            np.array([-0.5, -0.3, -0.2, -0.1, -0.05, 0.0]),
+        )
+    }
+    assert plainly._figure("technical", "high_52w_distance", -0.78, far) == (
+        "it sits farther below its 52-week high than most of the book"
+    )
 
 
 # An analyst that measured nothing is not a reason, and saying so in the
@@ -150,7 +171,7 @@ def test_spreads_are_taken_across_the_book_only():
         opinions={"fundamental": opinion},
     )
     scale = plainly.spreads(report)
-    middle, spread, _lean = scale[("fundamental", "revenue_yoy")]
+    middle, spread, _lean, _book = scale[("fundamental", "revenue_yoy")]
     assert middle == pytest.approx(3.0)  # the outsider did not move it
     assert spread == pytest.approx(1.0)
     # A measurement identical across the book has no usable spread.
@@ -196,5 +217,5 @@ def test_a_reading_of_nothing_is_quoted_against_the_book():
     picked = plainly._notable("sentiment", cited, scale, stance=-1)
     assert picked == [("tone_guidance", 0.0)]
     clause = plainly._clause("sentiment", -1, 0.26, cited, scale)
-    assert "against the book's +1.00" in clause
+    assert "said nothing about guidance, where most of the book was upbeat" in clause
     assert "demand" not in clause

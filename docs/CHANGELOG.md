@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - Reasons in words, not figures
+
+"capital spending against revenue at +2.99" told a reader nothing about
+whether that was a lot. A reason now says where the reading falls among
+the book's readings ("among the highest in the book", "below most of the
+book"), a release's tone as upbeat, silent or downbeat ("its last release
+said nothing about guidance, where most of the book was upbeat"), a state
+as the state it is in ("its weekly trend is down"), and a distance as
+where it sits ("it sits farther below its 52-week high than most of the
+book"). No figure is quoted. `plainly.spreads` keeps the book's readings
+so a figure can be placed; the sentence is "Grade C: avoid it. The
+sentiment analyst is against it: ..." with one clause per analyst.
+
 ## 2026-09-08 - A reason cites the readings that argue the stance
 
 CRWV's record read "the sentiment analyst is against it, on what it said
