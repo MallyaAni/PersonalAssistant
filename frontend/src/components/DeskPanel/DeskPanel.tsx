@@ -98,6 +98,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [holdings, setHoldings] = useState<DeskHolding[]>([])
   const [mine, setMine] = useState<DeskMineRow[]>([])
   const [holdingsError, setHoldingsError] = useState('')
+  const [help, setHelp] = useState(false)
   const [openReason, setOpenReason] = useState<string | null>(null)
 
   const load = async () => {
@@ -202,7 +203,19 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
     <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
+            <button
+              type="button"
+              onClick={() => setHelp(!help)}
+              aria-label="How to use this page"
+              title="How to use this page"
+              className="flex h-5 w-5 items-center justify-center rounded-full border border-black/[0.2] text-xs font-semibold text-[#6e6e73] hover:bg-black/[0.05]"
+            >
+              i
+            </button>
+          </div>
+          {help && <HowToUse onClose={() => setHelp(false)} />}
           <p className="text-sm text-[#6e6e73]">
             Session {latest.session} · {summary?.counts['A+'] ?? 0} A+, {summary?.counts.A ?? 0} A,{' '}
             {summary?.counts.B ?? 0} B, {summary?.counts.C ?? 0} C · book gross {summary ? pct(summary.gross) : '—'}
@@ -690,6 +703,39 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
     </section>
   )
 }
+
+// The one-screen explanation for someone who has never seen the page.
+const HowToUse = ({ onClose }: { onClose: () => void }) => (
+  <div className="my-2 max-w-xl rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f]">
+    <ol className="list-decimal space-y-1.5 pl-5">
+      <li>
+        <b>Every evening</b> the desk grades about ninety AI and software names and picks a book of the A-rated
+        ones. That decision is fixed for the day; the page reloads it every 5 minutes.
+      </li>
+      <li>
+        <b>Your account:</b> type or paste what you hold on Schwab. The board then says, name by name,{' '}
+        <b>buy, add, trim, sell or hold</b>, with the share count for your equity.
+      </li>
+      <li>
+        <b>Buy at the open.</b> Market-on-open was the best entry we measured. Do not chase a name that has already run.
+      </li>
+      <li>
+        <b>Selling:</b> a name leaves when its grade falls below A at a rebalance (every 20 sessions, the date is on
+        the row). Stops are off by default because they cost money; turn them on to see the 8/12/20% levels.
+      </li>
+      <li>
+        <b>Prices</b> refresh every 15 minutes during the session, and P&amp;L on each row is against your own entry.
+      </li>
+      <li>
+        <b>Why</b> on each row is the analysts&apos; reason: F fundamentals, T technicals, S sentiment, V value, R
+        rotation.
+      </li>
+    </ol>
+    <button type="button" onClick={onClose} className="mt-3 text-xs text-[#0071e3] hover:underline">
+      close
+    </button>
+  </div>
+)
 
 interface MyAccountProps {
   holdings: DeskHolding[]
