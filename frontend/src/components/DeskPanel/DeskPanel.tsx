@@ -41,6 +41,17 @@ const ACTION_STYLE: Record<string, string> = {
   hold: 'bg-[#f5f5f7] text-[#6e6e73]',
 }
 
+// The desk's warnings in plain words. Any flag not listed shows as written.
+const FLAG_WORDS: Record<string, string> = {
+  'not enough history to judge participation': 'too little history to judge how broad the AI rally is',
+  'participation below its two-year median': 'fewer AI names are rising than usual: the rally is narrow',
+  'participation in its top quintile (hype)': 'almost every AI name is rising at once, which often marks a top',
+  'AI-vs-software co-movement far from its history': 'AI and software stocks are moving together unusually, so the usual patterns may not hold',
+  'theme co-movement structure has changed shape': 'the way these stocks move together has changed, so the desk trusts its picks less',
+  'AI basket more than 25% off its yearly high': 'AI stocks are more than 25% below their high for the year',
+  'the ten-year yield is rising sharply': 'interest rates are rising fast, which usually hurts these stocks',
+}
+
 // The equity the board sizes to. The paper account's by default; the
 // person's own once typed, remembered in this browser only.
 const EQUITY_KEY = 'desk.equity'
@@ -170,7 +181,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   if (!payload || !payload.latest) {
     return (
       <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">
-        No desk record yet. Run the daily pipeline to write one.
+        No decision on file yet. The desk writes one every evening after the close.
       </div>
     )
   }
@@ -217,13 +228,14 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} />}
           <p className="text-sm text-[#6e6e73]">
-            Session {latest.session} · {summary?.counts['A+'] ?? 0} A+, {summary?.counts.A ?? 0} A,{' '}
-            {summary?.counts.B ?? 0} B, {summary?.counts.C ?? 0} C · book gross {summary ? pct(summary.gross) : '—'}
+            Decision from the close of {latest.session} · grades: {summary?.counts['A+'] ?? 0} A+,{' '}
+            {summary?.counts.A ?? 0} A, {summary?.counts.B ?? 0} B, {summary?.counts.C ?? 0} C · invested{' '}
+            {summary ? pct(summary.gross) : '—'} of the account
             {latest.paper && (
               <>
-                {' '}· paper equity {money(latest.paper.equity)},{' '}
+                {' '}· practice account {money(latest.paper.equity)},{' '}
                 <span className={latest.paper.pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
-                  P/L {money(latest.paper.pl)} ({(latest.paper.pl_pct * 100).toFixed(1)}%)
+                  {latest.paper.pl >= 0 ? 'up' : 'down'} {money(Math.abs(latest.paper.pl))} ({(latest.paper.pl_pct * 100).toFixed(1)}%)
                 </span>
               </>
             )}
@@ -275,17 +287,22 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
       />
 
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-        <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Regime</h3>
+        <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Market backdrop</h3>
         <p className="text-sm text-[#1d1d1f]">
-          Selection confidence {regime.selection_confidence.toFixed(2)} · exposure {regime.exposure.toFixed(2)} ·
-          rotation leader {regime.rotation_leader} · AI participation percentile{' '}
-          {Number.isFinite(regime.participation_percentile) ? regime.participation_percentile.toFixed(2) : '—'} ·
-          AI-vs-software correlation {regime.ai_vs_software_correlation.toFixed(2)} · AI drawdown {pct(regime.ai_drawdown)}
+          Leading group: {regime.rotation_leader === 'ai' ? 'AI' : regime.rotation_leader === 'software' ? 'software' : 'no clear leader'} ·
+          the desk is {pct(regime.exposure)} invested ·
+          AI names are {pct(regime.ai_drawdown)} below their yearly high ·
+          breadth of the AI rally{' '}
+          {Number.isFinite(regime.participation_percentile)
+            ? `${Math.round(regime.participation_percentile * 100)}th percentile of the last two years`
+            : 'unknown'}{' '}
+          · AI and software moving together: {regime.ai_vs_software_correlation.toFixed(2)} (1 is lockstep, 0 is unrelated) ·
+          confidence in today&rsquo;s picks {Math.round(regime.selection_confidence * 100)}%
         </p>
         {regime.flags.length > 0 && (
           <ul className="mt-2 space-y-1 text-sm text-[#9a6200]">
             {regime.flags.map((flag) => (
-              <li key={flag}>! {flag}</li>
+              <li key={flag}>Warning: {FLAG_WORDS[flag] ?? flag}</li>
             ))}
           </ul>
         )}
@@ -301,9 +318,9 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             <thead className="text-left text-[#6e6e73]">
               <tr>
                 <th className="py-1">Name</th>
-                <th>Action</th>
-                <th>From</th>
-                <th>To</th>
+                <th>Do</th>
+                <th>Now</th>
+                <th>Target</th>
                 <th>Why</th>
               </tr>
             </thead>
@@ -322,8 +339,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         ) : (
           <p className="text-sm text-[#6e6e73]">
             {changes?.since
-              ? 'Nothing to trade: the book is unchanged.'
-              : 'This is the first session on file, so there is nothing to compare it with. The book below is the desk’s target, not a list of trades. A second session gives this table something to say.'}
+              ? 'Nothing to trade today: the desk holds the same names as yesterday.'
+              : 'This is the first day on file, so there is nothing to compare it with. The list below is what the desk wants to hold, not a list of trades. Tomorrow this table will show the changes.'}
           </p>
         )}
         {changes && (changes.upgrades.length > 0 || changes.downgrades.length > 0) && (
@@ -344,7 +361,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         onClick={() => setDetails(!details)}
         className="self-start text-sm text-[#0071e3] hover:underline"
       >
-        {details ? 'Hide the paper account, the book and every grade' : 'Show the paper account, the book and every grade'}
+        {details ? 'Hide the details' : 'Show the details: practice account, holdings and every grade'}
       </button>
 
       {details && (
@@ -352,17 +369,25 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       {latest.paper && (
         <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-          <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Paper account</h3>
+          <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Practice account</h3>
+          <p className="mb-1 text-xs text-[#6e6e73]">
+            A simulated account that follows the desk&rsquo;s decisions with real market prices and no real money.
+          </p>
           <p className="text-sm text-[#1d1d1f]">
-            Equity {money(latest.paper.equity)} · cash {money(latest.paper.cash)} ·{' '}
+            Worth {money(latest.paper.equity)} · cash {money(latest.paper.cash)} ·{' '}
             <span className={latest.paper.pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
-              P/L {money(latest.paper.pl)} ({(latest.paper.pl_pct * 100).toFixed(1)}%)
+              {latest.paper.pl >= 0 ? 'up' : 'down'} {money(Math.abs(latest.paper.pl))} ({(latest.paper.pl_pct * 100).toFixed(1)}%)
             </span>{' '}
-            since the paper book started · {latest.paper.plan} day
+            since it started ·{' '}
+            {latest.paper.plan === 'rebalance'
+              ? 'today the desk re-checked every grade and reset the sizes'
+              : latest.paper.plan === 'exits'
+                ? 'today only names that lost their grade are sold'
+                : 'nothing to trade today'}
           </p>
           {latest.paper.orders.length > 0 && (
             <p className="mt-2 text-sm text-[#6e6e73]">
-              Submitted for the next open:{' '}
+              Orders placed for the next open:{' '}
               {latest.paper.orders.map((o) => `${o.side} ${o.qty} ${o.symbol}`).join(', ')}
             </p>
           )}
@@ -372,10 +397,10 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
                 <tr>
                   <th className="py-1">Name</th>
                   <th>Shares</th>
-                  <th>Value</th>
-                  <th>Entry</th>
-                  <th>Last</th>
-                  <th>Open P/L</th>
+                  <th>Worth now</th>
+                  <th>Bought at</th>
+                  <th>Price now</th>
+                  <th>Gain so far</th>
                 </tr>
               </thead>
               <tbody>
@@ -398,12 +423,11 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
       )}
 
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-        <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">The book</h3>
+        <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">What the desk holds</h3>
         <p className="mb-2 text-xs text-[#6e6e73]">
-          Rank is where the name sits in the desk&rsquo;s conviction ordering; weight is
-          what it actually holds. They disagree on purpose &mdash; a name is sized by the
-          inverse of its volatility, so the desk&rsquo;s best-liked name can be its
-          smallest position when it is also its wildest.
+          Rank is how much the desk likes the name (1 is best). Share of account is how much it holds.
+          The two differ on purpose: steadier names get more money and wilder names get less, so the
+          best-liked name can be the smallest position when it is also the most volatile.
         </p>
         <table className="w-full text-sm">
           <thead className="text-left text-[#6e6e73]">
@@ -411,8 +435,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
               <th className="py-1">Name</th>
               <th>Rank</th>
               <th>Grade</th>
-              <th>Weight</th>
-              <th>Volatility</th>
+              <th>Share of account</th>
+              <th>Volatility (a year)</th>
             </tr>
           </thead>
           <tbody>
@@ -439,14 +463,17 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
         <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Every grade</h3>
-        <p className="mb-2 text-xs text-[#6e6e73]">F fundamental · T technical · S sentiment · R rotation; + bullish, · neutral, − bearish</p>
+        <p className="mb-2 text-xs text-[#6e6e73]">
+          Every name the desk follows, best first. The four columns are the analysts: F business fundamentals,
+          T price trend, S news and sentiment, R which group is leading. + means for, · no view, − against.
+        </p>
         <table className="w-full text-sm">
           <thead className="text-left text-[#6e6e73]">
             <tr>
               <th className="py-1">Name</th>
-              <th>Side</th>
+              <th>Group</th>
               <th>Grade</th>
-              <th>Conviction</th>
+              <th>Score</th>
               <th>F</th>
               <th>T</th>
               <th>S</th>
@@ -458,14 +485,14 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             {grades.map(([ticker, g], i) => (
               <tr key={ticker} className="border-t border-black/[0.05] align-top">
                 <td className="py-1 font-medium">{ticker}</td>
-                <td className="text-[#6e6e73]">{g.side}</td>
+                <td className="text-[#6e6e73]">{g.side === 'ai' ? 'AI' : g.side}</td>
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[g.grade] ?? ''}`}>{g.grade}</span>
                 </td>
                 <td className="whitespace-nowrap font-mono text-xs">
                   {g.score.toFixed(2)}
                   {tiedWithAbove[i] && (
-                    <span className="ml-1 text-[#6e6e73]" title="too close to the name above to call it a difference">tied</span>
+                    <span className="ml-1 text-[#6e6e73]" title="so close to the name above that the order means nothing">tied</span>
                   )}
                 </td>
                 {(['fundamental', 'technical', 'sentiment', 'rotation'] as const).map((k) => (
@@ -538,10 +565,7 @@ const triggers = (stances: Record<string, number>) =>
 // What the measurements say about when to fill: buys at the open, sells at
 // the close in four of five years and not in 2026, so the open until the
 // paper record says otherwise.
-const timing = (a: DeskAction) =>
-  a.action === 'sell' || a.action === 'trim'
-    ? 'open (close was better 2022–25, not 2026)'
-    : 'open'
+const timing = (_a: DeskAction) => 'at the open'
 
 // The candle's verdict on a row: the last print against the close and,
 // for a name held, against its entry. The stop level appears only when the
@@ -555,12 +579,12 @@ const liveCell = (a: DeskAction, stops: boolean, quote?: { last: number; open: n
   const hit = trailing !== undefined && quote.last <= trailing
   return (
     <span className={hit ? 'font-medium text-[#b42318]' : undefined}>
-      {money(quote.last)} ({sinceOpen >= 0 ? '+' : ''}{(sinceOpen * 100).toFixed(1)}% since the open,{' '}
-      {versusClose >= 0 ? '+' : ''}{(versusClose * 100).toFixed(1)}% on the close
-      {versusEntry !== null && `, ${versusEntry >= 0 ? '+' : ''}${(versusEntry * 100).toFixed(1)}% on entry`})
+      now {money(quote.last)} · {sinceOpen >= 0 ? '+' : ''}{(sinceOpen * 100).toFixed(1)}% today ·{' '}
+      {versusClose >= 0 ? '+' : ''}{(versusClose * 100).toFixed(1)}% vs yesterday&rsquo;s close
+      {versusEntry !== null && ` · ${versusEntry >= 0 ? '+' : ''}${(versusEntry * 100).toFixed(1)}% vs what was paid`}
       {trailing !== undefined && (
         <span className="text-[#6e6e73]">
-          {' '}· {hit ? 'STOP HIT' : `room ${((quote.last / trailing - 1) * 100).toFixed(1)}% to ${money(trailing)}`}
+          {' '}· {hit ? 'below the stop: sell' : `stop ${money(trailing)}, ${((quote.last / trailing - 1) * 100).toFixed(1)}% below the price`}
         </span>
       )}
     </span>
@@ -588,55 +612,55 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
         </td>
         <td className="whitespace-nowrap">
           {a.action === 'hold' ? (
-            <span>{pct(a.current_weight)}</span>
+            <span>{pct(a.current_weight)} of the account</span>
           ) : (
             <span>
-              <span className="font-medium">{qty.toLocaleString()} sh</span>{' '}
+              <span className="font-medium">{qty.toLocaleString()} shares</span>{' '}
               <span className="text-[#6e6e73]">
-                {pct(a.current_weight)} → {pct(a.target_weight)}
+                ({pct(a.current_weight)} → {pct(a.target_weight)} of the account)
               </span>
             </span>
           )}
         </td>
         <td className="whitespace-nowrap text-[#6e6e73]">
-          {timing(a)} · close {money(a.last_close)}
+          {timing(a)} · last close {money(a.last_close)}
           {live.quotes[a.ticker] && <div className="text-xs">{liveCell(a, stops, live.quotes[a.ticker])}</div>}
         </td>
         <td className="whitespace-nowrap">
           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[a.grade] ?? ''}`}>{a.grade}</span>
           <span className="ml-1 font-mono text-xs text-[#6e6e73]">#{a.rank ?? '—'}</span>
           {atRisk && (
-            <span className="ml-1 text-xs text-[#9a6200]" title="one bearish stance from losing its grade">at risk</span>
+            <span className="ml-1 text-xs text-[#9a6200]" title="one more analyst turning against it would drop the grade below A">at risk</span>
           )}
         </td>
         <td className="whitespace-nowrap text-xs text-[#6e6e73]">
           {a.target_weight > 0 ? (
             <>
-              leaves when the grade falls below A
+              sell when its grade drops below A
               <br />
-              next rebalance in {untilRebalance}
+              next grade check in {untilRebalance} trading day{untilRebalance === 1 ? '' : 's'}
               {stops && a.stops['12'] !== undefined && (
                 <>
                   <br />
-                  stop 12% {money(a.stops['12'])}
-                  <span title={`8% ${money(a.stops['8'])}, 20% ${money(a.stops['20'])}, off the 20-session high ${money(a.high_20)}`}>
+                  stop {money(a.stops['12'])}
+                  <span title={`12% under the 20-day high of ${money(a.high_20)}. Tighter: ${money(a.stops['8'])} (8%). Looser: ${money(a.stops['20'])} (20%).`}>
                     {' '}▾
                   </span>
                 </>
               )}
             </>
           ) : (
-            'out of the book'
+            'sell everything: it no longer earns an A'
           )}
         </td>
         <td className="text-xs text-[#6e6e73]">
-          <span className="font-mono text-[#1d1d1f]" title="F fundamental · T technical · S sentiment · V value · R rotation">
+          <span className="font-mono text-[#1d1d1f]" title="The analysts: F business fundamentals, T price trend, S news and sentiment, V price vs value, R which group leads. + for, · no view, − against.">
             {triggers(a.stances ?? {})}
           </span>
           {' '}
           {a.reason ? (
             <button type="button" onClick={() => onReason(a.ticker)} className="text-left text-[#0071e3] hover:underline">
-              {openReason === a.ticker ? 'hide' : a.why || 'why'}
+              {openReason === a.ticker ? 'hide' : a.why || 'why?'}
             </button>
           ) : (
             a.why
@@ -650,10 +674,10 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-3">
         <h3 className="text-sm font-semibold text-[#1d1d1f]">
-          Action board · next open
+          What to do at the next open
           {live.as_of && (
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-              live candle {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              prices as of {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, refreshed every 15 minutes
             </span>
           )}
         </h3>
@@ -662,7 +686,7 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
           show stop levels
         </label>
         <label className="flex items-center gap-2 text-xs text-[#6e6e73]">
-          size to equity
+          account size $
           <input
             type="number"
             min={0}
@@ -678,11 +702,11 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
           <tr>
             <th className="py-1">Name</th>
             <th>Do</th>
-            <th>Size</th>
-            <th>Entry</th>
+            <th>How much</th>
+            <th>When and price</th>
             <th>Grade</th>
-            <th>Exit plan</th>
-            <th>Triggers · why</th>
+            <th>When to sell</th>
+            <th>Why</th>
           </tr>
         </thead>
         <tbody>
@@ -691,14 +715,12 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
         </tbody>
       </table>
       <p className="mt-2 text-xs text-[#6e6e73]">
-        Sizes are shares at the equity above, entered market-on-open: every later schedule measured
-        cost more. The exit is the signal, not a price: a name leaves at a rebalance when it no
-        longer earns its grade, because every price-based exit tested in this book cost mean
-        return. Stop levels are off by default for that reason. They are not hunted &mdash; a
-        wick through a level and a close through it are followed by the same flat ten sessions
-        &mdash; they simply cut winners&rsquo; drawdowns along with losers&rsquo;: after a sharp
-        rise a 12% stop cut the worst tenth from &minus;25% to &minus;16% and the average from
-        +9% to +4%. Switch them on if your size needs the tail cut.
+        Share counts are for the account size above and assume you buy at the open, which was the best time
+        we measured. Names are sold on grade, not price: a name leaves when it no longer earns an A at the
+        next check. Stops are off by default because in our tests they cut short the winners as often as
+        the losers. Switch them on if you need a hard limit on how much one name can lose.
+        The letters under Why are the analysts: F business fundamentals, T price trend, S news and sentiment,
+        V price vs value, R which group leads. + for, · no view, − against. Click a reason to read it in full.
       </p>
     </section>
   )
@@ -709,26 +731,26 @@ const HowToUse = ({ onClose }: { onClose: () => void }) => (
   <div className="my-2 max-w-xl rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f]">
     <ol className="list-decimal space-y-1.5 pl-5">
       <li>
-        <b>Every evening</b> the desk grades about ninety AI and software names and picks a book of the A-rated
-        ones. That decision is fixed for the day; the page reloads it every 5 minutes.
+        <b>Every evening</b> the desk grades about ninety AI and software stocks and picks the A-rated ones to
+        own. That decision holds for the next trading day.
       </li>
       <li>
-        <b>Your account:</b> type or paste what you hold on Schwab. The board then says, name by name,{' '}
-        <b>buy, add, trim, sell or hold</b>, with the share count for your equity.
+        <b>Your account:</b> type or paste what you hold on Schwab. The table then says, name by name,{' '}
+        <b>buy, add, trim, sell or hold</b>, and how many shares for your account size.
       </li>
       <li>
-        <b>Buy at the open.</b> Market-on-open was the best entry we measured. Do not chase a name that has already run.
+        <b>Buy at the open</b> with a market order. Do not chase a name that has already jumped.
       </li>
       <li>
-        <b>Selling:</b> a name leaves when its grade falls below A at a rebalance (every 20 sessions, the date is on
-        the row). Stops are off by default because they cost money; turn them on to see the 8/12/20% levels.
+        <b>Selling:</b> a name is sold when its grade drops below A at the next check, about every four weeks.
+        Each row says when that check is. Stops are optional: switch them on to see a price under which to sell.
       </li>
       <li>
-        <b>Prices</b> refresh every 15 minutes during the session, and P&amp;L on each row is against your own entry.
+        <b>Prices</b> refresh every 15 minutes during market hours. Gains are measured from what you paid.
       </li>
       <li>
-        <b>Why</b> on each row is the analysts&apos; reason: F fundamentals, T technicals, S sentiment, V value, R
-        rotation.
+        <b>Why:</b> the letters are the analysts (F business fundamentals, T price trend, S news and sentiment,
+        V price vs value, R which group leads). Click the reason to read it in full.
       </li>
     </ol>
     <button type="button" onClick={onClose} className="mt-3 text-xs text-[#0071e3] hover:underline">
@@ -795,7 +817,7 @@ const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountPr
             <div key={i} className="flex flex-wrap items-center gap-2">
               <input value={h.ticker} onChange={(e) => update(i, 'ticker', e.target.value)} placeholder="ticker" className="w-20 rounded-md border border-black/[0.12] px-2 py-1" />
               <input type="number" value={h.shares} onChange={(e) => update(i, 'shares', e.target.value)} placeholder="shares" className="w-24 rounded-md border border-black/[0.12] px-2 py-1" />
-              <input type="number" value={h.entry_price} onChange={(e) => update(i, 'entry_price', e.target.value)} placeholder="entry price" className="w-28 rounded-md border border-black/[0.12] px-2 py-1" />
+              <input type="number" value={h.entry_price} onChange={(e) => update(i, 'entry_price', e.target.value)} placeholder="cost per share" className="w-28 rounded-md border border-black/[0.12] px-2 py-1" />
               <input type="date" value={h.entry_date} onChange={(e) => update(i, 'entry_date', e.target.value)} className="rounded-md border border-black/[0.12] px-2 py-1" />
               <button type="button" onClick={() => setDraft(draft.filter((_, j) => j !== i))} className="text-xs text-[#b42318] hover:underline">remove</button>
             </div>
@@ -804,7 +826,7 @@ const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountPr
             <textarea
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
-              placeholder={'or paste, one per line: ticker shares cost [date]\nIREN 100 35.20 2026-08-28'}
+              placeholder={'or paste one line per position: ticker, shares, cost per share, date bought (optional)\nIREN 100 35.20 2026-08-28'}
               rows={3}
               className="w-full rounded-md border border-black/[0.12] px-2 py-1 font-mono text-xs"
             />
@@ -822,7 +844,7 @@ const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountPr
               >
                 add pasted lines
               </button>
-              {skipped.length > 0 && <span className="text-xs text-[#b42318]">could not read: {skipped.join(' | ')}</span>}
+              {skipped.length > 0 && <span className="text-xs text-[#b42318]">could not read these lines: {skipped.join(' | ')}</span>}
             </div>
           </div>
           <div className="flex gap-3">
@@ -833,7 +855,7 @@ const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountPr
         </div>
       )}
       {holdings.length === 0 && !editing && (
-        <p className="text-sm text-[#6e6e73]">No positions saved. Add what you hold and the board is computed against it.</p>
+        <p className="text-sm text-[#6e6e73]">No positions yet. Enter what you hold on Schwab and this table will say what to buy and sell.</p>
       )}
       {rows.length > 0 && (
         <table className="w-full text-sm">
@@ -841,10 +863,10 @@ const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountPr
             <tr>
               <th className="py-1">Name</th>
               <th>Do</th>
-              <th>Size</th>
-              <th>Yours</th>
+              <th>How much</th>
+              <th>You hold</th>
               <th>Grade</th>
-              <th>Exit plan</th>
+              <th>When to sell</th>
               <th>Why</th>
             </tr>
           </thead>
@@ -860,18 +882,18 @@ const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountPr
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>{r.action}</span>
                   </td>
                   <td className="whitespace-nowrap">
-                    {r.action === 'hold' ? pct(r.current_weight) : (
-                      <span><span className="font-medium">{qty.toLocaleString()} sh</span> <span className="text-[#6e6e73]">{pct(r.current_weight)} → {pct(r.target_weight)}</span></span>
+                    {r.action === 'hold' ? `${pct(r.current_weight)} of the account` : (
+                      <span><span className="font-medium">{qty.toLocaleString()} shares</span> <span className="text-[#6e6e73]">({pct(r.current_weight)} → {pct(r.target_weight)} of the account)</span></span>
                     )}
                   </td>
                   <td className="whitespace-nowrap text-xs text-[#6e6e73]">
                     {r.shares > 0 ? (
                       <>
-                        {r.shares} sh @ {money(r.entry_price ?? 0)}
+                        {r.shares} shares at {money(r.entry_price ?? 0)}
                         {r.pl_pct !== null && (
                           <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}> {r.pl_pct >= 0 ? '+' : ''}{(r.pl_pct * 100).toFixed(1)}%</span>
                         )}
-                        {r.last !== null && <div className={hit ? 'font-medium text-[#b42318]' : ''}>last {money(r.last)}{hit ? ' · STOP HIT' : trailing !== null ? ` · stop ${money(trailing)}` : ''}</div>}
+                        {r.last !== null && <div className={hit ? 'font-medium text-[#b42318]' : ''}>now {money(r.last)}{hit ? ' · below the stop: sell' : trailing !== null ? ` · stop ${money(trailing)}` : ''}</div>}
                       </>
                     ) : '—'}
                   </td>
@@ -882,12 +904,12 @@ const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountPr
                         <span className="ml-1 font-mono text-xs text-[#6e6e73]">#{r.rank ?? '—'}</span>
                       </>
                     ) : (
-                      <span className="text-xs text-[#6e6e73]">not rated</span>
+                      <span className="text-xs text-[#6e6e73]">not covered</span>
                     )}
                   </td>
                   <td className="whitespace-nowrap text-xs text-[#6e6e73]">
                     {r.leaves_if}
-                    {r.until_rebalance !== null && r.target_weight > 0 && <><br />next rebalance in {r.until_rebalance}</>}
+                    {r.until_rebalance !== null && r.target_weight > 0 && <><br />next grade check in {r.until_rebalance} trading day{r.until_rebalance === 1 ? '' : 's'}</>}
                   </td>
                   <td className="text-xs text-[#6e6e73]">
                     {r.in_book && <span className="font-mono text-[#1d1d1f]">{triggers(r.stances ?? {})} </span>}

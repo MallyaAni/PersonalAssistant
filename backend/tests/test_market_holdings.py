@@ -139,7 +139,7 @@ def test_board_against_the_persons_holdings():
     assert by["FTNT"]["grade"] == "B"
     assert by["FTNT"]["last"] == 80.0  # the record's close when the feed has none
     assert not by["IREN"]["in_book"]
-    assert by["IREN"]["why"].startswith("outside the book")
+    assert by["IREN"]["why"].startswith("the desk does not cover")
     assert by["IREN"]["pl_pct"] == pytest.approx(44.67 / 35.0 - 1.0)
     assert by["IREN"]["stops"] == {}
-    assert by["IREN"]["leaves_if"] == "outside the book"
+    assert by["IREN"]["leaves_if"].startswith("your call")

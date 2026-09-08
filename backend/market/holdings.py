@@ -133,7 +133,7 @@ def board(
                 "why": (
                     grade.get("headline", "")
                     if in_book
-                    else "outside the book: the desk does not rate this name"
+                    else "the desk does not cover this name, so it has no view on it"
                 ),
                 "reason": grade.get("reason", "") if in_book else "",
                 "target_weight": target,
@@ -152,12 +152,12 @@ def board(
                 "grade_margin": level.get("grade_margin"),
                 "until_rebalance": level.get("until_rebalance"),
                 "leaves_if": (
-                    "the grade falls below A at a rebalance"
+                    "sell when its grade drops below A"
                     if target > 0
                     else (
-                        "outside the book"
+                        "your call: the desk does not cover it"
                         if not in_book
-                        else "already outside the book"
+                        else "sell everything: it no longer earns an A"
                     )
                 ),
             }
