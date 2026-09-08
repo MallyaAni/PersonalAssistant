@@ -1,7 +1,28 @@
 # Next session
 
-Verified state as of 2026-09-07. `deep-matter.com` serves from spark1.
+Verified state as of 2026-09-08. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
+
+## 2026-09-08 — failed photo analyses are recovered so a picture's meaning always reaches memory (DEPLOYED `58d0cca`)
+
+Recurrence prevention for the bird-evening defect. The 09-05 fix stopped
+unaddressed room photos being dropped (`_observe_photos`), but a photo whose
+vision pass transiently fails is still stored with no meaning — exactly the
+"picture meaning never reached memory" failure the operator described. A new
+maintenance job `backend.cli.recover_vision_analysis` (service
+`vision-analysis-recovery`, maintenance profile, 12 h interval) re-inspects
+every ready upload with `analysis_status: failed` using the real VLM and
+rewrites the analysis and its embedding in place (`VisionAnalysisService.recover_analysis`).
+**Verified:** recovered the two existing failed uploads live (ani.mallya's
+08-25 photo and carolinecheatham's) — both now `analysis_status: ready` with
+an embedded `visual_artifact_analysis` semantic-memory row; unit tests added
+(11 in `test_vision_memory_indexing.py`, incl. failure-leaves-artifact-alone);
+unit gate 3233 passed; post-deploy `sweep_journeys OK` + `exercise_search_scenarios OK`.
+Recurrence-prevention stack for "photo meaning reaches memory" is now: room
+path stores/announces photos (`_observe_photos`), upload path stores+analyzes,
+failed analyses recovered within 12 h, momentary-state memory rule stops
+"i'm with gubacchi" being recorded as a person, and the naming feature binds
+user-given names to photos at upload.
 
 ## 2026-09-07 (end) — harness search identities are no longer capped like people (DEPLOYED `90c028d`)
 
