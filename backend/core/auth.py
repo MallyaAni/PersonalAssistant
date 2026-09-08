@@ -25,6 +25,13 @@ from backend.services.auth_service import AuthService
 # pool is still the real ceiling and bounds it like everyone else.
 HARNESS_DAILY_SEARCH_CAP = 10_000
 
+# Harness accounts are created on demand as ordinary guests, which leaves them
+# under the guest monthly allowance; a sweep that runs many journeys can spend
+# it in a few runs and then every search is refused for the rest of the month.
+# Treat a harness as an operator so it draws the operator monthly allowance -
+# still a share of the shared pool, which is the ceiling that actually runs out.
+HARNESS_MONTHLY_SEARCH_CAP = 2_000
+
 # Least-privilege scopes. A token may be restricted to a subset so a leaked or
 # narrowly-issued token cannot reach the whole account. A scope with a `parent`
 # below grants its children too, so `memory` implies read and write while
@@ -198,8 +205,12 @@ async def _bind_search_identity(db: AsyncSession, user_id: str) -> None:
         current_search_identity.set(
             SearchIdentity(
                 user_id=user_id,
-                is_operator=bool(account.is_admin),
-                monthly_limit=account.search_monthly_limit,
+                is_operator=bool(account.is_admin) or is_harness_id(user_id),
+                monthly_limit=(
+                    HARNESS_MONTHLY_SEARCH_CAP
+                    if is_harness_id(user_id)
+                    else account.search_monthly_limit
+                ),
                 daily_limit=(
                     HARNESS_DAILY_SEARCH_CAP
                     if is_harness_id(user_id)
