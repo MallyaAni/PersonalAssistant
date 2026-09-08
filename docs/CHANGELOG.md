@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - Opening orders queue as day orders; the auction order expired
+
+The paper book's first nine market-on-open orders went in as "opg"
+(auction) orders. At the open, eight expired unfilled and only SMCI
+filled: the paper venue fills an opg order only when its own feed prints
+an opening auction for the name. The reconciliation caught it (the
+rebalance clock is put back, so tonight's run re-submits the eight), and
+the order type is now a market order with time in force "day", submitted
+after the close and held by the broker until the next open, which fills
+at the first print: the price the execution study measured. `market_daily`
+refuses to submit while the market is open, so a day order cannot fill
+mid-session by accident. The client test asserts the order type.
+
 ## 2026-09-08 - The unit gate gets its own database
 
 Three deploys in a row failed the gate on three different queue tests

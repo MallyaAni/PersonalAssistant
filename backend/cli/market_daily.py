@@ -237,6 +237,59 @@ def _settled_rows(settled, panel) -> list[dict]:
     return rows
 
 
+# Send the plan: each order as a day order queued for the next open, and
+# what the broker said. Orders are day orders (see
+# `alpaca_trading.submit_market_on_open`), so submitting while the market
+# is open would fill them now, at whatever price, which is not the trade
+# that was measured. The nightly run is after the close; a run by hand
+# during the session is refused whole and told why.
+def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[str]]:
+    """Return (submitted rows, refusals) after sending `orders` when `live`."""
+    from backend.agents.trading.desk import paper
+    from backend.market import alpaca_trading
+
+    submitted: list[dict] = []
+    refused: list[str] = []
+    market_open = False
+    if live and orders:
+        try:
+            market_open = bool(client.clock().get("is_open"))
+        except alpaca_trading.AlpacaTradingError as exc:
+            print(f"  clock unavailable ({exc}); assuming the market is closed")
+    for order in orders:
+        line = f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
+        if not live:
+            print(line + "  [dry run]")
+            continue
+        if market_open:
+            refused.append(
+                f"{order.side} {order.symbol}: the market is open; "
+                "orders are queued for the next open after the close"
+            )
+            print(line + "  REFUSED: the market is open")
+            continue
+        try:
+            client.submit_market_on_open(
+                order.symbol,
+                order.qty,
+                order.side,
+                paper.order_id(session, order.symbol, order.side),
+            )
+            submitted.append(
+                {
+                    "symbol": order.symbol,
+                    "side": order.side,
+                    "qty": order.qty,
+                    "reason": order.reason,
+                }
+            )
+            print(line)
+        except alpaca_trading.AlpacaTradingError as exc:
+            refused.append(f"{order.side} {order.symbol}: {exc}")
+            print(line + f"  REFUSED: {exc}")
+    return submitted, refused
+
+
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Returns the day's entry for the desk record.
@@ -274,8 +327,6 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
         session, state, account.equity, held, prices, targets, grades
     )
     print(f"\npaper book ({what}), equity {account.equity:,.0f}:")
-    submitted = []
-    refused: list[str] = []
     # The plan is written down before a single order is sent, with the id
     # each one will carry. A crash between sending and recording then
     # leaves a record the next session can ask the broker about, rather
@@ -296,30 +347,7 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
         client.cancel_open_orders()
-    for order in orders:
-        line = f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
-        if not live:
-            print(line + "  [dry run]")
-            continue
-        try:
-            client.submit_market_on_open(
-                order.symbol,
-                order.qty,
-                order.side,
-                paper.order_id(session, order.symbol, order.side),
-            )
-            submitted.append(
-                {
-                    "symbol": order.symbol,
-                    "side": order.side,
-                    "qty": order.qty,
-                    "reason": order.reason,
-                }
-            )
-            print(line)
-        except alpaca_trading.AlpacaTradingError as exc:
-            refused.append(f"{order.side} {order.symbol}: {exc}")
-            print(line + f"  REFUSED: {exc}")
+    submitted, refused = _submit(client, orders, session, live)
     if not orders:
         print("  nothing to do")
     # A rebalance the broker would not take is not a rebalance. The clock

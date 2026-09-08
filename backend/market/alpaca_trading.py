@@ -143,10 +143,21 @@ class AlpacaTradingClient:
         self._call("DELETE", "/orders")
 
     # A whole-share market order for the next open.
+    # A market order queued for the open. It is submitted after the close
+    # with time in force "day", which the broker holds until the next
+    # session's open and fills there. It was "opg" (market-on-open, the
+    # auction order) until 2026-09-08, when eight of the desk's nine
+    # opening orders expired unfilled on the paper account and only SMCI
+    # filled: the paper venue fills an opg order only when its own feed
+    # prints an opening auction for the name, which for most names it does
+    # not. A day order queued before the open fills at the first print
+    # after it, which is the same price the execution study measured.
+    # `market_daily` refuses to submit while the market is open, so a day
+    # order can never fill mid-session by accident.
     def submit_market_on_open(
         self, symbol: str, qty: int, side: str, client_order_id: str | None = None
     ) -> dict[str, Any]:
-        """Submit a market-on-open order and return the order as accepted."""
+        """Submit a market order queued for the next open and return it as accepted."""
         if qty <= 0:
             raise AlpacaTradingError(f"{symbol}: quantity must be positive")
         if side not in ("buy", "sell"):
@@ -156,7 +167,7 @@ class AlpacaTradingClient:
             "qty": str(int(qty)),
             "side": side,
             "type": "market",
-            "time_in_force": "opg",
+            "time_in_force": "day",
         }
         # An id chosen before the request is what makes a crash between the
         # submission and the record recoverable: the next session can ask

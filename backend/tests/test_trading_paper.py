@@ -171,6 +171,10 @@ def test_client_requests(monkeypatch):
                 ).encode(),
             )
         if url.endswith("/orders") and method == "POST":
+            # Queued for the next open, not an auction order: on 2026-09-08
+            # eight of nine opg orders expired unfilled on the paper venue.
+            assert json.loads(body)["time_in_force"] == "day"
+            assert json.loads(body)["type"] == "market"
             return (
                 200,
                 json.dumps({"id": "o1", "symbol": json.loads(body)["symbol"]}).encode(),
@@ -191,7 +195,7 @@ def test_client_requests(monkeypatch):
         "qty": "5",
         "side": "buy",
         "type": "market",
-        "time_in_force": "opg",
+        "time_in_force": "day",
     }
     with pytest.raises(alpaca_trading.AlpacaTradingError):
         client.submit_market_on_open("SNDK", 0, "buy")
