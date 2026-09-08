@@ -213,10 +213,14 @@ def test_the_limit_context_is_reset_between_requests() -> None:
 
 
 @pytest.mark.asyncio
-async def test_a_harness_account_is_not_stopped_by_the_person_scale_daily_cap() -> None:
+async def test_a_harness_account_is_not_stopped_by_the_person_scale_allowance() -> None:
     from sqlalchemy import delete, text
 
-    from backend.core.auth import HARNESS_DAILY_SEARCH_CAP, _bind_search_identity
+    from backend.core.auth import (
+        HARNESS_DAILY_SEARCH_CAP,
+        HARNESS_MONTHLY_SEARCH_CAP,
+        _bind_search_identity,
+    )
     from backend.core.harness_identity import is_harness_id
     from backend.database.session import AsyncSessionLocal
     from backend.models.auth import UserAccount
@@ -228,7 +232,7 @@ async def test_a_harness_account_is_not_stopped_by_the_person_scale_daily_cap() 
         async with AsyncSessionLocal() as db:
             db.add_all(
                 [
-                    UserAccount(user_id=harness, username=harness, password_hash="x", is_admin=True, search_daily_limit=None),
+                    UserAccount(user_id=harness, username=harness, password_hash="x", is_admin=False, search_daily_limit=None),
                     UserAccount(user_id=person, username=person, password_hash="x", is_admin=True, search_daily_limit=17),
                 ]
             )
@@ -237,8 +241,12 @@ async def test_a_harness_account_is_not_stopped_by_the_person_scale_daily_cap() 
             try:
                 await _bind_search_identity(db, harness)
                 assert current_search_identity.get() is not None
+                assert current_search_identity.get().is_operator is True
+                assert current_search_identity.get().monthly_limit == HARNESS_MONTHLY_SEARCH_CAP
                 assert current_search_identity.get().daily_limit == HARNESS_DAILY_SEARCH_CAP
                 await _bind_search_identity(db, person)
+                assert current_search_identity.get().is_operator is True
+                assert current_search_identity.get().monthly_limit is None
                 assert current_search_identity.get().daily_limit == 17
             finally:
                 current_search_identity.reset(token)
