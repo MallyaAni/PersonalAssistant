@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { getDesk, getDeskLive, type DeskAction, type DeskLive, type DeskPayload } from '../../services/api'
+import {
+  getDesk,
+  getDeskHoldings,
+  getDeskLive,
+  getDeskMine,
+  putDeskHoldings,
+  type DeskAction,
+  type DeskHolding,
+  type DeskLive,
+  type DeskMineRow,
+  type DeskPayload,
+} from '../../services/api'
 
 interface DeskPanelProps {
   userId: string
@@ -84,6 +95,9 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
   const [stops, setStops] = useState<boolean>(readStops())
   const [details, setDetails] = useState(false)
+  const [holdings, setHoldings] = useState<DeskHolding[]>([])
+  const [mine, setMine] = useState<DeskMineRow[]>([])
+  const [holdingsError, setHoldingsError] = useState('')
   const [openReason, setOpenReason] = useState<string | null>(null)
 
   const load = async () => {
@@ -116,6 +130,35 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
     const timer = window.setInterval(() => void poll(), CANDLE_MS)
     return () => window.clearInterval(timer)
   }, [userId])
+
+  // The person's own positions, and the board against them at the equity
+  // typed in, refreshed with the candle.
+  useEffect(() => {
+    void (async () => {
+      try {
+        setHoldings(await getDeskHoldings(userId))
+      } catch {
+        // none saved yet
+      }
+    })()
+  }, [userId])
+  const equityForMine = equity ?? payload?.latest?.paper?.equity ?? 100000
+  useEffect(() => {
+    if (holdings.length === 0) {
+      setMine([])
+      return
+    }
+    const poll = async () => {
+      try {
+        setMine(await getDeskMine(userId, equityForMine))
+      } catch {
+        // the paper board stands
+      }
+    }
+    void poll()
+    const timer = window.setInterval(() => void poll(), CANDLE_MS)
+    return () => window.clearInterval(timer)
+  }, [userId, holdings, equityForMine])
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
@@ -201,6 +244,22 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           onReason={(ticker) => setOpenReason(openReason === ticker ? null : ticker)}
         />
       )}
+
+      <MyAccount
+        holdings={holdings}
+        rows={mine}
+        equity={equityForMine}
+        stops={stops}
+        error={holdingsError}
+        onSave={async (rows) => {
+          try {
+            setHoldings(await putDeskHoldings(userId, rows))
+            setHoldingsError('')
+          } catch (err) {
+            setHoldingsError(err instanceof Error ? err.message : 'The holdings were not saved.')
+          }
+        }}
+      />
 
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
         <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">Regime</h3>
@@ -628,6 +687,172 @@ const ActionBoard = ({ actions, equity, onEquity, untilRebalance, live, stops, o
         rise a 12% stop cut the worst tenth from &minus;25% to &minus;16% and the average from
         +9% to +4%. Switch them on if your size needs the tail cut.
       </p>
+    </section>
+  )
+}
+
+interface MyAccountProps {
+  holdings: DeskHolding[]
+  rows: DeskMineRow[]
+  equity: number
+  stops: boolean
+  error: string
+  onSave: (rows: DeskHolding[]) => Promise<void>
+}
+
+// The person's own account: the positions they typed in, and the board
+// against them. Sells and trims first, then buys and adds, then holds; a
+// name the desk does not rate keeps its row with the risk facts and
+// "outside the book", so the exit question is answered for it too.
+const parsePasted = (text: string): { rows: DeskHolding[]; skipped: string[] } => {
+  const today = new Date().toISOString().slice(0, 10)
+  const rows: DeskHolding[] = []
+  const skipped: string[] = []
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line) continue
+    const parts = line.split(/[\s,;\t]+/).map((p) => p.replace(/[$"]/g, ''))
+    const ticker = (parts[0] ?? '').toUpperCase()
+    const numbers = parts.slice(1).filter((p) => /^-?\d+(\.\d+)?$/.test(p)).map(Number)
+    const date = parts.slice(1).find((p) => /^\d{4}-\d{2}-\d{2}$/.test(p))
+    if (!/^[A-Z][A-Z0-9.-]{0,7}$/.test(ticker) || numbers.length < 2 || numbers[0] <= 0 || numbers[1] <= 0) {
+      skipped.push(line)
+      continue
+    }
+    rows.push({ ticker, shares: numbers[0], entry_price: numbers[1], entry_date: date ?? today })
+  }
+  return { rows, skipped }
+}
+
+const MyAccount = ({ holdings, rows, equity, stops, error, onSave }: MyAccountProps) => {
+  const [draft, setDraft] = useState<DeskHolding[]>(holdings)
+  const [editing, setEditing] = useState(holdings.length === 0)
+  const [pasted, setPasted] = useState('')
+  const [skipped, setSkipped] = useState<string[]>([])
+  useEffect(() => {
+    setDraft(holdings)
+    if (holdings.length > 0) setEditing(false)
+  }, [holdings])
+  const update = (i: number, key: keyof DeskHolding, value: string) =>
+    setDraft(draft.map((h, j) => (j === i ? { ...h, [key]: key === 'ticker' || key === 'entry_date' ? value : Number(value) } : h)))
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-3">
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Your account</h3>
+        <button type="button" onClick={() => setEditing(!editing)} className="text-xs text-[#0071e3] hover:underline">
+          {editing ? 'done' : 'edit positions'}
+        </button>
+      </div>
+      {editing && (
+        <div className="mb-3 space-y-2 text-sm">
+          {draft.map((h, i) => (
+            <div key={i} className="flex flex-wrap items-center gap-2">
+              <input value={h.ticker} onChange={(e) => update(i, 'ticker', e.target.value)} placeholder="ticker" className="w-20 rounded-md border border-black/[0.12] px-2 py-1" />
+              <input type="number" value={h.shares} onChange={(e) => update(i, 'shares', e.target.value)} placeholder="shares" className="w-24 rounded-md border border-black/[0.12] px-2 py-1" />
+              <input type="number" value={h.entry_price} onChange={(e) => update(i, 'entry_price', e.target.value)} placeholder="entry price" className="w-28 rounded-md border border-black/[0.12] px-2 py-1" />
+              <input type="date" value={h.entry_date} onChange={(e) => update(i, 'entry_date', e.target.value)} className="rounded-md border border-black/[0.12] px-2 py-1" />
+              <button type="button" onClick={() => setDraft(draft.filter((_, j) => j !== i))} className="text-xs text-[#b42318] hover:underline">remove</button>
+            </div>
+          ))}
+          <div className="space-y-1">
+            <textarea
+              value={pasted}
+              onChange={(e) => setPasted(e.target.value)}
+              placeholder={'or paste, one per line: ticker shares cost [date]\nIREN 100 35.20 2026-08-28'}
+              rows={3}
+              className="w-full rounded-md border border-black/[0.12] px-2 py-1 font-mono text-xs"
+            />
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const parsed = parsePasted(pasted)
+                  const kept = draft.filter((h) => !parsed.rows.some((r) => r.ticker === h.ticker.toUpperCase()))
+                  setDraft([...kept, ...parsed.rows])
+                  setSkipped(parsed.skipped)
+                  if (parsed.rows.length > 0) setPasted('')
+                }}
+                className="text-xs text-[#0071e3] hover:underline"
+              >
+                add pasted lines
+              </button>
+              {skipped.length > 0 && <span className="text-xs text-[#b42318]">could not read: {skipped.join(' | ')}</span>}
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setDraft([...draft, { ticker: '', shares: 0, entry_price: 0, entry_date: new Date().toISOString().slice(0, 10) }])} className="text-xs text-[#0071e3] hover:underline">add a position</button>
+            <button type="button" onClick={() => void onSave(draft)} className="rounded-full bg-[#1d1d1f] px-3 py-1 text-xs text-white">save</button>
+          </div>
+          {error && <p className="text-xs text-[#b42318]">{error}</p>}
+        </div>
+      )}
+      {holdings.length === 0 && !editing && (
+        <p className="text-sm text-[#6e6e73]">No positions saved. Add what you hold and the board is computed against it.</p>
+      )}
+      {rows.length > 0 && (
+        <table className="w-full text-sm">
+          <thead className="text-left text-[#6e6e73]">
+            <tr>
+              <th className="py-1">Name</th>
+              <th>Do</th>
+              <th>Size</th>
+              <th>Yours</th>
+              <th>Grade</th>
+              <th>Exit plan</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const qty = r.last && r.last > 0 ? Math.round((Math.abs(r.delta_weight) * equity) / r.last) : 0
+              const trailing = stops && r.high_20 && r.last ? Math.max(r.high_20, r.last) * 0.88 : null
+              const hit = trailing !== null && r.last !== null && r.last <= trailing
+              return (
+                <tr key={r.ticker} className="border-t border-black/[0.05] align-top">
+                  <td className="py-1.5 font-medium">{r.ticker}</td>
+                  <td>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>{r.action}</span>
+                  </td>
+                  <td className="whitespace-nowrap">
+                    {r.action === 'hold' ? pct(r.current_weight) : (
+                      <span><span className="font-medium">{qty.toLocaleString()} sh</span> <span className="text-[#6e6e73]">{pct(r.current_weight)} → {pct(r.target_weight)}</span></span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap text-xs text-[#6e6e73]">
+                    {r.shares > 0 ? (
+                      <>
+                        {r.shares} sh @ {money(r.entry_price ?? 0)}
+                        {r.pl_pct !== null && (
+                          <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}> {r.pl_pct >= 0 ? '+' : ''}{(r.pl_pct * 100).toFixed(1)}%</span>
+                        )}
+                        {r.last !== null && <div className={hit ? 'font-medium text-[#b42318]' : ''}>last {money(r.last)}{hit ? ' · STOP HIT' : trailing !== null ? ` · stop ${money(trailing)}` : ''}</div>}
+                      </>
+                    ) : '—'}
+                  </td>
+                  <td className="whitespace-nowrap">
+                    {r.in_book ? (
+                      <>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade] ?? ''}`}>{r.grade}</span>
+                        <span className="ml-1 font-mono text-xs text-[#6e6e73]">#{r.rank ?? '—'}</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-[#6e6e73]">not rated</span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap text-xs text-[#6e6e73]">
+                    {r.leaves_if}
+                    {r.until_rebalance !== null && r.target_weight > 0 && <><br />next rebalance in {r.until_rebalance}</>}
+                  </td>
+                  <td className="text-xs text-[#6e6e73]">
+                    {r.in_book && <span className="font-mono text-[#1d1d1f]">{triggers(r.stances ?? {})} </span>}
+                    {r.why}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
     </section>
   )
 }

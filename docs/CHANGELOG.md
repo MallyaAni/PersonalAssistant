@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The board against the person's own account
+
+The desk's action board was computed against the paper account, and the
+person trades their own. The dashboard now has a "Your account" section:
+positions are typed in or pasted (ticker, shares, cost, optional date),
+saved beside the desk records through `PUT /desk/holdings`, and
+`GET /desk/mine?equity=` computes every action row against them: sell,
+trim, add, buy or hold with the share count at the live candle, the
+person's entry and P&L, the exit plan, and the stop levels when the toggle
+is on. A name the desk does not rate keeps its row marked outside the book
+so the exit question is answered for it too. The nightly record now
+carries levels (close, twenty-session high, stops, grade margin, rank) for
+every book name, targeted or not, so a held name outside the targets is
+still sized. Tests: `backend/tests/test_market_holdings.py` and the desk
+API test. Nothing here reads or touches a brokerage account.
+
 ## 2026-09-07 - The analyst weights go back to equal: the walk-forward test
 
 A review named the morning's weight adoption development evidence, since the

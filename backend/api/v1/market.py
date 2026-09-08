@@ -11,12 +11,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import Path as PathParam
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
-from backend.market import alpaca, deskrecord, live_quotes
+from backend.market import alpaca, deskrecord, holdings, live_quotes
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -77,6 +77,58 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
         "user_id": user_id,
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
         "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
+    }
+
+
+# The person's own positions, kept beside the records and never touched
+# by the nightly run. PUT replaces the list; a bad row is refused whole.
+@router.get("/desk/holdings")
+async def desk_holdings(user_id: UserId) -> dict[str, object]:
+    """Return the saved holdings."""
+    _operator_only(user_id)
+    rows = holdings.load(_root())
+    return {"user_id": user_id, "holdings": [h.__dict__ for h in rows]}
+
+
+@router.put("/desk/holdings")
+async def desk_save_holdings(user_id: UserId, rows: list[dict]) -> dict[str, object]:
+    """Replace the saved holdings with `rows`."""
+    _operator_only(user_id)
+    try:
+        parsed = holdings.parse(rows)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    holdings.save(_root(), parsed)
+    return {"user_id": user_id, "holdings": [h.__dict__ for h in parsed]}
+
+
+# The board against the person's own holdings at the equity given: the
+# latest record's targets and levels, the live candle where the feed has
+# one, and the person's entry beside each name they hold.
+@router.get("/desk/mine")
+async def desk_mine(
+    user_id: UserId, equity: float = Query(..., gt=0)
+) -> dict[str, object]:
+    """Return action rows computed against the saved holdings."""
+    _operator_only(user_id)
+    latest, _previous = deskrecord.latest_pair(_root())
+    rows = holdings.load(_root())
+    if latest is None:
+        return {"user_id": user_id, "session": None, "rows": []}
+    symbols = sorted(
+        {h.ticker for h in rows} | {r["ticker"] for r in latest.get("book") or []}
+    )
+    quotes: dict = {}
+    try:
+        found = live_quotes.quotes(symbols, headers=alpaca.credentials())
+        quotes = {s: asdict(q) for s, q in found.items()}
+    except alpaca.AlpacaUnavailableError:
+        pass
+    return {
+        "user_id": user_id,
+        "session": latest.get("session"),
+        "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+        "rows": holdings.board(latest, rows, equity, quotes),
     }
 
 

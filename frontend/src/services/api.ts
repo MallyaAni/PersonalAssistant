@@ -1972,6 +1972,68 @@ export interface DeskLive {
   reason?: string;
 }
 
+// The person's own positions, kept beside the records, and the board
+// computed against them at a given equity.
+export interface DeskHolding {
+  ticker: string;
+  shares: number;
+  entry_price: number;
+  entry_date: string;
+}
+export interface DeskMineRow {
+  ticker: string;
+  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold';
+  in_book: boolean;
+  grade: string;
+  rank: number | null;
+  score: number | null;
+  stances: Record<string, number>;
+  why: string;
+  reason: string;
+  target_weight: number;
+  current_weight: number;
+  delta_weight: number;
+  shares: number;
+  entry_price: number | null;
+  entry_date: string | null;
+  last: number | null;
+  pl_pct: number | null;
+  last_close: number | null;
+  high_20: number | null;
+  stops: Record<string, number>;
+  grade_margin: number | null;
+  until_rebalance: number | null;
+  leaves_if: string;
+}
+
+export const getDeskHoldings = async (userId: string): Promise<DeskHolding[]> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/holdings`,
+  );
+  if (!response.ok) return [];
+  return ((await response.json()) as { holdings: DeskHolding[] }).holdings;
+};
+
+export const putDeskHoldings = async (userId: string, rows: DeskHolding[]): Promise<DeskHolding[]> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/holdings`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rows) },
+  );
+  if (!response.ok) {
+    const detail = (await response.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(detail.detail ?? 'The holdings were not saved.');
+  }
+  return ((await response.json()) as { holdings: DeskHolding[] }).holdings;
+};
+
+export const getDeskMine = async (userId: string, equity: number): Promise<DeskMineRow[]> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/mine?equity=${encodeURIComponent(equity)}`,
+  );
+  if (!response.ok) return [];
+  return ((await response.json()) as { rows: DeskMineRow[] }).rows;
+};
+
 export const getDeskLive = async (userId: string): Promise<DeskLive> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live`,

@@ -120,3 +120,60 @@ async def test_a_user_who_is_not_the_operator_is_refused_with_their_own_token(
             headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code == 403, response.text
+
+
+# The person's own positions round-trip through the API, a bad row is
+# refused whole, and the board against them says what to do with each
+# name held or targeted, the name the desk does not rate included.
+@pytest.mark.asyncio
+async def test_holdings_are_saved_and_the_board_is_computed_against_them(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-04", {"SNDK": "A+", "MU": "B"}, [("SNDK", 0.08)], [])
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    auth = {"Authorization": f"Bearer {token}"}
+    rows = [
+        {
+            "ticker": "mu",
+            "shares": 10,
+            "entry_price": 100.0,
+            "entry_date": "2026-09-01",
+        },
+        {
+            "ticker": "IREN",
+            "shares": 100,
+            "entry_price": 35.0,
+            "entry_date": "2026-08-28",
+        },
+    ]
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        before = await client.get(
+            "/api/v1/market/desk_user/desk/holdings", headers=auth
+        )
+        saved = await client.put(
+            "/api/v1/market/desk_user/desk/holdings", json=rows, headers=auth
+        )
+        bad = await client.put(
+            "/api/v1/market/desk_user/desk/holdings",
+            json=[{"ticker": "MU", "shares": 0, "entry_price": 1, "entry_date": "x"}],
+            headers=auth,
+        )
+        mine = await client.get(
+            "/api/v1/market/desk_user/desk/mine", params={"equity": 10000}, headers=auth
+        )
+    assert before.json()["holdings"] == []
+    assert [h["ticker"] for h in saved.json()["holdings"]] == ["MU", "IREN"]
+    assert bad.status_code == 422
+    assert "positive" in bad.json()["detail"]
+    board = {r["ticker"]: r for r in mine.json()["rows"]}
+    assert mine.json()["session"] == "2026-09-04"
+    assert board["SNDK"]["action"] == "buy"
+    assert board["MU"]["action"] == "sell"
+    assert board["MU"]["grade"] == "B"
+    assert board["IREN"]["action"] == "sell"
+    assert not board["IREN"]["in_book"]
+    assert board["IREN"]["shares"] == 100
