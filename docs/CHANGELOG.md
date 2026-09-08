@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - The second valuation analyst, measured: the current one stands
+
+Trailing four consecutive filed quarters (`levels_pit.ttm_series`,
+point in time), the multiple against the name's own three years
+(`valuation.own_history_rank`), sub-industry peers with a fallback to
+the side (`valuation.fine_groups`), and a second analyst
+(`value.opine_v2`) blending any of five legs. Measured on the book
+(`backend/cli/market_valuation.py`): own history is worth nothing, finer
+peers no better than the side, and the growth-adjusted trailing multiple
+the best leg in sample (IC +0.049, t 3.7). Walk-forward the choice is a
+wash (+0.037 vs +0.034), and the book with it earns +33.6% against the
+rule's +31.8% at higher volatility, which is +33.9% at the same
+volatility. The current analyst stands. Tests cover the trailing sum,
+the history rank and the peer groups.
+
 ## 2026-09-08 - The board in grade order, re-read every candle
 
 The board is sorted best grade first instead of by action, and the

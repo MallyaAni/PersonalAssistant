@@ -76,6 +76,57 @@ def multiples(
     return Multiples(ps, pe, pb, psg, cap)
 
 
+# Where a name's multiple sits in its own history: the share of its known
+# readings over the trailing `window` sessions that lie below today's, so
+# 0 is the cheapest the name has been in three years and 1 the richest.
+# NaN until `min_known` readings exist. Point in time by construction.
+def own_history_rank(
+    values: np.ndarray, window: int = 756, min_known: int = 250
+) -> np.ndarray:
+    """Return (T, N) percentile of each value within its own trailing window."""
+    rows, cols = values.shape
+    out = np.full(values.shape, np.nan)
+    for j in range(cols):
+        col = values[:, j]
+        for t in range(rows):
+            now = col[t]
+            if not np.isfinite(now):
+                continue
+            past = col[max(0, t - window + 1) : t + 1]
+            known = past[np.isfinite(past)]
+            if len(known) < min_known:
+                continue
+            out[t, j] = float((known < now).mean() + 0.5 * (known == now).mean())
+    return out
+
+
+# Peer groups from the universe's sub-industries where a sub-industry has
+# `min_peers` names in the panel, else the side of the book, so every
+# name is compared with the closest set that is big enough to compare
+# against.
+def fine_groups(
+    panel: Panel,
+    sides: dict[str, str],
+    sub_industry: dict[str, str],
+    min_peers: int = 3,
+) -> np.ndarray:
+    """Return (N,) group ids: sub-industry when populous, else the side; -1 none."""
+    counts: dict[str, int] = {}
+    for ticker in panel.tickers:
+        key = sub_industry.get(ticker) or ""
+        if key:
+            counts[key] = counts.get(key, 0) + 1
+    labels = []
+    for ticker in panel.tickers:
+        key = sub_industry.get(ticker) or ""
+        if key and counts.get(key, 0) >= min_peers:
+            labels.append(key)
+        else:
+            labels.append(sides.get(ticker, ""))
+    ids = {label: i for i, label in enumerate(sorted(set(labels) - {""}))}
+    return np.array([ids.get(label, -1) for label in labels])
+
+
 # Each name's value minus the median of the same value among the names
 # sharing its group on that session. A group with fewer than `MIN_PEERS`
 # known values gives no opinion.

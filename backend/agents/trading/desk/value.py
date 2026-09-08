@@ -60,3 +60,81 @@ def opine(
     evidence["cheap_vs_side"] = -valuation.relative_to_group(ratios.get(SCORED), peers)
     evidence["market_cap"] = ratios.market_cap
     return Opinion(NAME, scores, evidence)
+
+
+# The second valuation analyst: trailing four quarters, own history and
+# finer peers. Each leg is a cheapness (higher is cheaper) known at the
+# close; the score is the rank blend of the legs named in `legs`, and
+# every leg is cited so a measurement can pick the set that earns its
+# place (`backend/cli/market_valuation.py`).
+LEGS_V2 = (
+    "cheap_vs_side",
+    "cheap_vs_peers",
+    "cheap_vs_history",
+    "cheap_earnings",
+    "cheap_for_growth",
+)
+
+
+def opine_v2(
+    panel: Panel,
+    trailing: dict[str, np.ndarray],
+    sides: dict[str, str],
+    groups: np.ndarray | None = None,
+    legs: tuple[str, ...] = LEGS_V2,
+    size_neutral: bool = True,
+) -> Opinion:
+    """Return the second valuation analyst's Opinion from trailing levels."""
+    from backend.market import baselines
+
+    ratios = valuation.multiples(
+        panel,
+        trailing["revenue"],
+        trailing["earnings"],
+        trailing["equity"],
+        trailing["shares"],
+        trailing["revenue_growth"],
+    )
+    side_groups = valuation.groups_from(panel, sides)
+    peer_groups = side_groups
+    if groups is not None:
+        groups = np.asarray(groups)
+        peer_groups = (
+            np.broadcast_to(groups[None, :], side_groups.shape)
+            if groups.ndim == 1
+            else groups
+        )
+    eligible = np.array([t in sides for t in panel.tickers])
+    ps = ratios.get("price_sales")
+    with np.errstate(all="ignore"):
+        cheap_side = valuation.cheapness(
+            ps,
+            side_groups,
+            cap=ratios.market_cap,
+            eligible=eligible,
+            size_neutral=size_neutral,
+        )
+        history = valuation.own_history_rank(ps)
+        # Growth the price requires above the side, per year for five
+        # years, for the multiple to come back to the side's: cited.
+        implied = np.exp(valuation.relative_to_group(ps, side_groups) / 5.0) - 1.0
+    evidence = {
+        "cheap_vs_side": cheap_side,
+        "cheap_vs_peers": -valuation.relative_to_group(ps, peer_groups),
+        "cheap_vs_history": -history,
+        "cheap_earnings": -valuation.relative_to_group(
+            ratios.get("price_earnings"), side_groups
+        ),
+        "cheap_for_growth": -valuation.relative_to_group(
+            ratios.get("price_sales_growth"), side_groups
+        ),
+        "price_sales": ps,
+        "price_earnings": ratios.get("price_earnings"),
+        "price_book": ratios.get("price_book"),
+        "price_sales_growth": ratios.get("price_sales_growth"),
+        "implied_growth_vs_side": implied,
+        "market_cap": ratios.market_cap,
+    }
+    scores = baselines.rank_blend(*[evidence[name] for name in legs])
+    scores = np.where(eligible[None, :], scores, np.nan)
+    return Opinion(NAME, scores, evidence)
