@@ -7,6 +7,14 @@
 #   bash scripts/deploy.sh --skip-post  # ship without the post-deploy sweep and harness
 #   bash scripts/deploy.sh --wait-post  # wait for the sweep instead of detaching it
 #
+# A change that touches nothing the backend runs - the frontend, docs - takes
+# the short path (2026-09-08): no unit suite, no routing gate, no backup, no
+# migration, just the rebuild of the images it touched and the restart.
+# Those gates guard backend regressions and model routing, which a
+# frontend-only diff cannot change; the frontend's own type check runs in
+# its image build. Before this every deploy took the full fifteen minutes
+# and a wording change waited on a hundred model calls.
+#
 # This is the only deploy path. `docker compose up --build` by hand skips
 # every check below, and on 2026-08-26 a build shipped that way had a
 # seven-test regression sitting unnoticed among what looked like stale
@@ -115,6 +123,17 @@ else
     step "Building"
     "${compose[@]}" build "${services[@]}"
 fi
+# The short path: a known diff that touches nothing the backend runs.
+# Anything under these paths is backend code, its dependencies, the
+# schema, the compose file, the scripts the gate reads, or a file a
+# backend test holds to the checkout; everything else (frontend/, docs/)
+# cannot change what the gates measure.
+backend_paths='^(backend/|requirements|pyproject|Dockerfile|migrations/|docker-compose|scripts/|prompts/|skills/|bridges/|deploy/|\.env\.example)'
+frontend_only=false
+if [[ -n "$changed" ]] && ! grep -qE "$backend_paths" <<<"$changed"; then
+    frontend_only=true
+    echo "no backend change in $before..$after: taking the short path (no gate, no backup, no migration)"
+fi
 
 step "Gating"
 # Before the backup and the migration on purpose: a failing gate at this point
@@ -122,7 +141,9 @@ step "Gating"
 # --skip-gate exists because a model gate can flake and the public URL has real
 # users; a hotfix that cannot ship is a worse outage than the regression this
 # guards against.
-if $gate; then
+if $frontend_only; then
+    echo "frontend-only change; the gates measure nothing it can affect"
+elif $gate; then
     # The whole unit suite first: it is a minute, and it is where a
     # regression in a "done" item shows up before any model is asked.
     if ! bash "$root/scripts/gate.sh" --unit; then
@@ -139,6 +160,10 @@ else
     echo "WARNING: unit suite and routing gate skipped by request"
 fi
 
+if $frontend_only; then
+    step "Backup and migrations"
+    echo "frontend-only change; the schema is untouched"
+else
 step "Backing up before touching the schema"
 bash "$root/scripts/backup-db.sh"
 
@@ -149,6 +174,7 @@ if ! "${compose[@]}" run --rm -e POSTGRES_HOST=db \
     backend python -m alembic upgrade head; then
     echo "Migration failed; the running system was left on the previous code." >&2
     exit 1
+fi
 fi
 
 step "Restarting"

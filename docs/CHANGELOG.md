@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - Deploys take the short path for frontend-only changes
+
+Every deploy ran the unit suite, the routing gate, a backup and the
+migrations, fifteen minutes for a wording change. `scripts/deploy.sh`
+now checks the diff between the running commit and the new one: when
+nothing under the backend, its dependencies, the schema, the compose
+file, the gate's scripts or the prompt and skill trees changed, it
+rebuilds only the images the diff touched and restarts, with no gate,
+backup or migration. The gates guard backend regressions and model
+routing, which a frontend-only diff cannot change; the frontend's type
+check runs in its image build. A diff that cannot be read (no running
+commit on record) still takes the full path.
+
 ## 2026-09-08 - Opening orders queue as day orders; the auction order expired
 
 The paper book's first nine market-on-open orders went in as "opg"
