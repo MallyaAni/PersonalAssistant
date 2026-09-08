@@ -88,130 +88,136 @@ LABELS: dict[str, str] = {
 }
 
 # The release reader's fields, as the thing the release spoke about. A
-# reading is -1, 0 or +1, so it is said as downbeat, silent or upbeat.
+# reading is -1, 0 or +1: downbeat, silent or upbeat.
 TONE_SUBJECT: dict[str, str] = {
     "tone_guidance": "guidance",
     "tone_demand": "demand",
     "tone_pricing": "pricing",
-    "tone_capex": "capital spending",
+    "tone_capex": "capex",
 }
 TONE_CHANGE: dict[str, str] = {
-    "tone_guidance_change": "guidance",
-    "tone_demand_change": "demand",
+    "tone_guidance_change": "guidance tone",
+    "tone_demand_change": "demand tone",
 }
 # Readings that are a state, not a size: -1, 0 or +1.
 FLAG_WORDS: dict[str, tuple[str, str, str]] = {
-    "weekly_trend": (
-        "its weekly trend is down",
-        "its weekly trend is flat",
-        "its weekly trend is up",
-    ),
-    "daily_trend": (
-        "its daily trend is down",
-        "its daily trend is flat",
-        "its daily trend is up",
-    ),
-    "stack_order": (
-        "its moving averages are stacked for a downtrend",
-        "its moving averages are mixed",
-        "its moving averages are stacked for an uptrend",
-    ),
+    "weekly_trend": ("weekly trend down", "weekly trend flat", "weekly trend up"),
+    "daily_trend": ("daily trend down", "daily trend flat", "daily trend up"),
+    "stack_order": ("averages stacked down", "averages mixed", "averages stacked up"),
     "weekly_stack": (
-        "its weekly averages are stacked for a downtrend",
-        "its weekly averages are mixed",
-        "its weekly averages are stacked for an uptrend",
+        "weekly averages stacked down",
+        "weekly averages mixed",
+        "weekly averages stacked up",
     ),
     "converging_21_50": (
-        "its 21-day average is turning down toward its 50-day",
-        "its 21- and 50-day averages are not converging",
-        "its 21-day average is turning up toward its 50-day",
+        "21-day turning down to 50-day",
+        "21/50 not converging",
+        "21-day turning up to 50-day",
     ),
 }
-# Distances from a level: said as where it sits against the book.
+# Distances and rates: said as where the name sits against the book,
+# (below most of the book, about the book, above most of the book).
 DISTANCE_WORDS: dict[str, tuple[str, str, str]] = {
     "high_52w_distance": (
-        "it sits farther below its 52-week high than most of the book",
-        "it sits about as far below its 52-week high as the book",
-        "it sits closer to its 52-week high than most of the book",
+        "far below 52-week high",
+        "mid-way to 52-week high",
+        "near 52-week high",
     ),
     "low_52w_distance": (
-        "it sits closer to its 52-week low than most of the book",
-        "it sits about as far above its 52-week low as the book",
-        "it sits farther above its 52-week low than most of the book",
+        "near 52-week low",
+        "mid-way off 52-week low",
+        "far above 52-week low",
     ),
     "ema21_distance": (
-        "it sits further below its 21-day average than most of the book",
-        "it sits near its 21-day average, like most of the book",
-        "it sits further above its 21-day average than most of the book",
+        "well below 21-day avg",
+        "at 21-day avg",
+        "well above 21-day avg",
     ),
     "ema50_distance": (
-        "it sits further below its 50-day average than most of the book",
-        "it sits near its 50-day average, like most of the book",
-        "it sits further above its 50-day average than most of the book",
+        "well below 50-day avg",
+        "at 50-day avg",
+        "well above 50-day avg",
     ),
     "ema200_distance": (
-        "it sits further below its 200-day average than most of the book",
-        "it sits near its 200-day average, like most of the book",
-        "it sits further above its 200-day average than most of the book",
+        "well below 200-day avg",
+        "at 200-day avg",
+        "well above 200-day avg",
     ),
     "sma200_distance": (
-        "it sits further below its 200-day simple average than most of the book",
-        "it sits near its 200-day simple average, like most of the book",
-        "it sits further above its 200-day simple average than most of the book",
+        "well below 200-day avg",
+        "at 200-day avg",
+        "well above 200-day avg",
     ),
     "support_distance": (
-        "it sits closer to support than most of the book",
-        "it sits about as far from support as the book",
-        "it is stretched further from support than most of the book",
+        "at support",
+        "normal distance to support",
+        "stretched from support",
     ),
     "resistance_distance": (
-        "it sits closer to resistance than most of the book",
-        "it sits about as far from resistance as the book",
-        "it has more room to resistance than most of the book",
+        "at resistance",
+        "normal room to resistance",
+        "room to resistance",
     ),
     "spread_21_50": (
-        "its 21-day average sits further below its 50-day than most of the book",
-        "its 21- and 50-day averages sit about as close as the book's",
-        "its 21-day average sits further above its 50-day than most of the book",
+        "21-day well below 50-day",
+        "21/50 close",
+        "21-day well above 50-day",
     ),
     "range_position_60": (
-        "it sits near the bottom of its 60-day range",
-        "it sits in the middle of its 60-day range",
-        "it sits near the top of its 60-day range",
+        "bottom of 60-day range",
+        "middle of 60-day range",
+        "top of 60-day range",
     ),
     "residual_momentum_120": (
-        "its six-month momentum, with the market's part removed, "
-        "is among the weakest in the book",
-        "its six-month momentum, with the market's part removed, is about the book's",
-        "its six-month momentum, with the market's part removed, "
-        "is among the strongest in the book",
+        "6-month momentum weakest",
+        "6-month momentum average",
+        "6-month momentum strongest",
     ),
     "ema21_slope": (
-        "its 21-day average is falling faster than most of the book",
-        "its 21-day average is moving about like the book's",
-        "its 21-day average is rising faster than most of the book",
+        "21-day avg falling fast",
+        "21-day avg flat",
+        "21-day avg rising fast",
     ),
     "ema50_slope": (
-        "its 50-day average is falling faster than most of the book",
-        "its 50-day average is moving about like the book's",
-        "its 50-day average is rising faster than most of the book",
+        "50-day avg falling fast",
+        "50-day avg flat",
+        "50-day avg rising fast",
     ),
     "spread_21_50_slope": (
-        "the gap between its 21- and 50-day averages "
-        "is closing faster than most of the book",
-        "the gap between its 21- and 50-day averages is moving about like the book's",
-        "the gap between its 21- and 50-day averages "
-        "is opening faster than most of the book",
+        "21/50 gap closing fast",
+        "21/50 gap steady",
+        "21/50 gap opening fast",
     ),
+}
+# Short names for the sizes placed in the book.
+SHORT: dict[str, str] = {
+    "revenue_yoy": "revenue growth",
+    "revenue_qoq": "quarterly revenue growth",
+    "gross_margin": "gross margin",
+    "revenue_acceleration": "revenue acceleration",
+    "eps_change_yoy": "earnings growth",
+    "net_margin": "net margin",
+    "capex_to_revenue": "capex/revenue",
+    "share_issuance": "share issuance",
+    "asset_growth": "asset growth",
+    "book_to_market": "book/market",
+    "reward_risk": "reward/risk to levels",
+    "confluence": "timeframes agreeing",
+    "price_sales": "price/sales",
+    "price_earnings": "price/earnings",
+    "price_book": "price/book",
+    "price_sales_growth": "growth-adjusted price/sales",
+    "cheap_vs_side": "discount to peers",
 }
 # Where a reading sits in the book, from its percentile.
 PLACE_WORDS = (
-    (0.10, "among the lowest in the book"),
-    (0.30, "below most of the book"),
-    (0.70, "around the middle of the book"),
-    (0.90, "above most of the book"),
-    (1.01, "among the highest in the book"),
+    (0.10, "bottom of book"),
+    (0.30, "low"),
+    (0.70, "mid"),
+    (0.90, "high"),
+    (1.01, "top of book"),
 )
+MARK = {1: "+", 0: "\u00b7", -1: "\u2212"}
 
 # What the desk does at each grade, in the operator's own words.
 ACTION: dict[str, str] = {
@@ -302,7 +308,8 @@ def _lean(values: np.ndarray, scores: np.ndarray) -> int:
     return 0
 
 
-# One analyst's view of one name, as a clause.
+# One analyst's view of one name, as one line: its mark, its name, and
+# the readings that argue its way, fewest words that carry the fact.
 def _clause(
     analyst: str,
     stance: int,
@@ -310,21 +317,14 @@ def _clause(
     cited: dict,
     scale: dict | None = None,
 ) -> str:
-    mood = {1: "is for it", 0: "is neutral on it", -1: "is against it"}[stance]
-    where = ""
-    if rank is not None and rank == rank:
-        if rank >= 0.8:
-            where = ", ranking it near the top of the book"
-        elif rank <= 0.2:
-            where = ", ranking it near the bottom"
+    head = f"{MARK[stance]} {analyst.capitalize()}"
     if not cited:
-        return f"The {analyst} analyst has no data for it"
+        return f"{head}: no data"
     strongest = _notable(analyst, cited, scale, stance)
     if not strongest:
-        return f"The {analyst} analyst {mood}{where}"
+        return head
     parts = [_figure(analyst, k, v, scale) for k, v in strongest]
-    joined = parts[0] if len(parts) == 1 else f"{parts[0]}, and {parts[1]}"
-    return f"The {analyst} analyst {mood}{where}: {joined}"
+    return f"{head}: {'; '.join(parts)}"
 
 
 # One reading, in words a person can read: a release's tone as upbeat,
@@ -357,20 +357,16 @@ def _tone_words(measure: str, value: float, middle: float | None) -> str | None:
     if measure in TONE_SUBJECT:
         subject = TONE_SUBJECT[measure]
         if sign:
-            mood = "upbeat" if sign > 0 else "downbeat"
-            return f"its last release was {mood} on {subject}"
-        text = f"its last release said nothing about {subject}"
+            return f"{'upbeat' if sign > 0 else 'downbeat'} on {subject}"
         book = _sign(middle) if middle is not None else 0
         if book:
-            mood = "upbeat" if book > 0 else "downbeat"
-            text += f", where most of the book was {mood}"
-        return text
+            return f"silent on {subject} (book {'upbeat' if book > 0 else 'downbeat'})"
+        return f"silent on {subject}"
     if measure in TONE_CHANGE:
-        change = {1: "improved on", -1: "worsened on", 0: "was unchanged from"}[sign]
-        return f"its {TONE_CHANGE[measure]} talk {change} the last release"
+        change = {1: "improved", -1: "worsened", 0: "unchanged"}[sign]
+        return f"{TONE_CHANGE[measure]} {change}"
     if measure == "tone_supply_constrained":
-        did = "called" if sign > 0 else "did not call"
-        return f"it {did} itself supply constrained"
+        return "supply constrained" if sign > 0 else "not supply constrained"
     return None
 
 
@@ -381,13 +377,13 @@ def _placed_words(measure: str, value: float, place: float | None) -> str:
         if place is None:
             return high if value > 0 else low if value < 0 else mid
         return low if place < 0.3 else high if place > 0.7 else mid
-    label = LABELS.get(measure, measure)
+    label = SHORT.get(measure, LABELS.get(measure, measure))
     if place is None:
-        return f"its {label} is {'high' if value > 0 else 'low'}"
-    for cut, words in PLACE_WORDS:
-        if place < cut:
-            return f"its {label} is {words}"
-    return f"its {label} is {PLACE_WORDS[-1][1]}"
+        return f"{label} {'high' if value > 0 else 'low'}"
+    for limit, words in PLACE_WORDS:
+        if place < limit:
+            return f"{label} {words}"
+    return f"{label} {PLACE_WORDS[-1][1]}"
 
 
 # The share of the book's readings below this one, or None without a book.
@@ -446,8 +442,6 @@ def _notable(
 # analysts that decided it, strongest opinion first.
 def reason(view: dict, scale: dict | None = None) -> str:
     """Return a plain-English reason for one name's grade."""
-    grade = str(view.get("grade", "?"))
-    action = ACTION.get(grade, "no action")
     stances = view.get("stances") or {}
     ranks = view.get("ranks") or {}
     evidence = view.get("evidence") or {}
@@ -464,35 +458,32 @@ def reason(view: dict, scale: dict | None = None) -> str:
             continue
         clauses.append(_clause(analyst, int(stance), ranks.get(analyst), cited, scale))
     if not clauses:
-        return f"Grade {grade}: {action}. No analyst had a view on it today."
-    body = ". ".join(clauses[:3])
-    return f"Grade {grade}: {action}. {body}."
+        return "No analyst had a view on it today."
+    return chr(10).join(clauses[:5])
 
 
-# The one line a table can show without opening anything: the grade, the
-# action, and the single analyst that mattered most.
+# The one line a table can show without opening anything: the action and
+# the analysts on each side.
 def headline(view: dict) -> str:
-    """Return a one-clause summary of why a name is graded as it is."""
+    """Return a one-line summary of why a name is graded as it is."""
     grade = str(view.get("grade", "?"))
-    action = ACTION.get(grade, "no action")
+    action = ACTION.get(grade, "no action").split()[0].capitalize()
     stances = view.get("stances") or {}
     decisive = [a for a, s in stances.items() if s and abs(int(s)) == 1]
     if not decisive:
-        return f"{action.capitalize()}: no analyst has a strong view."
+        return f"{action}: no analyst has a strong view"
     bulls = [a for a in decisive if int(stances[a]) > 0]
     bears = [a for a in decisive if int(stances[a]) < 0]
     if bulls and not bears:
-        return f"{action.capitalize()}: {_names(bulls)} in favour, none against."
+        return f"{action}: {_names(bulls)} for, none against"
     if bears and not bulls:
-        return f"{action.capitalize()}: {_names(bears)} against, none in favour."
-    return f"{action.capitalize()}: {_names(bulls)} for, {_names(bears)} against."
+        return f"{action}: {_names(bears)} against, none for"
+    return f"{action}: {_names(bulls)} for; {_names(bears)} against"
 
 
-# "the fundamental analyst", "fundamental and technical", "three analysts".
+# "sentiment", "fundamental and technical", "3 analysts".
 def _names(analysts: list[str]) -> str:
     ordered = sorted(analysts)
-    if len(ordered) == 1:
-        return f"the {ordered[0]} analyst"
-    if len(ordered) == 2:
-        return f"{ordered[0]} and {ordered[1]}"
+    if len(ordered) <= 2:
+        return " and ".join(ordered)
     return f"{len(ordered)} analysts"

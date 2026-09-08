@@ -80,17 +80,14 @@ def test_a_reading_is_placed_in_the_book_not_quoted():
         "evidence": {"fundamental": {"revenue_yoy": -0.311}},
     }
     text = plainly.reason(view, scale)
-    assert "revenue growth over the year is among the lowest in the book" in text
+    assert text == "− Fundamental: revenue growth bottom of book"
     assert "-0.31" not in text
-    assert "revenue_yoy" not in text
-    assert text.startswith("Grade C: avoid it. The fundamental analyst is against it")
     # Tone, states and distances have their own words.
-    assert plainly._figure("sentiment", "tone_guidance", 1.0, None) == (
-        "its last release was upbeat on guidance"
+    assert (
+        plainly._figure("sentiment", "tone_guidance", 1.0, None) == "upbeat on guidance"
     )
     assert (
-        plainly._figure("technical", "weekly_trend", -1.0, None)
-        == "its weekly trend is down"
+        plainly._figure("technical", "weekly_trend", -1.0, None) == "weekly trend down"
     )
     far = {
         ("technical", "high_52w_distance"): (
@@ -101,7 +98,7 @@ def test_a_reading_is_placed_in_the_book_not_quoted():
         )
     }
     assert plainly._figure("technical", "high_52w_distance", -0.78, far) == (
-        "it sits farther below its 52-week high than most of the book"
+        "far below 52-week high"
     )
 
 
@@ -115,8 +112,8 @@ def test_an_analyst_with_no_evidence_is_left_out():
         "evidence": {"fundamental": {"revenue_yoy": 0.4}, "rotation": {}},
     }
     text = plainly.reason(view)
-    assert "rotation" not in text
-    assert "fundamental" in text
+    assert "Rotation" not in text
+    assert text.startswith("+ Fundamental")
     # With nothing at all, it says so once rather than inventing a reason.
     empty = plainly.reason({"grade": "C", "stances": {}, "evidence": {}})
     assert "No analyst had a view" in empty
@@ -134,7 +131,8 @@ def test_the_action_follows_the_grade(grade: str, action: str):
         "ranks": {"technical": 0.9},
         "evidence": {"technical": {"ema21_slope": 0.05}},
     }
-    assert plainly.reason(view).startswith(f"Grade {grade}: {action}")
+    # The grade and action live on the row; the reason is the analysts only.
+    assert plainly.reason(view) == "+ Technical: 21-day avg rising fast"
     assert plainly.headline(view).lower().startswith(action.split()[0])
 
 
@@ -217,5 +215,4 @@ def test_a_reading_of_nothing_is_quoted_against_the_book():
     picked = plainly._notable("sentiment", cited, scale, stance=-1)
     assert picked == [("tone_guidance", 0.0)]
     clause = plainly._clause("sentiment", -1, 0.26, cited, scale)
-    assert "said nothing about guidance, where most of the book was upbeat" in clause
-    assert "demand" not in clause
+    assert clause == "− Sentiment: silent on guidance (book upbeat)"

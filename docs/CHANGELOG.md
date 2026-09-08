@@ -2,6 +2,15 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - Reasons as one line per analyst
+
+A reason is now one line per analyst, fewest words that carry the fact:
+a mark (+ for, − against, · neutral), the analyst, and its triggers
+separated by semicolons, e.g. "− Sentiment: silent on guidance (book
+upbeat)" and "+ Technical: reward/risk to levels high; 6-month momentum
+strongest". The headline is "Avoid: sentiment and technical against,
+none for". The page renders the lines as a list. Tested.
+
 ## 2026-09-08 - Reasons in words, not figures
 
 "capital spending against revenue at +2.99" told a reader nothing about

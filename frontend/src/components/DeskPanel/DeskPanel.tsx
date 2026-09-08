@@ -109,6 +109,17 @@ const afterTrade = (holdings: DeskHolding[], r: DeskMineRow, price: number, qty:
   return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: today() }]
 }
 
+// A reason is one line per analyst: its mark, its name, its triggers.
+const ReasonLines = ({ text }: { text: string }) => (
+  <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">
+    {text.split('\n').map((line, i) => (
+      <li key={i} className="whitespace-nowrap">
+        <span className="font-mono">{line.slice(0, 1)}</span> {line.slice(2)}
+      </li>
+    ))}
+  </ul>
+)
+
 const triggers = (stances: Record<string, number>) =>
   TRIGGER_ORDER.filter(([k]) => k in stances)
     .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
@@ -568,7 +579,7 @@ const Row = ({ r, quote, equity, stops, open, onReason, marking, onDone }: RowPr
         ) : (
           r.why
         )}
-        {open && <p className="mt-1 text-[#1d1d1f]">{r.reason}</p>}
+        {open && <ReasonLines text={r.reason} />}
       </td>
     </tr>
   )
@@ -706,7 +717,7 @@ const EveryGrade = ({ latest }: { latest: NonNullable<DeskPayload['latest']> }) 
                 )}
                 {openBrief === ticker && (
                   <div className="mt-1 space-y-1 text-[#1d1d1f]">
-                    {g.reason && <p>{g.reason}</p>}
+                    {g.reason && <ReasonLines text={g.reason} />}
                     {briefs[ticker] && (
                       <>
                         <p>{briefs[ticker].reasoning}</p>
