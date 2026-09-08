@@ -61,7 +61,10 @@ The three other pinned suites (scout-schedule referent, correction capture,
 preference labelling) all pass (25). Sarcasm remains a documented, unfixed
 ceiling: "yeah i'm going line dancing with a bird" is still captured, and no
 phrasing rule is added for it, because a rule against a phrasing is the
-overfitting the prompt header forbids.
+overfitting the prompt header forbids. Re-measured 2026-09-08: no rule -> 6/6
+captured; a general plan-and-joke principle -> 0/12 then 7/20 (unstable, so
+nothing pins it deterministically), genuine line-dancing capture 8/8 either
+way. That variance is the model ceiling, not the wording.
 
 **The vision functional tests assert on properties.** The four tests in
 `test_visual_observation_behaviour.py` had never run here - the test
