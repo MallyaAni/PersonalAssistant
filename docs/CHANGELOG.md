@@ -2,6 +2,27 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The analyst weights go back to equal: the walk-forward test
+
+A review named the morning's weight adoption development evidence, since the
+book comparison applied one weight set across the years it was fit on. The
+honest test is `market_weights --walk-forward`: each fold's test years graded
+by the ridge weights fit only on the sessions before them, stitched, and run
+through the full rules.
+
+| the book from 2018-01-31 | annual | vol | Sharpe | max drawdown |
+|---|---|---|---|---|
+| equal weights, the rule | +27.2% | 16.5% | 1.65 | -20.4% |
+| fixed ridge weights, development | +26.2% | 15.7% | 1.67 | -17.8% |
+| walk-forward ridge weights | +25.0% | 15.5% | 1.61 | -17.7% |
+
+Two points a year less at a slightly lower Sharpe. The desk is back on equal
+weights the same day; the ridge set stays as `grading.RIDGE_WEIGHTS` for the
+forward record to judge. The same review found the chart and dip learners'
+training masks let labels reach into the test year; both now purge the label
+horizon, the dip learner reruns to the same verdict, and the chart network
+reruns overnight.
+
 ## 2026-09-07 - The chart network on fifteen-minute bars: nothing, and one honest pattern
 
 `market_charts_intraday` draws the last twenty fifteen-minute bars at 10:30,

@@ -37,17 +37,24 @@ ORDINAL: dict[str, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
 # How much of a full position each grade earns.
 SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 0.75, B: 0.5, C: 0.0}
 ROTATION_WEIGHT = 0.5
-# The weight each analyst carries in the desk's sum. Equal weights were the
-# rule until 2026-09-07; these are the ridge fit toward equal weights at
-# shrinkage 1 from `market_weights`, the same ordering the analysts'
-# individual measurements gave - value strongest, the tape weakest - and
-# stable in sign across every walk-forward fold. Behind the full-rule
-# simulator from 2021-06-01 they made Sharpe 1.90 against 1.85 at the same
-# return with the worst drawdown 17.8% against 19.0%; at the desk's own
-# horizon the rank IC gain is inside the noise and at sixty sessions it is
-# not. `grade_stances` with no weights is still the equal-weight rule, so
-# the two can always be compared.
+# The weight each analyst carries in the desk's sum: equal, rotation at
+# half. A ridge fit toward these (`market_weights`, shrink 1) wanted
+# value 0.60, fundamental 0.50, sentiment 0.42, technical 0.38, rotation
+# 0.30, and applied across the whole history made a better book, 1.90
+# against 1.85. Graded walk-forward, each year by weights fit only on the
+# years before it, the same fit made a worse one from 2018: 25.0% a year
+# at 1.61 against 27.2% at 1.65, with a shallower drawdown. The first
+# number was development evidence; the second is the test. The ridge set
+# stays available as RIDGE_WEIGHTS for the comparison the forward record
+# will eventually settle.
 ANALYST_WEIGHTS = {
+    "fundamental": 1.0,
+    "technical": 1.0,
+    "sentiment": 1.0,
+    "value": 1.0,
+    "rotation": ROTATION_WEIGHT,
+}
+RIDGE_WEIGHTS = {
     "value": 0.60,
     "fundamental": 0.50,
     "sentiment": 0.42,
