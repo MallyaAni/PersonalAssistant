@@ -108,3 +108,19 @@ def test_network_reads_an_image():
     assert net(x).shape == (4, 2)
     net5 = charts.ChartNet(5)
     assert net5(torch.zeros((2, 1, 32, 15))).shape == (2, 2)
+
+
+# No training sample's label can reach into the test year: the last
+# `horizon` sessions before the first test session are purged.
+def test_training_mask_purges_the_label_horizon_before_the_test_year():
+    from backend.cli import market_charts
+
+    sessions = np.repeat(np.arange(300), 2)  # two names per session
+    years = np.where(sessions < 250, 2023, 2024)
+    train, test = market_charts.training_mask(sessions, years, 2024, horizon=20)
+    assert test.sum() == 100
+    assert sessions[train].max() == 250 - 20 - 1
+    assert not (train & test).any()
+    # A year with no test samples leaves the earlier years as training.
+    train_none, test_none = market_charts.training_mask(sessions, years, 2030, 20)
+    assert not test_none.any() and train_none.all()

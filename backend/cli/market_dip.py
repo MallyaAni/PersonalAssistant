@@ -70,15 +70,18 @@ fall against peers +0.01%, stabilisation +0.46%, support density +0.02%,
 tightening -0.65%, volume spike -0.42%, tone rank -0.59%. Nothing above
 a percent and a quarter, and most flip sign across horizons.
 
-The learner, walk-forward by year on the ten-session residual:
+The learner, walk-forward by year on the ten-session residual, with the
+last thirty days before each test year purged from training so no
+training label is computed from test-year prices (a review found the
+first version's mask let them through):
 
   test year   events   rank IC   all events   top fifth   net of cost
-  2022         1770    +0.011      -1.56%      -1.21%       -1.41%
-  2023          840    -0.044      +1.15%      -0.47%       -0.67%
-  2024         1364    -0.017      -0.20%      +1.31%       +1.11%
-  2025         2226    -0.035      +0.90%      +1.44%       +1.24%
-  2026         1882    +0.014      +0.06%      +0.89%       +0.69%
-  pooled       8082    -0.023      +0.00%      +0.48%       +0.28%
+  2022         1770    +0.021      -1.56%      -0.88%       -1.08%
+  2023          840    -0.028      +1.15%      +0.11%       -0.09%
+  2024         1364    -0.027      -0.20%      +0.62%       +0.42%
+  2025         2226    -0.038      +0.90%      +1.62%       +1.42%
+  2026         1882    -0.025      +0.06%      +1.00%       +0.80%
+  pooled       8082    -0.032      +0.00%      +0.19%       -0.01%
 
 No skill out of sample. The conditions as a trader states them, made
 into numbers and combined by a learner, do not sort the dips.
@@ -88,7 +91,7 @@ confirmed on 1 September and entered at 39.60 on the 2nd, thirteen
 percent above the 34.81 low. Its conditions were what a trader would
 want - the fall was its own (7.5 points worse than its peers), volume
 1.3 times usual, tone rank 0.95, 43% off its 60-session high - and the
-learner scored it at the 45th percentile of every event. The confirmed
+learner scored it at the 63rd percentile of every event. The confirmed
 entry missed most of the move: 35.45 to 39.60 happened before the low
 was confirmed. The trade worked; the class of trade, entered when it
 can be known to be one, does not on average. The chart network in
@@ -314,7 +317,13 @@ def _learned(x, y, years, test_years, entry_dates) -> None:
     )
     pooled_pred, pooled_y, pooled_day = [], [], []
     for year in test_years:
-        train, test = years < year, years == year
+        test = years == year
+        if not test.any():
+            continue
+        # Events whose ten-session label reaches into the test year are
+        # not training data: purge the last twenty sessions before it.
+        first = entry_dates[test].min()
+        train = (years < year) & (entry_dates < first - np.timedelta64(30, "D"))
         if train.sum() < 500 or test.sum() < 50:
             continue
         ok = np.isfinite(y[:, target])
