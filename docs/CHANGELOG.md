@@ -2,6 +2,24 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - An earnings-expectations model, and the gap to the price as a challenger
+
+`backend/cli/market_expectations.py` builds the expectation the review
+asked for: a walk-forward learner on what was known the day before each
+results release (13,515 reports, 515 names, 2015-2026), beating the
+naive expectation out of sample (correlation +0.628 vs +0.531, eight
+years of nine). After the report there is no drift on this universe.
+Before it, the cheapest fifth for what is expected earns +1.23% through
+the print (t 2.6), positive in eight years of nine, and an improving
+tape does not help it. In the book the pre-report add is exposure, not
+skill; the expectation carried every session as a valuation leg,
+blended with the current analyst, earns more than the rule in seven
+years of nine from 2018 (+28.1% a year, Sharpe 1.56, against +23.9%,
+1.46) and loses a little more in the two falling ones. Not adopted; it
+is the challenger to run nightly beside the rule. `simulate.DipRule`'s
+signal hook served the overlay; tests cover the momentum and the
+learner's native API.
+
 ## 2026-09-08 - The second valuation analyst, measured: the current one stands
 
 Trailing four consecutive filed quarters (`levels_pit.ttm_series`,
