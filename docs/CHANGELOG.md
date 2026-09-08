@@ -2,6 +2,17 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - A reason cites the readings that argue the stance
+
+CRWV's record read "the sentiment analyst is against it, on what it said
+about demand at +1.00 and capital spending at +1.00": the clause named
+the most unusual readings whatever they argued, and the bullish fields
+were the unusual ones. `plainly.spreads` now also records which way each
+measurement leans (its rank correlation with the analyst's own score
+across the book that day), and a clause cites the readings that argue
+the analyst's way, falling back to the unusual ones only when none do.
+Tone readings with no book scale lean their own way. Tested.
+
 ## 2026-09-08 - Deploys take the short path for frontend-only changes
 
 Every deploy ran the unit suite, the routing gate, a backup and the

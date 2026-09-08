@@ -150,7 +150,7 @@ def test_spreads_are_taken_across_the_book_only():
         opinions={"fundamental": opinion},
     )
     scale = plainly.spreads(report)
-    middle, spread = scale[("fundamental", "revenue_yoy")]
+    middle, spread, _lean = scale[("fundamental", "revenue_yoy")]
     assert middle == pytest.approx(3.0)  # the outsider did not move it
     assert spread == pytest.approx(1.0)
     # A measurement identical across the book has no usable spread.
@@ -158,3 +158,43 @@ def test_spreads_are_taken_across_the_book_only():
     # And a reading is then judged on its own size rather than by dividing.
     picked = plainly._notable("fundamental", {"net_margin": 0.4}, scale)
     assert picked == [("net_margin", 0.4)]
+
+
+# A clause cites the readings that argue the analyst's way. CRWV on
+# 2026-09-04 read "the sentiment analyst is against it, on what it said
+# about demand at +1.00": the bullish fields were the unusual ones, and the
+# bearish ones that decided the stance went unnamed.
+def test_a_reason_cites_the_readings_that_argue_the_stance():
+    scale = {
+        ("sentiment", "tone_demand"): (0.0, 0.5, 1),
+        ("sentiment", "tone_guidance"): (0.0, 0.5, 1),
+        ("sentiment", "tone_guidance_change"): (0.0, 0.5, 1),
+    }
+    cited = {"tone_demand": 1.0, "tone_guidance": -1.0, "tone_guidance_change": -1.0}
+    against = plainly._notable("sentiment", cited, scale, stance=-1)
+    assert [m for m, _v in against] == ["tone_guidance", "tone_guidance_change"]
+    for_it = plainly._notable("sentiment", cited, scale, stance=1)
+    assert [m for m, _v in for_it] == ["tone_demand"]
+    # With no reading on its side, the unusual ones are still named.
+    only_bull = plainly._notable("sentiment", {"tone_demand": 1.0}, scale, stance=-1)
+    assert only_bull == [("tone_demand", 1.0)]
+    # Without a book scale, tone readings lean their own way.
+    bare = plainly._notable("sentiment", cited, None, stance=-1)
+    assert [m for m, _v in bare] == ["tone_guidance", "tone_guidance_change"]
+
+
+# The CRWV case itself: a book that mostly guides up has no spread on the
+# guidance field, and the release that said nothing about guidance is the
+# reading that set the name apart, quoted against the book's middle.
+def test_a_reading_of_nothing_is_quoted_against_the_book():
+    scale = {
+        ("sentiment", "tone_guidance"): (1.0, float("nan"), 1),
+        ("sentiment", "tone_demand"): (1.0, float("nan"), 1),
+        ("sentiment", "tone_capex"): (0.0, float("nan"), 0),
+    }
+    cited = {"tone_guidance": 0.0, "tone_demand": 1.0, "tone_capex": 1.0}
+    picked = plainly._notable("sentiment", cited, scale, stance=-1)
+    assert picked == [("tone_guidance", 0.0)]
+    clause = plainly._clause("sentiment", -1, 0.26, cited, scale)
+    assert "against the book's +1.00" in clause
+    assert "demand" not in clause

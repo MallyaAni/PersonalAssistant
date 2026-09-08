@@ -122,12 +122,24 @@ NOTABLE = 0.5
 # size at +457286396484.38", which is true of every name in the book and
 # explains nothing. The middle and spread come from the book itself, so a
 # reading is judged against its peers exactly as a stance is.
-def spreads(report) -> dict[tuple[str, str], tuple[float, float]]:
-    """Return (middle, spread) per analyst measurement across the book."""
+#
+# The third number is which way the measurement leans: +1 when a higher
+# reading goes with a higher score from that analyst across the book
+# today, -1 when lower does, 0 when the two are unrelated. A reason used
+# to cite the most unusual readings whatever they argued, so CRWV on
+# 2026-09-04 read "the sentiment analyst is against it, on what it said
+# about demand at +1.00": the two bullish tone fields were the unusual
+# ones, and the bearish fields that had actually decided the stance went
+# unmentioned. With the lean known, a clause cites the readings that argue
+# the analyst's way, and falls back to the unusual ones only when none do.
+def spreads(report) -> dict[tuple[str, str], tuple[float, float, int]]:
+    """Return (middle, spread, lean) per analyst measurement across the book."""
     t = len(report.panel.dates) - 1
     in_book = np.array([x in report.sides for x in report.panel.tickers])
-    out: dict[tuple[str, str], tuple[float, float]] = {}
+    out: dict[tuple[str, str], tuple[float, float, int]] = {}
     for analyst, opinion in report.opinions.items():
+        scores = np.asarray(getattr(opinion, "scores", np.full(in_book.shape, np.nan)))
+        score_row = scores[t] if scores.ndim == 2 else scores
         for measure, values in getattr(opinion, "evidence", {}).items():
             row = np.asarray(values)[t]
             known = row[in_book & np.isfinite(row)]
@@ -137,8 +149,30 @@ def spreads(report) -> dict[tuple[str, str], tuple[float, float]]:
             # Median absolute deviation: a spread that a handful of
             # extreme names cannot widen out of usefulness.
             spread = float(np.median(np.abs(known - middle)))
-            out[(analyst, measure)] = (middle, spread if spread > 0 else float("nan"))
+            both = in_book & np.isfinite(row) & np.isfinite(score_row)
+            lean = _lean(row[both], score_row[both]) if both.sum() >= 5 else 0
+            out[(analyst, measure)] = (
+                middle,
+                spread if spread > 0 else float("nan"),
+                lean,
+            )
     return out
+
+
+# Which way a measurement argues, from its rank correlation with the
+# analyst's own score across the book: the sign when it is clear, else 0.
+def _lean(values: np.ndarray, scores: np.ndarray) -> int:
+    """Return +1, -1 or 0 for the direction `values` pushes `scores`."""
+    a = np.argsort(np.argsort(values)).astype(float)
+    b = np.argsort(np.argsort(scores)).astype(float)
+    if a.std() == 0 or b.std() == 0:
+        return 0
+    corr = float(np.corrcoef(a, b)[0, 1])
+    if corr > 0.1:
+        return 1
+    if corr < -0.1:
+        return -1
+    return 0
 
 
 # One analyst's view of one name, as a clause.
@@ -158,34 +192,69 @@ def _clause(
             where = ", ranking it near the bottom"
     if not cited:
         return f"the {analyst} analyst has no data for it"
-    strongest = _notable(analyst, cited, scale)
+    strongest = _notable(analyst, cited, scale, stance)
     if not strongest:
         return f"the {analyst} analyst {mood}{where}"
-    parts = [f"{LABELS.get(k, k)} at {v:+.2f}" for k, v in strongest]
+    parts = [_figure(analyst, k, v, scale) for k, v in strongest]
     joined = parts[0] if len(parts) == 1 else f"{parts[0]} and {parts[1]}"
     return f"the {analyst} analyst {mood}{where}, on {joined}"
 
 
-# The measurements that set this name apart from the book, largest first.
-def _notable(analyst: str, cited: dict, scale: dict | None) -> list[tuple[str, float]]:
-    ranked: list[tuple[float, str, float]] = []
+# One reading as quoted. A reading of nothing is only a reason against a
+# book that reads something, so it is quoted with the book's middle.
+def _figure(analyst: str, measure: str, value: float, scale: dict | None) -> str:
+    text = f"{LABELS.get(measure, measure)} at {value:+.2f}"
+    entry = (scale or {}).get((analyst, measure))
+    if (
+        entry
+        and abs(value) <= QUIET
+        and np.isfinite(entry[0])
+        and abs(entry[0]) > QUIET
+    ):
+        text += f" against the book's {entry[0]:+.2f}"
+    return text
+
+
+# The measurements that set this name apart from the book, largest first;
+# with a stance, the ones that argue its way come first, and the rest are
+# used only when none do.
+def _notable(
+    analyst: str, cited: dict, scale: dict | None, stance: int = 0
+) -> list[tuple[str, float]]:
+    ranked: list[tuple[float, str, float, bool]] = []
     for measure, value in cited.items():
         if measure in CONTEXT or not np.isfinite(value):
             continue
-        middle, spread = (scale or {}).get((analyst, measure), (0.0, float("nan")))
-        if scale is None or not np.isfinite(spread):
+        entry = (scale or {}).get((analyst, measure), (0.0, float("nan"), 0))
+        middle, spread = entry[0], entry[1]
+        lean = entry[2] if len(entry) > 2 else 0
+        if scale is None:
             # No book to compare against: fall back to the reading itself,
             # which is right for the tone fields, where every value is
             # -1, 0 or 1 and the scale is already shared.
             score = abs(float(value))
+            direction = float(value)
+        elif not np.isfinite(spread):
+            # A book that mostly agrees has no spread to divide by, but
+            # its middle still says what is unusual: a release that says
+            # nothing about guidance, in a book where most guide up, is
+            # the reading that set the name apart, and the bullish field
+            # it shares with everyone is not.
+            score = abs(float(value) - middle)
+            direction = (float(value) - middle) * lean
         else:
             score = abs(float(value) - middle) / spread
+            direction = (float(value) - middle) * lean
             if score < NOTABLE:
                 continue
         if score > QUIET:
-            ranked.append((score, measure, float(value)))
+            # Tone-style readings with no scale lean their own way.
+            argues = stance != 0 and direction * stance > 0
+            ranked.append((score, measure, float(value), argues))
+    if stance != 0 and any(r[3] for r in ranked):
+        ranked = [r for r in ranked if r[3]]
     ranked.sort(key=lambda r: -r[0])
-    return [(measure, value) for _score, measure, value in ranked[:CITE]]
+    return [(measure, value) for _score, measure, value, _argues in ranked[:CITE]]
 
 
 # The whole reason for one name: the grade, what it means to do, and the
