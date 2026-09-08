@@ -2,6 +2,25 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-07 - The chart network measured: no chart analyst
+
+Jiang, Kelly and Xiu's image model, trained to the paper's specification on
+1.45 million twenty-day images of 531 names and scored walk-forward on
+611,451 cells from 2022, has no skill on this universe in these years: rank
+IC -0.003 on the universe, +0.011 on the book, and a flat decile table whose
+most confident tenth did slightly worse than its least. Momentum and reversal
+carry nothing on these names in these years either. IREN on 1 September 2026
+was scored at the 9th percentile of its day. `market_position` then bought
+the model's top tenth under four sizing rules and five exit rules: a
+market-shaped long book at a Sharpe of 0.75, every exit rule worse than
+holding, the stops most. There is no chart analyst; the desk's four analysts
+and its rebalance exit stand. The fifteen-minute version of the model
+(`market_charts_intraday`) is measured next.
+
+The paper book made its first live run at 19:30 ET on 2026-09-07: nine
+market-on-open buys for 8 September under the weighted analysts, accepted by
+the broker, none refused, the plan persisted before submission.
+
 ## 2026-09-07 - The board says why, and its exit is the signal
 
 Two changes to the action board after use. Each row now carries the analysts
