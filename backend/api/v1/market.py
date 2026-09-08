@@ -17,7 +17,15 @@ from fastapi import Path as PathParam
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
-from backend.market import alpaca, alpaca_trading, deskrecord, holdings, live_quotes
+from backend.market import (
+    alpaca,
+    alpaca_trading,
+    deskrecord,
+    holdings,
+    live_quotes,
+    live_technical,
+)
+from backend.market.store import MarketStore
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -74,7 +82,18 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
     except alpaca.AlpacaUnavailableError:
         return {"user_id": user_id, "as_of": None, "quotes": {}, "reason": "no keys"}
     found = live_quotes.quotes(symbols, headers=headers)
+    # The technical analyst re-read at the live price, one run per candle;
+    # a failure here leaves the quotes standing.
+    technical: dict = {}
+    if found:
+        try:
+            technical = await asyncio.to_thread(
+                live_technical.technical_now, MarketStore(_root()), found
+            )
+        except Exception as exc:  # noqa: BLE001 - the quotes must still reach the page
+            technical = {"reason": str(exc)}  # type: ignore[dict-item]
     return {
+        "technical": technical,
         "user_id": user_id,
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
         "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},

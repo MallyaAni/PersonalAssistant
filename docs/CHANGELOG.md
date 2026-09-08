@@ -2,6 +2,20 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - Each analyst's rating on the page, and the technical read at the live price
+
+The record now carries each analyst's rating of every name (its rank
+across the book on that analyst's evidence, 0 to 1), and the page shows
+them as F T S V R numbers with their marks, on the board row and in
+"Every grade". `/desk/live` adds the technical analyst re-read at the
+fifteen-minute price (`backend/market/live_technical.py`): the book's
+panel with today's row set from the live bars, the day's regime view,
+the analyst run on it, and each name's rank now beside its rank at the
+last close from the same run, one run per candle, cached. It is a
+reading, not a rule: on the measured playbook a quality name falling
+through its averages reads lower, and the snapback measurement behind
+that stands. Tests cover the live row and the record.
+
 ## 2026-09-08 - Chart structure written down and measured: nothing to refine
 
 Higher highs and lows, lower highs and lows, the breakout setting up

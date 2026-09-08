@@ -1853,6 +1853,9 @@ export interface DeskGrade {
   // these fields existed.
   headline?: string;
   reason?: string;
+  // Each analyst's rating of the name, 0 to 1, its rank across the book
+  // that day. Absent on records written before it was recorded.
+  ranks?: Record<string, number>;
 }
 
 export interface DeskBrief {
@@ -1970,6 +1973,10 @@ export interface DeskLive {
   as_of: string | null;
   quotes: Record<string, DeskQuote>;
   reason?: string;
+  // The technical analyst's rating re-read at the live price: `now` is
+  // where the name would rank if the session closed here, `close` where
+  // it ranked at the last close.
+  technical?: Record<string, { now: number; close: number }>;
 }
 
 // The person's own positions, kept beside the records, and the board

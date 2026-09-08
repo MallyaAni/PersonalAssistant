@@ -109,6 +109,12 @@ const afterTrade = (holdings: DeskHolding[], r: DeskMineRow, price: number, qty:
   return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: today() }]
 }
 
+// Each analyst's rating as a 0-100 number with its mark, F T S V R.
+const ratings = (ranks: Record<string, number> | undefined, stances: Record<string, number>) =>
+  TRIGGER_ORDER.filter(([k]) => ranks && k in ranks)
+    .map(([k, letter]) => `${letter}${Math.round((ranks?.[k] ?? 0) * 100)}${STANCE_MARK[stances[k] ?? 0]}`)
+    .join(' ')
+
 // A reason is one line per analyst: its mark, its name, its triggers.
 const ReasonLines = ({ text }: { text: string }) => (
   <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">
@@ -333,6 +339,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
               <Row
                 key={r.ticker}
                 r={r}
+                ranks={latest.grades[r.ticker]?.ranks}
+                technical={live.technical?.[r.ticker]}
                 quote={live.quotes[r.ticker]}
                 equity={equity}
                 stops={stops}
@@ -476,6 +484,8 @@ const PracticeAccount = ({ userId, record }: { userId: string; record: DeskPaylo
 
 interface RowProps {
   r: DeskMineRow
+  ranks?: Record<string, number>
+  technical?: { now: number; close: number }
   quote?: DeskQuote
   equity: number
   stops: boolean
@@ -487,7 +497,7 @@ interface RowProps {
 
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
-const Row = ({ r, quote, equity, stops, open, onReason, marking, onDone }: RowProps) => {
+const Row = ({ r, ranks, technical, quote, equity, stops, open, onReason, marking, onDone }: RowProps) => {
   const { price, qty } = sizing(r, quote, equity)
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
@@ -579,7 +589,21 @@ const Row = ({ r, quote, equity, stops, open, onReason, marking, onDone }: RowPr
         ) : (
           r.why
         )}
-        {open && <ReasonLines text={r.reason} />}
+        {open && (
+          <>
+            {ranks && (
+              <div className="mt-1 font-mono text-[#1d1d1f]" title="each analyst's rating, 0 to 100, rank across the book">
+                {ratings(ranks, r.stances ?? {})}
+              </div>
+            )}
+            {technical && (
+              <div className="text-[#6e6e73]">
+                technical at the live price: {Math.round(technical.now * 100)} (was {Math.round(technical.close * 100)} at the close)
+              </div>
+            )}
+            <ReasonLines text={r.reason} />
+          </>
+        )}
       </td>
     </tr>
   )
@@ -683,14 +707,17 @@ const EveryGrade = ({ latest }: { latest: NonNullable<DeskPayload['latest']> }) 
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Every grade</h3>
-      <p className="mb-2 text-xs text-[#6e6e73]">{TRIGGER_LEGEND}</p>
+      <p className="mb-2 text-xs text-[#6e6e73]">
+        {TRIGGER_LEGEND} The number is the analyst&rsquo;s rating, 0 to 100: where the name ranks across the book on
+        that analyst&rsquo;s evidence.
+      </p>
       <table className="w-full text-sm">
         <thead className="text-left text-[#6e6e73]">
           <tr>
             <th className="py-1">Name</th>
             <th>Group</th>
             <th>Grade</th>
-            <th>Analysts</th>
+            <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
             <th>Why</th>
           </tr>
         </thead>
@@ -702,7 +729,9 @@ const EveryGrade = ({ latest }: { latest: NonNullable<DeskPayload['latest']> }) 
               <td>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[g.grade] ?? ''}`}>{g.grade}</span>
               </td>
-              <td className="whitespace-nowrap font-mono text-xs">{triggers(g.stances ?? {})}</td>
+              <td className="whitespace-nowrap font-mono text-xs">
+                {g.ranks ? ratings(g.ranks, g.stances ?? {}) : triggers(g.stances ?? {})}
+              </td>
               <td className="text-xs">
                 {briefs[ticker] || g.headline ? (
                   <button

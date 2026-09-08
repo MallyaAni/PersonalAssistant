@@ -435,6 +435,13 @@ def record(
             "side": report.sides.get(ticker, ""),
             "headline": plainly.headline(view),
             "reason": plainly.reason(view, scale),
+            # Each analyst's rating: the name's rank across the book on that
+            # analyst's evidence, 0 to 1, so the page can show the parts.
+            "ranks": {
+                k: round(float(v), 3)
+                for k, v in (view.get("ranks") or {}).items()
+                if v == v
+            },
         }
     return {
         "session": str(panel.dates[last]),

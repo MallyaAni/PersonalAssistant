@@ -132,6 +132,7 @@ def board(
                 "rank": rank.get(ticker),
                 "score": float(grade.get("score", 0.0)) if in_book else None,
                 "stances": grade.get("stances") or {},
+                "ranks": grade.get("ranks") or {},
                 "why": (
                     grade.get("headline", "")
                     if in_book

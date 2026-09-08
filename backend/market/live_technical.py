@@ -1,0 +1,129 @@
+"""The technical analyst's rating re-read at the live price.
+
+The desk grades on the close. During the session the board shows the
+live price against that close, and a person watching a name fall asks
+what the technical analyst would make of it here. This answers that:
+the book's panel with today's row set from the fifteen-minute quotes
+(open, high, low so far, last), the technical analyst run on it, and
+each name's rank across the book on the resulting score, beside its
+rank at the last close from the same run so the two are comparable.
+
+It is a reading, not a rule. The analyst's playbook is the one measured
+on these names, and on it strength beats dips: a quality name falling
+through its averages reads lower, not higher, and the measurement
+behind that stands (`backend/cli/market_snapback.py`). What the live
+read gives is the size of the change, so a fall that has moved a name
+from the top of the book to its middle is visible as such by the
+candle rather than after the close.
+
+The run computes the day's regime view on the live panel so the
+analyst's playbook is the one the desk used; `now` against `close` from
+the same run is the comparison the page makes. One run per candle,
+cached.
+"""
+
+from dataclasses import replace
+from datetime import UTC, date, datetime
+
+import numpy as np
+
+from backend.agents.trading.desk import regime
+from backend.agents.trading.desk import technical as technical_analyst
+from backend.agents.trading.desk.desk import book_panel, tightening_for
+from backend.market import baselines
+from backend.market.panel import Panel
+
+_cache: dict[str, object] = {"key": None, "value": {}}
+
+
+# The panel with today's row set from the live quotes: appended when the
+# store ends before today, overwritten when it already has today. Names
+# without a quote carry their last close forward, so the cross-section
+# the rank is taken over is complete.
+def with_live_row(panel: Panel, quotes: dict, today: date) -> Panel:
+    """Return a Panel whose last row is today's live bar."""
+    last = panel.dates[-1].astype("datetime64[D]").astype(object)
+    if last > today:
+        return panel
+    if last < today:
+        dates = np.append(panel.dates, np.datetime64(today, "D"))
+        carry = lambda a: np.vstack([a, a[-1:]])  # noqa: E731
+        open_, high, low, close = (
+            carry(panel.open),
+            carry(panel.high),
+            carry(panel.low),
+            carry(panel.close),
+        )
+        adj_close = carry(panel.adj_close)
+        volume = np.vstack([panel.volume, np.full((1, panel.volume.shape[1]), np.nan)])
+        # A carried row is the last close on every field, not the last high.
+        open_[-1] = high[-1] = low[-1] = close[-1] = panel.close[-1]
+    else:
+        dates = panel.dates
+        open_, high, low, close = (
+            panel.open.copy(),
+            panel.high.copy(),
+            panel.low.copy(),
+            panel.close.copy(),
+        )
+        adj_close, volume = panel.adj_close.copy(), panel.volume
+    prev_close = close[-2] if close.shape[0] > 1 else close[-1]
+    prev_adj = adj_close[-2] if adj_close.shape[0] > 1 else adj_close[-1]
+    for symbol, quote in quotes.items():
+        if symbol not in panel.tickers:
+            continue
+        j = panel.index(symbol)
+        last_price = float(getattr(quote, "last", 0.0) or 0.0)
+        if last_price <= 0:
+            continue
+        open_[-1, j] = float(getattr(quote, "open", 0.0) or last_price)
+        high[-1, j] = max(float(getattr(quote, "high", 0.0) or last_price), last_price)
+        low[-1, j] = min(float(getattr(quote, "low", 0.0) or last_price), last_price)
+        close[-1, j] = last_price
+        # Adjusted close moves with the raw close: the ratio carries any
+        # split or dividend adjustment already in the history.
+        with np.errstate(all="ignore"):
+            ratio = prev_adj[j] / prev_close[j] if prev_close[j] > 0 else 1.0
+        adj_close[-1, j] = last_price * (ratio if np.isfinite(ratio) else 1.0)
+    return replace(
+        panel,
+        dates=dates,
+        open=open_,
+        high=high,
+        low=low,
+        close=close,
+        adj_close=adj_close,
+        volume=volume,
+    )
+
+
+# The technical analyst's rank per name at the live price and at the last
+# close, one run per candle.
+def technical_now(store, quotes: dict, today: date | None = None) -> dict:
+    """Return {symbol: {"now": rank, "close": rank}} for the names quoted."""
+    today = today or datetime.now(UTC).date()
+    key = (
+        today,
+        tuple(sorted((s, str(getattr(q, "bar", ""))) for s, q in quotes.items())),
+    )
+    if _cache["key"] == key:
+        return dict(_cache["value"])  # type: ignore[arg-type]
+    panel, sides = book_panel(store)
+    live = with_live_row(panel, quotes, today)
+    # The day's regime picks the analyst's playbook, as it does in the
+    # desk run, so the live rank and the record's rank read the same way.
+    view = regime.opine(live, sides, tightening_for(store, live, None))
+    scores = technical_analyst.opine(live, view.ai_trend).scores
+    if scores.shape[0] < 2:
+        return {}
+    ranks = baselines.percentile_rank(scores[-2:])
+    out = {}
+    for symbol in quotes:
+        if symbol not in panel.tickers:
+            continue
+        j = panel.index(symbol)
+        now, close = float(ranks[-1, j]), float(ranks[-2, j])
+        if np.isfinite(now) and np.isfinite(close):
+            out[symbol] = {"now": now, "close": close}
+    _cache["key"], _cache["value"] = key, out
+    return dict(out)
