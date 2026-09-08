@@ -9,6 +9,7 @@ chooses a search only to be refused.
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import UTC, datetime
 
 import pytest
@@ -209,6 +210,45 @@ def test_the_limit_context_is_reset_between_requests() -> None:
     finally:
         current_search_limit.reset(token)
     assert current_search_limit.get() is None
+
+
+@pytest.mark.asyncio
+async def test_a_harness_account_is_not_stopped_by_the_person_scale_daily_cap() -> None:
+    from sqlalchemy import delete, text
+
+    from backend.core.auth import HARNESS_DAILY_SEARCH_CAP, _bind_search_identity
+    from backend.core.harness_identity import is_harness_id
+    from backend.database.session import AsyncSessionLocal
+    from backend.models.auth import UserAccount
+
+    harness = f"harness_budget_test_{uuid.uuid4().hex[:8]}"
+    person = f"person_budget_test_{uuid.uuid4().hex[:8]}"
+    assert is_harness_id(harness) and not is_harness_id(person)
+    try:
+        async with AsyncSessionLocal() as db:
+            db.add_all(
+                [
+                    UserAccount(user_id=harness, username=harness, password_hash="x", is_admin=True, search_daily_limit=None),
+                    UserAccount(user_id=person, username=person, password_hash="x", is_admin=True, search_daily_limit=17),
+                ]
+            )
+            await db.commit()
+            token = current_search_identity.set(None)
+            try:
+                await _bind_search_identity(db, harness)
+                assert current_search_identity.get() is not None
+                assert current_search_identity.get().daily_limit == HARNESS_DAILY_SEARCH_CAP
+                await _bind_search_identity(db, person)
+                assert current_search_identity.get().daily_limit == 17
+            finally:
+                current_search_identity.reset(token)
+        async with AsyncSessionLocal() as db:
+            await db.execute(delete(UserAccount).where(text("user_id IN (:a, :b)").bindparams(a=harness, b=person)))
+            await db.commit()
+    finally:
+        async with AsyncSessionLocal() as db:
+            await db.execute(delete(UserAccount).where(text("user_id IN (:a, :b)").bindparams(a=harness, b=person)))
+            await db.commit()
 
 
 @pytest.mark.asyncio

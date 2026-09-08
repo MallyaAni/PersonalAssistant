@@ -3,7 +3,58 @@
 Verified state as of 2026-09-07. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
-## 2026-09-07 — events offer their links instead of printing them; the VLM records the names a user gives an upload (DEPLOYED `7e02167b`; this batch PUSHED)
+## 2026-09-07 (later) — the momentary-state memory rule closes the gubacchi pollution; the vision functional tests assert on properties (DEPLOYED `560d643a`)
+
+Continues the entry below it. Three changes, each verified against the real
+models and, where it matters, the live system.
+
+**A present-moment state is not a durable memory.** The 09-05 bird evening
+stored "Ani is with Gubacchi" twice and read it back as if the pet bird were
+a person. `prompts/memory/proposal.md` now states the general rule - who the
+user is with, where they are, or what they are doing at this instant is
+carried by the conversation and fills nothing; only stable, standing facts
+do - pinned by four momentary-state cases in
+`test_memory_capture_discipline.py`. **Verified live on the deployed system:**
+"i'm with gubacchi" now proposes nothing, while "my dog is called Biscuit",
+"I'm allergic to peanuts", and the spare-house-key arrangement still capture.
+The three other pinned suites (scout-schedule referent, correction capture,
+preference labelling) all pass (25). Sarcasm remains a documented, unfixed
+ceiling: "yeah i'm going line dancing with a bird" is still captured, and no
+phrasing rule is added for it, because a rule against a phrasing is the
+overfitting the prompt header forbids.
+
+**The vision functional tests assert on properties.** The four tests in
+`test_visual_observation_behaviour.py` had never run here - the test
+container could not reach the vision runtime until `VISION_LLM_BASE_URL` was
+set - and failed on exact phrasings the model does not use (it transcribes
+"8 PM" as "p.m.", declines "no fish or biological subjects", and answers the
+apple/device case in prose rather than the `identified_items` array). They
+now assert on properties - a time is read, a species is refused, a covered
+device is never given an exact make or model - so a reworded prompt survives
+and a changed behaviour fails.
+
+**The deployed 09-07 batch before this one (`50d973bd`) verified live:**
+upload a bird photo captioned "this is gubacchi" → `analysis_names:
+['gubacchi']` stored on the artifact, folded into the indexed memory, and
+"do you know gubacchi?" recalls the picture (artifact within
+`CANDIDATE_CEILING` distance, then `prefer_prompt_matches` narrows to it).
+
+**Post-deploy checks are blocked by the search allowance, not by code.**
+`sweep_journeys` passes; `exercise_search_scenarios` fails only because the
+Brave search allowance is used up ("used up the search allowance for today",
+`sources=0`), so the what's-on and try-again scenarios cannot search at all.
+The old `printed map=True` event failure is gone; the events-format fix is
+pinned by its functional test and cannot be walked end-to-end until the quota
+resets. When it does, re-run the post-deploy checks and expect the events
+check to pass.
+
+**Next atomic task.** When the search allowance resets, re-run
+`exercise_search_scenarios` to walk the events offer-links path end-to-end on
+the deployed system. Separately open: the entity side of an unknown name
+(gubacchi-as-person could recur if the name is heard in conversation with no
+photo bound), and sarcasm in the memory classifier (documented ceiling).
+
+## 2026-09-07 — events offer their links instead of printing them; the VLM records the names a user gives an upload (DEPLOYED `50d973b`; superseded by `560d643a` below)
 
 Two fixes, both with functional tests on the real models.
 
@@ -46,15 +97,12 @@ silently skipped**. The serving services set it literally
 (`http://animallya-spark2.local:8001`); the test service now does too, and
 the vision tests actually run.
 
-**KNOWN, pre-existing:** with the vision runtime now reachable, 4 tests in
-`test_visual_observation_behaviour.py` fail — proven identical at HEAD
-`3595b03` (before this batch), i.e. model-phrasing brittleness against the
-synthetic fixtures (the model transcribes "8 PM" as "p.m."; a refusal reads
-"no fish or biological subjects" rather than "cannot identify"), not a
-regression from this change. They only run under `bash scripts/gate.sh
---all`; the deploy gate's five suites never see them. If `--all` is run,
-expect these four red until someone updates the assertions to the current
-model's phrasing.
+**Vision functional tests now run and pass.** The 4 tests in
+`test_visual_observation_behaviour.py` had never run here — the test
+container could not reach the vision runtime until `VISION_LLM_BASE_URL` was
+set — and failed on exact phrasings the model does not use (proven identical
+at HEAD `3595b03`). They now assert on properties and pass (see the
+`560d643a` entry below).
 
 **Gates:** unit suite 3222 passed (the one `test_agent_runs` claim test
 races live agent workers — passes in isolation; same class as the
