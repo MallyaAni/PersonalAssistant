@@ -2034,6 +2034,25 @@ export const getDeskMine = async (userId: string, equity: number): Promise<DeskM
   return ((await response.json()) as { rows: DeskMineRow[] }).rows;
 };
 
+// The practice account as the broker reports it now.
+export interface DeskPaperLive {
+  as_of?: string;
+  reason?: string;
+  equity?: number;
+  cash?: number;
+  day_pl?: number;
+  positions?: { symbol: string; qty: number; market_value: number; avg_entry_price: number; current_price: number; unrealized_pl: number }[];
+  orders?: { symbol: string; side: string; qty: number; status: string }[];
+}
+
+export const getDeskPaper = async (userId: string): Promise<DeskPaperLive> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/paper`,
+  );
+  if (!response.ok) return { reason: `HTTP ${response.status}` };
+  return (await response.json()) as DeskPaperLive;
+};
+
 export const getDeskLive = async (userId: string): Promise<DeskLive> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live`,

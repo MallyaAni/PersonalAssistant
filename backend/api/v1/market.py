@@ -6,6 +6,7 @@ desk did not write. The user path segment keeps the same authorization as
 every other per-user route; the records themselves are the operator's own.
 """
 
+import asyncio
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,7 +17,7 @@ from fastapi import Path as PathParam
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
-from backend.market import alpaca, deskrecord, holdings, live_quotes
+from backend.market import alpaca, alpaca_trading, deskrecord, holdings, live_quotes
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -129,6 +130,44 @@ async def desk_mine(
         "session": latest.get("session"),
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
         "rows": holdings.board(latest, rows, equity, quotes),
+    }
+
+
+# The practice account as the broker reports it now, not as the evening
+# record left it: money, every position with its cost and price, and the
+# orders waiting for the open. Read-only, paper endpoint only.
+@router.get("/desk/paper")
+async def desk_paper(user_id: UserId) -> dict[str, object]:
+    """Return the paper account's live money, positions and open orders."""
+    _operator_only(user_id)
+
+    def fetch() -> dict[str, object]:
+        client = alpaca_trading.client_from_env()
+        account = client.account()
+        return {
+            "equity": account.equity,
+            "cash": account.cash,
+            "day_pl": account.equity - account.last_equity,
+            "positions": [asdict(p) for p in client.positions()],
+            "orders": [
+                {
+                    "symbol": o.get("symbol"),
+                    "side": o.get("side"),
+                    "qty": float(o.get("qty") or 0),
+                    "status": o.get("status"),
+                }
+                for o in client.open_orders()
+            ],
+        }
+
+    try:
+        live = await asyncio.to_thread(fetch)
+    except alpaca_trading.AlpacaTradingError as exc:
+        return {"user_id": user_id, "reason": str(exc)}
+    return {
+        "user_id": user_id,
+        "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+        **live,
     }
 
 

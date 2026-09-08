@@ -5,10 +5,12 @@ import {
   getDeskHoldings,
   getDeskLive,
   getDeskMine,
+  getDeskPaper,
   putDeskHoldings,
   type DeskHolding,
   type DeskLive,
   type DeskMineRow,
+  type DeskPaperLive,
   type DeskPayload,
   type DeskQuote,
 } from '../../services/api'
@@ -359,57 +361,105 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         {details ? 'Hide the details' : 'Show the details: practice account and every grade'}
       </button>
 
-      {details && paper && (
-        <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-          <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Practice account</h3>
-          <p className="mb-2 text-xs text-[#6e6e73]">
-            A simulated account that follows the desk with real prices and no real money. Its track record is the
-            desk&rsquo;s.
-          </p>
-          <p className="text-sm text-[#1d1d1f]">
-            Worth {money(paper.equity)} · cash {money(paper.cash)} ·{' '}
-            {paper.plan === 'rebalance'
-              ? 'today every grade was re-checked and the sizes reset'
-              : paper.plan === 'exits'
-                ? 'today only names that lost their grade are sold'
-                : 'nothing to trade today'}
-          </p>
-          {paper.orders.length > 0 && (
-            <p className="mt-2 text-sm text-[#6e6e73]">
-              Orders placed for the next open: {paper.orders.map((o) => `${o.side} ${o.qty} ${o.symbol}`).join(', ')}
-            </p>
-          )}
-          {paper.positions.length > 0 && (
-            <table className="mt-2 w-full text-sm">
-              <thead className="text-left text-[#6e6e73]">
-                <tr>
-                  <th className="py-1">Name</th>
-                  <th>Shares</th>
-                  <th>Worth now</th>
-                  <th>Bought at</th>
-                  <th>Price now</th>
-                  <th>Gain so far</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paper.positions.map((p) => (
-                  <tr key={p.symbol} className="border-t border-black/[0.05]">
-                    <td className="py-1 font-medium">{p.symbol}</td>
-                    <td>{p.qty}</td>
-                    <td>{money(p.market_value)}</td>
-                    <td>{money(p.avg_entry_price)}</td>
-                    <td>{money(p.current_price)}</td>
-                    <td className={p.unrealized_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>{money(p.unrealized_pl)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      )}
+      {details && <PracticeAccount userId={userId} record={paper} />}
 
       {details && <EveryGrade latest={latest} />}
     </div>
+  )
+}
+
+// The practice account: the broker's live money, positions and waiting
+// orders, refreshed with the candle; the evening record when the broker
+// cannot be reached.
+const PracticeAccount = ({ userId, record }: { userId: string; record: DeskPayload['latest'] extends infer L ? (L extends { paper: infer P } ? P : never) : never }) => {
+  const [live, setLive] = useState<DeskPaperLive | null>(null)
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        setLive(await getDeskPaper(userId))
+      } catch {
+        setLive({ reason: 'unreachable' })
+      }
+    }
+    void poll()
+    const timer = window.setInterval(() => void poll(), CANDLE_MS)
+    return () => window.clearInterval(timer)
+  }, [userId])
+  const fromBroker = live !== null && live.reason === undefined
+  const positions = fromBroker ? (live.positions ?? []) : (record?.positions ?? [])
+  const orders = fromBroker ? (live.orders ?? []) : (record?.orders ?? [])
+  const equity = fromBroker ? live.equity : record?.equity
+  const cash = fromBroker ? live.cash : record?.cash
+  if (equity === undefined || cash === undefined) return null
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">
+        Practice account
+        <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+          {fromBroker && live.as_of
+            ? `live, as of ${new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            : `as of the last evening record${live?.reason ? ` (broker: ${live.reason})` : ''}`}
+        </span>
+      </h3>
+      <p className="mb-2 text-xs text-[#6e6e73]">
+        A simulated account that follows the desk with real prices and no real money. Its track record is the
+        desk&rsquo;s.
+      </p>
+      <p className="text-sm text-[#1d1d1f]">
+        Worth {money(equity)} · cash {money(cash)}
+        {fromBroker && live.day_pl !== undefined && (
+          <>
+            {' '}·{' '}
+            <span className={live.day_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
+              {live.day_pl >= 0 ? 'up' : 'down'} {money(Math.abs(live.day_pl))} today
+            </span>
+          </>
+        )}
+        {!fromBroker && record && (
+          <>
+            {' '}·{' '}
+            {record.plan === 'rebalance'
+              ? 'every grade was re-checked and the sizes reset'
+              : record.plan === 'exits'
+                ? 'only names that lost their grade are sold'
+                : 'nothing to trade'}
+          </>
+        )}
+      </p>
+      {orders.length > 0 && (
+        <p className="mt-2 text-sm text-[#6e6e73]">
+          Orders waiting for the open: {orders.map((o) => `${o.side} ${o.qty} ${o.symbol}`).join(', ')}
+        </p>
+      )}
+      {positions.length > 0 ? (
+        <table className="mt-2 w-full text-sm">
+          <thead className="text-left text-[#6e6e73]">
+            <tr>
+              <th className="py-1">Name</th>
+              <th>Shares</th>
+              <th>Worth now</th>
+              <th>Bought at</th>
+              <th>Price now</th>
+              <th>Gain so far</th>
+            </tr>
+          </thead>
+          <tbody>
+            {positions.map((p) => (
+              <tr key={p.symbol} className="border-t border-black/[0.05]">
+                <td className="py-1 font-medium">{p.symbol}</td>
+                <td>{p.qty}</td>
+                <td>{money(p.market_value)}</td>
+                <td>{money(p.avg_entry_price)}</td>
+                <td>{money(p.current_price)}</td>
+                <td className={p.unrealized_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>{money(p.unrealized_pl)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="mt-2 text-sm text-[#6e6e73]">No positions held.</p>
+      )}
+    </section>
   )
 }
 

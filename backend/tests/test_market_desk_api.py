@@ -177,3 +177,44 @@ async def test_holdings_are_saved_and_the_board_is_computed_against_them(
     assert board["IREN"]["action"] == "sell"
     assert not board["IREN"]["in_book"]
     assert board["IREN"]["shares"] == 100
+
+
+# The practice account's live state comes from the broker, and a missing
+# key is an answer with a reason, not an error.
+@pytest.mark.asyncio
+async def test_the_paper_account_is_read_live(tmp_path, monkeypatch):
+    from backend.market import alpaca_trading
+
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+
+    class Fake:
+        def account(self):
+            return alpaca_trading.Account(101000.0, 5000.0, 5000.0, 100000.0)
+
+        def positions(self):
+            return [alpaca_trading.Position("ADBE", 42.0, 12600.0, 290.0, 300.0, 420.0)]
+
+        def open_orders(self):
+            return [{"symbol": "HPE", "side": "buy", "qty": "201", "status": "new"}]
+
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: Fake())
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    auth = {"Authorization": f"Bearer {token}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        live = await client.get("/api/v1/market/desk_user/desk/paper", headers=auth)
+        monkeypatch.setattr(
+            alpaca_trading,
+            "client_from_env",
+            lambda: (_ for _ in ()).throw(alpaca_trading.AlpacaTradingError("no key")),
+        )
+        missing = await client.get("/api/v1/market/desk_user/desk/paper", headers=auth)
+    body = live.json()
+    assert body["equity"] == 101000.0
+    assert body["day_pl"] == 1000.0
+    assert body["positions"][0]["symbol"] == "ADBE"
+    assert body["orders"] == [
+        {"symbol": "HPE", "side": "buy", "qty": 201.0, "status": "new"}
+    ]
+    assert missing.json()["reason"] == "no key"
