@@ -548,6 +548,61 @@ class VisionAnalysisService:
             "intent": EDIT if wants_edit else ASK,
         }
 
+    # Re-run the analysis of an already-stored upload whose first pass failed.
+    #
+    # A photo whose inspection transiently failed - the vision model restarting,
+    # a timeout - is kept as an artifact but carries no meaning, so a later
+    # mention of what it showed resolves to nothing. This inspects the stored
+    # bytes again with the canonical description and writes the same analysis
+    # shape the upload path would have, then embeds it, so the picture's meaning
+    # reaches memory after the fact. Best effort: a failure leaves the artifact
+    # as it was, marked failed, for a later recovery run.
+    async def recover_analysis(
+        self,
+        user_id: str,
+        artifact_id: str,
+        prompt: str,
+        content: bytes,
+        mime_type: str,
+    ) -> dict[str, Any] | None:
+        try:
+            inspection = await self._inspect_upload(prompt, content, mime_type)
+        except Exception:
+            logger.warning(
+                "Vision recovery inspection failed for artifact %s",
+                artifact_id,
+                exc_info=True,
+            )
+            return None
+        observation_text = inspection.observation or ""
+        metadata: dict[str, Any] = {
+            "analysis_status": "ready",
+            "analysis": observation_text,
+            "analysis_model": inspection.model,
+            "analysis_grounding": inspection.grounding,
+            "analysis_search_query": inspection.search_query,
+            "analysis_needs_reasoning": inspection.needs_reasoning,
+            "analysis_unsupported_reason": inspection.unsupported_reason,
+            "analysis_names": list(inspection.names),
+            "analysis_identified_items": [
+                {
+                    "label": item.label,
+                    "confidence": item.confidence,
+                    "basis": item.basis,
+                }
+                for item in inspection.identified_items
+            ],
+            **inspection.metadata,
+        }
+        updated = await self.repository.update_metadata(artifact_id, user_id, metadata)
+        await self._index_analysis(
+            user_id,
+            updated,
+            observation_text,
+            inspection.model,
+        )
+        return updated
+
     # Replace a deferred answer with the reasoned one, after the reply was sent.
     #
     # Reads the grounding back off the artifact rather than taking it as

@@ -178,6 +178,52 @@ async def test_blank_analysis_is_not_indexed():
     assert memory.saved == []
 
 
+@pytest.mark.asyncio
+async def test_recover_analysis_rewrites_metadata_and_reindexes_memory():
+    memory = RecordingMemory()
+    service = _service(memory)
+    artifact_id = "11111111-1111-4111-8111-111111111111"
+
+    updated = await service.recover_analysis(
+        "index_user",
+        artifact_id,
+        "Describe what you see in this picture, briefly.",
+        b"fake-png-bytes",
+        "image/png",
+    )
+
+    assert updated is not None
+    assert updated["metadata"]["analysis_status"] == "ready"
+    assert updated["metadata"]["analysis"] == "A magenta fox on a green platform."
+    assert len(memory.saved) == 1
+    entry = memory.saved[0]
+    assert entry["artifact_id"] == artifact_id
+    assert entry["purpose"] == VISUAL_ANALYSIS_PURPOSE
+    assert "A magenta fox on a green platform." in entry["content"]
+
+
+@pytest.mark.asyncio
+async def test_recover_analysis_leaves_the_artifact_alone_when_inspection_fails():
+    class _FailVision(StubVision):
+        async def analyze(self, prompt, content, mime_type):
+            raise RuntimeError("vision model unavailable")
+
+    memory = RecordingMemory()
+    service = VisionAnalysisService(
+        StubImages(),  # type: ignore[arg-type]
+        StubRepository(),  # type: ignore[arg-type]
+        _FailVision(),  # type: ignore[arg-type]
+        memory=memory,  # type: ignore[arg-type]
+    )
+
+    updated = await service.recover_analysis(
+        "index_user", "11111111-1111-4111-8111-111111111111", "Describe it.", b"bytes", "image/png"
+    )
+
+    assert updated is None
+    assert memory.saved == []
+
+
 # A refined image receives its own current-pixel analysis and semantic index.
 @pytest.mark.asyncio
 async def test_existing_edited_artifact_is_observed_and_indexed() -> None:

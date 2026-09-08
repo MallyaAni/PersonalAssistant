@@ -1262,6 +1262,50 @@ services:
       db:
         condition: service_healthy
 
+  vision-analysis-recovery:
+    # An upload whose first vision pass transiently failed stays stored but
+    # carries no meaning, so a later mention of what it showed resolves to
+    # nothing and a reference to it is misread. This re-inspects every failed
+    # upload with the vision model and writes the analysis and its embedding,
+    # so the picture's meaning reaches memory after the fact (2026-09-07:
+    # "i'm with gubacchi" plus a photo the analysis never survived).
+    restart: unless-stopped
+    build: .
+    profiles: ["maintenance"]
+    extra_hosts:
+      - "animallya-spark1.local:${SPARK1_IP:-172.16.8.3}"
+      - "animallya-spark2.local:${SPARK2_IP:-172.16.8.5}"
+    command:
+      - python
+      - -m
+      - backend.cli.recover_vision_analysis
+      - --all-users
+      - --apply
+      - --interval-seconds
+      - "43200"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
+      - POSTGRES_HOST=db
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+      - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
+      - LLM_BASE_URL=http://animallya-spark1.local:8000
+      - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
+      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
+      - VISION_MODEL=qwen3-vl-8b
+      - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
+      - VISION_MAX_TOKENS=${VISION_MAX_TOKENS:-1536}
+      - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
+      - EMBEDDING_BASE_URL=http://vllm-embedding:8000
+      - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
+    volumes:
+      - artifactdata:/app/data/artifacts
+    depends_on:
+      db:
+        condition: service_healthy
+
 networks:
   # Only `browser` and the two services that invoke tools sit on this one,
   # so the container running third-party code that fetches the open web has
