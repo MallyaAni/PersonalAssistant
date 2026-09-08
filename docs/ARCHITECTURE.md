@@ -909,7 +909,7 @@ the two data stores are published on the host's loopback only.
 | `discovery-worker` | Backend image, worker command | - | Scout sweeps, scheduled tasks, the iMessage polling loop |
 | `presentation-worker` / `presentation-renderer` | Backend image / Node PptxGenJS + LibreOffice | `8002` (renderer) | Durable deck jobs and their validated rendering |
 | `local-capabilities` | Backend image, FastMCP | `8001` | The local visual/presentation tool facade offered to the model |
-| `memory-maintenance` / `storage-collection` | Backend image, timers | - | Retention, stale-vector refresh, unreferenced-byte collection |
+| `memory-maintenance` / `storage-collection` / `vision-analysis-recovery` | Backend image, timers | - | Retention, stale-vector refresh, unreferenced-byte collection; re-inspects uploads whose vision analysis failed so their meaning reaches memory |
 | `db` | `pgvector/pgvector:pg16` | `127.0.0.1:5432` | PostgreSQL: every conversation, memory, artifact record, job, and account; pgvector HNSW indexes |
 | `redis` | `redis:7-alpine`, append-only | `127.0.0.1:6379` | Model-execution lease, login attempt windows, the iMessage cursor; never prompt or response text |
 | `vllm-embedding` | Pinned vLLM, `nomic-embed-text-v1.5` | host `8004` | 768-d text embeddings |
