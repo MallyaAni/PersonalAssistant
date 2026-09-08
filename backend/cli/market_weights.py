@@ -73,14 +73,21 @@ runs the full-rule simulation from 2021-06-01:
   ridge, shrink 1                   +31.6%  16.7%       Sharpe 1.90  maxDD -17.8%
   sentiment-led (the offline lean)  +31.6%  16.8%       Sharpe 1.88  maxDD -19.8%
 
-The ridge set is the desk's weights now (`grading.ANALYST_WEIGHTS`). The
-case for it is modest and consistent: a rank IC gain inside the noise at
-twenty sessions and outside it at sixty, a better book at the same return
-with a shallower drawdown, and a weight set that was fixed by the
-walk-forward fit before the book test was run, so the book test is
-confirmation rather than selection. On the day it was adopted it changed
-two of the nine names held and moved five grades by one notch. The
-forward paper record is where it earns its keep or does not.
+The ridge set was adopted on that, and reversed the same day when the
+book was graded walk-forward - each fold's test years under the weights
+fit on the sessions before them, no session graded by weights that saw
+it (`--walk-forward`):
+
+  the book from 2018-01-31             annual    vol  Sharpe   maxDD
+  equal weights (the rule)             +27.2%  16.5%    1.65  -20.4%
+  fixed ridge weights (development)    +26.2%  15.7%    1.67  -17.8%
+  walk-forward ridge weights           +25.0%  15.5%    1.61  -17.7%
+
+Two points a year less at a slightly lower Sharpe, with the shallower
+drawdown intact. The fixed-weight table was development evidence, as a
+review said; this is the test, and the desk is on equal weights. The
+ridge set stays as `grading.RIDGE_WEIGHTS` for the forward record to
+judge.
 """
 
 import argparse
@@ -124,14 +131,14 @@ def build_parser() -> argparse.ArgumentParser:
 # The weight sets the book is run under: the rule, the ridge fit at shrink
 # 1, and the order the offline policy leaned toward.
 WEIGHT_SETS = {
-    "equal weights (the rule until 2026-09-07)": {
+    "equal weights (the rule)": {
         "fundamental": 1.0,
         "technical": 1.0,
         "sentiment": 1.0,
         "value": 1.0,
         "rotation": ROTATION_WEIGHT,
     },
-    "ridge, shrink 1 (the desk now)": grading.ANALYST_WEIGHTS,
+    "ridge, shrink 1": grading.RIDGE_WEIGHTS,
     "sentiment-led (the offline lean)": {
         "sentiment": 0.51,
         "technical": 0.39,
