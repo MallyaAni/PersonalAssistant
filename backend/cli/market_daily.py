@@ -429,6 +429,25 @@ def record(
         ],
         "briefs": briefs or {},
         "paper": paper,
+        # Levels for every book name, targeted or not, so the person's own
+        # board can size a name the desk holds nothing of.
+        "levels": {
+            row["ticker"]: {
+                k: row[k]
+                for k in ("last_close", "high_20", "stops", "grade_margin", "rank")
+            }
+            for row in actions.build(
+                report,
+                {t: 0.0 for t in report.sides},
+                {},
+                (
+                    actions.REBALANCE
+                    - int(paper.get("until_rebalance", actions.REBALANCE))
+                    if paper
+                    else 0
+                ),
+            )
+        },
         "actions": (
             paper.get("actions")
             if paper and paper.get("actions") is not None
