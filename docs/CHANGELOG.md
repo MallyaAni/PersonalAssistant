@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - Chart structure written down and measured: nothing to refine
+
+Higher highs and lows, lower highs and lows, the breakout setting up
+and the breakout itself, on two-week and two-month swings, from the
+levels module's confirmed pivots (`backend/cli/market_structure.py`).
+On 531 names since 2016 none carries forward return; the one sign is
+the volume split on the breakout, where thin-volume breakouts fade
+(t -3.1) and volume breakouts are a coin with a slight edge (+0.19% at
+ten sessions, t 1.6; on the book +0.70%, t 2.4, positive only since
+2023). Inside the book's rules a 3% add on a volume breakout in an A
+name adds return by adding exposure and loses per unit of risk (Sharpe
+1.78 from cash, 1.80 funded, against 1.85). `simulate.DipRule` takes a
+precomputed signal so any such overlay is measured the same way. Tests
+cover the swing bookkeeping and the state reader.
+
 ## 2026-09-08 - The quality snapback, measured: the grading stands
 
 A trader's claim: a quality name stretched below its short-term

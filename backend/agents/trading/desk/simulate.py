@@ -141,6 +141,11 @@ class DipRule:
     # gross the regime chose is unchanged and only the selection moves.
     # Unfunded, it comes from cash and raises the gross.
     funded: bool = False
+    # A precomputed (T, N) signal in place of the fall rule, so any
+    # mid-cycle add (a breakout, a structure state) is measured inside
+    # the book's own rules the same way. The signal is responsible for
+    # its own grade condition.
+    signal: np.ndarray | None = None
 
 
 # Which (session, name) pairs the dip rule fires on: the name's fall over
@@ -256,7 +261,13 @@ def run(
     allocation is measured by the book it makes and nothing else.
     """
     decide = allocator or _targets
-    dips = _dip_signal(report, report.panel, dip) if dip else None
+    dips = None
+    if dip is not None:
+        dips = (
+            dip.signal
+            if dip.signal is not None
+            else _dip_signal(report, report.panel, dip)
+        )
     panel: Panel = report.panel
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
