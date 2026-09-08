@@ -69,6 +69,16 @@ The test that counts. With the technical analyst made neutral on the
 rules from 2021-06: +31.2% a year, Sharpe 1.80, worst drawdown -20.1%,
 against the rule's +31.8%, 1.85, -19.0%. The snapback is real in two
 years and costs the book across five. The grading stands.
+
+Also measured the same day, the other trend entry a trader uses: the
+pullback in an uptrend. Weekly trend up and the 21-day EMA rising,
+price 0 to 4% under the average (7,418 cells), against the rest of the
+trend names: +0.01% at five sessions (t 0.1), -0.22% at twenty (t
+-0.7). Against the chase, price more than 5% above the average: -0.34%
+at twenty (t -0.7), and the sign flips year to year (+2.6% in 2023,
+-3.7% in 2022, -3.0% in 2026). Buying the pullback is not better than
+buying the extended name on these names; where a name sits against its
+21-day average carries no timing information the trend itself does not.
 """
 
 import argparse
