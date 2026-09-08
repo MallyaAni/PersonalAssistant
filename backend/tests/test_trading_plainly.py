@@ -216,3 +216,21 @@ def test_a_reading_of_nothing_is_quoted_against_the_book():
     assert picked == [("tone_guidance", 0.0)]
     clause = plainly._clause("sentiment", -1, 0.26, cited, scale)
     assert clause == "− Sentiment: silent on guidance (book upbeat)"
+
+
+# A reason names what the analyst scores. Capital spending is on the
+# fundamental analyst's evidence and not in its score, so it must not be
+# cited as the reason for a stance when a scored reading is there.
+def test_a_reason_prefers_the_scored_readings():
+    scale = {
+        ("fundamental", "capex_to_revenue"): (0.1, 0.05, -1, None),
+        ("fundamental", "revenue_yoy"): (0.2, 0.1, 1, None),
+    }
+    cited = {"capex_to_revenue": 0.9, "revenue_yoy": -0.1}
+    picked = plainly._notable("fundamental", cited, scale, stance=-1)
+    assert [m for m, _v in picked] == ["revenue_yoy"]
+    # With nothing scored standing out, the context reading may be named.
+    only_context = plainly._notable(
+        "fundamental", {"capex_to_revenue": 0.9}, scale, stance=-1
+    )
+    assert [m for m, _v in only_context] == ["capex_to_revenue"]

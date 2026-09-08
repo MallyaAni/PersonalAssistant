@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - The board in grade order, re-read every candle
+
+The board is sorted best grade first instead of by action, and the
+grade is re-made every fifteen minutes with the technical analyst read
+at the live price: `grading.grade_from_stances` grades one name by the
+panel's rule, `holdings.board` re-reads the technical stance at the
+live rank (the other analysts as the record left them), re-makes the
+grade and moves the score by the technical conviction's change, and
+sorts on that. The evening decision (targets, actions) is untouched;
+the live grade is shown with "A+ at the close" when it differs. The
+Size column shows the share count alone, the Price column is gone (the
+stop status moved to Exit), the rank number is gone, and the wording is
+formal. Reasons now cite what the analyst scores before its context
+readings, so an unscored item is never given as the cause of a stance.
+Tests cover the scalar grade, the live re-grade and the scored-first
+citation.
+
 ## 2026-09-08 - Each analyst's rating on the page, and the technical read at the live price
 
 The record now carries each analyst's rating of every name (its rank

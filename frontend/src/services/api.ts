@@ -1992,9 +1992,16 @@ export interface DeskMineRow {
   action: 'buy' | 'add' | 'trim' | 'sell' | 'hold';
   in_book: boolean;
   grade: string;
+  // The grade re-made with the technical analyst read at the live price,
+  // and the score moved by it; the record's grade when there is no read.
+  grade_live: string;
+  score_live: number | null;
+  technical_now: number | null;
+  technical_close: number | null;
   rank: number | null;
   score: number | null;
   stances: Record<string, number>;
+  ranks?: Record<string, number>;
   why: string;
   reason: string;
   target_weight: number;

@@ -131,6 +131,37 @@ def grade(
     )
 
 
+# One name's grade from its stances alone, by the same rule as the panel:
+# for the page's live re-grade, where one analyst's stance has moved
+# with the price and the others stand. No persistence is applied; it is
+# "if the session closed here".
+def grade_from_stances(
+    stances: dict[str, int], weights: dict[str, float] | None = None
+) -> tuple[str, float]:
+    """Return (letter, votes) for one name from {analyst: stance}."""
+    w = analyst_weights(weights, tuple(stances))
+    votes = float(sum(w[name] * int(stance) for name, stance in stances.items()))
+    f = int(stances.get("fundamental", 0))
+    t = int(stances.get("technical", 0))
+    s_ = int(stances.get("sentiment", 0))
+    v = int(stances.get("value", 0))
+    release_bullish = s_ == BULLISH
+    letter = C
+    if votes >= 0.5:
+        letter = B
+    if (
+        votes >= 2
+        or (release_bullish and votes >= 1)
+        or (f == BULLISH and t == BULLISH and votes >= 1.5)
+    ):
+        letter = A
+    if release_bullish and votes >= 2:
+        letter = A_PLUS
+    if BEARISH in (f, t, s_, v) and ORDINAL[letter] > ORDINAL[B]:
+        letter = B
+    return letter, votes
+
+
 # The weight each analyst's stance and conviction carry in the sum. Equal
 # weights, rotation at half, is the rule; a different set is scaled to the
 # same total so the grade thresholds keep their meaning.

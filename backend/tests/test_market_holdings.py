@@ -129,7 +129,11 @@ def test_board_against_the_persons_holdings():
     quotes = {"ADBE": {"last": 303.0}, "IREN": {"last": 44.67}}
     rows = holdings.board(_record(), held, equity=100_000.0, quotes=quotes)
     by = {r["ticker"]: r for r in rows}
-    assert [r["action"] for r in rows][:2] == ["sell", "sell"]  # FTNT and IREN leave
+    assert {r["ticker"]: r["action"] for r in rows if r["action"] == "sell"} == {
+        "FTNT": "sell",
+        "IREN": "sell",
+    }  # FTNT and IREN leave
+    assert [r["ticker"] for r in rows][-1] == "IREN"  # not covered sorts last
     assert by["HPE"]["action"] == "buy"
     assert by["HPE"]["delta_weight"] == pytest.approx(0.105)
     assert by["ADBE"]["action"] == "hold"  # 37 * 303 / 100k = 11.2%, on target
@@ -145,3 +149,34 @@ def test_board_against_the_persons_holdings():
     assert by["IREN"]["pl_pct"] == pytest.approx(44.67 / 35.0 - 1.0)
     assert by["IREN"]["stops"] == {}
     assert by["IREN"]["leaves_if"].startswith("your call")
+
+
+# The live technical read re-makes the grade and the order: a name whose
+# technical rank has fallen through the bearish line drops to B by the
+# veto and sorts below the names still A, and a name that rose keeps its
+# grade with a higher score.
+def test_the_live_technical_read_regrades_and_reorders():
+    record = _record()
+    record["grades"]["ADBE"]["stances"] = {
+        "fundamental": 1,
+        "technical": 1,
+        "sentiment": 1,
+        "value": 0,
+        "rotation": 0,
+    }
+    record["grades"]["HPE"]["stances"] = dict(record["grades"]["ADBE"]["stances"])
+    technical = {
+        "ADBE": {"now": 0.10, "close": 0.90},
+        "HPE": {"now": 0.95, "close": 0.80},
+    }
+    rows = holdings.board(record, [], 100_000.0, {}, technical)
+    by = {r["ticker"]: r for r in rows}
+    assert by["ADBE"]["grade"] == "A+"
+    assert by["ADBE"]["grade_live"] == "B"  # a bearish technical vetoes the top grades
+    assert by["HPE"]["grade_live"] == "A+"
+    assert by["HPE"]["score_live"] > by["HPE"]["score"]
+    assert [r["ticker"] for r in rows][0] == "HPE"
+    assert [r["ticker"] for r in rows][-1] == "ADBE" or by["ADBE"]["grade_live"] == "B"
+    # Without a live read the grade stands and the order is by grade then score.
+    plain = holdings.board(record, [], 100_000.0, {})
+    assert [r["grade_live"] for r in plain] == [r["grade"] for r in plain]

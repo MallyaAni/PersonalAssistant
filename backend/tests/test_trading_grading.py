@@ -61,3 +61,31 @@ def test_weights_move_the_votes_and_the_summed_conviction():
     again = grading.grade_stances(bull, bear, flat, None, flat, _convictions())
     assert np.array_equal(plain.grades, again.grades)
     assert np.array_equal(plain.votes, again.votes)
+
+
+# One name's grade from its stances follows the panel's rule exactly:
+# the same thresholds, the release's role, and the bearish veto.
+def test_one_name_grades_like_the_panel():
+    from backend.agents.trading.desk.grading import ANALYST_WEIGHTS, grade_from_stances
+
+    base = {"fundamental": 0, "technical": 0, "sentiment": 0, "value": 0, "rotation": 0}
+    assert grade_from_stances(base, ANALYST_WEIGHTS)[0] == "C"
+    assert grade_from_stances({**base, "technical": 1}, ANALYST_WEIGHTS)[0] == "B"
+    assert (
+        grade_from_stances({**base, "fundamental": 1, "technical": 1}, ANALYST_WEIGHTS)[
+            0
+        ]
+        == "A"
+    )
+    assert (
+        grade_from_stances({**base, "sentiment": 1, "rotation": 1}, ANALYST_WEIGHTS)[0]
+        == "A"
+    )
+    assert (
+        grade_from_stances(
+            {**base, "sentiment": 1, "value": 1, "fundamental": 1}, ANALYST_WEIGHTS
+        )[0]
+        == "A+"
+    )
+    vetoed = {**base, "sentiment": 1, "value": 1, "fundamental": 1, "technical": -1}
+    assert grade_from_stances(vetoed, ANALYST_WEIGHTS)[0] == "B"

@@ -139,16 +139,24 @@ async def desk_mine(
         {h.ticker for h in rows} | {r["ticker"] for r in latest.get("book") or []}
     )
     quotes: dict = {}
+    technical: dict = {}
     try:
         found = live_quotes.quotes(symbols, headers=alpaca.credentials())
         quotes = {s: asdict(q) for s, q in found.items()}
+        if found:
+            try:
+                technical = await asyncio.to_thread(
+                    live_technical.technical_now, MarketStore(_root()), found
+                )
+            except Exception:  # noqa: BLE001 - the board stands without the live read
+                technical = {}
     except alpaca.AlpacaUnavailableError:
         pass
     return {
         "user_id": user_id,
         "session": latest.get("session"),
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
-        "rows": holdings.board(latest, rows, equity, quotes),
+        "rows": holdings.board(latest, rows, equity, quotes, technical),
     }
 
 

@@ -20,7 +20,14 @@ from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
 
-from backend.agents.trading.desk import actions
+from backend.agents.trading.desk import actions, grading
+from backend.agents.trading.desk.opinions import (
+    BEARISH,
+    BULLISH,
+    SHARPNESS,
+    STANCE_FRACTION,
+    conviction_from_ranks,
+)
 
 FILE = "holdings.json"
 
@@ -96,9 +103,20 @@ def save(root: Path, holdings: list[Holding]) -> Path:
 
 # The board against the person's holdings, from the latest record.
 def board(
-    record: dict, holdings: list[Holding], equity: float, quotes: dict
+    record: dict,
+    holdings: list[Holding],
+    equity: float,
+    quotes: dict,
+    technical: dict | None = None,
 ) -> list[dict]:
-    """Return action rows for every name held or targeted, most urgent first."""
+    """Return action rows for every name held or targeted, best grade first.
+
+    `technical` is {ticker: {"now": rank, "close": rank}} from the live
+    read; where present the technical stance is re-read at the live rank
+    and the grade and score re-made from it, so the order follows the
+    candle. The evening decision (targets, actions) is unchanged by it.
+    """
+    technical = technical or {}
     grades = record.get("grades") or {}
     targets = {row["ticker"]: float(row["weight"]) for row in record.get("book") or []}
     levels = dict(record.get("levels") or {})
@@ -123,12 +141,17 @@ def board(
         target = targets.get(ticker, 0.0)
         grade = grades.get(ticker) or {}
         in_book = ticker in grades
+        live = _live_grade(grade, technical.get(ticker)) if in_book else None
         rows.append(
             {
                 "ticker": ticker,
                 "action": actions.action_for(target, current),
                 "in_book": in_book,
                 "grade": grade.get("grade", ""),
+                "grade_live": live["grade"] if live else grade.get("grade", ""),
+                "score_live": live["score"] if live else None,
+                "technical_now": live["now"] if live else None,
+                "technical_close": live["close"] if live else None,
                 "rank": rank.get(ticker),
                 "score": float(grade.get("score", 0.0)) if in_book else None,
                 "stances": grade.get("stances") or {},
@@ -167,7 +190,45 @@ def board(
                 ),
             }
         )
+    # Best grade first, the live one where the candle has moved it, then
+    # the live score; names the desk does not cover last.
     rows.sort(
-        key=lambda r: (actions.ORDER[r["action"]], -abs(r["delta_weight"]), r["ticker"])
+        key=lambda r: (
+            not r["in_book"],
+            -grading.ORDINAL.get(r["grade_live"], -1),
+            -(r["score_live"] if r["score_live"] is not None else -1e9),
+            r["ticker"],
+        )
     )
     return rows
+
+
+# The grade re-made with the technical stance read at the live rank, the
+# other analysts as the record left them, and the score moved by the
+# technical conviction's change. None when there is no live read.
+def _live_grade(grade: dict, tech: dict | None) -> dict | None:
+    if not tech:
+        return None
+    now, close = float(tech.get("now", float("nan"))), float(
+        tech.get("close", float("nan"))
+    )
+    if not (now == now and close == close):
+        return None
+    stances = {k: int(v) for k, v in (grade.get("stances") or {}).items()}
+    if "technical" not in stances:
+        return None
+    stances["technical"] = (
+        BULLISH
+        if now >= 1.0 - STANCE_FRACTION
+        else BEARISH if now <= STANCE_FRACTION else 0
+    )
+    letter, _votes = grading.grade_from_stances(stances, grading.ANALYST_WEIGHTS)
+    moved = float(
+        conviction_from_ranks(now, SHARPNESS) - conviction_from_ranks(close, SHARPNESS)
+    )
+    return {
+        "grade": letter,
+        "score": float(grade.get("score", 0.0)) + moved,
+        "now": now,
+        "close": close,
+    }

@@ -218,6 +218,32 @@ PLACE_WORDS = (
     (1.01, "top of book"),
 )
 MARK = {1: "+", 0: "\u00b7", -1: "\u2212"}
+# What each analyst actually scores. The rest of its evidence is context:
+# it may be cited when nothing scored stands out, but a reader must not be
+# told an unscored reading decided a stance. The technical and value sets
+# are the legs of those analysts' blends (see their modules).
+SCORED_BY_ANALYST: dict[str, tuple[str, ...]] = {
+    "fundamental": (
+        "revenue_yoy",
+        "revenue_qoq",
+        "gross_margin",
+        "revenue_acceleration",
+    ),
+    "technical": (
+        "weekly_trend",
+        "daily_trend",
+        "residual_momentum_120",
+        "support_distance",
+        "range_position_60",
+    ),
+    "sentiment": (
+        "tone_guidance",
+        "tone_demand",
+        "tone_guidance_change",
+        "tone_pricing",
+    ),
+    "value": ("price_sales", "cheap_vs_side"),
+}
 
 # What the desk does at each grade, in the operator's own words.
 ACTION: dict[str, str] = {
@@ -434,6 +460,9 @@ def _notable(
             ranked.append((score, measure, float(value), argues))
     if stance != 0 and any(r[3] for r in ranked):
         ranked = [r for r in ranked if r[3]]
+    scored = SCORED_BY_ANALYST.get(analyst)
+    if scored and any(r[1] in scored for r in ranked):
+        ranked = [r for r in ranked if r[1] in scored]
     ranked.sort(key=lambda r: -r[0])
     return [(measure, value) for _score, measure, value, _argues in ranked[:CITE]]
 

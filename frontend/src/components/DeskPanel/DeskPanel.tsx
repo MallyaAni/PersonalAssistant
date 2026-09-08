@@ -326,11 +326,10 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           <thead className="text-left text-[#6e6e73]">
             <tr>
               <th className="py-1">Name</th>
-              <th>Do</th>
-              <th>How much</th>
-              <th>Price</th>
+              <th>Action</th>
+              <th>Size</th>
               <th>Grade</th>
-              <th>When to sell</th>
+              <th>Exit</th>
               <th title={TRIGGER_LEGEND}>Why</th>
             </tr>
           </thead>
@@ -340,7 +339,6 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
                 key={r.ticker}
                 r={r}
                 ranks={latest.grades[r.ticker]?.ranks}
-                technical={live.technical?.[r.ticker]}
                 quote={live.quotes[r.ticker]}
                 equity={equity}
                 stops={stops}
@@ -360,8 +358,10 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
         <p className="mt-2 text-xs text-[#6e6e73]">
           When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
-          price shown; edit the price if your fill differed. Buy at the open with a market order. A name is sold when it loses its A grade at the next check, not at a
-          price; stops are optional because they cut winners as often as losers.
+          price shown; edit the price if your fill differed. Names are in grade order, best first, re-read every 15
+          minutes with the technical analyst at the live price. Share counts follow the live price; the weights are
+          the evening decision. Buy at the open with a market order. The desk sells when a name loses its A grade at
+          the next check, not at a price; stops are optional because they cut winners as often as losers.
         </p>
         {warnings.length > 0 && (
           <ul className="mt-2 space-y-1 text-xs text-[#9a6200]">
@@ -485,7 +485,6 @@ const PracticeAccount = ({ userId, record }: { userId: string; record: DeskPaylo
 interface RowProps {
   r: DeskMineRow
   ranks?: Record<string, number>
-  technical?: { now: number; close: number }
   quote?: DeskQuote
   equity: number
   stops: boolean
@@ -497,7 +496,7 @@ interface RowProps {
 
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
-const Row = ({ r, ranks, technical, quote, equity, stops, open, onReason, marking, onDone }: RowProps) => {
+const Row = ({ r, ranks, quote, equity, stops, open, onReason, marking, onDone }: RowProps) => {
   const { price, qty } = sizing(r, quote, equity)
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
@@ -526,12 +525,7 @@ const Row = ({ r, ranks, technical, quote, equity, stops, open, onReason, markin
         {r.action === 'hold' ? (
           <span>{pct(r.current_weight)} of the account</span>
         ) : (
-          <span>
-            <span className="font-medium">{qty.toLocaleString()} shares</span>{' '}
-            <span className="text-[#6e6e73]">
-              ({pct(r.current_weight)} → {pct(r.target_weight)})
-            </span>
-          </span>
+          <span className="font-medium">{qty.toLocaleString()} shares</span>
         )}
         {r.shares > 0 && r.entry_price !== null && (
           <div className="text-xs text-[#6e6e73]">
@@ -542,22 +536,16 @@ const Row = ({ r, ranks, technical, quote, equity, stops, open, onReason, markin
           </div>
         )}
       </td>
-      <td className="whitespace-nowrap text-[#6e6e73]">
-        {r.last_close !== null ? `close ${money(r.last_close)}` : '—'}
-        {quote && (
-          <div className={`text-xs ${hit ? 'font-medium text-[#b42318]' : ''}`}>
-            now {money(quote.last)}
-            {quote.open > 0 && ` · ${signed(quote.last / quote.open - 1)} today`}
-            {trailing !== null && (hit ? ' · below the stop: sell' : ` · stop ${money(trailing)}`)}
-          </div>
-        )}
-      </td>
       <td className="whitespace-nowrap">
         {r.in_book ? (
           <>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade] ?? ''}`}>{r.grade}</span>
-            <span className="ml-1 font-mono text-xs text-[#6e6e73]">#{r.rank ?? '—'}</span>
-            {atRisk && (
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>{r.grade_live}</span>
+            {r.grade_live !== r.grade && (
+              <span className="ml-1 text-xs text-[#6e6e73]" title="the grade with the technical analyst read at the live price; the evening grade stands for the desk's own trades">
+                {r.grade} at the close
+              </span>
+            )}
+            {atRisk && r.grade_live === r.grade && (
               <span className="ml-1 text-xs text-[#9a6200]" title="one more analyst turning against it would drop the grade below A">
                 at risk
               </span>
@@ -572,7 +560,15 @@ const Row = ({ r, ranks, technical, quote, equity, stops, open, onReason, markin
         {r.until_rebalance !== null && r.target_weight > 0 && (
           <>
             <br />
-            next check in {r.until_rebalance} trading day{r.until_rebalance === 1 ? '' : 's'}
+            grade check in {r.until_rebalance} trading day{r.until_rebalance === 1 ? '' : 's'}
+          </>
+        )}
+        {trailing !== null && (
+          <>
+            <br />
+            <span className={hit ? 'font-medium text-[#b42318]' : ''}>
+              {hit ? 'below the stop: sell' : `stop ${money(trailing)}`}
+            </span>
           </>
         )}
       </td>
@@ -596,9 +592,9 @@ const Row = ({ r, ranks, technical, quote, equity, stops, open, onReason, markin
                 {ratings(ranks, r.stances ?? {})}
               </div>
             )}
-            {technical && (
+            {r.technical_now !== null && r.technical_close !== null && (
               <div className="text-[#6e6e73]">
-                technical at the live price: {Math.round(technical.now * 100)} (was {Math.round(technical.close * 100)} at the close)
+                technical at the live price: {Math.round(r.technical_now * 100)} (was {Math.round(r.technical_close * 100)} at the close)
               </div>
             )}
             <ReasonLines text={r.reason} />
