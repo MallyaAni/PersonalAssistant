@@ -79,6 +79,34 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
 const money = (value: number) =>
   value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+const sizing = (r: DeskMineRow, quote: DeskQuote | undefined, equity: number) => {
+  const price = quote?.last ?? r.last ?? r.last_close ?? 0
+  const qty = price > 0 ? Math.round((Math.abs(r.delta_weight) * equity) / price) : 0
+  return { price, qty }
+}
+const today = () => new Date().toISOString().slice(0, 10)
+
+// The positions after the person has done what a row says, at the price
+// and size on the row. A buy opens the name, an add averages into it, a
+// trim takes shares off, a sell closes it. They edit the price afterward
+// if their fill differed.
+const afterTrade = (holdings: DeskHolding[], r: DeskMineRow, price: number, qty: number): DeskHolding[] => {
+  const rest = holdings.filter((h) => h.ticker !== r.ticker)
+  const mine = holdings.find((h) => h.ticker === r.ticker)
+  if (r.action === 'sell') return rest
+  if (r.action === 'trim') {
+    if (!mine || mine.shares - qty <= 0) return rest
+    return [...rest, { ...mine, shares: mine.shares - qty }]
+  }
+  if (r.action === 'add' && mine) {
+    const shares = mine.shares + qty
+    const entry = (mine.shares * mine.entry_price + qty * price) / shares
+    return [...rest, { ...mine, shares, entry_price: Math.round(entry * 100) / 100 }]
+  }
+  if (qty <= 0) return holdings
+  return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: today() }]
+}
+
 const triggers = (stances: Record<string, number>) =>
   TRIGGER_ORDER.filter(([k]) => k in stances)
     .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
@@ -103,6 +131,18 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [editing, setEditing] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [openReason, setOpenReason] = useState<string | null>(null)
+  const [marking, setMarking] = useState<string | null>(null)
+
+  const save = async (next: DeskHolding[]) => {
+    try {
+      setHoldings(await putDeskHoldings(userId, next))
+      setSaveError('')
+      return true
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'The positions were not saved.')
+      return false
+    }
+  }
 
   const load = async () => {
     try {
@@ -253,13 +293,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             holdings={holdings}
             error={saveError}
             onSave={async (next) => {
-              try {
-                setHoldings(await putDeskHoldings(userId, next))
-                setSaveError('')
-                setEditing(false)
-              } catch (err) {
-                setSaveError(err instanceof Error ? err.message : 'The positions were not saved.')
-              }
+              if (await save(next)) setEditing(false)
             }}
           />
         )}
@@ -291,12 +325,21 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
                 stops={stops}
                 open={openReason === r.ticker}
                 onReason={() => setOpenReason(openReason === r.ticker ? null : r.ticker)}
+                marking={marking === r.ticker}
+                onDone={async () => {
+                  const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
+                  setMarking(r.ticker)
+                  await save(afterTrade(holdings, r, price, qty))
+                  setMarking(null)
+                }}
               />
             ))}
           </tbody>
         </table>
+        {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
         <p className="mt-2 text-xs text-[#6e6e73]">
-          Buy at the open with a market order. A name is sold when it loses its A grade at the next check, not at a
+          When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
+          price shown; edit the price if your fill differed. Buy at the open with a market order. A name is sold when it loses its A grade at the next check, not at a
           price; stops are optional because they cut winners as often as losers.
         </p>
         {warnings.length > 0 && (
@@ -377,13 +420,14 @@ interface RowProps {
   stops: boolean
   open: boolean
   onReason: () => void
+  marking: boolean
+  onDone: () => Promise<void>
 }
 
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
-const Row = ({ r, quote, equity, stops, open, onReason }: RowProps) => {
-  const price = quote?.last ?? r.last ?? r.last_close ?? 0
-  const qty = price > 0 ? Math.round((Math.abs(r.delta_weight) * equity) / price) : 0
+const Row = ({ r, quote, equity, stops, open, onReason, marking, onDone }: RowProps) => {
+  const { price, qty } = sizing(r, quote, equity)
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
   const hit = trailing !== null && price > 0 && price <= trailing
@@ -395,6 +439,17 @@ const Row = ({ r, quote, equity, stops, open, onReason }: RowProps) => {
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>
           {r.action}
         </span>
+        {r.action !== 'hold' && (
+          <button
+            type="button"
+            onClick={() => void onDone()}
+            disabled={marking}
+            title="I have placed this trade on my broker: record it in my positions at the price shown"
+            className="ml-1 text-xs text-[#0071e3] hover:underline disabled:text-[#6e6e73]"
+          >
+            {marking ? 'saving' : 'done'}
+          </button>
+        )}
       </td>
       <td className="whitespace-nowrap">
         {r.action === 'hold' ? (
@@ -637,7 +692,8 @@ const HowToUse = ({ onClose }: { onClose: () => void }) => (
         by name, <b>buy, add, trim, sell or hold</b>, and how many shares.
       </li>
       <li>
-        <b>Buy at the open</b> with a market order. Do not chase a name that has already jumped.
+        <b>Buy at the open</b> with a market order. Do not chase a name that has already jumped. When a trade is
+        placed, click <b>done</b> on its row and your positions update.
       </li>
       <li>
         <b>Selling:</b> a name is sold when its grade drops below A at the next check, about every four weeks. Each
