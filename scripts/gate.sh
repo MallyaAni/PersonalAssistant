@@ -28,7 +28,20 @@
 # follow the convention in backend/tests/test_scheduled_task_repository.py -
 # rows tagged with a throwaway user id, removed in the same test. That is
 # INSERT and DELETE against tagged rows, never DDL, so anios_db's real data is
-# not in the blast radius and no scratch database is created.
+# not in the blast radius.
+#
+# The unit suite is the exception, since 2026-09-08. It runs against its own
+# database, anios_gate, created beside anios_db on the same server and
+# migrated to head before every run. Tagged rows were not enough for it:
+# the queue tests (agent runs, discovery runs, run answers) enqueue a row and
+# claim it, and the live workers claim by queue, not by user, so the
+# discovery worker took the test's row first in three deploys out of three
+# on 2026-09-08 (claim_next returned None; its log showed foreign-key
+# failures on run ids the tests had already deleted). A scratch database no
+# worker connects to ends that race, and keeps test instructions such as
+# "send the summary to mum" out of a queue a real worker executes. It is
+# never dropped, never touched by the running system, and costs one
+# `alembic upgrade head` a run, a few seconds once it exists.
 
 set -euo pipefail
 
@@ -128,10 +141,29 @@ ignores=(
 # and adding workers of our own to that is a way to make a green suite
 # flaky.
 parallel=(-n 5 --dist loadfile)
+database=()
 if $unit; then
     ignores+=(--ignore=/app/backend/tests/functional)
     parallel=()
     "${compose[@]}" up -d --wait redis db >/dev/null
+    # The suite's own database: created once, migrated every run.
+    gate_db="anios_gate"
+    exists="$("${compose[@]}" exec -T db sh -c \
+        "psql -U \"\$POSTGRES_USER\" -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='$gate_db'\"")"
+    if [ "$exists" != "1" ]; then
+        echo "==> Creating $gate_db for the unit suite"
+        "${compose[@]}" exec -T db sh -c "psql -U \"\$POSTGRES_USER\" -d postgres -c 'CREATE DATABASE $gate_db'" >/dev/null
+    fi
+    echo "==> Migrating $gate_db to head"
+    if ! "${compose[@]}" run --rm --no-deps --build \
+        -e POSTGRES_DB="$gate_db" \
+        -v "$root/backend:/app/backend:ro" \
+        -v "$root/migrations:/app/migrations:ro" \
+        functional-tests python -m alembic upgrade head >/dev/null; then
+        echo "==> Gate FAILED: $gate_db could not be migrated" >&2
+        exit 1
+    fi
+    database=(-e POSTGRES_DB="$gate_db")
 fi
 
 echo "==> Gating on $target"
@@ -163,6 +195,7 @@ if "${compose[@]}" run --rm --no-deps --build \
     -v "$root/bridges:/app/bridges:ro" \
     -v "$root/.env.example:/app/.env.example:ro" \
     -e REDIS_URL=redis://redis:6379/0 \
+    "${database[@]}" \
     functional-tests \
     python -m pytest "${targets[@]}" "${ignores[@]}" "${parallel[@]}" \
         -q -p no:cacheprovider --no-header; then

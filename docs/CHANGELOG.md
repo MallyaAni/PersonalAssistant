@@ -2,6 +2,18 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - The unit gate gets its own database
+
+Three deploys in a row failed the gate on three different queue tests
+(discovery runs, agent runs, run answers): each enqueues a row and claims
+it, and the live discovery worker, which claims by queue rather than by
+user, took the row first. Its log showed foreign-key failures on run ids
+the tests had already deleted, so test instructions were reaching a queue
+a real worker executes. `scripts/gate.sh --unit` now creates `anios_gate`
+beside `anios_db` once, migrates it to head before every run, and points
+the suite at it. Nothing connects to it but the gate; nothing drops it.
+The functional gate is unchanged: the matrix needs no database.
+
 ## 2026-09-08 - One board
 
 The Desk page had two action tables (the practice account's and the
