@@ -46,7 +46,33 @@ is a touch generous against the next open, the same bias for every rule.
 
 Results
 -------
-Recorded below once the run is read.
+On the daily chart network's probabilities (`market_charts`), 611,451
+scored cells from 2022, the top tenth entered each session and held
+twenty, ten basis points a side:
+
+  sizing rule, hold 20            annual    vol  Sharpe   maxDD  per trade
+  equal weight                    +14.4%  19.1%    0.75  -22.6%    +1.13%
+  edge (p - 0.5)                  +14.4%  19.2%    0.75  -22.6%    +1.13%
+  edge over volatility            +10.6%  16.7%    0.64  -19.8%    +1.13%
+  edge over variance              +8.7%   14.8%    0.58  -18.9%    +1.13%
+
+  exit rule, edge-over-volatility sizing
+  hold to the horizon             +10.6%  16.7%    0.64  -19.8%    +1.13%
+  trailing stop 8%                +6.3%   12.3%    0.51  -17.4%    +0.66%
+  trailing stop 12%               +7.5%   14.3%    0.52  -20.4%    +0.79%
+  edge decay, P(up) under a half  +9.2%   15.8%    0.58  -19.7%    +0.99%
+  edge decay with the 12% stop    +6.6%   13.7%    0.48  -20.0%    +0.71%
+
+A market-shaped long book: fourteen percent a year at a Sharpe of 0.75,
+what holding these names does, which is what a signal with no
+cross-sectional skill produces when its top tenth is bought. Sizing on
+the edge changes nothing because the edge is noise; scaling by
+volatility lowers the return with the risk. Every exit rule is worse
+than holding, the stops most, and the model's own "edge decay" exit is
+no better than a stop, because a probability that carried no
+information at entry carries none at re-scoring. The desk's exit, the
+signal at the rebalance, was measured against every one of these on
+its own book and stands.
 """
 
 import argparse
