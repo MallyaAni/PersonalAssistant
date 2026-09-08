@@ -107,6 +107,8 @@ def board(
     ranked = sorted(grades, key=lambda t: -float(grades[t].get("score", 0.0)))
     rank = {t: i + 1 for i, t in enumerate(ranked)}
     held = {h.ticker: h for h in holdings}
+    # The rebalance clock is the paper book's; the levels carry none.
+    until = (record.get("paper") or {}).get("until_rebalance")
     rows = []
     for ticker in sorted(set(targets) | set(held)):
         holding = held.get(ticker)
@@ -150,7 +152,9 @@ def board(
                 "high_20": level.get("high_20"),
                 "stops": level.get("stops") or {},
                 "grade_margin": level.get("grade_margin"),
-                "until_rebalance": level.get("until_rebalance"),
+                "until_rebalance": (
+                    until if until is not None else level.get("until_rebalance")
+                ),
                 "leaves_if": (
                     "sell when its grade drops below A"
                     if target > 0
