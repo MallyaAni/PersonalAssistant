@@ -180,6 +180,8 @@ def _book(entries, close, simple, scores, hold, rule, stop, cost_bps):
     daily = np.zeros(rows)
     per_trade = []
     for t, n, w in entries:
+        if t + 1 >= rows:
+            continue  # an entry on the last session has no path to mark
         e = _exit_session(close, scores, t, n, hold, rule, stop)
         path = simple[t + 1 : e + 1, n]
         path = np.where(np.isfinite(path), path, 0.0)

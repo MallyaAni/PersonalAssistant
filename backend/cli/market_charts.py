@@ -34,7 +34,37 @@ is a smaller number.
 
 Results
 -------
-Recorded below once the run is read.
+1,452,698 twenty-day images over 531 names, 2015-02 to 2026-09; five
+test years, three seeds each, early stopping on a held-out third;
+611,451 out-of-sample cells from 2022-01-03. Measured as the desk's
+analysts are, rank IC against the twenty-session beta-adjusted residual:
+
+  signal                     cells    rank IC      t   net Sharpe
+  chart network           universe    -0.0027  -0.25       -0.51
+  chart network           the book    +0.0109  +0.58       +0.34
+  momentum 252/21         universe    +0.0077  +0.34       +0.35
+  momentum 252/21         the book    +0.0033  +0.10       -0.07
+  reversal, 5 sessions    universe    -0.0293  -1.91       -1.05
+  reversal, 5 sessions    the book    -0.0297  -1.37       -0.65
+
+Its probability in deciles across each session, against the realised
+twenty-session return and residual (`market_position`):
+
+  decile     1      2      3      4      5      6      7      8      9     10
+  return  +0.86  +0.83  +0.88  +0.92  +0.83  +0.85  +0.82  +0.79  +0.73  +0.73  %
+  resid   -0.16  -0.18  -0.12  -0.09  -0.15  -0.14  -0.16  -0.18  -0.22  -0.20  %
+
+Flat. The network's most confident tenth did no better than its least,
+and slightly worse. The shapes that beat momentum and reversal on the
+US cross-section of 1993-2019 do not carry information on five hundred
+large names in 2022-2026, at least not to this network trained to the
+paper's specification with this much data; momentum and reversal carry
+none here either, which is the same finding from the other side. IREN
+on 2026-09-01, the dip that prompted this: P(up) 0.536, the 9th
+percentile of that day's names - the model would have ranked it near
+the bottom. There is no chart analyst. The daily clock stays with the
+four analysts that measured; the fifteen-minute version of this model
+is measured next.
 """
 
 import argparse
