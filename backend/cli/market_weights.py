@@ -112,6 +112,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--embargo", type=int, default=5)
     parser.add_argument("--data-dir", default="data/market")
     parser.add_argument("--simulate", action="store_true", help="run the book too")
+    parser.add_argument(
+        "--walk-forward",
+        action="store_true",
+        help="the book under each fold's own fitted weights, never its own years",
+    )
     parser.add_argument("--since", type=date.fromisoformat, default=date(2021, 6, 1))
     return parser
 
@@ -151,6 +156,70 @@ def _regraded(report, weights):
     )
     scores = graded.as_scores(trading_desk.blended(opinions))
     return replace(report, graded=graded, scores=scores)
+
+
+# The book under walk-forward weights: every fold regrades the desk with
+# the ridge weights fit on the sessions before it, and the test range's
+# grades and scores are taken from that regrading, so no session is ever
+# graded by weights that saw it. The fixed-weight comparison above applies
+# one set across the whole history including the years it was fit on; a
+# review named that development evidence, which it is. This is the test.
+def _walk_forward_book(report, args, shrink: float) -> None:
+    panel = report.panel
+    in_book = np.array([t in report.sides for t in panel.tickers])
+    in_book[panel.index(panel.benchmark)] = False
+    conv, prior = _convictions(report)
+    label = panel.forward_residual(20)
+    folds = list(
+        walk_forward_folds(len(panel.dates), args.train, args.test, 20, args.embargo)
+    )
+    grades = report.graded.grades.copy()
+    scores = report.scores.copy()
+    has = np.isfinite(label) & in_book[None, :]
+    first = None
+    for train_range, test_range in folds:
+        mask = np.zeros_like(has)
+        mask[train_range.start : train_range.stop] = has[
+            train_range.start : train_range.stop
+        ]
+        ft, fn = np.nonzero(mask)
+        if len(ft) < 500:
+            continue
+        w = _fit(conv[ft, fn], label[ft, fn], prior, shrink)
+        weights = dict(zip(ANALYSTS, (float(v) for v in w), strict=True))
+        regraded = _regraded(report, weights)
+        block = slice(test_range.start, test_range.stop)
+        grades[block] = regraded.graded.grades[block]
+        scores[block] = regraded.scores[block]
+        first = test_range.start if first is None else first
+    if first is None:
+        print("no fold could be fit")
+        return
+    stitched = replace(
+        report, graded=replace(report.graded, grades=grades), scores=scores
+    )
+    since = panel.dates[first].astype("datetime64[D]").astype(object)
+    print(
+        f"\nthe book from {since}, walk-forward weights (shrink {shrink:g}): "
+        f"{'annual':>8} {'vol':>7} {'Sharpe':>7} {'maxDD':>8} {'total':>9}"
+    )
+    for name, rep_ in (
+        (
+            "equal weights (the rule)",
+            _regraded(report, WEIGHT_SETS["equal weights (the rule until 2026-09-07)"]),
+        ),
+        (
+            "fixed ridge weights (development)",
+            _regraded(report, grading.ANALYST_WEIGHTS),
+        ),
+        ("walk-forward ridge weights", stitched),
+    ):
+        result = simulate.run(rep_, since=since, use_exits=False)
+        s = result.stats()
+        print(
+            f"{name:36} {s['annual']:+8.1%} {s['volatility']:7.1%} {s['sharpe']:7.2f} "
+            f"{s['drawdown']:8.1%} {s['total']:+9.1%}"
+        )
 
 
 # The book under each weight set, full rules, from `since`.
@@ -226,6 +295,9 @@ def main() -> None:
     """Entry point."""
     args = build_parser().parse_args()
     report = trading_desk.run(MarketStore(args.data_dir))
+    if args.walk_forward:
+        _walk_forward_book(report, args, shrink=1.0)
+        return
     if args.simulate:
         _simulated(report, args.since)
         return

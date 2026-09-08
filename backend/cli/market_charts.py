@@ -120,6 +120,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# Training and test masks for one test year. A session before the test
+# year whose label reaches into it is not training data: its forward
+# return is computed from test-year prices. So the last `horizon`
+# sessions before the first test session are purged, as the harness
+# purges its folds. A review found the earlier mask let December labels
+# move when only January prices changed.
+def training_mask(sessions, years, year: int, horizon: int):
+    """Return (train, test) boolean masks over the samples."""
+    test = years == year
+    if not test.any():
+        return years < year, test
+    first = int(sessions[test].min())
+    train = (years < year) & (sessions < first - horizon)
+    return train, test
+
+
 # The universe on one panel and the arrays the images are drawn from.
 def _panel(store):
     universe = build_universe()
@@ -279,7 +295,7 @@ def main() -> None:
     scores = np.full(panel.adj_close.shape, np.nan)
     nets_by_year = {}
     for year in args.years:
-        train, test = years < year, years == year
+        train, test = training_mask(sessions, years, year, args.horizon)
         if train.sum() < 10_000 or test.sum() == 0:
             continue
         print(
