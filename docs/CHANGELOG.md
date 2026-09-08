@@ -2,6 +2,18 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - One board
+
+The Desk page had two action tables (the practice account's and the
+person's), a six-fact market sentence, a legacy changes table, a holdings
+table that repeated the board and a six-sentence footer. It now has one
+board computed against the person's positions (every name a buy from
+nothing until positions are entered), the account size and stops switch
+beside it, the positions editor folded behind a link, the warnings under
+the board, and the practice account and every grade behind a details
+link. The person's rows carry the paper book's rebalance clock, which the
+record's levels do not. No rule or number changed.
+
 ## 2026-09-07 - Improving technicals into earnings, measured: the run-up is what gets sold
 
 A trader's claim: a 21/50 EMA turn with a report two weeks out has a

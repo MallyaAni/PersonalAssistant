@@ -87,6 +87,7 @@ def _record():
                 "reason": "",
             },
         },
+        "paper": {"until_rebalance": 12},
         "book": [
             {"ticker": "ADBE", "weight": 0.112},
             {"ticker": "HPE", "weight": 0.105},
@@ -135,6 +136,7 @@ def test_board_against_the_persons_holdings():
     assert by["ADBE"]["pl_pct"] == pytest.approx(303.0 / 290.0 - 1.0)
     assert by["ADBE"]["stops"]["12"] == 281.6
     assert by["ADBE"]["rank"] == 1
+    assert by["ADBE"]["until_rebalance"] == 12
     assert by["FTNT"]["in_book"]
     assert by["FTNT"]["grade"] == "B"
     assert by["FTNT"]["last"] == 80.0  # the record's close when the feed has none
