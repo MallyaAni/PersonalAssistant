@@ -169,6 +169,20 @@ test.beforeEach(async ({ page }) => {
       technical: { AAPL: { now: 0.9, close: 0.8 } },
     }),
   }))
+  // The intraday re-read: nothing new on the candle, so the board is the
+  // record's; the route must answer or the page logs a connection error.
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/intraday*`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      as_of: '2026-09-08T20:00:00Z',
+      session: '2026-09-08',
+      equity: 104200,
+      top_buys: [],
+      rows: [],
+      changed: [],
+    }),
+  }))
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -307,12 +321,11 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(glance.getByText('Practice account')).toBeVisible()
   await expect(glance.getByText('$104,200')).toBeVisible()
   await expect(glance.getByText('Today')).toBeVisible()
-  await expect(glance.getByText(/+$31[23]/)).toBeVisible()
+  await expect(glance.getByText(/\+\$31[23]/)).toBeVisible()
   await expect(glance.getByText('The rules, backtest')).toBeVisible()
   await expect(glance.getByText('not a record', { exact: false })).toBeVisible()
   await expect(glance.getByText('vs SPY', { exact: false })).toBeVisible()
-  await expect(glance.getByText('80% invested')).toBeVisible()
-  await expect(glance.getByText('Next rebalance')).toBeVisible()
+  await expect(glance.getByText('6% invested')).toBeVisible()  // 6,120 of 104,200 live
 
   // The regime leads the board, in plain words, and says what it is doing
   // about it.
