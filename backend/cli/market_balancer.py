@@ -32,6 +32,11 @@ from backend.market.store import MarketStore
 INTRADAY_FILE = "intraday.json"
 INTRADAY_LOG = "intraday.log"
 
+# The live snapshot: the candle's quotes and technical read, persisted beside
+# the plan so the desk page's live endpoints can serve the candle instantly
+# instead of fetching quotes and recomputing the analyst on every request.
+LIVE_FILE = "live.json"
+
 
 # What the live board says changed since the previous plan: a name's grade
 # moved, or a buy fell out or into the ranked list. Compact, human-readable,
@@ -78,16 +83,22 @@ def run(data_dir: Path, equity: float) -> Path:
         path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
         return path
     symbols = sorted(
-        {h.ticker for h in held} | {r["ticker"] for r in latest.get("book") or []}
+        {h.ticker for h in held}
+        | {r["ticker"] for r in latest.get("book") or []}
+        | {r["ticker"] for r in latest.get("actions") or []}
     )
     quotes: dict = {}
     technical: dict = {}
+    technical_detail: dict = {}
     try:
         found = live_quotes.quotes(symbols, headers=alpaca.credentials())
         quotes = {s: _quote_dict(q) for s, q in found.items()}
         if found:
             try:
                 technical = live_technical.technical_now(store, found)
+                # The detail shares the analyst's per-candle cache, so the
+                # second read is cheap and the page never pays for it.
+                technical_detail = live_technical.technical_detail(store, found)
             except Exception:  # the board stands without the live read
                 technical = {}
     except alpaca.AlpacaUnavailableError:
@@ -114,6 +125,21 @@ def run(data_dir: Path, equity: float) -> Path:
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
+    # The live snapshot alongside the plan: the same quotes and technical read
+    # the plan was built from, so the API's live endpoints serve the candle
+    # without a fresh quote fetch or analyst run of their own. A run with no
+    # quotes (keys unavailable) leaves the previous snapshot standing rather
+    # than clobbering it with an empty one the API would serve.
+    if quotes:
+        live = {
+            "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+            "quotes": quotes,
+            "technical": technical,
+            "technical_detail": technical_detail,
+        }
+        (data_dir / "desk" / LIVE_FILE).write_text(
+            json.dumps(live, indent=2), encoding="utf-8"
+        )
     with (data_dir / "desk" / INTRADAY_LOG).open("a", encoding="utf-8") as handle:
         grades = ",".join(
             f"{b['ticker']}={b.get('grade_live') or b.get('grade')}" for b in top_buys[:5]

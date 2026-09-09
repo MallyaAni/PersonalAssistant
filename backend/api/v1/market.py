@@ -53,6 +53,21 @@ def _root() -> Path:
     return Path(settings.MARKET_DATA_ROOT)
 
 
+# The candle's live snapshot written by `market_balancer` beside the intraday
+# plan: quotes, the technical read and its detail, so the live endpoints serve
+# the candle without fetching quotes or running the analyst themselves. The
+# page is designed around fifteen-minute candles, so the snapshot's age is the
+# candle's age; only a missing file falls back to computing live.
+def _live_snapshot() -> dict | None:
+    path = _root() / "desk" / "live.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 # The latest record, the changes since the one before, the headline
 # summary, and the sessions on file.
 @router.get("/desk")
@@ -79,8 +94,11 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
 # session route so "live" is not taken for a session.
 @router.get("/desk/live")
 async def desk_live(user_id: UserId) -> dict[str, object]:
-    """Return live quotes for the names on the latest board."""
+    """Return the candle's live quotes and technical read for the board."""
     _operator_only(user_id)
+    snap = _live_snapshot()
+    if snap is not None and snap.get("quotes"):
+        return {"user_id": user_id, **snap}
     latest, _previous = deskrecord.latest_pair(_root())
     rows = (latest or {}).get("actions") or []
     symbols = [str(r.get("ticker")) for r in rows if r.get("ticker")]
@@ -161,6 +179,20 @@ async def desk_mine(
     rows = holdings.load(_root())
     if latest is None:
         return {"user_id": user_id, "session": None, "rows": []}
+    snap = _live_snapshot()
+    if snap is not None and snap.get("quotes"):
+        return {
+            "user_id": user_id,
+            "session": latest.get("session"),
+            "as_of": snap.get("as_of"),
+            "rows": holdings.board(
+                latest,
+                rows,
+                equity,
+                snap.get("quotes") or {},
+                snap.get("technical") or {},
+            ),
+        }
     symbols = sorted(
         {h.ticker for h in rows} | {r["ticker"] for r in latest.get("book") or []}
     )

@@ -439,3 +439,50 @@ async def test_the_autopsy_without_documents_explains_why(tmp_path, monkeypatch)
     body = response.json()
     assert body["result"] is None
     assert "No trading documents" in body["reason"]
+
+
+# The live endpoints serve the candle the balancer persisted, without a quote
+# fetch or an analyst run of their own: /desk/live returns the snapshot, and
+# /desk/mine builds its board from the snapshot's quotes and technical read.
+@pytest.mark.asyncio
+async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-04", {"SNDK": "A+", "MU": "B"}, [("SNDK", 0.08)], [])
+    # The live grade re-read needs a technical stance on each name.
+    record_path = tmp_path / "desk" / "asof=2026-09-04" / "desk.json"
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+    for grade in record["grades"].values():
+        grade["stances"] = {"technical": 1}
+    record_path.write_text(json.dumps(record), encoding="utf-8")
+    desk = tmp_path / "desk"
+    desk.mkdir(parents=True, exist_ok=True)
+    (desk / "live.json").write_text(
+        json.dumps(
+            {
+                "as_of": "2026-09-04T12:00:00+00:00",
+                "quotes": {"SNDK": {"last": 120.0}, "MU": {"last": 45.0}},
+                "technical": {"SNDK": {"now": 0.81, "close": 0.7}},
+                "technical_detail": {"SNDK": {"now": 0.81}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    auth = {"Authorization": f"Bearer {token}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        live = await client.get("/api/v1/market/desk_user/desk/live", headers=auth)
+        mine = await client.get(
+            "/api/v1/market/desk_user/desk/mine", params={"equity": 10000}, headers=auth
+        )
+    assert live.status_code == 200
+    body = live.json()
+    assert body["as_of"] == "2026-09-04T12:00:00+00:00"
+    assert body["quotes"] == {"SNDK": {"last": 120.0}, "MU": {"last": 45.0}}
+    assert body["technical"]["SNDK"]["now"] == 0.81
+    assert body["technical_detail"] == {"SNDK": {"now": 0.81}}
+    board = {r["ticker"]: r for r in mine.json()["rows"]}
+    assert board["SNDK"]["technical_now"] == 0.81
+    assert board["SNDK"]["last"] == 120.0

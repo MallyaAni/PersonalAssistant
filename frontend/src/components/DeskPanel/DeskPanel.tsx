@@ -866,7 +866,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       {latest && details && <PracticeAccount record={latest.paper} paperLive={paperLive} />}
 
-      {latest && details && <EveryGrade latest={latest} />}
+      {latest && details && <EveryGrade latest={latest} rows={rows} onOpenName={(t) => setOpenName(t)} />}
 
       {openName && latest && (
         <NameDetail
@@ -1141,6 +1141,26 @@ interface RowProps {
   onDone: () => Promise<void>
 }
 
+// What ends this row's buy or hold, in words with the name's own margin to
+// the line, so the column says something different for each name instead of
+// repeating the desk's rule. `grade_margin` is how many votes the grade sits
+// above its own threshold: at or below zero it is one bearish stance from
+// losing it, so a name on the edge is told apart from one with room.
+const exitCell = (r: DeskMineRow) => {
+  if (!r.in_book) {
+    return <span className="text-[#6e6e73]">your call — the desk does not cover it</span>
+  }
+  if (r.shares > 0 && r.target_weight <= 0) {
+    return <span className="text-[#b42318]">sell everything — it no longer earns a place</span>
+  }
+  const what = r.shares > 0 ? 'sold if it loses its A grade' : 'a buy while it holds its A grade'
+  const m = r.grade_margin
+  if (m == null) return <span className="text-[#6e6e73]">{what}</span>
+  if (m <= 0) return <span className="font-medium text-[#b42318]">{what} — on the edge, one analyst away</span>
+  if (m < 1) return <span className="text-[#9a6200]">{what} — a hair above the line</span>
+  return <span className="text-[#6e6e73]">{what}</span>
+}
+
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
 // The "why" reads in plain words first; the analysts' numbers are inside.
@@ -1211,18 +1231,18 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
           <span className="text-xs text-[#6e6e73]">not covered</span>
         )}
       </td>
-      <td className="whitespace-nowrap text-xs text-[#6e6e73]">
-        {r.leaves_if}
+      <td className="whitespace-nowrap text-xs">
+        {exitCell(r)}
         {r.until_rebalance !== null && r.target_weight > 0 && (
           <>
             <br />
-            grade check in {r.until_rebalance} trading day{r.until_rebalance === 1 ? '' : 's'}
+            <span className="text-[#6e6e73]">grade check in {r.until_rebalance} trading day{r.until_rebalance === 1 ? '' : 's'}</span>
           </>
         )}
         {trailing !== null && (
           <>
             <br />
-            <span className={hit ? 'font-medium text-[#b42318]' : ''}>
+            <span className={hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}>
               {hit ? 'below the stop: sell' : `stop ${money(trailing)}`}
             </span>
           </>
@@ -1345,16 +1365,31 @@ const Positions = ({ holdings, error, onSave }: PositionsProps) => {
 
 // Every name the desk follows, best first, with the analysts' marks and
 // the reason behind the grade on request.
-const EveryGrade = ({ latest }: { latest: NonNullable<DeskPayload['latest']> }) => {
+const EveryGrade = ({
+  latest,
+  rows,
+  onOpenName,
+}: {
+  latest: NonNullable<DeskPayload['latest']>
+  rows: DeskMineRow[]
+  onOpenName: (ticker: string) => void
+}) => {
   const [openBrief, setOpenBrief] = useState<string | null>(null)
-  const grades = Object.entries(latest.grades).sort((a, b) => b[1].score - a[1].score)
+  // Ranked by the live score where the candle has re-read the name, so the
+  // best value at the current price sits on top; the evening score fills in
+  // for a name the live board has not touched.
+  const liveScore = new Map(rows.filter((r) => r.score_live != null).map((r) => [r.ticker, r.score_live as number]))
+  const liveGrade = new Map(rows.filter((r) => r.grade_live).map((r) => [r.ticker, r.grade_live as string]))
+  const grades = Object.entries(latest.grades).sort(
+    (a, b) => (liveScore.get(b[0]) ?? b[1].score) - (liveScore.get(a[0]) ?? a[1].score),
+  )
   const briefs = latest.briefs ?? {}
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Every grade</h3>
       <p className="mb-2 text-xs text-[#6e6e73]">
         {TRIGGER_LEGEND} The number is the analyst&rsquo;s rating, 0 to 100: where the name ranks across the book on
-        that analyst&rsquo;s evidence.
+        that analyst&rsquo;s evidence. Ordered by the live score, so the best value at the current price is on top.
       </p>
       <table className="w-full text-sm">
         <thead className="text-left text-[#6e6e73]">
@@ -1367,47 +1402,59 @@ const EveryGrade = ({ latest }: { latest: NonNullable<DeskPayload['latest']> }) 
           </tr>
         </thead>
         <tbody>
-          {grades.map(([ticker, g]) => (
-            <tr key={ticker} className="border-t border-black/[0.05] align-top">
-              <td className="py-1 font-medium">{ticker}</td>
-              <td className="text-[#6e6e73]">{g.side === 'ai' ? 'AI' : g.side}</td>
-              <td>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[g.grade] ?? ''}`}>{g.grade}</span>
-              </td>
-              <td className="whitespace-nowrap font-mono text-xs">
-                {g.ranks ? ratings(g.ranks, g.stances ?? {}) : triggers(g.stances ?? {})}
-              </td>
-              <td className="text-xs">
-                {briefs[ticker] || g.headline ? (
+          {grades.map(([ticker, g]) => {
+            const current = liveGrade.get(ticker) ?? g.grade
+            return (
+              <tr key={ticker} className="border-t border-black/[0.05] align-top">
+                <td className="py-1">
                   <button
                     type="button"
-                    onClick={() => setOpenBrief(openBrief === ticker ? null : ticker)}
-                    className="text-left text-[#0071e3] hover:underline"
+                    onClick={() => onOpenName(ticker)}
+                    className="font-medium text-[#1d1d1f] hover:text-[#0071e3] hover:underline"
+                    title="Open the name's history"
                   >
-                    {openBrief === ticker ? 'hide' : (briefs[ticker]?.verdict ?? g.headline)}
+                    {ticker}
                   </button>
-                ) : (
-                  <span className="text-[#6e6e73]">—</span>
-                )}
-                {openBrief === ticker && (
-                  <div className="mt-1 space-y-1 text-[#1d1d1f]">
-                    {g.reason && <ReasonLines text={g.reason} />}
-                    {briefs[ticker] && (
-                      <>
-                        <p>{briefs[ticker].reasoning}</p>
-                        <p>
-                          <span className="font-medium">Risks:</span> {briefs[ticker].risks}
-                        </p>
-                        <p>
-                          <span className="font-medium">Watch:</span> {briefs[ticker].watch}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )}
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td className="text-[#6e6e73]">{g.side === 'ai' ? 'AI' : g.side}</td>
+                <td>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
+                </td>
+                <td className="whitespace-nowrap font-mono text-xs">
+                  {g.ranks ? ratings(g.ranks, g.stances ?? {}) : triggers(g.stances ?? {})}
+                </td>
+                <td className="text-xs">
+                  {briefs[ticker] || g.headline ? (
+                    <button
+                      type="button"
+                      onClick={() => setOpenBrief(openBrief === ticker ? null : ticker)}
+                      className="text-left text-[#0071e3] hover:underline"
+                    >
+                      {openBrief === ticker ? 'hide' : (briefs[ticker]?.verdict ?? g.headline)}
+                    </button>
+                  ) : (
+                    <span className="text-[#6e6e73]">—</span>
+                  )}
+                  {openBrief === ticker && (
+                    <div className="mt-1 space-y-1 text-[#1d1d1f]">
+                      {g.reason && <ReasonLines text={g.reason} />}
+                      {briefs[ticker] && (
+                        <>
+                          <p>{briefs[ticker].reasoning}</p>
+                          <p>
+                            <span className="font-medium">Risks:</span> {briefs[ticker].risks}
+                          </p>
+                          <p>
+                            <span className="font-medium">Watch:</span> {briefs[ticker].watch}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </section>
