@@ -2093,6 +2093,18 @@ export interface DeskMineRow {
   leaves_if: string;
 }
 
+// The balancer's persisted intraday plan: the same board, recomputed
+// headlessly on the fifteen-minute candle, with what changed since the
+// previous run.
+export interface DeskIntraday {
+  as_of: string;
+  session: string | null;
+  equity: number;
+  top_buys: DeskMineRow[];
+  rows: DeskMineRow[];
+  changed: string[];
+}
+
 export const getDeskHoldings = async (userId: string): Promise<DeskHolding[]> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/holdings`,
@@ -2119,6 +2131,16 @@ export const getDeskMine = async (userId: string, equity: number): Promise<DeskM
   );
   if (!response.ok) return [];
   return ((await response.json()) as { rows: DeskMineRow[] }).rows;
+};
+
+// The balancer's persisted intraday plan (recomputed every fifteen minutes),
+// or null when none has been written yet.
+export const getDeskIntraday = async (userId: string): Promise<DeskIntraday | null> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/intraday`,
+  );
+  if (!response.ok) return null;
+  return (await response.json()) as DeskIntraday;
 };
 
 // The practice account as the broker reports it now.

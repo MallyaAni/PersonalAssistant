@@ -4,6 +4,7 @@ import {
   getDesk,
   getDeskHistory,
   getDeskHoldings,
+  getDeskIntraday,
   getDeskLive,
   getDeskMine,
   getDeskPaper,
@@ -12,6 +13,7 @@ import {
   type DeskCurve,
   type DeskHolding,
   type DeskHistory,
+  type DeskIntraday,
   type DeskLive,
   type DeskMineRow,
   type DeskPaperLive,
@@ -572,6 +574,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [paperLive, setPaperLive] = useState<DeskPaperLive | null>(null)
   const [holdings, setHoldings] = useState<DeskHolding[]>([])
   const [rows, setRows] = useState<DeskMineRow[]>([])
+  const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
   const [equity, setEquity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
   const [stops, setStops] = useState(() => readStored(STOPS_KEY) === 'on')
   const [help, setHelp] = useState(false)
@@ -634,6 +637,11 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         setRows(await getDeskMine(userId, equity))
       } catch {
         // the last board stands
+      }
+      try {
+        setIntraday(await getDeskIntraday(userId))
+      } catch {
+        // the persisted plan is a convenience; the live board stands
       }
       try {
         setPaperLive(await getDeskPaper(userId))
@@ -714,6 +722,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
       {latest && (
         <BestBuys
           rows={rows}
+          intraday={intraday}
           equity={equity}
           quotes={live.quotes}
           marking={marking}
@@ -854,22 +863,42 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 // opens the position at the shown size, so the desk can track it.
 const BestBuys = ({
   rows,
+  intraday,
   equity,
   quotes,
   marking,
   onBuy,
 }: {
   rows: DeskMineRow[]
+  intraday: DeskIntraday | null
   equity: number
   quotes: Record<string, DeskQuote>
   marking: string | null
   onBuy: (r: DeskMineRow) => Promise<void>
 }) => {
-  const buys = rows.filter((r) => r.in_book && r.target_weight > 0 && r.shares === 0)
+  // The balancer's persisted plan when one exists (recomputed headlessly on
+  // the candle), else the board the browser just computed.
+  const buys =
+    intraday && intraday.top_buys && intraday.top_buys.length > 0
+      ? intraday.top_buys
+      : rows.filter((r) => r.in_book && r.target_weight > 0 && r.shares === 0)
   if (buys.length === 0) return null
+  const when = intraday?.as_of
+    ? new Date(intraday.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : null
   return (
     <section className="rounded-2xl border border-[#1e7a3a]/25 bg-white p-4">
-      <h3 className="text-sm font-semibold text-[#1d1d1f]">Best buys right now</h3>
+      <h3 className="text-sm font-semibold text-[#1d1d1f]">
+        Best buys right now
+        {when && (
+          <span className="ml-2 text-xs font-normal text-[#6e6e73]">plan as of {when}</span>
+        )}
+      </h3>
+      {intraday && intraday.changed && intraday.changed.length > 0 && (
+        <p className="mb-1 text-xs text-[#9a6200]">
+          Since the last plan: {intraday.changed.join(' · ')}
+        </p>
+      )}
       <p className="mb-2 text-xs text-[#6e6e73]">
         Ranked best-first for this moment, sized by the grade. Click <b>Buy</b> once you have placed it on Schwab and it
         becomes a tracked position.

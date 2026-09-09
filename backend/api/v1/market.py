@@ -129,6 +129,19 @@ async def desk_save_holdings(user_id: UserId, rows: list[dict]) -> dict[str, obj
     return {"user_id": user_id, "holdings": [h.__dict__ for h in parsed]}
 
 
+# The balancer's persisted plan: the ranked buys for this moment, re-read on
+# each fifteen-minute candle and written by `market_balancer`, so the page
+# has the current plan even when no browser has been open to compute it.
+@router.get("/desk/intraday")
+async def desk_intraday(user_id: UserId) -> dict[str, object]:
+    """Return the latest persisted intraday plan, or 404 when none exists."""
+    _operator_only(user_id)
+    path = _root() / "desk" / "intraday.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="no intraday plan yet")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 # The board against the person's own holdings at the equity given: the
 # latest record's targets and levels, the live candle where the feed has
 # one, and the person's entry beside each name they hold.

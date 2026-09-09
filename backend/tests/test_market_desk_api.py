@@ -304,6 +304,61 @@ async def test_the_history_endpoint_refuses_a_stranger(tmp_path, monkeypatch):
     assert response.status_code == 403, response.text
 
 
+# The persisted intraday plan reaches the page as the balancer wrote it, and
+# a desk with no plan yet answers 404 rather than inventing one.
+@pytest.mark.asyncio
+async def test_the_intraday_plan_is_read_back(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    plan = tmp_path / "desk" / "intraday.json"
+    plan.parent.mkdir(parents=True, exist_ok=True)
+    plan.write_text(
+        json.dumps(
+            {
+                "as_of": "2026-09-09T13:32:29+00:00",
+                "session": "2026-09-08",
+                "top_buys": [
+                    {
+                        "ticker": "SNDK",
+                        "grade_live": "A+",
+                        "target_weight": 0.04,
+                        "leaves_if": "a buy only while it holds an A grade",
+                    }
+                ],
+                "changed": ["first plan of the session"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    auth = {"Authorization": f"Bearer {token}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        found = await client.get("/api/v1/market/desk_user/desk/intraday", headers=auth)
+        # A desk with no plan: the root has no intraday.json yet.
+        (plan.parent / "intraday.json").unlink()
+        missing = await client.get(
+            "/api/v1/market/desk_user/desk/intraday", headers=auth
+        )
+        # A stranger is refused before the file is read.
+        monkeypatch.setattr(settings, "MARKET_DESK_USER", "ani.mallya")
+        stranger_token = issue_user_token(
+            "someone_else", ttl_seconds=60, scopes=["memory:read"]
+        )
+        refused = await client.get(
+            "/api/v1/market/someone_else/desk/intraday",
+            headers={"Authorization": f"Bearer {stranger_token}"},
+        )
+    body = found.json()
+    assert found.status_code == 200
+    assert body["session"] == "2026-09-08"
+    assert body["top_buys"][0]["ticker"] == "SNDK"
+    assert body["top_buys"][0]["leaves_if"].startswith("a buy only")
+    assert missing.status_code == 404
+    assert refused.status_code == 403
+
+
 # The autopsy reads the caller's own trading passages and returns the model's
 # three sections, and answers with a plain reason when there is nothing to read.
 @pytest.mark.asyncio
