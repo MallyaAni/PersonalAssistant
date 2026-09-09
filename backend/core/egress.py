@@ -3,13 +3,21 @@ from dataclasses import dataclass, field
 
 # Values that must never reach a third party under any circumstance. These
 # cannot be made safe by rewording, so a query carrying one is not sent at all.
+#
+# The word list deliberately stops short of the bare word "secret": it is
+# common English ("the secret to", a show title) and carries no value by
+# itself - a real secret is a distinctive shape (sk-, tvly-, ghp_, AKIA, a
+# JWT) or a labelled one (api key, password, bearer token), and those are the
+# patterns above and below. "secret" alone blocked a question about the show
+# Million Dollar Secret twice over - the search and then the reply - and
+# nothing was delivered (2026-09-09).
 _SECRETS: tuple[tuple[str, str], ...] = (
     (r"\b(sk|pk|rk)-[A-Za-z0-9_-]{16,}\b", "credential"),
     (r"\btvly-[A-Za-z0-9_-]{8,}\b", "credential"),
     (r"\b(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{16,}\b", "credential"),
     (r"\bAKIA[0-9A-Z]{16}\b", "credential"),
     (r"\bey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", "credential"),
-    (r"\b(api[\s_-]?key|password|passwd|secret|bearer token)\b", "credential"),
+    (r"\b(api[\s_-]?key|password|passwd|bearer token)\b", "credential"),
     # Account identifiers that single out one person.
     (r"\b[\w.+-]+@[\w-]+\.[\w.]{2,}\b", "account_identifier"),
     (

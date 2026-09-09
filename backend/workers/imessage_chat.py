@@ -551,6 +551,8 @@ class IMessageChatWorker:
                 str(exc)[:200],
                 extra={"user": user_id},
             )
+            if getattr(exc, "reason", None) == "argument_withheld":
+                await self._notice_withheld(reply_to)
         await self._mark_seen(guid)
         return answered
 
@@ -683,7 +685,7 @@ class IMessageChatWorker:
         if attachments:
             try:
                 turn = await self._with_ack(
-                    self._photo_turn(group.user_id, text, attachments), reply_to, status
+                    self._photo_turn(group.user_id, text, attachments), reply_to, status, in_group=True
                 )
             except BackendUnavailable:
                 await self._park(guid, group.user_id, reply_to, text, pinned=pinned, room=room, message=message)
@@ -717,6 +719,7 @@ class IMessageChatWorker:
                     ),
                     reply_to,
                     status,
+                    in_group=True,
                 )
             except BackendUnavailable:
                 await self._park(guid, group.user_id, reply_to, burst, pinned=pinned, room=room)
@@ -741,6 +744,8 @@ class IMessageChatWorker:
                 str(exc)[:200],
                 extra={"user": group.user_id},
             )
+            if getattr(exc, "reason", None) == "argument_withheld":
+                await self._notice_withheld(reply_to)
         await self._mark_seen(guid)
         return answered
 
@@ -1036,6 +1041,7 @@ class IMessageChatWorker:
                 self._converse(user_id, text, status=status, room=room),
                 reply_to,
                 status,
+                in_group=bool(room),
             )
             await self._deliver(reply_to, turn, user_id=user_id, room=room)
             return 1
@@ -1229,6 +1235,7 @@ class IMessageChatWorker:
                 ),
                 reply_to,
                 status,
+                in_group=bool(room),
             )
             try:
                 await self._deliver(reply_to, turn, user_id=user_id, room=room)
@@ -1406,6 +1413,7 @@ class IMessageChatWorker:
                     ),
                     reply_to,
                     status,
+                    in_group=bool(record.get("room")),
                 )
             except BackendUnavailable:
                 # Its clock and count carry over: the record was taken off
@@ -1449,6 +1457,27 @@ class IMessageChatWorker:
     # bubbles at a typing pace - then any picture the turn made, as a photo
     # after the words that introduce it. Each text bubble's returned GUID is
     # retained so a later positive tapback can refer to that exact bubble.
+    # The reply was refused by the privacy screen: tell the person rather than
+    # leave the thread silent, which read as "the assistant did nothing" when
+    # the egress screen held a reply (Groupie, 2026-09-09). The line is fixed
+    # and deliberately free of any screened word so sending it cannot be
+    # refused the same way.
+    async def _notice_withheld(self, reply_to: str) -> None:
+        try:
+            await self.invoke_tool(
+                settings.DISCOVERY_IMESSAGE_TOOL,
+                {
+                    "to": reply_to,
+                    "body": (
+                        "I couldn't deliver that reply because it looked like it "
+                        "contained private information, so I held it back. Ask me to "
+                        "rephrase it if you'd like."
+                    ),
+                },
+            )
+        except Exception:
+            logger.warning("imessage_chat_withheld_notice_failed", extra={"to": reply_to})
+
     async def _deliver(
         self,
         reply_to: str,
@@ -1563,9 +1592,15 @@ class IMessageChatWorker:
     # Any turn, with one acknowledgment when it runs long. The ack is
     # best-effort - a failure to send it must not cost the real answer -
     # and fires at most once per turn, only after the threshold, so a
-    # quick reply stays a single bubble.
+    # quick reply stays a single bubble. A group hears no bubble: everyone
+    # in the room would see it, and a canned status line on its own reads
+    # as noise there, not as "it's working" (Groupie, 2026-09-08).
     async def _with_ack(
-        self, work, reply_to: str, status: list[str] | None = None
+        self,
+        work,
+        reply_to: str,
+        status: list[str] | None = None,
+        in_group: bool = False,
     ) -> "TurnResult":
         turn = asyncio.create_task(work)
         started = time.monotonic()
@@ -1587,7 +1622,7 @@ class IMessageChatWorker:
             if time.monotonic() - started >= threshold:
                 body = random.choice(_ACK_REPLIES)
                 break
-        if body is not None:
+        if body is not None and not in_group:
             try:
                 await self.invoke_tool(
                     settings.DISCOVERY_IMESSAGE_TOOL,

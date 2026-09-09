@@ -99,6 +99,28 @@ def test_a_secret_outranks_an_otherwise_minimizable_query(policy):
     assert "credential" in result.categories
 
 
+# The bare word "secret" is not a credential: it is ordinary English ("the
+# secret to good brisket", a TV show title). A query carrying only that word
+# carries no value, so it passes - real secrets are distinctive shapes or are
+# labelled "api key"/"password"/"bearer token". Blocking the word alone was a
+# live failure: "shows like million dollar secret" had both its search and its
+# reply withheld, and the group got nothing (2026-09-09).
+@pytest.mark.parametrize(
+    "query",
+    [
+        "Scout what shows are like million dollar secret to watch?",
+        "what is the secret to good brisket",
+        "tell me about the secret santa exchange",
+    ],
+)
+def test_the_word_secret_alone_is_not_a_credential(policy, query):
+    result = policy.sanitize(query)
+
+    assert result.allowed is True
+    assert result.query == query
+    assert "credential" not in result.categories
+
+
 # A long numeric id in a URL is not a payment card, and treating it as one
 # stopped real digests going out.
 #

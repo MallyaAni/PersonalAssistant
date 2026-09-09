@@ -147,6 +147,30 @@ async def test_an_addressed_room_message_runs_as_the_group_and_answers_the_room(
 
 
 @pytest.mark.asyncio
+async def test_a_slow_group_turn_stays_silent_until_the_answer(monkeypatch):
+    # The acknowledgment bubble exists for the private thread, where the
+    # person who asked is the only one who sees it. In a room every member
+    # sees it, and a canned status line on its own reads as noise - so a slow
+    # group turn sends nothing until the real answer (Groupie, 2026-09-08).
+    import asyncio
+
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 0.05)
+    bridge = _Bridge({"messages": [_room_message("g2", "5550101", "Scout, deep question?")], "cursor": 6})
+    worker, _, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+
+    async def slow(user_id, text, active_image=None, status=None, room=None, replying_to="", **_):
+        await asyncio.sleep(0.2)
+        return TurnResult("a considered answer")
+
+    monkeypatch.setattr(worker, "_converse", slow)
+
+    assert await worker.tick() == 1
+    assert bridge.sent == [{"to": ROOM_GUID, "body": "a considered answer"}]
+
+
+@pytest.mark.asyncio
 async def test_a_room_with_a_stranger_answers_approved_members_and_tells_the_operator_once(monkeypatch):
     # The operator's rule (2026-09-02 evening): a stranger in the room does
     # not silence it. The room is read in full; approved people are answered;

@@ -1573,3 +1573,31 @@ async def test_a_refused_attachment_is_explained_by_its_reason(monkeypatch, reas
     monkeypatch.setattr(worker, "_read_attachment_once", refused_once)
     reply, artifact = await worker._analyze_photo("u-ani", "what is this?", {"attachment_id": "att-1"}, "conv-1")
     assert (reply, artifact) == (getattr(imessage_chat, expected), "")
+
+
+# A reply the privacy screen withholds is never silent: the thread gets a
+# one-line notice so "no response" cannot read as "nothing happened" (Groupie,
+# 2026-09-09 - the word "secret" in a TV-show title held both the search and
+# the reply, and the group got nothing).
+@pytest.mark.asyncio
+async def test_a_withheld_reply_tells_the_person(monkeypatch):
+    from backend.mcp.invocation import MCPInvocationError
+
+    bridge = _Bridge({"messages": [_message("g8", "7372025933", "deep q")], "cursor": 33})
+    worker, _ = _worker(
+        bridge,
+        monkeypatch,
+        accounts={"7372025933": "ani.mallya"},
+        replies={"deep q": "a reply"},
+    )
+
+    async def withheld(reply_to, turn, *, user_id="", room=None):
+        raise MCPInvocationError("argument_withheld", "body: credential")
+
+    monkeypatch.setattr(worker, "_deliver", withheld)
+
+    await worker.tick()
+
+    assert len(bridge.sent) == 1
+    assert "couldn't deliver" in bridge.sent[0]["body"]
+    assert "private information" in bridge.sent[0]["body"]
