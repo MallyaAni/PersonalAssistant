@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from backend.agents.trading.desk import grading, regime
 from backend.agents.trading.desk.desk import DeskReport
@@ -196,3 +197,84 @@ def test_prior_tone_records_carry_forward(tmp_path):
         stale,
     )
     assert market_tone.prior_records(store, "IREN", date(2026, 9, 6)) == {}
+
+
+# The record's curve block: the rules walked forward against SPY and QQQ,
+# from the simulation the nightly run already has, plus the headline stats.
+def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
+    from backend.agents.trading.desk import scorecard
+    from backend.agents.trading.desk import simulate as sim_module
+
+    report = _report()
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    monkeypatch.setattr(sim_module, "run", lambda report, use_exits=False: sim)
+    monkeypatch.setattr(
+        scorecard,
+        "index_returns",
+        lambda store, ticker, dates: np.array([0.0, 0.0, 0.01, 0.0]),
+    )
+    block = market_daily.curve_block(report, None)
+    assert block is not None
+    assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
+    assert len(block["spy"]) == 3
+    assert len(block["qqq"]) == 4  # one entry per return given
+    assert block["stats"]["total"] == pytest.approx(0.1)
+    assert block["asof"] == "2026-09-03"
+
+
+# The paper account's live equity history becomes the overlay for the same
+# chart, and an empty history is nothing rather than an error.
+def test_paper_curve_block_reads_the_live_history(tmp_path):
+    state = {
+        "sessions_seen": ["2026-09-04"],
+        "last_rebalance": None,
+        "sessions_since_rebalance": 0,
+        "opened": {},
+        "start_equity": 100000.0,
+        "history": [
+            {
+                "session": "2026-09-04",
+                "equity": 100000.0,
+                "pl_pct": 0.0,
+                "pl": 0.0,
+            }
+        ],
+        "pending": [],
+        "unconfirmed_rebalance": None,
+        "previous_rebalance": None,
+    }
+    root = tmp_path / "paper"
+    root.mkdir()
+    (root / "state.json").write_text(json.dumps(state), encoding="utf-8")
+    block = market_daily.paper_curve_block(tmp_path)
+    assert block is not None
+    assert block["sessions"] == ["2026-09-04"]
+    assert block["equity"] == [100000.0]
+    assert market_daily.paper_curve_block(tmp_path / "empty") is None
+
+
+# The drill-down files: one JSON per book name with the session rows and
+# the name's own backtest, so the page reads a single name without running
+# the desk again.
+def test_write_history_writes_one_file_per_book_name(tmp_path):
+    report = _report()
+    count = market_daily.write_history(MarketStore(tmp_path), report)
+    assert count == 2  # SNDK and IREN, the book sides
+    payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
+    assert payload["ticker"] == "SNDK"
+    assert payload["horizon"] == 20
+    assert payload["rows"]
+    row = payload["rows"][0]
+    assert row["date"]
+    assert row["grade"] == "A+"
+    assert "forward" in row
+    assert "forward_residual" in row
+    assert "earnings" in row
+    assert payload["backtest"]["ticker"] == "SNDK"

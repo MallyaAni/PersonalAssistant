@@ -7,6 +7,7 @@ every other per-user route; the records themselves are the operator's own.
 """
 
 import asyncio
+import json
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,6 +18,10 @@ from fastapi import Path as PathParam
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
+from backend.core.dependencies import (
+    DependencyAgentMemoryManager,
+    get_structured_llm_client,
+)
 from backend.market import (
     alpaca,
     alpaca_trading,
@@ -62,6 +67,8 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "summary": deskrecord.summary(latest),
         "changes": deskrecord.changes(latest, previous).to_dict(),
         "sessions": deskrecord.sessions(_root()),
+        # The track-record curve the record carries; absent on older records.
+        "curve": (latest or {}).get("curve") or {},
     }
 
 
@@ -195,6 +202,71 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
         "user_id": user_id,
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
         **live,
+    }
+
+
+# One name's history and backtest, from the files the nightly run wrote:
+# what the desk said about it session by session and what happened next.
+# The desk rebuilds in the nightly job (the serving container has no
+# torch), so the drill-down reads the record the job left behind.
+@router.get("/desk/history/{ticker}")
+async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
+    """Return a name's grade history and backtest, or 404 without it."""
+    _operator_only(user_id)
+    path = _root() / "history" / f"{ticker.upper()}.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="no history for that name yet")
+    return {
+        "user_id": user_id,
+        "ticker": ticker.upper(),
+        **json.loads(path.read_text(encoding="utf-8")),
+    }
+
+
+# The autopsy: read the caller's own trading passages and name what their
+# trading keeps doing. This one is not operator-only - it is the person's
+# own history, and `authorize_path_user` already keeps the boundary.
+@router.get("/trading/autopsy")
+async def trading_autopsy(
+    user_id: UserId, agent_memory: DependencyAgentMemoryManager
+) -> dict[str, object]:
+    """Return the autopsy of the caller's own trading documents, or why not."""
+    from backend.agents.trading.autopsy import MAX_PASSAGES, TradeAutopsy
+
+    passages = await agent_memory.search(
+        user_id,
+        "trading trades buy sell position entry exit loss win earnings",
+        top_k=MAX_PASSAGES,
+    )
+    if not passages:
+        return {
+            "user_id": user_id,
+            "result": None,
+            "reason": (
+                "No trading documents to read yet. Share a statement, a "
+                "journal, or notes about your trades and try again."
+            ),
+        }
+    result = await TradeAutopsy(get_structured_llm_client()).analyze(passages)
+    if result is None:
+        return {
+            "user_id": user_id,
+            "result": None,
+            "reason": "The analysis model was not reachable; try again shortly.",
+        }
+    sources = sorted(
+        {str(p.get("document", {}).get("title") or "a document") for p in passages}
+    )
+    return {
+        "user_id": user_id,
+        "result": {
+            "patterns": [dict(p) for p in result.patterns],
+            "costs": [dict(c) for c in result.costs],
+            "plan": result.plan,
+            "unknowns": list(result.unknowns),
+        },
+        "sources": sources,
+        "passages_used": len(passages),
     }
 
 

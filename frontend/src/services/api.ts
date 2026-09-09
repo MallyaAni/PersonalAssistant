@@ -1890,6 +1890,77 @@ export interface DeskRecord {
   paper: DeskPaper | null;
   // Absent on records written before the board existed.
   actions?: DeskAction[];
+  // The track-record curve the nightly run wrote: the desk's rules walked
+  // forward against SPY and QQQ, and the paper account's live equity.
+  curve?: DeskCurve;
+}
+
+// The track record the page draws. `backtest` is the desk's own rules
+// walked forward (cumulative returns, 1.0 start) against SPY and QQQ on
+// the same sessions; `paper` is the live paper account's equity history.
+// Absent on records written before the feature existed.
+export interface DeskCurve {
+  backtest?: {
+    label: string;
+    asof: string;
+    dates: string[];
+    rules: number[];
+    spy: number[];
+    qqq: number[];
+    stats: Record<string, number | null>;
+  };
+  paper?: {
+    label: string;
+    sessions: string[];
+    equity: number[];
+    pl_pct: number[];
+  };
+}
+
+// One name's drill-down: what the desk said session by session and what
+// happened next, plus the name's own backtest. Written by the nightly run.
+export interface DeskHistoryRow {
+  date: string;
+  grade: string;
+  votes: number;
+  stances: Record<string, number>;
+  exposure: number;
+  confidence: number;
+  forward: number | null;
+  forward_residual: number | null;
+  earnings: boolean;
+}
+export interface DeskHistory {
+  ticker: string;
+  asof: string;
+  horizon: number;
+  rows: DeskHistoryRow[];
+  backtest: {
+    min_grade: string;
+    sessions: number;
+    sessions_in: number;
+    switches: number;
+    rule_return: number | null;
+    hold_return: number | null;
+    benchmark_return: number | null;
+    in_annualised: number | null;
+    out_annualised: number | null;
+  };
+}
+
+// The autopsy: what the person's own trading keeps doing, from their own
+// documents, with a plan. `result` is null with a plain `reason` when there
+// is nothing to read or the model was unreachable.
+export interface TradingAutopsy {
+  result: {
+    patterns: { behaviour: string; evidence: string }[];
+    costs: { what: string; amount: string; source: string }[];
+    plan: { stop: string[]; start: string[]; keep: string[] };
+    unknowns: string[];
+  } | null;
+  sources?: string[];
+  passages_used?: number;
+  reason?: string;
 }
 
 // One row of the action board: what to do in a name at the next open, how
@@ -1953,6 +2024,8 @@ export interface DeskPayload {
     flags_cleared: string[];
   };
   sessions: string[];
+  // The record's track-record curve, for convenience at the top level.
+  curve?: DeskCurve;
 }
 
 // The trading desk's latest record and what changed since the one before.
@@ -2097,6 +2170,24 @@ export const getDesk = async (userId: string): Promise<DeskPayload> => {
     throw new Error(`Could not load the desk (HTTP ${response.status}).`);
   }
   return (await response.json()) as DeskPayload;
+};
+
+// One name's drill-down from the file the nightly run wrote.
+export const getDeskHistory = async (userId: string, ticker: string): Promise<DeskHistory> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/history/${encodeURIComponent(ticker)}`,
+  );
+  if (!response.ok) throw new Error(`No history for ${ticker} yet (HTTP ${response.status}).`);
+  return (await response.json()) as DeskHistory;
+};
+
+// The autopsy of the caller's own trading documents.
+export const getTradingAutopsy = async (userId: string): Promise<TradingAutopsy> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/trading/autopsy`,
+  );
+  if (!response.ok) throw new Error(`The analysis could not run (HTTP ${response.status}).`);
+  return (await response.json()) as TradingAutopsy;
 };
 
 export interface DiscoveryInterest {

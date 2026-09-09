@@ -11,7 +11,7 @@ from backend.core.auth import issue_user_token
 from backend.main import app
 
 
-def _write(root, session, grades, book, flags):
+def _write(root, session, grades, book, flags, curve=None):
     path = root / "desk" / f"asof={session}" / "desk.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -26,6 +26,7 @@ def _write(root, session, grades, book, flags):
                 "grades": {t: {"grade": g} for t, g in grades.items()},
                 "book": [{"ticker": t, "weight": w} for t, w in book],
                 "briefs": {},
+                "curve": curve,
             }
         ),
         encoding="utf-8",
@@ -218,3 +219,168 @@ async def test_the_paper_account_is_read_live(tmp_path, monkeypatch):
         {"symbol": "HPE", "side": "buy", "qty": 201.0, "status": "new"}
     ]
     assert missing.json()["reason"] == "no key"
+
+
+# The record's track-record curve reaches the desk endpoint, and a record
+# written before the curve existed answers without one.
+@pytest.mark.asyncio
+async def test_the_desk_returns_the_track_record_curve(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(
+        tmp_path,
+        "2026-09-04",
+        {"SNDK": "A+"},
+        [("SNDK", 0.08)],
+        [],
+        curve={"backtest": {"dates": ["2026-09-03"], "rules": [0.0]}, "paper": None},
+    )
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/desk_user/desk",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 200
+    assert response.json()["curve"]["backtest"]["rules"] == [0.0]
+    assert response.json()["latest"]["curve"]["backtest"]["dates"] == ["2026-09-03"]
+
+
+# The drill-down reads the nightly history file for one name, and refuses a
+# stranger the same way every other desk route does.
+@pytest.mark.asyncio
+async def test_the_history_endpoint_reads_the_nightly_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    hist = tmp_path / "history"
+    hist.mkdir()
+    (hist / "SNDK.json").write_text(
+        json.dumps(
+            {
+                "ticker": "SNDK",
+                "asof": "2026-09-04",
+                "horizon": 20,
+                "rows": [{"date": "2026-09-03", "grade": "A+", "votes": 2.0}],
+                "backtest": {"rule_return": 0.05},
+            }
+        ),
+        encoding="utf-8",
+    )
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    auth = {"Authorization": f"Bearer {token}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        found = await client.get(
+            "/api/v1/market/desk_user/desk/history/SNDK", headers=auth
+        )
+        lower = await client.get(
+            "/api/v1/market/desk_user/desk/history/sndk", headers=auth
+        )
+        missing = await client.get(
+            "/api/v1/market/desk_user/desk/history/NVDA", headers=auth
+        )
+    assert found.status_code == 200
+    assert found.json()["ticker"] == "SNDK"
+    assert found.json()["rows"][0]["grade"] == "A+"
+    assert lower.json()["ticker"] == "SNDK"
+    assert missing.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_the_history_endpoint_refuses_a_stranger(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "ani.mallya")
+    token = issue_user_token("someone_else", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/someone_else/desk/history/SNDK",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 403, response.text
+
+
+# The autopsy reads the caller's own trading passages and returns the model's
+# three sections, and answers with a plain reason when there is nothing to read.
+@pytest.mark.asyncio
+async def test_the_autopsy_reads_the_persons_own_documents(tmp_path, monkeypatch):
+    from backend.api.v1 import market as market_api
+    from backend.core.dependencies import get_agent_memory_manager
+
+    payload = {
+        "patterns": [{"behaviour": "cut winners early", "evidence": "twice"}],
+        "costs": [
+            {
+                "what": "left on the table",
+                "amount": "not stated",
+                "source": "journal",
+            }
+        ],
+        "plan": {"stop": ["hold winners"], "start": [], "keep": ["journaled"]},
+        "unknowns": [],
+    }
+
+    class FakeWriter:
+        def chat(
+            self, messages, max_tokens=1024, response_schema=None, temperature=None
+        ):
+            return {"content": json.dumps(payload)}
+
+    class FakeManager:
+        async def search(self, user_id, query, top_k):
+            return [
+                {
+                    "content": "bought at 40, sold at 32",
+                    "document": {"title": "journal"},
+                }
+            ]
+
+    app.dependency_overrides[get_agent_memory_manager] = lambda: FakeManager()
+    monkeypatch.setattr(market_api, "get_structured_llm_client", lambda: FakeWriter())
+    try:
+        token = issue_user_token("trader", ttl_seconds=60, scopes=["memory:read"])
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.get(
+                "/api/v1/market/trader/trading/autopsy",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+    finally:
+        app.dependency_overrides.pop(get_agent_memory_manager, None)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["result"]["patterns"][0]["behaviour"] == "cut winners early"
+    assert body["result"]["costs"][0]["amount"] == "not stated"
+    assert body["sources"] == ["journal"]
+    assert body["passages_used"] == 1
+
+
+@pytest.mark.asyncio
+async def test_the_autopsy_without_documents_explains_why(tmp_path, monkeypatch):
+    from backend.core.dependencies import get_agent_memory_manager
+
+    class EmptyManager:
+        async def search(self, user_id, query, top_k):
+            return []
+
+    app.dependency_overrides[get_agent_memory_manager] = lambda: EmptyManager()
+    try:
+        token = issue_user_token("trader", ttl_seconds=60, scopes=["memory:read"])
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.get(
+                "/api/v1/market/trader/trading/autopsy",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+    finally:
+        app.dependency_overrides.pop(get_agent_memory_manager, None)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["result"] is None
+    assert "No trading documents" in body["reason"]

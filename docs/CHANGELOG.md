@@ -2,6 +2,35 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-08 - The desk page leads with what a person can trust and act on
+
+The trading dashboard now opens with the numbers that matter instead of the
+analysts' tables: a summary strip (the paper account's worth, its move today,
+the rules' cumulative return against SPY and QQQ, how much of the book the
+desk is carrying, and the next rebalance as a date); the regime warnings in
+plain words; and what changed since the last session — upgrades, downgrades,
+the orders at the next open and new warnings — which the page previously
+fetched and threw away.
+
+The trust anchor is new: the nightly `market_daily` writes a curve block into
+the record (the desk's rules walked forward against SPY and QQQ on the same
+sessions, plus the paper account's live equity) and a per-name history file
+under the market data root. `GET /desk` returns the curve, `GET
+/desk/history/{ticker}` reads the nightly file, and `GET /trading/autopsy`
+runs the person's own trading documents through `TradeAutopsy` and returns the
+patterns, costs and plan with its sources. Each name's row reads why in plain
+words first, with the analysts' numbers on request, and opens a drill-down of
+what the desk said about it over time and how the name's own rule did against
+holding it and the benchmark.
+
+Verified on the branch `feat/desk-dashboard-overhaul`: 18 backend tests
+(`test_market_daily`, `test_market_desk_api`) and 4 new browser tests
+(`frontend/e2e/desk.spec.ts`) exercising the real desk page against mocked
+routes — the at-a-glance strip and curve, the name drill-down, the autopsy,
+and the getting-started empty state — with no page or console errors. The
+record's curve and history are written by the nightly CLI because the serving
+container has no torch; the API reads files.
+
 ## 2026-09-08 - The review's list, finished: objective, interactions, cash flow, the challenger track
 
 Five things from the review, each measured or wired.

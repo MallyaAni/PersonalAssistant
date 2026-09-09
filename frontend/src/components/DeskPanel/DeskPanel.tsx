@@ -1,18 +1,24 @@
-import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { RefreshCw, X } from 'lucide-react'
 import {
   getDesk,
+  getDeskHistory,
   getDeskHoldings,
   getDeskLive,
   getDeskMine,
   getDeskPaper,
+  getTradingAutopsy,
   putDeskHoldings,
+  type DeskCurve,
   type DeskHolding,
+  type DeskHistory,
   type DeskLive,
   type DeskMineRow,
   type DeskPaperLive,
   type DeskPayload,
   type DeskQuote,
+  type DeskRecord,
+  type TradingAutopsy,
 } from '../../services/api'
 
 interface DeskPanelProps {
@@ -88,6 +94,36 @@ const sizing = (r: DeskMineRow, quote: DeskQuote | undefined, equity: number) =>
 }
 const today = () => new Date().toISOString().slice(0, 10)
 
+// A signed value in green or red with an arrow, so the direction reads
+// without color (a colour-blind reader sees the arrow, not the shade).
+const Trend = ({ value, suffix = '%' }: { value: number; suffix?: string }) => {
+  const up = value >= 0
+  return (
+    <span className={up ? 'text-[#1e7a3a]' : 'text-[#b42318]'} aria-label={`${up ? 'up' : 'down'} ${value.toFixed(1)}${suffix}`}>
+      <span aria-hidden="true">{up ? '↑' : '↓'}</span> {up ? '+' : ''}
+      {value.toFixed(1)}
+      {suffix}
+    </span>
+  )
+}
+
+// The next rebalance as a calendar date: the desk's clock is trading
+// sessions, so this projects the `n` sessions from the record's own date,
+// skipping weekends. Weekday projection, so a holiday in the window makes
+// it a day or two early; the desk's exact clock is the session count.
+const projectTradingDate = (fromIso: string, sessions: number): string => {
+  const d = new Date(`${fromIso}T12:00:00Z`)
+  let added = 0
+  while (added < sessions) {
+    d.setUTCDate(d.getUTCDate() + 1)
+    const dow = d.getUTCDay()
+    if (dow !== 0 && dow !== 6) added += 1
+  }
+  return d.toISOString().slice(0, 10)
+}
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+
 // The positions after the person has done what a row says, at the price
 // and size on the row. A buy opens the name, an add averages into it, a
 // trim takes shares off, a sell closes it. They edit the price afterward
@@ -126,10 +162,402 @@ const ReasonLines = ({ text }: { text: string }) => (
   </ul>
 )
 
-const triggers = (stances: Record<string, number>) =>
-  TRIGGER_ORDER.filter(([k]) => k in stances)
-    .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
-    .join(' ')
+// One number to read at a glance: the paper account's worth, its return
+// since the desk started trading it, today's move, the rules' track record
+// against the market, how much of the book the desk is carrying, and when
+// it next rebalances. Everything here is read from the record or the live
+// broker, nothing is invented.
+const SummaryStrip = ({
+  latest,
+  paperLive,
+  curve,
+}: {
+  latest: DeskRecord
+  paperLive: DeskPaperLive | null
+  curve: DeskCurve | undefined
+}) => {
+  const paper = latest.paper
+  const worth = paperLive?.equity ?? paper?.equity
+  const since = paper?.pl_pct
+  const dayPl = paperLive?.day_pl
+  const backtest = curve?.backtest
+  const stats = backtest?.stats
+  const last = (arr?: number[]) => (arr && arr.length ? arr[arr.length - 1] : null)
+  const rulesTotal = last(backtest?.rules)
+  const spyTotal = last(backtest?.spy)
+  const qqqTotal = last(backtest?.qqq)
+  const exposure = latest.regime.exposure ?? 1
+  const until = paper?.until_rebalance ?? 20
+  const rebalanceDate = projectTradingDate(latest.session, until)
+  const cells = [
+    {
+      label: 'Practice account',
+      value:
+        worth !== undefined ? (
+          <>
+            {money(worth)}
+            {since !== undefined && (
+              <span className="ml-2 text-xs font-normal">
+                <Trend value={since * 100} />
+              </span>
+            )}
+          </>
+        ) : (
+          '—'
+        ),
+      note: 'the desk\u2019s own money, no real risk',
+    },
+    {
+      label: 'Today',
+      value: dayPl !== undefined ? <Trend value={dayPl} suffix="" /> : '—',
+      note: 'the paper account\u2019s move so far',
+    },
+    {
+      label: 'The rules, since inception',
+      value:
+        rulesTotal !== null ? (
+          <>
+            <Trend value={rulesTotal * 100} />
+            <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+              vs SPY <Trend value={(spyTotal ?? 0) * 100} />
+              {qqqTotal !== null && (
+                <>
+                  {' '}
+                  · QQQ <Trend value={qqqTotal * 100} />
+                </>
+              )}
+            </span>
+          </>
+        ) : (
+          '—'
+        ),
+      note:
+        stats && stats.drawdown !== null
+          ? `worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
+          : 'the desk\u2019s rules, measured forward',
+    },
+    {
+      label: 'The desk is',
+      value: `${Math.round(exposure * 100)}% invested`,
+      note: exposure < 1 ? 'sizing down while conditions are thin' : 'at full book',
+    },
+    {
+      label: 'Next rebalance',
+      value: `≈ ${shortDate(rebalanceDate)}`,
+      note: `in ${until} trading day${until === 1 ? '' : 's'}`,
+    },
+  ]
+  return (
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="The desk at a glance">
+      {cells.map((c) => (
+        <div key={c.label} className="rounded-2xl border border-black/[0.08] bg-white p-3">
+          <p className="text-xs text-[#6e6e73]">{c.label}</p>
+          <p className="mt-0.5 truncate text-lg font-semibold text-[#1d1d1f]">{c.value}</p>
+          <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
+        </div>
+      ))}
+    </section>
+  )
+}
+
+// The regime in front of the board, not at the bottom: the warnings change
+// how much of the board to trust, so they lead it. Plain words for each
+// flag, and a line when the desk has sized down because of them.
+const RegimeBanner = ({ regime }: { regime: DeskRecord['regime'] }) => {
+  const flags = regime.flags ?? []
+  if (flags.length === 0) return null
+  const exposure = regime.exposure ?? 1
+  return (
+    <section className="rounded-2xl border border-[#9a6200]/30 bg-[#fff6e5] p-4" role="note">
+      <h3 className="text-sm font-semibold text-[#9a6200]">The desk is being careful right now</h3>
+      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#7a5200]">
+        {flags.map((flag) => (
+          <li key={flag}>{FLAG_WORDS[flag] ?? flag}</li>
+        ))}
+      </ul>
+      {exposure < 1 && (
+        <p className="mt-2 text-sm text-[#7a5200]">
+          Because of this, the desk is carrying {Math.round(exposure * 100)}% of its usual book rather than
+          the full size. That is the point of the warning, not the sign it is broken.
+        </p>
+      )}
+    </section>
+  )
+}
+
+// What moved since the previous session: the upgrades, the downgrades, the
+// orders that rebalance the book, and the flags that appeared or cleared.
+// The API computes this; the page used to throw it away.
+const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']> }) => {
+  const words = (flag: string) => FLAG_WORDS[flag] ?? flag
+  const chips: string[] = []
+  if (changes.upgrades.length)
+    chips.push(`Upgraded: ${changes.upgrades.map((m) => `${m.ticker} ${m.from}→${m.to}`).join(', ')}`)
+  if (changes.downgrades.length)
+    chips.push(`Downgraded: ${changes.downgrades.map((m) => `${m.ticker} ${m.from}→${m.to}`).join(', ')}`)
+  const rows = [...changes.upgrades, ...changes.downgrades]
+  const moved = rows.length > 0 || changes.orders.length > 0 || changes.flags_raised.length > 0
+  if (!moved && !changes.since) return null
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">
+        What changed since the last session
+        <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+          {changes.since ? `since ${shortDate(changes.since)}` : 'the first session on file'}
+        </span>
+      </h3>
+      {moved ? (
+        <ul className="space-y-1 text-sm text-[#1d1d1f]">
+          {chips.map((c) => (
+            <li key={c}>{c}</li>
+          ))}
+          {changes.orders.length > 0 && (
+            <li>
+              Orders at the next open:{' '}
+              {changes.orders.map((o) => `${o.action} ${o.ticker}`).join(', ')}
+            </li>
+          )}
+          {changes.flags_raised.length > 0 && (
+            <li className="text-[#9a6200]">
+              New warning{changes.flags_raised.length === 1 ? '' : 's'}:{' '}
+              {changes.flags_raised.map(words).join('; ')}
+            </li>
+          )}
+          {changes.flags_cleared.length > 0 && (
+            <li className="text-[#1e7a3a]">
+              Cleared: {changes.flags_cleared.map(words).join('; ')}
+            </li>
+          )}
+        </ul>
+      ) : (
+        <p className="text-sm text-[#6e6e73]">Nothing moved: same grades, same book, same warnings.</p>
+      )}
+    </section>
+  )
+}
+
+// A small dependency-free SVG line chart of the track record: the desk's
+// rules, SPY and QQQ on the same sessions, and the paper account's live
+// equity normalized to the same start. Hovering shows the values on one
+// session.
+const CurveChart = ({
+  backtest,
+  paper,
+}: {
+  backtest: DeskCurve['backtest']
+  paper?: DeskCurve['paper']
+}) => {
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const [hover, setHover] = useState<number | null>(null)
+  const dates = backtest?.dates ?? []
+  const series: { label: string; color: string; values: number[] }[] = []
+  if (backtest) {
+    series.push({ label: 'the desk\u2019s rules', color: '#1e7a3a', values: backtest.rules })
+    series.push({ label: 'SPY', color: '#9ca3af', values: backtest.spy })
+    if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: backtest.qqq })
+  }
+  if (paper && paper.equity.length > 1) {
+    const base = paper.equity[0] || 1
+    series.push({
+      label: 'paper account (live)',
+      color: '#d97706',
+      values: paper.equity.map((e) => e / base - 1),
+    })
+  }
+  const width = 800
+  const height = 240
+  const padT = 14
+  const padB = 26
+  const padL = 8
+  const padR = 8
+  const innerW = width - padL - padR
+  const innerH = height - padT - padB
+  const all = series.flatMap((s) => s.values).concat(0)
+  const min = Math.min(...all, 0)
+  const max = Math.max(...all, 0)
+  const span = max - min || 1
+  const x = (i: number) => (dates.length > 1 ? padL + (i / (dates.length - 1)) * innerW : padL + innerW / 2)
+  const y = (v: number) => padT + (1 - (v - min) / span) * innerH
+  const line = (values: number[]) => values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+  const zeroY = y(0)
+  const ticks = [0, min / 2, max / 2, max]
+  const tickLabels = [...new Set([min, max, 0])]
+  const onMove = (e: React.MouseEvent) => {
+    const rect = svgRef.current?.getBoundingClientRect()
+    if (!rect || dates.length < 2) return
+    const fx = ((e.clientX - rect.left) / rect.width) * width
+    const idx = Math.round(((fx - padL) / innerW) * (dates.length - 1))
+    setHover(Math.max(0, Math.min(dates.length - 1, idx)))
+  }
+  const hoverSeries = hover !== null ? series.map((s) => ({ ...s, v: s.values[hover] ?? NaN })) : []
+  return (
+    <div className="relative">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-auto w-full"
+        role="img"
+        aria-label="The desk's track record against SPY and QQQ"
+        onMouseMove={onMove}
+        onMouseLeave={() => setHover(null)}
+      >
+        <line x1={padL} x2={width - padR} y1={zeroY} y2={zeroY} stroke="#d1d5db" strokeWidth={1} strokeDasharray="4 4" />
+        {series.map((s) => (
+          <polyline key={s.label} points={line(s.values)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        ))}
+        {hover !== null && (
+          <>
+            <line x1={x(hover)} x2={x(hover)} y1={padT} y2={height - padB} stroke="#9ca3af" strokeWidth={1} />
+            <circle cx={x(hover)} cy={y(series[0]?.values[hover] ?? 0)} r={3.5} fill="#1d1d1f" />
+          </>
+        )}
+        <text x={padL} y={height - 6} fontSize={11} fill="#6e6e73">
+          {dates.length ? shortDate(dates[0]) : ''}
+        </text>
+        <text x={width - padR} y={height - 6} fontSize={11} fill="#6e6e73" textAnchor="end">
+          {dates.length ? shortDate(dates[dates.length - 1]) : ''}
+        </text>
+        {tickLabels.map((v) => (
+          <text key={v} x={width - padR} y={y(v) - 3} fontSize={10} fill="#6e6e73" textAnchor="end">
+            {v === 0 ? '0' : `${(v * 100).toFixed(0)}%`}
+          </text>
+        ))}
+        <g aria-hidden="true" transform="translate(6, 6)">
+          {series.map((s, i) => (
+            <g key={s.label} transform={`translate(0, ${i * 14})`}>
+              <rect width={10} height={10} rx={2} fill={s.color} />
+              <text x={16} y={9} fontSize={11} fill="#1d1d1f">
+                {s.label}
+              </text>
+            </g>
+          ))}
+        </g>
+      </svg>
+      {hover !== null && hoverSeries.length > 0 && (
+        <div
+          className="pointer-events-none absolute z-10 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-xs shadow-md"
+          style={{ left: `${(x(hover) / width) * 100}%`, top: 0, transform: 'translate(-50%, -110%)' }}
+        >
+          <p className="font-medium text-[#1d1d1f]">{dates[hover]}</p>
+          {hoverSeries.map((s) => (
+            <p key={s.label} className="text-[#6e6e73]">
+              {s.label}: {Number.isFinite(s.v) ? `${(s.v * 100).toFixed(1)}%` : '—'}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// The trust anchor: the rules' track record in words and the curve. Absent
+// until the nightly run writes a curve block, with a plain note.
+const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
+  const backtest = curve?.backtest
+  const stats = backtest?.stats
+  if (!backtest || !stats) {
+    return (
+      <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">The desk’s track record</h3>
+        <p className="mt-1 text-sm text-[#6e6e73]">
+          The evening run has not written a curve yet; check back after the next close.
+        </p>
+      </section>
+    )
+  }
+  const cells = [
+    { label: 'CAGR', value: stats.cagr !== null ? `${(stats.cagr * 100).toFixed(1)}%` : '—' },
+    { label: 'Volatility', value: stats.volatility !== null ? `${(stats.volatility * 100).toFixed(0)}%` : '—' },
+    { label: 'Worst drawdown', value: stats.drawdown !== null ? `${(stats.drawdown * 100).toFixed(0)}%` : '—' },
+    { label: 'Total return', value: stats.total !== null ? `${(stats.total * 100).toFixed(0)}%` : '—' },
+  ]
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">The desk’s track record</h3>
+        <p className="text-xs text-[#6e6e73]">
+          {backtest.label} · as of {shortDate(backtest.asof)} · the paper account is the only truly new sample
+        </p>
+      </div>
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {cells.map((c) => (
+          <div key={c.label} className="rounded-xl bg-[#f5f5f7] px-3 py-2">
+            <p className="text-xs text-[#6e6e73]">{c.label}</p>
+            <p className="text-sm font-semibold text-[#1d1d1f]">{c.value}</p>
+          </div>
+        ))}
+      </div>
+      <CurveChart backtest={backtest} paper={curve?.paper} />
+    </section>
+  )
+}
+
+// The one-screen explanation for someone who has never seen the page, used
+// both as the help popover and the empty-state guide.
+const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?: boolean }) => (
+  <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-xl'}`}>
+    <ol className="list-decimal space-y-1.5 pl-5">
+      <li>
+        <b>Every evening</b> the desk grades about ninety AI and software stocks and picks the A-rated ones to own.
+        That decision holds for the next trading day.
+      </li>
+      <li>
+        <b>Enter your positions</b> (type or paste from Schwab) and set your account size. The board then says, name
+        by name, <b>buy, add, trim, sell or hold</b>, and how many shares.
+      </li>
+      <li>
+        <b>Buy at the open</b> with a market order. Do not chase a name that has already jumped. When a trade is
+        placed, click <b>done</b> on its row and your positions update.
+      </li>
+      <li>
+        <b>Selling:</b> a name is sold when its grade drops below A at the next check, about every four weeks. Each
+        row says when that is. Stops are optional: switch them on to see a price under which to sell.
+      </li>
+      <li>
+        <b>Prices</b> refresh every 15 minutes during market hours. Gains are measured from what you paid.
+      </li>
+      <li>
+        <b>Why:</b> click a name or its reason to read the desk’s case for it, and what would change its mind.
+      </li>
+    </ol>
+    {onClose && (
+      <button type="button" onClick={onClose} className="mt-3 text-xs text-[#0071e3] hover:underline">
+        close
+      </button>
+    )}
+  </div>
+)
+
+// The first-time state: the page either has no decision on file yet, or the
+// person has not entered positions, and both are where people abandon a
+// trading screen. Turn it into the three steps instead of a blank line.
+const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasRecord: boolean; hasPositions: boolean; onEnterPositions: () => void }) => {
+  if (hasRecord && hasPositions) return null
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">
+        {hasRecord ? 'Set up the board' : 'The desk starts tonight'}
+      </h3>
+      {!hasRecord ? (
+        <p className="mb-2 text-sm text-[#6e6e73]">
+          The desk writes a decision every evening after the close. Tonight it will grade the book, and tomorrow
+          this page will tell you what to do at the open.
+        </p>
+      ) : (
+        <p className="mb-2 text-sm text-[#6e6e73]">
+          No positions entered, so every name below is a buy from nothing. Enter what you hold and the board says
+          what to change.
+        </p>
+      )}
+      <HowToUse compact />
+      {hasRecord && (
+        <button type="button" onClick={onEnterPositions} className="mt-2 rounded-full bg-[#1d1d1f] px-3 py-1.5 text-sm text-white">
+          enter my positions
+        </button>
+      )}
+    </section>
+  )
+}
 
 // The desk's day for a person trading their own account: one board of
 // what to do at the next open, computed against the positions they
@@ -141,6 +569,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
+  const [paperLive, setPaperLive] = useState<DeskPaperLive | null>(null)
   const [holdings, setHoldings] = useState<DeskHolding[]>([])
   const [rows, setRows] = useState<DeskMineRow[]>([])
   const [equity, setEquity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
@@ -150,6 +579,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   const [editing, setEditing] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [openReason, setOpenReason] = useState<string | null>(null)
+  const [openName, setOpenName] = useState<string | null>(null)
+  const [autopsy, setAutopsy] = useState(false)
   const [marking, setMarking] = useState<string | null>(null)
 
   const save = async (next: DeskHolding[]) => {
@@ -190,7 +621,8 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
     })()
   }, [userId])
 
-  // The board and the candle, together, every fifteen minutes.
+  // The board, the candle, and the practice account together, every fifteen
+  // minutes; the practice account's day P/L feeds the summary strip.
   useEffect(() => {
     const poll = async () => {
       try {
@@ -202,6 +634,11 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         setRows(await getDeskMine(userId, equity))
       } catch {
         // the last board stands
+      }
+      try {
+        setPaperLive(await getDeskPaper(userId))
+      } catch {
+        setPaperLive({ reason: 'unreachable' })
       }
     }
     void poll()
@@ -215,17 +652,13 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
   if (error) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#b42318]">{error}</div>
   }
-  if (!payload || !payload.latest) {
-    return (
-      <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">
-        No decision on file yet. The desk writes one every evening after the close.
-      </div>
-    )
+  if (!payload) {
+    return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
   }
 
   const { latest, summary } = payload
-  const paper = latest.paper
-  const warnings = latest.regime.flags
+  const curve = payload.curve ?? latest?.curve
+  const warnings = latest?.regime.flags ?? []
 
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6">
@@ -242,18 +675,19 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
             >
               i
             </button>
+            <button
+              type="button"
+              onClick={() => setAutopsy(!autopsy)}
+              className="rounded-full border border-black/[0.08] bg-white px-2.5 py-0.5 text-xs font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]"
+            >
+              {autopsy ? 'hide the autopsy' : 'analyze my trading'}
+            </button>
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} />}
           <p className="text-sm text-[#6e6e73]">
-            Decision from the close of {latest.session} · the desk is {summary ? pct(summary.gross) : '—'} invested
-            {paper && (
-              <>
-                {' '}· practice account{' '}
-                <span className={paper.pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
-                  {paper.pl >= 0 ? 'up' : 'down'} {money(Math.abs(paper.pl))} ({(paper.pl_pct * 100).toFixed(1)}%)
-                </span>
-              </>
-            )}
+            {latest
+              ? `Decision from the close of ${latest.session} · the desk is ${summary ? pct(summary.gross) : '—'} invested`
+              : 'No decision on file yet'}
           </p>
         </div>
         <button
@@ -265,151 +699,157 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         </button>
       </header>
 
-      <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-          <h3 className="text-sm font-semibold text-[#1d1d1f]">
-            What to do at the next open
-            {live.as_of && (
-              <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                prices as of {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-          </h3>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
-            <label className="flex items-center gap-2">
-              account size $
-              <input
-                type="number"
-                min={0}
-                step={1000}
-                value={Math.round(equity)}
-                onChange={(e) => {
-                  const value = Number(e.target.value) || 0
-                  setEquity(value)
-                  writeStored(EQUITY_KEY, String(value))
-                }}
-                className="w-28 rounded-md border border-black/[0.12] px-2 py-1 text-right text-sm text-[#1d1d1f]"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={stops}
-                onChange={(e) => {
-                  setStops(e.target.checked)
-                  writeStored(STOPS_KEY, e.target.checked ? 'on' : 'off')
-                }}
-              />
-              show stops
-            </label>
-            <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
-              {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
-            </button>
+      {autopsy && <AutopsyView userId={userId} onClose={() => setAutopsy(false)} />}
+
+      {!latest && <GettingStarted hasRecord={false} hasPositions={holdings.length > 0} onEnterPositions={() => setEditing(true)} />}
+
+      {latest && (
+        <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} />
+      )}
+
+      {latest && <RegimeBanner regime={latest.regime} />}
+
+      {latest && payload.changes && <WhatChanged changes={payload.changes} />}
+
+      {latest && (
+        <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+            <h3 className="text-sm font-semibold text-[#1d1d1f]">
+              What to do at the next open
+              {live.as_of && (
+                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+                  prices as of {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </h3>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
+              <label className="flex items-center gap-2">
+                account size $
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={Math.round(equity)}
+                  onChange={(e) => {
+                    const value = Number(e.target.value) || 0
+                    setEquity(value)
+                    writeStored(EQUITY_KEY, String(value))
+                  }}
+                  className="w-28 rounded-md border border-black/[0.12] px-2 py-1 text-right text-sm text-[#1d1d1f]"
+                />
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={stops}
+                  onChange={(e) => {
+                    setStops(e.target.checked)
+                    writeStored(STOPS_KEY, e.target.checked ? 'on' : 'off')
+                  }}
+                />
+                show stops
+              </label>
+              <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
+                {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
+              </button>
+            </div>
           </div>
-        </div>
-        {editing && (
-          <Positions
-            holdings={holdings}
-            error={saveError}
-            onSave={async (next) => {
-              if (await save(next)) setEditing(false)
-            }}
-          />
-        )}
-        {holdings.length === 0 && !editing && (
-          <p className="mb-2 text-xs text-[#6e6e73]">
-            No positions entered, so every name below is a buy from nothing. Enter what you hold and the board says what
-            to change.
+          {editing && (
+            <Positions
+              holdings={holdings}
+              error={saveError}
+              onSave={async (next) => {
+                if (await save(next)) setEditing(false)
+              }}
+            />
+          )}
+          {holdings.length === 0 && !editing && (
+            <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
+          )}
+          <table className="w-full text-sm">
+            <thead className="text-left text-[#6e6e73]">
+              <tr>
+                <th className="py-1">Name</th>
+                <th>Action</th>
+                <th>Size</th>
+                <th>Grade</th>
+                <th>Exit</th>
+                <th title={TRIGGER_LEGEND}>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <Row
+                  key={r.ticker}
+                  r={r}
+                  ranks={latest.grades[r.ticker]?.ranks}
+                  quote={live.quotes[r.ticker]}
+                  equity={equity}
+                  stops={stops}
+                  open={openReason === r.ticker}
+                  onReason={() => setOpenReason(openReason === r.ticker ? null : r.ticker)}
+                  onOpenName={() => setOpenName(r.ticker)}
+                  marking={marking === r.ticker}
+                  onDone={async () => {
+                    const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
+                    setMarking(r.ticker)
+                    await save(afterTrade(holdings, r, price, qty))
+                    setMarking(null)
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+          {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
+          <p className="mt-2 text-xs text-[#6e6e73]">
+            When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
+            price shown; edit the price if your fill differed. Names are in grade order, best first, re-read every 15
+            minutes with the technical analyst at the live price. Share counts follow the live price; the weights are
+            the evening decision. Buy at the open with a market order. The desk sells when a name loses its A grade at
+            the next check, not at a price; stops are optional because they cut winners as often as losers.
           </p>
-        )}
-        <table className="w-full text-sm">
-          <thead className="text-left text-[#6e6e73]">
-            <tr>
-              <th className="py-1">Name</th>
-              <th>Action</th>
-              <th>Size</th>
-              <th>Grade</th>
-              <th>Exit</th>
-              <th title={TRIGGER_LEGEND}>Why</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <Row
-                key={r.ticker}
-                r={r}
-                ranks={latest.grades[r.ticker]?.ranks}
-                quote={live.quotes[r.ticker]}
-                equity={equity}
-                stops={stops}
-                open={openReason === r.ticker}
-                onReason={() => setOpenReason(openReason === r.ticker ? null : r.ticker)}
-                marking={marking === r.ticker}
-                onDone={async () => {
-                  const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
-                  setMarking(r.ticker)
-                  await save(afterTrade(holdings, r, price, qty))
-                  setMarking(null)
-                }}
-              />
-            ))}
-          </tbody>
-        </table>
-        {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
-        <p className="mt-2 text-xs text-[#6e6e73]">
-          When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
-          price shown; edit the price if your fill differed. Names are in grade order, best first, re-read every 15
-          minutes with the technical analyst at the live price. Share counts follow the live price; the weights are
-          the evening decision. Buy at the open with a market order. The desk sells when a name loses its A grade at
-          the next check, not at a price; stops are optional because they cut winners as often as losers.
-        </p>
-        {warnings.length > 0 && (
-          <ul className="mt-2 space-y-1 text-xs text-[#9a6200]">
-            {warnings.map((flag) => (
-              <li key={flag}>Warning: {FLAG_WORDS[flag] ?? flag}</li>
-            ))}
-          </ul>
-        )}
-      </section>
+        </section>
+      )}
 
-      <button
-        type="button"
-        onClick={() => setDetails(!details)}
-        className="self-start text-sm text-[#0071e3] hover:underline"
-      >
-        {details ? 'Hide the details' : 'Show the details: practice account and every grade'}
-      </button>
+      {latest && <TrackRecord curve={curve} />}
 
-      {details && <PracticeAccount userId={userId} record={paper} />}
+      {latest && (
+        <button
+          type="button"
+          onClick={() => setDetails(!details)}
+          className="self-start text-sm text-[#0071e3] hover:underline"
+        >
+          {details ? 'Hide the details' : 'Show the details: practice account and every grade'}
+        </button>
+      )}
 
-      {details && <EveryGrade latest={latest} />}
+      {latest && details && <PracticeAccount record={latest.paper} paperLive={paperLive} />}
+
+      {latest && details && <EveryGrade latest={latest} />}
+
+      {openName && latest && <NameDetail userId={userId} ticker={openName} latest={latest} onClose={() => setOpenName(null)} />}
     </div>
   )
 }
 
 // The practice account: the broker's live money, positions and waiting
 // orders, refreshed with the candle; the evening record when the broker
-// cannot be reached.
-const PracticeAccount = ({ userId, record }: { userId: string; record: DeskPayload['latest'] extends infer L ? (L extends { paper: infer P } ? P : never) : never }) => {
-  const [live, setLive] = useState<DeskPaperLive | null>(null)
-  useEffect(() => {
-    const poll = async () => {
-      try {
-        setLive(await getDeskPaper(userId))
-      } catch {
-        setLive({ reason: 'unreachable' })
-      }
-    }
-    void poll()
-    const timer = window.setInterval(() => void poll(), CANDLE_MS)
-    return () => window.clearInterval(timer)
-  }, [userId])
+// cannot be reached. The live state is shared with the summary strip so
+// both read the same number.
+const PracticeAccount = ({
+  record,
+  paperLive,
+}: {
+  record: DeskRecord['paper']
+  paperLive: DeskPaperLive | null
+}) => {
+  const live = paperLive
   const fromBroker = live !== null && live.reason === undefined
   const positions = fromBroker ? (live.positions ?? []) : (record?.positions ?? [])
   const orders = fromBroker ? (live.orders ?? []) : (record?.orders ?? [])
-  const equity = fromBroker ? live.equity : record?.equity
+  const equityValue = fromBroker ? live.equity : record?.equity
   const cash = fromBroker ? live.cash : record?.cash
-  if (equity === undefined || cash === undefined) return null
+  if (equityValue === undefined || cash === undefined) return null
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">
@@ -425,13 +865,10 @@ const PracticeAccount = ({ userId, record }: { userId: string; record: DeskPaylo
         desk&rsquo;s.
       </p>
       <p className="text-sm text-[#1d1d1f]">
-        Worth {money(equity)} · cash {money(cash)}
+        Worth {money(equityValue)} · cash {money(cash)}
         {fromBroker && live.day_pl !== undefined && (
           <>
-            {' '}·{' '}
-            <span className={live.day_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
-              {live.day_pl >= 0 ? 'up' : 'down'} {money(Math.abs(live.day_pl))} today
-            </span>
+            {' '}· <Trend value={live.day_pl} suffix="" /> today
           </>
         )}
         {!fromBroker && record && (
@@ -470,7 +907,9 @@ const PracticeAccount = ({ userId, record }: { userId: string; record: DeskPaylo
                 <td>{money(p.market_value)}</td>
                 <td>{money(p.avg_entry_price)}</td>
                 <td>{money(p.current_price)}</td>
-                <td className={p.unrealized_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>{money(p.unrealized_pl)}</td>
+                <td className={p.unrealized_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
+                  <Trend value={p.unrealized_pl} suffix="" />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -490,13 +929,15 @@ interface RowProps {
   stops: boolean
   open: boolean
   onReason: () => void
+  onOpenName: () => void
   marking: boolean
   onDone: () => Promise<void>
 }
 
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
-const Row = ({ r, ranks, quote, equity, stops, open, onReason, marking, onDone }: RowProps) => {
+// The "why" reads in plain words first; the analysts' numbers are inside.
+const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marking, onDone }: RowProps) => {
   const { price, qty } = sizing(r, quote, equity)
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
@@ -504,7 +945,11 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, marking, onDone }
   const atRisk = r.in_book && r.target_weight > 0 && (r.grade_margin ?? 1) <= 0
   return (
     <tr className="border-t border-black/[0.05] align-top">
-      <td className="py-1.5 font-medium">{r.ticker}</td>
+      <td className="py-1.5">
+        <button type="button" onClick={onOpenName} className="font-medium text-[#1d1d1f] hover:text-[#0071e3] hover:underline" title="Open the name's history">
+          {r.ticker}
+        </button>
+      </td>
       <td>
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>
           {r.action}
@@ -531,7 +976,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, marking, onDone }
           <div className="text-xs text-[#6e6e73]">
             you hold {r.shares} at {money(r.entry_price)}
             {r.pl_pct !== null && (
-              <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}> {signed(r.pl_pct)}</span>
+              <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}> <Trend value={r.pl_pct * 100} /></span>
             )}
           </div>
         )}
@@ -573,31 +1018,24 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, marking, onDone }
         )}
       </td>
       <td className="text-xs text-[#6e6e73]">
-        {r.in_book && (
-          <span className="font-mono text-[#1d1d1f]" title={TRIGGER_LEGEND}>
-            {triggers(r.stances ?? {})}{' '}
-          </span>
-        )}
-        {r.reason ? (
-          <button type="button" onClick={onReason} className="text-left text-[#0071e3] hover:underline">
-            {open ? 'hide' : r.why || 'why?'}
+        {r.in_book && r.why ? (
+          <button type="button" onClick={onReason} className="text-left text-[#1d1d1f] hover:text-[#0071e3] hover:underline" title="why the desk holds this grade">
+            {open ? 'hide' : r.why}
           </button>
         ) : (
           r.why
         )}
         {open && (
           <>
-            {ranks && (
-              <div className="mt-1 font-mono text-[#1d1d1f]" title="each analyst's rating, 0 to 100, rank across the book">
-                {ratings(ranks, r.stances ?? {})}
-              </div>
-            )}
+            <div className="mt-1 font-mono text-[#1d1d1f]" title={`${TRIGGER_LEGEND} the number is the analyst's rating, 0 to 100`}>
+              {r.in_book && ranks ? ratings(ranks, r.stances ?? {}) : null}
+            </div>
             {r.technical_now !== null && r.technical_close !== null && (
               <div className="text-[#6e6e73]">
                 technical at the live price: {Math.round(r.technical_now * 100)} (was {Math.round(r.technical_close * 100)} at the close)
               </div>
             )}
-            <ReasonLines text={r.reason} />
+            {r.reason && <ReasonLines text={r.reason} />}
           </>
         )}
       </td>
@@ -765,38 +1203,220 @@ const EveryGrade = ({ latest }: { latest: NonNullable<DeskPayload['latest']> }) 
   )
 }
 
-// The one-screen explanation for someone who has never seen the page.
-const HowToUse = ({ onClose }: { onClose: () => void }) => (
-  <div className="my-2 max-w-xl rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f]">
-    <ol className="list-decimal space-y-1.5 pl-5">
-      <li>
-        <b>Every evening</b> the desk grades about ninety AI and software stocks and picks the A-rated ones to own.
-        That decision holds for the next trading day.
-      </li>
-      <li>
-        <b>Enter your positions</b> (type or paste from Schwab) and set your account size. The board then says, name
-        by name, <b>buy, add, trim, sell or hold</b>, and how many shares.
-      </li>
-      <li>
-        <b>Buy at the open</b> with a market order. Do not chase a name that has already jumped. When a trade is
-        placed, click <b>done</b> on its row and your positions update.
-      </li>
-      <li>
-        <b>Selling:</b> a name is sold when its grade drops below A at the next check, about every four weeks. Each
-        row says when that is. Stops are optional: switch them on to see a price under which to sell.
-      </li>
-      <li>
-        <b>Prices</b> refresh every 15 minutes during market hours. Gains are measured from what you paid.
-      </li>
-      <li>
-        <b>Why:</b> the letters are the analysts (F business fundamentals, T price trend, S news and sentiment, V price
-        vs value, R which group leads). Click the reason to read it in full.
-      </li>
-    </ol>
-    <button type="button" onClick={onClose} className="mt-3 text-xs text-[#0071e3] hover:underline">
-      close
-    </button>
-  </div>
-)
+const triggers = (stances: Record<string, number>) =>
+  TRIGGER_ORDER.filter(([k]) => k in stances)
+    .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
+    .join(' ')
+
+// One name's drill-down: what the desk said about it over time, what came
+// next, and how it did under the desk's own rule versus holding it or the
+// benchmark. Read from the file the nightly run wrote.
+const NameDetail = ({
+  userId,
+  ticker,
+  latest,
+  onClose,
+}: {
+  userId: string
+  ticker: string
+  latest: NonNullable<DeskPayload['latest']>
+  onClose: () => void
+}) => {
+  const [history, setHistory] = useState<DeskHistory | null>(null)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    let alive = true
+    void getDeskHistory(userId, ticker)
+      .then((h) => alive && setHistory(h))
+      .catch((err) => alive && setError(err instanceof Error ? err.message : 'no history'))
+    return () => {
+      alive = false
+    }
+  }, [userId, ticker])
+  const brief = latest.briefs?.[ticker]
+  const bt = history?.backtest
+  const recent = history?.rows.slice(-12) ?? []
+  const cells = [
+    { label: 'The desk\u2019s rule', value: bt?.rule_return != null ? `${(bt.rule_return * 100).toFixed(0)}%` : '—', note: 'holding it only while graded A or better' },
+    { label: 'Just holding it', value: bt?.hold_return != null ? `${(bt.hold_return * 100).toFixed(0)}%` : '—', note: 'buy and hold over the same span' },
+    { label: 'The benchmark', value: bt?.benchmark_return != null ? `${(bt.benchmark_return * 100).toFixed(0)}%` : '—', note: 'SPY over the same sessions' },
+    { label: 'In vs out', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}%` : '—', note: bt?.out_annualised != null ? `vs ${(bt.out_annualised * 100).toFixed(0)}% on the days it was not held` : '' },
+  ]
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/25" onClick={onClose} role="dialog" aria-label={`${ticker} history`}>
+      <div className="h-full w-full max-w-xl overflow-y-auto bg-[#f5f5f7] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#1d1d1f]">
+            {ticker}
+            {brief && <span className="ml-2 text-sm font-normal text-[#6e6e73]">{brief.verdict}</span>}
+          </h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.1] text-[#6e6e73] hover:bg-white">
+            <X size={16} />
+          </button>
+        </div>
+        {error ? (
+          <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
+        ) : !history ? (
+          <p className="text-sm text-[#6e6e73]">Loading the history…</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              {cells.map((c) => (
+                <div key={c.label} className="rounded-xl border border-black/[0.08] bg-white p-3">
+                  <p className="text-xs text-[#6e6e73]">{c.label}</p>
+                  <p className="text-base font-semibold text-[#1d1d1f]">{c.value}</p>
+                  <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
+                </div>
+              ))}
+            </div>
+            {brief && (
+              <div className="mt-3 space-y-1 rounded-xl border border-black/[0.08] bg-white p-3 text-sm text-[#1d1d1f]">
+                <p>{brief.reasoning}</p>
+                <p><span className="font-medium">Risks:</span> {brief.risks}</p>
+                <p><span className="font-medium">Watch:</span> {brief.watch}</p>
+              </div>
+            )}
+            <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">The last {recent.length} sessions</h4>
+            <table className="mt-1 w-full text-sm">
+              <thead className="text-left text-[#6e6e73]">
+                <tr>
+                  <th className="py-1">Date</th>
+                  <th>Grade</th>
+                  <th>Votes</th>
+                  <th>Next {history.horizon} sessions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((row) => (
+                  <tr key={row.date} className="border-t border-black/[0.05]">
+                    <td className="py-1 text-[#6e6e73]">{shortDate(row.date)}</td>
+                    <td><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade] ?? ''}`}>{row.grade}</span></td>
+                    <td className="text-[#6e6e73]">{row.votes > 0 ? `+${row.votes.toFixed(1)}` : row.votes.toFixed(1)}</td>
+                    <td>{row.forward != null ? <Trend value={row.forward * 100} /> : <span className="text-[#9ca3af]">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// The autopsy: what the person's own trading keeps doing, read from their
+// own documents. Three sections plus what is unknown, and the sources it
+// read, so the person can check the reading.
+const AutopsyView = ({ userId, onClose }: { userId: string; onClose: () => void }) => {
+  const [autopsy, setAutopsy] = useState<TradingAutopsy | null>(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(true)
+  useEffect(() => {
+    let alive = true
+    void getTradingAutopsy(userId)
+      .then((a) => alive && setAutopsy(a))
+      .catch((err) => alive && setError(err instanceof Error ? err.message : 'The analysis could not run.'))
+      .finally(() => alive && setBusy(false))
+    return () => {
+      alive = false
+    }
+  }, [userId])
+  if (busy) {
+    return (
+      <section className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]">
+        Reading your own trading history… this takes a few seconds.
+      </section>
+    )
+  }
+  if (error) {
+    return (
+      <section className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#b42318]">
+        {error}
+      </section>
+    )
+  }
+  const result = autopsy?.result
+  if (!result) {
+    return (
+      <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-[#1d1d1f]">Your trading, in review</h3>
+          <button type="button" onClick={onClose} className="text-xs text-[#0071e3] hover:underline">
+            close
+          </button>
+        </div>
+        <p className="mt-1 text-sm text-[#6e6e73]">
+          {autopsy?.reason ?? 'Nothing to show yet.'} Share a statement, a journal, or notes about your trades and try
+          again.
+        </p>
+      </section>
+    )
+  }
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Your trading, in review</h3>
+        <button type="button" onClick={onClose} className="text-xs text-[#0071e3] hover:underline">
+          close
+        </button>
+      </div>
+      <p className="mb-2 mt-1 text-xs text-[#6e6e73]">
+        Read from {autopsy?.passages_used ?? 0} passage{autopsy?.passages_used === 1 ? '' : 's'}
+        {autopsy?.sources?.length ? ` of ${autopsy.sources.join(', ')}` : ''}. The analysis names what repeats; a single
+        trade proves nothing.
+      </p>
+      <div className="space-y-3">
+        <div>
+          <h4 className="text-sm font-semibold text-[#1d1d1f]">Patterns</h4>
+          <ul className="mt-1 space-y-1.5 text-sm text-[#1d1d1f]">
+            {result.patterns.map((p, i) => (
+              <li key={i}>
+                <span className="font-medium">{p.behaviour}</span>
+                <span className="text-[#6e6e73]"> — {p.evidence}</span>
+              </li>
+            ))}
+            {result.patterns.length === 0 && <li className="text-[#6e6e73]">Nothing repeated yet.</li>}
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-[#1d1d1f]">What it has cost</h4>
+          <ul className="mt-1 space-y-1.5 text-sm text-[#1d1d1f]">
+            {result.costs.map((c, i) => (
+              <li key={i}>
+                <span className="font-medium">{c.what}</span>{' '}
+                <span className="text-[#9a6200]">({c.amount})</span>
+                <span className="text-[#6e6e73]"> — {c.source}</span>
+              </li>
+            ))}
+            {result.costs.length === 0 && <li className="text-[#6e6e73]">No stated costs in what was read.</li>}
+          </ul>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {(['stop', 'start', 'keep'] as const).map((kind) => (
+            <div key={kind} className="rounded-xl bg-[#f5f5f7] p-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-[#6e6e73]">{kind}</h4>
+              <ul className="mt-1 space-y-1 text-sm text-[#1d1d1f]">
+                {result.plan[kind].map((item) => (
+                  <li key={item}>· {item}</li>
+                ))}
+                {result.plan[kind].length === 0 && <li className="text-[#6e6e73]">—</li>}
+              </ul>
+            </div>
+          ))}
+        </div>
+        {result.unknowns.length > 0 && (
+          <div>
+            <h4 className="text-sm font-semibold text-[#1d1d1f]">Not clear from what you shared</h4>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#6e6e73]">
+              {result.unknowns.map((u) => (
+                <li key={u}>{u}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
 
 export default DeskPanel

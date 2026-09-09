@@ -3,6 +3,40 @@
 Verified state as of 2026-09-08. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-08 — the desk dashboard overhaul, built and browser-verified on the branch (NOT MERGED)
+
+On `feat/desk-dashboard-overhaul` (currently at `f8270e2`, the same commit as
+`origin/main`, work uncommitted until the merge decision). The operator asked
+for the trading dashboard to be understandable to a person; the agreed scope
+was the dashboard overhaul plus autopsy-as-a-view. Verified by running:
+
+* **Backend (18 tests, ruff clean).** `market_daily` now writes a curve block
+  into the record (the rules walked forward against SPY and QQQ plus the
+  paper account's live equity) and a per-name history file under the market
+  data root; `GET /desk` returns the curve, `GET /desk/history/{ticker}`
+  reads the nightly file, `GET /trading/autopsy` runs the caller's own
+  trading documents through `TradeAutopsy` and returns patterns/costs/plan
+  with sources and passages used. The nightly cron on spark1 needs no new
+  flag: the new `main()` computes and writes these automatically.
+* **Browser (4 new tests in `frontend/e2e/desk.spec.ts`, all passing).** The
+  real desk page is exercised with the session mocked as the operator and
+  every desk endpoint mocked from the record's shape: the at-a-glance strip
+  (practice worth, today's move, rules vs SPY/QQQ, exposure, next rebalance
+  date), the regime warnings in plain words, "what changed since the last
+  session", the track-record curve and CAGR/vol/drawdown, the plain-word row
+  with its ticker drill-down, the autopsy view, and the getting-started empty
+  state. `npm run build` and `tsc --noEmit` are clean. (The container runs
+  e2e with Alpine's `chromium` binary and a `colorScheme: 'light'` override;
+  the throwaway `playwright.container.config.ts` was removed after the run.)
+
+**Next atomic task.** The merge and deploy are the operator's call: merge the
+branch, then rebuild the gateway for the frontend (`docker compose build
+gateway && docker compose up -d gateway` — a plain restart ships stale bytes),
+recreate the backend for the new routes, and confirm the nightly cron writes
+the curve/history files into the mounted `data/market/desk` partition. The
+real record on disk has no curve yet because the feature is new; the page
+says so until the next close.
+
 ## 2026-09-08 — failed photo analyses are recovered so a picture's meaning always reaches memory (DEPLOYED `58d0cca`)
 
 Recurrence prevention for the bird-evening defect. The 09-05 fix stopped

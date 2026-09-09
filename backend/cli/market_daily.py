@@ -435,6 +435,7 @@ def record(
     briefs: dict[str, dict] | None = None,
     paper: dict | None = None,
     challenger: dict | None = None,
+    curve: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     panel = report.panel
@@ -490,6 +491,10 @@ def record(
         ],
         "briefs": briefs or {},
         "paper": paper,
+        # The track record the page draws: the rules walked forward against
+        # SPY and QQQ, and the paper account's live equity since it started.
+        # Absent on records written before this existed.
+        "curve": curve,
         # The shadow desk, when one ran tonight: its book and grades, never
         # traded, priced forward by the scorecard beside the rule's.
         "challenger": challenger,
@@ -535,6 +540,133 @@ def save(root: Path, data: dict) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, default=float), encoding="utf-8")
     return path
+
+
+# The track record as a curve: the desk's own rules walked forward against
+# SPY and QQQ, with the headline numbers. Computed once at record time so
+# the page shows what the rules actually earned without running the desk
+# again (the backend serving the page has no torch).
+def curve_block(report, store) -> dict | None:
+    """Return the backtest curve block, or None when it cannot be drawn."""
+    from backend.agents.trading.desk import scorecard, simulate
+
+    panel = report.panel
+    try:
+        sim = simulate.run(report, use_exits=False)
+    except Exception:
+        return None
+    if len(sim.dates) < 2 or sim.equity is None or not np.isfinite(sim.equity[0]):
+        return None
+    start = int(np.searchsorted(panel.dates, sim.dates[0]))
+    dates = [str(d) for d in sim.dates]
+    equity = np.asarray(sim.equity, dtype=float)
+    base = equity[0] if equity[0] > 0 else 1.0
+    rules = [float(e / base - 1.0) for e in equity]
+    with np.errstate(all="ignore"):
+        simple = np.expm1(panel.log_returns())
+    bench = panel.index(panel.benchmark)
+    spy = simple[start : start + len(dates), bench]
+    spy = np.nan_to_num(spy, nan=0.0)
+    spy_curve = [float(v - 1.0) for v in np.cumprod(1.0 + spy)]
+    qqq = scorecard.index_returns(store, "QQQ", sim.dates)
+    if qqq is not None and len(qqq):
+        qqq_curve = [
+            float(v - 1.0) for v in np.cumprod(1.0 + np.nan_to_num(qqq, nan=0.0))
+        ]
+    else:
+        qqq_curve = []
+    stats = sim.stats()
+    return {
+        "label": "the desk's rules, walked forward",
+        "asof": str(panel.dates[-1]),
+        "dates": dates,
+        "rules": rules,
+        "spy": spy_curve,
+        "qqq": qqq_curve,
+        "stats": {k: (None if v != v else float(v)) for k, v in stats.items()},
+    }
+
+
+# The paper account's live equity history, for the same chart: the only
+# genuinely out-of-sample sample the desk has.
+def paper_curve_block(root: Path) -> dict | None:
+    """Return the paper account's equity history, or None before it has any."""
+    from backend.agents.trading.desk import paper
+
+    state = paper.load_state(root)
+    history = [h for h in state.history if h.get("equity") is not None]
+    if not history:
+        return None
+    return {
+        "label": "paper account (live)",
+        "sessions": [str(h.get("session")) for h in history],
+        "equity": [float(h.get("equity")) for h in history],
+        "pl_pct": [float(h.get("pl_pct") or 0.0) for h in history],
+    }
+
+
+# One session of a name's history, as JSON-safe plain data.
+def _history_row(row) -> dict:
+    """Return a JSON-safe row from a desk HistoryRow."""
+    forward = float(row.forward)
+    residual = float(row.forward_residual)
+    return {
+        "date": str(row.date),
+        "grade": row.grade,
+        "votes": float(row.votes),
+        "stances": {k: int(v) for k, v in row.stances.items()},
+        "exposure": float(row.exposure),
+        "confidence": float(row.confidence),
+        "forward": None if forward != forward else round(forward, 6),
+        "forward_residual": None if residual != residual else round(residual, 6),
+        "earnings": bool(row.earnings),
+    }
+
+
+# A name's backtest, as JSON-safe plain data.
+def _backtest_dict(bt) -> dict:
+    """Return a JSON-safe NameBacktest."""
+
+    def num(value):
+        value = float(value)
+        return None if value != value else round(value, 6)
+
+    return {
+        "ticker": bt.ticker,
+        "min_grade": bt.min_grade,
+        "sessions": int(bt.sessions),
+        "sessions_in": int(bt.sessions_in),
+        "switches": int(bt.switches),
+        "rule_return": num(bt.rule_return),
+        "hold_return": num(bt.hold_return),
+        "benchmark_return": num(bt.benchmark_return),
+        "in_annualised": num(bt.in_annualised),
+        "out_annualised": num(bt.out_annualised),
+    }
+
+
+# One history file per book name, so the drill-down reads a single name's
+# file rather than rebuilding the whole desk to answer one question.
+def write_history(store, report, horizon: int = 20) -> int:
+    """Write the per-name history files; return how many were written."""
+    base = Path(store.root) / "history"
+    base.mkdir(parents=True, exist_ok=True)
+    count = 0
+    for ticker in sorted(report.sides):
+        rows = trading_desk.history(report, ticker, horizon)
+        backtest = trading_desk.name_backtest(report, ticker)
+        payload = {
+            "ticker": ticker,
+            "asof": str(report.panel.dates[-1]),
+            "horizon": horizon,
+            "rows": [_history_row(r) for r in rows],
+            "backtest": _backtest_dict(backtest),
+        }
+        (base / f"{ticker}.json").write_text(
+            json.dumps(payload, indent=1), encoding="utf-8"
+        )
+        count += 1
+    return count
 
 
 # Write and print the briefs for some names through the local model.
@@ -606,8 +738,15 @@ def main() -> None:
     shadow = None
     if args.challenger:
         shadow = _challenger_block(store, report)
-    path = save(Path(store.root), record(report, briefs, entry, shadow))
+    curve = {
+        "backtest": curve_block(report, store),
+        "paper": paper_curve_block(Path(store.root)),
+    }
+    path = save(Path(store.root), record(report, briefs, entry, shadow, curve))
     print(f"\nrecord written: {path}")
+    written = write_history(store, report)
+    if written:
+        print(f"history: {written} names written")
     removed = prune(Path(store.root), asof, args.prune_days)
     if removed:
         print(f"pruned {len(removed)} old partitions")
