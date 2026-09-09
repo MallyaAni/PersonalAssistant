@@ -365,15 +365,23 @@ def _accuracy(expected, naive, y, meta_year, years, model):
 
 
 # Fifths of `values` within each year, stamped on the session `offset`
-# from each row's reaction session.
+# from each row's reaction session. The cutoffs are trailing: a row's fifth
+# is set by the reports up to its own session, never by reports later in the
+# year, or the buckets would know the future. A row is not bucketed until
+# its own history has enough reports to place it.
 def _fifths(values, mask, meta, meta_year, years, shape, offset):
     out = np.zeros((*shape, 5), dtype=bool)
     for yr in years:
         sel = mask & (meta_year == yr) & np.isfinite(values)
         if sel.sum() < 25:
             continue
-        cuts = np.quantile(values[sel], [0.2, 0.4, 0.6, 0.8])
-        for i in np.flatnonzero(sel):
+        indices = sorted(np.flatnonzero(sel), key=lambda i: meta[i][1])
+        pool: list[float] = []
+        for i in indices:
+            pool.append(float(values[i]))
+            if len(pool) < 25:
+                continue
+            cuts = np.quantile(pool, [0.2, 0.4, 0.6, 0.8])
             j, r, _yy = meta[i]
             out[r + offset, j, int(np.searchsorted(cuts, values[i], side="right"))] = (
                 True
