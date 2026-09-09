@@ -1,0 +1,596 @@
+{
+  "at": "2026-09-05T14:38:31+00:00",
+  "commit": "2fc6610",
+  "extra": {
+    "case_fingerprint": "b18764a227ffc317",
+    "environment": "component evaluation: real router + run_steps, scripted apply; production dispatch out of scope",
+    "floors_breached": [
+      "reference completion 0.67 < 0.67",
+      "reference carried 0.67 < 0.67"
+    ],
+    "model": "http://animallya-spark1.local:8000 deepseek-v4-flash",
+    "observations": [
+      {
+        "carried": true,
+        "category": "single_step",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "Remind me to call mum once 18 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 18:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 123785.4,
+        "name": "one-reminder",
+        "path": [
+          "schedule_task"
+        ],
+        "steps": 1,
+        "stopped": "the router named no further tool",
+        "unauthorized": []
+      },
+      {
+        "carried": true,
+        "category": "single_step",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "Remind me to call mum once 18 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 18:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 70765.1,
+        "name": "one-reminder",
+        "path": [
+          "schedule_task"
+        ],
+        "steps": 1,
+        "stopped": "the wall clock ran out",
+        "unauthorized": []
+      },
+      {
+        "carried": true,
+        "category": "single_step",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "Remind me to call mum once 18 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 18:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 37102.5,
+        "name": "one-reminder",
+        "path": [
+          "schedule_task"
+        ],
+        "steps": 1,
+        "stopped": "the router named no further tool",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "mixed_tools",
+        "completed": false,
+        "decisions": 3,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "reschedule the 5pm reminder to call mum None once 18 0 None 2026-09-03",
+            "kind": "task",
+            "line": "Manage scheduled tasks: reschedule",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "manage_tasks"
+          },
+          {
+            "arguments": "reschedule the 5pm reminder to call mum None None 18 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: reschedule",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "manage_tasks"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 52254.1,
+        "name": "cancel-and-reschedule",
+        "path": [
+          "manage_tasks",
+          "manage_tasks"
+        ],
+        "steps": 2,
+        "stopped": "the router repeated a step",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "mixed_tools",
+        "completed": false,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "reschedule the 5pm reminder to call mum None once 18 0 None 2026-09-03",
+            "kind": "task",
+            "line": "Manage scheduled tasks: reschedule",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "manage_tasks"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 92848.0,
+        "name": "cancel-and-reschedule",
+        "path": [
+          "manage_tasks"
+        ],
+        "steps": 1,
+        "stopped": "the router repeated a step",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "mixed_tools",
+        "completed": false,
+        "decisions": 1,
+        "duplicate_effects": 0,
+        "evidence": [],
+        "failed_steps": 0,
+        "latency_ms": 120122.0,
+        "name": "cancel-and-reschedule",
+        "path": [],
+        "steps": 0,
+        "stopped": "the router named no further tool",
+        "unauthorized": []
+      },
+      {
+        "carried": true,
+        "category": "mixed_tools",
+        "completed": true,
+        "decisions": 3,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "location city where I live None None",
+            "kind": "task",
+            "line": "Past conversations: location city where I live",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "search_history"
+          },
+          {
+            "arguments": "events this weekend September 5-6 2026 near me None",
+            "kind": "task",
+            "line": "Web search: events this weekend September 5-6 2026 near me",
+            "outcome": {
+              "kind": "scheduled"
+            },
+            "tool": "search_web"
+          },
+          {
+            "arguments": "Remind me about the pottery class on Saturday. once 9 0 0 2026-09-05",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 09:00",
+            "outcome": {
+              "kind": "scheduled"
+            },
+            "tool": "schedule_task"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 57171.7,
+        "name": "search-then-remind",
+        "path": [
+          "search_history",
+          "search_web",
+          "schedule_task"
+        ],
+        "steps": 3,
+        "stopped": "the step ceiling was reached",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "mixed_tools",
+        "completed": false,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "location city where I live None None",
+            "kind": "task",
+            "line": "Past conversations: location city where I live",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "search_history"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 59310.9,
+        "name": "search-then-remind",
+        "path": [
+          "search_history"
+        ],
+        "steps": 1,
+        "stopped": "the router repeated a step",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "mixed_tools",
+        "completed": false,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "location city where I live None None",
+            "kind": "task",
+            "line": "Past conversations: location city where I live",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "search_history"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 133701.4,
+        "name": "search-then-remind",
+        "path": [
+          "search_history"
+        ],
+        "steps": 1,
+        "stopped": "the wall clock ran out",
+        "unauthorized": []
+      },
+      {
+        "carried": null,
+        "category": "partial_failure",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "cancel the 5pm reminder None None 0 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: cancel [found nothing to act on]",
+            "outcome": {
+              "kind": "not_found",
+              "tasks": []
+            },
+            "tool": "manage_tasks"
+          },
+          {
+            "arguments": "list  None None 0 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: list [found nothing to act on]",
+            "outcome": {
+              "kind": "not_found",
+              "tasks": []
+            },
+            "tool": "manage_tasks"
+          }
+        ],
+        "failed_steps": 2,
+        "latency_ms": 26881.4,
+        "name": "cancel-nothing-found",
+        "path": [
+          "manage_tasks",
+          "manage_tasks"
+        ],
+        "steps": 2,
+        "stopped": "the step ceiling was reached",
+        "unauthorized": []
+      },
+      {
+        "carried": null,
+        "category": "partial_failure",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "cancel the 5pm reminder None None 0 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: cancel [found nothing to act on]",
+            "outcome": {
+              "kind": "not_found",
+              "tasks": []
+            },
+            "tool": "manage_tasks"
+          },
+          {
+            "arguments": "list  None None 0 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: list [found nothing to act on]",
+            "outcome": {
+              "kind": "not_found",
+              "tasks": []
+            },
+            "tool": "manage_tasks"
+          }
+        ],
+        "failed_steps": 2,
+        "latency_ms": 5026.1,
+        "name": "cancel-nothing-found",
+        "path": [
+          "manage_tasks",
+          "manage_tasks"
+        ],
+        "steps": 2,
+        "stopped": "the step ceiling was reached",
+        "unauthorized": []
+      },
+      {
+        "carried": null,
+        "category": "partial_failure",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "cancel the 5pm reminder None None 0 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: cancel [found nothing to act on]",
+            "outcome": {
+              "kind": "not_found",
+              "tasks": []
+            },
+            "tool": "manage_tasks"
+          },
+          {
+            "arguments": "list  None None 0 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: list [found nothing to act on]",
+            "outcome": {
+              "kind": "not_found",
+              "tasks": []
+            },
+            "tool": "manage_tasks"
+          }
+        ],
+        "failed_steps": 2,
+        "latency_ms": 23763.4,
+        "name": "cancel-nothing-found",
+        "path": [
+          "manage_tasks",
+          "manage_tasks"
+        ],
+        "steps": 2,
+        "stopped": "the step ceiling was reached",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "reference",
+        "completed": false,
+        "decisions": 1,
+        "duplicate_effects": 0,
+        "evidence": [],
+        "failed_steps": 0,
+        "latency_ms": 151250.9,
+        "name": "move-the-stretch-reminder",
+        "path": [],
+        "steps": 0,
+        "stopped": "the router named no further tool",
+        "unauthorized": []
+      },
+      {
+        "carried": true,
+        "category": "reference",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "reschedule the stretch reminder None once 20 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: reschedule",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "manage_tasks"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 30387.9,
+        "name": "move-the-stretch-reminder",
+        "path": [
+          "manage_tasks"
+        ],
+        "steps": 1,
+        "stopped": "the router named no further tool",
+        "unauthorized": []
+      },
+      {
+        "carried": true,
+        "category": "reference",
+        "completed": true,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "reschedule the stretch reminder None once 20 0 None None",
+            "kind": "task",
+            "line": "Manage scheduled tasks: reschedule",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "manage_tasks"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 83650.4,
+        "name": "move-the-stretch-reminder",
+        "path": [
+          "manage_tasks"
+        ],
+        "steps": 1,
+        "stopped": "the wall clock ran out",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "multiple_writes",
+        "completed": false,
+        "decisions": 3,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "Remind me to call mum once 18 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 18:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          },
+          {
+            "arguments": "remind me to call mum once 20 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 20:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 199900.3,
+        "name": "two-reminders",
+        "path": [
+          "schedule_task",
+          "schedule_task"
+        ],
+        "steps": 2,
+        "stopped": "the wall clock ran out",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "multiple_writes",
+        "completed": false,
+        "decisions": 2,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "Remind me to call mum once 18 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 18:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 256098.1,
+        "name": "two-reminders",
+        "path": [
+          "schedule_task"
+        ],
+        "steps": 1,
+        "stopped": "the wall clock ran out",
+        "unauthorized": []
+      },
+      {
+        "carried": false,
+        "category": "multiple_writes",
+        "completed": false,
+        "decisions": 3,
+        "duplicate_effects": 0,
+        "evidence": [
+          {
+            "arguments": "Remind me to call mum once 18 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 18:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          },
+          {
+            "arguments": "remind me to call mum once 20 0 0 2026-09-03",
+            "kind": "task",
+            "line": "Scheduled tasks: once at 20:00",
+            "outcome": {
+              "kind": "done"
+            },
+            "tool": "schedule_task"
+          }
+        ],
+        "failed_steps": 0,
+        "latency_ms": 64843.7,
+        "name": "two-reminders",
+        "path": [
+          "schedule_task",
+          "schedule_task"
+        ],
+        "steps": 2,
+        "stopped": "the router named no further tool",
+        "unauthorized": []
+      }
+    ]
+  },
+  "floor": null,
+  "name": "trajectories",
+  "notes": "6 labelled trajectories (component evaluation); 9 did not complete; 2 acceptance breach(es)",
+  "reps": 3,
+  "right": 9,
+  "scores": [
+    {
+      "name": "mixed_tools",
+      "right": 1,
+      "total": 6
+    },
+    {
+      "name": "multiple_writes",
+      "right": 0,
+      "total": 3
+    },
+    {
+      "name": "partial_failure",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "reference",
+      "right": 2,
+      "total": 3
+    },
+    {
+      "name": "single_step",
+      "right": 3,
+      "total": 3
+    }
+  ],
+  "total": 18
+}
