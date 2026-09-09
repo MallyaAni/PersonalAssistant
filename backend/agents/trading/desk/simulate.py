@@ -92,13 +92,19 @@ class SimResult:
         """Return annual return, volatility, Sharpe and worst drawdown."""
         daily = self.returns[np.isfinite(self.returns)]
         if len(daily) < 2:
-            nan = float("nan")
+            # Too short to measure, but still the full shape, so a caller
+            # that reads every key (the scorecard's table) never sees a
+            # missing one.
             return {
-                "annual": nan,
-                "volatility": nan,
-                "sharpe": nan,
-                "drawdown": nan,
-                "total": nan,
+                "annual": float("nan"),
+                "cagr": float("nan"),
+                "volatility": float("nan"),
+                "sharpe": float("nan"),
+                "drawdown": float("nan"),
+                "total": float("nan"),
+                "turnover": float("nan"),
+                "max_weight": float("nan"),
+                "years": 0.0,
             }
         curve = np.cumprod(1.0 + daily)
         annual = float(daily.mean() * 252)

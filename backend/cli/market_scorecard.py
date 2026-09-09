@@ -51,19 +51,84 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# A book's return from one record's close to the next, at the record's
-# weights held through the gap; cash earns nothing.
-def _forward(book: list[dict], prices: dict[str, tuple[float, float]]) -> float:
-    total = 0.0
-    for row in book:
-        pair = prices.get(row["ticker"])
-        if pair is None or pair[0] <= 0:
-            continue
-        total += float(row["weight"]) * (pair[1] / pair[0] - 1.0)
-    return total
+# The desk's rebalance cadence and costs, from simulate.py.
+REBALANCE = 20
+COST_BPS = 10.0
+MIN_TRADE = 0.005
 
 
-# The records' books priced forward: one daily-return series per track.
+# Walk the records as the strategy would actually have run: persistent
+# holdings, decisions made at a record's close and filled at the next
+# record's open, the desk's rebalance cadence, and its cost on the notional
+# traded. The old forward track re-priced each night's book from cash and
+# charged nothing, which is not the strategy: the desk holds what it decided
+# until the next rebalance, and every fill costs. The walk does no dip-adds
+# and applies no exit analyst - the records do not carry either - so it is
+# the cadence and the costs made real, not the whole rule.
+def _forward_walk(
+    records: list[dict],
+    closes: dict[str, dict[str, float]],
+    opens: dict[str, dict[str, float]],
+    book_key: str,
+) -> list[float]:
+    """Return the close-to-close returns of the strategy on the records."""
+    held: dict[str, float] = {}  # ticker -> value, in units of the $1 start
+    cash = 1.0
+    values: list[float] = [1.0]
+    out: list[float] = []
+    for i, rec in enumerate(records[:-1]):
+        a = rec["session"]
+        b = records[i + 1]["session"]
+        # A missing challenger block is no decision at all; an empty book is
+        # a real one (hold nothing), and both are walks that carry forward.
+        if book_key == "challenger":
+            block = rec.get("challenger")
+            known = isinstance(block, dict)
+            rows = block.get("book", []) if known else []
+        else:
+            known = True
+            rows = rec.get("book", [])
+        target = {row["ticker"]: float(row["weight"]) for row in rows}
+        # Mark the held book to the next session's open, while it is still
+        # the old book: the decision was taken at `a`'s close.
+        value_open = cash
+        for ticker, dollars in held.items():
+            ca, ob = closes.get(ticker, {}).get(a), opens.get(ticker, {}).get(b)
+            if ca and ca > 0 and ob:
+                held[ticker] = dollars * (ob / ca)
+                value_open += held[ticker]
+            else:
+                value_open += dollars
+        # A rebalance settles at `b`'s open, the desk's market-on-open fill.
+        if known and (i == 0 or i % REBALANCE == 0):
+            desired = {
+                t: w * value_open
+                for t, w in target.items()
+                if t in opens and b in opens[t]
+            }
+            trades = {}
+            for t in set(held) | set(desired):
+                move = desired.get(t, 0.0) - held.get(t, 0.0)
+                if abs(move) >= MIN_TRADE * value_open:
+                    trades[t] = move
+            notional = sum(abs(v) for v in trades.values())
+            for t, move in trades.items():
+                held[t] = held.get(t, 0.0) + move
+            held = {t: v for t, v in held.items() if v > 1e-12}
+            cash += -sum(trades.values()) - notional * (COST_BPS / 1e4)
+        # Carry the book to `b`'s close.
+        for ticker, dollars in held.items():
+            ob, cb = opens.get(ticker, {}).get(b), closes.get(ticker, {}).get(b)
+            if ob and ob > 0 and cb:
+                held[ticker] = dollars * (cb / ob)
+        values.append(cash + sum(held.values()))
+        out.append(
+            values[-1] / values[-2] - 1.0 if known else float("nan")
+        )
+    return out
+
+
+# The records' books walked forward: one daily-return series per track.
 def from_records(root: Path, store) -> dict[str, SimResult]:
     """Return {track: SimResult} built from consecutive nightly records."""
     sessions = (
@@ -89,6 +154,7 @@ def from_records(root: Path, store) -> dict[str, SimResult]:
         }
     )
     closes: dict[str, dict[str, float]] = {}
+    opens: dict[str, dict[str, float]] = {}
     for ticker in tickers:
         frame = store.read_frame("bars", ticker)
         if frame is None:
@@ -99,33 +165,23 @@ def from_records(root: Path, store) -> dict[str, SimResult]:
             for k in cols
             if k not in ("open", "high", "low", "close", "volume", "adj_close")
         )
-        closes[ticker] = dict(
+        stamps = [str(d)[:10] for d in cols[key]]
+        close_col = next(
+            (c for c in ("adj_close", "adjusted_close") if c in cols),
+            "close",
+        )
+        closes[ticker] = dict(zip(stamps, [float(v) for v in cols[close_col]], strict=True))
+        opens[ticker] = dict(
             zip(
-                [str(d)[:10] for d in cols[key]],
-                [
-                    float(v)
-                    for v in (
-                        cols["adj_close"] if "adj_close" in cols else cols["close"]
-                    )
-                ],
+                stamps,
+                [float(v) for v in cols["open"]],
                 strict=True,
             )
         )
-    tracks = {"the rule": [], "challenger": []}
-    dates = []
-    for earlier, later in zip(records, records[1:], strict=False):
-        a, b = earlier["session"], later["session"]
-        prices = {
-            t: (closes[t][a], closes[t][b])
-            for t in closes
-            if a in closes[t] and b in closes[t]
-        }
-        dates.append(np.datetime64(b))
-        tracks["the rule"].append(_forward(earlier.get("book", []), prices))
-        block = earlier.get("challenger")
-        tracks["challenger"].append(
-            _forward(block["book"], prices) if block else float("nan")
-        )
+    tracks = {
+        "the rule": _forward_walk(records, closes, opens, "book"),
+        "challenger": _forward_walk(records, closes, opens, "challenger"),
+    }
     out = {}
     for name, daily in tracks.items():
         arr = np.array(daily, dtype=float)
@@ -133,7 +189,9 @@ def from_records(root: Path, store) -> dict[str, SimResult]:
             continue
         equity = 100.0 * np.cumprod(1.0 + np.nan_to_num(arr))
         out[name] = SimResult(
-            dates=np.array(dates),
+            dates=np.array(
+                [np.datetime64(records[i + 1]["session"]) for i in range(len(daily))]
+            ),
             returns=arr,
             invested=np.ones(len(arr)),
             equity=equity,
