@@ -259,7 +259,7 @@ const SummaryStrip = ({
       note:
         exposure < 1 && liveInvested !== null
           ? 'sizing down while conditions are thin'
-          : 'of the paper account is in the market',
+          : 'of the paper account\u2019s money is at work',
     },
   ]
   return (
@@ -1075,7 +1075,7 @@ const PracticeAccount = ({
         Worth {money(equityValue)} · cash {money(cash)}
         {fromBroker && live.day_pl !== undefined && (
           <>
-            {' '}· <Trend value={live.day_pl} suffix="" /> today
+            {' '}· <TrendUsd value={live.day_pl} /> today
           </>
         )}
         {!fromBroker && record && (
@@ -1115,7 +1115,7 @@ const PracticeAccount = ({
                 <td>{money(p.avg_entry_price)}</td>
                 <td>{money(p.current_price)}</td>
                 <td className={p.unrealized_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
-                  <Trend value={p.unrealized_pl} suffix="" />
+                  <TrendUsd value={p.unrealized_pl} />
                 </td>
               </tr>
             ))}
