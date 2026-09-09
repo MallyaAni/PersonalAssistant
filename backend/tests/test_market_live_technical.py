@@ -12,6 +12,8 @@ from types import SimpleNamespace
 
 import numpy as np
 
+from backend.agents.trading.desk.opinions import Opinion
+from backend.market import live_technical
 from backend.market.live_technical import with_live_row
 from backend.market.panel import Panel
 
@@ -62,3 +64,42 @@ def test_todays_row_is_overwritten_when_the_store_has_it():
     assert live.adj_close[-1, 1] == 60.0 * 0.5
     # Nothing before today changed.
     assert live.close[0].tolist() == [100.0, 50.0, 400.0]
+
+
+def test_technical_detail_splits_the_features_by_horizon(monkeypatch):
+    # A fake live read: one name, one session, every feature present, so the
+    # split and the buckets are what the test checks, not the analyst run.
+    panel = Panel(
+        dates=np.array(["2026-09-08"], dtype="datetime64[D]"),
+        tickers=("AAA",),
+        open=np.array([[100.0]]),
+        high=np.array([[101.0]]),
+        low=np.array([[99.0]]),
+        close=np.array([[100.0]]),
+        adj_close=np.array([[100.0]]),
+        volume=np.array([[1000.0]]),
+        themes={},
+        benchmark="AAA",
+    )
+    evidence = {
+        name: np.full((1, 1), 0.4)
+        for name in live_technical.SHORT + live_technical.MEDIUM + live_technical.LONG
+    }
+    opinion = Opinion("technical", np.full((1, 1), 0.8), evidence)
+    monkeypatch.setattr(
+        live_technical,
+        "_live_read",
+        lambda store, quotes, today: {"panel": panel, "opinion": opinion},
+    )
+    quote = SimpleNamespace(last=100.0, open=100.0, high=101.0, low=99.0, bar="x")
+    out = live_technical.technical_detail(None, {"AAA": quote}, date(2026, 9, 8))
+    assert "AAA" in out
+    d = out["AAA"]
+    # Every horizon has at least one cited feature, each filed under its own
+    # list and nowhere else.
+    assert d["short"] and d["medium"] and d["long"]
+    assert all(name in live_technical.SHORT for name in d["short"])
+    assert all(name in live_technical.MEDIUM for name in d["medium"])
+    assert all(name in live_technical.LONG for name in d["long"])
+    assert "now" in d
+    assert d["now"] is not None

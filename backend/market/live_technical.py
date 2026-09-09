@@ -35,6 +35,36 @@ from backend.market.panel import Panel
 
 _cache: dict[str, object] = {"key": None, "value": {}}
 
+# The technical analyst's features grouped by how far ahead each one looks:
+# this candle and a few days, weeks, and months. The drill-down shows the
+# three horizons separately so a person sees both where price is right now
+# and whether the longer timeframes still agree with it.
+SHORT = (
+    "ema21_distance",
+    "ema21_slope",
+    "spread_21_50",
+    "spread_21_50_slope",
+    "converging_21_50",
+    "support_distance",
+    "resistance_distance",
+)
+MEDIUM = (
+    "ema50_distance",
+    "ema50_slope",
+    "stack_order",
+    "range_position_60",
+    "daily_trend",
+)
+LONG = (
+    "weekly_trend",
+    "weekly_stack",
+    "ema200_distance",
+    "sma200_distance",
+    "high_52w_distance",
+    "low_52w_distance",
+    "residual_momentum_120",
+)
+
 
 # The panel with today's row set from the live quotes: appended when the
 # store ends before today, overwritten when it already has today. Names
@@ -97,23 +127,33 @@ def with_live_row(panel: Panel, quotes: dict, today: date) -> Panel:
     )
 
 
-# The technical analyst's rank per name at the live price and at the last
-# close, one run per candle.
-def technical_now(store, quotes: dict, today: date | None = None) -> dict:
-    """Return {symbol: {"now": rank, "close": rank}} for the names quoted."""
-    today = today or datetime.now(UTC).date()
+# The live panel and the technical analyst's read of it, one run per candle.
+def _live_read(store, quotes: dict, today: date) -> dict:
+    """Return {"panel": live, "opinion": opinion}, cached by the candle."""
     key = (
         today,
         tuple(sorted((s, str(getattr(q, "bar", ""))) for s, q in quotes.items())),
     )
     if _cache["key"] == key:
-        return dict(_cache["value"])  # type: ignore[arg-type]
+        return _cache["value"]  # type: ignore[return-value]
     panel, sides = book_panel(store)
     live = with_live_row(panel, quotes, today)
     # The day's regime picks the analyst's playbook, as it does in the
     # desk run, so the live rank and the record's rank read the same way.
     view = regime.opine(live, sides, tightening_for(store, live, None))
-    scores = technical_analyst.opine(live, view.ai_trend).scores
+    opinion = technical_analyst.opine(live, view.ai_trend)
+    _cache["key"], _cache["value"] = key, {"panel": live, "opinion": opinion}
+    return _cache["value"]  # type: ignore[return-value]
+
+
+# The technical analyst's rank per name at the live price and at the last
+# close, one run per candle.
+def technical_now(store, quotes: dict, today: date | None = None) -> dict:
+    """Return {symbol: {"now": rank, "close": rank}} for the names quoted."""
+    today = today or datetime.now(UTC).date()
+    read = _live_read(store, quotes, today)
+    panel = read["panel"]
+    scores = read["opinion"].scores
     if scores.shape[0] < 2:
         return {}
     ranks = baselines.percentile_rank(scores[-2:])
@@ -125,5 +165,41 @@ def technical_now(store, quotes: dict, today: date | None = None) -> dict:
         now, close = float(ranks[-1, j]), float(ranks[-2, j])
         if np.isfinite(now) and np.isfinite(close):
             out[symbol] = {"now": now, "close": close}
-    _cache["key"], _cache["value"] = key, out
-    return dict(out)
+    return out
+
+
+# The technical features the analyst would cite for each name, read on the
+# live panel and split by horizon, one run per candle. The drill-down shows
+# these so a person sees the short-term where-price-is-now read beside the
+# longer timeframes instead of one number.
+def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
+    """Return {symbol: {"now": rank, "short": {...}, "medium": {...}, "long": {...}}}."""
+    today = today or datetime.now(UTC).date()
+    read = _live_read(store, quotes, today)
+    panel = read["panel"]
+    opinion = read["opinion"]
+    scores = opinion.scores
+    out: dict = {}
+    for symbol in quotes:
+        if symbol not in panel.tickers:
+            continue
+        j = panel.index(symbol)
+        feature = {}
+        for name in SHORT + MEDIUM + LONG:
+            arr = opinion.evidence.get(name)
+            if arr is None or arr.shape[0] < 1:
+                continue
+            value = float(arr[-1, j])
+            if np.isfinite(value):
+                feature[name] = round(value, 4)
+        now = None
+        if scores.shape[0] >= 1 and np.isfinite(scores[-1, j]):
+            now = float(baselines.percentile_rank(scores[-1:])[-1, j])
+            now = round(now, 4)
+        out[symbol] = {
+            "now": now,
+            "short": {k: feature[k] for k in SHORT if k in feature},
+            "medium": {k: feature[k] for k in MEDIUM if k in feature},
+            "long": {k: feature[k] for k in LONG if k in feature},
+        }
+    return out

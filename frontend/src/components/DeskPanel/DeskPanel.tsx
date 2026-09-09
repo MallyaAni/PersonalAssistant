@@ -221,30 +221,33 @@ const SummaryStrip = ({
       value: dayPl !== undefined ? <TrendUsd value={dayPl} /> : '—',
       note: 'the paper account\u2019s move so far',
     },
-    {
-      label: 'The rules, since inception',
-      value:
-        rulesTotal !== null ? (
-          <>
-            <Trend value={rulesTotal * 100} />
-            <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-              vs SPY <Trend value={(spyTotal ?? 0) * 100} />
-              {qqqTotal !== null && (
-                <>
-                  {' '}
-                  · QQQ <Trend value={qqqTotal * 100} />
-                </>
-              )}
-            </span>
-          </>
-        ) : (
-          '—'
-        ),
-      note:
-        stats && stats.drawdown !== null
-          ? `worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
-          : 'the desk\u2019s rules, measured forward',
-    },
+    // The forward track has no numbers until it has a run of sessions, so
+    // the cell is not shown empty: a "—" with a cryptic note reads as broken.
+    ...(rulesTotal !== null
+      ? [
+          {
+            label: 'The rules, since inception',
+            value: (
+              <>
+                <Trend value={rulesTotal * 100} />
+                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+                  vs SPY <Trend value={(spyTotal ?? 0) * 100} />
+                  {qqqTotal !== null && (
+                    <>
+                      {' '}
+                      · QQQ <Trend value={qqqTotal * 100} />
+                    </>
+                  )}
+                </span>
+              </>
+            ),
+            note:
+              stats && stats.drawdown !== null
+                ? `worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
+                : 'the desk\u2019s rules, measured forward',
+          },
+        ]
+      : []),
     {
       label: 'The desk is',
       value:
@@ -865,7 +868,16 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       {latest && details && <EveryGrade latest={latest} />}
 
-      {openName && latest && <NameDetail userId={userId} ticker={openName} latest={latest} onClose={() => setOpenName(null)} />}
+      {openName && latest && (
+        <NameDetail
+          userId={userId}
+          ticker={openName}
+          latest={latest}
+          row={rows.find((r) => r.ticker === openName) ?? null}
+          live={live}
+          onClose={() => setOpenName(null)}
+        />
+      )}
     </div>
   )
 }
@@ -1407,6 +1419,156 @@ const triggers = (stances: Record<string, number>) =>
     .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
     .join(' ')
 
+// The live technical read for one name, split by how far ahead each fact
+// looks. Short term is where price is this candle; medium term is the daily
+// timeframes; long term is the weekly and 52-week picture. Every number is
+// a real feature the analyst's playbook was measured on, given a plain word
+// beside it rather than left to stand alone.
+const LiveTechnical = ({
+  detail,
+  quote,
+  row,
+  asOf,
+}: {
+  detail:
+    | {
+        now: number | null
+        short: Record<string, number>
+        medium: Record<string, number>
+        long: Record<string, number>
+      }
+    | undefined
+  quote: DeskQuote | undefined
+  row: DeskMineRow
+  asOf: string | null
+}) => {
+  const last = quote?.last ?? row.last
+  const change = last != null && row.last_close ? last - row.last_close : null
+  const changePct = last != null && row.last_close ? last / row.last_close - 1 : null
+  const lines = (items: (string | null)[]) => items.filter((i): i is string => i !== null)
+  const pctWord = (v: number | undefined, goodUp = true) => {
+    if (v === undefined || !isFinite(v)) return null
+    const dir = v > 0 ? 'above' : v < 0 ? 'below' : 'at'
+    const ok = goodUp ? v >= 0 : v <= 0
+    return {
+      text: `${Math.abs(v * 100).toFixed(1)}% ${dir}`,
+      good: v === 0 ? true : ok,
+    }
+  }
+  const short: string[] = []
+  const medium: string[] = []
+  const long: string[] = []
+  if (detail) {
+    const s = detail.short ?? {}
+    const m = detail.medium ?? {}
+    const l = detail.long ?? {}
+    const conv = s.converging_21_50
+    if (conv !== undefined) {
+      short.push(
+        conv > 0
+          ? 'the 21/50 EMAs are squeezing upward (a bullish cross is forming)'
+          : conv < 0
+            ? 'the 21/50 EMAs are rolling over (a bearish cross is forming)'
+            : 'the 21/50 EMAs are not converging',
+      )
+    }
+    const sup = pctWord(s.support_distance)
+    if (sup) short.push(`${sup.text} nearest support`)
+    const res = pctWord(s.resistance_distance)
+    if (res) short.push(`${res.text} nearest resistance`)
+    const e21 = pctWord(s.ema21_distance)
+    if (e21) short.push(`${e21.text} the 21-day EMA`)
+    const dt = m.daily_trend
+    if (dt !== undefined) medium.push(dt > 0 ? 'daily trend up' : dt < 0 ? 'daily trend down' : 'daily trend flat')
+    const stack = m.stack_order
+    if (stack !== undefined) {
+      medium.push(
+        stack >= 3
+          ? 'full bullish EMA stack (9 > 21 > 50 > 200)'
+          : stack > 0
+            ? `${stack} of the three EMA pairs stacked up`
+            : stack === 0
+              ? 'EMA stack mixed'
+              : `${-stack} of the three EMA pairs stacked down`,
+      )
+    }
+    const e50 = pctWord(m.ema50_distance)
+    if (e50) medium.push(`${e50.text} the 50-day EMA`)
+    const rp = m.range_position_60
+    if (rp !== undefined) medium.push(`sitting ${Math.round(rp * 100)}% up in its 60-day range`)
+    const wt = l.weekly_trend
+    if (wt !== undefined) long.push(wt > 0 ? 'weekly trend up' : wt < 0 ? 'weekly trend down' : 'weekly trend flat')
+    const ws = l.weekly_stack
+    if (ws !== undefined) long.push(ws > 0 ? 'the weekly 9 EMA is above the 21' : 'the weekly 9 EMA is below the 21')
+    const h52 = pctWord(l.high_52w_distance, false)
+    const lo52 = pctWord(l.low_52w_distance)
+    if (h52 && lo52) long.push(`${h52.text} its 52-week high · ${lo52.text} its 52-week low`)
+    const e200 = pctWord(l.ema200_distance)
+    if (e200) long.push(`${e200.text} the 200-day EMA`)
+    const mom = l.residual_momentum_120
+    if (mom !== undefined) long.push(`slow momentum ${mom >= 0 ? '+' : ''}${mom.toFixed(1)} (${mom >= 0 ? 'positive' : 'negative'})`)
+  }
+  const tech = detail?.now
+  return (
+    <section className="rounded-xl border border-black/[0.08] bg-white p-3">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h4 className="text-sm font-semibold text-[#1d1d1f]">
+          Technical read
+          {asOf && (
+            <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+              live, {new Date(asOf).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </h4>
+        <span className="text-xs text-[#6e6e73]">
+          {last != null && money(last)}
+          {change != null && changePct != null && (
+            <span className="ml-1">
+              <TrendUsd value={change} />
+              <span className="ml-1">(<Trend value={changePct * 100} />)</span>
+            </span>
+          )}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <p className="text-xs font-medium text-[#1d1d1f]">Short term · this candle</p>
+          <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
+            {lines(short).map((t) => (
+              <li key={t}>· {t}</li>
+            ))}
+            {lines(short).length === 0 && <li>no short-term read yet</li>}
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs font-medium text-[#1d1d1f]">Medium term · weeks</p>
+          <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
+            {lines(medium).map((t) => (
+              <li key={t}>· {t}</li>
+            ))}
+            {lines(medium).length === 0 && <li>no medium-term read yet</li>}
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs font-medium text-[#1d1d1f]">Long term · months</p>
+          <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
+            {lines(long).map((t) => (
+              <li key={t}>· {t}</li>
+            ))}
+            {lines(long).length === 0 && <li>no long-term read yet</li>}
+          </ul>
+        </div>
+      </div>
+      {tech != null && (
+        <p className="mt-2 text-xs text-[#1d1d1f]">
+          Where the technical analyst would rank it if the session closed here:{' '}
+          <span className="font-medium">{(tech * 100).toFixed(0)}</span> of the book, best is 100
+        </p>
+      )}
+    </section>
+  )
+}
+
 // One name's drill-down: what the desk said about it over time, what came
 // next, and how it did under the desk's own rule versus holding it or the
 // benchmark. Read from the file the nightly run wrote.
@@ -1414,11 +1576,15 @@ const NameDetail = ({
   userId,
   ticker,
   latest,
+  row,
+  live,
   onClose,
 }: {
   userId: string
   ticker: string
   latest: NonNullable<DeskPayload['latest']>
+  row: DeskMineRow | null
+  live: DeskLive
   onClose: () => void
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
@@ -1453,6 +1619,26 @@ const NameDetail = ({
             <X size={16} />
           </button>
         </div>
+        {row && (
+          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[row.action] ?? ''}`}>
+              {row.action}
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade_live] ?? ''}`}>
+              {row.grade_live}
+              {row.grade_live !== row.grade && <span className="ml-1 font-normal text-[#6e6e73]">live · {row.grade} at the close</span>}
+            </span>
+            {row.why && <span className="text-xs text-[#6e6e73]">{row.why}</span>}
+          </div>
+        )}
+        {row && (
+          <LiveTechnical
+            detail={live.technical_detail?.[ticker]}
+            quote={live.quotes[ticker]}
+            row={row}
+            asOf={live.as_of}
+          />
+        )}
         {error ? (
           <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
         ) : !history ? (

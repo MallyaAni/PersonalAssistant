@@ -92,15 +92,21 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
     # The technical analyst re-read at the live price, one run per candle;
     # a failure here leaves the quotes standing.
     technical: dict = {}
+    technical_detail: dict = {}
     if found:
         try:
+            store = MarketStore(_root())
             technical = await asyncio.to_thread(
-                live_technical.technical_now, MarketStore(_root()), found
+                live_technical.technical_now, store, found
+            )
+            technical_detail = await asyncio.to_thread(
+                live_technical.technical_detail, store, found
             )
         except Exception as exc:  # noqa: BLE001 - the quotes must still reach the page
             technical = {"reason": str(exc)}  # type: ignore[dict-item]
     return {
         "technical": technical,
+        "technical_detail": technical_detail,
         "user_id": user_id,
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
         "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},

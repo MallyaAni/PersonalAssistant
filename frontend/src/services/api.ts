@@ -2050,6 +2050,17 @@ export interface DeskLive {
   // where the name would rank if the session closed here, `close` where
   // it ranked at the last close.
   technical?: Record<string, { now: number; close: number }>;
+  // The technical features the analyst would cite, read on the live panel
+  // and split by how far ahead each one looks, for the per-name drill-down.
+  technical_detail?: Record<
+    string,
+    {
+      now: number | null;
+      short: Record<string, number>;
+      medium: Record<string, number>;
+      long: Record<string, number>;
+    }
+  >;
 }
 
 // The person's own positions, kept beside the records, and the board
