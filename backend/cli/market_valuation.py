@@ -300,14 +300,21 @@ def main() -> None:
             f"{stats['sharpe']:7.2f} {stats['drawdown']:8.1%} {stats['total']:+9.1%}"
         )
     # The objective is compounded money at a risk the person accepts, so
-    # the rule is also shown scaled to the second analyst's volatility.
+    # the rule is also shown scaled to the second analyst's volatility. The
+    # compounded rate is scaled by re-compounding the scaled daily returns,
+    # not by a linear factor (the variance drag grows with the scale squared).
+    from backend.agents.trading.desk import scorecard
+
     rule, second = results["the rule (current analyst)"], results["the second analyst"]
     if rule["volatility"] > 0:
-        scale = second["volatility"] / rule["volatility"]
+        rule_run = simulate.run(report, since=start, use_exits=False)
+        scaled = scorecard.matched_at_volatility(
+            rule_run.returns, second["volatility"]
+        )
         print(
-            f"{'the rule at the same volatility':34} {rule['annual'] * scale:+8.1%} "
+            f"{'the rule at the same volatility':34} {scaled:+8.1%} "
             f"{second['volatility']:7.1%} {rule['sharpe']:7.2f} "
-            f"{rule['drawdown'] * scale:8.1%}"
+            f"{rule['drawdown']:8.1%}"
         )
 
 

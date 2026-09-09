@@ -43,9 +43,25 @@ def test_render_matches_to_the_rules_volatility_and_flags_the_limit():
     assert lines[0].startswith("candidate")
     assert "the rule" in lines[1]
     assert "risky" in lines[2]
-    # The rule at its own volatility is itself; risky is halved to match.
+    # The rule at its own volatility is itself; risky is matched by scaling
+    # its daily returns to the rule's volatility and compounding them.
     rule_stats, risky_stats = rule.stats(), risky.stats()
-    matched = risky_stats["cagr"] * rule_stats["volatility"] / risky_stats["volatility"]
+    matched = scorecard.matched_at_volatility(risky.returns, rule_stats["volatility"])
     assert f"{matched:+.1%}" in lines[2]
     assert lines[2].rstrip().endswith("NO") or lines[2].rstrip().endswith("yes")
     assert "beats the rule in" in text
+
+
+def test_matched_volatility_compounds_the_scaled_returns():
+    # A violent alternating series: its compounded rate carries a huge
+    # variance drag, so scaling the volatility must compound the scaled
+    # daily returns, not scale the compounded rate linearly.
+    daily = np.array([0.02, -0.01] * 252)
+    own = _result(daily).stats()
+    half = scorecard.matched_at_volatility(daily, own["volatility"] / 2.0)
+    # With the volatility halved, the scaled days are +1% / -0.5%, whose
+    # pair product is 1.00495 for 126 pairs over the two years.
+    assert half == pytest.approx(1.00495**126 - 1.0, rel=1e-6)
+    # The linear scaling of the compounded rate would overstate it badly.
+    linear = own["cagr"] * 0.5
+    assert half != pytest.approx(linear, rel=1e-2)

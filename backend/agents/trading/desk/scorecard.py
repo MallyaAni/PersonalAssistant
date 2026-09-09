@@ -30,6 +30,27 @@ def yearly(dates: np.ndarray, daily: np.ndarray) -> dict[int, float]:
     return out
 
 
+# The CAGR a walk would have shown had its daily returns been scaled to
+# another volatility. Scaling the mean (or the compounded rate) linearly is
+# the classic mistake: the compounded rate carries a variance drag that grows
+# with the square of the scale, so `cagr * k` overstates or understates the
+# matched return. The correct number compounds the scaled daily returns.
+def matched_at_volatility(daily: np.ndarray, target_vol: float) -> float:
+    """Return the compounded CAGR of `daily` scaled to `target_vol`."""
+    r = np.asarray(daily, dtype=float)
+    r = r[np.isfinite(r)]
+    if len(r) < 2:
+        return float("nan")
+    vol = float(r.std() * np.sqrt(252))
+    if vol <= 0:
+        return float("nan")
+    scaled = 1.0 + (target_vol / vol) * r
+    if np.any(scaled <= 0.0):
+        return float("nan")
+    years = len(r) / 252.0
+    return float(np.prod(scaled) ** (1.0 / years) - 1.0) if years > 0 else float("nan")
+
+
 # An index's daily returns from the store, aligned to the dates given.
 def index_returns(store, ticker: str, dates: np.ndarray) -> np.ndarray | None:
     """Return daily returns of `ticker` on `dates`, NaN where absent."""
@@ -67,7 +88,7 @@ def render(results: dict[str, SimResult], store=None, loss_limit: float = 0.25) 
     for name in names:
         s = results[name].stats()
         matched = (
-            s["cagr"] * rule["volatility"] / s["volatility"]
+            matched_at_volatility(results[name].returns, rule["volatility"])
             if s["volatility"] > 0
             else float("nan")
         )
