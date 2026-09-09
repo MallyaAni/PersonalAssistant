@@ -1478,11 +1478,11 @@ const LiveTechnical = ({
     if (res) short.push(`${res.text} nearest resistance`)
     const e21 = pctWord(s.ema21_distance)
     if (e21) short.push(`${e21.text} the 21-day EMA`)
-    const dt = m.daily_trend
-    if (dt !== undefined) medium.push(dt > 0 ? 'daily trend up' : dt < 0 ? 'daily trend down' : 'daily trend flat')
-    const stack = m.stack_order
+    const dt = s.daily_trend
+    if (dt !== undefined) short.push(dt > 0 ? 'daily trend up' : dt < 0 ? 'daily trend down' : 'daily trend flat')
+    const stack = s.stack_order
     if (stack !== undefined) {
-      medium.push(
+      short.push(
         stack >= 3
           ? 'full bullish EMA stack (9 > 21 > 50 > 200)'
           : stack > 0
@@ -1492,14 +1492,14 @@ const LiveTechnical = ({
               : `${-stack} of the three EMA pairs stacked down`,
       )
     }
-    const e50 = pctWord(m.ema50_distance)
-    if (e50) medium.push(`${e50.text} the 50-day EMA`)
-    const rp = m.range_position_60
-    if (rp !== undefined) medium.push(`sitting ${Math.round(rp * 100)}% up in its 60-day range`)
-    const wt = l.weekly_trend
-    if (wt !== undefined) long.push(wt > 0 ? 'weekly trend up' : wt < 0 ? 'weekly trend down' : 'weekly trend flat')
-    const ws = l.weekly_stack
-    if (ws !== undefined) long.push(ws > 0 ? 'the weekly 9 EMA is above the 21' : 'the weekly 9 EMA is below the 21')
+    const e50 = pctWord(s.ema50_distance)
+    if (e50) short.push(`${e50.text} the 50-day EMA`)
+    const rp = s.range_position_60
+    if (rp !== undefined) short.push(`sitting ${Math.round(rp * 100)}% up in its 60-day range`)
+    const wt = m.weekly_trend
+    if (wt !== undefined) medium.push(wt > 0 ? 'weekly trend up' : wt < 0 ? 'weekly trend down' : 'weekly trend flat')
+    const ws = m.weekly_stack
+    if (ws !== undefined) medium.push(ws > 0 ? 'the weekly 9 EMA is above the 21' : 'the weekly 9 EMA is below the 21')
     const h52 = pctWord(l.high_52w_distance, false)
     const lo52 = pctWord(l.low_52w_distance)
     if (h52 && lo52) long.push(`${h52.text} its 52-week high · ${lo52.text} its 52-week low`)
@@ -1532,7 +1532,7 @@ const LiveTechnical = ({
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <p className="text-xs font-medium text-[#1d1d1f]">Short term · this candle</p>
+          <p className="text-xs font-medium text-[#1d1d1f]">Short term · next week (daily chart)</p>
           <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
             {lines(short).map((t) => (
               <li key={t}>· {t}</li>
@@ -1541,7 +1541,7 @@ const LiveTechnical = ({
           </ul>
         </div>
         <div>
-          <p className="text-xs font-medium text-[#1d1d1f]">Medium term · weeks</p>
+          <p className="text-xs font-medium text-[#1d1d1f]">Medium term · 1–3 weeks (weekly chart)</p>
           <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
             {lines(medium).map((t) => (
               <li key={t}>· {t}</li>
@@ -1550,7 +1550,7 @@ const LiveTechnical = ({
           </ul>
         </div>
         <div>
-          <p className="text-xs font-medium text-[#1d1d1f]">Long term · months</p>
+          <p className="text-xs font-medium text-[#1d1d1f]">Long term · beyond (monthly chart)</p>
           <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
             {lines(long).map((t) => (
               <li key={t}>· {t}</li>

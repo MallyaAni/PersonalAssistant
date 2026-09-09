@@ -35,29 +35,31 @@ from backend.market.panel import Panel
 
 _cache: dict[str, object] = {"key": None, "value": {}}
 
-# The technical analyst's features grouped by how far ahead each one looks:
-# this candle and a few days, weeks, and months. The drill-down shows the
-# three horizons separately so a person sees both where price is right now
-# and whether the longer timeframes still agree with it.
+# The technical analyst's features grouped by chart timeframe, the way a
+# trader reads them: the daily chart is the short term (the next week or
+# so), the weekly chart is the medium term (one to three weeks), and the
+# monthly picture is the long term beyond that. The drill-down shows the
+# three separately so a person sees both where price is right now and
+# whether the longer timeframes still agree with it.
 SHORT = (
     "ema21_distance",
     "ema21_slope",
+    "ema50_distance",
+    "ema50_slope",
     "spread_21_50",
     "spread_21_50_slope",
     "converging_21_50",
+    "stack_order",
+    "daily_trend",
+    "range_position_60",
     "support_distance",
     "resistance_distance",
 )
 MEDIUM = (
-    "ema50_distance",
-    "ema50_slope",
-    "stack_order",
-    "range_position_60",
-    "daily_trend",
-)
-LONG = (
     "weekly_trend",
     "weekly_stack",
+)
+LONG = (
     "ema200_distance",
     "sma200_distance",
     "high_52w_distance",
