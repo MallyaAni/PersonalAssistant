@@ -9,6 +9,15 @@ nightly record beside the rule's book and never traded. The scorecard
 the records and prices them forward, so after a season the two tracks
 can be compared on real days with identical execution assumptions.
 
+The shadow is frozen at every decision point, not just once: the
+expectation it adds is walked forward (each year's learner is trained
+on the reports of the years before it), the blend of it with the
+valuation analyst ranks each session against its own cross-section
+rather than against the whole history, and the record is written once
+and never rewritten. A change that looks better can therefore be
+believed only once the forward track, pricing the frozen books on real
+days, says the same.
+
 The first challenger is the one `market_expectations` found: the
 valuation analyst blended with the gap between the learner's expected
 revenue growth and the growth the price implies. The learner is

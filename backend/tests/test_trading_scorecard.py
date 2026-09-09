@@ -65,3 +65,41 @@ def test_matched_volatility_compounds_the_scaled_returns():
     # The linear scaling of the compounded rate would overstate it badly.
     linear = own["cagr"] * 0.5
     assert half != pytest.approx(linear, rel=1e-2)
+
+
+def test_the_portfolio_block_shows_compounded_return_drawdown_and_exposure():
+    rng = np.random.default_rng(3)
+    rule = _result(rng.normal(0.0005, 0.01, size=504))
+    # Two-thirds invested, so the exposure column reads it back.
+    invested = np.full(len(rule.returns), 0.66)
+    rule = SimResult(
+        dates=rule.dates,
+        returns=rule.returns,
+        invested=invested,
+        equity=rule.equity,
+        traded=0.0,
+        top_weight=rule.top_weight,
+    )
+
+    class FakeStore:
+        def read_frame(self, kind, ticker):
+            return (
+                {
+                    "session_date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                    "open": [1.0, 1.0, 1.0],
+                    "close": [1.0, 1.1, 1.21],
+                    "adj_close": [1.0, 1.1, 1.21],
+                },
+                {},
+            )
+
+    block = scorecard._portfolio_block({"the rule": rule}, FakeStore(), rule)
+    text = "\n".join(block)
+    assert "portfolio vs benchmark" in text
+    assert "66.0%" in text  # the rule's average exposure
+    assert "100.0%" in text  # a benchmark is fully invested
+    assert "SPY" in text and "QQQ" in text
+    # Without a store the benchmarks are simply absent, not wrong.
+    text2 = "\n".join(scorecard._portfolio_block({"the rule": rule}, None, rule))
+    assert "66.0%" in text2
+    assert "SPY" not in text2

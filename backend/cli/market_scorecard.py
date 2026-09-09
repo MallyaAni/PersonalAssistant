@@ -70,12 +70,13 @@ def _forward_walk(
     closes: dict[str, dict[str, float]],
     opens: dict[str, dict[str, float]],
     book_key: str,
-) -> list[float]:
-    """Return the close-to-close returns of the strategy on the records."""
+) -> tuple[list[float], list[float]]:
+    """Return (close-to-close returns, fraction invested) on the records."""
     held: dict[str, float] = {}  # ticker -> value, in units of the $1 start
     cash = 1.0
     values: list[float] = [1.0]
     out: list[float] = []
+    invested_out: list[float] = []
     for i, rec in enumerate(records[:-1]):
         a = rec["session"]
         b = records[i + 1]["session"]
@@ -122,10 +123,14 @@ def _forward_walk(
             if ob and ob > 0 and cb:
                 held[ticker] = dollars * (cb / ob)
         values.append(cash + sum(held.values()))
+        equity = values[-1]
+        invested_out.append(
+            sum(held.values()) / equity if equity > 0 else float("nan")
+        )
         out.append(
             values[-1] / values[-2] - 1.0 if known else float("nan")
         )
-    return out
+    return out, invested_out
 
 
 # The records' books walked forward: one daily-return series per track.
@@ -183,7 +188,7 @@ def from_records(root: Path, store) -> dict[str, SimResult]:
         "challenger": _forward_walk(records, closes, opens, "challenger"),
     }
     out = {}
-    for name, daily in tracks.items():
+    for name, (daily, invested) in tracks.items():
         arr = np.array(daily, dtype=float)
         if not np.isfinite(arr).any():
             continue
@@ -193,7 +198,7 @@ def from_records(root: Path, store) -> dict[str, SimResult]:
                 [np.datetime64(records[i + 1]["session"]) for i in range(len(daily))]
             ),
             returns=arr,
-            invested=np.ones(len(arr)),
+            invested=np.array(invested, dtype=float),
             equity=equity,
             traded=0.0,
             top_weight=np.full(len(arr), np.nan),

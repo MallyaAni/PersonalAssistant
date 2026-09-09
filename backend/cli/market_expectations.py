@@ -24,9 +24,10 @@ what the desk already knows there: the point-in-time fundamental block
 (last growth, sequential growth, acceleration, margins, the last
 reaction, sessions since the last report), the release tone of the last
 report where scored, price momentum over 20, 60 and 120 sessions with
-the market's part removed, log market value, and the growth the price
-implies (the sales multiple against the sector, so the gap between the
-learner's expectation and the price is on the table).
+   the market's part removed, log market value, and the growth the
+   price implies (a valuation proxy: the sector-relative price/sales
+   multiple transformed onto a growth-like scale, so the gap between
+   the learner's expectation and the price is on the table).
 
 The measurement
 ---------------
@@ -134,7 +135,7 @@ FUND = (
     "sessions_since_earnings",
 )
 TONE = ("tone_guidance", "tone_demand", "tone_guidance_change", "tone_pricing")
-PRICE = ("mom_20", "mom_60", "mom_120", "log_cap", "implied_growth")
+PRICE = ("mom_20", "mom_60", "mom_120", "log_cap", "ps_implied_growth")
 NAMES = FUND + TONE + PRICE
 BEFORE = 10
 # A small gradient-boosted regressor, fit and asked once per fold.
@@ -266,6 +267,12 @@ def _block(panel, sector, fund, fidx, tone, tidx, mom, ratios):
     rows_n, cols = panel.adj_close.shape
     groups = valuation.groups_from(panel, sector)
     with np.errstate(all="ignore"):
+        # The growth the price implies is a valuation proxy, not a measured
+        # expectation: a monotone transform of the name's price/sales
+        # multiple against its group onto a growth-like scale (P/S of 5x a
+        # group average of 3x maps to about 12% here). Calling it a growth
+        # rate rather than a P/S reading would overstate what the market is
+        # known to be pricing.
         implied = (
             np.exp(valuation.relative_to_group(ratios.get("price_sales"), groups) / 5.0)
             - 1.0
@@ -419,7 +426,7 @@ def _after(panel, expected, naive, y, meta, meta_year, years):
 # through the print. Returns the cheapest-fifth mask on the panel.
 def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
     rows_n, cols = panel.adj_close.shape
-    implied_col = NAMES.index("implied_growth")
+    implied_col = NAMES.index("ps_implied_growth")
     x_before = x.copy()
     ok = np.zeros(len(y), dtype=bool)
     for i, (j, r, _yy) in enumerate(meta):

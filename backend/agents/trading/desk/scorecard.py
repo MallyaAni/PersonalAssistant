@@ -51,6 +51,43 @@ def matched_at_volatility(daily: np.ndarray, target_vol: float) -> float:
     return float(np.prod(scaled) ** (1.0 / years) - 1.0) if years > 0 else float("nan")
 
 
+# One row of the portfolio-vs-benchmark block.
+def _portfolio_line(name: str, total: float, drawdown: float, exposure: float) -> str:
+    return (
+        f"{name:34} {total:+10.1%} {drawdown:9.1%} "
+        f"{exposure:12.1%}"
+    )
+
+
+# The whole portfolio against the benchmarks: net compounded return (after
+# the desk's costs), worst drawdown, and how much of the account was in
+# positions on average. A benchmark is a fully invested buy-and-hold, so its
+# exposure is 100% by construction and its return carries no cost.
+def _portfolio_block(results, store, first) -> list[str]:
+    """Return the comparison lines for the candidates and the benchmarks."""
+    lines = [
+        "",
+        f"{'portfolio vs benchmark':34} {'compounded':>10} {'worst DD':>9} "
+        f"{'avg exposure':>12}",
+    ]
+    for name in results:
+        s = results[name].stats()
+        invested = results[name].invested
+        known = np.isfinite(invested)
+        exposure = float(np.nanmean(invested)) if invested is not None and known.any() else float("nan")
+        lines.append(_portfolio_line(name, s["total"], s["drawdown"], exposure))
+    if store is not None:
+        for ticker in INDICES:
+            daily = index_returns(store, ticker, first.dates)
+            if daily is None:
+                continue
+            curve = np.cumprod(1.0 + np.nan_to_num(daily, nan=0.0))
+            total = float(curve[-1] - 1.0)
+            drawdown = float((curve / np.maximum.accumulate(curve) - 1.0).min())
+            lines.append(_portfolio_line(ticker, total, drawdown, 1.0))
+    return lines
+
+
 # An index's daily returns from the store, aligned to the dates given.
 def index_returns(store, ticker: str, dates: np.ndarray) -> np.ndarray | None:
     """Return daily returns of `ticker` on `dates`, NaN where absent."""
@@ -98,6 +135,9 @@ def render(results: dict[str, SimResult], store=None, loss_limit: float = 0.25) 
             f"{s['sharpe']:7.2f} {s['drawdown']:9.1%} {s['turnover']:8.1f}x "
             f"{s['max_weight']:8.1%} {within:>13}"
         )
+    lines.extend(
+        _portfolio_block(results, store, results[names[0]])
+    )
     first = results[names[0]]
     table = {name: yearly(results[name].dates, results[name].returns) for name in names}
     if store is not None:
