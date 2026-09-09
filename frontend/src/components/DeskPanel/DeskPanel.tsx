@@ -89,6 +89,10 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
 const money = (value: number) =>
   value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+// A dollar P/L with the sign, the direction and the currency, so a live
+// figure reads as money rather than as a bare number.
+const signedMoney = (value: number) =>
+  `${value >= 0 ? '+' : '−'}${money(Math.abs(value))}`
 const sizing = (r: DeskMineRow, quote: DeskQuote | undefined, equity: number) => {
   const price = quote?.last ?? r.last ?? r.last_close ?? 0
   const qty = price > 0 ? Math.round((Math.abs(r.delta_weight) * equity) / price) : 0
@@ -109,20 +113,17 @@ const Trend = ({ value, suffix = '%' }: { value: number; suffix?: string }) => {
   )
 }
 
-// The next rebalance as a calendar date: the desk's clock is trading
-// sessions, so this projects the `n` sessions from the record's own date,
-// skipping weekends. Weekday projection, so a holiday in the window makes
-// it a day or two early; the desk's exact clock is the session count.
-const projectTradingDate = (fromIso: string, sessions: number): string => {
-  const d = new Date(`${fromIso}T12:00:00Z`)
-  let added = 0
-  while (added < sessions) {
-    d.setUTCDate(d.getUTCDate() + 1)
-    const dow = d.getUTCDay()
-    if (dow !== 0 && dow !== 6) added += 1
-  }
-  return d.toISOString().slice(0, 10)
+// A dollar P/L in green or red with an arrow and a currency sign, so the
+// direction reads without colour and the figure reads as money.
+const TrendUsd = ({ value }: { value: number }) => {
+  const up = value >= 0
+  return (
+    <span className={up ? 'text-[#1e7a3a]' : 'text-[#b42318]'} aria-label={`${up ? 'up' : 'down'} ${signedMoney(value)}`}>
+      <span aria-hidden="true">{up ? '↑' : '↓'}</span> {signedMoney(value)}
+    </span>
+  )
 }
+
 const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
@@ -188,9 +189,15 @@ const SummaryStrip = ({
   const rulesTotal = last(backtest?.rules)
   const spyTotal = last(backtest?.spy)
   const qqqTotal = last(backtest?.qqq)
+  // The share of the account actually at work, read live from the paper
+  // positions; the record's regime exposure only when the broker is not
+  // reachable, and never as a claim about what is really invested.
+  const investedUsd = paperLive?.positions?.reduce((sum, p) => sum + (p.market_value ?? 0), 0) ?? null
+  const liveInvested =
+    investedUsd !== null && paperLive?.equity
+      ? investedUsd / paperLive.equity
+      : null
   const exposure = latest.regime.exposure ?? 1
-  const until = paper?.until_rebalance ?? 20
-  const rebalanceDate = projectTradingDate(latest.session, until)
   const cells = [
     {
       label: 'Practice account',
@@ -211,7 +218,7 @@ const SummaryStrip = ({
     },
     {
       label: 'Today',
-      value: dayPl !== undefined ? <Trend value={dayPl} suffix="" /> : '—',
+      value: dayPl !== undefined ? <TrendUsd value={dayPl} /> : '—',
       note: 'the paper account\u2019s move so far',
     },
     {
@@ -240,13 +247,16 @@ const SummaryStrip = ({
     },
     {
       label: 'The desk is',
-      value: `${Math.round(exposure * 100)}% invested`,
-      note: exposure < 1 ? 'sizing down while conditions are thin' : 'at full book',
-    },
-    {
-      label: 'Next rebalance',
-      value: `≈ ${shortDate(rebalanceDate)}`,
-      note: `in ${until} trading day${until === 1 ? '' : 's'}`,
+      value:
+        liveInvested !== null ? (
+          <span>{Math.round(liveInvested * 100)}% invested</span>
+        ) : (
+          '—'
+        ),
+      note:
+        exposure < 1 && liveInvested !== null
+          ? 'sizing down while conditions are thin'
+          : 'of the paper account is in the market',
     },
   ]
   return (
@@ -719,6 +729,10 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
 
+      {paperLive && paperLive.positions && paperLive.positions.length > 0 && (
+        <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
+      )}
+
       {latest && (
         <BestBuys
           rows={rows}
@@ -853,6 +867,81 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       {openName && latest && <NameDetail userId={userId} ticker={openName} latest={latest} onClose={() => setOpenName(null)} />}
     </div>
+  )
+}
+
+// The practice account as the broker reports it this minute: every position
+// with its price, cost and what it is worth now, so the desk page shows the
+// live book and its P/L in dollars, not only the plan beside the person's
+// own notes.
+const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number }) => {
+  const positions = paper.positions ?? []
+  const rows = positions.map((p) => {
+    const pl = p.unrealized_pl ?? (p.current_price - p.avg_entry_price) * p.qty
+    const plPct = p.avg_entry_price > 0 ? (p.current_price / p.avg_entry_price - 1) * 100 : 0
+    return { ...p, pl, plPct }
+  })
+  const totalPl = rows.reduce((s, r) => s + r.pl, 0)
+  const totalValue = rows.reduce((s, r) => s + r.market_value, 0)
+  return (
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">
+          Live positions
+          {paper.as_of && (
+            <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+              as of {new Date(paper.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </h3>
+        <span className="text-xs text-[#6e6e73]">
+          {money(equity)} in the account · day P/L{' '}
+          {paper.day_pl !== undefined ? <TrendUsd value={paper.day_pl} /> : '—'}
+        </span>
+      </div>
+      <table className="w-full text-sm">
+        <thead className="text-left text-xs text-[#6e6e73]">
+          <tr>
+            <th className="py-1">position</th>
+            <th className="py-1 text-right">shares</th>
+            <th className="py-1 text-right">price</th>
+            <th className="py-1 text-right">avg cost</th>
+            <th className="py-1 text-right">value</th>
+            <th className="py-1 text-right">P/L</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => (
+            <tr key={p.symbol} className="border-t border-black/[0.05]">
+              <td className="py-1.5 font-medium text-[#1d1d1f]">{p.symbol}</td>
+              <td className="py-1.5 text-right text-[#6e6e73]">{p.qty.toLocaleString()}</td>
+              <td className="py-1.5 text-right">{money(p.current_price)}</td>
+              <td className="py-1.5 text-right text-[#6e6e73]">{money(p.avg_entry_price)}</td>
+              <td className="py-1.5 text-right">{money(p.market_value)}</td>
+              <td className="whitespace-nowrap py-1.5 text-right">
+                <TrendUsd value={p.pl} />
+                <span className="ml-1 text-xs text-[#6e6e73]">
+                  ({p.plPct >= 0 ? '+' : ''}
+                  {p.plPct.toFixed(1)}%)
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t border-black/[0.08]">
+            <td className="py-1.5 text-xs text-[#6e6e73]">{rows.length} open positions</td>
+            <td />
+            <td />
+            <td />
+            <td className="py-1.5 text-right text-xs text-[#6e6e73]">{money(totalValue)}</td>
+            <td className="py-1.5 text-right text-xs">
+              <TrendUsd value={totalPl} />
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
   )
 }
 
@@ -1081,8 +1170,12 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         {r.shares > 0 && r.entry_price !== null && (
           <div className="text-xs text-[#6e6e73]">
             you hold {r.shares} at {money(r.entry_price)}
-            {r.pl_pct !== null && (
-              <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}> <Trend value={r.pl_pct * 100} /></span>
+            {r.pl_pct !== null && r.last !== null && (
+              <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}>
+                {' '}
+                <TrendUsd value={r.shares * (r.last - r.entry_price)} />
+                <span className="ml-1">(<Trend value={r.pl_pct * 100} />)</span>
+              </span>
             )}
           </div>
         )}
