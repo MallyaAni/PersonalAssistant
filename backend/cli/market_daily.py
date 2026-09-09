@@ -565,9 +565,15 @@ def curve_block(report, store) -> dict | None:
     with np.errstate(all="ignore"):
         simple = np.expm1(panel.log_returns())
     bench = panel.index(panel.benchmark)
-    spy = simple[start : start + len(dates), bench]
+    # The strategy is first invested at the close of `sim.dates[0]`, so its
+    # first return is the period from that close to the next; the benchmark
+    # must start there too, or it earns the return into the base date the
+    # strategy never held (the leading NaN pad only hides this when the sim
+    # happens to start at the panel's first row). Both curves are normalised
+    # to 0 at the same base date as the rules.
+    spy = simple[start + 1 : start + len(dates), bench]
     spy = np.nan_to_num(spy, nan=0.0)
-    spy_curve = [float(v - 1.0) for v in np.cumprod(1.0 + spy)]
+    spy_curve = [0.0] + [float(v - 1.0) for v in np.cumprod(1.0 + spy)]
     qqq = scorecard.index_returns(store, "QQQ", sim.dates)
     if qqq is not None and len(qqq):
         qqq_curve = [

@@ -229,6 +229,105 @@ def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
     assert block["asof"] == "2026-09-03"
 
 
+# The benchmark starts at zero like the rules, and its first return is the
+# first one the strategy participates in - not the return into the base date,
+# which the strategy never held. The off-by-one is visible only when the sim
+# starts mid-panel, so this sim does.
+def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
+    from backend.agents.trading.desk import grading, regime
+    from backend.agents.trading.desk import scorecard
+    from backend.agents.trading.desk import simulate as sim_module
+    from backend.agents.trading.desk.desk import DeskReport
+    from backend.agents.trading.desk.opinions import Opinion
+    from backend.agents.trading.desk.risk import Sized
+    from backend.market.panel import Panel
+    from backend.market.sizing import Position
+    from backend.market.universe import AI_COMPUTE
+
+    t, n = 4, 2
+    close = np.full((t, n + 1), 100.0)
+    # The benchmark falls 10% into the base date, then rises 10% a day: the
+    # fall must not appear in the curve, and the first rise must.
+    close[:, 2] = [100.0, 90.0, 99.0, 108.9]
+    dates = np.array(
+        [date(2026, 9, 1) + timedelta(days=i) for i in range(t)],
+        dtype="datetime64[D]",
+    )
+    panel = Panel(
+        dates=dates,
+        tickers=("SNDK", "IREN", "SPY"),
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1e6),
+        themes={"SNDK": (AI_COMPUTE,), "IREN": (AI_COMPUTE,)},
+        benchmark="SPY",
+    )
+    grades = np.zeros((t, n + 1), dtype=int)
+    grades[:, 0] = grading.ORDINAL["A+"]
+    stances = {"fundamental": np.array([[1, -1, 0]] * t)}
+    graded = grading.Graded(grades, np.array([[3.0, -2.0, 0.0]] * t), stances)
+    state = regime.RegimeState(
+        -0.06,
+        0.19,
+        0.0,
+        -0.52,
+        -3.6,
+        4.8,
+        "software",
+        -0.217,
+        -0.223,
+        0.5,
+        1.0,
+        ("participation below its two-year median",),
+    )
+    view = regime.RegimeView(
+        [state] * t, Opinion("rotation", np.full((t, n + 1), np.nan))
+    )
+    book = [
+        Sized(
+            Position(
+                "SNDK", 0.08, 1.0, 1.37, (AI_COMPUTE,), "inverse-volatility weight"
+            ),
+            "A+",
+            1.0,
+            1.0,
+        )
+    ]
+    report = DeskReport(
+        panel,
+        {"SNDK": "ai", "IREN": "ai"},
+        {},
+        view,
+        graded,
+        grades.astype(float),
+        book,
+    )
+    sim = sim_module.SimResult(
+        dates=panel.dates[1:],
+        returns=np.array([0.0, 0.05, 0.1]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    monkeypatch.setattr(sim_module, "run", lambda report, use_exits=False: sim)
+    monkeypatch.setattr(
+        scorecard,
+        "index_returns",
+        lambda store, ticker, dates: np.array([0.0, 0.1, 0.1]),
+    )
+    block = market_daily.curve_block(report, None)
+    assert block is not None
+    assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
+    # The benchmark curve starts at 0 (it did not earn the -10% into the base
+    # date) and its cumulative return is the two +10% periods the strategy held.
+    assert block["spy"] == pytest.approx([0.0, 0.1, 0.21])
+    assert block["qqq"] == pytest.approx([0.0, 0.1, 0.21])
+
+
 # The paper account's live equity history becomes the overlay for the same
 # chart, and an empty history is nothing rather than an error.
 def test_paper_curve_block_reads_the_live_history(tmp_path):
