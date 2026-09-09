@@ -1,7 +1,59 @@
 # Next session
 
-Verified state as of 2026-09-08. `deep-matter.com` serves from spark1.
+Verified state as of 2026-09-09. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
+
+## 2026-09-09 (evening) — the desk's live numbers serve the candle, briefs say measurements in words, and the board's list is live and clickable (DEPLOYED `b833c6d`)
+
+Continues the 2026-09-08 entry below it. The operator's dashboard feedback
+through the day, each verified on the deployed system:
+
+* **The live endpoints were six or seven seconds each** — a fresh Alpaca
+  quote fetch plus the technical analyst re-read on every request
+  (`technical_now` alone is ~4.25 s). The intraday balancer already computes
+  both on each fifteen-minute candle, so it now persists them to
+  `data/market/desk/live.json` and the API serves that candle instead of
+  recomputing. Measured live: `/desk/live` **6.9 s → 0.008 s**, `/desk/mine`
+  **6.1 s → 0.005 s** (~1000×). The snapshot covers `book ∪ held ∪ actions`
+  (10 names; the old live path covered actions only). A balancer run with no
+  quotes (keys unavailable) leaves the previous snapshot standing rather
+  than clobbering it, and the API falls back to computing live when the
+  snapshot is missing or empty.
+* **The desk brief quoted the desk's own field names back at the reader**
+  (`revenue_yoy +0.194`, `stack_order +1.000`) — the prompt told it to copy
+  numbers verbatim with their names. `prompts/trading/desk_brief.md` now
+  says what each measurement means in plain words and never reproduces a
+  field name or a raw signed figure; `test_desk_brief_behaviour.py` pins the
+  property instead of rewarding echoes (3 passed on the real model).
+  **Caveat:** the briefs in the UI come from the last nightly (session
+  2026-09-08, old prompt); they regenerate at the next 19:30 nightly.
+* **Every grade is now ranked by the live score** (best value at the current
+  price on top) and its tickers open the same drill-down as the board.
+* **The Exit column repeated the same rule on every row** (all nine rows
+  were "a buy only while it holds an A grade", because the operator has not
+  yet recorded positions via Buy/done, so `holdings.json` is empty and the
+  board shows the book's names as buys). It now says each name's own
+  distance from the line that ends its buy or hold, from `grade_margin`:
+  "on the edge, one analyst away" (≤ 0, red), "a hair above the line"
+  (< 1, amber), or the plain rule (comfortable). Held rows and dropped rows
+  have their own wording. The board's "you hold N at $X" text will appear
+  once positions are recorded.
+* Also landed earlier today: the `$` audit fixes (`887daef`), the drill-down
+  horizons as chart timeframes — daily / weekly / monthly (`cb92fa8`), the
+  backend mount of the whole market root (`0905008`), and Claude's desk
+  fixes (`8a73c6e`, `175c556`) — all reviewed clean.
+
+**Verified:** full unit gate passed before deploy; routing gate passed; desk
+brief functional test 3/3; live latency measured 0.008 s / 0.005 s through
+the gateway; the deployed gateway bundle contains the new exit-column and
+every-grade strings. Post-deploy sweep for `b833c6d` was still running at
+the last check (previous verdict `cb92fa86 ok`).
+
+**Next atomic task.** Let tonight's 19:30 nightly write the new-format
+briefs, then confirm a brief reads as prose with no `revenue_yoy`-style
+identifiers. If the operator records his positions (Buy/done), re-check the
+Exit column's held-name wording and the "you hold" lines. The desk's search
+quota note still applies (the shared Tavily pool resets October 1).
 
 ## 2026-09-08 — the desk dashboard overhaul, built and browser-verified on the branch (NOT MERGED)
 
