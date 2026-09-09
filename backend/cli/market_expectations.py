@@ -111,7 +111,6 @@ from backend.cli.market_earnings import reaction_sessions
 from backend.cli.market_snapback import _spread
 from backend.market import edgar, language, valuation
 from backend.market.levels_pit import point_in_time_levels
-from backend.market.model import load_tone_features
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -238,6 +237,11 @@ def _fit_predict(x_train, y_train, x_test, names):
 
 # Every input the rows and the carried expectation read.
 def _features(store, panel, records):
+    # Imported at the use-site, as lightgbm is: the model module pulls torch,
+    # which the test image does not carry, and the pure parts of this study
+    # (momentum, the learner) must not require it.
+    from backend.market.model import load_tone_features
+
     fund = edgar.edgar_features(panel, records)
     fidx = {n: i for i, n in enumerate(edgar.FEATURE_NAMES)}
     tone = load_tone_features(store, panel)
