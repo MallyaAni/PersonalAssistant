@@ -195,17 +195,39 @@ def _ridge(x_train, y_train, x_test, lam: float) -> np.ndarray:
     return b1 @ w
 
 
+def _holdout(x_train, y_train):
+    """Return (train, validation) for a network's early stopping.
+
+    The validation is the most recent tenth of the rows, with the horizon of
+    sessions before it purged from training, so no training label reaches
+    into the validation window.
+    """
+    cut = int(len(x_train) * 0.9)
+    xa, ya = x_train[:cut], y_train[:cut]
+    xv, yv = x_train[cut:], y_train[cut:]
+    purge = min(HORIZON, len(xa))
+    if purge:
+        xa, ya = xa[:-purge], ya[:-purge]
+    return xa, ya, xv, yv
+
+
 def _network(x_train, y_train, x_test, seed: int = 0) -> np.ndarray:
     import torch
 
     torch.manual_seed(seed)
-    a, b = _standardise(x_train, x_test)
-    cut = int(len(a) * 0.9)
-    xa, ya = torch.tensor(a[:cut], dtype=torch.float32), torch.tensor(
-        y_train[:cut], dtype=torch.float32
+    # The hold-out is split before anything is normalised, the horizon of
+    # sessions before it is purged from training (their twenty-session
+    # labels reach into it), and the features are standardised with the
+    # purged training set's statistics alone - so the validation sees
+    # normalisation it had no hand in and labels no training row overlaps.
+    xa, ya, xv, yv = _holdout(x_train, y_train)
+    a, v = _standardise(xa, xv)
+    _, b = _standardise(xa, x_test)
+    xa, ya = torch.tensor(a, dtype=torch.float32), torch.tensor(
+        ya, dtype=torch.float32
     )
-    xv, yv = torch.tensor(a[cut:], dtype=torch.float32), torch.tensor(
-        y_train[cut:], dtype=torch.float32
+    xv, yv = torch.tensor(v, dtype=torch.float32), torch.tensor(
+        yv, dtype=torch.float32
     )
     net = torch.nn.Sequential(
         torch.nn.Linear(a.shape[1], 16),

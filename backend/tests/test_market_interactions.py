@@ -2,14 +2,21 @@
 
 What has to hold: the training mask for a test year excludes the
 horizon of sessions before it, so no label reaches into the year; the
-pairwise features are the inputs and every product of two; the ridge
-recovers a linear signal; and a selection by score grades the top fifth
-A and the next fifth B with no veto.
+network's hold-out is the most recent tenth of the rows with the
+horizon before it purged from training; the pairwise features are the
+inputs and every product of two; the ridge recovers a linear signal;
+and a selection by score grades the top fifth A and the next fifth B
+with no veto.
 """
 
 import numpy as np
 
-from backend.cli.market_interactions import _pairs, _ridge, training_mask
+from backend.cli.market_interactions import (
+    _holdout,
+    _pairs,
+    _ridge,
+    training_mask,
+)
 
 
 def test_training_mask_purges_the_horizon_before_the_test_year():
@@ -18,6 +25,20 @@ def test_training_mask_purges_the_horizon_before_the_test_year():
     assert mask[:25].all()
     assert not mask[25:30].any()  # the last five sessions of 2018 reach into 2019
     assert not mask[30:].any()
+
+
+def test_the_holdout_is_split_first_and_purged():
+    n = 100
+    x = np.arange(n * 3, dtype=float).reshape(n, 3)
+    y = np.arange(n, dtype=float)
+    xa, ya, xv, yv = _holdout(x, y)
+    # The validation is the most recent tenth of the rows.
+    assert len(xv) == 10
+    assert (xv == x[90:]).all()
+    # The twenty sessions before it are purged from training, so their
+    # forward labels do not reach into the validation window.
+    assert len(xa) == 70
+    assert (xa == x[:70]).all()
 
 
 def test_pairs_adds_every_product():
