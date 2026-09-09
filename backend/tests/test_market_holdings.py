@@ -149,6 +149,12 @@ def test_board_against_the_persons_holdings():
     assert by["IREN"]["pl_pct"] == pytest.approx(44.67 / 35.0 - 1.0)
     assert by["IREN"]["stops"] == {}
     assert by["IREN"]["leaves_if"].startswith("your call")
+    # The exit line answers from what you hold: a buy candidate has nothing
+    # to sell, a held name is sold by the grade rule, a held name the desk
+    # dropped is sold outright.
+    assert by["HPE"]["leaves_if"] == "a buy only while it holds an A grade"
+    assert by["ADBE"]["leaves_if"] == "sell when its grade drops below A at a rebalance"
+    assert by["FTNT"]["leaves_if"] == "sell everything: it no longer earns a place in the book"
 
 
 # The live technical read re-makes the grade and the order: a name whose

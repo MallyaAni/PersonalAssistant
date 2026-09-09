@@ -712,6 +712,21 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
 
       {latest && (
+        <BestBuys
+          rows={rows}
+          equity={equity}
+          quotes={live.quotes}
+          marking={marking}
+          onBuy={async (r) => {
+            const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
+            setMarking(r.ticker)
+            await save(afterTrade(holdings, r, price, qty))
+            setMarking(null)
+          }}
+        />
+      )}
+
+      {latest && (
         <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 className="text-sm font-semibold text-[#1d1d1f]">
@@ -829,6 +844,68 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
 
       {openName && latest && <NameDetail userId={userId} ticker={openName} latest={latest} onClose={() => setOpenName(null)} />}
     </div>
+  )
+}
+
+// The names worth buying right now, ranked for this moment and sized by the
+// grade. The board rows are already ordered best-first by the live score
+// (the technical analyst re-read at the live price every fifteen minutes),
+// so this keeps that order and filters to what you do not yet hold. A buy
+// opens the position at the shown size, so the desk can track it.
+const BestBuys = ({
+  rows,
+  equity,
+  quotes,
+  marking,
+  onBuy,
+}: {
+  rows: DeskMineRow[]
+  equity: number
+  quotes: Record<string, DeskQuote>
+  marking: string | null
+  onBuy: (r: DeskMineRow) => Promise<void>
+}) => {
+  const buys = rows.filter((r) => r.in_book && r.target_weight > 0 && r.shares === 0)
+  if (buys.length === 0) return null
+  return (
+    <section className="rounded-2xl border border-[#1e7a3a]/25 bg-white p-4">
+      <h3 className="text-sm font-semibold text-[#1d1d1f]">Best buys right now</h3>
+      <p className="mb-2 text-xs text-[#6e6e73]">
+        Ranked best-first for this moment, sized by the grade. Click <b>Buy</b> once you have placed it on Schwab and it
+        becomes a tracked position.
+      </p>
+      <ol className="flex flex-col gap-1">
+        {buys.map((r, i) => {
+          const { price, qty } = sizing(r, quotes[r.ticker], equity)
+          return (
+            <li
+              key={r.ticker}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/[0.05] py-1.5 text-sm"
+            >
+              <span className="w-5 text-right font-mono text-xs text-[#6e6e73]">{i + 1}</span>
+              <span className="w-14 font-medium text-[#1d1d1f]">{r.ticker}</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>
+                {r.grade_live}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-xs text-[#6e6e73]" title={r.why}>
+                {r.why}
+              </span>
+              <span className="whitespace-nowrap text-xs text-[#6e6e73]">
+                {qty.toLocaleString()} sh · {money(qty * price)}
+              </span>
+              <button
+                type="button"
+                onClick={() => void onBuy(r)}
+                disabled={marking === r.ticker}
+                className="rounded-full bg-[#1e7a3a] px-3 py-1 text-xs font-medium text-white hover:bg-[#17632e] disabled:bg-[#a3c4ad]"
+              >
+                {marking === r.ticker ? 'saving…' : 'Buy'}
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
   )
 }
 

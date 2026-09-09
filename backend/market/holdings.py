@@ -101,6 +101,20 @@ def save(root: Path, holdings: list[Holding]) -> Path:
     return path
 
 
+# Why a name leaves the account: what you hold changes the answer. A name
+# you do not hold has nothing to sell - the relevant line is how long it
+# stays a buy. The desk's own exit is the grade check at a rebalance, so a
+# held name's exit is that rule; a held name the desk dropped is sold.
+def _exit_reason(holding: Holding | None, in_book: bool, target: float) -> str:
+    if not in_book:
+        return "your call: the desk does not cover it"
+    if holding is None:
+        return "a buy only while it holds an A grade"
+    if target <= 0:
+        return "sell everything: it no longer earns a place in the book"
+    return "sell when its grade drops below A at a rebalance"
+
+
 # The board against the person's holdings, from the latest record.
 def board(
     record: dict,
@@ -179,15 +193,7 @@ def board(
                 "until_rebalance": (
                     until if until is not None else level.get("until_rebalance")
                 ),
-                "leaves_if": (
-                    "sell when its grade drops below A"
-                    if target > 0
-                    else (
-                        "your call: the desk does not cover it"
-                        if not in_book
-                        else "sell everything: it no longer earns an A"
-                    )
-                ),
+                "leaves_if": _exit_reason(holding, in_book, target),
             }
         )
     # Best grade first, the live one where the candle has moved it, then
