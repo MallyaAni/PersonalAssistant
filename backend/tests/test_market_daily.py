@@ -234,8 +234,7 @@ def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
 # which the strategy never held. The off-by-one is visible only when the sim
 # starts mid-panel, so this sim does.
 def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
-    from backend.agents.trading.desk import grading, regime
-    from backend.agents.trading.desk import scorecard
+    from backend.agents.trading.desk import grading, regime, scorecard
     from backend.agents.trading.desk import simulate as sim_module
     from backend.agents.trading.desk.desk import DeskReport
     from backend.agents.trading.desk.opinions import Opinion
@@ -377,3 +376,24 @@ def test_write_history_writes_one_file_per_book_name(tmp_path):
     assert "forward_residual" in row
     assert "earnings" in row
     assert payload["backtest"]["ticker"] == "SNDK"
+
+
+# A curve that cannot be drawn is a missing block, never a lost record.
+def test_curves_never_raise(monkeypatch, tmp_path):
+    from backend.agents.trading.desk import paper
+
+    def boom(root):
+        raise OSError("the history file is unreadable")
+
+    monkeypatch.setattr(paper, "load_state", boom)
+    monkeypatch.setattr(market_daily, "curve_block", lambda report, store: {"ok": 1})
+    out = market_daily.curves(None, None, tmp_path)
+    assert out == {"backtest": {"ok": 1}, "paper": None}
+
+    def boom2(report, store):
+        raise RuntimeError("no simulation")
+
+    monkeypatch.setattr(market_daily, "curve_block", boom2)
+    monkeypatch.setattr(paper, "load_state", lambda root: paper.PaperState())
+    out = market_daily.curves(None, None, tmp_path)
+    assert out == {"backtest": None, "paper": None}

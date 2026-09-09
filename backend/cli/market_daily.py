@@ -583,7 +583,7 @@ def curve_block(report, store) -> dict | None:
         qqq_curve = []
     stats = sim.stats()
     return {
-        "label": "the desk's rules, walked forward",
+        "label": "these rules run over the history: a backtest, not a record",
         "asof": str(panel.dates[-1]),
         "dates": dates,
         "rules": rules,
@@ -609,6 +609,27 @@ def paper_curve_block(root: Path) -> dict | None:
         "equity": [float(h.get("equity")) for h in history],
         "pl_pct": [float(h.get("pl_pct") or 0.0) for h in history],
     }
+
+
+# Both curves for the record, each guarded: the record must be written
+# whatever the chart could not draw, so a failure here is a missing
+# block and a line in the log, never a lost record.
+def curves(report, store, root: Path) -> dict:
+    """Return {"backtest": block or None, "paper": block or None}."""
+    backtest = None
+    paper_curve = None
+    try:
+        backtest = curve_block(report, store)
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        print(f"\ncurve: the backtest could not be drawn ({type(exc).__name__}: {exc})")
+    try:
+        paper_curve = paper_curve_block(root)
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        print(
+            f"\ncurve: the paper history could not be read "
+            f"({type(exc).__name__}: {exc})"
+        )
+    return {"backtest": backtest, "paper": paper_curve}
 
 
 # One session of a name's history, as JSON-safe plain data.
@@ -744,10 +765,7 @@ def main() -> None:
     shadow = None
     if args.challenger:
         shadow = _challenger_block(store, report)
-    curve = {
-        "backtest": curve_block(report, store),
-        "paper": paper_curve_block(Path(store.root)),
-    }
+    curve = curves(report, store, Path(store.root))
     path = save(Path(store.root), record(report, briefs, entry, shadow, curve))
     print(f"\nrecord written: {path}")
     written = write_history(store, report)

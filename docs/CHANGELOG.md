@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-09 - Three fixes so the page can be trusted at a glance
+
+The rules' curve was labelled "since inception" and "measured forward";
+it is a backtest of the current rules over the history and now says so,
+on the strip and in the record's label. The name drill-down compared one
+name's rule against buy-and-hold over eleven years, a comparison the
+rule cannot win and was never meant to; it now shows the annualised
+return on the days the name was held against the days it was not,
+sessions held and grade switches. The paper-curve block ran unguarded
+before the record was saved; both curves are now computed by
+`market_daily.curves`, each guarded, so a chart that cannot be drawn is
+a missing block, never a lost record. The "invested" cell had already
+been moved to the broker's live positions. Verified: 26 backend tests,
+the type check, and the four desk browser tests in Chromium (the Today
+cell's expectation updated to its dollar format).
+
 ## 2026-09-08 - The desk page leads with what a person can trust and act on
 
 The trading dashboard now opens with the numbers that matter instead of the

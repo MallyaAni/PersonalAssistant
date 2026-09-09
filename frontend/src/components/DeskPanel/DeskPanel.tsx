@@ -226,7 +226,7 @@ const SummaryStrip = ({
     ...(rulesTotal !== null
       ? [
           {
-            label: 'The rules, since inception',
+            label: 'The rules, backtest',
             value: (
               <>
                 <Trend value={rulesTotal * 100} />
@@ -243,8 +243,8 @@ const SummaryStrip = ({
             ),
             note:
               stats && stats.drawdown !== null
-                ? `worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
-                : 'the desk\u2019s rules, measured forward',
+                ? `these rules run over the history, not a record · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
+                : 'these rules run over the history, not a record',
           },
         ]
       : []),
@@ -1602,10 +1602,14 @@ const NameDetail = ({
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []
   const cells = [
-    { label: 'The desk\u2019s rule', value: bt?.rule_return != null ? `${(bt.rule_return * 100).toFixed(0)}%` : '—', note: 'holding it only while graded A or better' },
-    { label: 'Just holding it', value: bt?.hold_return != null ? `${(bt.hold_return * 100).toFixed(0)}%` : '—', note: 'buy and hold over the same span' },
-    { label: 'The benchmark', value: bt?.benchmark_return != null ? `${(bt.benchmark_return * 100).toFixed(0)}%` : '—', note: 'SPY over the same sessions' },
-    { label: 'In vs out', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}%` : '—', note: bt?.out_annualised != null ? `vs ${(bt.out_annualised * 100).toFixed(0)}% on the days it was not held` : '' },
+    // What the grade earned on this name: the days it was graded A or
+    // better against the days it was not, both a year. A single name's rule
+    // against buy-and-hold over the whole history would mislead: the book's
+    // return comes from rotating across names, not from riding one.
+    { label: 'While held', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}% a year` : '—', note: 'the days it was graded A or better' },
+    { label: 'While not held', value: bt?.out_annualised != null ? `${(bt.out_annualised * 100).toFixed(0)}% a year` : '—', note: 'the days it was not' },
+    { label: 'Sessions held', value: bt ? `${bt.sessions_in} of ${bt.sessions}` : '—', note: 'since the history starts' },
+    { label: 'Grade switches', value: bt ? `${bt.switches}` : '—', note: 'times it crossed the A line' },
   ]
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/25" onClick={onClose} role="dialog" aria-label={`${ticker} history`}>
