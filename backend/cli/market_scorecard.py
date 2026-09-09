@@ -10,6 +10,19 @@ since 2026-09-08, the challenger's; this prices both from each record's
 close to the next record's close with the store's bars, so the two
 tracks are judged on the same real days with the same assumptions, and
 nothing about the history can flatter either.
+
+The history, 2026-09-08, from 2018-06 with costs
+-------------------------------------------------
+| candidate        | CAGR   | at rule vol | vol   | Sharpe | worst DD | turns | top |
+| the rule         | +25.2% | +25.2%      | 16.3% | 1.46   | -23.4%   | 5.8x  | 19% |
+| expectations-gap | +30.3% | +27.5%      | 18.0% | 1.56   | -24.6%   | 5.6x  | 23% |
+
+The challenger beats the rule in seven of nine years; the rule beats
+SPY in seven of nine and QQQ in five of nine. Both are within the 25%
+loss limit. The challenger's extra return survives matching the rule's
+volatility (+2.3 points a year) and costs nothing in turnover; its
+largest position runs higher. Development evidence until the records
+say the same; the forward track started with the 2026-09-09 record.
 """
 
 import argparse

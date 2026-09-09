@@ -39,6 +39,37 @@ own rules: the rule; the rule with each model's score as the tie-break
 within the grades; each model alone selecting the book (A for its top
 fifth, B for the next, no veto); and the rule with the veto off. All
 on the scorecard, matched to the rule's volatility.
+
+Results, 2026-09-08
+-------------------
+Rank IC by year, 2019 to 2026, twenty sessions, walk-forward:
+
+| score            | mean  | years positive |
+| the desk's score | +0.055 | 7 of 8        |
+| linear           | +0.003 | 3 of 8        |
+| interactions     | +0.040 | 7 of 8        |
+| network          | +0.023 | 7 of 8        |
+
+Nothing learned beats the rule's own score at ranking, and the
+interactions model comes closest. In the book from 2021-06, costs
+included, the rule earns +35.4% a year (Sharpe 1.85, worst -19.0%).
+Every learned score does worse both ways: as the tie-break inside the
+grades, +28.0% to +29.8% (at the rule's volatility +33.3% to +34.2%),
+with turnover up a fifth because the scores reorder the book every
+session; alone selecting the book, +10.0% to +13.4%, Sharpe 0.8 to
+1.1. The rule's votes and thresholds are the selection; a learned
+ranking on the same inputs is not a better one on ninety names, which
+is the network's third loss here on three different inputs (charts,
+intraday bars, the analysts).
+
+The veto is the finding. With it off, the book earns +39.5% a year
+(Sharpe 1.87, worst -20.8%, turnover 6.3x against 5.9x), +36.2% at the
+rule's volatility, and beats the rule in five years of six. The veto
+was added after one trade (IREN, January 2026) and measured to lift the
+A grade's return per twenty sessions; inside the book it costs about a
+point a year at matched risk. Not adopted here: one challenger at a
+time keeps the forward record readable, and the expectations gap is
+already running. The veto is the next challenger.
 """
 
 import argparse

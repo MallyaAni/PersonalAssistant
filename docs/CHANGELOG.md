@@ -20,7 +20,18 @@ analysts' convictions, the tape, sessions since the report and the
 expectations gap, walk-forward by year with the label purged from the
 training window; each as the rule's tie-break and as the whole
 selection, and the rule with its veto off (`grade_stances(veto=False)`).
-Results in its docstring.
+None beats the rule's own score at ranking (mean IC +0.055 against
++0.040 for the best learner) and every one earns less in the book, as
+tie-break or alone. The veto off earns +39.5% a year against +35.4%
+(+36.2% at the rule's volatility, five years of six): the next
+challenger.
+
+The scorecard on the history from 2018-06: the rule +25.2% a year,
+the expectations-gap challenger +30.3% (+27.5% at the rule's
+volatility, Sharpe 1.56 against 1.46, turnover unchanged), seven years
+of nine; both within the 25% loss limit; the rule beats SPY in seven
+years of nine and QQQ in five. The nightly script on spark1 carries
+`--challenger` from the 2026-09-09 run.
 
 Cash flow, debt and cash. The EDGAR layer differences the filings'
 year-to-date cash-flow spans into quarters (`_with_year_to_date_quarters`)
