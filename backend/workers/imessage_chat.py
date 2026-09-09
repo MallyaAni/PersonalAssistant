@@ -296,12 +296,12 @@ _SLOW_ROUTES = frozenset(
 )
 
 _ACK_REPLIES = (
-    "On it — digging in 🔍",
-    "Good one, give me a sec 🤔",
-    "Looking into that for you 🕵️",
-    "One sec — pulling that together ✨",
-    "Checking the latest on that 📡",
-    "Hmm, let me find out 🧭",
+    "On it — my neurons are warming up 🔍",
+    "Good one. One sec, doing the thinking thing 🤔",
+    "Looking into that — giving the internet a firm but polite poke 🕵️",
+    "One sec, the answer is in here somewhere… ✨",
+    "Checking the latest — the web owes me a straight answer 📡",
+    "Hmm, let me find out. The suspense is mutual 🧭",
 )
 
 
@@ -685,7 +685,7 @@ class IMessageChatWorker:
         if attachments:
             try:
                 turn = await self._with_ack(
-                    self._photo_turn(group.user_id, text, attachments), reply_to, status, in_group=True
+                    self._photo_turn(group.user_id, text, attachments), reply_to, status
                 )
             except BackendUnavailable:
                 await self._park(guid, group.user_id, reply_to, text, pinned=pinned, room=room, message=message)
@@ -719,7 +719,6 @@ class IMessageChatWorker:
                     ),
                     reply_to,
                     status,
-                    in_group=True,
                 )
             except BackendUnavailable:
                 await self._park(guid, group.user_id, reply_to, burst, pinned=pinned, room=room)
@@ -1041,7 +1040,6 @@ class IMessageChatWorker:
                 self._converse(user_id, text, status=status, room=room),
                 reply_to,
                 status,
-                in_group=bool(room),
             )
             await self._deliver(reply_to, turn, user_id=user_id, room=room)
             return 1
@@ -1235,7 +1233,6 @@ class IMessageChatWorker:
                 ),
                 reply_to,
                 status,
-                in_group=bool(room),
             )
             try:
                 await self._deliver(reply_to, turn, user_id=user_id, room=room)
@@ -1413,7 +1410,6 @@ class IMessageChatWorker:
                     ),
                     reply_to,
                     status,
-                    in_group=bool(record.get("room")),
                 )
             except BackendUnavailable:
                 # Its clock and count carry over: the record was taken off
@@ -1592,15 +1588,15 @@ class IMessageChatWorker:
     # Any turn, with one acknowledgment when it runs long. The ack is
     # best-effort - a failure to send it must not cost the real answer -
     # and fires at most once per turn, only after the threshold, so a
-    # quick reply stays a single bubble. A group hears no bubble: everyone
-    # in the room would see it, and a canned status line on its own reads
-    # as noise there, not as "it's working" (Groupie, 2026-09-08).
+    # quick reply stays a single bubble. A room hears it too: the line
+    # names what is happening ("Rummaging through the internet…") rather
+    # than being a bare pleasantry, and the operator asked for the waiting
+    # filler back in the group after it went quiet there (2026-09-09).
     async def _with_ack(
         self,
         work,
         reply_to: str,
         status: list[str] | None = None,
-        in_group: bool = False,
     ) -> "TurnResult":
         turn = asyncio.create_task(work)
         started = time.monotonic()
@@ -1622,7 +1618,7 @@ class IMessageChatWorker:
             if time.monotonic() - started >= threshold:
                 body = random.choice(_ACK_REPLIES)
                 break
-        if body is not None and not in_group:
+        if body is not None:
             try:
                 await self.invoke_tool(
                     settings.DISCOVERY_IMESSAGE_TOOL,

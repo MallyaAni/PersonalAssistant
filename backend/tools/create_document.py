@@ -45,9 +45,9 @@ TOOL = BuiltinTool(
     ),
     schema=_SCHEMA,
     waiting=(
-        "📄 Laying out the pages…",
+        "📄 Laying out the pages… margins, stand back…",
         "🖨️ Putting that in a document…",
-        "📎 Writing the file…",
+        "📎 Writing the file… words on parade…",
     ),
     family="documents",
     contract=EffectContract(effect="write", cost="expensive", creates=True),

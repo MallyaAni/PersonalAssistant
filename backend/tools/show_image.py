@@ -47,7 +47,7 @@ TOOL = BuiltinTool(
     ),
     schema=_SCHEMA,
     waiting=(
-        "🔍 Finding that picture…",
+        "🔍 Finding that picture… it's in here, I just felt it…",
         "🗂️ Pulling that one back out…",
         "📎 Fetching it for you…",
     ),

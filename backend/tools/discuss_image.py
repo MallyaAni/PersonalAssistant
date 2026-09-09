@@ -44,8 +44,8 @@ TOOL = BuiltinTool(
     ),
     schema=_SCHEMA,
     waiting=(
-        "👀 Taking a look at the picture…",
-        "🖼️ Looking it over…",
+        "👀 Taking a look at the picture… giving it a proper once-over…",
+        "🖼️ Looking it over… not just nodding at the pixels…",
     ),
     family="pictures",
     needs_picture=True,

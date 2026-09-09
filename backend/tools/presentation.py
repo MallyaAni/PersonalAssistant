@@ -14,7 +14,7 @@ TOOL = BuiltinTool(
     description="Hand off to the specialist that builds slide decks.",
     schema=subject_schema("deck"),
     waiting=(
-        "📊 Calling in the deck crew…",
+        "📊 Calling in the deck crew — they've been waiting for this…",
         "🎞️ Handing this to the slide specialist…",
     ),
     family="presentations",

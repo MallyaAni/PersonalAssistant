@@ -60,9 +60,9 @@ TOOL = BuiltinTool(
         "additionalProperties": False,
     },
     waiting=(
-        "🗂️ Flipping back through our conversations…",
-        "🧠 Let me think back…",
-        "📖 Checking what we said…",
+        "🗂️ Flipping back through our conversations — the good parts…",
+        "🧠 Let me think back… it's in here somewhere…",
+        "📖 Checking what we said… receipts included…",
     ),
     family="memory",
     core=True,

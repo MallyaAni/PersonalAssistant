@@ -69,9 +69,9 @@ TOOL = BuiltinTool(
     ),
     schema=_SCHEMA,
     waiting=(
-        "✂️ Touching that up…",
-        "🪄 Waving the retouch wand…",
-        "🎛️ Tweaking the pixels…",
+        "✂️ Touching that up — gently…",
+        "🪄 Waving the retouch wand… poof…",
+        "🎛️ Tweaking the pixels… they felt that…",
     ),
     family="pictures",
     needs_picture=True,

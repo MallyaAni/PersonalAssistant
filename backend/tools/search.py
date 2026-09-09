@@ -58,24 +58,24 @@ SEARCH_CREDITS_CAPABILITY: dict[str, str] = {
     ),
 }
 SEARCH_CREDITS_WAITING: tuple[str, ...] = (
-    "🧾 Checking the search meter…",
-    "💳 Counting the credits…",
+    "🧾 Checking the search meter — counting beans…",
+    "💳 Counting the credits, like a concerned accountant…",
 )
 SEARCH_WAITING: tuple[str, ...] = (
-    "🔎 Rummaging through the internet…",
-    "🌐 Asking the web nicely…",
-    "🕵️ Following the trail…",
-    "📡 Pinging the wider world…",
+    "🔎 Rummaging through the internet like it owes me money…",
+    "🌐 Asking the web nicely. Then again, a little louder…",
+    "🕵️ Following the trail — no tab left unturned…",
+    "📡 Pinging the wider world… someone pick up…",
 )
 
 WEATHER_WAITING: tuple[str, ...] = (
-    "🌤️ Peeking out the window…",
-    "☁️ Consulting the clouds…",
-    "🌡️ Reading the sky…",
+    "🌤️ Peeking out the window like a suspicious neighbour…",
+    "☁️ Consulting the clouds — they rarely talk back…",
+    "🌡️ Reading the sky. It's looking a little smug today…",
 )
 
 TOOLBOX_WAITING: tuple[str, ...] = (
-    "🧰 Reaching into the toolbox…",
-    "🔧 Spinning up {tool}…",
-    "⚙️ Putting {tool} to work…",
+    "🧰 Reaching into the toolbox — let's see what we've got…",
+    "🔧 Spinning up {tool}… hold on to your hat…",
+    "⚙️ Putting {tool} to work. It grumbles a little…",
 )

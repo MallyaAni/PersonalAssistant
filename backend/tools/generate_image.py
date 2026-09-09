@@ -45,9 +45,9 @@ TOOL = BuiltinTool(
     ),
     schema=_SCHEMA,
     waiting=(
-        "🎨 Mixing the paints…",
-        "🖌️ Sketching that out…",
-        "✨ Conjuring pixels…",
+        "🎨 Mixing the paints — aiming for masterpiece…",
+        "🖌️ Sketching that out… artistic licence: on…",
+        "✨ Conjuring pixels… no artists were harmed…",
         "🖼️ Stretching a fresh canvas…",
     ),
     family="pictures",

@@ -147,18 +147,19 @@ async def test_an_addressed_room_message_runs_as_the_group_and_answers_the_room(
 
 
 @pytest.mark.asyncio
-async def test_a_slow_group_turn_stays_silent_until_the_answer(monkeypatch):
-    # The acknowledgment bubble exists for the private thread, where the
-    # person who asked is the only one who sees it. In a room every member
-    # sees it, and a canned status line on its own reads as noise - so a slow
-    # group turn sends nothing until the real answer (Groupie, 2026-09-08).
+async def test_a_slow_group_turn_gets_an_ack_then_the_answer(monkeypatch):
+    # The acknowledgment bubble is sent in a room too: the line names what
+    # is happening rather than being a bare pleasantry, and the operator
+    # asked for the waiting filler back in the group after it went quiet
+    # there (2026-09-09, reversing the Groupie silence of 2026-09-08).
     import asyncio
 
     from backend.config.settings import settings
+    from backend.workers.imessage_chat import _ACK_REPLIES
 
-    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 0.05)
     bridge = _Bridge({"messages": [_room_message("g2", "5550101", "Scout, deep question?")], "cursor": 6})
     worker, _, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 0.05)
 
     async def slow(user_id, text, active_image=None, status=None, room=None, replying_to="", **_):
         await asyncio.sleep(0.2)
@@ -167,7 +168,9 @@ async def test_a_slow_group_turn_stays_silent_until_the_answer(monkeypatch):
     monkeypatch.setattr(worker, "_converse", slow)
 
     assert await worker.tick() == 1
-    assert bridge.sent == [{"to": ROOM_GUID, "body": "a considered answer"}]
+    assert bridge.sent[0]["body"] in _ACK_REPLIES
+    assert bridge.sent[1]["body"] == "a considered answer"
+    assert len(bridge.sent) == 2
 
 
 @pytest.mark.asyncio

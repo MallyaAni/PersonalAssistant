@@ -24,9 +24,9 @@ TOOL = BuiltinTool(
     ),
     schema=subject_schema("diagram"),
     waiting=(
-        "📐 Lining up the boxes and arrows…",
+        "📐 Lining up the boxes and arrows — nobody tells arrows what to do…",
         "🧭 Charting that out…",
-        "🗺️ Drawing the map…",
+        "🗺️ Drawing the map… X marks the answer…",
     ),
     family="diagrams",
     contract=EffectContract(effect="write", cost="expensive", creates=True),

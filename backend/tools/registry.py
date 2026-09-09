@@ -247,8 +247,8 @@ def waiting_line(action: MainAction) -> str:
 
 
 SKILL_WAITING: tuple[str, ...] = (
-    "⚡ Running your '{name}' skill…",
-    "🎯 '{name}', coming right up…",
+    "⚡ Firing up your '{name}' skill…",
+    "🎯 '{name}', coming right up — no rehearsal needed…",
     "🚀 Launching '{name}'…",
 )
 
