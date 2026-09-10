@@ -48,7 +48,7 @@ from datetime import date
 import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
-from backend.agents.trading.desk import grading, risk
+from backend.agents.trading.desk import grading, planner, risk
 from backend.market.panel import Panel
 
 REBALANCE = 20
@@ -433,27 +433,36 @@ class _Book:
     # information the decision did not have: with a 10% target, a $100
     # close and a $120 open, it bought 83.33 shares where the paper
     # planner - working from the same close - had submitted 100. Sizing
-    # here and filling later is what the two paths have in common.
+    # here and filling later is what the two paths have in common, and the
+    # sizing itself is the shared planner's, so the paper account and the
+    # record tracker decide the same orders from the same close.
     def plan(self, target: np.ndarray, prices: np.ndarray) -> np.ndarray:
         """Return the share count wanted per name, decided at `prices`."""
         total = self.equity(prices)
-        wanted = np.array(self.shares, dtype=float)
         if total <= 0:
-            return wanted
-        tradable = np.isfinite(prices) & (prices > 0)
-        value_now = np.where(tradable, self.shares * np.nan_to_num(prices), 0.0)
-        value_want = np.where(tradable, target * total, 0.0)
-        # A move too small to be worth its cost is not ordered, the same
-        # rule the paper book applies.
-        move = np.where(
-            np.abs(value_want - value_now) < MIN_TRADE * total,
-            0.0,
-            value_want - value_now,
-        )
-        with np.errstate(all="ignore"):
-            shares = np.where(prices > 0, (value_now + move) / prices, self.shares)
-        wanted = np.where(tradable, shares, self.shares)
-        wanted = np.where(np.isfinite(wanted), wanted, 0.0)
+            return np.array(self.shares, dtype=float)
+        tickers = self.panel.tickers
+        targets = {
+            t: float(w)
+            for t, w in zip(tickers, target, strict=False)
+            if w > 0 and np.isfinite(w)
+        }
+        held = {
+            t: float(s)
+            for t, s in zip(tickers, self.shares, strict=False)
+            if s > 0
+        }
+        by_price = {
+            t: float(p)
+            for t, p in zip(tickers, prices, strict=False)
+            if np.isfinite(p) and p > 0
+        }
+        orders = planner.plan(targets, held, total, by_price)
+        wanted = np.array(self.shares, dtype=float)
+        for o in orders:
+            index = tickers.index(o.symbol)
+            current = held.get(o.symbol, 0.0)
+            wanted[index] = current + (o.qty if o.side == "buy" else -o.qty)
         return np.maximum(wanted, 0.0)
 
     # Fill the planned order at `prices`, then write down what changed.

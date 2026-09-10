@@ -3,14 +3,15 @@
 What has to hold: the training mask for a test year excludes the
 horizon of sessions before it, so no label reaches into the year; the
 network's hold-out is the most recent tenth of the rows with the
-horizon before it purged from training; the pairwise features are the
-inputs and every product of two; the ridge recovers a linear signal;
-and a selection by score grades the top fifth A and the next fifth B
-with no veto.
+horizon of *sessions* before it purged from training as whole sessions;
+the pairwise features are the inputs and every product of two; the
+ridge recovers a linear signal; and a selection by score grades the top
+fifth A and the next fifth B with no veto.
 """
 
 import numpy as np
 
+from backend.cli import market_interactions
 from backend.cli.market_interactions import (
     _holdout,
     _pairs,
@@ -27,18 +28,35 @@ def test_training_mask_purges_the_horizon_before_the_test_year():
     assert not mask[30:].any()
 
 
-def test_the_holdout_is_split_first_and_purged():
+def test_the_holdout_purges_whole_sessions_before_the_validation_window(
+    monkeypatch,
+):
+    monkeypatch.setattr(market_interactions, "HORIZON", 3)
+    # Six sessions, ten rows (names) each; rows arrive ordered by session.
+    per = 10
+    n_sessions = 6
+    rows = n_sessions * per
+    x = np.arange(rows * 3, dtype=float).reshape(rows, 3)
+    y = np.arange(rows, dtype=float)
+    sessions = np.repeat(np.arange(n_sessions), per)
+    xa, ya, xv, yv = _holdout(x, y, sessions)
+    # The validation is the most recent tenth of the rows.
+    cut = int(rows * 0.9)
+    assert (xv == x[cut:]).all()
+    # The three sessions whose labels reach into the validation are purged
+    # whole; a row-count purge of three rows would have left most of them in.
+    assert set(np.unique(sessions[: len(xa)])) == {0, 1}
+    assert len(xa) == per * 2
+    assert (xa == x[: per * 2]).all()
+
+
+def test_the_holdout_falls_back_to_a_row_purge_without_sessions():
     n = 100
     x = np.arange(n * 3, dtype=float).reshape(n, 3)
     y = np.arange(n, dtype=float)
-    xa, ya, xv, yv = _holdout(x, y)
-    # The validation is the most recent tenth of the rows.
+    xa, ya, xv, yv = _holdout(x, y, None)
     assert len(xv) == 10
-    assert (xv == x[90:]).all()
-    # The twenty sessions before it are purged from training, so their
-    # forward labels do not reach into the validation window.
-    assert len(xa) == 70
-    assert (xa == x[:70]).all()
+    assert len(xa) == 70  # 90 - the horizon of 20 rows
 
 
 def test_pairs_adds_every_product():

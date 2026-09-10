@@ -69,6 +69,23 @@ def _live_snapshot() -> dict | None:
         return None
 
 
+# A snapshot older than a candle is no longer the current candle; it is served
+# anyway (a closed market has nothing fresher), but the page is told it is
+# stale rather than presenting it as live. One candle: fifteen minutes.
+SNAPSHOT_STALE_AFTER_SECONDS = 15 * 60
+
+
+# How old a snapshot is, in seconds, or None when it cannot be dated.
+def _snapshot_age_seconds(snap: dict) -> float | None:
+    as_of = snap.get("as_of")
+    if not as_of:
+        return None
+    try:
+        return (datetime.now(UTC) - datetime.fromisoformat(str(as_of))).total_seconds()
+    except (ValueError, TypeError):
+        return None
+
+
 # The latest record, the changes since the one before, the headline
 # summary, and the sessions on file.
 @router.get("/desk")
@@ -99,7 +116,14 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
     _operator_only(user_id)
     snap = _live_snapshot()
     if snap is not None and snap.get("quotes"):
-        return {"user_id": user_id, **snap}
+        age = _snapshot_age_seconds(snap)
+        stale = age is None or age > SNAPSHOT_STALE_AFTER_SECONDS
+        return {
+            "user_id": user_id,
+            **snap,
+            "age_seconds": age,
+            "stale": stale,
+        }
     latest, _previous = deskrecord.latest_pair(_root())
     rows = (latest or {}).get("actions") or []
     symbols = [str(r.get("ticker")) for r in rows if r.get("ticker")]
@@ -128,6 +152,8 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
         "technical_detail": technical_detail,
         "user_id": user_id,
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+        "age_seconds": 0.0,
+        "stale": False,
         "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
     }
 

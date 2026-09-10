@@ -195,23 +195,41 @@ def _ridge(x_train, y_train, x_test, lam: float) -> np.ndarray:
     return b1 @ w
 
 
-def _holdout(x_train, y_train):
+def _holdout(x_train, y_train, sessions):
     """Return (train, validation) for a network's early stopping.
 
     The validation is the most recent tenth of the rows, with the horizon of
-    sessions before it purged from training, so no training label reaches
-    into the validation window.
+    *sessions* before it purged from training, so no training label reaches
+    into the validation window. Rows arrive ordered by session, one block per
+    session; purging by session rather than by row count is what keeps a
+    ninety-name session's labels from overlapping the validation - twenty
+    flattened rows are less than a session, so a row-count purge left the
+    session before the validation half in and half out.
     """
     cut = int(len(x_train) * 0.9)
     xa, ya = x_train[:cut], y_train[:cut]
     xv, yv = x_train[cut:], y_train[cut:]
-    purge = min(HORIZON, len(xa))
-    if purge:
-        xa, ya = xa[:-purge], ya[:-purge]
-    return xa, ya, xv, yv
+    if sessions is None or len(sessions) == 0:
+        purge = min(HORIZON, len(xa))
+        if purge:
+            xa, ya = xa[:-purge], ya[:-purge]
+        return xa, ya, xv, yv
+    sa = sessions[:cut]
+    uniq = np.unique(sa)
+    if len(uniq) <= HORIZON:
+        # Too small a window to spare a horizon; keep it all rather than
+        # purge the whole training set.
+        return xa, ya, xv, yv
+    boundary = uniq[
+        max(0, int(np.searchsorted(uniq, sessions[cut])) - HORIZON)
+    ]
+    keep = sa < boundary
+    if keep.sum() < 10:
+        return xa, ya, xv, yv
+    return xa[keep], ya[keep], xv, yv
 
 
-def _network(x_train, y_train, x_test, seed: int = 0) -> np.ndarray:
+def _network(x_train, y_train, x_test, sessions, seed: int = 0) -> np.ndarray:
     import torch
 
     torch.manual_seed(seed)
@@ -220,7 +238,7 @@ def _network(x_train, y_train, x_test, seed: int = 0) -> np.ndarray:
     # labels reach into it), and the features are standardised with the
     # purged training set's statistics alone - so the validation sees
     # normalisation it had no hand in and labels no training row overlaps.
-    xa, ya, xv, yv = _holdout(x_train, y_train)
+    xa, ya, xv, yv = _holdout(x_train, y_train, sessions)
     a, v = _standardise(xa, xv)
     _, b = _standardise(xa, x_test)
     xa, ya = torch.tensor(a, dtype=torch.float32), torch.tensor(
@@ -282,7 +300,12 @@ def walk_forward(x, label, years, in_book, fit) -> np.ndarray:
         te = test_rows[:, None] & in_book[None, :] & np.isfinite(x).all(axis=2)
         if tr.sum() < 500 or not te.any():
             continue
-        pred = fit(x[tr], label[tr], x[te])
+        # The session of each flattened training row, so the network's
+        # hold-out can purge a whole horizon of sessions rather than a
+        # handful of rows. Rows are ordered t-major, so the session index
+        # is the flat index over the columns.
+        train_sessions = np.flatnonzero(tr) // cols
+        pred = fit(x[tr], label[tr], x[te], train_sessions)
         out[te] = pred
     return out
 
@@ -347,8 +370,8 @@ def main() -> None:
     label = panel.forward_residual(HORIZON)
     print(f"book of {int(in_book.sum())} names, inputs: {', '.join(names)}")
     models = {
-        "linear": lambda a, b, c: _ridge(a, b, c, args.ridge),
-        "interactions": lambda a, b, c: _ridge(_pairs(a), b, _pairs(c), args.ridge),
+        "linear": lambda a, b, c, _s: _ridge(a, b, c, args.ridge),
+        "interactions": lambda a, b, c, _s: _ridge(_pairs(a), b, _pairs(c), args.ridge),
         "network": _network,
     }
     scores = {

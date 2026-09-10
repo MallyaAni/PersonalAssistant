@@ -772,6 +772,11 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
               {live.as_of && (
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
                   prices as of {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {live.stale && (
+                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
+                      stale — older than a candle
+                    </span>
+                  )}
                 </span>
               )}
             </h3>

@@ -26,6 +26,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from backend.agents.trading.desk import planner
+
 REBALANCE_EVERY = 20
 MIN_TRADE = 0.005
 PAPER_KIND = "paper"
@@ -122,36 +124,27 @@ def plan(
         new.previous_rebalance = state.last_rebalance
         new.last_rebalance = session
         new.sessions_since_rebalance = 0
-        for symbol in sorted(set(held) | set(targets)):
-            price = prices.get(symbol)
-            if not price or price <= 0:
+        # The plan is the shared planner's, sized at the close the decision
+        # could see; this path only rounds to the whole shares a broker
+        # accepts and skips a move too small to be worth its cost. Nearest
+        # whole share, not the floor: on a 100,000 book a 4.9% target in a
+        # 1,740 stock floors to 2 shares, 29% short of what was asked for,
+        # and the book came out 12% under its target gross. Rounding to
+        # nearest halves the error and does not bias it one way.
+        target_map = {s: float(w) for s, w in targets.items() if w > 0}
+        held_map = {s: float(q) for s, q in held.items() if q > 0}
+        price_map = {s: float(p) for s, p in prices.items() if p and p > 0}
+        for o in planner.plan(target_map, held_map, equity, price_map):
+            qty = int(round(o.qty))
+            if qty <= 0:
                 continue
-            # Nearest whole share, not the floor. Market-on-open orders
-            # must be whole shares, and flooring always rounds toward
-            # holding less - which is worst exactly where it is least
-            # affordable. On a 100,000 book a 4.9% target in a 1,740 stock
-            # floors to 2 shares, 29% short of what was asked for, and the
-            # book came out 12% under its target gross with almost all of
-            # the miss in that one name. Rounding to nearest halves the
-            # error and does not bias it one way.
-            target_qty = round(targets.get(symbol, 0.0) * equity / price)
-            delta = target_qty - int(held.get(symbol, 0))
-            if abs(delta) * price < MIN_TRADE * equity:
+            if abs(qty) * o.reference_price < MIN_TRADE * equity:
                 continue
-            if delta > 0:
-                orders.append(
-                    PaperOrder(
-                        symbol, "buy", delta, f"rebalance to {targets[symbol]:.3f}"
-                    )
-                )
-                new.opened.setdefault(symbol, session)
+            if o.side == "buy":
+                orders.append(PaperOrder(o.symbol, "buy", qty, o.reason))
+                new.opened.setdefault(o.symbol, session)
             else:
-                reason = (
-                    "leaves the book"
-                    if symbol not in targets
-                    else f"rebalance to {targets[symbol]:.3f}"
-                )
-                orders.append(PaperOrder(symbol, "sell", -delta, reason))
+                orders.append(PaperOrder(o.symbol, "sell", qty, o.reason))
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
@@ -258,8 +251,11 @@ def close_shortfall_bps(side: str, filled_price: float, close: float) -> float |
 # A rebalance whose orders did not all fill is not a rebalance. The clock
 # rolls back to the one before it, so the next session plans the rebalance
 # again instead of waiting out twenty sessions on a book that never
-# reached its targets. Orders still open are left pending and asked about
-# again next session; everything settled is cleared.
+# reached its targets. Orders still open or only partially filled are left
+# pending and asked about again next session - a partial has outstanding
+# quantity the desk still needs an answer on, and dropping it would
+# silently forget the unfilled part - and everything the broker says is
+# terminal is cleared.
 def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     """Return the state after recording what the broker did."""
     new = PaperState(**asdict(state))
@@ -268,7 +264,7 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
         for row in state.pending
         if any(
             s.client_order_id == str(row.get("client_order_id") or "")
-            and s.status == "open"
+            and s.status in ("open", "partial")
             for s in settled
         )
     ]
@@ -276,7 +272,9 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     if state.unconfirmed_rebalance is None:
         return new
     of_rebalance = [s for s in settled if s.session == state.unconfirmed_rebalance]
-    if not of_rebalance or any(s.status == "open" for s in of_rebalance):
+    if not of_rebalance or any(
+        s.status in ("open", "partial") for s in of_rebalance
+    ):
         # Nothing to conclude yet; ask again next session.
         return new
     if all(s.status == "filled" for s in of_rebalance):

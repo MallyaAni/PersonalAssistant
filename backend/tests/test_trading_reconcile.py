@@ -8,8 +8,9 @@ twenty sessions from its next attempt at targets it had never reached.
 
 What has to hold: the outcome comes from the broker's own record of the
 order, matched by an id chosen before the order was sent; a rebalance is
-only done when its orders filled; and one that did not fill puts the clock
-back so the next session tries again.
+only done when its orders filled; one that did not fill puts the clock
+back so the next session tries again; and a partial or open order stays
+pending with its outstanding quantity, unconcluded.
 """
 
 import pytest
@@ -99,9 +100,12 @@ def test_a_filled_rebalance_is_confirmed():
 # A rebalance the broker did not carry out is not one. The clock goes back
 # to the rebalance before it, so the next session plans it again rather
 # than waiting out twenty sessions on a book that never reached target.
+# A *partial* is different and does not roll the clock back: it stays
+# pending and the rebalance unconcluded, so the outstanding quantity is
+# asked about again rather than planned over.
 @pytest.mark.parametrize(
     ("status", "filled"),
-    [("rejected", 0), ("expired", 0), ("partially_filled", 3)],
+    [("rejected", 0), ("expired", 0)],
 )
 def test_an_unfilled_rebalance_puts_the_clock_back(status, filled):
     state = paper.PaperState(
@@ -156,6 +160,32 @@ def test_an_open_order_is_left_to_settle():
     assert after.unconfirmed_rebalance == "2026-09-07"
     assert after.last_rebalance == "2026-09-07"
     assert [row["symbol"] for row in after.pending] == ["BBB"]
+
+
+# A partial fill is an order still carrying outstanding quantity: it stays
+# pending, and the rebalance it belongs to is not concluded either way.
+# Dropping the partial would silently forget the unfilled part, and marking
+# the rebalance done would celebrate a book that never reached its targets.
+def test_a_partial_fill_stays_pending_and_the_rebalance_is_not_concluded():
+    state = paper.PaperState(
+        last_rebalance="2026-09-07",
+        previous_rebalance="2026-08-10",
+        sessions_since_rebalance=1,
+        unconfirmed_rebalance="2026-09-07",
+        pending=_pending("2026-09-07", "AAA", "BBB"),
+    )
+    settled = paper.settle(
+        state.pending,
+        [
+            _broker("2026-09-07", "AAA", "filled", 10),
+            _broker("2026-09-07", "BBB", "partially_filled", 3),
+        ],
+    )
+    after = paper.apply_settlements(state, settled)
+    assert [row["symbol"] for row in after.pending] == ["BBB"]
+    assert after.unconfirmed_rebalance == "2026-09-07"
+    assert after.last_rebalance == "2026-09-07"
+    assert after.sessions_since_rebalance == 1
 
 
 # The id is chosen before the order is sent and is stable, which is what

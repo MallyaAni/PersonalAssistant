@@ -1,7 +1,9 @@
 """The desk endpoint: the day's record and its changes reach the page, and
-only for the user whose token asks."""
+only for the user whose token asks. A stale live snapshot is served but
+marked stale, never presented as the current candle."""
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -137,13 +139,17 @@ async def test_a_named_extra_user_opens_the_desk(tmp_path, monkeypatch):
         allowed = await client.get(
             "/api/v1/market/vjmallya/desk",
             headers={
-                "Authorization": f"Bearer {issue_user_token('vjmallya', ttl_seconds=60)}"
+                "Authorization": (
+                    f"Bearer {issue_user_token('vjmallya', ttl_seconds=60)}"
+                )
             },
         )
         refused = await client.get(
             "/api/v1/market/stranger/desk",
             headers={
-                "Authorization": f"Bearer {issue_user_token('stranger', ttl_seconds=60)}"
+                "Authorization": (
+                    f"Bearer {issue_user_token('stranger', ttl_seconds=60)}"
+                )
             },
         )
     assert allowed.status_code == 200, allowed.text
@@ -156,6 +162,67 @@ def test_market_desk_operators_parse_the_allowlist(monkeypatch):
     assert settings.market_desk_operators == frozenset(
         {"ani.mallya", "vjmallya", "guest"}
     )
+
+
+# A snapshot older than a candle is served but marked stale, so the page does
+# not present a closed-market file as the current candle; a fresh one is not.
+@pytest.mark.asyncio
+async def test_the_live_snapshot_is_marked_stale_when_older_than_a_candle(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    live_dir = tmp_path / "desk"
+    live_dir.mkdir(parents=True, exist_ok=True)
+    (live_dir / "live.json").write_text(
+        json.dumps(
+            {
+                "as_of": (datetime.now(UTC) - timedelta(hours=26)).isoformat(
+                    timespec="seconds"
+                ),
+                "quotes": {"SNDK": {"t": "SNDK", "p": 10.0, "pc": 9.0}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/desk_user/desk/live",
+            headers={"Authorization": f"Bearer {issue_user_token('desk_user')}"},
+        )
+    body = response.json()
+    assert response.status_code == 200, response.text
+    assert body["stale"] is True
+    assert body["age_seconds"] > 15 * 60
+
+
+@pytest.mark.asyncio
+async def test_a_fresh_live_snapshot_is_not_stale(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    live_dir = tmp_path / "desk"
+    live_dir.mkdir(parents=True, exist_ok=True)
+    (live_dir / "live.json").write_text(
+        json.dumps(
+            {
+                "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+                "quotes": {"SNDK": {"t": "SNDK", "p": 10.0, "pc": 9.0}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/desk_user/desk/live",
+            headers={"Authorization": f"Bearer {issue_user_token('desk_user')}"},
+        )
+    body = response.json()
+    assert response.status_code == 200, response.text
+    assert body["stale"] is False
 
 
 # The person's own positions round-trip through the API, a bad row is

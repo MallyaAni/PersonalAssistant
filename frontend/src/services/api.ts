@@ -2055,6 +2055,11 @@ export interface DeskLive {
   as_of: string | null;
   quotes: Record<string, DeskQuote>;
   reason?: string;
+  // The snapshot's age in seconds, and whether it is older than a candle
+  // (fifteen minutes). A stale snapshot is served - a closed market has
+  // nothing fresher - but the panel shows it is not the current candle.
+  age_seconds?: number | null;
+  stale?: boolean;
   // The technical analyst's rating re-read at the live price: `now` is
   // where the name would rank if the session closed here, `close` where
   // it ranked at the last close.

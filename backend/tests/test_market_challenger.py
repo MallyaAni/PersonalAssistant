@@ -52,15 +52,10 @@ def test_the_shadow_blend_is_frozen_to_each_sessions_cross_section():
 
 
 def test_forward_prices_a_book_between_two_closes(monkeypatch):
+    book = [{"ticker": "AAA", "weight": 0.5}, {"ticker": "BBB", "weight": 0.3}]
     records = [
-        {
-            "session": "2026-09-01",
-            "book": [{"ticker": "AAA", "weight": 0.5}, {"ticker": "BBB", "weight": 0.3}],
-        },
-        {
-            "session": "2026-09-02",
-            "book": [{"ticker": "AAA", "weight": 0.5}, {"ticker": "BBB", "weight": 0.3}],
-        },
+        {"session": "2026-09-01", "book": book},
+        {"session": "2026-09-02", "book": book},
     ]
     closes = {
         "AAA": {"2026-09-01": 100.0, "2026-09-02": 110.0},
@@ -73,7 +68,9 @@ def test_forward_prices_a_book_between_two_closes(monkeypatch):
         "BBB": {"2026-09-01": 50.0, "2026-09-02": 50.0},
     }
     monkeypatch.setattr(market_scorecard, "COST_BPS", 0.0)
-    ret, invested = market_scorecard._forward_walk(records, closes, opens, "book")
+    ret, invested, _traded = market_scorecard._forward_walk(
+        records, closes, opens, "book"
+    )
     # 0.5 * 10% + 0.3 * -10% = +2%; the 20% in cash earns nothing.
     assert abs(ret[0] - 0.02) < 1e-12
     # The invested fraction is the book's share of the account at the close:
