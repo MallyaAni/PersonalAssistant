@@ -66,6 +66,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="write briefs for every name in today's book",
     )
     parser.add_argument(
+        "--read", nargs="*", default=[], help="tickers to write a read for"
+    )
+    parser.add_argument(
+        "--read-book",
+        action="store_true",
+        help="write a read for every name in today's book",
+    )
+    parser.add_argument(
         "--paper-trade",
         action="store_true",
         help="submit the book to the Alpaca PAPER account for the next open",
@@ -433,6 +441,7 @@ def _challenger_block(store, report) -> dict | None:
 def record(
     report,
     briefs: dict[str, dict] | None = None,
+    reads: dict[str, str | None] | None = None,
     paper: dict | None = None,
     challenger: dict | None = None,
     curve: dict | None = None,
@@ -462,6 +471,12 @@ def record(
             "side": report.sides.get(ticker, ""),
             "headline": plainly.headline(view),
             "reason": plainly.reason(view, scale),
+            # The read is the model's plain-language version of the whole
+            # evidence, written once a night for the names asked. The
+            # deterministic lines below are only the fallback when the
+            # runtime was away, so a missing read still answers "why".
+            "read": (reads or {}).get(ticker),
+            "reads": plainly.reads(view, scale),
             # Each analyst's rating: the name's rank across the book on that
             # analyst's evidence, 0 to 1, so the page can show the parts.
             "ranks": {
@@ -723,6 +738,39 @@ def briefs_for(report, tickers, narrator: DeskNarrator) -> dict[str, dict]:
     return out
 
 
+# Write and print the reads for some names through the local model. A read
+# is the whole desk's evidence in plain words, so the page can show every
+# trigger without the model at the edge omitting or inventing one.
+def reads_for(
+    report, tickers, narrator: DeskNarrator
+) -> dict[str, str | None]:
+    """Return {ticker: read text} for the names the model could read."""
+    out: dict[str, str | None] = {}
+    for ticker in tickers:
+        if ticker not in report.panel.tickers:
+            print(f"\n{ticker}: not in the book")
+            continue
+        read = narrator.read_sync(brief_text(report, ticker))
+        if read is None:
+            print(f"\n{ticker}: no read (runtime away or empty)")
+            continue
+        out[ticker] = read
+        print(f"\n{ticker}: {read[:160]}")
+    return out
+
+
+# The names a step should process: the ones named, plus every name in the
+# book when the whole book was asked for.
+def _wanted_tickers(report, named: list[str], whole_book: bool) -> list[str]:
+    """Return the tickers to process for one model-written step."""
+    wanted = list(named)
+    if whole_book:
+        wanted += [
+            s.position.ticker for s in report.book if s.position.ticker not in wanted
+        ]
+    return wanted
+
+
 # Run the day.
 def main() -> None:
     """Entry point."""
@@ -745,14 +793,16 @@ def main() -> None:
     _print_grades(report, args.top)
     _print_book(report)
     briefs: dict[str, dict] = {}
-    wanted = list(args.brief)
-    if args.brief_book:
-        wanted += [
-            s.position.ticker for s in report.book if s.position.ticker not in wanted
-        ]
-    if wanted:
+    wanted = _wanted_tickers(report, args.brief, args.brief_book)
+    read_wanted = _wanted_tickers(report, args.read, args.read_book)
+    reads: dict[str, str | None] = {}
+    if wanted or read_wanted:
         readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
-        briefs = briefs_for(report, wanted, DeskNarrator(readers[0].writer))
+        narrator = DeskNarrator(readers[0].writer)
+        if wanted:
+            briefs = briefs_for(report, wanted, narrator)
+        if read_wanted:
+            reads = reads_for(report, read_wanted, narrator)
     entry = None
     if args.paper_trade or args.paper_dry_run:
         session = str(panel.dates[-1])
@@ -766,7 +816,7 @@ def main() -> None:
     if args.challenger:
         shadow = _challenger_block(store, report)
     curve = curves(report, store, Path(store.root))
-    path = save(Path(store.root), record(report, briefs, entry, shadow, curve))
+    path = save(Path(store.root), record(report, briefs, reads, entry, shadow, curve))
     print(f"\nrecord written: {path}")
     written = write_history(store, report)
     if written:

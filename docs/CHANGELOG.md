@@ -2,6 +2,32 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-09 - The desk's reads are model-written prose, and the levels are named by what they are
+
+The drill-down's explanation of a name is no longer built from sentence
+templates. The whole evidence — every analyst, every measurement, and the
+nearest support and resistance named as a swing point or which average —
+is now written once a night by the model through
+`prompts/trading/desk_read.md`, stored on the record's grade as `read`,
+and a coverage gate verifies the read mentions every analyst and both
+levels before it is kept, retrying once and falling back to the complete
+deterministic lines. The live technical read at the live price is model
+prose too, through `prompts/trading/desk_live_read.md` and a cached
+`GET /desk/live/read/{symbol}` route, with `live_technical.lines()` as
+its input and fallback. `levels.level_identity` reports what the nearest
+level is (a swing low, the 50-day, the 200-day, or the weekly 21-day
+average) into the technical analyst's evidence and the live detail. The
+practice account now shows its lifetime move from the starting equity and
+today's move as percentages (`desk_paper` returns `pl_pct` and
+`day_pl_pct`), fixing the `+0.0%` beside the live dollar figure. The
+While-held block reads as "Return while it was an A / Return while it was
+not / Sessions it was an A / Crossed the A line"; stale briefs that dump
+raw evidence are hidden by shape; BestBuys no longer duplicates the board
+under "Set up the board" when holdings are empty. Verified: 108 desk and
+market unit tests, 74 functional tests including the coverage gate and the
+two new read pins run against the real model, ruff clean, tsc and the
+production build clean, and the four desk browser tests in Chromium.
+
 ## 2026-09-09 - Three fixes so the page can be trusted at a glance
 
 The rules' curve was labelled "since inception" and "measured forward";

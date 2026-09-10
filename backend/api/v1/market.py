@@ -8,6 +8,7 @@ every other per-user route; the records themselves are the operator's own.
 
 import asyncio
 import json
+import re
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -131,6 +132,135 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
     }
 
 
+# The live read is model-written prose, cached per candle so the drill-down
+# pays one call per name per candle rather than per open. The deterministic
+# lines are the fallback when the model is away and the text it is given to
+# rewrite, so the same numbers are never rendered two ways.
+_live_read_cache: dict[str, object] = {"key": None, "value": {}}
+
+
+# What the model's live read still has to mention: both levels with a
+# distance, and each horizon that had readings. A gap means the model
+# skipped a trigger, which is exactly what the read is forbidden to do.
+def _live_read_gaps(features: dict[str, list[str]], read: str) -> list[str]:
+    """Return the levels and horizons the live read left out."""
+    gaps: list[str] = []
+    low = read.lower()
+    for side in ("support", "resistance"):
+        if re.search(rf"{side}.{{0,80}}\d+(?:\.\d+)?\s*%", low) is None:
+            gaps.append(f"the nearest {side} and how far it sits")
+    if features.get("medium") and "week" not in low:
+        gaps.append("the medium-term (weekly) readings")
+    if features.get("long") and not (
+        "52" in low or "momentum" in low or "200-day" in low
+    ):
+        gaps.append("the long-term (52-week or momentum) readings")
+    return gaps
+
+
+# Write the live read for one name through the model, or None when the
+# runtime is away. Unstructured prose, greedy for a reproducible answer,
+# with a single retry naming what the first pass left out.
+def _model_live_read(
+    features: dict[str, list[str]],
+    client,
+    system: str,
+) -> str | None:
+    """Return the model's live read for the feature lines, or None."""
+    text = "\n".join(
+        f"{horizon}: " + ("; ".join(items) if items else "no readings")
+        for horizon, items in (
+            ("short", features["short"]),
+            ("medium", features["medium"]),
+            ("long", features["long"]),
+        )
+    )
+    if not text.strip():
+        return None
+    try:
+        read = str(
+            client.chat(
+                [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": text},
+                ],
+                400,
+                None,
+                0.0,
+            )["content"]
+        ).strip()
+    except Exception:  # the runtime being away must not fail the page
+        return None
+    gaps = _live_read_gaps(features, read)
+    if gaps:
+        try:
+            read = str(
+                client.chat(
+                    [
+                        {"role": "system", "content": system},
+                        {
+                            "role": "user",
+                            "content": (
+                                f"{text}\n\nYou left out: {', '.join(gaps)}. "
+                                "Cover those too, and every other reading you "
+                                "were given."
+                            ),
+                        },
+                    ],
+                    400,
+                    None,
+                    0.0,
+                )["content"]
+            ).strip()
+        except Exception:
+            return None
+        if _live_read_gaps(features, read):
+            return None
+    return read[:1200] or None
+
+
+# The live technical read for one name: the model's plain words, or the
+# deterministic lines when the model was away, either way with the features
+# that produced them.
+@router.get("/desk/live/read/{symbol}")
+async def desk_live_read(user_id: UserId, symbol: str) -> dict[str, object]:
+    """Return the model's live technical read for one name."""
+    _operator_only(user_id)
+    symbol = symbol.upper()
+    detail = ((_live_snapshot() or {}).get("technical_detail") or {}).get(symbol)
+    if detail is None:
+        try:
+            headers = alpaca.credentials()
+        except alpaca.AlpacaUnavailableError:
+            return {"read": None, "lines": {"short": [], "medium": [], "long": []}}
+        store = MarketStore(_root())
+        quotes = live_quotes.quotes([symbol], headers=headers)
+        if not quotes:
+            return {"read": None, "lines": {"short": [], "medium": [], "long": []}}
+        detail = (
+            await asyncio.to_thread(live_technical.technical_detail, store, quotes)
+        ).get(symbol)
+        if detail is None:
+            return {"read": None, "lines": {"short": [], "medium": [], "long": []}}
+    lines_ = live_technical.lines(detail)
+    sig = (symbol, json.dumps(detail, sort_keys=True))
+    if _live_read_cache["key"] == sig:
+        cached = _live_read_cache["value"]  # type: ignore[assignment]
+        return {"symbol": symbol, **cached}
+    from backend.core.dependencies import get_llm_client
+    from backend.core.prompts import render
+
+    try:
+        client = get_llm_client()
+        system = render("trading/desk_live_read")
+        read = _model_live_read(lines_, client, system)
+    except Exception:  # noqa: BLE001 - no model, no read, lines still render
+        read = None
+    out = {"read": read, "lines": lines_, "now": detail.get("now")}
+    _live_read_cache["key"], _live_read_cache["value"] = sig, out
+    return {"symbol": symbol, **out}
+
+
 # The person's own positions, kept beside the records and never touched
 # by the nightly run. PUT replaces the list; a bad row is refused whole.
 @router.get("/desk/holdings")
@@ -227,12 +357,25 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
     _operator_only(user_id)
 
     def fetch() -> dict[str, object]:
+        from backend.agents.trading.desk import paper
+
         client = alpaca_trading.client_from_env()
         account = client.account()
+        equity = float(account.equity)
+        day_pl = equity - float(account.last_equity)
+        # The paper book's lifetime and day moves as percentages, so the
+        # page can read them beside the dollar figures. The lifetime base
+        # is the equity the paper book started with; the day base is last
+        # night's equity (today's equity minus today's move).
+        state = paper.load_state(Path(settings.MARKET_DATA_ROOT))
+        start = state.start_equity
+        day_base = equity - day_pl
         return {
-            "equity": account.equity,
+            "equity": equity,
             "cash": account.cash,
-            "day_pl": account.equity - account.last_equity,
+            "day_pl": day_pl,
+            "day_pl_pct": (day_pl / day_base) if day_base else None,
+            "pl_pct": (equity / start - 1.0) if start else None,
             "positions": [asdict(p) for p in client.positions()],
             "orders": [
                 {

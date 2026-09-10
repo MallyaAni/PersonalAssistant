@@ -54,6 +54,10 @@ SHORT = (
     "range_position_60",
     "support_distance",
     "resistance_distance",
+    "support_level",
+    "support_kind",
+    "resistance_level",
+    "resistance_kind",
 )
 MEDIUM = (
     "weekly_trend",
@@ -175,7 +179,7 @@ def technical_now(store, quotes: dict, today: date | None = None) -> dict:
 # these so a person sees the short-term where-price-is-now read beside the
 # longer timeframes instead of one number.
 def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
-    """Return {symbol: {"now": rank, "short": {...}, "medium": {...}, "long": {...}}}."""
+    """Return each quoted name's technical features, split by horizon."""
     today = today or datetime.now(UTC).date()
     read = _live_read(store, quotes, today)
     panel = read["panel"]
@@ -205,3 +209,147 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
             "long": {k: feature[k] for k in LONG if k in feature},
         }
     return out
+
+
+# The line a percentage distance reads as, e.g. "12.6% above".
+def _pct_word(v) -> str | None:
+    """Return a distance's line, or None without a finite figure."""
+    if v is None or not np.isfinite(v):
+        return None
+    direction = "above" if v > 0 else "below" if v < 0 else "at"
+    return f"{abs(v * 100):.1f}% {direction}"
+
+
+# What a level kind reads as, so a line can name the level rather than
+# only say how far away price sits.
+def _level_word(kind, side: str) -> str | None:
+    """Return the plain name of a level kind, or None."""
+    if kind is None or not np.isfinite(kind):
+        return None
+    if int(kind) == 1:
+        return "a swing low" if side == "support" else "a swing high"
+    if int(kind) == 2:
+        return "the 50-day average"
+    if int(kind) == 3:
+        return "the 200-day average"
+    if int(kind) == 4:
+        return "the weekly 21-day average"
+    return None
+
+
+# The line for the 21/50 EMA convergence.
+def _convergence_line(conv) -> str:
+    """Return the line for a converging_21_50 reading."""
+    if conv > 0:
+        return "the 21/50 EMAs are squeezing upward (a bullish cross is forming)"
+    if conv < 0:
+        return "the 21/50 EMAs are rolling over (a bearish cross is forming)"
+    return "the 21/50 EMAs are not converging"
+
+
+# The support and resistance lines, each naming what the level is.
+def _level_lines(s: dict) -> list[str]:
+    """Return the support and resistance lines for a detail's short dict."""
+    lines_out: list[str] = []
+    for side in ("support", "resistance"):
+        dist = s.get(f"{side}_distance")
+        if dist is None or not np.isfinite(dist):
+            continue
+        base = f"{_pct_word(dist)} nearest {side}"
+        what = _level_word(s.get(f"{side}_kind"), side)
+        lines_out.append(f"{base} — {what}" if what else base)
+    return lines_out
+
+
+# The short horizon's lines: where price sits against the averages, the
+# daily trend, and the support and resistance that frame it.
+def _short_lines(s: dict) -> list[str]:
+    """Return the short-term readable lines for a detail's short dict."""
+    short: list[str] = []
+    conv = s.get("converging_21_50")
+    if conv is not None and np.isfinite(conv):
+        short.append(_convergence_line(conv))
+    short.extend(_level_lines(s))
+    e21 = _pct_word(s.get("ema21_distance"))
+    if e21:
+        short.append(f"{e21} the 21-day EMA")
+    dt = s.get("daily_trend")
+    if dt is not None and np.isfinite(dt):
+        short.append(
+            "daily trend up"
+            if dt > 0
+            else "daily trend down"
+            if dt < 0
+            else "daily trend flat"
+        )
+    stack = s.get("stack_order")
+    if stack is not None and np.isfinite(stack):
+        if stack >= 3:
+            short.append("full bullish EMA stack (9 > 21 > 50 > 200)")
+        elif stack > 0:
+            short.append(f"{stack:.0f} of the three EMA pairs stacked up")
+        elif stack == 0:
+            short.append("EMA stack mixed")
+        else:
+            short.append(f"{-stack:.0f} of the three EMA pairs stacked down")
+    e50 = _pct_word(s.get("ema50_distance"))
+    if e50:
+        short.append(f"{e50} the 50-day EMA")
+    rp = s.get("range_position_60")
+    if rp is not None and np.isfinite(rp):
+        short.append(f"sitting {rp * 100:.0f}% up in its 60-day range")
+    return short
+
+
+# The medium horizon's lines: the weekly trend and the weekly stack.
+def _medium_lines(m: dict) -> list[str]:
+    """Return the medium-term readable lines for a detail's medium dict."""
+    medium: list[str] = []
+    wt = m.get("weekly_trend")
+    if wt is not None and np.isfinite(wt):
+        medium.append(
+            "weekly trend up"
+            if wt > 0
+            else "weekly trend down"
+            if wt < 0
+            else "weekly trend flat"
+        )
+    ws = m.get("weekly_stack")
+    if ws is not None and np.isfinite(ws):
+        medium.append(
+            "the weekly 9 EMA is above the 21"
+            if ws > 0
+            else "the weekly 9 EMA is below the 21"
+        )
+    return medium
+
+
+# The long horizon's lines: the yearly range, the 200-day average and the
+# slow momentum.
+def _long_lines(features: dict) -> list[str]:
+    """Return the long-term readable lines for a detail's long dict."""
+    long: list[str] = []
+    h52 = _pct_word(features.get("high_52w_distance"))
+    lo52 = _pct_word(features.get("low_52w_distance"))
+    if h52 and lo52:
+        long.append(f"{h52} its 52-week high · {lo52} its 52-week low")
+    e200 = _pct_word(features.get("ema200_distance"))
+    if e200:
+        long.append(f"{e200} the 200-day EMA")
+    mom = features.get("residual_momentum_120")
+    if mom is not None and np.isfinite(mom):
+        long.append("slow momentum positive" if mom >= 0 else "slow momentum negative")
+    return long
+
+
+# The detail for one name rendered as readable lines, grouped by horizon.
+# These are the fallback when no model is available, and the text a model
+# is given to rewrite in its own words, so the same numbers are never
+# rendered two ways.
+def lines(detail: dict) -> dict[str, list[str]]:
+    """Return the readable lines for a technical detail, by horizon."""
+    return {
+        "short": _short_lines(detail.get("short") or {}),
+        "medium": _medium_lines(detail.get("medium") or {}),
+        "long": _long_lines(detail.get("long") or {}),
+    }

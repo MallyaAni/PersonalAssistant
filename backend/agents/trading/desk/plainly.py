@@ -32,6 +32,14 @@ from __future__ import annotations
 
 import numpy as np
 
+from backend.market.levels import (
+    KIND_EMA50,
+    KIND_EMA200,
+    KIND_NONE,
+    KIND_SWING,
+    KIND_WEEK21,
+)
+
 # What each of the desk's measurements is called in English. A name absent
 # here is written as-is rather than guessed at, so a new measurement shows
 # up looking wrong instead of being described wrongly.
@@ -64,6 +72,8 @@ LABELS: dict[str, str] = {
     "low_52w_distance": "distance above its 52-week low",
     "support_distance": "distance to support",
     "resistance_distance": "distance to resistance",
+    "support_level": "the support level",
+    "resistance_level": "the resistance level",
     "reward_risk": "reward against risk to the next levels",
     "range_position_60": "where it sits in its 60-day range",
     "weekly_trend": "its weekly trend",
@@ -489,6 +499,76 @@ def reason(view: dict, scale: dict | None = None) -> str:
     if not clauses:
         return "No analyst had a view on it today."
     return chr(10).join(clauses[:5])
+
+
+# What a level's kind means in words: a swing point from the daily bars,
+# or one of the averages the price tends to respect.
+LEVEL_KIND_WORDS: dict[int, str] = {
+    KIND_SWING: "a swing point from the daily chart",
+    KIND_EMA50: "the 50-day average",
+    KIND_EMA200: "the 200-day average",
+    KIND_WEEK21: "the weekly 21-day average",
+}
+
+
+# One support or resistance line, naming what the level is and how far away
+# price sits, so a read does not say "nearest support" and leave the reader
+# to guess whether that is a price from the past or an average.
+def _level_words(side: str, kind: float, level: float, distance: float) -> str | None:
+    """Return a plain line for one level, or None without one."""
+    if not np.isfinite(kind) or int(kind) == KIND_NONE:
+        return None
+    if not np.isfinite(distance):
+        return None
+    pct = abs(float(distance)) * 100
+    k = int(kind)
+    if side == "support":
+        what = "a swing low" if k == KIND_SWING else LEVEL_KIND_WORDS.get(k)
+        return f"nearest support is {pct:.0f}% below the price — {what}"
+    what = "a swing high" if k == KIND_SWING else LEVEL_KIND_WORDS.get(k)
+    return f"nearest resistance is {pct:.0f}% above the price — {what}"
+
+
+# Every reading the desk used for one name, in plain words, with nothing
+# omitted. The reason lines above show the two most unusual readings per
+# analyst, which is a sentence; this is the whole evidence, for the person
+# who wants to see every trigger behind the recommendation.
+def reads(view: dict, scale: dict | None = None) -> dict[str, list[str]]:
+    """Return {analyst: [plain-word reading, ...]} for a name, all of them."""
+    out: dict[str, list[str]] = {}
+    for analyst, cited in (view.get("evidence") or {}).items():
+        lines: list[str] = []
+        for measure, value in cited.items():
+            if measure in CONTEXT or not np.isfinite(value):
+                continue
+            if measure == "support_kind":
+                line = _level_words(
+                    "support", value, cited.get("support_level"),
+                    cited.get("support_distance"),
+                )
+                if line:
+                    lines.append(line)
+            elif measure == "resistance_kind":
+                line = _level_words(
+                    "resistance", value, cited.get("resistance_level"),
+                    cited.get("resistance_distance"),
+                )
+                if line:
+                    lines.append(line)
+            elif measure in (
+                "support_distance",
+                "resistance_distance",
+                "support_level",
+                "resistance_level",
+            ):
+                # The distance and the level are said together in the lines
+                # above; repeating them separately would be the same fact
+                # twice in one list.
+                continue
+            else:
+                lines.append(_figure(analyst, measure, float(value), scale))
+        out[analyst] = lines
+    return out
 
 
 # The one line a table can show without opening anything: the action and

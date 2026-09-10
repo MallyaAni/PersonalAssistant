@@ -33,6 +33,13 @@ SWING = 5
 LEVEL_LOOKBACK = 250
 AT_SUPPORT = 0.05
 GOOD_REWARD_RISK = 2.0
+# What the nearest support or resistance level is: a confirmed swing point
+# from the daily bars, or one of the averages the price tends to respect.
+KIND_NONE = 0
+KIND_SWING = 1
+KIND_EMA50 = 2
+KIND_EMA200 = 3
+KIND_WEEK21 = 4
 
 
 # Confirmed swing lows and highs: a bar whose low is the lowest (high the
@@ -157,6 +164,50 @@ def level_features(panel: Panel) -> np.ndarray:
         ],
         axis=2,
     )
+
+
+# The nearest support and resistance as (level, kind) pairs, so a read can
+# say what a level is rather than only how far away price sits. Support is
+# the nearest of the confirmed swing lows and the averages below the close;
+# resistance the nearest confirmed swing high above it. The kind names which
+# of those won: a swing point from the daily bars, the 50-day average, the
+# 200-day average, or the weekly 21-day average.
+def level_identity(
+    panel: Panel,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return (support_level, support_kind, resistance_level, resistance_kind)."""
+    close = panel.adj_close
+    high, low = panel.high, panel.low
+    swing_low, swing_high = swing_points(high, low)
+    e50, e200 = ema(close, 50), ema(close, 200)
+    w21 = _weekly_ema(panel, close, 21)
+    # The swing low is the nearest confirmed low in the lookback; each
+    # average is its own current level, used only when it sits below the
+    # close (the same candidates `level_features` compares).
+    with np.errstate(invalid="ignore"):
+        candidates = np.stack(
+            [
+                _nearest(swing_low, close, True, LEVEL_LOOKBACK),
+                np.where(e50 < close, e50, np.nan),
+                np.where(e200 < close, e200, np.nan),
+                np.where(w21 < close, w21, np.nan),
+            ],
+            axis=2,
+        )
+        any_finite = np.any(np.isfinite(candidates), axis=2)
+        best = np.argmax(
+            np.where(np.isfinite(candidates), candidates, -np.inf), axis=2
+        )
+        support_level = np.take_along_axis(
+            candidates, best[..., None], axis=2
+        )[..., 0]
+        support_level = np.where(any_finite, support_level, np.nan)
+        support_kind = np.where(any_finite, best + 1, KIND_NONE).astype(float)
+        resistance_level = _nearest(swing_high, close, False, LEVEL_LOOKBACK)
+        resistance_kind = np.where(
+            np.isfinite(resistance_level), KIND_SWING, KIND_NONE
+        ).astype(float)
+    return support_level, support_kind, resistance_level, resistance_kind
 
 
 # Rolling max or min over `n` sessions ending at t (inclusive).

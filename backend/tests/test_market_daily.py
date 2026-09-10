@@ -128,7 +128,7 @@ def test_record_and_save(tmp_path):
     assert data["book"][0]["weight"] == 0.08
     assert data["briefs"]["SNDK"]["stance"] == "own"
     assert data["paper"] is None
-    with_paper = market_daily.record(_report(), None, {"equity": 100.0})
+    with_paper = market_daily.record(_report(), paper={"equity": 100.0})
     assert with_paper["paper"]["equity"] == 100.0
     path = market_daily.save(Path(tmp_path), data)
     assert path == Path(tmp_path) / "desk" / "asof=2026-09-03" / "desk.json"

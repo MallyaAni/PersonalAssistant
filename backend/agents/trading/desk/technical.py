@@ -89,4 +89,13 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
     evidence = {n: feats[:, :, idx[n]].astype(float) for n in CITED}
     evidence.update({n: loc[:, :, lidx[n]] for n in LOCATION_CITED})
     evidence["residual_momentum_120"] = momentum
+    # What the nearest support and resistance are, so a read can name them
+    # as a swing point or an average rather than only a distance.
+    support_level, support_kind, resistance_level, resistance_kind = (
+        levels.level_identity(panel)
+    )
+    evidence["support_level"] = support_level
+    evidence["support_kind"] = support_kind
+    evidence["resistance_level"] = resistance_level
+    evidence["resistance_kind"] = resistance_kind
     return Opinion(NAME, scores, evidence)

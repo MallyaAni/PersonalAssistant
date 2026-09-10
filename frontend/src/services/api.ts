@@ -1853,6 +1853,12 @@ export interface DeskGrade {
   // these fields existed.
   headline?: string;
   reason?: string;
+  // The desk's whole evidence read out loud: the model's plain-language
+  // version of every trigger behind the grade, written once a night. When
+  // the model was away, `read` is absent and `reads` — the same evidence
+  // written deterministically, complete by construction — is the fallback.
+  read?: string | null;
+  reads?: Record<string, string[]>;
   // Each analyst's rating of the name, 0 to 1, its rank across the book
   // that day. Absent on records written before it was recorded.
   ranks?: Record<string, number>;
@@ -2052,11 +2058,19 @@ export interface DeskLive {
   technical?: Record<string, { now: number; close: number }>;
   // The technical features the analyst would cite, read on the live panel
   // and split by how far ahead each one looks, for the per-name drill-down.
+  // The `support_*` and `resistance_*` fields on `short` name what the
+  // nearest levels are: kind 1 a swing point, 2 the 50-day average, 3 the
+  // 200-day average, 4 the weekly 21-day average, with the level's price.
   technical_detail?: Record<
     string,
     {
       now: number | null;
-      short: Record<string, number>;
+      short: Record<string, number> & {
+        support_level?: number;
+        support_kind?: number;
+        resistance_level?: number;
+        resistance_kind?: number;
+      };
       medium: Record<string, number>;
       long: Record<string, number>;
     }
@@ -2154,13 +2168,17 @@ export const getDeskIntraday = async (userId: string): Promise<DeskIntraday | nu
   return (await response.json()) as DeskIntraday;
 };
 
-// The practice account as the broker reports it now.
+// The practice account as the broker reports it now. `pl_pct` is the
+// lifetime move from the paper book's starting equity, `day_pl_pct` today's
+// move, so the page can read percentages beside the dollar figures.
 export interface DeskPaperLive {
   as_of?: string;
   reason?: string;
   equity?: number;
   cash?: number;
   day_pl?: number;
+  pl_pct?: number;
+  day_pl_pct?: number;
   positions?: { symbol: string; qty: number; market_value: number; avg_entry_price: number; current_price: number; unrealized_pl: number }[];
   orders?: { symbol: string; side: string; qty: number; status: string }[];
 }
@@ -2181,6 +2199,24 @@ export const getDeskLive = async (userId: string): Promise<DeskLive> => {
     return { as_of: null, quotes: {} };
   }
   return (await response.json()) as DeskLive;
+};
+
+// The model's plain-language live technical read for one name. `read` is
+// the model's prose, or null when the model was away; `lines` are the same
+// features rendered deterministically, the fallback.
+export interface DeskLiveRead {
+  symbol: string;
+  read: string | null;
+  lines: { short: string[]; medium: string[]; long: string[] };
+  now?: number | null;
+}
+
+export const getDeskLiveRead = async (userId: string, symbol: string): Promise<DeskLiveRead | null> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live/read/${encodeURIComponent(symbol)}`,
+  );
+  if (!response.ok) return null;
+  return (await response.json()) as DeskLiveRead;
 };
 
 export const getDesk = async (userId: string): Promise<DeskPayload> => {

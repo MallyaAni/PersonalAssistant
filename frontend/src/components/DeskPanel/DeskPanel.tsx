@@ -6,6 +6,7 @@ import {
   getDeskHoldings,
   getDeskIntraday,
   getDeskLive,
+  getDeskLiveRead,
   getDeskMine,
   getDeskPaper,
   getTradingAutopsy,
@@ -15,6 +16,7 @@ import {
   type DeskHistory,
   type DeskIntraday,
   type DeskLive,
+  type DeskLiveRead,
   type DeskMineRow,
   type DeskPaperLive,
   type DeskPayload,
@@ -181,7 +183,12 @@ const SummaryStrip = ({
 }) => {
   const paper = latest.paper
   const worth = paperLive?.equity ?? paper?.equity
-  const since = paper?.pl_pct
+  // The lifetime move from the paper book's starting equity, live when the
+  // broker is reachable, and today's move; both as percentages so they read
+  // beside the dollar figure. The record's own pl_pct is the fallback when
+  // the broker is away.
+  const since = paperLive?.pl_pct ?? paper?.pl_pct
+  const dayPct = paperLive?.day_pl_pct
   const dayPl = paperLive?.day_pl
   const backtest = curve?.backtest
   const stats = backtest?.stats
@@ -206,15 +213,20 @@ const SummaryStrip = ({
           <>
             {money(worth)}
             {since !== undefined && (
-              <span className="ml-2 text-xs font-normal">
+              <span className="ml-2 text-xs font-normal" title="since the paper book started">
                 <Trend value={since * 100} />
+              </span>
+            )}
+            {dayPct !== undefined && (
+              <span className="ml-2 text-xs font-normal text-[#6e6e73]" title="today">
+                today <Trend value={dayPct * 100} />
               </span>
             )}
           </>
         ) : (
           '—'
         ),
-      note: 'the desk\u2019s own money, no real risk',
+      note: 'the desk\u2019s own money, no real risk; lifetime and today\u2019s moves',
     },
     {
       label: 'Today',
@@ -736,7 +748,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
         <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
       )}
 
-      {latest && (
+      {latest && holdings.length > 0 && (
         <BestBuys
           rows={rows}
           intraday={intraday}
@@ -1472,11 +1484,15 @@ const triggers = (stances: Record<string, number>) =>
 // a real feature the analyst's playbook was measured on, given a plain word
 // beside it rather than left to stand alone.
 const LiveTechnical = ({
+  userId,
+  ticker,
   detail,
   quote,
   row,
   asOf,
 }: {
+  userId: string
+  ticker: string
   detail:
     | {
         now: number | null
@@ -1489,73 +1505,42 @@ const LiveTechnical = ({
   row: DeskMineRow
   asOf: string | null
 }) => {
+  // The live read is the model's plain words over the analyst's live
+  // readings, fetched once per name when the drill-down opens. Until it
+  // arrives, and whenever the model is away, the same readings render as
+  // the deterministic lines the backend returns beside it.
+  const [liveRead, setLiveRead] = useState<DeskLiveRead | null>(null)
+  useEffect(() => {
+    let alive = true
+    setLiveRead(null)
+    if (!detail) return () => {
+      alive = false
+    }
+    void getDeskLiveRead(userId, ticker)
+      .then((r) => alive && setLiveRead(r))
+      .catch(() => alive && setLiveRead(null))
+    return () => {
+      alive = false
+    }
+  }, [userId, ticker, detail])
   const last = quote?.last ?? row.last
   const change = last != null && row.last_close ? last - row.last_close : null
   const changePct = last != null && row.last_close ? last / row.last_close - 1 : null
-  const lines = (items: (string | null)[]) => items.filter((i): i is string => i !== null)
-  const pctWord = (v: number | undefined, goodUp = true) => {
-    if (v === undefined || !isFinite(v)) return null
-    const dir = v > 0 ? 'above' : v < 0 ? 'below' : 'at'
-    const ok = goodUp ? v >= 0 : v <= 0
-    return {
-      text: `${Math.abs(v * 100).toFixed(1)}% ${dir}`,
-      good: v === 0 ? true : ok,
-    }
-  }
-  const short: string[] = []
-  const medium: string[] = []
-  const long: string[] = []
-  if (detail) {
-    const s = detail.short ?? {}
-    const m = detail.medium ?? {}
-    const l = detail.long ?? {}
-    const conv = s.converging_21_50
-    if (conv !== undefined) {
-      short.push(
-        conv > 0
-          ? 'the 21/50 EMAs are squeezing upward (a bullish cross is forming)'
-          : conv < 0
-            ? 'the 21/50 EMAs are rolling over (a bearish cross is forming)'
-            : 'the 21/50 EMAs are not converging',
-      )
-    }
-    const sup = pctWord(s.support_distance)
-    if (sup) short.push(`${sup.text} nearest support`)
-    const res = pctWord(s.resistance_distance)
-    if (res) short.push(`${res.text} nearest resistance`)
-    const e21 = pctWord(s.ema21_distance)
-    if (e21) short.push(`${e21.text} the 21-day EMA`)
-    const dt = s.daily_trend
-    if (dt !== undefined) short.push(dt > 0 ? 'daily trend up' : dt < 0 ? 'daily trend down' : 'daily trend flat')
-    const stack = s.stack_order
-    if (stack !== undefined) {
-      short.push(
-        stack >= 3
-          ? 'full bullish EMA stack (9 > 21 > 50 > 200)'
-          : stack > 0
-            ? `${stack} of the three EMA pairs stacked up`
-            : stack === 0
-              ? 'EMA stack mixed'
-              : `${-stack} of the three EMA pairs stacked down`,
-      )
-    }
-    const e50 = pctWord(s.ema50_distance)
-    if (e50) short.push(`${e50.text} the 50-day EMA`)
-    const rp = s.range_position_60
-    if (rp !== undefined) short.push(`sitting ${Math.round(rp * 100)}% up in its 60-day range`)
-    const wt = m.weekly_trend
-    if (wt !== undefined) medium.push(wt > 0 ? 'weekly trend up' : wt < 0 ? 'weekly trend down' : 'weekly trend flat')
-    const ws = m.weekly_stack
-    if (ws !== undefined) medium.push(ws > 0 ? 'the weekly 9 EMA is above the 21' : 'the weekly 9 EMA is below the 21')
-    const h52 = pctWord(l.high_52w_distance, false)
-    const lo52 = pctWord(l.low_52w_distance)
-    if (h52 && lo52) long.push(`${h52.text} its 52-week high · ${lo52.text} its 52-week low`)
-    const e200 = pctWord(l.ema200_distance)
-    if (e200) long.push(`${e200.text} the 200-day EMA`)
-    const mom = l.residual_momentum_120
-    if (mom !== undefined) long.push(`slow momentum ${mom >= 0 ? '+' : ''}${mom.toFixed(1)} (${mom >= 0 ? 'positive' : 'negative'})`)
-  }
-  const tech = detail?.now
+  const lines = (items: string[] | undefined) => (items ?? []).filter((i): i is string => i.length > 0)
+  const read = liveRead?.read
+  const fl = liveRead?.lines
+  const tech = detail?.now ?? liveRead?.now ?? null
+  const column = (title: string, items: string[] | undefined) => (
+    <div>
+      <p className="text-xs font-medium text-[#1d1d1f]">{title}</p>
+      <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
+        {lines(items).map((t) => (
+          <li key={t}>· {t}</li>
+        ))}
+        {lines(items).length === 0 && <li>no readings yet</li>}
+      </ul>
+    </div>
+  )
   return (
     <section className="rounded-xl border border-black/[0.08] bg-white p-3">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -1577,35 +1562,17 @@ const LiveTechnical = ({
           )}
         </span>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <p className="text-xs font-medium text-[#1d1d1f]">Short term · next week (daily chart)</p>
-          <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
-            {lines(short).map((t) => (
-              <li key={t}>· {t}</li>
-            ))}
-            {lines(short).length === 0 && <li>no short-term read yet</li>}
-          </ul>
+      {read ? (
+        <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>
+      ) : fl ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {column('Short term · next week (daily chart)', fl.short)}
+          {column('Medium term · 1–3 weeks (weekly chart)', fl.medium)}
+          {column('Long term · beyond (monthly chart)', fl.long)}
         </div>
-        <div>
-          <p className="text-xs font-medium text-[#1d1d1f]">Medium term · 1–3 weeks (weekly chart)</p>
-          <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
-            {lines(medium).map((t) => (
-              <li key={t}>· {t}</li>
-            ))}
-            {lines(medium).length === 0 && <li>no medium-term read yet</li>}
-          </ul>
-        </div>
-        <div>
-          <p className="text-xs font-medium text-[#1d1d1f]">Long term · beyond (monthly chart)</p>
-          <ul className="mt-1 space-y-1 text-xs text-[#6e6e73]">
-            {lines(long).map((t) => (
-              <li key={t}>· {t}</li>
-            ))}
-            {lines(long).length === 0 && <li>no long-term read yet</li>}
-          </ul>
-        </div>
-      </div>
+      ) : (
+        <p className="text-xs text-[#6e6e73]">reading the live tape…</p>
+      )}
       {tech != null && (
         <p className="mt-2 text-xs text-[#1d1d1f]">
           Where the technical analyst would rank it if the session closed here:{' '}
@@ -1615,6 +1582,13 @@ const LiveTechnical = ({
     </section>
   )
 }
+
+// A stale brief dumps the desk's raw evidence ("revenue_yoy +0.262") in
+// place of the plain words the prompt now demands. The shape — a field
+// identifier followed by a signed decimal — is enough to hide it rather
+// than trust the text.
+const looksLikeRawDump = (text: string) =>
+  /\b[a-zA-Z]+\d*_[a-zA-Z]+(?:_[a-zA-Z]+)*\b\s*[+-]?\d+(?:\.\d+)?/.test(text)
 
 // One name's drill-down: what the desk said about it over time, what came
 // next, and how it did under the desk's own rule versus holding it or the
@@ -1646,6 +1620,8 @@ const NameDetail = ({
     }
   }, [userId, ticker])
   const brief = latest.briefs?.[ticker]
+  const gradeRead = latest.grades?.[ticker]?.read ?? null
+  const gradeReads = latest.grades?.[ticker]?.reads
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []
   const cells = [
@@ -1653,10 +1629,10 @@ const NameDetail = ({
     // better against the days it was not, both a year. A single name's rule
     // against buy-and-hold over the whole history would mislead: the book's
     // return comes from rotating across names, not from riding one.
-    { label: 'While held', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}% a year` : '—', note: 'the days it was graded A or better' },
-    { label: 'While not held', value: bt?.out_annualised != null ? `${(bt.out_annualised * 100).toFixed(0)}% a year` : '—', note: 'the days it was not' },
-    { label: 'Sessions held', value: bt ? `${bt.sessions_in} of ${bt.sessions}` : '—', note: 'since the history starts' },
-    { label: 'Grade switches', value: bt ? `${bt.switches}` : '—', note: 'times it crossed the A line' },
+    { label: 'Return while it was an A', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}% a year` : '—', note: 'annualized over the days the desk graded it A or better' },
+    { label: 'Return while it was not', value: bt?.out_annualised != null ? `${(bt.out_annualised * 100).toFixed(0)}% a year` : '—', note: 'annualized over the days it was not an A' },
+    { label: 'Sessions it was an A', value: bt ? `${bt.sessions_in} of ${bt.sessions}` : '—', note: 'of all sessions since the history starts' },
+    { label: 'Crossed the A line', value: bt ? `${bt.switches}` : '—', note: 'times the grade moved across A, in either direction' },
   ]
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/25" onClick={onClose} role="dialog" aria-label={`${ticker} history`}>
@@ -1684,6 +1660,8 @@ const NameDetail = ({
         )}
         {row && (
           <LiveTechnical
+            userId={userId}
+            ticker={ticker}
             detail={live.technical_detail?.[ticker]}
             quote={live.quotes[ticker]}
             row={row}
@@ -1696,6 +1674,12 @@ const NameDetail = ({
           <p className="text-sm text-[#6e6e73]">Loading the history…</p>
         ) : (
           <>
+            <p className="mb-2 text-xs leading-relaxed text-[#6e6e73]">
+              How this name did under the desk's own rule: the sessions it was graded A or
+              better against the sessions it was not, both annualized. The book's return
+              comes from rotating across names, so the two are compared with each other,
+              not the name against buy-and-hold.
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {cells.map((c) => (
                 <div key={c.label} className="rounded-xl border border-black/[0.08] bg-white p-3">
@@ -1705,9 +1689,25 @@ const NameDetail = ({
                 </div>
               ))}
             </div>
+            {(gradeRead || gradeReads) && (
+              <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
+                <h4 className="text-sm font-semibold text-[#1d1d1f]">What the desk read</h4>
+                {gradeRead ? (
+                  <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{gradeRead}</p>
+                ) : (
+                  <ul className="mt-1 space-y-1 text-sm text-[#1d1d1f]">
+                    {Object.entries(gradeReads ?? {}).flatMap(([analyst, lines]) =>
+                      lines.map((line) => (
+                        <li key={`${analyst}-${line}`}>· {line}</li>
+                      )),
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
             {brief && (
               <div className="mt-3 space-y-1 rounded-xl border border-black/[0.08] bg-white p-3 text-sm text-[#1d1d1f]">
-                <p>{brief.reasoning}</p>
+                <p>{looksLikeRawDump(brief.reasoning) ? brief.verdict : brief.reasoning}</p>
                 <p><span className="font-medium">Risks:</span> {brief.risks}</p>
                 <p><span className="font-medium">Watch:</span> {brief.watch}</p>
               </div>

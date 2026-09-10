@@ -47,6 +47,8 @@ function deskRecord() {
         side: 'ai',
         headline: 'growing earnings, steady trend',
         reason: 'F The business keeps growing\nT The trend holds\nS No news against it',
+        read: 'The desk sees growing earnings with the trend intact: revenue is up, margins hold, and the daily trend supports the grade.',
+        reads: { fundamental: ['revenue is growing'], technical: ['daily trend up'] },
         ranks: { fundamental: 0.9, technical: 0.8, sentiment: 0.6, value: 0.5, rotation: 0.3 },
       },
       NVDA: {
@@ -167,6 +169,14 @@ test.beforeEach(async ({ page }) => {
         NVDA: { symbol: 'NVDA', last: 130, open: 128, high: 132, low: 127, bar: '20:00', as_of: '2026-09-08T20:00:00Z' },
       },
       technical: { AAPL: { now: 0.9, close: 0.8 } },
+      technical_detail: {
+        AAPL: {
+          now: 0.9,
+          short: { ema21_distance: 0.126, support_distance: 0.125, support_kind: 3, resistance_distance: 0.15, resistance_kind: 1 },
+          medium: { weekly_trend: 1 },
+          long: { ema200_distance: 0.023 },
+        },
+      },
     }),
   }))
   // The intraday re-read: nothing new on the candle, so the board is the
@@ -191,10 +201,31 @@ test.beforeEach(async ({ page }) => {
       equity: 104200,
       cash: 12000,
       day_pl: 312.5,
+      pl_pct: 0.042,
+      day_pl_pct: 0.003,
       positions: [{ symbol: 'AAPL', qty: 60, market_value: 6120, avg_entry_price: 91.25, current_price: 102, unrealized_pl: 645 }],
       orders: [],
     }),
   }))
+  // The drill-down's live technical read: the model's plain words over the
+  // analyst's live readings, with the deterministic lines as the fallback.
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live/read/*`, route => {
+    const symbol = (route.request().url().split('/').pop() ?? '').toUpperCase()
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        symbol,
+        read: 'Price sits above its rising averages with a bullish stack, support is the 200-day average below, and resistance is a swing high above.',
+        lines: {
+          short: ['12.6% above the 21-day EMA', '12.5% below nearest support — the 200-day average'],
+          medium: ['weekly trend up'],
+          long: ['2.3% below the 200-day EMA'],
+        },
+        now: 0.9,
+      }),
+    })
+  })
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -320,7 +351,11 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(glance).toBeVisible()
   await expect(glance.getByText('Practice account')).toBeVisible()
   await expect(glance.getByText('$104,200')).toBeVisible()
-  await expect(glance.getByText('Today')).toBeVisible()
+  // The lifetime and today moves read as percentages, not a bare dollar
+  // figure: 0.042 lifetime of the starting equity, 0.003 today.
+  await expect(glance.getByText('4.2%', { exact: false })).toBeVisible()
+  await expect(glance.getByText(/^today/)).toBeVisible()
+  await expect(glance.getByText('Today', { exact: true })).toBeVisible()
   await expect(glance.getByText(/\+\$31[23]/)).toBeVisible()
   await expect(glance.getByText('The rules, backtest')).toBeVisible()
   await expect(glance.getByText('not a record', { exact: false })).toBeVisible()
@@ -362,10 +397,16 @@ test('drills into a name’s own history', async ({ page }) => {
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByText('While held')).toBeVisible()
-  await expect(dialog.getByText('While not held')).toBeVisible()
-  await expect(dialog.getByText('Sessions held')).toBeVisible()
-  await expect(dialog.getByText('Grade switches')).toBeVisible()
+  await expect(dialog.getByText('Return while it was an A')).toBeVisible()
+  await expect(dialog.getByText('Return while it was not')).toBeVisible()
+  await expect(dialog.getByText('Sessions it was an A')).toBeVisible()
+  await expect(dialog.getByText('41 of 60')).toBeVisible()
+  await expect(dialog.getByText('Crossed the A line')).toBeVisible()
+  // The desk's whole evidence, read out loud by the model.
+  await expect(dialog.getByText('What the desk read')).toBeVisible()
+  await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).toBeVisible()
+  // The live technical read is the model's plain words over the live tape.
+  await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()
   await expect(dialog.getByText('The last 2 sessions')).toBeVisible()
   await expect(dialog.getByText('a steady AI leader')).toBeVisible()
   await dialog.getByRole('button', { name: 'Close' }).click()

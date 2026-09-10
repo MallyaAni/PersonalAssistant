@@ -10,6 +10,7 @@ given. It cannot see a price series, so it cannot forecast one.
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -19,10 +20,55 @@ from backend.core.prompts import render
 
 PROMPT_VERSION = "desk_brief/1"
 _SYSTEM = render("trading/desk_brief")
+_READ_SYSTEM = render("trading/desk_read")
 OWN = "own"
 WAIT = "wait"
 AVOID = "avoid"
 STANCES = (OWN, WAIT, AVOID)
+
+# The plain words a read uses for each analyst, so a read that skips an
+# analyst fails rather than passing on its own length.
+_ANALYST_WORDS: dict[str, tuple[str, ...]] = {
+    "fundamental": ("revenue", "sales", "growth", "grow", "margin", "earnings", "eps"),
+    "technical": (
+        "trend",
+        "ema",
+        "average",
+        "stack",
+        "momentum",
+        "range",
+        "support",
+        "resistance",
+        "distance",
+    ),
+    "sentiment": ("guidance", "tone", "demand", "pricing", "capex"),
+    "value": ("value", "valuation", "price", "pe", "p/e"),
+    "rotation": ("rotation", "sector", "theme", "leader"),
+}
+_ANALYST_LINE = re.compile(
+    r"^(fundamental|technical|sentiment|value|rotation) analyst: "
+    r"stance [+-]?\d+; (.*)$",
+    re.MULTILINE,
+)
+
+
+# What a read must still mention to count as complete: each analyst that
+# has data, and both levels with a distance. A gap means the model skipped
+# a trigger, which is exactly what the read is forbidden to do.
+def _coverage_gaps(text: str, read: str) -> list[str]:
+    """Return the analysts and levels the read left out."""
+    gaps: list[str] = []
+    low = read.lower()
+    for match in _ANALYST_LINE.finditer(text):
+        analyst, cited = match.group(1), match.group(2)
+        if cited.strip() in ("no data for this name",):
+            continue
+        if not any(word in low for word in _ANALYST_WORDS.get(analyst, ())):
+            gaps.append(f"the {analyst} analyst's readings")
+    for side in ("support", "resistance"):
+        if re.search(rf"{side}.{{0,80}}\d+(?:\.\d+)?\s*%", low) is None:
+            gaps.append(f"the nearest {side} and how far it sits")
+    return gaps
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,12 +168,18 @@ def _schema() -> dict[str, Any]:
 
 
 class DeskNarrator:
-    """Write the brief for one name from the desk's evidence text."""
+    """Write the brief and the read for one name from the desk's evidence."""
 
     # A missing runtime degrades to None rather than failing the caller.
-    def __init__(self, writer: TextWriter | None, max_tokens: int = 600) -> None:
+    def __init__(
+        self,
+        writer: TextWriter | None,
+        max_tokens: int = 600,
+        read_max_tokens: int = 600,
+    ) -> None:
         self.writer = writer
         self.max_tokens = max_tokens
+        self.read_max_tokens = read_max_tokens
 
     # Write the brief for a name in a report, or None when the runtime is
     # away, the answer does not fit the schema, or the stance contradicts
@@ -167,3 +219,60 @@ class DeskNarrator:
         if brief.stance != stance_for(grade):
             return None
         return brief
+
+    # Write the read for a name in a report, or None when the runtime is
+    # away or the answer comes back empty.
+    async def read(self, report, ticker: str) -> str | None:
+        """Return the desk's read for `ticker`, or None."""
+        text = brief_text(report, ticker)
+        return await asyncio.to_thread(self.read_sync, text)
+
+    # The synchronous form, from the evidence text. The read is prose, not
+    # a decision, so it is asked for without a schema: a grammar would force
+    # a shape onto what is meant to be plain language. A read that left a
+    # trigger out is asked for once more with the gap named; if it still
+    # will not cover it, None comes back and the caller shows the complete
+    # deterministic readings instead.
+    def read_sync(self, text: str) -> str | None:
+        """Return the desk's read for an evidence text, or None."""
+        if self.writer is None or not text.strip():
+            return None
+        try:
+            result = self.writer.chat(
+                [
+                    {"role": "system", "content": _READ_SYSTEM},
+                    {"role": "user", "content": text},
+                ],
+                self.read_max_tokens,
+                None,
+                # Greedy: the same evidence must read the same every time.
+                0.0,
+            )
+            read = str(result["content"]).strip()
+        except Exception:
+            return None
+        gaps = _coverage_gaps(text, read)
+        if gaps:
+            try:
+                result = self.writer.chat(
+                    [
+                        {"role": "system", "content": _READ_SYSTEM},
+                        {
+                            "role": "user",
+                            "content": (
+                                f"{text}\n\nYou left out: {', '.join(gaps)}. "
+                                "Cover those too, and every other measurement "
+                                "you were given."
+                            ),
+                        },
+                    ],
+                    self.read_max_tokens,
+                    None,
+                    0.0,
+                )
+                read = str(result["content"]).strip()
+            except Exception:
+                return None
+            if _coverage_gaps(text, read):
+                return None
+        return _cut(read, 1600) or None

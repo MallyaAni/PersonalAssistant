@@ -3,6 +3,58 @@
 Verified state as of 2026-09-09. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-09 (late) — the desk reads are model-written prose, the levels are named by what they are, and the practice account shows lifetime and day moves (ON `feat/desk-dashboard-overhaul`, not yet merged or deployed)
+
+The operator's second word-by-word review of the dashboard. Every prose
+output the desk shows is now written by the model; the deterministic
+renders survive only as the fallback floor, and every model-written
+prompt is pinned by a functional test.
+
+* **The drill-down "read" is model prose, complete by construction.** The
+  whole evidence for a name — every analyst, every measurement, the nearest
+  support and resistance named by what they are (a swing point, the 50-day,
+  the 200-day, or the weekly 21-day average) — is written once a night by
+  `prompts/trading/desk_read.md` (`--read` / `--read-book` on the nightly),
+  stored on the record's grade as `read`, and rendered as prose. The nightly
+  evidence now carries `support_level/support_kind/resistance_level/
+  resistance_kind` from `levels.level_identity` (`backend/market/levels.py`),
+  which says what the nearest level is rather than only how far away.
+  `DeskNarrator.read_sync` writes unstructured prose (no schema, greedy), and
+  a coverage gate checks the read still mentions every analyst and both
+  levels with a distance, retries once naming the gap, then falls back to the
+  deterministic `plainly.reads()` — so a skipped trigger is structural, never
+  silent. Pinned by `test_desk_read_behaviour.py` (2 tests, real model).
+* **The live technical read is model prose too.** `prompts/trading/
+  desk_live_read.md` + `GET /desk/live/read/{symbol}` (cached per candle)
+  turns the live short/medium/long features into plain words; the
+  deterministic `live_technical.lines()` — now a backend function, with the
+  level kinds named — is both the model's input and the fallback when the
+  runtime is away. Pinned by `test_desk_live_read_behaviour.py` (real model).
+* **The practice account fixed.** `$99,254↑ +0.0%` mixed the live equity
+  with the record's 0.03% lifetime figure. `desk_paper` now returns
+  `pl_pct` (equity/start − 1) and `day_pl_pct`; the strip shows lifetime and
+  today's moves as percentages beside the dollars.
+* **The "While held" block reworded** to "Return while it was an A /
+  Return while it was not / Sessions it was an A / Crossed the A line" with
+  a lead-in sentence; **stale briefs** that dump raw evidence
+  (`revenue_yoy +0.262`) are hidden by shape and the model read shown
+  instead; **BestBuys** no longer duplicates the board under "Set up the
+  board" when holdings are empty.
+
+**Verified:** ruff clean; 108 desk/market unit tests; 74 functional tests
+including the coverage gate and both new read pins on the real model; tsc
+and `npm run build` clean; 4/4 desk browser tests in Chromium (new
+assertions for the reworded cells, the model read, the live read, and the
+practice percentages).
+
+**Next atomic task.** Merge the branch to `main`, then deploy through
+`scripts/deploy.sh`. Tonight's nightly must run with `--read-book` (and
+`--brief-book`) so every book name gets a read; the on-disk `desk.json`
+briefs are still the old-prompt dumps until the next 19:30 nightly. The live
+read endpoint needs a model call per drill-down open — watch its latency
+through the gateway after deploy. If the operator records positions
+(Buy/done), re-check the Exit column's held-name wording as before.
+
 ## 2026-09-09 (evening) — the desk's live numbers serve the candle, briefs say measurements in words, and the board's list is live and clickable (DEPLOYED `b833c6d`)
 
 Continues the 2026-09-08 entry below it. The operator's dashboard feedback
