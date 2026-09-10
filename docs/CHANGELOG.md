@@ -2,6 +2,24 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The drill-down's live technical read works for any covered name, with the short/medium/long horizons beside the prose
+
+A covered name outside the book is graded every evening but was not in the
+candle's live snapshot (the balancer covers `book ∪ held ∪ actions` only),
+and the drill-down skipped the whole technical block because it required a
+board row — so a name like ORCL showed no live read at all, and when the
+model prose read was present it replaced the short/medium/long horizon
+columns. The backend already computed the live read on demand from a fresh
+quote; the frontend never asked. The drill-down's live technical read now
+renders for every covered name, fetching on demand when the snapshot lacks
+the ticker, and the model's plain-words read leads with the three horizon
+columns (short/medium/long) beside it instead of replacing them. Verified:
+frontend `tsc` and `vite build` clean, all six `desk.spec.ts` Playwright
+tests including the new "drills into a covered name outside the book and
+sees its live horizons" test, the backend serving ORCL's full live read on
+demand, and the deployed system serving `73ca0c4` with green post-deploy
+sweeps and the horizon strings present in the gateway bundle.
+
 ## 2026-09-10 - The desk record is immutable and self-describing, a down market clock fails closed, the coverage gate sees ranked analysts, and the dashboard shows each thing once
 
 Six findings from a second codex review (a fresh session with no context,

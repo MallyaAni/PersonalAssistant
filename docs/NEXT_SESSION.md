@@ -3,6 +3,24 @@
 Verified state as of 2026-09-10. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-10 (afternoon) — the drill-down's live read works for any covered name, horizons beside the prose (DEPLOYED `73ca0c4`)
+
+A covered name outside the book is graded every evening but was not in the
+candle's live snapshot (the balancer covers `book ∪ held ∪ actions`), and
+the drill-down skipped the whole technical block because it required a
+board row — so a name like ORCL showed no live read at all, and when the
+model prose read was present it replaced the short/medium/long columns.
+The backend already computed the read on demand from a fresh quote; the
+frontend never asked. `LiveTechnical` now always fetches on open and
+renders for any covered name (`row` nullable), and the prose read leads
+with the three horizon columns beside it instead of replacing them.
+Pinned by `e2e/desk.spec.ts` `drills into a covered name outside the book
+and sees its live horizons` (MSFT-grade fixture not in the board). Verified:
+frontend `tsc` and `vite build` clean; all 6 desk Playwright tests pass;
+the backend served ORCL's full live read on demand (short/medium/long
+lines from a fresh quote); deployed `73ca0c4` with green post-deploy
+sweeps and the horizon strings in the gateway bundle.
+
 ## 2026-09-10 (midday) — the desk record is immutable and carries provenance, a down market clock fails closed, the coverage gate sees ranked analysts, and the dashboard shows each thing once (DEPLOYED `26bebfc`; contains `41efede` + `26bebfc`)
 
 The six findings from the second codex review (a fresh session that had no
