@@ -51,6 +51,12 @@ class PaperState:
     # broker whether these exact orders exist rather than inferring it from
     # positions, which move for other reasons.
     pending: list[dict] = field(default_factory=list)
+    # The durable order journal: every settled outcome, one entry per order
+    # id (the latest wins), so a leg that was rejected in one round and a
+    # leg that filled in a later round are both seen when the rebalance is
+    # concluded. Without it a terminal outcome is dropped from `pending` and
+    # forgotten the moment another leg still working fills later.
+    journal: list[dict] = field(default_factory=list)
     # The session whose rebalance has been sent but not yet confirmed as
     # filled. Until it is, the rebalance has not happened.
     unconfirmed_rebalance: str | None = None
@@ -173,6 +179,9 @@ def plan(
 # they cannot tell you whether your own order filled.
 FILLED = ("filled",)
 DEAD = ("canceled", "cancelled", "expired", "rejected", "done_for_day", "suspended")
+# The broker statuses that mean an order may still fill: everything else a
+# partial is reported as means no more quantity is coming.
+_WORKING = ("accepted", "new", "partially_filled", "open", "pending")
 
 
 @dataclass(frozen=True)
@@ -187,6 +196,11 @@ class Settled:
     status: str  # filled, partial, dead, open, or missing
     filled_qty: int
     filled_price: float = 0.0  # the broker's average fill, 0 when nothing filled
+    # Whether the broker will ever fill the rest of this order. An order
+    # that is canceled or expired after a partial fill is terminal: the
+    # outstanding quantity is not coming, so it is concluded, not kept
+    # pending for an answer that can never arrive.
+    terminal: bool = False
 
 
 # Pure: match what was written down against what the broker reports.
@@ -201,6 +215,7 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
     for row in pending:
         order = by_id.get(str(row.get("client_order_id") or ""))
         wanted = int(row.get("qty") or 0)
+        raw = ""
         if order is None:
             # Never reached the broker, or reached it under another id.
             # Either way this desk cannot claim it traded.
@@ -227,6 +242,8 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
                 status=status,
                 filled_qty=filled,
                 filled_price=price,
+                terminal=status in ("filled", "dead", "missing")
+                or (status == "partial" and raw not in _WORKING),
             )
         )
     return out
@@ -251,33 +268,49 @@ def close_shortfall_bps(side: str, filled_price: float, close: float) -> float |
 # A rebalance whose orders did not all fill is not a rebalance. The clock
 # rolls back to the one before it, so the next session plans the rebalance
 # again instead of waiting out twenty sessions on a book that never
-# reached its targets. Orders still open or only partially filled are left
-# pending and asked about again next session - a partial has outstanding
-# quantity the desk still needs an answer on, and dropping it would
-# silently forget the unfilled part - and everything the broker says is
-# terminal is cleared.
+# reached its targets. Every outcome is written to the durable journal
+# first, so a leg rejected in an earlier round is still seen when the last
+# leg fills - a rebalance is concluded over all its legs' latest recorded
+# outcomes, not over whichever ones happen to still be pending. Only an
+# order still working stays pending; a partial the broker has now closed
+# (canceled or expired) is a concluded partial, with its fill recorded,
+# not an order waiting for an answer that can never arrive.
 def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     """Return the state after recording what the broker did."""
     new = PaperState(**asdict(state))
-    still_open = [
+    journal = {str(row.get("client_order_id") or ""): row for row in state.journal}
+    for s in settled:
+        journal[s.client_order_id] = {
+            "client_order_id": s.client_order_id,
+            "symbol": s.symbol,
+            "side": s.side,
+            "qty": s.qty,
+            "session": s.session,
+            "status": s.status,
+            "filled_qty": s.filled_qty,
+            "filled_price": s.filled_price,
+            "terminal": s.terminal,
+        }
+    new.journal = [journal[k] for k in sorted(journal)]
+    still_working = {
+        s.client_order_id
+        for s in settled
+        if s.status == "open" or (s.status == "partial" and not s.terminal)
+    }
+    new.pending = [
         row
         for row in state.pending
-        if any(
-            s.client_order_id == str(row.get("client_order_id") or "")
-            and s.status in ("open", "partial")
-            for s in settled
-        )
+        if str(row.get("client_order_id") or "") in still_working
     ]
-    new.pending = still_open
     if state.unconfirmed_rebalance is None:
         return new
-    of_rebalance = [s for s in settled if s.session == state.unconfirmed_rebalance]
-    if not of_rebalance or any(
-        s.status in ("open", "partial") for s in of_rebalance
-    ):
+    # The rebalance's whole set of legs, from the journal's latest entry per
+    # order, so a terminal leg is never forgotten when another fills later.
+    legs = [e for e in new.journal if e["session"] == state.unconfirmed_rebalance]
+    if not legs or any(not e["terminal"] for e in legs):
         # Nothing to conclude yet; ask again next session.
         return new
-    if all(s.status == "filled" for s in of_rebalance):
+    if all(e["status"] == "filled" for e in legs):
         new.unconfirmed_rebalance = None
         return new
     # It did not go through. Put the clock back so it is tried again.

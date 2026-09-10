@@ -49,6 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="run the shadow desk (the expectations-gap challenger) into the record",
     )
     parser.add_argument("--asof", type=date.fromisoformat, default=None)
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="rewrite a session's record that already exists (the default "
+        "refuses, so a day's decision is never silently replaced)",
+    )
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument(
         "--skip-tone", action="store_true", help="refresh without scoring"
@@ -264,15 +270,27 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
     submitted: list[dict] = []
     refused: list[str] = []
     market_open = False
+    clock_known = False
     if live and orders:
         try:
             market_open = bool(client.clock().get("is_open"))
+            clock_known = True
         except alpaca_trading.AlpacaTradingError as exc:
-            print(f"  clock unavailable ({exc}); assuming the market is closed")
+            print(f"  clock unavailable ({exc}); refusing to submit")
     for order in orders:
         line = f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
         if not live:
             print(line + "  [dry run]")
+            continue
+        if not clock_known:
+            # Fail closed: without the clock the desk cannot know whether a
+            # market-on-open order would fill now instead of at the next
+            # open, so nothing is submitted on a guess.
+            refused.append(
+                f"{order.side} {order.symbol}: the market clock is unavailable; "
+                "refusing to queue orders for the next open"
+            )
+            print(line + "  REFUSED: market clock unavailable")
             continue
         if market_open:
             refused.append(
@@ -445,6 +463,7 @@ def record(
     paper: dict | None = None,
     challenger: dict | None = None,
     curve: dict | None = None,
+    llm_model: str | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     panel = report.panel
@@ -488,6 +507,21 @@ def record(
     return {
         "session": str(panel.dates[last]),
         "written": datetime.now(tz=UTC).isoformat(timespec="seconds"),
+        # What produced this record, so a reported return can be traced to
+        # the decision, code and data that made it: the checkout's revision,
+        # the data window, the strategy's cadence and the model that wrote
+        # the briefs and reads.
+        "provenance": {
+            "code_revision": _git_revision(),
+            "data": {
+                "first_session": str(panel.dates[0]),
+                "session": str(panel.dates[last]),
+                "names": len(panel.tickers) - 1,
+                "benchmark": panel.benchmark,
+            },
+            "strategy": {"rebalance_every": actions.REBALANCE},
+            "model": llm_model or None,
+        },
         "regime": {
             k: (v if not isinstance(v, tuple) else list(v))
             for k, v in state.__dict__.items()
@@ -548,10 +582,41 @@ def record_path(root: Path, session: str) -> Path:
     return Path(root) / DESK_KIND / f"asof={session}" / "desk.json"
 
 
+# The checkout's revision, so a record says exactly which code produced it;
+# "unknown" when the revision cannot be read (no git, or not a checkout).
+def _git_revision() -> str:
+    try:
+        import subprocess
+
+        out = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        rev = out.stdout.strip()
+        return rev or "unknown"
+    except Exception:  # noqa: BLE001 - a record must never fail on this
+        return "unknown"
+
+
 # Write the record and return its path.
-def save(root: Path, data: dict) -> Path:
-    """Write the day's record as JSON."""
+#
+# The record is the day's decision, immutable: a second run for the same
+# session must not silently replace it, or the track record no longer says
+# what was decided. An existing record is refused unless the caller says
+# it is deliberately rewriting it (`allow_overwrite`), and every record
+# carries the revision and settings that produced it so a reported return
+# can be traced back to the decision that made it.
+def save(root: Path, data: dict, allow_overwrite: bool = False) -> Path:
+    """Write the day's record as JSON, refusing to clobber an existing one."""
     path = record_path(root, data["session"])
+    if path.exists() and not allow_overwrite:
+        raise FileExistsError(
+            f"a record for {data['session']} already exists at {path}; "
+            "refusing to overwrite it (pass --force to rewrite)"
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, default=float), encoding="utf-8")
     return path
@@ -816,7 +881,16 @@ def main() -> None:
     if args.challenger:
         shadow = _challenger_block(store, report)
     curve = curves(report, store, Path(store.root))
-    path = save(Path(store.root), record(report, briefs, reads, entry, shadow, curve))
+    try:
+        path = save(
+            Path(store.root),
+            record(report, briefs, reads, entry, shadow, curve, llm_model=args.llm_model),
+            allow_overwrite=args.force,
+        )
+    except FileExistsError as exc:
+        print(f"\n{exc}")
+        print("the existing record is kept; nothing was changed")
+        return
     print(f"\nrecord written: {path}")
     written = write_history(store, report)
     if written:

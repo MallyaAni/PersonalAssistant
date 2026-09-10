@@ -9,8 +9,12 @@ twenty sessions from its next attempt at targets it had never reached.
 What has to hold: the outcome comes from the broker's own record of the
 order, matched by an id chosen before the order was sent; a rebalance is
 only done when its orders filled; one that did not fill puts the clock
-back so the next session tries again; and a partial or open order stays
-pending with its outstanding quantity, unconcluded.
+back so the next session tries again; a partial or open order stays
+pending with its outstanding quantity, unconcluded; a partial the broker
+has now closed is a concluded partial, never stuck pending; every outcome
+is kept in a durable journal, so a leg rejected in one round is seen
+again when another leg fills in a later round; and the journal survives
+the state's round-trip through its file.
 """
 
 import pytest
@@ -188,6 +192,65 @@ def test_a_partial_fill_stays_pending_and_the_rebalance_is_not_concluded():
     assert after.sessions_since_rebalance == 1
 
 
+# A partial the broker has now CLOSED (canceled or expired) is a concluded
+# partial, not an order still working: the outstanding quantity is not
+# coming, so it leaves pending with its fill recorded and the rebalance is
+# not confirmed - the clock goes back so the remainder is planned again.
+def test_a_canceled_partial_is_concluded_and_the_clock_goes_back():
+    state = paper.PaperState(
+        last_rebalance="2026-09-07",
+        previous_rebalance="2026-08-10",
+        sessions_since_rebalance=1,
+        unconfirmed_rebalance="2026-09-07",
+        pending=_pending("2026-09-07", "AAA"),
+    )
+    settled = paper.settle(
+        state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)]
+    )
+    after = paper.apply_settlements(state, settled)
+    # Concluded: not stuck pending, and its outcome is in the journal.
+    assert after.pending == []
+    assert after.unconfirmed_rebalance is None
+    assert after.last_rebalance == "2026-08-10"
+    assert after.sessions_since_rebalance == paper.REBALANCE_EVERY
+    assert after.journal[0]["status"] == "partial"
+    assert after.journal[0]["terminal"] is True
+    assert after.journal[0]["filled_qty"] == 3
+
+
+# A leg rejected in one round is seen again when another leg fills in a
+# later round: the rebalance is concluded over every leg's latest recorded
+# outcome, so a book that never reached its targets is never confirmed.
+def test_a_rejected_leg_is_not_forgotten_when_another_fills_later():
+    state = paper.PaperState(
+        last_rebalance="2026-09-07",
+        previous_rebalance="2026-08-10",
+        sessions_since_rebalance=1,
+        unconfirmed_rebalance="2026-09-07",
+        pending=_pending("2026-09-07", "AAA", "BBB"),
+    )
+    round1 = paper.settle(
+        state.pending,
+        [
+            _broker("2026-09-07", "AAA", "rejected", 0),
+            _broker("2026-09-07", "BBB", "accepted", 0),
+        ],
+    )
+    after1 = paper.apply_settlements(state, round1)
+    assert [row["symbol"] for row in after1.pending] == ["BBB"]
+    # BBB fills in a later round; AAA's rejection is still in the journal.
+    round2 = paper.settle(
+        after1.pending, [_broker("2026-09-07", "BBB", "filled", 10)]
+    )
+    after2 = paper.apply_settlements(after1, round2)
+    assert after2.unconfirmed_rebalance is None
+    assert after2.last_rebalance == "2026-08-10"
+    assert after2.sessions_since_rebalance == paper.REBALANCE_EVERY
+    by_id = {e["client_order_id"]: e for e in after2.journal}
+    assert by_id[paper.order_id("2026-09-07", "AAA", "buy")]["status"] == "dead"
+    assert by_id[paper.order_id("2026-09-07", "BBB", "buy")]["status"] == "filled"
+
+
 # The id is chosen before the order is sent and is stable, which is what
 # makes a crash between sending and recording recoverable.
 def test_the_order_id_is_stable_and_specific():
@@ -204,6 +267,24 @@ def test_no_pending_orders_changes_nothing():
     after = paper.apply_settlements(state, paper.settle([], []))
     assert after.last_rebalance == "2026-09-07"
     assert after.sessions_since_rebalance == 4
+
+
+# The journal is durable: it survives the state's round-trip through its
+# file, so a terminal outcome is never lost to a restart.
+def test_the_journal_survives_the_state_file(tmp_path):
+    state = paper.PaperState(
+        last_rebalance="2026-09-07",
+        previous_rebalance="2026-08-10",
+        unconfirmed_rebalance="2026-09-07",
+        pending=_pending("2026-09-07", "AAA"),
+    )
+    after = paper.apply_settlements(
+        state, paper.settle(state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)])
+    )
+    paper.save_state(tmp_path, after)
+    loaded = paper.load_state(tmp_path)
+    assert [e["status"] for e in loaded.journal] == ["partial"]
+    assert loaded.journal[0]["terminal"] is True
 
 
 # The fill price the broker reports is kept, and the closing auction's

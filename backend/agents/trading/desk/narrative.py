@@ -45,9 +45,13 @@ _ANALYST_WORDS: dict[str, tuple[str, ...]] = {
     "value": ("value", "valuation", "price", "pe", "p/e"),
     "rotation": ("rotation", "sector", "theme", "leader"),
 }
+# One analyst's line in the evidence. The rank sits between the stance and
+# the semicolon (`stance +1 (rank 0.95 among the book, 1.00 is best);`), so
+# the pattern allows it - a ranked input used to break the match and leave
+# that analyst completely outside the coverage check.
 _ANALYST_LINE = re.compile(
     r"^(fundamental|technical|sentiment|value|rotation) analyst: "
-    r"stance [+-]?\d+; (.*)$",
+    r"stance [+-]?\d+(?: \([^)]*\))?; (.*)$",
     re.MULTILINE,
 )
 

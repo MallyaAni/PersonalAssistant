@@ -135,6 +135,52 @@ def test_record_and_save(tmp_path):
     assert json.loads(path.read_text(encoding="utf-8"))["session"] == "2026-09-03"
 
 
+# A record is the day's decision and must not be silently replaced: saving
+# a second record for the same session is refused unless the caller says it
+# is deliberately rewriting it. And every record says what produced it.
+def test_save_refuses_to_overwrite_a_session_and_carries_provenance(tmp_path):
+    data = market_daily.record(_report(), {"SNDK": {"stance": "own"}})
+    first = market_daily.save(Path(tmp_path), data)
+    with pytest.raises(FileExistsError):
+        market_daily.save(Path(tmp_path), data)
+    # The original is untouched by the refused second save.
+    assert json.loads(first.read_text(encoding="utf-8"))["session"] == "2026-09-03"
+    # An explicit rewrite is allowed.
+    second = market_daily.save(Path(tmp_path), data, allow_overwrite=True)
+    assert json.loads(second.read_text(encoding="utf-8"))["session"] == "2026-09-03"
+    provenance = market_daily.record(_report(), llm_model="deepseek-v4-flash")[
+        "provenance"
+    ]
+    assert provenance["code_revision"]  # a real revision or "unknown"
+    assert provenance["strategy"]["rebalance_every"] > 0
+    assert provenance["model"] == "deepseek-v4-flash"
+    assert provenance["data"]["session"] == "2026-09-03"
+
+
+# Without the clock the desk cannot know whether a market-on-open order
+# would fill now instead of at the next open, so submission fails closed:
+# every order is refused and none is sent.
+def test_an_unavailable_market_clock_refuses_submission(monkeypatch):
+    from backend.agents.trading.desk import paper
+    from backend.market import alpaca_trading
+
+    class Clockless:
+        def clock(self):
+            raise alpaca_trading.AlpacaTradingError("clock down")
+
+        def submit_market_on_open(self, *args):
+            raise AssertionError("must not submit without the clock")
+
+    submitted, refused = market_daily._submit(
+        Clockless(),
+        [paper.PaperOrder("AAA", "buy", 10, "rebalance to 0.100")],
+        "2026-09-07",
+        live=True,
+    )
+    assert submitted == []
+    assert refused and "clock" in refused[0].lower()
+
+
 # Pruning drops old bar and filing partitions but never the newest one of
 # a layer, never tone, and never the desk records.
 def test_prune_keeps_newest_tone_and_records(tmp_path):

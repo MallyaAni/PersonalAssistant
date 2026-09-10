@@ -12,6 +12,7 @@ from backend.agents.trading.desk.narrative import (
     OWN,
     WAIT,
     DeskNarrator,
+    _coverage_gaps,
     brief_text,
     stance_for,
 )
@@ -115,6 +116,21 @@ def test_brief_text_carries_the_evidence():
     assert "Grade: C" in iren
     assert "sentiment analyst: stance +0 (rank 0.50 among the book" in iren
     assert "no data for this name" in iren
+
+
+# The coverage gate must see a ranked analyst (whose rank sits between the
+# stance and the semicolon) exactly as it sees an unranked one, so a read
+# that skips it still fails. Before the fix the ranked variant broke the
+# line pattern and the analyst was never checked.
+def test_the_coverage_gate_sees_a_ranked_analyst():
+    unranked = "technical analyst: stance +1; momentum +0.123, trend +0.456."
+    ranked = (
+        "technical analyst: stance +1 (rank 0.95 among the book, 1.00 is best); "
+        "momentum +0.123, trend +0.456."
+    )
+    read = "The fundamental case is strong on revenue and growth."
+    assert any("technical analyst" in g for g in _coverage_gaps(unranked, read))
+    assert any("technical analyst" in g for g in _coverage_gaps(ranked, read))
 
 
 # The stance the grade implies.
