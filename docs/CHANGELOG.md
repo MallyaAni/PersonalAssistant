@@ -2,6 +2,38 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The record tracker sizes like the desk, the network purges whole sessions, partial fills stay pending, and named extra accounts read the desk
+
+Five codex review findings were reproduced first, then fixed in one bounded
+piece around a shared order planner, and the desk was opened to named extra
+accounts in a way that cannot clobber the operator's book. The simulator,
+the paper account and the record tracker now decide their orders in one
+place — `backend/agents/trading/desk/planner.py` (`target_shares`, `plan`),
+sized at the close the decision could see and filled at the next open — so
+an overnight gap no longer changes how much a rebalance is worth and the
+three paths cannot drift apart again. The record tracker mixes no adjusted
+closes with raw opens any more (the open is adjusted on the close's basis,
+so a flat price across an ex-date books no fake move), a record with no
+challenger block holds its book and earns the real move instead of a NaN
+that compounded as flat, and its turnover is recorded rather than hardcoded
+0. The interaction study's network hold-out purges a horizon of whole
+*sessions* before the validation window, not twenty flattened rows that
+could sit inside a single ninety-name session. A partially filled paper
+order stays pending with its outstanding quantity and its rebalance is
+never concluded on a partial. The live snapshot is marked stale when older
+than a candle and the panel says so. The desk opens to accounts named in
+`MARKET_DESK_USERS` (e.g. `vjmallya`) read-only: they see the records,
+live candle, practice account and board, while only the primary operator
+(`MARKET_DESK_USER`) may replace the shared holdings — the second review
+reproduced an extra account overwriting the operator's `holdings.json` via
+`PUT /desk/holdings`, and the two-account test now writes the operator's,
+attempts the extra's, and reads both sides back (403, list intact).
+Verified: all five findings reproduced first, ruff clean, 110 desk/market/
+auth unit tests, the gateway's `tsc && vite build` clean, and the deployed
+system serving `02b73cf0` with `MARKET_DESK_USERS=vjmallya`,
+`market_desk_operators={ani.mallya, vjmallya}`, the planner imported by the
+scorecard, and the writer guard and snapshot staleness live.
+
 ## 2026-09-09 - The desk's reads are model-written prose, and the levels are named by what they are
 
 The drill-down's explanation of a name is no longer built from sentence
