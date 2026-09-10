@@ -123,6 +123,41 @@ async def test_a_user_who_is_not_the_operator_is_refused_with_their_own_token(
     assert response.status_code == 403, response.text
 
 
+# An account named in MARKET_DESK_USERS opens the desk like the primary
+# operator; a user outside both still cannot.
+@pytest.mark.asyncio
+async def test_a_named_extra_user_opens_the_desk(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "ani.mallya")
+    monkeypatch.setattr(settings, "MARKET_DESK_USERS", "vjmallya, guest")
+    _write(tmp_path, "2026-09-04", {"SNDK": "A+"}, [("SNDK", 0.08)], [])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        allowed = await client.get(
+            "/api/v1/market/vjmallya/desk",
+            headers={
+                "Authorization": f"Bearer {issue_user_token('vjmallya', ttl_seconds=60)}"
+            },
+        )
+        refused = await client.get(
+            "/api/v1/market/stranger/desk",
+            headers={
+                "Authorization": f"Bearer {issue_user_token('stranger', ttl_seconds=60)}"
+            },
+        )
+    assert allowed.status_code == 200, allowed.text
+    assert refused.status_code == 403, refused.text
+
+
+def test_market_desk_operators_parse_the_allowlist(monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "ani.mallya")
+    monkeypatch.setattr(settings, "MARKET_DESK_USERS", " vjmallya, ,guest")
+    assert settings.market_desk_operators == frozenset(
+        {"ani.mallya", "vjmallya", "guest"}
+    )
+
+
 # The person's own positions round-trip through the API, a bad row is
 # refused whole, and the board against them says what to do with each
 # name held or targeted, the name the desk does not rate included.

@@ -72,7 +72,9 @@ def test_every_service_has_a_stable_container_name(name: str):
 # `MARKET_DESK_USER` did that. Its default is "operator", the desk belongs
 # to a named account, and every request to the Desk view answered 403 while
 # `.env` on the deployment said the right thing all along.
-_MUST_REACH_THE_BACKEND = ("MARKET_DESK_USER", "AUTH_LOCAL_USER_ID")
+# `MARKET_DESK_USERS` is the same trap for the second account granted the
+# desk: a value in `.env` alone would reach nothing.
+_MUST_REACH_THE_BACKEND = ("MARKET_DESK_USER", "MARKET_DESK_USERS", "AUTH_LOCAL_USER_ID")
 
 
 @pytest.mark.parametrize("name", _MUST_REACH_THE_BACKEND)

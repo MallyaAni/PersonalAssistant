@@ -72,6 +72,10 @@ class SessionResponse(BaseModel):
     # decide what to show; the server never trusts it, and every admin route
     # re-derives the answer from the database.
     is_admin: bool = False
+    # Whether this identity may open the trading desk. The browser needs it to
+    # decide what to show; the desk routes re-derive the answer from the
+    # operator allowlist before serving anything.
+    desk_access: bool = False
 
 
 # Attach one opaque session using the deployment's browser-cookie policy.
@@ -159,6 +163,7 @@ async def login(
         user_id=created.user_id,
         expires_at=created.expires_at.isoformat(),
         is_admin=bool(account and account.is_admin),
+        desk_access=created.user_id in settings.market_desk_operators,
     )
 
 
@@ -233,6 +238,7 @@ async def register(
         # An invited account is a guest. Stated rather than defaulted, so
         # the answer cannot change if the field default ever does.
         is_admin=False,
+        desk_access=created.user_id in settings.market_desk_operators,
     )
 
 
@@ -249,6 +255,8 @@ async def current_session(
             user_id=settings.AUTH_LOCAL_USER_ID,
             expires_at=None,
             is_admin=True,
+            desk_access=settings.AUTH_LOCAL_USER_ID
+            in settings.market_desk_operators,
         )
     account = await db.scalar(
         select(UserAccount).where(UserAccount.user_id == identity.user_id)
@@ -258,6 +266,7 @@ async def current_session(
         user_id=identity.user_id,
         expires_at=datetime.fromtimestamp(identity.expires_at, tz=UTC).isoformat(),
         is_admin=bool(account and account.is_admin),
+        desk_access=identity.user_id in settings.market_desk_operators,
     )
 
 

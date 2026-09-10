@@ -32,7 +32,7 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
     # counts and the book, read from the file the desk wrote so the card
     # cannot claim a book the desk does not hold.
     latest = None
-    if user_id == settings.MARKET_DESK_USER:
+    if user_id in settings.market_desk_operators:
         latest, _previous = deskrecord.latest_pair(Path(settings.MARKET_DATA_ROOT))
     if latest is not None:
         headline = deskrecord.summary(latest)
@@ -53,7 +53,7 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
             ", ".join(headline["names"][:5]) or "nothing held"
         )
         opens_view = "desk"
-    elif user_id == settings.MARKET_DESK_USER:
+    elif user_id in settings.market_desk_operators:
         detail = "No desk record yet; the after-close run writes one each session."
 
     return AgentSummary(

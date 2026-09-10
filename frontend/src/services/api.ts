@@ -24,6 +24,9 @@ export interface AuthSession {
   // Decides what the workspace offers. The server never trusts this: every
   // operator route re-derives the answer from the database.
   is_admin: boolean;
+  // Whether this identity may open the trading desk; the desk routes
+  // re-derive the answer from the operator allowlist before serving.
+  desk_access?: boolean;
 }
 
 // Load the server-derived identity or report that an interactive login is needed.
@@ -2229,8 +2232,8 @@ export const getDesk = async (userId: string): Promise<DeskPayload> => {
     // on screen, and they are fixed in different places. Say which.
     if (response.status === 403) {
       throw new Error(
-        'The desk belongs to one account. The server does not think this is it '
-          + '- check MARKET_DESK_USER in the deployment environment.',
+        'The desk is not open to this account. The server does not think this is it '
+          + '- check MARKET_DESK_USER / MARKET_DESK_USERS in the deployment environment.',
       );
     }
     if (response.status === 401) {

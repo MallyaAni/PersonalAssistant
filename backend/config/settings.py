@@ -617,9 +617,19 @@ class Settings(BaseSettings):
     OPERATOR_ALERT_PHONE: str = ""
     # The trading desk belongs to one person: the operator's own user id.
     # Every other user id is refused by the desk route, whatever its token.
+    # MARKET_DESK_USERS extends the desk to more accounts (comma-separated
+    # user ids), for a shared view of the book; the primary identity stays
+    # MARKET_DESK_USER.
     # Whose desk it is. The real identity is set in .env, which is not in
     # the repository, so no personal name lives in source or in docs.
     MARKET_DESK_USER: str = "operator"
+    MARKET_DESK_USERS: str = ""
+
+    @property
+    def market_desk_operators(self) -> frozenset[str]:
+        """Return the user ids allowed to open the trading desk."""
+        extra = {u.strip() for u in self.MARKET_DESK_USERS.split(",") if u.strip()}
+        return frozenset({self.MARKET_DESK_USER} | extra)
     # Scheduled tasks: anything a person asked to have done later or on a
     # schedule, run as a chat turn under their identity and delivered on the
     # channel they asked from. The loop shares the discovery worker process.

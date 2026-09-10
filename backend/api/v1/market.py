@@ -42,10 +42,10 @@ UserId = Annotated[str, PathParam(min_length=1, max_length=50)]
 Session = Annotated[str, PathParam(pattern=r"^\d{4}-\d{2}-\d{2}$")]
 
 
-# The desk is one person's. A valid token for any other user is refused
-# here, before a record is read.
+# The desk is one person's, or the few the operator has named. A valid token
+# for any other user is refused here, before a record is read.
 def _operator_only(user_id: str) -> None:
-    if user_id != settings.MARKET_DESK_USER:
+    if user_id not in settings.market_desk_operators:
         raise HTTPException(status_code=403, detail="the desk is the operator's")
 
 

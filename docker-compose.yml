@@ -785,6 +785,8 @@ services:
       # container: without this line the setting falls back to its code
       # default and the Desk view answers 403 to the actual operator.
       - MARKET_DESK_USER=${MARKET_DESK_USER:-${AUTH_LOCAL_USER_ID:-ani.mallya}}
+      # Comma-separated extra user ids allowed to open the trading desk.
+      - MARKET_DESK_USERS=${MARKET_DESK_USERS:-}
       # The desk's live board reads Alpaca's free market-data feed; the
       # keys live in .env and reach the container here and nowhere else.
       - APCA_API_KEY_ID=${APCA_API_KEY_ID:-}
