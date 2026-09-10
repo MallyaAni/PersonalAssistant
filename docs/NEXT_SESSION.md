@@ -1,7 +1,68 @@
 # Next session
 
-Verified state as of 2026-09-09. `deep-matter.com` serves from spark1.
+Verified state as of 2026-09-10. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
+
+## 2026-09-10 — the record tracker sizes like the desk, the network purges whole sessions, partial fills stay pending, and named extra accounts read the desk (DEPLOYING `277d55d`; contains `9b0dd05` + `277d55d`)
+
+The five codex review findings from 2026-09-09, all verified by reproduction
+first, then fixed in one bounded piece with a shared order planner, plus the
+operator's request to open the desk to `vjmallya` — which the second review
+then found let an extra account overwrite the primary operator's shared
+holdings file, now closed by read-only access for extras.
+
+* **One order planner for all three execution paths** (`backend/agents/
+  trading/desk/planner.py`): `target_shares` + `plan` decide the orders at
+  the close the decision could see; the simulator (`simulate.py`), the paper
+  account (`paper.py`) and the record tracker (`market_scorecard.py`) each
+  keep only their execution (continuous shares at the open / whole-share
+  broker rounding / pricing nightly records forward). The old tracker sized
+  at the next *open*, so an overnight gap changed how much a rebalance was
+  worth (F1); it mixed adjusted closes with raw opens, so a flat price across
+  an ex-date booked a fake **-5.10%/+5.27%** move (F2); and a record with no
+  challenger block turned a real +2.1% move into a NaN that compounded as
+  flat (F3). Now: sized at the close, filled at the open, the open adjusted
+  on the close's basis, a held book always earns the real move, and the
+  tracker's turnover is recorded instead of hardcoded 0.
+* **The network hold-out purges whole sessions** (`market_interactions.py`):
+  the last `HORIZON` sessions before the validation window, not
+  `min(HORIZON, rows)` flattened rows — which left a ninety-name session half
+  in and half out (F4). Only affects the network's early stopping.
+* **A partial fill stays pending** (`paper.py` `apply_settlements`): its
+  outstanding quantity is asked about again and the rebalance is never
+  concluded on a partial (F5); a terminal outcome still rolls the clock back.
+* **The live snapshot is marked stale when older than a candle** (`market.py`
+  `desk_live` + `age_seconds`/`stale` in the response; the panel shows
+  "stale — older than a candle").
+* **Named extra accounts read the desk; only the primary operator writes it**
+  (`MARKET_DESK_USERS` allowlist + `MARKET_DESK_USER` writer guard on
+  `PUT /desk/holdings`; `SessionResponse.desk_write`; the panel hides the
+  buy/mark-done/positions-editor for readers and shows "read-only — the
+  operator's book"). The second review reproduced an extra account replacing
+  the operator's `holdings.json`; the two-account test now writes the
+  operator's, attempts the extra's, and reads back both sides (403, list
+  intact).
+
+**Verified:** all five findings reproduced first (repro script
+`/tmp/opencode/repro_scorecard.py`); ruff clean; 110 desk/market/auth unit
+tests pass including the new two-account holdings test, the flat-across-a-
+dividend test, the whole-session purge test and the partial-stays-pending
+test; `npm run build` clean. `9b0dd05` and `277d55d` pushed to `main`;
+deploy of `277d55d` started 2026-09-10T07:29Z detached
+(`data/deploy-277d55d-*.log`). The 1410607a post-deploy sweep completed
+**OK** (sweep_journeys + exercise_search_scenarios). The forward-track
+numbers in the `market_scorecard.py` module docstring's history table will
+change once the tracker fix is live — re-run `python -m
+backend.cli.market_scorecard` after deploy and update the table.
+
+**Next atomic task.** Confirm the `277d55d` deploy's unit + routing gates,
+then its post-deploy sweep; verify `MARKET_DESK_USERS=vjmallya` and
+`market_desk_operators = {vjmallya, ani.mallya}` in the running backend, and
+that a vjmallya token gets 200 on the desk read routes and 403 on
+`PUT /desk/holdings` (needs their password for a full end-to-end). Then
+re-run `market_scorecard` and record the corrected forward-track numbers,
+and let the next 19:30 nightly write records under the new tracker before
+judging the rule's live track record.
 
 ## 2026-09-09 (late) — the desk reads are model-written prose, the levels are named by what they are, and the practice account shows lifetime and day moves (DEPLOYED `c9ffd0c`)
 
