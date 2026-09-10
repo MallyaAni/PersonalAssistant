@@ -1433,30 +1433,30 @@ const LiveTechnical = ({
       }
     | undefined
   quote: DeskQuote | undefined
-  row: DeskMineRow
+  row: DeskMineRow | null
   asOf: string | null
 }) => {
   // The live read is the model's plain words over the analyst's live
-  // readings, fetched once per name when the drill-down opens. Until it
+  // readings, fetched once per name when the drill-down opens. The backend
+  // computes it on demand for any covered name (a name outside the candle's
+  // snapshot gets a fresh quote and read), so the fetch always runs rather
+  // than waiting for the snapshot to already hold this name. Until it
   // arrives, and whenever the model is away, the same readings render as
   // the deterministic lines the backend returns beside it.
   const [liveRead, setLiveRead] = useState<DeskLiveRead | null>(null)
   useEffect(() => {
     let alive = true
     setLiveRead(null)
-    if (!detail) return () => {
-      alive = false
-    }
     void getDeskLiveRead(userId, ticker)
       .then((r) => alive && setLiveRead(r))
       .catch(() => alive && setLiveRead(null))
     return () => {
       alive = false
     }
-  }, [userId, ticker, detail])
-  const last = quote?.last ?? row.last
-  const change = last != null && row.last_close ? last - row.last_close : null
-  const changePct = last != null && row.last_close ? last / row.last_close - 1 : null
+  }, [userId, ticker])
+  const last = quote?.last ?? row?.last ?? null
+  const change = last != null && row?.last_close ? last - row.last_close : null
+  const changePct = last != null && row?.last_close ? last / row.last_close - 1 : null
   const lines = (items: string[] | undefined) => (items ?? []).filter((i): i is string => i.length > 0)
   const read = liveRead?.read
   const fl = liveRead?.lines
@@ -1493,14 +1493,20 @@ const LiveTechnical = ({
           )}
         </span>
       </div>
-      {read ? (
+      {/* The model's plain words lead, and the short/medium/long readings
+          sit beside them: the prose says what it means, the columns say the
+          numbers behind it. */}
+      {fl ? (
+        <>
+          {read && <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>}
+          <div className="grid gap-3 sm:grid-cols-3">
+            {column('Short term · next week (daily chart)', fl.short)}
+            {column('Medium term · 1–3 weeks (weekly chart)', fl.medium)}
+            {column('Long term · beyond (monthly chart)', fl.long)}
+          </div>
+        </>
+      ) : read ? (
         <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>
-      ) : fl ? (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {column('Short term · next week (daily chart)', fl.short)}
-          {column('Medium term · 1–3 weeks (weekly chart)', fl.medium)}
-          {column('Long term · beyond (monthly chart)', fl.long)}
-        </div>
       ) : (
         <p className="text-xs text-[#6e6e73]">reading the live tape…</p>
       )}
@@ -1589,16 +1595,18 @@ const NameDetail = ({
             {row.why && <span className="text-xs text-[#6e6e73]">{row.why}</span>}
           </div>
         )}
-        {row && (
-          <LiveTechnical
-            userId={userId}
-            ticker={ticker}
-            detail={live.technical_detail?.[ticker]}
-            quote={live.quotes[ticker]}
-            row={row}
-            asOf={live.as_of}
-          />
-        )}
+        {/* The live technical read renders for any covered name, even one
+            the board does not carry: the backend computes it on demand from
+            a fresh quote, so a name outside the candle's snapshot (not in
+            the book, not held) still gets its short/medium/long read. */}
+        <LiveTechnical
+          userId={userId}
+          ticker={ticker}
+          detail={live.technical_detail?.[ticker]}
+          quote={live.quotes[ticker]}
+          row={row ?? null}
+          asOf={live.as_of}
+        />
         {error ? (
           <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
         ) : !history ? (

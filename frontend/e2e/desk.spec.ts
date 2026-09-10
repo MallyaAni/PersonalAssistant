@@ -61,6 +61,18 @@ function deskRecord() {
         reason: 'F Demand is real\nR The group leads\nV Price is far ahead of value',
         ranks: { fundamental: 0.95, technical: 0.4, sentiment: 0.7, value: 0.2, rotation: 0.8 },
       },
+      // A covered name the board does not carry (not in the book, not held):
+      // its drill-down must still fetch a live technical read on demand.
+      MSFT: {
+        grade: 'C',
+        votes: 1.8,
+        stances: { fundamental: -1, technical: 0, sentiment: 0, value: 1, rotation: 0 },
+        score: 0.45,
+        side: 'ai',
+        headline: 'expensive and the trend is quiet',
+        reason: 'F Fundamentals softened\nV Price sits near value',
+        ranks: { fundamental: 0.3, technical: 0.5, sentiment: 0.5, value: 0.7, rotation: 0.4 },
+      },
     },
     book: [
       { ticker: 'AAPL', grade: 'A', weight: 0.06, engine_weight: 0.05, volatility: 0.18, exposure: 0.8 },
@@ -316,6 +328,30 @@ test.beforeEach(async ({ page }) => {
       },
     }),
   }))
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/history/MSFT`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      ticker: 'MSFT',
+      asof: '2026-09-08',
+      horizon: 20,
+      rows: [
+        { date: '2026-08-28', grade: 'C', votes: 1.8, stances: {}, exposure: 0.8, confidence: 0.9, forward: 0.011, forward_residual: 0.008, earnings: false },
+        { date: '2026-09-08', grade: 'C', votes: 1.8, stances: {}, exposure: 0.8, confidence: 0.9, forward: null, forward_residual: null, earnings: false },
+      ],
+      backtest: {
+        min_grade: 'A',
+        sessions: 60,
+        sessions_in: 12,
+        switches: 2,
+        rule_return: 0.09,
+        hold_return: 0.12,
+        benchmark_return: 0.09,
+        in_annualised: 0.2,
+        out_annualised: 0.05,
+      },
+    }),
+  }))
   await page.route(`http://localhost:8000/api/v1/market/${USER}/trading/autopsy`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -441,6 +477,27 @@ test('drills into a name’s own history', async ({ page }) => {
   await expect(dialog.getByText('a steady AI leader')).toBeVisible()
   await dialog.getByRole('button', { name: 'Close' }).click()
   await expect(dialog).not.toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A covered name that is not in the book is still graded every evening, and
+// its drill-down must fetch a live technical read on demand (a fresh quote,
+// not the candle's snapshot): the short/medium/long horizons render beside
+// the model's prose instead of being hidden behind it.
+test('drills into a covered name outside the book and sees its live horizons', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await page.getByRole('button', { name: 'MSFT', exact: true }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'MSFT history' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText('Technical read')).toBeVisible()
+  await expect(dialog.getByText('Short term · next week (daily chart)')).toBeVisible()
+  await expect(dialog.getByText('Medium term · 1–3 weeks (weekly chart)')).toBeVisible()
+  await expect(dialog.getByText('Long term · beyond (monthly chart)')).toBeVisible()
+  await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()
+  await expect(dialog.getByText(/Where the technical analyst would rank it/)).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
