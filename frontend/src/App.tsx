@@ -214,7 +214,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
         {/* The desk is the operator's, or the accounts the operator has named;
             the routes behind it refuse everyone else. */}
         {activeView === 'desk' && (auth.is_admin || auth.desk_access) && (
-          <DeskPanel userId={userId} canWrite={auth.is_admin || auth.desk_write} />
+          <DeskPanel userId={userId} canWrite={Boolean(auth.is_admin || auth.desk_write)} />
         )}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
         {/* Guarded twice: hidden unless the session says operator, and every
