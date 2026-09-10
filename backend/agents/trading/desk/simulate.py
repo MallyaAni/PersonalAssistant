@@ -369,6 +369,14 @@ class _Book:
         self.panel = panel
         self.report = report
         self.stamps = stamps
+        # The names the shared planner keys its orders by; a bare book built
+        # for an isolated plan/settle test has synthetic names rather than a
+        # panel's.
+        self.tickers = (
+            list(panel.tickers)
+            if panel is not None
+            else [f"T{i}" for i in range(names)]
+        )
         self.opened: dict[int, int] = {}
         self.paid: dict[int, float] = {}
         self.trades: list[SimTrade] = []
@@ -441,7 +449,7 @@ class _Book:
         total = self.equity(prices)
         if total <= 0:
             return np.array(self.shares, dtype=float)
-        tickers = self.panel.tickers
+        tickers = self.tickers
         targets = {
             t: float(w)
             for t, w in zip(tickers, target, strict=False)
