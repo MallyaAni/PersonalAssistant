@@ -2,6 +2,27 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - Cutting losses on the bounce, measured and not adopted
+
+A trader's alternative to the stop the book has already rejected: when a
+name turns from an uptrend into a downtrend, sell the dead-cat bounce
+rather than the break. `backend/cli/market_bounce.py` reads two trend
+breaks (the 21/50 EMA cross down; a close below the 50-day after ten
+sessions above) and six bounces off the post-break low (3, 5 and 8
+percent, the 10 and 21 EMA, two up closes), with and without a ten-session
+deadline, and runs each as the exit rule inside the desk's own simulator,
+to cash and redeployed, against selling the break. On the book's names a
+held-grade name that has broken and bounced goes on to earn what any held
+name earns over the next twenty sessions; in the book every variant to
+cash earns less than the rule and the best redeployed variant is t +1.5
+of fifty-six tries at double the turnover. It helps in 2022 alone, as the
+earlier exit study found, and the regime analyst already cuts exposure
+there. The simulator takes an `exits` evidence and a `grace` so any exit
+rule can be measured the same way. Also measured tonight: the grade held
+the session before a results release orders the reaction the right way
+(A+ +1.7% on the day, C +0.2%), and the sign of one reaction says nothing
+about the next (3,329 pairs, same sign 48.6%).
+
 ## 2026-09-10 - Option chains stored nightly: the put wall, the call wall and a gamma proxy
 
 Nobody keeps a free history of option open interest, so the desk starts

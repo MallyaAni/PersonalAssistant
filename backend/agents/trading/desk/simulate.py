@@ -284,6 +284,8 @@ def run(
     redeploy: bool = REDEPLOY,
     allocator=None,
     dip: "DipRule | None" = None,
+    exits=None,
+    grace: int = exit_analyst.GRACE,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -291,6 +293,10 @@ def run(
     rebalance sessions when given; everything else - fills, costs, the
     holding between rebalances - stays the desk's, so a learned
     allocation is measured by the book it makes and nothing else.
+    `exits` is an ExitEvidence (anything with `signalled()`) in place of
+    the exit analyst's own reading, so a candidate exit rule is measured
+    inside the same book; `grace` is how many sessions a position is left
+    alone after it opens before any exit may fire.
     """
     decide = allocator or _targets
     dips = None
@@ -304,7 +310,9 @@ def run(
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
     start = int(np.searchsorted(panel.dates, np.datetime64(since))) if since else 0
-    evidence = exit_analyst.evidence(panel) if use_exits else None
+    evidence = exits
+    if evidence is None and use_exits:
+        evidence = exit_analyst.evidence(panel)
     stamps = [str(d) for d in panel.dates]
     opens = adjusted_open(panel)
     closes = panel.adj_close
@@ -325,7 +333,7 @@ def run(
             reason = "rebalanced out"
             rebalances += 1
         else:
-            target, reason = book.between(evidence, closes[t], t, redeploy)
+            target, reason = book.between(evidence, closes[t], t, redeploy, grace)
             if dips is not None and dips[t].any():
                 target, added = _dip_add(target, dips[t], dip, book, closes[t])
                 if added:
@@ -407,7 +415,9 @@ class _Book:
 
     # What to hold between rebalances: what is already held, less anything
     # the exit analyst names.
-    def between(self, evidence, prices, t: int, redeploy: bool):
+    def between(
+        self, evidence, prices, t: int, redeploy: bool, grace: int = exit_analyst.GRACE
+    ):
         """Return (target weights, the reason anything leaves)."""
         total = self.equity(prices)
         priced = np.isfinite(prices) & (prices > 0)
@@ -419,7 +429,7 @@ class _Book:
         reason = "held"
         for column in np.flatnonzero(self.shares > 0):
             entry = self.opened.get(column, t)
-            if exit_analyst.should_exit(evidence, t, column, entry):
+            if exit_analyst.should_exit(evidence, t, column, entry, grace):
                 leaving[column] = True
                 reason = exit_analyst.reason(evidence, t, column)
         if not leaving.any():
@@ -456,9 +466,7 @@ class _Book:
             if w > 0 and np.isfinite(w)
         }
         held = {
-            t: float(s)
-            for t, s in zip(tickers, self.shares, strict=False)
-            if s > 0
+            t: float(s) for t, s in zip(tickers, self.shares, strict=False) if s > 0
         }
         by_price = {
             t: float(p)

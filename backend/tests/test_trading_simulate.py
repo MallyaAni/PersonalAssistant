@@ -226,7 +226,7 @@ def test_redeploy_puts_the_freed_weight_back_to_work():
         simulate.exit_analyst.reason,
     )
     simulate.exit_analyst.evidence = lambda p: _Stub()
-    simulate.exit_analyst.should_exit = lambda ev, t, c, entry: bool(ev[t, c])
+    simulate.exit_analyst.should_exit = lambda ev, t, c, entry, grace=0: bool(ev[t, c])
     simulate.exit_analyst.reason = lambda ev, t, c: "the stub said so"
     try:
         cash = simulate.run(
