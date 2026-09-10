@@ -80,7 +80,10 @@ def test_the_meter_has_its_own_label_and_waiting_line() -> None:
         )
     )
     assert describe_action(action) == ("Search credits", "")
-    assert waiting_line(action) in {"🧾 Checking the search meter…", "💳 Counting the credits…"}
+    assert waiting_line(action) in {
+        "🧾 Checking the search meter — counting beans…",
+        "💳 Counting the credits, like a concerned accountant…",
+    }
 
 
 def test_the_silence_token_is_recognised_with_the_decoration_models_add() -> None:
