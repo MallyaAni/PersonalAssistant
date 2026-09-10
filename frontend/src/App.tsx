@@ -213,7 +213,9 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
         {activeView === 'memory' && <MemoryPanel userId={userId} />}
         {/* The desk is the operator's, or the accounts the operator has named;
             the routes behind it refuse everyone else. */}
-        {activeView === 'desk' && (auth.is_admin || auth.desk_access) && <DeskPanel userId={userId} />}
+        {activeView === 'desk' && (auth.is_admin || auth.desk_access) && (
+          <DeskPanel userId={userId} canWrite={auth.is_admin || auth.desk_write} />
+        )}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
         {/* Guarded twice: hidden unless the session says operator, and every
             route behind it re-checks against the database. */}

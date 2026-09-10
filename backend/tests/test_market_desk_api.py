@@ -1,6 +1,7 @@
 """The desk endpoint: the day's record and its changes reach the page, and
 only for the user whose token asks. A stale live snapshot is served but
-marked stale, never presented as the current candle."""
+marked stale, never presented as the current candle. A named extra account
+reads the desk but cannot replace the operator's shared holdings."""
 
 import json
 from datetime import UTC, datetime, timedelta
@@ -154,6 +155,62 @@ async def test_a_named_extra_user_opens_the_desk(tmp_path, monkeypatch):
         )
     assert allowed.status_code == 200, allowed.text
     assert refused.status_code == 403, refused.text
+
+
+# The desk's holdings are one shared book, so writing them is the primary
+# operator's alone. A named extra account reads the desk and cannot replace
+# the operator's saved list with its own; the persisted file keeps the
+# operator's rows after the extra account's attempt.
+@pytest.mark.asyncio
+async def test_an_extra_account_cannot_overwrite_the_operators_holdings(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "ani.mallya")
+    monkeypatch.setattr(settings, "MARKET_DESK_USERS", "vjmallya, guest")
+    owner = {
+        "Authorization": f"Bearer {issue_user_token('ani.mallya', ttl_seconds=60)}"
+    }
+    extra = {
+        "Authorization": f"Bearer {issue_user_token('vjmallya', ttl_seconds=60)}"
+    }
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        saved = await client.put(
+            "/api/v1/market/ani.mallya/desk/holdings",
+            headers=owner,
+            json=[
+                {
+                    "ticker": "AAA",
+                    "shares": 10.0,
+                    "entry_price": 100.0,
+                    "entry_date": "2026-09-01",
+                }
+            ],
+        )
+        assert saved.status_code == 200, saved.text
+        refused = await client.put(
+            "/api/v1/market/vjmallya/desk/holdings",
+            headers=extra,
+            json=[
+                {
+                    "ticker": "BBB",
+                    "shares": 10.0,
+                    "entry_price": 50.0,
+                    "entry_date": "2026-09-01",
+                }
+            ],
+        )
+        assert refused.status_code == 403, refused.text
+        owner_read = await client.get(
+            "/api/v1/market/ani.mallya/desk/holdings", headers=owner
+        )
+        extra_read = await client.get(
+            "/api/v1/market/vjmallya/desk/holdings", headers=extra
+        )
+    assert [h["ticker"] for h in owner_read.json()["holdings"]] == ["AAA"]
+    assert [h["ticker"] for h in extra_read.json()["holdings"]] == ["AAA"]
 
 
 def test_market_desk_operators_parse_the_allowlist(monkeypatch):

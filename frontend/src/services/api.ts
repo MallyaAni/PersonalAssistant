@@ -27,6 +27,9 @@ export interface AuthSession {
   // Whether this identity may open the trading desk; the desk routes
   // re-derive the answer from the operator allowlist before serving.
   desk_access?: boolean;
+  // Whether this identity may *write* the desk - only the primary operator
+  // replaces the shared holdings; a named extra account reads only.
+  desk_write?: boolean;
 }
 
 // Load the server-derived identity or report that an interactive login is needed.

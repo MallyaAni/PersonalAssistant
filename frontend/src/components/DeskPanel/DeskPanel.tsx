@@ -27,6 +27,9 @@ import {
 
 interface DeskPanelProps {
   userId: string
+  // Whether this identity may write the desk - the primary operator alone.
+  // A named extra account reads the shared book and never edits it.
+  canWrite: boolean
 }
 
 // The page asks for a fresh record every few minutes: the desk writes one
@@ -591,7 +594,7 @@ const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasReco
 // entered, with the live candle beside each name; the warnings; and the
 // record's detail folded away. Everything shown is read from the record
 // the desk wrote and the positions the person saved.
-const DeskPanel = ({ userId }: DeskPanelProps) => {
+const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [payload, setPayload] = useState<DeskPayload | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -755,12 +758,16 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
           equity={equity}
           quotes={live.quotes}
           marking={marking}
-          onBuy={async (r) => {
-            const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
-            setMarking(r.ticker)
-            await save(afterTrade(holdings, r, price, qty))
-            setMarking(null)
-          }}
+          onBuy={
+            canWrite
+              ? async (r) => {
+                  const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
+                  setMarking(r.ticker)
+                  await save(afterTrade(holdings, r, price, qty))
+                  setMarking(null)
+                }
+              : undefined
+          }
         />
       )}
 
@@ -807,12 +814,16 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
                 />
                 show stops
               </label>
-              <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
-                {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
-              </button>
+              {canWrite ? (
+                <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
+                  {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
+                </button>
+              ) : (
+                <span className="text-[#6e6e73]">read-only — the operator's book</span>
+              )}
             </div>
           </div>
-          {editing && (
+          {canWrite && editing && (
             <Positions
               holdings={holdings}
               error={saveError}
@@ -821,7 +832,7 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
               }}
             />
           )}
-          {holdings.length === 0 && !editing && (
+          {canWrite && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
           <table className="w-full text-sm">
@@ -848,12 +859,16 @@ const DeskPanel = ({ userId }: DeskPanelProps) => {
                   onReason={() => setOpenReason(openReason === r.ticker ? null : r.ticker)}
                   onOpenName={() => setOpenName(r.ticker)}
                   marking={marking === r.ticker}
-                  onDone={async () => {
-                    const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
-                    setMarking(r.ticker)
-                    await save(afterTrade(holdings, r, price, qty))
-                    setMarking(null)
-                  }}
+                  onDone={
+                    canWrite
+                      ? async () => {
+                          const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
+                          setMarking(r.ticker)
+                          await save(afterTrade(holdings, r, price, qty))
+                          setMarking(null)
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </tbody>
@@ -992,7 +1007,7 @@ const BestBuys = ({
   equity: number
   quotes: Record<string, DeskQuote>
   marking: string | null
-  onBuy: (r: DeskMineRow) => Promise<void>
+  onBuy?: (r: DeskMineRow) => Promise<void>
 }) => {
   // The balancer's persisted plan when one exists (recomputed headlessly on
   // the candle), else the board the browser just computed.
@@ -1018,8 +1033,9 @@ const BestBuys = ({
         </p>
       )}
       <p className="mb-2 text-xs text-[#6e6e73]">
-        Ranked best-first for this moment, sized by the grade. Click <b>Buy</b> once you have placed it on Schwab and it
-        becomes a tracked position.
+        {onBuy
+          ? 'Ranked best-first for this moment, sized by the grade. Click <b>Buy</b> once you have placed it on Schwab and it becomes a tracked position.'
+          : 'Ranked best-first for this moment, sized by the grade.'}
       </p>
       <ol className="flex flex-col gap-1">
         {buys.map((r, i) => {
@@ -1040,14 +1056,16 @@ const BestBuys = ({
               <span className="whitespace-nowrap text-xs text-[#6e6e73]">
                 {qty.toLocaleString()} sh · {money(qty * price)}
               </span>
-              <button
-                type="button"
-                onClick={() => void onBuy(r)}
-                disabled={marking === r.ticker}
-                className="rounded-full bg-[#1e7a3a] px-3 py-1 text-xs font-medium text-white hover:bg-[#17632e] disabled:bg-[#a3c4ad]"
-              >
-                {marking === r.ticker ? 'saving…' : 'Buy'}
-              </button>
+              {onBuy && (
+                <button
+                  type="button"
+                  onClick={() => void onBuy(r)}
+                  disabled={marking === r.ticker}
+                  className="rounded-full bg-[#1e7a3a] px-3 py-1 text-xs font-medium text-white hover:bg-[#17632e] disabled:bg-[#a3c4ad]"
+                >
+                  {marking === r.ticker ? 'saving…' : 'Buy'}
+                </button>
+              )}
             </li>
           )
         })}
@@ -1155,7 +1173,7 @@ interface RowProps {
   onReason: () => void
   onOpenName: () => void
   marking: boolean
-  onDone: () => Promise<void>
+  onDone?: () => Promise<void>
 }
 
 // What ends this row's buy or hold, in words with the name's own margin to
@@ -1198,7 +1216,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>
           {r.action}
         </span>
-        {r.action !== 'hold' && (
+        {r.action !== 'hold' && onDone && (
           <button
             type="button"
             onClick={() => void onDone()}

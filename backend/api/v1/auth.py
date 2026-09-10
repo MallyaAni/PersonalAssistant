@@ -76,6 +76,10 @@ class SessionResponse(BaseModel):
     # decide what to show; the desk routes re-derive the answer from the
     # operator allowlist before serving anything.
     desk_access: bool = False
+    # Whether this identity may *write* the desk - only the primary operator
+    # replaces the shared holdings. A named extra account reads the desk and
+    # never overwrites the operator's book.
+    desk_write: bool = False
 
 
 # Attach one opaque session using the deployment's browser-cookie policy.
@@ -164,6 +168,7 @@ async def login(
         expires_at=created.expires_at.isoformat(),
         is_admin=bool(account and account.is_admin),
         desk_access=created.user_id in settings.market_desk_operators,
+        desk_write=created.user_id == settings.MARKET_DESK_USER,
     )
 
 
@@ -239,6 +244,7 @@ async def register(
         # the answer cannot change if the field default ever does.
         is_admin=False,
         desk_access=created.user_id in settings.market_desk_operators,
+        desk_write=created.user_id == settings.MARKET_DESK_USER,
     )
 
 
@@ -257,6 +263,7 @@ async def current_session(
             is_admin=True,
             desk_access=settings.AUTH_LOCAL_USER_ID
             in settings.market_desk_operators,
+            desk_write=settings.AUTH_LOCAL_USER_ID == settings.MARKET_DESK_USER,
         )
     account = await db.scalar(
         select(UserAccount).where(UserAccount.user_id == identity.user_id)
@@ -267,6 +274,7 @@ async def current_session(
         expires_at=datetime.fromtimestamp(identity.expires_at, tz=UTC).isoformat(),
         is_admin=bool(account and account.is_admin),
         desk_access=identity.user_id in settings.market_desk_operators,
+        desk_write=identity.user_id == settings.MARKET_DESK_USER,
     )
 
 

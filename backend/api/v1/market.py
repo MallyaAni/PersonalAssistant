@@ -49,6 +49,14 @@ def _operator_only(user_id: str) -> None:
         raise HTTPException(status_code=403, detail="the desk is the operator's")
 
 
+# Writing the desk - replacing the shared holdings - is the primary operator's
+# alone. A named extra account reads the desk and never overwrites the
+# operator's book, which a single shared holdings file would let them do.
+def _desk_writer_only(user_id: str) -> None:
+    if user_id != settings.MARKET_DESK_USER:
+        raise HTTPException(status_code=403, detail="read-only desk access")
+
+
 # The root the records are read from.
 def _root() -> Path:
     return Path(settings.MARKET_DATA_ROOT)
@@ -300,7 +308,7 @@ async def desk_holdings(user_id: UserId) -> dict[str, object]:
 @router.put("/desk/holdings")
 async def desk_save_holdings(user_id: UserId, rows: list[dict]) -> dict[str, object]:
     """Replace the saved holdings with `rows`."""
-    _operator_only(user_id)
+    _desk_writer_only(user_id)
     try:
         parsed = holdings.parse(rows)
     except ValueError as exc:
