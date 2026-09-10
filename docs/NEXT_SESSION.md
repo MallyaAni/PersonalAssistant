@@ -3,7 +3,7 @@
 Verified state as of 2026-09-09. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
-## 2026-09-09 (late) — the desk reads are model-written prose, the levels are named by what they are, and the practice account shows lifetime and day moves (ON `feat/desk-dashboard-overhaul`, not yet merged or deployed)
+## 2026-09-09 (late) — the desk reads are model-written prose, the levels are named by what they are, and the practice account shows lifetime and day moves (DEPLOYED `c9ffd0c`)
 
 The operator's second word-by-word review of the dashboard. Every prose
 output the desk shows is now written by the model; the deterministic
@@ -45,10 +45,17 @@ prompt is pinned by a functional test.
 including the coverage gate and both new read pins on the real model; tsc
 and `npm run build` clean; 4/4 desk browser tests in Chromium (new
 assertions for the reworded cells, the model read, the live read, and the
-practice percentages).
+practice percentages). Merged to `main` and deployed as `c9ffd0c`
+(`scripts/deploy.sh`, unit gate 3299 passed + routing gate green; the
+gateway image rebuilt 2026-09-10T01:24Z and its bundle contains the new
+"Return while it was an A" strings; backend verified through the gateway
+answering 401). One pre-existing failure had to be fixed first: the other
+agent's `d40d766` changed the search-credits waiting lines without
+updating `test_search_credits_tool.py`, so the unit gate was red on main;
+the test's allowed set now names the tool's actual lines. Post-deploy
+sweep/harness running detached (`data/post-deploy-c9ffd0cc-*.log`).
 
-**Next atomic task.** Merge the branch to `main`, then deploy through
-`scripts/deploy.sh`. Tonight's nightly must run with `--read-book` (and
+**Next atomic task.** Tonight's nightly must run with `--read-book` (and
 `--brief-book`) so every book name gets a read; the on-disk `desk.json`
 briefs are still the old-prompt dumps until the next 19:30 nightly. The live
 read endpoint needs a model call per drill-down open — watch its latency
