@@ -582,6 +582,22 @@ def record_path(root: Path, session: str) -> Path:
     return Path(root) / DESK_KIND / f"asof={session}" / "desk.json"
 
 
+# Whether the day is already decided: a record for the session exists and the
+# run is not deliberately rewriting it. Called before any brief, read, or
+# trade, so a same-session rerun places no orders and persists no pending
+# state it would then be told to keep.
+def refuse_existing_record(root: Path, session: str, force: bool = False) -> bool:
+    """Return True, having said so, when the session's record already exists."""
+    if force:
+        return False
+    path = record_path(root, session)
+    if not path.exists():
+        return False
+    print(f"\na record for {session} already exists at {path}")
+    print("refusing to re-run the day (pass --force to rewrite); nothing was changed")
+    return True
+
+
 # The checkout's revision, so a record says exactly which code produced it;
 # "unknown" when the revision cannot be read (no git, or not a checkout).
 def _git_revision() -> str:
@@ -836,6 +852,26 @@ def _wanted_tickers(report, named: list[str], whole_book: bool) -> list[str]:
     return wanted
 
 
+# The model-written briefs and reads the run asked for, or empty dicts when
+# the runtime is away: the day still runs, just without prose.
+def _wanted_briefs_and_reads(
+    report, args
+) -> tuple[dict[str, dict], dict[str, str | None]]:
+    """Return the briefs and reads the run asked for."""
+    briefs: dict[str, dict] = {}
+    wanted = _wanted_tickers(report, args.brief, args.brief_book)
+    read_wanted = _wanted_tickers(report, args.read, args.read_book)
+    reads: dict[str, str | None] = {}
+    if wanted or read_wanted:
+        readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
+        narrator = DeskNarrator(readers[0].writer)
+        if wanted:
+            briefs = briefs_for(report, wanted, narrator)
+        if read_wanted:
+            reads = reads_for(report, read_wanted, narrator)
+    return briefs, reads
+
+
 # Run the day.
 def main() -> None:
     """Entry point."""
@@ -857,20 +893,18 @@ def main() -> None:
     _print_regime(report.regime.today())
     _print_grades(report, args.top)
     _print_book(report)
-    briefs: dict[str, dict] = {}
-    wanted = _wanted_tickers(report, args.brief, args.brief_book)
-    read_wanted = _wanted_tickers(report, args.read, args.read_book)
-    reads: dict[str, str | None] = {}
-    if wanted or read_wanted:
-        readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
-        narrator = DeskNarrator(readers[0].writer)
-        if wanted:
-            briefs = briefs_for(report, wanted, narrator)
-        if read_wanted:
-            reads = reads_for(report, read_wanted, narrator)
+    # The record is the day's decision. If it already exists and the run is
+    # not deliberately rewriting it, the day has been decided. Refusing here,
+    # before any brief, read, or trade, is what makes a same-session rerun
+    # harmless: the old code ran paper_trade first and then refused to save,
+    # having already placed orders and persisted pending state it would call
+    # "nothing was changed".
+    session = str(panel.dates[-1])
+    if refuse_existing_record(Path(store.root), session, args.force):
+        return
+    briefs, reads = _wanted_briefs_and_reads(report, args)
     entry = None
     if args.paper_trade or args.paper_dry_run:
-        session = str(panel.dates[-1])
         try:
             entry = paper_trade(
                 report, Path(store.root), session, live=args.paper_trade
@@ -884,7 +918,15 @@ def main() -> None:
     try:
         path = save(
             Path(store.root),
-            record(report, briefs, reads, entry, shadow, curve, llm_model=args.llm_model),
+            record(
+                report,
+                briefs,
+                reads,
+                entry,
+                shadow,
+                curve,
+                llm_model=args.llm_model,
+            ),
             allow_overwrite=args.force,
         )
     except FileExistsError as exc:

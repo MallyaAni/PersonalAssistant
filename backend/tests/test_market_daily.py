@@ -1,6 +1,7 @@
 """The daily pipeline: what it refreshes, in what order, and what it records."""
 
 import json
+import sys
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
@@ -178,7 +179,8 @@ def test_an_unavailable_market_clock_refuses_submission(monkeypatch):
         live=True,
     )
     assert submitted == []
-    assert refused and "clock" in refused[0].lower()
+    assert refused
+    assert "clock" in refused[0].lower()
 
 
 # Pruning drops old bar and filing partitions but never the newest one of
@@ -202,6 +204,39 @@ def test_prune_keeps_newest_tone_and_records(tmp_path):
     assert (tmp_path / "desk" / "asof=2026-07-01").exists()
     assert (tmp_path / "edgar_facts" / "asof=2026-06-01").exists()  # the newest
     assert market_daily.prune(tmp_path, date(2026, 9, 6), 0) == []
+
+
+# A same-session rerun is refused before any side effect: with a record on
+# file, main() returns at the guard and never reaches paper_trade, so a
+# duplicate invocation places no orders and persists no pending state. The
+# old code traded first and refused to save afterwards, having already
+# submitted and written pending state it then called "nothing was changed".
+def test_a_same_session_rerun_submits_no_trade(tmp_path, monkeypatch, capsys):
+    market_daily.save(Path(tmp_path), market_daily.record(_report()))
+    traded = []
+
+    def fake_run(store, asof=None):
+        return _report()
+
+    def fake_paper_trade(*args, **kwargs):
+        traded.append(args)
+        return {}
+
+    monkeypatch.setattr(market_daily.trading_desk, "run", fake_run)
+    monkeypatch.setattr(market_daily, "paper_trade", fake_paper_trade)
+    # The print helpers need a fuller fixture than _report(); the guard is
+    # what is under test, so they are stubbed out.
+    monkeypatch.setattr(market_daily, "_print_regime", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "_print_grades", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "_print_book", lambda *a, **k: None)
+    monkeypatch.setattr(
+        sys, "argv", ["market_daily", "--data-dir", str(tmp_path), "--paper-trade"]
+    )
+    market_daily.main()
+    assert traded == []
+    assert "refusing to re-run the day" in capsys.readouterr().out
+    # The record on file is untouched, and no pending state was written.
+    assert (Path(tmp_path) / "desk" / "asof=2026-09-03" / "desk.json").exists()
 
 
 # A new day's tone refresh starts from the scores already stored, so only

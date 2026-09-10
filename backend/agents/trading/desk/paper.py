@@ -179,9 +179,21 @@ def plan(
 # they cannot tell you whether your own order filled.
 FILLED = ("filled",)
 DEAD = ("canceled", "cancelled", "expired", "rejected", "done_for_day", "suspended")
-# The broker statuses that mean an order may still fill: everything else a
-# partial is reported as means no more quantity is coming.
-_WORKING = ("accepted", "new", "partially_filled", "open", "pending")
+# The broker statuses that mean an order may still fill or change: a partial
+# reported as anything else has no more quantity coming. pending_cancel and
+# pending_replace are deliberately included - the cancel or replacement is
+# still in flight, so the order can still fill, and it must stay pending
+# until the broker confirms a terminal outcome (filled, canceled, expired,
+# rejected, ...) rather than being concluded early and replanned.
+_WORKING = (
+    "accepted",
+    "new",
+    "partially_filled",
+    "open",
+    "pending",
+    "pending_cancel",
+    "pending_replace",
+)
 
 
 @dataclass(frozen=True)

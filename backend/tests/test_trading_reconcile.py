@@ -251,6 +251,32 @@ def test_a_rejected_leg_is_not_forgotten_when_another_fills_later():
     assert by_id[paper.order_id("2026-09-07", "BBB", "buy")]["status"] == "filled"
 
 
+# An order whose cancel or replacement is still in flight can still fill or
+# change, so it must stay pending and keep the rebalance open: a partial
+# reported as pending_cancel or pending_replace is not a concluded partial.
+# Before the fix those two statuses were outside the working set, so a
+# 3-of-10 partial was dropped and the clock rolled back while the original
+# order was still live.
+@pytest.mark.parametrize("raw", ["pending_cancel", "pending_replace"])
+def test_an_in_flight_cancel_or_replace_keeps_the_partial_pending(raw):
+    state = paper.PaperState(
+        last_rebalance="2026-09-07",
+        previous_rebalance="2026-08-10",
+        sessions_since_rebalance=1,
+        unconfirmed_rebalance="2026-09-07",
+        pending=_pending("2026-09-07", "AAA"),
+    )
+    settled = paper.settle(
+        state.pending, [_broker("2026-09-07", "AAA", raw, 3)]
+    )
+    assert not settled[0].terminal
+    after = paper.apply_settlements(state, settled)
+    # Still pending, still unconfirmed: the rebalance is not concluded.
+    assert [row["symbol"] for row in after.pending] == ["AAA"]
+    assert after.unconfirmed_rebalance == "2026-09-07"
+    assert after.last_rebalance == "2026-09-07"
+
+
 # The id is chosen before the order is sent and is stable, which is what
 # makes a crash between sending and recording recoverable.
 def test_the_order_id_is_stable_and_specific():
@@ -279,7 +305,10 @@ def test_the_journal_survives_the_state_file(tmp_path):
         pending=_pending("2026-09-07", "AAA"),
     )
     after = paper.apply_settlements(
-        state, paper.settle(state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)])
+        state,
+        paper.settle(
+            state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)]
+        ),
     )
     paper.save_state(tmp_path, after)
     loaded = paper.load_state(tmp_path)
