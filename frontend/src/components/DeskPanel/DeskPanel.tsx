@@ -220,20 +220,27 @@ const SummaryStrip = ({
                 <Trend value={since * 100} />
               </span>
             )}
+          </>
+        ) : (
+          '—'
+        ),
+      note: 'the desk\u2019s own money, no real risk; the move since it started',
+    },
+    {
+      label: 'Today',
+      value:
+        dayPl !== undefined ? (
+          <>
+            <TrendUsd value={dayPl} />
             {dayPct !== undefined && (
-              <span className="ml-2 text-xs font-normal text-[#6e6e73]" title="today">
-                today <Trend value={dayPct * 100} />
+              <span className="ml-2 text-xs font-normal text-[#6e6e73]" title="today's move as a percentage">
+                (<Trend value={dayPct * 100} />)
               </span>
             )}
           </>
         ) : (
           '—'
         ),
-      note: 'the desk\u2019s own money, no real risk; lifetime and today\u2019s moves',
-    },
-    {
-      label: 'Today',
-      value: dayPl !== undefined ? <TrendUsd value={dayPl} /> : '—',
       note: 'the paper account\u2019s move so far',
     },
     // The forward track has no numbers until it has a run of sessions, so
@@ -692,7 +699,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
   }
 
-  const { latest, summary } = payload
+  const { latest } = payload
   const curve = payload.curve ?? latest?.curve
   const warnings = latest?.regime.flags ?? []
 
@@ -721,9 +728,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} />}
           <p className="text-sm text-[#6e6e73]">
-            {latest
-              ? `Decision from the close of ${latest.session} · the desk is ${summary ? pct(summary.gross) : '—'} invested`
-              : 'No decision on file yet'}
+            {latest ? `Decision from the close of ${latest.session}` : 'No decision on file yet'}
           </p>
         </div>
         <button
@@ -746,30 +751,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <RegimeBanner regime={latest.regime} />}
 
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
-
-      {paperLive && paperLive.positions && paperLive.positions.length > 0 && (
-        <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
-      )}
-
-      {latest && holdings.length > 0 && (
-        <BestBuys
-          rows={rows}
-          intraday={intraday}
-          equity={equity}
-          quotes={live.quotes}
-          marking={marking}
-          onBuy={
-            canWrite
-              ? async (r) => {
-                  const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
-                  setMarking(r.ticker)
-                  await save(afterTrade(holdings, r, price, qty))
-                  setMarking(null)
-                }
-              : undefined
-          }
-        />
-      )}
 
       {latest && (
         <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
@@ -823,6 +804,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               )}
             </div>
           </div>
+          {intraday && intraday.changed && intraday.changed.length > 0 && (
+            <p className="mb-2 text-xs text-[#9a6200]">
+              Since the last plan: {intraday.changed.join(' · ')}
+            </p>
+          )}
           {canWrite && editing && (
             <Positions
               holdings={holdings}
@@ -878,10 +864,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
             price shown; edit the price if your fill differed. Names are in grade order, best first, re-read every 15
             minutes with the technical analyst at the live price. Share counts follow the live price; the weights are
-            the evening decision. Buy at the open with a market order. The desk sells when a name loses its A grade at
-            the next check, not at a price; stops are optional because they cut winners as often as losers.
+            the evening decision. Buy at the open with a market order. Stops are optional because they cut winners as
+            often as losers.
           </p>
         </section>
+      )}
+
+      {paperLive && paperLive.positions && paperLive.positions.length > 0 && (
+        <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
       )}
 
       {latest && <TrackRecord curve={curve} />}
@@ -989,91 +979,6 @@ const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number
   )
 }
 
-// The names worth buying right now, ranked for this moment and sized by the
-// grade. The board rows are already ordered best-first by the live score
-// (the technical analyst re-read at the live price every fifteen minutes),
-// so this keeps that order and filters to what you do not yet hold. A buy
-// opens the position at the shown size, so the desk can track it.
-const BestBuys = ({
-  rows,
-  intraday,
-  equity,
-  quotes,
-  marking,
-  onBuy,
-}: {
-  rows: DeskMineRow[]
-  intraday: DeskIntraday | null
-  equity: number
-  quotes: Record<string, DeskQuote>
-  marking: string | null
-  onBuy?: (r: DeskMineRow) => Promise<void>
-}) => {
-  // The balancer's persisted plan when one exists (recomputed headlessly on
-  // the candle), else the board the browser just computed.
-  const buys =
-    intraday && intraday.top_buys && intraday.top_buys.length > 0
-      ? intraday.top_buys
-      : rows.filter((r) => r.in_book && r.target_weight > 0 && r.shares === 0)
-  if (buys.length === 0) return null
-  const when = intraday?.as_of
-    ? new Date(intraday.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : null
-  return (
-    <section className="rounded-2xl border border-[#1e7a3a]/25 bg-white p-4">
-      <h3 className="text-sm font-semibold text-[#1d1d1f]">
-        Best buys right now
-        {when && (
-          <span className="ml-2 text-xs font-normal text-[#6e6e73]">plan as of {when}</span>
-        )}
-      </h3>
-      {intraday && intraday.changed && intraday.changed.length > 0 && (
-        <p className="mb-1 text-xs text-[#9a6200]">
-          Since the last plan: {intraday.changed.join(' · ')}
-        </p>
-      )}
-      <p className="mb-2 text-xs text-[#6e6e73]">
-        {onBuy
-          ? 'Ranked best-first for this moment, sized by the grade. Click <b>Buy</b> once you have placed it on Schwab and it becomes a tracked position.'
-          : 'Ranked best-first for this moment, sized by the grade.'}
-      </p>
-      <ol className="flex flex-col gap-1">
-        {buys.map((r, i) => {
-          const { price, qty } = sizing(r, quotes[r.ticker], equity)
-          return (
-            <li
-              key={r.ticker}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-black/[0.05] py-1.5 text-sm"
-            >
-              <span className="w-5 text-right font-mono text-xs text-[#6e6e73]">{i + 1}</span>
-              <span className="w-14 font-medium text-[#1d1d1f]">{r.ticker}</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>
-                {r.grade_live}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-xs text-[#6e6e73]" title={r.why}>
-                {r.why}
-              </span>
-              <span className="whitespace-nowrap text-xs text-[#6e6e73]">
-                {qty.toLocaleString()} sh · {money(qty * price)}
-              </span>
-              {onBuy && (
-                <button
-                  type="button"
-                  onClick={() => void onBuy(r)}
-                  disabled={marking === r.ticker}
-                  className="rounded-full bg-[#1e7a3a] px-3 py-1 text-xs font-medium text-white hover:bg-[#17632e] disabled:bg-[#a3c4ad]"
-                >
-                  {marking === r.ticker ? 'saving…' : 'Buy'}
-                </button>
-              )}
-            </li>
-          )
-        })}
-      </ol>
-    </section>
-  )
-}
-
 // The practice account: the broker's live money, positions and waiting
 // orders, refreshed with the candle; the evening record when the broker
 // cannot be reached. The live state is shared with the summary strip so
@@ -1129,7 +1034,10 @@ const PracticeAccount = ({
           Orders waiting for the open: {orders.map((o) => `${o.side} ${o.qty} ${o.symbol}`).join(', ')}
         </p>
       )}
-      {positions.length > 0 ? (
+      {/* The broker's live book is already shown in its own section above the
+          board; only the evening record's positions are repeated here, when the
+          broker is away and there is no live table to see. */}
+      {!fromBroker && positions.length > 0 ? (
         <table className="mt-2 w-full text-sm">
           <thead className="text-left text-[#6e6e73]">
             <tr>
@@ -1157,7 +1065,7 @@ const PracticeAccount = ({
           </tbody>
         </table>
       ) : (
-        <p className="mt-2 text-sm text-[#6e6e73]">No positions held.</p>
+        !fromBroker && <p className="mt-2 text-sm text-[#6e6e73]">No positions held.</p>
       )}
     </section>
   )

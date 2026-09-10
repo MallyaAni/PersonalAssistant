@@ -352,11 +352,13 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(glance.getByText('Practice account')).toBeVisible()
   await expect(glance.getByText('$104,200')).toBeVisible()
   // The lifetime and today moves read as percentages, not a bare dollar
-  // figure: 0.042 lifetime of the starting equity, 0.003 today.
+  // figure: 0.042 lifetime of the starting equity, 0.003 today. Both sit in
+  // one "Today" cell rather than being shown twice, once as a percent in the
+  // account cell and once as dollars in their own cell.
   await expect(glance.getByText('4.2%', { exact: false })).toBeVisible()
-  await expect(glance.getByText(/^today/)).toBeVisible()
   await expect(glance.getByText('Today', { exact: true })).toBeVisible()
   await expect(glance.getByText(/\+\$31[23]/)).toBeVisible()
+  await expect(glance.getByText(/\+0\.3%/)).toBeVisible()
   await expect(glance.getByText('The rules, backtest')).toBeVisible()
   await expect(glance.getByText('not a record', { exact: false })).toBeVisible()
   await expect(glance.getByText('vs SPY', { exact: false })).toBeVisible()
@@ -381,9 +383,37 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByText('CAGR')).toBeVisible()
   await expect(page.getByText('31.0%', { exact: true })).toBeVisible()
 
-  // A row reads in plain words first, and the ticker opens the drill-down.
+// A row reads in plain words first, and the ticker opens the drill-down.
   await expect(page.getByText('What to do at the next open')).toBeVisible()
   await expect(page.getByText('The desk adds to its best name.', { exact: false })).toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// The page used to show the buys twice - once in a standalone "Best buys
+// right now" list with its own Buy button and once as the board's buy rows -
+// and the broker's live positions twice - once in its own section and once
+// again in the behind-the-fold "Practice account" panel. Each thing is shown
+// exactly once now: the board owns the buys, and the live positions table
+// exists in one place even with the details open.
+test('shows each thing once, not twice', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+
+  // The board is the single buy list; no standalone best-buys shortlist.
+  await expect(page.getByText('Best buys right now')).toHaveCount(0)
+  await expect(page.getByText('What to do at the next open')).toBeVisible()
+
+  // The broker's live positions are one table on the page.
+  await expect(page.getByText('Live positions')).toBeVisible()
+
+  // Opening the details must not add a second copy of the same positions:
+  // the details' "Practice account" panel keeps its summary but shows the
+  // positions table only when the broker is away, because the live section
+  // above already shows them.
+  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await expect(page.getByText('Every grade')).toBeVisible()
+  await expect(page.getByText('Practice account', { exact: true })).toBeVisible()
+  await expect(page.getByText('Gain so far')).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
