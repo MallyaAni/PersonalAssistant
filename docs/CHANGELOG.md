@@ -2,6 +2,26 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - An in-flight cancel or replace keeps its partial pending, and a same-session re-run is refused before any trade
+
+A third codex review found two P1 defects in the paper trading lifecycle.
+First, a partial reported with broker status `pending_cancel` or
+`pending_replace` was treated as terminal: those statuses were missing from
+`paper._WORKING`, so `settle` dropped the partial and rolled the rebalance
+clock back while the original order was still live and could still fill.
+Both statuses are now in the working set, and only a broker-confirmed
+terminal outcome (filled, canceled, expired, rejected, ...) concludes the
+partial. Second, `market_daily.main()` placed trades (and persisted pending
+state) before `save()` refused an existing record, so a same-session re-run
+did real work and then reported "nothing was changed". The guard now runs
+first as `refuse_existing_record`, before any brief, read, or trade, and
+returns early. Pinned by `test_an_in_flight_cancel_or_replace_keeps_the_partial_pending`
+and `test_a_same_session_rerun_submits_no_trade`. Verified: 54 desk/market
+tests pass, ruff clean against the mounted `backend/`. Deployed `2e8dae0`
+with green unit and routing gates; post-deploy sweep was running at the time
+of writing.
+
+
 ## 2026-09-10 - The drill-down's live technical read works for any covered name, with the short/medium/long horizons beside the prose
 
 A covered name outside the book is graded every evening but was not in the

@@ -3,6 +3,36 @@
 Verified state as of 2026-09-10. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-10 (afternoon) — an in-flight cancel or replace stays pending, and a same-session re-run is refused before any trade (DEPLOYED `2e8dae0`)
+
+Two P1 findings from the third codex review (a fresh session that pulled
+`main` stale at `89a8211`; each claim was reproduced before fixing).
+
+* **A partial reported `pending_cancel`/`pending_replace` was dropped and
+  the rebalance clock rolled back while the original order was still
+  live.** Those two statuses were outside `paper._WORKING`, so `settle`
+  marked such a partial terminal — even though the cancel or replacement
+  is in flight and the order can still fill. Both are now in the working
+  set; only a broker-confirmed terminal outcome concludes the partial.
+  Pinned by `test_an_in_flight_cancel_or_replace_keeps_the_partial_pending`
+  (parametrized over both statuses), which asserts the partial stays
+  pending and `unconfirmed_rebalance` is unchanged.
+* **`market_daily.main()` ran `paper_trade()` before `save()` refused an
+  existing record**, so a same-session re-run placed orders and persisted
+  pending state, then printed "nothing was changed". The record-exists
+  guard is now a `refuse_existing_record(root, session, force)` helper
+  called before any brief, read, or trade, with an early return. Pinned by
+  `test_a_same_session_rerun_submits_no_trade`, which monkeypatches
+  `trading_desk.run` and `paper_trade`, pre-seeds a record, and asserts
+  `paper_trade` is never reached and the stdout says "refusing to re-run
+  the day". The briefs/reads block also moved into
+  `_wanted_briefs_and_reads` to keep `main` under the complexity bound.
+
+Verified: 54 desk/market tests pass, ruff clean (with `backend/` mounted —
+the functional-tests image is stale by design and a bare `ruff` run
+analyzes the baked-in copy). Deployed `2e8dae0`; unit and routing gates
+passed; post-deploy sweep running.
+
 ## 2026-09-10 (afternoon) — the drill-down's live read works for any covered name, horizons beside the prose (DEPLOYED `73ca0c4`)
 
 A covered name outside the book is graded every evening but was not in the
