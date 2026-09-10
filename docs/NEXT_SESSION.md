@@ -3,6 +3,34 @@
 Verified state as of 2026-09-10. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-10 (evening) — the drill-down re-reads its analysis when the candle turns, and its timestamp is its own (DEPLOYED `9d5669e`)
+
+The fourth codex review's one remaining P2: an open drill-down showed
+stale analysis beside fresh prices. The live read was fetched once on open
+(keyed `[userId, ticker]`), so a candle refresh updated the price,
+timestamp and technical rank — all read from the live snapshot — while the
+prose and horizon lines still described the older candle, and the header's
+"live, HH:MM" was the candle's time, not the analysis's. Reproduced in the
+code before fixing: `LiveTechnical` renders `quote.last` and
+`detail?.now` from the fresh candle but `liveRead.read`/`lines` from the
+on-open fetch, and `desk_live_read` never returned a timestamp.
+
+The fetch is now keyed on `quote?.bar` — the same stable candle identifier
+the backend's per-candle cache uses — so a new bar re-reads the analysis
+and an unchanged bar never does; a name outside the snapshot has no bar and
+still reads once on open. The backend returns `read_at` (cached with the
+read, so a cache hit keeps its original time), and the header shows that
+instead of the candle's `as_of`. Pinned by `e2e/desk.spec.ts` `a new candle
+re-reads the analysis alongside the fresh price`, which drives one
+fifteen-minute candle with `page.clock.fastForward` and asserts the prose,
+horizon lines, price ($102→$110), rank (90→20) and header time all move
+together and that the read endpoint is hit once for the new bar. Verified:
+all 7 desk Playwright tests pass, `tsc` and `vite build` clean, ruff clean,
+21 desk/API backend tests pass. Deployed `9d5669e`; the deployed backend
+serves `read_at` (200 on `desk/live/read/AAPL`, `now 0.957`), the gateway
+bundle contains the new code; post-deploy sweep was running at the time of
+writing.
+
 ## 2026-09-10 (afternoon) — an in-flight cancel or replace stays pending, and a same-session re-run is refused before any trade (DEPLOYED `2e8dae0`)
 
 Two P1 findings from the third codex review (a fresh session that pulled

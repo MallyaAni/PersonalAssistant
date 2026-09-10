@@ -2,6 +2,29 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The drill-down re-reads its analysis when the candle turns, and its timestamp is its own
+
+A fourth codex review found the last P2: an open drill-down showed stale
+analysis alongside fresh prices. The live technical read was fetched once
+on open, so when the fifteen-minute candle refreshed, the price, timestamp
+and technical rank — all read from the live snapshot — moved while the
+prose and horizon lines still described the older candle, and the header's
+"live, HH:MM" showed the candle's time rather than the analysis's. The read
+fetch is now keyed on the candle's `bar`, the same stable identifier the
+backend's per-candle cache uses, so a new bar re-reads the analysis and an
+unchanged bar never does (a name outside the snapshot has no bar and reads
+once on open). `desk_live_read` now returns `read_at`, cached with the read
+so a cache hit keeps its original time, and the header shows that instead
+of the candle's `as_of`. Pinned by the Playwright test `a new candle
+re-reads the analysis alongside the fresh price`, which advances one
+fifteen-minute candle with a fake clock and asserts the prose, horizon
+lines, price, rank and header time all move together. Verified: all seven
+desk Playwright tests, `tsc` and `vite build`, ruff, and the desk/API
+backend tests pass; the deployed backend returns `read_at` on
+`desk/live/read/AAPL` and the gateway bundle carries the change. Deployed
+`9d5669e`.
+
+
 ## 2026-09-10 - An in-flight cancel or replace keeps its partial pending, and a same-session re-run is refused before any trade
 
 A third codex review found two P1 defects in the paper trading lifecycle.
