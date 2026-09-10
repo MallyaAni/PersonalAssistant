@@ -1595,6 +1595,16 @@ const NameDetail = ({
             {row.why && <span className="text-xs text-[#6e6e73]">{row.why}</span>}
           </div>
         )}
+        {!row && latest.grades?.[ticker] && (
+          <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.grades[ticker].grade] ?? ''}`}>
+              {latest.grades[ticker].grade}
+            </span>
+            <span className="text-xs text-[#6e6e73]">
+              {latest.grades[ticker].headline ?? 'graded but not in the book'}
+            </span>
+          </div>
+        )}
         {/* The live technical read renders for any covered name, even one
             the board does not carry: the backend computes it on demand from
             a fresh quote, so a name outside the candle's snapshot (not in

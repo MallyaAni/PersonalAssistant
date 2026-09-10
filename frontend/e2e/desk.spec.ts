@@ -492,6 +492,8 @@ test('drills into a covered name outside the book and sees its live horizons', a
 
   const dialog = page.getByRole('dialog', { name: 'MSFT history' })
   await expect(dialog).toBeVisible()
+  // The evening grade chip renders even though the name is not a board row.
+  await expect(dialog.getByText('expensive and the trend is quiet')).toBeVisible()
   await expect(dialog.getByText('Technical read')).toBeVisible()
   await expect(dialog.getByText('Short term · next week (daily chart)')).toBeVisible()
   await expect(dialog.getByText('Medium term · 1–3 weeks (weekly chart)')).toBeVisible()
