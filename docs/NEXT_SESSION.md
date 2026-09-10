@@ -3,7 +3,72 @@
 Verified state as of 2026-09-10. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
-## 2026-09-10 — the record tracker sizes like the desk, the network purges whole sessions, partial fills stay pending, and named extra accounts read the desk (DEPLOYING `277d55d`; contains `9b0dd05` + `277d55d`)
+## 2026-09-10 (midday) — the desk record is immutable and carries provenance, a down market clock fails closed, the coverage gate sees ranked analysts, and the dashboard shows each thing once (DEPLOYED `26bebfc`; contains `41efede` + `26bebfc`)
+
+The six findings from the second codex review (a fresh session that had no
+context, so every claim was verified by reproduction before anything was
+changed), plus the operator's dashboard review. Both deploys are live with
+green post-deploy checks (`41efede6 ok`, `26bebfcb ok`).
+
+* **Order lifecycle, paper book** (`paper.py`): a canceled/expired partial
+  stayed pending forever and a rejected leg was forgotten when another
+  filled later. `apply_settlements` now journals every settlement (latest
+  wins), keeps only still-working pending, and concludes a rebalance only
+  over the legs that are done — a canceled partial rolls the clock back and
+  the journal survives the state file. Pinned by `test_a_canceled_partial_is_concluded_and_the_clock_goes_back`
+  and `test_a_rejected_leg_is_not_forgotten_when_another_fills_later`.
+* **A down market clock fails closed** (`market_daily._submit`): the old code
+  caught the clock error and submitted market-on-open orders anyway. Now it
+  refuses every order with "REFUSED: market clock unavailable". Pinned by
+  `test_an_unavailable_market_clock_refuses_submission`.
+* **The desk record is immutable and self-describing** (`market_daily.save`):
+  saving a second record for the same session raised no error and silently
+  replaced the first — the track record no longer said what was decided.
+  `save()` now refuses to overwrite (an explicit `--force` rewrites), and
+  every record carries `provenance` (code revision, data window, strategy
+  cadence, model). Pinned by `test_save_refuses_to_overwrite_a_session_and_carries_provenance`.
+* **The coverage gate saw ranked analysts as uncovered** (`narrative.py`):
+  `_ANALYST_LINE` expected `stance +1;` but the ranked line carries
+  `(rank 0.95 ...)` between the stance and the semicolon, so the analyst was
+  never checked. The pattern now allows the rank; pinned by
+  `test_the_coverage_gate_sees_a_ranked_analyst`.
+* **Dashboard duplicates removed** (`DeskPanel.tsx`, operator review). "The
+  desk is X% invested" appeared twice with two meanings (evening target vs
+  live paper) — the header now keeps only the decision date and the strip
+  owns the live figure. Today's move appeared twice (percent in the account
+  cell, dollars in its own) — now one "Today" cell with both. Every buy
+  appeared twice — "Best buys right now" and the board's buy rows with two
+  buttons that did the same thing — the board now owns the single buy list
+  and its header carries the "Since the last plan" note. The practice
+  account's positions appeared twice — the live section moves below the
+  board and the behind-the-fold panel shows the table only when the broker
+  is away. Pinned by `e2e/desk.spec.ts` `shows each thing once, not twice`.
+* **"Best buys" ranking verified against the live 15-minute candle.** The
+  balancer rewrites `intraday.json` on the candle and the order actually
+  moves (13:45 run re-ranked SNDK/NTAP/LRCX/ANET/ADBE and flipped NVDA
+  B→A, ETN A→B); the rank key is the technical analyst re-read at the live
+  price (`holdings._live_grade`). Caveat: ranked by the read *at* the price,
+  not raw price move; falls back to the evening grade if the live read is
+  down. The fair-universe gap (`universe.py:23-28`, ~19 pts/year) was
+  confirmed as a documented limitation, not a bug.
+
+**Verified:** 43 desk/market unit tests pass + ruff clean (`41efede`);
+frontend `tsc` clean, `vite build` clean, all 5 `desk.spec.ts` Playwright
+tests pass including the new dedupe test (`26bebfc`); post-deploy sweeps
+green on both (two flaky journeys and the search harness re-checked on the
+second deploy). The gateway bundle no longer contains "Best buys right now"
+and does contain "Since the last plan"; the gateway proxies the desk API
+(401, not 502). Git: `main` at `26bebfc`, `~/anios` clean.
+
+**Next atomic task.** Watch the first real desk record written under the
+immutable `save()` — the nightly `market_daily` must not hit the new
+`FileExistsError` on a same-session re-run (it would now refuse loudly,
+which is correct, but confirm nothing re-runs the same session). Then let
+the 19:30 nightly write records under the new tracker before judging the
+rule's live track record, and re-run `market_scorecard` to refresh the
+module docstring's history table (the tracker fix changed forward numbers).
+
+## 2026-09-10 — the record tracker sizes like the desk, the network purges whole sessions, partial fills stay pending, and named extra accounts read the desk (DEPLOYED `02b73cf`; contains `9b0dd05` + `277d55d` + `02b73cf`)
 
 The five codex review findings from 2026-09-09, all verified by reproduction
 first, then fixed in one bounded piece with a shared order planner, plus the

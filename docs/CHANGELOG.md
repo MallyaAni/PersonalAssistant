@@ -2,6 +2,40 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The desk record is immutable and self-describing, a down market clock fails closed, the coverage gate sees ranked analysts, and the dashboard shows each thing once
+
+Six findings from a second codex review (a fresh session with no context,
+so every claim was reproduced before editing) plus the operator's dashboard
+review. The paper book now journals every settlement instead of dropping
+the losers: a canceled or expired partial is concluded (not left pending
+forever) and a rejected leg is not forgotten when a sibling fills later,
+with the rebalance concluded only over the legs that are done and the
+journal surviving the state file. A market clock that cannot be read now
+refuses every order ("REFUSED: market clock unavailable") instead of
+submitting market-on-open orders blind. The day's desk record refuses to be
+silently overwritten — a second save for the same session raises unless
+`--force` says it is deliberate — and every record carries provenance
+(checkout revision, data window, strategy cadence, model), so a reported
+return can be traced to the decision that made it. The read coverage gate
+no longer mistakes a ranked analyst line for an uncovered one (the rank
+sits between the stance and the semicolon and used to break the pattern),
+so a read that skips the analyst still fails. The dashboard was reviewed
+word by word from a user's perspective: "% invested" and today's move were
+each shown twice, every buy appeared twice (a "Best buys right now" list
+and the board's buy rows with two buttons that did the same thing), and the
+practice account's positions appeared twice; each is now shown once, the
+board owns the single buy list with the plan's "Since the last plan" note,
+and the live positions section moved below the board so the actionable
+list leads. The "best buys" ranking was verified against the live candle:
+the balancer rewrites the plan every fifteen minutes and the order actually
+moves (13:45 re-ranked the buys and flipped NVDA/ETN), ranked by the
+technical analyst re-read at the live price. Verified: 43 desk/market unit
+tests plus ruff clean, frontend `tsc` and `vite build` clean, all five
+`desk.spec.ts` Playwright tests including the new "shows each thing once"
+test, and the deployed system serving `26bebfc` with green post-deploy
+sweeps — the gateway bundle contains "Since the last plan" and no "Best
+buys right now", and the gateway proxies the desk API (401, not 502).
+
 ## 2026-09-10 - The record tracker sizes like the desk, the network purges whole sessions, partial fills stay pending, and named extra accounts read the desk
 
 Five codex review findings were reproduced first, then fixed in one bounded
