@@ -2,6 +2,24 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - Option chains stored nightly: the put wall, the call wall and a gamma proxy
+
+Nobody keeps a free history of option open interest, so the desk starts
+one. `backend/cli/market_options.py --refresh` fetches every listed
+contract within 180 days for the 93 book names from Cboe's free delayed
+feed (open interest, implied volatility, gamma, the underlying's price)
+and stores an immutable frame per name per session under
+`data/market/options/`; `--walls` reads the newest frame and prints the
+put wall (the largest put open interest at or below the price), the
+call wall (the largest call open interest above it) on the nearest
+expiry at least five sessions out, and a dealer-gamma proxy in shares
+per one percent move (`backend/market/options.py`). First snapshot
+2026-09-10: 92 of 93 names. The peer-reviewed evidence is expiration-day
+pinning and index-level intraday hedging flows; whether the walls carry
+anything over the desk's twenty-session horizon is the question the
+snapshots will answer in a quarter. Nothing trades on them. Tests cover
+the symbol parse, the chain parse, the walls and the frame.
+
 ## 2026-09-10 - The drill-down re-reads its analysis when the candle turns, and its timestamp is its own
 
 A fourth codex review found the last P2: an open drill-down showed stale
