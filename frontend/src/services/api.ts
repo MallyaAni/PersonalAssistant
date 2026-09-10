@@ -2220,6 +2220,9 @@ export interface DeskLiveRead {
   read: string | null;
   lines: { short: string[]; medium: string[]; long: string[] };
   now?: number | null;
+  // When the analysis was written, so the page's "live, HH:MM" is the time
+  // of the prose, never the candle it happens to sit beside.
+  read_at?: string | null;
 }
 
 export const getDeskLiveRead = async (userId: string, symbol: string): Promise<DeskLiveRead | null> => {

@@ -503,6 +503,93 @@ test('drills into a covered name outside the book and sees its live horizons', a
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// A live drill-down must stay coherent as the candle moves: when the
+// fifteen-minute bar turns, the price, the technical rank AND the analysis
+// all move together. Before the fix the read was fetched once on open and
+// never again, so a new candle updated the price and rank while the prose
+// and horizon lines described an older price — and the header's "live"
+// timestamp was the candle's, not the analysis's. The fetch is keyed on the
+// candle's bar, the same identifier the backend's per-candle cache uses.
+test('a new candle re-reads the analysis alongside the fresh price', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  // A fake clock so one fifteen-minute candle can be advanced in a test.
+  await page.clock.install({ time: new Date('2026-09-08T19:59:00Z') })
+  let candle = 0
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live`, route => {
+    const first = candle === 0
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        as_of: first ? '2026-09-08T20:00:00Z' : '2026-09-08T20:15:00Z',
+        quotes: {
+          AAPL: { symbol: 'AAPL', last: first ? 102 : 110, open: 101, high: 103, low: 100.5, bar: first ? '20:00' : '20:15', as_of: first ? '2026-09-08T20:00:00Z' : '2026-09-08T20:15:00Z' },
+          NVDA: { symbol: 'NVDA', last: 130, open: 128, high: 132, low: 127, bar: first ? '20:00' : '20:15', as_of: '2026-09-08T20:00:00Z' },
+        },
+        technical_detail: {
+          AAPL: { now: first ? 0.9 : 0.2, short: {}, medium: {}, long: {} },
+        },
+      }),
+    })
+  })
+  let refetchForNewCandle = 0
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live/read/*`, route => {
+    // The read is served for the candle that is current when the request is
+    // made, not for a count of requests: on open the effect may run once or
+    // twice (the live state starts empty, so the bar arrives a moment later)
+    // and both of those must still be the first candle's read.
+    const first = candle === 0
+    if (!first) refetchForNewCandle += 1
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        symbol: 'AAPL',
+        read: first
+          ? 'Support holds beneath the rally.'
+          : 'A breakdown has broken support — the rally is over.',
+        lines: {
+          short: [first ? '12.6% above the 21-day EMA' : '4.1% below the 21-day EMA'],
+          medium: [first ? 'weekly trend up' : 'weekly trend down'],
+          long: [first ? '2.3% below the 200-day EMA' : '11.2% below the 200-day EMA'],
+        },
+        now: first ? 0.9 : 0.2,
+        read_at: first ? '2026-09-08T20:03:00Z' : '2026-09-08T20:18:00Z',
+      }),
+    })
+  })
+
+  await page.goto('/#desk')
+  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await page.getByRole('button', { name: 'AAPL', exact: true }).last().click()
+
+  const dialog = page.getByRole('dialog', { name: 'AAPL history' })
+  await expect(dialog).toBeVisible()
+  const stamp = dialog.locator('h4', { hasText: 'Technical read' })
+  await expect(dialog.getByText('Support holds beneath the rally.', { exact: false })).toBeVisible()
+  await expect(dialog.getByText(/\$102/)).toBeVisible()
+  await expect(dialog.getByText(/Where the technical analyst would rank it/)).toContainText('90')
+  await expect(stamp).toContainText('live,')
+  const firstTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
+  expect(firstTime).toBeTruthy()
+
+  // One candle later: price 110, rank 20, and the analysis itself is
+  // re-read — the prose, the horizon lines and the header's timestamp all
+  // move, and the read endpoint was called a second time.
+  candle = 1
+  await page.clock.fastForward('15:00')
+  await expect(dialog.getByText('A breakdown has broken support — the rally is over.', { exact: false })).toBeVisible()
+  await expect(dialog.getByText('4.1% below the 21-day EMA', { exact: false })).toBeVisible()
+  await expect(dialog.getByText(/\$110/)).toBeVisible()
+  await expect(dialog.getByText(/Where the technical analyst would rank it/)).toContainText('20')
+  await expect(stamp).toContainText('live,')
+  const secondTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
+  expect(secondTime).toBeTruthy()
+  expect(secondTime).not.toBe(firstTime)
+  expect(refetchForNewCandle).toBe(1)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // The autopsy reads the person's own documents: what keeps repeating, what
 // it has cost, and the plan. It is one click from the board.
 test('analyzes the person’s own trading from their documents', async ({ page }) => {

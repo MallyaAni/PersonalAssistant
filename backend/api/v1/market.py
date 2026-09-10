@@ -290,7 +290,15 @@ async def desk_live_read(user_id: UserId, symbol: str) -> dict[str, object]:
         read = _model_live_read(lines_, client, system)
     except Exception:  # noqa: BLE001 - no model, no read, lines still render
         read = None
-    out = {"read": read, "lines": lines_, "now": detail.get("now")}
+    out = {
+        "read": read,
+        "lines": lines_,
+        "now": detail.get("now"),
+        # When this analysis was written, so the page can show the time of
+        # the prose rather than the candle it happens to sit beside: a read
+        # is only fresh for the candle it was computed on.
+        "read_at": datetime.now(UTC).isoformat(timespec="seconds"),
+    }
     _live_read_cache["key"], _live_read_cache["value"] = sig, out
     return {"symbol": symbol, **out}
 

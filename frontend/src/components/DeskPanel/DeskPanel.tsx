@@ -1420,7 +1420,6 @@ const LiveTechnical = ({
   detail,
   quote,
   row,
-  asOf,
 }: {
   userId: string
   ticker: string
@@ -1434,16 +1433,17 @@ const LiveTechnical = ({
     | undefined
   quote: DeskQuote | undefined
   row: DeskMineRow | null
-  asOf: string | null
 }) => {
   // The live read is the model's plain words over the analyst's live
-  // readings, fetched once per name when the drill-down opens. The backend
-  // computes it on demand for any covered name (a name outside the candle's
-  // snapshot gets a fresh quote and read), so the fetch always runs rather
-  // than waiting for the snapshot to already hold this name. Until it
-  // arrives, and whenever the model is away, the same readings render as
-  // the deterministic lines the backend returns beside it.
+  // readings, fetched once per name per candle. The fetch is keyed on the
+  // candle's bar — the same identifier the backend's per-candle cache uses
+  // — so a new bar re-reads the analysis, and an unchanged bar never does.
+  // A name outside the candle's snapshot has no bar and reads once on open,
+  // because there is no candle to refresh against. Until the read arrives,
+  // and whenever the model is away, the same readings render as the
+  // deterministic lines the backend returns beside it.
   const [liveRead, setLiveRead] = useState<DeskLiveRead | null>(null)
+  const bar = quote?.bar ?? ''
   useEffect(() => {
     let alive = true
     setLiveRead(null)
@@ -1453,7 +1453,7 @@ const LiveTechnical = ({
     return () => {
       alive = false
     }
-  }, [userId, ticker])
+  }, [userId, ticker, bar])
   const last = quote?.last ?? row?.last ?? null
   const change = last != null && row?.last_close ? last - row.last_close : null
   const changePct = last != null && row?.last_close ? last / row.last_close - 1 : null
@@ -1461,6 +1461,7 @@ const LiveTechnical = ({
   const read = liveRead?.read
   const fl = liveRead?.lines
   const tech = detail?.now ?? liveRead?.now ?? null
+  const readAt = liveRead?.read_at ?? null
   const column = (title: string, items: string[] | undefined) => (
     <div>
       <p className="text-xs font-medium text-[#1d1d1f]">{title}</p>
@@ -1477,9 +1478,9 @@ const LiveTechnical = ({
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h4 className="text-sm font-semibold text-[#1d1d1f]">
           Technical read
-          {asOf && (
+          {readAt && (
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-              live, {new Date(asOf).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              live, {new Date(readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </h4>
@@ -1615,7 +1616,6 @@ const NameDetail = ({
           detail={live.technical_detail?.[ticker]}
           quote={live.quotes[ticker]}
           row={row ?? null}
-          asOf={live.as_of}
         />
         {error ? (
           <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
