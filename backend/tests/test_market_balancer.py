@@ -73,9 +73,9 @@ def _record() -> dict:
             },
         },
         "actions": [
-            {"ticker": "ADBE", "rejecting_band": False},
-            {"ticker": "HPE", "rejecting_band": False},
-            {"ticker": "FTNT", "rejecting_band": False},
+            {"ticker": "ADBE", "last_close": 300.0, "rejecting_band": False},
+            {"ticker": "HPE", "last_close": 52.0, "rejecting_band": False},
+            {"ticker": "FTNT", "last_close": 80.0, "rejecting_band": False},
         ],
     }
 
@@ -148,3 +148,129 @@ def test_a_root_with_no_record_writes_an_empty_plan(tmp_path: Path, monkeypatch)
     plan = json.loads(path.read_text(encoding="utf-8"))
     assert plan["session"] is None
     assert plan["top_buys"] == []
+
+
+# A name with a pending market-on-close sell that is trading up at the open
+# is not exited into its own rally: the broker's order is cancelled, the
+# state marks the sell deliberately skipped, and a name trading down keeps
+# its sell. The rule only acts in the 9-11 EDT weekday window.
+def test_a_green_name_is_not_sold_into_its_own_rally(tmp_path: Path, monkeypatch):
+    import datetime as dt
+
+    from backend.agents.trading.desk import paper
+
+    class _FakeDT(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return dt.datetime(2026, 9, 11, 14, 30, tzinfo=dt.timezone.utc)
+
+    monkeypatch.setattr(market_balancer, "datetime", _FakeDT)
+    _write_record(tmp_path, _record())
+    state = paper.PaperState()
+    state.pending = [
+        {
+            "client_order_id": "anios-2026-09-10-sell-adbe-7",
+            "symbol": "ADBE",
+            "side": "sell",
+            "qty": 33,
+            "session": "2026-09-10",
+            "reason": "leaves the book",
+        },
+        {
+            "client_order_id": "anios-2026-09-10-sell-hpe-8",
+            "symbol": "HPE",
+            "side": "sell",
+            "qty": 95,
+            "session": "2026-09-10",
+            "reason": "leaves the book",
+        },
+    ]
+    paper.save_state(tmp_path, state)
+
+    cancelled: list[str] = []
+    fake_client = type(
+        "C", (), {"cancel_orders": lambda self, ids: cancelled.extend(ids)}
+    )()
+    from backend.market import alpaca_trading
+
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: fake_client)
+
+    record = json.loads(
+        (tmp_path / "desk" / "asof=2026-09-04" / "desk.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    # ADBE opens up (305 > 300 close), HPE opens down (51 < 52 close).
+    quotes = {"ADBE": {"last": 305.0}, "HPE": {"last": 51.0}}
+    market_balancer._green_day_skip(
+        tmp_path, record, quotes, tmp_path / "intraday.log"
+    )
+
+    assert cancelled == ["anios-2026-09-10-sell-adbe-7"]
+    back = paper.load_state(tmp_path)
+    assert [p["client_order_id"] for p in back.pending] == [
+        "anios-2026-09-10-sell-hpe-8"
+    ]
+    entry = next(
+        e
+        for e in back.journal
+        if e["client_order_id"] == "anios-2026-09-10-sell-adbe-7"
+    )
+    assert entry["status"] == paper.SKIPPED
+    assert "green-day skipped" in (tmp_path / "intraday.log").read_text(
+        encoding="utf-8"
+    )
+
+
+# Outside the opening hour the rule must not cancel anything: a quote
+# arriving in the afternoon is a different question than the open, and the
+# desk should not act on it.
+def test_the_green_day_rule_is_quiet_outside_the_window(
+    tmp_path: Path, monkeypatch
+):
+    import datetime as dt
+
+    from backend.agents.trading.desk import paper
+
+    class _FakeDT(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return dt.datetime(2026, 9, 11, 20, 0, tzinfo=dt.timezone.utc)
+
+    monkeypatch.setattr(market_balancer, "datetime", _FakeDT)
+    _write_record(tmp_path, _record())
+    state = paper.PaperState()
+    state.pending = [
+        {
+            "client_order_id": "anios-2026-09-10-sell-adbe-7",
+            "symbol": "ADBE",
+            "side": "sell",
+            "qty": 33,
+            "session": "2026-09-10",
+            "reason": "leaves the book",
+        }
+    ]
+    paper.save_state(tmp_path, state)
+
+    cancelled: list[str] = []
+    fake_client = type(
+        "C", (), {"cancel_orders": lambda self, ids: cancelled.extend(ids)}
+    )()
+    from backend.market import alpaca_trading
+
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: fake_client)
+
+    record = json.loads(
+        (tmp_path / "desk" / "asof=2026-09-04" / "desk.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    market_balancer._green_day_skip(
+        tmp_path, record, {"ADBE": {"last": 305.0}}, tmp_path / "intraday.log"
+    )
+
+    assert cancelled == []
+    back = paper.load_state(tmp_path)
+    assert [p["client_order_id"] for p in back.pending] == [
+        "anios-2026-09-10-sell-adbe-7"
+    ]

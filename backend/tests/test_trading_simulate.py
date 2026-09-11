@@ -498,3 +498,76 @@ def test_stats_carry_the_objectives_numbers():
     assert stats["turnover"] == pytest.approx(2.0)  # twice the account a year
     assert stats["max_weight"] == pytest.approx(0.15)
     assert stats["years"] == pytest.approx(2.0)
+
+
+# The desk's exit goes to the closing auction, not the opening print: a
+# sell decided on one close fills at the next session's close. Here N0's
+# grade dies at the t=120 rebalance and the session it would fill on opens
+# ten dollars up, and the account that fills its sell at that open pockets
+# the gap while the account that fills on the close does not.
+def test_exit_at_close_fills_sells_on_the_close_not_the_open():
+    rows, names = 140, NAMES
+    close = np.full((rows, names), 100.0)
+    open_ = close.copy()
+    open_[121, 0] = 110.0  # N0 gaps up on the session the exit would fill
+    grades = np.zeros((rows, names), dtype=int)
+    grades[:, 0] = 3
+    grades[:, 1] = 2
+    grades[:, 2] = 1
+    grades[120:, 0] = 0  # N0's grade dies at the t=120 rebalance
+    report = _report(close, grades=grades)
+    report.panel = replace(report.panel, open=open_)
+    at_open = simulate.run(report, use_exits=False, rebalance=60)
+    at_close = simulate.run(report, use_exits=False, rebalance=60, exit_at_close=True)
+    # Identical until the sell fills; the gap-up open is then the whole
+    # difference between the two accounts.
+    assert np.allclose(
+        np.nan_to_num(at_open.equity[:121]), np.nan_to_num(at_close.equity[:121])
+    )
+    assert at_close.equity[121] < at_open.equity[121]
+
+
+# The green-day rule holds a sell back when the name opens up for the day:
+# the desk never exits into a name's own rally. N0 opens up ten on the
+# session its exit would fill, and the skipped book still carries N0 after
+# it while the selling book is out.
+def test_green_day_skip_holds_a_sell_into_a_gap_up_open():
+    rows, names = 140, NAMES
+    close = np.full((rows, names), 100.0)
+    open_ = close.copy()
+    open_[121, 0] = 110.0
+    grades = np.zeros((rows, names), dtype=int)
+    grades[:, 0] = 3
+    grades[:, 1] = 2
+    grades[:, 2] = 1
+    grades[120:, 0] = 0
+    report = _report(close, grades=grades)
+    report.panel = replace(report.panel, open=open_)
+    no_skip = simulate.run(report, use_exits=False, rebalance=60)
+    skipped = simulate.run(report, use_exits=False, rebalance=60, green_day_skip=True)
+    assert skipped.invested[122] > no_skip.invested[122]
+    assert any(tr.ticker == "N0" and tr.closed is None for tr in skipped.trades)
+    assert all(tr.ticker != "N0" or tr.closed is not None for tr in no_skip.trades)
+
+
+# The two exit changes compose: on the same session a name opens up AND is
+# due to leave, the account keeps it (green-day holds the sell) rather than
+# capturing the gap by selling at the open or the flat day by selling at
+# the close - it still owns the name afterwards either way.
+def test_the_exit_overrides_never_buy_into_the_gap():
+    rows, names = 140, NAMES
+    close = np.full((rows, names), 100.0)
+    open_ = close.copy()
+    open_[121, 0] = 110.0
+    grades = np.zeros((rows, names), dtype=int)
+    grades[:, 0] = 3
+    grades[:, 1] = 2
+    grades[:, 2] = 1
+    grades[120:, 0] = 0
+    report = _report(close, grades=grades)
+    report.panel = replace(report.panel, open=open_)
+    both = simulate.run(
+        report, use_exits=False, rebalance=60, exit_at_close=True, green_day_skip=True
+    )
+    assert any(tr.ticker == "N0" and tr.closed is None for tr in both.trades)
+    assert both.equity[121] == pytest.approx(1.0, abs=0.01)

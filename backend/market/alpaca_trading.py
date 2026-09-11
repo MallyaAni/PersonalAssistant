@@ -184,6 +184,31 @@ class AlpacaTradingClient:
             body["client_order_id"] = client_order_id
         return self._call("POST", "/orders", body)
 
+    # A whole-share market order for the next closing auction. The TIF is
+    # "cls" (market-on-close); submitted after 7pm the broker queues it for
+    # the next session's close, where it fills at the closing auction. A
+    # sell queued this way can be cancelled any time up to the close, which
+    # is what the intraday green-day rule relies on: a name that is up at
+    # the open has its exit cancelled rather than sold into the rally.
+    def submit_market_on_close(
+        self, symbol: str, qty: int, side: str, client_order_id: str | None = None
+    ) -> dict[str, Any]:
+        """Submit a market order for the next closing auction."""
+        if qty <= 0:
+            raise AlpacaTradingError(f"{symbol}: quantity must be positive")
+        if side not in ("buy", "sell"):
+            raise AlpacaTradingError(f"{symbol}: side must be buy or sell")
+        body = {
+            "symbol": symbol,
+            "qty": str(int(qty)),
+            "side": side,
+            "type": "market",
+            "time_in_force": "cls",
+        }
+        if client_order_id:
+            body["client_order_id"] = client_order_id
+        return self._call("POST", "/orders", body)
+
 
 # The client from the environment's keys, or an error naming the missing one.
 def client_from_env(transport: Transport = urllib_transport) -> AlpacaTradingClient:

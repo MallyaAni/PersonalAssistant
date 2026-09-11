@@ -262,12 +262,19 @@ def _settled_rows(settled, panel) -> list[dict]:
     return rows
 
 
-# Send the plan: each order as a day order queued for the next open, and
-# what the broker said. Orders are day orders (see
-# `alpaca_trading.submit_market_on_open`), so submitting while the market
-# is open would fill them now, at whatever price, which is not the trade
-# that was measured. The nightly run is after the close; a run by hand
-# during the session is refused whole and told why.
+# Send the plan: buys as day orders queued for the next open, sells as
+# market-on-close orders queued for the next session's closing auction, and
+# what the broker said. A buy queued before the open fills at the first
+# print after it; a sell queued for the close fills at the closing auction,
+# so the desk never exits into an opening print it has not seen (an exit
+# decided on yesterday's close used to pay whatever the next open printed,
+# and on 2026-09-11 sold ETN at the day's low before a two-point rally).
+# The market-on-close sell can be cancelled up to the close, which the
+# intraday green-day rule does for names trading up at the open.
+# Submitting while the market is open would fill a day order now, at
+# whatever price, which is not the trade that was measured. The nightly run
+# is after the close; a run by hand during the session is refused whole and
+# told why.
 def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[str]]:
     """Return (submitted rows, refusals) after sending `orders` when `live`."""
     from backend.agents.trading.desk import paper
@@ -306,13 +313,22 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
             print(line + "  REFUSED: the market is open")
             continue
         try:
-            client.submit_market_on_open(
-                order.symbol,
-                order.qty,
-                order.side,
-                order.client_order_id
-                or paper.order_id(session, order.symbol, order.side),
-            )
+            if order.side == "sell":
+                client.submit_market_on_close(
+                    order.symbol,
+                    order.qty,
+                    order.side,
+                    order.client_order_id
+                    or paper.order_id(session, order.symbol, order.side),
+                )
+            else:
+                client.submit_market_on_open(
+                    order.symbol,
+                    order.qty,
+                    order.side,
+                    order.client_order_id
+                    or paper.order_id(session, order.symbol, order.side),
+                )
             submitted.append(
                 {
                     "symbol": order.symbol,

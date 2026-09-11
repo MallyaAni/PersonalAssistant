@@ -273,3 +273,101 @@ def test_client_requests(monkeypatch):
     assert (
         alpaca_trading.client_from_env(transport).base_url == alpaca_trading.PAPER_URL
     )
+
+
+# A sell queued for the closing auction rides the cls TIF, so an exit
+# decided on one close fills at the next session's close, not its open.
+def test_submit_market_on_close_rides_the_closing_auction(monkeypatch):
+    calls = []
+
+    def transport(method, url, headers, body):
+        calls.append(json.loads(body))
+        return 200, json.dumps({"id": "o2"}).encode()
+
+    client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
+    client.submit_market_on_close(
+        "ETN", 21, "sell", client_order_id="anios-2026-09-10-sell-etn-7"
+    )
+    assert calls[-1] == {
+        "symbol": "ETN",
+        "qty": "21",
+        "side": "sell",
+        "type": "market",
+        "time_in_force": "cls",
+        "client_order_id": "anios-2026-09-10-sell-etn-7",
+    }
+
+
+# The green-day rule's hold: a pending sell is dropped from pending and
+# journaled as a deliberate skip (terminal, not a failed order), while the
+# rest of the plan's orders stay put.
+def test_skip_sell_marks_a_pending_sell_as_deliberately_held():
+    state = paper.PaperState()
+    state.pending = [
+        {
+            "client_order_id": "anios-2026-09-10-sell-etn-7",
+            "symbol": "ETN",
+            "side": "sell",
+            "qty": 21,
+            "session": "2026-09-10",
+            "reason": "leaves the book",
+        },
+        {
+            "client_order_id": "anios-2026-09-10-buy-anet-8",
+            "symbol": "ANET",
+            "side": "buy",
+            "qty": 39,
+            "session": "2026-09-10",
+            "reason": "rebalance to 0.075",
+        },
+    ]
+    out = paper.skip_sell(state, "anios-2026-09-10-sell-etn-7")
+    assert [p["client_order_id"] for p in out.pending] == [
+        "anios-2026-09-10-buy-anet-8"
+    ]
+    entry = next(
+        e
+        for e in out.journal
+        if e["client_order_id"] == "anios-2026-09-10-sell-etn-7"
+    )
+    assert entry["status"] == paper.SKIPPED
+    assert entry["terminal"] is True
+    assert entry["qty"] == 21
+
+
+# A rebalance whose only unfilled leg was deliberately skipped still
+# concludes: the green-day hold keeps the position on purpose, so the
+# rebalance clock must not roll back and re-plan it as a failure.
+def test_a_rebalance_with_a_skipped_leg_concludes_without_rolling_back():
+    state = paper.PaperState()
+    state.unconfirmed_rebalance = "2026-09-10"
+    state.last_rebalance = "2026-09-10"
+    state.previous_rebalance = "2026-09-08"
+    state.journal = [
+        {
+            "client_order_id": "anios-2026-09-10-sell-etn-7",
+            "symbol": "ETN",
+            "side": "sell",
+            "qty": 21,
+            "session": "2026-09-10",
+            "status": paper.SKIPPED,
+            "filled_qty": 0,
+            "filled_price": 0.0,
+            "terminal": True,
+        },
+        {
+            "client_order_id": "anios-2026-09-10-buy-anet-8",
+            "symbol": "ANET",
+            "side": "buy",
+            "qty": 39,
+            "session": "2026-09-10",
+            "status": "filled",
+            "filled_qty": 39,
+            "filled_price": 194.3,
+            "terminal": True,
+        },
+    ]
+    out = paper.apply_settlements(state, [])
+    assert out.unconfirmed_rebalance is None
+    assert out.last_rebalance == "2026-09-10"
+    assert out.sessions_since_rebalance == 0

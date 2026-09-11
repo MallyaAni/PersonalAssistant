@@ -185,7 +185,8 @@ def test_an_unavailable_market_clock_refuses_submission(monkeypatch):
 
 
 # The id an order carries at submission is the id it was planned with; a
-# fallback recomputes one only for an order that never got one.
+# fallback recomputes one only for an order that never got one. Buys are
+# queued for the next open and sells for the next closing auction.
 def test_submission_uses_the_planned_order_id():
     from backend.agents.trading.desk import paper
 
@@ -196,7 +197,10 @@ def test_submission_uses_the_planned_order_id():
             return {"is_open": False}
 
         def submit_market_on_open(self, symbol, qty, side, client_order_id):
-            sent.append(client_order_id)
+            sent.append(("open", client_order_id))
+
+        def submit_market_on_close(self, symbol, qty, side, client_order_id):
+            sent.append(("close", client_order_id))
 
     planned = paper.PaperOrder(
         "AAA",
@@ -210,8 +214,35 @@ def test_submission_uses_the_planned_order_id():
         Quiet(), [planned, fallback], "2026-09-07", live=True
     )
     assert refused == []
-    assert sent[0] == "anios-2026-09-07-buy-aaa-3"
-    assert sent[1] == paper.order_id("2026-09-07", "BBB", "sell")
+    assert sent[0] == ("open", "anios-2026-09-07-buy-aaa-3")
+    assert sent[1] == ("close", paper.order_id("2026-09-07", "BBB", "sell"))
+
+
+# A sell goes to the closing auction and a buy to the next open: the desk
+# exits on the close it has seen rather than an opening print, while a buy
+# still fills at the first print after the open.
+def test_sells_go_to_the_close_and_buys_to_the_open(monkeypatch):
+    from backend.agents.trading.desk import paper
+
+    calls = []
+
+    class Broker:
+        def clock(self):
+            return {"is_open": False}
+
+        def submit_market_on_open(self, symbol, qty, side, client_order_id):
+            calls.append(("open", side, symbol))
+
+        def submit_market_on_close(self, symbol, qty, side, client_order_id):
+            calls.append(("close", side, symbol))
+
+    buy = paper.PaperOrder("AAA", "buy", 10, "rebalance to 0.100")
+    sell = paper.PaperOrder("BBB", "sell", 5, "leaves the book")
+    submitted, refused = market_daily._submit(
+        Broker(), [buy, sell], "2026-09-07", live=True
+    )
+    assert refused == []
+    assert calls == [("open", "buy", "AAA"), ("close", "sell", "BBB")]
 
 
 # The desk cancels only what it wrote down, matched by its own client order

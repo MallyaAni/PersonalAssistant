@@ -287,6 +287,71 @@ def _gated_targets(target, fired, blocked, weights, t) -> np.ndarray:
     return np.where(blocked_inc, weights, target)
 
 
+# Whether each name closes above its 200-day average, the standing
+# per-name trend read. A close at the bands means different things in an
+# uptrend and a downtrend, and both candidate rules below are gated on it.
+def _trend_up(panel: Panel) -> np.ndarray:
+    """Return (T, N) True where a name closes above its 200-day average."""
+    from backend.market import technical
+
+    features = technical.technical_features(panel)
+    index = {n: i for i, n in enumerate(technical.TECHNICAL_NAMES)}
+    return features[:, :, index["ema200_distance"]] > 0
+
+
+# Which (session, name) pairs a lower-band dip fires on: price in the
+# bottom of its 20-day band while the name is still in its long uptrend.
+# This is the mirror of the exit analyst's upper-band read, and the dip is
+# only a dip in a trend - a lower band with no trend is a falling knife.
+def _band_dip_signal(report, panel: Panel, band_up: np.ndarray) -> np.ndarray:
+    """Return (T, N) True where a name is oversold at the lower band in an uptrend."""
+    from backend.agents.trading.desk import exit as exit_analyst
+
+    ev = exit_analyst.evidence(panel)
+    in_book = np.array([t in report.sides for t in panel.tickers])
+    in_book[panel.index(panel.benchmark)] = False
+    graded = report.graded.grades >= grading.ORDINAL[grading.A]
+    with np.errstate(invalid="ignore"):
+        at_lower = (ev.band_position <= -0.80) & np.isfinite(ev.band_position)
+    return at_lower & band_up & graded & in_book[None, :]
+
+
+# The mid-cycle add signal the run will use, whichever way it is made: a
+# caller's own precomputed signal, the fall rule, or the band-dip read.
+def _dip_signal_for(
+    report, panel: Panel, dip, band_dip_buy: bool, trend_up
+) -> np.ndarray:
+    """Return the (T, N) dip signal the run should act on, or None."""
+    if band_dip_buy:
+        return _band_dip_signal(report, panel, trend_up)
+    if dip is not None:
+        if dip.signal is not None:
+            return dip.signal
+        return _dip_signal(report, panel, dip)
+    return None
+
+
+# The buy gates and the dip signal the run is asked to apply, all read in
+# one place so the session loop only decides what to trade.
+def _signals_for(
+    report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
+):
+    """Return (fired, blocked, trend_up, dips) the run's options require."""
+    fired = blocked = None
+    if entry_gate:
+        from backend.agents.trading.desk import entry
+        from backend.market import levels
+
+        fired = entry.entries(report.panel, levels.level_features(report.panel)).any()
+    if block_overbought:
+        blocked = exit_analyst.evidence(report.panel).signalled()
+    trend_up = None
+    if band_dip_buy or trend_gated_exit:
+        trend_up = _trend_up(report.panel)
+    dips = _dip_signal_for(report, report.panel, dip, band_dip_buy, trend_up)
+    return fired, blocked, trend_up, dips
+
+
 # Walk the desk's own rules from `since` to the end of the panel.
 def run(
     report,
@@ -302,6 +367,10 @@ def run(
     grace: int = exit_analyst.GRACE,
     entry_gate: bool = False,
     block_overbought: bool = False,
+    band_dip_buy: bool = False,
+    trend_gated_exit: bool = False,
+    exit_at_close: bool = False,
+    green_day_skip: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -322,24 +391,32 @@ def run(
     `block_overbought` is the narrow alternative: only a name whose daily
     is rejecting its upper Bollinger band (the exit analyst's own signal)
     is held back, so a book is not starved of every un-triggered buy.
+    `band_dip_buy` adds the symmetric lower edge mid-cycle: a name at the
+    bottom of its 20-day band while still above its 200-day average is a
+    dip in an uptrend and earns a small add. Measured on 2015-2026 it
+    never fires - these ninety-four names hug the top of their own band
+    (median band position +0.59), so a close at the bottom (<= -0.80) does
+    not occur; the fall-based dip rule is the dip that exists here.
+    `trend_gated_exit` is the symmetric upper edge, and it encodes the rule
+    that a band read only fires as an exit in a downtrend: the exit
+    analyst's signal sells a name only when it closes below its 200-day
+    average, and never in an uptrend, where an extension has measured as a
+    pause, not a turn. Measured the same way it still loses a little
+    (Sharpe 1.43 against 1.44 ungated; total +1242% against +1259%), the
+    same reason as the retired overlay: these names resume after the
+    pause. Both options stay for the measurement, not for trading.
+    `exit_at_close` fills sells at the execution session's close instead
+    of its open, so an exit captures the day's move rather than an opening
+    print it has not seen. `green_day_skip` holds a sell back when the
+    name opens up for the day - the desk never exits into a name's own
+    rally. Both are the paper account's live behavior since 2026-09-11 and
+    are measured here so the change from the old all-at-the-open fills is
+    visible.
     """
     decide = allocator or _targets
-    fired: np.ndarray | None = None
-    blocked: np.ndarray | None = None
-    if entry_gate:
-        from backend.agents.trading.desk import entry
-        from backend.market import levels
-
-        fired = entry.entries(report.panel, levels.level_features(report.panel)).any()
-    if block_overbought:
-        blocked = exit_analyst.evidence(report.panel).signalled()
-    dips = None
-    if dip is not None:
-        dips = (
-            dip.signal
-            if dip.signal is not None
-            else _dip_signal(report, report.panel, dip)
-        )
+    fired, blocked, trend_up, dips = _signals_for(
+        report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
+    )
     panel: Panel = report.panel
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
@@ -375,16 +452,33 @@ def run(
             reason = "rebalanced out"
             rebalances += 1
         else:
-            target, reason = book.between(evidence, closes[t], t, redeploy, grace)
+            target, reason = book.between(
+                evidence, closes[t], t, redeploy, grace, trend_up
+            )
             if dips is not None and dips[t].any():
                 target, added = _dip_add(target, dips[t], dip, book, closes[t])
                 if added:
                     reason = "dip add"
                     dip_adds += added
         # The quantity is decided from what the decision could see - t's
-        # close - and only then filled at t + 1's open.
+        # close - and only then filled at t + 1's open. Buys and sells can
+        # fill at different prices (the paper account sells on the close
+        # and never into a green open since 2026-09-11), so the fill is
+        # split by side.
         order = book.plan(target, closes[t])
-        book.settle(order, opens[t + 1], t + 1, reason)
+        buy_prices = opens[t + 1]
+        sell_prices = opens[t + 1]
+        if exit_at_close:
+            sell_prices = closes[t + 1]
+        if green_day_skip:
+            # Hold a sell back when the name opens up for the day: the
+            # desk does not exit into a name's own rally.
+            up_at_open = (opens[t + 1] > closes[t]) & np.isfinite(
+                opens[t + 1]
+            ) & np.isfinite(closes[t])
+            skip = (order < book.shares) & up_at_open
+            order = np.where(skip, book.shares, order)
+        book.settle_split(order, buy_prices, sell_prices, t + 1, reason)
         equity[t + 1] = book.equity(closes[t + 1])
         returns[t + 1] = (
             equity[t + 1] / equity[t] - 1.0 if equity[t] > 0 else float("nan")
@@ -456,9 +550,17 @@ class _Book:
         return float((self.shares[priced] * prices[priced]).sum() / total)
 
     # What to hold between rebalances: what is already held, less anything
-    # the exit analyst names.
+    # the exit analyst names. `trend_up` gates an exit to a downtrend: a
+    # name above its 200-day average is left alone even when a band signal
+    # fires, because an extension in an uptrend has measured as a pause.
     def between(
-        self, evidence, prices, t: int, redeploy: bool, grace: int = exit_analyst.GRACE
+        self,
+        evidence,
+        prices,
+        t: int,
+        redeploy: bool,
+        grace: int = exit_analyst.GRACE,
+        trend_up: np.ndarray | None = None,
     ):
         """Return (target weights, the reason anything leaves)."""
         total = self.equity(prices)
@@ -471,7 +573,10 @@ class _Book:
         reason = "held"
         for column in np.flatnonzero(self.shares > 0):
             entry = self.opened.get(column, t)
-            if exit_analyst.should_exit(evidence, t, column, entry, grace):
+            in_downtrend = trend_up is None or not bool(trend_up[t, column])
+            if in_downtrend and exit_analyst.should_exit(
+                evidence, t, column, entry, grace
+            ):
                 leaving[column] = True
                 reason = exit_analyst.reason(evidence, t, column)
         if not leaving.any():
@@ -544,6 +649,47 @@ class _Book:
         if not move.any():
             return
         notional = move * np.nan_to_num(prices)
+        self.cash -= float(notional.sum()) + float(np.abs(notional).sum()) * self.cost
+        self.traded += float(np.abs(notional).sum())
+        self.shares = np.maximum(wanted, 0.0)
+
+    # Fill the plan with buys paid at `buy_prices` and sells paid at
+    # `sell_prices` - the paper account buys at the open and sells on the
+    # close since 2026-09-11, so a buy and a sell on the same session
+    # trade at different prices and the ledger must not pretend otherwise.
+    def settle_split(
+        self, order: np.ndarray, buy_prices: np.ndarray, sell_prices: np.ndarray,
+        session: int, reason: str,
+    ) -> None:
+        """Fill the plan, buys at `buy_prices` and sells at `sell_prices`."""
+        before = self.shares > 0
+        self._fill_split(order, buy_prices, sell_prices)
+        for column in np.flatnonzero((self.shares > 0) & ~before):
+            self.opened[column] = session
+            self.paid[column] = float(buy_prices[column])
+        for column in np.flatnonzero(before & (self.shares <= 0)):
+            self._log(column, session, sell_prices, reason)
+
+    # The split-price fill: a name without a buy price cannot grow, a name
+    # without a sell price cannot shrink, and each side is paid at its own
+    # session price.
+    def _fill_split(
+        self, order: np.ndarray, buy_prices: np.ndarray, sell_prices: np.ndarray
+    ) -> None:
+        buy_ok = np.isfinite(buy_prices) & (buy_prices > 0)
+        sell_ok = np.isfinite(sell_prices) & (sell_prices > 0)
+        wanted = self.shares.copy()
+        grow = (order > self.shares) & buy_ok
+        shrink = (order < self.shares) & sell_ok
+        wanted[grow] = order[grow]
+        wanted[shrink] = order[shrink]
+        move = wanted - self.shares
+        if not move.any():
+            return
+        price = np.empty_like(buy_prices, dtype=float)
+        price[grow] = buy_prices[grow]
+        price[shrink] = sell_prices[shrink]
+        notional = move * np.nan_to_num(price)
         self.cash -= float(notional.sum()) + float(np.abs(notional).sum()) * self.cost
         self.traded += float(np.abs(notional).sum())
         self.shares = np.maximum(wanted, 0.0)

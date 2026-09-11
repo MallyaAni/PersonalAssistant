@@ -279,6 +279,15 @@ _WORKING = (
     "pending_cancel",
     "pending_replace",
 )
+# A leg the desk deliberately chose not to execute: the intraday green-day
+# rule cancels a market-on-close sell for a name trading up at the open and
+# journals it here. It is terminal (the broker's later cancel must not
+# re-open it) and counts as done for the rebalance - the position is
+# deliberately held, not a failed order to be retried.
+SKIPPED = "skipped"
+# The statuses that count a rebalance leg as concluded, whether it filled
+# or was deliberately held.
+DONE = ("filled", SKIPPED)
 
 
 @dataclass(frozen=True)
@@ -407,7 +416,7 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     if not legs or any(not e["terminal"] for e in legs):
         # Nothing to conclude yet; ask again next session.
         return new
-    if all(e["status"] == "filled" for e in legs):
+    if all(e["status"] in DONE for e in legs):
         new.unconfirmed_rebalance = None
         return new
     # It did not go through. Put the clock back so it is tried again.
@@ -423,6 +432,37 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
 def order_id(session: str, symbol: str, side: str, seq: int = 0) -> str:
     """Return the client order id for one submission of a symbol on a session."""
     return f"anios-{session}-{side}-{symbol}-{seq}".lower()
+
+
+# Deliberately hold a position the desk planned to sell. The intraday
+# green-day rule calls this when a name with a pending market-on-close sell
+# is trading up at the open: the order is cancelled on the broker and this
+# writes the hold into the state as a concluded leg, so the rebalance does
+# not treat the cancelled sell as a failed order and roll the clock back.
+def skip_sell(state: PaperState, client_order_id: str) -> PaperState:
+    """Return the state with the given pending sell marked as deliberately held."""
+    new = PaperState(**asdict(state))
+    row = next(
+        (r for r in new.pending if r.get("client_order_id") == client_order_id),
+        None,
+    )
+    if row is None:
+        return state
+    new.pending = [r for r in new.pending if r.get("client_order_id") != client_order_id]
+    journal = {str(r.get("client_order_id") or ""): r for r in new.journal}
+    journal[client_order_id] = {
+        "client_order_id": client_order_id,
+        "symbol": row.get("symbol", ""),
+        "side": row.get("side", "sell"),
+        "qty": int(row.get("qty") or 0),
+        "session": row.get("session", ""),
+        "status": SKIPPED,
+        "filled_qty": 0,
+        "filled_price": 0.0,
+        "terminal": True,
+    }
+    new.journal = [journal[k] for k in sorted(journal)]
+    return new
 
 
 # Record the account after the day's orders: equity, cash, and the profit
