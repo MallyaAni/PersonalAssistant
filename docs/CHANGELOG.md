@@ -2,6 +2,14 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The drill-down lists the grade changes
+
+Twelve identical session rows answered nothing. The name's drill-down now
+opens its history with the sessions where the grade actually moved,
+newest first, each with the analysts whose stance changed and how
+("value for → neutral"), marked "said" where a nightly record wrote it.
+The session table follows below it.
+
 ## 2026-09-10 - A name's history shows what the desk said, and which analyst moved
 
 The drill-down's session table read from the history file, which is

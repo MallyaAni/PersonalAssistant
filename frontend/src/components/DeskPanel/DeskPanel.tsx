@@ -14,6 +14,7 @@ import {
   type DeskCurve,
   type DeskHolding,
   type DeskHistory,
+  type DeskHistoryRow,
   type DeskIntraday,
   type DeskLive,
   type DeskLiveRead,
@@ -1515,6 +1516,25 @@ const LiveTechnical = ({
   )
 }
 
+// The sessions where the grade moved, with the analysts whose stance
+// changed and how: "technical turned against", "value no longer for".
+const STANCE_WORD: Record<number, string> = { 1: 'for', 0: 'neutral', [-1]: 'against' }
+const gradeChanges = (rows: DeskHistoryRow[]) => {
+  const out: { date: string; from: string; to: string; moved: string[]; said?: boolean }[] = []
+  for (let i = 1; i < rows.length; i += 1) {
+    const prev = rows[i - 1]
+    const row = rows[i]
+    if (row.grade === prev.grade) continue
+    const moved: string[] = []
+    for (const [analyst, now] of Object.entries(row.stances ?? {})) {
+      const before = prev.stances?.[analyst] ?? 0
+      if (before !== now) moved.push(`${analyst} ${STANCE_WORD[before] ?? before} → ${STANCE_WORD[now] ?? now}`)
+    }
+    out.push({ date: row.date, from: prev.grade, to: row.grade, moved, said: row.said })
+  }
+  return out
+}
+
 // A stale brief dumps the desk's raw evidence ("revenue_yoy +0.262") in
 // place of the plain words the prompt now demands. The shape — a field
 // identifier followed by a signed decimal — is enough to hide it rather
@@ -1556,6 +1576,11 @@ const NameDetail = ({
   const gradeReads = latest.grades?.[ticker]?.reads
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []
+  // The sessions where the grade actually moved, newest first, each with
+  // the analysts whose stance changed: a list of twelve identical rows says
+  // nothing, and "what changed and who moved it" is the question a person
+  // opens this panel with.
+  const changes = gradeChanges(history?.rows ?? []).slice(-8).reverse()
   const cells = [
     // What the grade earned on this name: the days it was graded A or
     // better against the days it was not, both a year. A single name's rule
@@ -1654,6 +1679,23 @@ const NameDetail = ({
                 <p><span className="font-medium">Risks:</span> {brief.risks}</p>
                 <p><span className="font-medium">Watch:</span> {brief.watch}</p>
               </div>
+            )}
+            <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">Grade changes</h4>
+            {changes.length === 0 ? (
+              <p className="mt-1 text-xs text-[#6e6e73]">No grade change in the history on file.</p>
+            ) : (
+              <ul className="mt-1 space-y-1 text-sm text-[#1d1d1f]">
+                {changes.map((c) => (
+                  <li key={c.date} className="flex flex-wrap items-center gap-x-2">
+                    <span className="text-[#6e6e73]">{shortDate(c.date)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[c.from] ?? ''}`}>{c.from}</span>
+                    <span className="text-[#6e6e73]">→</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[c.to] ?? ''}`}>{c.to}</span>
+                    <span className="text-xs text-[#6e6e73]">{c.moved.length > 0 ? c.moved.join(', ') : 'the size cut, not an analyst'}</span>
+                    {c.said && <span className="text-[10px] uppercase tracking-wide text-[#0b5cad]">said</span>}
+                  </li>
+                ))}
+              </ul>
             )}
             <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">The last {recent.length} sessions</h4>
             <p className="mt-0.5 text-xs text-[#6e6e73]">
