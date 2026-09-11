@@ -436,6 +436,17 @@ def book_backtest(report: DeskReport, since: date | None = None) -> list[BookSta
     # narrower question and was for a long time the only one being asked.
     full = simulate.run(report, since=since, use_exits=False)
     out.append(_book_stat("the desk's rules, all of them", full.returns))
+    # The same book with the band-reversal blocker the live planner now
+    # runs: no buy or add into a name whose daily is rejecting its upper
+    # Bollinger band. Measured since 2015 it beats the ungated book on
+    # return, Sharpe and drawdown; requiring a full entry trigger starved
+    # the book of exposure instead.
+    gated = simulate.run(report, since=since, use_exits=False, block_overbought=True)
+    out.append(
+        _book_stat(
+            "the desk's rules, buys blocked at the upper band", gated.returns
+        )
+    )
     variants = (
         ("desk book (default config)", risk.BOOK_CONFIG),
         ("top 20%, vol target 15%", sizing.SizingConfig(top_fraction=0.2)),

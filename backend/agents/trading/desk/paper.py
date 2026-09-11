@@ -111,8 +111,59 @@ def save_state(root: Path, state: PaperState) -> Path:
 
 # The plan for one session: the orders to submit for the next open and the
 # state after it. `held` is {symbol: shares}, `prices` {symbol: last close},
-# `targets` {symbol: weight} from the desk's book, `grades` {symbol: letter}
-# for every name graded today.
+# `targets` {symbol: weight} from the desk's book, `grades` {symbol:
+# letter} for every name graded today.
+# The rebalance's orders: the shared planner's moves, rounded to the whole
+# shares a broker accepts, gated on the band-reversal blocker, skipping a
+# move too small to be worth its cost. Sells and trims pass whatever the
+# gate says; a buy or add inside `entry_blocked` (the daily rejecting its
+# upper Bollinger band) is held back, so the desk never buys a name whose
+# own daily is rolling over at the top.
+def _rebalance_orders(
+    planner_moves,
+    entry_blocked: set[str] | None,
+    equity: float,
+    session: str,
+    new: PaperState,
+) -> list[PaperOrder]:
+    """Return the buy and sell orders for this rebalance."""
+    orders: list[PaperOrder] = []
+    for o in planner_moves:
+        if o.side == "buy" and entry_blocked is not None and o.symbol in entry_blocked:
+            continue
+        qty = int(round(o.qty))
+        if qty <= 0:
+            continue
+        if abs(qty) * o.reference_price < MIN_TRADE * equity:
+            continue
+        seq = new.order_seq
+        new.order_seq += 1
+        if o.side == "buy":
+            orders.append(
+                PaperOrder(
+                    o.symbol,
+                    "buy",
+                    qty,
+                    o.reason,
+                    client_order_id=order_id(session, o.symbol, "buy", seq),
+                )
+            )
+            new.opened.setdefault(o.symbol, session)
+        else:
+            orders.append(
+                PaperOrder(
+                    o.symbol,
+                    "sell",
+                    qty,
+                    o.reason,
+                    client_order_id=order_id(session, o.symbol, "sell", seq),
+                )
+            )
+    return orders
+
+
+# Plan this session's moves: rebalance to the targets, or the exits the
+# caller named.
 def plan(
     session: str,
     state: PaperState,
@@ -123,6 +174,7 @@ def plan(
     grades: dict[str, str],
     finished: dict[str, str] | None = None,
     force_rebalance: bool = False,
+    entry_blocked: set[str] | None = None,
 ) -> tuple[list[PaperOrder], PaperState, str]:
     """Return (orders, new state, what the day was).
 
@@ -131,6 +183,14 @@ def plan(
     one-time move - the desk's rule never sets it - and it is the one case
     a session already planned is planned again, deliberately: the caller
     cancels the broker's open orders before submitting the new ones.
+
+    `entry_blocked` is the set of symbols whose daily is rejecting its
+    upper Bollinger band tonight (the exit analyst's own signal - a
+    bearish candle at the band, or price in the upper fifth of a wide
+    band). When given, no buy or add is placed for a name in it; sells and
+    trims pass regardless. Measured on the book since 2015 this held only
+    those buys back and beat the ungated book on return, Sharpe and
+    drawdown, where requiring a full entry trigger starved the book.
     """
     if session in state.sessions_seen and not force_rebalance:
         return [], state, "already planned for this session"
@@ -159,35 +219,13 @@ def plan(
         target_map = {s: float(w) for s, w in targets.items() if w > 0}
         held_map = {s: float(q) for s, q in held.items() if q > 0}
         price_map = {s: float(p) for s, p in prices.items() if p and p > 0}
-        for o in planner.plan(target_map, held_map, equity, price_map):
-            qty = int(round(o.qty))
-            if qty <= 0:
-                continue
-            if abs(qty) * o.reference_price < MIN_TRADE * equity:
-                continue
-            seq = new.order_seq
-            new.order_seq += 1
-            if o.side == "buy":
-                orders.append(
-                    PaperOrder(
-                        o.symbol,
-                        "buy",
-                        qty,
-                        o.reason,
-                        client_order_id=order_id(session, o.symbol, "buy", seq),
-                    )
-                )
-                new.opened.setdefault(o.symbol, session)
-            else:
-                orders.append(
-                    PaperOrder(
-                        o.symbol,
-                        "sell",
-                        qty,
-                        o.reason,
-                        client_order_id=order_id(session, o.symbol, "sell", seq),
-                    )
-                )
+        orders = _rebalance_orders(
+            planner.plan(target_map, held_map, equity, price_map),
+            entry_blocked,
+            equity,
+            session,
+            new,
+        )
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1

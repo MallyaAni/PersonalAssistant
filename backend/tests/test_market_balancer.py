@@ -53,6 +53,7 @@ def _record() -> dict:
                 "stops": {"12": 281.6},
                 "grade_margin": 0.5,
                 "rank": 1,
+                "rejecting_band": False,
             },
             "HPE": {
                 "last_close": 52.0,
@@ -60,6 +61,7 @@ def _record() -> dict:
                 "stops": {"12": 48.4},
                 "grade_margin": 0.4,
                 "rank": 2,
+                "rejecting_band": False,
             },
             "FTNT": {
                 "last_close": 80.0,
@@ -67,8 +69,14 @@ def _record() -> dict:
                 "stops": {"12": 79.2},
                 "grade_margin": 0.1,
                 "rank": 3,
+                "rejecting_band": False,
             },
         },
+        "actions": [
+            {"ticker": "ADBE", "rejecting_band": False},
+            {"ticker": "HPE", "rejecting_band": False},
+            {"ticker": "FTNT", "rejecting_band": False},
+        ],
     }
 
 
@@ -100,6 +108,24 @@ def test_with_no_holdings_every_book_name_is_a_ranked_buy(tmp_path: Path, monkey
     # targeted, so it is not a buy. Grade order, best first.
     assert [b["ticker"] for b in plan["top_buys"]] == ["ADBE", "HPE"]
     assert plan["changed"] == ["first plan of the session"]
+
+
+# A name can earn a target weight and still be rejecting its upper
+# Bollinger band tonight; the balancer must not rank it a buy. This is the
+# blocker the nightly plan runs, and it is what keeps a name whose daily
+# is rolling over at the top out of the ranked buys.
+def test_a_book_name_rejecting_the_upper_band_is_not_a_buy(tmp_path: Path, monkeypatch):
+    _no_network(monkeypatch)
+    record = _record()
+    record["levels"]["HPE"]["rejecting_band"] = True
+    record["actions"][1]["rejecting_band"] = True
+    _write_record(tmp_path, record)
+    plan = json.loads(
+        market_balancer.run(tmp_path, 100_000.0).read_text(encoding="utf-8")
+    )
+    # HPE is in the book, targeted and unheld, but its daily is rejecting
+    # its upper Bollinger band: it is not a buy. ADBE's is not, so it is.
+    assert [b["ticker"] for b in plan["top_buys"]] == ["ADBE"]
 
 
 def test_a_held_name_is_not_a_buy_and_changes_are_detected(tmp_path: Path, monkeypatch):

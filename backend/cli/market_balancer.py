@@ -61,6 +61,50 @@ def _changes(previous: dict | None, top_buys: list[dict]) -> list[str]:
     return notes or ["no change to the ranked buys"]
 
 
+# The names the desk will not buy into tonight: a daily rejecting its upper
+# Bollinger band, read with the exit analyst's own signal. The record
+# carries the flag the nightly run stamped, on its action rows and its
+# levels block; a record that predates the stamp falls back to recomputing
+# it here from the store, so the ranked buys stay gated however old the
+# record is. A record with neither (a report-only test fixture) leaves
+# every name buyable, as it was before the blocker existed.
+def _band_blocked(latest: dict, store: MarketStore) -> set[str]:
+    """Return the tickers the desk refuses to buy on the record's session."""
+    flags: dict[str, bool] = {}
+    for source in (latest.get("actions"), latest.get("levels")):
+        for row in source or []:
+            if (
+                isinstance(row, dict)
+                and row.get("ticker")
+                and "rejecting_band" in row
+            ):
+                flags[row["ticker"]] = bool(row["rejecting_band"])
+    if flags:
+        return {t for t, v in flags.items() if v}
+    try:
+        from backend.agents.trading.desk import exit as exit_analyst
+        from backend.market import universe
+        from backend.market.panel import build_panel
+
+        book_universe = universe.build_universe()
+        sides = universe.book_sides(book_universe)
+        themes = {
+            t: g for t, g in universe.theme_map(book_universe).items() if t in sides
+        }
+        panel = build_panel(
+            store, list(sides), universe.MARKET_BENCHMARK, themes, asof=None
+        )
+        signal = exit_analyst.evidence(panel).signalled()
+        last = len(panel.dates) - 1
+        return {
+            ticker
+            for column, ticker in enumerate(panel.tickers)
+            if signal[last, column]
+        }
+    except Exception:
+        return set()
+
+
 # Build the plan for the person's own account from the latest record, their
 # recorded holdings, and the live read, and write it with the audit line.
 def run(data_dir: Path, equity: float) -> Path:
@@ -106,8 +150,21 @@ def run(data_dir: Path, equity: float) -> Path:
     except alpaca.AlpacaUnavailableError:
         pass
     rows = holdings.board(latest, held, equity, quotes, technical)
+    # Only names the desk is willing to start: a name can earn a target
+    # weight and still be rejecting its upper Bollinger band tonight, and
+    # buying it then is buying into a move that is already rolling over -
+    # SNDK bought the morning after a 12% spike while its daily rejected
+    # the band. The nightly plan blocks the same names. Measured on the
+    # book since 2015 this narrow blocker beat the ungated book on return,
+    # Sharpe and drawdown; requiring a full entry trigger starved it.
+    blocked = _band_blocked(latest, store)
     top_buys = [
-        r for r in rows if r["in_book"] and r["target_weight"] > 0 and r["shares"] == 0
+        r
+        for r in rows
+        if r["in_book"]
+        and r["target_weight"] > 0
+        and r["shares"] == 0
+        and r["ticker"] not in blocked
     ]
     previous: dict | None = None
     if path.exists():

@@ -340,6 +340,30 @@ def _desk_open_order_ids(open_orders: list[dict]) -> list[str]:
     ]
 
 
+# Which names the desk will not buy or add to tonight: a daily rejecting
+# its upper Bollinger band, read with the exit analyst's own signal (a
+# bearish candle at the band, or price in the upper fifth of a wide band)
+# at the planning session's close. A name in the set is held or trimmed
+# but never bought, whatever its grade says. Measured on the book since
+# 2015 this narrow blocker beat the ungated book on return, Sharpe and
+# drawdown, where requiring a full dip-or-breakout trigger starved it.
+def _band_blocked(report) -> tuple[set[str], dict[str, bool]]:
+    """Return (blocked, {ticker: rejecting-the-band}) for the last session."""
+    from backend.agents.trading.desk import exit as exit_analyst
+
+    panel = report.panel
+    last = len(panel.dates) - 1
+    signal = exit_analyst.evidence(panel).signalled()
+    blocked: set[str] = set()
+    flags: dict[str, bool] = {}
+    for column, ticker in enumerate(panel.tickers):
+        flag = bool(signal[last, column])
+        flags[ticker] = flag
+        if flag:
+            blocked.add(ticker)
+    return blocked, flags
+
+
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Returns the day's entry for the desk record.
@@ -375,6 +399,7 @@ def paper_trade(
     # Nothing is passed for `finished`: the band exit that used to fill it
     # was measured inside the book's own rules and cost 3.0% a year. See
     # the note at the top of `desk/exit.py`.
+    blocked, blocking_flags = _band_blocked(report)
     orders, new_state, what = paper.plan(
         session,
         state,
@@ -384,11 +409,23 @@ def paper_trade(
         targets,
         grades,
         force_rebalance=rebalance_now,
+        entry_blocked=blocked,
     )
     print(
         f"\npaper book ({what}{', forced tonight' if rebalance_now else ''}), "
         f"equity {account.equity:,.0f}:"
     )
+    held_back = sum(1 for o in orders if o.side == "buy" and o.symbol in blocked)
+    if held_back:
+        print(
+            f"  {held_back} buy orders held back: "
+            "the daily is rejecting its upper Bollinger band"
+        )
+    else:
+        print(
+            f"  buys blocked where the daily rejects its upper Bollinger band "
+            f"({len(blocked)} names rejecting tonight)"
+        )
     # The plan is written down before a single order is sent, with the id
     # each one will carry. A crash between sending and recording then
     # leaves a record the next session can ask the broker about, rather
@@ -464,6 +501,10 @@ def paper_trade(
         int(new_state.sessions_since_rebalance),
         {o.symbol: o.reason for o in orders},
     )
+    # The band-rejection flag each action row decided on, so the record and
+    # the board can show which names the desk refused to buy tonight.
+    for row in entry["actions"]:
+        row["rejecting_band"] = blocking_flags.get(row.get("ticker"), False)
     if live:
         paper.save_state(store_root, new_state)
     print(
@@ -511,6 +552,7 @@ def record(
     last = len(panel.dates) - 1
     state = report.regime.today()
     grades = {}
+    _, blocking_flags = _band_blocked(report)
     # Every name carries its own reason, written from the same evidence the
     # grade came from. The model's brief covers only the names held, so
     # without this the view answers "what" for ninety names and "why" for
@@ -601,6 +643,7 @@ def record(
                 k: row[k]
                 for k in ("last_close", "high_20", "stops", "grade_margin", "rank")
             }
+            | {"rejecting_band": blocking_flags.get(row["ticker"], False)}
             for row in actions.build(
                 report,
                 {t: 0.0 for t in report.sides},
@@ -616,9 +659,12 @@ def record(
         "actions": (
             paper.get("actions")
             if paper and paper.get("actions") is not None
-            else actions.build(
-                report, {s.position.ticker: s.weight for s in report.book}, {}, 0
-            )
+            else [
+                {**row, "rejecting_band": blocking_flags.get(row.get("ticker"), False)}
+                for row in actions.build(
+                    report, {s.position.ticker: s.weight for s in report.book}, {}, 0
+                )
+            ]
         ),
     }
 

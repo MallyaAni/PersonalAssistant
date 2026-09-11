@@ -273,6 +273,20 @@ def _targets(report, panel: Panel, config, t: int) -> np.ndarray:
     return targets
 
 
+# Apply the buy gate to a rebalance's targets: cap any increase for names
+# the gate denies, so trims and sells pass but the book cannot grow a
+# position the gate refused.
+def _gated_targets(target, fired, blocked, weights, t) -> np.ndarray:
+    """Return `target` with denied increases capped at `weights`."""
+    gate = np.zeros(weights.shape, dtype=bool)
+    if fired is not None:
+        gate |= ~fired[t]
+    if blocked is not None:
+        gate |= blocked[t]
+    blocked_inc = gate & (target > weights)
+    return np.where(blocked_inc, weights, target)
+
+
 # Walk the desk's own rules from `since` to the end of the panel.
 def run(
     report,
@@ -286,6 +300,8 @@ def run(
     dip: "DipRule | None" = None,
     exits=None,
     grace: int = exit_analyst.GRACE,
+    entry_gate: bool = False,
+    block_overbought: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -297,8 +313,26 @@ def run(
     the exit analyst's own reading, so a candidate exit rule is measured
     inside the same book; `grace` is how many sessions a position is left
     alone after it opens before any exit may fire.
+
+    `entry_gate` mirrors the live paper planner's rule: on a rebalance, no
+    name may be bought or added to unless its entry trigger (a dip or a
+    breakout) fired that session. Sells and trims still happen; a name
+    already held keeps its weight but cannot grow without a trigger. This
+    is how the measured book and the paper account decide the same orders.
+    `block_overbought` is the narrow alternative: only a name whose daily
+    is rejecting its upper Bollinger band (the exit analyst's own signal)
+    is held back, so a book is not starved of every un-triggered buy.
     """
     decide = allocator or _targets
+    fired: np.ndarray | None = None
+    blocked: np.ndarray | None = None
+    if entry_gate:
+        from backend.agents.trading.desk import entry
+        from backend.market import levels
+
+        fired = entry.entries(report.panel, levels.level_features(report.panel)).any()
+    if block_overbought:
+        blocked = exit_analyst.evidence(report.panel).signalled()
     dips = None
     if dip is not None:
         dips = (
@@ -330,6 +364,14 @@ def run(
         # Decided on t's close, filled at t+1's open.
         if (t - start) % rebalance == 0:
             target = decide(report, panel, config, t)
+            if fired is not None or blocked is not None:
+                total = book.equity(closes[t])
+                weights = (
+                    (book.shares * closes[t]) / total
+                    if total > 0
+                    else np.zeros(names)
+                )
+                target = _gated_targets(target, fired, blocked, weights, t)
             reason = "rebalanced out"
             rebalances += 1
         else:

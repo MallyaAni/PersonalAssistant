@@ -201,6 +201,9 @@ def board(
                 "high_20": level.get("high_20"),
                 "stops": level.get("stops") or {},
                 "grade_margin": level.get("grade_margin"),
+                # Whether the nightly desk refused to buy the name tonight
+                # because its daily is rejecting its upper Bollinger band.
+                "rejecting_band": bool(level.get("rejecting_band", False)),
                 "until_rebalance": countdown,
                 # Whether the paper book's next session is a rebalance: only
                 # then are the target-vs-held changes executable at the next

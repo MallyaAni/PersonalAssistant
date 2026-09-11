@@ -36,6 +36,34 @@ def test_first_plan_rebalances_and_is_idempotent():
     assert same is new
 
 
+# The band-reversal blocker: a name can earn a target weight and still be
+# rejecting its upper Bollinger band, and then it is not bought - the grade
+# says what to own, but the desk will not buy into a move that is already
+# rolling over at the top. Sells pass regardless, and a name not rejecting
+# the band is bought as before.
+def test_buys_are_blocked_when_the_daily_rejects_the_upper_band():
+    state = paper.PaperState()
+    orders, new, what = paper.plan(
+        "2026-09-04",
+        state,
+        equity=100_000.0,
+        held={"MU": 10.0},
+        prices={"SNDK": 200.0, "PANW": 180.0, "MU": 150.0, "TINY": 10.0},
+        targets={"SNDK": 0.076, "PANW": 0.063, "TINY": 0.001},
+        grades={"SNDK": "A+", "PANW": "A+", "MU": "C", "TINY": "A"},
+        entry_blocked={"SNDK"},
+    )
+    assert what == "rebalance"
+    # SNDK is the top-rated name, but its daily is rejecting its upper
+    # Bollinger band, so it is not bought; PANW is bought; the MU exit is
+    # not a buy and still happens.
+    assert [(o.symbol, o.side, o.qty) for o in orders] == [
+        ("MU", "sell", 10),
+        ("PANW", "buy", 35),
+    ]
+    assert new.opened == {"PANW": "2026-09-04"}
+
+
 # Whole shares are rounded to the nearest, not floored.
 #
 # Market-on-open orders must be whole shares, and flooring always rounds

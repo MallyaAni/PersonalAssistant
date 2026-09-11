@@ -128,6 +128,61 @@ def test_the_rebalance_clock(every):
     assert result.rebalances == expected
 
 
+# The entry gate mirrors the paper planner: a rebalance may not buy or add
+# to a name whose dip or breakout trigger did not fire. On a flat panel no
+# trigger ever fires, so the gated book never buys and holds only cash,
+# while the ungated book buys its graded names to target.
+def test_the_entry_gate_holds_a_book_with_no_triggers_in_cash():
+    flat = np.full((SESSIONS, NAMES), 100.0)
+    report = _report(flat)
+    ungated = simulate.run(report, use_exits=False, rebalance=20)
+    gated = simulate.run(report, use_exits=False, rebalance=20, entry_gate=True)
+    assert np.nanmax(ungated.invested) > 0.0
+    assert np.nanmax(gated.invested) == 0.0
+    assert gated.traded == 0.0
+
+
+# The band blocker (the live rule) can only hold buys back, never create
+# them: it trades no more, and right after a rebalance fills the blocked
+# book holds no more than the ungated one.
+def test_the_band_blocker_only_ever_holds_buys_back():
+    rng = np.random.default_rng(7)
+    close = 100.0 * np.exp(
+        np.cumsum(rng.normal(loc=0.0005, scale=0.01, size=(SESSIONS, NAMES)), axis=0)
+    )
+    report = _report(close)
+    ungated = simulate.run(report, use_exits=False, rebalance=20)
+    blocked = simulate.run(report, use_exits=False, rebalance=20, block_overbought=True)
+    assert blocked.traded <= ungated.traded + 1e-9
+    fills = [t + 1 for t in range(0, SESSIONS - 1, 20)]
+    gb = np.nan_to_num(blocked.invested)
+    uu = np.nan_to_num(ungated.invested)
+    assert np.all(gb[fills] <= uu[fills] + 0.005)
+
+
+# The gate can only hold buys back, never create them: it trades no more,
+# and right after a rebalance fills the gated book holds no more than the
+# ungated one (between rebalances the two books hold different names, so
+# their gross drifts apart and only the fill sessions compare fairly).
+def test_the_entry_gate_only_ever_holds_buys_back():
+    rng = np.random.default_rng(7)
+    close = 100.0 * np.exp(
+        np.cumsum(rng.normal(loc=0.0005, scale=0.01, size=(SESSIONS, NAMES)), axis=0)
+    )
+    report = _report(close)
+    ungated = simulate.run(report, use_exits=False, rebalance=20)
+    gated = simulate.run(report, use_exits=False, rebalance=20, entry_gate=True)
+    assert gated.traded <= ungated.traded + 1e-9
+    fills = [t + 1 for t in range(0, SESSIONS - 1, 20)]
+    gu = np.nan_to_num(gated.invested)
+    uu = np.nan_to_num(ungated.invested)
+    # The gross right after a rebalance fill, within drift noise: a blocked
+    # name's held weight still moves with the price between the decision
+    # close and the fill open, so the comparison is not exact to the penny.
+    assert np.all(gu[fills] <= uu[fills] + 0.005)
+
+
+
 # A better grade earns a bigger position: A+ is a full one, A three
 # quarters, B a half, and C nothing at all.
 def test_the_grade_sizes_the_position():
