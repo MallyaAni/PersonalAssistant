@@ -29,7 +29,13 @@ def test_record_block_has_the_book_and_every_grade():
     ]
     shadow = SimpleNamespace(panel=panel, graded=graded, book=book)
     block = challenger.record_block(shadow)
-    assert block["name"] == challenger.NAME
+    # A report carrying nothing beyond the analysts is the plain rule; one
+    # carrying the gap is named for it, whichever of them is the shadow.
+    assert block["name"] == challenger.PLAIN
+    with_gap = SimpleNamespace(
+        panel=panel, graded=graded, book=book, inputs=("expectations-gap",)
+    )
+    assert challenger.record_block(with_gap)["name"] == challenger.NAME
     assert block["book"] == [{"ticker": "AAA", "grade": "A+", "weight": 0.11}]
     assert block["grades"] == {"AAA": "A+", "BBB": "C"}
 

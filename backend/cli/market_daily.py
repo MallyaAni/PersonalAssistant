@@ -46,7 +46,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--challenger",
         action="store_true",
-        help="run the shadow desk (the expectations-gap challenger) into the record",
+        help="write the shadow desk (the rule without its promoted input)",
     )
     parser.add_argument("--asof", type=date.fromisoformat, default=None)
     parser.add_argument(
@@ -438,22 +438,27 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
 
 
 # The day's record, as plain data.
-# The challenger's block for tonight, or None when it could not be run:
-# the shadow desk must never cost the record.
+# The shadow's block for tonight, or None when there is none: the live
+# desk carries its alternate (the plain rule when the gap is live), and a
+# live desk that fell back to the plain rule has no shadow to write.
 def _challenger_block(store, report) -> dict | None:
     from backend.market import challenger
 
-    try:
-        gap = challenger.expectations_gap(store, report.panel)
-        shadow = challenger.report_with_gap(report, gap)
-    except Exception as exc:  # noqa: BLE001 - reported, never fatal
-        print(f"\nchallenger: not run ({type(exc).__name__}: {exc})")
+    shadow = getattr(report, "alternate", None)
+    if shadow is None:
+        print("\nchallenger: none (the live desk ran without its promoted input)")
         return None
     block = challenger.record_block(shadow)
     print(f"\nchallenger ({block['name']}): {len(block['book'])} names")
     for row in block["book"]:
         print(f"  {row['ticker']:6} {row['grade']:2} {row['weight']:.3f}")
     return block
+
+
+def _strategy_name(report) -> str:
+    from backend.market import challenger
+
+    return challenger.strategy(report)
 
 
 def record(
@@ -513,6 +518,12 @@ def record(
         # the briefs and reads.
         "provenance": {
             "code_revision": _git_revision(),
+            # The strategy the live book is, by name, so the scorecard can
+            # price each strategy across the day its role changed.
+            "rule": {
+                "name": _strategy_name(report),
+                "inputs": list(getattr(report, "inputs", ()) or ()),
+            },
             "data": {
                 "first_session": str(panel.dates[0]),
                 "session": str(panel.dates[last]),
@@ -822,9 +833,7 @@ def briefs_for(report, tickers, narrator: DeskNarrator) -> dict[str, dict]:
 # Write and print the reads for some names through the local model. A read
 # is the whole desk's evidence in plain words, so the page can show every
 # trigger without the model at the edge omitting or inventing one.
-def reads_for(
-    report, tickers, narrator: DeskNarrator
-) -> dict[str, str | None]:
+def reads_for(report, tickers, narrator: DeskNarrator) -> dict[str, str | None]:
     """Return {ticker: read text} for the names the model could read."""
     out: dict[str, str | None] = {}
     for ticker in tickers:

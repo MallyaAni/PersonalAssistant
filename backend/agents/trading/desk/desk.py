@@ -6,7 +6,7 @@ book. `calibrate` measures what each grade earned in the history, beta-
 adjusted, so a grade that stops paying is seen rather than assumed.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 
 import numpy as np
@@ -54,6 +54,11 @@ class DeskReport:
     graded: Graded
     scores: np.ndarray  # (T, N) the graded score with the blended tie-break
     book: list[Sized]
+    # Which inputs beyond the five analysts made this report (see
+    # LIVE_INPUTS), and the same desk without them, so the record can carry
+    # the shadow track beside the live one without a second run.
+    inputs: tuple[str, ...] = ()
+    alternate: "DeskReport | None" = None
 
     # The last session's grade and evidence for one name.
     def brief(self, ticker: str) -> dict[str, object]:
@@ -113,9 +118,33 @@ def tightening_for(store: MarketStore, panel: Panel, asof=None):
     return regime.tightening_from(yields)
 
 
+# The inputs the live rule carries beyond the five analysts. The
+# expectations gap - a walk-forward learner's expected revenue growth less
+# the growth the price implies, blended into the valuation analyst
+# (`backend/market/challenger.py`) - ran as the shadow desk from the
+# 2026-09-09 record and was promoted on 2026-09-10 on the operator's
+# decision: on the history from 2018-06 it earned +30.3% a year against the
+# plain rule's +25.2% (+27.5% at the rule's volatility, Sharpe 1.56 against
+# 1.46), ahead in seven years of nine, with turnover unchanged. Its forward
+# record was two sessions old when it went live; the plain rule now runs as
+# the shadow so the scorecard keeps pricing both on the same real days.
+EXPECTATIONS_GAP = "expectations-gap"
+LIVE_INPUTS: tuple[str, ...] = (EXPECTATIONS_GAP,)
+
+
 # Run the whole desk as of a date.
-def run(store: MarketStore, asof: date | None = None) -> DeskReport:
-    """Return the DeskReport for the book as of `asof` (latest if None)."""
+def run(
+    store: MarketStore,
+    asof: date | None = None,
+    inputs: tuple[str, ...] = LIVE_INPUTS,
+) -> DeskReport:
+    """Return the DeskReport for the book as of `asof` (latest if None).
+
+    `inputs` names what the live rule carries beyond the analysts; pass
+    `()` for the plain rule. When the gap cannot be computed the desk
+    falls back to the plain rule and says so in `inputs`, so a data
+    fault never stops the record.
+    """
     # The loaders live next to the torch models; importing them here keeps
     # the desk importable where torch is absent (the gate container).
     from backend.market.levels_pit import point_in_time_levels
@@ -131,6 +160,28 @@ def run(store: MarketStore, asof: date | None = None) -> DeskReport:
         sentiment.NAME: sentiment.opine(tone),
         value.NAME: value.opine(panel, point_in_time_levels(store, panel, asof), sides),
     }
+    plain = assemble(panel, sides, opinions, view)
+    if EXPECTATIONS_GAP not in inputs:
+        return plain
+    from backend.market import challenger
+
+    try:
+        gap = challenger.expectations_gap(store, panel)
+    except Exception as exc:  # noqa: BLE001 - the plain rule stands in, and says so
+        print(f"expectations gap: not computed ({type(exc).__name__}: {exc})")
+        return plain
+    if not np.isfinite(gap).any():
+        print("expectations gap: no values on the book; the plain rule stands in")
+        return plain
+    live = assemble(
+        panel, sides, challenger.with_gap(opinions, gap), view, (EXPECTATIONS_GAP,)
+    )
+    return replace(live, alternate=plain)
+
+
+# Grade, score and size a set of opinions into a report.
+def assemble(panel, sides, opinions, view, inputs: tuple[str, ...] = ()) -> DeskReport:
+    """Return the DeskReport the desk's fixed rule makes of `opinions`."""
     graded = grading.grade(
         opinions[fundamental.NAME],
         opinions[technical.NAME],
@@ -142,7 +193,7 @@ def run(store: MarketStore, asof: date | None = None) -> DeskReport:
     scores = graded.as_scores(blended(opinions))
     last = len(panel.dates) - 1
     book = risk.size(scores[last], graded.grades[last], panel, view.today())
-    return DeskReport(panel, sides, opinions, view, graded, scores, book)
+    return DeskReport(panel, sides, opinions, view, graded, scores, book, inputs)
 
 
 @dataclass(frozen=True)

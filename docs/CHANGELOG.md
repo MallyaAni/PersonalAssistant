@@ -2,6 +2,32 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The expectations gap is the live rule; the plain rule is the shadow
+
+The operator's decision: the dashboard and the paper account carry the
+best-measured version, not a weaker one with a better-measured shadow
+beside it. `desk.run` now blends the walk-forward expectations gap into
+the valuation analyst (`desk.LIVE_INPUTS`), the same blend the challenger
+ran from the 2026-09-09 record, and carries the plain rule as the
+report's `alternate`, which the nightly writes as the shadow block. The
+record names its strategy under `provenance.rule`, and the scorecard's
+forward walk prices each strategy by name across the swap, so both
+tracks stay whole: the records before tonight are the plain rule live
+with the gap as shadow, and the records after are the reverse. If the
+gap cannot be computed the desk falls back to the plain rule and says so
+in the record. Nothing on the dashboard reads the shadow.
+
+Measured before the swap, four ways on the scorecard from 2018-06 with
+costs: the plain rule +25.2% a year within a -23.4% worst loss; the gap
+blend +30.3% (+27.3% at the rule's volatility, Sharpe 1.56 against
+1.46, -24.6%, seven years of nine); the veto off +27.4% but -26.0%,
+outside the 25% limit; both together +31.5% and -25.5%, outside it. So
+the gap goes live and the veto stays. The gap's edge is in the longer
+history: from 2021-06 it is +38.6% against +35.4%, a wash at matched
+volatility, three years of six, with a larger top position (28% against
+20%). Two sessions of forward record when promoted; the scorecard's
+`--records` walk is the judge from here.
+
 ## 2026-09-10 - Cutting losses on the bounce, measured and not adopted
 
 A trader's alternative to the stop the book has already rejected: when a

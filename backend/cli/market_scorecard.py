@@ -71,13 +71,44 @@ MIN_TRADE = 0.005
 # shares and cash, sized by the shared planner at the close and filled at
 # the next open, exactly as the desk's own simulator runs, so the two
 # tracks are judged on the same real days with the same sizing.
+# Which strategy a record's live book is, and which its shadow is. Records
+# written before the rule carried a name are the plain rule with the
+# expectations-gap shadow, which is what they were.
+def _live_name(rec: dict) -> str:
+    return str(
+        ((rec.get("provenance") or {}).get("rule") or {}).get("name")
+        or challenger.PLAIN
+    )
+
+
+def _shadow_name(rec: dict) -> str | None:
+    block = rec.get("challenger")
+    if not isinstance(block, dict):
+        return None
+    return str(block.get("name") or challenger.NAME)
+
+
+# The rows a record decided for `name`, or None when it made no decision
+# for that strategy that night.
+def _book_for(rec: dict, name: str) -> list[dict] | None:
+    if _live_name(rec) == name:
+        return rec.get("book", [])
+    if _shadow_name(rec) == name:
+        return (rec.get("challenger") or {}).get("book", [])
+    return None
+
+
 def _forward_walk(
     records: list[dict],
     closes: dict[str, dict[str, float]],
     opens: dict[str, dict[str, float]],
     book_key: str,
 ) -> tuple[list[float], list[float], float]:
-    """Return (close-to-close returns, fraction invested, notional traded)."""
+    """Return (close-to-close returns, fraction invested, notional traded).
+
+    `book_key` is a strategy name (see `_book_for`); the two legacy keys
+    "book" and "challenger" still mean the record's live and shadow rows.
+    """
     held: dict[str, float] = {}  # ticker -> shares
     cash = 1.0
     values: list[float] = [1.0]
@@ -93,9 +124,13 @@ def _forward_walk(
             block = rec.get("challenger")
             known = isinstance(block, dict)
             rows = block.get("book", []) if known else []
-        else:
+        elif book_key == "book":
             known = True
             rows = rec.get("book", [])
+        else:
+            decided = _book_for(rec, book_key)
+            known = decided is not None
+            rows = decided or []
         # A rebalance is decided at `a`'s close - the weights, equity and
         # prices the decision could see - and filled at `b`'s open; a record
         # with no decision holds what it has and earns or loses the market.
@@ -105,9 +140,7 @@ def _forward_walk(
                 for t, ca in ((t, closes.get(t, {}).get(a)) for t in held)
                 if ca and ca > 0
             )
-            prices = {
-                t: ca for t, d in closes.items() if (ca := d.get(a)) and ca > 0
-            }
+            prices = {t: ca for t, d in closes.items() if (ca := d.get(a)) and ca > 0}
             targets = {row["ticker"]: float(row["weight"]) for row in rows}
             for o in planner.plan(targets, held, equity_close, prices):
                 ob = opens.get(o.symbol, {}).get(b)
@@ -135,6 +168,16 @@ def _forward_walk(
         out.append(values[-1] / values[-2] - 1.0)
         invested_out.append((equity - cash) / equity if equity > 0 else float("nan"))
     return out, invested_out, traded
+
+
+# Every strategy the records carry, the latest live one first.
+def _track_names(records: list[dict]) -> list[str]:
+    names = [_live_name(records[-1])]
+    for rec in records:
+        for name in (_live_name(rec), _shadow_name(rec)):
+            if name and name not in names:
+                names.append(name)
+    return names
 
 
 # The records' books walked forward: one daily-return series per track.
@@ -196,9 +239,12 @@ def from_records(root: Path, store) -> dict[str, SimResult]:
                 strict=True,
             )
         )
+    # One track per strategy, the live one first (it sets the volatility
+    # the others are matched to), so the swap of 2026-09-10 - the gap
+    # promoted, the plain rule made the shadow - leaves both series whole.
     tracks = {
-        "the rule": _forward_walk(records, closes, opens, "book"),
-        "challenger": _forward_walk(records, closes, opens, "challenger"),
+        name: _forward_walk(records, closes, opens, name)
+        for name in _track_names(records)
     }
     out = {}
     for name, (daily, invested, traded) in tracks.items():
@@ -235,15 +281,17 @@ def main() -> None:
         print(scorecard.render(results, store, args.loss_limit))
         return
     report = trading_desk.run(store)
-    gap = challenger.expectations_gap(store, report.panel)
-    shadow = challenger.report_with_gap(report, gap)
     start = date.fromisoformat(args.since)
     results = {
-        "the rule": simulate.run(report, since=start, use_exits=False),
-        f"challenger: {challenger.NAME}": simulate.run(
-            shadow, since=start, use_exits=False
-        ),
+        f"the rule: {challenger.strategy(report)}": simulate.run(
+            report, since=start, use_exits=False
+        )
     }
+    shadow = getattr(report, "alternate", None)
+    if shadow is not None:
+        results[f"shadow: {challenger.strategy(shadow)}"] = simulate.run(
+            shadow, since=start, use_exits=False
+        )
     print(f"the book from {args.since}, full rules, costs included:")
     print(scorecard.render(results, store, args.loss_limit))
 

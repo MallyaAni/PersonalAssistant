@@ -1,4 +1,4 @@
-"""The challenger: the desk with one input changed, run beside the rule, never traded.
+"""The shadow desk: the rule with one input changed, run beside it, never traded.
 
 The rule is frozen. A change that looks better in the history is
 development evidence until it has a forward record of its own, so a
@@ -18,11 +18,15 @@ and never rewritten. A change that looks better can therefore be
 believed only once the forward track, pricing the frozen books on real
 days, says the same.
 
-The first challenger is the one `market_expectations` found: the
+The first challenger was the one `market_expectations` found: the
 valuation analyst blended with the gap between the learner's expected
 revenue growth and the growth the price implies. The learner is
 trained on every report filed before the current year and asked on
-today's features, which is the walk-forward rule the study used.
+today's features, which is the walk-forward rule the study used. On
+2026-09-10 the operator promoted it into the live rule
+(`desk.LIVE_INPUTS`); the plain rule is the shadow from the next
+record, so the two tracks keep the same real days and the scorecard
+prices each strategy by name across the swap.
 """
 
 from dataclasses import replace
@@ -30,9 +34,16 @@ from dataclasses import replace
 import numpy as np
 
 from backend.agents.trading.desk import desk as trading_desk
-from backend.agents.trading.desk import grading, risk
 
 NAME = "expectations-gap"
+PLAIN = "plain-value"
+
+
+# The strategy a report is, by what it carries beyond the analysts.
+def strategy(report) -> str:
+    """Return the report's strategy name."""
+    inputs = tuple(getattr(report, "inputs", ()) or ())
+    return "+".join(inputs) if inputs else PLAIN
 
 
 # The gap on the book's panel for every session, from the study's
@@ -57,32 +68,35 @@ def expectations_gap(store, book) -> np.ndarray:
     return mx._onto_book(gap, panel, book, udates)
 
 
-# The rule's report with its valuation analyst blended with `gap`: the
-# same grading and sizing, one input changed.
-def report_with_gap(report, gap: np.ndarray):
-    """Return the challenger's DeskReport from the rule's and the gap."""
+# The analysts with the valuation analyst blended with `gap`: each
+# session's rank of the analyst's score averaged with that session's rank
+# of the gap, so the blend is frozen to its own cross-section.
+def with_gap(opinions: dict, gap: np.ndarray) -> dict:
+    """Return the opinions with the value analyst blended with the gap."""
     from backend.market import baselines
 
-    opinions = dict(report.opinions)
-    value = opinions["value"]
+    out = dict(opinions)
+    value = out["value"]
     blended = baselines.rank_blend(value.scores, gap)
     evidence = dict(value.evidence)
     evidence["expectations_gap"] = gap
-    opinions["value"] = replace(value, scores=blended, evidence=evidence)
-    graded = grading.grade(
-        opinions["fundamental"],
-        opinions["technical"],
-        opinions["sentiment"],
-        report.regime.rotation,
-        opinions["value"],
-        grading.ANALYST_WEIGHTS,
+    out["value"] = replace(value, scores=blended, evidence=evidence)
+    return out
+
+
+# A report's valuation analyst blended with `gap`: the same grading and
+# sizing, one input changed. Kept for the studies that start from a plain
+# report; the live desk applies the same blend in `desk.run`.
+def report_with_gap(report, gap: np.ndarray):
+    """Return the DeskReport with the gap blended in, from `report`'s analysts."""
+    live = trading_desk.assemble(
+        report.panel,
+        report.sides,
+        with_gap(report.opinions, gap),
+        report.regime,
+        (trading_desk.EXPECTATIONS_GAP,),
     )
-    scores = graded.as_scores(trading_desk.blended(opinions))
-    last = len(report.panel.dates) - 1
-    book = risk.size(
-        scores[last], graded.grades[last], report.panel, report.regime.today()
-    )
-    return replace(report, opinions=opinions, graded=graded, scores=scores, book=book)
+    return replace(live, alternate=report)
 
 
 # The challenger's block for the nightly record: its book and grades,
@@ -92,7 +106,7 @@ def record_block(challenger) -> dict:
     panel = challenger.panel
     last = len(panel.dates) - 1
     return {
-        "name": NAME,
+        "name": strategy(challenger),
         "book": [
             {
                 "ticker": s.position.ticker,

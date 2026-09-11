@@ -84,7 +84,7 @@ def test_the_walk_holds_the_book_fills_at_the_open_and_pays_costs(tmp_path):
         ]
     }
     results = _from(tmp_path, records, bars)
-    rule = results["the rule"]
+    rule = results["plain-value"]
     # Sized at the 09-01 close (1.0 * $1 / $100 = 0.01 shares) and filled at
     # the 09-02 open (110), with the cost on the notional filled: 0.01 shares
     # bought at 110, worth 120 at that close.
@@ -121,7 +121,7 @@ def test_a_mid_walk_decision_is_ignored_until_a_rebalance(tmp_path, monkeypatch)
             ("2026-09-04", 132, 132),
         ]
     }
-    rule = _from(tmp_path, records, bars)["the rule"]
+    rule = _from(tmp_path, records, bars)["plain-value"]
     shares = 1.0 / 100.0
     cost = shares * 110 * REBALANCE_COST
     assert rule.returns[0] == pytest.approx(-cost, abs=1e-12)
@@ -151,7 +151,7 @@ def test_a_rebalance_executes_the_latest_book_change(tmp_path, monkeypatch):
             ("2026-09-04", 132, 132),
         ]
     }
-    rule = _from(tmp_path, records, bars)["the rule"]
+    rule = _from(tmp_path, records, bars)["plain-value"]
     shares = 1.0 / 100.0
     cost = shares * 110 * REBALANCE_COST
     assert rule.returns[0] == pytest.approx(-cost, abs=1e-12)
@@ -183,8 +183,8 @@ def test_a_missing_challenger_block_holds_what_it_has_and_records_the_real_move(
         ]
     }
     results = _from(tmp_path, records, bars)
-    assert "the rule" in results
-    challenger = results["challenger"]
+    assert "plain-value" in results
+    challenger = results["expectations-gap"]
     # The gap with no decision holds what it has: the position is not
     # liquidated, and the real 110 -> 120 move is recorded rather than a NaN
     # the equity rebuild would flatten to zero.
@@ -195,7 +195,7 @@ def test_a_missing_challenger_block_holds_what_it_has_and_records_the_real_move(
         (after_buy + shares * (120 - 110)) / after_buy - 1.0
     )
     # The rule track still walks every gap.
-    assert np.isfinite(results["the rule"].returns).all()
+    assert np.isfinite(results["plain-value"].returns).all()
 
 
 def test_flat_prices_across_a_dividend_do_not_book_a_fake_move(tmp_path):
@@ -218,7 +218,7 @@ def test_flat_prices_across_a_dividend_do_not_book_a_fake_move(tmp_path):
         ]
     }
     adj = {"SNDK": [95.0, 95.0, 100.0]}
-    rule = _from(tmp_path, records, bars, adj)["the rule"]
+    rule = _from(tmp_path, records, bars, adj)["plain-value"]
     # The buy fills at the adjusted open (95): the return is only the 10bp
     # cost, nowhere near the fake -5% the raw-open/raw-close mix would book.
     assert rule.returns[0] == pytest.approx(-REBALANCE_COST, abs=1e-9)
