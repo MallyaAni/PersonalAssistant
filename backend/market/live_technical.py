@@ -31,6 +31,7 @@ from backend.agents.trading.desk import regime
 from backend.agents.trading.desk import technical as technical_analyst
 from backend.agents.trading.desk.desk import book_panel, tightening_for
 from backend.market import baselines, options
+from backend.market import technical as daily_technical
 from backend.market.panel import Panel
 
 _cache: dict[str, object] = {"key": None, "value": {}}
@@ -223,6 +224,8 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
     panel = read["panel"]
     opinion = read["opinion"]
     scores = opinion.scores
+    candles = daily_technical._candles(panel)
+    last = panel.adj_close.shape[0] - 1
     out: dict = {}
     for symbol in quotes:
         if symbol not in panel.tickers:
@@ -246,7 +249,14 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
             "medium": {k: feature[k] for k in MEDIUM if k in feature},
             "long": {k: feature[k] for k in LONG if k in feature},
         }
-        price = float(panel.adj_close[-1, j]) if np.isfinite(panel.adj_close[-1, j]) else None
+        candle = _today_candle(candles, panel, last, j)
+        if candle is not None:
+            entry["candle"] = candle
+        price = (
+            float(panel.adj_close[-1, j])
+            if np.isfinite(panel.adj_close[-1, j])
+            else None
+        )
         walls = _walls_for(store, symbol, price, today)
         if walls is not None:
             entry["walls"] = walls
@@ -363,8 +373,10 @@ def _medium_lines(m: dict) -> list[str]:
     return medium
 
 
-# The long horizon's lines: the yearly range, the 200-day average and the
-# slow momentum.
+# The long horizon's lines: the yearly range, the 200-day averages and the
+# slow momentum. Both the EMA and the simple average are cited: a person
+# watches the 200 SMA as the standing trend line, and a read that names
+# only the EMA leaves that number out.
 def _long_lines(features: dict) -> list[str]:
     """Return the long-term readable lines for a detail's long dict."""
     long: list[str] = []
@@ -375,6 +387,9 @@ def _long_lines(features: dict) -> list[str]:
     e200 = _pct_word(features.get("ema200_distance"))
     if e200:
         long.append(f"{e200} the 200-day EMA")
+    s200 = _pct_word(features.get("sma200_distance"))
+    if s200:
+        long.append(f"{s200} the 200-day simple average")
     mom = features.get("residual_momentum_120")
     if mom is not None and np.isfinite(mom):
         long.append("slow momentum positive" if mom >= 0 else "slow momentum negative")
@@ -387,8 +402,70 @@ def _long_lines(features: dict) -> list[str]:
 # rendered two ways.
 def lines(detail: dict) -> dict[str, list[str]]:
     """Return the readable lines for a technical detail, by horizon."""
+    short = _short_lines(detail.get("short") or {})
+    candle = detail.get("candle")
+    if candle:
+        short.append(_candle_line(candle))
     return {
-        "short": _short_lines(detail.get("short") or {}),
+        "short": short,
         "medium": _medium_lines(detail.get("medium") or {}),
         "long": _long_lines(detail.get("long") or {}),
     }
+
+
+# The named reversal candle on today's daily bar, read off the daily OHLC
+# the way the analyst reads it: an engulfing (with how much of the prior
+# body it takes), a shooting star or a hammer (with how long the wick is
+# against the body). The read surfaces the candle because a person
+# watching the daily chart sees it first, and a bearish engulfing at
+# today's close is the daily evidence for a weekly turn the medium
+# horizon already points at.
+def _today_candle(candles: dict, panel: Panel, t: int, j: int) -> dict | None:
+    """Return {name, detail} for the candle on session t, or None."""
+    o, h, low, c = panel.open, panel.high, panel.low, panel.close
+    body = abs(c[t, j] - o[t, j])
+    if not np.isfinite(body) or body <= 0:
+        return None
+
+    def fires(name: str) -> bool:
+        arr = candles.get(name)
+        return arr is not None and np.isfinite(arr[t, j]) and arr[t, j] > 0
+
+    if fires("bearish_engulfing") or fires("bullish_engulfing"):
+        name = (
+            "bearish engulfing"
+            if fires("bearish_engulfing")
+            else "bullish engulfing"
+        )
+        prev_body = abs(c[t - 1, j] - o[t - 1, j]) if t >= 1 else np.nan
+        detail = (
+            f"{body / prev_body:.1f}x the prior session's body"
+            if np.isfinite(prev_body) and prev_body > 0
+            else ""
+        )
+        return {"name": name, "detail": detail}
+    if fires("shooting_star"):
+        upper = h[t, j] - max(o[t, j], c[t, j])
+        detail = (
+            f"upper wick {upper / body:.1f}x the body"
+            if np.isfinite(upper) and upper > 0
+            else ""
+        )
+        return {"name": "shooting star", "detail": detail}
+    if fires("hammer"):
+        lower = min(o[t, j], c[t, j]) - low[t, j]
+        detail = (
+            f"lower wick {lower / body:.1f}x the body"
+            if np.isfinite(lower) and lower > 0
+            else ""
+        )
+        return {"name": "hammer", "detail": detail}
+    return None
+
+
+# The candle as one readable line for the short horizon.
+def _candle_line(candle: dict) -> str:
+    """Return the line for a candle read on today's daily bar."""
+    if candle.get("detail"):
+        return f"today's daily candle is a {candle['name']}, {candle['detail']}"
+    return f"today's daily candle is a {candle['name']}"

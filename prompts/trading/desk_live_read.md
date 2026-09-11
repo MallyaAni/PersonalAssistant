@@ -24,6 +24,9 @@ Write a few short paragraphs in plain words that:
 
 - Cover every reading below, in all three horizons. Do not leave a reading
   out, however small, and do not add a reading that is not there.
+- A named daily candle pattern (a bullish or bearish engulfing, a shooting
+  star, a hammer) is a reading too: say what it argues, for or against the
+  daily trend, not only that the pattern is present.
 - Say what the nearest support and resistance are, not only how far away:
   a swing point from the daily chart, the 50-day average, the 200-day
   average, or the weekly 21-day average, and the distance as a percentage

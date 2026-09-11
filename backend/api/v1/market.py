@@ -189,6 +189,13 @@ def _live_read_gaps(features: dict[str, list[str]], read: str) -> list[str]:
         "52" in low or "momentum" in low or "200-day" in low
     ):
         gaps.append("the long-term (52-week or momentum) readings")
+    # The 200-day simple average is its own line in the features, and it is
+    # easily folded into the 200-day EMA by a model that treats the two as
+    # one reading. The person watches the SMA; make sure it is named.
+    if any("simple average" in line for line in features.get("long", [])) and (
+        "simple average" not in low and "sma" not in low
+    ):
+        gaps.append("the 200-day simple average")
     return gaps
 
 

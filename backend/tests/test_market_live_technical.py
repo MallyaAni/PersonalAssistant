@@ -108,6 +108,45 @@ def test_technical_detail_splits_the_features_by_horizon(monkeypatch):
     assert d["now"] is not None
 
 
+# The long horizon names both the 200-day EMA and the 200-day simple
+# average: the SMA is the standing trend line a person watches, and a read
+# that omits it hides the figure that matters to them.
+def test_long_lines_name_the_200_day_ema_and_sma():
+    features = {
+        "high_52w_distance": -0.79,
+        "low_52w_distance": 0.27,
+        "ema200_distance": -0.116,
+        "sma200_distance": -0.106,
+        "residual_momentum_120": -6.9,
+    }
+    lines_out = live_technical._long_lines(features)
+    assert any("200-day EMA" in line for line in lines_out)
+    assert any("200-day simple average" in line for line in lines_out)
+
+
+# A bearish engulfing on the last daily bar is surfaced as today's candle
+# in the short horizon, with how much of the prior body it takes; a name
+# whose last bar is an ordinary candle carries none.
+def test_todays_bearish_engulfing_is_a_short_horizon_line():
+    panel = _panel()
+    candles = {
+        "bearish_engulfing": np.array([[0.0, 0.0], [0.0, 1.0]], dtype=float),
+        "bullish_engulfing": np.zeros((2, 3)),
+        "shooting_star": np.zeros((2, 3)),
+        "hammer": np.zeros((2, 3)),
+    }
+    candle = live_technical._today_candle(candles, panel, 1, 1)
+    assert candle is not None
+    assert candle["name"] == "bearish engulfing"
+    line = live_technical._candle_line(candle)
+    assert "today's daily candle is a bearish engulfing" in line
+    detail = {"short": {}, "medium": {}, "long": {}, "candle": candle}
+    rendered = live_technical.lines(detail)
+    assert any("bearish engulfing" in line for line in rendered["short"])
+    # The name with no candle on its last bar carries none.
+    assert live_technical._today_candle(candles, panel, 1, 0) is None
+
+
 # When a chain is on file the drill-down carries the option walls read at
 # the live price, with the put and call walls as distances from it; when
 # the store has no chain the block is simply absent.

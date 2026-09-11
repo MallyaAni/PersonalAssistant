@@ -910,14 +910,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
           <p className="mt-2 text-xs text-[#6e6e73]">
             When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
-            price shown; edit the price if your fill differed. Names are in grade order, best first, re-read every 15
-            minutes with the technical analyst at the live price. Share counts follow the live price; the weights are
-            the evening decision. Buy at the open with a market order. The desk itself re-checks all grades
+            price shown; edit the price if your fill differed. Names are in grade order, best first. Grades are
+            recomputed every evening after the close, and the technical read re-checks them every 15 minutes at the
+            live price, so a name's grade can move within the day. The target book re-sorts at the next rebalance
             {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
-              ? ` in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days`
-              : ' every 20 trading days'}
-            ; the target book holds A-rated names at full size and eligible B names at half size, and a name whose
-            grade falls to C or below is dropped at the rebalance. Stops are off in the current strategy.
+              ? ` (in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days)`
+              : ' (about every 20 trading days)'}
+            , when a name whose grade falls to C or below is dropped and A-rated names stay at full size with eligible B
+            names at half size. Buy at the open with a market order. Stops are off in the current strategy.
           </p>
         </section>
       )}
