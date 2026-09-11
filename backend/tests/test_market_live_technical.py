@@ -185,3 +185,19 @@ def test_the_short_read_sees_the_nine_day_ema_turn(monkeypatch):
     assert any(
         line.startswith("the 9-day EMA is") and "narrowing" in line for line in short
     )
+
+
+# Support is always said as below the price and resistance as above it.
+def test_level_lines_read_the_right_way_round():
+    lines = live_technical._level_lines(
+        {
+            "support_distance": 0.047,
+            "support_kind": 1.0,
+            "resistance_distance": 0.055,
+            "resistance_kind": 1.0,
+        }
+    )
+    assert lines == [
+        "4.7% above nearest support — a swing low",
+        "5.5% below nearest resistance — a swing high",
+    ]

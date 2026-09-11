@@ -313,7 +313,15 @@ def _level_lines(s: dict) -> list[str]:
         dist = s.get(f"{side}_distance")
         if dist is None or not np.isfinite(dist):
             continue
-        base = f"{_pct_word(dist)} nearest {side}"
+        # Support sits below the price and resistance above it, whatever
+        # sign the distance carries: "6.9% above nearest resistance" was a
+        # line no trader could read as intended.
+        pct = f"{abs(float(dist)) * 100:.1f}%"
+        base = (
+            f"{pct} above nearest support"
+            if side == "support"
+            else f"{pct} below nearest resistance"
+        )
         what = _level_word(s.get(f"{side}_kind"), side)
         lines_out.append(f"{base} — {what}" if what else base)
     return lines_out
