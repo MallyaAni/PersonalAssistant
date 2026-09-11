@@ -369,6 +369,7 @@ def run(
     block_overbought: bool = False,
     band_dip_buy: bool = False,
     trend_gated_exit: bool = False,
+    trim: float = 1.0,
     exit_at_close: bool = False,
     green_day_skip: bool = False,
 ) -> SimResult:
@@ -405,7 +406,12 @@ def run(
     (Sharpe 1.43 against 1.44 ungated; total +1242% against +1259%), the
     same reason as the retired overlay: these names resume after the
     pause. Both options stay for the measurement, not for trading.
-    `exit_at_close` fills sells at the execution session's close instead
+    `trim` is how much of a signalled position an exit sells, from a
+    third (1/3) through half (1/2) to the full exit (1.0). The retired
+    overlay was a full exit; a partial trim keeps some of a name that may
+    resume, which is the "take profit, keep the runner" version measured
+    here to see whether partial beats doing nothing where the full exit
+    lost. `exit_at_close` fills sells at the execution session's close instead
     of its open, so an exit captures the day's move rather than an opening
     print it has not seen. `green_day_skip` holds a sell back when the
     name opens up for the day - the desk never exits into a name's own
@@ -453,7 +459,7 @@ def run(
             rebalances += 1
         else:
             target, reason = book.between(
-                evidence, closes[t], t, redeploy, grace, trend_up
+                evidence, closes[t], t, redeploy, grace, trend_up, trim
             )
             if dips is not None and dips[t].any():
                 target, added = _dip_add(target, dips[t], dip, book, closes[t])
@@ -561,6 +567,7 @@ class _Book:
         redeploy: bool,
         grace: int = exit_analyst.GRACE,
         trend_up: np.ndarray | None = None,
+        trim: float = 1.0,
     ):
         """Return (target weights, the reason anything leaves)."""
         total = self.equity(prices)
@@ -581,8 +588,12 @@ class _Book:
                 reason = exit_analyst.reason(evidence, t, column)
         if not leaving.any():
             return weights, reason
-        freed = float(weights[leaving].sum())
-        weights = np.where(leaving, 0.0, weights)
+        # A trim sells the fraction `trim` of a signalled position and keeps
+        # the rest - the "take some profit off the table" version of the
+        # exit - while `trim == 1` is the full exit the analyst retired.
+        cut = np.where(leaving, weights * (1.0 - trim), weights)
+        freed = float((weights - cut).sum())
+        weights = cut
         if redeploy:
             # The regime already decided how much of the book to carry, so
             # an exit changes which names hold it, not how much is held.
