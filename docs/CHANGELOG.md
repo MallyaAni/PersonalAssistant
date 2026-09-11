@@ -2,6 +2,52 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-11 - The desk exits on the close and never into a name's own rally; the option walls reach the live drill-down; an 8-K's own numbers reach the fundamental analyst
+
+Three trading-desk changes shipped as deploy `c988172` (commits `f003b27`,
+`bc7e9aa`, `c988172`).
+
+**Exits now fill on the close, and a name up at the open is held.** The
+desk's exit was decided on one close and filled at the next open, which is
+how ETN was sold at the day's low on the morning its rally began. Sells now
+ride the market-on-close order (`alpaca_trading.submit_market_on_close`,
+TIF `cls`); buys still fill at the next open (`market_daily._submit`); and
+the intraday balancer cancels a pending sell during the opening hour
+(9-11 EDT, weekdays) when the name trades up, journaling the deliberate
+hold so the rebalance concludes instead of rolling back. The simulator
+walks both behaviours (`exit_at_close`, `green_day_skip`) so the change is
+measurable: over the desk's 11.66-year history, baseline sell-at-open CAGR
+25.1%/Sharpe 1.44; exit-at-close alone 24.3%/1.38 (close fills are
+marginally worse here); exit-at-close + green-day-skip 36.0% at 25.6% vol,
+Sharpe 1.33, MaxDD -28.4%, 81 fewer trades. The combined rule went live;
+the numbers record the honest cost of the requested behaviour.
+
+**Option walls in the live drill-down.** `live_technical._walls_for` reads
+the newest stored `options` frame and adds each name's put wall, call wall,
+their open interest, net gamma and wall distances to `technical_detail`;
+`DeskPanel.tsx` renders them under the rank line. Verified against the
+deployed container (ADBE: expiry 2026-09-18, put_wall 220, call_wall 300,
+net_gamma -46147, distances coherent with the frame's reference price) and
+in the deployed gateway bundle.
+
+**A fresh 8-K's reported numbers reach the fundamental analyst.** The
+release reader (`release_tone.py`, now `release_tone/2`) reports the quarter
+end and the reported revenue, EPS, net income and gross margin; the tone
+frames carry them; `edgar.release_facts` turns them into `QuarterFacts`; and
+`model.load_edgar_features` merges them into the fundamental record, so an
+8-K between 10-Qs advances revenue and margin features immediately. Legacy
+frames read back as no financials. Functional tests pin extraction and the
+null-when-unstated case against the real model; unit tests cover the round
+trip, legacy frames, conversion and merge. Post-deploy, ADBE's 47 stored
+releases were re-scored with v2 (all 47 carry financials; the fresh 8-K
+filed 2026-09-10 reads revenue 6760M / EPS 4.62 / NI 1827M / GM 88.7%,
+quarter end 2026-08-28); the nightly 19:30 run re-scores the rest of the
+book, since a prompt-version change starts the layer over.
+
+Verified: unit gate 3360 passed, 19 skipped (incl. ruff); six functional
+release-tone tests against the real model; `tsc` + `vite build` clean.
+Deployed `c988172`; post-deploy `2026-09-11T20:30:32Z c988172 ok (cheap)`.
+
 ## 2026-09-11 - The desk's eleven review findings, fixed; post-deploy checks stop spending search credits on every deploy
 
 The fifth codex review of the trading desk returned eleven findings, all

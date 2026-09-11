@@ -3,6 +3,75 @@
 Verified state as of 2026-09-11. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-11 — the desk exits on the close and never into a name's own rally, the option walls reach the live drill-down, and the fundamental analyst reads an 8-K's own numbers (DEPLOYED `c988172`; contains `f003b27` + `bc7e9aa` + `c988172`)
+
+Three changes shipped in one deploy, all backtested or functionally pinned:
+
+**Exit on the close, never into the name's own rally** (`f003b27`). The
+desk's exit was decided on one close and filled at the next open — that is
+how ETN was sold at the day's low on the morning its rally began. Sells now
+ride the market-on-close order (`time_in_force: cls`), buys still fill at
+the next open, and the intraday balancer cancels a pending sell during the
+opening hour when the name is trading up (`_green_day_skip`, 9–11 EDT
+weekdays only), journaling the deliberate hold so the rebalance concludes.
+The simulator walks both behaviours (`exit_at_close`: sells fill at
+`closes[t+1]`; `green_day_skip`: hold when `opens[t+1] > closes[t]`), so
+the change from the old all-at-the-open fills is measurable. Backtest over
+the desk's 11.66-year history (2939 sessions, 94 names): baseline sell-at-
+open CAGR 25.1% / vol 16.5% / Sharpe 1.440 / MaxDD −25.7%; exit-at-close
+alone 24.3% / 16.8% / 1.379 / −25.5% (close fills are marginally worse than
+opens here); exit-at-close + green-day-skip 36.0% / 25.6% / 1.332 / −28.4%
+with 81 fewer trades (4.44 turnover). The combined rule is what went live:
+absolute return up sharply at materially higher volatility and a lower
+Sharpe — the behaviour was requested (don't sell ETN into its own rally),
+and these numbers are the honest cost. Fills verified in
+`backend/agents/trading/desk/simulate.py`, `paper.py`,
+`backend/market/alpaca_trading.py` (`submit_market_on_close`),
+`backend/cli/market_daily.py` (`_submit`: sells→close, buys→open),
+`backend/cli/market_balancer.py`.
+
+**Option walls in the live drill-down** (`bc7e9aa`). `live_technical.py`
+`_walls_for` reads the newest stored `options` frame and carries the put
+wall, call wall, their open interest, the net gamma and the distances
+(relative to the panel's adjusted close, which is coherent with the frame's
+reference price) into each name's `technical_detail`; `DeskPanel.tsx`
+renders them under the rank line. Verified against the deployed container:
+`technical_detail` for ADBE emits expiry 2026-09-18, put_wall 220, call_wall
+300, net_gamma −46147, put_wall_distance −0.116 (at ~245) — coherent with
+the stored frame's reference price 244.17. The deployed gateway bundle
+contains the render (`index-CjEp7hyb.js`, image built 20:30Z after the
+commit).
+
+**An 8-K's own numbers reach the fundamental analyst** (`c988172`). The
+release reader (`release_tone.py`, PROMPT_VERSION `release_tone/1` →
+`release_tone/2`) now also reports the quarter end and the reported revenue,
+EPS, net income and gross margin; the tone frames carry them; `edgar.release_facts`
+turns them into `QuarterFacts`; and `model.load_edgar_features` merges them
+into the fundamental record, so a fresh 8-K between 10-Qs advances revenue
+and margin features immediately. Legacy frames without the new columns read
+back as no financials. Functional tests pin extraction and the
+null-when-unstated case against the real model (`test_release_tone_behaviour.py`,
+6 passed); unit tests cover the round trip, the legacy frame, the release-
+facts conversion and the merge. Deployed container verified carrying
+`release_tone/2`, the financial `ToneRecord` fields, and `edgar.release_facts`.
+**Post-deploy refresh done for ADBE**: `market_tone --refresh --tickers ADBE`
+re-scored all 47 stored releases with v2 (4.9 min); all 47 now carry
+financials, and the fresh 8-K (filed 2026-09-10, quarter end 2026-08-28)
+reads revenue 6760M / EPS 4.62 / NI 1827M / GM 88.7%. `edgar.release_facts`
+over the real frame yields that quarter (asserted), and
+`load_edgar_features` over a real ADBE panel computes all 18 fundamental
+features finite. **The nightly 19:30 run re-scores the rest of the book**
+(~93 names × their release histories, one-time ~2h at concurrency 4) because
+`market_tone.prior_records` drops frames on a prompt-version change — that
+is the mechanism that folds release financials in for every name; ADBE is
+already in the 2026-09-11 partition and will be skipped.
+
+**Verification**: unit gate `3360 passed, 19 skipped` (incl. ruff); the six
+functional release-tone tests passed against the real model (spark1:8000);
+`tsc` + `vite build` clean; backtest numbers above. Deployed `c988172`;
+post-deploy `2026-09-11T20:30:32Z c988172 ok (cheap)` — backend through the
+gateway 401, `/health` 200.
+
 ## 2026-09-11 — the desk's eleven review findings are fixed and measured (DEPLOYED `7f3e313`), and the credit-consuming post-deploy checks now run only on search-affecting deploys (DEPLOYED `4e9f75a`)
 
 The fifth codex review of the trading desk returned eleven findings; all
