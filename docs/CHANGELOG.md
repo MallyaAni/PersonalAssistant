@@ -2,6 +2,36 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-11 - The desk's eleven review findings, fixed; post-deploy checks stop spending search credits on every deploy
+
+The fifth codex review of the trading desk returned eleven findings, all
+fixed and measured in one deploy: the entry-point clock in `_forward_walk`,
+per-row `rebalance_due` with "Targets for the next rebalance" and "Changes
+in target weights" wording, held out-of-book shares as an `uncovered`
+review state, `PaperOrder.client_order_id` with `order_id()` and
+`cancel_orders(ids)`, `MARKET_INDICES = ("SPY", "QQQ")` with
+known-days-only scorecard compounding and all-NaN benchmark guards, the
+CurveChart merged date axis, HowToUse copy, `_cut` never leaving an
+unfinished sentence with a `narrative._contradicts` brief guard pinned by
+`prompts/trading/desk_brief_check.md`, the live grade in the `!row` path,
+local-time `shortDate` with `_pct_abs` removed, and `poll` at component
+scope. Verified by the unit suite (3342 passed, 18 skipped), ruff, the
+coverage-completeness gate (69 passed), `tsc`, `vite build`, and 9/9 desk
+Playwright tests (3 new). Deployed `7f3e313`; the post-deploy sweep and
+search harness ran all green.
+
+Deploy sweeps were spending the search allowance faster than real use: on
+2026-08-29 they accounted for 344 of the month's 403 provider searches,
+and the 2026-09-11 sweep's harness found Tavily at 0 of its 1000 searches
+this billing period, with repeated questions served only from the 30-minute
+cache. `scripts/deploy.sh` now runs the credit-consuming sweep and search
+harness only when the diff touched the search chain or the router's tool
+choice; every other deploy runs `post-deploy-checks.sh --cheap` (gateway →
+backend 401, backend `/health` 200), which still records the verdict and
+pages on red. `--run-post` forces the full set; an empty diff is treated as
+full. Pinned by `test_deploy_scripts.py` and validated on the policy's own
+deploy: `4e9f75af ok (cheap)`, gateway 401, `/health` 200.
+
 ## 2026-09-10 - Live quotes on the New York day
 
 The live quotes asked the feed for the UTC date's bars, so from 20:00 to

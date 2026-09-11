@@ -1,7 +1,52 @@
 # Next session
 
-Verified state as of 2026-09-10. `deep-matter.com` serves from spark1.
+Verified state as of 2026-09-11. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
+
+## 2026-09-11 — the desk's eleven review findings are fixed and measured (DEPLOYED `7f3e313`), and the credit-consuming post-deploy checks now run only on search-affecting deploys (DEPLOYED `4e9f75a`)
+
+The fifth codex review of the trading desk returned eleven findings; all
+eleven were fixed, tested and shipped in one commit. Full detail in the
+commit message; the short list is the entry-point clock in
+`_forward_walk` (F1), per-row `rebalance_due` + "Targets for the next
+rebalance" header + "Changes in target weights" wording (F2), held
+out-of-book shares shown as `uncovered` review state with no done button
+(F3), `PaperOrder.client_order_id` + `order_id()` + `cancel_orders(ids)`
+(F4), `MARKET_INDICES = ("SPY", "QQQ")` + known-days-only scorecard
+compounding + all-NaN benchmark guards (F5), CurveChart merged date axis
+(F6), HowToUse copy (F7), `_cut` never leaving an unfinished sentence +
+`narrative._contradicts` brief guard pinned by
+`prompts/trading/desk_brief_check.md` + `functional/test_desk_brief_behaviour.py`
+(F8), live grade in the `!row` path via `liveGrades` (F9), local-time
+`shortDate` + `_pct_abs` removed (F10), `poll` at component scope (F11).
+Verified: unit suite 3342 passed / 18 skipped, ruff clean,
+coverage-completeness gate 69 passed, `tsc` + `vite build` clean, 9/9 desk
+Playwright tests (3 new), 21 desk/API backend tests. Deployed `7f3e313`;
+post-deploy all green (sweep_journeys OK, exercise_search_scenarios OK).
+
+**Search credits are the constraint now.** That same sweep's harness
+reported Tavily at 0 of its 1000 searches this billing period, with the
+repeated questions served from the 30-minute SQLite cache — the whole
+reason the policy below exists. On 2026-08-29 deploy sweeps accounted for
+344 of the month's 403 searches.
+
+**The post-deploy sweep no longer runs on every deploy.** `scripts/deploy.sh`
+computes whether the `$before..$after` diff touched the search chain or the
+router's tool choice (mcp, services, tools, core prompts, the
+chat/reply/scout agents, `prompts/(routing|reply|search|scout|referent|refinement)/`,
+the checks themselves, skills, bridges). Only then does it run the full
+`post-deploy-checks.sh` sweep + search harness; any other deploy runs
+`--cheap` (gateway→backend 401, backend `/health` 200), which still writes
+`data/.post-deploy-status` and pages on red. `--run-post` forces the full
+set; an empty diff is treated as full. Pinned by
+`backend/tests/test_deploy_scripts.py::test_the_credit_consuming_checks_are_opt_in_by_diff`.
+Validated on the deploy of `4e9f75a` itself (a scripts/tests-only diff):
+the deploy printed "cheap checks running in the background" and the verdict
+was `4e9f75af ok (cheap)` with the gateway answering 401 and `/health` 200.
+This policy change takes effect on the next deploy's run of `deploy.sh`.
+
+Next: nothing outstanding. Watch Tavily credit replenishment before trusting
+a full sweep's live numbers.
 
 ## 2026-09-10 (evening) — the drill-down re-reads its analysis when the candle turns, and its timestamp is its own (DEPLOYED `9d5669e`)
 
