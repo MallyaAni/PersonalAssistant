@@ -90,6 +90,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the paper orders and the account without submitting",
     )
     parser.add_argument(
+        "--rebalance-now",
+        action="store_true",
+        help="rebalance the paper book to tonight's targets whatever the clock "
+        "says, and restart the clock (the operator's one-time move)",
+    )
+    parser.add_argument(
         "--prune-days",
         type=int,
         default=0,
@@ -324,7 +330,9 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Returns the day's entry for the desk record.
-def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
+def paper_trade(
+    report, store_root: Path, session: str, live: bool, rebalance_now: bool = False
+) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import actions, paper
     from backend.market import alpaca_trading
@@ -355,9 +363,19 @@ def paper_trade(report, store_root: Path, session: str, live: bool) -> dict:
     # was measured inside the book's own rules and cost 3.0% a year. See
     # the note at the top of `desk/exit.py`.
     orders, new_state, what = paper.plan(
-        session, state, account.equity, held, prices, targets, grades
+        session,
+        state,
+        account.equity,
+        held,
+        prices,
+        targets,
+        grades,
+        force_rebalance=rebalance_now,
     )
-    print(f"\npaper book ({what}), equity {account.equity:,.0f}:")
+    print(
+        f"\npaper book ({what}{', forced tonight' if rebalance_now else ''}), "
+        f"equity {account.equity:,.0f}:"
+    )
     # The plan is written down before a single order is sent, with the id
     # each one will carry. A crash between sending and recording then
     # leaves a record the next session can ask the broker about, rather
@@ -916,7 +934,11 @@ def main() -> None:
     if args.paper_trade or args.paper_dry_run:
         try:
             entry = paper_trade(
-                report, Path(store.root), session, live=args.paper_trade
+                report,
+                Path(store.root),
+                session,
+                live=args.paper_trade,
+                rebalance_now=args.rebalance_now,
             )
         except Exception as exc:  # the account being away must not lose the record
             print(f"\npaper book: not traded ({type(exc).__name__}: {exc})")

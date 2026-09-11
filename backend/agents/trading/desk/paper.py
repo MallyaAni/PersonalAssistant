@@ -113,17 +113,27 @@ def plan(
     targets: dict[str, float],
     grades: dict[str, str],
     finished: dict[str, str] | None = None,
+    force_rebalance: bool = False,
 ) -> tuple[list[PaperOrder], PaperState, str]:
-    """Return (orders, new state, what the day was)."""
-    if session in state.sessions_seen:
+    """Return (orders, new state, what the day was).
+
+    `force_rebalance` rebalances to the targets tonight whatever the clock
+    says and restarts the clock from this session. It is the operator's
+    one-time move - the desk's rule never sets it - and it is the one case
+    a session already planned is planned again, deliberately: the caller
+    cancels the broker's open orders before submitting the new ones.
+    """
+    if session in state.sessions_seen and not force_rebalance:
         return [], state, "already planned for this session"
     new = PaperState(**asdict(state))
-    new.sessions_seen = state.sessions_seen + [session]
+    if session not in state.sessions_seen:
+        new.sessions_seen = state.sessions_seen + [session]
     new.opened = {s: d for s, d in state.opened.items() if s in held}
     done = finished or {}
     orders: list[PaperOrder] = []
     rebalance = (
-        state.last_rebalance is None
+        force_rebalance
+        or state.last_rebalance is None
         or state.sessions_since_rebalance + 1 >= REBALANCE_EVERY
     )
     if rebalance:

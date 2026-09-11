@@ -117,6 +117,40 @@ def test_rebalance_clock():
     assert new.sessions_since_rebalance == 0
 
 
+# The operator's one-time move: a forced rebalance on a session the desk
+# has already planned as a hold plans the targets anyway and restarts the
+# clock; without the flag the same call is refused as already planned.
+def test_a_forced_rebalance_overrides_the_clock_and_the_seen_session():
+    state = paper.PaperState(
+        last_rebalance="2026-09-08",
+        sessions_since_rebalance=2,
+        sessions_seen=["2026-09-10"],
+    )
+    refused, same, why = paper.plan(
+        "2026-09-10", state, 50_000.0, {"MU": 10.0}, {"MU": 100.0}, {"SNDK": 0.1}, {}
+    )
+    assert refused == [] and why == "already planned for this session"
+    orders, new, what = paper.plan(
+        "2026-09-10",
+        state,
+        50_000.0,
+        {"MU": 10.0},
+        {"MU": 100.0, "SNDK": 100.0},
+        {"SNDK": 0.1},
+        {"MU": "B", "SNDK": "A"},
+        force_rebalance=True,
+    )
+    assert what == "rebalance"
+    assert {(o.symbol, o.side, o.qty) for o in orders} == {
+        ("MU", "sell", 10),
+        ("SNDK", "buy", 50),
+    }
+    assert new.last_rebalance == "2026-09-10"
+    assert new.previous_rebalance == "2026-09-08"
+    assert new.sessions_since_rebalance == 0
+    assert new.sessions_seen == ["2026-09-10"]
+
+
 # The state round-trips through its file and the snapshot books P/L from
 # the first equity seen.
 def test_state_and_snapshot(tmp_path):
