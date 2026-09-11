@@ -364,9 +364,12 @@ async def desk_mine(
                 snap.get("quotes") or {},
                 snap.get("technical") or {},
             ),
+            "grades_live": holdings.live_grades(latest, snap.get("technical") or {}),
         }
     symbols = sorted(
-        {h.ticker for h in rows} | {r["ticker"] for r in latest.get("book") or []}
+        {h.ticker for h in rows}
+        | {r["ticker"] for r in latest.get("book") or []}
+        | set(latest.get("grades") or {})
     )
     quotes: dict = {}
     technical: dict = {}
@@ -387,6 +390,7 @@ async def desk_mine(
         "session": latest.get("session"),
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
         "rows": holdings.board(latest, rows, equity, quotes, technical),
+        "grades_live": holdings.live_grades(latest, technical),
     }
 
 

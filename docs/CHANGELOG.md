@@ -2,6 +2,17 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - Every grade re-read at the candle, ordered by grade
+
+The full list on the Desk view ("Every grade") sorted by the score alone,
+and the score is summed conviction, so an A+ could sit under a B and the
+list read as unsorted; and only the board's names (held or targeted) were
+re-graded at the live price, so the rest showed the evening grade in the
+same list. The intraday snapshot now quotes every graded name, `/desk/mine`
+returns `grades_live` for every name with a read (`holdings.live_grades`),
+and the list orders by grade first, live where the candle has moved it,
+then by score within the grade. Tested on the backend and in the browser.
+
 ## 2026-09-10 - A one-time forced rebalance for the paper account
 
 `market_daily --rebalance-now` rebalances the paper book to tonight's

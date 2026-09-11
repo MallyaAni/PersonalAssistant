@@ -17,6 +17,7 @@ import {
   type DeskIntraday,
   type DeskLive,
   type DeskLiveRead,
+  type DeskLiveGrade,
   type DeskMineRow,
   type DeskPaperLive,
   type DeskPayload,
@@ -37,6 +38,7 @@ interface DeskPanelProps {
 const REFRESH_MS = 5 * 60 * 1000
 const CANDLE_MS = 15 * 60 * 1000
 
+const GRADE_ORDER: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
 const GRADE_STYLE: Record<string, string> = {
   'A+': 'bg-[#e6f4ea] text-[#1e7a3a]',
   A: 'bg-[#eaf3ff] text-[#0b5cad]',
@@ -609,6 +611,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [paperLive, setPaperLive] = useState<DeskPaperLive | null>(null)
   const [holdings, setHoldings] = useState<DeskHolding[]>([])
   const [rows, setRows] = useState<DeskMineRow[]>([])
+  const [liveGrades, setLiveGrades] = useState<Record<string, DeskLiveGrade>>({})
   const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
   const [equity, setEquity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
   const [stops, setStops] = useState(() => readStored(STOPS_KEY) === 'on')
@@ -669,7 +672,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         // the board stands without the live layer
       }
       try {
-        setRows(await getDeskMine(userId, equity))
+        const mine = await getDeskMine(userId, equity)
+        setRows(mine.rows)
+        setLiveGrades(mine.grades_live)
       } catch {
         // the last board stands
       }
@@ -888,7 +893,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {latest && details && <PracticeAccount record={latest.paper} paperLive={paperLive} />}
 
-      {latest && details && <EveryGrade latest={latest} rows={rows} onOpenName={(t) => setOpenName(t)} />}
+      {latest && details && (
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} onOpenName={(t) => setOpenName(t)} />
+      )}
 
       {openName && latest && (
         <NameDetail
@@ -1311,20 +1318,36 @@ const Positions = ({ holdings, error, onSave }: PositionsProps) => {
 const EveryGrade = ({
   latest,
   rows,
+  liveGrades,
   onOpenName,
 }: {
   latest: NonNullable<DeskPayload['latest']>
   rows: DeskMineRow[]
+  liveGrades: Record<string, DeskLiveGrade>
   onOpenName: (ticker: string) => void
 }) => {
   const [openBrief, setOpenBrief] = useState<string | null>(null)
-  // Ranked by the live score where the candle has re-read the name, so the
-  // best value at the current price sits on top; the evening score fills in
-  // for a name the live board has not touched.
-  const liveScore = new Map(rows.filter((r) => r.score_live != null).map((r) => [r.ticker, r.score_live as number]))
-  const liveGrade = new Map(rows.filter((r) => r.grade_live).map((r) => [r.ticker, r.grade_live as string]))
+  // Every name is re-graded at the candle: the live grades cover the whole
+  // book, the board's rows cover what it carries, and the evening record
+  // fills in for a name the candle has not read. Ordered by grade first and
+  // the score within it, so the list reads as the desk ranks.
+  const liveScore = new Map<string, number>()
+  const liveGrade = new Map<string, string>()
+  for (const r of rows) {
+    if (r.score_live != null) liveScore.set(r.ticker, r.score_live)
+    if (r.grade_live) liveGrade.set(r.ticker, r.grade_live)
+  }
+  for (const [ticker, g] of Object.entries(liveGrades)) {
+    liveScore.set(ticker, g.score_live)
+    liveGrade.set(ticker, g.grade_live)
+  }
+  const gradeOf = (ticker: string, g: { grade: string }) => liveGrade.get(ticker) ?? g.grade
+  const scoreOf = (ticker: string, g: { score: number }) => liveScore.get(ticker) ?? g.score
   const grades = Object.entries(latest.grades).sort(
-    (a, b) => (liveScore.get(b[0]) ?? b[1].score) - (liveScore.get(a[0]) ?? a[1].score),
+    (a, b) =>
+      (GRADE_ORDER[gradeOf(b[0], b[1])] ?? -1) - (GRADE_ORDER[gradeOf(a[0], a[1])] ?? -1) ||
+      scoreOf(b[0], b[1]) - scoreOf(a[0], a[1]) ||
+      a[0].localeCompare(b[0]),
   )
   const briefs = latest.briefs ?? {}
   return (
@@ -1332,7 +1355,8 @@ const EveryGrade = ({
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Every grade</h3>
       <p className="mb-2 text-xs text-[#6e6e73]">
         {TRIGGER_LEGEND} The number is the analyst&rsquo;s rating, 0 to 100: where the name ranks across the book on
-        that analyst&rsquo;s evidence. Ordered by the live score, so the best value at the current price is on top.
+        that analyst&rsquo;s evidence. Ordered by grade, best first, then by score within the grade; each name is
+        re-read at the live price every fifteen-minute candle.
       </p>
       <table className="w-full text-sm">
         <thead className="text-left text-[#6e6e73]">

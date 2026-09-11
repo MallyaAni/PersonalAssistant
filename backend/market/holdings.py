@@ -209,6 +209,26 @@ def board(
     return rows
 
 
+# Every graded name re-graded at the candle, for the page's full list:
+# the board carries only the names held or targeted, and the person reads
+# the whole book by grade, so the other names must move with the candle
+# too or the list is a mix of live and evening grades in one order.
+def live_grades(record: dict, technical: dict | None) -> dict[str, dict]:
+    """Return {ticker: live grade, score and technical ranks} where read."""
+    out: dict[str, dict] = {}
+    for ticker, grade in (record.get("grades") or {}).items():
+        live = _live_grade(grade, (technical or {}).get(ticker))
+        if live is None:
+            continue
+        out[ticker] = {
+            "grade_live": live["grade"],
+            "score_live": live["score"],
+            "technical_now": live["now"],
+            "technical_close": live["close"],
+        }
+    return out
+
+
 # The grade re-made with the technical stance read at the live rank, the
 # other analysts as the record left them, and the score moved by the
 # technical conviction's change. None when there is no live read.

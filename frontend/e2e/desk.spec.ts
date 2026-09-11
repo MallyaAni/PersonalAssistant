@@ -242,6 +242,11 @@ test.beforeEach(async ({ page }) => {
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
+      // MSFT is C at the close but its live read lifts it to B: the full
+      // list must show the live grade and order it above nothing lower.
+      grades_live: {
+        MSFT: { grade_live: 'B', score_live: 0.5, technical_now: 0.85, technical_close: 0.5 },
+      },
       rows: [
         {
           ticker: 'AAPL',
@@ -448,6 +453,11 @@ test('shows each thing once, not twice', async ({ page }) => {
   // above already shows them.
   await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
   await expect(page.getByText('Every grade')).toBeVisible()
+  // Ordered by grade, best first: AAPL (A), then NVDA (B) and MSFT (lifted
+  // to B by its live read), and MSFT shows the live grade, not the close's.
+  const everyGrade = page.locator('section', { has: page.getByRole('heading', { name: 'Every grade' }) })
+  await expect(everyGrade.locator('tbody tr td:first-child')).toHaveText(['AAPL', 'NVDA', 'MSFT'])
+  await expect(everyGrade.locator('tbody tr').last().locator('td').nth(2)).toHaveText('B')
   await expect(page.getByText('Practice account', { exact: true })).toBeVisible()
   await expect(page.getByText('Gain so far')).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })

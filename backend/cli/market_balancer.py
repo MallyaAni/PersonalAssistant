@@ -21,7 +21,6 @@ broker and records it with the board's Buy button.
 
 import argparse
 import json
-import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -82,10 +81,13 @@ def run(data_dir: Path, equity: float) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
         return path
+    # Every graded name, not only the board's: the page's full list is
+    # re-graded at the candle from this same snapshot.
     symbols = sorted(
         {h.ticker for h in held}
         | {r["ticker"] for r in latest.get("book") or []}
         | {r["ticker"] for r in latest.get("actions") or []}
+        | set(latest.get("grades") or {})
     )
     quotes: dict = {}
     technical: dict = {}
@@ -105,9 +107,7 @@ def run(data_dir: Path, equity: float) -> Path:
         pass
     rows = holdings.board(latest, held, equity, quotes, technical)
     top_buys = [
-        r
-        for r in rows
-        if r["in_book"] and r["target_weight"] > 0 and r["shares"] == 0
+        r for r in rows if r["in_book"] and r["target_weight"] > 0 and r["shares"] == 0
     ]
     previous: dict | None = None
     if path.exists():
@@ -142,7 +142,8 @@ def run(data_dir: Path, equity: float) -> Path:
         )
     with (data_dir / "desk" / INTRADAY_LOG).open("a", encoding="utf-8") as handle:
         grades = ",".join(
-            f"{b['ticker']}={b.get('grade_live') or b.get('grade')}" for b in top_buys[:5]
+            f"{b['ticker']}={b.get('grade_live') or b.get('grade')}"
+            for b in top_buys[:5]
         )
         handle.write(
             f"{plan['as_of']} session={plan['session']} buys=[{grades}] "

@@ -154,7 +154,10 @@ def test_board_against_the_persons_holdings():
     # dropped is sold outright.
     assert by["HPE"]["leaves_if"] == "a buy only while it holds an A grade"
     assert by["ADBE"]["leaves_if"] == "sell when its grade drops below A at a rebalance"
-    assert by["FTNT"]["leaves_if"] == "sell everything: it no longer earns a place in the book"
+    assert (
+        by["FTNT"]["leaves_if"]
+        == "sell everything: it no longer earns a place in the book"
+    )
 
 
 # The live technical read re-makes the grade and the order: a name whose
@@ -186,3 +189,26 @@ def test_the_live_technical_read_regrades_and_reorders():
     # Without a live read the grade stands and the order is by grade then score.
     plain = holdings.board(record, [], 100_000.0, {})
     assert [r["grade_live"] for r in plain] == [r["grade"] for r in plain]
+
+
+# The full list's live grades: every graded name with a technical read is
+# re-graded, whether or not the board carries it; a name without a read is
+# left out so the page falls back to the evening grade.
+def test_live_grades_cover_every_graded_name_with_a_read():
+    record = _record()
+    for ticker in record["grades"]:
+        record["grades"][ticker]["stances"] = {
+            "fundamental": 1,
+            "technical": 1,
+            "sentiment": 1,
+            "value": 0,
+            "rotation": 0,
+        }
+    read = {t: {"now": 0.10, "close": 0.90} for t in record["grades"]}
+    first = next(iter(record["grades"]))
+    del read[first]
+    live = holdings.live_grades(record, read)
+    assert first not in live
+    assert set(live) == set(record["grades"]) - {first}
+    assert all(v["grade_live"] == "B" for v in live.values())  # bearish veto
+    assert holdings.live_grades(record, None) == {}

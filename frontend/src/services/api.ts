@@ -2161,12 +2161,27 @@ export const putDeskHoldings = async (userId: string, rows: DeskHolding[]): Prom
   return ((await response.json()) as { holdings: DeskHolding[] }).holdings;
 };
 
-export const getDeskMine = async (userId: string, equity: number): Promise<DeskMineRow[]> => {
+// The live grade of one covered name, re-made at the candle.
+export interface DeskLiveGrade {
+  grade_live: string;
+  score_live: number;
+  technical_now: number;
+  technical_close: number;
+}
+
+export interface DeskMine {
+  rows: DeskMineRow[];
+  // Every graded name with a live read this candle, not only the board's.
+  grades_live: Record<string, DeskLiveGrade>;
+}
+
+export const getDeskMine = async (userId: string, equity: number): Promise<DeskMine> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/mine?equity=${encodeURIComponent(equity)}`,
   );
-  if (!response.ok) return [];
-  return ((await response.json()) as { rows: DeskMineRow[] }).rows;
+  if (!response.ok) return { rows: [], grades_live: {} };
+  const data = (await response.json()) as Partial<DeskMine>;
+  return { rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
 };
 
 // The balancer's persisted intraday plan (recomputed every fifteen minutes),
