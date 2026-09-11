@@ -2,6 +2,17 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The live technical read sees the 9-day EMA and the three-session turn
+
+The read had no 9-day EMA and read the 21 and 50-day slopes over five
+sessions, so a name whose 9 and 21 had curled down off a rejected high
+two days earlier still read "rising" and "the trend is not stalling". The
+live detail now carries, per name at the live bar, the distance to the
+9-day EMA, whether the 9 and the 21 have turned over the last three
+sessions, and the 9/21 gap with whether it is widening or narrowing;
+the short-term lines say so in words, and the model's prose is written
+from those lines. Nothing is scored on them; the grade is unchanged.
+
 ## 2026-09-10 - Live quotes on the New York day
 
 The live quotes asked the feed for the UTC date's bars, so from 20:00 to

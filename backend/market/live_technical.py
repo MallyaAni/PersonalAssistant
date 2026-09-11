@@ -42,6 +42,11 @@ _cache: dict[str, object] = {"key": None, "value": {}}
 # three separately so a person sees both where price is right now and
 # whether the longer timeframes still agree with it.
 SHORT = (
+    "ema9_distance",
+    "ema9_turn_3",
+    "ema21_turn_3",
+    "spread_9_21",
+    "spread_9_21_turn_3",
     "ema21_distance",
     "ema21_slope",
     "ema50_distance",
@@ -193,6 +198,7 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
     panel = read["panel"]
     opinion = read["opinion"]
     scores = opinion.scores
+    fast = _fast_turns(panel)
     out: dict = {}
     for symbol in quotes:
         if symbol not in panel.tickers:
@@ -206,6 +212,10 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
             value = float(arr[-1, j])
             if np.isfinite(value):
                 feature[name] = round(value, 4)
+        for name, arr in fast.items():
+            value = float(arr[j])
+            if np.isfinite(value):
+                feature[name] = round(value, 4)
         now = None
         if scores.shape[0] >= 1 and np.isfinite(scores[-1, j]):
             now = float(baselines.percentile_rank(scores[-1:])[-1, j])
@@ -217,6 +227,46 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
             "long": {k: feature[k] for k in LONG if k in feature},
         }
     return out
+
+
+# The fast averages the analyst does not score but a trader watches: the
+# 9-day EMA, where price sits against it, and whether the 9 and the 21
+# have turned over the last three sessions. The analyst's slopes run over
+# five sessions, so a bend two days old read as "rising" while the chart
+# showed the 9 and 21 curling down off a rejected high. Read at the live
+# bar, per name, with nothing scored on them.
+def _fast_turns(panel: Panel) -> dict[str, np.ndarray]:
+    """Return {name: (N,) reading} for the 9/21 EMA picture at the live bar."""
+    close = panel.adj_close
+    if close.shape[0] < 4:
+        return {}
+    from backend.market import technical
+
+    e9 = technical.ema(close, 9)
+    e21 = technical.ema(close, 21)
+    with np.errstate(all="ignore"):
+        spread = np.log(e9 / e21)
+        return {
+            "ema9_distance": np.log(close[-1] / e9[-1]),
+            "ema9_turn_3": np.log(e9[-1] / e9[-4]),
+            "ema21_turn_3": np.log(e21[-1] / e21[-4]),
+            "spread_9_21": spread[-1],
+            "spread_9_21_turn_3": spread[-1] - spread[-4],
+        }
+
+
+# The line a three-session turn of an average reads as.
+def _turn_line(label: str, turn) -> str | None:
+    """Return "the 9-day EMA turned down over the last three sessions", or None."""
+    if turn is None or not np.isfinite(turn):
+        return None
+    if abs(turn) < 0.001:
+        return f"the {label} is flat over the last three sessions"
+    return (
+        f"the {label} is rising over the last three sessions"
+        if turn > 0
+        else f"the {label} has turned down over the last three sessions"
+    )
 
 
 # The line a percentage distance reads as, e.g. "12.6% above".
@@ -269,6 +319,29 @@ def _level_lines(s: dict) -> list[str]:
     return lines_out
 
 
+# The 9-day EMA and the last three sessions' turn of the fast averages.
+def _fast_lines(s: dict) -> list[str]:
+    """Return the 9/21 EMA lines for a detail's short dict."""
+    fast: list[str] = []
+    e9 = _pct_word(s.get("ema9_distance"))
+    if e9:
+        fast.append(f"{e9} the 9-day EMA")
+    for label, key in (("9-day EMA", "ema9_turn_3"), ("21-day EMA", "ema21_turn_3")):
+        turn = _turn_line(label, s.get(key))
+        if turn:
+            fast.append(turn)
+    gap = s.get("spread_9_21")
+    gap_turn = s.get("spread_9_21_turn_3")
+    if gap is not None and np.isfinite(gap):
+        line = f"the 9-day EMA is {_pct_word(gap)} the 21-day"
+        if gap_turn is not None and np.isfinite(gap_turn) and abs(gap_turn) >= 0.001:
+            line += ", the gap " + (
+                "widening" if gap_turn * np.sign(gap or 1) > 0 else "narrowing"
+            )
+        fast.append(line)
+    return fast
+
+
 # The short horizon's lines: where price sits against the averages, the
 # daily trend, and the support and resistance that frame it.
 def _short_lines(s: dict) -> list[str]:
@@ -278,6 +351,7 @@ def _short_lines(s: dict) -> list[str]:
     if conv is not None and np.isfinite(conv):
         short.append(_convergence_line(conv))
     short.extend(_level_lines(s))
+    short.extend(_fast_lines(s))
     e21 = _pct_word(s.get("ema21_distance"))
     if e21:
         short.append(f"{e21} the 21-day EMA")

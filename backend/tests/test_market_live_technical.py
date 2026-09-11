@@ -145,3 +145,43 @@ def test_technical_now_carries_the_persisted_stance(monkeypatch):
     assert out["AAA"]["stance"] == 1
     assert out["BBB"]["stance"] == -1
     assert out["AAA"]["now"] < out["AAA"]["close"]
+
+
+# The fast picture: a name that ran up and then slipped for three sessions
+# reads as the 9-day EMA having turned down over the last three sessions,
+# with the 9/21 gap narrowing, while the analyst's five-session slope would
+# still call it rising.
+def test_the_short_read_sees_the_nine_day_ema_turn(monkeypatch):
+    rows = 40
+    path = np.concatenate([np.linspace(100, 130, rows - 3), [128.0, 126.0, 124.0]])
+    dates = np.datetime64("2026-07-01") + np.arange(rows).astype("timedelta64[D]")
+    col = path[:, None]
+    panel = Panel(
+        dates=dates,
+        tickers=("AAA",),
+        open=col,
+        high=col * 1.01,
+        low=col * 0.99,
+        close=col,
+        adj_close=col,
+        volume=np.full((rows, 1), 1000.0),
+        themes={},
+        benchmark="AAA",
+    )
+    opinion = Opinion("technical", np.full((rows, 1), 0.5), {})
+    monkeypatch.setattr(
+        live_technical,
+        "_live_read",
+        lambda store, quotes, today: {"panel": panel, "opinion": opinion},
+    )
+    quote = SimpleNamespace(last=124.0, open=126.0, high=126.5, low=123.5, bar="x")
+    detail = live_technical.technical_detail(None, {"AAA": quote}, date(2026, 8, 9))[
+        "AAA"
+    ]
+    assert detail["short"]["ema9_turn_3"] < 0
+    assert detail["short"]["spread_9_21_turn_3"] < 0
+    short = live_technical.lines(detail)["short"]
+    assert "the 9-day EMA has turned down over the last three sessions" in short
+    assert any(
+        line.startswith("the 9-day EMA is") and "narrowing" in line for line in short
+    )
