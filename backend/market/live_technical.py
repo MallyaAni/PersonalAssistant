@@ -163,6 +163,14 @@ def technical_now(store, quotes: dict, today: date | None = None) -> dict:
     if scores.shape[0] < 2:
         return {}
     ranks = baselines.percentile_rank(scores[-2:])
+    # The stance the evening rule would hold with the live bar as today's
+    # session: bullish or bearish only once the rank has sat past the line
+    # for the rule's run of sessions (opinions.PERSISTENCE), so a name on a
+    # threshold does not change grade every candle. Thresholding the live
+    # rank alone did exactly that: ETN, bullish at the close on a rank of
+    # 60 held over from earlier sessions, read neutral at 54 an hour later
+    # and the page showed C for a name the rule still graded B.
+    stances = read["opinion"].stances()
     out = {}
     for symbol in quotes:
         if symbol not in panel.tickers:
@@ -170,7 +178,7 @@ def technical_now(store, quotes: dict, today: date | None = None) -> dict:
         j = panel.index(symbol)
         now, close = float(ranks[-1, j]), float(ranks[-2, j])
         if np.isfinite(now) and np.isfinite(close):
-            out[symbol] = {"now": now, "close": close}
+            out[symbol] = {"now": now, "close": close, "stance": int(stances[-1, j])}
     return out
 
 
@@ -278,9 +286,7 @@ def _short_lines(s: dict) -> list[str]:
         short.append(
             "daily trend up"
             if dt > 0
-            else "daily trend down"
-            if dt < 0
-            else "daily trend flat"
+            else "daily trend down" if dt < 0 else "daily trend flat"
         )
     stack = s.get("stack_order")
     if stack is not None and np.isfinite(stack):
@@ -310,9 +316,7 @@ def _medium_lines(m: dict) -> list[str]:
         medium.append(
             "weekly trend up"
             if wt > 0
-            else "weekly trend down"
-            if wt < 0
-            else "weekly trend flat"
+            else "weekly trend down" if wt < 0 else "weekly trend flat"
         )
     ws = m.get("weekly_stack")
     if ws is not None and np.isfinite(ws):

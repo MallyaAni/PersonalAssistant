@@ -97,9 +97,51 @@ def test_technical_detail_splits_the_features_by_horizon(monkeypatch):
     d = out["AAA"]
     # Every horizon has at least one cited feature, each filed under its own
     # list and nowhere else.
-    assert d["short"] and d["medium"] and d["long"]
+    assert d["short"]
+    assert d["medium"]
+    assert d["long"]
     assert all(name in live_technical.SHORT for name in d["short"])
     assert all(name in live_technical.MEDIUM for name in d["medium"])
     assert all(name in live_technical.LONG for name in d["long"])
     assert "now" in d
     assert d["now"] is not None
+
+
+# technical_now carries the persisted stance the rule would hold with the
+# live bar as today's session, not a threshold on the live rank alone.
+def test_technical_now_carries_the_persisted_stance(monkeypatch):
+    dates = np.array(
+        ["2026-09-04", "2026-09-05", "2026-09-08", "2026-09-09"], dtype="datetime64[D]"
+    )
+    ones = np.ones((4, 3))
+    panel = Panel(
+        dates=dates,
+        tickers=("AAA", "BBB", "CCC"),
+        open=ones * 100,
+        high=ones * 101,
+        low=ones * 99,
+        close=ones * 100,
+        adj_close=ones * 100,
+        volume=ones * 1000,
+        themes={},
+        benchmark="CCC",
+    )
+    # AAA is top-ranked for three sessions and slips to the middle on the
+    # live bar; BBB the reverse. The rule keeps AAA bullish (one session
+    # under the line is not a run) and BBB bearish.
+    scores = np.array(
+        [[0.9, 0.1, 0.5], [0.9, 0.1, 0.5], [0.9, 0.1, 0.5], [0.5, 0.6, 0.4]]
+    )
+    opinion = Opinion("technical", scores, {})
+    monkeypatch.setattr(
+        live_technical,
+        "_live_read",
+        lambda store, quotes, today: {"panel": panel, "opinion": opinion},
+    )
+    quote = SimpleNamespace(last=100.0, open=100.0, high=101.0, low=99.0, bar="x")
+    out = live_technical.technical_now(
+        None, {"AAA": quote, "BBB": quote}, date(2026, 9, 9)
+    )
+    assert out["AAA"]["stance"] == 1
+    assert out["BBB"]["stance"] == -1
+    assert out["AAA"]["now"] < out["AAA"]["close"]

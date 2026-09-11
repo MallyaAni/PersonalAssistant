@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The live re-grade keeps the rule's persistence
+
+The evening rule changes an analyst's stance only after the rank has sat
+past the line for three sessions (`opinions.PERSISTENCE`), so a name on a
+threshold does not change grade every day. The live re-grade thresholded
+the live rank alone and flipped on one candle: ETN, bullish at the close
+on a technical rank of 60 held over from earlier sessions, read neutral
+at 54 an hour later and every place on the page showed C for a name the
+rule graded B. `technical_now` now carries the rule's own persisted
+stance with the live bar as today's session, and the board, the full
+list and the drill-down take it, with the bare threshold only as the
+fallback for a snapshot written before the stance was.
+
 ## 2026-09-10 - The drill-down lists the grade changes
 
 Twelve identical session rows answered nothing. The name's drill-down now

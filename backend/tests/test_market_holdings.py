@@ -212,3 +212,27 @@ def test_live_grades_cover_every_graded_name_with_a_read():
     assert set(live) == set(record["grades"]) - {first}
     assert all(v["grade_live"] == "B" for v in live.values())  # bearish veto
     assert holdings.live_grades(record, None) == {}
+
+
+# The live read carries the rule's own persisted stance; a rank that has
+# dipped under the line for one candle does not change the grade when the
+# rule says the stance still holds, and a bare rank is only the fallback.
+def test_the_persisted_live_stance_wins_over_the_bare_rank():
+    record = _record()
+    record["grades"]["ADBE"]["stances"] = {
+        "fundamental": 1,
+        "technical": 1,
+        "sentiment": 1,
+        "value": 0,
+        "rotation": 0,
+    }
+    held = holdings.board(
+        record, [], 100_000.0, {}, {"ADBE": {"now": 0.10, "close": 0.60, "stance": 1}}
+    )
+    assert {r["ticker"]: r for r in held}["ADBE"]["grade_live"] == "A+"
+    bare = holdings.board(
+        record, [], 100_000.0, {}, {"ADBE": {"now": 0.10, "close": 0.60}}
+    )
+    assert {r["ticker"]: r for r in bare}["ADBE"][
+        "grade_live"
+    ] == "B"  # the bare rank reads bearish: the veto

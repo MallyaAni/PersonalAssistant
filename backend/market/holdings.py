@@ -243,11 +243,17 @@ def _live_grade(grade: dict, tech: dict | None) -> dict | None:
     stances = {k: int(v) for k, v in (grade.get("stances") or {}).items()}
     if "technical" not in stances:
         return None
-    stances["technical"] = (
-        BULLISH
-        if now >= 1.0 - STANCE_FRACTION
-        else BEARISH if now <= STANCE_FRACTION else 0
-    )
+    # The live stance is the rule's own, persisted through the live bar,
+    # when the read carries it; the bare threshold is the fallback for a
+    # snapshot written before the stance was.
+    if tech.get("stance") is not None:
+        stances["technical"] = int(tech["stance"])
+    else:
+        stances["technical"] = (
+            BULLISH
+            if now >= 1.0 - STANCE_FRACTION
+            else BEARISH if now <= STANCE_FRACTION else 0
+        )
     letter, _votes = grading.grade_from_stances(stances, grading.ANALYST_WEIGHTS)
     moved = float(
         conviction_from_ranks(now, SHARPNESS) - conviction_from_ranks(close, SHARPNESS)
