@@ -15,6 +15,7 @@ resolution that survives cost; what a candle adds is risk information.
 import time
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from zoneinfo import ZoneInfo
 
 from backend.market import alpaca
 
@@ -60,6 +61,9 @@ def quote_from_bars(symbol: str, bars: list, fetched_at: datetime) -> Quote | No
     )
 
 
+NEW_YORK = ZoneInfo("America/New_York")
+
+
 # Quotes for the symbols on the given session, from memory when the
 # candle has not turned, else from the feed.
 def quotes(
@@ -71,7 +75,11 @@ def quotes(
     headers: dict | None = None,
 ) -> dict[str, Quote]:
     """Return {symbol: Quote} for the symbols the feed has bars for."""
-    today = session or clock().date()
+    # The session is the New York calendar day, not the UTC one: from 20:00
+    # to midnight Eastern the UTC date has already rolled to tomorrow, and
+    # asking the feed for tomorrow's bars gave the page no quotes, no live
+    # read and no "prices as of" for those four hours every evening.
+    today = session or clock().astimezone(NEW_YORK).date()
     out: dict[str, Quote] = {}
     for symbol in symbols:
         held = _cache.get(symbol)

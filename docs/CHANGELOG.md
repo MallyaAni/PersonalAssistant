@@ -2,6 +2,13 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - Live quotes on the New York day
+
+The live quotes asked the feed for the UTC date's bars, so from 20:00 to
+midnight Eastern the date had rolled and the page had no quotes, no live
+read and no "prices as of" for four hours every evening. The session is
+the New York calendar day now.
+
 ## 2026-09-10 - The live re-grade keeps the rule's persistence
 
 The evening rule changes an analyst's stance only after the rank has sat

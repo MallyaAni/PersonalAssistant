@@ -63,3 +63,24 @@ def test_memory_holds_for_a_candle_and_errors_cost_one_name():
     live_quotes.quotes(["AAA"], **kwargs)
     assert calls.count("AAA") == 2
     live_quotes.forget()
+
+
+# The session is the Eastern calendar day: at 01:00 UTC on the 11th it is
+# still the evening of the 10th in New York, and the feed is asked for the
+# 10th's bars, not for a day that has not opened.
+def test_the_session_is_the_new_york_day_not_the_utc_one():
+    from datetime import UTC, datetime
+
+    live_quotes.forget()
+    asked = []
+
+    def fetch(symbol, start, end, headers=None):
+        asked.append((start, end))
+        return []
+
+    live_quotes.quotes(
+        ["AAA"],
+        fetch=fetch,
+        clock=lambda: datetime(2026, 9, 11, 1, 0, tzinfo=UTC),
+    )
+    assert asked == [(date(2026, 9, 10), date(2026, 9, 10))]
