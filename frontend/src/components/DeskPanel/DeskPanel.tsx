@@ -226,7 +226,7 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note: 'the desk\u2019s own money, no real risk; the move since it started',
+      note: 'simulated money, no real risk \u00b7 the move since it started',
     },
     {
       label: 'Today',
@@ -243,14 +243,14 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note: 'the paper account\u2019s move so far',
+      note: 'the practice account\u2019s move today',
     },
     // The forward track has no numbers until it has a run of sessions, so
     // the cell is not shown empty: a "—" with a cryptic note reads as broken.
     ...(rulesTotal !== null
       ? [
           {
-            label: 'The rules, backtest',
+            label: 'Backtest of the rules',
             value: (
               <>
                 <Trend value={rulesTotal * 100} />
@@ -267,13 +267,13 @@ const SummaryStrip = ({
             ),
             note:
               stats && stats.drawdown !== null
-                ? `these rules run over the history, not a record · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
-                : 'these rules run over the history, not a record',
+                ? `the rules replayed over past years, not a live record · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
+                : 'the rules replayed over past years, not a live record',
           },
         ]
       : []),
     {
-      label: 'The desk is',
+      label: 'Money at work',
       value:
         liveInvested !== null ? (
           <span>{Math.round(liveInvested * 100)}% invested</span>
@@ -282,8 +282,8 @@ const SummaryStrip = ({
         ),
       note:
         exposure < 1 && liveInvested !== null
-          ? 'sizing down while conditions are thin'
-          : 'of the paper account\u2019s money is at work',
+          ? 'sized down because of the warnings below'
+          : 'of the practice account is in positions',
     },
   ]
   return (
@@ -308,7 +308,7 @@ const RegimeBanner = ({ regime }: { regime: DeskRecord['regime'] }) => {
   const exposure = regime.exposure ?? 1
   return (
     <section className="rounded-2xl border border-[#9a6200]/30 bg-[#fff6e5] p-4" role="note">
-      <h3 className="text-sm font-semibold text-[#9a6200]">The desk is being careful right now</h3>
+      <h3 className="text-sm font-semibold text-[#9a6200]">Warnings the desk is weighing</h3>
       <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#7a5200]">
         {flags.map((flag) => (
           <li key={flag}>{FLAG_WORDS[flag] ?? flag}</li>
@@ -316,8 +316,7 @@ const RegimeBanner = ({ regime }: { regime: DeskRecord['regime'] }) => {
       </ul>
       {exposure < 1 && (
         <p className="mt-2 text-sm text-[#7a5200]">
-          Because of this, the desk is carrying {Math.round(exposure * 100)}% of its usual book rather than
-          the full size. That is the point of the warning, not the sign it is broken.
+          Because of these, the desk is carrying {Math.round(exposure * 100)}% of its usual size.
         </p>
       )}
     </section>
@@ -369,7 +368,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
           )}
         </ul>
       ) : (
-        <p className="text-sm text-[#6e6e73]">Nothing moved: same grades, same book, same warnings.</p>
+        <p className="text-sm text-[#6e6e73]">No change: same grades, same book, same warnings.</p>
       )}
     </section>
   )
@@ -391,14 +390,14 @@ const CurveChart = ({
   const dates = backtest?.dates ?? []
   const series: { label: string; color: string; values: number[] }[] = []
   if (backtest) {
-    series.push({ label: 'the desk\u2019s rules', color: '#1e7a3a', values: backtest.rules })
+    series.push({ label: 'the rules', color: '#1e7a3a', values: backtest.rules })
     series.push({ label: 'SPY', color: '#9ca3af', values: backtest.spy })
     if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: backtest.qqq })
   }
   if (paper && paper.equity.length > 1) {
     const base = paper.equity[0] || 1
     series.push({
-      label: 'paper account (live)',
+      label: 'practice account (live)',
       color: '#d97706',
       values: paper.equity.map((e) => e / base - 1),
     })
@@ -515,7 +514,7 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-[#1d1d1f]">The desk’s track record</h3>
         <p className="text-xs text-[#6e6e73]">
-          {backtest.label} · as of {shortDate(backtest.asof)} · the paper account is the only truly new sample
+          {backtest.label} · as of {shortDate(backtest.asof)} · the practice account is the only live sample
         </p>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -728,7 +727,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               onClick={() => setAutopsy(!autopsy)}
               className="rounded-full border border-black/[0.08] bg-white px-2.5 py-0.5 text-xs font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]"
             >
-              {autopsy ? 'hide the autopsy' : 'analyze my trading'}
+              {autopsy ? 'hide the review' : 'analyze my trading'}
             </button>
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} />}
@@ -767,7 +766,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                   prices as of {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   {live.stale && (
                     <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
-                      stale — older than a candle
+                      stale: older than 15 minutes
                     </span>
                   )}
                 </span>
@@ -805,7 +804,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                   {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
                 </button>
               ) : (
-                <span className="text-[#6e6e73]">read-only — the operator's book</span>
+                <span className="text-[#6e6e73]">read-only: the operator's book</span>
               )}
             </div>
           </div>
@@ -1098,16 +1097,16 @@ interface RowProps {
 // losing it, so a name on the edge is told apart from one with room.
 const exitCell = (r: DeskMineRow) => {
   if (!r.in_book) {
-    return <span className="text-[#6e6e73]">your call — the desk does not cover it</span>
+    return <span className="text-[#6e6e73]">your call: the desk does not cover it</span>
   }
   if (r.shares > 0 && r.target_weight <= 0) {
-    return <span className="text-[#b42318]">sell everything — it no longer earns a place</span>
+    return <span className="text-[#b42318]">sell all: it no longer earns a place</span>
   }
   const what = r.shares > 0 ? 'sold if it loses its A grade' : 'a buy while it holds its A grade'
   const m = r.grade_margin
   if (m == null) return <span className="text-[#6e6e73]">{what}</span>
-  if (m <= 0) return <span className="font-medium text-[#b42318]">{what} — on the edge, one analyst away</span>
-  if (m < 1) return <span className="text-[#9a6200]">{what} — a hair above the line</span>
+  if (m <= 0) return <span className="font-medium text-[#b42318]">{what}: on the edge, one analyst away</span>
+  if (m < 1) return <span className="text-[#9a6200]">{what}: just above the line</span>
   return <span className="text-[#6e6e73]">{what}</span>
 }
 
@@ -1527,18 +1526,18 @@ const LiveTechnical = ({
           <div className="grid gap-3 sm:grid-cols-3">
             {column('Short term · next week (daily chart)', fl.short)}
             {column('Medium term · 1–3 weeks (weekly chart)', fl.medium)}
-            {column('Long term · beyond (monthly chart)', fl.long)}
+            {column('Long term · months (200-day and 52-week)', fl.long)}
           </div>
         </>
       ) : read ? (
         <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>
       ) : (
-        <p className="text-xs text-[#6e6e73]">reading the live tape…</p>
+        <p className="text-xs text-[#6e6e73]">reading the live price…</p>
       )}
       {tech != null && (
         <p className="mt-2 text-xs text-[#1d1d1f]">
-          Where the technical analyst would rank it if the session closed here:{' '}
-          <span className="font-medium">{(tech * 100).toFixed(0)}</span> of the book, best is 100
+          Technical rank if the session closed now:{' '}
+          <span className="font-medium">{(tech * 100).toFixed(0)}</span> out of 100, where 100 is best
         </p>
       )}
     </section>
@@ -1594,7 +1593,7 @@ const NameDetail = ({
     { label: 'Return while it was an A', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}% a year` : '—', note: 'annualized over the days the desk graded it A or better' },
     { label: 'Return while it was not', value: bt?.out_annualised != null ? `${(bt.out_annualised * 100).toFixed(0)}% a year` : '—', note: 'annualized over the days it was not an A' },
     { label: 'Sessions it was an A', value: bt ? `${bt.sessions_in} of ${bt.sessions}` : '—', note: 'of all sessions since the history starts' },
-    { label: 'Crossed the A line', value: bt ? `${bt.switches}` : '—', note: 'times the grade moved across A, in either direction' },
+    { label: 'Grade changes across A', value: bt ? `${bt.switches}` : '—', note: 'times the grade crossed the A line, either way' },
   ]
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/25" onClick={onClose} role="dialog" aria-label={`${ticker} history`}>

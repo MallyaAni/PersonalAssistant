@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - The Desk view, read word for word
+
+Every visible string on the Desk view read as a trader would and
+tightened: one vocabulary ("practice account", never "paper" or "the
+desk's own money"); "Backtest of the rules ... the rules replayed over
+past years, not a live record"; "Money at work ... of the practice account
+is in positions"; the warnings banner is "Warnings the desk is weighing"
+with one sentence on the size cut; "No change" instead of "Nothing
+moved"; the exit column's "sell all", "on the edge, one analyst away",
+"just above the line"; the technical read's rank line as "Technical rank
+if the session closed now: N out of 100"; the long-term column named for
+what it holds (200-day and 52-week); "Grade changes across A" in the
+name's history; "stale: older than 15 minutes"; "hide the review" to
+match the section it hides. The browser tests follow the words.
+
 ## 2026-09-10 - Every grade re-read at the candle, ordered by grade
 
 The full list on the Desk view ("Every grade") sorted by the score alone,

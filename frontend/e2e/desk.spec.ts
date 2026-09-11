@@ -390,7 +390,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
 
   const glance = page.getByLabel('The desk at a glance')
   await expect(glance).toBeVisible()
-  await expect(glance.getByText('Practice account')).toBeVisible()
+  await expect(glance.getByText('Practice account', { exact: true })).toBeVisible()
   await expect(glance.getByText('$104,200')).toBeVisible()
   // The lifetime and today moves read as percentages, not a bare dollar
   // figure: 0.042 lifetime of the starting equity, 0.003 today. Both sit in
@@ -400,16 +400,16 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(glance.getByText('Today', { exact: true })).toBeVisible()
   await expect(glance.getByText(/\+\$31[23]/)).toBeVisible()
   await expect(glance.getByText(/\+0\.3%/)).toBeVisible()
-  await expect(glance.getByText('The rules, backtest')).toBeVisible()
-  await expect(glance.getByText('not a record', { exact: false })).toBeVisible()
+  await expect(glance.getByText('Backtest of the rules')).toBeVisible()
+  await expect(glance.getByText('not a live record', { exact: false })).toBeVisible()
   await expect(glance.getByText('vs SPY', { exact: false })).toBeVisible()
   await expect(glance.getByText('6% invested')).toBeVisible()  // 6,120 of 104,200 live
 
   // The regime leads the board, in plain words, and says what it is doing
   // about it.
-  await expect(page.getByRole('note')).toContainText('The desk is being careful right now')
+  await expect(page.getByRole('note')).toContainText('Warnings the desk is weighing')
   await expect(page.getByRole('note')).toContainText('fewer AI names are rising than usual')
-  await expect(page.getByRole('note')).toContainText('80% of its usual book')
+  await expect(page.getByRole('note')).toContainText('80% of its usual size')
 
   // What moved since the last session, which the page used to throw away.
   await expect(page.getByText('What changed since the last session')).toBeVisible()
@@ -477,7 +477,7 @@ test('drills into a name’s own history', async ({ page }) => {
   await expect(dialog.getByText('Return while it was not')).toBeVisible()
   await expect(dialog.getByText('Sessions it was an A')).toBeVisible()
   await expect(dialog.getByText('41 of 60')).toBeVisible()
-  await expect(dialog.getByText('Crossed the A line')).toBeVisible()
+  await expect(dialog.getByText('Grade changes across A')).toBeVisible()
   // The desk's whole evidence, read out loud by the model.
   await expect(dialog.getByText('What the desk read')).toBeVisible()
   await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).toBeVisible()
@@ -507,9 +507,9 @@ test('drills into a covered name outside the book and sees its live horizons', a
   await expect(dialog.getByText('Technical read')).toBeVisible()
   await expect(dialog.getByText('Short term · next week (daily chart)')).toBeVisible()
   await expect(dialog.getByText('Medium term · 1–3 weeks (weekly chart)')).toBeVisible()
-  await expect(dialog.getByText('Long term · beyond (monthly chart)')).toBeVisible()
+  await expect(dialog.getByText('Long term · months (200-day and 52-week)')).toBeVisible()
   await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()
-  await expect(dialog.getByText(/Where the technical analyst would rank it/)).toBeVisible()
+  await expect(dialog.getByText(/Technical rank if the session closed now/)).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -578,7 +578,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   const stamp = dialog.locator('h4', { hasText: 'Technical read' })
   await expect(dialog.getByText('Support holds beneath the rally.', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/\$102/)).toBeVisible()
-  await expect(dialog.getByText(/Where the technical analyst would rank it/)).toContainText('90')
+  await expect(dialog.getByText(/Technical rank if the session closed now/)).toContainText('90')
   await expect(stamp).toContainText('live,')
   const firstTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
   expect(firstTime).toBeTruthy()
@@ -591,7 +591,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   await expect(dialog.getByText('A breakdown has broken support — the rally is over.', { exact: false })).toBeVisible()
   await expect(dialog.getByText('4.1% below the 21-day EMA', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/\$110/)).toBeVisible()
-  await expect(dialog.getByText(/Where the technical analyst would rank it/)).toContainText('20')
+  await expect(dialog.getByText(/Technical rank if the session closed now/)).toContainText('20')
   await expect(stamp).toContainText('live,')
   const secondTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
   expect(secondTime).toBeTruthy()
