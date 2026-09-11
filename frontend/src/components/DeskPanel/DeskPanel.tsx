@@ -1451,6 +1451,19 @@ const triggers = (stances: Record<string, number>) =>
     .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
     .join(' ')
 
+// The option walls read off the stored chain at the live price, with the
+// put and call walls as distances from it (negative below, positive above).
+type DeskWalls = {
+  expiry: string | null
+  put_wall: number | null
+  call_wall: number | null
+  put_wall_oi: number
+  call_wall_oi: number
+  net_gamma: number
+  put_wall_distance?: number
+  call_wall_distance?: number
+}
+
 // The live technical read for one name, split by how far ahead each fact
 // looks. Short term is where price is this candle; medium term is the daily
 // timeframes; long term is the weekly and 52-week picture. Every number is
@@ -1471,6 +1484,7 @@ const LiveTechnical = ({
         short: Record<string, number>
         medium: Record<string, number>
         long: Record<string, number>
+        walls?: DeskWalls
       }
     | undefined
   quote: DeskQuote | undefined
@@ -1557,6 +1571,38 @@ const LiveTechnical = ({
         <p className="mt-2 text-xs text-[#1d1d1f]">
           Technical rank if the session closed now:{' '}
           <span className="font-medium">{(tech * 100).toFixed(0)}</span> out of 100, where 100 is best
+        </p>
+      )}
+      {detail?.walls && (detail.walls.put_wall != null || detail.walls.call_wall != null) && (
+        <p className="mt-2 text-xs text-[#6e6e73]">
+          Option walls {detail.walls.expiry ? `to ${detail.walls.expiry.slice(5)}` : ''}:{' '}
+          {detail.walls.put_wall != null ? (
+            <>
+              put{' '}
+              <span className="text-[#1d1d1f]">
+                {money(detail.walls.put_wall)}
+                {detail.walls.put_wall_distance != null && (
+                  <span className="ml-1">(<Trend value={detail.walls.put_wall_distance * 100} /> below)</span>
+                )}
+              </span>
+            </>
+          ) : (
+            'no put wall in range'
+          )}{' '}
+          ·{' '}
+          {detail.walls.call_wall != null ? (
+            <>
+              call{' '}
+              <span className="text-[#1d1d1f]">
+                {money(detail.walls.call_wall)}
+                {detail.walls.call_wall_distance != null && (
+                  <span className="ml-1">(<Trend value={detail.walls.call_wall_distance * 100} /> above)</span>
+                )}
+              </span>
+            </>
+          ) : (
+            'no call wall in range'
+          )}
         </p>
       )}
     </section>

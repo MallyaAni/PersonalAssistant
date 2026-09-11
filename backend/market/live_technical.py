@@ -30,7 +30,7 @@ import numpy as np
 from backend.agents.trading.desk import regime
 from backend.agents.trading.desk import technical as technical_analyst
 from backend.agents.trading.desk.desk import book_panel, tightening_for
-from backend.market import baselines
+from backend.market import baselines, options
 from backend.market.panel import Panel
 
 _cache: dict[str, object] = {"key": None, "value": {}}
@@ -182,6 +182,36 @@ def technical_now(store, quotes: dict, today: date | None = None) -> dict:
     return out
 
 
+# The option walls read from the newest stored chain for `symbol`, at
+# `price`, as distances from it. None when the store has no chain or the
+# price is absent, so a missing options partition costs the read nothing.
+def _walls_for(store, symbol: str, price: float | None, today: date) -> dict | None:
+    """Return the option walls near `price`, or None when none are stored."""
+    if store is None or not price or price <= 0:
+        return None
+    frame = store.read_frame(options.KIND, symbol, today)
+    if frame is None:
+        return None
+    columns, _meta = frame
+    rows = options.rows_from_frame(columns)
+    if not rows:
+        return None
+    w = options.walls(rows, price, today)
+    out: dict = {
+        "expiry": w.expiry.isoformat() if w.expiry else None,
+        "put_wall": w.put_wall,
+        "call_wall": w.call_wall,
+        "put_wall_oi": w.put_wall_oi,
+        "call_wall_oi": w.call_wall_oi,
+        "net_gamma": w.net_gamma,
+    }
+    if w.put_wall:
+        out["put_wall_distance"] = w.put_wall / price - 1.0
+    if w.call_wall:
+        out["call_wall_distance"] = w.call_wall / price - 1.0
+    return out
+
+
 # The technical features the analyst would cite for each name, read on the
 # live panel and split by horizon, one run per candle. The drill-down shows
 # these so a person sees the short-term where-price-is-now read beside the
@@ -210,12 +240,17 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
         if scores.shape[0] >= 1 and np.isfinite(scores[-1, j]):
             now = float(baselines.percentile_rank(scores[-1:])[-1, j])
             now = round(now, 4)
-        out[symbol] = {
+        entry = {
             "now": now,
             "short": {k: feature[k] for k in SHORT if k in feature},
             "medium": {k: feature[k] for k in MEDIUM if k in feature},
             "long": {k: feature[k] for k in LONG if k in feature},
         }
+        price = float(panel.adj_close[-1, j]) if np.isfinite(panel.adj_close[-1, j]) else None
+        walls = _walls_for(store, symbol, price, today)
+        if walls is not None:
+            entry["walls"] = walls
+        out[symbol] = entry
     return out
 
 

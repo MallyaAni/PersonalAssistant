@@ -11,6 +11,7 @@ from datetime import date
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from backend.agents.trading.desk.opinions import Opinion
 from backend.market import live_technical
@@ -105,6 +106,58 @@ def test_technical_detail_splits_the_features_by_horizon(monkeypatch):
     assert all(name in live_technical.LONG for name in d["long"])
     assert "now" in d
     assert d["now"] is not None
+
+
+# When a chain is on file the drill-down carries the option walls read at
+# the live price, with the put and call walls as distances from it; when
+# the store has no chain the block is simply absent.
+def test_technical_detail_carries_the_option_walls_when_stored(tmp_path, monkeypatch):
+    from datetime import timedelta
+
+    from backend.market import options
+    from backend.market.store import MarketStore
+
+    today = date(2026, 9, 8)
+    expiry = today + timedelta(days=30)
+    rows = [
+        options.ChainRow(expiry, "put", 90.0, 3000, 1, 0.5, 0.018),
+        options.ChainRow(expiry, "call", 110.0, 2000, 1, 0.4, 0.015),
+    ]
+    store = MarketStore(tmp_path)
+    store.write_frame(options.KIND, today, "AAA", options.frame(rows))
+    panel = Panel(
+        dates=np.array(["2026-09-08"], dtype="datetime64[D]"),
+        tickers=("AAA",),
+        open=np.array([[100.0]]),
+        high=np.array([[101.0]]),
+        low=np.array([[99.0]]),
+        close=np.array([[100.0]]),
+        adj_close=np.array([[100.0]]),
+        volume=np.array([[1000.0]]),
+        themes={},
+        benchmark="AAA",
+    )
+    evidence = {
+        name: np.full((1, 1), 0.4)
+        for name in live_technical.SHORT + live_technical.MEDIUM + live_technical.LONG
+    }
+    opinion = Opinion("technical", np.full((1, 1), 0.8), evidence)
+    monkeypatch.setattr(
+        live_technical,
+        "_live_read",
+        lambda store, quotes, today: {"panel": panel, "opinion": opinion},
+    )
+    quote = SimpleNamespace(last=100.0, open=100.0, high=101.0, low=99.0, bar="x")
+    out = live_technical.technical_detail(store, {"AAA": quote}, today)
+    walls = out["AAA"]["walls"]
+    assert walls["put_wall"] == 90.0
+    assert walls["call_wall"] == 110.0
+    assert walls["put_wall_distance"] == pytest.approx(-0.10)
+    assert walls["call_wall_distance"] == pytest.approx(0.10)
+    assert "net_gamma" in walls
+    # Without a chain (no store) the block is absent, not empty.
+    bare = live_technical.technical_detail(None, {"AAA": quote}, today)
+    assert "walls" not in bare["AAA"]
 
 
 # technical_now carries the persisted stance the rule would hold with the
