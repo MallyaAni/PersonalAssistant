@@ -21,6 +21,7 @@ from backend.core.prompts import render
 PROMPT_VERSION = "desk_brief/1"
 _SYSTEM = render("trading/desk_brief")
 _READ_SYSTEM = render("trading/desk_read")
+_CHECK_SYSTEM = render("trading/desk_brief_check")
 OWN = "own"
 WAIT = "wait"
 AVOID = "avoid"
@@ -142,11 +143,21 @@ def brief_text(report, ticker: str) -> str:
 
 
 # Text held within `limit` characters, cut at the last sentence end inside
-# the limit rather than mid-word.
+# the limit rather than mid-word. A text that is short but ends without
+# sentence punctuation is a truncation, not a finished brief: the runtime
+# stopped at its token ceiling, so the sentence must be cut back to the
+# last complete one rather than shown broken.
 def _cut(text: str, limit: int) -> str:
     """Return `text` within `limit`, ending at a sentence when it must cut."""
+    text = text.strip()
     if len(text) <= limit:
-        return text
+        if text.endswith((".", "!", "?")):
+            return text
+        # Short but unfinished: cut back to the last complete sentence. A
+        # one-clause fragment with no sentence end is kept whole - there is
+        # nothing more honest to show.
+        end = max(text.rfind(". "), text.rfind(".\n"), text.rfind("; "))
+        return text[: end + 1].rstrip() if end > 0 else text
     head = text[:limit]
     end = max(head.rfind(". "), head.rfind(".\n"), head.rfind("; "))
     if end > limit // 2:
@@ -167,6 +178,19 @@ def _schema() -> dict[str, Any]:
             "reasoning": {"type": "string", "minLength": 20, "maxLength": 700},
             "risks": {"type": "string", "minLength": 5, "maxLength": 300},
             "watch": {"type": "string", "minLength": 5, "maxLength": 240},
+        },
+    }
+
+
+# The check's answer is one of two words; a grammar forces the choice.
+def _check_schema() -> dict[str, Any]:
+    return {
+        "title": "DeskBriefCheck",
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["consistency"],
+        "properties": {
+            "consistency": {"type": "string", "enum": ["consistent", "contradicts"]},
         },
     }
 
@@ -222,7 +246,41 @@ class DeskNarrator:
             return None
         if brief.stance != stance_for(grade):
             return None
+        if self._contradicts(text, brief):
+            return None
         return brief
+
+    # Whether the brief contradicts the evidence it was written from. A
+    # judgement, so it is a model decision into a two-value schema; a check
+    # that fails to answer never discards a good brief.
+    def _contradicts(self, text: str, brief: DeskBrief) -> bool:
+        """Return whether the brief contradicts the evidence."""
+        if self.writer is None:
+            return False
+        try:
+            result = self.writer.chat(
+                [
+                    {"role": "system", "content": _CHECK_SYSTEM},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"EVIDENCE:\n{text}\n\nBRIEF:\n"
+                            f"stance: {brief.stance}\n"
+                            f"verdict: {brief.verdict}\n"
+                            f"reasoning: {brief.reasoning}\n"
+                            f"risks: {brief.risks}\n"
+                            f"watch: {brief.watch}"
+                        ),
+                    },
+                ],
+                32,
+                _check_schema(),
+                0.0,
+            )
+            payload = json.loads(result["content"])
+            return str(payload.get("consistency") or "consistent") == "contradicts"
+        except Exception:
+            return False
 
     # Write the read for a name in a report, or None when the runtime is
     # away or the answer comes back empty.

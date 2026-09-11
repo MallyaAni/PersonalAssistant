@@ -63,6 +63,12 @@ class PaperState:
     # What the previous rebalance was, so an unconfirmed one can be rolled
     # back to it rather than guessed at.
     previous_rebalance: str | None = None
+    # Monotonic per-order sequence, so a client order id is unique to one
+    # submission. A forced rebalance of a session already planned used to
+    # reuse ids (`anios-{session}-{side}-{symbol}`): the broker rejects a
+    # second order carrying an id it has already seen, and the replacement
+    # never reached the market.
+    order_seq: int = 0
 
 
 @dataclass(frozen=True)
@@ -73,6 +79,9 @@ class PaperOrder:
     side: str
     qty: int
     reason: str
+    # The id this submission will carry on the broker, chosen at plan time
+    # so the write-down and the submit use the same one.
+    client_order_id: str | None = None
 
 
 # Where the state lives.
@@ -156,18 +165,46 @@ def plan(
                 continue
             if abs(qty) * o.reference_price < MIN_TRADE * equity:
                 continue
+            seq = new.order_seq
+            new.order_seq += 1
             if o.side == "buy":
-                orders.append(PaperOrder(o.symbol, "buy", qty, o.reason))
+                orders.append(
+                    PaperOrder(
+                        o.symbol,
+                        "buy",
+                        qty,
+                        o.reason,
+                        client_order_id=order_id(session, o.symbol, "buy", seq),
+                    )
+                )
                 new.opened.setdefault(o.symbol, session)
             else:
-                orders.append(PaperOrder(o.symbol, "sell", qty, o.reason))
+                orders.append(
+                    PaperOrder(
+                        o.symbol,
+                        "sell",
+                        qty,
+                        o.reason,
+                        client_order_id=order_id(session, o.symbol, "sell", seq),
+                    )
+                )
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
         for symbol, why in done.items():
             qty = int(held.get(symbol, 0))
             if qty > 0:
-                orders.append(PaperOrder(symbol, "sell", qty, why))
+                seq = new.order_seq
+                new.order_seq += 1
+                orders.append(
+                    PaperOrder(
+                        symbol,
+                        "sell",
+                        qty,
+                        why,
+                        client_order_id=order_id(session, symbol, "sell", seq),
+                    )
+                )
                 new.opened.pop(symbol, None)
         what = "hold" if not orders else "exits"
     # Sells first, so the buys have the cash.
@@ -342,10 +379,12 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     return new
 
 
-# A stable id for one order, chosen before it is sent.
-def order_id(session: str, symbol: str, side: str) -> str:
-    """Return the client order id for a symbol on a session."""
-    return f"anios-{session}-{side}-{symbol}".lower()
+# A stable id for one order, chosen before it is sent. The sequence makes
+# it unique to one submission: a forced rebalance of a session already
+# planned must not reuse an id the broker has already seen.
+def order_id(session: str, symbol: str, side: str, seq: int = 0) -> str:
+    """Return the client order id for one submission of a symbol on a session."""
+    return f"anios-{session}-{side}-{symbol}-{seq}".lower()
 
 
 # Record the account after the day's orders: equity, cash, and the profit

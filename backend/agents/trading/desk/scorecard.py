@@ -14,8 +14,7 @@ from datetime import date
 import numpy as np
 
 from backend.agents.trading.desk.simulate import SimResult
-
-INDICES = ("SPY", "QQQ")
+from backend.market.universe import MARKET_INDICES as INDICES
 
 
 # Total return per calendar year from a daily series.
@@ -74,14 +73,21 @@ def _portfolio_block(results, store, first) -> list[str]:
         s = results[name].stats()
         invested = results[name].invested
         known = np.isfinite(invested)
-        exposure = float(np.nanmean(invested)) if invested is not None and known.any() else float("nan")
+        exposure = (
+            float(np.nanmean(invested))
+            if invested is not None and known.any()
+            else float("nan")
+        )
         lines.append(_portfolio_line(name, s["total"], s["drawdown"], exposure))
     if store is not None:
         for ticker in INDICES:
             daily = index_returns(store, ticker, first.dates)
-            if daily is None:
+            if daily is None or not np.isfinite(daily).any():
+                # A benchmark with no bars at all is not a 0% benchmark: a
+                # series nobody refreshes must not read as a flat cash line.
                 continue
-            curve = np.cumprod(1.0 + np.nan_to_num(daily, nan=0.0))
+            known = np.isfinite(daily)
+            curve = np.cumprod(1.0 + daily[known])
             total = float(curve[-1] - 1.0)
             drawdown = float((curve / np.maximum.accumulate(curve) - 1.0).min())
             lines.append(_portfolio_line(ticker, total, drawdown, 1.0))

@@ -283,7 +283,50 @@ def test_the_order_id_is_stable_and_specific():
     first = paper.order_id("2026-09-07", "AAA", "buy")
     assert first == paper.order_id("2026-09-07", "AAA", "buy")
     assert first != paper.order_id("2026-09-07", "AAA", "sell")
-    assert first != paper.order_id("2026-09-08", "AAA", "buy")
+    assert first != paper.order_id("2026-09-07", "AAA", "buy", 1)
+
+
+# Every order gets an id unique to one submission, and a forced rebalance
+# of a session already planned must produce fresh ids - a reused id makes
+# the broker reject the replacement order, so the forced rebalance never
+# reaches the market.
+def test_a_forced_rebalance_uses_fresh_order_ids():
+    def planned(session):
+        state = paper.PaperState(
+            last_rebalance="2026-09-01",
+            sessions_since_rebalance=paper.REBALANCE_EVERY - 1,
+        )
+        orders, new, _what = paper.plan(
+            session,
+            state,
+            equity=100_000.0,
+            held={},
+            prices={"AAA": 100.0, "BBB": 50.0},
+            targets={"AAA": 0.1, "BBB": 0.1},
+            grades={"AAA": "A+", "BBB": "A"},
+        )
+        return orders, new
+
+    first, state_after = planned("2026-09-08")
+    assert len({o.client_order_id for o in first}) == len(first)
+    # Replanning the same session as a forced rebalance yields ids that do
+    # not collide with the first round's.
+    second, _state, _what = paper.plan(
+        "2026-09-08",
+        state_after,
+        equity=100_000.0,
+        held={},
+        prices={"AAA": 100.0, "BBB": 50.0},
+        targets={"AAA": 0.1, "BBB": 0.1},
+        grades={"AAA": "A+", "BBB": "A"},
+        force_rebalance=True,
+    )
+    assert not {o.client_order_id for o in first} & {o.client_order_id for o in second}
+    assert state_after.order_seq == len(first)
+    # The fallback for an id-less order still matches the first planned one.
+    assert paper.order_id("2026-09-08", "AAA", "buy") in {
+        o.client_order_id for o in first
+    }
     assert first != paper.order_id("2026-09-07", "BBB", "buy")
 
 

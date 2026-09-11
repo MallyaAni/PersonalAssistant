@@ -107,3 +107,31 @@ async def test_b_reads_as_wait(narrator):
     assert any(
         w in low for w in ("fundamental", "sentiment", "technical", "release", "filing")
     )
+
+
+# The contradiction check is a model judgement: a brief that states the
+# opposite of what the evidence says is dropped, and a brief that stays on
+# the evidence passes. Omission is a shorter brief, not a contradiction.
+async def test_a_brief_that_contradicts_the_evidence_is_dropped(narrator):
+    from backend.agents.trading.desk.narrative import DeskBrief
+
+    evidence = (
+        "fundamental analyst: stance +1; revenue_yoy +1.551. "
+        "Revenue grew strongly year over year."
+    )
+    good = DeskBrief(
+        stance=OWN,
+        verdict="Revenue is growing strongly.",
+        reasoning="Revenue grew strongly year over year and the fundamentals support the grade.",
+        risks="A broad AI sell-off would take it down with the group.",
+        watch="A bearish sentiment stance would drop the grade.",
+    )
+    assert narrator._contradicts(evidence, good) is False
+    bad = DeskBrief(
+        stance=OWN,
+        verdict="Revenue is falling sharply.",
+        reasoning="Revenue fell sharply year over year, yet the desk still grades it A+.",
+        risks="A broad AI sell-off would take it down with the group.",
+        watch="A bearish sentiment stance would drop the grade.",
+    )
+    assert narrator._contradicts(evidence, bad) is True

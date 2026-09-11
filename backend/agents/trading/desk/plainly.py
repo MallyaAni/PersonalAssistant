@@ -346,9 +346,12 @@ def _figure(analyst: str, measure: str, value: float, scale: dict | None) -> str
     if measure == "range_position_60":
         return f"{max(0.0, min(1.0, value)) * 100:.0f}% up its 60-day range"
     if measure == "support_distance":
-        return f"nearest support {_pct_abs(value)} below the price"
+        # A simple fraction of the price, not a log distance: exponentiating
+        # it reported 22.1% for a level 20% below (and disagreed with the
+        # citation path, which always multiplied by 100).
+        return f"nearest support {abs(value) * 100:.1f}% below the price"
     if measure == "resistance_distance":
-        return f"nearest resistance {_pct_abs(value)} above the price"
+        return f"nearest resistance {abs(value) * 100:.1f}% above the price"
     return _placed_words(measure, value, _place(value, book))
 
 
@@ -358,10 +361,6 @@ def _pct(value: float) -> str:
     if abs(move) < 0.05:
         return "level with"
     return f"{abs(move):.1f}% {'above' if move > 0 else 'below'}"
-
-
-def _pct_abs(value: float) -> str:
-    return f"{abs(float(np.exp(abs(value))) - 1.0) * 100:.1f}%"
 
 
 # A distance to a level as a percentage of the price.

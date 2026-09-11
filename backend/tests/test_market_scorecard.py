@@ -232,3 +232,35 @@ def test_flat_prices_across_a_dividend_do_not_book_a_fake_move(tmp_path):
 
 def test_fewer_than_two_records_answers_empty(tmp_path):
     assert _from(tmp_path, [_record("2026-09-01", [("SNDK", 1.0)])], {}) == {}
+
+
+def test_a_challenger_that_starts_mid_run_enters_at_its_first_decision(tmp_path):
+    # A new strategy first decides at record 2. Indexing the rebalance off
+    # the run (i % 20) would keep it in cash until record 20 and report the
+    # challenger's live run as 0% invested; it must enter at its first real
+    # decision whatever index that is.
+    records = [
+        _record("2026-09-01", [("SNDK", 1.0)]),
+        _record("2026-09-02", [("SNDK", 1.0)]),
+        _record("2026-09-03", [("SNDK", 1.0)], challenger=[("SNDK", 1.0)]),
+        _record("2026-09-04", [("SNDK", 1.0)], challenger=[("SNDK", 1.0)]),
+    ]
+    bars = {
+        "SNDK": [
+            ("2026-09-01", 100, 100),
+            ("2026-09-02", 100, 100),
+            ("2026-09-03", 100, 100),
+            ("2026-09-04", 110, 110),
+        ]
+    }
+    challenger = _from(tmp_path, records, bars)["expectations-gap"]
+    # Pure cash before it has decided.
+    assert challenger.invested[0] == pytest.approx(0.0, abs=1e-9)
+    assert challenger.invested[1] == pytest.approx(0.0, abs=1e-9)
+    # Its first decision at record 2 is filled at the 09-04 open: it trades
+    # (the day's return is the fill cost, not a flat zero) and is invested,
+    # instead of sitting in cash until record 20.
+    assert challenger.invested[2] > 0
+    assert challenger.traded > 0
+    assert challenger.returns[2] < 0.0
+

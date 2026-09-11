@@ -66,6 +66,12 @@ BENCHMARK = "benchmark"
 # The broad market benchmark every relative channel is computed against.
 MARKET_BENCHMARK = "SPY"
 
+# The indices the desk displays and compares against. QQQ is a displayed
+# benchmark too, so the nightly refresh has to pull its bars as well as
+# SPY's - a benchmark that is never refreshed quietly flattens to cash in
+# the scorecard.
+MARKET_INDICES = ("SPY", "QQQ")
+
 # How old the latest stored session may be before a ticker is reported stale.
 # A long calendar window covers weekends and market holidays.
 STALE_AFTER_DAYS = 7

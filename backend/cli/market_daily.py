@@ -29,7 +29,7 @@ from backend.config.settings import settings
 from backend.market import snapshot
 from backend.market.macro import SERIES
 from backend.market.store import MarketStore
-from backend.market.universe import MARKET_BENCHMARK, book_sides, build_universe
+from backend.market.universe import MARKET_INDICES, book_sides, build_universe
 
 DESK_KIND = "desk"
 # The layers a day re-fetches in full, so old partitions of them are
@@ -104,12 +104,12 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# The tickers the desk needs daily bars for: the book, the benchmark, the
-# macro series.
+# The tickers the desk needs daily bars for: the book, the displayed
+# benchmarks, the macro series.
 def bar_tickers() -> tuple[str, ...]:
     """Return the tickers the daily refresh pulls bars for."""
     names = tuple(sorted(book_sides(build_universe())))
-    return names + (MARKET_BENCHMARK,) + tuple(SERIES.values())
+    return names + tuple(MARKET_INDICES) + tuple(SERIES.values())
 
 
 # The book names, for the filings and the releases.
@@ -310,7 +310,8 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
                 order.symbol,
                 order.qty,
                 order.side,
-                paper.order_id(session, order.symbol, order.side),
+                order.client_order_id
+                or paper.order_id(session, order.symbol, order.side),
             )
             submitted.append(
                 {
@@ -325,6 +326,18 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
             refused.append(f"{order.side} {order.symbol}: {exc}")
             print(line + f"  REFUSED: {exc}")
     return submitted, refused
+
+
+# Which open orders belong to this desk, matched by the client order id
+# prefix the desk chose for its own submissions. A person's own orders on
+# the same account must never be withdrawn by the desk's cancel.
+def _desk_open_order_ids(open_orders: list[dict]) -> list[str]:
+    """Return the client order ids of the desk's own open orders."""
+    return [
+        str(o.get("client_order_id") or "")
+        for o in open_orders
+        if str(o.get("client_order_id") or "").startswith("anios-")
+    ]
 
 
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
@@ -383,7 +396,8 @@ def paper_trade(
     if live and orders:
         new_state.pending = [
             {
-                "client_order_id": paper.order_id(session, o.symbol, o.side),
+                "client_order_id": o.client_order_id
+                or paper.order_id(session, o.symbol, o.side),
                 "symbol": o.symbol,
                 "side": o.side,
                 "qty": int(o.qty),
@@ -395,7 +409,11 @@ def paper_trade(
         if what == "rebalance":
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
-        client.cancel_open_orders()
+        # Withdraw only what this desk wrote down and is still open; a broad
+        # cancel would also withdraw an order the person placed by hand.
+        desk_open = _desk_open_order_ids(client.open_orders())
+        if desk_open:
+            client.cancel_orders(desk_open)
     submitted, refused = _submit(client, orders, session, live)
     if not orders:
         print("  nothing to do")
@@ -700,7 +718,9 @@ def curve_block(report, store) -> dict | None:
     spy = np.nan_to_num(spy, nan=0.0)
     spy_curve = [0.0] + [float(v - 1.0) for v in np.cumprod(1.0 + spy)]
     qqq = scorecard.index_returns(store, "QQQ", sim.dates)
-    if qqq is not None and len(qqq):
+    if qqq is not None and len(qqq) and np.isfinite(qqq).any():
+        # The curve stays aligned to `dates`: a wholly missing series must
+        # not render as a flat 0% line, so it is dropped instead.
         qqq_curve = [
             float(v - 1.0) for v in np.cumprod(1.0 + np.nan_to_num(qqq, nan=0.0))
         ]

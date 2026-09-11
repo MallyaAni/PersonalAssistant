@@ -137,10 +137,17 @@ class AlpacaTradingClient:
         query = f"/orders?status=all&limit={int(limit)}&after={after}&direction=asc"
         return self._call("GET", query) or []
 
-    # Cancel every open order, so a day's plan never stacks on the last one.
-    def cancel_open_orders(self) -> None:
-        """Cancel all open orders."""
-        self._call("DELETE", "/orders")
+    # Cancel the desk's own open orders by id, never the person's. A broad
+    # DELETE /orders would withdraw an order placed by hand on Schwab as
+    # readily as one this desk wrote down; the desk only cancels what its
+    # own client order ids identify.
+    def cancel_orders(self, ids: list[str]) -> None:
+        """Cancel the given open orders by id, ignoring any that are gone."""
+        for oid in ids:
+            try:
+                self._call("DELETE", f"/orders/{oid}")
+            except AlpacaTradingError:
+                continue
 
     # A whole-share market order for the next open.
     # A market order queued for the open. It is submitted after the close

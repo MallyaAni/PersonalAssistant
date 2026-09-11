@@ -2,10 +2,10 @@
 
 What has to hold: rows are validated whole, tickers normalised, and a
 bad one refused with a reason; what is saved is what is loaded; and the
-board against the holdings says sell for a name held but not targeted,
-buy for one targeted but not held, hold where the weights agree, and
-gives a name the desk does not rate its own row marked outside the book,
-with the person's entry and P&L beside every held name.
+board against the holdings says sell for a held name the desk dropped,
+buy for one targeted but not held, hold where the weights agree, and an
+uncovered held name gets an explicit review state rather than a sell -
+a lack of coverage is not a liquidation decision.
 """
 
 from pathlib import Path
@@ -129,10 +129,12 @@ def test_board_against_the_persons_holdings():
     quotes = {"ADBE": {"last": 303.0}, "IREN": {"last": 44.67}}
     rows = holdings.board(_record(), held, equity=100_000.0, quotes=quotes)
     by = {r["ticker"]: r for r in rows}
+    # FTNT is rated but the desk dropped it, so it sells; IREN is not
+    # covered at all, so it is an explicit review state, not a sell.
     assert {r["ticker"]: r["action"] for r in rows if r["action"] == "sell"} == {
         "FTNT": "sell",
-        "IREN": "sell",
-    }  # FTNT and IREN leave
+    }
+    assert by["IREN"]["action"] == "uncovered"
     assert [r["ticker"] for r in rows][-1] == "IREN"  # not covered sorts last
     assert by["HPE"]["action"] == "buy"
     assert by["HPE"]["delta_weight"] == pytest.approx(0.105)
@@ -141,6 +143,7 @@ def test_board_against_the_persons_holdings():
     assert by["ADBE"]["stops"]["12"] == 281.6
     assert by["ADBE"]["rank"] == 1
     assert by["ADBE"]["until_rebalance"] == 12
+    assert by["ADBE"]["rebalance_due"] is False  # 12 sessions left: targets, not orders
     assert by["FTNT"]["in_book"]
     assert by["FTNT"]["grade"] == "B"
     assert by["FTNT"]["last"] == 80.0  # the record's close when the feed has none
@@ -158,6 +161,23 @@ def test_board_against_the_persons_holdings():
         by["FTNT"]["leaves_if"]
         == "sell everything: it no longer earns a place in the book"
     )
+
+
+# The board distinguishes "the next session is a rebalance" from "targets
+# for a later one": only with the countdown at one (or absent, a fresh
+# book) are the target-vs-held changes executable at the next open.
+def test_the_board_knows_when_a_rebalance_is_due():
+    due = holdings.board(
+        dict(_record(), **{"paper": {"until_rebalance": 1}}), [], 100_000.0, {}
+    )
+    assert due[0]["rebalance_due"] is True
+    far = holdings.board(
+        dict(_record(), **{"paper": {"until_rebalance": 18}}), [], 100_000.0, {}
+    )
+    assert far[0]["rebalance_due"] is False
+    fresh = holdings.board(dict(_record(), **{"paper": None}), [], 100_000.0, {})
+    assert fresh[0]["rebalance_due"] is True  # no clock yet: first decision is due
+
 
 
 # The live technical read re-makes the grade and the order: a name whose

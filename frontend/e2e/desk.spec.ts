@@ -276,6 +276,7 @@ test.beforeEach(async ({ page }) => {
           grade_margin: 0.3,
           leaves_if: 'drops below A',
           until_rebalance: 18,
+          rebalance_due: false,
         },
         {
           ticker: 'NVDA',
@@ -305,6 +306,7 @@ test.beforeEach(async ({ page }) => {
           grade_margin: 0.1,
           leaves_if: 'drops below A',
           until_rebalance: 18,
+          rebalance_due: false,
         },
       ],
     }),
@@ -414,7 +416,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // What moved since the last session, which the page used to throw away.
   await expect(page.getByText('What changed since the last session')).toBeVisible()
   await expect(page.getByText('Upgraded: NVDA B→A')).toBeVisible()
-  await expect(page.getByText('Orders at the next open: add AAPL')).toBeVisible()
+  await expect(page.getByText('Changes in target weights at the next rebalance: add AAPL')).toBeVisible()
 
   // The trust anchor: the curve and its summary numbers, as an SVG the page
   // draws itself.
@@ -425,7 +427,10 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByText('31.0%', { exact: true })).toBeVisible()
 
 // A row reads in plain words first, and the ticker opens the drill-down.
-  await expect(page.getByText('What to do at the next open')).toBeVisible()
+  // The board is not due a rebalance for 18 sessions, so it says "targets
+  // for the next rebalance" rather than teaching a daily trading cadence.
+  await expect(page.getByText('Targets for the next rebalance')).toBeVisible()
+  await expect(page.getByText('in 18 trading days', { exact: true })).toBeVisible()
   await expect(page.getByText('The desk adds to its best name.', { exact: false })).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -442,7 +447,7 @@ test('shows each thing once, not twice', async ({ page }) => {
 
   // The board is the single buy list; no standalone best-buys shortlist.
   await expect(page.getByText('Best buys right now')).toHaveCount(0)
-  await expect(page.getByText('What to do at the next open')).toBeVisible()
+  await expect(page.getByText('Targets for the next rebalance')).toBeVisible()
 
   // The broker's live positions are one table on the page.
   await expect(page.getByText('Live positions')).toBeVisible()
@@ -508,12 +513,117 @@ test('drills into a covered name outside the book and sees its live horizons', a
   await expect(dialog).toBeVisible()
   // The evening grade chip renders even though the name is not a board row.
   await expect(dialog.getByText('expensive and the trend is quiet')).toBeVisible()
+  // The drill-down shows the same live grade as the list: MSFT is B at the
+  // candle even though the evening record says C.
+  await expect(dialog.getByText('B', { exact: true })).toBeVisible()
   await expect(dialog.getByText('Technical read')).toBeVisible()
   await expect(dialog.getByText('Short term · next week (daily chart)')).toBeVisible()
   await expect(dialog.getByText('Medium term · 1–3 weeks (weekly chart)')).toBeVisible()
   await expect(dialog.getByText('Long term · months (200-day and 52-week)')).toBeVisible()
   await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/Technical rank if the session closed now/)).toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A holding the desk does not rate is an explicit review state, not a sell
+// instruction: no trade was instructed, so the row carries no "done" button
+// and the person's own shares stay visible.
+test('an uncovered holding is a review state, not a sell', async ({ page }) => {
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      grades_live: {},
+      rows: [
+        {
+          ticker: 'IREN',
+          action: 'uncovered',
+          in_book: false,
+          grade: '',
+          grade_live: '',
+          score_live: null,
+          technical_now: null,
+          technical_close: null,
+          rank: null,
+          score: null,
+          stances: {},
+          why: 'the desk does not cover this name, so it has no view on it',
+          reason: '',
+          target_weight: 0,
+          current_weight: 0.03,
+          delta_weight: 0,
+          shares: 100,
+          entry_price: 35.2,
+          entry_date: '2026-08-28',
+          last: 40,
+          pl_pct: 0.13,
+          last_close: 39,
+          high_20: 41,
+          grade_margin: null,
+          until_rebalance: null,
+          rebalance_due: true,
+          leaves_if: 'your call: the desk does not cover it',
+        },
+      ],
+    }),
+  }))
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+  await expect(page.getByText('uncovered', { exact: true })).toBeVisible()
+  await expect(page.getByText('100 shares held')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'done' })).not.toBeVisible()
+  // A fresh book with no rebalance clock: the next session is the first
+  // decision, so the board reads as actions for the next open.
+  await expect(page.getByText('What to do at the next open')).toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// The board says what is executable at the next open only when the paper
+// book is actually due a rebalance; otherwise the rows are targets for a
+// later one, and the countdown is named.
+test('a due rebalance reads as what to do at the next open', async ({ page }) => {
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      grades_live: {},
+      rows: [
+        {
+          ticker: 'AAPL',
+          action: 'add',
+          in_book: true,
+          grade: 'A',
+          grade_live: 'A',
+          score_live: 0.92,
+          technical_now: null,
+          technical_close: null,
+          rank: 1,
+          score: 0.92,
+          stances: {},
+          why: 'The desk adds to its best name.',
+          reason: '',
+          target_weight: 0.06,
+          current_weight: 0.04,
+          delta_weight: 0.02,
+          shares: 0,
+          entry_price: null,
+          entry_date: null,
+          last: null,
+          pl_pct: null,
+          last_close: 102,
+          high_20: 105,
+          grade_margin: 0.3,
+          until_rebalance: 1,
+          rebalance_due: true,
+          leaves_if: 'drops below A',
+        },
+      ],
+    }),
+  }))
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+  await expect(page.getByText('What to do at the next open')).toBeVisible()
+  await expect(page.getByText('in 1 trading days')).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -640,7 +750,7 @@ test('an empty record becomes the getting-started guide', async ({ page }) => {
   await page.goto('/#desk')
 
   await expect(page.getByText('The desk starts tonight')).toBeVisible()
-  await expect(page.getByText('Every evening', { exact: true })).toBeVisible()
+  await expect(page.getByText('Each evening', { exact: true })).toBeVisible()
   await expect(page.getByText('No decision on file yet')).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })

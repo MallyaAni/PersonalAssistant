@@ -49,6 +49,7 @@ def test_refresh_order_and_tickers(tmp_path):
     assert [c[0] for c in calls] == ["bars", "filings", "tone"]
     bar_tickers = calls[0][1]
     assert MARKET_BENCHMARK in bar_tickers
+    assert "QQQ" in bar_tickers  # a displayed benchmark is refreshed, not flat
     assert "^VIX" in bar_tickers
     assert "SNDK" in bar_tickers
     assert "SPY" not in calls[1][1]
@@ -181,6 +182,51 @@ def test_an_unavailable_market_clock_refuses_submission(monkeypatch):
     assert submitted == []
     assert refused
     assert "clock" in refused[0].lower()
+
+
+# The id an order carries at submission is the id it was planned with; a
+# fallback recomputes one only for an order that never got one.
+def test_submission_uses_the_planned_order_id():
+    from backend.agents.trading.desk import paper
+
+    sent = []
+
+    class Quiet:
+        def clock(self):
+            return {"is_open": False}
+
+        def submit_market_on_open(self, symbol, qty, side, client_order_id):
+            sent.append(client_order_id)
+
+    planned = paper.PaperOrder(
+        "AAA",
+        "buy",
+        10,
+        "rebalance to 0.100",
+        client_order_id="anios-2026-09-07-buy-aaa-3",
+    )
+    fallback = paper.PaperOrder("BBB", "sell", 5, "exit")
+    submitted, refused = market_daily._submit(
+        Quiet(), [planned, fallback], "2026-09-07", live=True
+    )
+    assert refused == []
+    assert sent[0] == "anios-2026-09-07-buy-aaa-3"
+    assert sent[1] == paper.order_id("2026-09-07", "BBB", "sell")
+
+
+# The desk cancels only what it wrote down, matched by its own client order
+# id prefix: an order the person placed by hand stays on the account.
+def test_the_desk_cancels_only_its_own_open_orders():
+    open_orders = [
+        {"client_order_id": "anios-2026-09-04-buy-aaa-0"},
+        {"client_order_id": "anios-2026-09-04-sell-bbb-1"},
+        {"client_order_id": "manual-1002"},
+        {},
+    ]
+    assert market_daily._desk_open_order_ids(open_orders) == [
+        "anios-2026-09-04-buy-aaa-0",
+        "anios-2026-09-04-sell-bbb-1",
+    ]
 
 
 # Pruning drops old bar and filing partitions but never the newest one of

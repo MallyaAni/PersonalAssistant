@@ -156,10 +156,21 @@ def board(
         grade = grades.get(ticker) or {}
         in_book = ticker in grades
         live = _live_grade(grade, technical.get(ticker)) if in_book else None
+        # A held name the desk does not cover has no liquidation decision: a
+        # lack of coverage is not a sell. It gets an explicit review state
+        # until the person assigns it to the strategy or closes it by hand.
+        action = (
+            "uncovered"
+            if (holding is not None and not in_book)
+            else actions.action_for(target, current)
+        )
+        # The paper book's countdown to its next rebalance, from the record's
+        # paper block or the levels when it is absent.
+        countdown = until if until is not None else level.get("until_rebalance")
         rows.append(
             {
                 "ticker": ticker,
-                "action": actions.action_for(target, current),
+                "action": action,
                 "in_book": in_book,
                 "grade": grade.get("grade", ""),
                 "grade_live": live["grade"] if live else grade.get("grade", ""),
@@ -190,9 +201,12 @@ def board(
                 "high_20": level.get("high_20"),
                 "stops": level.get("stops") or {},
                 "grade_margin": level.get("grade_margin"),
-                "until_rebalance": (
-                    until if until is not None else level.get("until_rebalance")
-                ),
+                "until_rebalance": countdown,
+                # Whether the paper book's next session is a rebalance: only
+                # then are the target-vs-held changes executable at the next
+                # open. Otherwise they are targets for the next rebalance,
+                # and the page must not present them as tomorrow's orders.
+                "rebalance_due": countdown is None or int(countdown) <= 1,
                 "leaves_if": _exit_reason(holding, in_book, target),
             }
         )

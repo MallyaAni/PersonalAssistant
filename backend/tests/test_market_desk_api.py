@@ -332,9 +332,12 @@ async def test_holdings_are_saved_and_the_board_is_computed_against_them(
     assert board["SNDK"]["action"] == "buy"
     assert board["MU"]["action"] == "sell"
     assert board["MU"]["grade"] == "B"
-    assert board["IREN"]["action"] == "sell"
+    # IREN is held but the desk does not cover it: an explicit review state,
+    # not a sell instruction.
+    assert board["IREN"]["action"] == "uncovered"
     assert not board["IREN"]["in_book"]
     assert board["IREN"]["shares"] == 100
+    assert board["IREN"]["rebalance_due"] is True  # no paper clock yet
 
 
 # The practice account's live state comes from the broker, and a missing

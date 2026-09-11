@@ -2101,7 +2101,9 @@ export interface DeskHolding {
 }
 export interface DeskMineRow {
   ticker: string;
-  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold';
+  // `uncovered` is a held name the desk does not rate: a review state, not
+  // a sell instruction.
+  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold' | 'uncovered';
   in_book: boolean;
   grade: string;
   // The grade re-made with the technical analyst read at the live price,
@@ -2129,6 +2131,9 @@ export interface DeskMineRow {
   stops: Record<string, number>;
   grade_margin: number | null;
   until_rebalance: number | null;
+  // Whether the paper book's next session is a rebalance: only then are the
+  // target-vs-held changes executable at the next open.
+  rebalance_due: boolean;
   leaves_if: string;
 }
 

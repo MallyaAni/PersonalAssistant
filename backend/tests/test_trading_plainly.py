@@ -242,3 +242,15 @@ def test_a_reason_prefers_the_scored_readings():
         "fundamental", {"capex_to_revenue": 0.9}, scale, stance=-1
     )
     assert [m for m, _v in only_context] == ["capex_to_revenue"]
+
+
+# A support or resistance distance is a simple fraction of the price, not a
+# log distance: 20% below must read "20.0% below", never the 22.1% that
+# exponentiating a simple fraction produces.
+def test_a_level_distance_is_a_percentage_of_the_price_not_a_log():
+    assert plainly._figure("technical", "support_distance", 0.2, None) == (
+        "nearest support 20.0% below the price"
+    )
+    assert plainly._figure("technical", "resistance_distance", 0.25, None) == (
+        "nearest resistance 25.0% above the price"
+    )

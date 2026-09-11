@@ -52,6 +52,7 @@ const ACTION_STYLE: Record<string, string> = {
   trim: 'bg-[#fff6e5] text-[#9a6200]',
   sell: 'bg-[#fdecea] text-[#b42318]',
   hold: 'bg-[#f5f5f7] text-[#6e6e73]',
+  uncovered: 'bg-[#eef1f6] text-[#3a3a3c]',
 }
 const STANCE_MARK: Record<number, string> = { 1: '+', 0: '·', [-1]: '−' }
 const TRIGGER_ORDER: [string, string][] = [
@@ -133,7 +134,7 @@ const TrendUsd = ({ value }: { value: number }) => {
 }
 
 const shortDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
 // The positions after the person has done what a row says, at the price
 // and size on the row. A buy opens the name, an add averages into it, a
@@ -335,7 +336,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
   if (changes.downgrades.length)
     chips.push(`Downgraded: ${changes.downgrades.map((m) => `${m.ticker} ${m.from}→${m.to}`).join(', ')}`)
   const rows = [...changes.upgrades, ...changes.downgrades]
-  const moved = rows.length > 0 || changes.orders.length > 0 || changes.flags_raised.length > 0
+  const moved = rows.length > 0 || changes.orders.length > 0 || changes.flags_raised.length > 0 || changes.flags_cleared.length > 0
   if (!moved && !changes.since) return null
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
@@ -352,7 +353,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
           ))}
           {changes.orders.length > 0 && (
             <li>
-              Orders at the next open:{' '}
+              Changes in target weights at the next rebalance:{' '}
               {changes.orders.map((o) => `${o.action} ${o.ticker}`).join(', ')}
             </li>
           )}
@@ -388,19 +389,29 @@ const CurveChart = ({
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [hover, setHover] = useState<number | null>(null)
-  const dates = backtest?.dates ?? []
+  // The backtest spans years while the paper account started a few
+  // sessions ago. Aligning every series to one merged date axis keeps the
+  // paper curve at its real dates; drawing it at the backtest's indices
+  // used to put its September 2026 points at the 2015 start of the chart.
+  const btDates = backtest?.dates ?? []
+  const paperDates = paper?.sessions ?? []
+  const dates = [...new Set([...btDates, ...paperDates])].sort()
+  const align = (d: string[], values: number[]) => {
+    const by = new Map(d.map((date, i) => [date, values[i]] as const))
+    return dates.map((date) => by.get(date) ?? NaN)
+  }
   const series: { label: string; color: string; values: number[] }[] = []
   if (backtest) {
-    series.push({ label: 'the rules', color: '#1e7a3a', values: backtest.rules })
-    series.push({ label: 'SPY', color: '#9ca3af', values: backtest.spy })
-    if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: backtest.qqq })
+    series.push({ label: 'the rules', color: '#1e7a3a', values: align(btDates, backtest.rules) })
+    series.push({ label: 'SPY', color: '#9ca3af', values: align(btDates, backtest.spy) })
+    if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: align(btDates, backtest.qqq) })
   }
   if (paper && paper.equity.length > 1) {
     const base = paper.equity[0] || 1
     series.push({
       label: 'practice account (live)',
       color: '#d97706',
-      values: paper.equity.map((e) => e / base - 1),
+      values: align(paperDates, paper.equity.map((e) => e / base - 1)),
     })
   }
   const width = 800
@@ -411,13 +422,23 @@ const CurveChart = ({
   const padR = 8
   const innerW = width - padL - padR
   const innerH = height - padT - padB
-  const all = series.flatMap((s) => s.values).concat(0)
+  const all = series.flatMap((s) => s.values).filter(Number.isFinite).concat(0)
   const min = Math.min(...all, 0)
   const max = Math.max(...all, 0)
   const span = max - min || 1
   const x = (i: number) => (dates.length > 1 ? padL + (i / (dates.length - 1)) * innerW : padL + innerW / 2)
   const y = (v: number) => padT + (1 - (v - min) / span) * innerH
-  const line = (values: number[]) => values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+  // A polyline per run of finite values, so a series that starts later
+  // (the paper account) or skips a date does not draw a false bridge.
+  const line = (values: number[]) => {
+    const segs: { x: number; y: number }[][] = []
+    for (const [i, v] of values.entries()) {
+      if (!Number.isFinite(v)) continue
+      if (!segs.length || !segs[segs.length - 1].length) segs.push([])
+      segs[segs.length - 1].push({ x: x(i), y: y(v) })
+    }
+    return segs.map((seg) => seg.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '))
+  }
   const zeroY = y(0)
   const ticks = [0, min / 2, max / 2, max]
   const tickLabels = [...new Set([min, max, 0])]
@@ -441,9 +462,11 @@ const CurveChart = ({
         onMouseLeave={() => setHover(null)}
       >
         <line x1={padL} x2={width - padR} y1={zeroY} y2={zeroY} stroke="#d1d5db" strokeWidth={1} strokeDasharray="4 4" />
-        {series.map((s) => (
-          <polyline key={s.label} points={line(s.values)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        ))}
+        {series.map((s) =>
+          line(s.values).map((points, i) => (
+            <polyline key={`${s.label}-${i}`} points={points} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          )),
+        )}
         {hover !== null && (
           <>
             <line x1={x(hover)} x2={x(hover)} y1={padT} y2={height - padB} stroke="#9ca3af" strokeWidth={1} />
@@ -537,23 +560,25 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-xl'}`}>
     <ol className="list-decimal space-y-1.5 pl-5">
       <li>
-        <b>Every evening</b> the desk grades about ninety AI and software stocks and picks the A-rated ones to own.
-        That decision holds for the next trading day.
+        <b>Each evening</b> the desk updates the grades and targets for about ninety AI and software stocks. Trades
+        follow the rebalance schedule (about every four weeks); eligible A names are held at full size and eligible B
+        names at half size. A daily update is a target, not an order at the next open.
       </li>
       <li>
         <b>Enter your positions</b> (type or paste from Schwab) and set your account size. The board then says, name
-        by name, <b>buy, add, trim, sell or hold</b>, and how many shares.
+        by name, <b>buy, add, trim, sell or hold</b> — or <b>uncovered</b> for a holding the desk does not rate, which
+        is your call to keep or close, not a sell instruction — and how many shares.
       </li>
       <li>
-        <b>Buy at the open</b> with a market order. Do not chase a name that has already jumped. When a trade is
-        placed, click <b>done</b> on its row and your positions update.
+        <b>Buy at the open</b> with a market order. When a trade is placed, click <b>done</b> on its row and your
+        positions update.
       </li>
       <li>
-        <b>Selling:</b> a name is sold when its grade drops below A at the next check, about every four weeks. Each
-        row says when that is. Stops are optional: switch them on to see a price under which to sell.
+        <b>Selling:</b> at a rebalance a name is dropped when its grade falls to C or below. The footer shows the
+        countdown to the next check. Stops are off in the current strategy; tested variants reduced performance.
       </li>
       <li>
-        <b>Prices</b> refresh every 15 minutes during market hours. Gains are measured from what you paid.
+        <b>Prices</b> come from the latest available 15-minute bars. Gains are measured from what you paid.
       </li>
       <li>
         <b>Why:</b> click a name or its reason to read the desk’s case for it, and what would change its mind.
@@ -645,6 +670,36 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       setLoading(false)
     }
   }
+
+  // The board, the candle, and the practice account together; the practice
+  // account's day P/L feeds the summary strip. Shared by the polling loop
+  // and the Refresh button, so a manual refresh re-reads the live layer
+  // too rather than only the evening payload.
+  const poll = async () => {
+    try {
+      setLive(await getDeskLive(userId))
+    } catch {
+      // the board stands without the live layer
+    }
+    try {
+      const mine = await getDeskMine(userId, equity)
+      setRows(mine.rows)
+      setLiveGrades(mine.grades_live)
+    } catch {
+      // the last board stands
+    }
+    try {
+      setIntraday(await getDeskIntraday(userId))
+    } catch {
+      // the persisted plan is a convenience; the live board stands
+    }
+    try {
+      setPaperLive(await getDeskPaper(userId))
+    } catch {
+      setPaperLive({ reason: 'unreachable' })
+    }
+  }
+
   useEffect(() => {
     void load()
     const timer = window.setInterval(() => void load(), REFRESH_MS)
@@ -662,36 +717,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     })()
   }, [userId])
 
-  // The board, the candle, and the practice account together, every fifteen
-  // minutes; the practice account's day P/L feeds the summary strip.
   useEffect(() => {
-    const poll = async () => {
-      try {
-        setLive(await getDeskLive(userId))
-      } catch {
-        // the board stands without the live layer
-      }
-      try {
-        const mine = await getDeskMine(userId, equity)
-        setRows(mine.rows)
-        setLiveGrades(mine.grades_live)
-      } catch {
-        // the last board stands
-      }
-      try {
-        setIntraday(await getDeskIntraday(userId))
-      } catch {
-        // the persisted plan is a convenience; the live board stands
-      }
-      try {
-        setPaperLive(await getDeskPaper(userId))
-      } catch {
-        setPaperLive({ reason: 'unreachable' })
-      }
-    }
     void poll()
     const timer = window.setInterval(() => void poll(), CANDLE_MS)
     return () => window.clearInterval(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, equity, holdings])
 
   if (loading) {
@@ -707,6 +737,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const { latest } = payload
   const curve = payload.curve ?? latest?.curve
   const warnings = latest?.regime.flags ?? []
+  // Whether the paper book's next session is a rebalance: only then are the
+  // board's target-vs-held changes executable at the next open. Otherwise
+  // they are targets for the next rebalance, and the page says so instead
+  // of teaching a daily trading cadence the backtest does not use.
+  const rebalanceDue = rows.length > 0 ? rows[0].rebalance_due : true
+  const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? null
 
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6">
@@ -738,7 +774,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         </div>
         <button
           type="button"
-          onClick={() => void load()}
+          onClick={() => {
+            void load()
+            void poll()
+          }}
           className="flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-sm text-[#1d1d1f] hover:bg-[#f5f5f7]"
         >
           <RefreshCw size={14} /> Refresh
@@ -761,7 +800,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 className="text-sm font-semibold text-[#1d1d1f]">
-              What to do at the next open
+              {rebalanceDue ? 'What to do at the next open' : 'Targets for the next rebalance'}
+              {!rebalanceDue && countdown !== null && (
+                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+                  in {countdown} trading days
+                </span>
+              )}
               {live.as_of && (
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
                   prices as of {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -872,8 +916,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
               ? ` in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days`
               : ' every 20 trading days'}
-            ; a name is sold there if it has lost its A grade. Stops are optional because they cut winners as often as
-            losers.
+            ; the target book holds A-rated names at full size and eligible B names at half size, and a name whose
+            grade falls to C or below is dropped at the rebalance. Stops are off in the current strategy.
           </p>
         </section>
       )}
@@ -907,6 +951,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           latest={latest}
           row={rows.find((r) => r.ticker === openName) ?? null}
           live={live}
+          liveGrades={liveGrades}
           onClose={() => setOpenName(null)}
         />
       )}
@@ -1114,7 +1159,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>
           {r.action}
         </span>
-        {r.action !== 'hold' && onDone && (
+        {r.action !== 'hold' && r.action !== 'uncovered' && onDone && (
           <button
             type="button"
             onClick={() => void onDone()}
@@ -1129,6 +1174,8 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
       <td className="whitespace-nowrap">
         {r.action === 'hold' ? (
           <span>{pct(r.current_weight)} of the account</span>
+        ) : r.action === 'uncovered' ? (
+          <span className="font-medium">{r.shares.toLocaleString()} shares held</span>
         ) : (
           <span className="font-medium">{qty.toLocaleString()} shares</span>
         )}
@@ -1551,6 +1598,7 @@ const NameDetail = ({
   latest,
   row,
   live,
+  liveGrades,
   onClose,
 }: {
   userId: string
@@ -1558,6 +1606,7 @@ const NameDetail = ({
   latest: NonNullable<DeskPayload['latest']>
   row: DeskMineRow | null
   live: DeskLive
+  liveGrades: Record<string, DeskLiveGrade>
   onClose: () => void
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
@@ -1617,8 +1666,11 @@ const NameDetail = ({
         )}
         {!row && latest.grades?.[ticker] && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.grades[ticker].grade] ?? ''}`}>
-              {latest.grades[ticker].grade}
+            {/* The list reads the live grade, so the detail must too: a
+                name outside the board's rows would otherwise show the
+                evening grade while the list beside it shows the candle's. */}
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[(liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade) as keyof typeof GRADE_STYLE] ?? ''}`}>
+              {liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade}
             </span>
             <span className="text-xs text-[#6e6e73]">
               {latest.grades[ticker].headline ?? 'graded but not in the book'}

@@ -115,6 +115,12 @@ def _forward_walk(
     out: list[float] = []
     invested_out: list[float] = []
     traded = 0.0
+    # The last record index at which this strategy actually rebalanced. A
+    # challenger begins mid-run, so its first real decision has to enter the
+    # walk at whatever index it appears; indexing off the run (i % REBALANCE)
+    # measured a strategy that only started at record 2 as holding cash for
+    # the next eighteen records.
+    last_entry: int | None = None
     for i, rec in enumerate(records[:-1]):
         a = rec["session"]
         b = records[i + 1]["session"]
@@ -134,7 +140,8 @@ def _forward_walk(
         # A rebalance is decided at `a`'s close - the weights, equity and
         # prices the decision could see - and filled at `b`'s open; a record
         # with no decision holds what it has and earns or loses the market.
-        if known and (i == 0 or i % REBALANCE == 0):
+        if known and (last_entry is None or i - last_entry >= REBALANCE):
+            last_entry = i
             equity_close = cash + sum(
                 held[t] * ca
                 for t, ca in ((t, closes.get(t, {}).get(a)) for t in held)

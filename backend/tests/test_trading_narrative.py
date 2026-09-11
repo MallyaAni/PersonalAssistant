@@ -21,16 +21,18 @@ from backend.market.panel import Panel
 from backend.market.universe import AI_COMPUTE
 
 
-# A writer that returns a fixed JSON payload, or garbage.
+# A writer that returns a fixed JSON payload per call (the last one is
+# reused), or garbage.
 class _Writer:
-    def __init__(self, payload):
-        self.payload = payload
+    def __init__(self, payload, *more):
+        self.payloads = [payload, *more]
         self.calls = []
 
     def chat(self, messages, max_tokens, schema, temperature):
         self.calls.append((messages, max_tokens, schema, temperature))
+        payload = self.payloads[min(len(self.calls) - 1, len(self.payloads) - 1)]
         content = (
-            self.payload if isinstance(self.payload, str) else json.dumps(self.payload)
+            payload if isinstance(payload, str) else json.dumps(payload)
         )
         return {"content": content}
 
@@ -151,7 +153,7 @@ def test_narrator_round_trip_and_refusals():
         "risks": "Participation is below its two-year median.",
         "watch": "A bearish sentiment stance would drop the grade.",
     }
-    writer = _Writer(payload)
+    writer = _Writer(payload, {"consistency": "consistent"})
     brief = DeskNarrator(writer).brief_sync("evidence", "A+")
     assert brief is not None
     assert brief.stance == OWN
@@ -165,6 +167,29 @@ def test_narrator_round_trip_and_refusals():
     assert DeskNarrator(None).brief_sync("evidence", "A+") is None
 
 
+# A brief that contradicts the evidence is dropped, not persisted; the page
+# shows the deterministic readings instead. A check that fails to answer
+# never discards a good brief.
+def test_a_brief_that_contradicts_the_evidence_is_dropped():
+    payload = {
+        "stance": "own",
+        "verdict": "A+ on a bullish release and growing revenue.",
+        "reasoning": "Fundamental bullish: revenue_yoy +1.551. Sentiment bullish.",
+        "risks": "Participation is below its two-year median.",
+        "watch": "A bearish sentiment stance would drop the grade.",
+    }
+    assert (
+        DeskNarrator(_Writer(payload, {"consistency": "contradicts"})).brief_sync(
+            "evidence", "A+"
+        )
+        is None
+    )
+    assert (
+        DeskNarrator(_Writer(payload, "not json")).brief_sync("evidence", "A+")
+        is not None
+    )
+
+
 # A long field is cut at a sentence end, never mid-word.
 def test_cut_at_sentence():
     from backend.agents.trading.desk.narrative import _cut
@@ -172,3 +197,16 @@ def test_cut_at_sentence():
     text = "First sentence is here. Second sentence follows. Third one is long."
     assert _cut(text, 100) == text
     assert _cut(text, 50) == "First sentence is here. Second sentence follows."
+
+
+# A short field that ends without sentence punctuation is a truncation, not
+# a finished brief: it is cut back to the last complete sentence rather
+# than shown broken. A single fragment with no sentence end is kept whole.
+def test_a_short_unfinished_field_is_cut_to_a_complete_sentence():
+    from backend.agents.trading.desk.narrative import _cut
+
+    unfinished = "Revenue is up strongly. The margin story is still"
+    assert _cut(unfinished, 200) == "Revenue is up strongly."
+    fragment = "The margin story is still"
+    assert _cut(fragment, 200) == fragment
+    assert _cut("Revenue is up strongly.", 200) == "Revenue is up strongly."
