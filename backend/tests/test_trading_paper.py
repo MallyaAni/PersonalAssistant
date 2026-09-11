@@ -129,7 +129,8 @@ def test_a_forced_rebalance_overrides_the_clock_and_the_seen_session():
     refused, same, why = paper.plan(
         "2026-09-10", state, 50_000.0, {"MU": 10.0}, {"MU": 100.0}, {"SNDK": 0.1}, {}
     )
-    assert refused == [] and why == "already planned for this session"
+    assert refused == []
+    assert why == "already planned for this session"
     orders, new, what = paper.plan(
         "2026-09-10",
         state,

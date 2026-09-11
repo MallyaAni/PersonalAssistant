@@ -2,6 +2,16 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - A one-time forced rebalance for the paper account
+
+`market_daily --rebalance-now` rebalances the paper book to tonight's
+targets whatever the clock says and restarts the twenty-session clock
+from this session. It is the operator's move for the night a better rule
+goes live, so the account does not hold the old book for eighteen more
+sessions; the desk's own rule never sets it. It is the one case a session
+already planned is planned again, deliberately, and the open orders at
+the broker are cancelled before the new ones go. Tested on the planner.
+
 ## 2026-09-10 - The expectations gap is the live rule; the plain rule is the shadow
 
 The operator's decision: the dashboard and the paper account carry the
