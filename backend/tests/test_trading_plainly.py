@@ -97,8 +97,16 @@ def test_a_reading_is_placed_in_the_book_not_quoted():
             np.array([-0.5, -0.3, -0.2, -0.1, -0.05, 0.0]),
         )
     }
+    # A distance is said as what it is, not as its place in the book: a log
+    # distance of -0.78 is 54% below the high, whatever the rest of the book.
     assert plainly._figure("technical", "high_52w_distance", -0.78, far) == (
-        "far below 52-week high"
+        "54.2% below its 52-week high"
+    )
+    assert plainly._figure("technical", "ema21_distance", 0.0, None) == (
+        "level with the 21-day average"
+    )
+    assert plainly._figure("technical", "range_position_60", 0.93, None) == (
+        "93% up its 60-day range"
     )
 
 
@@ -132,7 +140,7 @@ def test_the_action_follows_the_grade(grade: str, action: str):
         "evidence": {"technical": {"ema21_slope": 0.05}},
     }
     # The grade and action live on the row; the reason is the analysts only.
-    assert plainly.reason(view) == "+ Technical: 21-day avg rising fast"
+    assert plainly.reason(view) == "+ Technical: 21-day average rising"
     assert plainly.headline(view).lower().startswith(action.split()[0])
 
 

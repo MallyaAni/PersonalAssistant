@@ -2,6 +2,24 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - Readings in true words; the Exit column goes
+
+The per-analyst readings under a name said cross-sectional places in
+absolute words: a mid-book distance read "at 200-day avg", a name at its
+yearly high read "near 52-week high" and "near 52-week low" in one list,
+a moderate rise read "flat", and the 200-day line appeared twice. Now a
+distance is said as what it is, a percentage from the level from the
+reading's own value ("12.3% below its 52-week high", "level with the
+21-day average"); a slope by its sign, with the book's place only as a
+qualifier at the ends; the 60-day range as a percentage up it; the two
+200-day averages named apart; and every ranked size said as a place in
+the book ("low in book", "top of book"), never a bare "low" that reads
+as a fact about the company. The expectations gap has words too.
+
+The board's Exit column is gone: it repeated the desk's one rule on
+every row. The stop line sits under the grade when stops are on, and the
+footer says when the desk next re-checks all grades.
+
 ## 2026-09-10 - The Desk view, read word for word
 
 Every visible string on the Desk view read as a trader would and

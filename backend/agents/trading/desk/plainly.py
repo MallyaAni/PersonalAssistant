@@ -125,79 +125,24 @@ FLAG_WORDS: dict[str, tuple[str, str, str]] = {
         "21-day turning up to 50-day",
     ),
 }
-# Distances and rates: said as where the name sits against the book,
-# (below most of the book, about the book, above most of the book).
-DISTANCE_WORDS: dict[str, tuple[str, str, str]] = {
-    "high_52w_distance": (
-        "far below 52-week high",
-        "mid-way to 52-week high",
-        "near 52-week high",
-    ),
-    "low_52w_distance": (
-        "near 52-week low",
-        "mid-way off 52-week low",
-        "far above 52-week low",
-    ),
-    "ema21_distance": (
-        "well below 21-day avg",
-        "at 21-day avg",
-        "well above 21-day avg",
-    ),
-    "ema50_distance": (
-        "well below 50-day avg",
-        "at 50-day avg",
-        "well above 50-day avg",
-    ),
-    "ema200_distance": (
-        "well below 200-day avg",
-        "at 200-day avg",
-        "well above 200-day avg",
-    ),
-    "sma200_distance": (
-        "well below 200-day avg",
-        "at 200-day avg",
-        "well above 200-day avg",
-    ),
-    "support_distance": (
-        "at support",
-        "normal distance to support",
-        "stretched from support",
-    ),
-    "resistance_distance": (
-        "at resistance",
-        "normal room to resistance",
-        "room to resistance",
-    ),
-    "spread_21_50": (
-        "21-day well below 50-day",
-        "21/50 close",
-        "21-day well above 50-day",
-    ),
-    "range_position_60": (
-        "bottom of 60-day range",
-        "middle of 60-day range",
-        "top of 60-day range",
-    ),
-    "residual_momentum_120": (
-        "6-month momentum weakest",
-        "6-month momentum average",
-        "6-month momentum strongest",
-    ),
-    "ema21_slope": (
-        "21-day avg falling fast",
-        "21-day avg flat",
-        "21-day avg rising fast",
-    ),
-    "ema50_slope": (
-        "50-day avg falling fast",
-        "50-day avg flat",
-        "50-day avg rising fast",
-    ),
-    "spread_21_50_slope": (
-        "21/50 gap closing fast",
-        "21/50 gap steady",
-        "21/50 gap opening fast",
-    ),
+# Distances said as what they are: a percentage from the level, from the
+# reading's own value. They used to be said as where the name sat against
+# the book ("at 200-day avg" for a mid-book distance), which read as a
+# fact about the chart and was not one: a name at its yearly high could be
+# "near 52-week high" and "near 52-week low" in the same list.
+ABSOLUTE_DISTANCE: dict[str, str] = {
+    "ema21_distance": "the 21-day average",
+    "ema50_distance": "the 50-day average",
+    "ema200_distance": "the 200-day average",
+    "sma200_distance": "the 200-day simple average",
+    "high_52w_distance": "its 52-week high",
+    "low_52w_distance": "its 52-week low",
+}
+# Rates of change said by their sign, with the book's place only as a
+# qualifier at the extremes; a moderate rise is "rising", never "flat".
+SLOPE_WORDS: dict[str, str] = {
+    "ema21_slope": "21-day average",
+    "ema50_slope": "50-day average",
 }
 # Short names for the sizes placed in the book.
 SHORT: dict[str, str] = {
@@ -218,13 +163,16 @@ SHORT: dict[str, str] = {
     "price_book": "price/book",
     "price_sales_growth": "growth-adjusted price/sales",
     "cheap_vs_side": "discount to peers",
+    "expectations_gap": "cheapness vs expected growth",
+    "residual_momentum_120": "6-month momentum vs the market",
 }
-# Where a reading sits in the book, from its percentile.
+# Where a reading sits in the book, from its percentile. Said as a place
+# in the book, never as a bare "low" or "high" that reads as an absolute.
 PLACE_WORDS = (
     (0.10, "bottom of book"),
-    (0.30, "low"),
-    (0.70, "mid"),
-    (0.90, "high"),
+    (0.30, "low in book"),
+    (0.70, "mid-book"),
+    (0.90, "high in book"),
     (1.01, "top of book"),
 )
 MARK = {1: "+", 0: "\u00b7", -1: "\u2212"}
@@ -379,7 +327,57 @@ def _figure(analyst: str, measure: str, value: float, scale: dict | None) -> str
     if measure in FLAG_WORDS:
         down, flat, up = FLAG_WORDS[measure]
         return up if value > 0.5 else down if value < -0.5 else flat
+    if measure in ABSOLUTE_DISTANCE:
+        return _distance_words(measure, value)
+    if measure in SLOPE_WORDS:
+        return _slope_words(measure, value, _place(value, book))
+    if measure == "spread_21_50":
+        return f"21-day average {_pct(value)} the 50-day"
+    if measure == "spread_21_50_slope":
+        return (
+            "21-day average gaining on the 50-day"
+            if value > 0
+            else (
+                "21-day average losing to the 50-day"
+                if value < 0
+                else "21/50 gap steady"
+            )
+        )
+    if measure == "range_position_60":
+        return f"{max(0.0, min(1.0, value)) * 100:.0f}% up its 60-day range"
+    if measure == "support_distance":
+        return f"nearest support {_pct_abs(value)} below the price"
+    if measure == "resistance_distance":
+        return f"nearest resistance {_pct_abs(value)} above the price"
     return _placed_words(measure, value, _place(value, book))
+
+
+# A log distance as "12.3% above" or "4.0% below".
+def _pct(value: float) -> str:
+    move = (float(np.exp(value)) - 1.0) * 100
+    if abs(move) < 0.05:
+        return "level with"
+    return f"{abs(move):.1f}% {'above' if move > 0 else 'below'}"
+
+
+def _pct_abs(value: float) -> str:
+    return f"{abs(float(np.exp(abs(value))) - 1.0) * 100:.1f}%"
+
+
+# A distance to a level as a percentage of the price.
+def _distance_words(measure: str, value: float) -> str:
+    return f"{_pct(value)} {ABSOLUTE_DISTANCE[measure]}"
+
+
+# A rate of change by its sign, and its place in the book only at the ends.
+def _slope_words(measure: str, value: float, place: float | None) -> str:
+    label = SLOPE_WORDS[measure]
+    direction = "rising" if value > 0 else "falling" if value < 0 else "flat"
+    if place is not None and place > 0.9:
+        return f"{label} {direction}, among the book's fastest"
+    if place is not None and place < 0.1:
+        return f"{label} {direction}, among the book's slowest"
+    return f"{label} {direction}"
 
 
 # A reading of -1, 0 or +1 as its sign.
@@ -406,16 +404,11 @@ def _tone_words(measure: str, value: float, middle: float | None) -> str | None:
     return None
 
 
-# A distance or a size, said by where it falls among the book's readings.
+# A size, said by where it falls among the book's readings.
 def _placed_words(measure: str, value: float, place: float | None) -> str:
-    if measure in DISTANCE_WORDS:
-        low, mid, high = DISTANCE_WORDS[measure]
-        if place is None:
-            return high if value > 0 else low if value < 0 else mid
-        return low if place < 0.3 else high if place > 0.7 else mid
     label = SHORT.get(measure, LABELS.get(measure, measure))
     if place is None:
-        return f"{label} {'high' if value > 0 else 'low'}"
+        return f"{label} {'high in book' if value > 0 else 'low in book'}"
     for limit, words in PLACE_WORDS:
         if place < limit:
             return f"{label} {words}"
@@ -543,14 +536,18 @@ def reads(view: dict, scale: dict | None = None) -> dict[str, list[str]]:
                 continue
             if measure == "support_kind":
                 line = _level_words(
-                    "support", value, cited.get("support_level"),
+                    "support",
+                    value,
+                    cited.get("support_level"),
                     cited.get("support_distance"),
                 )
                 if line:
                     lines.append(line)
             elif measure == "resistance_kind":
                 line = _level_words(
-                    "resistance", value, cited.get("resistance_level"),
+                    "resistance",
+                    value,
+                    cited.get("resistance_level"),
                     cited.get("resistance_distance"),
                 )
                 if line:

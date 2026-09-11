@@ -832,7 +832,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                 <th>Action</th>
                 <th>Size</th>
                 <th>Grade</th>
-                <th>Exit</th>
                 <th title={TRIGGER_LEGEND}>Why</th>
               </tr>
             </thead>
@@ -868,8 +867,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
             price shown; edit the price if your fill differed. Names are in grade order, best first, re-read every 15
             minutes with the technical analyst at the live price. Share counts follow the live price; the weights are
-            the evening decision. Buy at the open with a market order. Stops are optional because they cut winners as
-            often as losers.
+            the evening decision. Buy at the open with a market order. The desk itself re-checks all grades
+            {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
+              ? ` in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days`
+              : ' every 20 trading days'}
+            ; a name is sold there if it has lost its A grade. Stops are optional because they cut winners as often as
+            losers.
           </p>
         </section>
       )}
@@ -1090,26 +1093,6 @@ interface RowProps {
   onDone?: () => Promise<void>
 }
 
-// What ends this row's buy or hold, in words with the name's own margin to
-// the line, so the column says something different for each name instead of
-// repeating the desk's rule. `grade_margin` is how many votes the grade sits
-// above its own threshold: at or below zero it is one bearish stance from
-// losing it, so a name on the edge is told apart from one with room.
-const exitCell = (r: DeskMineRow) => {
-  if (!r.in_book) {
-    return <span className="text-[#6e6e73]">your call: the desk does not cover it</span>
-  }
-  if (r.shares > 0 && r.target_weight <= 0) {
-    return <span className="text-[#b42318]">sell all: it no longer earns a place</span>
-  }
-  const what = r.shares > 0 ? 'sold if it loses its A grade' : 'a buy while it holds its A grade'
-  const m = r.grade_margin
-  if (m == null) return <span className="text-[#6e6e73]">{what}</span>
-  if (m <= 0) return <span className="font-medium text-[#b42318]">{what}: on the edge, one analyst away</span>
-  if (m < 1) return <span className="text-[#9a6200]">{what}: just above the line</span>
-  return <span className="text-[#6e6e73]">{what}</span>
-}
-
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
 // The "why" reads in plain words first; the analysts' numbers are inside.
@@ -1175,26 +1158,14 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
                 at risk
               </span>
             )}
+            {trailing !== null && (
+              <div className={`text-xs ${hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}`}>
+                {hit ? 'below the stop: sell' : `stop ${money(trailing)}`}
+              </div>
+            )}
           </>
         ) : (
           <span className="text-xs text-[#6e6e73]">not covered</span>
-        )}
-      </td>
-      <td className="whitespace-nowrap text-xs">
-        {exitCell(r)}
-        {r.until_rebalance !== null && r.target_weight > 0 && (
-          <>
-            <br />
-            <span className="text-[#6e6e73]">grade check in {r.until_rebalance} trading day{r.until_rebalance === 1 ? '' : 's'}</span>
-          </>
-        )}
-        {trailing !== null && (
-          <>
-            <br />
-            <span className={hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}>
-              {hit ? 'below the stop: sell' : `stop ${money(trailing)}`}
-            </span>
-          </>
         )}
       </td>
       <td className="text-xs text-[#6e6e73]">
