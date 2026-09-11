@@ -4,8 +4,9 @@
 #   bash scripts/deploy.sh              # pull, then rebuild what changed
 #   bash scripts/deploy.sh --no-pull    # deploy the working tree as it stands
 #   bash scripts/deploy.sh --skip-gate  # ship without the unit suite and routing gate
-#   bash scripts/deploy.sh --skip-post  # ship without the post-deploy sweep and harness
+#   bash scripts/deploy.sh --skip-post  # ship without the post-deploy checks
 #   bash scripts/deploy.sh --wait-post  # wait for the sweep instead of detaching it
+#   bash scripts/deploy.sh --run-post   # force the full post-deploy sweep and harness
 #
 # A change that touches nothing the backend runs - the frontend, docs - takes
 # the short path (2026-09-08): no unit suite, no routing gate, no backup, no
@@ -14,6 +15,13 @@
 # frontend-only diff cannot change; the frontend's own type check runs in
 # its image build. Before this every deploy took the full fifteen minutes
 # and a wording change waited on a hundred model calls.
+#
+# The credit-consuming post-deploy sweep and search harness (one live
+# provider query per question) run only when the change touched the search
+# chain or the router's tool choice; any other deploy runs the cheap smoke
+# instead. See "Post-deploy checks" below - on 2026-08-29 deploy sweeps
+# spent 344 of the month's 403 searches, against an allowance that is no
+# longer free.
 #
 # This is the only deploy path. `docker compose up --build` by hand skips
 # every check below, and on 2026-08-26 a build shipped that way had a
@@ -53,6 +61,7 @@ compose=(docker compose -f "$root/docker-compose.yml")
 pull=true
 gate=true
 post=true
+force_post=false
 # The live checks verify a system that is already serving, so the deploy no
 # longer blocks on them (2026-09-06): forty minutes of every deploy was spent
 # waiting on checks that could change nothing about what was running, and on
@@ -66,6 +75,7 @@ for arg in "$@"; do
         --skip-gate) gate=false ;;
         --skip-post) post=false ;;
         --wait-post) wait_post=true ;;
+        --run-post)  force_post=true ;;
     esac
 done
 
@@ -98,10 +108,24 @@ if [[ "$before" == "$after" ]]; then
     echo "already running $after"
 fi
 
+# Whether the change could touch the search chain or the router's tool
+# choice - the only things the credit-consuming post-deploy sweep verifies
+# that a fresh deploy's live searches are worth. The sweep and the search
+# harness spend one provider query per live question, and on 2026-08-29
+# deploy sweeps accounted for 344 of the month's 403 searches against an
+# allowance that is no longer free. A change to the desk or the frontend
+# skips them; --run-post forces them regardless. An empty diff is treated
+# as full, so a re-run of the same commit still verifies everything.
+search_paths='^backend/mcp/|^backend/services/|^backend/tools/|^backend/core/prompts/|^backend/agents/(chat|reply|scout)/|^backend/cli/(sweep_journeys|exercise_search_scenarios|tool_selection_cases|real_utterances|evaluate_tool_selection)\.py|^prompts/(routing|reply|search|scout|referent|refinement)/|^skills/|^bridges/'
+search_touched=false
+changed="$(git -C "$root" diff --name-only "$before" "$after" 2>/dev/null || true)"
+if $force_post || [[ -z "$changed" ]] || grep -qE "$search_paths" <<<"$changed"; then
+    search_touched=true
+fi
+
 # Rebuild only what the change actually touched. A full rebuild of every image
 # takes minutes and is almost never what a deploy needs.
 step "Deciding what to rebuild"
-changed="$(git -C "$root" diff --name-only "$before" "$after" 2>/dev/null || true)"
 services=()
 if [[ -z "$changed" ]] || grep -qE '^(backend/|requirements|pyproject|Dockerfile)' <<<"$changed"; then
     # All six services that build from the root Dockerfile. Three of them -
@@ -236,6 +260,17 @@ echo "deployed $after"
 step "Post-deploy checks"
 if ! $post; then
     echo "WARNING: post-deploy checks skipped by request"
+elif ! $search_touched; then
+    # The change did not touch the search chain or the router's tool choice,
+    # so the credit-consuming sweep and search harness are not worth their
+    # live searches (2026-08-29: 344 of the month's 403 searches came from
+    # deploy sweeps, against an allowance that is no longer free). The cheap
+    # smoke still runs; --run-post forces the full set.
+    checks_log="$root/data/post-deploy-$after-$(date +%Y%m%dT%H%M%S).log"
+    mkdir -p "$(dirname "$checks_log")"
+    setsid nohup bash "$root/scripts/post-deploy-checks.sh" --cheap "$after" > "$checks_log" 2>&1 < /dev/null &
+    echo "cheap checks running in the background: $checks_log"
+    echo "verdict: data/.post-deploy-status (a red one pages the operator)"
 elif $wait_post; then
     bash "$root/scripts/post-deploy-checks.sh" "$after" \
         || { echo "deployed, but a post-deploy check failed" >&2; exit 1; }

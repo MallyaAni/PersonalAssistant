@@ -71,3 +71,20 @@ def test_the_deploy_detaches_the_live_checks_and_records_their_verdict():
     # Both live checks survived the move.
     assert "backend.cli.sweep_journeys" in body
     assert "backend.cli.exercise_search_scenarios" in body
+
+
+# The credit-consuming sweep and search harness run only when the change
+# touched the search chain or the router's tool choice; any other deploy
+# runs the cheap serving-path smoke. Deploy sweeps spent 344 of the month's
+# 403 searches on 2026-08-29, against an allowance that is no longer free.
+def test_the_credit_consuming_checks_are_opt_in_by_diff():
+    deploy = (SCRIPTS / "deploy.sh").read_text(encoding="utf-8")
+    checks = (SCRIPTS / "post-deploy-checks.sh").read_text(encoding="utf-8")
+    assert "--run-post" in deploy, "--run-post forces the full post-deploy set"
+    assert "--cheap" in checks, "post-deploy-checks.sh --cheap runs the smoke only"
+    # The diff-based gate: a frontend or desk change skips the sweep.
+    assert "search_touched" in deploy
+    assert "post-deploy-checks.sh" in deploy
+    # The cheap mode still writes the verdict and pages on red.
+    assert "--cheap" in checks and "notify-operator.sh" in checks
+    assert "gateway -> backend" in checks and "/health" in checks

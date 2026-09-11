@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 # The live checks that run against an already-deployed system.
 #
-#   bash scripts/post-deploy-checks.sh <commit>
+#   bash scripts/post-deploy-checks.sh <commit>          # the full sweep and search harness
+#   bash scripts/post-deploy-checks.sh --cheap <commit>  # the serving-path smoke only
+#
+# The full set is the credit-consuming one: every live web-search journey
+# spends one provider query, and on 2026-08-29 deploy sweeps accounted for
+# 344 of the month's 403 searches. deploy.sh runs the full set only when the
+# change touched the search chain or the router's tool choice, and the cheap
+# smoke otherwise.
 #
 # Split out of deploy.sh on 2026-09-06 so the deploy does not wait on them.
 # They verify a system that is *already serving*: deploy.sh restarts the
@@ -27,6 +34,41 @@ trap 'status=$?; if [[ $status -ne 0 ]]; then echo "post-deploy-checks.sh: exiti
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml")
 after="${1:-unknown}"
+
+# The cheap mode: run by deploy.sh when the change did not touch the search
+# chain or the router's tool choice, so the credit-consuming sweep and
+# search harness would buy live queries for nothing. It verifies only that
+# the serving path answers: the gateway proxies to the backend (the auth
+# route returns 401, never 502), and the backend reports healthy.
+if [[ "$after" == "--cheap" ]]; then
+    after="${2:-unknown}"
+    status_file="$root/data/.post-deploy-status"
+    ok=true
+    code="$(curl -sS -o /dev/null -w '%{http_code}' -m 15 \
+        -H 'Host: deep-matter.com' http://localhost:8080/api/v1/auth/session 2>/dev/null || true)"
+    echo "gateway -> backend on /api/v1/auth/session: HTTP ${code:-unreachable} (expect 401)"
+    [[ "$code" == "401" ]] || ok=false
+    if "${compose[@]}" exec -T backend python -c \
+        "import httpx; r = httpx.get('http://localhost:8000/health', timeout=10); assert r.status_code == 200, r.text; print('backend /health: 200')" \
+        </dev/null; then
+        :
+    else
+        echo "backend /health: failed" >&2
+        ok=false
+    fi
+    mkdir -p "$(dirname "$status_file")"
+    if $ok; then
+        printf '%s %s ok (cheap)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$after" > "$status_file"
+        echo "cheap post-deploy checks: all green - gateway -> backend OK; backend /health OK"
+        exit 0
+    fi
+    printf '%s %s FAILED (cheap)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$after" > "$status_file"
+    bash "$root/scripts/notify-operator.sh" \
+        "AniOS $after cheap post-deploy smoke failed: the gateway or the backend did not answer" || true
+    echo "cheap post-deploy checks: FAILED" >&2
+    exit 1
+fi
+
 status_file="$root/data/.post-deploy-status"
 
 post_ok=true
