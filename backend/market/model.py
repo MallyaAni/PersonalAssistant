@@ -1057,12 +1057,16 @@ def score_today(
 
 
 # The EDGAR feature array for a panel, from the store's newest frames, or
-# None when the store holds no EDGAR layer. Shared by the CLIs.
+# None when the store holds no EDGAR layer. Shared by the CLIs. Release
+# financials from the tone frames are folded into each record's facts, so
+# the fundamental layer reads an 8-K's own numbers from its reaction date
+# instead of the last 10-Q's until the next filing supersedes them.
 def load_edgar_features(store, panel, asof=None):
     """Return edgar_features(panel, records) from stored frames, or None."""
     from datetime import datetime
+    from dataclasses import replace
 
-    from backend.market import edgar
+    from backend.market import edgar, language
 
     records = {}
     for ticker in panel.tickers:
@@ -1082,6 +1086,18 @@ def load_edgar_features(store, panel, asof=None):
         )
     if not records:
         return None
+    release = edgar.release_facts(
+        {
+            ticker: language.records_from_frame(frame[0])
+            for ticker in panel.tickers
+            if (frame := store.read_frame(language.TONE_KIND, ticker, asof)) is not None
+        }
+    )
+    for ticker, extra_facts in release.items():
+        if ticker not in records or not extra_facts:
+            continue
+        record = records[ticker]
+        records[ticker] = replace(record, facts=record.facts + tuple(extra_facts))
     return edgar.edgar_features(panel, records)
 
 

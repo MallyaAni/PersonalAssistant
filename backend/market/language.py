@@ -74,6 +74,14 @@ class ToneRecord:
     model: str
     prompt_version: str
     truncated: bool
+    # The quarter the release reports and its numbers, so the fundamental
+    # layer can read the release's own figures between 10-Qs. None when
+    # the release does not state them.
+    quarter_end: date | None = None
+    revenue_usd_m: float | None = None
+    eps_usd: float | None = None
+    net_income_usd_m: float | None = None
+    gross_margin_pct: float | None = None
 
 
 # Fetch a page as text with the SEC pacing and retries.
@@ -171,6 +179,13 @@ def tone_frame(records: Sequence[ToneRecord]) -> dict[str, list]:
         "model": [r.model for r in records],
         "prompt_version": [r.prompt_version for r in records],
         "truncated": [r.truncated for r in records],
+        "quarter_end": [
+            r.quarter_end.isoformat() if r.quarter_end else None for r in records
+        ],
+        "revenue_usd_m": [r.revenue_usd_m for r in records],
+        "eps_usd": [r.eps_usd for r in records],
+        "net_income_usd_m": [r.net_income_usd_m for r in records],
+        "gross_margin_pct": [r.gross_margin_pct for r in records],
     }
 
 
@@ -190,10 +205,31 @@ def records_from_frame(columns: Mapping[str, list]) -> tuple[ToneRecord, ...]:
             model=str(columns["model"][i]),
             prompt_version=str(columns["prompt_version"][i]),
             truncated=bool(columns["truncated"][i]),
+            quarter_end=_opt_date(columns.get("quarter_end"), i),
+            revenue_usd_m=_opt_float(columns.get("revenue_usd_m"), i),
+            eps_usd=_opt_float(columns.get("eps_usd"), i),
+            net_income_usd_m=_opt_float(columns.get("net_income_usd_m"), i),
+            gross_margin_pct=_opt_float(columns.get("gross_margin_pct"), i),
         )
         for i in range(len(columns.get("accession", [])))
     ]
     return tuple(sorted(rows, key=lambda r: r.reaction_date))
+
+
+# A nullable date column value, or None for an old frame lacking the column.
+def _opt_date(column: list | None, i: int) -> date | None:
+    if column is None:
+        return None
+    value = column[i]
+    return date.fromisoformat(value) if value else None
+
+
+# A nullable float column value, or None for an old frame lacking the column.
+def _opt_float(column: list | None, i: int) -> float | None:
+    if column is None:
+        return None
+    value = column[i]
+    return float(value) if value is not None else None
 
 
 # The partial file a long run appends to, one JSON record per line.
@@ -208,6 +244,8 @@ def append_partial(path: Path, record: ToneRecord) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = asdict(record)
     payload["reaction_date"] = record.reaction_date.isoformat()
+    if payload.get("quarter_end"):
+        payload["quarter_end"] = record.quarter_end.isoformat()
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload) + "\n")
 
@@ -223,6 +261,8 @@ def read_partial(path: Path) -> dict[str, ToneRecord]:
             continue
         payload = json.loads(line)
         payload["reaction_date"] = date.fromisoformat(payload["reaction_date"])
+        if payload.get("quarter_end"):
+            payload["quarter_end"] = date.fromisoformat(payload["quarter_end"])
         record = ToneRecord(**payload)
         out[record.accession] = record
     return out

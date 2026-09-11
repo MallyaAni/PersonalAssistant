@@ -26,14 +26,19 @@ from backend.core.prompts import render
 # outlook is in the prose at the top, so the text is cut here and the cut
 # is recorded with the score.
 MAX_CHARS = 24_000
-PROMPT_VERSION = "release_tone/1"
+PROMPT_VERSION = "release_tone/2"
 
 _SYSTEM = render("trading/release_tone")
 
 
 @dataclass(frozen=True, slots=True)
 class ReleaseTone:
-    """One release's scores, as the model wrote them, plus the summary."""
+    """One release's scores, as the model wrote them, plus the summary.
+
+    The financials are the quarter the release itself reports, so the
+    fundamental layer can read the release's own numbers instead of the
+    last 10-Q's. A field is None when the release does not state it.
+    """
 
     guidance: float
     demand: float
@@ -42,10 +47,20 @@ class ReleaseTone:
     supply_constrained: float
     summary: str
     truncated: bool
+    quarter_end: str | None = None
+    revenue_usd_m: float | None = None
+    eps_usd: float | None = None
+    net_income_usd_m: float | None = None
+    gross_margin_pct: float | None = None
 
 
 def _schema() -> dict[str, Any]:
     bounded = {"type": "number", "minimum": -1, "maximum": 1}
+    optional = {
+        "type": ["number", "null"],
+        "minimum": 0,
+        "maximum": 1_000_000,
+    }
     return {
         "title": "ReleaseTone",
         "type": "object",
@@ -57,6 +72,11 @@ def _schema() -> dict[str, Any]:
             "capex",
             "supply_constrained",
             "summary",
+            "quarter_end",
+            "revenue_usd_m",
+            "eps_usd",
+            "net_income_usd_m",
+            "gross_margin_pct",
         ],
         "properties": {
             "guidance": bounded,
@@ -65,6 +85,11 @@ def _schema() -> dict[str, Any]:
             "capex": bounded,
             "supply_constrained": {"type": "number", "minimum": 0, "maximum": 1},
             "summary": {"type": "string", "minLength": 5, "maxLength": 240},
+            "quarter_end": {"type": ["string", "null"], "format": "date"},
+            "revenue_usd_m": optional,
+            "eps_usd": {"type": ["number", "null"]},
+            "net_income_usd_m": optional,
+            "gross_margin_pct": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
         },
     }
 
@@ -112,6 +137,11 @@ class ReleaseToneReader:
                 supply_constrained=_clip(payload["supply_constrained"], 0, 1),
                 summary=str(payload["summary"])[:240],
                 truncated=truncated,
+                quarter_end=payload.get("quarter_end"),
+                revenue_usd_m=_opt(payload.get("revenue_usd_m"), 0, 1_000_000),
+                eps_usd=_opt(payload.get("eps_usd"), -1000, 100_000),
+                net_income_usd_m=_opt(payload.get("net_income_usd_m"), 0, 1_000_000),
+                gross_margin_pct=_opt(payload.get("gross_margin_pct"), 0, 100),
             )
         except Exception:
             return None
@@ -119,4 +149,11 @@ class ReleaseToneReader:
 
 # A number held inside its documented bounds.
 def _clip(value: Any, low: float, high: float) -> float:
+    return float(min(high, max(low, float(value))))
+
+
+# An optional number: None in, None out; otherwise clipped into bounds.
+def _opt(value: Any, low: float, high: float) -> float | None:
+    if value is None:
+        return None
     return float(min(high, max(low, float(value))))

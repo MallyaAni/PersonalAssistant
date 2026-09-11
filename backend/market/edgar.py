@@ -785,6 +785,46 @@ def record_from_frames(
     return CompanyRecord(ticker, cik, event_rows, fact_rows, source_time)
 
 
+# The release-reported financials as quarterly facts, so the fundamental
+# layer reads an 8-K's own numbers between 10-Qs. Each release record (a
+# language.ToneRecord) yields a revenue, net income and EPS fact for the
+# quarter it reports, filed on its reaction date, and a gross-profit fact
+# derived from the reported gross margin so the margin feature stays on
+# the same quarter. A field a release does not state contributes nothing.
+def release_facts(records: Mapping[str, Sequence]) -> dict[str, list[QuarterFact]]:
+    """Return {ticker: release-reported QuarterFacts} from tone records."""
+    out: dict[str, list[QuarterFact]] = {}
+    for ticker, rows in records.items():
+        facts: list[QuarterFact] = []
+        for record in rows:
+            end = getattr(record, "quarter_end", None)
+            filed = getattr(record, "reaction_date", None)
+            if not end or not filed:
+                continue
+            revenue = getattr(record, "revenue_usd_m", None)
+            if revenue is not None:
+                facts.append(QuarterFact("revenue", end, end, revenue * 1e6, filed))
+            eps = getattr(record, "eps_usd", None)
+            if eps is not None:
+                facts.append(QuarterFact("eps", end, end, eps, filed))
+            ni = getattr(record, "net_income_usd_m", None)
+            if ni is not None:
+                facts.append(QuarterFact("net_income", end, end, ni * 1e6, filed))
+            margin = getattr(record, "gross_margin_pct", None)
+            if margin is not None and revenue is not None:
+                facts.append(
+                    QuarterFact(
+                        "gross_profit",
+                        end,
+                        end,
+                        margin / 100.0 * revenue * 1e6,
+                        filed,
+                    )
+                )
+        out[ticker] = facts
+    return out
+
+
 # Strip an HTML press release to text for the language pass.
 def html_to_text(html: str) -> str:
     """Return the visible text of an HTML document, whitespace collapsed."""

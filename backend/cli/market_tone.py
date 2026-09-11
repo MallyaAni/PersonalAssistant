@@ -196,6 +196,15 @@ def _refresh_ticker(
                 model=model,
                 prompt_version=PROMPT_VERSION,
                 truncated=tone.truncated,
+                quarter_end=(
+                    date.fromisoformat(tone.quarter_end)
+                    if tone.quarter_end
+                    else None
+                ),
+                revenue_usd_m=tone.revenue_usd_m,
+                eps_usd=tone.eps_usd,
+                net_income_usd_m=tone.net_income_usd_m,
+                gross_margin_pct=tone.gross_margin_pct,
             )
             language.append_partial(partial, record)
             done[record.accession] = record

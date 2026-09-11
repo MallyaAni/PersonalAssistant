@@ -124,3 +124,54 @@ def test_partials_and_frames_round_trip(tmp_path):
     records = language.records_from_frame(frame)
     assert [r.accession for r in records] == ["x", "y"]
     assert language.read_partial(tmp_path / "none.jsonl") == {}
+
+
+# A release's reported financials survive the partial file and the frame,
+# and a frame written before they existed reads back as None.
+def test_release_financials_round_trip_and_legacy_frames_read_none(tmp_path):
+    rec = language.ToneRecord(
+        accession="a",
+        reaction_date=date(2025, 6, 10),
+        guidance=0.2,
+        demand=0.1,
+        pricing=0.0,
+        capex=0.0,
+        supply_constrained=0.0,
+        summary="s",
+        model="m",
+        prompt_version="v",
+        truncated=False,
+        quarter_end=date(2025, 5, 31),
+        revenue_usd_m=200.0,
+        eps_usd=2.0,
+        net_income_usd_m=40.0,
+        gross_margin_pct=55.0,
+    )
+    path = language.partial_path(tmp_path, date(2026, 1, 2), "AAA")
+    language.append_partial(path, rec)
+    back = language.read_partial(path)["a"]
+    assert back.quarter_end == date(2025, 5, 31)
+    assert back.revenue_usd_m == 200.0
+    assert back.eps_usd == 2.0
+    rebuilt = language.records_from_frame(language.tone_frame([rec]))[0]
+    assert rebuilt.net_income_usd_m == 40.0
+    assert rebuilt.gross_margin_pct == 55.0
+    legacy_columns = {
+        k: language.tone_frame([rec])[k]
+        for k in (
+            "accession",
+            "reaction_date",
+            "guidance",
+            "demand",
+            "pricing",
+            "capex",
+            "supply_constrained",
+            "summary",
+            "model",
+            "prompt_version",
+            "truncated",
+        )
+    }
+    legacy = language.records_from_frame(legacy_columns)[0]
+    assert legacy.quarter_end is None
+    assert legacy.revenue_usd_m is None

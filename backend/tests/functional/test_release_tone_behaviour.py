@@ -106,3 +106,44 @@ async def test_summary_is_bounded_and_scores_repeat(reader):
     assert 5 <= len(first.summary) <= 240
     assert first.guidance == second.guidance
     assert first.capex == second.capex
+
+
+# A release that dates its quarter and states its numbers hands them to the
+# fundamental layer: the model reports the quarter it covers, revenue, EPS,
+# net income and gross margin as stated, on the release's own figures.
+async def test_the_reported_financials_are_extracted(reader):
+    release = (
+        "Vantage Optics Reports Results for the Quarter Ended June 30, 2026\n\n"
+        "Revenue for the quarter ended June 30, 2026 was $4.42 billion, "
+        "compared with $3.18 billion in the same quarter last year. Net "
+        "income was $1.21 billion, or $3.42 per diluted share. GAAP gross "
+        "margin was 64.8%.\n\n"
+        "For the third quarter of fiscal 2026, the company expects revenue "
+        "of $4.65 billion, plus or minus 2%.\n\n"
+        "The company will host a conference call at 2 p.m. Pacific time."
+    )
+    tone = await reader.score(release)
+    assert tone is not None
+    assert tone.quarter_end == "2026-06-30"
+    assert tone.revenue_usd_m == pytest.approx(4420.0, rel=0.02)
+    assert tone.net_income_usd_m == pytest.approx(1210.0, rel=0.02)
+    assert tone.eps_usd == pytest.approx(3.42, rel=0.02)
+    assert tone.gross_margin_pct == pytest.approx(64.8, rel=0.02)
+
+
+# A release that states no figures at all leaves the financials null rather
+# than carrying numbers over from elsewhere.
+async def test_financials_are_null_when_not_stated(reader):
+    sparse = (
+        "Delta Systems Announces Third Quarter Results\n\n"
+        "The company reported record results for the quarter. Full details "
+        "are available in the accompanying financial tables.\n\n"
+        "Outlook. For the fourth quarter the company expects continued "
+        "growth and plans to raise its dividend.\n"
+    )
+    tone = await reader.score(sparse)
+    assert tone is not None
+    assert tone.revenue_usd_m is None
+    assert tone.eps_usd is None
+    assert tone.net_income_usd_m is None
+    assert tone.gross_margin_pct is None

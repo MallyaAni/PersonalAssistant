@@ -49,6 +49,34 @@ or deliver: 0 when the text says nothing about it or says supply is ample,
 summary — one sentence, at most 240 characters, stating the outlook and
 the main reason the company gives for it, in plain words.
 
+The release also reports the quarter that just ended, with its numbers.
+Give them so the pipeline can read the release's own figures rather than
+an older filing's, exactly as stated:
+
+quarter_end — the date the reported quarter ended, as stated in the
+release, in ISO form (YYYY-MM-DD). Null when the release does not date
+its quarter.
+
+revenue_usd_m — the quarter's reported revenue, in millions of US
+dollars. Null when the release does not state a revenue figure.
+
+eps_usd — the quarter's reported diluted earnings per share, in US
+dollars. Null when the release does not state an EPS figure. Report the
+GAAP figure when one is given.
+
+net_income_usd_m — the quarter's reported net income, in millions of US
+dollars (a loss is a negative number). Null when the release does not
+state a net income figure.
+
+gross_margin_pct — the quarter's reported gross margin, as a percentage
+from 0 to 100. Null when the release does not state a gross margin.
+
+Report only what the release states. Never estimate a figure from other
+numbers, never carry a figure from a prior quarter, and leave a field
+null when the release does not give it. A figure from the reported
+quarter is history, but it is the history the fundamental layer needs;
+it must not change any of the five scores above.
+
 Read the whole release, including any outlook or guidance section. Do not
 pad a score to reflect the tone of the reported quarter; the reported
 quarter is the past.
