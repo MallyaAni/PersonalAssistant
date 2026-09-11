@@ -31,6 +31,33 @@ def sessions(root: Path) -> list[str]:
 
 
 # One session's record, or None.
+# What the records actually said about one name, night by night: the
+# grade, the votes and the stances each record carried. The history file
+# a drill-down reads is today's rule replayed over the past, which is the
+# right thing for a backtest and the wrong thing for "what did the desk
+# say on Tuesday" - after a rule changes, the replay disagrees with the
+# record that was on the page that night. The records are the truth for
+# the sessions they cover (a month; older ones are pruned).
+def said(root: Path, ticker: str) -> dict[str, dict]:
+    """Return {session: {grade, votes, stances, rule}} from the records on file."""
+    out: dict[str, dict] = {}
+    for session in sessions(root):
+        record = load(root, session)
+        if not record:
+            continue
+        grade = (record.get("grades") or {}).get(ticker)
+        if not grade:
+            continue
+        out[session] = {
+            "grade": grade.get("grade"),
+            "votes": grade.get("votes"),
+            "stances": grade.get("stances") or {},
+            "rule": ((record.get("provenance") or {}).get("rule") or {}).get("name")
+            or "plain-value",
+        }
+    return out
+
+
 def load(root: Path, session: str) -> dict | None:
     """Return the record for `session`."""
     path = Path(root) / DESK_KIND / f"asof={session}" / "desk.json"

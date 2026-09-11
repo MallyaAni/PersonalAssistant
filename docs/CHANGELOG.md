@@ -2,6 +2,18 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-10 - A name's history shows what the desk said, and which analyst moved
+
+The drill-down's session table read from the history file, which is
+today's rule replayed over the past: right for the backtest, wrong for
+"what did the desk say on Tuesday", and after tonight's rule change it
+showed ETN as B on a night the page had said A. The history endpoint now
+overlays each nightly record on file (`deskrecord.said`): a row with a
+record carries the grade, votes and stances the desk wrote that night and
+is marked "said"; the rest are the replay, and the page says so. The
+table shows each analyst's mark per session in place of the bare vote
+count, so a grade change names the analyst that moved.
+
 ## 2026-09-10 - Readings in true words; the Exit column goes
 
 The per-analyst readings under a name said cross-sectional places in

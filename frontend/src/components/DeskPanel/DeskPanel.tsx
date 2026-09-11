@@ -1656,21 +1656,33 @@ const NameDetail = ({
               </div>
             )}
             <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">The last {recent.length} sessions</h4>
+            <p className="mt-0.5 text-xs text-[#6e6e73]">
+              Each night&rsquo;s grade with the analysts that voted for (+) or against (−) it, so a grade change shows
+              which analyst moved. Rows marked &ldquo;said&rdquo; are what the desk wrote that night; the rest are
+              today&rsquo;s rules replayed over the past.
+            </p>
             <table className="mt-1 w-full text-sm">
               <thead className="text-left text-[#6e6e73]">
                 <tr>
                   <th className="py-1">Date</th>
                   <th>Grade</th>
-                  <th>Votes</th>
+                  <th title={TRIGGER_LEGEND}>Analysts</th>
                   <th>Next {history.horizon} sessions</th>
                 </tr>
               </thead>
               <tbody>
                 {recent.map((row) => (
                   <tr key={row.date} className="border-t border-black/[0.05]">
-                    <td className="py-1 text-[#6e6e73]">{shortDate(row.date)}</td>
+                    <td className="py-1 text-[#6e6e73]">
+                      {shortDate(row.date)}
+                      {row.said && <span className="ml-1 text-[10px] uppercase tracking-wide text-[#0b5cad]">said</span>}
+                    </td>
                     <td><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade] ?? ''}`}>{row.grade}</span></td>
-                    <td className="text-[#6e6e73]">{row.votes > 0 ? `+${row.votes.toFixed(1)}` : row.votes.toFixed(1)}</td>
+                    <td className="whitespace-nowrap font-mono text-xs text-[#1d1d1f]">
+                      {row.stances && Object.keys(row.stances).length > 0
+                        ? triggers(row.stances)
+                        : `${row.votes > 0 ? '+' : ''}${row.votes.toFixed(1)} votes`}
+                    </td>
                     <td>{row.forward != null ? <Trend value={row.forward * 100} /> : <span className="text-[#9ca3af]">—</span>}</td>
                   </tr>
                 ))}

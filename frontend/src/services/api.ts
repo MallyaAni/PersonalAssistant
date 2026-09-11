@@ -1941,6 +1941,9 @@ export interface DeskHistoryRow {
   forward: number | null;
   forward_residual: number | null;
   earnings: boolean;
+  // True where a nightly record exists for the session and the row is what
+  // the desk said that night; false where it is today's rule replayed.
+  said?: boolean;
 }
 export interface DeskHistory {
   ticker: string;

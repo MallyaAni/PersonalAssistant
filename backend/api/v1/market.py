@@ -456,11 +456,18 @@ async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
     path = _root() / "history" / f"{ticker.upper()}.json"
     if not path.exists():
         raise HTTPException(status_code=404, detail="no history for that name yet")
-    return {
-        "user_id": user_id,
-        "ticker": ticker.upper(),
-        **json.loads(path.read_text(encoding="utf-8")),
-    }
+    history = json.loads(path.read_text(encoding="utf-8"))
+    # The rows are today's rule replayed; where a nightly record exists for
+    # the session, the row carries what the desk actually said that night
+    # and is marked as said, so a grade that moved because the rule changed
+    # is told apart from one that moved because the name did.
+    spoken = deskrecord.said(_root(), ticker.upper())
+    rows = []
+    for row in history.get("rows") or []:
+        told = spoken.get(str(row.get("date")))
+        rows.append({**row, **told, "said": True} if told else {**row, "said": False})
+    history["rows"] = rows
+    return {"user_id": user_id, "ticker": ticker.upper(), **history}
 
 
 # The autopsy: read the caller's own trading passages and name what their

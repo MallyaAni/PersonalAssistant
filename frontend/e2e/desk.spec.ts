@@ -317,8 +317,8 @@ test.beforeEach(async ({ page }) => {
       asof: '2026-09-08',
       horizon: 20,
       rows: [
-        { date: '2026-08-28', grade: 'A', votes: 3.2, stances: {}, exposure: 0.8, confidence: 0.9, forward: 0.021, forward_residual: 0.012, earnings: false },
-        { date: '2026-09-08', grade: 'A', votes: 3.2, stances: {}, exposure: 0.8, confidence: 0.9, forward: null, forward_residual: null, earnings: false },
+        { date: '2026-08-28', grade: 'A', votes: 3.2, stances: { fundamental: 1, technical: 1, value: 0 }, exposure: 0.8, confidence: 0.9, forward: 0.021, forward_residual: 0.012, earnings: false, said: false },
+        { date: '2026-09-08', grade: 'A', votes: 3.2, stances: { fundamental: 1, technical: 1, value: 0 }, exposure: 0.8, confidence: 0.9, forward: null, forward_residual: null, earnings: false, said: true },
       ],
       backtest: {
         min_grade: 'A',
@@ -484,6 +484,10 @@ test('drills into a name’s own history', async ({ page }) => {
   // The live technical read is the model's plain words over the live tape.
   await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()
   await expect(dialog.getByText('The last 2 sessions')).toBeVisible()
+  // Each session shows which analysts voted, and the row the desk actually
+  // wrote that night is marked as said.
+  await expect(dialog.getByText('F+ T+ V·').first()).toBeVisible()
+  await expect(dialog.getByText('said', { exact: true })).toHaveCount(1)
   await expect(dialog.getByText('a steady AI leader')).toBeVisible()
   await dialog.getByRole('button', { name: 'Close' }).click()
   await expect(dialog).not.toBeVisible()

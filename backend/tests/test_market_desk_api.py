@@ -171,9 +171,7 @@ async def test_an_extra_account_cannot_overwrite_the_operators_holdings(
     owner = {
         "Authorization": f"Bearer {issue_user_token('ani.mallya', ttl_seconds=60)}"
     }
-    extra = {
-        "Authorization": f"Bearer {issue_user_token('vjmallya', ttl_seconds=60)}"
-    }
+    extra = {"Authorization": f"Bearer {issue_user_token('vjmallya', ttl_seconds=60)}"}
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -421,8 +419,26 @@ async def test_the_history_endpoint_reads_the_nightly_file(tmp_path, monkeypatch
                 "ticker": "SNDK",
                 "asof": "2026-09-04",
                 "horizon": 20,
-                "rows": [{"date": "2026-09-03", "grade": "A+", "votes": 2.0}],
+                "rows": [
+                    {"date": "2026-09-02", "grade": "B", "votes": 1.0},
+                    {"date": "2026-09-03", "grade": "A+", "votes": 2.0},
+                ],
                 "backtest": {"rule_return": 0.05},
+            }
+        ),
+        encoding="utf-8",
+    )
+    # A nightly record for 09-03 said A, not the A+ the replay gives it: the
+    # row must carry what the desk said that night and be marked as said.
+    rec = tmp_path / "desk" / "asof=2026-09-03"
+    rec.mkdir(parents=True)
+    (rec / "desk.json").write_text(
+        json.dumps(
+            {
+                "session": "2026-09-03",
+                "grades": {
+                    "SNDK": {"grade": "A", "votes": 2.0, "stances": {"technical": 1}}
+                },
             }
         ),
         encoding="utf-8",
@@ -443,7 +459,13 @@ async def test_the_history_endpoint_reads_the_nightly_file(tmp_path, monkeypatch
         )
     assert found.status_code == 200
     assert found.json()["ticker"] == "SNDK"
-    assert found.json()["rows"][0]["grade"] == "A+"
+    rows = {r["date"]: r for r in found.json()["rows"]}
+    assert rows["2026-09-03"]["grade"] == "A"
+    assert rows["2026-09-03"]["stances"] == {"technical": 1}
+    assert rows["2026-09-03"]["said"] is True
+    assert rows["2026-09-02"]["grade"] == "B"
+    assert rows["2026-09-02"]["said"] is False
+    assert [r["grade"] for r in found.json()["rows"]] == ["B", "A"]
     assert lower.json()["ticker"] == "SNDK"
     assert missing.status_code == 404
 
