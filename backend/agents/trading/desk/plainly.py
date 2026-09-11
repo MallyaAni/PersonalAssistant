@@ -517,9 +517,9 @@ def _level_words(side: str, kind: float, level: float, distance: float) -> str |
     k = int(kind)
     if side == "support":
         what = "a swing low" if k == KIND_SWING else LEVEL_KIND_WORDS.get(k)
-        return f"nearest support is {pct:.0f}% below the price — {what}"
+        return f"nearest support is {pct:.1f}% below the price — {what}"
     what = "a swing high" if k == KIND_SWING else LEVEL_KIND_WORDS.get(k)
-    return f"nearest resistance is {pct:.0f}% above the price — {what}"
+    return f"nearest resistance is {pct:.1f}% above the price — {what}"
 
 
 # Every reading the desk used for one name, in plain words, with nothing
