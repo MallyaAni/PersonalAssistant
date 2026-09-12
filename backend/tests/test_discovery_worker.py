@@ -21,6 +21,7 @@ from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.schedule import Cadence
 from backend.discovery.sources_repository import DiscoverySourceRepository
+from backend.models.auth import UserAccount
 from backend.models.discovery import DiscoveryInterest
 from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
 from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
@@ -68,6 +69,15 @@ def _event(external_id: str, title: str) -> DiscoveredEvent:
     )
 
 
+# The producer only enqueues sweeps for a user who has an account, so a worker
+# test has to look like a person rather than like the fixture residue that
+# check exists to make inert.
+async def _account(session, user_id: str) -> None:
+    if await session.get(UserAccount, user_id) is None:
+        session.add(UserAccount(user_id=user_id, username=user_id, password_hash="x"))
+        await session.commit()
+
+
 async def _cleanup(user_id: str) -> None:
     async with AsyncSessionLocal() as session:
         schedules = (
@@ -95,6 +105,9 @@ async def _cleanup(user_id: str) -> None:
         await session.execute(
             delete(DiscoveryInterest).where(DiscoveryInterest.user_id == user_id)
         )
+        await session.execute(
+            delete(UserAccount).where(UserAccount.user_id == user_id)
+        )
         await session.commit()
 
 
@@ -120,6 +133,7 @@ async def test_a_due_schedule_produces_one_completed_run(monkeypatch):
                 user_id, "jazz", 3, "user_explicit"
             )
             runs = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await runs.upsert_schedule(
                 user_id,
                 Cadence(
@@ -177,6 +191,7 @@ async def test_enqueueing_twice_does_not_queue_a_second_sweep(monkeypatch):
     try:
         async with AsyncSessionLocal() as session:
             runs = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await runs.upsert_schedule(
                 user_id,
                 Cadence(

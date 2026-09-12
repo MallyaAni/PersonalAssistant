@@ -15,12 +15,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.discovery.schedule import Cadence, next_run_at
+from backend.models.auth import UserAccount
 from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
 
 # How long a claimed redelivery is held before another worker may take it. Long
 # enough to cover a bridge that is slow rather than absent, short enough that a
 # worker killed mid-attempt does not strand the digest for the rest of its life.
 _DELIVERY_CLAIM_SECONDS = 120
+
+# How many due schedules one producer pass may turn into runs. The pass holds a
+# row lock on every schedule it selects, so an unbounded select makes one
+# transaction as long as the user base; the leftovers are due on the next pass a
+# moment later, and the consumer is one-run-at-a-time regardless.
+MAX_ENQUEUED_PER_PASS = 200
 
 
 class DiscoveryRunRepository:
@@ -83,12 +90,28 @@ class DiscoveryRunRepository:
         self, now: datetime | None = None
     ) -> list[dict[str, Any]]:
         moment = now or datetime.now(UTC)
+        # Only for someone who actually has an account. A schedule outlives the
+        # thing that made it: test fixtures and deleted users leave enabled rows
+        # behind, and the producer cannot tell them from a person. On
+        # 2026-09-12 ten such rows were live in production against eighteen real
+        # accounts, and the worker had been sweeping them - real web-search
+        # credits, on a daily and weekly cadence, for user ids that exist in no
+        # account table. Nothing was wrong with any single component; the
+        # schedule table simply had no owner check.
         stmt = (
             select(DiscoverySchedule)
             .where(
                 DiscoverySchedule.enabled.is_(True),
                 DiscoverySchedule.next_run_at <= moment,
+                select(UserAccount.user_id)
+                .where(
+                    UserAccount.user_id == DiscoverySchedule.user_id,
+                    UserAccount.is_active.is_(True),
+                )
+                .exists(),
             )
+            .order_by(DiscoverySchedule.next_run_at.asc())
+            .limit(MAX_ENQUEUED_PER_PASS)
             .with_for_update(skip_locked=True)
         )
         schedules = (await self.session.execute(stmt)).scalars().all()
@@ -380,10 +403,21 @@ class DiscoveryRunRepository:
     # The producer slept a fixed interval, so a slot at 17:10:00 was noticed
     # somewhere in the following minute. Sleeping until the slot instead makes
     # the sweep start when it was asked to.
+    #
+    # Scoped to schedules the producer would actually enqueue. Left unscoped it
+    # would answer with an ownerless row's slot, which `enqueue_due_runs` then
+    # declines to advance - so the minimum stays in the past forever and the
+    # worker never sleeps past its idle floor again.
     async def next_due_at(self) -> datetime | None:
         value = await self.session.scalar(
             select(func.min(DiscoverySchedule.next_run_at)).where(
-                DiscoverySchedule.enabled.is_(True)
+                DiscoverySchedule.enabled.is_(True),
+                select(UserAccount.user_id)
+                .where(
+                    UserAccount.user_id == DiscoverySchedule.user_id,
+                    UserAccount.is_active.is_(True),
+                )
+                .exists(),
             )
         )
         return value

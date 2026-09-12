@@ -75,6 +75,16 @@ class Readable:
     # Describing one anyway produced a delivered find whose link opened a
     # city-wide search instead of the event it named. Defaults to False.
     lists_many: bool = False
+    # True only when the page states who may attend and an approved fact
+    # plainly rules this person out. An embedding cannot represent this:
+    # no vector of an interest is far from an event that excludes the person
+    # holding it. Defaults to False, so a page that names no audience, a
+    # person with no facts on file, and a failed call all keep the find -
+    # over-exclusion is the failure this question is most likely to cause.
+    audience_rules_out: bool = False
+    # The page's own words that caused it, kept so a drop can be explained
+    # rather than only counted. Empty whenever nothing was dropped.
+    stated_audience: str = ""
 
 
 _SCHEMA: dict[str, Any] = {
@@ -134,9 +144,36 @@ _LISTING_SCHEMA: dict[str, Any] = {
     "properties": {"lists_many": {"type": "boolean"}},
 }
 
+# How much of the person's approved context the audience judge sees. The
+# reader already bounds each statement and the count of them; this is the
+# belt-and-braces bound on the rendered block, so one long memory cannot grow
+# a per-find prompt.
+MAX_FACTS_CHARS = 1_200
+
+# How much of the page's stated audience is kept. Long enough for a sentence
+# saying who may attend, short enough that it cannot carry a page into a log.
+MAX_AUDIENCE_CHARS = 200
+
+# The reading comes before the verdict, and the order is load-bearing rather
+# than cosmetic: a decision field answered first is a guess the rest of the
+# object then justifies. Measured here 2026-09-12 - asked for the verdict
+# alone, a wine festival stating no restriction was ruled out 3/3 for someone
+# whose fact was that they do not drink.
+_AUDIENCE_SCHEMA: dict[str, Any] = {
+    "title": "EventAudience",
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["stated_audience", "rules_out"],
+    "properties": {
+        "stated_audience": {"type": "string", "maxLength": MAX_AUDIENCE_CHARS},
+        "rules_out": {"type": "boolean"},
+    },
+}
+
 _PROMPT = load("scout/describe")
 _LOCATE_PROMPT = load("scout/locate")
 _LISTING_PROMPT = load("scout/listing")
+_AUDIENCE_PROMPT = load("scout/audience")
 
 # Sent only to a writer whose engine enforces no grammar, where the shape has
 # to be asked for in words. Deliberately not in describe.md: folded into the
@@ -252,6 +289,53 @@ class EventDescriber:
         prompt = _LISTING_PROMPT.format(title=title, source=source[:MAX_SOURCE_CHARS])
         return await self._page_verdict(prompt, _LISTING_SCHEMA, "lists_many")
 
+    # The page's own words saying who may attend, when an approved fact rules
+    # this person out of them - and "" whenever it does not, which is the
+    # answer in every other case including a failed call. Returning the quoted
+    # words rather than a boolean is what lets the caller refuse a verdict with
+    # no evidence behind it, and is what a person is owed if they ask why a
+    # find never reached them.
+    #
+    # Asked separately for the reason locate.md was split out of describe.md:
+    # one small model holding a writing task and a judgement at once does both
+    # worse. Asked only when there are facts to judge against, so an account
+    # with no memory spends nothing here.
+    async def _audience_rules_out(self, title: str, source: str, facts: str) -> str:
+        if not facts or not source:
+            return ""
+        judge = self.structured or self.writer
+        if judge is None:
+            return ""
+        prompt = _AUDIENCE_PROMPT.format(
+            title=title,
+            source=source[:MAX_SOURCE_CHARS],
+            facts=facts[:MAX_FACTS_CHARS],
+        )
+        try:
+            result = await asyncio.to_thread(
+                judge.chat,
+                [{"role": "user", "content": prompt}],
+                # Room for a quoted sentence as well as the verdict.
+                120,
+                _AUDIENCE_SCHEMA,
+                0.0,
+            )
+            answer = json.loads(result["content"])
+        except Exception:
+            # Fail open, like every other page verdict: a judge that is down
+            # must cost nobody a find.
+            return ""
+        if answer.get("rules_out") is not True:
+            return ""
+        # The verdict alone is not enough to act on. A restriction the model
+        # could not quote from the page is one it inferred, and inferring is
+        # the failure this whole question is most likely to produce - a taste
+        # read as an eligibility bar, an attribute read off a name. Requiring
+        # the evidence puts that rule in code rather than asking the prompt to
+        # hold it twice.
+        stated = str(answer.get("stated_audience") or "").strip()
+        return stated[:MAX_AUDIENCE_CHARS]
+
     # One writer's answer, parsed - or None when the call failed or returned
     # something other than JSON. Validation happens on the caller.
     async def _ask(self, writer: TextWriter, prompt: str) -> dict | None:
@@ -297,6 +381,7 @@ class EventDescriber:
         today: date | None = None,
         place: str | None = None,
         url: str | None = None,
+        facts: str = "",
     ) -> Readable:
         # The source's own title still prepares the prompt and still stands in
         # when there is no model answer at all. That is not a rewriting of what
@@ -313,6 +398,21 @@ class EventDescriber:
             return Readable(title=cleaned, description=None, lists_many=True)
 
         elsewhere = await self._located_elsewhere(cleaned, source, place, url)
+
+        # Asked before the description is written, and answered from the page
+        # rather than the snippet, because a stated audience is usually said
+        # once and in the page's own words. Returning here also saves the
+        # description call on a find the caller is about to drop.
+        stated = await self._audience_rules_out(cleaned, source, facts)
+        if stated:
+            return Readable(
+                title=cleaned,
+                description=None,
+                located_elsewhere=elsewhere,
+                audience_rules_out=True,
+                stated_audience=stated,
+            )
+
         prompt = _PROMPT.format(
             title=cleaned,
             source=source[:MAX_SOURCE_CHARS],

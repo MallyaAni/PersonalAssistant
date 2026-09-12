@@ -24,7 +24,7 @@ sweep behaves exactly as it did before this module existed.
 import json
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.discovery_feedback import DiscoverySentFind
@@ -38,6 +38,37 @@ MAX_REACTIONS_READ = 60
 # signal; a long tail of old thumbs would crowd out the approved facts the
 # context exists to carry.
 MAX_STATEMENTS = 6
+
+# How many times one find may be sent before the repeat fill stops offering it.
+# A digest that repeats a good find is better than a silent one; the same five
+# events every day is neither, and that is what no cap produced. Measured on
+# live rows 2026-09-12: one find had reached arsalon 21 times, ani.mallya 12,
+# ibraa 13 and jenos1 11, and jenos1's last four digests were repeats end to
+# end - every selected item carried shortlist_rank -1, meaning nothing that day
+# came from the sweep at all.
+MAX_REPEAT_SENDS = 3
+
+
+# How many times each find has already been sent to this user, by item digest.
+#
+# `discovery_sent_finds` is the only record of a *send*. A seen item's
+# `announced_at` deliberately keeps its first timestamp, so it cannot count
+# repeats, and the label column is sealed with a fresh nonce per row, so it
+# cannot be grouped. The digest is plaintext and indexed alongside the user
+# (`ix_discovery_sent_find_user`), which is what makes this one grouped query.
+#
+# Fails soft like everything else here: an unreadable table means the fill
+# behaves exactly as it did before the cap existed.
+async def send_counts(session: AsyncSession, user_id: str) -> dict[str, int]:
+    rows = await session.execute(
+        select(DiscoverySentFind.item_digest, func.count())
+        .where(
+            DiscoverySentFind.user_id == user_id,
+            DiscoverySentFind.item_digest.is_not(None),
+        )
+        .group_by(DiscoverySentFind.item_digest)
+    )
+    return {digest: int(count) for digest, count in rows if digest}
 
 
 @dataclass(frozen=True, slots=True)

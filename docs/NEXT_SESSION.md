@@ -35,6 +35,70 @@ read/live-read/brief functional suites 7 passed; `npx tsc --noEmit` clean.
 `value_now` exercised against the real store: 84 of 93 quoted names ranked
 with stances. Deployed `8df5a240`, post-deploy cheap checks `ok (cheap)` —
 search chain untouched, so the credit-consuming sweep correctly did not run.
+## 2026-09-12 — why every Scout digest was the same five events (not deployed)
+
+Reported as "crappy event recommendations, especially singles events even
+though she said she is not single". Traced in the live database before any
+edit. Four separate defects, three of them affecting every user.
+
+**The digests were repeats, not recommendations.** `_repeat_fill` re-offers
+still-upcoming finds so a quiet day is not silent. It had no bound. Novelty
+suppresses everything already seen, so on any account with history the novel
+side is empty most days and the fill supplies the whole digest. Live counts of
+one find sent to one person: **arsalon 21, ibraa 13, ani.mallya 12, jenos1
+11**. Every selected item in jenos1's last four digests carried
+`shortlist_rank -1`, meaning nothing in them came from that day's sweep.
+Capped at `MAX_REPEAT_SENDS = 3`, counted from `discovery_sent_finds` (the only
+record of a *send*: a seen item's `announced_at` keeps its first timestamp, and
+the label column is sealed per row so it cannot be grouped). There was no test
+for `_repeat_fill` at all; there is one now.
+
+**A stated audience was read by nothing.** jenos1 told the assistant on
+2026-08-24 "I am not single and I am an adult"; it is stored, approved, and
+does reach the sweep. Nothing acted on it, because ranking cannot: no embedding
+of an interest is far from an event that excludes the person holding it, and
+`reranking.py` records measuring the reranker refusing to exclude and, when
+strengthened, over-excluding on a control with no relevant fact. Built the fix
+that file names: `prompts/scout/audience.md`, a focused per-find call in the
+shape of `scout/locate`, dropped in code in `_make_readable`.
+
+The schema reads before it decides — `stated_audience` then `rules_out` — and
+the caller refuses a verdict with no quoted evidence. That ordering is the fix,
+not decoration: asked for the verdict alone, a wine festival stating no
+restriction was ruled out **3/3** for someone whose fact was that they do not
+drink. With the evidence gate, `functional/test_audience_behaviour.py` is
+**7 passed** — the singles case excluded, and four keep cases held at 0/3
+including the same page with no relevant fact on file.
+
+**Ten ownerless schedules were being swept for real.** `discovery_schedules`
+held enabled, due rows for `del_*`, `sch_*`, `api_del_*`, `scout_probe_v4` —
+ids in no account table, left by tests run against this database. The worker
+could not tell them from a person: 51 runs, 15 requests spent each, on a daily
+and weekly cadence. `enqueue_due_runs` and `next_due_at` now require an active
+`user_accounts` row, and the pass is bounded at 200. This makes existing
+residue inert without deleting anything.
+
+**Two smaller ones.** `discovery_seen_items.embedding` had no vector index
+while every sibling embedding column has one, so both novelty queries were a
+sequential scan per candidate over a table that only grows — migration
+`20260912_0020`. And the hourly maintenance cycle ran without `--reembed`, so
+it inventoried 180 stale vectors and fixed none, reporting `attention` forever
+with `updated_total: 0`; the compose command now passes it.
+
+VERIFIED in a probe clone of `7d8b7d8d` on spark1 with the changed files
+mounted, against the live schema. Unit suite **3377 passed, 24 failed** against
+a measured baseline of **3369 passed, 24 failed** on the unmodified tree — the
+same 24 (access_requests, admin_boundary, model_gate, search_budget; missing
+Redis mount, the documented gate trap), and 8 more passing, which are the new
+tests. `functional/test_audience_behaviour.py` 7 passed.
+`functional/test_prompt_behaviour.py` 22 passed, 2 failed:
+`test_memory_capture_does_not_take_someone_elses_preference` fails identically
+on the baseline tree, and the diagram case passed on re-run (model variance).
+
+UNVERIFIED: deployment, and the migration against production. The index is
+additive and safe under the running build, so apply it ahead of the deploy per
+the additive-migration trap. Not deployed and not pushed — opencode held
+uncommitted work in `~/anios` at the time.
 
 ## 2026-09-12 — desk cancellation, session-open, and text-bound fixes (not deployed)
 

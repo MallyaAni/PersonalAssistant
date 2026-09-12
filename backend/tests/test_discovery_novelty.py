@@ -32,6 +32,7 @@ from backend.discovery.relevance import (
 from backend.discovery.runner import DiscoveryRunner, events_from_digest
 from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.discovery.types import DiscoveryProfile, Interest
+from backend.models.discovery_feedback import DiscoverySentFind
 from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
 
 
@@ -196,6 +197,9 @@ async def _cleanup(user_id: str) -> None:
         await session.execute(
             delete(DiscoverySource).where(DiscoverySource.user_id == user_id)
         )
+        await session.execute(
+            delete(DiscoverySentFind).where(DiscoverySentFind.user_id == user_id)
+        )
         await session.commit()
 
 
@@ -297,6 +301,80 @@ async def test_a_repeated_sweep_over_an_unchanged_feed_reoffers_still_upcoming()
                 "Jazz at the Green",
                 "Jazz brunch",
             }
+    finally:
+        await _cleanup(user_id)
+
+
+# The re-offer is a courtesy for a quiet day, not a rotation. Left unbounded it
+# becomes the whole digest: novelty suppresses everything already seen, so on
+# an account with any history there is nothing new most days and the fill
+# supplies every line. Measured on live rows 2026-09-12 - one find had reached
+# arsalon 21 times, ani.mallya 12, ibraa 13, jenos1 11, and jenos1's last four
+# digests contained nothing that came from that day's sweep at all.
+@pytest.mark.asyncio
+async def test_a_find_already_sent_its_fill_of_times_is_not_reoffered():
+    from backend.discovery.feedback_loop import MAX_REPEAT_SENDS
+
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    events = (_event("evt-1", "Jazz at the Green"), _event("evt-2", "Jazz brunch"))
+    try:
+        async with AsyncSessionLocal() as session:
+            sources = DiscoverySourceRepository(session)
+            source = await sources.upsert_source(
+                user_id, "ics", "https://example.org/feed.ics"
+            )
+            stub = _StubSource(source.id, events)
+            runner = DiscoveryRunner(
+                sources=sources,
+                seen=SeenItemRepository(session),
+                embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+                adapter_factory=lambda _source, _budget: stub,
+            )
+            profile = DiscoveryProfile(
+                interests=(
+                    Interest(
+                        id="i1", label="jazz", strength=3, provenance="user_explicit"
+                    ),
+                ),
+                localities=(),
+            )
+            first = await runner.sweep(user_id, profile, now=_NOW)
+            assert len(first.selected) == 2
+
+            # One of the two has now been delivered its full allowance; the
+            # other has been sent once. Delivery is what writes these rows, so
+            # the cap counts what the person actually received.
+            by_title = {
+                item.event.title: item.candidate.digest for item in first.selected
+            }
+            capped = by_title["Jazz at the Green"]
+            spared = by_title["Jazz brunch"]
+            for index in range(MAX_REPEAT_SENDS):
+                session.add(
+                    DiscoverySentFind(
+                        user_id=user_id,
+                        item_digest=capped,
+                        message_guid=f"guid-capped-{index}-{uuid.uuid4().hex[:8]}",
+                        sent_at=_NOW,
+                    )
+                )
+            session.add(
+                DiscoverySentFind(
+                    user_id=user_id,
+                    item_digest=spared,
+                    message_guid=f"guid-spared-{uuid.uuid4().hex[:8]}",
+                    sent_at=_NOW,
+                )
+            )
+            await session.commit()
+
+            second = await runner.sweep(user_id, profile, now=_NOW)
+
+            titles = {item.event.title for item in second.selected}
+            # The quiet day still fills — the point of the fallback survives.
+            assert "Jazz brunch" in titles
+            # But the one they have already been sent three times stops coming.
+            assert "Jazz at the Green" not in titles
     finally:
         await _cleanup(user_id)
 

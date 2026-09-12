@@ -38,8 +38,10 @@ from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
 from backend.discovery.feedback_loop import (
+    MAX_REPEAT_SENDS,
     adjusted_strengths,
     reacted_finds,
+    send_counts,
     reaction_statements,
 )
 from backend.discovery.fetching import (
@@ -534,8 +536,12 @@ class DiscoveryRunner:
             place = primary.label
             if primary.region:
                 place = f"{primary.label}, {primary.region}"
-        selected = await self._make_readable(selected, budget, moment, place)
-        notable = await self._make_readable(notable, budget, moment, place)
+        # The same approved context that aimed the queries and ordered the
+        # shortlist. Deliberately the same, for the reason stated where it is
+        # read: a sweep must not search for one person and screen for another.
+        facts = context.render()
+        selected = await self._make_readable(selected, budget, moment, place, facts)
+        notable = await self._make_readable(notable, budget, moment, place, facts)
 
         # Everything considered is recorded, but only what was selected counts
         # as announced. An item ranked out stays eligible for a later sweep,
@@ -592,6 +598,7 @@ class DiscoveryRunner:
         budget: RequestBudget | None = None,
         now: datetime | None = None,
         place: str | None = None,
+        facts: str = "",
     ) -> tuple[RankedCandidate, ...]:
         today = (now or datetime.now(UTC)).date()
         readable: list[RankedCandidate] = []
@@ -599,7 +606,7 @@ class DiscoveryRunner:
             event = item.event
             source = event.summary or await self._page_text(event.url, budget)
             described = await self.describer.describe(
-                event.title, source, today, place, event.url
+                event.title, source, today, place, event.url, facts
             )
             # The page is a directory of many happenings, not one. A find
             # described off a listing names an event its link cannot honor -
@@ -610,6 +617,14 @@ class DiscoveryRunner:
             # checks miss whatever the snippet omits; the page is where the
             # real location lives, and this is the only stage that reads it.
             if described.located_elsewhere:
+                continue
+            # The page states who it is for and an approved fact rules this
+            # person out. Ranking cannot reach this: an embedding of an
+            # interest sits just as close to an event that excludes the person
+            # holding it, and the reranker was measured refusing to act on the
+            # question at all. Set only when the judge could quote the page's
+            # own words, so a restriction it inferred cannot drop anything.
+            if described.audience_rules_out:
                 continue
             # Read before the model is trusted with it. The describe call does
             # ask — "Today is {today}, set already_happened when a deadline has
@@ -750,6 +765,13 @@ class DiscoveryRunner:
     # is new; this only fills what novelty left empty, re-scoring announced
     # items against the same interests so only the still-relevant ones return,
     # and spreading the result so a repeated cluster does not dominate.
+    #
+    # A find already sent `MAX_REPEAT_SENDS` times is not offered again. Without
+    # that bound this is not a fallback but the digest itself: novelty suppresses
+    # everything already seen, so on an account with any history the novel side
+    # is empty most days and the fill supplies every line. What the person then
+    # receives is the same handful of events for as long as they remain
+    # upcoming, which reads as an assistant that has stopped looking.
     async def _repeat_fill(
         self,
         user_id: str,
@@ -768,7 +790,21 @@ class DiscoveryRunner:
         if not repeats:
             return selected
         chosen = {item.candidate.digest for item in selected}
-        candidates = tuple(c for c in repeats if c.digest not in chosen)
+        # Read once per sweep rather than per candidate: one grouped query on an
+        # indexed column, against a table that only this fill needs to consult.
+        try:
+            already_sent = await send_counts(self.seen.session, user_id)
+        except Exception:
+            # The cap is a quality bound, not a safety one. Losing it must not
+            # cost the person their digest, so an unreadable table falls back to
+            # the unbounded behaviour rather than to an empty fill.
+            already_sent = {}
+        candidates = tuple(
+            c
+            for c in repeats
+            if c.digest not in chosen
+            and already_sent.get(c.digest, 0) < MAX_REPEAT_SENDS
+        )
         if not candidates:
             return selected
         ranked = ranker.rank(

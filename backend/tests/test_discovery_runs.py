@@ -13,9 +13,21 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.schedule import Cadence, next_run_at
+from backend.models.auth import UserAccount
 from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
 
 _ZONE = "America/New_York"
+
+
+# Give a test user an account, because the producer only enqueues sweeps for
+# people who have one. Before that check existed, a schedule left behind by a
+# test was indistinguishable from a person's and the worker swept it for real:
+# ten such rows were live in production on 2026-09-12, spending web-search
+# credits daily. Idempotent, so a test may call it for an id twice.
+async def _account(session, user_id: str) -> None:
+    if await session.get(UserAccount, user_id) is None:
+        session.add(UserAccount(user_id=user_id, username=user_id, password_hash="x"))
+        await session.commit()
 
 
 def _weekly(hour: int = 9, weekday: int = 4) -> Cadence:
@@ -81,12 +93,14 @@ async def test_schedule_round_trips_and_arms_a_future_slot():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             saved = await repo.upsert_schedule(user_id, _weekly())
 
             assert saved["cadence"] == "weekly"
             assert saved["next_run_at"] > datetime.now(UTC)
             assert (await repo.get_schedule(user_id))["hour"] == 9
 
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily(hour=7))
             assert (await repo.get_schedule(user_id))["cadence"] == "daily"
     finally:
@@ -101,6 +115,7 @@ async def test_due_slot_produces_exactly_one_run_however_often_it_is_polled():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily(hour=9))
             await _force_due(session, user_id)
 
@@ -124,6 +139,7 @@ async def test_concurrent_workers_cannot_claim_the_same_run():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily())
             await _force_due(session, user_id)
             await repo.enqueue_due_runs()
@@ -149,6 +165,7 @@ async def test_expired_lease_is_reclaimable_and_resumes_prior_work():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily())
             await _force_due(session, user_id)
             await repo.enqueue_due_runs()
@@ -179,6 +196,7 @@ async def test_delivery_is_recorded_exactly_once():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily())
             await _force_due(session, user_id)
             await repo.enqueue_due_runs()
@@ -203,6 +221,7 @@ async def test_lease_renewal_requires_the_owning_worker():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily())
             await _force_due(session, user_id)
             await repo.enqueue_due_runs()
@@ -222,6 +241,7 @@ async def test_cancellation_removes_a_run_from_the_claimable_set():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily())
             await _force_due(session, user_id)
             queued = await repo.enqueue_due_runs()
@@ -244,6 +264,7 @@ async def test_cancel_and_read_are_scoped_to_the_owning_user():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, owner)
             await repo.upsert_schedule(owner, _daily())
             await _force_due(session, owner)
             queued = await repo.enqueue_due_runs()
@@ -262,6 +283,7 @@ async def test_terminal_states_are_recorded_with_the_lease_released():
     try:
         async with AsyncSessionLocal() as session:
             repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await repo.upsert_schedule(user_id, _daily())
             await _force_due(session, user_id)
             await repo.enqueue_due_runs()
@@ -304,6 +326,52 @@ async def _expire_lease(session, run_id: str) -> None:
     await session.commit()
 
 
+# A schedule whose user has no account is not a person's, and the producer
+# must not spend a sweep on it. Test fixtures and deleted users both leave
+# these behind; in production on 2026-09-12 ten of them were enabled, due, and
+# being swept for real against eighteen actual accounts.
+@pytest.mark.asyncio
+async def test_a_schedule_with_no_account_is_never_enqueued():
+    ghost = f"ghost_{uuid.uuid4().hex[:12]}"
+    real = f"run_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoveryRunRepository(session)
+            # Deliberately no account for the ghost, one for the person.
+            await repo.upsert_schedule(ghost, _daily())
+            await _account(session, real)
+            await repo.upsert_schedule(real, _daily())
+            await _force_due(session, ghost)
+            await _force_due(session, real)
+
+            created = await repo.enqueue_due_runs()
+
+            assert not [run for run in created if run["user_id"] == ghost]
+            assert len([run for run in created if run["user_id"] == real]) == 1
+            assert await repo.list_runs(ghost) == []
+    finally:
+        await _cleanup(ghost, real)
+
+
+# The producer sleeps until the next slot it would actually act on. Counting a
+# schedule it will never enqueue leaves a permanently past minimum, and the
+# worker then never sleeps beyond its idle floor again.
+@pytest.mark.asyncio
+async def test_an_ownerless_schedule_does_not_hold_the_due_clock_open():
+    ghost = f"ghost_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoveryRunRepository(session)
+            await repo.upsert_schedule(ghost, _daily())
+            await _force_due(session, ghost)
+
+            due = await repo.next_due_at()
+
+            assert due is None or due > datetime.now(UTC)
+    finally:
+        await _cleanup(ghost)
+
+
 async def _cleanup(*user_ids: str) -> None:
     async with AsyncSessionLocal() as session:
         await session.execute(
@@ -313,6 +381,9 @@ async def _cleanup(*user_ids: str) -> None:
             delete(DiscoverySchedule).where(
                 DiscoverySchedule.user_id.in_(list(user_ids))
             )
+        )
+        await session.execute(
+            delete(UserAccount).where(UserAccount.user_id.in_(list(user_ids)))
         )
         await session.commit()
 
@@ -372,6 +443,7 @@ async def test_advancing_a_schedule_keeps_its_minute():
     try:
         async with AsyncSessionLocal() as session:
             runs = DiscoveryRunRepository(session)
+            await _account(session, user_id)
             await runs.upsert_schedule(
                 user_id,
                 Cadence(cadence="daily", hour=9, minute=45, weekday=0, timezone=_ZONE),
@@ -404,6 +476,7 @@ async def test_the_producer_waits_for_the_slot_rather_than_a_fixed_interval():
         async with AsyncSessionLocal() as session:
             runs = DiscoveryRunRepository(session)
             assert await runs.next_due_at() is None or True
+            await _account(session, user_id)
             await runs.upsert_schedule(
                 user_id,
                 Cadence(cadence="daily", hour=17, minute=10, weekday=0, timezone=_ZONE),

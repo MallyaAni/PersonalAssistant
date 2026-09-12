@@ -1215,6 +1215,14 @@ services:
       - -m
       - backend.cli.run_memory_maintenance
       - --all-users
+      # Without this the cycle only *inventories* stale vectors and reports
+      # them, so the report says "attention" every hour forever and nothing
+      # ever fixes it. Live on 2026-09-12: 180 stale embeddings (88 entities,
+      # 88 procedures, 2 tool descriptors, 1 chunk, 1 summary) held at exactly
+      # that number across consecutive cycles, with `updated_total: 0` and
+      # `dry_run: true` each time. A permanently red check cannot signal
+      # anything, which is worse than not checking.
+      - --reembed
       - --strict
       - --interval-seconds
       - "3600"

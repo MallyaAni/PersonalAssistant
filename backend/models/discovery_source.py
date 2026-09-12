@@ -98,6 +98,16 @@ class DiscoverySeenItem(Base):
         # novelty; the embedding handles the same event relisted under a new id.
         UniqueConstraint("user_id", "item_digest", name="uq_discovery_seen_item"),
         Index("ix_discovery_seen_user_time", "user_id", "first_seen_at"),
+        # Both novelty questions - is this the same happening, is this the same
+        # kind of thing this account always gets - are cosine distances over
+        # everything this user has ever been shown. Without this they are a
+        # sequential scan per candidate, over a table that only ever grows.
+        Index(
+            "ix_discovery_seen_items_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
