@@ -2,6 +2,63 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-12 - The sixth desk review's four P1s and remaining P2s, fixed and measured
+
+Deploy `6f70007a`.
+
+**P1 #1 - a failed cancellation can no longer be journaled as done.**
+`cancel_orders` previously deleted open orders by `client_order_id` and let
+a broker refusal fall through to a generic exception the balancer's
+green-day-skip swallowed, so the journal recorded a cancellation that never
+happened. It now matches the broker's own order UUID, raises
+`AlpacaTradingError` on a genuine refusal, and the balancer's
+`except -> continue` can no longer turn a failed cancel into a journaled
+skip. Pinned by three tests in `test_trading_paper.py`.
+
+**P1 #2 - the backtest now walks the live execution rules.** The live desk
+blocks buys on a band-reversal, sells on the close, and skips a sell into a
+green open; the backtest walked none of them. `simulate.LIVE_POLICY` carries
+all three, and the curve block and the scorecard run it, so the track record
+and the live strategy obey the same fills. Parity test added.
+
+**P1 #3 - a reported net loss is no longer rounded up to zero.**
+`release_tone`'s schema bounds for net income and gross margin were
+non-negative, so a loss was clamped to zero. The bounds are now signed and a
+functional test asserts a negative net income stays negative on the real
+model.
+
+**P1 #4 - the board no longer asks for an order the strategy refuses.**
+The paper planner holds every buy-side order for a name whose daily rejects
+its upper Bollinger band, but the board derived buy/add from the levels and
+told the operator to place it. The board now reports the blocker's own
+verdict (`blocked` + reason) and the row has no done button.
+
+**P2s closed** - session dates now derive from `America/New_York` (were UTC
+/ a hard-coded -4h that ignored DST); the dip rule's band threshold is
+corrected from `<= -0.80` (inside the band) to `<= 0.20`, and a trim's freed
+weight is not redeployed into the trimmed name; `index_returns` reads the
+store's real `adjusted_close` column (a non-existent `adj_close` was falling
+back to raw close, so the benchmark ignored splits); the desk chart's
+`line()` closes a segment on a missing value instead of drawing a straight
+bridge (the Sep 9 gap); and the dashboard wording names the real sizing (A+
+100% / A 75% / B 50%), states sells fill at the close of the deciding
+session, calls the weekly 21-EMA the 21-week average, and scrolls the board
+table horizontally instead of clipping at 390px.
+
+**Also shipped** - the C-brief checker's stability work: `_check_facts`
+includes the regime lines and book status (so a faithful brief no longer
+reads as invented), `_contradicts` drops a brief only when a majority of
+three independent checks says it contradicts, and the writer prompt forbids
+position-sizing language for a name not in the book. `max_tokens` rose
+600 -> 900. Pinned by `desk_brief_check.md` and the brief functional suite
+(5/5 across repeated runs).
+
+Verified: unit gate 3370 passed / 19 skipped, routing gate 100 passed, ruff
+clean, tsc clean, desk read/live-read/brief functional suites green against
+the real model (7 tests). Post-deploy `6f70007a ok (cheap)` - backend
+through the gateway 401, `/health` 200.
+
+
 ## 2026-09-11 - The desk exits on the close and never into a name's own rally; the option walls reach the live drill-down; an 8-K's own numbers reach the fundamental analyst
 
 Three trading-desk changes shipped as deploy `c988172` (commits `f003b27`,

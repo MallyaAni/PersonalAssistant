@@ -1,7 +1,58 @@
 # Next session
 
-Verified state as of 2026-09-11. `deep-matter.com` serves from spark1.
+Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
+
+## 2026-09-12 — the sixth desk review's four P1s and remaining P2s, fixed and measured (DEPLOYED `6f70007a`)
+
+The sixth codex review of the trading desk returned four P1 findings and
+several P2s. All are fixed, each with a regression pin; the standing P2s
+are closed too. Full detail in the commit message; the short list:
+
+- **P1 #1 cancellation** — `cancel_orders` now matches the broker's own
+  order UUID and raises `AlpacaTradingError` on a genuine refusal, so the
+  balancer's `except → continue` can no longer journal a cancellation that
+  never happened. Three paper-trade tests pin it.
+- **P1 #2 backtest parity** — `simulate.LIVE_POLICY` (`block_overbought`,
+  `exit_at_close`, `green_day_skip`) now runs in the curve block and the
+  scorecard, so the track record and the live strategy obey the same fills.
+  Parity test in `test_market_daily.py`.
+- **P1 #3 earnings losses** — `release_tone`'s schema bounds for net
+  income / gross margin are now signed, so a reported loss is not rounded
+  up to zero. Functional pin: `test_a_reported_loss_stays_negative`.
+- **P1 #4 board blocker** — the board reports the band-reversal blocker's
+  own verdict (`blocked` + reason) instead of asking the operator to place
+  an order the strategy refuses. holdings + DeskPanel + API tests.
+- **P2 #5 session time** — `live_technical` and the green-day skip derive
+  the session date from `America/New_York` (was UTC / hard-coded −4h).
+- **P2 #6 research units** — the dip signal's `band_position <= 0.20` (was
+  `<= -0.80`, inside the band), and a trim's freed weight is not redeployed
+  into the trimmed name.
+- **P2 #7 missing data** — `index_returns` reads the store's
+  `adjusted_close` (was a non-existent `adj_close` falling back to raw
+  close); the desk chart's `line()` now closes a segment on a missing
+  value instead of bridging the gap (the Sep 9 bridge).
+- **P2 #8 wording** — sizing copy names A+ 100% / A 75% / B 50%, sells
+  fill at the close of the deciding session, the "weekly 21-day average"
+  is now the 21-week average (prompts, plainly, API comment), and the
+  board table scrolls horizontally instead of clipping at 390px.
+
+**Verification**: unit gate `3370 passed, 19 skipped` (~2m21s), routing
+gate `100 passed` (~8m24s), ruff clean, `tsc` clean; the desk read /
+live-read / brief functional suites pass against the real model (7 tests,
+including the brief suite's five-of-five across repeated runs). Deployed
+`6f70007a` from `~/deploy/anios`; post-deploy `2026-09-12T09:29:47Z
+6f70007a ok (cheap)` — backend through the gateway 401, `/health` 200;
+gateway + backend containers created 09:29:33Z.
+
+**Carried forward, still true**: the C-brief checker stability work is in
+this commit too — `_check_facts` includes regime lines and book status,
+`_contradicts` drops only on a majority of three checks, and
+`desk_brief.md` forbids position-sizing language for a name not in the
+book. Nothing outstanding for the desk; the nightly 19:30 run is expected
+to re-score the book's release financials with `release_tone/2` (the
+mechanism from `c988172`).
+
 
 ## 2026-09-11 — the desk exits on the close and never into a name's own rally, the option walls reach the live drill-down, and the fundamental analyst reads an 8-K's own numbers (DEPLOYED `c988172`; contains `f003b27` + `bc7e9aa` + `c988172`)
 
