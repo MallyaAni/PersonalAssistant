@@ -26,7 +26,12 @@ from backend.core.prompts import render
 # outlook is in the prose at the top, so the text is cut here and the cut
 # is recorded with the score.
 MAX_CHARS = 24_000
-PROMPT_VERSION = "release_tone/2"
+# A schema bound is part of the prompt contract, so a change to one must
+# bump this: the tone cache carries scores forward only while the stored
+# frame's prompt version matches, and a net loss clamped to zero by the
+# old bounds is still cached under "release_tone/2" until the version
+# moves and the nightly run re-scores the book.
+PROMPT_VERSION = "release_tone/3"
 
 _SYSTEM = render("trading/release_tone")
 

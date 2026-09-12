@@ -189,7 +189,14 @@ def test_a_green_name_is_not_sold_into_its_own_rally(tmp_path: Path, monkeypatch
 
     cancelled: list[str] = []
     fake_client = type(
-        "C", (), {"cancel_orders": lambda self, ids: cancelled.extend(ids)}
+        "C",
+        (),
+        {
+            "cancel_orders": lambda self, ids: (
+                cancelled.extend(ids),
+                {i: "cancelled" for i in ids},
+            )[1]
+        },
     )()
     from backend.market import alpaca_trading
 
@@ -201,7 +208,7 @@ def test_a_green_name_is_not_sold_into_its_own_rally(tmp_path: Path, monkeypatch
         )
     )
     # ADBE opens up (305 > 300 close), HPE opens down (51 < 52 close).
-    quotes = {"ADBE": {"last": 305.0}, "HPE": {"last": 51.0}}
+    quotes = {"ADBE": {"open": 305.0}, "HPE": {"open": 51.0}}
     market_balancer._green_day_skip(
         tmp_path, record, quotes, tmp_path / "intraday.log"
     )
@@ -254,7 +261,14 @@ def test_the_green_day_rule_is_quiet_outside_the_window(
 
     cancelled: list[str] = []
     fake_client = type(
-        "C", (), {"cancel_orders": lambda self, ids: cancelled.extend(ids)}
+        "C",
+        (),
+        {
+            "cancel_orders": lambda self, ids: (
+                cancelled.extend(ids),
+                {i: "cancelled" for i in ids},
+            )[1]
+        },
     )()
     from backend.market import alpaca_trading
 
@@ -266,7 +280,7 @@ def test_the_green_day_rule_is_quiet_outside_the_window(
         )
     )
     market_balancer._green_day_skip(
-        tmp_path, record, {"ADBE": {"last": 305.0}}, tmp_path / "intraday.log"
+        tmp_path, record, {"ADBE": {"open": 305.0}}, tmp_path / "intraday.log"
     )
 
     assert cancelled == []
@@ -274,3 +288,67 @@ def test_the_green_day_rule_is_quiet_outside_the_window(
     assert [p["client_order_id"] for p in back.pending] == [
         "anios-2026-09-10-sell-adbe-7"
     ]
+
+
+# A green name whose cancel the broker has not confirmed - the order is
+# still working and can still fill - must not be journaled as a deliberate
+# zero-fill hold: the state leaves it pending so the next reconcile records
+# what the broker actually did.
+def test_an_unconfirmed_cancel_is_not_journaled_as_a_hold(
+    tmp_path: Path, monkeypatch
+):
+    import datetime as dt
+
+    from backend.agents.trading.desk import paper
+
+    class _FakeDT(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return dt.datetime(2026, 9, 11, 14, 30, tzinfo=dt.timezone.utc)
+
+    monkeypatch.setattr(market_balancer, "datetime", _FakeDT)
+    _write_record(tmp_path, _record())
+    state = paper.PaperState()
+    state.pending = [
+        {
+            "client_order_id": "anios-2026-09-10-sell-adbe-7",
+            "symbol": "ADBE",
+            "side": "sell",
+            "qty": 33,
+            "session": "2026-09-10",
+            "reason": "leaves the book",
+        }
+    ]
+    paper.save_state(tmp_path, state)
+
+    fake_client = type(
+        "C",
+        (),
+        {
+            "cancel_orders": lambda self, ids: {i: "unconfirmed" for i in ids},
+        },
+    )()
+    from backend.market import alpaca_trading
+
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: fake_client)
+
+    record = json.loads(
+        (tmp_path / "desk" / "asof=2026-09-04" / "desk.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    market_balancer._green_day_skip(
+        tmp_path, record, {"ADBE": {"open": 305.0}}, tmp_path / "intraday.log"
+    )
+
+    back = paper.load_state(tmp_path)
+    # Still pending: the broker has not confirmed the cancel, so nothing is
+    # concluded and no zero-fill hold is journaled.
+    assert [p["client_order_id"] for p in back.pending] == [
+        "anios-2026-09-10-sell-adbe-7"
+    ]
+    assert not any(
+        e.get("client_order_id") == "anios-2026-09-10-sell-adbe-7"
+        and e.get("status") == paper.SKIPPED
+        for e in back.journal
+    )

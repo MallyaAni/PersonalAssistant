@@ -264,16 +264,20 @@ def _model_live_read(
 # prose, and a straight cut ends in the middle of a sentence and can drop
 # the long-horizon readings the model wrote last - the 200-day average is
 # exactly the fact the cut has been observed to remove. Cut at the last
-# sentence boundary that fits, and if even that would lose a required
-# reading, hand back the deterministic lines whole: a complete fallback
-# beats a truncated read that silently hides the SMA.
+# sentence boundary that fits, and if there is none (or cutting would lose
+# a required reading), hand back the deterministic lines whole: a complete
+# fallback beats a truncated read that silently hides the SMA or stops
+# mid-word.
 def _fit_live_read(features: dict[str, list[str]], read: str) -> str | None:
     """Return `read` cut to fit the page, falling back to the lines when it cannot."""
     if len(read) <= 1200:
         return read or None
     cut = read.rfind(". ", 0, 1200)
-    end = cut + 1 if cut >= 600 else 1200
-    fitted = read[:end]
+    if cut < 600:
+        # No sentence boundary fits: a raw twelve-hundred-character cut
+        # could land mid-word, so the complete deterministic lines stand in.
+        return _deterministic_read(features)
+    fitted = read[: cut + 1]
     if _live_read_gaps(features, fitted):
         return _deterministic_read(features)
     return fitted

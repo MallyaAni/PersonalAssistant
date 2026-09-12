@@ -144,32 +144,46 @@ class AlpacaTradingClient:
     #
     # The broker's cancel endpoint takes the order's broker id (a UUID),
     # not the client order id this desk chose, so the open orders are read
-    # back and matched by client order id before anything is cancelled. An
-    # id that no longer appears among the open orders is already gone -
-    # filled, expired or withdrawn by hand - and is skipped, not an error.
-    # A cancel the broker refuses raises, so a caller that journals an
-    # order as deliberately held only journals it when the withdrawal
-    # actually happened.
-    def cancel_orders(self, ids: list[str]) -> None:
-        """Cancel the desk's open orders by client order id; raise when a live one fails."""
+    # back and matched by client order id before anything is cancelled. The
+    # outcome of each requested id is returned so a caller that journals a
+    # deliberate hold can only do so when the broker confirmed the cancel:
+    # "cancelled" for a confirmed cancel, "unconfirmed" when the order is
+    # still working (a pending_cancel can still fill), and "already_gone"
+    # when the id is not among the open orders - filled, expired or
+    # withdrawn by hand, and never a hold to journal. A cancel the broker
+    # refuses raises, so the caller knows a live order it meant to withdraw
+    # is still out there.
+    def cancel_orders(self, ids: list[str]) -> dict[str, str]:
+        """Cancel the desk's open orders by client order id; report each outcome."""
         if not ids:
-            return
+            return {}
         open_orders = self.open_orders() or []
         by_client = {
             str(o.get("client_order_id") or ""): o
             for o in open_orders
             if o.get("client_order_id")
         }
+        outcomes: dict[str, str] = {}
         for client_id in ids:
             order = by_client.get(client_id)
             if order is None:
+                outcomes[client_id] = "already_gone"
                 continue
             broker_id = order.get("id")
             if not broker_id:
                 raise AlpacaTradingError(
                     f"{client_id}: open order has no broker id to cancel"
                 )
-            self._call("DELETE", f"/orders/{broker_id}")
+            deleted = self._call("DELETE", f"/orders/{broker_id}")
+            status = (
+                str(deleted.get("status") or "").lower()
+                if isinstance(deleted, dict)
+                else ""
+            )
+            outcomes[client_id] = (
+                "cancelled" if status in ("canceled", "cancelled") else "unconfirmed"
+            )
+        return outcomes
 
     # A whole-share market order for the next open.
     # A market order queued for the open. It is submitted after the close

@@ -291,11 +291,46 @@ class DeskNarrator:
         """Return the DeskBrief for an evidence text, or None."""
         if self.writer is None or not text.strip():
             return None
+        # A brief is written and checked, and a slip the checker catches is
+        # rewritten and re-checked, up to a bound. The engine is not
+        # strictly deterministic at temperature 0, so one bad sentence in a
+        # field can trip the checker on an otherwise good brief; a bounded
+        # rewrite fixes it while a genuinely wrong brief keeps contradicting
+        # and is dropped.
+        for attempt in range(3):
+            brief = self._write_brief(text, retry=attempt > 0)
+            if brief is None or brief.stance != stance_for(grade):
+                return None
+            if not self._contradicts(text, brief):
+                return brief
+        return None
+
+    # One write of the brief from the evidence, or None when the runtime is
+    # away or the answer does not fit the schema. A retry asks the model to
+    # stick strictly to the evidence and name the average or trend it means
+    # rather than generalising, because the contradictions the checker
+    # catches are a summary sentence that overstated one measurement.
+    def _write_brief(self, text: str, retry: bool = False) -> DeskBrief | None:
+        """Return the DeskBrief for an evidence text, or None."""
+        if self.writer is None or not text.strip():
+            return None
+        user = (
+            f"{text}\n\nThe previous brief was dropped because it stated "
+            "something the evidence disagrees with. The desk's own fact "
+            "contract, which every sentence of the brief must agree with, "
+            f"is:\n{_check_facts(text)}\n\nRewrite the brief so every "
+            "direction, comparison and claim comes straight from those "
+            "facts. State each measurement's direction as the facts give "
+            "it, and never write one blanket direction for the whole price "
+            "action that a specific measurement contradicts."
+            if retry
+            else text
+        )
         try:
             result = self.writer.chat(
                 [
                     {"role": "system", "content": _SYSTEM},
-                    {"role": "user", "content": text},
+                    {"role": "user", "content": user},
                 ],
                 self.max_tokens,
                 _schema(),
@@ -303,7 +338,7 @@ class DeskNarrator:
                 0.0,
             )
             payload = json.loads(result["content"])
-            brief = DeskBrief(
+            return DeskBrief(
                 stance=str(payload["stance"]),
                 verdict=_cut(str(payload["verdict"]), 200),
                 reasoning=_cut(str(payload["reasoning"]), 700),
@@ -312,11 +347,6 @@ class DeskNarrator:
             )
         except Exception:
             return None
-        if brief.stance != stance_for(grade):
-            return None
-        if self._contradicts(text, brief):
-            return None
-        return brief
 
     # Whether the brief contradicts the facts the desk measured. A
     # judgement, so it is a model decision into a two-value schema; a check

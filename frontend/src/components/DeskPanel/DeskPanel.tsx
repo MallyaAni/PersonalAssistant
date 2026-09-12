@@ -579,7 +579,8 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         is your call to keep or close, not a sell instruction — and how many shares.
       </li>
       <li>
-        <b>Buy at the open</b> with a market order; sells fill at the close of the session that decides them. When a
+        <b>Buy at the open</b> with a market order; sells fill at the close of the session that executes them (the one
+        after the session that decides them). When a
         trade is placed, click <b>done</b> on its row and your positions update.
       </li>
       <li>

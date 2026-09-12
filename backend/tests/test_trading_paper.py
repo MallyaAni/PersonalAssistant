@@ -376,7 +376,8 @@ def test_a_rebalance_with_a_skipped_leg_concludes_without_rolling_back():
 # A cancel is issued against the broker's own order id, never the client
 # order id the desk chose: the broker's DELETE endpoint takes the UUID it
 # issued, and the desk's id would 404. The open orders are read back and
-# matched by client order id before the DELETE goes out.
+# matched by client order id before the DELETE goes out, and a confirmed
+# cancel is reported as cancelled.
 def test_cancel_orders_deletes_by_the_brokers_order_id():
     calls = []
 
@@ -398,15 +399,16 @@ def test_cancel_orders_deletes_by_the_brokers_order_id():
                 ]
             ).encode()
         if method == "DELETE":
-            return 200, b"[]"
+            return 200, json.dumps({"id": "o-broker-1", "status": "canceled"}).encode()
         return 404, b"{}"
 
     client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
-    client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
+    outcomes = client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
     deletes = [url for method, url in calls if method == "DELETE"]
     assert deletes == [
         "https://paper-api.alpaca.markets/v2/orders/o-broker-1"
     ]
+    assert outcomes == {"anios-2026-09-10-sell-etn-7": "cancelled"}
 
 
 # A live order the broker refuses to cancel must not read as cancelled:
@@ -434,8 +436,9 @@ def test_cancel_orders_raises_when_the_broker_refuses():
 
 
 # A client order id that no longer appears among the open orders is
-# already gone - filled, expired or withdrawn by hand - so it is skipped
-# rather than treated as a failed cancel.
+# already gone - filled, expired or withdrawn by hand - so it is reported
+# as such rather than as a failed cancel or a confirmed one: the caller
+# must not journal a deliberate hold for an order that already filled.
 def test_cancel_orders_skips_an_order_that_is_already_gone():
     deletes: list[str] = []
 
@@ -448,5 +451,32 @@ def test_cancel_orders_skips_an_order_that_is_already_gone():
         return 404, b"{}"
 
     client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
-    client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
+    outcomes = client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
     assert deletes == []
+    assert outcomes == {"anios-2026-09-10-sell-etn-7": "already_gone"}
+
+
+# A cancel the broker accepts without confirming - the order is left in
+# pending_cancel and can still fill - must not read as cancelled, or a
+# caller would journal a hold for an order that may yet execute.
+def test_cancel_orders_reports_an_unconfirmed_cancel():
+    def transport(method, url, headers, body):
+        if method == "GET" and url.endswith("/orders?status=open&limit=500"):
+            return 200, json.dumps(
+                [
+                    {
+                        "id": "o-broker-1",
+                        "client_order_id": "anios-2026-09-10-sell-etn-7",
+                        "symbol": "ETN",
+                    }
+                ]
+            ).encode()
+        if method == "DELETE":
+            return 200, json.dumps(
+                {"id": "o-broker-1", "status": "pending_cancel"}
+            ).encode()
+        return 404, b"{}"
+
+    client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
+    outcomes = client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
+    assert outcomes == {"anios-2026-09-10-sell-etn-7": "unconfirmed"}

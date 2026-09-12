@@ -33,6 +33,12 @@ Rules:
 - Never invent a figure, a percentage, a price target, a forecast, or a
   probability. You do not know a measurement's scale, so describe it in
   words and never convert it to a percent or a ratio.
+- Only claim what the measurements support, and state each one as the
+  facts give it. Do not extend a single reading into a blanket statement
+  about everything else: a price can sit above its short-term average
+  while the stack and the trends are down, so say which average or trend
+  you mean rather than generalising the whole price action to one side.
+  A direction you state must match the measurement it names.
 - A stance is relative to the other names in the book, not to zero: an
   analyst can be bearish on a name whose numbers are positive because
   the other names' numbers are stronger. When a rank is given, say
@@ -40,6 +46,16 @@ Rules:
   than calling positive numbers negative.
 - Keep each field well inside its length; a cut sentence is worse than
   a short one.
+- The verdict is a summary of the reasoning: every direction it asserts
+  must already appear in the reasoning, and never a single blanket
+  direction ("the price is below its averages", "every trend is down")
+  when the measurements give a mixed picture. A signed measurement such
+  as a distance from an average carries its own direction: a positive
+  value means above, a negative value below, and the verdict must match
+  it. When one measurement is above and the broader stack or trend is
+  down, the verdict says exactly that - above its short-term average
+  while the stack and trends are down - and never collapses the two
+  into one side.
 - Name the analysts by their stance: which are bullish, which neutral,
   which bearish, and the one or two pieces of evidence that matter most
   for each. A stance of +1 is bullish, 0 neutral, -1 bearish. The value

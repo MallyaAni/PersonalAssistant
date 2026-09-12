@@ -113,9 +113,12 @@ def _band_blocked(latest: dict, store: MarketStore) -> set[str]:
 # market-on-close order now; a name trading up at the open should not be
 # sold into its own rally, so its exit is cancelled and the position is
 # deliberately held. This runs on the balancer's candle during the opening
-# hour, reads the paper state's pending sells, and for each one whose live
-# price is above the prior session's close cancels the order on the broker
-# and journals the hold. The position then rides to the next rebalance.
+# hour, reads the paper state's pending sells, and for each one whose
+# session's opening print is above the prior session's close cancels the
+# order on the broker and journals the hold. The opening print is the same
+# price the backtest's green_day_skip compares, so the paper account and
+# the track record cannot reach opposite decisions. The position then
+# rides to the next rebalance.
 def _green_day_skip(
     data_dir: Path, latest: dict, quotes: dict, log_path: Path
 ) -> None:
@@ -141,22 +144,35 @@ def _green_day_skip(
         ticker = row.get("symbol", "")
         quote = quotes.get(ticker)
         prior = (action_rows.get(ticker) or {}).get("last_close")
-        last = (quote or {}).get("last")
-        if not last or not prior:
+        # The rule is about the open, so it compares the session's opening
+        # print against the prior close - exactly what the backtest's
+        # green_day_skip walks (opens[t+1] > closes[t]). The latest tick
+        # would let a name that opened down but rallied in the first hour
+        # be held while the simulation sold it, and one that opened up then
+        # faded be sold while the simulation held it.
+        open_px = (quote or {}).get("open")
+        if not open_px or not prior:
             continue
-        if last <= float(prior):
+        if open_px <= float(prior):
             continue
         # Cancel the broker's order by the id the desk chose, then write
         # the deliberate hold into the state so the rebalance concludes.
+        # Only a confirmed cancel becomes a hold: an order the broker still
+        # has working (pending_cancel can still fill) or one that already
+        # filled is left in the state for the next reconcile to record what
+        # actually happened, never journaled as a zero-fill hold.
         try:
             if clients is None:
                 clients = alpaca_trading.client_from_env()
-            clients.cancel_orders([row["client_order_id"]])
+            outcomes = clients.cancel_orders([row["client_order_id"]])
         except alpaca_trading.AlpacaTradingError as exc:
             print(f"  green-day skip: could not cancel {ticker}: {exc}")
             continue
+        if outcomes.get(row["client_order_id"]) != "cancelled":
+            print(f"  green-day skip: {ticker} not held (cancel {outcomes.get(row['client_order_id'])})")
+            continue
         state = paper.skip_sell(state, row["client_order_id"])
-        skipped.append(f"{ticker} up at the open ({last:.2f} > {float(prior):.2f})")
+        skipped.append(f"{ticker} up at the open ({open_px:.2f} > {float(prior):.2f})")
     if skipped:
         paper.save_state(data_dir, state)
         with log_path.open("a", encoding="utf-8") as handle:
