@@ -3,14 +3,47 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
-## 2026-09-12 — the seventh desk review's remaining P1s and P2s, fixed and measured (COMMITTED `b706540`, DEPLOY PENDING)
+## 2026-09-12 — the web vision upload fits an oversized screenshot instead of 413ing it (DEPLOYED `1b28dc0`)
+
+A screenshot uploaded in the `ani.mallya` web chat on 2026-09-10 failed
+with no artifact, no conversation turn and no stored evidence — because the
+web vision path rejected it before anything could be recorded. The iMessage
+path had a downscaling step (`_fit_for_vision`); the web path sent the raw
+file and refused at read time, and its comment's claim that "the browser
+picker downscales" is false. Reproduced exactly on the live system before
+the fix: a 17.8 MB retina screenshot (3024×1964, 5.9 MP — under the 20 MP
+pixel limit) returned **413 "Uploaded image is too large."** with no
+artifact, because `IMAGE_MAX_UPLOAD_BYTES` is 10 MB and the byte cap was
+enforced before any decode. The pixel limit (20 MP) and the byte limit
+(10 MB) were inconsistent: a valid screenshot could pass one and fail the
+other, and the failure left no trace anywhere.
+
+Fixed in `1b28dc0`: `backend/artifacts/image.py` gained `fit_image_for_vision`
+(downscale when the pixel count exceeds 90% of the pixel limit; re-encode to
+JPEG when the bytes exceed the storage budget, stepping quality down and
+halving pixels until the budget holds — the budget is a guarantee, since
+`validate_image_bytes` enforces it next), and `backend/api/v1/vision.py`
+reads the upload with a fetch cap derived from the pixel limit
+(`max(2×upload, 3×pixels)`), fits the bytes to the budgets, and stores the
+fitted image. Fitted output keeps its true decoded mime so the
+declared-vs-content check still passes. Unit tests (`test_image_artifacts.py`):
+pass-through unchanged, byte-budget re-encode, pixel-ceiling downscale, and
+fitted-output-passes-validation. Verified live post-deploy: the same
+17.8 MB screenshot now returns **201**, stored as a 4.95 MB JPEG at the same
+3024×1964 dimensions; both synthetic verification artifacts were deleted
+afterwards (today's `ani.mallya` artifact count back to 0). Unit gate
+`3376 passed, 19 skipped`; routing gate `100 passed`; post-deploy
+`2026-09-12T17:18:26Z 1b28dc0e ok (cheap)`. A 413 still exists only beyond
+the pixel-derived fetch cap (~60 MB at 20 MP), which no legitimate screenshot
+reaches.
+
+## 2026-09-12 — the seventh desk review's remaining P1s and P2s, fixed and measured (DEPLOYED `1b28dc0`; contains `b706540`)
 
 The seventh codex review returned more findings after `6f70007a`. All are
-fixed in `b706540`, each pinned. The deploy is on hold: the unit gate
-fails on the other agent's in-progress, uncommitted image work
-(`test_fit_image_for_vision_reencodes_an_over_byte_budget_image_to_jpeg` —
-their fixture is a 2,387-byte image asserting `> 50_000`), which must not
-be touched or committed. Once they finish, deploy the combined tree.
+fixed in `b706540`, each pinned. The deploy was held because the unit gate
+failed on an in-progress image test (`test_fit_image_for_vision_reencodes_an_over_byte_budget_image_to_jpeg`
+had a 2,387-byte fixture asserting `> 50_000`); that fixture is fixed in
+`1b28dc0` and the gate is green, so the combined tree deployed together.
 
 - **P1 cancellation** — `cancel_orders` now returns the broker's outcome
   per order (`"cancelled"` / `"unconfirmed"` / `"already_gone"`), and the

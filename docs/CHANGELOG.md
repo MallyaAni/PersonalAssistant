@@ -2,6 +2,30 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-12 - The web vision upload fits an oversized screenshot instead of 413ing it
+
+A screenshot uploaded in the `ani.mallya` web chat on 2026-09-10 failed
+with no artifact, no conversation turn and no stored evidence, because the
+web vision path rejected it at read time: a retina screenshot (3024×1964,
+5.9 MP) passes the 20 MP pixel limit while its PNG exceeds the 10 MB byte
+cap, so a valid image was refused with 413 "Uploaded image is too large."
+The iMessage path already downscaled (`_fit_for_vision`); the web path sent
+the raw file and the byte cap was enforced before any decode, and its
+comment's claim that the browser picker downscales is false. The pixel and
+byte limits were inconsistent, and the failure left no trace.
+
+`backend/artifacts/image.py` gained `fit_image_for_vision`: downscale when
+the pixel count exceeds 90% of the pixel limit, re-encode to JPEG when the
+bytes exceed the storage budget, stepping quality down and halving pixels
+until the budget holds (a guarantee, because `validate_image_bytes`
+enforces it next). `backend/api/v1/vision.py` reads the upload with a fetch
+cap derived from the pixel limit (`max(2x upload, 3x pixels)`), fits the
+bytes to the budgets, and stores the fitted image with its true decoded
+mime. Verified: reproduced the 413 before the fix on the live system, then
+201 after — the same 17.8 MB screenshot stored as a 4.95 MB JPEG at the
+same dimensions; unit gate 3376 passed / 19 skipped; routing gate 100
+passed; post-deploy `2026-09-12T17:18:26Z 1b28dc0e ok (cheap)`.
+
 ## 2026-09-12 - The sixth desk review's four P1s and remaining P2s, fixed and measured
 
 Deploy `6f70007a`.
