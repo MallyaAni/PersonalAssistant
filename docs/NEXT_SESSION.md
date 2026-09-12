@@ -3,6 +3,49 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-12 — the seventh desk review's remaining P1s and P2s, fixed and measured (COMMITTED `b706540`, DEPLOY PENDING)
+
+The seventh codex review returned more findings after `6f70007a`. All are
+fixed in `b706540`, each pinned. The deploy is on hold: the unit gate
+fails on the other agent's in-progress, uncommitted image work
+(`test_fit_image_for_vision_reencodes_an_over_byte_budget_image_to_jpeg` —
+their fixture is a 2,387-byte image asserting `> 50_000`), which must not
+be touched or committed. Once they finish, deploy the combined tree.
+
+- **P1 cancellation** — `cancel_orders` now returns the broker's outcome
+  per order (`"cancelled"` / `"unconfirmed"` / `"already_gone"`), and the
+  green-day rule journals a hold only on a confirmed cancel, so an
+  unconfirmed or already-filled order can no longer be recorded as a
+  zero-fill hold. Pins: `test_an_unconfirmed_cancel_is_not_journaled_as_a_hold`,
+  `test_cancel_orders_reports_an_unconfirmed_cancel`,
+  `test_cancel_orders_skips_an_order_that_is_already_gone`.
+- **P1 earnings cache** — the corrected loss parsing ships under a bumped
+  prompt version (`release_tone/3`), invalidating cached frames the faulty
+  bounds clamped to zero, so the nightly run re-scores. `test_prior_tone_records_carry_forward`
+  already pins version invalidation.
+- **P1 backtest mismatch** — the green-day skip compares the session's
+  open against the prior session's close (the same comparison the
+  simulator makes) instead of the latest tick, so live execution no longer
+  sells a name the backtest would hold.
+- **P2 narrative** — the C-grade brief dropped when the writer generalised
+  a mixed picture into one direction. `desk_brief.md` now requires the
+  verdict to summarise only what the reasoning asserts and to state a
+  signed measurement's direction as given; the retry passes the desk's
+  clean fact contract to the rewrite. First-attempt success measured
+  **12/12**, functional test passes repeatedly (5/5 on one run, 12/12 on
+  another); the bounded retry remains a safety net.
+- **P2 long reads** — a live read with no sentence boundary in the first
+  window now falls back to the deterministic read instead of cutting
+  mid-word.
+- **P2 sell timing** — desk help text now says sells fill at the close of
+  the session that *executes* them (the one after the session that decides
+  them), matching `simulate`'s `exit_at_close` fill at `closes[t+1]`.
+
+**Verification**: unit suite `3375 passed, 19 skipped` (the single failure
+is the other agent's in-progress image test), routing gate `100 passed`
+(~8m14s), desk read / live-read / brief functional suites `7/7`, frontend
+`tsc` clean. Deploy pending as above.
+
 ## 2026-09-12 — the sixth desk review's four P1s and remaining P2s, fixed and measured (DEPLOYED `6f70007a`)
 
 The sixth codex review of the trading desk returned four P1 findings and
