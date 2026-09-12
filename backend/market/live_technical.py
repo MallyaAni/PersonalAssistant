@@ -141,8 +141,13 @@ def with_live_row(panel: Panel, quotes: dict, today: date) -> Panel:
 
 
 # The live panel and the technical analyst's read of it, one run per candle.
+# The value analyst is price-derived too - its multiples use the panel's
+# close (`valuation.multiples`), so a name that cheapens intraday changes
+# its value rank even though its filed levels do not - so the same live
+# panel carries the value read beside the technical one. A value failure
+# leaves the technical read standing.
 def _live_read(store, quotes: dict, today: date) -> dict:
-    """Return {"panel": live, "opinion": opinion}, cached by the candle."""
+    """Return {"panel": live, "opinion": technical, "value": value}, cached by candle."""
     key = (
         today,
         tuple(sorted((s, str(getattr(q, "bar", ""))) for s, q in quotes.items())),
@@ -155,7 +160,21 @@ def _live_read(store, quotes: dict, today: date) -> dict:
     # desk run, so the live rank and the record's rank read the same way.
     view = regime.opine(live, sides, tightening_for(store, live, None))
     opinion = technical_analyst.opine(live, view.ai_trend)
-    _cache["key"], _cache["value"] = key, {"panel": live, "opinion": opinion}
+    value_opinion = None
+    try:
+        from backend.agents.trading.desk import value as value_analyst
+        from backend.market.levels_pit import point_in_time_levels
+
+        value_opinion = value_analyst.opine(
+            live, point_in_time_levels(store, live, None), sides
+        )
+    except Exception:
+        value_opinion = None
+    _cache["key"], _cache["value"] = key, {
+        "panel": live,
+        "opinion": opinion,
+        "value": value_opinion,
+    }
     return _cache["value"]  # type: ignore[return-value]
 
 
@@ -178,6 +197,32 @@ def technical_now(store, quotes: dict, today: date | None = None) -> dict:
     # 60 held over from earlier sessions, read neutral at 54 an hour later
     # and the page showed C for a name the rule still graded B.
     stances = read["opinion"].stances()
+    out = {}
+    for symbol in quotes:
+        if symbol not in panel.tickers:
+            continue
+        j = panel.index(symbol)
+        now, close = float(ranks[-1, j]), float(ranks[-2, j])
+        if np.isfinite(now) and np.isfinite(close):
+            out[symbol] = {"now": now, "close": close, "stance": int(stances[-1, j])}
+    return out
+
+
+# The value analyst's rank per name at the live price and at the last close,
+# read from the same live panel as the technical rank, one run per candle.
+def value_now(store, quotes: dict, today: date | None = None) -> dict:
+    """Return {symbol: {"now": rank, "close": rank, "stance": int}} for value."""
+    today = today or datetime.now(NEW_YORK).date()
+    read = _live_read(store, quotes, today)
+    panel = read["panel"]
+    opinion = read.get("value")
+    if opinion is None:
+        return {}
+    scores = opinion.scores
+    if scores.shape[0] < 2:
+        return {}
+    ranks = baselines.percentile_rank(scores[-2:])
+    stances = opinion.stances()
     out = {}
     for symbol in quotes:
         if symbol not in panel.tickers:

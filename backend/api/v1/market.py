@@ -140,15 +140,19 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
     except alpaca.AlpacaUnavailableError:
         return {"user_id": user_id, "as_of": None, "quotes": {}, "reason": "no keys"}
     found = live_quotes.quotes(symbols, headers=headers)
-    # The technical analyst re-read at the live price, one run per candle;
-    # a failure here leaves the quotes standing.
+    # The technical and value analysts re-read at the live price, one run
+    # per candle; a failure here leaves the quotes standing.
     technical: dict = {}
+    value: dict = {}
     technical_detail: dict = {}
     if found:
         try:
             store = MarketStore(_root())
             technical = await asyncio.to_thread(
                 live_technical.technical_now, store, found
+            )
+            value = await asyncio.to_thread(
+                live_technical.value_now, store, found
             )
             technical_detail = await asyncio.to_thread(
                 live_technical.technical_detail, store, found
@@ -157,6 +161,7 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
             technical = {"reason": str(exc)}  # type: ignore[dict-item]
     return {
         "technical": technical,
+        "value": value,
         "technical_detail": technical_detail,
         "user_id": user_id,
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -410,8 +415,11 @@ async def desk_mine(
                 equity,
                 snap.get("quotes") or {},
                 snap.get("technical") or {},
+                snap.get("value") or {},
             ),
-            "grades_live": holdings.live_grades(latest, snap.get("technical") or {}),
+            "grades_live": holdings.live_grades(
+                latest, snap.get("technical") or {}, snap.get("value") or {}
+            ),
         }
     symbols = sorted(
         {h.ticker for h in rows}
@@ -420,6 +428,7 @@ async def desk_mine(
     )
     quotes: dict = {}
     technical: dict = {}
+    value: dict = {}
     try:
         found = live_quotes.quotes(symbols, headers=alpaca.credentials())
         quotes = {s: asdict(q) for s, q in found.items()}
@@ -430,14 +439,20 @@ async def desk_mine(
                 )
             except Exception:  # noqa: BLE001 - the board stands without the live read
                 technical = {}
+            try:
+                value = await asyncio.to_thread(
+                    live_technical.value_now, MarketStore(_root()), found
+                )
+            except Exception:  # noqa: BLE001 - the board stands without the live read
+                value = {}
     except alpaca.AlpacaUnavailableError:
         pass
     return {
         "user_id": user_id,
         "session": latest.get("session"),
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
-        "rows": holdings.board(latest, rows, equity, quotes, technical),
-        "grades_live": holdings.live_grades(latest, technical),
+        "rows": holdings.board(latest, rows, equity, quotes, technical, value),
+        "grades_live": holdings.live_grades(latest, technical, value),
     }
 
 

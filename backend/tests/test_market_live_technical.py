@@ -237,3 +237,53 @@ def test_technical_now_carries_the_persisted_stance(monkeypatch):
     assert out["AAA"]["stance"] == 1
     assert out["BBB"]["stance"] == -1
     assert out["AAA"]["now"] < out["AAA"]["close"]
+
+
+# value_now reads the value analyst from the same live read and returns the
+# same shape as technical_now - rank now and at the close, and the persisted
+# stance - so the live re-grade can move the value stance exactly as it
+# moves the technical one.
+def test_value_now_reads_the_value_analyst_and_reports_the_stance(monkeypatch):
+    dates = np.array(
+        ["2026-09-04", "2026-09-05", "2026-09-08", "2026-09-09"], dtype="datetime64[D]"
+    )
+    ones = np.ones((4, 2))
+    panel = Panel(
+        dates=dates,
+        tickers=("AAA", "BBB"),
+        open=ones * 100,
+        high=ones * 101,
+        low=ones * 99,
+        close=ones * 100,
+        adj_close=ones * 100,
+        volume=ones * 1000,
+        themes={},
+        benchmark="BBB",
+    )
+    technical = Opinion("technical", np.full((4, 2), 0.5), {})
+    # AAA is cheap for three sessions and expensive on the live bar; BBB the
+    # reverse. The persisted stance keeps AAA bullish and BBB bearish.
+    value = Opinion(
+        "value",
+        np.array([[0.9, 0.1], [0.9, 0.1], [0.9, 0.1], [0.5, 0.6]]),
+        {},
+    )
+    monkeypatch.setattr(
+        live_technical,
+        "_live_read",
+        lambda store, quotes, today: {"panel": panel, "opinion": technical, "value": value},
+    )
+    quote = SimpleNamespace(last=100.0, open=100.0, high=101.0, low=99.0, bar="x")
+    out = live_technical.value_now(
+        None, {"AAA": quote, "BBB": quote}, date(2026, 9, 9)
+    )
+    assert out["AAA"]["stance"] == 1
+    assert out["BBB"]["stance"] == -1
+    assert out["AAA"]["now"] < out["AAA"]["close"]
+    # A live read without the value analyst carries no value rankings.
+    monkeypatch.setattr(
+        live_technical,
+        "_live_read",
+        lambda store, quotes, today: {"panel": panel, "opinion": technical, "value": None},
+    )
+    assert live_technical.value_now(None, {"AAA": quote}, date(2026, 9, 9)) == {}

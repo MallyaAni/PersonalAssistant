@@ -2070,6 +2070,10 @@ export interface DeskLive {
   // where the name would rank if the session closed here, `close` where
   // it ranked at the last close.
   technical?: Record<string, { now: number; close: number }>;
+  // The value analyst's rating re-read at the live price, the same shape
+  // as `technical`: value is price-derived, so a name that cheapens
+  // intraday moves its live grade too.
+  value?: Record<string, { now: number; close: number }>;
   // The technical features the analyst would cite, read on the live panel
   // and split by how far ahead each one looks, for the per-name drill-down.
   // The `support_*` and `resistance_*` fields on `short` name what the
@@ -2114,6 +2118,9 @@ export interface DeskMineRow {
   score_live: number | null;
   technical_now: number | null;
   technical_close: number | null;
+  // The value analyst's live rank (price-derived), beside the technical one.
+  value_now?: number | null;
+  value_close?: number | null;
   rank: number | null;
   score: number | null;
   stances: Record<string, number>;
@@ -2132,6 +2139,9 @@ export interface DeskMineRow {
   high_20: number | null;
   stops: Record<string, number>;
   grade_margin: number | null;
+  // The live grade's own margin, where a live read exists: "at risk" reads
+  // this so the marker follows the candle, not the evening grade.
+  grade_margin_live?: number | null;
   until_rebalance: number | null;
   // Whether the paper book's next session is a rebalance: only then are the
   // target-vs-held changes executable at the next open.
@@ -2177,6 +2187,11 @@ export interface DeskLiveGrade {
   score_live: number;
   technical_now: number;
   technical_close: number;
+  value_now?: number | null;
+  value_close?: number | null;
+  // How far the live grade's votes sit above its own line; the page's
+  // "at risk" marker reads this rather than the evening margin.
+  grade_margin_live?: number | null;
 }
 
 export interface DeskMine {

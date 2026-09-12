@@ -286,7 +286,7 @@ const SummaryStrip = ({
       note:
         exposure < 1 && liveInvested !== null
           ? 'sized down because of the warnings below'
-          : 'of the practice account is in positions',
+          : 'share of the practice account in positions',
     },
   ]
   return (
@@ -919,15 +919,15 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           </table>
           {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
           <p className="mt-2 text-xs text-[#6e6e73]">
-            When you have placed a trade on Schwab, click <b>done</b> on its row and it goes into your positions at the
-            price shown; edit the price if your fill differed. Names are in grade order, best first. Grades are
-            recomputed every evening after the close, and the technical read re-checks them every 15 minutes at the
-            live price, so a name's grade can move within the day. The target book re-sorts at the next rebalance
+            Placed a trade on Schwab? Click <b>done</b> on its row to record it at the price shown (edit if your fill
+            differed). Names run in grade order, best first. Grades recompute each evening; the technical and value
+            reads re-check them every 15 minutes at the live price, so a grade can move within the day. The book
+            re-sorts at the next rebalance
             {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
               ? ` (in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days)`
               : ' (about every 20 trading days)'}
-            , when a name whose grade falls to C or below is dropped; A+ names stay at full weight, A names at three
-            quarters and eligible B names at half size. Buy at the open with a market order. Stops are off in the current strategy.
+            , when a name that falls to C or below is dropped; A+ names stay at full weight, A at three quarters,
+            eligible B at half. Buy at the open with a market order. Stops are off: tested variants reduced performance.
           </p>
         </section>
       )}
@@ -1157,7 +1157,19 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
   const hit = trailing !== null && price > 0 && price <= trailing
-  const atRisk = r.in_book && r.target_weight > 0 && (r.grade_margin ?? 1) <= 0
+  // "At risk" reads the live grade's margin when the candle has one, so the
+  // marker moves with the price rather than the evening grade; the evening
+  // margin stands in for a name the candle has not read.
+  const atRisk =
+    r.in_book &&
+    r.target_weight > 0 &&
+    (r.grade_margin_live ?? r.grade_margin ?? 1) <= 0
+  // The board's action comes from the evening target against the current
+  // weight, and the grade badge reads the candle. When the live grade is a
+  // C - the rebalance drop line - but the action still says buy or add,
+  // the two disagree, and the row must say so in one line: the desk will
+  // drop this name at the next rebalance if it closes here.
+  const liveDrop = r.in_book && r.grade_live === 'C' && (r.action === 'buy' || r.action === 'add')
   return (
     <tr className="border-t border-black/[0.05] align-top">
       <td className="py-1.5">
@@ -1179,6 +1191,11 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
           >
             {marking ? 'saving' : 'done'}
           </button>
+        )}
+        {liveDrop && (
+          <div className="mt-0.5 text-xs font-medium text-[#9a6200]" title="the evening decision still says buy, but the grade at the live price is C - the desk drops C names at the next rebalance">
+            grade C live: dropped at the next rebalance
+          </div>
         )}
       </td>
       <td className="whitespace-nowrap">
@@ -1209,12 +1226,12 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
           <>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>{r.grade_live}</span>
             {r.grade_live !== r.grade && (
-              <span className="ml-1 text-xs text-[#6e6e73]" title="the grade with the technical analyst read at the live price; the evening grade stands for the desk's own trades">
+              <span className="ml-1 text-xs text-[#6e6e73]" title="the grade with the technical and value analysts read at the live price; the evening grade stands for the desk's own trades">
                 {r.grade} at the close
               </span>
             )}
             {atRisk && r.grade_live === r.grade && (
-              <span className="ml-1 text-xs text-[#9a6200]" title="one more analyst turning against it would drop the grade below A">
+              <span className="ml-1 text-xs text-[#9a6200]" title="one more analyst turning against it would drop the grade">
                 at risk
               </span>
             )}
@@ -1244,8 +1261,14 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
             {r.technical_now !== null && r.technical_close !== null && (
               <div className="text-[#6e6e73]">
                 technical at the live price: {Math.round(r.technical_now * 100)} (was {Math.round(r.technical_close * 100)} at the close)
+                {r.value_now !== null && r.value_now !== undefined && r.value_close !== null && r.value_close !== undefined && (
+                  <span>
+                    {' '}· value {Math.round(r.value_now * 100)} (was {Math.round(r.value_close * 100)})
+                  </span>
+                )}
               </div>
             )}
+
             {r.reason && <ReasonLines text={r.reason} />}
           </>
         )}

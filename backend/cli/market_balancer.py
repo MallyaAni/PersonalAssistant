@@ -221,6 +221,7 @@ def run(data_dir: Path, equity: float) -> Path:
     )
     quotes: dict = {}
     technical: dict = {}
+    value: dict = {}
     technical_detail: dict = {}
     try:
         found = live_quotes.quotes(symbols, headers=alpaca.credentials())
@@ -228,6 +229,7 @@ def run(data_dir: Path, equity: float) -> Path:
         if found:
             try:
                 technical = live_technical.technical_now(store, found)
+                value = live_technical.value_now(store, found)
                 # The detail shares the analyst's per-candle cache, so the
                 # second read is cheap and the page never pays for it.
                 technical_detail = live_technical.technical_detail(store, found)
@@ -235,7 +237,7 @@ def run(data_dir: Path, equity: float) -> Path:
                 technical = {}
     except alpaca.AlpacaUnavailableError:
         pass
-    rows = holdings.board(latest, held, equity, quotes, technical)
+    rows = holdings.board(latest, held, equity, quotes, technical, value)
     # Only names the desk is willing to start: a name can earn a target
     # weight and still be rejecting its upper Bollinger band tonight, and
     # buying it then is buying into a move that is already rolling over -
@@ -278,6 +280,7 @@ def run(data_dir: Path, equity: float) -> Path:
             "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
             "quotes": quotes,
             "technical": technical,
+            "value": value,
             "technical_detail": technical_detail,
         }
         (data_dir / "desk" / LIVE_FILE).write_text(

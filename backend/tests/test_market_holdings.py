@@ -281,3 +281,72 @@ def test_the_persisted_live_stance_wins_over_the_bare_rank():
     assert {r["ticker"]: r for r in bare}["ADBE"][
         "grade_live"
     ] == "B"  # the bare rank reads bearish: the veto
+
+
+# The value analyst is price-derived (its multiples use the live close), so
+# a bearish value read at the live price must re-grade a name the same way
+# a bearish technical read does, and the two live reads are combined - one
+# analyst turning bearish is not cancelled by the other holding.
+def test_the_live_value_read_regrades_a_name():
+    record = _record()
+    record["grades"]["ADBE"]["stances"] = {
+        "fundamental": 1,
+        "technical": 1,
+        "sentiment": 1,
+        "value": 0,
+        "rotation": 0,
+    }
+    rows = holdings.board(
+        record,
+        [],
+        100_000.0,
+        {},
+        {"ADBE": {"now": 0.90, "close": 0.90, "stance": 1}},
+        {"ADBE": {"now": 0.10, "close": 0.60, "stance": -1}},
+    )
+    row = {r["ticker"]: r for r in rows}["ADBE"]
+    # The value veto caps the top grades: one bearish analyst drops A+ to B.
+    assert row["grade"] == "A+"
+    assert row["grade_live"] == "B"
+
+
+# The row carries the live grade's own margin, so "at risk" reads the
+# candle rather than the evening grade. The evening margin is the fallback
+# when no live read exists.
+def test_the_live_grade_carries_its_own_margin():
+    record = _record()
+    record["grades"]["ADBE"]["stances"] = {
+        "fundamental": 1,
+        "technical": 1,
+        "sentiment": 1,
+        "value": 0,
+        "rotation": 0,
+    }
+    rows = holdings.board(
+        record,
+        [],
+        100_000.0,
+        {},
+        {"ADBE": {"now": 0.90, "close": 0.90, "stance": 1}},
+    )
+    row = {r["ticker"]: r for r in rows}["ADBE"]
+    assert row["grade_margin"] == 0.5  # the evening margin stands
+    # A live A+ at release (sentiment bullish, votes 3 above the A+ line
+    # of 2) carries its own margin, distinct from the fixture's evening one.
+    assert row["grade_margin_live"] == 1.0
+    record["grades"]["ADBE"]["stances"] = {
+        "fundamental": 1,
+        "technical": 1,
+        "sentiment": 1,
+        "value": 1,
+        "rotation": 0,
+    }
+    rows = holdings.board(
+        record,
+        [],
+        100_000.0,
+        {},
+        {"ADBE": {"now": 0.95, "close": 0.95, "stance": 1}},
+    )
+    row = {r["ticker"]: r for r in rows}["ADBE"]
+    assert row["grade_margin_live"] is not None
