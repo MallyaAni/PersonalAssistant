@@ -264,3 +264,40 @@ def test_a_challenger_that_starts_mid_run_enters_at_its_first_decision(tmp_path)
     assert challenger.traded > 0
     assert challenger.returns[2] < 0.0
 
+
+# The benchmark's daily returns are built from the store's adjusted closes,
+# not its raw closes: a split or dividend would otherwise move the line
+# that is meant to be the market's return. Missing sessions are NaN, never
+# a fabricated bridge.
+def test_index_returns_read_the_adjusted_close_column(tmp_path):
+    from datetime import UTC, date, datetime
+
+    from backend.agents.trading.desk import scorecard
+    from backend.market.store import MarketStore
+
+    store = MarketStore(tmp_path)
+    store.write_frame(
+        "bars",
+        date(2026, 9, 30),
+        "SPY",
+        {
+            "session_date": ["2026-09-01", "2026-09-02", "2026-09-03"],
+            "open": [100.0, 101.0, 102.0],
+            "high": [100.0, 101.0, 102.0],
+            "low": [100.0, 101.0, 102.0],
+            "close": [100.0, 101.0, 102.0],
+            "adjusted_close": [100.0, 50.0, 51.0],  # a 2:1 split on 09-02
+            "volume": [1e6] * 3,
+        },
+    )
+    dates = np.array(
+        [date(2026, 9, 1), date(2026, 9, 2), date(2026, 9, 3), date(2026, 9, 4)],
+        dtype="datetime64[D]",
+    )
+    returns = scorecard.index_returns(store, "SPY", dates)
+    assert returns is not None
+    # 09-02 is -50% on adjusted closes (the split), not +1% on raw closes;
+    # 09-04 has no bar and is NaN, not 0.
+    assert returns[1] == pytest.approx(50.0 / 100.0 - 1.0)
+    assert np.isnan(returns[3])
+

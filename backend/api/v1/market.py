@@ -257,7 +257,43 @@ def _model_live_read(
             return None
         if _live_read_gaps(features, read):
             return None
-    return read[:1200] or None
+    return _fit_live_read(features, read)
+
+
+# The page reads at most the first twelve hundred characters of the model's
+# prose, and a straight cut ends in the middle of a sentence and can drop
+# the long-horizon readings the model wrote last - the 200-day average is
+# exactly the fact the cut has been observed to remove. Cut at the last
+# sentence boundary that fits, and if even that would lose a required
+# reading, hand back the deterministic lines whole: a complete fallback
+# beats a truncated read that silently hides the SMA.
+def _fit_live_read(features: dict[str, list[str]], read: str) -> str | None:
+    """Return `read` cut to fit the page, falling back to the lines when it cannot."""
+    if len(read) <= 1200:
+        return read or None
+    cut = read.rfind(". ", 0, 1200)
+    end = cut + 1 if cut >= 600 else 1200
+    fitted = read[:end]
+    if _live_read_gaps(features, fitted):
+        return _deterministic_read(features)
+    return fitted
+
+
+# The read the page falls back to when the model's prose will not fit: the
+# deterministic feature lines themselves, in the same horizon order the
+# model was given, so a name's reading is never lost to a character cut.
+def _deterministic_read(features: dict[str, list[str]]) -> str | None:
+    """Return the feature lines as plain prose, horizon by horizon."""
+    parts: list[str] = []
+    for horizon, opener in (
+        ("short", "In the near term"),
+        ("medium", "Over the coming weeks"),
+        ("long", "For the longer run"),
+    ):
+        items = features.get(horizon) or []
+        if items:
+            parts.append(f"{opener}: " + "; ".join(items))
+    return " ".join(parts) or None
 
 
 # The live technical read for one name: the model's plain words, or the

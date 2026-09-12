@@ -108,7 +108,12 @@ def index_returns(store, ticker: str, dates: np.ndarray) -> np.ndarray | None:
     )
     stamps = np.array([str(d)[:10] for d in cols[key]])
     close = np.array(
-        cols["adj_close"] if "adj_close" in cols else cols["close"], dtype=float
+        cols["adjusted_close"]
+        if "adjusted_close" in cols
+        else cols["adj_close"]
+        if "adj_close" in cols
+        else cols["close"],
+        dtype=float,
     )
     by = dict(zip(stamps, close, strict=True))
     prices = np.array([by.get(str(d)[:10], np.nan) for d in dates])

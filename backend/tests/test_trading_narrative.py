@@ -199,14 +199,31 @@ def test_cut_at_sentence():
     assert _cut(text, 50) == "First sentence is here. Second sentence follows."
 
 
+# A cut whose limit lands before any sentence boundary still ends at a
+# complete sentence - the last one anywhere in the text - rather than
+# mid-sentence; a text with no sentence end at all falls back instead of
+# showing a broken fragment.
+def test_a_cut_never_ends_mid_sentence():
+    from backend.agents.trading.desk.narrative import _FRAGMENT_FALLBACK, _cut
+
+    # No sentence end within the limit, one further along: the cut returns
+    # the earlier complete sentence, not a mid-sentence fragment.
+    long = "An opening thought. " + "words " * 40 + "the unfinished close"
+    assert _cut(long, 30) == "An opening thought."
+    # No sentence end anywhere: the bounded fallback, not the raw fragment.
+    assert _cut("Price is 100.25 and the", 200) == _FRAGMENT_FALLBACK
+
+
 # A short field that ends without sentence punctuation is a truncation, not
 # a finished brief: it is cut back to the last complete sentence rather
-# than shown broken. A single fragment with no sentence end is kept whole.
+# than shown broken. A fragment with no sentence end at all cannot be made
+# complete by cutting, so a bounded fallback stands in instead of an
+# unfinished phrase.
 def test_a_short_unfinished_field_is_cut_to_a_complete_sentence():
-    from backend.agents.trading.desk.narrative import _cut
+    from backend.agents.trading.desk.narrative import _FRAGMENT_FALLBACK, _cut
 
     unfinished = "Revenue is up strongly. The margin story is still"
     assert _cut(unfinished, 200) == "Revenue is up strongly."
     fragment = "The margin story is still"
-    assert _cut(fragment, 200) == fragment
+    assert _cut(fragment, 200) == _FRAGMENT_FALLBACK
     assert _cut("Revenue is up strongly.", 200) == "Revenue is up strongly."

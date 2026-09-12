@@ -46,7 +46,10 @@ Rules:
   analyst is bullish when the name is cheap against the other names on
   its side of the book, bearish when the market already pays up for it.
 - If the regime line carries flags, say what they mean for the size of
-  the position, not for the direction.
+  the position, not for the direction. When the evidence says the name is
+  not in today's book, there is no position to size: say the name stays
+  out, and never describe holding, keeping, adding to or sizing a
+  position in it.
 - Plain words, no jargon the operator did not use. No hedging phrases.
 
 verdict — one sentence, at most 200 characters: the grade and the single

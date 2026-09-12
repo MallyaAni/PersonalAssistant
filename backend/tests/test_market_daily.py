@@ -372,7 +372,7 @@ def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
         rebalances=0,
         equity=np.array([1.0, 1.05, 1.1]),
     )
-    monkeypatch.setattr(sim_module, "run", lambda report, use_exits=False: sim)
+    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
     monkeypatch.setattr(
         scorecard,
         "index_returns",
@@ -470,7 +470,7 @@ def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
         rebalances=0,
         equity=np.array([1.0, 1.05, 1.1]),
     )
-    monkeypatch.setattr(sim_module, "run", lambda report, use_exits=False: sim)
+    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
     monkeypatch.setattr(
         scorecard,
         "index_returns",
@@ -483,6 +483,42 @@ def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
     # date) and its cumulative return is the two +10% periods the strategy held.
     assert block["spy"] == pytest.approx([0.0, 0.1, 0.21])
     assert block["qqq"] == pytest.approx([0.0, 0.1, 0.21])
+
+
+# The published backtest must run the same execution policy as the live
+# paper account, or the curve silently measures a book nobody trades. Every
+# flag in simulate.LIVE_POLICY is passed through curve_block; a policy that
+# adds a rule without this test knowing is a backtest that has drifted.
+def test_curve_block_runs_the_live_execution_policy(monkeypatch):
+    from backend.agents.trading.desk import scorecard
+    from backend.agents.trading.desk import simulate as sim_module
+
+    report = _report()
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 0.1]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    seen: dict[str, object] = {}
+
+    def fake_run(report, **kwargs):
+        seen.update(kwargs)
+        return sim
+
+    monkeypatch.setattr(sim_module, "run", fake_run)
+    monkeypatch.setattr(
+        scorecard,
+        "index_returns",
+        lambda store, ticker, dates: np.array([0.0, 0.0, 0.01, 0.0]),
+    )
+    market_daily.curve_block(report, None)
+    assert sim_module.LIVE_POLICY, "the live policy must not be empty"
+    for flag in sim_module.LIVE_POLICY:
+        assert flag in seen, f"curve_block did not pass the live flag {flag}"
+        assert seen[flag] == sim_module.LIVE_POLICY[flag]
 
 
 # The paper account's live equity history becomes the overlay for the same

@@ -28,7 +28,7 @@ Write the read as a few short paragraphs, in this order:
    has no data for this name.
 2. One sentence each on the nearest support and the nearest resistance:
    what each is (a swing point from the daily chart, the 50-day average,
-   the 200-day average, or the weekly 21-day average) and the distance as
+   the 200-day average, or the 21-week average) and the distance as
    a percentage either way.
 
 Rules that hold throughout:
@@ -46,7 +46,7 @@ Rules that hold throughout:
 
 A measurement key that is not a percentage or a distance is what its name
 says. A level kind of 1 is a swing point, 2 the 50-day average, 3 the
-200-day average, and 4 the weekly 21-day average; the level value that
+200-day average, and 4 the 21-week average; the level value that
 goes with a kind is that level's price. An analyst stance of +1 leans
 bullish, -1 leans bearish, and 0 is neutral.
 

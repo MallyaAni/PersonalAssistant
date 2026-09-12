@@ -499,7 +499,7 @@ LEVEL_KIND_WORDS: dict[int, str] = {
     KIND_SWING: "a swing point from the daily chart",
     KIND_EMA50: "the 50-day average",
     KIND_EMA200: "the 200-day average",
-    KIND_WEEK21: "the weekly 21-day average",
+    KIND_WEEK21: "the 21-week average",
 }
 
 

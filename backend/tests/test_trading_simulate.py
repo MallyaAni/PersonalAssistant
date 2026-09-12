@@ -304,6 +304,66 @@ def test_redeploy_puts_the_freed_weight_back_to_work():
     assert any(t.reason == "the stub said so" for t in cash.trades)
 
 
+# A partial trim sells only part of a signalled position, and the freed
+# weight goes to the names held in full - never back into the name being
+# trimmed, or the trim would hand the position back the weight it just shed
+# and the "reduce this name" step would do almost nothing.
+def test_a_trim_does_not_redeploy_into_the_trimmed_name():
+    from backend.agents.trading.desk.simulate import _Book
+
+    rows, names = 200, NAMES
+    close = np.full((rows, names), 100.0)
+    report = _report(close)
+    panel = report.panel
+    book = _Book(
+        names,
+        1_000_000.0,
+        0.0,
+        panel,
+        report,
+        [str(d) for d in panel.dates],
+    )
+    # Hold two names; N0 is signalled for a half trim.
+    book.shares = np.array([100.0, 100.0, 0.0, 0.0, 0.0, 0.0])
+    book.opened = {0: 0, 1: 0}
+    book.paid = {0: 100.0, 1: 100.0}
+    signal = np.zeros((rows, names), dtype=bool)
+    signal[5, 0] = True
+
+    class _Stub:
+        def __getitem__(self, key):
+            return signal[key]
+
+    original = (
+        simulate.exit_analyst.evidence,
+        simulate.exit_analyst.should_exit,
+        simulate.exit_analyst.reason,
+    )
+    simulate.exit_analyst.evidence = lambda p: _Stub()
+    simulate.exit_analyst.should_exit = lambda ev, t, c, entry, grace=0: bool(ev[t, c])
+    simulate.exit_analyst.reason = lambda ev, t, c: "the stub said so"
+    try:
+        target, reason = book.between(
+            _Stub(), panel.adj_close[5], 5, redeploy=True, trim=1 / 2
+        )
+    finally:
+        (
+            simulate.exit_analyst.evidence,
+            simulate.exit_analyst.should_exit,
+            simulate.exit_analyst.reason,
+        ) = original
+    assert reason == "the stub said so"
+    # N0 and N1 each start at the same held value (100 shares at 100). The
+    # trim must leave N0 at half its own weight - a quarter of the pair -
+    # with the freed weight going entirely to N1. Had the redeploy reached
+    # back into N0, N0 would hold a third of the pair, not a quarter.
+    equity = book.equity(panel.adj_close[5])
+    w0 = 100 * 100 / equity
+    assert target[0] == pytest.approx(0.5 * w0)
+    assert target[1] == pytest.approx(1.5 * w0)
+    assert target[0] + target[1] == pytest.approx(2 * w0)
+
+
 # The statistics come from the daily series and nothing else, so a series
 # with no return has no Sharpe and a straight line has no drawdown.
 def test_stats_read_the_daily_series():

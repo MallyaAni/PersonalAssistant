@@ -757,7 +757,10 @@ def curve_block(report, store) -> dict | None:
 
     panel = report.panel
     try:
-        sim = simulate.run(report, use_exits=False)
+        # The published curve runs the live execution policy - the band
+        # blocker on buys, sells at the close, the green-day hold - not the
+        # bare rebalance, so what the page shows is what the account runs.
+        sim = simulate.run(report, use_exits=False, **simulate.LIVE_POLICY)
     except Exception:
         return None
     if len(sim.dates) < 2 or sim.equity is None or not np.isfinite(sim.equity[0]):

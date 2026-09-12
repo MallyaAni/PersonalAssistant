@@ -53,6 +53,7 @@ const ACTION_STYLE: Record<string, string> = {
   sell: 'bg-[#fdecea] text-[#b42318]',
   hold: 'bg-[#f5f5f7] text-[#6e6e73]',
   uncovered: 'bg-[#eef1f6] text-[#3a3a3c]',
+  blocked: 'bg-[#f5f5f7] text-[#6e6e73]',
 }
 const STANCE_MARK: Record<number, string> = { 1: '+', 0: '·', [-1]: '−' }
 const TRIGGER_ORDER: [string, string][] = [
@@ -430,14 +431,22 @@ const CurveChart = ({
   const y = (v: number) => padT + (1 - (v - min) / span) * innerH
   // A polyline per run of finite values, so a series that starts later
   // (the paper account) or skips a date does not draw a false bridge.
+  // A missing value must close the current run: appending the next finite
+  // point to the last non-empty segment would draw the gap as a straight
+  // line, which is exactly the bridge this is meant to avoid.
   const line = (values: number[]) => {
     const segs: { x: number; y: number }[][] = []
     for (const [i, v] of values.entries()) {
-      if (!Number.isFinite(v)) continue
+      if (!Number.isFinite(v)) {
+        if (segs.length && segs[segs.length - 1].length) segs.push([])
+        continue
+      }
       if (!segs.length || !segs[segs.length - 1].length) segs.push([])
       segs[segs.length - 1].push({ x: x(i), y: y(v) })
     }
-    return segs.map((seg) => seg.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '))
+    return segs
+      .filter((seg) => seg.length)
+      .map((seg) => seg.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '))
   }
   const zeroY = y(0)
   const ticks = [0, min / 2, max / 2, max]
@@ -561,8 +570,8 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
     <ol className="list-decimal space-y-1.5 pl-5">
       <li>
         <b>Each evening</b> the desk updates the grades and targets for about ninety AI and software stocks. Trades
-        follow the rebalance schedule (about every four weeks); eligible A names are held at full size and eligible B
-        names at half size. A daily update is a target, not an order at the next open.
+        follow the rebalance schedule (about every four weeks); A+ names are sized at full weight, A names at three
+        quarters and eligible B names at half. A daily update is a target, not an order at the next open.
       </li>
       <li>
         <b>Enter your positions</b> (type or paste from Schwab) and set your account size. The board then says, name
@@ -570,8 +579,8 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         is your call to keep or close, not a sell instruction — and how many shares.
       </li>
       <li>
-        <b>Buy at the open</b> with a market order. When a trade is placed, click <b>done</b> on its row and your
-        positions update.
+        <b>Buy at the open</b> with a market order; sells fill at the close of the session that decides them. When a
+        trade is placed, click <b>done</b> on its row and your positions update.
       </li>
       <li>
         <b>Selling:</b> at a rebalance a name is dropped when its grade falls to C or below. The footer shows the
@@ -797,7 +806,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
 
       {latest && (
-        <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+        <section className="overflow-x-auto rounded-2xl border border-black/[0.08] bg-white p-4">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 className="text-sm font-semibold text-[#1d1d1f]">
               {rebalanceDue ? 'What to do at the next open' : 'Targets for the next rebalance'}
@@ -916,8 +925,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
               ? ` (in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days)`
               : ' (about every 20 trading days)'}
-            , when a name whose grade falls to C or below is dropped and A-rated names stay at full size with eligible B
-            names at half size. Buy at the open with a market order. Stops are off in the current strategy.
+            , when a name whose grade falls to C or below is dropped; A+ names stay at full weight, A names at three
+            quarters and eligible B names at half size. Buy at the open with a market order. Stops are off in the current strategy.
           </p>
         </section>
       )}
@@ -1159,7 +1168,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>
           {r.action}
         </span>
-        {r.action !== 'hold' && r.action !== 'uncovered' && onDone && (
+        {r.action !== 'hold' && r.action !== 'uncovered' && r.action !== 'blocked' && onDone && (
           <button
             type="button"
             onClick={() => void onDone()}
@@ -1176,6 +1185,8 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
           <span>{pct(r.current_weight)} of the account</span>
         ) : r.action === 'uncovered' ? (
           <span className="font-medium">{r.shares.toLocaleString()} shares held</span>
+        ) : r.action === 'blocked' ? (
+          <span className="text-xs text-[#6e6e73]">{r.blocked_reason ?? 'buy held back by the band rule'}</span>
         ) : (
           <span className="font-medium">{qty.toLocaleString()} shares</span>
         )}

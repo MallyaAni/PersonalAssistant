@@ -59,6 +59,19 @@ COST_BPS = 10.0
 MIN_TRADE = 0.005
 START_EQUITY = 1.0
 
+# The one versioned execution policy the live paper account runs, used
+# wherever a backtest is published so the measured curve and the live book
+# decide the same way. Each flag is a `simulate.run` argument; the paper
+# account applies them at the rebalance (the band blocker on buys) and at
+# the fill (sells at the close, holds a sell on a name up at the open).
+# Any change to how the live book executes edits this dict and nothing
+# else, so a backtest cannot drift from the account it is measured against.
+LIVE_POLICY: dict[str, bool] = {
+    "block_overbought": True,
+    "exit_at_close": True,
+    "green_day_skip": True,
+}
+
 
 @dataclass(frozen=True)
 class SimTrade:
@@ -312,7 +325,11 @@ def _band_dip_signal(report, panel: Panel, band_up: np.ndarray) -> np.ndarray:
     in_book[panel.index(panel.benchmark)] = False
     graded = report.graded.grades >= grading.ORDINAL[grading.A]
     with np.errstate(invalid="ignore"):
-        at_lower = (ev.band_position <= -0.80) & np.isfinite(ev.band_position)
+        # Band position runs 0 at the lower band to 1 at the upper (bands.py),
+        # so the lower fifth is <= 0.20, the mirror of the exit analyst's
+        # upper fifth (>= 0.80). A threshold below the band's own span would
+        # be a close that never happens and a buy option that can never fire.
+        at_lower = (ev.band_position <= 0.20) & np.isfinite(ev.band_position)
     return at_lower & band_up & graded & in_book[None, :]
 
 
@@ -393,10 +410,11 @@ def run(
     is rejecting its upper Bollinger band (the exit analyst's own signal)
     is held back, so a book is not starved of every un-triggered buy.
     `band_dip_buy` adds the symmetric lower edge mid-cycle: a name at the
-    bottom of its 20-day band while still above its 200-day average is a
-    dip in an uptrend and earns a small add. Measured on 2015-2026 it
-    never fires - these ninety-four names hug the top of their own band
-    (median band position +0.59), so a close at the bottom (<= -0.80) does
+    bottom of its 20-day band (position <= 0.20, the mirror of the exit
+    analyst's upper fifth) while still above its 200-day average is a dip
+    in an uptrend and earns a small add. Measured on 2015-2026 it never
+    fires - these ninety-four names hug the top of their own band
+    (median band position +0.59), so a close in the bottom fifth does
     not occur; the fall-based dip rule is the dip that exists here.
     `trend_gated_exit` is the symmetric upper edge, and it encodes the rule
     that a band read only fires as an exit in a downtrend: the exit
@@ -597,9 +615,17 @@ class _Book:
         if redeploy:
             # The regime already decided how much of the book to carry, so
             # an exit changes which names hold it, not how much is held.
-            remaining = float(weights.sum())
+            # The freed weight goes to the names still held in full; a
+            # trimmed name is deliberately being reduced, so it must not
+            # receive back a share of the very weight it just shed.
+            staying = ~leaving
+            remaining = float(weights[staying].sum())
             if remaining > 0:
-                weights = weights * (1.0 + freed / remaining)
+                weights = np.where(
+                    staying,
+                    weights * (1.0 + freed / remaining),
+                    weights,
+                )
         return weights, reason
 
     # How many shares of each name to end up holding, decided at `prices`.

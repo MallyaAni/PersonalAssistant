@@ -21,8 +21,9 @@ broker and records it with the board's Buy button.
 
 import argparse
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from backend.market import alpaca, deskrecord, holdings, live_quotes, live_technical
 from backend.market.store import MarketStore
@@ -30,6 +31,9 @@ from backend.market.store import MarketStore
 # The plan and its audit trail, both under the desk data root.
 INTRADAY_FILE = "intraday.json"
 INTRADAY_LOG = "intraday.log"
+# The trading day is a New York date; the zone carries daylight saving, so
+# the opening-hour rule is not a fixed offset from UTC.
+NEW_YORK = ZoneInfo("America/New_York")
 
 # The live snapshot: the candle's quotes and technical read, persisted beside
 # the plan so the desk page's live endpoints can serve the candle instantly
@@ -120,10 +124,11 @@ def _green_day_skip(
     from backend.market import alpaca_trading
 
     # Only the opening hour, US Eastern: the rule is about the open, and a
-    # stale or pre-market quote outside it must not cancel anything.
-    now = datetime.now(UTC)
-    est = now - timedelta(hours=4)
-    if not (9 <= est.hour < 11) or est.weekday() >= 5:
+    # stale or pre-market quote outside it must not cancel anything. The
+    # New York zone carries daylight saving, where a fixed four-hour shift
+    # from UTC is wrong half the year.
+    now = datetime.now(UTC).astimezone(NEW_YORK)
+    if not (9 <= now.hour < 11) or now.weekday() >= 5:
         return
     state = paper.load_state(data_dir)
     pending_sells = [p for p in state.pending if p.get("side") == "sell"]

@@ -137,17 +137,39 @@ class AlpacaTradingClient:
         query = f"/orders?status=all&limit={int(limit)}&after={after}&direction=asc"
         return self._call("GET", query) or []
 
-    # Cancel the desk's own open orders by id, never the person's. A broad
+    # Cancel the desk's own open orders, never the person's. A broad
     # DELETE /orders would withdraw an order placed by hand on Schwab as
     # readily as one this desk wrote down; the desk only cancels what its
     # own client order ids identify.
+    #
+    # The broker's cancel endpoint takes the order's broker id (a UUID),
+    # not the client order id this desk chose, so the open orders are read
+    # back and matched by client order id before anything is cancelled. An
+    # id that no longer appears among the open orders is already gone -
+    # filled, expired or withdrawn by hand - and is skipped, not an error.
+    # A cancel the broker refuses raises, so a caller that journals an
+    # order as deliberately held only journals it when the withdrawal
+    # actually happened.
     def cancel_orders(self, ids: list[str]) -> None:
-        """Cancel the given open orders by id, ignoring any that are gone."""
-        for oid in ids:
-            try:
-                self._call("DELETE", f"/orders/{oid}")
-            except AlpacaTradingError:
+        """Cancel the desk's open orders by client order id; raise when a live one fails."""
+        if not ids:
+            return
+        open_orders = self.open_orders() or []
+        by_client = {
+            str(o.get("client_order_id") or ""): o
+            for o in open_orders
+            if o.get("client_order_id")
+        }
+        for client_id in ids:
+            order = by_client.get(client_id)
+            if order is None:
                 continue
+            broker_id = order.get("id")
+            if not broker_id:
+                raise AlpacaTradingError(
+                    f"{client_id}: open order has no broker id to cancel"
+                )
+            self._call("DELETE", f"/orders/{broker_id}")
 
     # A whole-share market order for the next open.
     # A market order queued for the open. It is submitted after the close

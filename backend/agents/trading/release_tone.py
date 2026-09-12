@@ -61,6 +61,12 @@ def _schema() -> dict[str, Any]:
         "minimum": 0,
         "maximum": 1_000_000,
     }
+    # A signed amount or margin can be negative: a net loss or a negative
+    # gross margin is a real reading, not a defect, and must not clamp to 0
+    # or the desk thinks the company broke even. The lower bounds here are
+    # generous because the numbers are read from a release, not measured.
+    net_income = {"type": ["number", "null"], "minimum": -100_000, "maximum": 1_000_000}
+    margin = {"type": ["number", "null"], "minimum": -1000, "maximum": 100}
     return {
         "title": "ReleaseTone",
         "type": "object",
@@ -88,8 +94,8 @@ def _schema() -> dict[str, Any]:
             "quarter_end": {"type": ["string", "null"], "format": "date"},
             "revenue_usd_m": optional,
             "eps_usd": {"type": ["number", "null"]},
-            "net_income_usd_m": optional,
-            "gross_margin_pct": {"type": ["number", "null"], "minimum": 0, "maximum": 100},
+            "net_income_usd_m": net_income,
+            "gross_margin_pct": margin,
         },
     }
 
@@ -140,8 +146,8 @@ class ReleaseToneReader:
                 quarter_end=payload.get("quarter_end"),
                 revenue_usd_m=_opt(payload.get("revenue_usd_m"), 0, 1_000_000),
                 eps_usd=_opt(payload.get("eps_usd"), -1000, 100_000),
-                net_income_usd_m=_opt(payload.get("net_income_usd_m"), 0, 1_000_000),
-                gross_margin_pct=_opt(payload.get("gross_margin_pct"), 0, 100),
+                net_income_usd_m=_opt(payload.get("net_income_usd_m"), -100_000, 1_000_000),
+                gross_margin_pct=_opt(payload.get("gross_margin_pct"), -1000, 100),
             )
         except Exception:
             return None

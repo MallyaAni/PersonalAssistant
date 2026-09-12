@@ -291,13 +291,13 @@ def main() -> None:
     start = date.fromisoformat(args.since)
     results = {
         f"the rule: {challenger.strategy(report)}": simulate.run(
-            report, since=start, use_exits=False
+            report, since=start, use_exits=False, **simulate.LIVE_POLICY
         )
     }
     shadow = getattr(report, "alternate", None)
     if shadow is not None:
         results[f"shadow: {challenger.strategy(shadow)}"] = simulate.run(
-            shadow, since=start, use_exits=False
+            shadow, since=start, use_exits=False, **simulate.LIVE_POLICY
         )
     print(f"the book from {args.since}, full rules, costs included:")
     print(scorecard.render(results, store, args.loss_limit))

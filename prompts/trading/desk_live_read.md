@@ -29,7 +29,7 @@ Write a few short paragraphs in plain words that:
   daily trend, not only that the pattern is present.
 - Say what the nearest support and resistance are, not only how far away:
   a swing point from the daily chart, the 50-day average, the 200-day
-  average, or the weekly 21-day average, and the distance as a percentage
+  average, or the 21-week average, and the distance as a percentage
   either way.
 - Say which way the short, medium and long horizons point and how they
   agree or disagree.
@@ -37,7 +37,7 @@ Write a few short paragraphs in plain words that:
 Say what the readings mean in words. Never print a field name or a raw
 signed decimal; say "12.6% above the 21-day average" rather than the field
 name and its number. A level kind of 1 is a swing point, 2 the 50-day
-average, 3 the 200-day average, and 4 the weekly 21-day average; the level
+average, 3 the 200-day average, and 4 the 21-week average; the level
 value that goes with a kind is that level's price.
 
 Write only the read itself, in the second person, with no heading.

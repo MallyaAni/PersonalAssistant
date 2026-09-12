@@ -131,6 +131,28 @@ async def test_the_reported_financials_are_extracted(reader):
     assert tone.gross_margin_pct == pytest.approx(64.8, rel=0.02)
 
 
+# A net loss is a real reading, not a defect: the model must report it as a
+# negative figure, or the desk believes the company broke even. A release
+# that states a loss and a negative gross margin hands both through signed.
+async def test_a_reported_loss_stays_negative(reader):
+    release = (
+        "Falcon Materials Reports Results for the Quarter Ended March 31, 2026\n\n"
+        "Revenue for the quarter ended March 31, 2026 was $1.10 billion, "
+        "compared with $1.05 billion a year ago. The company reported a net "
+        "loss of $420 million, or a loss of $1.85 per diluted share. GAAP "
+        "gross margin was negative 8.2%.\n\n"
+        "For the second quarter the company expects revenue of $1.15 billion, "
+        "plus or minus 3%.\n\n"
+        "A conference call will be held at 1 p.m. Pacific time."
+    )
+    tone = await reader.score(release)
+    assert tone is not None
+    assert tone.net_income_usd_m is not None
+    assert tone.net_income_usd_m < 0
+    assert tone.eps_usd is not None and tone.eps_usd < 0
+    assert tone.gross_margin_pct is not None and tone.gross_margin_pct < 0
+
+
 # A release that states no figures at all leaves the financials null rather
 # than carrying numbers over from elsewhere.
 async def test_financials_are_null_when_not_stated(reader):

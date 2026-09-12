@@ -2074,7 +2074,7 @@ export interface DeskLive {
   // and split by how far ahead each one looks, for the per-name drill-down.
   // The `support_*` and `resistance_*` fields on `short` name what the
   // nearest levels are: kind 1 a swing point, 2 the 50-day average, 3 the
-  // 200-day average, 4 the weekly 21-day average, with the level's price.
+  // 200-day average, 4 the 21-week average, with the level's price.
   technical_detail?: Record<
     string,
     {
@@ -2102,8 +2102,10 @@ export interface DeskHolding {
 export interface DeskMineRow {
   ticker: string;
   // `uncovered` is a held name the desk does not rate: a review state, not
-  // a sell instruction.
-  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold' | 'uncovered';
+  // a sell instruction. `blocked` is a buy or add the band-reversal rule
+  // held back: the desk will not place it, so it is not actionable.
+  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold' | 'uncovered' | 'blocked';
+  blocked_reason?: string | null;
   in_book: boolean;
   grade: string;
   // The grade re-made with the technical analyst read at the live price,

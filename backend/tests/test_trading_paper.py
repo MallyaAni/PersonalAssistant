@@ -371,3 +371,82 @@ def test_a_rebalance_with_a_skipped_leg_concludes_without_rolling_back():
     assert out.unconfirmed_rebalance is None
     assert out.last_rebalance == "2026-09-10"
     assert out.sessions_since_rebalance == 0
+
+
+# A cancel is issued against the broker's own order id, never the client
+# order id the desk chose: the broker's DELETE endpoint takes the UUID it
+# issued, and the desk's id would 404. The open orders are read back and
+# matched by client order id before the DELETE goes out.
+def test_cancel_orders_deletes_by_the_brokers_order_id():
+    calls = []
+
+    def transport(method, url, headers, body):
+        calls.append((method, url))
+        if method == "GET" and url.endswith("/orders?status=open&limit=500"):
+            return 200, json.dumps(
+                [
+                    {
+                        "id": "o-broker-1",
+                        "client_order_id": "anios-2026-09-10-sell-etn-7",
+                        "symbol": "ETN",
+                    },
+                    {
+                        "id": "o-broker-2",
+                        "client_order_id": "anios-2026-09-10-buy-anet-8",
+                        "symbol": "ANET",
+                    },
+                ]
+            ).encode()
+        if method == "DELETE":
+            return 200, b"[]"
+        return 404, b"{}"
+
+    client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
+    client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
+    deletes = [url for method, url in calls if method == "DELETE"]
+    assert deletes == [
+        "https://paper-api.alpaca.markets/v2/orders/o-broker-1"
+    ]
+
+
+# A live order the broker refuses to cancel must not read as cancelled:
+# the caller journals a deliberate hold only when the withdrawal happened,
+# so a refused cancel raises instead of being swallowed.
+def test_cancel_orders_raises_when_the_broker_refuses():
+    def transport(method, url, headers, body):
+        if method == "GET" and url.endswith("/orders?status=open&limit=500"):
+            return 200, json.dumps(
+                [
+                    {
+                        "id": "o-broker-1",
+                        "client_order_id": "anios-2026-09-10-sell-etn-7",
+                        "symbol": "ETN",
+                    }
+                ]
+            ).encode()
+        if method == "DELETE":
+            return 403, b'{"message": "the auction is locked"}'
+        return 404, b"{}"
+
+    client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
+    with pytest.raises(alpaca_trading.AlpacaTradingError):
+        client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
+
+
+# A client order id that no longer appears among the open orders is
+# already gone - filled, expired or withdrawn by hand - so it is skipped
+# rather than treated as a failed cancel.
+def test_cancel_orders_skips_an_order_that_is_already_gone():
+    deletes: list[str] = []
+
+    def transport(method, url, headers, body):
+        if method == "GET" and url.endswith("/orders?status=open&limit=500"):
+            return 200, json.dumps([]).encode()
+        if method == "DELETE":
+            deletes.append(url)
+            return 200, b"[]"
+        return 404, b"{}"
+
+    client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
+    client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
+    assert deletes == []

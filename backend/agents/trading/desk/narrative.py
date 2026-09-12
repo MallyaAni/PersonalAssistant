@@ -76,6 +76,60 @@ def _coverage_gaps(text: str, read: str) -> list[str]:
     return gaps
 
 
+# The facts the contradiction check can rely on, read deterministically
+# from the evidence rather than trusted to a model: each analyst's stance
+# and the key measurements behind it, plus the grade it was told to
+# explain. The reviewer's complaint was that the check received raw
+# numbers and free prose it could not reliably adjudicate; handing it the
+# clean contract the brief was written to match makes "consistent" the
+# verdict for a faithful brief and only a stated direction the facts
+# contradict becomes "contradicts".
+def _check_facts(text: str) -> str:
+    """Return the stances, grade and key figures in `text` as a fact list."""
+    grade = next(
+        (m.group(1) for m in re.finditer(r"^Grade:\s*([A-Z][+-]?)", text, re.MULTILINE)),
+        "?",
+    )
+    votes = next(
+        (
+            m.group(1)
+            for m in re.finditer(r"Votes:\s*([+-]?\d+(?:\.\d+)?)", text)
+        ),
+        "?",
+    )
+    # Each analyst's line keeps its measurements (the text after the
+    # stance), so the checker can verify a figure the brief cites against
+    # the fact it came from rather than treating it as invented.
+    lines: list[str] = []
+    for match in _ANALYST_LINE.finditer(text):
+        analyst, cited = match.group(1), match.group(2)
+        stance = next(
+            (
+                m.group(1)
+                for m in re.finditer(r"stance\s*([+-]?\d+)", match.group(0))
+            ),
+            "0",
+        )
+        word = "bullish" if int(stance) > 0 else "bearish" if int(stance) < 0 else "neutral"
+        if cited.strip() in ("no data for this name",):
+            lines.append(f"{analyst}: {word} (no data)")
+        else:
+            lines.append(f"{analyst}: {word} ({cited.strip()})")
+    # The regime lines and the book status are facts too; a brief that
+    # faithfully reports them must not look invented because the contract
+    # left them out.
+    regime_lines = [
+        m.group(1).rstrip(".") for m in re.finditer(r"^Regime[^:\n]*:\s*([^\n]+)", text, re.MULTILINE)
+    ]
+    regime = " | ".join(regime_lines)
+    book = "in today's book" if "In today's book" in text else "not in today's book"
+    return (
+        f"Grade: {grade}. Votes: {votes}.\n"
+        + "\n".join(lines)
+        + f"\nRegime: {regime.strip()}.\nBook: {book}."
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class DeskBrief:
     """What the model wrote for one name."""
@@ -146,24 +200,38 @@ def brief_text(report, ticker: str) -> str:
 # the limit rather than mid-word. A text that is short but ends without
 # sentence punctuation is a truncation, not a finished brief: the runtime
 # stopped at its token ceiling, so the sentence must be cut back to the
-# last complete one rather than shown broken.
+# last complete one rather than shown broken. When the text has no complete
+# sentence at all - a bare fragment the model stopped mid-thought - a
+# bounded deterministic fallback stands in rather than an unfinished phrase
+# on the board.
+_FRAGMENT_FALLBACK = "The desk's read did not finish in a complete sentence."
+
+
 def _cut(text: str, limit: int) -> str:
     """Return `text` within `limit`, ending at a sentence when it must cut."""
     text = text.strip()
+    if not text:
+        return text
     if len(text) <= limit:
         if text.endswith((".", "!", "?")):
             return text
         # Short but unfinished: cut back to the last complete sentence. A
-        # one-clause fragment with no sentence end is kept whole - there is
-        # nothing more honest to show.
+        # one-clause fragment with no sentence end cannot be made complete
+        # by cutting, so the bounded fallback replaces it.
         end = max(text.rfind(". "), text.rfind(".\n"), text.rfind("; "))
-        return text[: end + 1].rstrip() if end > 0 else text
+        return text[: end + 1].rstrip() if end > 0 else _FRAGMENT_FALLBACK
+    # A cut that lands before any sentence boundary would end mid-sentence,
+    # so widen the search to the whole text before accepting a fragment:
+    # the last complete sentence anywhere wins, and only a text with no
+    # sentence end at all falls back.
     head = text[:limit]
     end = max(head.rfind(". "), head.rfind(".\n"), head.rfind("; "))
     if end > limit // 2:
         return head[: end + 1].rstrip()
-    clause = max(head.rfind(", "), head.rfind(" "))
-    return (head[:clause] if clause > limit // 2 else head).rstrip(" ,;")
+    end = max(text.rfind(". "), text.rfind(".\n"), text.rfind("; "))
+    if end > 0:
+        return text[: end + 1].rstrip()
+    return _FRAGMENT_FALLBACK
 
 
 def _schema() -> dict[str, Any]:
@@ -202,7 +270,7 @@ class DeskNarrator:
     def __init__(
         self,
         writer: TextWriter | None,
-        max_tokens: int = 600,
+        max_tokens: int = 900,
         read_max_tokens: int = 600,
     ) -> None:
         self.writer = writer
@@ -250,37 +318,47 @@ class DeskNarrator:
             return None
         return brief
 
-    # Whether the brief contradicts the evidence it was written from. A
+    # Whether the brief contradicts the facts the desk measured. A
     # judgement, so it is a model decision into a two-value schema; a check
-    # that fails to answer never discards a good brief.
+    # that fails to answer never discards a good brief. The facts it judges
+    # against are the clean stances and measurements read from the evidence
+    # in code, not the raw prose a model could not reliably adjudicate. The
+    # engine is not strictly deterministic at temperature 0, so one call
+    # can say "contradicts" on a good brief; a brief is dropped only when a
+    # majority of three independent calls say so, which a genuinely wrong
+    # brief produces and a right one almost never does.
     def _contradicts(self, text: str, brief: DeskBrief) -> bool:
         """Return whether the brief contradicts the evidence."""
         if self.writer is None:
             return False
-        try:
-            result = self.writer.chat(
-                [
-                    {"role": "system", "content": _CHECK_SYSTEM},
-                    {
-                        "role": "user",
-                        "content": (
-                            f"EVIDENCE:\n{text}\n\nBRIEF:\n"
-                            f"stance: {brief.stance}\n"
-                            f"verdict: {brief.verdict}\n"
-                            f"reasoning: {brief.reasoning}\n"
-                            f"risks: {brief.risks}\n"
-                            f"watch: {brief.watch}"
-                        ),
-                    },
-                ],
-                32,
-                _check_schema(),
-                0.0,
-            )
-            payload = json.loads(result["content"])
-            return str(payload.get("consistency") or "consistent") == "contradicts"
-        except Exception:
-            return False
+        brief_lines = (
+            f"stance: {brief.stance}\n"
+            f"verdict: {brief.verdict}\n"
+            f"reasoning: {brief.reasoning}\n"
+            f"risks: {brief.risks}\n"
+            f"watch: {brief.watch}"
+        )
+        disagree = 0
+        for _ in range(3):
+            try:
+                result = self.writer.chat(
+                    [
+                        {"role": "system", "content": _CHECK_SYSTEM},
+                        {
+                            "role": "user",
+                            "content": f"FACTS:\n{_check_facts(text)}\n\nBRIEF:\n{brief_lines}",
+                        },
+                    ],
+                    32,
+                    _check_schema(),
+                    0.0,
+                )
+                payload = json.loads(result["content"])
+                if str(payload.get("consistency") or "consistent") == "contradicts":
+                    disagree += 1
+            except Exception:
+                continue
+        return disagree >= 2
 
     # Write the read for a name in a report, or None when the runtime is
     # away or the answer comes back empty.

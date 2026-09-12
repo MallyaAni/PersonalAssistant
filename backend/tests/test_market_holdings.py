@@ -163,6 +163,31 @@ def test_board_against_the_persons_holdings():
     )
 
 
+# The band-reversal blocker is not just a flag the page ignores: a buy or
+# an add the nightly desk refused because the daily rejected its upper band
+# shows as "blocked", not an actionable buy, and never gets a done button.
+def test_a_buy_held_back_by_the_band_reversal_is_blocked_not_buyable():
+    record = _record()
+    record["levels"]["HPE"]["rejecting_band"] = True
+    record["actions"] = [{"ticker": "HPE", "rejecting_band": True}]
+    rows = holdings.board(record, [], 100_000.0, {})
+    hpe = {r["ticker"]: r for r in rows}["HPE"]
+    assert hpe["action"] == "blocked"
+    assert hpe["blocked_reason"].startswith("the name's daily rejected")
+    # A held name adds into is held back too: the planner holds every
+    # buy-side order for a blocked name, not only the first entry.
+    held = [holdings.Holding("HPE", 10.0, 50.0, "2026-09-01")]
+    rows = holdings.board(record, held, 100_000.0, {"HPE": {"last": 52.0}})
+    hpe = {r["ticker"]: r for r in rows}["HPE"]
+    assert hpe["action"] == "blocked"
+    # Sells and holds are not blocked: only the buy side is.
+    record["levels"]["HPE"]["rejecting_band"] = False
+    record["actions"] = [{"ticker": "HPE", "rejecting_band": False}]
+    rows = holdings.board(record, held, 100_000.0, {"HPE": {"last": 52.0}})
+    hpe = {r["ticker"]: r for r in rows}["HPE"]
+    assert hpe["action"] in ("add", "hold")
+
+
 # The board distinguishes "the next session is a rebalance" from "targets
 # for a later one": only with the countdown at one (or absent, a fresh
 # book) are the target-vs-held changes executable at the next open.

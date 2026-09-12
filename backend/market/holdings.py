@@ -164,6 +164,15 @@ def board(
             if (holding is not None and not in_book)
             else actions.action_for(target, current)
         )
+        # The band-reversal blocker: a name the nightly desk refused to buy
+        # because its daily rejects its upper Bollinger band is not a buy or
+        # an add here either - the paper planner holds every buy-side order
+        # for it back, so presenting it as an actionable buy would tell the
+        # person to place an order the strategy itself will not place. The
+        # board carries the blocker's own verdict instead.
+        blocked = bool(level.get("rejecting_band", False)) and action in ("buy", "add")
+        if blocked:
+            action = "blocked"
         # The paper book's countdown to its next rebalance, from the record's
         # paper block or the levels when it is absent.
         countdown = until if until is not None else level.get("until_rebalance")
@@ -171,6 +180,11 @@ def board(
             {
                 "ticker": ticker,
                 "action": action,
+                "blocked_reason": (
+                    "the name's daily rejected its upper band, so the desk held the buy"
+                    if blocked
+                    else None
+                ),
                 "in_book": in_book,
                 "grade": grade.get("grade", ""),
                 "grade_live": live["grade"] if live else grade.get("grade", ""),

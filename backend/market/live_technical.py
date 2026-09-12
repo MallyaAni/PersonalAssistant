@@ -24,6 +24,7 @@ cached.
 
 from dataclasses import replace
 from datetime import UTC, date, datetime
+from zoneinfo import ZoneInfo
 
 import numpy as np
 
@@ -33,6 +34,11 @@ from backend.agents.trading.desk.desk import book_panel, tightening_for
 from backend.market import baselines, options
 from backend.market import technical as daily_technical
 from backend.market.panel import Panel
+
+# The session date is the New York calendar date, not the UTC one: an
+# afternoon in UTC is already the next date in New York's calendar, so a
+# UTC "today" can point the live bar at the wrong session.
+NEW_YORK = ZoneInfo("America/New_York")
 
 _cache: dict[str, object] = {"key": None, "value": {}}
 
@@ -157,7 +163,7 @@ def _live_read(store, quotes: dict, today: date) -> dict:
 # close, one run per candle.
 def technical_now(store, quotes: dict, today: date | None = None) -> dict:
     """Return {symbol: {"now": rank, "close": rank}} for the names quoted."""
-    today = today or datetime.now(UTC).date()
+    today = today or datetime.now(NEW_YORK).date()
     read = _live_read(store, quotes, today)
     panel = read["panel"]
     scores = read["opinion"].scores
@@ -219,7 +225,7 @@ def _walls_for(store, symbol: str, price: float | None, today: date) -> dict | N
 # longer timeframes instead of one number.
 def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
     """Return each quoted name's technical features, split by horizon."""
-    today = today or datetime.now(UTC).date()
+    today = today or datetime.now(NEW_YORK).date()
     read = _live_read(store, quotes, today)
     panel = read["panel"]
     opinion = read["opinion"]
