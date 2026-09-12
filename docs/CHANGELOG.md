@@ -2,6 +2,20 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-12 — desk cancellations survive reconciliation and session/text bounds hold
+
+`a0f1e5c9`: cancellation acknowledgement is followed by an order-status read;
+durable hold intent lets later reconciliation preserve partial fills and
+conclude deliberate cancellations without rolling back the rebalance clock.
+Regular-session quotes require the actual opening candle and cannot reuse a
+different day's cache; the balancer rejects stale and premarket candles.
+Narrative fallback and sentence trimming obey the requested character limit.
+
+Measured with isolated broker fixtures and persisted paper state: trading/
+market suite **417 passed, 8 skipped** (23 existing numerical warnings).
+Real-model desk brief/read/live-read suite **7 passed**. Ruff and diff checks
+passed. Validation covers the candidate code, not a deployed broker journey.
+
 ## 2026-09-12 - The web vision upload fits an oversized screenshot instead of 413ing it
 
 A screenshot uploaded in the `ani.mallya` web chat on 2026-09-10 failed

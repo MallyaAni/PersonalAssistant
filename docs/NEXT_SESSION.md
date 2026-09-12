@@ -3,6 +3,37 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-12 — desk cancellation, session-open, and text-bound fixes (not deployed)
+
+Code commit `a0f1e5c9`, based on clean `73d6df9c`. The reviewed failures were
+reproduced before editing. Cancellation now reads order status after Alpaca's
+204 acknowledgement. The balancer saves `hold_requested` before cancellation;
+reconciliation concludes a confirmed canceled sell as a deliberate hold while
+preserving any partial fill. Pending cancellations stay pending and a full
+fill stays a fill, including after a process restart. This prevents a
+successful deliberate cancellation from resetting the rebalance clock.
+
+Live quotes exclude extended hours and other dates, require the 09:30 New York
+opening candle, and scope cache reuse to the requested session. The balancer
+acts only from 09:30 to 11:00 with a current regular-session candle no older
+than 30 minutes. Narrative cuts now use a sentence boundary inside the limit
+or a fallback that fits, never a later boundary or a decimal point.
+
+VERIFIED in an isolated copy of the candidate source mounted into
+`anios-functional-tests` on spark1: trading/market tests **417 passed,
+8 skipped**, 23 existing numeric warnings, 5.07 seconds. The new regression
+module reads state back from disk after cancellation and reconciliation,
+covering pending, partial, canceled, and filled outcomes, summer/winter session
+opens, stale candles, cache date isolation, and strict text bounds. No real
+broker traffic was sent. Desk brief/read/live-read functional tests against
+the real `deepseek-v4-flash` runtime: **7 passed**, 78.90 seconds. Ruff on all
+changed Python files and `git diff --check` passed.
+
+UNVERIFIED: deployed broker/UI acceptance, full deployment gates, and
+production earnings backfill. This was a fix-and-commit request; deployment
+has not been performed. Ship only through `scripts/deploy.sh` and run its
+required gates and deployed acceptance checks before claiming deployment.
+
 ## 2026-09-12 — the web vision upload fits an oversized screenshot instead of 413ing it (DEPLOYED `1b28dc0`)
 
 A screenshot uploaded in the `ani.mallya` web chat on 2026-09-10 failed
