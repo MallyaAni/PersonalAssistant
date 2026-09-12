@@ -3,6 +3,39 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-12 — the live grade re-reads the value analyst, the board warns when it contradicts the action, and "at risk" reads the candle (DEPLOYED `8df5a24`)
+
+The live grade was re-made from the technical analyst alone. The value
+analyst is price-derived — `valuation.multiples` uses the panel's close — so
+a name that cheapened intraday changed its value rank while the filed levels
+did not, yet its live grade never moved. The live read now carries the value
+opinion beside the technical one (`_live_read` returns `"value"`), and
+`value_now` mirrors `technical_now` (`{symbol: {"now", "close", "stance"}}`).
+`holdings.board` and `live_grades` take the value read, `_live_grade` re-reads
+both stances and carries the live grade's own margin
+(`actions.grade_margin(votes, letter, release_bullish)`), so:
+
+- the "at risk" marker reads `grade_margin_live` (falling back to the evening
+  margin when the candle has not read the name), so it moves with the price;
+- a row whose live grade is C while the action still says buy or add shows
+  "grade C live: dropped at the next rebalance" in one line;
+- the row's detail shows the value rank beside the technical one.
+
+The dashboard copy was passed word by word: the footer now says the technical
+and value reads re-check every 15 minutes, and "Money at work" reads as a
+share of the practice account.
+
+VERIFIED on spark1: changed-module tests 43 passed (added
+`test_the_live_value_read_regrades_a_name`,
+`test_the_live_grade_carries_its_own_margin`,
+`test_value_now_reads_the_value_analyst_and_reports_the_stance`); unit suite
+3357 passed, 19 skipped; routing gate 100 passed (3 unrelated functional
+failures re-ran green — engine nondeterminism, not this change); desk
+read/live-read/brief functional suites 7 passed; `npx tsc --noEmit` clean.
+`value_now` exercised against the real store: 84 of 93 quoted names ranked
+with stances. Deployed `8df5a240`, post-deploy cheap checks `ok (cheap)` —
+search chain untouched, so the credit-consuming sweep correctly did not run.
+
 ## 2026-09-12 — desk cancellation, session-open, and text-bound fixes (not deployed)
 
 Code commit `a0f1e5c9`, based on clean `73d6df9c`. The reviewed failures were
