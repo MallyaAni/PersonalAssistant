@@ -87,14 +87,14 @@ def _coverage_gaps(text: str, read: str) -> list[str]:
 def _check_facts(text: str) -> str:
     """Return the stances, grade and key figures in `text` as a fact list."""
     grade = next(
-        (m.group(1) for m in re.finditer(r"^Grade:\s*([A-Z][+-]?)", text, re.MULTILINE)),
+        (
+            m.group(1)
+            for m in re.finditer(r"^Grade:\s*([A-Z][+-]?)", text, re.MULTILINE)
+        ),
         "?",
     )
     votes = next(
-        (
-            m.group(1)
-            for m in re.finditer(r"Votes:\s*([+-]?\d+(?:\.\d+)?)", text)
-        ),
+        (m.group(1) for m in re.finditer(r"Votes:\s*([+-]?\d+(?:\.\d+)?)", text)),
         "?",
     )
     # Each analyst's line keeps its measurements (the text after the
@@ -104,13 +104,16 @@ def _check_facts(text: str) -> str:
     for match in _ANALYST_LINE.finditer(text):
         analyst, cited = match.group(1), match.group(2)
         stance = next(
-            (
-                m.group(1)
-                for m in re.finditer(r"stance\s*([+-]?\d+)", match.group(0))
-            ),
+            (m.group(1) for m in re.finditer(r"stance\s*([+-]?\d+)", match.group(0))),
             "0",
         )
-        word = "bullish" if int(stance) > 0 else "bearish" if int(stance) < 0 else "neutral"
+        word = (
+            "bullish"
+            if int(stance) > 0
+            else "bearish"
+            if int(stance) < 0
+            else "neutral"
+        )
         if cited.strip() in ("no data for this name",):
             lines.append(f"{analyst}: {word} (no data)")
         else:
@@ -119,7 +122,8 @@ def _check_facts(text: str) -> str:
     # faithfully reports them must not look invented because the contract
     # left them out.
     regime_lines = [
-        m.group(1).rstrip(".") for m in re.finditer(r"^Regime[^:\n]*:\s*([^\n]+)", text, re.MULTILINE)
+        m.group(1).rstrip(".")
+        for m in re.finditer(r"^Regime[^:\n]*:\s*([^\n]+)", text, re.MULTILINE)
     ]
     regime = " | ".join(regime_lines)
     book = "in today's book" if "In today's book" in text else "not in today's book"
@@ -207,31 +211,25 @@ def brief_text(report, ticker: str) -> str:
 _FRAGMENT_FALLBACK = "The desk's read did not finish in a complete sentence."
 
 
+# Keep complete sentences within the budget, or use a fallback that fits.
 def _cut(text: str, limit: int) -> str:
     """Return `text` within `limit`, ending at a sentence when it must cut."""
     text = text.strip()
-    if not text:
-        return text
-    if len(text) <= limit:
-        if text.endswith((".", "!", "?")):
-            return text
-        # Short but unfinished: cut back to the last complete sentence. A
-        # one-clause fragment with no sentence end cannot be made complete
-        # by cutting, so the bounded fallback replaces it.
-        end = max(text.rfind(". "), text.rfind(".\n"), text.rfind("; "))
-        return text[: end + 1].rstrip() if end > 0 else _FRAGMENT_FALLBACK
-    # A cut that lands before any sentence boundary would end mid-sentence,
-    # so widen the search to the whole text before accepting a fragment:
-    # the last complete sentence anywhere wins, and only a text with no
-    # sentence end at all falls back.
-    head = text[:limit]
-    end = max(head.rfind(". "), head.rfind(".\n"), head.rfind("; "))
-    if end > limit // 2:
-        return head[: end + 1].rstrip()
-    end = max(text.rfind(". "), text.rfind(".\n"), text.rfind("; "))
-    if end > 0:
-        return text[: end + 1].rstrip()
-    return _FRAGMENT_FALLBACK
+    if not text or limit <= 0:
+        return ""
+    # Inspect the following character in the original text so a decimal
+    # point at the limit cannot masquerade as a completed sentence.
+    ends = [
+        i + 1
+        for i, char in enumerate(text[:limit])
+        if char in ".!?" and (i + 1 == len(text) or text[i + 1].isspace())
+    ]
+    if ends:
+        return text[: ends[-1]].rstrip()
+    for fallback in (_FRAGMENT_FALLBACK, "Read unavailable."):
+        if len(fallback) <= limit:
+            return fallback
+    return ""
 
 
 def _schema() -> dict[str, Any]:
@@ -376,7 +374,10 @@ class DeskNarrator:
                         {"role": "system", "content": _CHECK_SYSTEM},
                         {
                             "role": "user",
-                            "content": f"FACTS:\n{_check_facts(text)}\n\nBRIEF:\n{brief_lines}",
+                            "content": (
+                                f"FACTS:\n{_check_facts(text)}\n\n"
+                                f"BRIEF:\n{brief_lines}"
+                            ),
                         },
                     ],
                     32,

@@ -15,6 +15,7 @@ resolution that survives cost; what a candle adds is risk information.
 import time
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from datetime import time as day_time
 from zoneinfo import ZoneInfo
 
 from backend.market import alpaca
@@ -40,10 +41,25 @@ class Quote:
 _cache: dict[str, tuple[float, Quote]] = {}
 
 
-# The session's bars folded into a Quote, or None when there are none.
-def quote_from_bars(symbol: str, bars: list, fetched_at: datetime) -> Quote | None:
+# Normalize provider timestamps, whose naive representation also means UTC.
+def _bar_time(value: datetime) -> datetime:
+    return value.replace(tzinfo=value.tzinfo or UTC)
+
+
+# Fold regular-session bars into a quote only when its opening candle exists.
+def quote_from_bars(
+    symbol: str, bars: list, fetched_at: datetime, session: date | None = None
+) -> Quote | None:
     """Return the Quote of the session's bars, oldest first, or None."""
-    if not bars:
+    today = session or fetched_at.astimezone(NEW_YORK).date()
+    opening = datetime.combine(today, day_time(9, 30), NEW_YORK)
+    closing = datetime.combine(today, day_time(16), NEW_YORK)
+    # Provider timestamps are UTC; ignore extended hours and other dates.
+    bars = sorted(
+        (b for b in bars if opening <= _bar_time(b.start) < closing),
+        key=lambda b: _bar_time(b.start),
+    )
+    if not bars or _bar_time(bars[0].start) != opening:
         return None
     last = bars[-1]
     return Quote(
@@ -83,14 +99,21 @@ def quotes(
     out: dict[str, Quote] = {}
     for symbol in symbols:
         held = _cache.get(symbol)
-        if held and now() - held[0] < CANDLE_SECONDS:
+        if (
+            held
+            and now() - held[0] < CANDLE_SECONDS
+            and _bar_time(datetime.fromisoformat(held[1].bar))
+            .astimezone(NEW_YORK)
+            .date()
+            == today
+        ):
             out[symbol] = held[1]
             continue
         try:
             bars = fetch(symbol, today, today, headers=headers)
         except Exception:  # the feed is a convenience; the board stands without it
             continue
-        quote = quote_from_bars(symbol, bars, clock())
+        quote = quote_from_bars(symbol, bars, clock(), session=today)
         if quote is not None:
             _cache[symbol] = (now(), quote)
             out[symbol] = quote

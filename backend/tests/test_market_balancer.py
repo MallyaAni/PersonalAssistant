@@ -162,7 +162,7 @@ def test_a_green_name_is_not_sold_into_its_own_rally(tmp_path: Path, monkeypatch
     class _FakeDT(dt.datetime):
         @classmethod
         def now(cls, tz=None):
-            return dt.datetime(2026, 9, 11, 14, 30, tzinfo=dt.timezone.utc)
+            return dt.datetime(2026, 9, 11, 14, 30, tzinfo=dt.UTC)
 
     monkeypatch.setattr(market_balancer, "datetime", _FakeDT)
     _write_record(tmp_path, _record())
@@ -208,10 +208,11 @@ def test_a_green_name_is_not_sold_into_its_own_rally(tmp_path: Path, monkeypatch
         )
     )
     # ADBE opens up (305 > 300 close), HPE opens down (51 < 52 close).
-    quotes = {"ADBE": {"open": 305.0}, "HPE": {"open": 51.0}}
-    market_balancer._green_day_skip(
-        tmp_path, record, quotes, tmp_path / "intraday.log"
-    )
+    quotes = {
+        "ADBE": {"open": 305.0, "bar": "2026-09-11T14:15:00+00:00"},
+        "HPE": {"open": 51.0, "bar": "2026-09-11T14:15:00+00:00"},
+    }
+    market_balancer._green_day_skip(tmp_path, record, quotes, tmp_path / "intraday.log")
 
     assert cancelled == ["anios-2026-09-10-sell-adbe-7"]
     back = paper.load_state(tmp_path)
@@ -232,9 +233,7 @@ def test_a_green_name_is_not_sold_into_its_own_rally(tmp_path: Path, monkeypatch
 # Outside the opening hour the rule must not cancel anything: a quote
 # arriving in the afternoon is a different question than the open, and the
 # desk should not act on it.
-def test_the_green_day_rule_is_quiet_outside_the_window(
-    tmp_path: Path, monkeypatch
-):
+def test_the_green_day_rule_is_quiet_outside_the_window(tmp_path: Path, monkeypatch):
     import datetime as dt
 
     from backend.agents.trading.desk import paper
@@ -242,7 +241,7 @@ def test_the_green_day_rule_is_quiet_outside_the_window(
     class _FakeDT(dt.datetime):
         @classmethod
         def now(cls, tz=None):
-            return dt.datetime(2026, 9, 11, 20, 0, tzinfo=dt.timezone.utc)
+            return dt.datetime(2026, 9, 11, 20, 0, tzinfo=dt.UTC)
 
     monkeypatch.setattr(market_balancer, "datetime", _FakeDT)
     _write_record(tmp_path, _record())
@@ -280,7 +279,10 @@ def test_the_green_day_rule_is_quiet_outside_the_window(
         )
     )
     market_balancer._green_day_skip(
-        tmp_path, record, {"ADBE": {"open": 305.0}}, tmp_path / "intraday.log"
+        tmp_path,
+        record,
+        {"ADBE": {"open": 305.0, "bar": "2026-09-11T14:15:00+00:00"}},
+        tmp_path / "intraday.log",
     )
 
     assert cancelled == []
@@ -294,9 +296,7 @@ def test_the_green_day_rule_is_quiet_outside_the_window(
 # still working and can still fill - must not be journaled as a deliberate
 # zero-fill hold: the state leaves it pending so the next reconcile records
 # what the broker actually did.
-def test_an_unconfirmed_cancel_is_not_journaled_as_a_hold(
-    tmp_path: Path, monkeypatch
-):
+def test_an_unconfirmed_cancel_is_not_journaled_as_a_hold(tmp_path: Path, monkeypatch):
     import datetime as dt
 
     from backend.agents.trading.desk import paper
@@ -304,7 +304,7 @@ def test_an_unconfirmed_cancel_is_not_journaled_as_a_hold(
     class _FakeDT(dt.datetime):
         @classmethod
         def now(cls, tz=None):
-            return dt.datetime(2026, 9, 11, 14, 30, tzinfo=dt.timezone.utc)
+            return dt.datetime(2026, 9, 11, 14, 30, tzinfo=dt.UTC)
 
     monkeypatch.setattr(market_balancer, "datetime", _FakeDT)
     _write_record(tmp_path, _record())
@@ -338,7 +338,10 @@ def test_an_unconfirmed_cancel_is_not_journaled_as_a_hold(
         )
     )
     market_balancer._green_day_skip(
-        tmp_path, record, {"ADBE": {"open": 305.0}}, tmp_path / "intraday.log"
+        tmp_path,
+        record,
+        {"ADBE": {"open": 305.0, "bar": "2026-09-11T14:15:00+00:00"}},
+        tmp_path / "intraday.log",
     )
 
     back = paper.load_state(tmp_path)

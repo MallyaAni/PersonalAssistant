@@ -326,9 +326,7 @@ def test_skip_sell_marks_a_pending_sell_as_deliberately_held():
         "anios-2026-09-10-buy-anet-8"
     ]
     entry = next(
-        e
-        for e in out.journal
-        if e["client_order_id"] == "anios-2026-09-10-sell-etn-7"
+        e for e in out.journal if e["client_order_id"] == "anios-2026-09-10-sell-etn-7"
     )
     assert entry["status"] == paper.SKIPPED
     assert entry["terminal"] is True
@@ -399,15 +397,17 @@ def test_cancel_orders_deletes_by_the_brokers_order_id():
                 ]
             ).encode()
         if method == "DELETE":
-            return 200, json.dumps({"id": "o-broker-1", "status": "canceled"}).encode()
+            return 204, b""
+        if method == "GET" and url.endswith("/orders/o-broker-1"):
+            return 200, json.dumps(
+                {"id": "o-broker-1", "status": "canceled", "filled_qty": "0"}
+            ).encode()
         return 404, b"{}"
 
     client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
     outcomes = client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
     deletes = [url for method, url in calls if method == "DELETE"]
-    assert deletes == [
-        "https://paper-api.alpaca.markets/v2/orders/o-broker-1"
-    ]
+    assert deletes == ["https://paper-api.alpaca.markets/v2/orders/o-broker-1"]
     assert outcomes == {"anios-2026-09-10-sell-etn-7": "cancelled"}
 
 
@@ -460,6 +460,7 @@ def test_cancel_orders_skips_an_order_that_is_already_gone():
 # pending_cancel and can still fill - must not read as cancelled, or a
 # caller would journal a hold for an order that may yet execute.
 def test_cancel_orders_reports_an_unconfirmed_cancel():
+    # Acknowledgement and order status are separate broker responses.
     def transport(method, url, headers, body):
         if method == "GET" and url.endswith("/orders?status=open&limit=500"):
             return 200, json.dumps(
@@ -472,6 +473,8 @@ def test_cancel_orders_reports_an_unconfirmed_cancel():
                 ]
             ).encode()
         if method == "DELETE":
+            return 204, b""
+        if method == "GET" and url.endswith("/orders/o-broker-1"):
             return 200, json.dumps(
                 {"id": "o-broker-1", "status": "pending_cancel"}
             ).encode()

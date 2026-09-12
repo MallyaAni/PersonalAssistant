@@ -174,14 +174,17 @@ class AlpacaTradingClient:
                 raise AlpacaTradingError(
                     f"{client_id}: open order has no broker id to cancel"
                 )
-            deleted = self._call("DELETE", f"/orders/{broker_id}")
-            status = (
-                str(deleted.get("status") or "").lower()
-                if isinstance(deleted, dict)
-                else ""
-            )
+            self._call("DELETE", f"/orders/{broker_id}")
+            # DELETE acknowledges the request with 204, not an order body.
+            # A single read bounds this call; later reconciliation handles
+            # a cancellation that is still in flight or has partially filled.
+            confirmed = self._call("GET", f"/orders/{broker_id}") or {}
+            status = str(confirmed.get("status") or "").lower()
             outcomes[client_id] = (
-                "cancelled" if status in ("canceled", "cancelled") else "unconfirmed"
+                "cancelled"
+                if status in ("canceled", "cancelled")
+                and float(confirmed.get("filled_qty") or 0) == 0
+                else "unconfirmed"
             )
         return outcomes
 

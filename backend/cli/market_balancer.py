@@ -77,11 +77,7 @@ def _band_blocked(latest: dict, store: MarketStore) -> set[str]:
     flags: dict[str, bool] = {}
     for source in (latest.get("actions"), latest.get("levels")):
         for row in source or []:
-            if (
-                isinstance(row, dict)
-                and row.get("ticker")
-                and "rejecting_band" in row
-            ):
+            if isinstance(row, dict) and row.get("ticker") and "rejecting_band" in row:
                 flags[row["ticker"]] = bool(row["rejecting_band"])
     if flags:
         return {t for t, v in flags.items() if v}
@@ -109,40 +105,44 @@ def _band_blocked(latest: dict, store: MarketStore) -> set[str]:
         return set()
 
 
-# The green-day rule: a sell planned on the previous session is a
-# market-on-close order now; a name trading up at the open should not be
-# sold into its own rally, so its exit is cancelled and the position is
-# deliberately held. This runs on the balancer's candle during the opening
-# hour, reads the paper state's pending sells, and for each one whose
-# session's opening print is above the prior session's close cancels the
-# order on the broker and journals the hold. The opening print is the same
-# price the backtest's green_day_skip compares, so the paper account and
-# the track record cannot reach opposite decisions. The position then
-# rides to the next rebalance.
-def _green_day_skip(
-    data_dir: Path, latest: dict, quotes: dict, log_path: Path
-) -> None:
+# Check that a candle belongs to the current regular session and is recent.
+def _current_opening_candle(quote: dict, now: datetime) -> bool:
+    try:
+        bar = datetime.fromisoformat(str(quote.get("bar", "")))
+        bar = bar.astimezone(NEW_YORK) if bar.tzinfo else None
+    except ValueError:
+        return False
+    return (
+        bar is not None
+        and bar.date() == now.date()
+        and bar.hour * 60 + bar.minute >= 570
+        and 0 <= (now - bar).total_seconds() <= 1800
+    )
+
+
+# Persist the intention to hold a green opening before requesting cancellation.
+def _green_day_skip(data_dir: Path, latest: dict, quotes: dict, log_path: Path) -> None:
     """Cancel pending sells for names trading up at the open; journal the holds."""
     from backend.agents.trading.desk import paper
     from backend.market import alpaca_trading
 
-    # Only the opening hour, US Eastern: the rule is about the open, and a
+    # Only 09:30-11:00 US Eastern: the rule is about the open, and a
     # stale or pre-market quote outside it must not cancel anything. The
     # New York zone carries daylight saving, where a fixed four-hour shift
     # from UTC is wrong half the year.
     now = datetime.now(UTC).astimezone(NEW_YORK)
-    if not (9 <= now.hour < 11) or now.weekday() >= 5:
+    if not (570 <= now.hour * 60 + now.minute < 660) or now.weekday() >= 5:
         return
     state = paper.load_state(data_dir)
     pending_sells = [p for p in state.pending if p.get("side") == "sell"]
-    if not pending_sells:
-        return
     action_rows = {r.get("ticker"): r for r in latest.get("actions") or []}
     clients = None
     skipped: list[str] = []
     for row in pending_sells:
         ticker = row.get("symbol", "")
         quote = quotes.get(ticker)
+        if not _current_opening_candle(quote or {}, now):
+            continue
         prior = (action_rows.get(ticker) or {}).get("last_close")
         # The rule is about the open, so it compares the session's opening
         # print against the prior close - exactly what the backtest's
@@ -151,9 +151,7 @@ def _green_day_skip(
         # be held while the simulation sold it, and one that opened up then
         # faded be sold while the simulation held it.
         open_px = (quote or {}).get("open")
-        if not open_px or not prior:
-            continue
-        if open_px <= float(prior):
+        if not open_px or not prior or open_px <= float(prior):
             continue
         # Cancel the broker's order by the id the desk chose, then write
         # the deliberate hold into the state so the rebalance concludes.
@@ -164,12 +162,20 @@ def _green_day_skip(
         try:
             if clients is None:
                 clients = alpaca_trading.client_from_env()
+            # Save intent before the external action: an accepted cancel
+            # may finish after this process exits. Reconciliation must know
+            # why it was canceled without inventing or discarding fills.
+            row["hold_requested"] = True
+            paper.save_state(data_dir, state)
             outcomes = clients.cancel_orders([row["client_order_id"]])
         except alpaca_trading.AlpacaTradingError as exc:
             print(f"  green-day skip: could not cancel {ticker}: {exc}")
             continue
         if outcomes.get(row["client_order_id"]) != "cancelled":
-            print(f"  green-day skip: {ticker} not held (cancel {outcomes.get(row['client_order_id'])})")
+            print(
+                f"  green-day skip: {ticker} not held "
+                f"(cancel {outcomes.get(row['client_order_id'])})"
+            )
             continue
         state = paper.skip_sell(state, row["client_order_id"])
         skipped.append(f"{ticker} up at the open ({open_px:.2f} > {float(prior):.2f})")

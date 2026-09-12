@@ -332,6 +332,14 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
             raw = str(order.get("status") or "").lower()
             if raw in FILLED and filled >= wanted:
                 status = "filled"
+            elif (
+                raw in ("canceled", "cancelled")
+                and row.get("hold_requested")
+                and row.get("side") == "sell"
+            ):
+                # The remaining quantity was deliberately held. Keep any
+                # execution before cancellation in the same journal receipt.
+                status = SKIPPED
             elif filled > 0:
                 status = "partial"
             elif raw in DEAD:
@@ -348,7 +356,7 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
                 status=status,
                 filled_qty=filled,
                 filled_price=price,
-                terminal=status in ("filled", "dead", "missing")
+                terminal=status in ("filled", "dead", "missing", SKIPPED)
                 or (status == "partial" and raw not in _WORKING),
             )
         )
@@ -448,7 +456,9 @@ def skip_sell(state: PaperState, client_order_id: str) -> PaperState:
     )
     if row is None:
         return state
-    new.pending = [r for r in new.pending if r.get("client_order_id") != client_order_id]
+    new.pending = [
+        r for r in new.pending if r.get("client_order_id") != client_order_id
+    ]
     journal = {str(r.get("client_order_id") or ""): r for r in new.journal}
     journal[client_order_id] = {
         "client_order_id": client_order_id,
