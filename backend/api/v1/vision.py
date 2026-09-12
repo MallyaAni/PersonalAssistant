@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import Annotated, Any
 from uuid import UUID
@@ -12,6 +13,7 @@ from fastapi import (
     status,
 )
 
+from backend.artifacts.image import fit_image_for_vision
 from backend.config.settings import settings
 from backend.core.auth import (
     SCOPE_VISION,
@@ -55,6 +57,20 @@ router = APIRouter(prefix="/vision", tags=["vision"])
 
 class UploadTooLargeError(ValueError):
     """Signals that a streamed upload crossed the configured byte limit."""
+
+
+# How many bytes a transport may hand the fitting step before refusal. The
+# storage budget (IMAGE_MAX_UPLOAD_BYTES) is enforced on the *fitted* image,
+# but the raw upload has to be read first, and a retina screenshot passes the
+# pixel limit while its PNG exceeds the storage budget - so the read cap is
+# derived from the pixel limit (a PNG holds at most about three bytes per
+# pixel) rather than from the storage budget that would reject it.
+def _fetch_cap_bytes() -> int:
+    """Return the raw-upload read ceiling, generous enough for any pixel-valid image."""
+    return max(
+        settings.IMAGE_MAX_UPLOAD_BYTES * 2,
+        settings.IMAGE_MAX_PIXELS * 3,
+    )
 
 
 # Read an upload in bounded chunks without trusting its declared length.
@@ -117,12 +133,10 @@ async def analyze_image_upload(
         raise HTTPException(status_code=422, detail="Text fields must not be blank")
     authorize_user(normalized_user_id, identity)
     authorize_scope(identity, SCOPE_VISION)
+    declared = image.content_type
     trace_id = tracer.start_trace(normalized_user_id)
     try:
-        content = await _read_bounded_upload(
-            image,
-            settings.IMAGE_MAX_UPLOAD_BYTES,
-        )
+        content = await _read_bounded_upload(image, _fetch_cap_bytes())
     except UploadTooLargeError as exc:
         raise HTTPException(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,
@@ -130,6 +144,17 @@ async def analyze_image_upload(
         ) from exc
     finally:
         await image.close()
+    # Fit an oversized-but-valid screenshot to the vision pipeline's budgets
+    # instead of rejecting it: the storage byte limit and the pixel ceiling
+    # still hold, but on the fitted image, so a retina capture that passes the
+    # pixel limit while its PNG exceeds the byte limit uploads rather than 413s.
+    content, declared = await asyncio.to_thread(
+        fit_image_for_vision,
+        content,
+        declared,
+        settings.IMAGE_MAX_UPLOAD_BYTES,
+        settings.IMAGE_MAX_PIXELS,
+    )
     try:
         result = await service.analyze_upload(
             user_id=normalized_user_id,
@@ -137,7 +162,7 @@ async def analyze_image_upload(
             trace_id=trace_id,
             prompt=normalized_prompt,
             content=content,
-            declared_mime_type=image.content_type,
+            declared_mime_type=declared,
             defer_reasoning=defer_reasoning,
         )
         # Runs after this response is delivered, on its own session, because
@@ -160,7 +185,7 @@ async def analyze_image_upload(
         logger.warning(
             "Rejected image upload: %s (declared_type=%r, bytes=%d)",
             exc,
-            image.content_type,
+            declared,
             len(content),
             extra={"trace_id": trace_id},
         )

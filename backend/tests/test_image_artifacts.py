@@ -1,5 +1,6 @@
 import asyncio
 import io
+import random
 import uuid
 from pathlib import Path
 from typing import Any, cast
@@ -10,7 +11,7 @@ from fastapi import Request
 from PIL import Image
 
 from backend.api.v1.images import ImageClientDisconnectedError, _run_until_disconnect
-from backend.artifacts.image import validate_image_bytes
+from backend.artifacts.image import fit_image_for_vision, validate_image_bytes
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.artifacts.types import (
     GeneratedImage,
@@ -564,6 +565,70 @@ def test_validate_image_bytes_still_rejects_a_contradictory_declaration() -> Non
             max_bytes=1024 * 1024,
             max_pixels=1000,
         )
+
+
+# A small image within both budgets must come back byte-identical with its own
+# mime: fitting is a no-op except where a budget is actually exceeded.
+def test_fit_image_for_vision_passes_a_small_image_through_unchanged() -> None:
+    content = _png_bytes()
+    fitted, mime = fit_image_for_vision(
+        content, "image/png", max_bytes=1024 * 1024, max_pixels=1000
+    )
+    assert fitted == content
+    assert mime == "image/png"
+
+
+# A noisy image whose PNG exceeds the byte budget while its pixels stay under
+# the ceiling must be re-encoded to JPEG, not rejected - that is the retina
+# screenshot that used to 413 with no artifact.
+def test_fit_image_for_vision_reencodes_an_over_byte_budget_image_to_jpeg() -> None:
+    rng = random.Random(7)
+    noisy = Image.new("RGB", (300, 200))
+    noisy.putdata(
+        [
+            (rng.randrange(256), rng.randrange(256), rng.randrange(256))
+            for _ in range(300 * 200)
+        ]
+    )
+    buffer = io.BytesIO()
+    noisy.save(buffer, format="PNG")
+    content = buffer.getvalue()
+    assert len(content) > 50_000, "test fixture should exceed the byte budget"
+    fitted, mime = fit_image_for_vision(
+        content, "image/png", max_bytes=50_000, max_pixels=200_000
+    )
+    assert mime == "image/jpeg"
+    assert len(fitted) < len(content)
+    assert len(fitted) <= 50_000
+
+
+# An image whose pixel count exceeds the margin under the ceiling must be
+# downscaled below it, whatever its byte size.
+def test_fit_image_for_vision_downscales_an_oversized_pixel_image() -> None:
+    large = io.BytesIO()
+    Image.new("RGB", (400, 400)).save(large, format="PNG")
+    fitted, mime = fit_image_for_vision(
+        large.getvalue(), "image/png", max_bytes=1024 * 1024, max_pixels=100_000
+    )
+    assert mime == "image/jpeg"
+    with Image.open(io.BytesIO(fitted)) as image:
+        assert image.width * image.height <= 100_000
+
+
+# The fitted output must itself pass the same validation budgets the endpoint
+# applies next, so the whole pipeline accepts what fitting produces.
+def test_fit_image_for_vision_fitted_output_passes_validation() -> None:
+    noisy = io.BytesIO()
+    Image.new("RGB", (400, 400)).save(noisy, format="PNG")
+    fitted, mime = fit_image_for_vision(
+        noisy.getvalue(), "image/png", max_bytes=50_000, max_pixels=200_000
+    )
+    validated = validate_image_bytes(
+        fitted, mime, max_bytes=50_000, max_pixels=200_000
+    )
+    assert validated.mime_type == mime
+    assert validated.width * validated.height <= 200_000
+
 
 
 # Verify generation persists, reads, integrity-checks, and deletes owned bytes.
