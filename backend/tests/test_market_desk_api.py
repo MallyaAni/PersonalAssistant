@@ -4,7 +4,7 @@ marked stale, never presented as the current candle. A named extra account
 reads the desk but cannot replace the operator's shared holdings."""
 
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -75,6 +75,80 @@ async def test_the_endpoint_returns_the_record_and_the_changes(tmp_path, monkeyp
     assert earlier.status_code == 200
     assert earlier.json()["record"]["session"] == "2026-09-03"
     assert missing.status_code == 404
+
+
+# The newest earnings release read reaches the drill-down the day an 8-K
+# lands: the tone and the numbers the release reader scored, straight from
+# the store the release reader writes (not from the nightly grade, which has
+# not seen it yet). A name with no release on file answers read None rather
+# than erroring, so the page can hide the block quietly.
+@pytest.mark.asyncio
+async def test_the_earnings_read_reaches_the_drill_down(tmp_path, monkeypatch):
+    from backend.market import language
+    from backend.market.store import MarketStore
+
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    record = language.ToneRecord(
+        accession="0000320193-26-000001",
+        reaction_date=date(2026, 9, 11),
+        guidance=1.0,
+        demand=1.0,
+        pricing=0.0,
+        capex=1.0,
+        supply_constrained=0.0,
+        summary="Oracle guides Q2 FY27 revenue growth of 30-34%",
+        model="deepseek-v4-flash",
+        prompt_version="release_tone/2",
+        truncated=False,
+        quarter_end=date(2026, 8, 31),
+        revenue_usd_m=19345.0,
+        eps_usd=1.56,
+        net_income_usd_m=4679.0,
+        gross_margin_pct=None,
+    )
+    MarketStore(tmp_path).write_frame(
+        language.TONE_KIND,
+        date(2026, 9, 12),
+        "ORCL",
+        language.tone_frame([record]),
+    )
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/desk_user/desk/earnings/ORCL",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 200, response.text
+    read = response.json()["read"]
+    assert read["reaction_date"] == "2026-09-11"
+    assert read["guidance"] == 1.0
+    assert read["demand"] == 1.0
+    assert read["pricing"] == 0.0
+    assert read["revenue_usd_m"] == 19345.0
+    assert read["eps_usd"] == 1.56
+    assert read["net_income_usd_m"] == 4679.0
+    assert read["quarter_end"] == "2026-08-31"
+    assert read["gross_margin_pct"] is None
+    assert read["summary"] == "Oracle guides Q2 FY27 revenue growth of 30-34%"
+
+
+@pytest.mark.asyncio
+async def test_a_name_without_a_release_read_answers_none(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/desk_user/desk/earnings/ORCL",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 200, response.text
+    assert response.json()["read"] is None
 
 
 @pytest.mark.asyncio

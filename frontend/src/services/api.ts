@@ -2314,6 +2314,41 @@ export const getDeskHistory = async (userId: string, ticker: string): Promise<De
   return (await response.json()) as DeskHistory;
 };
 
+// The newest earnings release read for one name, straight from the release
+// reader's store: the tone it scored (guidance / demand / pricing / capex),
+// the numbers it extracted, and the session the market could first react.
+// `read` is null when the name has no release on file; `same_day` tells the
+// page an 8-K landed today so it can say so instead of waiting for the
+// next nightly grade.
+export interface DeskEarnings {
+  user_id: string;
+  symbol: string;
+  read: {
+    reaction_date: string;
+    guidance: number;
+    demand: number;
+    pricing: number;
+    capex: number;
+    supply_constrained: number;
+    quarter_end: string | null;
+    revenue_usd_m: number | null;
+    eps_usd: number | null;
+    net_income_usd_m: number | null;
+    gross_margin_pct: number | null;
+    summary: string | null;
+    prompt_version: string;
+    same_day: boolean;
+  } | null;
+}
+
+export const getDeskEarnings = async (userId: string, symbol: string): Promise<DeskEarnings> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/earnings/${encodeURIComponent(symbol)}`,
+  );
+  if (!response.ok) return { user_id: userId, symbol, read: null };
+  return (await response.json()) as DeskEarnings;
+};
+
 // The autopsy of the caller's own trading documents.
 export const getTradingAutopsy = async (userId: string): Promise<TradingAutopsy> => {
   const response = await authenticatedFetch(

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 import {
   getDesk,
+  getDeskEarnings,
   getDeskHistory,
   getDeskHoldings,
   getDeskIntraday,
@@ -12,6 +13,7 @@ import {
   getTradingAutopsy,
   putDeskHoldings,
   type DeskCurve,
+  type DeskEarnings,
   type DeskHolding,
   type DeskHistory,
   type DeskHistoryRow,
@@ -1711,6 +1713,57 @@ const gradeChanges = (rows: DeskHistoryRow[]) => {
 const looksLikeRawDump = (text: string) =>
   /\b[a-zA-Z]+\d*_[a-zA-Z]+(?:_[a-zA-Z]+)*\b\s*[+-]?\d+(?:\.\d+)?/.test(text)
 
+// The newest earnings release read for a name, shown the day an 8-K lands:
+// the tone the release reader scored (guidance / demand / pricing / capex)
+// and the numbers it extracted. Every value is what the release reader
+// already stored — no new model call, and no analyst-consensus comparison:
+// only what the release itself said.
+const EarningsRead = ({ read }: { read: NonNullable<DeskEarnings['read']> }) => {
+  const tone = (value: number) => (value > 0 ? 'raised' : value < 0 ? 'lowered' : 'flat')
+  const billed = (m: number | null) =>
+    m == null ? null : m >= 1000 ? `$${(m / 1000).toFixed(1)}B` : `$${m.toFixed(0)}M`
+  const dims = ['guidance', 'demand', 'pricing', 'capex'] as const
+  const tones = dims.map((k) => ({ k, v: read[k] })).filter((t) => t.v !== 0)
+  const facts = ([
+    ['Revenue', billed(read.revenue_usd_m)],
+    ['EPS', read.eps_usd != null ? `$${read.eps_usd.toFixed(2)}` : null],
+    ['Net income', billed(read.net_income_usd_m)],
+    ['Gross margin', read.gross_margin_pct != null ? `${read.gross_margin_pct.toFixed(1)}%` : null],
+    [
+      'Quarter',
+      read.quarter_end
+        ? `ending ${new Date(`${read.quarter_end}T00:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
+        : null,
+    ],
+  ].filter(([, v]) => v != null) as [string, string][]
+  return (
+    <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-2">
+        <h4 className="text-sm font-semibold text-[#1d1d1f]">Latest earnings read</h4>
+        <span className={`text-xs ${read.same_day ? 'font-medium text-[#0b5cad]' : 'text-[#6e6e73]'}`}>
+          {read.same_day ? 'released today' : `released ${shortDate(read.reaction_date)}`}
+        </span>
+      </div>
+      {tones.length > 0 ? (
+        <p className="mt-1 text-sm text-[#1d1d1f]">
+          {tones.map((t, i) => (
+            <span key={t.k}>
+              {i > 0 && ' · '}
+              {t.k} {tone(t.v)}
+            </span>
+          ))}
+        </p>
+      ) : (
+        <p className="mt-1 text-sm text-[#6e6e73]">No strong signals in the release itself.</p>
+      )}
+      {read.summary && <p className="mt-1 text-sm leading-relaxed text-[#1d1d1f]">{read.summary}</p>}
+      {facts.length > 0 && (
+        <p className="mt-1 text-xs text-[#6e6e73]">{facts.map(([k, v]) => `${k} ${v}`).join(' · ')}</p>
+      )}
+    </div>
+  )
+}
+
 // One name's drill-down: what the desk said about it over time, what came
 // next, and how it did under the desk's own rule versus holding it or the
 // benchmark. Read from the file the nightly run wrote.
@@ -1732,12 +1785,18 @@ const NameDetail = ({
   onClose: () => void
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
+  const [earnings, setEarnings] = useState<DeskEarnings | null>(null)
   const [error, setError] = useState('')
   useEffect(() => {
     let alive = true
     void getDeskHistory(userId, ticker)
       .then((h) => alive && setHistory(h))
       .catch((err) => alive && setError(err instanceof Error ? err.message : 'no history'))
+    // The earnings read is fetched on open too, so a fresh 8-K is visible
+    // the day it lands even though the nightly grade has not folded it in.
+    void getDeskEarnings(userId, ticker)
+      .then((e) => alive && setEarnings(e))
+      .catch(() => alive && setEarnings(null))
     return () => {
       alive = false
     }
@@ -1811,6 +1870,7 @@ const NameDetail = ({
           quote={live.quotes[ticker]}
           row={row ?? null}
         />
+        {earnings?.read && <EarningsRead read={earnings.read} />}
         {error ? (
           <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
         ) : !history ? (

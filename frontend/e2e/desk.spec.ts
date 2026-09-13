@@ -338,6 +338,33 @@ test.beforeEach(async ({ page }) => {
       },
     }),
   }))
+  // The newest earnings release read for AAPL, as the release reader stored
+  // it: a same-day 8-K shows its tone and numbers in the drill-down without
+  // waiting for the next nightly grade.
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/earnings/AAPL`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: USER,
+      symbol: 'AAPL',
+      read: {
+        reaction_date: '2026-09-13',
+        guidance: 1.0,
+        demand: 1.0,
+        pricing: 0.0,
+        capex: 0.0,
+        supply_constrained: 0.0,
+        quarter_end: '2026-06-27',
+        revenue_usd_m: 109417.0,
+        eps_usd: 2.02,
+        net_income_usd_m: 29789.0,
+        gross_margin_pct: 50.1,
+        summary: 'Apple reported record June-quarter revenue and EPS, with double-digit growth across products.',
+        prompt_version: 'release_tone/2',
+        same_day: true,
+      },
+    }),
+  }))
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/history/MSFT`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -507,6 +534,28 @@ test('drills into a name’s own history', async ({ page }) => {
   await expect(dialog.getByText('a steady AI leader')).toBeVisible()
   await dialog.getByRole('button', { name: 'Close' }).click()
   await expect(dialog).not.toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A fresh 8-K shows its earnings read in the drill-down the day it lands:
+// the tone the release reader scored, the numbers it extracted, and the
+// "released today" marker — ahead of the next nightly grade, which has not
+// folded it into the score yet.
+test('shows a same-day earnings read in the drill-down', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+  await page.getByRole('button', { name: 'AAPL', exact: true }).click()
+
+  const dialog = page.getByRole('dialog', { name: 'AAPL history' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText('Latest earnings read')).toBeVisible()
+  await expect(dialog.getByText('released today')).toBeVisible()
+  await expect(dialog.getByText('guidance raised · demand raised')).toBeVisible()
+  await expect(dialog.getByText('record June-quarter revenue', { exact: false })).toBeVisible()
+  await expect(dialog.getByText(/Revenue \$109\.4B/)).toBeVisible()
+  await expect(dialog.getByText(/EPS \$2\.02/)).toBeVisible()
+  await expect(dialog.getByText(/Net income \$29\.8B/)).toBeVisible()
+  await expect(dialog.getByText(/Gross margin 50\.1%/)).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 

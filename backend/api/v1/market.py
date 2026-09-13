@@ -30,6 +30,7 @@ from backend.market import (
     desk_freshness,
     deskrecord,
     holdings,
+    language,
     live_quotes,
     live_technical,
 )
@@ -556,6 +557,48 @@ async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
         rows.append({**row, **told, "said": True} if told else {**row, "said": False})
     history["rows"] = rows
     return {"user_id": user_id, "ticker": ticker.upper(), **history}
+
+
+# The newest earnings release read for one name, straight from the store the
+# release reader writes: the tone it scored (guidance / demand / pricing /
+# capex), the numbers it extracted, and the session the market could first
+# react. The drill-down shows a fresh 8-K the day it lands instead of waiting
+# for the next nightly grade to fold it into the score. Read-only; there is
+# no analyst-consensus comparison here, only what the release itself said.
+@router.get("/desk/earnings/{symbol}")
+async def desk_earnings(user_id: UserId, symbol: str) -> dict[str, object]:
+    """Return the newest release read for one name, or read None."""
+    _operator_only(user_id)
+    ticker = symbol.upper()
+    frame = MarketStore(_root()).read_frame(language.TONE_KIND, ticker)
+    if frame is None:
+        return {"user_id": user_id, "symbol": ticker, "read": None}
+    records = language.records_from_frame(frame[0])
+    if not records:
+        return {"user_id": user_id, "symbol": ticker, "read": None}
+    # records are oldest reaction first; the last is the newest release.
+    last = records[-1]
+    today = datetime.now(desk_freshness.NEW_YORK).date()
+    return {
+        "user_id": user_id,
+        "symbol": ticker,
+        "read": {
+            "reaction_date": last.reaction_date.isoformat(),
+            "guidance": last.guidance,
+            "demand": last.demand,
+            "pricing": last.pricing,
+            "capex": last.capex,
+            "supply_constrained": last.supply_constrained,
+            "quarter_end": last.quarter_end.isoformat() if last.quarter_end else None,
+            "revenue_usd_m": last.revenue_usd_m,
+            "eps_usd": last.eps_usd,
+            "net_income_usd_m": last.net_income_usd_m,
+            "gross_margin_pct": last.gross_margin_pct,
+            "summary": last.summary,
+            "prompt_version": last.prompt_version,
+            "same_day": last.reaction_date == today,
+        },
+    }
 
 
 # The autopsy: read the caller's own trading passages and name what their
