@@ -271,12 +271,14 @@ def test_value_now_reads_the_value_analyst_and_reports_the_stance(monkeypatch):
     monkeypatch.setattr(
         live_technical,
         "_live_read",
-        lambda store, quotes, today: {"panel": panel, "opinion": technical, "value": value},
+        lambda store, quotes, today: {
+            "panel": panel,
+            "opinion": technical,
+            "value": value,
+        },
     )
     quote = SimpleNamespace(last=100.0, open=100.0, high=101.0, low=99.0, bar="x")
-    out = live_technical.value_now(
-        None, {"AAA": quote, "BBB": quote}, date(2026, 9, 9)
-    )
+    out = live_technical.value_now(None, {"AAA": quote, "BBB": quote}, date(2026, 9, 9))
     assert out["AAA"]["stance"] == 1
     assert out["BBB"]["stance"] == -1
     assert out["AAA"]["now"] < out["AAA"]["close"]
@@ -284,7 +286,11 @@ def test_value_now_reads_the_value_analyst_and_reports_the_stance(monkeypatch):
     monkeypatch.setattr(
         live_technical,
         "_live_read",
-        lambda store, quotes, today: {"panel": panel, "opinion": technical, "value": None},
+        lambda store, quotes, today: {
+            "panel": panel,
+            "opinion": technical,
+            "value": None,
+        },
     )
     assert live_technical.value_now(None, {"AAA": quote}, date(2026, 9, 9)) == {}
 
@@ -302,23 +308,40 @@ def test_a_log_distance_reads_as_its_arithmetic_percentage():
     assert live_technical._log_pct_word(None) is None
 
 
-# A resistance above the price reads "below nearest resistance", and one
-# below it "above nearest resistance": the direction is read from which
-# side the level sits on, not from the sign of the distance alone. Support
-# keeps the opposite reading for the same sign.
-def test_a_resistance_above_the_price_reads_below_nearest_resistance():
+# Level distances describe the level relative to price, preserving the denominator.
+def test_levels_describe_the_level_relative_to_price():
     above = live_technical._level_lines(
         {"resistance_distance": 0.15, "resistance_kind": 1}
     )
-    assert above == ["15.0% below nearest resistance — a swing high"]
+    assert above == ["nearest resistance is 15.0% above the price — a swing high"]
     below = live_technical._level_lines(
         {"resistance_distance": -0.15, "resistance_kind": 1}
     )
-    assert below == ["15.0% above nearest resistance — a swing high"]
+    assert below == ["nearest resistance is 15.0% below the price — a swing high"]
     support = live_technical._level_lines(
         {"support_distance": 0.125, "support_kind": 3}
     )
-    assert support == ["12.5% above nearest support — the 200-day average"]
+    assert support == ["nearest support is 12.5% below the price — the 200-day average"]
+
+
+# A net count of one means two pairs agree and one disagrees, not one agreeing pair.
+@pytest.mark.parametrize(
+    ("score", "expected"),
+    [
+        (1, "2 of the three EMA pairs stacked up"),
+        (-1, "2 of the three EMA pairs stacked down"),
+        (-3, "full bearish EMA stack (9 < 21 < 50 < 200)"),
+    ],
+)
+def test_live_stack_counts_pairs_instead_of_the_net_score(score, expected):
+    assert expected in live_technical._short_lines({"stack_order": score})
+
+
+# A weekly support names weeks and a coincident level does not claim a direction.
+def test_weekly_and_coincident_levels_keep_their_units():
+    assert live_technical._level_lines(
+        {"support_distance": 0.0, "support_kind": 4}
+    ) == ["nearest support is at the price — the 21-week average"]
 
 
 # The long horizon's yearly-range line states the arithmetic percentage

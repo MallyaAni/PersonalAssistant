@@ -23,7 +23,7 @@ cached.
 """
 
 from dataclasses import replace
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -147,7 +147,7 @@ def with_live_row(panel: Panel, quotes: dict, today: date) -> Panel:
 # panel carries the value read beside the technical one. A value failure
 # leaves the technical read standing.
 def _live_read(store, quotes: dict, today: date) -> dict:
-    """Return {"panel": live, "opinion": technical, "value": value}, cached by candle."""
+    """Return the live panel and analyst opinions, cached by candle."""
     key = (
         today,
         tuple(sorted((s, str(getattr(q, "bar", ""))) for s, q in quotes.items())),
@@ -170,11 +170,14 @@ def _live_read(store, quotes: dict, today: date) -> dict:
         )
     except Exception:
         value_opinion = None
-    _cache["key"], _cache["value"] = key, {
-        "panel": live,
-        "opinion": opinion,
-        "value": value_opinion,
-    }
+    _cache["key"], _cache["value"] = (
+        key,
+        {
+            "panel": live,
+            "opinion": opinion,
+            "value": value_opinion,
+        },
+    )
     return _cache["value"]  # type: ignore[return-value]
 
 
@@ -346,7 +349,7 @@ def _level_word(kind, side: str) -> str | None:
     if int(kind) == 3:
         return "the 200-day average"
     if int(kind) == 4:
-        return "the weekly 21-day average"
+        return "the 21-week average"
     return None
 
 
@@ -360,11 +363,7 @@ def _convergence_line(conv) -> str:
     return "the 21/50 EMAs are not converging"
 
 
-# The support and resistance lines, each naming what the level is. The
-# direction is read from which side the level sits on, because a positive
-# support distance is price above support while a positive resistance
-# distance is price below resistance: resistance above the price must read
-# "below nearest resistance", never "above" it.
+# Describe each level relative to price, the denominator of its stored distance.
 def _level_lines(s: dict) -> list[str]:
     """Return the support and resistance lines for a detail's short dict."""
     lines_out: list[str] = []
@@ -372,12 +371,14 @@ def _level_lines(s: dict) -> list[str]:
         dist = s.get(f"{side}_distance")
         if dist is None or not np.isfinite(dist):
             continue
-        pct = abs(dist * 100)
-        if side == "resistance":
-            direction = "below" if dist > 0 else "above" if dist < 0 else "at"
-        else:
-            direction = "above" if dist > 0 else "below" if dist < 0 else "at"
-        base = f"{pct:.1f}% {direction} nearest {side}"
+        displacement = -dist if side == "support" else dist
+        direction = "above" if displacement > 0 else "below"
+        position = (
+            f"{abs(displacement) * 100:.1f}% {direction} the price"
+            if displacement != 0
+            else "at the price"
+        )
+        base = f"nearest {side} is {position}"
         what = _level_word(s.get(f"{side}_kind"), side)
         lines_out.append(f"{base} — {what}" if what else base)
     return lines_out
@@ -400,18 +401,22 @@ def _short_lines(s: dict) -> list[str]:
         short.append(
             "daily trend up"
             if dt > 0
-            else "daily trend down" if dt < 0 else "daily trend flat"
+            else "daily trend down"
+            if dt < 0
+            else "daily trend flat"
         )
     stack = s.get("stack_order")
     if stack is not None and np.isfinite(stack):
-        if stack >= 3:
+        if stack == 3:
             short.append("full bullish EMA stack (9 > 21 > 50 > 200)")
-        elif stack > 0:
-            short.append(f"{stack:.0f} of the three EMA pairs stacked up")
-        elif stack == 0:
-            short.append("EMA stack mixed")
+        elif stack == -3:
+            short.append("full bearish EMA stack (9 < 21 < 50 < 200)")
+        elif stack in (-1, 1):
+            short.append(
+                f"2 of the three EMA pairs stacked {'up' if stack > 0 else 'down'}"
+            )
         else:
-            short.append(f"{-stack:.0f} of the three EMA pairs stacked down")
+            short.append("EMA stack mixed")
     e50 = _log_pct_word(s.get("ema50_distance"))
     if e50:
         short.append(f"{e50} the 50-day EMA")
@@ -430,7 +435,9 @@ def _medium_lines(m: dict) -> list[str]:
         medium.append(
             "weekly trend up"
             if wt > 0
-            else "weekly trend down" if wt < 0 else "weekly trend flat"
+            else "weekly trend down"
+            if wt < 0
+            else "weekly trend flat"
         )
     ws = m.get("weekly_stack")
     if ws is not None and np.isfinite(ws):
@@ -502,9 +509,7 @@ def _today_candle(candles: dict, panel: Panel, t: int, j: int) -> dict | None:
 
     if fires("bearish_engulfing") or fires("bullish_engulfing"):
         name = (
-            "bearish engulfing"
-            if fires("bearish_engulfing")
-            else "bullish engulfing"
+            "bearish engulfing" if fires("bearish_engulfing") else "bullish engulfing"
         )
         prev_body = abs(c[t - 1, j] - o[t - 1, j]) if t >= 1 else np.nan
         detail = (

@@ -3,6 +3,40 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — follow-up audit of `98785fb3`; technical text correction (candidate)
+
+Started on clean main `98785fb3` after pulling the other operator's changes.
+Preserved the initial regression-test patch outside the checkout at
+`/private/tmp/desk-review-regressions-d220.patch`. Confirmed the deployed source
+matches the incoming technical module and post-deploy marker
+`2026-09-13T22:04:18Z 98785fb3 ok (cheap)`.
+
+The incoming changes fixed log-percent conversion, resistance direction,
+history labels, mobile table containment and premature done buttons. They did
+not finish the audit. A deployed probe with price 100, support 80 and resistance
+125 still read "20% above support" and "25% below resistance", using price as
+the denominator while wording implied the level. The net EMA-stack count -1
+was still described as one falling pair rather than two.
+
+This candidate describes the level relative to price, preserves the simple
+distance denominator, counts EMA pairs correctly, and names the 21-week average
+in weeks. The incoming log conversion remains. No grading/execution rule or
+prompt changed. VERIFIED: market/trading suite **445 passed, 8 skipped**;
+real-model technical-read tests **2 passed in 32.91 seconds**, including the
+actual feature formatter path; Ruff passes. Deployment is pending.
+
+FAILED incoming calendar boundary: on a panel ending September 11,
+`_fomc_distances` reports the same `[3, 2, 1]` distance for a September 16
+meeting and a December 16 meeting. Keeping every future meeting at the array's
+end makes any future meeting appear one session away. The incoming test pins
+that wrong result. Calendar remains context-only; fix separately with actual
+future session dates and a far-future negative case.
+
+Earnings staging rebuild FINISHED: all **93 companies**, `failed={}`, reader
+`release_tone/3`; result still says `production_published=false`. Validate
+staging coverage and signed values before promotion. Historical decisions and
+partitions must remain immutable. The process is no longer running.
+
 ## 2026-09-13 (opencode) — desk number fixes, an upcoming-FOMC visibility fix, and the earnings/FOMC backtests (DEPLOYED `29b579d3`, contains `bd486cb` + `29b579d`)
 
 Fixes the trading-desk defects the codex review listed (the user asked me to

@@ -28,14 +28,15 @@ import re
 
 from backend.api.v1.market import _model_live_read
 from backend.core.prompts import render
+from backend.market import live_technical
 
 _SYSTEM = render("trading/desk_live_read")
 
 _FEATURES = {
     "short": [
         "the 21/50 EMAs are squeezing upward (a bullish cross is forming)",
-        "12.5% below nearest support — the 200-day average",
-        "15.0% above nearest resistance — a swing high",
+        "nearest support is 12.5% below the price — the 200-day average",
+        "nearest resistance is 15.0% above the price — a swing high",
         "12.6% above the 21-day EMA",
         "daily trend up",
         "full bullish EMA stack (9 > 21 > 50 > 200)",
@@ -45,7 +46,7 @@ _FEATURES = {
     ],
     "medium": ["weekly trend up", "the weekly 9 EMA is above the 21"],
     "long": [
-        "3.1% above its 52-week high · 12.5% below its 52-week low",
+        "3.1% below its 52-week high · 12.5% above its 52-week low",
         "2.3% below the 200-day EMA",
         "2.3% below the 200-day simple average",
         "slow momentum positive",
@@ -56,6 +57,7 @@ _FIELD = re.compile(r"\b[a-zA-Z]+\d*_[a-zA-Z]+(?:_[a-zA-Z]+)*\b")
 _RAW_FIGURE = re.compile(r"(?<![A-Za-z_])[+-]\d+\.\d+")
 
 
+# The model preserves the evidence and distinguishes the levels from the averages.
 def test_live_read_covers_horizons_and_levels(llm):
     read = _model_live_read(_FEATURES, llm, _SYSTEM)
     assert read is not None
@@ -77,3 +79,28 @@ def test_live_read_covers_horizons_and_levels(llm):
     # weekly turn, and the read must say what it argues.
     assert "engulf" in low, read
     assert re.search(r"(revers|turn|bearish|lower|down)", low) is not None, read
+
+
+# The real model preserves converted distances from the actual feature-to-text path.
+def test_live_read_preserves_converted_price_distances(llm):
+    features = live_technical.lines(
+        {
+            "short": {
+                "support_distance": 0.2,
+                "support_kind": 3,
+                "resistance_distance": 0.25,
+                "resistance_kind": 1,
+            },
+            "medium": {"weekly_trend": -1},
+            "long": {"high_52w_distance": -0.796, "low_52w_distance": 1.7402},
+        }
+    )
+    read = _model_live_read(features, llm, _SYSTEM)
+    assert read is not None
+    assert "54.9%" in read, read
+    assert "469.8%" in read, read
+    assert "79.6%" not in read, read
+    assert "174.0%" not in read, read
+    assert re.search(
+        r"(resistance.{0,100}above|below.{0,100}resistance)", read.lower()
+    ), read

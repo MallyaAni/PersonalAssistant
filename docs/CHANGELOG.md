@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-13 — Preserve technical level denominators and count EMA pairs
+
+Support and resistance now state the level's percentage distance from price,
+matching the stored denominator. A net EMA-stack score of ±1 correctly names
+two agreeing pairs rather than one, and weekly support is labelled in weeks.
+The latest log-distance correction is preserved. Market/trading: 445 passed,
+8 skipped; real-model technical explanations: 2 passed. No trading rules changed.
+
 ## 2026-09-13 — Explain intraday analyst vote changes
 
 The trading desk's Every grade table now names comparable analyst vote changes
