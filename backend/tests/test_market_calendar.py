@@ -80,3 +80,27 @@ def test_committed_decisions_cover_2015_to_2026():
     assert decisions[0].year == 2015
     assert any(d.year == 2026 for d in decisions)
     assert len(decisions) >= 90
+
+
+# A decision whose date falls after the panel's last session is still a
+# meeting the desk can see: the sessions before it read their distance to
+# it and their pre-window flag, instead of "none within 30 sessions". The
+# clipped version made the week before an upcoming meeting invisible.
+def test_an_upcoming_meeting_beyond_the_panel_still_flags_the_pre_window():
+    first = date(2026, 9, 7)  # a Monday
+    panel = panel_from_histories(
+        {"AAA": _history("AAA", first, 5), "SPY": _history("SPY", first, 5)},
+        "SPY",
+        {},
+    )
+    dates = list(panel.dates.astype("datetime64[D]").astype(object))
+    upcoming = date(2026, 9, 16)  # past the panel's last session
+    feats = calendar.calendar_by_session(panel, [upcoming])
+    names = calendar.CALENDAR_NAMES
+    last = len(dates) - 1
+    assert feats[last, names.index("sessions_to_fomc")] == 1
+    assert feats[last, names.index("fomc_pre_window")] == 1.0
+    assert feats[last - 2, names.index("fomc_pre_window")] == 1.0
+    assert feats[last - 3, names.index("fomc_pre_window")] == 0.0
+    # No session is itself the future decision day.
+    assert feats[:, names.index("fomc_decision_day")].sum() == 0

@@ -81,8 +81,12 @@ def _fomc_distances(
 ) -> tuple[np.ndarray, np.ndarray]:
     marks = np.asarray(sorted(decisions), dtype="datetime64[D]")
     # The session on or after each decision (a Sunday action reacts Monday).
+    # A decision beyond the panel's last session is kept as a future mark
+    # (position == len(dates)): the desk must see an upcoming meeting as
+    # sessions-to-go, not as "none within 30 sessions". Dropping it made
+    # the week before a meeting invisible whenever the meeting fell after
+    # the last stored session.
     positions = np.searchsorted(dates, marks, side="left")
-    positions = positions[positions < len(dates)]
     to_next = np.full(len(dates), FAR)
     since = np.full(len(dates), FAR)
     for t in range(len(dates)):
