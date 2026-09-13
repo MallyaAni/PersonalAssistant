@@ -413,8 +413,8 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // The regime leads the board, in plain words, and says what it is doing
   // about it.
   await expect(page.getByRole('note')).toContainText('Warnings the desk is weighing')
-  await expect(page.getByRole('note')).toContainText('fewer AI names are rising than usual')
-  await expect(page.getByRole('note')).toContainText('80% of its usual size')
+  await expect(page.getByRole('note')).toContainText('AI trading activity is below its historical median')
+  await expect(page.getByRole('note')).toContainText('target-size multiplier is 80%')
 
   // What moved since the last session, which the page used to throw away.
   await expect(page.getByText('What changed since the last session')).toBeVisible()
@@ -456,7 +456,8 @@ test('shows each thing once, not twice', async ({ page }) => {
   await expect(page.getByText('Targets for the next rebalance')).toBeVisible()
 
   // The broker's live positions are one table on the page.
-  await expect(page.getByText('Live positions')).toBeVisible()
+  await expect(page.getByText('Practice positions')).toBeVisible()
+  await expect(page.locator('section', {has: page.getByRole('heading', {name: /^Practice positions/})})).toContainText('$91.25')
 
   // Opening the details must not add a second copy of the same positions:
   // the details' "Practice account" panel keeps its summary but shows the
@@ -527,11 +528,11 @@ test('drills into a covered name outside the book and sees its live horizons', a
   // candle even though the evening record says C.
   await expect(dialog.getByText('B', { exact: true })).toBeVisible()
   await expect(dialog.getByText('Technical read')).toBeVisible()
-  await expect(dialog.getByText('Short term · next week (daily chart)')).toBeVisible()
-  await expect(dialog.getByText('Medium term · 1–3 weeks (weekly chart)')).toBeVisible()
-  await expect(dialog.getByText('Long term · months (200-day and 52-week)')).toBeVisible()
+  await expect(dialog.getByText('Daily chart', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('Weekly chart', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('Longer-term reference levels')).toBeVisible()
   await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()
-  await expect(dialog.getByText(/Technical rank if the session closed now/)).toBeVisible()
+  await expect(dialog.getByText(/Technical rank at the available candle/)).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -704,7 +705,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   const stamp = dialog.locator('h4', { hasText: 'Technical read' })
   await expect(dialog.getByText('Support holds beneath the rally.', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/\$102/)).toBeVisible()
-  await expect(dialog.getByText(/Technical rank if the session closed now/)).toContainText('90')
+  await expect(dialog.getByText(/Technical rank at the available candle/)).toContainText('90')
   await expect(stamp).toContainText('candle from Sep 8')
   await expect(stamp).toContainText('explanation generated')
   const firstTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
@@ -718,7 +719,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   await expect(dialog.getByText('A breakdown has broken support — the rally is over.', { exact: false })).toBeVisible()
   await expect(dialog.getByText('4.1% below the 21-day EMA', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/\$110/)).toBeVisible()
-  await expect(dialog.getByText(/Technical rank if the session closed now/)).toContainText('20')
+  await expect(dialog.getByText(/Technical rank at the available candle/)).toContainText('20')
   await expect(stamp).toContainText('candle from Sep 8')
   const secondTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
   expect(secondTime).toBeTruthy()
@@ -788,8 +789,24 @@ test('an empty record becomes the getting-started guide', async ({ page }) => {
   }))
   await page.goto('/#desk')
 
-  await expect(page.getByText('The desk starts tonight')).toBeVisible()
-  await expect(page.getByText('Each evening', { exact: true })).toBeVisible()
+  await expect(page.getByText('No evening decision is available yet')).toBeVisible()
+  await expect(page.getByText('After each trading session', { exact: true })).toBeVisible()
   await expect(page.getByText('No decision on file yet')).toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Displaying a hypothetical stop must never turn its breach into a sell instruction.
+test('a hypothetical stop remains a reference after price crosses it', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live`, route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({as_of: '2026-09-08T20:00:00Z', stale: true, quotes: {
+      AAPL: {symbol: 'AAPL', last: 80, high: 105, low: 80, open: 102, bar: '2026-09-08T19:45:00Z'},
+    }}),
+  }))
+  await page.goto('/#desk')
+  await page.getByRole('checkbox', {name: 'show hypothetical stops'}).check()
+  await expect(page.getByText('hypothetical stop breached — not an active exit rule')).toBeVisible()
+  await expect(page.getByText('below the stop: sell')).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })

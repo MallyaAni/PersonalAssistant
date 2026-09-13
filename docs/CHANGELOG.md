@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-13 — Make desk captions match their evidence
+
+Correct participation, practice-account, target-exposure, chart-timeframe and
+historical-change captions; hypothetical stop breaches no longer issue sell
+instructions. Keep cents in per-share prices and date broker snapshots in ET.
+Remove empty-state timing promises. Eleven browser tests, TypeScript and the
+production build pass; strategy and execution rules are unchanged.
+
 ## 2026-09-13 — Preserve technical level denominators and count EMA pairs
 
 Support and resistance now state the level's percentage distance from price,

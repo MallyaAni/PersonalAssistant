@@ -72,13 +72,13 @@ const TRIGGER_ORDER: [string, string][] = [
   ['rotation', 'R'],
 ]
 const TRIGGER_LEGEND =
-  'The analysts: F business fundamentals, T price trend, S news and sentiment, V price vs value, R which group leads. + for, · no view, − against.'
+  'The analysts: F business fundamentals, T price trend, S earnings-release tone, V price vs value, R which group leads. + for, · neutral or unavailable, − against.'
 
 // The desk's warnings in plain words. A flag not listed shows as written.
 const FLAG_WORDS: Record<string, string> = {
-  'not enough history to judge participation': 'too little history to judge how broad the AI rally is',
-  'participation below its two-year median': 'fewer AI names are rising than usual: the rally is narrow',
-  'participation in its top quintile (hype)': 'almost every AI name is rising at once, which often marks a top',
+  'not enough history to judge participation': 'too little history to compare AI trading activity with its past',
+  'participation below its two-year median': 'AI trading activity is below its historical median',
+  'participation in its top quintile (hype)': 'AI trading activity is in the highest fifth of its historical readings',
   'AI-vs-software co-movement far from its history': 'AI and software stocks are moving together unusually, so the usual patterns may not hold',
   'theme co-movement structure has changed shape': 'the way these stocks move together has changed, so the desk trusts its picks less',
   'AI basket more than 25% off its yearly high': 'AI stocks are more than 25% below their high for the year',
@@ -107,6 +107,9 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
 const money = (value: number) =>
   value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+// Preserve cents in per-share prices while account totals remain rounded for scanning.
+const priceMoney = (value: number) =>
+  value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
 // A dollar P/L with the sign, the direction and the currency, so a live
 // figure reads as money rather than as a bare number.
 const signedMoney = (value: number) =>
@@ -237,7 +240,7 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note: 'simulated money, no real risk \u00b7 the move since it started',
+      note: 'simulated funds, no real-money orders \u00b7 the move since it started',
     },
     {
       label: 'Today',
@@ -327,7 +330,7 @@ const RegimeBanner = ({ regime }: { regime: DeskRecord['regime'] }) => {
       </ul>
       {exposure < 1 && (
         <p className="mt-2 text-sm text-[#7a5200]">
-          Because of these, the desk is carrying {Math.round(exposure * 100)}% of its usual size.
+          The current target-size multiplier is {Math.round(exposure * 100)}%. Actual positions may differ until orders fill.
         </p>
       )}
     </section>
@@ -379,7 +382,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
           )}
         </ul>
       ) : (
-        <p className="text-sm text-[#6e6e73]">No change between the last two evening decisions.</p>
+        <p className="text-sm text-[#6e6e73]">No tracked grade, target-weight or warning changes between the last two evening decisions.</p>
       )}
     </section>
   )
@@ -577,7 +580,7 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-xl'}`}>
     <ol className="list-decimal space-y-1.5 pl-5">
       <li>
-        <b>Each evening</b> the desk updates the grades and targets for about ninety AI and software stocks. Trades
+        <b>After each trading session</b> the desk updates the grades and targets for about ninety AI and software stocks. Trades
         follow the rebalance schedule (about every four weeks); A+ names are sized at full weight, A names at three
         quarters and eligible B names at half. A daily update is a target, not an order at the next open.
       </li>
@@ -618,17 +621,17 @@ const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasReco
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">
-        {hasRecord ? 'Set up the board' : 'The desk starts tonight'}
+        {hasRecord ? 'Set up the board' : 'No evening decision is available yet'}
       </h3>
       {!hasRecord ? (
         <p className="mb-2 text-sm text-[#6e6e73]">
-          The desk writes a decision every evening after the close. Tonight it will grade the book, and tomorrow
-          this page will tell you what to do at the open.
+          The desk is scheduled to write a decision after each trading session. Once a decision is available,
+          this page will show its grades, targets and rebalance schedule.
         </p>
       ) : (
         <p className="mb-2 text-sm text-[#6e6e73]">
-          No positions entered, so every name below is a buy from nothing. Enter what you hold and the board says
-          what to change.
+          No manual positions are recorded. Proposed changes assume an empty account; enter what you hold
+          to compare it with the desk's targets.
         </p>
       )}
       <HowToUse compact />
@@ -865,7 +868,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                     writeStored(STOPS_KEY, e.target.checked ? 'on' : 'off')
                   }}
                 />
-                show stops
+                show hypothetical stops
               </label>
               {canWrite ? (
                 <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
@@ -999,10 +1002,10 @@ const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h3 className="text-sm font-semibold text-[#1d1d1f]">
-          Live positions
+          Practice positions
           {paper.as_of && (
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-              as of {new Date(paper.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              broker snapshot fetched {marketTime(paper.as_of)}
             </span>
           )}
         </h3>
@@ -1027,8 +1030,8 @@ const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number
             <tr key={p.symbol} className="border-t border-black/[0.05]">
               <td className="py-1.5 font-medium text-[#1d1d1f]">{p.symbol}</td>
               <td className="py-1.5 text-right text-[#6e6e73]">{p.qty.toLocaleString()}</td>
-              <td className="py-1.5 text-right">{money(p.current_price)}</td>
-              <td className="py-1.5 text-right text-[#6e6e73]">{money(p.avg_entry_price)}</td>
+              <td className="py-1.5 text-right">{priceMoney(p.current_price)}</td>
+              <td className="py-1.5 text-right text-[#6e6e73]">{priceMoney(p.avg_entry_price)}</td>
               <td className="py-1.5 text-right">{money(p.market_value)}</td>
               <td className="whitespace-nowrap py-1.5 text-right">
                 <TrendUsd value={p.pl} />
@@ -1081,7 +1084,7 @@ const PracticeAccount = ({
         Practice account
         <span className="ml-2 text-xs font-normal text-[#6e6e73]">
           {fromBroker && live.as_of
-            ? `live, as of ${new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            ? `broker snapshot fetched ${marketTime(live.as_of)}`
             : `as of the last evening record${live?.reason ? ` (broker: ${live.reason})` : ''}`}
         </span>
       </h3>
@@ -1133,8 +1136,8 @@ const PracticeAccount = ({
                 <td className="py-1 font-medium">{p.symbol}</td>
                 <td>{p.qty}</td>
                 <td>{money(p.market_value)}</td>
-                <td>{money(p.avg_entry_price)}</td>
-                <td>{money(p.current_price)}</td>
+                <td>{priceMoney(p.avg_entry_price)}</td>
+                <td>{priceMoney(p.current_price)}</td>
                 <td className={p.unrealized_pl >= 0 ? 'text-[#1e7a3a]' : 'text-[#b42318]'}>
                   <TrendUsd value={p.unrealized_pl} />
                 </td>
@@ -1223,7 +1226,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         )}
         {r.shares > 0 && r.entry_price !== null && (
           <div className="text-xs text-[#6e6e73]">
-            you hold {r.shares} at {money(r.entry_price)}
+            you hold {r.shares} at {priceMoney(r.entry_price)}
             {r.pl_pct !== null && r.last !== null && (
               <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}>
                 {' '}
@@ -1245,13 +1248,13 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
               </span>
             )}
             {atRisk && r.grade_live === r.grade && (
-              <span className="ml-1 text-xs text-[#9a6200]" title="one more analyst turning against it would drop the grade">
-                at risk
+              <span className="ml-1 text-xs text-[#9a6200]" title="The vote total is near a grade threshold. This is not a probability of loss; a core analyst veto can also change the grade.">
+                near grade threshold
               </span>
             )}
             {trailing !== null && (
               <div className={`text-xs ${hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}`}>
-                {hit ? 'below the stop: sell' : `stop ${money(trailing)}`}
+                {hit ? 'hypothetical stop breached — not an active exit rule' : `hypothetical stop ${priceMoney(trailing)} — not an active exit rule`}
               </div>
             )}
           </>
@@ -1614,7 +1617,7 @@ const LiveTechnical = ({
           )}
         </h4>
         <span className="text-xs text-[#6e6e73]">
-          {last != null && money(last)}
+          {last != null && priceMoney(last)}
           {change != null && changePct != null && (
             <span className="ml-1">
               <TrendUsd value={change} />
@@ -1630,9 +1633,9 @@ const LiveTechnical = ({
         <>
           {read && <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>}
           <div className="grid gap-3 sm:grid-cols-3">
-            {column('Short term · next week (daily chart)', fl.short)}
-            {column('Medium term · 1–3 weeks (weekly chart)', fl.medium)}
-            {column('Long term · months (200-day and 52-week)', fl.long)}
+            {column('Daily chart', fl.short)}
+            {column('Weekly chart', fl.medium)}
+            {column('Longer-term reference levels', fl.long)}
           </div>
         </>
       ) : read ? (
@@ -1642,8 +1645,8 @@ const LiveTechnical = ({
       )}
       {tech != null && (
         <p className="mt-2 text-xs text-[#1d1d1f]">
-          Technical rank if the session closed now:{' '}
-          <span className="font-medium">{(tech * 100).toFixed(0)}</span> out of 100, where 100 is best
+          Technical rank at the available candle:{' '}
+          <span className="font-medium">{(tech * 100).toFixed(0)}</span> out of 100. Higher means a higher technical score among covered names with data.
         </p>
       )}
       {detail?.walls && (detail.walls.put_wall != null || detail.walls.call_wall != null) && (
@@ -1653,7 +1656,7 @@ const LiveTechnical = ({
             <>
               put{' '}
               <span className="text-[#1d1d1f]">
-                {money(detail.walls.put_wall)}
+                {priceMoney(detail.walls.put_wall)}
                 {detail.walls.put_wall_distance != null && (
                   <span className="ml-1">(<Trend value={detail.walls.put_wall_distance * 100} /> below)</span>
                 )}
@@ -1667,7 +1670,7 @@ const LiveTechnical = ({
             <>
               call{' '}
               <span className="text-[#1d1d1f]">
-                {money(detail.walls.call_wall)}
+                {priceMoney(detail.walls.call_wall)}
                 {detail.walls.call_wall_distance != null && (
                   <span className="ml-1">(<Trend value={detail.walls.call_wall_distance * 100} /> above)</span>
                 )}
@@ -1863,7 +1866,7 @@ const NameDetail = ({
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[c.from] ?? ''}`}>{c.from}</span>
                     <span className="text-[#6e6e73]">→</span>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[c.to] ?? ''}`}>{c.to}</span>
-                    <span className="text-xs text-[#6e6e73]">{c.moved.length > 0 ? c.moved.join(', ') : 'the size cut, not an analyst'}</span>
+                    <span className="text-xs text-[#6e6e73]">{c.moved.length > 0 ? c.moved.join(', ') : 'no change in recorded votes; cause not recorded'}</span>
                     {c.said && <span className="text-[10px] uppercase tracking-wide text-[#0b5cad]">said</span>}
                   </li>
                 ))}
@@ -1929,7 +1932,7 @@ const AutopsyView = ({ userId, onClose }: { userId: string; onClose: () => void 
   if (busy) {
     return (
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]">
-        Reading your own trading history… this takes a few seconds.
+        Reading the trading documents available for this review…
       </section>
     )
   }
@@ -1980,7 +1983,7 @@ const AutopsyView = ({ userId, onClose }: { userId: string; onClose: () => void 
                 <span className="text-[#6e6e73]"> — {p.evidence}</span>
               </li>
             ))}
-            {result.patterns.length === 0 && <li className="text-[#6e6e73]">Nothing repeated yet.</li>}
+            {result.patterns.length === 0 && <li className="text-[#6e6e73]">No repeated pattern found in the documents read.</li>}
           </ul>
         </div>
         <div>

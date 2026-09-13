@@ -3,6 +3,34 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — dashboard caption accuracy (candidate after `6f9baa70`)
+
+Objective: align captions with their data without changing trading decisions.
+Started with clean main `6f9baa70`; its technical-text deployment is running.
+Participation now describes trading activity rather than the number of rising
+stocks; the exposure multiplier is a target rather than a claim about filled
+positions. Paper positions are identified as practice positions and their
+fetch timestamps include date and ET. Per-share prices retain cents.
+Hypothetical stops explicitly remain inactive even when breached. Chart
+timeframes no longer imply forecast horizons, stale candle ranks do not say
+"now", empty states do not promise an overnight run, and missing historical
+causality is not invented as a size cut. The S legend names earnings-release
+tone; zero remains explicitly neutral-or-unavailable until coverage is separate.
+
+VERIFIED: **11 desk browser tests passed in 17.5 seconds** against this checkout's
+Vite server on port 5187 with deterministic API fixtures, including stop breach
+and price precision. TypeScript and production Vite build pass (existing CSS
+and large-chunk warnings). No prompt, strategy or execution rule changed.
+Caption deployment pending; real authenticated browser session unverified.
+
+Earnings staging integrity verified read-only: **93 frames, 3403 records,
+3435 considered events, 32 without text**, every record v3, no duplicate
+accessions or nonfinite financial values; known AAOI net loss **-22.8 million**.
+There are 679 negative net-income values, including **574 positive-to-negative
+changes** versus production. Production still reports **93 v2 frames**.
+This is not proof of every extraction's semantic accuracy. Staging remains
+unpublished; source-check more changed figures before promoting a new partition.
+
 ## 2026-09-13 — follow-up audit of `98785fb3`; technical text correction (candidate)
 
 Started on clean main `98785fb3` after pulling the other operator's changes.
