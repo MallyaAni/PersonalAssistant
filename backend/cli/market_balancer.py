@@ -278,6 +278,7 @@ def run(data_dir: Path, equity: float) -> Path:
     if quotes:
         live = {
             "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+            "decision_session": latest.get("session"),
             "quotes": quotes,
             "technical": technical,
             "value": value,

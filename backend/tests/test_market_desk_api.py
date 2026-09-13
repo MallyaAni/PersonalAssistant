@@ -253,8 +253,19 @@ async def test_the_live_snapshot_is_marked_stale_when_older_than_a_candle(
     assert body["age_seconds"] > 15 * 60
 
 
+# Freshness is measured from a real candle during an open session.
 @pytest.mark.asyncio
 async def test_a_fresh_live_snapshot_is_not_stale(tmp_path, monkeypatch):
+    from backend.market import desk_freshness
+
+    # Freeze an open session so freshness does not depend on the test's day.
+    class Clock(datetime):
+        # Return a time just after a real regular-session candle.
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 9, 11, 14, 0, tzinfo=UTC)
+
+    monkeypatch.setattr(desk_freshness, "datetime", Clock)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     live_dir = tmp_path / "desk"
@@ -262,8 +273,8 @@ async def test_a_fresh_live_snapshot_is_not_stale(tmp_path, monkeypatch):
     (live_dir / "live.json").write_text(
         json.dumps(
             {
-                "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
-                "quotes": {"SNDK": {"t": "SNDK", "p": 10.0, "pc": 9.0}},
+                "as_of": Clock.now().isoformat(),
+                "quotes": {"SNDK": {"last": 10.0, "bar": "2026-09-11T13:45:00+00:00"}},
             }
         ),
         encoding="utf-8",
@@ -278,6 +289,66 @@ async def test_a_fresh_live_snapshot_is_not_stale(tmp_path, monkeypatch):
     body = response.json()
     assert response.status_code == 200, response.text
     assert body["stale"] is False
+
+
+# HTTP responses must reject stale evidence even when its file was just written.
+@pytest.mark.asyncio
+async def test_new_snapshot_with_old_candle_keeps_the_evening_grade(
+    tmp_path, monkeypatch
+):
+    from backend.api.v1 import market
+
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-10", {"AAA": "B"}, [("AAA", 0.08)], [])
+    record_path = tmp_path / "desk/asof=2026-09-10/desk.json"
+    record = json.loads(record_path.read_text())
+    record["grades"]["AAA"].update(
+        stances={"technical": 0, "value": 0},
+        ranks={"technical": 0.5, "value": 0.5},
+        score=0,
+    )
+    record_path.write_text(json.dumps(record))
+    (tmp_path / "desk/live.json").write_text(
+        json.dumps(
+            {
+                "as_of": datetime.now(UTC).isoformat(),
+                "decision_session": "2026-09-10",
+                "quotes": {"AAA": {"last": 105, "bar": "2026-09-10T13:45:00+00:00"}},
+                "technical": {"AAA": {"now": 0.9, "close": 0.5, "stance": 1}},
+                "technical_detail": {
+                    "AAA": {"now": 0.9, "short": {}, "medium": {}, "long": {}}
+                },
+            }
+        )
+    )
+
+    # A stale read must stop before the model boundary.
+    def unexpected_model(*args, **kwargs):
+        pytest.fail("stale evidence called the model")
+
+    monkeypatch.setattr(market, "_model_live_read", unexpected_model)
+    auth = {"Authorization": f"Bearer {issue_user_token('desk_user')}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        live = await client.get("/api/v1/market/desk_user/desk/live", headers=auth)
+        mine = await client.get(
+            "/api/v1/market/desk_user/desk/mine", params={"equity": 10000}, headers=auth
+        )
+        read = await client.get(
+            "/api/v1/market/desk_user/desk/live/read/AAA", headers=auth
+        )
+    assert live.status_code == mine.status_code == read.status_code == 200
+    assert live.json()["stale"] is True
+    assert live.json()["stale_symbols"] == ["AAA"]
+    assert mine.json()["grades_live"] == {}
+    row = mine.json()["rows"][0]
+    assert row["grade_live"] == row["grade"] == "B"
+    assert row["grade_source"] == "evening"
+    assert read.json()["stale"] is True
+    assert read.json()["read_at"] is None
+    assert read.json()["data_at"] == "2026-09-10T13:45:00+00:00"
 
 
 # The person's own positions round-trip through the API, a bad row is
@@ -630,6 +701,15 @@ async def test_the_autopsy_without_documents_explains_why(tmp_path, monkeypatch)
 # /desk/mine builds its board from the snapshot's quotes and technical read.
 @pytest.mark.asyncio
 async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeypatch):
+    from backend.market import desk_freshness
+
+    class Clock(datetime):
+        # Keep this acceptance path inside the next regular session.
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 9, 8, 14, 0, tzinfo=UTC)
+
+    monkeypatch.setattr(desk_freshness, "datetime", Clock)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     _write(tmp_path, "2026-09-04", {"SNDK": "A+", "MU": "B"}, [("SNDK", 0.08)], [])
@@ -644,8 +724,12 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeyp
     (desk / "live.json").write_text(
         json.dumps(
             {
-                "as_of": "2026-09-04T12:00:00+00:00",
-                "quotes": {"SNDK": {"last": 120.0}, "MU": {"last": 45.0}},
+                "as_of": "2026-09-08T14:00:00+00:00",
+                "decision_session": "2026-09-04",
+                "quotes": {
+                    "SNDK": {"last": 120.0, "bar": "2026-09-08T13:45:00+00:00"},
+                    "MU": {"last": 45.0},
+                },
                 "technical": {"SNDK": {"now": 0.81, "close": 0.7}},
                 "technical_detail": {"SNDK": {"now": 0.81}},
             }
@@ -663,8 +747,9 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeyp
         )
     assert live.status_code == 200
     body = live.json()
-    assert body["as_of"] == "2026-09-04T12:00:00+00:00"
-    assert body["quotes"] == {"SNDK": {"last": 120.0}, "MU": {"last": 45.0}}
+    assert body["as_of"] == "2026-09-08T14:00:00+00:00"
+    assert body["quotes"]["SNDK"]["last"] == 120.0
+    assert body["stale_symbols"] == ["MU"]
     assert body["technical"]["SNDK"]["now"] == 0.81
     assert body["technical_detail"] == {"SNDK": {"now": 0.81}}
     board = {r["ticker"]: r for r in mine.json()["rows"]}

@@ -2059,6 +2059,9 @@ export interface DeskQuote {
 }
 export interface DeskLive {
   as_of: string | null;
+  data_at?: string | null;
+  decision_session?: string | null;
+  stale_symbols?: string[];
   quotes: Record<string, DeskQuote>;
   reason?: string;
   // The snapshot's age in seconds, and whether it is older than a candle
@@ -2104,6 +2107,9 @@ export interface DeskHolding {
   entry_date: string;
 }
 export interface DeskMineRow {
+  grade_source?: 'intraday' | 'evening';
+  stances_live?: Record<string, number>;
+  ranks_live?: Record<string, number>;
   ticker: string;
   // `uncovered` is a held name the desk does not rate: a review state, not
   // a sell instruction. `blocked` is a buy or add the band-reversal rule
@@ -2183,6 +2189,8 @@ export const putDeskHoldings = async (userId: string, rows: DeskHolding[]): Prom
 
 // The live grade of one covered name, re-made at the candle.
 export interface DeskLiveGrade {
+  stances_live?: Record<string, number>;
+  ranks_live?: Record<string, number>;
   grade_live: string;
   score_live: number;
   technical_now: number;
@@ -2256,6 +2264,8 @@ export const getDeskLive = async (userId: string): Promise<DeskLive> => {
 // the model's prose, or null when the model was away; `lines` are the same
 // features rendered deterministically, the fallback.
 export interface DeskLiveRead {
+  data_at?: string | null;
+  stale?: boolean;
   symbol: string;
   read: string | null;
   lines: { short: string[]; medium: string[]; long: string[] };

@@ -3,6 +3,42 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-12 — candle provenance and coherent intraday grades (candidate)
+
+Objective: make a fifteen-minute desk visit distinguish current market evidence,
+the evening decision, and generated prose. Acceptance: stale/future/undated
+candles and snapshots from a different decision cannot change the current
+grade; the displayed analyst ranks and votes match that grade; candle and
+explanation times are separately dated in Eastern time.
+
+Starting point: isolated `codex/desk-live-provenance` at `d848095e`, clean before
+editing. The shared main checkout was left untouched. Preserved the newer live
+value analyst. A value-only reading now also updates the grade when technical
+evidence is absent. Snapshots name their evening decision session; legacy
+snapshots safely fall back to the evening grade. Old candle explanations use
+deterministic evidence without making a new model call. The model-read cache
+holds up to 64 symbol/candle/detail entries, rather than only the last name.
+
+VERIFIED candidate: trading/market suite **430 passed, 8 skipped** (23 existing
+numerical warnings), including route-level stale-data fallback; desk Playwright
+**10 passed**, exercising candle refresh, separate evidence/prose timestamps,
+indicative labels, drill-downs and unchanged holdings behavior, with no blocking
+console errors or page exceptions. TypeScript, Ruff and diff checks pass;
+production Vite build passes with existing CSS/chunk-size warnings. Browser
+acceptance used this worktree's Vite server and deterministic API fixtures.
+
+UNVERIFIED: deployment of this candidate, authenticated production browser
+workflow, real-session feed transitions, and any improvement in investment
+returns. No broker orders were submitted. Earlier production inspection found
+93/93 newest earnings-tone frames still labelled `release_tone/2`; repairing
+partial/same-day caches and rebuilding v3 inputs remains separate work. Never
+overwrite immutable historical partitions to perform that repair.
+
+The user chose whichever horizon leads to the best overall gain. Research
+objective: after-cost compounded returns, preserving current risk limits;
+compare frozen candidates on unseen periods before changing the live rule.
+The current five-session paper record cannot establish durable superiority.
+
 ## 2026-09-12 — the live grade re-reads the value analyst, the board warns when it contradicts the action, and "at risk" reads the candle (DEPLOYED `8df5a24`)
 
 The live grade was re-made from the technical analyst alone. The value

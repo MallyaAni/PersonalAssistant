@@ -8,6 +8,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Fail browser acceptance on application exceptions and blocking console errors.
 function observeBlockingBrowserErrors(page: Page) {
   const consoleErrors: string[] = []
   const pageErrors: string[] = []
@@ -462,7 +463,8 @@ test('shows each thing once, not twice', async ({ page }) => {
   // to B by its live read), and MSFT shows the live grade, not the close's.
   const everyGrade = page.locator('section', { has: page.getByRole('heading', { name: 'Every grade' }) })
   await expect(everyGrade.locator('tbody tr td:first-child')).toHaveText(['AAPL', 'NVDA', 'MSFT'])
-  await expect(everyGrade.locator('tbody tr').last().locator('td').nth(2)).toHaveText('B')
+  await expect(everyGrade.locator('tbody tr').last().locator('td').nth(2).locator('span')).toHaveText('B')
+  await expect(everyGrade.locator('tbody tr').last()).toContainText('indicative intraday grade')
   await expect(page.getByText('Practice account', { exact: true })).toBeVisible()
   await expect(page.getByText('Gain so far')).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
@@ -573,15 +575,15 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
   await expect(page.getByText('100 shares held')).toBeVisible()
   await expect(page.getByRole('button', { name: 'done' })).not.toBeVisible()
   // A fresh book with no rebalance clock: the next session is the first
-  // decision, so the board reads as actions for the next open.
-  await expect(page.getByText('What to do at the next open')).toBeVisible()
+  // decision, so the board shows the next scheduled trades.
+  await expect(page.getByText('Next scheduled trades')).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// The board says what is executable at the next open only when the paper
+// The board names scheduled trades only when the paper
 // book is actually due a rebalance; otherwise the rows are targets for a
 // later one, and the countdown is named.
-test('a due rebalance reads as what to do at the next open', async ({ page }) => {
+test('a due rebalance shows the next scheduled trades', async ({ page }) => {
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -622,7 +624,7 @@ test('a due rebalance reads as what to do at the next open', async ({ page }) =>
   }))
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
-  await expect(page.getByText('What to do at the next open')).toBeVisible()
+  await expect(page.getByText('Next scheduled trades')).toBeVisible()
   await expect(page.getByText('in 1 trading days')).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -678,6 +680,8 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
           long: [first ? '2.3% below the 200-day EMA' : '11.2% below the 200-day EMA'],
         },
         now: first ? 0.9 : 0.2,
+        data_at: first ? '2026-09-08T19:45:00Z' : '2026-09-08T20:00:00Z',
+        stale: false,
         read_at: first ? '2026-09-08T20:03:00Z' : '2026-09-08T20:18:00Z',
       }),
     })
@@ -693,7 +697,8 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   await expect(dialog.getByText('Support holds beneath the rally.', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/\$102/)).toBeVisible()
   await expect(dialog.getByText(/Technical rank if the session closed now/)).toContainText('90')
-  await expect(stamp).toContainText('live,')
+  await expect(stamp).toContainText('candle from Sep 8')
+  await expect(stamp).toContainText('explanation generated')
   const firstTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
   expect(firstTime).toBeTruthy()
 
@@ -706,11 +711,37 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   await expect(dialog.getByText('4.1% below the 21-day EMA', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/\$110/)).toBeVisible()
   await expect(dialog.getByText(/Technical rank if the session closed now/)).toContainText('20')
-  await expect(stamp).toContainText('live,')
+  await expect(stamp).toContainText('candle from Sep 8')
   const secondTime = (await stamp.textContent() ?? '').match(/\d{1,2}:\d{2}/)?.[0]
   expect(secondTime).toBeTruthy()
   expect(secondTime).not.toBe(firstTime)
   expect(refetchForNewCandle).toBe(1)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Old evidence stays visibly dated even when its explanation is newly generated.
+test('dates old candles separately from explanations and labels indicative grades', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live/read/*`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      symbol: 'MSFT', read: 'The available candle is below the moving average.',
+      now: .4, lines: { short: [], medium: [], long: [] },
+      data_at: '2026-09-08T19:45:00Z', read_at: '2026-09-12T14:00:00Z', stale: true,
+    }),
+  }))
+  await page.goto('/#desk')
+  await expect(page.getByText('last known data · not current')).toBeVisible()
+  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await expect(page.getByText('indicative intraday grade')).toBeVisible()
+  await page.getByRole('button', { name: 'MSFT', exact: true }).last().click()
+  const dialog = page.getByRole('dialog', { name: 'MSFT history' })
+  const stamp = dialog.locator('h4', { hasText: 'Technical read' })
+  await expect(stamp).toContainText('candle from Sep 8')
+  await expect(stamp).toContainText('last known data')
+  await expect(stamp).toContainText('explanation generated Sep 12')
+  await expect(stamp).not.toContainText('live,')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 

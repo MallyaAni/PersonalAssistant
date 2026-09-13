@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-12 — desk grades are tied to their candle and evening decision
+
+Intraday grade inputs now require a dated, recent regular-session candle and a
+snapshot naming the exact evening decision being extended. A newly written
+file cannot make yesterday's price current. Value-only updates work, and
+current analyst ranks and votes accompany the grade they produced. Stale reads
+return deterministic evidence without a new model call; current reads retain a
+bounded per-name/candle cache.
+
+The dashboard separately dates the IEX candle and generated explanation in ET,
+labels indicative intraday grades and evening theses, and calls the combined
+buy/sell board "Next scheduled trades". Trading/market tests: **430 passed,
+8 skipped**. Desk browser acceptance: **10 passed**, with no blocking console
+errors or page exceptions. TypeScript, Ruff and production build passed
+(existing build warnings remain). These are candidate-code measurements with
+fixture browser data, not evidence of investment performance.
+
 ## 2026-09-12 — desk cancellations survive reconciliation and session/text bounds hold
 
 `a0f1e5c9`: cancellation acknowledgement is followed by an order-status read;

@@ -194,6 +194,9 @@ def board(
                 "in_book": in_book,
                 "grade": grade.get("grade", ""),
                 "grade_live": live["grade"] if live else grade.get("grade", ""),
+                "grade_source": "intraday" if live else "evening",
+                "stances_live": live["stances"] if live else grade.get("stances") or {},
+                "ranks_live": live["ranks"] if live else grade.get("ranks") or {},
                 "score_live": live["score"] if live else None,
                 "technical_now": live["now"] if live else None,
                 "technical_close": live["close"] if live else None,
@@ -266,13 +269,13 @@ def live_grades(
     value = value or {}
     out: dict[str, dict] = {}
     for ticker, grade in (record.get("grades") or {}).items():
-        live = _live_grade(
-            grade, technical.get(ticker), value.get(ticker)
-        )
+        live = _live_grade(grade, technical.get(ticker), value.get(ticker))
         if live is None:
             continue
         out[ticker] = {
             "grade_live": live["grade"],
+            "stances_live": live["stances"],
+            "ranks_live": live["ranks"],
             "score_live": live["score"],
             "technical_now": live["now"],
             "technical_close": live["close"],
@@ -286,10 +289,13 @@ def live_grades(
 # The grade re-made with the technical and value stances read at the live
 # rank, the other analysts as the record left them, and the score moved by
 # the analysts' conviction changes. None when there is no live read at all.
-def _live_grade(grade: dict, tech: dict | None, value: dict | None = None) -> dict | None:
+def _live_grade(
+    grade: dict, tech: dict | None, value: dict | None = None
+) -> dict | None:
     tech = tech or None
     value = value or None
     stances = {k: int(v) for k, v in (grade.get("stances") or {}).items()}
+    ranks = dict(grade.get("ranks") or {})
     if "technical" not in stances and "value" not in stances:
         return None
     if tech is None and value is None:
@@ -300,8 +306,9 @@ def _live_grade(grade: dict, tech: dict | None, value: dict | None = None) -> di
     for name, read in (("technical", tech), ("value", value)):
         if read is None:
             continue
-        r_now, r_close = float(read.get("now", float("nan"))), float(
-            read.get("close", float("nan"))
+        r_now, r_close = (
+            float(read.get("now", float("nan"))),
+            float(read.get("close", float("nan"))),
         )
         if not (r_now == r_now and r_close == r_close):
             continue
@@ -310,6 +317,7 @@ def _live_grade(grade: dict, tech: dict | None, value: dict | None = None) -> di
         else:
             value_now, value_close = r_now, r_close
         if name in stances:
+            ranks[name] = r_now
             # The live stance is the rule's own, persisted through the live
             # bar, when the read carries it; the bare threshold is the
             # fallback for a snapshot written before the stance was.
@@ -319,18 +327,22 @@ def _live_grade(grade: dict, tech: dict | None, value: dict | None = None) -> di
                 stances[name] = (
                     BULLISH
                     if r_now >= 1.0 - STANCE_FRACTION
-                    else BEARISH if r_now <= STANCE_FRACTION else 0
+                    else BEARISH
+                    if r_now <= STANCE_FRACTION
+                    else 0
                 )
             moved += float(
                 conviction_from_ranks(r_now, SHARPNESS)
                 - conviction_from_ranks(r_close, SHARPNESS)
             )
-    if now is None:
+    if now is None and value_now is None:
         return None
     letter, votes = grading.grade_from_stances(stances, grading.ANALYST_WEIGHTS)
     release_bullish = stances.get("sentiment") == BULLISH
     return {
         "grade": letter,
+        "stances": stances,
+        "ranks": ranks,
         "score": float(grade.get("score", 0.0)) + moved,
         "now": now,
         "close": close,

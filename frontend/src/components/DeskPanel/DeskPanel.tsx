@@ -39,6 +39,14 @@ interface DeskPanelProps {
 const REFRESH_MS = 5 * 60 * 1000
 const CANDLE_MS = 15 * 60 * 1000
 
+// Show the date and exchange timezone so an old candle cannot look current.
+const marketTime = (value: string | null | undefined) => {
+  if (!value || Number.isNaN(Date.parse(value))) return 'unknown time'
+  return `${new Date(value).toLocaleString('en-US', {
+    timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  })} ET`
+}
+
 const GRADE_ORDER: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
 const GRADE_STYLE: Record<string, string> = {
   'A+': 'bg-[#e6f4ea] text-[#1e7a3a]',
@@ -371,7 +379,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
           )}
         </ul>
       ) : (
-        <p className="text-sm text-[#6e6e73]">No change: same grades, same book, same warnings.</p>
+        <p className="text-sm text-[#6e6e73]">No change between the last two evening decisions.</p>
       )}
     </section>
   )
@@ -689,14 +697,18 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     try {
       setLive(await getDeskLive(userId))
     } catch {
-      // the board stands without the live layer
+      setLive((previous) => ({ ...previous, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
     }
     try {
       const mine = await getDeskMine(userId, equity)
       setRows(mine.rows)
       setLiveGrades(mine.grades_live)
     } catch {
-      // the last board stands
+      setLiveGrades({})
+      setRows((previous) => previous.map((row) => ({
+        ...row, grade_live: row.grade, grade_source: 'evening', stances_live: row.stances, ranks_live: row.ranks,
+        score_live: null, grade_margin_live: null, technical_now: null, technical_close: null, value_now: null, value_close: null,
+      })))
     }
     try {
       setIntraday(await getDeskIntraday(userId))
@@ -810,7 +822,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <section className="overflow-x-auto rounded-2xl border border-black/[0.08] bg-white p-4">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 className="text-sm font-semibold text-[#1d1d1f]">
-              {rebalanceDue ? 'What to do at the next open' : 'Targets for the next rebalance'}
+              {rebalanceDue ? 'Next scheduled trades' : 'Targets for the next rebalance'}
               {!rebalanceDue && countdown !== null && (
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
                   in {countdown} trading days
@@ -818,14 +830,15 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               )}
               {live.as_of && (
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  prices as of {new Date(live.as_of).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  {live.stale && (
+                  IEX candle from {marketTime(live.data_at)}
+                  {(live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
                     <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
-                      stale: older than 15 minutes
+                      last known data · not current
                     </span>
                   )}
                 </span>
               )}
+              {live.reason && <span className="ml-2 text-xs text-amber-800">{live.reason}</span>}
             </h3>
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
               <label className="flex items-center gap-2">
@@ -1193,8 +1206,8 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
           </button>
         )}
         {liveDrop && (
-          <div className="mt-0.5 text-xs font-medium text-[#9a6200]" title="the evening decision still says buy, but the grade at the live price is C - the desk drops C names at the next rebalance">
-            grade C live: dropped at the next rebalance
+          <div className="mt-0.5 text-xs font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">
+            indicative C: removed if still C at the next rebalance
           </div>
         )}
       </td>
@@ -1225,6 +1238,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         {r.in_book ? (
           <>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>{r.grade_live}</span>
+            <div className="text-xs text-[#6e6e73]">{r.grade_source === 'intraday' ? 'indicative intraday grade' : 'evening decision'}</div>
             {r.grade_live !== r.grade && (
               <span className="ml-1 text-xs text-[#6e6e73]" title="the grade with the technical and value analysts read at the live price; the evening grade stands for the desk's own trades">
                 {r.grade} at the close
@@ -1248,7 +1262,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
       <td className="text-xs text-[#6e6e73]">
         {r.in_book && r.why ? (
           <button type="button" onClick={onReason} className="text-left text-[#1d1d1f] hover:text-[#0071e3] hover:underline" title="why the desk holds this grade">
-            {open ? 'hide' : r.why}
+            {open ? 'hide evening thesis' : `Evening thesis: ${r.why}`}
           </button>
         ) : (
           r.why
@@ -1256,7 +1270,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         {open && (
           <>
             <div className="mt-1 font-mono text-[#1d1d1f]" title={`${TRIGGER_LEGEND} the number is the analyst's rating, 0 to 100`}>
-              {r.in_book && ranks ? ratings(ranks, r.stances ?? {}) : null}
+              {r.in_book && ranks ? ratings(r.ranks_live ?? ranks, r.stances_live ?? r.stances ?? {}) : null}
             </div>
             {r.technical_now !== null && r.technical_close !== null && (
               <div className="text-[#6e6e73]">
@@ -1409,7 +1423,7 @@ const EveryGrade = ({
       <p className="mb-2 text-xs text-[#6e6e73]">
         {TRIGGER_LEGEND} The number is the analyst&rsquo;s rating, 0 to 100: where the name ranks across the book on
         that analyst&rsquo;s evidence. Ordered by grade, best first, then by score within the grade; each name is
-        re-read at the live price every fifteen-minute candle.
+        updated from available technical and value readings. Other votes and the thesis are from the evening decision.
       </p>
       <table className="w-full text-sm">
         <thead className="text-left text-[#6e6e73]">
@@ -1439,9 +1453,10 @@ const EveryGrade = ({
                 <td className="text-[#6e6e73]">{g.side === 'ai' ? 'AI' : g.side}</td>
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
+                  <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'indicative intraday grade' : 'evening decision'}</div>
                 </td>
                 <td className="whitespace-nowrap font-mono text-xs">
-                  {g.ranks ? ratings(g.ranks, g.stances ?? {}) : triggers(g.stances ?? {})}
+                  {g.ranks ? ratings(liveGrades[ticker]?.ranks_live ?? g.ranks, liveGrades[ticker]?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}
                 </td>
                 <td className="text-xs">
                   {briefs[ticker] || g.headline ? (
@@ -1534,13 +1549,15 @@ const LiveTechnical = ({
   // and whenever the model is away, the same readings render as the
   // deterministic lines the backend returns beside it.
   const [liveRead, setLiveRead] = useState<DeskLiveRead | null>(null)
+  const [readUnavailable, setReadUnavailable] = useState(false)
   const bar = quote?.bar ?? ''
   useEffect(() => {
     let alive = true
     setLiveRead(null)
+    setReadUnavailable(false)
     void getDeskLiveRead(userId, ticker)
-      .then((r) => alive && setLiveRead(r))
-      .catch(() => alive && setLiveRead(null))
+      .then((r) => { if (alive) { setLiveRead(r); setReadUnavailable(r === null) } })
+      .catch(() => { if (alive) { setLiveRead(null); setReadUnavailable(true) } })
     return () => {
       alive = false
     }
@@ -1569,9 +1586,11 @@ const LiveTechnical = ({
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h4 className="text-sm font-semibold text-[#1d1d1f]">
           Technical read
-          {readAt && (
+          {(liveRead?.data_at || readAt) && (
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-              live, {new Date(readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              candle from {marketTime(liveRead?.data_at)}
+              {liveRead?.stale ? ' · last known data' : ''}
+              {readAt ? ` · explanation generated ${marketTime(readAt)}` : ''}
             </span>
           )}
         </h4>
@@ -1600,7 +1619,7 @@ const LiveTechnical = ({
       ) : read ? (
         <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>
       ) : (
-        <p className="text-xs text-[#6e6e73]">reading the live price…</p>
+        <p className="text-xs text-[#6e6e73]">{readUnavailable ? 'Technical read unavailable. Try Refresh.' : 'Reading the available price data…'}</p>
       )}
       {tech != null && (
         <p className="mt-2 text-xs text-[#1d1d1f]">

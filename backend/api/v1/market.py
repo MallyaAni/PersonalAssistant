@@ -9,6 +9,7 @@ every other per-user route; the records themselves are the operator's own.
 import asyncio
 import json
 import re
+from collections import OrderedDict
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,6 +27,7 @@ from backend.core.dependencies import (
 from backend.market import (
     alpaca,
     alpaca_trading,
+    desk_freshness,
     deskrecord,
     holdings,
     live_quotes,
@@ -124,14 +126,7 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
     _operator_only(user_id)
     snap = _live_snapshot()
     if snap is not None and snap.get("quotes"):
-        age = _snapshot_age_seconds(snap)
-        stale = age is None or age > SNAPSHOT_STALE_AFTER_SECONDS
-        return {
-            "user_id": user_id,
-            **snap,
-            "age_seconds": age,
-            "stale": stale,
-        }
+        return {"user_id": user_id, **desk_freshness.describe(snap)}
     latest, _previous = deskrecord.latest_pair(_root())
     rows = (latest or {}).get("actions") or []
     symbols = [str(r.get("ticker")) for r in rows if r.get("ticker")]
@@ -151,31 +146,32 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
             technical = await asyncio.to_thread(
                 live_technical.technical_now, store, found
             )
-            value = await asyncio.to_thread(
-                live_technical.value_now, store, found
-            )
+            value = await asyncio.to_thread(live_technical.value_now, store, found)
             technical_detail = await asyncio.to_thread(
                 live_technical.technical_detail, store, found
             )
         except Exception as exc:  # noqa: BLE001 - the quotes must still reach the page
             technical = {"reason": str(exc)}  # type: ignore[dict-item]
-    return {
-        "technical": technical,
-        "value": value,
-        "technical_detail": technical_detail,
-        "user_id": user_id,
-        "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
-        "age_seconds": 0.0,
-        "stale": False,
-        "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
-    }
+    return desk_freshness.describe(
+        {
+            "technical": technical,
+            "value": value,
+            "technical_detail": technical_detail,
+            "user_id": user_id,
+            "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+            "age_seconds": 0.0,
+            "stale": False,
+            "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
+            "decision_session": (latest or {}).get("session"),
+        }
+    )
 
 
 # The live read is model-written prose, cached per candle so the drill-down
 # pays one call per name per candle rather than per open. The deterministic
 # lines are the fallback when the model is away and the text it is given to
 # rewrite, so the same numbers are never rendered two ways.
-_live_read_cache: dict[str, object] = {"key": None, "value": {}}
+_live_read_cache: OrderedDict[tuple, dict] = OrderedDict()
 
 
 # What the model's live read still has to mention: both levels with a
@@ -313,7 +309,9 @@ async def desk_live_read(user_id: UserId, symbol: str) -> dict[str, object]:
     """Return the model's live technical read for one name."""
     _operator_only(user_id)
     symbol = symbol.upper()
-    detail = ((_live_snapshot() or {}).get("technical_detail") or {}).get(symbol)
+    snapshot = _live_snapshot() or {}
+    detail = (snapshot.get("technical_detail") or {}).get(symbol)
+    quote = (snapshot.get("quotes") or {}).get(symbol) or {}
     if detail is None:
         try:
             headers = alpaca.credentials()
@@ -323,16 +321,32 @@ async def desk_live_read(user_id: UserId, symbol: str) -> dict[str, object]:
         quotes = live_quotes.quotes([symbol], headers=headers)
         if not quotes:
             return {"read": None, "lines": {"short": [], "medium": [], "long": []}}
+        quote = asdict(quotes[symbol]) if symbol in quotes else {}
         detail = (
             await asyncio.to_thread(live_technical.technical_detail, store, quotes)
         ).get(symbol)
         if detail is None:
             return {"read": None, "lines": {"short": [], "medium": [], "long": []}}
     lines_ = live_technical.lines(detail)
-    sig = (symbol, json.dumps(detail, sort_keys=True))
-    if _live_read_cache["key"] == sig:
-        cached = _live_read_cache["value"]  # type: ignore[assignment]
-        return {"symbol": symbol, **cached}
+    evidence = desk_freshness.quote_status(quote, datetime.now(UTC))
+    sig = (
+        str(_root()),
+        symbol,
+        evidence["data_at"],
+        json.dumps(detail, sort_keys=True),
+    )
+    if evidence["stale"]:
+        return {
+            "symbol": symbol,
+            "read": _deterministic_read(lines_),
+            "lines": lines_,
+            "now": detail.get("now"),
+            "read_at": None,
+            **evidence,
+        }
+    if sig in _live_read_cache:
+        _live_read_cache.move_to_end(sig)
+        return {"symbol": symbol, **_live_read_cache[sig], **evidence}
     from backend.core.dependencies import get_llm_client
     from backend.core.prompts import render
 
@@ -351,8 +365,10 @@ async def desk_live_read(user_id: UserId, symbol: str) -> dict[str, object]:
         # is only fresh for the candle it was computed on.
         "read_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
-    _live_read_cache["key"], _live_read_cache["value"] = sig, out
-    return {"symbol": symbol, **out}
+    _live_read_cache[sig] = out
+    if len(_live_read_cache) > 64:
+        _live_read_cache.popitem(last=False)
+    return {"symbol": symbol, **out, **evidence}
 
 
 # The person's own positions, kept beside the records and never touched
@@ -405,6 +421,7 @@ async def desk_mine(
         return {"user_id": user_id, "session": None, "rows": []}
     snap = _live_snapshot()
     if snap is not None and snap.get("quotes"):
+        technical, value = desk_freshness.grade_inputs(snap, latest)
         return {
             "user_id": user_id,
             "session": latest.get("session"),
@@ -414,12 +431,10 @@ async def desk_mine(
                 rows,
                 equity,
                 snap.get("quotes") or {},
-                snap.get("technical") or {},
-                snap.get("value") or {},
+                technical,
+                value,
             ),
-            "grades_live": holdings.live_grades(
-                latest, snap.get("technical") or {}, snap.get("value") or {}
-            ),
+            "grades_live": holdings.live_grades(latest, technical, value),
         }
     symbols = sorted(
         {h.ticker for h in rows}
@@ -447,10 +462,21 @@ async def desk_mine(
                 value = {}
     except alpaca.AlpacaUnavailableError:
         pass
+    as_of = datetime.now(UTC).isoformat(timespec="seconds")
+    technical, value = desk_freshness.grade_inputs(
+        {
+            "as_of": as_of,
+            "decision_session": latest.get("session"),
+            "quotes": quotes,
+            "technical": technical,
+            "value": value,
+        },
+        latest,
+    )
     return {
         "user_id": user_id,
         "session": latest.get("session"),
-        "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+        "as_of": as_of,
         "rows": holdings.board(latest, rows, equity, quotes, technical, value),
         "grades_live": holdings.live_grades(latest, technical, value),
     }
