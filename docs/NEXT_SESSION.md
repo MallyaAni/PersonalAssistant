@@ -1,7 +1,71 @@
 # Next session
 
-Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
+Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
+
+## 2026-09-13 (opencode) — desk number fixes, an upcoming-FOMC visibility fix, and the earnings/FOMC backtests (DEPLOYED `29b579d3`, contains `bd486cb` + `29b579d`)
+
+Fixes the trading-desk defects the codex review listed (the user asked me to
+implement them), all committed on `main`, plus one real defect found by the
+backtest. Deployed and VERIFIED end to end.
+
+- **`bd486cb` — displayed numbers and level wording.** `_pct_word`
+  (`backend/market/live_technical.py`) rendered `100·log(close/high)` as a
+  percent (AAOI −0.796 → "79.6%" when the real drawdown is 54.9%); it now
+  converts the log move to an arithmetic percent. `_level_lines` reversed the
+  resistance direction (`levels.py:113` computes
+  `resistance_distance=(resistance−close)/close`); each side now names its
+  level correctly (a resistance above the price reads "below nearest
+  resistance"). DeskPanel history labels read "Annualized mean while an A/not"
+  and "Position changes" (the old labels described size changes and called a
+  mean-daily-log×252 an annualized rule return); EveryGrade table gets an
+  overflow wrapper (the whitespace-nowrap analysts column overflowed mobile);
+  the "done" button is gated on `rebalance_due`, so a non-rebalance day reads
+  "Targets for the next rebalance" without trade buttons. Pinned by
+  `backend/tests/test_market_live_technical.py` + updated `e2e/desk.spec.ts`.
+- **`29b579d` — the desk can see an upcoming FOMC meeting beyond the panel.**
+  `calendar._fomc_distances` dropped any decision whose date fell past the
+  panel's last session, so the sessions before the September 16 2026 meeting
+  read "none within 30 sessions" and its pre-window flag never fired. The
+  future decision is now kept as a mark at position `len(dates)`; the
+  pre-window sessions read sessions-to-go 1..3 and flag correctly, and no
+  session is mistaken for the future decision day. Pinned by
+  `test_an_upcoming_meeting_beyond_the_panel_still_flags_the_pre_window`.
+- **Backtest Q1 (FOMC selloff).** The policy change is real: Kevin Warsh's
+  first FOMC meeting as chair was 2026-06-17, where forward guidance was
+  scrapped ("forward guidance isn't the business we should be in"). Only one
+  complete no-guidance cycle exists (2026-07-29): book pre-window
+  −2.84/−0.16/−2.82%, decision day −4.02% (SPY flat pre-window, −1.55% on the
+  day). Current Sept 16 pre-window (Sep 8–11): book 3-day cum −0.92%, SPY
+  −0.22%. Full-history (2015–2026, 282 pre sessions): book pre-window −6.06%
+  ann vs +26.53% ann overall; going flat pre-window has lost money recently.
+  **n is too small to wire de-risk** — the regime entry's "FOMC context only,
+  never changes a size" stays; re-measure after a few more meetings.
+- **Backtest Q2 (earnings timing).** 3402 scored releases: bullish tone
+  (guidance+demand+pricing ≥ 1, n=1746) beta-adj forward 1s +0.14% (t=1.6),
+  5s +0.37% (t=2.2), 10s +0.67% (t=3.0), 20s +1.27% (t=4.4); neutral ~0;
+  bearish (n=107) −0.36% 1s. **Edge is NOT front-loaded → intraday is not
+  supported by the data**, so no intraday earnings change per the user's
+  decision rule. The nightly grade update (next close) is the right hook.
+- **Verification.** Backend 111 tests passed (calendar + live_technical +
+  market/desk suites); `tsc` clean. E2E gap found and closed: the live
+  `anios_frontend` dev server mounts the **deploy clone** (`~/deploy/anios`),
+  not the workspace, so the first e2e run hit stale code (2 failures that were
+  not regressions). After deploying, the desk suite passed **10/10** against
+  the real system via `mcr.microsoft.com/playwright:v1.61.1-noble`
+  (host `frontend` mounted, `--network host`, `PUPPETEER_SKIP_DOWNLOAD=true`).
+  Deployed `29b579d3` from `~/deploy/anios`; post-deploy
+  `2026-09-13T21:54:40Z 29b579d3 ok (cheap)` — search/router surfaces
+  untouched, so the credit-consuming sweep correctly did not run; gateway 401,
+  `/health` 200. Workspace HEAD == origin/main == `29b579d3`, tree clean.
+
+**Next atomic task.** The backtest says intraday earnings is not worth
+implementing; the remaining user-facing "I need to know" is surfacing a
+same-day earnings read in the desk view (name drops an 8-K → show the release
+reader's tone + financials the same day, ahead of the next-night grade). Not
+started. The codex earnings rebuild (PID 1561834, `/tmp/desk-tone-rebuild-20260913.py`,
+staging store `data/market-tone-v3-20260913`, ~5/93 companies) is still
+running and remains theirs.
 
 ## 2026-09-13 — explain intraday vote changes (deployed `6525f8d3`)
 
