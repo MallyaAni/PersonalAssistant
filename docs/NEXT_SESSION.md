@@ -129,6 +129,41 @@ started. The codex earnings rebuild (PID 1561834, `/tmp/desk-tone-rebuild-202609
 staging store `data/market-tone-v3-20260913`, ~5/93 companies) is still
 running and remains theirs.
 
+## 2026-09-13 (opencode) — same-day earnings read in the desk drill-down (DEPLOYED `141f5a43`, contains `3d5f5db` + `83fe9d0` + `141f5a4`)
+
+Built the pending user-facing item above: the desk drill-down now shows a
+name's newest earnings release read the day an 8-K lands, ahead of the next
+nightly grade. `GET /market/{user}/desk/earnings/{symbol}` reads the newest
+`edgar_tone` frame from the store the release reader writes (no new model
+call, no analyst-consensus comparison — only what the release itself said)
+and returns the tone (guidance / demand / pricing / capex), the numbers
+(revenue, EPS, net income, gross margin, quarter end), the stored model
+summary, and a `same_day` flag (reaction date == today in America/New_York).
+`DeskPanel`'s `EarningsRead` renders the block in `NameDetail` with a
+"released today" marker; `read: null` hides it.
+
+VERIFIED: backend desk suite 21 passed (2 new: read reaches the drill-down,
+no-release answers None); the combined tree with the other agent's `405943d`
+(desk captions) and `6f9baa7` (technical denominators) rebased cleanly and
+passes. Deployed 3 times: `3d5f5db`'s gateway build failed on a real TS parse
+error my first "tsc clean" missed — the frontend dev container mounts the
+deploy clone, so that tsc had checked the stale copy; the workspace copy has
+no such blind spot (`const facts = ([` left the leading paren unclosed;
+fixed in `83fe9d0`). E2E gap: `NameDetail`'s new fetch without a fixture hit
+the real backend and logged a CORS console error that failed two tests; a
+`desk/earnings/*` wildcard (read: null) covers every name, the AAPL route
+overrides it. Desk browser suite **12 passed** against the deployed system
+via the Playwright noble image. Live: the gateway answers 401 on
+`/desk/earnings/ORCL` (protected, routed); the backend reads the real ORCL
+frame (2026-09-11, guidance 1.0, demand 1.0, rev 19345M, EPS 1.56, NI 4679M).
+Public gateway bundle `index-D17iAH4N.js` contains "Latest earnings read";
+post-deploy `2026-09-13T23:57:26Z 141f5a43 ok (cheap)`. Workspace HEAD ==
+origin/main == deploy clone == `141f5a4`, tree clean.
+
+The codex earnings rebuild (PID 1561834, `/tmp/desk-tone-rebuild-20260913.py`,
+staging store `data/market-tone-v3-20260913`, ~5/93 companies) is still
+running and remains theirs.
+
 ## 2026-09-13 — explain intraday vote changes (deployed `6525f8d3`)
 
 Starting branch `codex/desk-live-provenance`, HEAD `e98701da`; only the local
