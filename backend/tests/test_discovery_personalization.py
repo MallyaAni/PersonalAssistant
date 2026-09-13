@@ -650,7 +650,7 @@ async def test_a_sweep_searches_and_ranks_with_what_memory_knows(monkeypatch):
     search = _StubSearch(
         [
             (
-                "Beginner group run September 12, 2099",
+                "Beginner group run September 30, 2026",
                 "https://runs.example/beginner",
                 "An easy weekend run for anyone starting out.",
             ),
