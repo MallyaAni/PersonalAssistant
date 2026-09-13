@@ -1724,7 +1724,7 @@ const EarningsRead = ({ read }: { read: NonNullable<DeskEarnings['read']> }) => 
     m == null ? null : m >= 1000 ? `$${(m / 1000).toFixed(1)}B` : `$${m.toFixed(0)}M`
   const dims = ['guidance', 'demand', 'pricing', 'capex'] as const
   const tones = dims.map((k) => ({ k, v: read[k] })).filter((t) => t.v !== 0)
-  const facts = ([
+  const facts = [
     ['Revenue', billed(read.revenue_usd_m)],
     ['EPS', read.eps_usd != null ? `$${read.eps_usd.toFixed(2)}` : null],
     ['Net income', billed(read.net_income_usd_m)],
