@@ -3,7 +3,7 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
-## 2026-09-13 — explain intraday vote changes (candidate)
+## 2026-09-13 — explain intraday vote changes (deployed `6525f8d3`)
 
 Starting branch `codex/desk-live-provenance`, HEAD `e98701da`; only the local
 node_modules symlink was untracked. Every grade now shows observed vote
@@ -14,8 +14,16 @@ interpreted as neutral. No grading or execution rules changed.
 VERIFIED in this source tree: desk browser suite **10 passed** (41.7 seconds),
 including the MSFT technical-vote transition, thesis label and rank explanation;
 TypeScript and production Vite build passed. Existing CSS and chunk-size build
-warnings remain. Deployment and authenticated production browser acceptance
-of this wording are UNVERIFIED.
+warnings remain. Deployment VERIFIED through `scripts/deploy.sh`'s automatic
+frontend-only path; post-deploy marker
+`2026-09-13T14:37:15Z 6525f8d3 ok (cheap)`. Gateway image
+`sha256:b5c3f5c13bd49f98ab5b56b2acee3c637efa6f8e955a746044a716dec43419c2`
+contains the new wording. The public gateway serves `index-CRB2_6CV.js`
+(SHA256 `f8c3d597eee71c7bb575ffeec843f8e6e59144fabf08c571322dd3a1cbe4aa2a`).
+Authenticated production browser acceptance remains UNVERIFIED; UI proof is
+the automated local browser workflow against deterministic API fixtures.
+Staging rebuild progress at this checkpoint: 2/93 companies complete
+(AAOI 55 filings, AAPL 48); PID 1561834 is running, not paused.
 
 ## 2026-09-13 — earnings refresh version and retry boundaries (deployed `e98701da`)
 
