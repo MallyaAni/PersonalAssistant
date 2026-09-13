@@ -239,6 +239,14 @@ test.beforeEach(async ({ page }) => {
       }),
     })
   })
+  // The drill-down fetches the newest earnings release read on open. Most
+  // fixtures name no read (the block hides); the AAPL-specific route
+  // registered below overrides this one for the same-day earnings test.
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/earnings/*`, route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ user_id: USER, symbol: '', read: null }),
+  }))
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
