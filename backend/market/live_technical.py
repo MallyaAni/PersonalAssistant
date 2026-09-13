@@ -315,13 +315,22 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
     return out
 
 
-# The line a percentage distance reads as, e.g. "12.6% above".
-def _pct_word(v) -> str | None:
-    """Return a distance's line, or None without a finite figure."""
+# The line a log distance reads as: its arithmetic percentage from the
+# level, never the log itself. The features are log distances - the EMA and
+# 52-week distances are log(price / level) - and a log is not a percentage:
+# a reading of -0.796 is a price 54.9% below its level, not 79.6%, and the
+# gap grows the further price sits. A level distance (support, resistance)
+# is already a simple fraction of the price, so it is spoken straight.
+def _log_pct_word(v) -> str | None:
+    """Return a log distance as an arithmetic percentage line, or None."""
     if v is None or not np.isfinite(v):
         return None
-    direction = "above" if v > 0 else "below" if v < 0 else "at"
-    return f"{abs(v * 100):.1f}% {direction}"
+    if abs(v) < 1e-9:
+        return "at"
+    ratio = np.exp(v)
+    if v > 0:
+        return f"{(ratio - 1) * 100:.1f}% above"
+    return f"{(1 - ratio) * 100:.1f}% below"
 
 
 # What a level kind reads as, so a line can name the level rather than
@@ -351,7 +360,11 @@ def _convergence_line(conv) -> str:
     return "the 21/50 EMAs are not converging"
 
 
-# The support and resistance lines, each naming what the level is.
+# The support and resistance lines, each naming what the level is. The
+# direction is read from which side the level sits on, because a positive
+# support distance is price above support while a positive resistance
+# distance is price below resistance: resistance above the price must read
+# "below nearest resistance", never "above" it.
 def _level_lines(s: dict) -> list[str]:
     """Return the support and resistance lines for a detail's short dict."""
     lines_out: list[str] = []
@@ -359,7 +372,12 @@ def _level_lines(s: dict) -> list[str]:
         dist = s.get(f"{side}_distance")
         if dist is None or not np.isfinite(dist):
             continue
-        base = f"{_pct_word(dist)} nearest {side}"
+        pct = abs(dist * 100)
+        if side == "resistance":
+            direction = "below" if dist > 0 else "above" if dist < 0 else "at"
+        else:
+            direction = "above" if dist > 0 else "below" if dist < 0 else "at"
+        base = f"{pct:.1f}% {direction} nearest {side}"
         what = _level_word(s.get(f"{side}_kind"), side)
         lines_out.append(f"{base} — {what}" if what else base)
     return lines_out
@@ -374,7 +392,7 @@ def _short_lines(s: dict) -> list[str]:
     if conv is not None and np.isfinite(conv):
         short.append(_convergence_line(conv))
     short.extend(_level_lines(s))
-    e21 = _pct_word(s.get("ema21_distance"))
+    e21 = _log_pct_word(s.get("ema21_distance"))
     if e21:
         short.append(f"{e21} the 21-day EMA")
     dt = s.get("daily_trend")
@@ -394,7 +412,7 @@ def _short_lines(s: dict) -> list[str]:
             short.append("EMA stack mixed")
         else:
             short.append(f"{-stack:.0f} of the three EMA pairs stacked down")
-    e50 = _pct_word(s.get("ema50_distance"))
+    e50 = _log_pct_word(s.get("ema50_distance"))
     if e50:
         short.append(f"{e50} the 50-day EMA")
     rp = s.get("range_position_60")
@@ -431,14 +449,14 @@ def _medium_lines(m: dict) -> list[str]:
 def _long_lines(features: dict) -> list[str]:
     """Return the long-term readable lines for a detail's long dict."""
     long: list[str] = []
-    h52 = _pct_word(features.get("high_52w_distance"))
-    lo52 = _pct_word(features.get("low_52w_distance"))
+    h52 = _log_pct_word(features.get("high_52w_distance"))
+    lo52 = _log_pct_word(features.get("low_52w_distance"))
     if h52 and lo52:
         long.append(f"{h52} its 52-week high · {lo52} its 52-week low")
-    e200 = _pct_word(features.get("ema200_distance"))
+    e200 = _log_pct_word(features.get("ema200_distance"))
     if e200:
         long.append(f"{e200} the 200-day EMA")
-    s200 = _pct_word(features.get("sma200_distance"))
+    s200 = _log_pct_word(features.get("sma200_distance"))
     if s200:
         long.append(f"{s200} the 200-day simple average")
     mom = features.get("residual_momentum_120")

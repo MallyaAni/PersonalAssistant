@@ -434,6 +434,9 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // for the next rebalance" rather than teaching a daily trading cadence.
   await expect(page.getByText('Targets for the next rebalance')).toBeVisible()
   await expect(page.getByText('in 18 trading days', { exact: true })).toBeVisible()
+  // No trade is scheduled before the rebalance, so no row carries a "done"
+  // button: the targets read as targets, not as instructions to buy now.
+  await expect(page.getByRole('button', { name: 'done' })).not.toBeVisible()
   await expect(page.getByText('The desk adds to its best name.', { exact: false })).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -485,11 +488,11 @@ test('drills into a name’s own history', async ({ page }) => {
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByText('Return while it was an A')).toBeVisible()
-  await expect(dialog.getByText('Return while it was not')).toBeVisible()
+  await expect(dialog.getByText('Annualized mean while an A')).toBeVisible()
+  await expect(dialog.getByText('Annualized mean while not')).toBeVisible()
   await expect(dialog.getByText('Sessions it was an A')).toBeVisible()
   await expect(dialog.getByText('41 of 60')).toBeVisible()
-  await expect(dialog.getByText('Grade changes across A')).toBeVisible()
+  await expect(dialog.getByText('Position changes')).toBeVisible()
   // The desk's whole evidence, read out loud by the model.
   await expect(dialog.getByText('What the desk read')).toBeVisible()
   await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).toBeVisible()

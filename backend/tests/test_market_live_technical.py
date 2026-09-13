@@ -287,3 +287,53 @@ def test_value_now_reads_the_value_analyst_and_reports_the_stance(monkeypatch):
         lambda store, quotes, today: {"panel": panel, "opinion": technical, "value": None},
     )
     assert live_technical.value_now(None, {"AAA": quote}, date(2026, 9, 9)) == {}
+
+
+# A log distance is said as its arithmetic percentage, never the log
+# itself: a reading of -0.796 is a price 54.9% below its level, not 79.6%,
+# and the two diverge the further price sits. A small log distance keeps
+# its familiar reading because log and arithmetic percentage agree closely.
+def test_a_log_distance_reads_as_its_arithmetic_percentage():
+    assert live_technical._log_pct_word(-0.796) == "54.9% below"
+    assert live_technical._log_pct_word(0.796) == "121.7% above"
+    assert live_technical._log_pct_word(-0.05) == "4.9% below"
+    assert live_technical._log_pct_word(0.0) == "at"
+    assert live_technical._log_pct_word(float("nan")) is None
+    assert live_technical._log_pct_word(None) is None
+
+
+# A resistance above the price reads "below nearest resistance", and one
+# below it "above nearest resistance": the direction is read from which
+# side the level sits on, not from the sign of the distance alone. Support
+# keeps the opposite reading for the same sign.
+def test_a_resistance_above_the_price_reads_below_nearest_resistance():
+    above = live_technical._level_lines(
+        {"resistance_distance": 0.15, "resistance_kind": 1}
+    )
+    assert above == ["15.0% below nearest resistance — a swing high"]
+    below = live_technical._level_lines(
+        {"resistance_distance": -0.15, "resistance_kind": 1}
+    )
+    assert below == ["15.0% above nearest resistance — a swing high"]
+    support = live_technical._level_lines(
+        {"support_distance": 0.125, "support_kind": 3}
+    )
+    assert support == ["12.5% above nearest support — the 200-day average"]
+
+
+# The long horizon's yearly-range line states the arithmetic percentage
+# below the 52-week high and above the 52-week low, and the 200-day lines
+# the same way.
+def test_the_long_horizon_lines_say_arithmetic_percentages():
+    lines_out = live_technical._long_lines(
+        {
+            "high_52w_distance": -0.796,
+            "low_52w_distance": 0.27,
+            "ema200_distance": -0.05,
+            "sma200_distance": -0.05,
+        }
+    )
+    assert "54.9% below its 52-week high" in lines_out[0]
+    assert "31.0% above its 52-week low" in lines_out[0]
+    assert "4.9% below the 200-day EMA" in lines_out
+    assert "4.9% below the 200-day simple average" in lines_out

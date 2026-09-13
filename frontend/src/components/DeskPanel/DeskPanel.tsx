@@ -917,7 +917,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                   onOpenName={() => setOpenName(r.ticker)}
                   marking={marking === r.ticker}
                   onDone={
-                    canWrite
+                    canWrite && rebalanceDue
                       ? async () => {
                           const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
                           setMarking(r.ticker)
@@ -1425,6 +1425,7 @@ const EveryGrade = ({
         that analyst&rsquo;s evidence, not its probability of profit. Ordered by grade, best first, then by score within the grade; each name is
         updated from available technical and value readings. Other votes and the thesis are from the evening decision.
       </p>
+      <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="text-left text-[#6e6e73]">
           <tr>
@@ -1495,6 +1496,7 @@ const EveryGrade = ({
           })}
         </tbody>
       </table>
+      </div>
     </section>
   )
 }
@@ -1749,13 +1751,14 @@ const NameDetail = ({
   const changes = gradeChanges(history?.rows ?? []).slice(-8).reverse()
   const cells = [
     // What the grade earned on this name: the days it was graded A or
-    // better against the days it was not, both a year. A single name's rule
-    // against buy-and-hold over the whole history would mislead: the book's
-    // return comes from rotating across names, not from riding one.
-    { label: 'Return while it was an A', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}% a year` : '—', note: 'annualized over the days the desk graded it A or better' },
-    { label: 'Return while it was not', value: bt?.out_annualised != null ? `${(bt.out_annualised * 100).toFixed(0)}% a year` : '—', note: 'annualized over the days it was not an A' },
+    // better against the days it was not, both annualized from the mean of
+    // the name's own daily returns on those days. The number is a
+    // log-return annualization, not a compounded return, and it says
+    // nothing about how the days were arranged.
+    { label: 'Annualized mean while an A', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}% a year` : '—', note: 'mean of its daily log returns on days graded A or better, × 252' },
+    { label: 'Annualized mean while not', value: bt?.out_annualised != null ? `${(bt.out_annualised * 100).toFixed(0)}% a year` : '—', note: 'mean of its daily log returns on days it was not an A, × 252' },
     { label: 'Sessions it was an A', value: bt ? `${bt.sessions_in} of ${bt.sessions}` : '—', note: 'of all sessions since the history starts' },
-    { label: 'Grade changes across A', value: bt ? `${bt.switches}` : '—', note: 'times the grade crossed the A line, either way' },
+    { label: 'Position changes', value: bt ? `${bt.switches}` : '—', note: 'times the position size changed — grade moves and regime exposure — each paying the trade cost' },
   ]
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/25" onClick={onClose} role="dialog" aria-label={`${ticker} history`}>
