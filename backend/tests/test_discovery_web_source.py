@@ -114,7 +114,7 @@ async def test_results_become_events_and_undated_ones_stay_unschedulable():
     search = _StubSearch(
         [
             (
-                "Ridge hike September 12, 2026",
+                "Ridge hike September 12, 2099",
                 "https://trails.example/ridge",
                 "Meet at 9",
             ),
