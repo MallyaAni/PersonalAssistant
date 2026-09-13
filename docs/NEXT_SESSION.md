@@ -3,7 +3,39 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
-## 2026-09-13 — earnings refresh version and retry boundaries (candidate)
+## 2026-09-13 — explain intraday vote changes (candidate)
+
+Starting branch `codex/desk-live-provenance`, HEAD `e98701da`; only the local
+node_modules symlink was untracked. Every grade now shows observed vote
+transitions against evening votes, labels the evening thesis, and explains
+that analyst ranks are not probabilities of profit. Missing votes are not
+interpreted as neutral. No grading or execution rules changed.
+
+VERIFIED in this source tree: desk browser suite **10 passed** (41.7 seconds),
+including the MSFT technical-vote transition, thesis label and rank explanation;
+TypeScript and production Vite build passed. Existing CSS and chunk-size build
+warnings remain. Deployment and authenticated production browser acceptance
+of this wording are UNVERIFIED.
+
+## 2026-09-13 — earnings refresh version and retry boundaries (deployed `e98701da`)
+
+Deployment VERIFIED through `scripts/deploy.sh`: 3421 unit tests passed,
+19 skipped; all 100 real-model gate tests passed on retry. The first attempt
+failed three routing/trajectory cases, including a model timeout and a Scout
+floor miss; no floors or unrelated router code were changed. The staging
+earnings rebuild was paused during the retry to remove our competing load.
+Public gateway acceptance and deployed module hashes match `e98701da`;
+post-deploy marker: `2026-09-13T14:34:32Z e98701da ok (cheap)`.
+The separate host-cron checkout `~/anios` was fast-forwarded to this revision.
+
+The staging rebuild was RESUMED after deployment. PID 1561834 on spark1 runs
+`/tmp/desk-tone-rebuild-20260913.py`; log
+`/tmp/desk-tone-rebuild-20260913.log`; staging store
+`/home/animallya96/anios/data/market-tone-v3-20260913`.
+It does not publish to production. Validate coverage, failures and record
+versions before promotion; preserve historical decisions and partitions.
+At resume only AAOI had completed (55 scored filings); the 93-name repair is
+still IN PROGRESS, and corrected production-wide inputs remain UNVERIFIED.
 
 Starting checkpoint `f131d35d`, isolated `codex/desk-live-provenance`; only the
 local node_modules symlink was untracked. Objective: prevent old cached earnings

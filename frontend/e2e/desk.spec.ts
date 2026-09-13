@@ -246,7 +246,9 @@ test.beforeEach(async ({ page }) => {
       // MSFT is C at the close but its live read lifts it to B: the full
       // list must show the live grade and order it above nothing lower.
       grades_live: {
-        MSFT: { grade_live: 'B', score_live: 0.5, technical_now: 0.85, technical_close: 0.5 },
+        MSFT: { grade_live: 'B', score_live: 0.5, technical_now: 0.85, technical_close: 0.5,
+          stances_live: { fundamental: -1, technical: 1, sentiment: 0, value: 1, rotation: 0 },
+          ranks_live: { fundamental: 0.3, technical: 0.85, sentiment: 0.5, value: 0.7, rotation: 0.4 } },
       },
       rows: [
         {
@@ -465,6 +467,9 @@ test('shows each thing once, not twice', async ({ page }) => {
   await expect(everyGrade.locator('tbody tr td:first-child')).toHaveText(['AAPL', 'NVDA', 'MSFT'])
   await expect(everyGrade.locator('tbody tr').last().locator('td').nth(2).locator('span')).toHaveText('B')
   await expect(everyGrade.locator('tbody tr').last()).toContainText('indicative intraday grade')
+  await expect(everyGrade.locator('tbody tr').last()).toContainText('Since evening: T no view → for')
+  await expect(everyGrade.locator('tbody tr').last()).toContainText('Evening thesis:')
+  await expect(everyGrade).toContainText('not its probability of profit')
   await expect(page.getByText('Practice account', { exact: true })).toBeVisible()
   await expect(page.getByText('Gain so far')).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })

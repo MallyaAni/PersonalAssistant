@@ -1422,7 +1422,7 @@ const EveryGrade = ({
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Every grade</h3>
       <p className="mb-2 text-xs text-[#6e6e73]">
         {TRIGGER_LEGEND} The number is the analyst&rsquo;s rating, 0 to 100: where the name ranks across the book on
-        that analyst&rsquo;s evidence. Ordered by grade, best first, then by score within the grade; each name is
+        that analyst&rsquo;s evidence, not its probability of profit. Ordered by grade, best first, then by score within the grade; each name is
         updated from available technical and value readings. Other votes and the thesis are from the evening decision.
       </p>
       <table className="w-full text-sm">
@@ -1459,13 +1459,16 @@ const EveryGrade = ({
                   {g.ranks ? ratings(liveGrades[ticker]?.ranks_live ?? g.ranks, liveGrades[ticker]?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}
                 </td>
                 <td className="text-xs">
+                  {liveGrades[ticker]?.stances_live && (
+                    <VoteChanges evening={g.stances ?? {}} current={liveGrades[ticker].stances_live!} />
+                  )}
                   {briefs[ticker] || g.headline ? (
                     <button
                       type="button"
                       onClick={() => setOpenBrief(openBrief === ticker ? null : ticker)}
                       className="text-left text-[#0071e3] hover:underline"
                     >
-                      {openBrief === ticker ? 'hide' : (briefs[ticker]?.verdict ?? g.headline)}
+                      {openBrief === ticker ? 'Hide evening thesis' : `Evening thesis: ${briefs[ticker]?.verdict ?? g.headline}`}
                     </button>
                   ) : (
                     <span className="text-[#6e6e73]">—</span>
@@ -1496,6 +1499,20 @@ const EveryGrade = ({
   )
 }
 
+// Explain observed vote changes without treating a missing reading as neutral.
+const VoteChanges = ({ evening, current }: { evening: Record<string, number>; current: Record<string, number> }) => {
+  const words: Record<number, string> = { 1: 'for', 0: 'no view', [-1]: 'against' }
+  const changes = TRIGGER_ORDER.filter(([key]) => key in evening && key in current && evening[key] !== current[key])
+  return (
+    <p className="mb-1 text-[#1d1d1f]">
+      Since evening: {changes.length
+        ? changes.map(([key, letter]) => `${letter} ${words[evening[key]]} → ${words[current[key]]}`).join('; ')
+        : 'no change in comparable analyst votes'}. Ranks can move without changing a vote.
+    </p>
+  )
+}
+
+// Render the available analyst votes in the desk's fixed order.
 const triggers = (stances: Record<string, number>) =>
   TRIGGER_ORDER.filter(([k]) => k in stances)
     .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)

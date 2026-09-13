@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-13 — Explain intraday analyst vote changes
+
+The trading desk's Every grade table now names comparable analyst vote changes
+since evening and labels the evening thesis separately. Analyst ranks explicitly
+describe relative standing, not probability of profit. The desk browser suite
+passes all 10 tests; TypeScript and the production build pass, with existing
+CSS and chunk-size warnings. No strategy or execution policy changed.
+
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
 ## 2026-09-13 — earnings refreshes preserve reader versions and retry state
