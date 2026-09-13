@@ -3,7 +3,33 @@
 Verified state as of 2026-09-12. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
-## 2026-09-12 — candle provenance and coherent intraday grades (candidate)
+## 2026-09-13 — earnings refresh version and retry boundaries (candidate)
+
+Starting checkpoint `f131d35d`, isolated `codex/desk-live-provenance`; only the
+local node_modules symlink was untracked. Objective: prevent old cached earnings
+results being relabelled as v3 and make interrupted refreshes retryable without
+rewriting historical partitions. Four regression cases reproduced before the
+fix: old partial reuse, old record carry-forward under current metadata,
+silent same-day incompatibility, and empty publication after model failure.
+
+`market_tone` checks metadata and each record's prompt version, filters partial
+records to the current reader, explicitly refuses incompatible same-day frames,
+and retains partial results after fetch/model failures or refused publication.
+A successfully fetched filing with no results exhibit is recorded as missing
+coverage, separately from an outage. Historical frames remain immutable.
+
+VERIFIED candidate: trading/market tests **437 passed, 8 skipped**, including
+seven datastore assertions covering signed-loss persistence, retry, no-exhibit
+coverage and refusal to overwrite history. Real-model release reader: **7 passed**
+in 46.73 seconds, including signed losses. A real filing replay in temporary
+storage rescored AAOI accession `0001683168-26-006055` from v2 to v3, persisted
+net income of **-22.8 million**, removed its completed partial file, and left
+the production store mounted read-only. Runtime module SHA256
+`486d3e5df757ad56a5f1d9e0fb1393278152fbc0a1ede7c6870bdc510b616545`.
+Ruff passes. Production-wide v3
+backfill and resulting investment performance remain UNVERIFIED.
+
+## 2026-09-12 — candle provenance and coherent intraday grades (deployed `f131d35d`)
 
 Objective: make a fifteen-minute desk visit distinguish current market evidence,
 the evening decision, and generated prose. Acceptance: stale/future/undated
@@ -27,8 +53,17 @@ console errors or page exceptions. TypeScript, Ruff and diff checks pass;
 production Vite build passes with existing CSS/chunk-size warnings. Browser
 acceptance used this worktree's Vite server and deterministic API fixtures.
 
-UNVERIFIED: deployment of this candidate, authenticated production browser
-workflow, real-session feed transitions, and any improvement in investment
+VERIFIED deployed on 2026-09-13 through `scripts/deploy.sh --wait-post`: unit
+gate **3414 passed, 19 skipped**; post-deploy marker
+`2026-09-13T03:26:40Z f131d35d ok (cheap)`. Public gateway acceptance returned
+93 stale weekend quotes, zero indicative grades, nine covered board rows using
+their evening grades, and a dated AAOI technical read with `read_at=null`.
+Four deployed backend source hashes match the committed tree; gateway assets
+contain the indicative-grade wording. The separate `~/anios` checkout used by
+host market cron was fast-forwarded to the same checkpoint after deployment.
+
+UNVERIFIED: authenticated production browser workflow, real-session feed
+transitions, and any improvement in investment
 returns. No broker orders were submitted. Earlier production inspection found
 93/93 newest earnings-tone frames still labelled `release_tone/2`; repairing
 partial/same-day caches and rebuilding v3 inputs remains separate work. Never

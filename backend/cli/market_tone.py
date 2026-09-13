@@ -103,7 +103,26 @@ def prior_records(
     columns, meta = frame
     if meta.get("prompt_version") != PROMPT_VERSION:
         return {}
-    return {r.accession: r for r in language.records_from_frame(columns)}
+    return {
+        r.accession: r
+        for r in language.records_from_frame(columns)
+        if r.prompt_version == PROMPT_VERSION
+    }
+
+
+# Keep only compatible completed frames; historical partitions are never rewritten.
+def current_frame_exists(store: MarketStore, ticker: str, asof: date) -> bool:
+    if not store.has_frame(language.TONE_KIND, asof, ticker):
+        return False
+    columns, metadata = store.read_frame(language.TONE_KIND, ticker, asof)
+    if metadata.get("prompt_version") != PROMPT_VERSION or any(
+        r.prompt_version != PROMPT_VERSION for r in language.records_from_frame(columns)
+    ):
+        raise RuntimeError(
+            f"{ticker}: incompatible earnings frame at {asof}; "
+            "use a new as-of partition to preserve history"
+        )
+    return True
 
 
 # Score every listed ticker's unscored releases; return how many were scored.
@@ -122,7 +141,7 @@ def refresh_tickers(
     pacer = edgar.Pacer()
     total = 0
     for ticker in tickers:
-        if store.has_frame(language.TONE_KIND, asof, ticker):
+        if current_frame_exists(store, ticker, asof):
             continue
         scored, _missing, stored = _refresh_ticker(
             store, ticker, asof, since, readers, model, pacer
@@ -130,6 +149,22 @@ def refresh_tickers(
         if stored >= 0:
             total += scored
     return total
+
+
+# Fetch releases with SEC pacing, retaining a count of retryable provider failures.
+def _release_texts(
+    ticker: str, cik: int, events: list, pacer: edgar.Pacer
+) -> tuple[list, int]:
+    texts = []
+    failures = 0
+    for event in events:
+        try:
+            texts.append((event, language.fetch_release_text(cik, event, pacer=pacer)))
+        except Exception as exc:
+            print(f"{ticker:6} {event.accession} fetch failed: {exc}", flush=True)
+            failures += 1
+            texts.append((event, None))
+    return texts, failures
 
 
 # Score one ticker's unscored releases and store the frame when complete.
@@ -142,6 +177,9 @@ def _refresh_ticker(
     model: str,
     pacer: edgar.Pacer,
 ) -> tuple[int, int, int]:
+    if current_frame_exists(store, ticker, asof):
+        columns, _meta = store.read_frame(language.TONE_KIND, ticker, asof)
+        return 0, 0, len(columns.get("accession", []))
     events_frame = store.read_frame("edgar_events", ticker, asof)
     if events_frame is None:
         return 0, 0, -1
@@ -159,30 +197,32 @@ def _refresh_ticker(
     events = [e for e in events if e.filed >= since]
     partial = language.partial_path(store.root, asof, ticker)
     done = prior_records(store, ticker, asof)
-    done.update(language.read_partial(partial))
+    done.update(
+        {
+            key: r
+            for key, r in language.read_partial(partial).items()
+            if r.prompt_version == PROMPT_VERSION
+        }
+    )
     todo = [e for e in events if e.accession not in done]
 
     # Fetch texts serially (SEC pacing), score concurrently.
-    texts: list[tuple[edgar.EarningsEvent, str | None]] = []
-    for event in todo:
-        try:
-            texts.append((event, language.fetch_release_text(cik, event, pacer=pacer)))
-        except Exception as exc:
-            print(f"{ticker:6} {event.accession} fetch failed: {exc}", flush=True)
-            texts.append((event, None))
+    texts, failures = _release_texts(ticker, cik, todo, pacer)
 
+    # Keep absence of an exhibit separate from a model failing on a fetched one.
     def work(item: tuple[int, tuple[edgar.EarningsEvent, str | None]]):
         index, (event, text) = item
         if not text:
-            return event, None
-        return event, readers[index % len(readers)].score_sync(text)
+            return event, None, False
+        return event, readers[index % len(readers)].score_sync(text), True
 
     scored = 0
     missing = 0
     with ThreadPoolExecutor(max_workers=len(readers)) as pool:
-        for event, tone in pool.map(work, enumerate(texts)):
+        for event, tone, had_text in pool.map(work, enumerate(texts)):
             if tone is None:
                 missing += 1
+                failures += int(had_text)
                 continue
             record = language.ToneRecord(
                 accession=event.accession,
@@ -197,9 +237,7 @@ def _refresh_ticker(
                 prompt_version=PROMPT_VERSION,
                 truncated=tone.truncated,
                 quarter_end=(
-                    date.fromisoformat(tone.quarter_end)
-                    if tone.quarter_end
-                    else None
+                    date.fromisoformat(tone.quarter_end) if tone.quarter_end else None
                 ),
                 revenue_usd_m=tone.revenue_usd_m,
                 eps_usd=tone.eps_usd,
@@ -209,14 +247,29 @@ def _refresh_ticker(
             language.append_partial(partial, record)
             done[record.accession] = record
             scored += 1
+    if failures:
+        raise RuntimeError(
+            f"{ticker}: earnings refresh incomplete ({failures} failures); "
+            "partial results retained for retry"
+        )
     records = sorted(done.values(), key=lambda r: r.reaction_date)
-    store.write_frame(
+    stored = store.write_frame(
         language.TONE_KIND,
         asof,
         ticker,
         language.tone_frame(records),
-        {"cik": str(cik), "model": model, "prompt_version": PROMPT_VERSION},
+        {
+            "cik": str(cik),
+            "model": model,
+            "prompt_version": PROMPT_VERSION,
+            "events_considered": str(len(events)),
+            "without_text": str(missing),
+        },
     )
+    if not stored:
+        raise RuntimeError(
+            f"{ticker}: earnings frame already exists; partial results retained"
+        )
     if partial.exists():
         partial.unlink()
     return scored, missing, len(records)
@@ -235,7 +288,7 @@ def main() -> None:
         started = time.time()
         total = 0
         for ticker in tickers:
-            if store.has_frame(language.TONE_KIND, asof, ticker):
+            if current_frame_exists(store, ticker, asof):
                 print(f"{ticker:6} kept", flush=True)
                 continue
             t0 = time.time()

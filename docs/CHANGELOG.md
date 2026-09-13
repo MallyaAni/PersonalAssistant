@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-13 — earnings refreshes preserve reader versions and retry state
+
+An old partial earnings result could be published under current prompt-version
+metadata without being rescored. Same-day mismatches were silently kept, and a
+model failure could publish an empty frame and delete its resumable work.
+Version checks now apply to frames and individual records. Incompatible
+same-day frames are explicitly refused, preserving immutable history; provider
+and model failures retain partial work without publishing. Filings that were
+retrieved but have no results exhibit carry an explicit missing-text count.
+
+Four failures reproduced before the fix. Trading/market tests now pass
+**437 tests, 8 skipped**, including seven persistence/retry/version cases;
+the real-model release-reader suite passes **7 tests**, including signed losses.
+Ruff passes. These tests establish cache and reader behavior, not that all
+production earnings data has been rebuilt or that returns improve.
+
 ## 2026-09-12 — desk grades are tied to their candle and evening decision
 
 Intraday grade inputs now require a dated, recent regular-session candle and a
