@@ -2065,6 +2065,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
+  forward_evidence?: DeskForwardEvidence;
   event_status?: { as_of?: string; status?: string; stale: boolean; active: boolean; pending_orders: number; policy?: DeskRecord['event_risk']; sold?: Record<string, number> };
   intraday_research?: { status: string; reason?: string; session?: string; targets?: Record<string, number>; event_paused?: boolean; bar?: string; valid_until?: string; valuation?: string; macro?: { defensive: boolean; exposure: number; base_exposure: number } };
   economics?: DeskEconomics | null;
@@ -2082,6 +2083,22 @@ export interface DeskPayload {
   sessions: string[];
   // The record's track-record curve, for convenience at the top level.
   curve?: DeskCurve;
+}
+
+export interface DeskForwardEvidence {
+  status: string;
+  reason?: string;
+  versions?: {
+    version: string;
+    decision_count: number;
+    corporate_actions_through?: string | null;
+    pending_daily_validation?: number;
+    outcomes: {signal_count: number; decision_days: number; cost_bps_per_side: number; entry_states?: {state: string; horizon_sessions: number; observations: number; nonoverlapping_cohorts: number; mean_excess_return: number | null}[]; grades: {
+      grade: string; horizon_sessions: number; observations: number; nonoverlapping_cohorts: number;
+      mean_excess_return: number | null; approximate_95_interval: [number, number] | null;
+    }[]}[];
+    portfolios: {cost_bps: number; fill_intervals: number; status: string; arms: Record<string, {return: number; drawdown: number; traded_dollars: number}>}[];
+  }[];
 }
 
 export interface DeskEconomics {
@@ -2253,11 +2270,29 @@ export interface DeskLiveGrade {
 }
 
 export interface DeskMine {
+  decisions?: DeskDecisions;
   session?: string | null;
   grade_valid_until?: Record<string, string>;
   rows: DeskMineRow[];
   // Every graded name with a live read this candle, not only the board's.
   grades_live: Record<string, DeskLiveGrade>;
+}
+
+export interface DeskDecisions {
+  as_of: string;
+  session: string;
+  written?: string;
+  equity: number;
+  holdings: Record<string, number>;
+  rows: Record<string, {
+    action: 'Buy eligible' | 'Wait' | 'Hold' | 'Reduce';
+    reason: string;
+    target_weight: number;
+    current_weight: number;
+    delta_weight: number;
+    valid_until: string | null;
+    quote: {feed: string | null; at: string | null; bid?: number; ask?: number; spread_bps?: number; eligible: boolean; reason: string; valid_until: string | null};
+  }>;
 }
 
 export interface DeskFundingPreview {
@@ -2291,7 +2326,7 @@ export const getDeskMine = async (userId: string, equity: number): Promise<DeskM
   );
   if (!response.ok) return { rows: [], grades_live: {} };
   const data = (await response.json()) as Partial<DeskMine>;
-  return { session: data.session, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
+  return { session: data.session, decisions: data.decisions, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
 };
 
 // The balancer's persisted intraday plan (recomputed every fifteen minutes),

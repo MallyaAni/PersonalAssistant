@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 import { FundingPreview } from './FundingPreview'
 import { EconomicContext } from './EconomicContext'
+import { ForwardEvidence } from './ForwardEvidence'
 import {
   getDesk,
   getDeskEarnings,
@@ -15,6 +16,7 @@ import {
   getTradingAutopsy,
   putDeskHoldings,
   type DeskCurve,
+  type DeskDecisions,
   type DeskBrief,
   type DeskEarnings,
   type DeskHolding,
@@ -681,6 +683,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [holdingsReady, setHoldingsReady] = useState(false)
   const [holdingsError, setHoldingsError] = useState('')
   const [storedRows, setRows] = useState<DeskMineRow[]>([])
+  const [decisions, setDecisions] = useState<DeskDecisions | undefined>()
   const [storedGrades, setLiveGrades] = useState<Record<string, DeskLiveGrade>>({})
   const [gradeContext, setGradeContext] = useState<{session?: string | null; until: Record<string, string>}>({until: {}})
   const [now, setNow] = useState(Date.now)
@@ -733,10 +736,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     try {
       const mine = await getDeskMine(userId, equity)
       setRows(mine.rows)
+      setDecisions(mine.decisions)
       setLiveGrades(mine.grades_live)
       setGradeContext({session: mine.session, until: mine.grade_valid_until ?? {}})
     } catch {
       setLiveGrades({})
+      setDecisions(undefined)
       setRows((previous) => previous.map((row) => ({
         ...row, grade_live: row.grade, grade_source: 'evening', stances_live: row.stances, ranks_live: row.ranks,
         score_live: null, grade_margin_live: null, technical_now: null, technical_close: null, value_now: null, value_close: null,
@@ -793,11 +798,30 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   }, [userId, equity, holdings, payload?.latest?.session])
 
   useEffect(() => {
-    const deadlines = [...Object.values(gradeContext.until), payload?.intraday_research?.valid_until ?? ''].map(Date.parse).filter(value => value > now)
+    const deadlines = [...Object.values(gradeContext.until), payload?.intraday_research?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
     return () => window.clearTimeout(timer)
-  }, [gradeContext, now, payload?.intraday_research?.valid_until])
+  }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions])
+
+  // Refresh quote eligibility between candle updates and ignore obsolete account requests.
+  useEffect(() => {
+    let stopped = false
+    let busy = false
+    // Keep only one quote refresh in flight and fail closed on a provider/API error.
+    const refresh = async () => {
+      if (busy || document.hidden) return
+      busy = true
+      try {
+        const mine = await getDeskMine(userId, equity)
+        if (!stopped) { setDecisions(mine.decisions); setNow(Date.now()) }
+      } catch {
+        if (!stopped) setDecisions(undefined)
+      } finally { busy = false }
+    }
+    const timer = window.setInterval(() => void refresh(), 15_000)
+    return () => { stopped = true; window.clearInterval(timer) }
+  }, [userId, equity, holdings, payload?.latest?.session])
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
@@ -890,7 +914,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </details>}
 
       {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} now={now}
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} now={now} decisions={decisions} equity={equity}
           holdings={holdingsReady ? holdings : null} marking={marking !== null}
           onRecordBuy={canWrite && holdingsReady ? async (ticker, price, qty, fillDate) => {
             setMarking(ticker)
@@ -917,6 +941,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             Bar times identify the start of the 15-minute interval, not a current executable price.</p>
         </details>
       )}
+
+      <ForwardEvidence evidence={payload.forward_evidence} />
 
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
@@ -1568,6 +1594,29 @@ const Positions = ({ holdings, error, onSave }: PositionsProps) => {
 const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
   ? '<0.1%' : `${(100 * weight).toFixed(1)}%`
 
+// Withhold actions whose price, decision or account context no longer matches the page.
+const DecisionCell = ({ticker, decisions, latest, holdings, equity, now}: {
+  ticker: string; decisions?: DeskDecisions; latest: DeskRecord; holdings: DeskHolding[] | null; equity: number; now: number
+}) => {
+  const matches = decisions && holdings !== null && decisions.session === latest.session && decisions.written === latest.written && decisions.equity === equity
+    && holdings.length === Object.keys(decisions.holdings).length && holdings.every(h => decisions.holdings[h.ticker] === h.shares)
+  const row = matches ? decisions.rows[ticker] : undefined
+  if (!row) return <span className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>Wait · decision unavailable</span>
+  const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
+  const action = expired ? 'Wait' : row.action
+  const reason = expired && row.action !== 'Wait' ? 'Refresh price evidence' : row.reason
+  return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
+    <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {allocationPercent(row.target_weight)} plan</span></div>
+    <div className="text-[#6e6e73]">{reason}</div>
+    <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
+      <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
+      <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
+      <div>{row.quote.at ? marketTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
+      {row.valid_until && <div>Expires {marketTime(row.valid_until)}</div>}
+    </details>
+  </div>
+}
+
 // Every name the desk follows, best first, with the analysts' marks and
 // the reason behind the grade on request.
 const EveryGrade = ({
@@ -1582,6 +1631,8 @@ const EveryGrade = ({
   onOpenName,
   research,
   now,
+  decisions,
+  equity,
 }: {
   latest: NonNullable<DeskPayload['latest']>
   rows: DeskMineRow[]
@@ -1594,6 +1645,8 @@ const EveryGrade = ({
   onOpenName: (ticker: string) => void
   research: DeskPayload['intraday_research']
   now: number
+  decisions?: DeskDecisions
+  equity: number
 }) => {
   const [openBrief, setOpenBrief] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -1643,13 +1696,14 @@ const EveryGrade = ({
           Only eligible technical readings refresh this decision's intraday grades.</p>}
         <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
+        <p className="mt-2">Plan action checks the scheduled next-open strategy against your recorded positions. Buy eligible requires fresh consolidated quotes, positive displayed size, a spread no wider than 25 basis points and current technical evidence. It still requires a cash-funded preview and a broker price check. IEX quotes cover one exchange; quoted prices and sizes do not guarantee a fill. Research targets are evaluated separately.</p>
       </details>
       <div className="overflow-x-auto">
       <table className="w-full text-sm [&_td]:pr-3 [&_th]:pr-3">
         <thead className="text-left text-[#6e6e73]">
           <tr>
             <th className="py-1">Name</th>
-            <th>Group</th>
+            <th>Plan action</th>
             <th>Grade</th>
             <th>Bar price</th>
             <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
@@ -1674,7 +1728,7 @@ const EveryGrade = ({
                     {ticker}
                   </button>
                 </td>
-                <td className="text-[#6e6e73]">{g.side === 'ai' ? 'AI' : g.side}</td>
+                <td className="text-xs"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} holdings={holdings} equity={equity} now={now} /></td>
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
                   <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'intraday' : 'close'}</div>

@@ -1,0 +1,110 @@
+"""Exercise execution evidence and the adopted-plan decision gates."""
+
+import json
+from datetime import timedelta
+from types import SimpleNamespace
+
+import pytest
+
+from backend.market import decision_view, execution_quotes
+from backend.tests.test_intraday_candidate import inputs
+
+
+# Construct fresh quotes and a strategy due for its scheduled rebalance.
+def setup():
+    record, snapshot, _, _, now = inputs()
+    record["paper"] = {"until_rebalance": 0}
+    quoted = {
+        "feed": "sip",
+        "market_open": True,
+        "quotes": {
+            n: {"bp": 99.99, "ap": 100.01, "bs": 10, "as": 10, "t": now.isoformat()}
+            for n in record["grades"]
+        },
+    }
+    return record, snapshot, quoted, now
+
+
+# Every missing quote or strategy gate blocks an otherwise eligible addition.
+@pytest.mark.parametrize(
+    "block",
+    [
+        None,
+        "iex",
+        "stale",
+        "closed",
+        "spread",
+        "size",
+        "future",
+        "band",
+        "fomc",
+        "schedule",
+        "timing",
+        "technical",
+    ],
+)
+def test_decision_requires_every_gate(block):
+    record, snapshot, quoted, now = setup()
+    quote = quoted["quotes"]["S11"]
+    changes = {
+        "iex": (quoted, {"feed": "iex"}),
+        "stale": (quote, {"t": (now - timedelta(seconds=31)).isoformat()}),
+        "future": (quote, {"t": (now + timedelta(seconds=1)).isoformat()}),
+        "closed": (quoted, {"market_open": False}),
+        "spread": (quote, {"ap": 102}),
+        "size": (quote, {"bs": 0}),
+        "band": (record, {"levels": {"S11": {"rejecting_band": True}}}),
+        "fomc": (record, {"event_risk": {"execution_pending": True}}),
+        "schedule": (record, {"paper": {"until_rebalance": 10}}),
+        "timing": (record, {"paper": {}}),
+        "technical": (snapshot, {"technical": {}}),
+    }
+    if block:
+        target, replacement = changes[block]
+        target.update(replacement)
+    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
+        "S11"
+    ]
+    assert (result["action"] == "Buy eligible") is (block is None)
+    assert result["target_weight"] == 0.1
+
+
+# Expired provider caches are checked by their quote time, not their fetch time.
+def test_invalid_quotes_never_gain_eligibility():
+    _, _, quoted, now = setup()
+    raw = quoted["quotes"]["S11"]
+    for replacement in ({"bp": float("nan")}, {"ap": 0}, {"ap": 90}, {"t": "unknown"}):
+        assert not execution_quotes.describe({**raw, **replacement}, "sip", True, now)[
+            "eligible"
+        ]
+
+
+# Feed fallback is explicit, cached and read-only; provider text is never returned.
+def test_quote_access_falls_back_without_hiding_feed(monkeypatch):
+    execution_quotes._cache.clear()
+    monkeypatch.setattr(execution_quotes, "_sip_retry_at", 0)
+    monkeypatch.setattr(execution_quotes.alpaca, "credentials", lambda: {})
+    monkeypatch.setattr(
+        execution_quotes.alpaca_trading,
+        "client_from_env",
+        lambda: SimpleNamespace(clock=lambda: {"is_open": True}),
+    )
+    calls = []
+
+    # Return a forbidden consolidated feed and an available single-exchange quote.
+    def request(url, headers):
+        calls.append(url)
+        return (
+            (403, b"private provider text")
+            if "feed=sip" in url
+            else (200, json.dumps({"quotes": {"AAPL": {"bp": 1}}}).encode())
+        )
+
+    result = execution_quotes.fetch(["AAPL"], request, lambda: 100)
+    assert result["feed"] == "iex"
+    assert result["market_open"]
+    assert len(calls) == 2
+    assert execution_quotes.fetch(["AAPL"], request, lambda: 101) == result
+    assert len(calls) == 2
+    assert "private" not in json.dumps(result)
+    execution_quotes._cache.clear()

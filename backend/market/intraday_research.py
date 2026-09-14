@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 from backend.agents.trading.desk import intraday_candidate
 from backend.agents.trading.desk.desk import book_panel
-from backend.market import desk_freshness, economics, live_technical
+from backend.market import desk_freshness, economics, execution_quotes, live_technical
 from backend.market.store import MarketStore
 
 
@@ -23,6 +23,7 @@ def record_hash(record: dict) -> str:
 def build(
     root: Path, record: dict, snapshot: dict, now: datetime | None = None
 ) -> dict:
+    live_clock = now is None
     now = now or datetime.now(UTC)
     panel, _ = book_panel(MarketStore(root), date.fromisoformat(record["session"]))
     if str(panel.dates[-1]) != record["session"]:
@@ -37,11 +38,40 @@ def build(
     result = intraday_candidate.calculate(
         record, snapshot, economics.load(root, now) or {}, panel, now
     )
+    if live_clock:
+        result["execution_quotes"] = execution_quotes.fetch(
+            list(record.get("grades") or {})
+        )
+        result["as_of"] = datetime.now(UTC).isoformat()
+        if desk_freshness.timestamp(result["as_of"]) >= desk_freshness.timestamp(
+            result["valid_until"]
+        ):
+            raise ValueError("Inputs expired during collection")
     result["input_sha256"] = hashlib.sha256(
-        json.dumps({"record": record, "snapshot": snapshot}, sort_keys=True).encode()
+        json.dumps(
+            {
+                "record": record,
+                "snapshot": snapshot,
+                "execution_quotes": result.get("execution_quotes"),
+            },
+            sort_keys=True,
+        ).encode()
     ).hexdigest()
+    base = Path(__file__).resolve().parents[1]
     result["policy_sha256"] = hashlib.sha256(
-        Path(intraday_candidate.__file__).read_bytes()
+        b"".join(
+            (base / name).read_bytes()
+            for name in (
+                "agents/trading/desk/intraday_candidate.py",
+                "agents/trading/desk/portfolio_candidate.py",
+                "agents/trading/desk/entry.py",
+                "agents/trading/desk/risk.py",
+                "agents/trading/desk/grading.py",
+                "market/sizing.py",
+                "market/holdings.py",
+                "market/desk_freshness.py",
+            )
+        )
     ).hexdigest()
     result["record_sha256"] = record_hash(record)
     return result

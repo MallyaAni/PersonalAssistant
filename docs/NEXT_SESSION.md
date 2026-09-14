@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-09-14 — Plan actions and forward evidence (deployment pending)
+
+User authorized all five enhancements. Started clean on main `3e0337d3`, pulled
+origin/main (current). Added dated plan actions, SIP/IEX quote checks, entry/wait
+archives, grade outcomes with sample limits, and a correlation-cap research arm.
+Adopted FOMC and paper order logic are unchanged. Detailed methodology and
+limitations: `docs/research/desk-forward-evidence-2026-09-14.md`.
+
+VERIFIED: 38 dashboard browser workflows passed (1.4m); quote expiry and empty
+outcomes included. The browser caught and fixed the API client's dropped
+`decisions` field. Initial focused backend run: 62 passed (1.92s), including
+split/dividend accounting. Additional HTTP read-only/context test now added.
+UNVERIFIED: current-turn deployment and public browser acceptance still pending.
+Current provider evidence: SIP 403, IEX 200; no subscription was purchased.
+Do not call IEX execution-qualified or claim mature forward performance.
+Diagram impact: UPDATED — agent-trading-desk.
+
 ## 2026-09-14 — Recover missed FOMC reductions
 
 Started clean on main `0aa70861`; pulled origin/main, already current. The user

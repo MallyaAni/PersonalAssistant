@@ -8,6 +8,7 @@ every other per-user route; the records themselves are the operator's own.
 
 import asyncio
 import json
+import math
 import re
 from collections import OrderedDict
 from dataclasses import asdict
@@ -110,7 +111,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     latest, previous = deskrecord.latest_pair(_root())
     if latest is None:
         return {"user_id": user_id, "latest": None, "sessions": []}
-    from backend.market import event_status
+    from backend.market import event_status, forward_evidence
 
     event_live = event_status.load(_root())
     research = intraday_research.load(_root(), latest["session"])
@@ -122,6 +123,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "economics": economics.load(_root()),
         "intraday_research": research,
         "event_status": event_live,
+        "forward_evidence": await asyncio.to_thread(forward_evidence.report, _root()),
         "event_policy": {
             "enabled": True,
             "version": event_risk.VERSION,
@@ -435,6 +437,8 @@ async def desk_mine(
 ) -> dict[str, object]:
     """Return action rows computed against the saved holdings."""
     _operator_only(user_id)
+    if not math.isfinite(equity):
+        raise HTTPException(status_code=422, detail="Equity must be finite")
     latest, _previous = deskrecord.latest_pair(_root())
     rows = holdings.load(_root())
     if latest is None:
@@ -443,6 +447,12 @@ async def desk_mine(
 
     latest = event_status.for_planning(latest, _root())
     snap = _live_snapshot()
+    from backend.market import decision_view, execution_quotes
+
+    quoted = await asyncio.to_thread(
+        execution_quotes.fetch, list(latest.get("grades") or {})
+    )
+    decisions = decision_view.build(latest, rows, equity, snap or {}, quoted)
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)
         return {
@@ -461,6 +471,7 @@ async def desk_mine(
                 value,
             ),
             "grades_live": holdings.live_grades(latest, technical, value),
+            "decisions": decisions,
         }
     symbols = sorted(
         {h.ticker for h in rows}
@@ -505,6 +516,7 @@ async def desk_mine(
         "as_of": as_of,
         "rows": holdings.board(latest, rows, equity, quotes, technical, value),
         "grades_live": holdings.live_grades(latest, technical, value),
+        "decisions": decisions,
         "grade_valid_until": desk_freshness.grade_expiries(
             {"as_of": as_of, "quotes": quotes}, set(technical) | set(value)
         ),

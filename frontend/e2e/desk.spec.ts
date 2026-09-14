@@ -8,6 +8,50 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Quote eligibility expires on screen even if polling returns the same older response.
+test('plan action expires and preserves its quoted source', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const now = new Date('2026-09-09T14:00:00Z')
+  await page.clock.install({time: now})
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk/mine?*`, route => route.fulfill({json: {
+    session: latest.session, rows: [], grades_live: {}, decisions: {
+      session: latest.session, written: latest.written, equity: 100000, holdings: {AAPL: 60}, as_of: now.toISOString(),
+      rows: {AAPL: {action: 'Buy eligible', reason: 'Scheduled addition; confirm cash and broker price', target_weight: .1, current_weight: 0, delta_weight: .1,
+        valid_until: '2026-09-09T14:00:30Z', quote: {feed: 'sip', bid: 199.99, ask: 200.01, at: now.toISOString(), eligible: true, valid_until: '2026-09-09T14:00:30Z', reason: 'Quote checks passed'}}},
+    },
+  }}))
+  await page.goto('/#desk')
+  const cell = page.getByLabel('AAPL plan action')
+  await expect(cell).toContainText('Buy eligible')
+  await cell.getByText('Position & quote').click()
+  await expect(cell).toContainText('SIP')
+  await expect(cell).toContainText('10.0 pp')
+  await page.clock.fastForward(31_000)
+  await expect(cell).toContainText('Wait')
+  await expect(cell).not.toContainText('Buy eligible')
+  await expect(cell).toContainText('expired')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Empty forward outcomes never display zero returns or invented confidence.
+test('forward evidence distinguishes unobserved outcomes from zero performance', async ({page}) => {
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], forward_evidence: {status: 'collecting_forward_evidence', versions: [{
+      version: 'candidate/2', decision_count: 10, pending_daily_validation: 10, corporate_actions_through: '2026-09-08',
+      outcomes: [{signal_count: 0, decision_days: 0, cost_bps_per_side: 10, grades: []}],
+      portfolios: [{cost_bps: 10, fill_intervals: 0, status: 'insufficient_forward_data', arms: {}}],
+    }]},
+  }}))
+  await page.goto('/#desk')
+  await page.getByText('Forward evidence · research', {exact: true}).click()
+  const evidence = page.locator('details', {has: page.getByText('Forward evidence · research', {exact: true})})
+  await expect(evidence).toContainText('10 decisions awaiting validation')
+  await expect(evidence).toContainText('No matured 5/20-session grade outcomes yet')
+  await expect(evidence).not.toContainText('0.00%')
+})
+
 // A stale observation cannot erase a durable active cycle from the status heading.
 test('stale FOMC recovery keeps the active cycle paused', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)

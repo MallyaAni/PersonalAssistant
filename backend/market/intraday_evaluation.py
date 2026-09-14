@@ -7,6 +7,8 @@ An allocation is filled only at a later observed candle, after it was recorded.
 import math
 from datetime import datetime, timedelta
 
+from backend.market import forward_actions
+
 ARMS = ("baseline_targets", "technical_targets", "targets")
 
 
@@ -19,13 +21,40 @@ def validate_weights(weights: dict) -> None:
         raise ValueError("Invalid funded target weights")
 
 
+# Include the correlation comparison only with complete target coverage.
+def available_arms(decisions):
+    return (
+        (*ARMS, "correlation_targets")
+        if decisions
+        and all(isinstance(row.get("correlation_targets"), dict) for row in decisions)
+        else ARMS
+    )
+
+
+# Apply ex-date accounting consistently before valuing each candidate account.
+def accrue_actions(accounts, previous, current, actions):
+    for account in accounts.values():
+        account["dividend_receivable"] += forward_actions.apply(
+            account["shares"],
+            forward_actions.session(previous["bar"]),
+            forward_actions.session(current["bar"]),
+            actions or {},
+        )
+
+
 # Compare funded accounts using prices observed after each recommendation.
-def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
+def evaluate(
+    decisions: list[dict], cost_bps: float = 10, corporate_actions=None
+) -> dict:
     if not math.isfinite(cost_bps) or not 0 <= cost_bps <= 100:
         raise ValueError("Cost must be between zero and 100 basis points")
     decisions = sorted(decisions, key=lambda row: row["bar"])
+    versions = {(row.get("version"), row.get("policy_sha256")) for row in decisions}
+    if len(versions) > 1:
+        raise ValueError("Different policy versions require separate evaluation")
     if len({row["bar"] for row in decisions}) != len(decisions):
         raise ValueError("Duplicate decision bars")
+    arms = available_arms(decisions)
     accounts = {
         arm: {
             "cash": 100000.0,
@@ -34,8 +63,9 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
             "drawdown": 0.0,
             "traded": 0.0,
             "equity": 100000.0,
+            "dividend_receivable": 0.0,
         }
-        for arm in ARMS
+        for arm in arms
     }
     fills = 0
     for previous, current in zip(decisions, decisions[1:], strict=False):
@@ -46,8 +76,9 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
             <= datetime.fromisoformat(previous["valid_until"])
         )
         prices = current["prices"]
+        accrue_actions(accounts, previous, current, corporate_actions)
         needed = set().union(
-            *(previous[arm] for arm in ARMS),
+            *(previous[arm] for arm in arms),
             *(account["shares"] for account in accounts.values()),
         )
         if any(
@@ -57,8 +88,10 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
             raise ValueError("Missing next-candle valuation; comparison withheld")
         for arm, account in accounts.items():
             shares = account["shares"]
-            equity = account["cash"] + sum(
-                qty * prices[name] for name, qty in shares.items()
+            equity = (
+                account["cash"]
+                + account["dividend_receivable"]
+                + sum(qty * prices[name] for name, qty in shares.items())
             )
             weights = previous[arm]
             validate_weights(weights)
@@ -83,8 +116,10 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
                     account["cash"] -= bought * prices[name] * (1 + cost_bps / 10000)
                     account["traded"] += bought * prices[name]
                     shares[name] += bought
-            account["equity"] = account["cash"] + sum(
-                qty * prices[name] for name, qty in shares.items()
+            account["equity"] = (
+                account["cash"]
+                + account["dividend_receivable"]
+                + sum(qty * prices[name] for name, qty in shares.items())
             )
             account["peak"] = max(account["peak"], account["equity"])
             account["drawdown"] = min(
@@ -107,6 +142,7 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
                 "drawdown": account["drawdown"],
                 "cash": account["cash"],
                 "traded_dollars": account["traded"],
+                "dividend_receivable": account["dividend_receivable"],
             }
             for arm, account in accounts.items()
         },

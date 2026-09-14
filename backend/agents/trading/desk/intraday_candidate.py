@@ -11,12 +11,18 @@ from datetime import datetime
 
 import numpy as np
 
-from backend.agents.trading.desk import economist, grading, risk
+from backend.agents.trading.desk import (
+    economist,
+    entry,
+    grading,
+    portfolio_candidate,
+    risk,
+)
 from backend.agents.trading.desk.regime import TIGHTENING_EXPOSURE
 from backend.market import desk_freshness, holdings
 from backend.market.panel import Panel
 
-VERSION = "intraday-macro-candidate/1"
+VERSION = "intraday-macro-candidate/2"
 
 
 @dataclass(frozen=True)
@@ -106,6 +112,9 @@ def calculate(
     _, technical_targets = risk.desk_targets(scores, grades, panel, base_budget)
     _, macro_targets = risk.desk_targets(scores, grades, panel, budget)
     deadlines = desk_freshness.grade_expiries(snapshot, required)
+    weights = {name: float(macro_targets[panel.index(name)]) for name in sorted(names)}
+    overlap = portfolio_candidate.calculate(panel, weights)
+    entries = entry.entries(panel)
     return {
         "version": VERSION,
         "mode": "research_only",
@@ -119,6 +128,12 @@ def calculate(
         in ((record.get("provenance") or {}).get("rule") or {}).get("inputs", [])
         else "compatible intraday value",
         "grades": live,
+        "entry_states": {
+            name: entries.kind(len(panel.dates) - 1, panel.index(name)) or "wait"
+            for name in sorted(names)
+        },
+        "correlation_candidate": overlap,
+        "correlation_targets": overlap["targets"],
         "targets": {
             name: float(macro_targets[panel.index(name)]) for name in sorted(names)
         },

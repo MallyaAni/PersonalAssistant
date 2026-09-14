@@ -330,6 +330,18 @@ The following controls are requirements for future milestones, not current featu
   when the classifier proposes one, with no user approval step; model failure
   or a capacity conflict writes nothing.
 
+## Trading quote and forward evidence boundary (2026-09-14)
+
+The existing operator-only desk preview fetches public bid/ask evidence and the
+broker session clock with existing credentials. It sends no orders and returns
+no provider error bodies or credentials. Quote requests time out and missing
+evidence withholds eligibility. Account equity and saved holdings only bind the
+private preview response; the research archive contains public quotes, computed
+entry states and candidate weights, not personal positions or account cash.
+Forward reports read local immutable decisions and corporate-action histories.
+Neither the report nor correlation challenger can promote a strategy or change
+broker/account state. No new tool, route, permission or model prompt was added.
+
 ## Security review for a change
 
 Before accepting a security-sensitive feature, verify:

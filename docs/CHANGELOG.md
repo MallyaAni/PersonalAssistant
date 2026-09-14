@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-14 — Dated plan actions and separate forward evidence
+
+Added compact plan actions with target percentages, position deltas and expiring
+bid/ask evidence. The existing API refreshes quote checks every 15 seconds on the
+visible dashboard; technical collection remains every 15 minutes. Consolidated
+quote access is required for buy eligibility; current IEX fallback is identified.
+Research version 2 records entry/wait states and a correlation-cap challenger.
+Forward reports separate policy hashes and cost assumptions, include corporate
+actions, and withhold immature outcomes and undersized confidence estimates.
+No candidate is promoted and adopted paper execution is unchanged.
+
+Pre-deploy browser validation: 38 workflows passed (1.4m), including expiry,
+manual-position persistence and empty outcomes. Targeted backend and public
+deployment evidence is recorded in NEXT_SESSION. No prompt/router/tool changed;
+the existing routing gate remains mandatory at deployment.
+Diagram impact: UPDATED — agent-trading-desk.
+
 ## 2026-09-14 — Recover missed FOMC reductions safely
 
 Added gated, paper-only intraday recovery of qualified FOMC share reductions.
