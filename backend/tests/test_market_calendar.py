@@ -87,9 +87,9 @@ def test_committed_decisions_cover_2015_to_2026():
 # it and their pre-window flag, instead of "none within 30 sessions". The
 # clipped version made the week before an upcoming meeting invisible.
 def test_an_upcoming_meeting_beyond_the_panel_still_flags_the_pre_window():
-    first = date(2026, 9, 7)  # a Monday
+    first = date(2026, 9, 8)  # Tuesday after Labor Day
     panel = panel_from_histories(
-        {"AAA": _history("AAA", first, 5), "SPY": _history("SPY", first, 5)},
+        {"AAA": _history("AAA", first, 4), "SPY": _history("SPY", first, 4)},
         "SPY",
         {},
     )
@@ -98,9 +98,39 @@ def test_an_upcoming_meeting_beyond_the_panel_still_flags_the_pre_window():
     feats = calendar.calendar_by_session(panel, [upcoming])
     names = calendar.CALENDAR_NAMES
     last = len(dates) - 1
-    assert feats[last, names.index("sessions_to_fomc")] == 1
+    assert feats[last, names.index("sessions_to_fomc")] == 3
     assert feats[last, names.index("fomc_pre_window")] == 1.0
-    assert feats[last - 2, names.index("fomc_pre_window")] == 1.0
-    assert feats[last - 3, names.index("fomc_pre_window")] == 0.0
+    assert feats[last - 1, names.index("fomc_pre_window")] == 0.0
     # No session is itself the future decision day.
     assert feats[:, names.index("fomc_decision_day")].sum() == 0
+
+
+# A distant future meeting must not create a pre-meeting window at the panel boundary.
+def test_a_distant_future_meeting_does_not_trigger_the_pre_window():
+    dates = np.asarray(
+        ["2026-09-09", "2026-09-10", "2026-09-11"], dtype="datetime64[D]"
+    )
+    near, _ = calendar._fomc_distances(dates, [date(2026, 9, 16)])
+    far, _ = calendar._fomc_distances(dates, [date(2026, 12, 16)])
+    np.testing.assert_array_equal(near, [5, 4, 3])
+    np.testing.assert_array_equal(far, [30, 30, 30])
+
+
+# Full exchange holidays are skipped, while an early-close session is still counted.
+def test_future_distance_uses_exchange_holidays():
+    dates = np.asarray(["2026-11-25"], dtype="datetime64[D]")
+    distance, _ = calendar._fomc_distances(dates, [date(2026, 11, 30)])
+    assert distance[0] == 2  # Friday's early close and Monday, not Thanksgiving.
+    dates = np.asarray(["2026-04-02"], dtype="datetime64[D]")
+    distance, _ = calendar._fomc_distances(dates, [date(2026, 4, 5)])
+    assert distance[0] == 1  # Good Friday closed, Sunday action reacts Monday.
+
+
+# Unknown coverage stays unknown; an earlier decision cannot become today's event.
+def test_calendar_boundaries_do_not_invent_decision_days():
+    dates = np.asarray(["2029-01-02"], dtype="datetime64[D]")
+    distance, since = calendar._fomc_distances(
+        dates, [date(2029, 1, 1), date(2029, 1, 31)]
+    )
+    assert np.isnan(distance[0])
+    assert np.isnan(since[0])

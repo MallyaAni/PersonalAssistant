@@ -3,6 +3,29 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — FOMC boundary correction (after `c68fb498`)
+
+The incoming implementation mapped every future decision to `len(panel)`;
+September 16 and December 16 therefore both appeared one session after
+September 11. Four acceptance cases failed against `5d05adfb`. Future
+distances now count published NYSE sessions, excluding full-session holidays
+and retaining early closes. The official 2026–2028 calendar is committed with
+its source and bounded coverage; outside that coverage distance is unknown,
+not an invented one-session warning. A decision before the first observed
+session no longer becomes a false decision day at the panel's start.
+
+VERIFIED: market/trading suite **450 passed, 8 skipped, 23 warnings in 4.82s**
+against the candidate mounted in the functional-tests image; Ruff passes.
+September 9–11 distances are `[5, 4, 3]` to September 16, versus `[30, 30, 30]`
+to December 16. Thanksgiving and Good Friday cases pass. Deployment pending.
+This corrects the calendar features; it does not add an FOMC exposure rule.
+Historical research must still distinguish complete meetings from individual
+days or names and test transaction costs before promoting a new strategy.
+
+Earnings panel checkpoint `c68fb498` deployed through `scripts/deploy.sh
+--wait-post` with exit 0. Its exact frontend passed 14 browser cases and the
+production build. Production browser replay remains to be repeated.
+
 ## 2026-09-13 — earnings-panel evidence correction (after `5d05adfb`)
 
 Started clean on main `5d05adfb` after pulling opencode's earnings panel.

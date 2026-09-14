@@ -28,7 +28,9 @@ federalreserve.gov, committed in data/fomc_decisions.csv (dated in its
 header), plus the March 2020 unscheduled actions.
 """
 
+import json
 from datetime import date, timedelta
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -36,6 +38,7 @@ import numpy as np
 from backend.market.panel import Panel
 
 FOMC_PATH = Path(__file__).parent / "data" / "fomc_decisions.csv"
+HOLIDAYS_PATH = Path(__file__).parent / "data" / "nyse_holidays.json"
 CALENDAR_NAMES: tuple[str, ...] = (
     "sessions_to_fomc",
     "sessions_since_fomc",
@@ -75,25 +78,53 @@ def nth_friday(year: int, month: int, n: int) -> date:
     return first + timedelta(days=offset + 7 * (n - 1))
 
 
-# Per-session FOMC distances: (sessions to next, sessions since last).
+# Load the exchange's published full-session closures and explicitly bounded coverage.
+@lru_cache(maxsize=1)
+def _published_sessions() -> tuple[set[int], np.busdaycalendar]:
+    years = json.loads(HOLIDAYS_PATH.read_text(encoding="utf-8"))["years"]
+    holidays = [day for days in years.values() for day in days]
+    return {int(year) for year in years}, np.busdaycalendar(holidays=holidays)
+
+
+# Count sessions beyond the panel, or report missing exchange-calendar coverage.
+def _future_session_offset(last: np.datetime64, decision: np.datetime64) -> float:
+    years, sessions = _published_sessions()
+    start_year = last.astype(object).year
+    end_year = decision.astype(object).year
+    if not set(range(start_year, end_year + 1)).issubset(years):
+        return float("nan")
+    reaction = np.busday_offset(decision, 0, roll="forward", busdaycal=sessions)
+    if reaction.astype(object).year not in years:
+        return float("nan")
+    return float(np.busday_count(last, reaction, busdaycal=sessions))
+
+
+# Count observed sessions inside the panel and published sessions beyond its end.
 def _fomc_distances(
     dates: np.ndarray, decisions: list[date]
 ) -> tuple[np.ndarray, np.ndarray]:
     marks = np.asarray(sorted(decisions), dtype="datetime64[D]")
-    # The session on or after each decision (a Sunday action reacts Monday).
-    # A decision beyond the panel's last session is kept as a future mark
-    # (position == len(dates)): the desk must see an upcoming meeting as
-    # sessions-to-go, not as "none within 30 sessions". Dropping it made
-    # the week before a meeting invisible whenever the meeting fell after
-    # the last stored session.
-    positions = np.searchsorted(dates, marks, side="left")
+    if not len(dates):
+        return np.empty(0), np.empty(0)
+    # Never project a December decision onto September's next array slot.
+    # A decision before the first observed date is not a decision on that date either.
+    positions = np.searchsorted(
+        dates, marks[(marks >= dates[0]) & (marks <= dates[-1])]
+    ).astype(float)
+    future = [
+        len(dates) - 1 + _future_session_offset(dates[-1], mark)
+        for mark in marks[marks > dates[-1]]
+    ]
+    positions = np.sort(np.concatenate((positions, np.asarray(future))))
     to_next = np.full(len(dates), FAR)
-    since = np.full(len(dates), FAR)
+    since = np.full(len(dates), np.nan if np.any(marks < dates[0]) else FAR)
     for t in range(len(dates)):
         after = positions[positions >= t]
         before = positions[positions <= t]
         if len(after):
             to_next[t] = min(float(after[0] - t), FAR)
+        elif any(np.isnan(future)):
+            to_next[t] = np.nan
         if len(before):
             since[t] = min(float(t - before[-1]), FAR)
     return to_next, since
