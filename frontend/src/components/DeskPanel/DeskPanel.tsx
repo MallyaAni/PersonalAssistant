@@ -879,7 +879,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <section aria-label="Cash exposure" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
         <span>Paper cash <b>{paperLive?.cash != null && paperLive.equity && paperLive.equity > 0 ? `${(100 * paperLive.cash / paperLive.equity).toFixed(1)}%` : 'unavailable'}</b></span>
         <span title="Cash implied by evening target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
-        <span className="text-[#6e6e73]">Plan applies at the scheduled rebalance</span>
+        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
       </section>}
 
       {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
@@ -921,7 +921,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
           <h3 className="font-semibold">FOMC · {!eventLive?.stale && eventLive?.status ? eventLive.status : !event ? 'decision missing' : eventPaused ? 'portfolio adjustments paused' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
-          {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''} · {eventLive.pending_orders} pending event orders</p>}
+          {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''} · {eventLive.pending_orders} event orders awaiting reconciliation</p>}
           <details className="mt-1 text-xs"><summary className="cursor-pointer">Policy & execution</summary>
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
             The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day.
@@ -1640,7 +1640,7 @@ const EveryGrade = ({
         {latest.provenance?.rule?.inputs?.includes('expectations-gap') && <p className="mt-2">
           Valuation stays at the evening reading: the intraday reader does not yet reproduce the growth-model blend.
           Only eligible technical readings refresh this decision's intraday grades.</p>}
-        <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means no current allocation is available; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
+        <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
       </details>
       <div className="overflow-x-auto">
