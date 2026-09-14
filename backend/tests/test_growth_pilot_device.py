@@ -1,7 +1,10 @@
 """Explicit device selection and portable research checkpoints."""
 
 import pytest
-import torch
+
+# torch is a research-only dependency, absent from the test image, so the
+# module skips there and runs where the research extra is installed.
+torch = pytest.importorskip("torch")
 
 from backend.cli import market_growth_pilot as pilot
 
