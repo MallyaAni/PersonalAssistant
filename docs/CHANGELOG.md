@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-14 — Funded target previews and dated inflation context
+
+The manual desk now previews all target additions against one explicitly
+confirmed cash budget, subtracting existing holdings and excluding projected
+sale proceeds. Whole-share floors keep the combined reference-price cost within
+cash. Cash stays in page memory and context changes require reconfirmation.
+This previews evening targets; it does not introduce intraday allocation.
+
+Five FRED inflation indexes feed a dated, archived evidence layer. Calendar-month
+comparisons preserve gaps; collection age is separate from observation month.
+The agent-owned economist prompt gives DeepSeek only public facts and constrains
+its answer to inflation pressure and evidence references. It has no order or
+sizing authority. Publication timestamps and consensus remain unknown.
+Nightly collection preserves the job's explicit DeepSeek runtime selection.
+
+Application checkpoint `83a20599` deployed through the script: 3485 unit tests,
+100 real routing cases, 28 browser cases, 3 real-model economist cases passed;
+19 unit skips remain explicitly reported. Public acceptance exercised all 93
+grades, five inflation rows and the zero-cash preview with no browser errors.
+The strengthened authenticated desk API suite passed all 23 cases. No evidence
+of improved returns or a new allocation policy is claimed by these changes.
+
 ## 2026-09-13 — Preserve execution evidence and stop guessing fill dates
 
 A delayed fill could be compared with the wrong session's close because the

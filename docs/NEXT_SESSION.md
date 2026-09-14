@@ -20,8 +20,36 @@ Initial model tests exposed unsupported `uniqueItems` grammar (HTTP 400);
 deduplication now happens in code. Browser reload fixture required clearing its
 nonexistent saved conversation identity; desk storage remains intact in the test.
 
-UNVERIFIED: deployment of these new changes, improvements in returns, economic
-allocation policy, dynamic intraday share targets and executable quotes. The
+VERIFIED live application checkpoint: `83a20599d535196d35d88f33dcb91c6b54cead9f`.
+Both the deploy and nightly checkouts carry this application revision. The first
+deployment attempt was stopped before shipping when the actual nightly host
+revealed stale default model settings. `market_daily` now forwards its explicit
+model URL/name into economics. Actual host collection with the nightly job's
+`--llm-url http://127.0.0.1:8000 --llm-model deepseek-v4-flash` succeeded and wrote
+the live snapshot at `2026-09-14T12:36:37.332942+00:00`.
+
+Deployment used `scripts/deploy.sh --wait-post`: 3485 unit tests passed,
+19 skipped (137.60s), 100 real routing cases passed (508.51s), backup/migration,
+build and restart succeeded. Post-deploy marker:
+`2026-09-14T12:49:24Z 83a20599 ok (cheap)`. No gate was bypassed.
+Final frontend acceptance: 28 browser tests passed (48.2s), TS/Vite passed.
+Real public Chrome session: asset `/assets/index-CGpcYSvF.js`, 20 successful
+API responses, 93 grade rows, 5 inflation rows, zero-cash preview cost $0,
+zero console/page/network errors. Board content fits its height on desktop
+(1637/1637) and mobile (3211/3211); practice account width 340/340.
+The public harness allowed GETs plus only the read-only funding-preview POST;
+no holdings saves or brokerage orders. Its first read-scope credential was
+correctly refused for POST (403), which uses the existing memory:write scope.
+Operator-scope rerun passed; the API regression now sets AUTH_REQUIRED=true
+and tests the scope rejection explicitly (23 passed, 1.26s). All temporary
+credentials were removed from Mac, remote host and backend container.
+Funding/economics/economist source hashes match the running backend exactly.
+Logs: `/tmp/desk-economic-final-deploy.log` and `/tmp/desk-economist-proof.log`
+on Spark; `/private/tmp/desk-economic-public-proof-final.log` and
+`/private/tmp/desk-economics-browser-final.log` on Mac.
+
+UNVERIFIED: improvements in returns, economic allocation policy,
+dynamic intraday share targets and executable quotes. The
 economic assessment intentionally has no effect on sizes or orders. Continue
 with the funded comparison in `docs/research/retail-decision-workflow.md` before
 promoting a new trading policy. No real brokerage orders were placed.

@@ -44,6 +44,7 @@ async def test_funding_preview_uses_saved_holdings_without_writing_cash(
 ):
     from backend.market import holdings
 
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     _write(
@@ -58,7 +59,9 @@ async def test_funding_preview_uses_saved_holdings_without_writing_cash(
         json.dumps({"quotes": {"AAA": {"last": 10}, "BBB": {"last": 20}}})
     )
     before = {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")}
-    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    token = issue_user_token(
+        "desk_user", ttl_seconds=60, scopes=["memory:read", "memory:write"]
+    )
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -80,6 +83,15 @@ async def test_funding_preview_uses_saved_holdings_without_writing_cash(
             json={"equity": 10000, "available_cash": 200},
         )
         assert denied.status_code == 403
+        read_token = issue_user_token(
+            "desk_user", ttl_seconds=60, scopes=["memory:read"]
+        )
+        denied_scope = await client.post(
+            "/api/v1/market/desk_user/desk/funding-preview",
+            headers={"Authorization": f"Bearer {read_token}"},
+            json={"equity": 10000, "available_cash": 200},
+        )
+        assert denied_scope.status_code == 403
     assert {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")} == before
 
 
