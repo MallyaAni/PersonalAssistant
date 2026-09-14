@@ -6,10 +6,12 @@ Research source checkpoint bd2816c2 adds explicit CPU/CUDA selection, default CP
 with fail-closed unavailable CUDA and portable saved weights. VERIFIED: one-seed
 two-epoch/two-episode CUDA smoke completed on RTX 5080 in 4.88 seconds; four saved
 cost curves replayed on both CPU and CUDA; 17 focused tests and lint passed.
-Original strict replay remains BLOCKED by feature hash despite matching prices
-and an isolated NumPy 2.5.2 retry. Diagnostic original-model paths match all 12
-recorded curves exactly; raw neural CPU/CUDA predictions differ by at most
-2.3842e-7 without changing baskets. Do not call that diagnostic hash-verified.
+VERIFIED: exact original tensors exported from Spark passed the unchanged price
+and feature hash checks; all 12 original curves replayed on CPU and all 12 on
+CUDA, with exact decisions/dates and NAV tolerance 1e-10. Desktop recomputation
+differs in 7,633 finite feature elements by at most 2.220446049250313e-16;
+an isolated NumPy 2.5.2 retry did not resolve that raw hash difference.
+Frozen replay receipt: desktop growth-pilot-transfer-3dcce629/frozen-replay.json.
 Original artifacts preserved; no strategy promotion, live deploy or Spark change.
 Evidence: docs/research/growth-gpu-replication-2026-09-14.md. No broader work is
 part of this checkpoint. Diagram impact: NONE — internal device selection only.

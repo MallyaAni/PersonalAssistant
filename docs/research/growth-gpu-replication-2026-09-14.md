@@ -21,7 +21,7 @@ remain portable CPU tensors; original input hashes and NAV tolerance are unchang
   CUDA forward/backward/optimizer execution and unavailable-device rejection.
   Ruff passed. Five existing NumPy timedelta deprecation warnings remain.
 
-## Original frozen models: strict replay blocked
+## Original frozen models: strict replay verified with frozen inputs
 
 Original price hash matches:
 `e2e3c6b32067aafb0c8949a6b7d9c27ef64fcd8e445677b11d6fd446b0f84900`.
@@ -46,9 +46,17 @@ Maximum CPU/CUDA neural prediction differences by seed were 1.7881393432617188e-
 did not change the selected baskets. This diagnostic does not constitute a
 hash-verified replay of the original inputs.
 
-The next step to resolve strict portability would be an exact original feature
-tensor export, followed by an elementwise comparison. No further training is
-needed to investigate that boundary; it was outside this bounded completion.
+The final acceptance run exported exact original Dataset tensors on Spark,
+checked them against the original manifest, and transferred them to the desktop.
+Elementwise comparison found 7,633 differing finite feature elements, maximum
+absolute difference 2.220446049250313e-16, and zero NaN-payload differences.
+Prices, dates, ticker order and NaN positions matched. The low-level cause of
+the recomputation difference remains unverified.
+
+Using these frozen tensors, the unchanged `verify_artifacts` passed original
+price and feature hashes and replayed all 12 original cost curves on CPU and
+all 12 on CUDA. Decisions and dates matched exactly; NAV tolerance stayed 1e-10.
+This resolves the original replay blocker without relaxing verification.
 
 ## Artifacts and reproduction
 
@@ -58,6 +66,15 @@ Original inputs: `market/`; original artifacts: `pilot/`; diagnostic:
 Separate smoke artifacts: `gpu-smoke-bd2816c2/` (weights, manifest, results,
 execution timing/memory JSON). Isolated NumPy check: `venv-numpy252/`, which
 reuses the existing environment's other dependencies read-only through a .pth.
+
+Frozen inputs: `growth-frozen-tensors.npz`, 14,821,699 bytes, SHA256
+`f9b8d3729ab7ad79fdaa935c1b926255af69f79d061464ac36e5d496b76c3581`.
+A durable copy is also stored in
+`/home/animallya96/research/growth-pilot-20260914-3dcce629/` on Spark.
+Desktop `verify-frozen-growth.py` validates the archive, compares recomputed
+features and runs strict CPU/CUDA verification; `frozen-replay.json` records
+the successful results. Run the helper from the source worktree using the same
+desktop Python environment to repeat the final acceptance path.
 
 From source checkpoint bd2816c2, using the existing desktop Python environment
 with NumPy 2.5.1 and DEBUG=false:
@@ -75,7 +92,7 @@ Tests: `python -B -m pytest -q -p no:cacheprovider
 backend/tests/test_growth_pilot.py backend/tests/test_growth_objective.py
 backend/tests/test_growth_pilot_device.py`.
 
-UNVERIFIED: strategy superiority, full desk equivalence, original feature-tensor
-portability and production runtime behavior. No broker, account, dashboard or
+UNVERIFIED: strategy superiority, full desk equivalence, bitwise reproducibility
+of recomputed features and production runtime behavior. No broker, account, dashboard or
 Spark serving changes. Diagram impact: NONE — an internal execution-device
 option adds no architectural component or data flow; no diagram edits made.

@@ -4,9 +4,11 @@
 
 Growth pilot accepts --device cpu/cuda with CPU default and fail-closed CUDA.
 Source bd2816c2 passed 17 focused tests and lint; a two-epoch/two-episode GPU
-smoke's four saved cost curves replayed on both devices. Original strict replay
-is blocked by feature hash even with isolated NumPy 2.5.2; a separate diagnostic
-matched all 12 original NAV paths exactly. See the GPU replication research report.
+smoke's four saved cost curves replayed on both devices. Exact original tensors
+subsequently passed unchanged hash checks and all 12 original curves replayed on
+each device, with exact decisions/dates and NAV tolerance 1e-10. Recomputed
+features differ by at most 2.220446049250313e-16; an isolated NumPy upgrade did
+not remove that difference. See the GPU replication research report.
 No production policy or account changes; no investment superiority claimed.
 
 ## 2026-09-14 — Trained neural/RL growth research, separate regime reports
