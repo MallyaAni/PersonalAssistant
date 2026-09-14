@@ -77,6 +77,7 @@ does not establish that an RL strategy will beat this desk.
 overestimation under distribution shift. That is directly relevant to trying
 actions or regimes poorly represented in a short recommendation log.
 
-Status: data capture and readiness audit implemented; training and superiority
-unverified. Complete broad-universe and current-price valuation research before
-choosing the state and reward contract for a training run.
+Update: a separate daily price/calendar pilot has now trained and replayed six
+models; see [measured results](growth-pilot-2026-09-14.md). It does not use the
+short forward log or establish full-desk superiority. Complete historical-universe
+and current-price valuation research before adopting a learned allocation policy.

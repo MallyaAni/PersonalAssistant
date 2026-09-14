@@ -1,6 +1,6 @@
 # Next session
 
-## 2026-09-14 — Neural/RL growth pilot in progress
+## 2026-09-14 — Neural/RL growth pilot completed, not adopted
 
 User authorized trying neural and RL models and requested distinct evaluation
 after Warsh's guidance change. Official June 17 statement already omitted forward
@@ -18,8 +18,28 @@ Current-book membership and adjusted fractional prices are explicit limitations;
 this pilot does not replay the full desk, intraday quotes or adopted FOMC overlay.
 No promotion or production deployment is intended for a research-only CLI.
 
-VERIFIED: 12 targeted accounting/causality/objective tests, lint. Training results
-and model superiority UNVERIFIED until the actual bounded run completes.
+VERIFIED: training at 3dcce629 completed: three neural scorers, three sequential
+RL policies, 22 account paths (five baselines plus six learned policies, two
+cost settings). Saved model replay reproduced all 12 learned-model cost curves,
+exact decisions/dates and NAV within 1e-10, after price/feature hash checks.
+Twelve targeted accounting/causality/objective tests and lint passed. All 32
+diagrams and the architecture page synchronized; both changed views inspected.
+
+Test initial NAV January 2, 2025 through September 11, 2026, 423 transitions.
+At 10 bp, NN total returns 114.75/163.09/183.59%, RL 9.00/99.47/201.58%, versus
+momentum20 357.27%, momentum120 396.68%, SPY 31.19%. Current thematic membership
+creates material survivorship/selection bias: these are not investable forecasts.
+NN drawdowns 48–53%; RL seeds unstable. No contender beat the momentum baselines.
+After Jackson Hole, NN +6.73–13.18%, RL 0–2.81%, but only nine sessions and no
+FOMC decision. June 18–August 27: 49 sessions, one decision. September 14 is
+outside the completed daily history. No permanent/causal regime inference.
+
+Artifacts: /home/animallya96/research/growth-pilot-20260914-3dcce629 on spark1;
+report and machine summary: docs/research/growth-pilot-2026-09-14.{md,json}.
+UNVERIFIED: full desk/DeepSeek features, historical membership/delistings,
+intraday execution realism, adopted FOMC overlay comparison and superiority.
+Only CPU research ran; live dashboard revision remains 2cc8ebff. Nothing trained
+here is read by a production trading decision. No research-only deploy needed.
 Diagram impact: UPDATED — market-data, agent-trading-desk.
 
 ## Latest verified live checkpoint — 2cc8ebff

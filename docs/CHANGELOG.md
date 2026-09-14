@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-14 — Trained neural/RL growth research, separate regime reports
+
+Added a CPU-only daily growth pilot with purged chronological splits, supervised
+return networks and a sequential sampled-action RL allocator that can hold cash.
+Decisions execute next close; fees are funded and missing held prices invalidate
+the path. Training completed at 3dcce629 with three seeds for each model family,
+five baselines and 10/30 bp cost scenarios. Frozen models reproduced all twelve
+learned-policy curves. Twelve accounting/causality/objective tests passed.
+
+The June 17 statement and August 28 speech are distinct diagnostic boundaries;
+announcement days are separate. Nine post-Jackson-Hole sessions cannot establish
+a stable new regime. Neither learned family beat simple momentum on full-period
+wealth, and current-book survivorship bias remains material. No policy promoted,
+no production deployment or account change. Detailed numbers and artifacts:
+research/growth-pilot-2026-09-14.md. Diagram impact: UPDATED — market-data,
+agent-trading-desk; full diagram suite synchronized and changed views inspected.
+
 ## 2026-09-14 — Explained opportunity index and growth objective
 
 Live checkpoint 2cc8ebff adds expiring 0–10 analyst evidence scores, factor

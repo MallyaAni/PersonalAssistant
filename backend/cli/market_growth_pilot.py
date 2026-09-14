@@ -32,12 +32,20 @@ def parser():
     p.add_argument("--seeds", type=int, default=3)
     p.add_argument("--epochs", type=int, default=15)
     p.add_argument("--episodes", type=int, default=120)
+    p.add_argument("--verify", action="store_true")
     return p
 
 
 # Fit feature normalization exclusively on the requested training observations.
 def normalization(values):
     return values.mean(axis=0), np.maximum(values.std(axis=0), 1e-5)
+
+
+# Use the identical network shape for training and frozen-artifact replay.
+def return_network(width):
+    return nn.Sequential(
+        nn.Linear(width, 32), nn.Tanh(), nn.Linear(32, 16), nn.Tanh(), nn.Linear(16, 1)
+    )
 
 
 # Fit a small stock-return network; select its epoch using 2024 labels only.
@@ -57,13 +65,7 @@ def neural(data, train, validation, seed, epochs, output):
         dtype=torch.float32,
     )
     vy = torch.tensor(labels[validation][val_ok], dtype=torch.float32)
-    model = nn.Sequential(
-        nn.Linear(x.shape[1], 32),
-        nn.Tanh(),
-        nn.Linear(32, 16),
-        nn.Tanh(),
-        nn.Linear(16, 1),
-    )
+    model = return_network(x.shape[1])
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.001)
     best, best_state, best_epoch = float("inf"), None, None
     for epoch in range(epochs):
@@ -209,13 +211,63 @@ def fixed_chooser(data, action=None, predictions=None, benchmark=False):
     return choose
 
 
+# Prove saved models reproduce every recorded learned-policy account curve.
+def verify_artifacts(data, test, output):
+    manifest = json.loads((output / "manifest.json").read_text())
+    recorded = json.loads((output / "results.json").read_text())["results"]
+    for name, values in (("price", data.prices), ("feature", data.features)):
+        if hashlib.sha256(values.tobytes()).hexdigest() != manifest[f"{name}_sha256"]:
+            raise ValueError("Input snapshot differs from the training record")
+    checked = 0
+    for seed in range(manifest["arguments"]["seeds"]):
+        for kind in ("neural", "rl"):
+            saved = torch.load(
+                output / f"{kind}-{seed}.pt", weights_only=True, map_location="cpu"
+            )
+            mean, scale = np.asarray(saved["mean"]), np.asarray(saved["scale"])
+            if kind == "neural":
+                model = return_network(data.features.shape[-1])
+                model.load_state_dict(saved["state"])
+                transformed = np.nan_to_num(
+                    np.clip((data.features - mean) / scale, -5, 5)
+                )
+                with torch.no_grad():
+                    predicted = model(torch.tensor(transformed, dtype=torch.float32))
+                chooser = fixed_chooser(data, predictions=predicted.squeeze(-1).numpy())
+            else:
+                model = Allocator(data.market.shape[1] + 1 + len(gp.ACTION_NAMES))
+                model.load_state_dict(saved["state"])
+                chooser = rl_chooser(data, model, mean, scale)
+            for cost in (0.001, 0.003):
+                actual = gp.evaluate(data, test, chooser, cost)
+                expected = recorded[f"{kind}-{seed}@{round(cost * 10000)}bps"]
+                np.testing.assert_allclose(
+                    actual["nav"], expected["nav"], rtol=0, atol=1e-10
+                )
+                if (
+                    actual["dates"] != expected["dates"]
+                    or actual["decisions"] != expected["decisions"]
+                ):
+                    raise ValueError("Saved model decision replay differs")
+                checked += 1
+    print(
+        json.dumps(
+            {
+                "verified_frozen_model_curves": checked,
+                "training_revision": manifest["arguments"]["revision"],
+            }
+        )
+    )
+
+
 # Write one immutable research directory containing models, curves and provenance.
 def main():
     args = parser().parse_args()
     if min(args.seeds, args.epochs, args.episodes) < 1:
         raise ValueError("Positive training bounds required")
     output = Path(args.output)
-    output.mkdir(parents=True, exist_ok=False)
+    if not args.verify:
+        output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(2)
     torch.set_num_interop_threads(1)
     panel, _ = book_panel(MarketStore(args.data_dir), date.fromisoformat(args.asof))
@@ -226,6 +278,9 @@ def main():
     test = gp.split_rows(data, "2025-01-01", "2027-01-01", horizon=1)
     if not all(len(x) for x in (train, val_labels, validation, test)):
         raise ValueError("A chronological split has no usable observations")
+    if args.verify:
+        verify_artifacts(data, test, output)
+        return
     manifest = {
         "arguments": vars(args),
         "device": "cpu",

@@ -29,7 +29,7 @@ flowchart TB
     CLI[CLI: market_snapshot · market_edgar<br/>market_tone · market_sweep · market_book] -.-> Refresh
     CLI -.-> Report
 
-    Rule[Reproducibility is a pinned as-of date.<br/>No partition is ever rewritten;<br/>no channel is a hand-coded signal]
+    Rule[Reproducibility is a pinned as-of date.<br/>No partition is ever rewritten;<br/>label endpoints are purged]
     Rule -.-> Store
     Rule -.-> Windows
 

@@ -1,0 +1,1638 @@
+{
+  "manifest": {
+    "arguments": {
+      "data_dir": "/home/animallya96/anios/data/market",
+      "output": "/home/animallya96/research/growth-pilot-20260914-3dcce629",
+      "asof": "2026-09-14",
+      "revision": "3dcce629",
+      "seeds": 3,
+      "epochs": 15,
+      "episodes": 120
+    },
+    "device": "cpu",
+    "torch": "2.14.0+cu130",
+    "numpy": "2.5.2",
+    "tickers": [
+      "AAOI",
+      "AAPL",
+      "ACN",
+      "ADBE",
+      "ADI",
+      "ADSK",
+      "ALAB",
+      "AMAT",
+      "AMD",
+      "AMZN",
+      "ANET",
+      "APLD",
+      "ARM",
+      "ASML",
+      "AVGO",
+      "BE",
+      "CDNS",
+      "CEG",
+      "CIEN",
+      "CIFR",
+      "COHR",
+      "CORZ",
+      "CRDO",
+      "CRM",
+      "CRWD",
+      "CRWV",
+      "CSCO",
+      "DDOG",
+      "DELL",
+      "ETN",
+      "FFIV",
+      "FICO",
+      "FN",
+      "FSLR",
+      "FTNT",
+      "GEN",
+      "GEV",
+      "GLXY",
+      "GOOGL",
+      "HPE",
+      "HUT",
+      "IBM",
+      "INTC",
+      "INTU",
+      "IREN",
+      "KLAC",
+      "LITE",
+      "LRCX",
+      "MCHP",
+      "MDB",
+      "META",
+      "MOD",
+      "MPWR",
+      "MRVL",
+      "MSFT",
+      "MSI",
+      "MU",
+      "NBIS",
+      "NET",
+      "NOW",
+      "NTAP",
+      "NVDA",
+      "NXPI",
+      "OKLO",
+      "ON",
+      "ORCL",
+      "PANW",
+      "PLTR",
+      "POWL",
+      "PTC",
+      "Q",
+      "QCOM",
+      "SIMO",
+      "SMCI",
+      "SMR",
+      "SNDK",
+      "SNOW",
+      "SNPS",
+      "SPY",
+      "STX",
+      "SWKS",
+      "TEAM",
+      "TER",
+      "TLN",
+      "TRMB",
+      "TSM",
+      "TXN",
+      "TYL",
+      "VRT",
+      "VST",
+      "WDAY",
+      "WDC",
+      "WULF",
+      "ZS"
+    ],
+    "price_sha256": "e2e3c6b32067aafb0c8949a6b7d9c27ef64fcd8e445677b11d6fd446b0f84900",
+    "feature_sha256": "c232280a4d63a91cb5da17bb2be68d28a4989fbbb2c48752ab9f1b08ee625eef",
+    "train_last_decision": "2023-12-21",
+    "train_last_label": "2023-12-29",
+    "validation_last_label": "2024-12-31",
+    "test_first": "2025-01-02",
+    "test_last": "2026-09-11",
+    "status": "retrospective_daily_pilot_not_adopted",
+    "limitations": [
+      "Current book membership: survivorship/selection bias",
+      "Price/calendar inputs only; no current desk/DeepSeek valuation replay",
+      "Reinvested adjusted-price units; fractional next-close approximation",
+      "No spread history, impact, settlement or historical quote eligibility",
+      "No adopted FOMC overlay: diagnostic, not a replacement policy",
+      "Post-event periods are short and not proof of a causal regime change",
+      "2025+ examined by older experiments; not an untouched holdout"
+    ]
+  },
+  "results_sha256": "f6eee5c0333d229fa85e4e1297c6f3083dc5f97f86aa57fe06230bba72816363",
+  "training": {
+    "neural-0": {
+      "validation_mse_percent_squared": 53.082942962646484,
+      "selected_epoch": 2,
+      "train_examples": 113152,
+      "validation_examples": 21203
+    },
+    "rl-0": {
+      "validation_log_growth": 0.2748005300894621,
+      "selected_episode": 120
+    },
+    "neural-1": {
+      "validation_mse_percent_squared": 53.049503326416016,
+      "selected_epoch": 2,
+      "train_examples": 113152,
+      "validation_examples": 21203
+    },
+    "rl-1": {
+      "validation_log_growth": 0.5148005513540163,
+      "selected_episode": 100
+    },
+    "neural-2": {
+      "validation_mse_percent_squared": 53.081871032714844,
+      "selected_epoch": 2,
+      "train_examples": 113152,
+      "validation_examples": 21203
+    },
+    "rl-2": {
+      "validation_log_growth": 0.37328717986683035,
+      "selected_episode": 60
+    }
+  },
+  "results": {
+    "USD@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.0,
+        "total_return": 0.0,
+        "drawdown": 0.0,
+        "terminal_equity": 1.0,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "USD@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.0,
+        "total_return": 0.0,
+        "drawdown": 0.0,
+        "terminal_equity": 1.0,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "SPY@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.27150060320438046,
+        "total_return": 0.31193166321917354,
+        "drawdown": -0.18755250947031588,
+        "terminal_equity": 1.3119316632191735,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.2504935704100581,
+          "total_return": 0.2846593300667555,
+          "drawdown": -0.18755250947031588,
+          "terminal_equity": 1.2846593300667555,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.012566499634242152,
+          "total_return": -0.012487870885051544,
+          "drawdown": -0.012487870885051544,
+          "terminal_equity": 1.268616670221605,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.04244429805959143,
+          "total_return": 0.04335793769336127,
+          "drawdown": -0.03376381193750533,
+          "terminal_equity": 1.323621272765833,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.002272064407546174,
+          "total_return": -0.002269485222937795,
+          "drawdown": -0.002269485222937795,
+          "terminal_equity": 1.3206173338465248,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.006598701223480746,
+          "total_return": -0.006576977603385492,
+          "drawdown": -0.01984035355663194,
+          "terminal_equity": 1.3119316632191735,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "SPY@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.26950459455766673,
+        "total_return": 0.30931564793858035,
+        "drawdown": -0.1875525094703162,
+        "terminal_equity": 1.3093156479385804,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.24849756176334428,
+          "total_return": 0.2820976963079018,
+          "drawdown": -0.1875525094703162,
+          "terminal_equity": 1.2820976963079018,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.012566499634242041,
+          "total_return": -0.012487870885051433,
+          "drawdown": -0.012487870885051433,
+          "terminal_equity": 1.2660870258143868,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.04244429805959164,
+          "total_return": 0.04335793769336149,
+          "drawdown": -0.03376381193750533,
+          "terminal_equity": 1.3209819481940204,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.002272064407546285,
+          "total_return": -0.002269485222937906,
+          "drawdown": -0.002269485222937906,
+          "terminal_equity": 1.3179839991828264,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.006598701223480857,
+          "total_return": -0.006576977603385603,
+          "drawdown": -0.01984035355663194,
+          "terminal_equity": 1.3093156479385804,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "momentum20@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 1.520099490003554,
+        "total_return": 3.5726801084723716,
+        "drawdown": -0.3825889040365579,
+        "terminal_equity": 4.572680108472372,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.6398366671911497,
+          "total_return": 4.154327572678203,
+          "drawdown": -0.3825889040365579,
+          "terminal_equity": 5.154327572678203,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.014085848626156723,
+          "total_return": 0.014185521635032838,
+          "drawdown": 0.0,
+          "terminal_equity": 5.227444397974476,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.02712489777549521,
+          "total_return": -0.026760321537846132,
+          "drawdown": -0.25718737046213214,
+          "terminal_equity": 5.087556305063466,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.00513424467494717,
+          "total_return": 0.005147447494970203,
+          "drawdown": 0.0,
+          "terminal_equity": 5.1137442340214845,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.1118323727132043,
+          "total_return": -0.10580586372494738,
+          "drawdown": -0.10880711695548995,
+          "terminal_equity": 4.572680108472372,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "momentum20@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 1.3650137676325607,
+        "total_return": 2.9157769626000207,
+        "drawdown": -0.39558483779457554,
+        "terminal_equity": 3.9157769626000207,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.5122051676011523,
+          "total_return": 3.5367240087077656,
+          "drawdown": -0.39558483779457554,
+          "terminal_equity": 4.536724008707766,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.014085848626156723,
+          "total_return": 0.014185521635032838,
+          "drawdown": 0.0,
+          "terminal_equity": 4.601079805285463,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.04976938829102628,
+          "total_return": -0.04855118556010363,
+          "drawdown": -0.26437154912754546,
+          "terminal_equity": 4.3776919258822025,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.005134244674946949,
+          "total_return": 0.005147447494969981,
+          "drawdown": 0.0,
+          "terminal_equity": 4.400225865219835,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.11664210497866925,
+          "total_return": -0.11009637174513798,
+          "drawdown": -0.11308322441037377,
+          "terminal_equity": 3.9157769626000207,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "momentum120@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 1.602771341172706,
+        "total_return": 3.966778005131956,
+        "drawdown": -0.48126145250322894,
+        "terminal_equity": 4.966778005131956,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.8330372030445499,
+          "total_return": 5.252849019757317,
+          "drawdown": -0.48126145250322894,
+          "terminal_equity": 6.252849019757317,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.02755534790897088,
+          "total_return": 0.027938507779749155,
+          "drawdown": 0.0,
+          "terminal_equity": 6.4275442907414035,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.2750462460474364,
+          "total_return": -0.24046300317123903,
+          "drawdown": -0.41805921096170884,
+          "terminal_equity": 4.881957687573574,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.0358953808606367,
+          "total_return": -0.03525878140032024,
+          "drawdown": -0.03525878140032024,
+          "terminal_equity": 4.709825808661805,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0531204171272583,
+          "total_return": 0.05455662415318896,
+          "drawdown": -0.041690840429883025,
+          "terminal_equity": 4.966778005131956,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "momentum120@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 1.5384983353117616,
+        "total_return": 3.6575908771796444,
+        "drawdown": -0.4841202132878013,
+        "terminal_equity": 4.657590877179644,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.7788105868272488,
+          "total_return": 4.92280756208674,
+          "drawdown": -0.4841202132878013,
+          "terminal_equity": 5.92280756208674,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.027555347908971094,
+          "total_return": 0.027938507779749377,
+          "drawdown": 0.0,
+          "terminal_equity": 6.088281967238059,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.28337832780077726,
+          "total_return": -0.2467652357048965,
+          "drawdown": -0.42012864986785614,
+          "terminal_equity": 4.585905632554688,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.03589538086063658,
+          "total_return": -0.03525878140032013,
+          "drawdown": -0.03525878140032013,
+          "terminal_equity": 4.424212188333946,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.051406109236955586,
+          "total_return": 0.05275033811919938,
+          "drawdown": -0.04169649362376171,
+          "terminal_equity": 4.657590877179644,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "equal@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.8312329988565682,
+        "total_return": 1.296148143615763,
+        "drawdown": -0.3339366580547686,
+        "terminal_equity": 2.296148143615763,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.8501254889837015,
+          "total_return": 1.3399404702542044,
+          "drawdown": -0.3339366580547686,
+          "terminal_equity": 2.3399404702542044,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.004221722700986581,
+          "total_return": -0.004212823757066886,
+          "drawdown": -0.004212823757066886,
+          "terminal_equity": 2.330082713450995,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.0025676143059052926,
+          "total_return": -0.002564320803710829,
+          "drawdown": -0.1727676984642832,
+          "terminal_equity": 2.324107633874526,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.026955559369483514,
+          "total_return": -0.02659550072717587,
+          "drawdown": -0.02659550072717587,
+          "terminal_equity": 2.262296827607781,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.01485240624924204,
+          "total_return": 0.01496325132709364,
+          "drawdown": -0.02704412335559736,
+          "terminal_equity": 2.296148143615763,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "equal@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.8199201635582309,
+        "total_return": 1.27031857614007,
+        "drawdown": -0.334608370756703,
+        "terminal_equity": 2.27031857614007,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.8403712164739204,
+          "total_return": 1.3172270099818895,
+          "drawdown": -0.334608370756703,
+          "terminal_equity": 2.3172270099818895,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.004221722700987027,
+          "total_return": -0.00421282375706733,
+          "drawdown": -0.00421282375706733,
+          "terminal_equity": 2.30746494098372,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.0038799999974850484,
+          "total_return": -0.003872482523237797,
+          "drawdown": -0.17334858125252273,
+          "terminal_equity": 2.2985293233267763,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.02695555936948283,
+          "total_return": -0.026595500727175203,
+          "drawdown": -0.026595500727175203,
+          "terminal_equity": 2.2373987850368056,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.014606229152265459,
+          "total_return": 0.014713421372812174,
+          "drawdown": -0.027190870180591298,
+          "terminal_equity": 2.27031857614007,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "neural-0@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.7642950436643661,
+        "total_return": 1.1474799613159221,
+        "drawdown": -0.4801778678806633,
+        "terminal_equity": 2.147479961315922,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.7405010392137933,
+          "total_return": 1.096985923502785,
+          "drawdown": -0.4801778678806633,
+          "terminal_equity": 2.096985923502785,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.014615848606271308,
+          "total_return": -0.014509555575437427,
+          "drawdown": -0.014509555575437427,
+          "terminal_equity": 2.0665595897048115,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.020690104711714917,
+          "total_return": -0.020477533062672526,
+          "drawdown": -0.2884529138793188,
+          "terminal_equity": 2.0242415473806483,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.0646834626126863,
+          "total_return": -0.06263587278588156,
+          "drawdown": -0.06263587278588156,
+          "terminal_equity": 1.897451411331018,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.12378342038124526,
+          "total_return": 0.13177072598107542,
+          "drawdown": -0.048388553558136205,
+          "terminal_equity": 2.147479961315922,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "neural-0@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.5822226377953541,
+        "total_return": 0.7900125621614946,
+        "drawdown": -0.4922885070669004,
+        "terminal_equity": 1.7900125621614946,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.5885332623458948,
+          "total_return": 0.8013443771906357,
+          "drawdown": -0.4922885070669004,
+          "terminal_equity": 1.8013443771906357,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.014615848606271421,
+          "total_return": -0.014509555575437538,
+          "drawdown": -0.014509555575437538,
+          "terminal_equity": 1.7752076708392863,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.04509894273721696,
+          "total_return": -0.044097102495232354,
+          "drawdown": -0.2944010815953917,
+          "terminal_equity": 1.6969261562279636,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.0646834626126863,
+          "total_return": -0.06263587278588156,
+          "drawdown": -0.06263587278588156,
+          "terminal_equity": 1.5906377053794338,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.11808762940563403,
+          "total_return": 0.12534272016046644,
+          "drawdown": -0.05183459730098372,
+          "terminal_equity": 1.7900125621614946,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "rl-0@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.08614468014696738,
+        "total_return": 0.08996401305152535,
+        "drawdown": -0.36219963578910297,
+        "terminal_equity": 1.0899640130515253,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.4138022253651588,
+          "total_return": 0.5125579517041645,
+          "drawdown": -0.36219963578910297,
+          "terminal_equity": 1.5125579517041645,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.5125579517041645,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.3276575452181914,
+          "total_return": -0.27939024628875353,
+          "drawdown": -0.2918178657876984,
+          "terminal_equity": 1.0899640130515253,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0899640130515253,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0899640130515253,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "rl-0@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.005057281088764577,
+        "total_return": 0.0050700907196357115,
+        "drawdown": -0.37279172773491187,
+        "terminal_equity": 1.0050700907196357,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.34829757302674796,
+          "total_return": 0.41665374496685326,
+          "drawdown": -0.37279172773491187,
+          "terminal_equity": 1.4166537449668533,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.4166537449668533,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.3432402919379834,
+          "total_return": -0.29053228829522326,
+          "drawdown": -0.2988695121032747,
+          "terminal_equity": 1.0050700907196357,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0050700907196357,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0,
+          "total_return": 0.0,
+          "drawdown": 0.0,
+          "terminal_equity": 1.0050700907196357,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "neural-1@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.9673333379172606,
+        "total_return": 1.630919323882246,
+        "drawdown": -0.5254315608893756,
+        "terminal_equity": 2.630919323882246,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.0278789818745577,
+          "total_return": 1.7951310194434118,
+          "drawdown": -0.5254315608893756,
+          "terminal_equity": 2.795131019443412,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.014163800056294903,
+          "total_return": -0.014063965342398288,
+          "drawdown": -0.014063965342398288,
+          "terminal_equity": 2.7558203936584973,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.0510927052994554,
+          "total_return": -0.04980942125293952,
+          "drawdown": -0.2572640117145887,
+          "terminal_equity": 2.6185545747733197,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.060386489654648094,
+          "total_return": -0.05859937833646989,
+          "drawdown": -0.05859937833646989,
+          "terminal_equity": 2.465108904551484,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.06509735105310126,
+          "total_return": 0.06726291849606159,
+          "drawdown": -0.0576854364491407,
+          "terminal_equity": 2.630919323882246,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "neural-1@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.8148245015164647,
+        "total_return": 1.2587792252341128,
+        "drawdown": -0.5343195204270945,
+        "terminal_equity": 2.258779225234113,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.9035227145762713,
+          "total_return": 1.4682828700691148,
+          "drawdown": -0.5343195204270945,
+          "terminal_equity": 2.468282870069115,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.014163800056294678,
+          "total_return": -0.014063965342398066,
+          "drawdown": -0.014063965342398066,
+          "terminal_equity": 2.433569025329228,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.07474908882575701,
+          "total_return": -0.07202370325775087,
+          "drawdown": -0.266854818912184,
+          "terminal_equity": 2.2582943719916617,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.06038648965464821,
+          "total_return": -0.05859937833647,
+          "drawdown": -0.05859937833647,
+          "terminal_equity": 2.1259597256922014,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.06060116547689329,
+          "total_return": 0.06247507793152862,
+          "drawdown": -0.05999405584987283,
+          "terminal_equity": 2.258779225234113,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "rl-1@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.6904960470854088,
+        "total_return": 0.9947047553525672,
+        "drawdown": -0.42283682417001467,
+        "terminal_equity": 1.9947047553525672,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.6783529581226335,
+          "total_return": 0.9706293487907769,
+          "drawdown": -0.42283682417001467,
+          "terminal_equity": 1.970629348790777,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.004221722700986804,
+          "total_return": -0.004212823757067108,
+          "drawdown": -0.004212823757067108,
+          "terminal_equity": 1.9623274346538173,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.028467964784003014,
+          "total_return": 0.02887705000804175,
+          "drawdown": -0.1466915132199358,
+          "terminal_equity": 2.018993662116468,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.026955559369483285,
+          "total_return": -0.026595500727175647,
+          "drawdown": -0.026595500727175647,
+          "terminal_equity": 1.9652975147074863,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.014852406249242382,
+          "total_return": 0.014963251327093863,
+          "drawdown": -0.027044123355596694,
+          "terminal_equity": 1.9947047553525672,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "rl-1@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.6439999847508323,
+        "total_return": 0.9040819658829151,
+        "drawdown": -0.4293311682381241,
+        "terminal_equity": 1.9040819658829151,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.640317538003667,
+          "total_return": 0.8970831796789271,
+          "drawdown": -0.4293311682381241,
+          "terminal_equity": 1.8970831796789271,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.004221722700986692,
+          "total_return": -0.004212823757066997,
+          "drawdown": -0.004212823757066997,
+          "terminal_equity": 1.8890911025904435,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.020253499665370246,
+          "total_return": 0.020459993507963015,
+          "drawdown": -0.1531559096518208,
+          "terminal_equity": 1.9277418942853948,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.026955559369483174,
+          "total_return": -0.026595500727175536,
+          "drawdown": -0.026595500727175536,
+          "terminal_equity": 1.8764726333341208,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.014606229152264907,
+          "total_return": 0.014713421372811508,
+          "drawdown": -0.027190870180591298,
+          "terminal_equity": 1.9040819658829151,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "neural-2@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 1.0423609257540478,
+        "total_return": 1.8359044768594592,
+        "drawdown": -0.5300512379364668,
+        "terminal_equity": 2.8359044768594592,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.0463198201572794,
+          "total_return": 1.8471537759221732,
+          "drawdown": -0.5300512379364668,
+          "terminal_equity": 2.8471537759221732,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.016909935679523307,
+          "total_return": -0.016767765209657837,
+          "drawdown": -0.016767765209657837,
+          "terminal_equity": 2.7994133698917194,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.001038124473849512,
+          "total_return": -0.00103758580905422,
+          "drawdown": -0.2348343483716625,
+          "terminal_equity": 2.796508738305443,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.060962183039479305,
+          "total_return": -0.059141180475919986,
+          "drawdown": -0.059141180475919986,
+          "terminal_equity": 2.631119910310834,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.0749513487896205,
+          "total_return": 0.07783171179166537,
+          "drawdown": -0.06274192612473894,
+          "terminal_equity": 2.8359044768594592,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "neural-2@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 0.8751280052775542,
+        "total_return": 1.3991823823189615,
+        "drawdown": -0.5393832280774418,
+        "terminal_equity": 2.3991823823189615,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.9056622213235499,
+          "total_return": 1.4735694312238503,
+          "drawdown": -0.5393832280774418,
+          "terminal_equity": 2.4735694312238503,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.016909935679523307,
+          "total_return": -0.016767765209657837,
+          "drawdown": -0.016767765209657837,
+          "terminal_equity": 2.432093199771302,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.02432565430873668,
+          "total_return": -0.024032170127744723,
+          "drawdown": -0.24163788438419198,
+          "terminal_equity": 2.373644722227867,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.060962183039479305,
+          "total_return": -0.059141180475919986,
+          "drawdown": -0.059141180475919986,
+          "terminal_equity": 2.2332645713248738,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.07166355698174352,
+          "total_return": 0.07429384459166788,
+          "drawdown": -0.06465590068702565,
+          "terminal_equity": 2.3991823823189615,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "rl-2@10bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 1.1038578803020533,
+        "total_return": 2.0157781215134105,
+        "drawdown": -0.2286737241414205,
+        "terminal_equity": 3.0157781215134105,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.198796232368801,
+          "total_return": 2.3161226780067383,
+          "drawdown": -0.2236044124011578,
+          "terminal_equity": 3.3161226780067383,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.01415481874391922,
+          "total_return": 0.014255472542126446,
+          "drawdown": 0.0,
+          "terminal_equity": 3.363395573789386,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.11877938581854472,
+          "total_return": -0.11199631464012971,
+          "drawdown": -0.2286737241414205,
+          "terminal_equity": 2.9867076648480504,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.018065696271539273,
+          "total_return": -0.017903489840119247,
+          "drawdown": -0.017903489840119247,
+          "terminal_equity": 2.933235174515037,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.027751911279417067,
+          "total_return": 0.028140582697062655,
+          "drawdown": -0.020845420214941623,
+          "terminal_equity": 3.0157781215134105,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    },
+    "rl-2@30bps": {
+      "metrics": {
+        "objective": "net-compounded-growth/1",
+        "log_growth": 1.0546991791820073,
+        "total_return": 1.8711113339203247,
+        "drawdown": -0.23006989092637742,
+        "terminal_equity": 2.8711113339203247,
+        "transitions": 423
+      },
+      "regimes": {
+        "before_june_statement": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 1.1547909932685416,
+          "total_return": 2.1733600945894236,
+          "drawdown": -0.22851587959164055,
+          "terminal_equity": 3.1733600945894236,
+          "transitions": 363,
+          "first": "2025-01-03",
+          "last": "2026-06-16",
+          "scheduled_decisions": 11
+        },
+        "june_statement_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.01415481874391922,
+          "total_return": 0.014255472542126446,
+          "drawdown": 0.0,
+          "terminal_equity": 3.218597842284123,
+          "transitions": 1,
+          "first": "2026-06-17",
+          "last": "2026-06-17",
+          "scheduled_decisions": 1
+        },
+        "after_june_before_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.12304645111366172,
+          "total_return": -0.11577741151709997,
+          "drawdown": -0.23006989092637742,
+          "terminal_equity": 2.845956915389944,
+          "transitions": 49,
+          "first": "2026-06-18",
+          "last": "2026-08-27",
+          "scheduled_decisions": 1
+        },
+        "jackson_hole_day": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": -0.018065696271539273,
+          "total_return": -0.017903489840119247,
+          "drawdown": -0.017903489840119247,
+          "terminal_equity": 2.795004354669843,
+          "transitions": 1,
+          "first": "2026-08-28",
+          "last": "2026-08-28",
+          "scheduled_decisions": 0
+        },
+        "after_jackson_hole": {
+          "objective": "net-compounded-growth/1",
+          "log_growth": 0.02686551455474752,
+          "total_return": 0.02722964603733935,
+          "drawdown": -0.02089457059206523,
+          "terminal_equity": 2.8711113339203247,
+          "transitions": 9,
+          "first": "2026-08-31",
+          "last": "2026-09-11",
+          "scheduled_decisions": 0
+        }
+      }
+    }
+  }
+}
