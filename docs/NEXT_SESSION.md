@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-09-14 — Compact trading dashboard and FOMC diagnosis
+
+Started clean on `main` at `cce79a11`; pulled origin/main, already current.
+The user requested fewer words and clearer decisions. Stock rankings now lead;
+actual paper cash and cash implied by scheduled targets are separately labelled.
+Setup is one line. Methodology, inflation and performance expand on demand.
+"Portfolio plan" replaces "Targets for the next rebalance", with the existing
+countdown and execution status retained. Research sizing remains explicit.
+
+VERIFIED before deployment: 30 browser workflows passed (1.2m), TypeScript and
+Vite passed. A styled same-fixture before/after comparison measured 811 → 326
+visible words (60% fewer) and ranking-heading position 604px → 298px at
+1440×1000. The compact test also checks mobile overflow and distinguishes actual
+paper cash from target-implied cash. Initial failures were old wording/hidden
+performance expectations; the removed footer's countdown was restored in the
+plan header so due trades retain their date context.
+
+The user's market observation prompted a read-only exposure audit. At
+2026-09-14T13:49:50Z, paper cash was 58.87%, the paper account was down 1.92%
+on the day, and the evening weights implied 76.40% cash. These are different
+states, not contradictory numbers. Friday's saved record has no `event_risk`;
+paper state has no event cycle or outcomes. Replaying the current FOMC policy on
+the Friday point-in-time panel returns factor 0.5, with SPY five-session return
+-1.1485% and three sessions to the September 16 decision. The policy execution
+path is nightly; it was deployed after that stored record. This confirms an
+execution/rollout gap, not proof that an order was placed or filled. The UI now
+says "FOMC decision missing". No broker mutations were performed in this turn.
+**UNRESOLVED:** policy catch-up before the next nightly execution; this UI change
+does not execute a missed reduction or alter the strategy. Do not report it fixed.
+
+The research collector did successfully archive its first actual fresh decision
+at 13:45:29Z from the 13:30 bar: all 93 grades, building inflation, daily SPY
+neutral, weekly positive, 0.5 base budget, no additional macro cut, total targets
+23.34%. This resolves the prior fresh-collection uncertainty, not the absence of
+forward performance evidence. Diagnosis file: `/private/tmp/desk-market-diagnosis.json`.
+
 ## 2026-09-14 — Intraday sizing and macro research
 
 Started clean on main `36cf40f9dbf9a1880fc0597e324b6b1a97c56b4d`;

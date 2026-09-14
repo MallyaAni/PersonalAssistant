@@ -17,16 +17,18 @@ export const FundingPreview = ({ userId, equity, research }: { userId: string; e
     return () => window.clearTimeout(timeout)
   }, [preview])
   return <div className="my-4 rounded-lg border border-black/10 p-3 text-sm">
-    <h4 className="font-medium">Cash-limited target preview</h4>
+    <h4 className="font-medium">Share sizing</h4>
     <label className="my-2 block text-xs">Sizing policy
       <select aria-label="Sizing policy" value={mode} disabled={busy} className="ml-2 rounded border p-1" onChange={event => { setMode(event.target.value); setPreview(null); setError('') }}>
         <option value="evening">Evening targets</option>
         <option value="intraday_research">Intraday + macro research</option>
       </select>
     </label>
-    {mode === 'evening'
-      ? <p className="my-2 text-xs text-[#6e6e73]">Uses the evening target weights and last known prices. This is planning arithmetic, not a buy-now signal or an executable quote. No proceeds from planned sells are included. Reserve fees and any cash you want to keep before entering your budget.</p>
-      : <p className="my-2 text-xs text-[#6e6e73]">Research only. Recalculates the risk manager’s weights from synchronized completed bars and current technical grades. The evening growth-model valuation is retained where used. Building inflation pressure plus negative daily and weekly benchmark trends activates the existing defensive budget ceiling; reductions are not multiplied together. No broker orders or scheduled-policy changes. Prices remain reference bars, not executable quotes.</p>}
+    <p className="my-2 text-xs text-[#6e6e73]">{mode === 'evening' ? 'Scheduled targets · reference prices' : 'Research only · current technical sizing'} · no orders placed.</p>
+    <details className="my-2 text-xs text-[#6e6e73]"><summary className="cursor-pointer">Sizing details</summary>
+      <p className="mt-1">Cash excludes pending sales. Reserve fees before entering your budget. Whole shares; cash is not saved. Reconfirm after any fill or account change.</p>
+      {mode === 'intraday_research' && <p className="mt-1">Current technical grades; evening growth-model valuation retained. Building inflation plus negative daily and weekly benchmark trends tightens the exposure ceiling without compounding cuts. Experimental; scheduled policy unchanged.</p>}
+    </details>
     {mode === 'intraday_research' && research?.status !== 'available' && <p className="my-2 text-xs text-amber-800">{research?.reason ?? 'Waiting for a complete fresh research allocation.'}</p>}
     <form className="flex flex-wrap items-end gap-3" onSubmit={async event => {
       event.preventDefault()
@@ -57,7 +59,7 @@ export const FundingPreview = ({ userId, equity, research }: { userId: string; e
         <p>Research target reductions · no sale proceeds included in this budget</p>
         {preview.reductions.map(row => <p key={row.ticker} className="mt-1">{row.ticker}: {row.held_shares} held → {row.target_total_shares} target shares · reduction {row.reduction_shares}</p>)}
       </div>}
-      <p className="mt-2 text-xs text-[#6e6e73]">Whole shares, before execution costs. Cash is not saved. Reconfirm after a recorded fill, position edit, account-size change or page reload. Check your broker’s current quote and available funds before execution.</p>
+      <p className="mt-2 text-xs text-[#6e6e73]">Before fees · verify broker price and cash.</p>
     </div>}
   </div>
 }

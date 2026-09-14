@@ -342,8 +342,8 @@ const RegimeBanner = ({ regime }: { regime: DeskRecord['regime'] }) => {
   if (flags.length === 0) return null
   const exposure = regime.exposure ?? 1
   return (
-    <section className="rounded-2xl border border-[#9a6200]/30 bg-[#fff6e5] p-4" role="note">
-      <h3 className="text-sm font-semibold text-[#9a6200]">Warnings the desk is weighing</h3>
+    <section className="rounded-xl border border-[#9a6200]/30 bg-[#fff6e5] px-3 py-2" role="note">
+      <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {flags.length} flags</summary>
       <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#7a5200]">
         {flags.map((flag) => (
           <li key={flag}>{FLAG_WORDS[flag] ?? flag}</li>
@@ -354,6 +354,7 @@ const RegimeBanner = ({ regime }: { regime: DeskRecord['regime'] }) => {
           The current target-size multiplier is {Math.round(exposure * 100)}%. Actual positions may differ until orders fill.
         </p>
       )}
+      </details>
     </section>
   )
 }
@@ -645,31 +646,19 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
   </div>
 )
 
-// The first-time state: the page either has no decision on file yet, or the
-// person has not entered positions, and both are where people abandon a
-// trading screen. Turn it into the three steps instead of a blank line.
+// Keep missing account context visible without repeating the page's help guide.
 const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasRecord: boolean; hasPositions: boolean; onEnterPositions: () => void }) => {
   if (hasRecord && hasPositions) return null
   return (
-    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-      <h3 className="mb-2 text-sm font-semibold text-[#1d1d1f]">
-        {hasRecord ? 'Set up the board' : 'No evening decision is available yet'}
-      </h3>
+    <section className="flex flex-wrap items-center gap-2 py-2 text-xs text-[#6e6e73]">
       {!hasRecord ? (
-        <p className="mb-2 text-sm text-[#6e6e73]">
-          The desk is scheduled to write a decision after each trading session. Once a decision is available,
-          this page will show its grades, targets and rebalance schedule.
-        </p>
+        <p>No evening decision is available yet. Check after the next trading session.</p>
       ) : (
-        <p className="mb-2 text-sm text-[#6e6e73]">
-          No manual positions are recorded. Proposed changes assume an empty account; enter what you hold
-          to compare it with the desk's targets.
-        </p>
+        <p>No positions recorded · sizing assumes an empty account.</p>
       )}
-      <HowToUse compact />
       {hasRecord && (
         <button type="button" onClick={onEnterPositions} className="mt-2 rounded-full bg-[#1d1d1f] px-3 py-1.5 text-sm text-white">
-          enter my positions
+          Add positions
         </button>
       )}
     </section>
@@ -842,7 +831,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const eventPaused = event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
 
   return (
-    <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6 [&>section]:shrink-0">
+    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -885,13 +874,18 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {!latest && <GettingStarted hasRecord={false} hasPositions={holdings.length > 0} onEnterPositions={() => setEditing(true)} />}
 
-      {latest && (
-        <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} />
-      )}
+      {latest && <section aria-label="Cash exposure" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
+        <span>Paper cash <b>{paperLive?.cash != null && paperLive.equity && paperLive.equity > 0 ? `${(100 * paperLive.cash / paperLive.equity).toFixed(1)}%` : 'unavailable'}</b></span>
+        <span title="Cash implied by evening target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
+        <span className="text-[#6e6e73]">Plan applies at the scheduled rebalance</span>
+      </section>}
 
       {latest && <RegimeBanner regime={latest.regime} />}
 
-      {latest && <EconomicContext data={payload.economics} />}
+      {latest && <details className="rounded-xl border border-black/[0.08] px-3 py-2 text-xs">
+        <summary className="cursor-pointer font-medium">Inflation · {payload.economics?.assessment?.status === 'model_assessment' && !payload.economics.collection_stale && Date.now() - Date.parse(payload.economics.observed_at) < 36 * 3600000 ? payload.economics.assessment.pressure : 'unavailable'} · research</summary>
+        <EconomicContext data={payload.economics} />
+      </details>}
 
       {latest && (
         <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes}
@@ -911,34 +905,34 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       )}
 
       {latest && (
-        <section aria-label="Reading the current picks" className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#1d1d1f]">
-          <h3 className="font-semibold">A grade ranks evidence; it does not confirm an entry</h3>
+        <details aria-label="Reading the current picks" className="px-1 text-xs text-[#6e6e73]">
+          <summary className="cursor-pointer">Data & timing · 15-minute bars, not live quotes</summary>
           <p className="mt-1">A+ is the highest grade under the current voting rules, not a probability of profit.
             Intraday grades update technical and price-sensitive value inputs; other votes and target weights use the evening decision.
             Prices, available cash and execution conditions can change before an order fills.</p>
           <p className="mt-2 text-xs text-[#6e6e73]">Intraday calculations are scheduled every 15 minutes on weekdays during market hours.
             This page checks for updates every minute. A scheduled run may be late or missing; expired intraday grades revert to the evening decision.
             Bar times identify the start of the 15-minute interval, not a current executable price.</p>
-        </section>
+        </details>
       )}
 
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
-          <h3 className="font-semibold">FOMC de-risking enabled · provisional policy</h3>
+          <h3 className="font-semibold">FOMC · {!event ? 'decision missing' : eventPaused ? 'portfolio adjustments paused' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
+          <details className="mt-1 text-xs"><summary className="cursor-pointer">Policy & execution</summary>
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
             The reduction lasts through decision day. Paper orders are queued for the next open, even on a green day;
             actual fill times and prices can differ.
             Restoration is limited to confirmed reductions and available cash. Regular rebalances wait while event orders remain unresolved.
             If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
-          <p className="mt-2">{event
+          </details>
+          <p className="mt-2 text-xs">{event
             ? `Decision at the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
             {' '}{Object.entries(event.outcome.unrestored).map(([symbol, qty]) => `${symbol} ${qty} shares unbought`).join(' · ')}.
             These are unfilled quantities, not restored positions.</p>}
-          <p className="mt-2">This automates the paper account. Your manually tracked positions require your own broker orders;
-            the regular target table is not a record of FOMC fills. Performance after the selected {payload.event_policy.evaluation_since} boundary is evaluated separately.
-            This recent period has a limited sample; the split does not establish causation or optimal timing.</p>
+          <p className="mt-1 text-xs">Paper account only · execute personal-account changes at your broker.</p>
         </section>
       )}
 
@@ -948,8 +942,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <section className="overflow-x-auto rounded-2xl border border-black/[0.08] bg-white p-4">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 className="text-sm font-semibold text-[#1d1d1f]">
-              {eventPaused ? 'Regular targets · FOMC adjustments take priority' : rebalanceDue ? 'Next scheduled trades' : 'Targets for the next rebalance'}
-              {!rebalanceDue && countdown !== null && (
+              Portfolio plan
+              <span className="ml-2 text-xs font-normal text-[#6e6e73]">{eventPaused ? 'FOMC takes priority' : rebalanceDue ? 'scheduled trades due' : 'not due yet'}</span>
+              {countdown !== null && (
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
                   in {countdown} trading days
                 </span>
@@ -1065,17 +1060,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             </tbody>
           </table>
           {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
-          <p className="mt-2 text-xs text-[#6e6e73]">
-            After your broker confirms a fill, click <b>record fill</b> and enter its actual shares and average price.
-            Record each fill once; partial sells leave the remaining shares held. Names run in grade order, highest first. Grades recompute each evening; the technical and value
-            inputs can update from intraday bars. The book
-            re-sorts at the next rebalance
-            {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
-              ? ` (in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days)`
-              : ' (about every 20 trading days)'}
-            , when a name that falls to C or below is dropped. Grade multipliers, volatility, caps and market conditions determine target weights.
-            The strategy models buys at the next open; your execution price may differ. No automatic price stop is active.
-          </p>
+          <p className="mt-2 text-xs text-[#6e6e73]">Record confirmed broker fills only. No automatic price stops.</p>
         </section>
       )}
 
@@ -1083,7 +1068,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
       )}
 
-      {latest && <TrackRecord curve={curve} />}
+      {latest && <details className="rounded-xl border border-black/[0.08] p-3">
+        <summary className="cursor-pointer text-sm font-medium">Performance & practice account</summary>
+        <div className="mt-3 space-y-3"><SummaryStrip latest={latest} paperLive={paperLive} curve={curve} /><TrackRecord curve={curve} /></div>
+      </details>}
 
       {latest && (
         <button
@@ -1617,16 +1605,11 @@ const EveryGrade = ({
   const briefs = latest.briefs ?? {}
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-      <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Every grade</h3>
-      <p className="mb-2 text-sm text-[#1d1d1f]">Latest stock rankings · {Object.keys(liveGrades).length} of {grades.length} have unexpired intraday updates.
-        Others use the {latest.session} evening decision. Rankings are not entry confirmations.</p>
-      <p className="mb-2 text-xs text-[#6e6e73]">
-        {TRIGGER_LEGEND} The number is the analyst&rsquo;s rating, 0 to 100: where the name ranks across the book on
-        that analyst&rsquo;s evidence, not its probability of profit. Ordered by grade, best first, then by score within the grade; each name is
-        updated from available technical and value readings. Other votes and the thesis are from the evening decision.
-      </p>
+      <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
+      <p className="mb-2 text-xs text-[#6e6e73]">{Object.keys(liveGrades).length}/{grades.length} fresh · remaining grades: {latest.session} close · grades are not entry signals.</p>
       <details className="mb-3 text-xs text-[#6e6e73]">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
+        <p className="mt-2">{TRIGGER_LEGEND} Ratings show relative rank, not probability of profit. Grade first; conviction breaks ties. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
         <p className="mt-2">Current voting rules: fundamentals, technicals, release sentiment and valuation each carry one vote;
           rotation carries half a vote. A bearish core analyst caps the grade at B. Weighted conviction breaks ties within a grade.
           Position sizes also depend on volatility, grade multipliers, concentration limits and market exposure.</p>
@@ -1674,7 +1657,7 @@ const EveryGrade = ({
                 <td className="text-[#6e6e73]">{g.side === 'ai' ? 'AI' : g.side}</td>
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
-                  <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'indicative intraday grade' : 'evening decision'}</div>
+                  <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'intraday' : 'close'}</div>
                   {liveGrades[ticker] && <div className="text-xs text-[#6e6e73]">Updated: {[
                     liveGrades[ticker].technical_now != null ? 'technical' : null,
                     liveGrades[ticker].value_now != null ? 'valuation' : null,
@@ -1682,7 +1665,7 @@ const EveryGrade = ({
                 </td>
                 <td className="text-xs text-[#6e6e73]">
                   {quote ? <><span className="font-medium text-[#1d1d1f]">{priceMoney(quote.last)}</span>
-                    <div>IEX · {marketTime(quote.bar)} interval start</div>
+                    <div title="IEX 15-minute interval start">{marketTime(quote.bar)}</div>
                     {Date.now() - Date.parse(quote.bar) >= 30 * 60 * 1000 && <div className="text-amber-800">last known bar</div>}
                   </> : 'No bar price available'}
                 </td>

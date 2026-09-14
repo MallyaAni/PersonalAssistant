@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-14 — Compact trading decisions
+
+Rankings lead the page; actual paper cash and planned cash are labelled separately.
+Removed the setup tutorial and repeated footer guidance. Renamed scheduled targets
+to Portfolio plan, retaining timing and fill controls. Research, methodology and
+performance remain accessible without occupying the main view. Missing FOMC
+decisions are explicit instead of appearing to be monitored protection.
+
+Validation: 30 browser workflows passed, TypeScript/Vite passed. Same-fixture
+visible text fell from 811 to 326 words (60%); rankings moved from 604px to 298px.
+An exposure audit found the Friday record predates the FOMC policy and no event
+cycle was recorded despite a qualifying historical replay. That execution gap
+is documented in NEXT_SESSION and is not fixed by this presentation change.
+
 ## 2026-09-14 — Intraday sizing and macro research candidate
 
 The fifteen-minute collector now archives a separate current-grade sizing
