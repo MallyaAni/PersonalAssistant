@@ -8,10 +8,14 @@ archives, grade outcomes with sample limits, and a correlation-cap research arm.
 Adopted FOMC and paper order logic are unchanged. Detailed methodology and
 limitations: `docs/research/desk-forward-evidence-2026-09-14.md`.
 
-VERIFIED: 38 dashboard browser workflows passed (1.4m); quote expiry and empty
+VERIFIED pre-deploy checkpoint `135e5d31`: 63 focused backend tests passed
+(1.81s), including HTTP preview with unchanged files; lint passed. TypeScript
+and Vite passed (existing CSS/chunk warnings). All 32 diagrams and the published
+architecture page are synchronized; changed diagram visually inspected.
+38 dashboard browser workflows passed (1.4m); quote expiry and empty
 outcomes included. The browser caught and fixed the API client's dropped
 `decisions` field. Initial focused backend run: 62 passed (1.92s), including
-split/dividend accounting. Additional HTTP read-only/context test now added.
+split/dividend accounting. The later 63-test run includes HTTP context coverage.
 UNVERIFIED: current-turn deployment and public browser acceptance still pending.
 Current provider evidence: SIP 403, IEX 200; no subscription was purchased.
 Do not call IEX execution-qualified or claim mature forward performance.

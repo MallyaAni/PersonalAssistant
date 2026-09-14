@@ -2093,7 +2093,7 @@ export interface DeskForwardEvidence {
     decision_count: number;
     corporate_actions_through?: string | null;
     pending_daily_validation?: number;
-    outcomes: {signal_count: number; decision_days: number; cost_bps_per_side: number; entry_states?: {state: string; horizon_sessions: number; observations: number; nonoverlapping_cohorts: number; mean_excess_return: number | null}[]; grades: {
+    outcomes: {signal_count: number; decision_days: number; cost_bps_per_side: number; missing_or_immature?: Record<string, number>; entry_states?: {state: string; horizon_sessions: number; observations: number; nonoverlapping_cohorts: number; mean_excess_return: number | null}[]; grades: {
       grade: string; horizon_sessions: number; observations: number; nonoverlapping_cohorts: number;
       mean_excess_return: number | null; approximate_95_interval: [number, number] | null;
     }[]}[];

@@ -1611,8 +1611,9 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now}: {
     <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
       <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
       <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
-      <div>{row.quote.at ? marketTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
-      {row.valid_until && <div>Expires {marketTime(row.valid_until)}</div>}
+      <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
+      <div>{row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</div>
+      {row.valid_until && <div>Expires {executionTime(row.valid_until)}</div>}
     </details>
   </div>
 }

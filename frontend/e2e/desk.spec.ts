@@ -27,6 +27,7 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
   await cell.getByText('Position & quote').click()
   await expect(cell).toContainText('SIP')
   await expect(cell).toContainText('10.0 pp')
+  await expect(cell).toContainText('10:00:30 AM')
   await page.clock.fastForward(31_000)
   await expect(cell).toContainText('Wait')
   await expect(cell).not.toContainText('Buy eligible')
@@ -40,7 +41,7 @@ test('forward evidence distinguishes unobserved outcomes from zero performance',
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest, sessions: [latest.session], forward_evidence: {status: 'collecting_forward_evidence', versions: [{
       version: 'candidate/2', decision_count: 10, pending_daily_validation: 10, corporate_actions_through: '2026-09-08',
-      outcomes: [{signal_count: 0, decision_days: 0, cost_bps_per_side: 10, grades: []}],
+      outcomes: [{signal_count: 0, decision_days: 0, cost_bps_per_side: 10, missing_or_immature: {'5': 12}, grades: []}],
       portfolios: [{cost_bps: 10, fill_intervals: 0, status: 'insufficient_forward_data', arms: {}}],
     }]},
   }}))
@@ -49,6 +50,7 @@ test('forward evidence distinguishes unobserved outcomes from zero performance',
   const evidence = page.locator('details', {has: page.getByText('Forward evidence · research', {exact: true})})
   await expect(evidence).toContainText('10 decisions awaiting validation')
   await expect(evidence).toContainText('No matured 5/20-session grade outcomes yet')
+  await expect(evidence).toContainText('12 at 5 sessions')
   await expect(evidence).not.toContainText('0.00%')
 })
 

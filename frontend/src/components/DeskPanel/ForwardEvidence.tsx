@@ -14,15 +14,16 @@ export const ForwardEvidence = ({evidence}: {evidence?: DeskForwardEvidence}) =>
     {evidence?.versions?.map(version => <div key={version.version} className="mt-3">
       <p>{version.version} · {version.decision_count} recorded decisions · {version.outcomes[0]?.decision_days ?? 0} validated days</p>
       {version.corporate_actions_through && <p>Daily validation through {version.corporate_actions_through} · {version.pending_daily_validation ?? 0} decisions awaiting validation</p>}
-      <p className="mt-1">First daily signal only. Approximate 95% intervals require 20 non-overlapping date cohorts. No interval means insufficient independent evidence.</p>
+      <p className="mt-1">First daily signal only. Means use non-overlapping date cohorts; approximate 95% intervals require 20 cohorts. No interval means insufficient evidence for that estimate.</p>
       {version.outcomes.map(outcome => <div key={outcome.cost_bps_per_side} className="mt-2 overflow-x-auto">
         <p>{outcome.cost_bps_per_side} bp per side · {outcome.signal_count} stock observations tracked</p>
+        {!!Object.keys(outcome.missing_or_immature ?? {}).length && <p>Missing or immature: {Object.entries(outcome.missing_or_immature ?? {}).map(([horizon, count]) => `${count} at ${horizon} sessions`).join(' · ')}</p>}
         {!outcome.grades.length ? <p>No matured 5/20-session grade outcomes yet.</p> : <table className="mt-1 w-full text-left [&_td]:pr-3 [&_th]:pr-3">
-          <thead><tr><th>Grade</th><th>Sessions</th><th>Observations</th><th>Non-overlapping cohorts</th><th>Mean vs SPY</th><th>Approx. 95% interval</th></tr></thead>
+          <thead><tr><th>Grade</th><th>Sessions</th><th>Observations</th><th>Non-overlapping cohorts</th><th>Cohort mean vs SPY</th><th>Approx. 95% interval</th></tr></thead>
           <tbody>{outcome.grades.map(row => <tr key={`${row.grade}-${row.horizon_sessions}`}><td>{row.grade}</td><td>{row.horizon_sessions}</td><td>{row.observations}</td><td>{row.nonoverlapping_cohorts}</td><td>{percent(row.mean_excess_return)}</td><td>{row.approximate_95_interval ? row.approximate_95_interval.map(percent).join(' to ') : 'Insufficient evidence'}</td></tr>)}</tbody>
         </table>}
         {!!outcome.entry_states?.length && <table className="mt-2 w-full text-left [&_td]:pr-3 [&_th]:pr-3">
-          <thead><tr><th>Entry state</th><th>Sessions</th><th>Observations</th><th>Mean vs SPY</th></tr></thead>
+          <thead><tr><th>Entry state</th><th>Sessions</th><th>Observations</th><th>Cohort mean vs SPY</th></tr></thead>
           <tbody>{outcome.entry_states.map(row => <tr key={`${row.state}-${row.horizon_sessions}`}><td>{row.state}</td><td>{row.horizon_sessions}</td><td>{row.observations}</td><td>{percent(row.mean_excess_return)}</td></tr>)}</tbody>
         </table>}
       </div>)}
