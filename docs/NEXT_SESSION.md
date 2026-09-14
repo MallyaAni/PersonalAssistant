@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-09-14 — cash preview and economic evidence
+
+Started clean on main `04c4a0af`, pulled origin main (already current).
+Cash preview checkpoint `5d814fa0` is pushed: shared budget, whole-share floors,
+existing holdings deducted, no projected sale proceeds or paper cash, explicit
+confirmation after context changes. It previews evening targets, not intraday
+allocation. New economic context collects five public inflation indexes and uses
+the agent-owned economist prompt for a research-only DeepSeek classification.
+It archives collection-time evidence; release timestamps/consensus are unknown.
+
+VERIFIED before deployment: 35 backend funding/economics/API tests (1.12s),
+28 dashboard browser tests (45.7s), 3 real DeepSeek economist tests (6.71s),
+TypeScript, Vite build and Ruff. Real collection and disk readback under
+`/tmp/desk-economic-acceptance` on Spark: five series, content hash
+`84b838230e3a9f38988155fbcb259edf3ce9996a898274b09c37daf4f685577b`,
+observed `2026-09-14T12:28:26.921414+00:00`, model `deepseek-v4-flash`.
+Initial model tests exposed unsupported `uniqueItems` grammar (HTTP 400);
+deduplication now happens in code. Browser reload fixture required clearing its
+nonexistent saved conversation identity; desk storage remains intact in the test.
+
+UNVERIFIED: deployment of these new changes, improvements in returns, economic
+allocation policy, dynamic intraday share targets and executable quotes. The
+economic assessment intentionally has no effect on sizes or orders. Continue
+with the funded comparison in `docs/research/retail-decision-workflow.md` before
+promoting a new trading policy. No real brokerage orders were placed.
+
 Verified state as of 2026-09-14. `deep-matter.com` serves from spark1.
 Verification labels distinguish observed behavior, source findings and remaining work.
 

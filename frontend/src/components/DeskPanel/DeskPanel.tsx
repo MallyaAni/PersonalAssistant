@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 import { FundingPreview } from './FundingPreview'
+import { EconomicContext } from './EconomicContext'
 import {
   getDesk,
   getDeskEarnings,
@@ -889,6 +890,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       )}
 
       {latest && <RegimeBanner regime={latest.regime} />}
+
+      {latest && <EconomicContext data={payload.economics} />}
 
       {latest && (
         <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes}

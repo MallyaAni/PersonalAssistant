@@ -2065,6 +2065,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
+  economics?: DeskEconomics | null;
   event_policy?: { enabled: boolean; version: string; evaluation_since: string };
   latest: DeskRecord | null;
   summary?: { session: string; counts: Record<string, number>; gross: number; names: string[]; flags: string[] };
@@ -2079,6 +2080,14 @@ export interface DeskPayload {
   sessions: string[];
   // The record's track-record curve, for convenience at the top level.
   curve?: DeskCurve;
+}
+
+export interface DeskEconomics {
+  observed_at: string;
+  collection_stale: boolean;
+  model?: string;
+  assessment?: { pressure: 'easing' | 'building' | 'mixed' | 'unknown'; evidence_ids: string[]; status: string } | null;
+  facts: { id: string; label: string; status: string; period?: string; source?: string; month_change_pct?: number | null; year_change_pct?: number | null; previous_year_change_pct?: number | null }[];
 }
 
 // The trading desk's latest record and what changed since the one before.

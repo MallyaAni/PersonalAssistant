@@ -29,6 +29,7 @@ from backend.market import (
     alpaca_trading,
     desk_freshness,
     deskrecord,
+    economics,
     funding,
     holdings,
     language,
@@ -111,6 +112,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     return {
         "user_id": user_id,
         "latest": latest,
+        "economics": economics.load(_root()),
         "event_policy": {
             "enabled": True,
             "version": event_risk.VERSION,

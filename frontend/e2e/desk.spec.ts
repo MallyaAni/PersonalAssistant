@@ -427,6 +427,29 @@ test.beforeEach(async ({ page }) => {
 // practice account, the rules against the market, the exposure, and the
 // warnings — not the analysts' tables.
 // Confirm cash explicitly and discard the preview whenever the budget changes.
+test('separates dated inflation facts from research-only model judgement', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: deskRecord(), sessions: ['2026-09-08'],
+    economics: {
+      observed_at: new Date().toISOString(), collection_stale: false, model: 'deepseek-v4-flash',
+      assessment: {pressure: 'mixed', evidence_ids: ['CPIAUCSL'], status: 'model_assessment'},
+      facts: [{id: 'CPIAUCSL', label: 'CPI', status: 'available', period: '2026-08-01', source: 'https://fred.stlouisfed.org/series/CPIAUCSL', month_change_pct: .23, year_change_pct: 3.45, previous_year_change_pct: null}],
+    },
+  }}))
+  await page.goto('/#desk')
+  const context = page.getByLabel('Economic context')
+  await expect(context).toContainText('2026-08')
+  await expect(context).toContainText('0.23%')
+  await expect(context).toContainText('3.45%')
+  await expect(context).toContainText('Unavailable')
+  await expect(context).toContainText('mixed inflation pressure')
+  await expect(context).toContainText('does not change grades, exposure or orders')
+  await expect(context.getByRole('link', {name: 'CPI', exact: true})).toHaveAttribute('href', 'https://fred.stlouisfed.org/series/CPIAUCSL')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Confirm cash explicitly and discard the preview whenever the budget changes.
 test('previews one confirmed cash budget and clears changed inputs', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/api/v1/conversations/ani.mallya/*', route => route.fulfill({json: {messages: []}}))

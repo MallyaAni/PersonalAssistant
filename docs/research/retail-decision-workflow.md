@@ -9,8 +9,17 @@ together, floors whole shares, subtracts existing holdings, and excludes
 unexecuted sale proceeds and FOMC-paused additions. Cash stays in page memory;
 holdings/equity/context changes and reload require reconfirmation. The preview
 expires after fifteen minutes and labels last-known reference prices. It is not
-dynamic intraday allocation or an executable-price recommendation. CPI/PPI/PCE
-ingestion, DeepSeek economic interpretation and the new-policy evaluation below
+dynamic intraday allocation or an executable-price recommendation.
+
+The economic context now collects headline/core CPI, final-demand PPI and
+headline/core PCE from FRED CSV downloads, on current nightly refreshes or through
+`python -m backend.cli.market_economics`. It archives collection-time vintages,
+calculates changes from exact matching calendar months, and displays collection
+and observation ages separately. Publication timestamps and archived consensus
+remain unavailable. Revised histories must not be backfilled into prior decisions.
+DeepSeek classifies supplied inflation pressure with evidence IDs under an
+agent-owned prompt; its assessment does not change grades, exposure or orders.
+New-policy evaluation, dynamic intraday targets and executable quote evidence
 remain unfinished.
 
 ## Objective

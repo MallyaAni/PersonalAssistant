@@ -209,6 +209,15 @@ model, and is not deliberately logged or retained. Reloading or changing the
 holdings/account-size context clears the browser value. Existing infrastructure
 request-body logging must remain disabled for this endpoint.
 
+Economic context stores public FRED index observations, retrieval timestamps,
+content hashes and bounded model classifications under `data/market/desk/economics/`.
+Each collection is archived before replacing `latest.json`; no automatic archive
+expiry is configured. The desk-protected API reads the latest facts, without the
+full historical series. Only public economic facts reach the configured main
+DeepSeek model; holdings and cash do not. An operator can remove these files and
+their backups under the existing backup retention policy. This removes the
+forward-observation evidence needed for subsequent research; it changes no orders.
+
 The trading desk's execution evidence is stored with its existing paper state
 in `data/market/paper/state.json` and in dated desk records. It adds decision
 time/reference price and allowlisted broker creation, submission, completion,

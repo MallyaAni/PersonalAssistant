@@ -1120,6 +1120,12 @@ def main() -> None:
         print("the existing record is kept; nothing was changed")
         return
     print(f"\nrecord written: {path}")
+    # Current collection stays outside historical decisions and portfolio sizing.
+    from backend.cli import market_economics
+
+    market_economics.refresh_if_current(
+        Path(store.root), args.refresh and args.asof is None
+    )
     written = write_history(store, report)
     if written:
         print(f"history: {written} names written")
