@@ -254,6 +254,8 @@ test.beforeEach(async ({ page }) => {
     body: JSON.stringify({
       // MSFT is C at the close but its live read lifts it to B: the full
       // list must show the live grade and order it above nothing lower.
+      session: '2026-09-08',
+      grade_valid_until: Object.fromEntries(['MSFT', 'AAPL', 'NVDA'].map(ticker => [ticker, new Date(Date.now() + 15 * 60 * 1000).toISOString()])),
       grades_live: {
         MSFT: { grade_live: 'B', score_live: 0.5, technical_now: 0.85, technical_close: 0.5,
           stances_live: { fundamental: -1, technical: 1, sentiment: 0, value: 1, rotation: 0 },
@@ -438,11 +440,11 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // one "Today" cell rather than being shown twice, once as a percent in the
   // account cell and once as dollars in their own cell.
   await expect(glance.getByText('4.2%', { exact: false })).toBeVisible()
-  await expect(glance.getByText('Today', { exact: true })).toBeVisible()
+  await expect(glance.getByText('Broker day P/L', { exact: true })).toBeVisible()
   await expect(glance.getByText(/\+\$31[23]/)).toBeVisible()
   await expect(glance.getByText(/\+0\.3%/)).toBeVisible()
-  await expect(glance.getByText('Backtest of the rules')).toBeVisible()
-  await expect(glance.getByText('not a live record', { exact: false })).toBeVisible()
+  await expect(glance.getByText('Stored simulation · under review')).toBeVisible()
+  await expect(glance.getByText('borrowing without financing costs', { exact: false })).toBeVisible()
   await expect(glance.getByText('vs SPY', { exact: false })).toBeVisible()
   await expect(glance.getByText('6% invested')).toBeVisible()  // 6,120 of 104,200 live
 
@@ -469,6 +471,10 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // The board is not due a rebalance for 18 sessions, so it says "targets
   // for the next rebalance" rather than teaching a daily trading cadence.
   await expect(page.getByText('Targets for the next rebalance')).toBeVisible()
+  await expect(page.getByLabel('Reading the current picks')).toContainText('not a probability of profit')
+  await expect(page.getByRole('columnheader', {name: 'Target move', exact: true})).toBeVisible()
+  await expect(page.getByText('not scheduled yet', {exact: true}).first()).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'broker mark', exact: true})).toBeVisible()
   await expect(page.getByText('in 18 trading days', { exact: true })).toBeVisible()
   // No trade is scheduled before the rebalance, so no row carries a "done"
   // button: the targets read as targets, not as instructions to buy now.
@@ -531,7 +537,7 @@ test('drills into a name’s own history', async ({ page }) => {
   await expect(dialog.getByText('41 of 60')).toBeVisible()
   await expect(dialog.getByText('Position changes')).toBeVisible()
   // The desk's whole evidence, read out loud by the model.
-  await expect(dialog.getByText('What the desk read')).toBeVisible()
+  await expect(dialog.getByRole('heading', {name: 'Evening analysis · 2026-09-08'})).toBeVisible()
   await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).toBeVisible()
   // The live technical read is the model's plain words over the live tape.
   await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()
@@ -623,7 +629,7 @@ test('drills into a covered name outside the book and sees its live horizons', a
   await expect(dialog.getByText('expensive and the trend is quiet')).toBeVisible()
   // The drill-down shows the same live grade as the list: MSFT is B at the
   // candle even though the evening record says C.
-  await expect(dialog.getByText('B', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('Bindicative intraday grade', { exact: true })).toBeVisible()
   await expect(dialog.getByText('Technical read')).toBeVisible()
   await expect(dialog.getByText('Daily chart', { exact: true })).toBeVisible()
   await expect(dialog.getByText('Weekly chart', { exact: true })).toBeVisible()
@@ -915,6 +921,48 @@ test('analyzes the person’s own trading from their documents', async ({ page }
   await expect(page.getByText('sizing by grade')).toBeVisible()
   await expect(page.getByText('Read from 3 passages')).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A grade must expire while the page is open, even if a cached endpoint repeats it.
+test('an intraday grade expires without requiring a page reload', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      session: '2026-09-08', rows: [],
+      grade_valid_until: {MSFT: '2026-09-09T14:01:00Z'},
+      grades_live: {MSFT: {grade_live: 'B', score_live: 0.5}},
+    }),
+  }))
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'Show the details: practice account and every grade'}).click()
+  const grades = page.locator('section', {has: page.getByRole('heading', {name: 'Every grade', exact: true})})
+  const msft = grades.locator('tbody tr').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
+  await expect(msft.locator('td').nth(2)).toContainText('B')
+  await page.clock.fastForward('01:01')
+  await expect(msft.locator('td').nth(2)).toContainText('C')
+  await expect(msft).not.toContainText('indicative intraday grade')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Actual receipts must expose dated evidence and keep legacy missing fields unknown.
+// A later decision must not inherit either targets or grades from an older snapshot.
+test('a mismatched decision cannot display the previous intraday targets or grades', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      session: '2026-09-07', rows: [],
+      grade_valid_until: {MSFT: new Date(Date.now() + 900000).toISOString()},
+      grades_live: {MSFT: {grade_live: 'A+', score_live: 1}},
+    }),
+  }))
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'Show the details: practice account and every grade'}).click()
+  const grades = page.locator('section', {has: page.getByRole('heading', {name: 'Every grade', exact: true})})
+  const msft = grades.locator('tbody tr').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
+  await expect(msft.locator('td').nth(2)).toContainText('C')
+  await expect(msft).not.toContainText('indicative intraday grade')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
 // Actual receipts must expose dated evidence and keep legacy missing fields unknown.

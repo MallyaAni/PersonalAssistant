@@ -434,6 +434,9 @@ async def desk_mine(
             "user_id": user_id,
             "session": latest.get("session"),
             "as_of": snap.get("as_of"),
+            "grade_valid_until": desk_freshness.grade_expiries(
+                snap, set(technical) | set(value)
+            ),
             "rows": holdings.board(
                 latest,
                 rows,
@@ -487,6 +490,9 @@ async def desk_mine(
         "as_of": as_of,
         "rows": holdings.board(latest, rows, equity, quotes, technical, value),
         "grades_live": holdings.live_grades(latest, technical, value),
+        "grade_valid_until": desk_freshness.grade_expiries(
+            {"as_of": as_of, "quotes": quotes}, set(technical) | set(value)
+        ),
     }
 
 

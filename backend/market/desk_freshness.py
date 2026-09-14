@@ -1,11 +1,27 @@
 """Date the market evidence separately from when a process wrote a snapshot."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 NEW_YORK = ZoneInfo("America/New_York")
 SNAPSHOT_SECONDS = 900
 BAR_SECONDS = 1800
+
+
+# Give the browser the same per-stock evidence deadline enforced by the API.
+def grade_expiries(snapshot: dict, symbols) -> dict[str, str]:
+    written = timestamp(snapshot.get("as_of"))
+    if written is None:
+        return {}
+    result = {}
+    for symbol in symbols:
+        bar = timestamp((snapshot.get("quotes", {}).get(symbol) or {}).get("bar"))
+        if bar is not None:
+            result[symbol] = min(
+                written + timedelta(seconds=SNAPSHOT_SECONDS),
+                bar + timedelta(seconds=BAR_SECONDS),
+            ).isoformat()
+    return result
 
 
 # Accept only timezone-aware timestamps that can be compared unambiguously.
@@ -28,7 +44,7 @@ def quote_status(quote: dict, now: datetime) -> dict:
         and local.weekday() < 5
         and 570 <= local.hour * 60 + local.minute < 960
         and age is not None
-        and 0 <= age <= BAR_SECONDS
+        and SNAPSHOT_SECONDS <= age < BAR_SECONDS
     )
     return {
         "data_at": bar.isoformat() if bar else None,
@@ -55,7 +71,7 @@ def describe(snapshot: dict, now: datetime | None = None) -> dict:
         "stale": not quotes
         or bool(stale)
         or age is None
-        or not 0 <= age <= SNAPSHOT_SECONDS,
+        or not 0 <= age < SNAPSHOT_SECONDS,
     }
 
 
@@ -71,7 +87,7 @@ def grade_inputs(
         not session
         or snapshot.get("decision_session") != session
         or written is None
-        or not 0 <= (now - written).total_seconds() <= SNAPSHOT_SECONDS
+        or not 0 <= (now - written).total_seconds() < SNAPSHOT_SECONDS
     ):
         return {}, {}
     eligible = {

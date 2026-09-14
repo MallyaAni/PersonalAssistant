@@ -27,6 +27,7 @@ def snapshot():
         None,
         "2026-09-10T13:45:00+00:00",
         "2026-09-11T14:15:00+00:00",
+        "2026-09-11T13:55:00+00:00",
         "2026-09-11T12:00:00+00:00",
     ],
 )
@@ -54,6 +55,18 @@ def test_grade_inputs_are_filtered_per_stock():
     technical, value = desk_freshness.grade_inputs(snap, {"session": "2026-09-10"}, NOW)
     assert set(technical) == {"AAA"}
     assert set(value) == {"AAA"}
+
+
+# Browser deadlines expire on the first stale dependency, not the newest one.
+def test_browser_deadline_respects_the_earlier_quote_or_snapshot_expiry():
+    snap = snapshot()
+    snap["quotes"]["OLDER"] = {"bar": "2026-09-11T13:35:00+00:00"}
+    dates = desk_freshness.grade_expiries(snap, ["AAA", "OLDER", "MISSING"])
+    assert dates == {
+        "AAA": "2026-09-11T14:15:00+00:00",
+        "OLDER": "2026-09-11T14:05:00+00:00",
+    }
+    assert desk_freshness.grade_expiries({}, ["AAA"]) == {}
 
 
 # The displayed votes and ranks must be the ones that produced the grade.

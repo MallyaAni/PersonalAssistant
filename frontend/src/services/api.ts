@@ -2239,18 +2239,21 @@ export interface DeskLiveGrade {
 }
 
 export interface DeskMine {
+  session?: string | null;
+  grade_valid_until?: Record<string, string>;
   rows: DeskMineRow[];
   // Every graded name with a live read this candle, not only the board's.
   grades_live: Record<string, DeskLiveGrade>;
 }
 
+// Preserve the evidence deadlines so an open page can expire an intraday grade.
 export const getDeskMine = async (userId: string, equity: number): Promise<DeskMine> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/mine?equity=${encodeURIComponent(equity)}`,
   );
   if (!response.ok) return { rows: [], grades_live: {} };
   const data = (await response.json()) as Partial<DeskMine>;
-  return { rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
+  return { session: data.session, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
 };
 
 // The balancer's persisted intraday plan (recomputed every fifteen minutes),

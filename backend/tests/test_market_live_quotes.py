@@ -18,19 +18,40 @@ def _bar(start: str, o: float, h: float, lo: float, c: float):
     )
 
 
+# Completed bars determine the displayed price and observed session range.
 def test_bars_fold_into_last_high_and_low():
     bars = [
         _bar("2026-09-08T13:30", 44.0, 45.0, 43.5, 44.5),
         _bar("2026-09-08T13:45", 44.5, 46.0, 44.0, 45.8),
     ]
     q = live_quotes.quote_from_bars(
-        "IREN", bars, datetime(2026, 9, 8, 13, 50, tzinfo=UTC)
+        "IREN", bars, datetime(2026, 9, 8, 14, 0, tzinfo=UTC)
     )
     assert q is not None
     assert (q.last, q.high, q.low) == (45.8, 46.0, 43.5)
     assert q.open == 44.0  # the session's first bar's open
     assert q.bar.startswith("2026-09-08T13:45")
     assert live_quotes.quote_from_bars("IREN", [], datetime.now(UTC)) is None
+
+
+# A forming or future candle must not influence the displayed price or range.
+def test_unfinished_candles_are_excluded_until_the_interval_closes():
+    bars = [
+        _bar("2026-09-08T13:30", 44.0, 45.0, 43.5, 44.5),
+        _bar("2026-09-08T13:45", 44.5, 46.0, 44.0, 45.8),
+        _bar("2026-09-08T14:00", 45.8, 99.0, 1.0, 98.0),
+    ]
+    assert (
+        live_quotes.quote_from_bars(
+            "IREN", bars, datetime(2026, 9, 8, 13, 44, tzinfo=UTC)
+        )
+        is None
+    )
+    quote = live_quotes.quote_from_bars(
+        "IREN", bars, datetime(2026, 9, 8, 13, 50, tzinfo=UTC)
+    )
+    assert quote is not None
+    assert (quote.last, quote.high, quote.low) == (44.5, 45.0, 43.5)
 
 
 def test_memory_holds_for_a_candle_and_errors_cost_one_name():

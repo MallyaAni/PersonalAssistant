@@ -3,6 +3,36 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — dashboard evidence and expiry audit
+
+Started clean on `main` at `f82b5e4b`; origin was already current. Objective:
+make displayed grades, prices, allocation instructions and performance labels
+match their dated evidence before further timing research. Acceptance includes
+expiry on an open page, completed bars only, correct decision association,
+explicit target/fill distinction, browser interactions and deployed checks.
+
+FAILED then fixed: an intraday grade stayed current indefinitely in an open
+page; a forming/future candle could set the displayed price and grade. The API
+now publishes per-stock expiry deadlines, the client preserves them and returns
+to the evening grade at expiry, and both quote ingestion and grade eligibility
+exclude unfinished bars. The board re-sorts when grades expire.
+
+VERIFIED locally: 21 browser cases passed in 1.3 minutes (fixtures; includes
+expiry, decision mismatch, fill persistence, details, earnings and FOMC);
+480 market/trading tests passed, 8 skipped, 1 expected funding failure in 5.14s.
+TypeScript, Vite production build and Ruff passed. Cron inspected on the EDT
+host: intraday `*/15 9-16 * * 1-5`, evening `30 19 * * 1-5`. A scheduled run is
+not a guarantee of fresh evidence. The browser now polls every minute.
+
+Wording distinguishes session from publication, target move from entry/fill,
+IEX bars from broker marks, and broker day P/L from calendar-day returns.
+Initial grade sizing multipliers no longer claim to be final allocations.
+Legacy simulation figures explicitly disclose unmodeled borrowing, and dated
+model commentary is not presented as verified current trade instruction.
+UNVERIFIED until deployment below: these changes on the public dashboard.
+Forecast accuracy, best-possible grades and improved future returns remain
+UNVERIFIED. Cash-constrained simulation is the next approved atomic fix.
+
 ## 2026-09-13 — durable execution timing and honest receipt display
 
 Started clean on `main` at `4490ee0a`, pulled/rebased origin (already current).

@@ -40,6 +40,14 @@ interface DeskPanelProps {
 // a session, so that is plenty. Prices follow the fifteen-minute candle.
 const REFRESH_MS = 5 * 60 * 1000
 const CANDLE_MS = 15 * 60 * 1000
+const POLL_MS = 60 * 1000
+
+// Revert an expired intraday opinion to the recorded evening evidence.
+const eveningRow = (row: DeskMineRow): DeskMineRow => ({
+  ...row, grade_live: row.grade, grade_source: 'evening', stances_live: row.stances,
+  ranks_live: row.ranks, score_live: null, grade_margin_live: null,
+  technical_now: null, technical_close: null, value_now: null, value_close: null,
+})
 
 // Show the date and exchange timezone so an old candle cannot look current.
 const marketTime = (value: string | null | undefined) => {
@@ -233,7 +241,6 @@ const SummaryStrip = ({
     investedUsd !== null && paperLive?.equity
       ? investedUsd / paperLive.equity
       : null
-  const exposure = latest.regime.exposure ?? 1
   const cells = [
     {
       label: 'Practice account',
@@ -253,13 +260,13 @@ const SummaryStrip = ({
       note: 'simulated funds, no real-money orders \u00b7 the move since it started',
     },
     {
-      label: 'Today',
+      label: 'Broker day P/L',
       value:
         dayPl !== undefined ? (
           <>
             <TrendUsd value={dayPl} />
             {dayPct !== undefined && (
-              <span className="ml-2 text-xs font-normal text-[#6e6e73]" title="today's move as a percentage">
+              <span className="ml-2 text-xs font-normal text-[#6e6e73]" title="change from the broker's prior closing equity">
                 (<Trend value={dayPct * 100} />)
               </span>
             )}
@@ -267,19 +274,19 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note: 'the practice account\u2019s move today',
+      note: 'change from the broker’s prior closing equity; not a calendar-day return',
     },
     // The forward track has no numbers until it has a run of sessions, so
     // the cell is not shown empty: a "—" with a cryptic note reads as broken.
     ...(rulesTotal !== null
       ? [
           {
-            label: 'Backtest of the rules',
+            label: 'Stored simulation · under review',
             value: (
               <>
                 <Trend value={rulesTotal * 100} />
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  vs SPY <Trend value={(spyTotal ?? 0) * 100} />
+                  {spyTotal !== null && <>vs SPY <Trend value={spyTotal * 100} /></>}
                   {qqqTotal !== null && (
                     <>
                       {' '}
@@ -291,8 +298,8 @@ const SummaryStrip = ({
             ),
             note:
               stats && stats.drawdown !== null
-                ? `the rules replayed over past years, not a live record · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
-                : 'the rules replayed over past years, not a live record',
+                ? `legacy simulation permits borrowing without financing costs · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
+                : 'legacy simulation permits borrowing without financing costs; not evidence for current cash-only returns',
           },
         ]
       : []),
@@ -304,10 +311,7 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note:
-        exposure < 1 && liveInvested !== null
-          ? 'sized down because of the warnings below'
-          : 'share of the practice account in positions',
+      note: 'share of the practice account in positions',
     },
   ]
   return (
@@ -424,14 +428,14 @@ const CurveChart = ({
   }
   const series: { label: string; color: string; values: number[] }[] = []
   if (backtest) {
-    series.push({ label: 'the rules', color: '#1e7a3a', values: align(btDates, backtest.rules) })
+    series.push({ label: 'stored simulation', color: '#1e7a3a', values: align(btDates, backtest.rules) })
     series.push({ label: 'SPY', color: '#9ca3af', values: align(btDates, backtest.spy) })
     if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: align(btDates, backtest.qqq) })
   }
   if (paper && paper.equity.length > 1) {
     const base = paper.equity[0] || 1
     series.push({
-      label: 'practice account (live)',
+      label: 'practice account (recorded equity)',
       color: '#d97706',
       values: align(paperDates, paper.equity.map((e) => e / base - 1)),
     })
@@ -558,10 +562,10 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
     )
   }
   const cells = [
-    { label: 'CAGR', value: stats.cagr !== null ? `${(stats.cagr * 100).toFixed(1)}%` : '—' },
-    { label: 'Volatility', value: stats.volatility !== null ? `${(stats.volatility * 100).toFixed(0)}%` : '—' },
-    { label: 'Worst drawdown', value: stats.drawdown !== null ? `${(stats.drawdown * 100).toFixed(0)}%` : '—' },
-    { label: 'Total return', value: stats.total !== null ? `${(stats.total * 100).toFixed(0)}%` : '—' },
+    { label: 'CAGR', value: stats.cagr != null ? `${(stats.cagr * 100).toFixed(1)}%` : '—' },
+    { label: 'Volatility', value: stats.volatility != null ? `${(stats.volatility * 100).toFixed(0)}%` : '—' },
+    { label: 'Worst drawdown', value: stats.drawdown != null ? `${(stats.drawdown * 100).toFixed(0)}%` : '—' },
+    { label: 'Total return', value: stats.total != null ? `${(stats.total * 100).toFixed(0)}%` : '—' },
   ]
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
@@ -571,6 +575,8 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
           {backtest.label} · as of {shortDate(backtest.asof)} · the practice account is the only live sample
         </p>
       </div>
+      <p className="mb-3 text-xs text-amber-800">Legacy simulation under review: borrowing was permitted without financing costs.
+        These results do not establish the performance of a cash-only account or the current FOMC policy.</p>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {cells.map((c) => (
           <div key={c.label} className="rounded-xl bg-[#f5f5f7] px-3 py-2">
@@ -598,8 +604,8 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
     <ol className="list-decimal space-y-1.5 pl-5">
       <li>
         <b>After each trading session</b> the desk updates the grades and targets for about ninety AI and software stocks. Trades
-        follow the rebalance schedule (about every four weeks); A+ names are sized at full weight, A names at three
-        quarters and eligible B names at half. A daily update is a target, not an order at the next open.
+        follow the rebalance schedule (about every four weeks). Initial grade multipliers are A+ 1, A 0.75 and eligible B 0.5;
+        volatility, caps and market conditions also determine final weights. A daily target is not an order.
       </li>
       <li>
         <b>Enter your positions</b> (type or paste from Schwab) and set your account size. The board then says, name
@@ -613,10 +619,11 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       </li>
       <li>
         <b>Selling:</b> at a rebalance a name is dropped when its grade falls to C or below. The footer shows the
-        countdown to the next check. Stops are off in the current strategy; tested variants reduced performance.
+        countdown to the next check. No automatic price stop is active; displayed hypothetical stops are references only.
       </li>
       <li>
-        <b>Prices</b> come from the latest available 15-minute bars. Gains are measured from what you paid.
+        <b>Prices</b> on the target board come from available IEX 15-minute bars, with an evening-close fallback.
+        They are not executable bid/ask quotes. Practice positions use separate broker marks.
       </li>
       <li>
         <b>Why:</b> click a name or its reason to read the desk’s case for it, and what would change its mind.
@@ -675,8 +682,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [holdings, setHoldings] = useState<DeskHolding[]>([])
   const [holdingsReady, setHoldingsReady] = useState(false)
   const [holdingsError, setHoldingsError] = useState('')
-  const [rows, setRows] = useState<DeskMineRow[]>([])
-  const [liveGrades, setLiveGrades] = useState<Record<string, DeskLiveGrade>>({})
+  const [storedRows, setRows] = useState<DeskMineRow[]>([])
+  const [storedGrades, setLiveGrades] = useState<Record<string, DeskLiveGrade>>({})
+  const [gradeContext, setGradeContext] = useState<{session?: string | null; until: Record<string, string>}>({until: {}})
+  const [now, setNow] = useState(Date.now)
   const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
   const [equity, setEquity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
   const [stops, setStops] = useState(() => readStored(STOPS_KEY) === 'on')
@@ -717,6 +726,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // and the Refresh button, so a manual refresh re-reads the live layer
   // too rather than only the evening payload.
   const poll = async () => {
+    setNow(Date.now())
     try {
       setLive(await getDeskLive(userId))
     } catch {
@@ -726,6 +736,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       const mine = await getDeskMine(userId, equity)
       setRows(mine.rows)
       setLiveGrades(mine.grades_live)
+      setGradeContext({session: mine.session, until: mine.grade_valid_until ?? {}})
     } catch {
       setLiveGrades({})
       setRows((previous) => previous.map((row) => ({
@@ -772,10 +783,23 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   useEffect(() => {
     void poll()
-    const timer = window.setInterval(() => void poll(), CANDLE_MS)
-    return () => window.clearInterval(timer)
+    const timer = window.setInterval(() => void poll(), POLL_MS)
+    // Recheck immediately when a background tab returns to the foreground.
+    const resume = () => { if (!document.hidden) void poll() }
+    document.addEventListener('visibilitychange', resume)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', resume)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, equity, holdings])
+  }, [userId, equity, holdings, payload?.latest?.session])
+
+  useEffect(() => {
+    const deadlines = Object.values(gradeContext.until).map(Date.parse).filter(value => value > now)
+    if (!deadlines.length) return
+    const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
+    return () => window.clearTimeout(timer)
+  }, [gradeContext, now])
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
@@ -788,6 +812,16 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   }
 
   const { latest } = payload
+  // A grade needs both the current decision and an unexpired evidence deadline.
+  const gradeCurrent = (ticker: string) => gradeContext.session === latest?.session
+    && Date.parse(gradeContext.until[ticker] ?? '') > now
+  const liveGrades = Object.fromEntries(Object.entries(storedGrades).filter(([ticker]) => gradeCurrent(ticker)))
+  const rows = gradeContext.session && gradeContext.session !== latest?.session ? []
+    : storedRows.map(row => gradeCurrent(row.ticker) ? row : eveningRow(row)).sort((a, b) =>
+      Number(b.in_book) - Number(a.in_book)
+      || (GRADE_ORDER[b.grade_live] ?? -1) - (GRADE_ORDER[a.grade_live] ?? -1)
+      || (b.score_live ?? latest?.grades[b.ticker]?.score ?? -1e9) - (a.score_live ?? latest?.grades[a.ticker]?.score ?? -1e9)
+      || a.ticker.localeCompare(b.ticker))
   const curve = payload.curve ?? latest?.curve
   const warnings = latest?.regime.flags ?? []
   // Whether the paper book's next session is a rebalance: only then are the
@@ -824,7 +858,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} />}
           <p className="text-sm text-[#6e6e73]">
-            {latest ? `Decision from the close of ${latest.session}` : 'No decision on file yet'}
+            {latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
           </p>
         </div>
         <button
@@ -848,6 +882,18 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       )}
 
       {latest && <RegimeBanner regime={latest.regime} />}
+
+      {latest && (
+        <section aria-label="Reading the current picks" className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#1d1d1f]">
+          <h3 className="font-semibold">A grade ranks evidence; it does not confirm an entry</h3>
+          <p className="mt-1">A+ is the highest grade under the current voting rules, not a probability of profit.
+            Intraday grades update technical and price-sensitive value inputs; other votes and target weights use the evening decision.
+            Prices, available cash and execution conditions can change before an order fills.</p>
+          <p className="mt-2 text-xs text-[#6e6e73]">Intraday calculations are scheduled every 15 minutes on weekdays during market hours.
+            This page checks for updates every minute. A scheduled run may be late or missing; expired intraday grades revert to the evening decision.
+            Bar times identify the start of the 15-minute interval, not a current executable price.</p>
+        </section>
+      )}
 
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
@@ -879,7 +925,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               )}
               {live.as_of && (
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  IEX candle from {marketTime(live.data_at)}
+                  IEX 15-minute bar starting {marketTime(live.data_at)}
                   {(live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
                     <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
                       last known data · not current
@@ -925,7 +971,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               )}
             </div>
           </div>
-          {intraday && intraday.changed && intraday.changed.length > 0 && (
+          {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
             <p className="mb-2 text-xs text-[#9a6200]">
               Since the last plan: {intraday.changed.join(' · ')}
             </p>
@@ -947,7 +993,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             <thead className="text-left text-[#6e6e73]">
               <tr>
                 <th className="py-1">Name</th>
-                <th>Action</th>
+                <th>Target move</th>
                 <th>Size</th>
                 <th>Grade</th>
                 <th title={TRIGGER_LEGEND}>Why</th>
@@ -966,6 +1012,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                   onReason={() => setOpenReason(openReason === r.ticker ? null : r.ticker)}
                   onOpenName={() => setOpenName(r.ticker)}
                   marking={marking !== null}
+                  scheduleLabel={eventPaused ? 'FOMC takes priority' : !r.rebalance_due ? 'not scheduled yet' : 'scheduled target; not a fill'}
                   onDone={
                     canWrite && holdingsReady && rebalanceDue && !eventPaused
                       ? async (price, qty) => {
@@ -988,14 +1035,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
           <p className="mt-2 text-xs text-[#6e6e73]">
             After your broker confirms a fill, click <b>record fill</b> and enter its actual shares and average price.
-            Record each fill once; partial sells leave the remaining shares held. Names run in grade order, best first. Grades recompute each evening; the technical and value
-            reads re-check them every 15 minutes at the live price, so a grade can move within the day. The book
+            Record each fill once; partial sells leave the remaining shares held. Names run in grade order, highest first. Grades recompute each evening; the technical and value
+            inputs can update from intraday bars. The book
             re-sorts at the next rebalance
             {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
               ? ` (in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days)`
               : ' (about every 20 trading days)'}
-            , when a name that falls to C or below is dropped; A+ names stay at full weight, A at three quarters,
-            eligible B at half. The strategy models buys at the next open; your execution price may differ. Stops are off: tested variants reduced performance.
+            , when a name that falls to C or below is dropped. Grade multipliers, volatility, caps and market conditions determine target weights.
+            The strategy models buys at the next open; your execution price may differ. No automatic price stop is active.
           </p>
         </section>
       )}
@@ -1066,12 +1113,13 @@ const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number
           {paper.day_pl !== undefined ? <TrendUsd value={paper.day_pl} /> : '—'}
         </span>
       </div>
+      <p className="mb-2 text-xs text-[#6e6e73]">Broker marks can differ from IEX bars. The fetch time is not the time of the last trade.</p>
       <table className="w-full text-sm">
         <thead className="text-left text-xs text-[#6e6e73]">
           <tr>
             <th className="py-1">position</th>
             <th className="py-1 text-right">shares</th>
-            <th className="py-1 text-right">price</th>
+            <th className="py-1 text-right">broker mark</th>
             <th className="py-1 text-right">avg cost</th>
             <th className="py-1 text-right">value</th>
             <th className="py-1 text-right">P/L</th>
@@ -1148,7 +1196,7 @@ const PracticeAccount = ({
         Worth {money(equityValue)} · cash {money(cash)}
         {fromBroker && live.day_pl !== undefined && (
           <>
-            {' '}· <TrendUsd value={live.day_pl} /> today
+            {' '}· broker day P/L <TrendUsd value={live.day_pl} />
           </>
         )}
         {!fromBroker && record && (
@@ -1246,13 +1294,14 @@ interface RowProps {
   onReason: () => void
   onOpenName: () => void
   marking: boolean
+  scheduleLabel: string
   onDone?: (price: number, qty: number) => Promise<boolean>
 }
 
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
 // The "why" reads in plain words first; the analysts' numbers are inside.
-const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marking, onDone }: RowProps) => {
+const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marking, scheduleLabel, onDone }: RowProps) => {
   const [recording, setRecording] = useState(false)
   const [filledShares, setFilledShares] = useState('')
   const [fillPrice, setFillPrice] = useState('')
@@ -1284,6 +1333,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>
           {r.action}
         </span>
+        {['buy', 'add', 'trim', 'sell'].includes(r.action) && <div className="mt-1 text-xs text-[#6e6e73]">{scheduleLabel}</div>}
         {r.action !== 'hold' && r.action !== 'uncovered' && r.action !== 'blocked' && onDone && (
           <button
             type="button"
@@ -1328,7 +1378,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         ) : r.action === 'blocked' ? (
           <span className="text-xs text-[#6e6e73]">{r.blocked_reason ?? 'buy held back by the band rule'}</span>
         ) : (
-          <span className="font-medium">{qty.toLocaleString()} shares</span>
+          <span className="font-medium">{qty.toLocaleString()} share{qty === 1 ? '' : 's'}</span>
         )}
         {r.shares > 0 && r.entry_price !== null && (
           <div className="text-xs text-[#6e6e73]">
@@ -1349,7 +1399,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>{r.grade_live}</span>
             <div className="text-xs text-[#6e6e73]">{r.grade_source === 'intraday' ? 'indicative intraday grade' : 'evening decision'}</div>
             {r.grade_live !== r.grade && (
-              <span className="ml-1 text-xs text-[#6e6e73]" title="the grade with the technical and value analysts read at the live price; the evening grade stands for the desk's own trades">
+              <span className="ml-1 text-xs text-[#6e6e73]" title="indicative grade using available intraday technical and value inputs; the evening decision governs scheduled targets">
                 {r.grade} at the close
               </span>
             )}
@@ -1383,7 +1433,7 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
             </div>
             {r.technical_now !== null && r.technical_close !== null && (
               <div className="text-[#6e6e73]">
-                technical at the live price: {Math.round(r.technical_now * 100)} (was {Math.round(r.technical_close * 100)} at the close)
+                technical at the bar price: {Math.round(r.technical_now * 100)} (was {Math.round(r.technical_close * 100)} at the close)
                 {r.value_now !== null && r.value_now !== undefined && r.value_close !== null && r.value_close !== undefined && (
                   <span>
                     {' '}· value {Math.round(r.value_now * 100)} (was {Math.round(r.value_close * 100)})
@@ -1696,7 +1746,7 @@ const LiveTechnical = ({
   const lines = (items: string[] | undefined) => (items ?? []).filter((i): i is string => i.length > 0)
   const read = liveRead?.read
   const fl = liveRead?.lines
-  const tech = detail?.now ?? liveRead?.now ?? null
+  const tech = liveRead?.now ?? detail?.now ?? null
   const readAt = liveRead?.read_at ?? null
   const column = (title: string, items: string[] | undefined) => (
     <div>
@@ -1716,8 +1766,8 @@ const LiveTechnical = ({
           Technical read
           {(liveRead?.data_at || readAt) && (
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-              candle from {marketTime(liveRead?.data_at)}
-              {liveRead?.stale ? ' · last known data' : ''}
+              candle from {marketTime(liveRead?.data_at)} (15-minute interval start)
+              {liveRead?.stale || Date.now() - Date.parse(liveRead?.data_at ?? '') >= 30 * 60 * 1000 ? ' · last known data' : ''}
               {readAt ? ` · explanation generated ${marketTime(readAt)}` : ''}
             </span>
           )}
@@ -1732,6 +1782,8 @@ const LiveTechnical = ({
           )}
         </span>
       </div>
+      <p className="mb-2 text-xs text-[#6e6e73]">Price basis: {quote?.bar ? `IEX bar starting ${marketTime(quote.bar)}` : 'evening close; no intraday quote available'}.
+        {change != null ? ' Change is measured from the stored evening close.' : ''} Commentary interprets the dated evidence; it is not a verified forecast.</p>
       {/* The model's plain words lead, and the short/medium/long readings
           sit beside them: the prose says what it means, the columns say the
           numbers behind it. */}
@@ -1957,7 +2009,7 @@ const NameDetail = ({
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[#1d1d1f]">
             {ticker}
-            {brief && <span className="ml-2 text-sm font-normal text-[#6e6e73]">{brief.verdict}</span>}
+            {brief && <span className="ml-2 text-sm font-normal text-[#6e6e73]">Evening view: {brief.verdict}</span>}
           </h3>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.1] text-[#6e6e73] hover:bg-white">
             <X size={16} />
@@ -1966,11 +2018,11 @@ const NameDetail = ({
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[row.action] ?? ''}`}>
-              {row.action}
+              target: {row.action}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade_live] ?? ''}`}>
               {row.grade_live}
-              {row.grade_live !== row.grade && <span className="ml-1 font-normal text-[#6e6e73]">live · {row.grade} at the close</span>}
+              <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `indicative · evening ${row.grade}` : 'evening decision'}</span>
             </span>
             {row.why && <span className="text-xs text-[#6e6e73]">{row.why}</span>}
           </div>
@@ -1982,6 +2034,7 @@ const NameDetail = ({
                 evening grade while the list beside it shows the candle's. */}
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[(liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade) as keyof typeof GRADE_STYLE] ?? ''}`}>
               {liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade}
+              <span className="ml-1 font-normal">{liveGrades[ticker] ? 'indicative intraday grade' : 'evening decision'}</span>
             </span>
             <span className="text-xs text-[#6e6e73]">
               {latest.grades[ticker].headline ?? 'graded but not in the book'}
@@ -2007,10 +2060,8 @@ const NameDetail = ({
         ) : (
           <>
             <p className="mb-2 text-xs leading-relaxed text-[#6e6e73]">
-              How this name did under the desk's own rule: the sessions it was graded A or
-              better against the sessions it was not, both annualized. The book's return
-              comes from rotating across names, so the two are compared with each other,
-              not the name against buy-and-hold.
+              Historical returns grouped by grade: sessions graded A or better against the other sessions.
+              Annualized daily log-return means are conditional statistics, not funded portfolio returns or forecasts.
             </p>
             <div className="grid grid-cols-2 gap-2">
               {cells.map((c) => (
@@ -2023,7 +2074,7 @@ const NameDetail = ({
             </div>
             {(gradeRead || gradeReads) && (
               <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
-                <h4 className="text-sm font-semibold text-[#1d1d1f]">What the desk read</h4>
+                <h4 className="text-sm font-semibold text-[#1d1d1f]">Evening analysis · {latest.session}</h4>
                 {gradeRead ? (
                   <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{gradeRead}</p>
                 ) : (
@@ -2039,6 +2090,7 @@ const NameDetail = ({
             )}
             {brief && (
               <div className="mt-3 space-y-1 rounded-xl border border-black/[0.08] bg-white p-3 text-sm text-[#1d1d1f]">
+                <p className="text-xs text-[#6e6e73]">Model commentary published {marketTime(latest.written)}; not an intraday entry instruction.</p>
                 <p>{looksLikeRawDump(brief.reasoning) ? brief.verdict : brief.reasoning}</p>
                 <p><span className="font-medium">Risks:</span> {brief.risks}</p>
                 <p><span className="font-medium">Watch:</span> {brief.watch}</p>
@@ -2065,7 +2117,7 @@ const NameDetail = ({
             <p className="mt-0.5 text-xs text-[#6e6e73]">
               Each night&rsquo;s grade with the analysts that voted for (+) or against (−) it, so a grade change shows
               which analyst moved. Rows marked &ldquo;said&rdquo; are what the desk wrote that night; the rest are
-              today&rsquo;s rules replayed over the past.
+              simulated grades from the rules used to generate this stored history.
             </p>
             <table className="mt-1 w-full text-sm">
               <thead className="text-left text-[#6e6e73]">

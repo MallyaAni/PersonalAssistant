@@ -14,7 +14,7 @@ resolution that survives cost; what a candle adds is risk information.
 
 import time
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from datetime import time as day_time
 from zoneinfo import ZoneInfo
 
@@ -46,7 +46,7 @@ def _bar_time(value: datetime) -> datetime:
     return value.replace(tzinfo=value.tzinfo or UTC)
 
 
-# Fold regular-session bars into a quote only when its opening candle exists.
+# Fold completed regular-session bars into a quote once the opening candle closes.
 def quote_from_bars(
     symbol: str, bars: list, fetched_at: datetime, session: date | None = None
 ) -> Quote | None:
@@ -56,7 +56,12 @@ def quote_from_bars(
     closing = datetime.combine(today, day_time(16), NEW_YORK)
     # Provider timestamps are UTC; ignore extended hours and other dates.
     bars = sorted(
-        (b for b in bars if opening <= _bar_time(b.start) < closing),
+        (
+            b
+            for b in bars
+            if opening <= _bar_time(b.start) < closing
+            and _bar_time(b.start) + timedelta(seconds=CANDLE_SECONDS) <= fetched_at
+        ),
         key=lambda b: _bar_time(b.start),
     )
     if not bars or _bar_time(bars[0].start) != opening:
@@ -68,11 +73,7 @@ def quote_from_bars(
         open=float(bars[0].open),
         high=float(max(b.high for b in bars)),
         low=float(min(b.low for b in bars)),
-        bar=(
-            last.start.isoformat()
-            if hasattr(last.start, "isoformat")
-            else str(last.start)
-        ),
+        bar=_bar_time(last.start).isoformat(),
         as_of=fetched_at.isoformat(timespec="seconds"),
     )
 
