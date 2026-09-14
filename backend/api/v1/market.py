@@ -32,6 +32,7 @@ from backend.market import (
     economics,
     funding,
     holdings,
+    intraday_research,
     language,
     live_quotes,
     live_technical,
@@ -113,6 +114,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "user_id": user_id,
         "latest": latest,
         "economics": economics.load(_root()),
+        "intraday_research": intraday_research.load(_root(), latest["session"]),
         "event_policy": {
             "enabled": True,
             "version": event_risk.VERSION,
@@ -516,14 +518,33 @@ async def desk_funding_preview(user_id: UserId, inputs: dict) -> dict[str, objec
         snap = _live_snapshot() or {}
         quotes = snap.get("quotes") or {}
         held = holdings.load(_root())
-        rows = holdings.board(latest, held, equity, quotes)
+        mode = inputs.get("mode", "evening")
+        decision = None
+        if mode == "intraday_research":
+            decision = intraday_research.load(_root(), latest["session"])
+            sizing_record = intraday_research.candidate_record(latest, decision)
+            quotes = {
+                name: {"last": price, "bar": decision["bar"]}
+                for name, price in decision["prices"].items()
+            }
+        elif mode == "evening":
+            sizing_record = latest
+        else:
+            raise ValueError("Unknown preview mode")
+        rows = holdings.board(sizing_record, held, equity, quotes)
         result = funding.preview(rows, equity, cash)
+        if decision:
+            result["basis"] = "intraday-macro-research-cash-preview-v1"
+        result["reductions"] = funding.reductions(rows, equity) if decision else []
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {
         **result,
         "session": latest.get("session"),
         "calculated_at": datetime.now(UTC).isoformat(),
+        "mode": mode,
+        "valid_until": decision["valid_until"] if decision else None,
+        "macro": decision["macro"] if decision else None,
         "price_times": {
             r["ticker"]: (quotes.get(r["ticker"]) or {}).get("bar")
             for r in result["rows"]

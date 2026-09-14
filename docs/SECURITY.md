@@ -218,6 +218,13 @@ DeepSeek model; holdings and cash do not. An operator can remove these files and
 their backups under the existing backup retention policy. This removes the
 forward-observation evidence needed for subsequent research; it changes no orders.
 
+Intraday research archives under `data/market/desk/intraday-research/` store
+public reference prices, strategy grades/weights, timestamps and evidence hashes.
+They contain neither manual holdings nor confirmed cash. The authenticated
+funding-preview endpoint computes research share counts without writing account
+state. Archives remain until operator removal under existing backup retention;
+removing them removes the corresponding forward-evaluation evidence.
+
 The trading desk's execution evidence is stored with its existing paper state
 in `data/market/paper/state.json` and in dated desk records. It adds decision
 time/reference price and allowlisted broker creation, submission, completion,

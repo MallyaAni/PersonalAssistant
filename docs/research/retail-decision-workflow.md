@@ -18,9 +18,46 @@ calculates changes from exact matching calendar months, and displays collection
 and observation ages separately. Publication timestamps and archived consensus
 remain unavailable. Revised histories must not be backfilled into prior decisions.
 DeepSeek classifies supplied inflation pressure with evidence IDs under an
-agent-owned prompt; its assessment does not change grades, exposure or orders.
-New-policy evaluation, dynamic intraday targets and executable quote evidence
-remain unfinished.
+agent-owned prompt; its assessment does not change the scheduled policy or orders.
+The separate intraday research preview now consumes this classification; the
+scheduled trading policy and broker orders remain unchanged. Executable quote
+evidence and any claim of improved returns remain unverified.
+
+## September 14 intraday research implementation
+
+`intraday-macro-candidate/1` automatically runs after the existing fifteen-minute
+collector. Every covered name and SPY must have the same fresh completed candle;
+every covered name must have a current technical grade. The existing risk manager
+recalculates weights using those grades and the evening point-in-time risk history
+extended with observed prices. Growth-model valuation votes remain intact.
+
+Three target trackers are archived: evening targets, current technical targets,
+and current technical targets with macro restraint. The macro candidate requires
+a fresh, known DeepSeek inflation assessment plus SPY daily and weekly trends.
+Only building pressure with both trends negative applies the existing defensive
+exposure ceiling (50%). It takes the tighter ceiling, not a compounded cut.
+Existing FOMC controls continue to pause ordinary additions and reductions.
+This is a predeclared candidate rule, not an optimized or proven threshold.
+
+The cash preview has a separate research selector, current reference prices,
+total/additional shares, and target reductions. Planned sales cannot fund buys.
+Decisions expire with their inputs and bind to the exact evening record. The
+first decision for each candle is immutable; input, policy and economic hashes
+identify its evidence. No account holdings or confirmed cash enter these archives.
+
+`python -m backend.cli.evaluate_intraday_research` compares cash-funded target
+trackers at 10 and 25 basis points, filling at the next observed candle close
+after the decision was recorded. It rejects missing valuation prices and never
+fills an allocation with its own candle price. It is not a reproduction of the
+complete scheduled strategy's entry/exit mechanics. Zero observations explicitly
+mean insufficient forward data; there is no automatic promotion rule.
+
+The funded daily-cadence proxy on the reconstructed 2021–2026 universe returned
+35.79% CAGR / 1.664 Sharpe for 20-session rebalancing versus 29.05% / 1.500 for
+daily rebalancing at 10 bps. At 25 bps those were 34.55% / 1.616 versus 21.21% /
+1.153. Annual turnover was approximately 6.10 versus 41.06 at 10 bps. This is
+daily data, not evidence about intraday or past macro classifications. Raw result:
+`intraday-funded-cadence-2026-09-14.json`. No historical macro labels were backfilled.
 
 ## Objective
 

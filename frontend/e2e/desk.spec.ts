@@ -444,7 +444,7 @@ test('separates dated inflation facts from research-only model judgement', async
   await expect(context).toContainText('3.45%')
   await expect(context).toContainText('Unavailable')
   await expect(context).toContainText('mixed inflation pressure')
-  await expect(context).toContainText('does not change grades, exposure or orders')
+  await expect(context).toContainText('does not change the scheduled trading policy or submit orders')
   await expect(context.getByRole('link', {name: 'CPI', exact: true})).toHaveAttribute('href', 'https://fred.stlouisfed.org/series/CPIAUCSL')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
@@ -474,6 +474,30 @@ test('previews one confirmed cash budget and clears changed inputs', async ({ pa
   await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
   await page.reload()
   await expect(cash).toHaveValue('')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Keep experimental allocations explicit and clear their results on policy changes.
+test('research sizing displays reductions and clears the previous policy', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/desk/funding-preview', route => {
+    expect(route.request().postDataJSON().mode).toBe('intraday_research')
+    return route.fulfill({json: {
+      mode: 'intraday_research', session: '2026-09-08', calculated_at: new Date().toISOString(),
+      valid_until: new Date(Date.now() + 600000).toISOString(), macro: {exposure: .5, defensive: true},
+      estimated_cost: 0, unallocated_cash: 0, rows: [], price_times: {},
+      reductions: [{ticker: 'AAPL', held_shares: 20, target_total_shares: 10, reduction_shares: 10}],
+    }})
+  })
+  await page.goto('/#desk')
+  await page.getByLabel('Sizing policy').selectOption('intraday_research')
+  await expect(page.getByText('Research only. Recalculates', {exact: false})).toBeVisible()
+  await page.getByLabel('Available cash to allocate ($)').fill('0')
+  await page.getByRole('button', {name: 'Confirm cash and preview'}).click()
+  await expect(page.getByText('defensive macro condition active', {exact: false})).toBeVisible()
+  await expect(page.getByText('AAPL: 20 held → 10 target shares · reduction 10')).toBeVisible()
+  await page.getByLabel('Sizing policy').selectOption('evening')
+  await expect(page.getByText('AAPL: 20 held → 10 target shares · reduction 10')).toHaveCount(0)
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 

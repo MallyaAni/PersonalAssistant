@@ -29,8 +29,8 @@ The book from 2021-06-01, full rules, the desk's weights:
   vol target 35%, caps 20/70  +38.8%  20.7%    1.87  -24.8%   +581%
   vol target 50%, caps 25/80  +42.0%  22.2%    1.89  -25.5%   +696%
 
-Re-deciding more often only pays churn: every session is a full Sharpe
-point below every twenty, and forty is the same as twenty. The grade is
+In this daily-cadence comparison, every session is 0.27 Sharpe points
+below every twenty; this is not an intraday measurement. The grade is
 continuous; the book should not be. More exposure is the lever that
 keeps the Sharpe: at a 50% volatility target with 25% and 80% caps the
 same rule returns 42% a year at 1.89 against 31.6% at 1.90, with the

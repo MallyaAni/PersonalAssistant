@@ -47,11 +47,11 @@ def preview(rows: list[dict], equity: float, cash: float) -> dict:
         if wanted:
             requests.append((ticker, price, held, target, wanted))
     requested = sum((price * wanted for _, price, _, _, wanted in requests), Decimal(0))
-    scale = min(Decimal(1), cash_d / requested) if requested else Decimal(0)
+    budget = min(cash_d, requested)
     result = []
     spent = Decimal(0)
     for ticker, price, held, target, wanted in requests:
-        shares = (wanted * scale).to_integral_value(rounding=ROUND_FLOOR)
+        shares = (wanted * budget / requested).to_integral_value(rounding=ROUND_FLOOR)
         cost = shares * price
         spent += cost
         result.append(
@@ -72,3 +72,25 @@ def preview(rows: list[dict], equity: float, cash: float) -> dict:
         "cash_limited": requested > cash_d,
         "rows": result,
     }
+
+
+# Show target reductions without counting them as spendable sale proceeds.
+def reductions(rows: list[dict], equity: float) -> list[dict]:
+    total = amount(equity, "Account equity", positive=True)
+    result = []
+    for row in rows:
+        if row.get("action") not in ("trim", "sell") or row.get("event_paused"):
+            continue
+        price = amount(row.get("last"), "Reference price", positive=True)
+        held = amount(row.get("shares"), "Held shares")
+        weight = amount(row.get("target_weight"), "Target weight")
+        target = (total * weight / price).to_integral_value(rounding=ROUND_FLOOR)
+        result.append(
+            {
+                "ticker": row["ticker"],
+                "held_shares": float(held),
+                "target_total_shares": int(target),
+                "reduction_shares": float(max(0, held - target)),
+            }
+        )
+    return result

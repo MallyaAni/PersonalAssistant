@@ -9,12 +9,11 @@ buys, the rebalance plan against the holdings, and what changed since the
 last run - to ``data/market/desk/intraday.json`` for the dashboard, plus a
 one-line audit trail.
 
-It decides nothing the nightly run does not already decide. Re-deciding the
-book intraday is measured to lose a Sharpe point (`market_cadence`), so this
-only re-reads the technical stance at the live price and re-ranks - exactly
-what the board does, but persisted on the candle so the plan exists even when
-no browser is open. It never submits a trade: the person executes on their
-broker and records it with the board's Buy button.
+The scheduled policy keeps the evening targets. A separate research allocation
+re-sizes fresh grades with a macro budget; it never supplies broker orders.
+The older `market_cadence` study compared daily cadences, not intraday trading.
+This job also reconciles the existing paper-account green-opening sell rule;
+use `market_intraday_research` for a research-only manual run.
 
     python -m backend.cli.market_balancer --data-dir data/market --equity 100000
 """
@@ -220,6 +219,7 @@ def run(data_dir: Path, equity: float) -> Path:
         | {r["ticker"] for r in latest.get("book") or []}
         | {r["ticker"] for r in latest.get("actions") or []}
         | set(latest.get("grades") or {})
+        | {"SPY"}
     )
     quotes: dict = {}
     technical: dict = {}
@@ -290,6 +290,13 @@ def run(data_dir: Path, equity: float) -> Path:
         (data_dir / "desk" / LIVE_FILE).write_text(
             json.dumps(live, indent=2), encoding="utf-8"
         )
+        # Keep automatic candidate sizing separate from paper account operations.
+        from backend.market import intraday_research
+
+        try:
+            intraday_research.publish(data_dir, latest, live)
+        except Exception as exc:  # noqa: BLE001 - research cannot interrupt execution
+            print(f"Research allocation unavailable ({type(exc).__name__})")
         # The green-day rule runs on the same candle: a pending sell for a
         # name trading up at the open is cancelled and the position held.
         _green_day_skip(data_dir, latest, quotes, data_dir / "desk" / INTRADAY_LOG)

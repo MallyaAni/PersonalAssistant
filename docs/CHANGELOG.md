@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-14 — Intraday sizing and macro research candidate
+
+The fifteen-minute collector now archives a separate current-grade sizing
+candidate using the existing risk manager. Known DeepSeek inflation pressure
+and negative daily/weekly benchmark trends can tighten its exposure budget;
+FOMC controls are preserved without multiplying cuts. The dashboard previews
+cash-limited additions and reductions under an explicit research selector.
+Expiry, complete synchronized coverage and exact evening-record identity are
+required. The scheduled broker policy is unchanged.
+
+An immutable decision archive supports forward cash-funded target comparisons
+at ordinary/stressed costs, with later observed fills and no fabricated historical
+macro labels. The funded daily-cadence proxy favored the existing cadence;
+see `research/retail-decision-workflow.md`. Fixed a recurring-decimal floor that
+could leave one exactly affordable share unfunded.
+
+Pre-deploy evidence: 29 dashboard browser tests passed (45.7s), TypeScript/Vite
+passed, 44 candidate/storage/evaluator/funding/authenticated API tests passed
+(1.24s). Actual stored Friday prices were correctly withheld before Monday's
+open; the real forward archive reported zero observations. Profitable intraday
+behavior remains unverified.
+
 ## 2026-09-14 — Funded target previews and dated inflation context
 
 The manual desk now previews all target additions against one explicitly

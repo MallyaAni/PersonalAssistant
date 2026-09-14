@@ -1,0 +1,59 @@
+{
+  "report_sha256": "7994c5df176913209b929e451e75f7700c6009d3bd8b0587ad1f8f5ef7acd582",
+  "simulator_sha256": "6be929db208adc7e3f947c558b0b90f2682784a652be7614d646fcdf2ec6e768",
+  "rows": [
+    {
+      "cost_bps": 10,
+      "rebalance_sessions": 20,
+      "annual": 0.3251176428603191,
+      "cagr": 0.3578599538117422,
+      "volatility": 0.1953715636998677,
+      "sharpe": 1.6640990976546053,
+      "drawdown": -0.2449685037395134,
+      "total": 4.66037087940061,
+      "turnover": 6.095253703823332,
+      "max_weight": 0.2390271885380963,
+      "years": 5.666666666666667
+    },
+    {
+      "cost_bps": 10,
+      "rebalance_sessions": 1,
+      "annual": 0.27155993489930425,
+      "cagr": 0.2905280328916724,
+      "volatility": 0.1810994100395659,
+      "sharpe": 1.4995075623933556,
+      "drawdown": -0.2569865857127903,
+      "total": 3.243089334336875,
+      "turnover": 41.05609326451756,
+      "max_weight": 0.15954492414522473,
+      "years": 5.666666666666667
+    },
+    {
+      "cost_bps": 25,
+      "rebalance_sessions": 20,
+      "annual": 0.3159956221729177,
+      "cagr": 0.34549173135467304,
+      "volatility": 0.1955702531139882,
+      "sharpe": 1.6157652666570899,
+      "drawdown": -0.24933119368595924,
+      "total": 4.374348868688333,
+      "turnover": 6.104338439224975,
+      "max_weight": 0.23926374815321022,
+      "years": 5.666666666666667
+    },
+    {
+      "cost_bps": 25,
+      "rebalance_sessions": 1,
+      "annual": 0.20883247283701775,
+      "cagr": 0.21210490061017828,
+      "volatility": 0.18118699847972988,
+      "sharpe": 1.1525797909852824,
+      "drawdown": -0.28706583100771843,
+      "total": 1.974366677557219,
+      "turnover": 41.18189613384333,
+      "max_weight": 0.15954553455253975,
+      "years": 5.666666666666667
+    }
+  ],
+  "limitation": "Daily cadence proxy on a reconstructed universe; no intraday or historical macro-assessment evidence."
+}

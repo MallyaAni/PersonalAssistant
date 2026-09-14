@@ -2065,6 +2065,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
+  intraday_research?: { status: string; reason?: string; bar?: string; valid_until?: string; valuation?: string; macro?: { defensive: boolean; exposure: number; base_exposure: number } };
   economics?: DeskEconomics | null;
   event_policy?: { enabled: boolean; version: string; evaluation_since: string };
   latest: DeskRecord | null;
@@ -2259,6 +2260,10 @@ export interface DeskMine {
 }
 
 export interface DeskFundingPreview {
+  reductions?: { ticker: string; held_shares: number; target_total_shares: number; reduction_shares: number }[];
+  mode?: string;
+  valid_until?: string | null;
+  macro?: { defensive: boolean; exposure: number; base_exposure: number } | null;
   session: string;
   calculated_at: string;
   estimated_cost: number;
@@ -2269,10 +2274,10 @@ export interface DeskFundingPreview {
 }
 
 // Send confirmed planning cash in the request body, without storing it in a URL.
-export const getDeskFundingPreview = async (userId: string, equity: number, availableCash: number): Promise<DeskFundingPreview> => {
+export const getDeskFundingPreview = async (userId: string, equity: number, availableCash: number, mode = 'evening'): Promise<DeskFundingPreview> => {
   const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/funding-preview`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ equity, available_cash: availableCash }),
+    body: JSON.stringify({ equity, available_cash: availableCash, ...(mode === 'evening' ? {} : {mode}) }),
   });
   if (!response.ok) throw new Error('Sizing preview unavailable. Check account equity, cash and market data.');
   return await response.json() as DeskFundingPreview;

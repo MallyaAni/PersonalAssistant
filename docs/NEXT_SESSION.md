@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-14 — Intraday sizing and macro research
+
+Started clean on main `36cf40f9dbf9a1880fc0597e324b6b1a97c56b4d`;
+`git pull --rebase origin main` was already current. Implemented the separate
+automatic candidate, immutable decisions, cash preview selector/reductions,
+expiry and a forward funded target evaluator. The scheduled broker policy is
+unchanged. No broker actions were run manually.
+
+VERIFIED pre-deploy: 51 candidate/storage/evaluation/funding/API/balancer tests
+passed (1.40s), 29 dashboard browser tests passed (45.7s), TS/Vite and Ruff passed.
+The authenticated API test checks persisted state is unchanged and expired
+research requests are rejected. The actual safe research CLI on Spark withheld
+Friday prices before Monday's open; both cost arms reported zero observations.
+The funded daily-cadence proxy favored the existing holding cadence; see
+`research/retail-decision-workflow.md` and its raw JSON artifact.
+
+UNVERIFIED: successful current-session research allocation from live prices
+before the market opens, deployment of this change, and superior net returns.
+The new research preview is not a validated replacement strategy. Record the
+deployed SHA, post marker and browser evidence below after deployment.
+
 ## 2026-09-14 — cash preview and economic evidence
 
 Started clean on main `04c4a0af`, pulled origin main (already current).

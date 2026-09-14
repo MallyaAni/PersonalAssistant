@@ -9,11 +9,11 @@ so the caps still hold.
 """
 
 from dataclasses import dataclass, replace
+from typing import Protocol
 
 import numpy as np
 
 from backend.agents.trading.desk.grading import GRADES, SIZE_MULTIPLIER
-from backend.agents.trading.desk.regime import RegimeState
 from backend.market.panel import Panel
 from backend.market.sizing import (
     Position,
@@ -39,6 +39,13 @@ BOOK_CONFIG = SizingConfig(
 # worst drawdown -38.3% -> -34.6%, and more total return, so this is not
 # a trade of return for safety.
 TIGHTENING_POWER = 2.0
+
+
+class RiskBudget(Protocol):
+    """Only the exposure and rate posture are required to size a book."""
+
+    exposure: float
+    tightening: bool
 
 
 @dataclass(frozen=True)
@@ -126,7 +133,7 @@ def desk_targets(
     scores_today: np.ndarray,
     graded_today: np.ndarray,
     panel: Panel,
-    regime: RegimeState,
+    regime: RiskBudget,
     config: SizingConfig = BOOK_CONFIG,
     held: np.ndarray | None = None,
 ) -> tuple[list[Position], np.ndarray]:
@@ -158,7 +165,7 @@ def size(
     scores_today: np.ndarray,
     graded_today: np.ndarray,
     panel: Panel,
-    regime: RegimeState,
+    regime: RiskBudget,
     config: SizingConfig = BOOK_CONFIG,
     held: np.ndarray | None = None,
 ) -> list[Sized]:

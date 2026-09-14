@@ -1020,7 +1020,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {canWrite && holdingsReady && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
-          {canWrite && holdingsReady && <FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} />}
+          {canWrite && holdingsReady && <FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} />}
           <table className="w-full text-sm">
             <thead className="text-left text-[#6e6e73]">
               <tr>

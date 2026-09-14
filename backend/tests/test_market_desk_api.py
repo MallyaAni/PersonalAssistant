@@ -95,6 +95,61 @@ async def test_funding_preview_uses_saved_holdings_without_writing_cash(
     assert {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")} == before
 
 
+# Exercise the research preview with disk-backed decisions and reject expired evidence.
+@pytest.mark.asyncio
+async def test_research_preview_reads_targets_without_mutating_holdings(
+    tmp_path, monkeypatch
+):
+    from backend.market import deskrecord, holdings, intraday_research
+
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-04", {"AAA": "A+", "BBB": "A"}, [("AAA", 0.15)], [])
+    holdings.save(tmp_path, [holdings.Holding("AAA", 100, 9, "2026-09-01")])
+    record, _ = deskrecord.latest_pair(tmp_path)
+    now = datetime.now(UTC)
+    decision = {
+        "status": "available",
+        "session": record["session"],
+        "as_of": now.isoformat(),
+        "valid_until": (now + timedelta(minutes=10)).isoformat(),
+        "bar": now.isoformat(),
+        "macro": {"exposure": 0.5},
+        "record_sha256": intraday_research.record_hash(record),
+        "targets": {"AAA": 0.05, "BBB": 0.15},
+        "prices": {"AAA": 10, "BBB": 20},
+    }
+    path = tmp_path / "desk" / "intraday-research" / "latest.json"
+    path.parent.mkdir()
+    path.write_text(json.dumps(decision))
+    before = {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")}
+    token = issue_user_token("desk_user", scopes=["memory:read", "memory:write"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        response = await client.post(
+            "/api/v1/market/desk_user/desk/funding-preview",
+            json={"equity": 10000, "available_cash": 200, "mode": "intraday_research"},
+        )
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["estimated_cost"] == 200
+        assert result["rows"][0]["additional_shares"] == 10
+        assert result["reductions"][0]["reduction_shares"] == 50
+        assert {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")} == before
+        decision["valid_until"] = (now - timedelta(seconds=1)).isoformat()
+        path.write_text(json.dumps(decision))
+        expired = await client.post(
+            "/api/v1/market/desk_user/desk/funding-preview",
+            json={"equity": 10000, "available_cash": 200, "mode": "intraday_research"},
+        )
+        assert expired.status_code == 422
+        assert "expired" in expired.text
+
+
 @pytest.mark.asyncio
 async def test_the_endpoint_returns_the_record_and_the_changes(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
