@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-14 — Price-sensitive ML ladder and paper accounting corrections
+
+Added and ran a bounded ridge/tree/neural return comparison with filed financial
+ratios, delayed filing availability, purged labels and validation-wealth selection.
+Six saved model curves replayed; no learned policy promoted. Added current-session
+corporate-action observations so overnight paper holdings can update intraday.
+Aligned paper and HTTP action directions with displayed research allocations.
+75 targeted Linux tests and 16 Windows research/accounting tests passed (overlap
+four); lint and diagram synchronization passed. Live deployment remains unverified
+because desktop SSH access was denied. See the dated opportunity-learning report.
+
 ## 2026-09-14 — Explicit CUDA research execution and bounded replication
 
 Growth pilot accepts --device cpu/cuda with CPU default and fail-closed CUDA.

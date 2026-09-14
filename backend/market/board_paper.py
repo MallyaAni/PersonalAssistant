@@ -181,6 +181,7 @@ def transition(state, decisions, research, now):
         )
     return {
         **state,
+        "version": VERSION,
         "sequence": state["sequence"] + 1,
         "as_of": now.isoformat(),
         "bar": research.get("bar"),

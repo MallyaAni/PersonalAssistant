@@ -470,8 +470,9 @@ async def desk_mine(
         research.get("status") == "available"
         and research.get("record_sha256") == intraday_research.record_hash(original)
         and all(
-            research.get("bar") == quote.get("bar")
-            for quote in ((snap or {}).get("quotes") or {}).values()
+            research.get("bar")
+            == (((snap or {}).get("quotes") or {}).get(ticker) or {}).get("bar")
+            for ticker in original.get("grades") or {}
         )
         and (snap or {}).get("quotes")
     ):

@@ -1,5 +1,24 @@
 # Next session
 
+## 2026-09-14 — Price-sensitive ML comparison and paper fixes
+
+User authorized proceeding with supervised ML and fixing the two paper defects.
+Source b92ca4ff trained ridge, boosted trees and one small CUDA neural network
+using price and filed-financial features. Neural epoch 10 won 2024 validation;
+2025+ net return was 63.72% versus trees 121.07%, fixed valuation 255.52%, and
+momentum20 419.01% at 10 bp. All are biased retrospective results; none promoted.
+Six frozen learned-model cost paths replayed. Artifacts and exact evidence:
+docs/research/opportunity-learning-2026-09-14.{md,json}.
+
+Paper v2 reads current corporate actions independently of completed daily bars
+and uses the selected intraday allocation for direction and size. HTTP decision
+targets match current research too. VERIFIED: 75 targeted Linux tests, 16 Windows
+research/accounting tests (four overlap), lint, real AAPL action-adapter call,
+32 diagrams and architecture page synchronized. Diagram impact: NONE.
+UNVERIFIED deployment: desktop SSH to spark1 denied. Do not claim the live site
+contains these fixes; deploy through scripts/deploy.sh from an authorized host.
+No new ML forward record or production model promotion occurred.
+
 ## 2026-09-14 — Bounded desktop GPU replication
 
 Research source checkpoint bd2816c2 adds explicit CPU/CUDA selection, default CPU,

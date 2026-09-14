@@ -1,0 +1,318 @@
+{
+  "manifest": {
+    "source": "b92ca4ff46c60ae92b4b387df460cafeb0b26287",
+    "arguments": {
+      "data_dir": "E:/AgentWorkspace/growth-pilot-transfer-3dcce629/market",
+      "facts_dir": "E:/AgentWorkspace/PersonalAssistant/data/market",
+      "output": "E:/AgentWorkspace/opportunity-learning-20260914",
+      "asof": "2026-09-14",
+      "device": "cuda"
+    },
+    "feature_names": [
+      "return5",
+      "return20",
+      "return60",
+      "return120",
+      "vol20",
+      "distance_ma20",
+      "distance_ma60",
+      "relative_volume",
+      "log_sales_yield",
+      "earnings_yield",
+      "book_yield",
+      "cash_flow_yield",
+      "revenue_growth",
+      "net_margin",
+      "gross_margin",
+      "cash_flow_margin",
+      "cash_to_cap",
+      "debt_to_cap"
+    ],
+    "feature_sha256": "35927c33bf226151561a7a5280c3bd787136ddceed01edc1988d6e9e4816c068",
+    "price_sha256": "e2e3c6b32067aafb0c8949a6b7d9c27ef64fcd8e445677b11d6fd446b0f84900",
+    "tickers": [
+      "AAOI",
+      "AAPL",
+      "ACN",
+      "ADBE",
+      "ADI",
+      "ADSK",
+      "ALAB",
+      "AMAT",
+      "AMD",
+      "AMZN",
+      "ANET",
+      "APLD",
+      "ARM",
+      "ASML",
+      "AVGO",
+      "BE",
+      "CDNS",
+      "CEG",
+      "CIEN",
+      "CIFR",
+      "COHR",
+      "CORZ",
+      "CRDO",
+      "CRM",
+      "CRWD",
+      "CRWV",
+      "CSCO",
+      "DDOG",
+      "DELL",
+      "ETN",
+      "FFIV",
+      "FICO",
+      "FN",
+      "FSLR",
+      "FTNT",
+      "GEN",
+      "GEV",
+      "GLXY",
+      "GOOGL",
+      "HPE",
+      "HUT",
+      "IBM",
+      "INTC",
+      "INTU",
+      "IREN",
+      "KLAC",
+      "LITE",
+      "LRCX",
+      "MCHP",
+      "MDB",
+      "META",
+      "MOD",
+      "MPWR",
+      "MRVL",
+      "MSFT",
+      "MSI",
+      "MU",
+      "NBIS",
+      "NET",
+      "NOW",
+      "NTAP",
+      "NVDA",
+      "NXPI",
+      "OKLO",
+      "ON",
+      "ORCL",
+      "PANW",
+      "PLTR",
+      "POWL",
+      "PTC",
+      "Q",
+      "QCOM",
+      "SIMO",
+      "SMCI",
+      "SMR",
+      "SNDK",
+      "SNOW",
+      "SNPS",
+      "SPY",
+      "STX",
+      "SWKS",
+      "TEAM",
+      "TER",
+      "TLN",
+      "TRMB",
+      "TSM",
+      "TXN",
+      "TYL",
+      "VRT",
+      "VST",
+      "WDAY",
+      "WDC",
+      "WULF",
+      "ZS"
+    ],
+    "numpy": "2.5.2",
+    "sklearn": "1.9.1",
+    "torch": "2.14.0+cu130",
+    "train_examples": 22387,
+    "train_last_label": "2023-12-27",
+    "test_first": "2025-01-02",
+    "test_last": "2026-09-11",
+    "financial_coverage": 0.8428932225896321,
+    "limitations": [
+      "Current thematic membership; no delisting universe",
+      "2025+ already examined; not an untouched holdout",
+      "Filings delayed a day; share-count/split units need further audit",
+      "No analyst consensus, release-text model or full adopted desk replay",
+      "Fractional adjusted next-close execution; no spread history or settlement"
+    ]
+  },
+  "validation_log_growth": {
+    "ridge": 0.8851207345537662,
+    "trees": 0.5629546241101637,
+    "neural": 0.9083216569721959,
+    "valuation_rule": 0.711091462395914,
+    "momentum20": 0.6147350612798993,
+    "momentum120": 0.6777542414855597
+  },
+  "validation_winner": "neural",
+  "neural_selection": {
+    "selected_epoch": 10,
+    "checkpoints": [
+      {
+        "epoch": 5,
+        "validation_log_growth": 0.6994747983359625
+      },
+      {
+        "epoch": 10,
+        "validation_log_growth": 0.9083216569721959
+      },
+      {
+        "epoch": 15,
+        "validation_log_growth": 0.8107466797317843
+      }
+    ]
+  },
+  "verified_replay_curves": 6,
+  "metrics": {
+    "ridge@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.47642004199671223,
+      "total_return": 0.610299267241039,
+      "drawdown": -0.4549868692776513,
+      "terminal_equity": 1.610299267241039,
+      "transitions": 423
+    },
+    "trees@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.7933258328389491,
+      "total_return": 1.2107367540331389,
+      "drawdown": -0.468465752759303,
+      "terminal_equity": 2.210736754033139,
+      "transitions": 423
+    },
+    "neural@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.49298144110253483,
+      "total_return": 0.6371901366633388,
+      "drawdown": -0.4974592402390201,
+      "terminal_equity": 1.6371901366633388,
+      "transitions": 423
+    },
+    "valuation_rule@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 1.268401220051202,
+      "total_return": 2.555164091196708,
+      "drawdown": -0.36535454820578483,
+      "terminal_equity": 3.555164091196708,
+      "transitions": 423
+    },
+    "SPY@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.27150060320438746,
+      "total_return": 0.3119316632191824,
+      "drawdown": -0.18755250947031588,
+      "terminal_equity": 1.3119316632191824,
+      "transitions": 423
+    },
+    "momentum20@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 1.646760399077635,
+      "total_return": 4.190138584710388,
+      "drawdown": -0.3831458624922299,
+      "terminal_equity": 5.190138584710388,
+      "transitions": 423
+    },
+    "momentum120@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 1.4998420553456666,
+      "total_return": 3.4809812674053306,
+      "drawdown": -0.45870123904872795,
+      "terminal_equity": 4.480981267405331,
+      "transitions": 423
+    },
+    "equal@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.7990972596996331,
+      "total_return": 1.2235327495745998,
+      "drawdown": -0.33879157833023477,
+      "terminal_equity": 2.2235327495746,
+      "transitions": 423
+    },
+    "USD@10bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0,
+      "total_return": 0,
+      "drawdown": 0,
+      "terminal_equity": 1,
+      "transitions": 423
+    },
+    "ridge@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.4311734980205163,
+      "total_return": 0.5390625511001783,
+      "drawdown": -0.45874518871173886,
+      "terminal_equity": 1.5390625511001783,
+      "transitions": 423
+    },
+    "trees@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.7384444648818502,
+      "total_return": 1.092677747638466,
+      "drawdown": -0.47248646233937963,
+      "terminal_equity": 2.092677747638466,
+      "transitions": 423
+    },
+    "neural@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.4426675959700024,
+      "total_return": 0.5568547435310367,
+      "drawdown": -0.5007015242029427,
+      "terminal_equity": 1.5568547435310367,
+      "transitions": 423
+    },
+    "valuation_rule@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 1.2506040790303183,
+      "total_return": 2.4924520374124155,
+      "drawdown": -0.36658102937023207,
+      "terminal_equity": 3.4924520374124155,
+      "transitions": 423
+    },
+    "SPY@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.2695045945576743,
+      "total_return": 0.309315647938589,
+      "drawdown": -0.18755250947031565,
+      "terminal_equity": 1.309315647938589,
+      "transitions": 423
+    },
+    "momentum20@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 1.5778600853034799,
+      "total_return": 3.8445777280127142,
+      "drawdown": -0.3878170844194765,
+      "terminal_equity": 4.844577728012714,
+      "transitions": 423
+    },
+    "momentum120@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 1.4718822195547088,
+      "total_return": 3.3574290654565546,
+      "drawdown": -0.4599861460678305,
+      "terminal_equity": 4.357429065456555,
+      "transitions": 423
+    },
+    "equal@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0.7924961292936848,
+      "total_return": 1.208903258644669,
+      "drawdown": -0.339153721644756,
+      "terminal_equity": 2.208903258644669,
+      "transitions": 423
+    },
+    "USD@30bps": {
+      "objective": "net-compounded-growth/1",
+      "log_growth": 0,
+      "total_return": 0,
+      "drawdown": 0,
+      "terminal_equity": 1,
+      "transitions": 423
+    }
+  }
+}
