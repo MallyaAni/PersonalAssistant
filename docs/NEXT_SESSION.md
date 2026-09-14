@@ -3,7 +3,45 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — audit actual pick publication, fills and technical timing
+
+Read-only `market_pick_audit` evaluates saved grades, never regenerating the
+past with current code. Five records, 34 A+ observations, 11 distinct names;
+ten have post-publication prices. Five of ten rose from the first tradable
+open to September 11. Mean +0.67% before costs, median −0.40%; matched SPY
+−0.23%. Saturday's September 11 record has no forward outcome by the cutoff.
+
+Fetched 22,616 historical SIP bars including warmup, with no unavailable names,
+and 34 broker receipts. HPE's 201-share buy expired, missing its subsequent
+18.74% move. AAOI filled Friday at 9:33:06 after a sharp opening move. NTAP's
+Friday trim preceded a recovery; SMCI's later re-entry improved its outcome.
+See [full audit](research/pick-timing-audit-2026-09-13.md) and companion JSON.
+
+The user clarified that timing should depend on technical structure, not fixed
+profit numbers. Added research-only daily/hourly/15-minute comparisons using
+EMA21/50 trend alignment, EMA9/21 pullback recovery, prior-day-high retests,
+Bollinger rejection, and confirmed EMA failure. Only completed candles enter
+signals; fills use the following bar. Nine tests passed, including no future
+repainting and unfinished-hour exclusion. These specific variants underperformed
+the simple entry/hold comparison in this short sample and were not promoted.
+They are per-position diagnostics, not funded portfolio simulations, and have
+no re-entry after full exits. Next work needs re-entry/funding and an untouched
+forward sample before changing live technical execution.
+
+Production follow-ups supported by the audit: persist publication/submission/
+fill timestamps together, measure opening drift against a named feed/quote,
+and make allocation/entry eligibility distinct from the A+ selection grade.
+The new research CLI runs from an isolated source tree against read-only data;
+it is not a new live job and creates no orders.
+
 ## 2026-09-13 — FOMC deployment verified
+
+Frontend follow-up `f13cbcfa` also deployed through the script, exit 0;
+post marker `2026-09-14T01:53:26Z f13cbcfa ok (cheap)`. Public asset
+`/assets/index-CtXHAenQ.js` passed the same 93-grade/AAOI/mobile browser replay
+with zero errors. Two focused FOMC browser tests passed in 7.1s. The final
+wording says orders are queued for the open and actual fills can differ.
+The backend image remains the fully gated `84d07faf` implementation below.
 
 Verified checkpoint `84d07faf`: deployed through `scripts/deploy.sh --wait-post`,
 exit 0. Full unit gate **3450 passed, 19 skipped, 82 warnings in 141.85s**;

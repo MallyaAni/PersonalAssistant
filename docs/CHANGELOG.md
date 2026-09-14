@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-13 — Adopt FOMC exposure policy and audit actual trade timing
+
+Enabled the user-selected, provisional three-session FOMC reduction when
+five-session SPY performance turns negative. Separate event receipts prevent
+repeated cuts and restoration of unfilled sales; opening execution bypasses
+ordinary green-day/closing rules, and active cycles defer regular rebalances.
+Dashboard copy distinguishes enabled policy, queued intent and confirmed fills.
+Evaluation reports the post-guidance era separately on a continuous account.
+Deployment `84d07faf`: 3450 unit tests passed, 19 skipped; 100 real-model routing
+cases passed; post-deploy checks passed. Eighteen dashboard browser cases passed.
+
+Added a read-only publication/price/fill audit and multi-timeframe timing
+research. Real evidence: 34 stored A+ observations, 11 names, 22,616 SIP candles,
+34 paper order receipts. Nine causal-boundary tests passed. The tested EMA/
+Bollinger/retest variants do not yet improve the short sample and remain
+research-only. See `docs/research/pick-timing-audit-2026-09-13.md` for every
+comparison, execution findings and limitations.
+
 ## 2026-09-13 — Make desk captions match their evidence
 
 Correct participation, practice-account, target-exposure, chart-timeframe and
