@@ -94,6 +94,8 @@ async def test_decision_preview_preserves_context_and_files(tmp_path, monkeypatc
         assert result["equity"] == 100000
         assert result["session"] == record["session"]
         assert result["rows"]["S11"]["quote"]["feed"] == "sip"
+        method = result["rows"]["S11"]["opportunity"]["method"]
+        assert "not a predicted return" in method
         invalid = await client.get("/api/v1/market/desk_user/desk/mine?equity=inf")
         assert invalid.status_code == 422
     assert {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")} == before

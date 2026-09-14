@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react'
-import type { DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
+import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
 
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
 
@@ -10,10 +10,12 @@ const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, holdings, paused, now, action, onOpen, onBuy, saving, error}: {
+export const StockBoard = ({latest, live, grades, research, paper, coverage, decisions, holdings, paused, now, action, onOpen, onBuy, saving, error}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
+  decisions?: DeskDecisions;
+  coverage?: DeskPayload['coverage'];
   paused: boolean; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
   onOpen: (ticker: string) => void;
   onBuy?: (ticker: string, price: number, shares: number, date: string) => Promise<boolean>;
@@ -31,15 +33,24 @@ export const StockBoard = ({latest, live, grades, research, paper, holdings, pau
       && Number.isFinite(research.targets?.[ticker]) && research.targets![ticker] >= 0)
   const gross = current ? Object.values(research.targets ?? {}).reduce((sum, weight) => sum + weight, 0) : null
   const sized = current && gross !== null && gross <= 1.000001 && !paused && !research.event_paused
+  // Compare only current scores tied to this exact nightly basis and completed price.
+  const opportunity = (ticker: string) => {
+    const value = decisions?.rows[ticker]?.opportunity
+    return decisions?.session === latest.session && decisions.written === latest.written
+      && value?.bar === live.quotes[ticker]?.bar && Date.parse(value?.valid_until ?? '') > now
+      && Number.isFinite(value?.score) ? value!.score : null
+  }
   const stocks = Object.entries(latest.grades).map(([ticker, grade]) => ({
     ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
+    opportunity: opportunity(ticker),
     weight: sized ? research.targets![ticker] : null,
-  })).sort((a, b) => (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
+  })).sort((a, b) => (b.opportunity ?? -1) - (a.opportunity ?? -1)
+    || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
     || (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
   const emptyAccount = holdings !== null && holdings.length === 0
-  const cash = {ticker: '__cash__', grade: '', score: 0, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
+  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
   const cashIndex = paused ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   const ranked = [...stocks]
   ranked.splice(cashIndex < 0 ? ranked.length : cashIndex, 0, cash)
@@ -50,6 +61,7 @@ export const StockBoard = ({latest, live, grades, research, paper, holdings, pau
       <p>{paused ? 'FOMC · new buys paused' : sized ? '15-minute model allocations · experimental' : 'Sizing unavailable · waiting for fresh data'}</p>
       <p className="mt-0.5">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours</p>
       <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">Analysis {latest.session} close{live.stale ? ' · market data stale' : ''}</p>
+      {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
     </div>
     <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
@@ -61,7 +73,7 @@ export const StockBoard = ({latest, live, grades, research, paper, holdings, pau
           return <tr key={row.ticker} className={`border-t border-black/[0.05] ${isCash ? 'bg-[#f0f5fa]' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{index + 1}</td>
             <td className="py-2">
-              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span></button>}
+              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span>{row.opportunity !== null && <span title="Opportunity evidence index; open for inputs and dates" className="ml-1 text-[10px] font-normal text-[#6e6e73]">· {row.opportunity!.toFixed(1)}/10</span>}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? 'Hold available cash' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs">{isCash ? 'Hold' : paused ? <span title="FOMC cycle takes priority">Wait</span> : action(row.ticker, row.weight)}</td>

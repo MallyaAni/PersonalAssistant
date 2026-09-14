@@ -203,6 +203,16 @@ def _green_day_skip_locked(
             print(f"  - {note}")
 
 
+# Keep a failed synthetic-account write separate from successfully published research.
+def _observe_paper(data_dir, record, snapshot, research):
+    from backend.market import board_paper
+
+    try:
+        board_paper.observe(data_dir, record, snapshot, research)
+    except Exception as exc:  # noqa: BLE001 - isolate the synthetic account
+        print(f"Forward paper observation unavailable ({type(exc).__name__})")
+
+
 # Build the plan for the person's own account from the latest record, their
 # recorded holdings, and the live read, and write it with the audit line.
 def run(data_dir: Path, equity: float) -> Path:
@@ -306,11 +316,10 @@ def run(data_dir: Path, equity: float) -> Path:
 
         try:
             research = intraday_research.publish(data_dir, latest, live)
-            from backend.market import board_paper
-
-            board_paper.observe(data_dir, latest, live, research)
         except Exception as exc:  # noqa: BLE001 - research cannot interrupt execution
             print(f"Research allocation unavailable ({type(exc).__name__})")
+        else:
+            _observe_paper(data_dir, latest, live, research)
         # The green-day rule runs on the same candle: a pending sell for a
         # name trading up at the open is cancelled and the position held.
         _green_day_skip(data_dir, latest, quotes, data_dir / "desk" / INTRADAY_LOG)

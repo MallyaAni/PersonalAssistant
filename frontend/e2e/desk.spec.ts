@@ -8,6 +8,43 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Current opportunity evidence, not a larger position budget, determines stock priority.
+test('current opportunity scores change rank and explain their inputs', async ({page}) => {
+  await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  let next = false
+  await page.route('**/desk/history/NVDA', route => route.fulfill({json: {ticker: 'NVDA', rows: [], backtest: null}}))
+  // Return a changed observed score on the next refresh without changing target sizes.
+  const reading = (score: number) => ({version: 'analyst-opportunity/1', score, status: 'indicative',
+    price: 100, bar: '2026-09-09T13:45:00Z', valid_until: '2026-09-09T14:15:00Z', valuation_current: false,
+    parts: [{analyst: 'value', score: 8, weight: 1, basis: '2026-09-08', evidence: ['Recorded price/sales comparison']}], missing: [], method: 'Evidence index'})
+  await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-09T14:00:00Z', quotes: {
+    AAPL: {last: 100, bar: '2026-09-09T13:45:00Z'}, NVDA: {last: 100, bar: '2026-09-09T13:45:00Z'},
+  }}}))
+  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, holdings: {}, equity: 100000,
+    rows: {AAPL: {action: 'Wait', opportunity: reading(next ? 9 : 5)}, NVDA: {action: 'Wait', opportunity: reading(8)}},
+  }}}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.locator('tbody tr').first()).toContainText('NVDA')
+  await page.getByRole('button', {name: /^NVDA/}).click()
+  const score = page.getByLabel('Price-to-opportunity score')
+  await expect(score).toContainText('8.0/10')
+  await expect(score).toContainText('valuation is nightly')
+  await expect(score).toContainText('Recorded price/sales comparison')
+  await expect(score).toContainText('not a return forecast')
+  await page.getByRole('button', {name: 'Close', exact: true}).click()
+  next = true
+  await page.clock.fastForward(16000)
+  await expect(board.locator('tbody tr').first()).toContainText('AAPL')
+  await expect(board.locator('tbody tr').first()).toContainText('9.0/10')
+  await page.clock.fastForward(15 * 60000)
+  await expect(board).not.toContainText('/10')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // A known empty account holds all its capital in USD while additions are paused.
 test('empty paused account shows USD at 100 percent', async ({page}) => {
   await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))

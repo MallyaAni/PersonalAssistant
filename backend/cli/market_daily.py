@@ -4,8 +4,8 @@
     python -m backend.cli.market_daily                      # the desk on stored data
     python -m backend.cli.market_daily --refresh --brief SNDK CRWV
 
-`--refresh` pulls daily bars for the book names, the benchmark and the
-macro series, the EDGAR events and facts for the book names, and scores any
+`--refresh` pulls daily bars for all tracked stocks, benchmarks and the
+macro series, EDGAR events and facts for all tracked stocks, and scores any
 release not yet scored (only the new ones: earlier scores carry forward).
 Then the desk runs and prints the regime, the grades and the book, and the
 whole record is written to `data/market/desk/asof=DATE/desk.json` so a day
@@ -29,7 +29,14 @@ from backend.config.settings import settings
 from backend.market import snapshot
 from backend.market.macro import SERIES
 from backend.market.store import MarketStore
-from backend.market.universe import MARKET_INDICES, book_sides, build_universe
+from backend.market.universe import (
+    FOCUS,
+    MARKET_INDICES,
+    MEMBER,
+    book_sides,
+    build_universe,
+    tickers_with_role,
+)
 
 DESK_KIND = "desk"
 # The layers a day re-fetches in full, so old partitions of them are
@@ -104,11 +111,10 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# The tickers the desk needs daily bars for: the book, the displayed
-# benchmarks, the macro series.
+# Keep the entire research universe current, plus benchmarks and macro series.
 def bar_tickers() -> tuple[str, ...]:
     """Return the tickers the daily refresh pulls bars for."""
-    names = tuple(sorted(book_sides(build_universe())))
+    names = research_tickers()
     return names + tuple(MARKET_INDICES) + tuple(SERIES.values())
 
 
@@ -116,6 +122,11 @@ def bar_tickers() -> tuple[str, ...]:
 def book_tickers() -> tuple[str, ...]:
     """Return the book's tickers."""
     return tuple(sorted(book_sides(build_universe())))
+
+
+# Collect evidence systematically for all stock members, not just the themed book.
+def research_tickers() -> tuple[str, ...]:
+    return tuple(sorted(tickers_with_role(build_universe(), FOCUS, MEMBER)))
 
 
 # Refresh every layer the desk reads, in the order it needs them.
@@ -141,14 +152,14 @@ def refresh(
             else ""
         )
     )
-    filings(store, book_tickers(), asof)
+    filings(store, research_tickers(), asof)
     if skip_tone:
         print("tone: skipped")
         return
     try:
         scored = tone(
             store,
-            book_tickers(),
+            research_tickers(),
             asof,
             llm_url=llm_url,
             llm_model=llm_model,

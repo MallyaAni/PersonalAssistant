@@ -21,6 +21,7 @@ def archive(root, rows):
 # Paused sizes stay withheld and later policy changes do not rewrite an earlier grade.
 def test_original_grades_sizes_and_pauses_are_immutable(tmp_path, monkeypatch):
     rows = observations()
+    rows[0]["opportunity"] = {"AAPL": {"score": 7.25}}
     rows[1]["targets"]["AAPL"] = 0.2
     rows[2]["event_paused"] = True
     rows[2]["policy_sha256"] = "new"
@@ -35,6 +36,7 @@ def test_original_grades_sizes_and_pauses_are_immutable(tmp_path, monkeypatch):
     assert result["observations"][0]["grade"] == "C"
     assert result["observations"][1]["allocation_change"] == pytest.approx(0.1)
     assert result["observations"][-1]["grade"] == "A+"
+    assert result["observations"][-1]["opportunity_score"] == 7.25
     assert all(row["stock_total_return"] is None for row in result["observations"])
     assert result["outcomes"]["status"] == "awaiting_daily_validation"
     assert {path: Path(path).read_bytes() for path in before} == before

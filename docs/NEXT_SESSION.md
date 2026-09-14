@@ -1,5 +1,39 @@
 # Next session
 
+## Latest verified live checkpoint — 413447fa
+
+Deployed through scripts/deploy.sh: 3563 unit tests passed, 19 skipped (149.83s),
+100 real routing tests passed (476.58s), backup/restart and cheap post-check
+`2026-09-14T19:26:29Z 413447fa ok (cheap)`. Public browser asset DTSbP3wX:
+94 rows in one table, USD first, FOMC Wait, Buy cancelled with no write, 23 ticker
+history rows, paper USD 100%, mobile 364/364px, zero browser/network errors.
+All 32 diagrams and the published architecture page checked; changed SVG inspected.
+
+New synthetic run initialized at 19:27:47 UTC with $100,000 USD, no positions or
+fills. All 93 shared-planner actions were Wait. Existing Alpaca paper state and
+personal holdings hashes unchanged. First 19:30 cron paper observation FAILED:
+container-root initialization made the new folder unwritable by the host user.
+Fixed ownership of ONLY desk/board-paper to match intraday-research. An observation
+as the host UID then persisted sequence 2 at 19:32:01 UTC, unchanged $100,000 cash
+and no fills. Verify the next unattended tick before claiming scheduler acceptance.
+
+Current follow-up implements a transparent 0–10 analyst evidence index, its
+component weights/dates/reasons, current-score stock ordering, and prospective
+score archiving. It is explicitly NOT a calibrated return forecast and discloses
+nightly valuation. Scores disappear when price evidence expires. The existing
+daily refresh is widened to all 531 tracked stocks for bars, filings and new
+DeepSeek release scores, retaining the 93-name adopted strategy until broader
+grading is evaluated. UI states graded versus tracked scope; no claim all 531
+already receive valid grades. Neither a 13% drop nor a cheap-looking stock is
+automatically a high-quality opportunity.
+
+VERIFIED locally: 91 targeted backend tests (1.68s), 44 browser workflows (1.3m),
+TypeScript/Vite and lint. Follow-up checkpoint/deploy/public score acceptance pending.
+User clarified cumulative gain, NOT Sharpe. Added a tested net-log-NAV objective;
+no volatility division or hidden risk penalty. Read the existing historical ML/RL
+experiments but do not treat their old reward results as a rerun for this objective.
+No new trained growth policy or broader-universe strategy has been promoted.
+
 ## 2026-09-14 — USD, ticker history, separate forward paper and RL audit
 
 Started on main f6f6758a with seven unfinished ticker-history files. Pull --rebase

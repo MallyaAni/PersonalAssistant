@@ -42,6 +42,9 @@ def observation(record, ticker, identity):
         "policy_sha256": record.get("policy_sha256"),
         "allocation_change": None,
         "stock_total_return": None,
+        "opportunity_score": (record.get("opportunity", {}).get(ticker) or {}).get(
+            "score"
+        ),
     }
 
 

@@ -27,8 +27,8 @@ class _BarsReport:
     failed_tickers: list = field(default_factory=list)
 
 
-# The refresh pulls bars for the book plus the benchmark and the macro
-# series, then filings for the book, then the tone, in that order; a tone
+# Refresh the broad universe plus benchmarks and macro, then filings and
+# tone for every stock member in that order; an unavailable tone
 # runtime that is away does not stop the desk.
 def test_refresh_order_and_tickers(tmp_path):
     calls = []
@@ -54,7 +54,9 @@ def test_refresh_order_and_tickers(tmp_path):
     assert "SNDK" in bar_tickers
     assert "SPY" not in calls[1][1]
     assert calls[1][1] == calls[2][1]
-    assert "DUK" not in calls[1][1]
+    assert "DUK" in calls[1][1]
+    assert set(calls[1][1]) == set(market_daily.research_tickers())
+    assert set(market_daily.book_tickers()) < set(calls[1][1])
 
 
 def _report() -> DeskReport:

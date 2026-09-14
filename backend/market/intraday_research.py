@@ -10,7 +10,13 @@ from types import SimpleNamespace
 
 from backend.agents.trading.desk import intraday_candidate
 from backend.agents.trading.desk.desk import book_panel
-from backend.market import desk_freshness, economics, execution_quotes, live_technical
+from backend.market import (
+    desk_freshness,
+    economics,
+    execution_quotes,
+    live_technical,
+    opportunity,
+)
 from backend.market.store import MarketStore
 
 
@@ -47,6 +53,17 @@ def build(
         "technical_detail": snapshot.get("technical_detail") or {},
         "nightly_grades": record.get("grades") or {},
         "regime": record.get("regime") or {},
+    }
+    result["opportunity"] = {
+        ticker: opportunity.explain(
+            grade,
+            result["grades"].get(ticker),
+            snapshot["quotes"][ticker],
+            result["valid_until"],
+            now,
+            record["session"],
+        )
+        for ticker, grade in record["grades"].items()
     }
     if live_clock:
         result["execution_quotes"] = execution_quotes.fetch(

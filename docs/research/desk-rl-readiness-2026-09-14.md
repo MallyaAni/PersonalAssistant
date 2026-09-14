@@ -18,11 +18,28 @@ The reported GLW daily loss was not independently verified by this audit.
 
 ## First RL experiment
 
+User clarified that maximum cumulative gain, not Sharpe, is the objective.
+`growth_objective` therefore uses incremental log net NAV: summing rewards gives
+log(final NAV / initial NAV), exactly the terminal-wealth ordering for a fixed
+initial balance. Cash gives zero before interest; transaction costs already in
+NAV reduce the reward once. Drawdown and Sharpe are diagnostics and existing
+exposure/position/cash limits are constraints. Deposits/withdrawals require
+flow-adjusted NAV and cannot be counted as investment gains.
+
+Existing source research includes `market_allocation_rl` (Sharpe-shaped window
+reward), `market_offline_rl` (a contextual-bandit rather than sequential account
+simulator), `market_intraday_rl`, `market_execution_rl`, `market_interactions`
+and `market_xsect_net`. Their recorded results are not fresh measurements in
+this task. Their objectives, universe, execution model and turnover assumptions
+differ from this requested account objective. They are baselines to reproduce,
+not grounds to dismiss growth-oriented learning. Do not silently replace their
+reward and reuse the old result headings as if those experiments had been rerun.
+
 Research allocation and USD exposure using the existing analyst inputs, holdings,
 cash, elapsed holding time, market regime, event state and execution availability.
 Use bounded allocation changes; keep action gates outside the learner. Optimize
-net log equity growth with predeclared drawdown/turnover constraints. Choose any
-penalty coefficients on training/validation only, not by inspecting the final test.
+net log equity growth under the adopted exposure, position and cash constraints.
+Do not add a volatility penalty that silently changes the user's objective.
 Do not optimize hindsight-perfect entries/exits or use future highs as fill prices.
 
 Chronological train/validation/test blocks must isolate overlapping holding-period

@@ -6,7 +6,13 @@ from datetime import UTC, datetime
 import numpy as np
 
 from backend.agents.trading.desk.actions import action_for
-from backend.market import calendar, desk_freshness, execution_quotes, holdings
+from backend.market import (
+    calendar,
+    desk_freshness,
+    execution_quotes,
+    holdings,
+    opportunity,
+)
 
 VERSION = "desk-decision-view/1"
 
@@ -50,6 +56,7 @@ def build(record, held, equity, snapshot, quoted, now=None):
         )
     }
     expiries = desk_freshness.grade_expiries(snapshot, technical)
+    readings = holdings.live_grades(record, technical, value)
     event = record.get("event_risk") or {}
     paused = (
         event.get("factor") == 0.5
@@ -93,6 +100,14 @@ def build(record, held, equity, snapshot, quoted, now=None):
             if desk_freshness.timestamp(v)
         ]
         result[symbol] = {
+            "opportunity": opportunity.explain(
+                (record.get("grades") or {}).get(symbol, {}),
+                readings.get(symbol),
+                (snapshot.get("quotes") or {}).get(symbol, {}),
+                expiries.get(symbol),
+                now,
+                record["session"],
+            ),
             "action": action,
             "reason": reason,
             "target_weight": target,

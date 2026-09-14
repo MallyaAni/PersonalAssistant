@@ -1989,7 +1989,7 @@ export interface DeskRecommendationHistory {
   observations: {id: string; recorded_at: string; bar: string; grade: string;
     allocation: number | null; allocation_change: number | null; model_weight: number;
     event_paused: boolean; entry_state: string | null; price: number;
-    version: string; policy_sha256: string | null; stock_total_return: number | null}[];
+    version: string; policy_sha256: string | null; stock_total_return: number | null; opportunity_score?: number | null}[];
 }
 
 // The autopsy: what the person's own trading keeps doing, from their own
@@ -2077,6 +2077,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
+  coverage?: {tracked: number; graded: number};
   board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;
   forward_evidence?: DeskForwardEvidence;
   event_status?: { as_of?: string; status?: string; stale: boolean; active: boolean; pending_orders: number; policy?: DeskRecord['event_risk']; sold?: Record<string, number> };
@@ -2291,6 +2292,13 @@ export interface DeskMine {
   grades_live: Record<string, DeskLiveGrade>;
 }
 
+export interface DeskOpportunity {
+  version: string; score: number | null; status: string; price: number | null;
+  bar: string | null; valid_until: string | null; valuation_current: boolean;
+  parts: {analyst: string; score: number; weight: number; basis: string; evidence: string[]}[];
+  missing: string[]; method: string;
+}
+
 export interface DeskDecisions {
   as_of: string;
   session: string;
@@ -2298,6 +2306,7 @@ export interface DeskDecisions {
   equity: number;
   holdings: Record<string, number>;
   rows: Record<string, {
+    opportunity?: DeskOpportunity;
     action: 'Buy eligible' | 'Wait' | 'Hold' | 'Reduce';
     reason: string;
     target_weight: number;

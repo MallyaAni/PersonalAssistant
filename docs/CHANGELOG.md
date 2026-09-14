@@ -9838,6 +9838,16 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - Rebuilt the backend from the working tree, recreated it, and restarted the gateway. A four-turn authenticated `testuser` acceptance thread through `POST /api/v1/chat` retained Saturday 8am–7pm and one recipient, produced the draft, and rewrote it casually. All four traces completed; no web-search, MCP tool execution, image-edit or missing-image event appeared in their logs.
 # 2026-09-14 — Single-board follow-through
 
+Follow-up: explain a current analyst evidence index out of ten with exact input
+weights, dates and recorded reasons; rank scored stocks by that index rather
+than allocation size. It is not a learned return forecast and retains the
+explicit nightly valuation limitation. Archive the original index prospectively.
+Broaden nightly bars, filings and release-score collection to the 531-member
+research universe, retaining the adopted 93-name strategy while wider grading
+is unverified. Add a net-compounded-growth research objective, independently
+tested against the prior Sharpe-shaped framing. Validation: 91 focused backend
+tests and 44 dashboard browser workflows; TypeScript/Vite and lint passed.
+
 Added the original recommendation timeline to ticker details; dated nightly
 analysis separately from intraday bars; labelled cash USD with explicit empty-
 account cash. Added an isolated opt-in forward paper ledger with delayed simulated

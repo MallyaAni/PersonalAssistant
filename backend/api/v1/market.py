@@ -115,6 +115,9 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
 
     event_live = event_status.load(_root())
     research = intraday_research.load(_root(), latest["session"])
+    from backend.market.universe import FOCUS, MEMBER, build_universe, tickers_with_role
+
+    tracked = tickers_with_role(build_universe(), FOCUS, MEMBER)
     if event_live["planning_paused"]:
         research = {**research, "event_paused": True}
     return {
@@ -123,6 +126,10 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "economics": economics.load(_root()),
         "intraday_research": research,
         "board_paper": board_paper.summary(_root()),
+        "coverage": {
+            "tracked": len(tracked),
+            "graded": len(latest.get("grades") or {}),
+        },
         "event_status": event_live,
         "forward_evidence": await asyncio.to_thread(forward_evidence.report, _root()),
         "event_policy": {
