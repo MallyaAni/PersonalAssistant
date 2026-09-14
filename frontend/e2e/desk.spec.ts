@@ -9,23 +9,25 @@ import { expect, test, type Page } from '@playwright/test'
 const USER = 'ani.mallya'
 
 // Percent allocations need no cash input and disappear at their evidence deadline.
-test('research percentages expire independently of account sizing', async ({page}) => {
+for (const [weight, displayed] of [[.047, '4.7%'], [.0002, '<0.1%']] as const) {
+test(`research percentages ${displayed} expire independently of account sizing`, async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest: deskRecord(), sessions: ['2026-09-08'], intraday_research: {
       status: 'available', session: '2026-09-08', bar: '20:00',
-      valid_until: '2026-09-09T14:00:30Z', targets: {AAPL: .047, NVDA: 0},
+      valid_until: '2026-09-09T14:00:30Z', targets: {AAPL: weight, NVDA: 0},
     },
   }}))
   await page.goto('/#desk')
   const rankings = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings'})})
-  await expect(rankings.locator('tr', {hasText: 'AAPL'})).toContainText('4.7%')
+  await expect(rankings.locator('tr', {hasText: 'AAPL'})).toContainText(displayed)
   await expect(rankings.locator('tr', {hasText: 'NVDA'})).toContainText('0.0%')
   await expect(page.getByLabel('Available cash to allocate ($)')).not.toBeVisible()
   await page.clock.fastForward(31_000)
-  await expect(rankings).not.toContainText('4.7%')
+  await expect(rankings).not.toContainText(displayed)
   await expect(rankings).not.toContainText('0.0%')
 })
+}
 
 // Execution history distinguishes an empty broker response from missing evidence.
 test('paper execution distinguishes fills from unavailable history', async ({page}) => {

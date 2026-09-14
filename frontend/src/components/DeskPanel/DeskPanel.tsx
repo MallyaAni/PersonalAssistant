@@ -1560,6 +1560,10 @@ const Positions = ({ holdings, error, onSave }: PositionsProps) => {
   )
 }
 
+// Keep a tiny positive allocation visibly distinct from an explicit zero.
+const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
+  ? '<0.1%' : `${(100 * weight).toFixed(1)}%`
+
 // Every name the desk follows, best first, with the analysts' marks and
 // the reason behind the grade on request.
 const EveryGrade = ({
@@ -1704,7 +1708,7 @@ const EveryGrade = ({
                 </td>
                 <td className="min-w-40 text-xs">
                   {research?.status === 'available' && !research.event_paused && research.session === latest.session && research.bar === quote?.bar && Date.parse(research.valid_until ?? '') > now && Number.isFinite(research.targets?.[ticker])
-                    ? `${(100 * research.targets![ticker]).toFixed(1)}%`
+                    ? allocationPercent(research.targets![ticker])
                     : '—'}
                 </td>
                 <td className="min-w-40 text-xs">
