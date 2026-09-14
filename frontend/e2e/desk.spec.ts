@@ -27,6 +27,7 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
   await cell.getByText('Position & quote').click()
   await expect(cell).toContainText('SIP')
   await expect(cell).toContainText('10.0 pp')
+  await expect(cell).toContainText('Using $100,000')
   await expect(cell).toContainText('10:00:30 AM')
   await page.clock.fastForward(31_000)
   await expect(cell).toContainText('Wait')

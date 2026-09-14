@@ -1609,6 +1609,7 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now}: {
     <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {allocationPercent(row.target_weight)} plan</span></div>
     <div className="text-[#6e6e73]">{reason}</div>
     <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
+      <div>Using {money(equity)} account value</div>
       <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
       <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
       <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
