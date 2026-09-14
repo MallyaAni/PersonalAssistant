@@ -41,8 +41,11 @@ dependencies = [
 
 [project.optional-dependencies]
 research = [
-    # Training the market ranker; not part of the backend image.
+    # Isolated market training and artifact replay; not part of the backend image.
     "torch>=2.5.0",
+    "scikit-learn>=1.5.0",
+    "joblib>=1.4.0",
+    "threadpoolctl>=3.5.0",
 ]
 dev = [
     "black>=24.0.0",

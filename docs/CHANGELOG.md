@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-14 — Research dependency packaging
+
+Declared scikit-learn, joblib and threadpoolctl in the existing research extra
+so the new supervised comparison can be installed on another research host.
+Production dependencies and model activation are unchanged. Manual deployment
+uses scripts/deploy.sh and its normal acceptance gates.
+
 ## 2026-09-14 — Price-sensitive ML ladder and paper accounting corrections
 
 Added and ran a bounded ridge/tree/neural return comparison with filed financial

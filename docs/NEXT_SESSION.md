@@ -1,5 +1,14 @@
 # Next session
 
+## Deployment handoff
+
+All requested source changes are pushed for manual deployment. Research-only
+dependencies (scikit-learn, joblib and threadpoolctl) are declared in the existing
+research extra; they are not added to the production image. Install .[research]
+only in an isolated training environment. Run bash scripts/deploy.sh on the
+deployment host; its gates and post-checks still determine live verification.
+Deployment does not activate an ML trading policy or reset any paper account.
+
 ## 2026-09-14 — Price-sensitive ML comparison and paper fixes
 
 User authorized proceeding with supervised ML and fixing the two paper defects.
