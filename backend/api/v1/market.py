@@ -111,7 +111,12 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     latest, previous = deskrecord.latest_pair(_root())
     if latest is None:
         return {"user_id": user_id, "latest": None, "sessions": []}
-    from backend.market import board_paper, event_status, forward_evidence
+    from backend.market import (
+        board_paper,
+        event_status,
+        forward_evidence,
+        opportunity_shadow,
+    )
 
     event_live = event_status.load(_root())
     research = intraday_research.load(_root(), latest["session"])
@@ -126,6 +131,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "economics": economics.load(_root()),
         "intraday_research": research,
         "board_paper": board_paper.summary(_root()),
+        "ml_forward": opportunity_shadow.summary(_root()),
         "coverage": {
             "tracked": len(tracked),
             "graded": len(latest.get("grades") or {}),

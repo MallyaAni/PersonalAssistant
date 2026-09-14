@@ -342,6 +342,28 @@ Forward reports read local immutable decisions and corporate-action histories.
 Neither the report nor correlation challenger can promote a strategy or change
 broker/account state. No new tool, route, permission or model prompt was added.
 
+## Frozen ML forward ledger boundary (2026-09-14)
+
+The forward-paper comparison reads only local market history and the
+checked-in NumPy bundle (`backend/market/data/opportunity_neural_v1.npz`,
+loaded with `allow_pickle=False`, so the file can carry arrays and nothing
+executable). It has no broker credentials, no broker-write capability and
+no network access of its own; it never places or previews an order. Its
+state lives under `data/market/desk/ml-forward/` as append-only sequence
+files written by hard link, so a competing writer cannot overwrite or
+duplicate a transition, and the only routine writer is the nightly refresh
+running for the current date. Each record pins the SHA-256 of the bundle
+and the inference, feature, execution, filing, level and calendar code, and
+a changed model or code refuses to continue the ledger rather than silently
+altering an experiment. Records hold synthetic $100,000 accounts, public
+prices, normalized public features and their hash, model forecasts and
+policy targets: no personal positions, account cash, tokens or model
+conversations. The summary is exposed only through the existing
+desk-owner route and reads the latest record without loading parameters.
+Retention follows the market-data backup policy; operator removal of the
+directory is the deletion path and starts a fresh ledger. No new route,
+permission, model prompt or external dependency was added.
+
 ## Security review for a change
 
 The separate forward paper simulation stores account-free synthetic capital,

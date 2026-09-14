@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-09-14 — Frozen neural forward-paper comparison, observed nightly
+
+Exported the 2024-validation-selected neural scorer from research source
+b92ca4ff (published 09cef0e5) to a pickle-free NumPy bundle
+(`backend/market/data/opportunity_neural_v1.npz`: 94 names, 18 features,
+three linear layers, training medians and scale). `opportunity_shadow`
+runs it with NumPy alone; production needs no Torch and no GPU. Each
+completed session after 16:00 ET it records five policies — the frozen
+network, the fixed valuation rule, 20-session momentum, SPY and cash —
+in ten separate $100,000 accounts at 10 and 30 bp per traded dollar,
+under `data/market/desk/ml-forward/`. Decisions are recorded before any
+fill and filled at the next session's close; a missed session cancels
+the standing intent rather than filling at a price already seen; a
+missing held price fails the account closed; stale daily history starts
+cash accounts only. Every record carries the bundle-plus-code
+fingerprint, the normalized inputs and their hash, so an experiment
+cannot drift silently, and the ledger is append-only (hard-linked
+sequence files, duplicates refused). The nightly refresh observes only
+when it runs for the current date; a historical `--asof` run has no
+side effects. The desk route reports the accounts as `ml_forward`, and
+the board shows them in a collapsed "ML paper comparison" panel that
+says no real orders are placed. The live allocation is untouched: the
+network has no demonstrated prospective advantage and controls nothing.
+
+VERIFIED on this desktop: seven shadow tests, 16 nightly CLI tests, lint,
+type check, the ML-comparison browser test, and all 32 diagrams and the
+architecture page synchronized (`docs:diagram:check`). Five desk-API
+tests need Linux (`fcntl`) and fail identically on origin/main here;
+they passed in the Linux run recorded in the previous entry. Deployment
+is not verified from this host. Diagram impact: UPDATED — Trading desk,
+Market data (frozen inference and the independent accounts added).
+
 ## 2026-09-14 — Research dependency packaging
 
 Declared scikit-learn, joblib and threadpoolctl in the existing research extra

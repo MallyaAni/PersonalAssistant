@@ -8,6 +8,31 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Prospective model accounts are visible separately from the adopted plan and holdings.
+test('frozen ML paper comparison shows independent account returns', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/api/v1/conversations/ani.mallya/*', route => route.fulfill({json: {messages: []}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: deskRecord(), ml_forward: {status: 'Observed frozen policies', session: '2026-09-14',
+      observed_at: '2026-09-14T21:00:00Z', accounts: {
+        'neural@10bps': {equity: 101000, total_return: .01},
+        'SPY@10bps': {equity: 100500, total_return: .005},
+      }},
+  }}))
+  await page.goto('/#desk')
+  await page.getByText('ML paper comparison · 2026-09-14', {exact: true}).click()
+  const comparison = page.getByLabel('ML forward comparison')
+  await expect(comparison).toContainText('no real orders')
+  await expect(comparison).toContainText('Updated nightly')
+  await expect(page.getByRole('table', {name: 'ML paper returns'})).toContainText('1.00%')
+  await expect(page.getByRole('table', {name: 'ML paper returns'})).toContainText('0.50%')
+  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
+  await page.reload()
+  await page.getByText('ML paper comparison · 2026-09-14', {exact: true}).click()
+  await expect(comparison).toContainText('$101,000.00')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Current opportunity evidence, not a larger position budget, determines stock priority.
 test('current opportunity scores change rank and explain their inputs', async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})

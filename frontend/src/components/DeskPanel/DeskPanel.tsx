@@ -880,7 +880,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <button aria-label="Refresh" onClick={() => {void load();void poll()}}><RefreshCw size={16} /></button>
       </div>
     </header>
-    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} paper={payload.board_paper} coverage={payload.coverage} decisions={decisions}
+    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} paper={payload.board_paper} ml={payload.ml_forward} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} paused={Boolean(eventPaused)} now={now}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
       onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />

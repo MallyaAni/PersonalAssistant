@@ -75,13 +75,16 @@ async def test_current_research_target_drives_action_over_http(tmp_path, monkeyp
 async def test_forward_paper_summary_is_read_from_persisted_account(
     tmp_path, monkeypatch
 ):
-    from backend.market import board_paper
+    from backend.market import board_paper, opportunity_shadow
 
     monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     _write(tmp_path, "2026-09-11", {"AAPL": "A+"}, [("AAPL", 0.1)], [])
     before = board_paper.initialize(tmp_path, 100_000)
+    ml_before = opportunity_shadow.initialize(
+        tmp_path / "desk/ml-forward", ("AAPL", "SPY"), "frozen", datetime.now(UTC)
+    )
     token = issue_user_token("desk_user", scopes=["memory:read"])
     async with AsyncClient(
         transport=ASGITransport(app=app),
@@ -92,7 +95,12 @@ async def test_forward_paper_summary_is_read_from_persisted_account(
         assert response.status_code == 200
         assert response.json()["board_paper"]["cash"] == 100_000
         assert response.json()["board_paper"]["equity"] == 100_000
+        assert (
+            response.json()["ml_forward"]["accounts"]["neural@10bps"]["equity"]
+            == 100_000
+        )
     assert board_paper.latest(tmp_path) == before
+    assert opportunity_shadow.latest(tmp_path / "desk/ml-forward") == ml_before
 
 
 # Recorded recommendations remain accessible even before a nightly replay file exists.

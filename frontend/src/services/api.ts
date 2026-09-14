@@ -2079,6 +2079,7 @@ export interface DeskOrder {
 export interface DeskPayload {
   coverage?: {tracked: number; graded: number};
   board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;
+  ml_forward?: {status: string; started_at?: string; observed_at?: string; session?: string | null; accounts: Record<string, {equity: number; total_return: number}>} | null;
   forward_evidence?: DeskForwardEvidence;
   event_status?: { as_of?: string; status?: string; stale: boolean; active: boolean; pending_orders: number; policy?: DeskRecord['event_risk']; sold?: Record<string, number> };
   intraday_research?: { status: string; reason?: string; session?: string; targets?: Record<string, number>; event_paused?: boolean; bar?: string; valid_until?: string; valuation?: string; macro?: { defensive: boolean; exposure: number; base_exposure: number } };

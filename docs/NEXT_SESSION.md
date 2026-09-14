@@ -9,6 +9,55 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-14 — Frozen ML forward-paper checkpoint (this branch)
+
+Branch `research/growth-gpu-audit` carries the finished forward-paper
+implementation. The architecture is: dated market data and filed
+fundamentals → frozen features and the training normalizer → frozen
+NumPy scorer → portfolio targets → separate paper ledger → dashboard
+comparison. Boundaries that must survive any later change:
+
+- Research and production are separate. Training and model selection
+  happened offline; production loads `opportunity_neural_v1.npz` with
+  `allow_pickle=False` and needs neither Torch nor a GPU. The export CLI
+  (`market_opportunity_export`) refuses any run whose validation winner
+  is not the neural model and verifies NumPy inference and every
+  historical basket against the Torch model before writing.
+- Five policies keep independent records at two cost assumptions
+  (`neural`, `valuation_rule`, `momentum20`, `SPY`, `USD` × 10/30 bp).
+  Nothing shares cash or holdings with the Alpaca paper account, the
+  board paper account or the person's positions.
+- Decisions are recorded before simulated fills and filled at the next
+  session's close. A missed daily run cancels the intent; stale history
+  cannot generate a historical trade; a missing held mark fails closed.
+- Integrity: the record's `policy` is the SHA-256 of the bundle plus the
+  feature, execution, filing, level and calendar modules; a changed model
+  or changed execution code refuses to continue an existing ledger and
+  must use a separate directory. Ledger entries are append-only.
+- Promotion needs paper evidence. The network has no demonstrated
+  prospective advantage and does not control the deployed allocation.
+
+Entry points: `python -m backend.cli.market_opportunity_forward
+--data-dir data/market` observes once and prints the receipt; the
+nightly `market_daily` calls the same observer before grading when run
+for the current date. The desk route's `ml_forward` field and the
+board's "ML paper comparison" panel read the latest record only.
+
+VERIFIED on the desktop (Windows): `test_opportunity_shadow` (7),
+`test_market_daily` (16), ruff, black, `tsc`, the ML-comparison
+Playwright test, `docs:diagram:check` (32 diagrams and the page). Five
+desk-API tests fail here for lack of `fcntl`, identically on origin/main;
+they are Linux tests and passed in the Linux run of the previous entry.
+UNVERIFIED: deployment. The user runs `scripts/deploy.sh` on the
+deployment host manually; the first ledger record is written by the first
+nightly run for a current date after 16:00 ET, and the panel shows
+"awaiting first close" until then.
+
+Next atomic task: none of code. Let the accounts accumulate untouched
+results for a season, then compare the five policies at both costs on
+the same real sessions. Do not retrain, add RL, change the live
+allocation, or promote the network before that record exists.
+
 ## 2026-09-14 — Price-sensitive ML comparison and paper fixes
 
 User authorized proceeding with supervised ML and fixing the two paper defects.

@@ -10,10 +10,11 @@ const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, coverage, decisions, holdings, paused, now, action, onOpen, onBuy, saving, error}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, paused, now, action, onOpen, onBuy, saving, error}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
+  ml?: DeskPayload['ml_forward'];
   decisions?: DeskDecisions;
   coverage?: DeskPayload['coverage'];
   paused: boolean; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
@@ -88,6 +89,15 @@ export const StockBoard = ({latest, live, grades, research, paper, coverage, dec
       <span className="ml-1">· {new Date(paper.as_of).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})} ET{now - Date.parse(paper.as_of) >= 900000 ? ' · awaiting update' : ''}</span>
     </p>}
     {holdings === null && <p role="alert" className="px-3 py-2 text-xs text-[#b42318]">Positions unavailable. Recording is disabled.</p>}
+    {ml && <details aria-label="ML forward comparison" className="shrink-0 border-t px-3 py-2 text-xs">
+      <summary className="cursor-pointer">ML paper comparison · {ml.session ?? 'awaiting first close'}</summary>
+      <p className="my-2 text-[#6e6e73]">Separate simulated accounts starting at $100,000 each. Frozen model; no real orders. Updated nightly. Costs of 10 or 30 basis points per traded dollar are included. This research portfolio does not follow the live desk’s FOMC policy.</p>
+      <p>{ml.status}</p>
+      {ml.observed_at && <p>Last observed {new Date(ml.observed_at).toLocaleString('en-US', {timeZone: 'America/New_York'})} ET</p>}
+      <table aria-label="ML paper returns" className="mt-2 w-full tabular-nums"><thead><tr><th className="text-left">Policy / cost</th><th>Account</th><th>Return</th></tr></thead>
+        <tbody>{Object.entries(ml.accounts).map(([name, account]) => <tr key={name}><td>{name}</td><td className="text-center">{account.equity.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</td><td className="text-center">{(account.total_return * 100).toFixed(2)}%</td></tr>)}</tbody>
+      </table>
+    </details>}
     {buy && <div role="dialog" aria-modal="true" aria-label={`Record ${buy} buy`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <form className="w-full max-w-sm space-y-3 rounded-2xl bg-white p-5 text-sm shadow-xl" onSubmit={async event => {
         event.preventDefault()

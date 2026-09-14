@@ -1110,6 +1110,9 @@ def main() -> None:
             llm_model=args.llm_model,
             concurrency=args.concurrency,
         )
+    from backend.market import opportunity_shadow
+
+    opportunity_shadow.observe_if_current(Path(store.root), args.asof is None)
     report = trading_desk.run(store, args.asof)
     panel = report.panel
     print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
