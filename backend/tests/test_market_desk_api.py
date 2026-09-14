@@ -539,6 +539,46 @@ async def test_new_snapshot_with_old_candle_keeps_the_evening_grade(
     assert read.json()["data_at"] == "2026-09-10T13:45:00+00:00"
 
 
+# Durable event intent pauses live plans without overwriting the nightly archive.
+@pytest.mark.asyncio
+async def test_live_event_cycle_pauses_planning_and_cash_preview(tmp_path, monkeypatch):
+    from backend.agents.trading.desk import paper
+
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-04", {"AAA": "A+"}, [("AAA", 0.08)], [])
+    (tmp_path / "desk" / "live.json").write_text(
+        json.dumps({"quotes": {"AAA": {"last": 10}}})
+    )
+    paper.save_state(
+        tmp_path,
+        paper.PaperState(event_cycle={"id": "event", "baseline": {"AAA": 100}}),
+    )
+    before = {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")}
+    token = issue_user_token(
+        "desk_user", ttl_seconds=60, scopes=["memory:read", "memory:write"]
+    )
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        desk = (await client.get("/api/v1/market/desk_user/desk")).json()
+        mine = (
+            await client.get("/api/v1/market/desk_user/desk/mine?equity=10000")
+        ).json()
+        preview = await client.post(
+            "/api/v1/market/desk_user/desk/funding-preview",
+            json={"equity": 10000, "available_cash": 5000},
+        )
+    assert desk["event_status"]["active"]
+    assert desk["intraday_research"]["event_paused"]
+    assert all(row["event_paused"] for row in mine["rows"])
+    assert preview.status_code == 200
+    assert preview.json()["estimated_cost"] == 0
+    assert before == {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")}
+
+
 # The person's own positions round-trip through the API, a bad row is
 # refused whole, and the board against them says what to do with each
 # name held or targeted, the name the desk does not rate included.

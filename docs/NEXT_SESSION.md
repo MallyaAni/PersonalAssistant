@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-09-14 — Recover missed FOMC reductions
+
+Started clean on main `0aa70861`; pulled origin/main, already current. The user
+requested continuation through the remaining execution gap. Implemented regular-
+session paper-only recovery of an already-qualified FOMC reduction. It rebuilds
+the policy from the exact prior-session panel, requires fresh completed prices
+and the broker's open-session clock, journals before submitting, and retries an
+uncertain acknowledgment with the same client ID. Partial fills reduce only the
+remaining quantity. Unknown event receipts no longer disappear during nightly
+reconciliation. Lower actual holdings block an unsafe retry. Recovery never buys,
+extends an expired event, advances the rebalance clock, or cancels other orders.
+
+Nightly execution and the green-day cancellation path share a POSIX file lock
+with recovery. A code-hash activation written only by gated deployment prevents
+the independent cron Git pull from activating new order logic early. API/UI show
+current event evidence separately from the archived decision and pause planning
+against durable event intent. FOMC restoration retains the adopted rule after
+the measured comparison in `docs/research/fomc-restoration-2026-09-14.md`: the
+trend gate raised historical drawdown and has no distinguishing result in the
+newer period, which contains only one completed meeting.
+
+VERIFIED pre-deploy: 59 focused backend tests (1.86s), 35 browser workflows
+(53.7s), TypeScript/Vite and lint. A current-account dry run through the actual
+broker reads proposed nine sell orders and persisted all nine intents in a
+temporary state copy; every broker write was intercepted. It touched no real
+paper state or broker orders. Deployment and actual recovery receipts pending.
+
 ## 2026-09-14 — Trading review, allocation percentages and execution evidence
 
 Started on main `42b928b9` with three unfinished task files. Pull initially

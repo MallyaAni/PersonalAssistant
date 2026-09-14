@@ -110,11 +110,18 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     latest, previous = deskrecord.latest_pair(_root())
     if latest is None:
         return {"user_id": user_id, "latest": None, "sessions": []}
+    from backend.market import event_status
+
+    event_live = event_status.load(_root())
+    research = intraday_research.load(_root(), latest["session"])
+    if event_live["active"]:
+        research = {**research, "event_paused": True}
     return {
         "user_id": user_id,
         "latest": latest,
         "economics": economics.load(_root()),
-        "intraday_research": intraday_research.load(_root(), latest["session"]),
+        "intraday_research": research,
+        "event_status": event_live,
         "event_policy": {
             "enabled": True,
             "version": event_risk.VERSION,
@@ -432,6 +439,9 @@ async def desk_mine(
     rows = holdings.load(_root())
     if latest is None:
         return {"user_id": user_id, "session": None, "rows": []}
+    from backend.market import event_status
+
+    latest = event_status.for_planning(latest, _root())
     snap = _live_snapshot()
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)
@@ -531,6 +541,9 @@ async def desk_funding_preview(user_id: UserId, inputs: dict) -> dict[str, objec
             sizing_record = latest
         else:
             raise ValueError("Unknown preview mode")
+        from backend.market import event_status
+
+        sizing_record = event_status.for_planning(sizing_record, _root())
         rows = holdings.board(sizing_record, held, equity, quotes)
         result = funding.preview(rows, equity, cash)
         if decision:

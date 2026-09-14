@@ -257,6 +257,11 @@ mkdir -p "$(dirname "$deployed_marker")"
 printf '%s\n' "$after" > "$deployed_marker"
 echo "deployed $after"
 
+# A cron pull alone must not activate new paper-order execution code.
+if $gate && ! $frontend_only; then
+    "${compose[@]}" exec -T backend python -m backend.cli.market_event_recovery --activate
+fi
+
 step "Post-deploy checks"
 if ! $post; then
     echo "WARNING: post-deploy checks skipped by request"

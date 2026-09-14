@@ -1,7 +1,7 @@
 """The desk's intraday balancer: every fifteen minutes, what to buy right now.
 
 The nightly record decides the book and its target weights. Between sessions
-the grade is fixed but the price and the technical read move, so "best buys
+eligible grades and the price and technical read move, so "best buys
 for this moment, sized by the grade" is a live re-ranking of that fixed book
 against the person's recorded holdings, refreshed on each fifteen-minute
 candle. This job does that re-ranking headlessly and persists it - the ranked
@@ -12,7 +12,8 @@ one-line audit trail.
 The scheduled policy keeps the evening targets. A separate research allocation
 re-sizes fresh grades with a macro budget; it never supplies broker orders.
 The older `market_cadence` study compared daily cadences, not intraday trading.
-This job also reconciles the existing paper-account green-opening sell rule;
+This job also reconciles the paper-account green-opening sell rule and recovers
+missed FOMC reductions once the execution code has passed gated deployment;
 use `market_intraday_research` for a research-only manual run.
 
     python -m backend.cli.market_balancer --data-dir data/market --equity 100000
@@ -121,6 +122,16 @@ def _current_opening_candle(quote: dict, now: datetime) -> bool:
 
 # Persist the intention to hold a green opening before requesting cancellation.
 def _green_day_skip(data_dir: Path, latest: dict, quotes: dict, log_path: Path) -> None:
+    from backend.agents.trading.desk import paper
+
+    with paper.transaction(data_dir):
+        _green_day_skip_locked(data_dir, latest, quotes, log_path)
+
+
+# Apply green-opening cancellations while holding the shared paper-state lock.
+def _green_day_skip_locked(
+    data_dir: Path, latest: dict, quotes: dict, log_path: Path
+) -> None:
     """Cancel pending sells for names trading up at the open; journal the holds."""
     from backend.agents.trading.desk import paper
     from backend.market import alpaca_trading
@@ -300,6 +311,9 @@ def run(data_dir: Path, equity: float) -> Path:
         # The green-day rule runs on the same candle: a pending sell for a
         # name trading up at the open is cancelled and the position held.
         _green_day_skip(data_dir, latest, quotes, data_dir / "desk" / INTRADAY_LOG)
+        from backend.cli import market_event_recovery
+
+        market_event_recovery.run(data_dir, latest, live)
     with (data_dir / "desk" / INTRADAY_LOG).open("a", encoding="utf-8") as handle:
         grades = ",".join(
             f"{b['ticker']}={b.get('grade_live') or b.get('grade')}"

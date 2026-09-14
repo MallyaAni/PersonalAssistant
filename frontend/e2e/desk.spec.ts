@@ -8,6 +8,24 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Current recovery evidence takes priority while the archived nightly decision stays dated.
+test('FOMC recovery displays current intent and pauses the portfolio plan', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], event_policy: {enabled: true},
+    event_status: {as_of: new Date().toISOString(), stale: false, active: true,
+      status: 'reduction pending', pending_orders: 2,
+      policy: {session: latest.session, factor: .5, calendar_known: true, decision_date: '2026-09-16'}},
+  }}))
+  await page.goto('/#desk')
+  await expect(page.getByLabel('FOMC exposure policy')).toContainText('FOMC · reduction pending')
+  await expect(page.getByLabel('FOMC exposure policy')).toContainText('2 pending event orders')
+  await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toContainText('FOMC takes priority')
+  await expect(page.getByLabel('FOMC exposure policy')).not.toContainText('decision missing')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Percent allocations need no cash input and disappear at their evidence deadline.
 for (const [weight, displayed] of [[.047, '4.7%'], [.0002, '<0.1%']] as const) {
 test(`research percentages ${displayed} expire independently of account sizing`, async ({page}) => {

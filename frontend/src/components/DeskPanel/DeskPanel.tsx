@@ -828,8 +828,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // of teaching a daily trading cadence the backtest does not use.
   const rebalanceDue = rows.length > 0 ? rows[0].rebalance_due : true
   const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? null
-  const event = latest?.event_risk
-  const eventPaused = event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
+  const eventLive = payload.event_status
+  const event = (!eventLive?.stale && eventLive?.policy) || latest?.event_risk
+  const eventPaused = eventLive?.active || event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
@@ -919,17 +920,19 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
-          <h3 className="font-semibold">FOMC · {!event ? 'decision missing' : eventPaused ? 'portfolio adjustments paused' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
+          <h3 className="font-semibold">FOMC · {!eventLive?.stale && eventLive?.status ? eventLive.status : !event ? 'decision missing' : eventPaused ? 'portfolio adjustments paused' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
+          {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''} · {eventLive.pending_orders} pending event orders</p>}
           <details className="mt-1 text-xs"><summary className="cursor-pointer">Policy & execution</summary>
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
-            The reduction lasts through decision day. Paper orders are queued for the next open, even on a green day;
+            The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day.
+            Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys.
             actual fill times and prices can differ.
             Restoration is limited to confirmed reductions and available cash. Regular rebalances wait while event orders remain unresolved.
             Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear.
             If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
           </details>
           <p className="mt-2 text-xs">{event
-            ? `Decision at the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
+            ? `Using the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
             {' '}{Object.entries(event.outcome.unrestored).map(([symbol, qty]) => `${symbol} ${qty} shares unbought`).join(' · ')}.

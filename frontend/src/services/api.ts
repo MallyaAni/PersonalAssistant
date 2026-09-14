@@ -2065,6 +2065,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
+  event_status?: { as_of?: string; status?: string; stale: boolean; active: boolean; pending_orders: number; policy?: DeskRecord['event_risk']; sold?: Record<string, number> };
   intraday_research?: { status: string; reason?: string; session?: string; targets?: Record<string, number>; event_paused?: boolean; bar?: string; valid_until?: string; valuation?: string; macro?: { defensive: boolean; exposure: number; base_exposure: number } };
   economics?: DeskEconomics | null;
   event_policy?: { enabled: boolean; version: string; evaluation_since: string };

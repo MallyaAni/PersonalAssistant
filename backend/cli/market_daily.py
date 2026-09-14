@@ -205,6 +205,13 @@ def _reconcile(client, state, store_root: Path, live: bool):
     except alpaca_trading.AlpacaTradingError as exc:
         print(f"  could not read the broker's orders: {exc}")
         return state, []
+    known = {row.get("client_order_id") for row in broker}
+    if any(
+        row.get("event_id") and row["client_order_id"] not in known
+        for row in state.pending
+    ):
+        print("  FOMC order outcome unknown; preserving intent for idempotent recovery")
+        return state, []
     settled = paper.settle(state.pending, broker)
     if settled:
         counts: dict[str, int] = {}
@@ -273,10 +280,14 @@ def _settled_rows(settled, panel) -> list[dict]:
 # The market-on-close sell can be cancelled up to the close, which the
 # intraday green-day rule does for names trading up at the open.
 # Submitting while the market is open would fill a day order now, at
-# whatever price, which is not the trade that was measured. The nightly run
+# whatever price, which is not the trade that was measured. Explicit intraday
+# recovery permits only event sells; all ordinary orders keep the nightly guard.
+# The nightly run
 # is after the close; a run by hand during the session is refused whole and
 # told why.
-def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[str]]:
+def _submit(
+    client, orders, session: str, live: bool, *, intraday_event_reduction=False
+) -> tuple[list[dict], list[str]]:
     """Return (submitted rows, refusals) after sending `orders` when `live`."""
     from backend.agents.trading.desk import execution_evidence, paper
     from backend.market import alpaca_trading
@@ -306,7 +317,14 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
             )
             print(line + "  REFUSED: market clock unavailable")
             continue
-        if market_open:
+        if intraday_event_reduction and (
+            not market_open or order.side != "sell" or not order.event_id
+        ):
+            refused.append(
+                f"{order.symbol}: catch-up requires event sells in the regular session"
+            )
+            continue
+        if market_open and not intraday_event_reduction:
             refused.append(
                 f"{order.side} {order.symbol}: the market is open; "
                 "orders are queued for the next open after the close"
@@ -403,6 +421,18 @@ def _band_blocked(report) -> tuple[set[str], dict[str, bool]]:
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Returns the day's entry for the desk record.
 def paper_trade(
+    report, store_root: Path, session: str, live: bool, rebalance_now: bool = False
+) -> dict:
+    from backend.agents.trading.desk import paper
+
+    if not live:
+        return _paper_trade(report, store_root, session, False, rebalance_now)
+    with paper.transaction(store_root):
+        return _paper_trade(report, store_root, session, live, rebalance_now)
+
+
+# Reconcile and execute one nightly plan while holding the shared paper-state lock.
+def _paper_trade(
     report, store_root: Path, session: str, live: bool, rebalance_now: bool = False
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""

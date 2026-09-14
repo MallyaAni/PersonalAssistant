@@ -201,6 +201,17 @@ AniOS is therefore a local development scaffold, not a hardened system for sensi
 
 ## Current development requirements
 
+FOMC recovery is restricted to the official Alpaca paper endpoint. The deployment
+script writes `data/market/desk/event-recovery-enabled.json` with a hash of the
+deployed execution source; a collector that has only pulled newer Git code cannot
+trade through this recovery path. `desk/event-live.json` records dated policy and
+execution status, pending counts and confirmed reductions. The existing paper
+state journal remains the authority for order IDs and fills. Both nightly and
+intraday writers hold `paper/state.lock` across their transaction. These files
+follow the existing market-data backup/retention policy and desk-owner API access.
+Removing activation disables recovery; do not remove pending intent to retry an
+uncertain broker order. Recovery uses the original client ID until reconciled.
+
 The trading desk funding preview accepts operator-entered cash and equity in a
 POST body, accessible through the existing desk identity checks. It computes
 against the shared recorded holdings but writes no files or account state.

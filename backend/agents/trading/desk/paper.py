@@ -26,6 +26,7 @@ file anyone can read.
 import json
 import os
 import tempfile
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -89,6 +90,21 @@ class PaperOrder:
     # so the write-down and the submit use the same one.
     client_order_id: str | None = None
     event_id: str | None = None
+
+
+# Serialize paper writers across the nightly and intraday processes.
+@contextmanager
+def transaction(root: Path):
+    import fcntl
+
+    path = Path(root) / PAPER_KIND / "state.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 # Where the state lives.

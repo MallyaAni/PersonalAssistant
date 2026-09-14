@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-14 — Recover missed FOMC reductions safely
+
+Added gated, paper-only intraday recovery of qualified FOMC share reductions.
+Recovery requires fresh completed prices, the prior-session decision and an
+open broker clock. Persisted order IDs survive missing acknowledgments; partial
+fills reduce only the remainder. A shared lock serializes nightly execution,
+intraday recovery and green-opening cancellation. The dashboard shows current
+event execution independently of the archived nightly record and pauses regular
+allocation previews while a durable cycle exists.
+
+Pre-deploy validation: 59 focused backend tests, 35 browser workflows and four
+final FOMC UI cases passed. Real paper-account reads produced nine proposed sells
+in a write-intercepted replay, with all intents read back from temporary state.
+The deployment activation hash prevents the cron's independent Git pull from
+enabling new execution before deployment. No new model prompt or router tool.
+The restoration comparison is recorded under docs/research; its newer period
+has only one completed meeting and does not distinguish the two tested methods.
+
 ## 2026-09-14 — Make trading decisions and execution evidence distinguishable
 
 Fixed the trading review HTTP 500 caused by calling a nonexistent memory-manager

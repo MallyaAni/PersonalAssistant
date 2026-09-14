@@ -26,8 +26,12 @@ def filled(state: paper.PaperState, side: str) -> dict[str, int]:
 
 
 # Plan remaining event shares once, without moving the ordinary rebalance date.
-def plan(session, state, held, prices, cash, policy):
-    new = _advance_clock(state, session)
+def plan(session, state, held, prices, cash, policy, *, advance_clock=True):
+    new = (
+        _advance_clock(state, session)
+        if advance_clock
+        else paper.PaperState(**asdict(state))
+    )
     if state.pending:
         return [], new, "FOMC waiting for broker settlement"
     if not policy.get("calendar_known"):

@@ -224,8 +224,8 @@ class AlpacaTradingClient:
     # prints an opening auction for the name, which for most names it does
     # not. A day order queued before the open fills at the first print
     # after it, which is the same price the execution study measured.
-    # `market_daily` refuses to submit while the market is open, so a day
-    # order can never fill mid-session by accident.
+    # The dispatcher permits a regular-session day order only for explicit
+    # FOMC reduction recovery; ordinary orders retain the after-close guard.
     def submit_market_on_open(
         self, symbol: str, qty: int, side: str, client_order_id: str | None = None
     ) -> dict[str, Any]:
