@@ -36,7 +36,7 @@ def action_for_row(
         return "Buy eligible", "Scheduled addition; confirm cash and broker price"
     if direction in ("trim", "sell"):
         return "Reduce", "Scheduled target below recorded position"
-    return "Hold", "No eligible addition"
+    return ("Hold" if row["shares"] > 0 else "Wait"), "No eligible addition"
 
 
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.

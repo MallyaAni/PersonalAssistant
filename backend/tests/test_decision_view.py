@@ -69,6 +69,32 @@ def test_decision_requires_every_gate(block):
     assert result["target_weight"] == 0.1
 
 
+# A name with no recorded position cannot be labeled Hold when buying is ineligible.
+@pytest.mark.parametrize(("shares", "expected"), [(0, "Wait"), (10, "Hold")])
+def test_no_eligible_addition_distinguishes_unheld_names(shares, expected):
+    _, _, _, now = setup()
+    row = {
+        "in_book": True,
+        "until_rebalance": 0,
+        "rebalance_due": True,
+        "rejecting_band": False,
+        "grade_live": "B",
+        "shares": shares,
+    }
+    action, reason = decision_view.action_for_row(
+        row,
+        {"eligible": True, "reason": "Quote checks passed"},
+        now + timedelta(seconds=20),
+        False,
+        True,
+        0.1,
+        0,
+        now,
+    )
+    assert action == expected
+    assert reason == "No eligible addition"
+
+
 # Expired provider caches are checked by their quote time, not their fetch time.
 def test_invalid_quotes_never_gain_eligibility():
     _, _, quoted, now = setup()
