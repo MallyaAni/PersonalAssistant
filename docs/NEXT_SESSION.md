@@ -21,6 +21,19 @@ Current provider evidence: SIP 403, IEX 200; no subscription was purchased.
 Do not call IEX execution-qualified or claim mature forward performance.
 Diagram impact: UPDATED — agent-trading-desk.
 
+Follow-up verified before final deployment: `6e090ba9` makes 30-second quote
+deadlines visible to the second, labels cohort averages, and shows missing
+outcome counts. Two relevant browser workflows passed (11.5s), TypeScript/Vite
+passed. A version-boundary regression then exposed that old signals lacked later
+price observations after a policy change. The evaluator now shares observed
+prices without mixing original grades/policy groups: 41 focused tests passed
+(1.89s). This requires the normal backend gate again; do not skip it.
+
+Read-only live-input candidate check at 18:20:57 UTC: 93 grades and 93 IEX quotes,
+12 breakout / 16 dip / 65 wait states; correlation calculation available with
+no caps binding on the current small weights. Paper state file hash unchanged.
+These are current input checks, not evidence of profitable timing.
+
 ## 2026-09-14 — Recover missed FOMC reductions
 
 Started clean on main `0aa70861`; pulled origin/main, already current. The user

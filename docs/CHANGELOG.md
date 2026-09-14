@@ -11,6 +11,11 @@ Forward reports separate policy hashes and cost assumptions, include corporate
 actions, and withhold immature outcomes and undersized confidence estimates.
 No candidate is promoted and adopted paper execution is unchanged.
 
+Older policy grades continue to mature using later archived market prices,
+without adopting newer grades or mixing policy groups. A 41-test focused run
+pins that boundary. Quote deadlines show seconds and research tables report
+missing observations and identify their cohort means explicitly.
+
 Pre-deploy browser validation: 38 workflows passed (1.4m), including expiry,
 manual-position persistence and empty outcomes. Targeted backend and public
 deployment evidence is recorded in NEXT_SESSION. No prompt/router/tool changed;

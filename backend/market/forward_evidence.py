@@ -81,13 +81,24 @@ def endpoint(later, local_entry, horizon):
     return None
 
 
-# Use the first daily signal and later observed bars, including wait signals.
-def outcomes(decisions, cost_bps=10, corporate_actions=None):
+# Preserve the earliest recorded price observation for each completed candle.
+def price_observations(rows):
+    first = {}
+    for row in sorted(rows, key=lambda r: desk_freshness.timestamp(r["as_of"])):
+        first.setdefault(desk_freshness.timestamp(row["bar"]), row)
+    return [first[bar] for bar in sorted(first)]
+
+
+# Keep signal versions separate while allowing later prices to mature old signals.
+def outcomes(decisions, cost_bps=10, corporate_actions=None, observed_prices=None):
     if not math.isfinite(cost_bps) or not 0 <= cost_bps <= 100:
         raise ValueError("Invalid cost assumption")
     if len({(r.get("version"), r.get("policy_sha256")) for r in decisions}) > 1:
         raise ValueError("Policy versions must be evaluated separately")
     decisions = sorted(decisions, key=lambda r: r["bar"])
+    observations = price_observations(
+        observed_prices if observed_prices is not None else decisions
+    )
     first = {}
     for i, row in enumerate(decisions):
         stamp = desk_freshness.timestamp(row.get("as_of"))
@@ -103,7 +114,12 @@ def outcomes(decisions, cost_bps=10, corporate_actions=None):
         signal = decisions[index]
         observed = desk_freshness.timestamp(signal["as_of"])
         deadline = desk_freshness.timestamp(signal.get("valid_until"))
-        later = decisions[index + 1 :]
+        later = [
+            row
+            for row in observations
+            if desk_freshness.timestamp(row["bar"])
+            > desk_freshness.timestamp(signal["bar"])
+        ]
         entry = (
             next(
                 (
@@ -214,12 +230,20 @@ def report(root, require_actions=True):
                 )
             ].append(row)
         versions = []
+        all_prices = [row for rows in groups.values() for row in rows]
+        actions, through = {}, None
+        observations = all_prices
+        if require_actions and all_prices:
+            symbols = set().union(*(row["prices"] for row in all_prices))
+            actions, through = forward_actions.load(root, symbols)
+            observations = [
+                row
+                for row in all_prices
+                if forward_actions.session(row["bar"]).isoformat() <= through
+            ]
         for (version, fingerprint), rows in sorted(groups.items()):
-            actions, through = {}, None
             eligible = rows
-            if require_actions:
-                symbols = set().union(*(row["prices"] for row in rows))
-                actions, through = forward_actions.load(root, symbols)
+            if through:
                 eligible = [
                     row
                     for row in rows
@@ -232,7 +256,8 @@ def report(root, require_actions=True):
                     "corporate_actions_through": through,
                     "pending_daily_validation": len(rows) - len(eligible),
                     "outcomes": [
-                        outcomes(eligible, cost, actions) for cost in (10, 25)
+                        outcomes(eligible, cost, actions, observations)
+                        for cost in (10, 25)
                     ],
                     "portfolios": [
                         intraday_evaluation.evaluate(eligible, cost, actions)

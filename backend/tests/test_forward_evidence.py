@@ -83,6 +83,24 @@ def test_versions_and_policy_hashes_stay_separate(tmp_path):
     assert len(report["versions"]) == 2
 
 
+# Later policy prices mature older signals without replacing their original grades.
+def test_old_grades_mature_using_new_policy_price_observations(tmp_path):
+    rows = observations()
+    rows[1]["policy_sha256"] = "new"
+    rows[2]["policy_sha256"] = "new"
+    rows[1]["grades"]["AAPL"] = {"grade_live": "C"}
+    folder = tmp_path / "desk/intraday-research"
+    folder.mkdir(parents=True)
+    for i, row in enumerate(rows):
+        (folder / f"decision-{i}.json").write_text(json.dumps(row))
+    result = forward_evidence.report(tmp_path, require_actions=False)
+    old = next(v for v in result["versions"] if v["version"].endswith("one"))
+    grade = old["outcomes"][0]["grades"][0]
+    assert grade["grade"] == "A+"
+    assert grade["mean_excess_return"] == pytest.approx(0.098)
+    assert old["decision_count"] == 1
+
+
 # Correlated positions can only shrink; the candidate cannot borrow or evade name caps.
 def test_correlation_cap_releases_cash_without_redistribution():
     _, _, _, panel, _ = inputs()

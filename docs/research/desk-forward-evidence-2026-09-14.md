@@ -28,7 +28,10 @@ inputs; no new model prompt was introduced. Re-entry research remains the dated
 comparison in `fomc-restoration-2026-09-14.md`, which did not justify promotion.
 
 Archives freeze the first decision per version/session/bar; evaluation separates
-exact policy hashes. Grade outcomes take the first daily signal and a later
+policy hashes. Later price observations are shared across versions, preserving
+the earliest archived observation per candle, so changing policy cannot strand
+an older signal before its outcome matures or replace its original grade.
+Grade outcomes take the first daily signal and a later
 observed entry close before expiry, then the first close at or after the matching
 time five or twenty trading sessions later. Wait signals are included; missing
 data stays missing. Grade outcomes subtract SPY total returns and an additive
