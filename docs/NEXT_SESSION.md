@@ -1,6 +1,6 @@
 # Next session
 
-Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
+Verified state as of 2026-09-14. `deep-matter.com` serves from spark1.
 Verification labels distinguish observed behavior, source findings and remaining work.
 
 ## 2026-09-14 — manual purchases and valuation-model consistency
@@ -57,8 +57,16 @@ leads with recorded analyst evidence and moves old model interpretations behind
 an explicit, closed-by-default unverified archive control. The original records
 are preserved. All 26 browser tests passed on the final tree in 39.0s, including
 opening the archive; TypeScript and Vite passed. An earlier run overlapped a
-layout edit and lost one dialog; the unchanged-tree rerun passed. Deployment of
-this presentation follow-up is pending.
+layout edit and lost one dialog; the unchanged-tree rerun passed.
+VERIFIED presentation checkpoint `f6b4cddf`, deployed by the script's normal
+frontend-only path (TypeScript/build and post-deploy smoke, no backend change).
+Marker: `2026-09-14T04:11:27Z f6b4cddf ok (cheap)`. Public asset
+`/assets/index-cw7YwHWm.js` passed the same authenticated 93-grade workflow,
+including opening the unverified archives: 19 API successes, zero errors,
+unchanged unclipped section dimensions. Desktop/mobile screenshots were inspected.
+Cron checkout `~/anios` was clean and fast-forwarded to `f6b4cddf`. All temporary
+browser-token files were removed from the Mac, remote host and backend container.
+No manual holdings or broker orders were changed during public acceptance.
 
 UNVERIFIED/unimplemented: CPI/PPI/PCE allocation inputs, macro observation age
 limits and missing-yield status, a validated intraday allocation/entry policy,
