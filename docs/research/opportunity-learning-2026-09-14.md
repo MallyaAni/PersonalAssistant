@@ -1,6 +1,10 @@
 # Price-sensitive supervised comparison — September 14, 2026
 
 Implemented and trained at source `b92ca4ff46c60ae92b4b387df460cafeb0b26287`.
+After incorporating concurrent documentation updates, this source commit became
+published `09cef0e5`. The training CLI, feature builder, accounting, valuation
+levels and shared model code are byte-for-byte unchanged by that rebase. The
+original artifact manifest retains the actual training revision.
 This is a bounded comparison, not a production trading policy or proof of alpha.
 
 ## What ran
