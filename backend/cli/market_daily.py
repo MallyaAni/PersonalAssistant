@@ -1124,7 +1124,10 @@ def main() -> None:
     from backend.cli import market_economics
 
     market_economics.refresh_if_current(
-        Path(store.root), args.refresh and args.asof is None
+        Path(store.root),
+        args.refresh and args.asof is None,
+        args.llm_url,
+        args.llm_model,
     )
     written = write_history(store, report)
     if written:

@@ -10,12 +10,12 @@ from backend.market import economics
 
 
 # Preserve dated evidence and model provenance without modifying any portfolio state.
-def refresh(root: Path) -> dict:
+def refresh(root: Path, llm_url: str = "", llm_model: str = "") -> dict:
     snapshot = economics.collect()
-    model = settings.MAIN_LLM_MODEL or settings.LLM_MODEL
+    model = llm_model or settings.MAIN_LLM_MODEL or settings.LLM_MODEL
     previous = economics.load(root)
     writer = OpenAICompatibleInferenceProvider(
-        settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
+        llm_url or settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
         model,
         settings.LLM_API_KEY,
         timeout_seconds=60.0,
@@ -44,17 +44,21 @@ def main() -> None:
     parser.add_argument(
         "--data-dir", type=Path, default=Path(settings.MARKET_DATA_ROOT)
     )
+    parser.add_argument("--llm-url", default="")
+    parser.add_argument("--llm-model", default="")
     args = parser.parse_args()
-    result = refresh(args.data_dir)
+    result = refresh(args.data_dir, args.llm_url, args.llm_model)
     print(f"Economic evidence collected {result['observed_at']}; research context only")
 
 
 # Keep collection failures from preventing completion of the existing nightly record.
-def refresh_if_current(root: Path, enabled: bool) -> None:
+def refresh_if_current(
+    root: Path, enabled: bool, llm_url: str = "", llm_model: str = ""
+) -> None:
     if not enabled:
         return
     try:
-        refresh(root)
+        refresh(root, llm_url, llm_model)
     except Exception as exc:  # noqa: BLE001 - retain dated prior evidence
         print(
             f"Economic context unavailable ({type(exc).__name__}); prior date retained"
