@@ -536,8 +536,10 @@ test('drills into a name’s own history', async ({ page }) => {
   await expect(dialog.getByText('Sessions it was an A')).toBeVisible()
   await expect(dialog.getByText('41 of 60')).toBeVisible()
   await expect(dialog.getByText('Position changes')).toBeVisible()
-  // The desk's whole evidence, read out loud by the model.
+  // Recorded evidence leads; unverified historical model claims require opening their archive.
   await expect(dialog.getByRole('heading', {name: 'Evening analysis · 2026-09-08'})).toBeVisible()
+  await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).not.toBeVisible()
+  await dialog.getByText('Archived model commentary · unverified', {exact: true}).click()
   await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).toBeVisible()
   // The live technical read is the model's plain words over the live tape.
   await expect(dialog.getByText('resistance is a swing high above', { exact: false })).toBeVisible()

@@ -13,6 +13,7 @@ import {
   getTradingAutopsy,
   putDeskHoldings,
   type DeskCurve,
+  type DeskBrief,
   type DeskEarnings,
   type DeskHolding,
   type DeskHistory,
@@ -1637,7 +1638,7 @@ const EveryGrade = ({
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
       </details>
       <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm [&_td]:pr-3 [&_th]:pr-3">
         <thead className="text-left text-[#6e6e73]">
           <tr>
             <th className="py-1">Name</th>
@@ -1693,7 +1694,7 @@ const EveryGrade = ({
                       onClick={() => setOpenBrief(openBrief === ticker ? null : ticker)}
                       className="text-left text-[#0071e3] hover:underline"
                     >
-                      {openBrief === ticker ? 'Hide evening thesis' : `Evening thesis: ${briefs[ticker]?.verdict ?? g.headline}`}
+                      {openBrief === ticker ? 'Hide evening thesis' : `Evening thesis: ${g.headline || 'recorded analyst evidence'}`}
                     </button>
                   ) : (
                     <span className="text-[#6e6e73]">—</span>
@@ -1701,17 +1702,7 @@ const EveryGrade = ({
                   {openBrief === ticker && (
                     <div className="mt-1 space-y-1 text-[#1d1d1f]">
                       {g.reason && <ReasonLines text={g.reason} />}
-                      {briefs[ticker] && (
-                        <>
-                          <p>{briefs[ticker].reasoning}</p>
-                          <p>
-                            <span className="font-medium">Risks:</span> {briefs[ticker].risks}
-                          </p>
-                          <p>
-                            <span className="font-medium">Watch:</span> {briefs[ticker].watch}
-                          </p>
-                        </>
-                      )}
+                      {briefs[ticker] && <ArchivedCommentary brief={briefs[ticker]} written={latest.written} />}
                     </div>
                   )}
                 </td>
@@ -1731,6 +1722,22 @@ const EveryGrade = ({
     </section>
   )
 }
+
+// Keep historical model interpretations accessible without presenting them as verified strategy rules.
+const ArchivedCommentary = ({brief, read, written}: {brief?: DeskBrief; read?: string | null; written: string}) => (
+  <details className="mt-2 rounded border border-black/[0.08] p-2 text-xs">
+    <summary className="cursor-pointer text-[#0071e3]">Archived model commentary · unverified</summary>
+    <p className="my-2 text-[#6e6e73]">Published {marketTime(written)}. This saved interpretation can contain errors,
+      including claims about sizing or grade changes. It does not calculate the displayed grade or allocation.</p>
+    {read && <p className="mb-2 whitespace-pre-line">{read}</p>}
+    {brief && <div className="space-y-1">
+      <p>{brief.verdict}</p>
+      <p>{looksLikeRawDump(brief.reasoning) ? '' : brief.reasoning}</p>
+      <p><span className="font-medium">Model's risks:</span> {brief.risks}</p>
+      <p><span className="font-medium">Model's watch points:</span> {brief.watch}</p>
+    </div>}
+  </details>
+)
 
 // Save only a user-confirmed brokerage purchase; viewing or cancelling the form never writes positions.
 const ConfirmedBuy = ({ticker, disabled, onSave, error}: {
@@ -2117,7 +2124,6 @@ const NameDetail = ({
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[#1d1d1f]">
             {ticker}
-            {brief && <span className="ml-2 text-sm font-normal text-[#6e6e73]">Evening view: {brief.verdict}</span>}
           </h3>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.1] text-[#6e6e73] hover:bg-white">
             <X size={16} />
@@ -2180,12 +2186,9 @@ const NameDetail = ({
                 </div>
               ))}
             </div>
-            {(gradeRead || gradeReads) && (
+            {gradeReads && (
               <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
                 <h4 className="text-sm font-semibold text-[#1d1d1f]">Evening analysis · {latest.session}</h4>
-                {gradeRead ? (
-                  <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{gradeRead}</p>
-                ) : (
                   <ul className="mt-1 space-y-1 text-sm text-[#1d1d1f]">
                     {Object.entries(gradeReads ?? {}).flatMap(([analyst, lines]) =>
                       lines.map((line) => (
@@ -2193,17 +2196,9 @@ const NameDetail = ({
                       )),
                     )}
                   </ul>
-                )}
               </div>
             )}
-            {brief && (
-              <div className="mt-3 space-y-1 rounded-xl border border-black/[0.08] bg-white p-3 text-sm text-[#1d1d1f]">
-                <p className="text-xs text-[#6e6e73]">Model commentary published {marketTime(latest.written)}; not an intraday entry instruction.</p>
-                <p>{looksLikeRawDump(brief.reasoning) ? brief.verdict : brief.reasoning}</p>
-                <p><span className="font-medium">Risks:</span> {brief.risks}</p>
-                <p><span className="font-medium">Watch:</span> {brief.watch}</p>
-              </div>
-            )}
+            {(brief || gradeRead) && <ArchivedCommentary brief={brief ?? undefined} read={gradeRead} written={latest.written} />}
             <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">Grade changes</h4>
             {changes.length === 0 ? (
               <p className="mt-1 text-xs text-[#6e6e73]">No grade change in the history on file.</p>

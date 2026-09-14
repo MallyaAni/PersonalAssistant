@@ -1,7 +1,7 @@
 # Next session
 
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
-Everything below was checked by running it, not by reading it.
+Verification labels distinguish observed behavior, source findings and remaining work.
 
 ## 2026-09-14 — manual purchases and valuation-model consistency
 
@@ -30,7 +30,35 @@ buy outside the target book, preserved other holdings and persistence after
 reload. Market/trading suite: 487 passed, 8 skipped in 6.87s. Two real ASGI HTTP
 cases against temporary persisted records passed in 1.51s, covering plain and
 growth-model decisions. TypeScript, Vite build and Ruff passed.
-Public deployment/browser acceptance of this follow-up is still pending.
+Four focused browser checks passed after the final wording changes in 30.7s.
+Final real-DeepSeek run on the matching test image: 13 passed, 1 xpassed in
+165.70s. The XPASS is the intermittently failing repeatability assertion, not
+evidence that repeatability is fixed. Runtime hashes of the narrator, both
+changed prompts and the release test matched the checkout.
+
+VERIFIED checkpoint `a76976a18641d74bfa41960d0f57bbc5a00314d5` deployed through
+`scripts/deploy.sh --wait-post`, exit zero: 3472 unit tests passed, 19 skipped
+in 156.55s; 100 real-model routing tests passed in 497.43s. Post marker:
+`2026-09-14T04:05:18Z a76976a1 ok (cheap)`. The preceding cash checkpoint
+`fb8335d3` also deployed with 3470 unit passes, 19 skips and 100 routing passes.
+Live holdings and simulator hashes match the tested source and funding report.
+
+Authenticated public browser on `/assets/index-BVtAeYHD.js`: top ten and all 93
+grades, ranking methodology, manual-buy form open/cancel, all expanded theses,
+receipts and AAOI history/earnings/technical read exercised with real GETs.
+Nineteen API responses succeeded; zero browser/network errors. Target section
+content/height: desktop 1153/1153, mobile 2299/2299; no vertical clipping.
+Practice-account mobile content/width: 340/340. No position write or broker
+order was performed in the public check; fixture tests prove write/reload flow.
+
+That word audit found historical model prose incorrectly attributing position
+size caps to participation and correlation warnings. A frontend follow-up now
+leads with recorded analyst evidence and moves old model interpretations behind
+an explicit, closed-by-default unverified archive control. The original records
+are preserved. All 26 browser tests passed on the final tree in 39.0s, including
+opening the archive; TypeScript and Vite passed. An earlier run overlapped a
+layout edit and lost one dialog; the unchanged-tree rerun passed. Deployment of
+this presentation follow-up is pending.
 
 UNVERIFIED/unimplemented: CPI/PPI/PCE allocation inputs, macro observation age
 limits and missing-yield status, a validated intraday allocation/entry policy,
@@ -61,7 +89,7 @@ can be published. Five real-model brief tests passed; the final live-read prompt
 passed two tests after removing a numerical example the model copied into its
 answer. FAILED: release-tone repeated scores differed (1.0 versus 0.8) at
 temperature zero; its property assertion remains as an evidenced xfail.
-Fourteen other release-tone functional tests passed. This is bounded evidence,
+The initial combined functional run had 14 passes and that one failure. This is bounded evidence,
 not proof that every generated claim is correct. These changes are not yet live.
 
 User's next requested workflow: prominent current opportunities with changing

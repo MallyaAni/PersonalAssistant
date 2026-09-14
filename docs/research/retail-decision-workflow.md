@@ -10,6 +10,11 @@ when an observed entry is suitable. A fifteen-minute refresh is an observation
 cadence, not a requirement to trade fifteen-minute moves. The strategy must not
 depend on beating the initial CPI/PPI announcement reaction.
 
+A [Federal Reserve-hosted study of news analytics](https://www.federalreserve.gov/econres/ifdp/first-to-quotreadquot-the-news-new-analytics-and-algorithmic-trading.htm)
+found faster stock-price responses and reduced liquidity around the articles
+it studied. That supports avoiding a news-speed premise; it does not establish
+an exploitable later response or prove that a slower strategy has an advantage.
+
 The intended dashboard combines current ranked candidates, dated entry evidence,
 recommended total shares and additional shares, existing manual positions, and
 an explicit cash constraint. A Record buy button records a completed brokerage
