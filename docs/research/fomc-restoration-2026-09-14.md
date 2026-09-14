@@ -22,7 +22,10 @@ Maximum observed position weight also rose from about 17.5% to 24.4%. Extending
 the event changes the rebalance timing, so the return increase is not proof
 that the benchmark condition times re-entry better.
 
-The June 18–September 11 slice has **one completed meeting, July 29**. The two
+The June 18–September 11 slice has **one completed meeting, July 29**, consistent
+with the [Federal Reserve's official calendar](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm)
+checked September 14. June 18 is the chosen evaluation boundary, not a verified
+finding that the Fed removed guidance on that date. The two
 methods are identical: +1.52% total return at 10 bp and +1.30% at 25 bp. Do not
 annualize that small sample into a claim of superiority. These runs restart
 the account at each period's start; they are separate comparisons, not a

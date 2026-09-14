@@ -21,11 +21,50 @@ the measured comparison in `docs/research/fomc-restoration-2026-09-14.md`: the
 trend gate raised historical drawdown and has no distinguishing result in the
 newer period, which contains only one completed meeting.
 
-VERIFIED pre-deploy: 59 focused backend tests (1.86s), 35 browser workflows
+VERIFIED pre-deploy: 60 focused backend tests (1.33s), 35 browser workflows
 (53.7s), TypeScript/Vite and lint. A current-account dry run through the actual
 broker reads proposed nine sell orders and persisted all nine intents in a
 temporary state copy; every broker write was intercepted. It touched no real
-paper state or broker orders. Deployment and actual recovery receipts pending.
+paper state or broker orders. The final stale-event browser case reproduced a
+misleading "decision missing" heading over a durable active cycle. Checkpoint
+`49e62285` fixes the heading and fallback explanation; all five FOMC browser
+cases passed (9.3s), as did TypeScript.
+
+VERIFIED live trading checkpoint `49e62285`; backend execution content is
+unchanged from `2ead7c49`. The initial deploy passed 3523 unit tests (19 skipped,
+141.43s) and 100 routing cases (493.67s), but its already-running older script
+did not execute the newly pulled activation hook. Recovery remained off. The
+updated script was rerun normally: 3523 unit tests (19 skipped, 139.79s), 100
+routing cases (490.94s), backup, restart, and successful activation at
+16:47:00 UTC. No gate was bypassed. The final frontend-only deployment shipped
+`49e62285`, with marker `2026-09-14T16:47:51Z 49e62285 ok (cheap)`.
+
+VERIFIED real paper recovery through the normal host collector: nine sell
+orders filled in 14 executions between 16:48:16 and 16:48:18 UTC on September
+14. Total 136 shares: AAOI 15, AMD 4, ANET 19, LITE 1, MDB 4, NTAP 20, NVDA 12,
+SMCI 60, SNDK 1. Paper cash moved from 58.81% before recovery to 78.85% at
+16:48:26 UTC (78.83% at the next price observation). A second collector run
+settled all nine journal entries, left zero pending/open orders, and preserved
+the same fills, positions, order sequence 9 and ordinary rebalance clock:
+last rebalance September 10, sessions since rebalance 1. The event cycle
+remains active, so ordinary allocation previews stay paused until restoration.
+This verifies paper execution, not real-account execution or strategy returns.
+
+VERIFIED authenticated public Chrome desktop/mobile workflow: asset
+`/assets/index-DJFyec85.js`, 18 successful API responses, all 93 grades, five
+economic rows, zero-cash preview, manual-buy cancellation, actual 14 execution
+records, current "reduction settled" status and zero event receipts awaiting
+reconciliation. The review returned HTTP 200 with the correct no-trading-docs
+message. Zero page, console or network errors; desktop board 958/958px, mobile
+1376/1376px, account width 356/356px. API, broker adapter and recovery module
+SHA256 hashes match source exactly; activation matches the deployed execution
+hash. Temporary browser credentials were removed from Mac, host and container.
+
+Evidence on Mac: `/private/tmp/desk-event-{before,submitted,settled}.json`,
+`/private/tmp/desk-event-public-proof.log`. Deployment logs on Spark:
+`/tmp/desk-event-{recovery,activation,final-ui}-deploy.log`. The repeat deployment
+also triggered the full general application sweep and search harness because
+its source diff was empty; those broader post checks are still running.
 
 ## 2026-09-14 — Trading review, allocation percentages and execution evidence
 

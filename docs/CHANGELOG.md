@@ -10,13 +10,25 @@ intraday recovery and green-opening cancellation. The dashboard shows current
 event execution independently of the archived nightly record and pauses regular
 allocation previews while a durable cycle exists.
 
-Pre-deploy validation: 59 focused backend tests, 35 browser workflows and four
+Pre-deploy validation: 60 focused backend tests, 35 browser workflows and five
 final FOMC UI cases passed. Real paper-account reads produced nine proposed sells
 in a write-intercepted replay, with all intents read back from temporary state.
 The deployment activation hash prevents the cron's independent Git pull from
 enabling new execution before deployment. No new model prompt or router tool.
 The restoration comparison is recorded under docs/research; its newer period
 has only one completed meeting and does not distinguish the two tested methods.
+Stale event observations retain the durable cycle's paused status instead of
+misreporting a missing decision. Pending journal receipts are explicitly separate
+from the broker's currently open orders.
+
+Live proof on September 14: nine paper sell orders filled 136 shares in 14
+executions; cash increased from 58.81% to approximately 78.85%. A repeat
+collector run confirmed all nine journal entries without additional orders,
+fills or rebalance-clock advancement. Public checkpoint `49e62285` shows the
+settled reduction and actual receipts. Both gated backend deployments passed
+3523 unit tests and 100 routing cases; 18 public API responses and desktop/mobile
+interaction checks passed without blocking errors. The full general application
+post-deploy sweep is still pending.
 
 ## 2026-09-14 — Make trading decisions and execution evidence distinguishable
 
