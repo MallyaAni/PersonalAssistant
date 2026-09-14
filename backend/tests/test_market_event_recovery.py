@@ -239,6 +239,30 @@ def test_paper_transaction_preserves_competing_updates(tmp_path):
 
 
 # The intraday exception is structurally restricted to event sells while open.
+# A qualified cut pauses additions even if execution is waiting for better data.
+def test_qualified_recovery_pauses_planning_before_orders_exist(tmp_path):
+    import json
+
+    folder = tmp_path / "desk"
+    folder.mkdir()
+    (folder / "event-live.json").write_text(
+        json.dumps(
+            {
+                "as_of": datetime.now(UTC).isoformat(),
+                "policy": POLICY,
+                "status": "fresh completed prices required",
+            }
+        )
+    )
+    status = event_status.load(tmp_path)
+    assert not status["active"]
+    assert status["planning_paused"]
+    assert event_status.for_planning(LATEST, tmp_path)["event_risk"][
+        "execution_pending"
+    ]
+
+
+# The intraday exception is structurally restricted to event sells while open.
 @pytest.mark.parametrize(
     ("side", "event_id", "opened"),
     [("buy", "event", True), ("sell", None, True), ("sell", "event", False)],

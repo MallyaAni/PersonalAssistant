@@ -114,7 +114,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
 
     event_live = event_status.load(_root())
     research = intraday_research.load(_root(), latest["session"])
-    if event_live["active"]:
+    if event_live["planning_paused"]:
         research = {**research, "event_paused": True}
     return {
         "user_id": user_id,
