@@ -344,6 +344,17 @@ broker/account state. No new tool, route, permission or model prompt was added.
 
 ## Security review for a change
 
+The separate forward paper simulation stores account-free synthetic capital,
+decisions, simulated fills and holdings under `data/market/desk/board-paper`.
+It has no broker-write capability, starts only on explicit operator initialization,
+and exposes a summary through the existing desk-owner route. The collector is
+its sole routine writer; a file lock serializes complete append-only state records.
+Retention is indefinite under the market backup policy; explicit operator archive
+or removal is the deletion path. Existing Alpaca and manual accounts are separate.
+Prospective `learning_state` fields store public technical/value/regime features,
+not personal positions, tokens or model conversations. Ticker history exposes only
+public recommendation projections through the existing protected route.
+
 Before accepting a security-sensitive feature, verify:
 
 1. what untrusted input and sensitive data enter the flow;

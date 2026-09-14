@@ -14,6 +14,56 @@ from backend.core.auth import issue_user_token
 from backend.main import app
 
 
+# The existing desk route reads the persisted independent paper run without changing it.
+@pytest.mark.asyncio
+async def test_forward_paper_summary_is_read_from_persisted_account(
+    tmp_path, monkeypatch
+):
+    from backend.market import board_paper
+
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-11", {"AAPL": "A+"}, [("AAPL", 0.1)], [])
+    before = board_paper.initialize(tmp_path, 100_000)
+    token = issue_user_token("desk_user", scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        response = await client.get("/api/v1/market/desk_user/desk")
+        assert response.status_code == 200
+        assert response.json()["board_paper"]["cash"] == 100_000
+        assert response.json()["board_paper"]["equity"] == 100_000
+    assert board_paper.latest(tmp_path) == before
+
+
+# Recorded recommendations remain accessible even before a nightly replay file exists.
+@pytest.mark.asyncio
+async def test_recorded_ticker_history_without_simulated_history(tmp_path, monkeypatch):
+    from backend.tests.test_forward_evidence import observations
+    from backend.tests.test_recommendation_history import archive
+
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    archive(tmp_path, observations())
+    token = issue_user_token("desk_user", scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        response = await client.get("/api/v1/market/desk_user/desk/history/AAPL")
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert len(result["recommendations"]["observations"]) == 3
+        assert result["backtest"] is None
+        missing = await client.get("/api/v1/market/desk_user/desk/history/MISSING")
+        assert missing.status_code == 404
+
+
 # Read dated quote decisions over HTTP and prove the preview changes no stored state.
 @pytest.mark.asyncio
 async def test_decision_preview_preserves_context_and_files(tmp_path, monkeypatch):

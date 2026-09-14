@@ -21,6 +21,10 @@ flowchart TB
     Research --> Evidence[Forward evaluation<br/>grade outcomes and funded target trackers]
     Store --> Evidence
     Evidence --> View
+    Research --> Shadow[(Separate board paper ledger<br/>USD, delayed simulated fills, action gates)]
+    Plan --> Shadow
+    Shadow --> View
+    Research --> Audit[RL readiness audit<br/>research only; no policy promotion]
 
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;

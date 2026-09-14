@@ -305,7 +305,10 @@ def run(data_dir: Path, equity: float) -> Path:
         from backend.market import intraday_research
 
         try:
-            intraday_research.publish(data_dir, latest, live)
+            research = intraday_research.publish(data_dir, latest, live)
+            from backend.market import board_paper
+
+            board_paper.observe(data_dir, latest, live, research)
         except Exception as exc:  # noqa: BLE001 - research cannot interrupt execution
             print(f"Research allocation unavailable ({type(exc).__name__})")
         # The green-day rule runs on the same candle: a pending sell for a

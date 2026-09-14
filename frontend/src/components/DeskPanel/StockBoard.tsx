@@ -10,9 +10,10 @@ const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, holdings, paused, now, action, onOpen, onBuy, saving, error}: {
+export const StockBoard = ({latest, live, grades, research, paper, holdings, paused, now, action, onOpen, onBuy, saving, error}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
+  paper?: DeskPayload['board_paper'];
   paused: boolean; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
   onOpen: (ticker: string) => void;
   onBuy?: (ticker: string, price: number, shares: number, date: string) => Promise<boolean>;
@@ -37,7 +38,8 @@ export const StockBoard = ({latest, live, grades, research, holdings, paused, no
   })).sort((a, b) => (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
     || (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
-  const cash = {ticker: '__cash__', grade: '', score: 0, weight: sized ? Math.max(0, 1 - gross!) : null}
+  const emptyAccount = holdings !== null && holdings.length === 0
+  const cash = {ticker: '__cash__', grade: '', score: 0, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
   const cashIndex = paused ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   const ranked = [...stocks]
   ranked.splice(cashIndex < 0 ? ranked.length : cashIndex, 0, cash)
@@ -46,7 +48,8 @@ export const StockBoard = ({latest, live, grades, research, holdings, paused, no
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
     <div className="shrink-0 border-b border-black/[0.06] px-3 py-2 text-xs text-[#6e6e73]">
       <p>{paused ? 'FOMC · new buys paused' : sized ? '15-minute model allocations · experimental' : 'Sizing unavailable · waiting for fresh data'}</p>
-      <p className="mt-0.5">{time ? `Bar ${time} ET` : 'No current bar'} · refreshes every 15 minutes</p>
+      <p className="mt-0.5">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours</p>
+      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">Analysis {latest.session} close{live.stale ? ' · market data stale' : ''}</p>
     </div>
     <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
@@ -58,8 +61,8 @@ export const StockBoard = ({latest, live, grades, research, holdings, paused, no
           return <tr key={row.ticker} className={`border-t border-black/[0.05] ${isCash ? 'bg-[#f0f5fa]' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{index + 1}</td>
             <td className="py-2">
-              {isCash ? <span className="font-semibold">Cash</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span></button>}
-              <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? 'Hold available cash' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
+              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span></button>}
+              <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? 'Hold available cash' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs">{isCash ? 'Hold' : paused ? <span title="FOMC cycle takes priority">Wait</span> : action(row.ticker, row.weight)}</td>
             <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
@@ -68,6 +71,10 @@ export const StockBoard = ({latest, live, grades, research, holdings, paused, no
         })}</tbody>
       </table>
     </div>
+    {paper?.equity !== undefined && <p aria-label="Forward paper account" className="border-t px-3 py-2 text-[11px] text-[#6e6e73]" title="Separate local simulation, not a brokerage account. Delayed quotes, spread and 10 bp extra cost per side. No real orders. Overnight marks wait for corporate-action validation.">
+      Paper · {paper.equity.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} · USD {percentage(paper.cash / paper.equity)} · {((paper.equity / paper.initial_capital - 1) * 100).toFixed(2)}% since start
+      <span className="ml-1">· {new Date(paper.as_of).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})} ET{now - Date.parse(paper.as_of) >= 900000 ? ' · awaiting update' : ''}</span>
+    </p>}
     {holdings === null && <p role="alert" className="px-3 py-2 text-xs text-[#b42318]">Positions unavailable. Recording is disabled.</p>}
     {buy && <div role="dialog" aria-modal="true" aria-label={`Record ${buy} buy`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
       <form className="w-full max-w-sm space-y-3 rounded-2xl bg-white p-5 text-sm shadow-xl" onSubmit={async event => {

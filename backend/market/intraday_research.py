@@ -38,6 +38,16 @@ def build(
     result = intraday_candidate.calculate(
         record, snapshot, economics.load(root, now) or {}, panel, now
     )
+    # Preserve public state features now; later reconstructions can leak future data.
+    result["learning_state"] = {
+        "schema": "desk-state/1",
+        "observed_at": snapshot.get("as_of"),
+        "technical": snapshot.get("technical") or {},
+        "value": snapshot.get("value") or {},
+        "technical_detail": snapshot.get("technical_detail") or {},
+        "nightly_grades": record.get("grades") or {},
+        "regime": record.get("regime") or {},
+    }
     if live_clock:
         result["execution_quotes"] = execution_quotes.fetch(
             list(record.get("grades") or {})

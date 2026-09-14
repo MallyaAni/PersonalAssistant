@@ -1,5 +1,54 @@
 # Next session
 
+## 2026-09-14 — USD, ticker history, separate forward paper and RL audit
+
+Started on main f6f6758a with seven unfinished ticker-history files. Pull --rebase
+refused the dirty tree; fetch confirmed origin/main is exactly f6f6758a. All
+changes in this task are authorized; old paper account and manual holdings remain
+untouched. f6f6758a was already live (18:50:32 UTC; public asset DV8D3zOx).
+The prior handoff's "not deployed" line below is superseded.
+
+Implemented original recommendation timeline on the existing ticker route,
+including grades, allocation changes, policy provenance and validated stock moves.
+No stock move is called strategy profit. Recent display is bounded to 200 rows
+from 1000 archives; originals remain on disk. USD replaces Cash. Empty recorded
+accounts show 100% recorded cash; during an FOMC pause their cash size is 100%.
+Outside a pause the Size column remains model target allocation, while recorded
+cash stays separately labelled. Analysis date is now separate from intraday bar
+date: September 11 is the nightly basis, not evidence the quote collector stopped.
+
+The new board-paper ledger is an opt-in local forward simulation, not an Alpaca
+reset. It starts only through explicit initialize(), preserves existing history,
+uses shared dashboard action gates and research sizes, and observes the ordinary
+collector. It delays fills until a later observation, revalidates quotes/actions,
+uses whole shares, displayed size caps, bid/ask plus 10 bp per side, and cannot
+borrow. Same-observation sales cannot fund purchases. Each immutable observation
+contains resulting cash, positions, fills and original decisions. Policy changes
+clear pending intents. Overnight valuation waits for complete action coverage;
+unknown-pay-date dividends are receivables, not spendable cash. These are model
+limitations, not a proven brokerage execution replica. SIP remains unavailable;
+exact dashboard eligibility therefore blocks new simulated buys too.
+
+RL audit counts independent dates, quote feeds and actual feature snapshots.
+New public state snapshots are archived prospectively; old ones are never
+reconstructed using current information. No trained RL policy is promoted.
+Remaining: final verification, checkpoint/push/deploy, initialize the separate
+run, live browser acceptance, real-data RL audit and research report.
+
+VERIFIED so far: 53 focused backend tests (1.70s), TypeScript/Vite; 42 existing
+browser workflows passed and the corrected timeline plus USD/paper workflows
+passed (2 tests, 8.1s). Final expanded tests and deployment still pending.
+Diagram impact: UPDATED — agent-trading-desk.
+
+Further steering: best current-price opportunity first, GLW as an example, and
+systematic stock coverage beyond user-supplied names. Actual universe has 531
+members but book_sides admits 93; GLW is excluded by that theme filter. Live
+expectations value vote is nightly (SNDK rank .949), technical updates intraday.
+Do not call the existing rank a current fair-value forecast. Broad-universe and
+compatible intraday expectations work remains. RL audit: 22 observations, one
+session, 0 full state snapshots, 19 missing quote records and 3 IEX. See
+docs/research/desk-rl-readiness-2026-09-14.md.
+
 ## User steering — one board, cash ranked, ticker recommendation history
 
 The user rejected multiple default sections and asked for one table of every

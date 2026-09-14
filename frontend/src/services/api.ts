@@ -1967,6 +1967,7 @@ export interface DeskHistory {
   asof: string;
   horizon: number;
   rows: DeskHistoryRow[];
+  recommendations?: DeskRecommendationHistory;
   backtest: {
     min_grade: string;
     sessions: number;
@@ -1977,7 +1978,18 @@ export interface DeskHistory {
     benchmark_return: number | null;
     in_annualised: number | null;
     out_annualised: number | null;
-  };
+  } | null;
+}
+
+export interface DeskRecommendationHistory {
+  status: string;
+  invalid_archives: number;
+  older_records_not_shown: boolean;
+  outcomes?: {status: string; through?: string; mark_at?: string; mark_price?: number} | null;
+  observations: {id: string; recorded_at: string; bar: string; grade: string;
+    allocation: number | null; allocation_change: number | null; model_weight: number;
+    event_paused: boolean; entry_state: string | null; price: number;
+    version: string; policy_sha256: string | null; stock_total_return: number | null}[];
 }
 
 // The autopsy: what the person's own trading keeps doing, from their own
@@ -2065,6 +2077,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
+  board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;
   forward_evidence?: DeskForwardEvidence;
   event_status?: { as_of?: string; status?: string; stale: boolean; active: boolean; pending_orders: number; policy?: DeskRecord['event_risk']; sold?: Record<string, number> };
   intraday_research?: { status: string; reason?: string; session?: string; targets?: Record<string, number>; event_paused?: boolean; bar?: string; valid_until?: string; valuation?: string; macro?: { defensive: boolean; exposure: number; base_exposure: number } };

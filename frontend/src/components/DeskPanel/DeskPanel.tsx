@@ -4,6 +4,7 @@ import { FundingPreview } from './FundingPreview'
 import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { StockBoard } from './StockBoard'
+import { RecommendationTimeline } from './RecommendationTimeline'
 import {
   getDesk,
   getDeskEarnings,
@@ -878,7 +879,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <button aria-label="Refresh" onClick={() => {void load();void poll()}}><RefreshCw size={16} /></button>
       </div>
     </header>
-    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research}
+    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} paper={payload.board_paper}
       holdings={holdingsReady ? holdings : null} paused={Boolean(eventPaused)} now={now}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
       onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
@@ -889,7 +890,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <Positions holdings={holdings} error={saveError} onSave={async next => {if (await save(next)) setEditing(false)}} />
       </div>
     </div>}
-    {openName && <NameDetail userId={userId} ticker={openName} latest={latest} row={rows.find(row => row.ticker === openName) ?? null} live={live} liveGrades={liveGrades} onClose={() => setOpenName(null)} />}
+    {openName && <NameDetail compact userId={userId} ticker={openName} latest={latest} row={rows.find(row => row.ticker === openName) ?? null} live={live} liveGrades={liveGrades} onClose={() => setOpenName(null)} />}
   </div>
 
   return (
@@ -2170,6 +2171,7 @@ const NameDetail = ({
   live,
   liveGrades,
   onClose,
+  compact = false,
 }: {
   userId: string
   ticker: string
@@ -2178,6 +2180,7 @@ const NameDetail = ({
   live: DeskLive
   liveGrades: Record<string, DeskLiveGrade>
   onClose: () => void
+  compact?: boolean
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
   const [error, setError] = useState('')
@@ -2222,6 +2225,11 @@ const NameDetail = ({
             <X size={16} />
           </button>
         </div>
+        {history && <RecommendationTimeline history={history.recommendations} />}
+        {compact && !history && !error && <p className="mb-3 text-xs">Loading recommendations…</p>}
+        {compact && error && <p role="alert" className="mb-3 text-xs text-[#b42318]">{error}</p>}
+        <details open={!compact}>
+          <summary className={compact ? 'cursor-pointer text-xs text-[#0071e3]' : 'hidden'}>Analysis & backtest</summary>
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[row.action] ?? ''}`}>
@@ -2344,6 +2352,7 @@ const NameDetail = ({
             </table>
           </>
         )}
+        </details>
       </div>
     </div>
   )

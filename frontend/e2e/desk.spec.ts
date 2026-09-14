@@ -8,6 +8,55 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// A known empty account holds all its capital in USD while additions are paused.
+test('empty paused account shows USD at 100 percent', async ({page}) => {
+  await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: deskRecord(), event_status: {active: true, stale: false},
+    board_paper: {version: 'board-paper/1', started_at: new Date().toISOString(), as_of: new Date().toISOString(), initial_capital: 100000, cash: 100000, equity: 100000, sequence: 0, status: 'Started in USD'},
+  }}))
+  await page.goto('/#desk')
+  const cash = page.getByRole('table', {name: 'Ranked stocks and cash'}).locator('tbody tr').first()
+  await expect(cash).toContainText('USD')
+  await expect(cash).toContainText('100.0%')
+  await expect(cash).toContainText('100% recorded')
+  await expect(page.getByLabel('Forward paper account')).toContainText('USD 100.0%')
+  await expect(page.getByLabel('Forward paper account')).toContainText('0.00% since start')
+})
+
+// A ticker exposes original recommendations without confusing stock moves with fills.
+test('ticker opens original recommendation timeline before detailed analysis', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/desk/history/AAPL', route => route.fulfill({json: {
+    ticker: 'AAPL', rows: [], backtest: null, recommendations: {
+      status: 'available', outcomes: {status: 'awaiting_daily_validation'}, invalid_archives: 0,
+      older_records_not_shown: false, observations: [
+        {id: 'new', recorded_at: '2026-09-14T18:30:24Z', bar: '2026-09-14T18:15:00Z',
+          grade: 'A+', allocation: null, allocation_change: null, event_paused: true,
+          price: 110, stock_total_return: null, version: 'policy/2', policy_sha256: 'abcdefgh'},
+        {id: 'old', recorded_at: '2026-09-11T18:30:24Z', bar: '2026-09-11T18:15:00Z',
+          grade: 'A', allocation: .2, allocation_change: .1, event_paused: false,
+          entry_state: 'dip', price: 100, stock_total_return: null, version: 'policy/1', policy_sha256: '12345678'},
+      ],
+    },
+  }}))
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: /^AAPL/}).click()
+  const timeline = page.getByRole('region', {name: 'Recorded recommendations'})
+  await expect(timeline.getByRole('table')).toBeVisible()
+  await expect(timeline).toContainText('Wait · FOMC')
+  await expect(timeline).toContainText('20.0%')
+  await expect(timeline).toContainText('+10.0 pp')
+  await expect(timeline).toContainText('not strategy profit')
+  await expect(timeline).toContainText('policy/1')
+  await expect(timeline).toContainText('await validated daily data')
+  const details = page.locator('details').filter({has: page.locator('summary', {hasText: 'Analysis & backtest'})})
+  await expect(details).not.toHaveAttribute('open', '')
+  await details.locator(':scope > summary').click()
+  await expect(details).toHaveAttribute('open', '')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // The default board ranks cash with allocations and refreshes the whole view together.
 test('single board ranks cash and updates allocations with the next candle', async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
@@ -28,7 +77,7 @@ test('single board ranks cash and updates allocations with the next candle', asy
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(page.getByRole('table')).toHaveCount(1)
   await expect(board.locator('tbody tr')).toHaveCount(4)
-  await expect(board.locator('tbody tr').first()).toContainText('Cash')
+  await expect(board.locator('tbody tr').first()).toContainText('USD')
   await expect(board.locator('tbody tr').first()).toContainText('75.0%')
   await expect(board.locator('tbody tr').nth(1)).toContainText('AAPL')
   await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toHaveCount(0)
@@ -37,7 +86,7 @@ test('single board ranks cash and updates allocations with the next candle', asy
   await expect(board.locator('tbody tr').first()).toContainText('NVDA')
   await expect(board.locator('tbody tr').first()).toContainText('55.0%')
   await expect(board.locator('tbody tr').first()).toContainText('$110.00')
-  await expect(board.locator('tbody tr').nth(2)).toContainText('Cash')
+  await expect(board.locator('tbody tr').nth(2)).toContainText('USD')
   await expect(board.locator('tbody tr').nth(2)).toContainText('5.0%')
   await page.setViewportSize({width: 390, height: 844})
   const dimensions = await board.evaluate(element => ({width: element.getBoundingClientRect().width, available: element.parentElement!.clientWidth}))

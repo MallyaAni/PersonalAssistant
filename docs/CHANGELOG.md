@@ -9836,3 +9836,11 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - Tightened the semantic action-selection contract so an answer to the assistant's drafting question, details such as dates, times, quantities and deadlines, and tone or wording revisions continue the recent writing task without a tool. Image edits now require a picture to be the established subject. No keyword or regex router was added.
 - Added four real-model writing-follow-up cases spanning requested scheduling details, tone revision, content addition and deadline revision. The complete Qwen tool-selection functional module passes 7/7, and the focused selector/search unit suites pass 30/30.
 - Rebuilt the backend from the working tree, recreated it, and restarted the gateway. A four-turn authenticated `testuser` acceptance thread through `POST /api/v1/chat` retained Saturday 8am–7pm and one recipient, produced the draft, and rewrote it casually. All four traces completed; no web-search, MCP tool execution, image-edit or missing-image event appeared in their logs.
+# 2026-09-14 — Single-board follow-through
+
+Added the original recommendation timeline to ticker details; dated nightly
+analysis separately from intraday bars; labelled cash USD with explicit empty-
+account cash. Added an isolated opt-in forward paper ledger with delayed simulated
+fills, shared action gates, immutable state and a compact dated dashboard summary.
+Started prospective public feature capture and a read-only RL data readiness audit.
+The old paper account is preserved. No RL model or new live trading policy is promoted.

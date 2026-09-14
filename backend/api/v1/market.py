@@ -111,7 +111,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     latest, previous = deskrecord.latest_pair(_root())
     if latest is None:
         return {"user_id": user_id, "latest": None, "sessions": []}
-    from backend.market import event_status, forward_evidence
+    from backend.market import board_paper, event_status, forward_evidence
 
     event_live = event_status.load(_root())
     research = intraday_research.load(_root(), latest["session"])
@@ -122,6 +122,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "latest": latest,
         "economics": economics.load(_root()),
         "intraday_research": research,
+        "board_paper": board_paper.summary(_root()),
         "event_status": event_live,
         "forward_evidence": await asyncio.to_thread(forward_evidence.report, _root()),
         "event_policy": {
@@ -641,18 +642,23 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
     }
 
 
-# One name's history and backtest, from the files the nightly run wrote:
-# what the desk said about it session by session and what happened next.
-# The desk rebuilds in the nightly job (the serving container has no
-# torch), so the drill-down reads the record the job left behind.
+# Read original recommendations alongside an optional nightly grade replay.
 @router.get("/desk/history/{ticker}")
 async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
-    """Return a name's grade history and backtest, or 404 without it."""
+    """Return recorded recommendations and optional simulated history."""
     _operator_only(user_id)
+    from backend.market import recommendation_history
+
+    recommendations = await asyncio.to_thread(
+        recommendation_history.load, _root(), ticker.upper()
+    )
     path = _root() / "history" / f"{ticker.upper()}.json"
     if not path.exists():
-        raise HTTPException(status_code=404, detail="no history for that name yet")
-    history = json.loads(path.read_text(encoding="utf-8"))
+        if not recommendations["observations"]:
+            raise HTTPException(status_code=404, detail="no history for that name yet")
+        history = {"rows": [], "backtest": None, "horizon": 20, "asof": None}
+    else:
+        history = json.loads(path.read_text(encoding="utf-8"))
     # The rows are today's rule replayed; where a nightly record exists for
     # the session, the row carries what the desk actually said that night
     # and is marked as said, so a grade that moved because the rule changed
@@ -663,7 +669,12 @@ async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
         told = spoken.get(str(row.get("date")))
         rows.append({**row, **told, "said": True} if told else {**row, "said": False})
     history["rows"] = rows
-    return {"user_id": user_id, "ticker": ticker.upper(), **history}
+    return {
+        "user_id": user_id,
+        "ticker": ticker.upper(),
+        **history,
+        "recommendations": recommendations,
+    }
 
 
 # The newest earnings release read for one name, straight from the store the
