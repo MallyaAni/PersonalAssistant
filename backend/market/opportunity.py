@@ -14,10 +14,20 @@ def explain(grade, live, quote, deadline, now, session):
     missing = []
     for analyst, weight in grading.ANALYST_WEIGHTS.items():
         rank = ranks.get(analyst)
-        if rank is None or not math.isfinite(rank) or not 0 <= rank <= 1:
+        vote = ((live or {}).get("stances_live") or grade.get("stances") or {}).get(
+            analyst
+        )
+        recorded_vote = analyst == "rotation" and rank is None and vote in (-1, 0, 1)
+        if not recorded_vote and (
+            rank is None or not math.isfinite(rank) or not 0 <= rank <= 1
+        ):
             missing.append(analyst)
             continue
-        score = 5 * (1 + float(conviction_from_ranks(rank, SHARPNESS)))
+        score = (
+            5 * (1 + vote)
+            if recorded_vote
+            else 5 * (1 + float(conviction_from_ranks(rank, SHARPNESS)))
+        )
         current = bool(live) and (
             analyst == "technical"
             and live.get("technical_now") is not None
@@ -29,6 +39,7 @@ def explain(grade, live, quote, deadline, now, session):
                 "analyst": analyst,
                 "score": score,
                 "weight": weight,
+                "source": "recorded_vote" if recorded_vote else "rank",
                 "basis": "intraday" if current else session,
                 "evidence": (grade.get("reads") or {}).get(analyst) or [],
             }
@@ -54,6 +65,7 @@ def explain(grade, live, quote, deadline, now, session):
         "parts": parts,
         "missing": missing,
         "valuation_current": bool(live and live.get("value_now") is not None),
-        "method": "Configured analyst convictions normalized to 0–10. "
+        "method": "Configured analyst convictions normalized to 0–10; "
+        "rotation uses its recorded vote when no rank is stored. "
         "This is an evidence index, not a predicted return or probability of profit.",
     }

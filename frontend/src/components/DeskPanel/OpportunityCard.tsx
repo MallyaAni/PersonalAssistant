@@ -11,7 +11,7 @@ export const OpportunityCard = ({reading, now}: {reading?: DeskOpportunity; now:
       <p className="mt-1 text-[11px] text-[#6e6e73]">Analyst evidence index · not a return forecast{!reading!.valuation_current ? ' · valuation is nightly' : ''}</p>
       <div className="mt-3 space-y-2">{[...reading!.parts].sort((a, b) => b.weight * (b.score - 5) - a.weight * (a.score - 5)).map(part => <div key={part.analyst} className="text-xs">
         <div className="flex justify-between gap-2"><span className="capitalize">{part.analyst}</span><span>{part.score.toFixed(1)}/10 · {(part.weight / total * 100).toFixed(0)}% weight</span></div>
-        <p className="text-[11px] text-[#6e6e73]">{part.score > 5 ? 'Raises score' : part.score < 5 ? 'Lowers score' : 'Neutral'} · {part.basis === 'intraday' ? 'current bar' : `${part.basis} close`}</p>
+        <p className="text-[11px] text-[#6e6e73]">{part.score > 5 ? 'Raises score' : part.score < 5 ? 'Lowers score' : 'Neutral'} · {part.basis === 'intraday' ? 'current bar' : `${part.basis} close`}{part.source === 'recorded_vote' ? ' · recorded vote' : ''}</p>
         {part.evidence[0] && <p className="mt-0.5 text-[11px] text-[#6e6e73]">{part.basis === 'intraday' ? 'Prior-close context: ' : ''}{part.evidence[0]}</p>}
       </div>)}</div>
       <p className="mt-3 text-[11px] text-[#6e6e73]">A high score does not override Wait, FOMC restrictions or position limits.</p>

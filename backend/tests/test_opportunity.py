@@ -9,6 +9,35 @@ from backend.market import opportunity
 NOW = datetime(2026, 9, 14, 18, 30, tzinfo=UTC)
 
 
+# Real nightly records store the rotation vote separately from the four analyst ranks.
+def test_recorded_rotation_vote_does_not_require_an_invented_rank():
+    grade = {
+        "ranks": {
+            name: 0.5
+            for name in opportunity.grading.ANALYST_WEIGHTS
+            if name != "rotation"
+        },
+        "stances": {"rotation": 0},
+    }
+    live = {
+        "ranks_live": grade["ranks"],
+        "technical_now": 0.5,
+        "stances_live": grade["stances"],
+    }
+    result = opportunity.explain(
+        grade,
+        live,
+        {"last": 100},
+        (NOW + timedelta(minutes=15)).isoformat(),
+        NOW,
+        "2026-09-11",
+    )
+    assert result["score"] == pytest.approx(5)
+    rotation = next(p for p in result["parts"] if p["analyst"] == "rotation")
+    assert rotation["source"] == "recorded_vote"
+    assert rotation["score"] == 5
+
+
 # All-neutral evidence is five; stronger current technical evidence moves it upward.
 def test_score_moves_with_current_evidence_and_explains_weights():
     grade = {

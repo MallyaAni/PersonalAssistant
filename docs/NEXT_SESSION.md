@@ -34,6 +34,16 @@ no volatility division or hidden risk penalty. Read the existing historical ML/R
 experiments but do not treat their old reward results as a rerun for this objective.
 No new trained growth policy or broader-universe strategy has been promoted.
 
+Real-input scoring caught a FAILED boundary before promotion: a92b7b64 required
+a stored rotation percentile, but all current records have only its vote. Stopped
+that deployment before backup/restart, fixed the explicit recorded-vote fallback
+and added a regression test. At 19:37:20 UTC on the real 19:15 bar, 79/93 names
+had complete scores; 14 were correctly withheld for missing evidence. Top index:
+SNDK 9.297 at $1560, NTAP 8.630 at $190.80, LITE 8.076 at $835.50. These are
+indicative analyst indices with nightly valuation, not learned returns. All 93
+actions stayed Wait; account files were unchanged. Restart the full deployment
+gate for the fix; do not reuse the interrupted gate as passing evidence.
+
 ## 2026-09-14 — USD, ticker history, separate forward paper and RL audit
 
 Started on main f6f6758a with seven unfinished ticker-history files. Pull --rebase

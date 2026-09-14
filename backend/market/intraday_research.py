@@ -97,6 +97,8 @@ def build(
                 "market/sizing.py",
                 "market/holdings.py",
                 "market/desk_freshness.py",
+                "market/opportunity.py",
+                "market/intraday_research.py",
             )
         )
     ).hexdigest()
