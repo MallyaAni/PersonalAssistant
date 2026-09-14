@@ -3,6 +3,7 @@ import { RefreshCw, X } from 'lucide-react'
 import { FundingPreview } from './FundingPreview'
 import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
+import { StockBoard } from './StockBoard'
 import {
   getDesk,
   getDeskEarnings,
@@ -692,6 +693,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [stops, setStops] = useState(() => readStored(STOPS_KEY) === 'on')
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
+  const [advanced, setAdvanced] = useState(() => new URLSearchParams(window.location.search).get('deskDetails') === '1')
   const [editing, setEditing] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [openReason, setOpenReason] = useState<string | null>(null)
@@ -709,6 +711,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       setSaveError(err instanceof Error ? err.message : 'The positions were not saved.')
       return false
     }
+  }
+
+  // Persist an actual personal-account fill through the existing position tracker.
+  const recordBuy = async (ticker: string, price: number, qty: number, fillDate: string) => {
+    setMarking(ticker)
+    try {
+      return await save(afterTrade(holdings, {ticker, action: 'buy'}, price, qty, fillDate))
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'The buy was not recorded.')
+      return false
+    } finally { setMarking(null) }
   }
 
   const load = async () => {
@@ -856,12 +869,36 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const event = (!eventLive?.stale && eventLive?.policy) || latest?.event_risk
   const eventPaused = eventLive?.active || event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
 
+  if (latest && !advanced) return <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
+    <header className="flex shrink-0 items-center justify-between gap-2">
+      <h2 className="text-xl font-semibold">Desk</h2>
+      <div className="flex items-center gap-3 text-xs text-[#0071e3]">
+        <button disabled={!canWrite || !holdingsReady} onClick={() => setEditing(true)}>Positions</button>
+        <button onClick={() => setAdvanced(true)}>Details</button>
+        <button aria-label="Refresh" onClick={() => {void load();void poll()}}><RefreshCw size={16} /></button>
+      </div>
+    </header>
+    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research}
+      holdings={holdingsReady ? holdings : null} paused={Boolean(eventPaused)} now={now}
+      action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
+      onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
+    {editing && <div role="dialog" aria-modal="true" aria-label="Your positions" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-4">
+        <div className="mb-3 flex justify-between"><h3 className="font-semibold">Your positions</h3><button onClick={() => setEditing(false)} aria-label="Close positions"><X size={18} /></button></div>
+        <label className="mb-3 flex items-center gap-2 text-sm">Account value $<input aria-label="Account value" type="number" min="1" value={equity} className="w-32 rounded border p-1" onChange={event => {const value = Number(event.target.value);setEquity(value);writeStored(EQUITY_KEY, String(value))}} /></label>
+        <Positions holdings={holdings} error={saveError} onSave={async next => {if (await save(next)) setEditing(false)}} />
+      </div>
+    </div>}
+    {openName && <NameDetail userId={userId} ticker={openName} latest={latest} row={rows.find(row => row.ticker === openName) ?? null} live={live} liveGrades={liveGrades} onClose={() => setOpenName(null)} />}
+  </div>
+
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
+            {latest && <button onClick={() => setAdvanced(false)} className="text-xs text-[#0071e3]">Back to stocks</button>}
             <button
               type="button"
               onClick={() => setHelp(!help)}
@@ -916,23 +953,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && (
         <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} now={now} decisions={decisions} equity={equity}
           holdings={holdingsReady ? holdings : null} marking={marking !== null}
-          onRecordBuy={canWrite && holdingsReady ? async (ticker, price, qty, fillDate) => {
-            setMarking(ticker)
-            try {
-              return await save(afterTrade(holdings, {ticker, action: 'buy'}, price, qty, fillDate))
-            } catch (err) {
-              setSaveError(err instanceof Error ? err.message : 'The buy was not recorded.')
-              return false
-            } finally {
-              setMarking(null)
-            }
-          } : undefined}
+          onRecordBuy={canWrite && holdingsReady ? recordBuy : undefined}
           saveError={saveError} onOpenName={(t) => setOpenName(t)} />
       )}
 
       {latest && (
         <details aria-label="Reading the current picks" className="px-1 text-xs text-[#6e6e73]">
-          <summary className="cursor-pointer">Data & timing · 15-minute bars, not live quotes</summary>
+          <summary className="cursor-pointer">Data & timing · bar prices and quote checks</summary>
           <p className="mt-1">A+ is the highest grade under the current voting rules, not a probability of profit.
             Intraday grades update technical and price-sensitive value inputs; other votes and target weights use the evening decision.
             Prices, available cash and execution conditions can change before an order fills.</p>
@@ -1595,16 +1622,18 @@ const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
   ? '<0.1%' : `${(100 * weight).toFixed(1)}%`
 
 // Withhold actions whose price, decision or account context no longer matches the page.
-const DecisionCell = ({ticker, decisions, latest, holdings, equity, now}: {
+const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact = false, allocationAllowed = true}: {
   ticker: string; decisions?: DeskDecisions; latest: DeskRecord; holdings: DeskHolding[] | null; equity: number; now: number
+  compact?: boolean; allocationAllowed?: boolean
 }) => {
   const matches = decisions && holdings !== null && decisions.session === latest.session && decisions.written === latest.written && decisions.equity === equity
     && holdings.length === Object.keys(decisions.holdings).length && holdings.every(h => decisions.holdings[h.ticker] === h.shares)
   const row = matches ? decisions.rows[ticker] : undefined
-  if (!row) return <span className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>Wait · decision unavailable</span>
+  if (!row) return <span title="Decision unavailable" className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>{compact ? 'Wait' : 'Wait · decision unavailable'}</span>
   const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
-  const action = expired ? 'Wait' : row.action
+  const action = expired || (row.action === 'Buy eligible' && !allocationAllowed) ? 'Wait' : row.action
   const reason = expired && row.action !== 'Wait' ? 'Refresh price evidence' : row.reason
+  if (compact) return <span title={reason} aria-label={`${ticker} plan action`}>{action}</span>
   return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
     <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {allocationPercent(row.target_weight)} plan</span></div>
     <div className="text-[#6e6e73]">{reason}</div>

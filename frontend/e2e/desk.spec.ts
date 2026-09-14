@@ -8,6 +8,91 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// The default board ranks cash with allocations and refreshes the whole view together.
+test('single board ranks cash and updates allocations with the next candle', async ({page}) => {
+  await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  let next = false
+  // Serve compatible completed prices and weights for each observed candle.
+  const bar = () => next ? '2026-09-09T14:00:00Z' : '2026-09-09T13:45:00Z'
+  await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
+    as_of: bar(), data_at: bar(), quotes: Object.fromEntries(Object.keys(latest.grades).map(ticker => [ticker, {symbol: ticker, last: next ? 110 : 100, bar: bar()}])),
+  }}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], intraday_research: {status: 'available', session: latest.session,
+      bar: bar(), valid_until: next ? '2026-09-09T14:30:00Z' : '2026-09-09T14:15:00Z',
+      targets: next ? {AAPL: .4, NVDA: .55, MSFT: 0} : {AAPL: .2, NVDA: .05, MSFT: 0}},
+  }}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(page.getByRole('table')).toHaveCount(1)
+  await expect(board.locator('tbody tr')).toHaveCount(4)
+  await expect(board.locator('tbody tr').first()).toContainText('Cash')
+  await expect(board.locator('tbody tr').first()).toContainText('75.0%')
+  await expect(board.locator('tbody tr').nth(1)).toContainText('AAPL')
+  await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toHaveCount(0)
+  next = true
+  await page.clock.fastForward(15 * 60_000)
+  await expect(board.locator('tbody tr').first()).toContainText('NVDA')
+  await expect(board.locator('tbody tr').first()).toContainText('55.0%')
+  await expect(board.locator('tbody tr').first()).toContainText('$110.00')
+  await expect(board.locator('tbody tr').nth(2)).toContainText('Cash')
+  await expect(board.locator('tbody tr').nth(2)).toContainText('5.0%')
+  await page.setViewportSize({width: 390, height: 844})
+  const dimensions = await board.evaluate(element => ({width: element.getBoundingClientRect().width, available: element.parentElement!.clientWidth}))
+  expect(dimensions.width).toBeLessThanOrEqual(dimensions.available)
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// FOMC pauses do not erase rankings or pretend the user's account is entirely cash.
+test('single board keeps cash and wait actions during FOMC', async ({page}) => {
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], event_status: {active: true, stale: true},
+  }}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(page.getByText('FOMC · new buys paused')).toBeVisible()
+  await expect(board.locator('tbody tr').first()).toContainText('Hold available cash')
+  await expect(board.locator('tbody tr').first()).not.toContainText('100.0%')
+  await expect(board.locator('tbody tr').nth(1)).toContainText('Wait')
+  await expect(board.locator('tbody tr')).toHaveCount(4)
+  await page.getByRole('button', {name: 'Details', exact: true}).click()
+  await expect(page.getByRole('heading', {name: 'Stock rankings', exact: true})).toBeVisible()
+  await page.getByRole('button', {name: 'Back to stocks'}).click()
+  await expect(board).toBeVisible()
+})
+
+// A Buy click opens a confirmation; only a saved real fill changes persisted holdings.
+test('single board records a confirmed buy and reads it back after reload', async ({page}) => {
+  let stored = [{ticker: 'AAPL', shares: 5, entry_price: 100, entry_date: '2026-09-01'}]
+  let writes = 0
+  await page.route('**/desk/holdings', route => {
+    if (route.request().method() === 'PUT') {writes += 1;stored = route.request().postDataJSON()}
+    return route.fulfill({json: {holdings: stored}})
+  })
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'Buy MSFT', exact: true}).click()
+  const dialog = page.getByRole('dialog', {name: 'Record MSFT buy'})
+  await expect(dialog).toContainText('does not place an order')
+  expect(writes).toBe(0)
+  await dialog.getByRole('button', {name: 'Cancel', exact: true}).click()
+  expect(writes).toBe(0)
+  await page.getByRole('button', {name: 'Buy MSFT', exact: true}).click()
+  await dialog.getByLabel('Filled shares').fill('2.5')
+  await dialog.getByLabel('Average fill price').fill('411.23')
+  await dialog.getByLabel('Fill date').fill('2026-09-10')
+  await dialog.getByRole('button', {name: 'Save position', exact: true}).click()
+  await expect(dialog).not.toBeVisible()
+  expect(writes).toBe(1)
+  expect(stored).toContainEqual({ticker: 'MSFT', shares: 2.5, entry_price: 411.23, entry_date: '2026-09-10'})
+  await page.reload()
+  const row = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row').filter({has: page.getByRole('button', {name: 'Buy MSFT', exact: true})})
+  await expect(row).toContainText('2.5 held')
+  expect(writes).toBe(1)
+})
+
 // Quote eligibility expires on screen even if polling returns the same older response.
 test('plan action expires and preserves its quoted source', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -21,7 +106,7 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
         valid_until: '2026-09-09T14:00:30Z', quote: {feed: 'sip', bid: 199.99, ask: 200.01, at: now.toISOString(), eligible: true, valid_until: '2026-09-09T14:00:30Z', reason: 'Quote checks passed'}}},
     },
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const cell = page.getByLabel('AAPL plan action')
   await expect(cell).toContainText('Buy eligible')
   await cell.getByText('Position & quote').click()
@@ -46,7 +131,7 @@ test('forward evidence distinguishes unobserved outcomes from zero performance',
       portfolios: [{cost_bps: 10, fill_intervals: 0, status: 'insufficient_forward_data', arms: {}}],
     }]},
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByText('Forward evidence · research', {exact: true}).click()
   const evidence = page.locator('details', {has: page.getByText('Forward evidence · research', {exact: true})})
   await expect(evidence).toContainText('10 decisions awaiting validation')
@@ -64,7 +149,7 @@ test('stale FOMC recovery keeps the active cycle paused', async ({page}) => {
     event_status: {as_of: '2026-09-01T14:00:00Z', stale: true, active: true,
       status: 'reduction settled', pending_orders: 0},
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const banner = page.getByLabel('FOMC exposure policy')
   await expect(banner).toContainText('FOMC · portfolio adjustments paused')
   await expect(banner).toContainText('last known status')
@@ -85,7 +170,7 @@ test('FOMC recovery displays current intent and pauses the portfolio plan', asyn
       status: 'reduction pending', pending_orders: 2,
       policy: {session: latest.session, factor: .5, calendar_known: true, decision_date: '2026-09-16'}},
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await expect(page.getByLabel('FOMC exposure policy')).toContainText('FOMC · reduction pending')
   await expect(page.getByLabel('FOMC exposure policy')).toContainText('2 event orders awaiting reconciliation')
   await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toContainText('FOMC takes priority')
@@ -104,7 +189,7 @@ test(`research percentages ${displayed} expire independently of account sizing`,
       valid_until: '2026-09-09T14:00:30Z', targets: {AAPL: weight, NVDA: 0},
     },
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const rankings = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings'})})
   await expect(rankings.locator('tr', {hasText: 'AAPL'})).toContainText(displayed)
   await expect(rankings.locator('tr', {hasText: 'NVDA'})).toContainText('0.0%')
@@ -120,7 +205,7 @@ test('paper execution distinguishes fills from unavailable history', async ({pag
   await page.route(`**/market/${USER}/desk/paper`, route => route.fulfill({json: {
     orders: [], activity: {session: '2026-09-14', complete: true, fills: []},
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const execution = page.getByLabel('Paper execution', {exact: true})
   await expect(execution).toContainText('0 open orders')
   await expect(execution).toContainText('No fills · 2026-09-14')
@@ -553,7 +638,7 @@ test.beforeEach(async ({ page }) => {
 test('compact decision view keeps rankings above the fold', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.setViewportSize({width: 1440, height: 1000})
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const heading = page.getByRole('heading', {name: /^(Stock rankings|Every grade)$/})
   await expect(heading).toBeVisible()
   await page.waitForLoadState('networkidle')
@@ -583,7 +668,7 @@ test('separates dated inflation facts from research-only model judgement', async
       facts: [{id: 'CPIAUCSL', label: 'CPI', status: 'available', period: '2026-08-01', source: 'https://fred.stlouisfed.org/series/CPIAUCSL', month_change_pct: .23, year_change_pct: 3.45, previous_year_change_pct: null}],
     },
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const context = page.getByLabel('Economic context')
   await page.getByText(/^Inflation ·/).click()
   await expect(context).toContainText('2026-08')
@@ -608,7 +693,7 @@ test('previews one confirmed cash budget and clears changed inputs', async ({ pa
       rows: [{ticker: 'AAPL', reference_price: 190, held_shares: 0, target_total_shares: 31, additional_shares: 1, estimated_cost: 190}],
     }})
   })
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const cash = page.getByLabel('Available cash to allocate ($)')
   await page.getByText('Calculate shares with available cash', {exact: true}).click()
   await cash.fill('200')
@@ -638,7 +723,7 @@ test('research sizing displays reductions and clears the previous policy', async
       reductions: [{ticker: 'AAPL', held_shares: 20, target_total_shares: 10, reduction_shares: 10}],
     }})
   })
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByText('Calculate shares with available cash', {exact: true}).click()
   await page.getByLabel('Sizing policy').selectOption('intraday_research')
   await expect(page.getByText('Research only · current technical sizing', {exact: false})).toBeVisible()
@@ -653,7 +738,7 @@ test('research sizing displays reductions and clears the previous policy', async
 
 test('renders the desk at a glance with the track record', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByText('Performance & practice account', {exact: true}).click()
   await expect(page.getByRole('main').getByRole('heading', { level: 2, name: 'Desk' })).toBeVisible()
 
@@ -717,7 +802,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
 // exists in one place even with the details open.
 test('shows each thing once, not twice', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
 
   // The board is the single buy list; no standalone best-buys shortlist.
   await expect(page.getByText('Best buys right now')).toHaveCount(0)
@@ -754,7 +839,7 @@ test('shows each thing once, not twice', async ({ page }) => {
 // and the benchmark.
 test('drills into a name’s own history', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
@@ -785,7 +870,7 @@ test('drills into a name’s own history', async ({ page }) => {
 // Reaction timing, extracted tone and precise financials must not imply a release date or revision.
 test('shows accurately dated earnings evidence in the drill-down', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
@@ -813,7 +898,7 @@ test('withholds legacy earnings figures and retains signed precision after retry
     } } })
   })
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog.getByText('Financial figures withheld: this older extraction may misreport losses.')).toBeVisible()
@@ -834,7 +919,7 @@ test('retries an unavailable earnings read without disguising it as no release',
   await page.route(`**/desk/earnings/AAPL`, route => {
     return available ? route.fulfill({ json: { read: null } }) : route.abort('failed')
   })
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog.getByText('Earnings read unavailable.')).toBeVisible()
@@ -849,7 +934,7 @@ test('retries an unavailable earnings read without disguising it as no release',
 // the model's prose instead of being hidden behind it.
 test('drills into a covered name outside the book and sees its live horizons', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', { name: 'Show practice account details' }).click()
   await page.getByRole('button', { name: 'MSFT', exact: true }).click()
 
@@ -912,7 +997,7 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
     }),
   }))
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await expect(page.getByText('uncovered', { exact: true })).toBeVisible()
   await expect(page.getByText('100 shares held')).toBeVisible()
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
@@ -976,7 +1061,7 @@ test(`records a confirmed ${action} fill and reads the position back after reloa
     }),
   }))
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await expect(page.getByText('scheduled trades due', {exact: true})).toBeVisible()
   await expect(page.getByText('in 1 trading days')).toBeVisible()
   await page.getByRole('button', { name: 'record fill', exact: true }).click()
@@ -1011,7 +1096,7 @@ test(`records a confirmed ${action} fill and reads the position back after reloa
 // A failed holdings read must not masquerade as an empty account that can be overwritten.
 test('withholds position editing when existing holdings cannot be loaded', async ({ page }) => {
   await page.route('**/desk/holdings', route => route.fulfill({ status: 503, json: { detail: 'unavailable' } }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await expect(page.getByRole('alert')).toContainText('Your positions could not be loaded.')
   await expect(page.getByRole('button', { name: 'edit my positions' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).toHaveCount(0)
@@ -1030,7 +1115,7 @@ test('records a discretionary buy from rankings and reloads its actual shares an
     return route.fulfill({json: {holdings: stored}})
   })
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toBeVisible()
   const rankings = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings', exact: true})})
   const row = rankings.getByRole('row').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
@@ -1064,7 +1149,7 @@ test('explains analyst weights and identifies the recorded expectations model', 
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
     latest: {...deskRecord(), provenance: {rule: {inputs: ['expectations-gap']}}},
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByText('How ranking and sizing work', {exact: true}).click()
   await expect(page.getByText('Current voting rules:')).toContainText('rotation carries half a vote')
   await expect(page.getByText('This evening decision includes the LightGBM expectations gap:')).toContainText('estimated revenue growth minus price-implied growth')
@@ -1130,7 +1215,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
     })
   })
 
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', { name: 'Show practice account details' }).click()
   await page.getByRole('button', { name: 'AAPL', exact: true }).last().click()
 
@@ -1174,7 +1259,7 @@ test('dates old candles separately from explanations and labels indicative grade
       data_at: '2026-09-08T19:45:00Z', read_at: '2026-09-12T14:00:00Z', stale: true,
     }),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await expect(page.getByText('last known data · not current')).toBeVisible()
   await page.getByRole('button', { name: 'Show practice account details' }).click()
   await expect(page.getByText('intraday', {exact: true})).toBeVisible()
@@ -1192,7 +1277,7 @@ test('dates old candles separately from explanations and labels indicative grade
 // it has cost, and the plan. It is one click from the board.
 test('analyzes the person’s own trading from their documents', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', { name: 'analyze my trading' }).click()
 
   const review = page.getByText('Your trading, in review')
@@ -1213,7 +1298,7 @@ test('analyzes the person’s own trading from their documents', async ({ page }
 test('trading review shows the empty-document response', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/trading/autopsy', route => route.fulfill({json: {result: null, reason: 'Share a statement or journal in chat, then retry.'}}))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', {name: 'analyze my trading'}).click()
   await expect(page.getByText('Share a statement or journal in chat, then retry.', {exact: true})).toBeVisible()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
@@ -1230,7 +1315,7 @@ test('an intraday grade expires without requiring a page reload', async ({ page 
       grades_live: {MSFT: {grade_live: 'B', score_live: 0.5}},
     }),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', {name: 'Show practice account details'}).click()
   const grades = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings', exact: true})})
   const msft = grades.locator('tbody tr').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
@@ -1251,7 +1336,7 @@ test('a mismatched decision cannot display the previous intraday targets or grad
       grades_live: {MSFT: {grade_live: 'A+', score_live: 1}},
     }),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', {name: 'Show practice account details'}).click()
   const grades = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings', exact: true})})
   const msft = grades.locator('tbody tr').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
@@ -1268,7 +1353,7 @@ test('cash-limited performance is distinguished from legacy simulated borrowing'
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({latest, changes: null}),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByText('Performance & practice account', {exact: true}).click()
   await expect(page.getByLabel('The desk at a glance')).toContainText('Cash-limited simulation')
   await expect(page.getByText('closing sales cannot fund earlier buys', {exact: false})).toBeVisible()
@@ -1293,7 +1378,7 @@ test('execution receipts distinguish decisions, fills and historical submissions
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({reason: 'unreachable'}),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', {name: 'Show practice account details'}).click()
   const account = page.locator('section', {has: page.getByRole('heading', {name: /^Practice account/})})
   await expect(account).toContainText('Recorded plan:')
@@ -1322,7 +1407,7 @@ test('FOMC policy explains activation without inventing an executed reduction', 
       event_policy: {enabled: true, version: 'fomc-3-session-weakness/1', evaluation_since: '2026-06-18'},
     }),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const banner = page.getByRole('region', {name: 'FOMC exposure policy'})
   await expect(banner).toContainText('FOMC · decision missing')
   await expect(banner).toContainText('does not confirm any reduction')
@@ -1342,7 +1427,7 @@ test('FOMC reduction takes priority over regular target execution', async ({ pag
       event_policy: {enabled: true, version: 'fomc-3-session-weakness/1', evaluation_since: '2026-06-18'},
     }),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await expect(page.getByRole('heading', {name: /^Portfolio plan.*FOMC takes priority/})).toBeVisible()
   await expect(page.getByRole('button', {name: 'record fill', exact: true})).toHaveCount(0)
   await expect(page.getByRole('region', {name: 'FOMC exposure policy'})).toContainText('reduction triggered or still in force')
@@ -1351,7 +1436,7 @@ test('FOMC reduction takes priority over regular target execution', async ({ pag
 
 // The target board must take its content height instead of clipping rows inside a flex item.
 test('target rows are not hidden inside a vertically collapsed section', async ({ page }) => {
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const board = page.locator('section', {has: page.getByRole('columnheader', {name: 'Target move', exact: true})})
   await expect(board.locator('tbody tr')).toHaveCount(2)
   const size = await board.evaluate(element => ({height: element.clientHeight, content: element.scrollHeight}))
@@ -1370,7 +1455,7 @@ test('cash-limited FOMC restoration never claims the remainder was filled', asyn
       }}, event_policy: {enabled: true, version: 'fomc-3-session-weakness/2', evaluation_since: '2026-06-18'},
     }),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   const banner = page.getByRole('region', {name: 'FOMC exposure policy'})
   await expect(banner).toContainText('AAPL 5 shares unbought')
   await expect(banner).toContainText('unfilled quantities, not restored positions')
@@ -1390,7 +1475,7 @@ test('an empty record becomes the getting-started guide', async ({ page }) => {
       sessions: [],
     }),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
 
   await expect(page.getByText('No evening decision is available yet')).toBeVisible()
   await expect(page.getByText('Check after the next trading session.', { exact: false })).toBeVisible()
@@ -1407,7 +1492,7 @@ test('a hypothetical stop remains a reference after price crosses it', async ({ 
       AAPL: {symbol: 'AAPL', last: 80, high: 105, low: 80, open: 102, bar: '2026-09-08T19:45:00Z'},
     }}),
   }))
-  await page.goto('/#desk')
+  await page.goto('/?deskDetails=1#desk')
   await page.getByRole('checkbox', {name: 'show hypothetical stops'}).check()
   await expect(page.getByText('hypothetical stop breached — not an active exit rule')).toBeVisible()
   await expect(page.getByText('below the stop: sell')).toHaveCount(0)

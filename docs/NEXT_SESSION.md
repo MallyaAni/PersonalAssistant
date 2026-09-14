@@ -1,5 +1,25 @@
 # Next session
 
+## User steering — one board, cash ranked, ticker recommendation history
+
+The user rejected multiple default sections and asked for one table of every
+stock, rank, dynamic percentage sizing, plan action and Buy. Buy records a
+confirmed manual brokerage fill; it never places a real order. Cash is an
+explicit allocation, ranked alongside stocks; FOMC keeps stock actions at Wait
+and cash first without inventing a 100% cash balance. The default frontend now
+uses StockBoard; the prior detailed view remains behind Details and the deep
+link `?deskDetails=1#desk`. When current research sizing is available, allocation
+weight determines priority, then existing grade/conviction breaks ties. The
+main view identifies model sizing as experimental; adopted action controls
+remain in force. The recorded expectations-model vote is still nightly.
+
+VERIFIED locally: 41 dashboard workflows passed (1.6m), including cash changing
+rank at the next candle, FOMC pauses, mobile width, and a confirmed Buy whose
+shares/cost persist after reload. TypeScript passed. This single-board UI is
+not deployed yet. The user also requested per-ticker recommendation/size history
+and asked whether the dataset could support RL. Ticker timeline implementation
+is in progress. No RL training or promotion is authorized as a completed result.
+
 ## 2026-09-14 — Plan actions and forward evidence (deployment pending)
 
 User authorized all five enhancements. Started clean on main `3e0337d3`, pulled
