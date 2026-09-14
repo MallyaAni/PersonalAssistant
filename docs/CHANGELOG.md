@@ -18,6 +18,17 @@ and [fill-event semantics](https://docs.alpaca.markets/us/docs/websocket-streami
 distinguish aggregate order completion from individual partial-fill events;
 the dashboard preserves that distinction.
 
+Deployment verified at `c43a1a38`: 3461 full-unit tests passed (19 skipped),
+100 real-model routing cases passed, post-deploy checks passed. Authenticated
+public browser acceptance used real GET responses and verified all 93 grades,
+receipts, AAOI drill-down and mobile layout with zero errors.
+
+Separate finding, still unresolved: the unchanged historical simulation allows
+borrowing without financing costs. Its current-policy 2021–2026 replay ended
+220 of 1429 sessions with negative cash and reached 131.7917% gross exposure.
+A strict expected-failure test preserves the observed funding defect; the next
+technical-timing evaluation must resolve funding before judging new signals.
+
 ## 2026-09-13 — Adopt FOMC exposure policy and audit actual trade timing
 
 Enabled the user-selected, provisional three-session FOMC reduction when

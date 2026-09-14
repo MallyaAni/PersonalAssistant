@@ -32,9 +32,35 @@ isolated run lacked prompt files; copying the matching prompts resolved the
 environment failure. Runtime evidence is `/tmp/desk-execution-proof.json` in
 the backend container, with SHA-256 hashes of all three production modules.
 
-UNVERIFIED until the next checkpoint: deployment and authenticated public
-browser acceptance of the new build. Future return improvement still needs
-funded technical timing/re-entry evaluation and an untouched forward sample.
+VERIFIED checkpoint `c43a1a382499ca4fa92bf121957fa080e2b413f4`: deployed through
+`scripts/deploy.sh --wait-post`, exit zero. Full unit gate **3461 passed,
+19 skipped, 82 warnings in 142.28s**; real-model routing **100 passed in
+496.61s**. Marker: `2026-09-14T02:21:54Z c43a1a38 ok (cheap)`.
+The deployed modules' hashes match the pre-deploy real-broker proof, which was
+repeated successfully against `/app` in the new container (34 receipts, 24 fills).
+
+VERIFIED authenticated public browser acceptance: asset
+`/assets/index-1V3qTuNK.js`; real identity and API responses using a short-lived
+read-only bearer, no response fixtures. All 93 grades, the receipt section,
+AAOI history/technical/earnings requests and mobile layout passed. Fifteen API
+responses were HTTP 200; zero page/console/network errors; practice-account
+content 340/340 pixels on mobile. No account writes or broker orders occurred.
+Temporary credentials were removed. Browser evidence is retained locally in
+`/private/tmp/desk-authenticated-{desktop,mobile}.png` and
+`/private/tmp/desk-authenticated-copy.txt`. This proves authenticated reading,
+not the password-login workflow or future execution of newly planned orders.
+
+**Next priority — FAILED cash-only funding constraint:** a minimal current
+simulator fill spends $120.12 from $100. The unchanged 2021–September 11, 2026
+current-policy replay ended with negative cash on **220/1429 sessions** and
+maximum gross exposure **131.7917% of equity**, without financing costs.
+The strict expected-failure regression in `test_trading_execution_funding.py`
+keeps the defect visible (1 xfailed in 0.12s). The new test and evaluation plan
+do not change production behavior and were added after the deployed checkpoint.
+See [next evaluation protocol](research/technical-timing-next-evaluation.md).
+Resolve and measure funding before promoting technical exit/re-entry rules;
+the existing simulation must not be represented as cash-constrained performance.
+Future return improvement remains UNVERIFIED.
 
 ## 2026-09-13 — audit actual pick publication, fills and technical timing
 
