@@ -40,12 +40,11 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
     fills = 0
     for previous, current in zip(decisions, decisions[1:], strict=False):
         fill_time = datetime.fromisoformat(current["bar"]) + timedelta(minutes=15)
-        if fill_time <= datetime.fromisoformat(
-            previous["as_of"]
-        ) or datetime.fromisoformat(current["bar"]) > datetime.fromisoformat(
-            previous["valid_until"]
-        ):
-            continue
+        eligible = (
+            datetime.fromisoformat(previous["as_of"])
+            < fill_time
+            <= datetime.fromisoformat(previous["valid_until"])
+        )
         prices = current["prices"]
         needed = set().union(
             *(previous[arm] for arm in ARMS),
@@ -63,7 +62,7 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
             )
             weights = previous[arm]
             validate_weights(weights)
-            if not previous.get("event_paused"):
+            if eligible and not previous.get("event_paused"):
                 targets = {
                     name: math.floor(equity * weights.get(name, 0) / prices[name])
                     for name in needed
@@ -91,12 +90,13 @@ def evaluate(decisions: list[dict], cost_bps: float = 10) -> dict:
             account["drawdown"] = min(
                 account["drawdown"], account["equity"] / account["peak"] - 1
             )
-        fills += 1
+        fills += int(eligible and not previous.get("event_paused"))
     return {
         "status": "observations_available"
         if fills >= 2
         else "insufficient_forward_data",
         "decision_count": len(decisions),
+        "last_valued_bar": decisions[-1]["bar"] if len(decisions) > 1 else None,
         "fill_intervals": fills,
         "cost_bps": cost_bps,
         "limitation": "Target trackers only; not the full scheduled strategy. "

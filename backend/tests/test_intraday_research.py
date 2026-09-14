@@ -76,6 +76,10 @@ def test_forward_tracker_uses_next_prices_and_real_cash():
     assert 0.49 < result["arms"]["baseline_targets"]["return"] < 0.5
     assert result["arms"]["targets"]["return"] == 0
     assert all(arm["cash"] >= 0 for arm in result["arms"].values())
+    rows[-1]["bar"] = (now + timedelta(days=1)).isoformat()
+    gap = intraday_evaluation.evaluate(rows)
+    assert gap["fill_intervals"] == 1
+    assert .49 < gap["arms"]["baseline_targets"]["return"] < .5
     assert intraday_evaluation.evaluate([])["status"] == "insufficient_forward_data"
     rows[-1]["prices"] = {}
     with pytest.raises(ValueError, match="Missing next-candle"):
