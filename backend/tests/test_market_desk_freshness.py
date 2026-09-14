@@ -82,3 +82,42 @@ def test_value_only_updates_include_the_current_evidence():
     assert read["ranks"]["value"] == 0.9
     assert read["now"] is None
     assert read["value_now"] == 0.9
+
+
+# A plain-value reading cannot replace the recorded growth-model valuation vote.
+def test_growth_model_grade_keeps_its_valuation_in_both_live_paths():
+    record = {
+        "provenance": {"rule": {"inputs": ["expectations-gap"]}},
+        "grades": {
+            "AAA": {
+                "grade": "A+",
+                "score": 3.0,
+                "stances": {
+                    "fundamental": 1,
+                    "technical": 1,
+                    "sentiment": 1,
+                    "value": 1,
+                },
+                "ranks": {
+                    "fundamental": 0.8,
+                    "technical": 0.8,
+                    "sentiment": 0.8,
+                    "value": 0.8,
+                },
+            }
+        },
+        "book": [{"ticker": "AAA", "weight": 0.1}],
+    }
+    technical = {"AAA": {"now": 0.8, "close": 0.8, "stance": 1}}
+    plain_value = {"AAA": {"now": 0.2, "close": 0.2, "stance": -1}}
+    ranked = holdings.live_grades(record, technical, plain_value)["AAA"]
+    board = holdings.board(
+        record, [], 10000, {"AAA": {"last": 100}}, technical, plain_value
+    )[0]
+    for row in (ranked, board):
+        assert row["grade_live"] == "A+"
+        assert row["stances_live"]["value"] == 1
+        assert row["ranks_live"]["value"] == 0.8
+        assert row["value_now"] is None
+        assert row["score_live"] == 3.0
+    assert holdings.live_grades(record, {}, plain_value) == {}

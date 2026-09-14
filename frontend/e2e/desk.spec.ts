@@ -785,6 +785,61 @@ test('withholds position editing when existing holdings cannot be loaded', async
   await expect(page.getByRole('alert')).toContainText('Your positions could not be loaded.')
   await expect(page.getByRole('button', { name: 'edit my positions' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Record buy', exact: true })).toHaveCount(0)
+})
+
+// An off-schedule purchase outside the target book persists only after its actual fill is confirmed.
+test('records a discretionary buy from rankings and reloads its actual shares and cost', async ({ page }) => {
+  let stored = [{ticker: 'AAPL', shares: 5, entry_price: 100, entry_date: '2026-09-01'}]
+  let writes = 0
+  await page.route('**/desk/holdings', route => {
+    if (route.request().method() === 'PUT') {
+      writes += 1
+      stored = route.request().postDataJSON()
+    }
+    return route.fulfill({json: {holdings: stored}})
+  })
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+  await expect(page.getByText('Targets for the next rebalance')).toBeVisible()
+  const rankings = page.locator('section', {has: page.getByRole('heading', {name: 'Every grade', exact: true})})
+  const row = rankings.getByRole('row').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
+  await row.getByRole('button', {name: 'Record buy', exact: true}).click()
+  const form = row.getByRole('form', {name: 'Record MSFT buy'})
+  await expect(form.getByLabel('Filled shares')).toHaveValue('')
+  await expect(form.getByLabel('Average fill price')).toHaveValue('')
+  expect(writes).toBe(0)
+  await row.getByRole('button', {name: 'Cancel buy record'}).click()
+  expect(writes).toBe(0)
+  await row.getByRole('button', {name: 'Record buy', exact: true}).click()
+  await form.getByLabel('Filled shares').fill('2.5')
+  await form.getByLabel('Average fill price').fill('411.23')
+  await form.getByLabel('Fill date').fill('2026-09-10')
+  await form.getByRole('button', {name: 'Save confirmed buy'}).click()
+  await expect(form).not.toBeVisible()
+  expect(writes).toBe(1)
+  expect(stored).toEqual([
+    {ticker: 'AAPL', shares: 5, entry_price: 100, entry_date: '2026-09-01'},
+    {ticker: 'MSFT', shares: 2.5, entry_price: 411.23, entry_date: '2026-09-10'},
+  ])
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await expect(row).toContainText('2.5 shares recorded')
+  expect(writes).toBe(1)
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// The method panel attributes the learner only when the saved decision identifies its input.
+test('explains analyst weights and identifies the recorded expectations model', async ({ page }) => {
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: {...deskRecord(), provenance: {rule: {inputs: ['expectations-gap']}}},
+  }}))
+  await page.goto('/#desk')
+  await page.getByText('How ranking and sizing work', {exact: true}).click()
+  await expect(page.getByText('Current voting rules:')).toContainText('rotation carries half a vote')
+  await expect(page.getByText('This evening decision includes the LightGBM expectations gap:')).toContainText('estimated revenue growth minus price-implied growth')
+  await expect(page.getByText('This evening decision includes the LightGBM expectations gap:')).toContainText('not a forecast of a future share price')
+  await expect(page.getByText('Valuation stays at the evening reading:')).toBeVisible()
 })
 
 // A live drill-down must stay coherent as the candle moves: when the

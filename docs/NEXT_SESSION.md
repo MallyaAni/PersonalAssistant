@@ -3,6 +3,41 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-14 — manual purchases and valuation-model consistency
+
+Started from checkpoint `fb8335d3` on main after pulling and pushing the cash
+and clipping fixes. User clarified the desired workflow: current opportunities,
+variable share recommendations and manual recording after brokerage execution.
+They also asked for macro/bear-market coverage without competing on submillisecond
+economic-release reactions. Design and known gaps:
+`docs/research/retail-decision-workflow.md`.
+
+FAILED then fixed: a no-price-change test became B instead of A+ because the
+intraday plain-value reader replaced the evening expectations-gap valuation.
+Both manual-board and all-grade paths now retain the recorded growth-model
+valuation. Compatible technical updates continue. The UI identifies the model
+from saved provenance and names refreshed inputs. This is a consistency repair,
+not implementation of live expectations-gap valuation.
+
+The main rankings now provide Record buy for covered names regardless of the
+rebalance schedule. Blank share/price inputs, actual fill date, explicit manual
+tracker wording, and saved holdings after reload separate executed positions
+from recommendations. Existing positions are preserved and holdings-read failure
+disables the action. No live broker orders were submitted in validation.
+
+VERIFIED locally: 26 browser tests passed in 1.7 minutes, including an off-schedule
+buy outside the target book, preserved other holdings and persistence after
+reload. Market/trading suite: 487 passed, 8 skipped in 6.87s. Two real ASGI HTTP
+cases against temporary persisted records passed in 1.51s, covering plain and
+growth-model decisions. TypeScript, Vite build and Ruff passed.
+Public deployment/browser acceptance of this follow-up is still pending.
+
+UNVERIFIED/unimplemented: CPI/PPI/PCE allocation inputs, macro observation age
+limits and missing-yield status, a validated intraday allocation/entry policy,
+real-account available-cash tracking, and superior future net returns. The code
+does not support claiming these are already done. Temperature-zero DeepSeek
+release-score repeatability remains an evidenced functional xfail.
+
 ## 2026-09-13 — dashboard evidence and expiry audit
 
 Follow-up checkpoint in progress: cash-at-fill-v1 funds buys from cash available

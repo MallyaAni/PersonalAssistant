@@ -774,7 +774,10 @@ async def test_the_autopsy_without_documents_explains_why(tmp_path, monkeypatch)
 # fetch or an analyst run of their own: /desk/live returns the snapshot, and
 # /desk/mine builds its board from the snapshot's quotes and technical read.
 @pytest.mark.asyncio
-async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeypatch):
+@pytest.mark.parametrize("growth_model", [False, True])
+async def test_the_live_endpoints_serve_the_persisted_snapshot(
+    tmp_path, monkeypatch, growth_model
+):
     from backend.market import desk_freshness
 
     class Clock(datetime):
@@ -792,6 +795,11 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeyp
     record = json.loads(record_path.read_text(encoding="utf-8"))
     for grade in record["grades"].values():
         grade["stances"] = {"technical": 1}
+        if growth_model:
+            grade["stances"].update(fundamental=1, sentiment=1, value=1)
+            grade["ranks"] = {"value": 0.8}
+    if growth_model:
+        record["provenance"] = {"rule": {"inputs": ["expectations-gap"]}}
     record_path.write_text(json.dumps(record), encoding="utf-8")
     desk = tmp_path / "desk"
     desk.mkdir(parents=True, exist_ok=True)
@@ -805,6 +813,7 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeyp
                     "MU": {"last": 45.0},
                 },
                 "technical": {"SNDK": {"now": 0.81, "close": 0.7}},
+                "value": {"SNDK": {"now": 0.1, "close": 0.1, "stance": -1}},
                 "technical_detail": {"SNDK": {"now": 0.81}},
             }
         ),
@@ -829,3 +838,9 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(tmp_path, monkeyp
     board = {r["ticker"]: r for r in mine.json()["rows"]}
     assert board["SNDK"]["technical_now"] == 0.81
     assert board["SNDK"]["last"] == 120.0
+    if growth_model:
+        for row in (board["SNDK"], mine.json()["grades_live"]["SNDK"]):
+            assert row["grade_live"] == "A+"
+            assert row["value_now"] is None
+            assert row["stances_live"]["value"] == 1
+            assert row["ranks_live"]["value"] == 0.8

@@ -100,7 +100,7 @@ const FLAG_WORDS: Record<string, string> = {
   'participation in its top quintile (hype)': 'AI trading activity is in the highest fifth of its historical readings',
   'AI-vs-software co-movement far from its history': 'AI and software stocks are moving together unusually, so the usual patterns may not hold',
   'theme co-movement structure has changed shape': 'the way these stocks move together has changed, so the desk trusts its picks less',
-  'AI basket more than 25% off its yearly high': 'AI stocks are more than 25% below their high for the year',
+  'AI basket more than 25% off its yearly high': 'the AI basket has a large decline from its trailing high',
   'the ten-year yield is rising sharply': 'interest rates are rising fast, which usually hurts these stocks',
 }
 
@@ -138,7 +138,10 @@ const sizing = (r: DeskMineRow, quote: DeskQuote | undefined, equity: number) =>
   const qty = price > 0 ? Math.round((Math.abs(r.delta_weight) * equity) / price) : 0
   return { price, qty }
 }
-const today = () => new Date().toISOString().slice(0, 10)
+// Default a recorded fill to the exchange's calendar date, including after UTC midnight.
+const today = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+}).format(new Date())
 
 // A signed value in green or red with an arrow, so the direction reads
 // without color (a colour-blind reader sees the arrow, not the shade).
@@ -168,7 +171,7 @@ const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
 // Apply only the actual shares and average fill price confirmed from the broker.
-const afterTrade = (holdings: DeskHolding[], r: DeskMineRow, price: number, qty: number): DeskHolding[] => {
+const afterTrade = (holdings: DeskHolding[], r: Pick<DeskMineRow, 'ticker' | 'action'>, price: number, qty: number, fillDate = today()): DeskHolding[] => {
   if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(qty) || qty <= 0) {
     throw new Error('Enter positive filled shares and average fill price.')
   }
@@ -184,7 +187,7 @@ const afterTrade = (holdings: DeskHolding[], r: DeskMineRow, price: number, qty:
     const entry = (mine.shares * mine.entry_price + qty * price) / shares
     return [...rest, { ...mine, shares, entry_price: entry }]
   }
-  return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: today() }]
+  return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: fillDate }]
 }
 
 // Each analyst's rating as a 0-100 number with its mark, F T S V R.
@@ -886,7 +889,20 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <RegimeBanner regime={latest.regime} />}
 
       {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} onOpenName={(t) => setOpenName(t)} />
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes}
+          holdings={holdingsReady ? holdings : null} marking={marking !== null}
+          onRecordBuy={canWrite && holdingsReady ? async (ticker, price, qty, fillDate) => {
+            setMarking(ticker)
+            try {
+              return await save(afterTrade(holdings, {ticker, action: 'buy'}, price, qty, fillDate))
+            } catch (err) {
+              setSaveError(err instanceof Error ? err.message : 'The buy was not recorded.')
+              return false
+            } finally {
+              setMarking(null)
+            }
+          } : undefined}
+          saveError={saveError} onOpenName={(t) => setOpenName(t)} />
       )}
 
       {latest && (
@@ -1552,12 +1568,20 @@ const EveryGrade = ({
   rows,
   liveGrades,
   quotes,
+  holdings,
+  marking,
+  onRecordBuy,
+  saveError,
   onOpenName,
 }: {
   latest: NonNullable<DeskPayload['latest']>
   rows: DeskMineRow[]
   liveGrades: Record<string, DeskLiveGrade>
   quotes: DeskLive['quotes']
+  holdings: DeskHolding[] | null
+  marking: boolean
+  onRecordBuy?: (ticker: string, price: number, qty: number, fillDate: string) => Promise<boolean>
+  saveError: string
   onOpenName: (ticker: string) => void
 }) => {
   const [openBrief, setOpenBrief] = useState<string | null>(null)
@@ -1595,6 +1619,23 @@ const EveryGrade = ({
         that analyst&rsquo;s evidence, not its probability of profit. Ordered by grade, best first, then by score within the grade; each name is
         updated from available technical and value readings. Other votes and the thesis are from the evening decision.
       </p>
+      <details className="mb-3 text-xs text-[#6e6e73]">
+        <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
+        <p className="mt-2">Current voting rules: fundamentals, technicals, release sentiment and valuation each carry one vote;
+          rotation carries half a vote. A bearish core analyst caps the grade at B. Weighted conviction breaks ties within a grade.
+          Position sizes also depend on volatility, grade multipliers, concentration limits and market exposure.</p>
+        <p className="mt-2">{latest.provenance?.rule?.inputs?.includes('expectations-gap')
+          ? 'This evening decision includes the LightGBM expectations gap: estimated revenue growth minus price-implied growth, blended with relative valuation.'
+          : latest.provenance?.rule?.inputs
+            ? 'This evening decision does not include the LightGBM expectations gap.'
+            : 'This record does not identify whether the LightGBM expectations gap was used.'}
+          {' '}This is not a forecast of a future share price. Intraday updates do not retrain the learner or refresh company filings.</p>
+        {latest.provenance?.rule?.inputs?.includes('expectations-gap') && <p className="mt-2">
+          Valuation stays at the evening reading: the intraday reader does not yet reproduce the growth-model blend.
+          Only eligible technical readings refresh this decision's intraday grades.</p>}
+        <p className="mt-2">These rankings do not calculate a new intraday allocation or confirm an entry.
+          Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
+      </details>
       <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="text-left text-[#6e6e73]">
@@ -1605,6 +1646,7 @@ const EveryGrade = ({
             <th>Bar price</th>
             <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
             <th>Why</th>
+            <th>Your position</th>
           </tr>
         </thead>
         <tbody>
@@ -1627,6 +1669,10 @@ const EveryGrade = ({
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
                   <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'indicative intraday grade' : 'evening decision'}</div>
+                  {liveGrades[ticker] && <div className="text-xs text-[#6e6e73]">Updated: {[
+                    liveGrades[ticker].technical_now != null ? 'technical' : null,
+                    liveGrades[ticker].value_now != null ? 'valuation' : null,
+                  ].filter(Boolean).join(', ') || 'inputs not identified'}</div>}
                 </td>
                 <td className="text-xs text-[#6e6e73]">
                   {quote ? <><span className="font-medium text-[#1d1d1f]">{priceMoney(quote.last)}</span>
@@ -1669,6 +1715,10 @@ const EveryGrade = ({
                     </div>
                   )}
                 </td>
+                <td className="min-w-40 text-xs">
+                  <div>{holdings === null ? 'Positions unavailable' : `${(holdings.find(h => h.ticker === ticker)?.shares ?? 0).toLocaleString()} shares recorded`}</div>
+                  {onRecordBuy && <ConfirmedBuy ticker={ticker} disabled={marking} onSave={onRecordBuy} error={saveError} />}
+                </td>
               </tr>
             )
           })}
@@ -1680,6 +1730,42 @@ const EveryGrade = ({
       </button>}
     </section>
   )
+}
+
+// Save only a user-confirmed brokerage purchase; viewing or cancelling the form never writes positions.
+const ConfirmedBuy = ({ticker, disabled, onSave, error}: {
+  ticker: string
+  disabled: boolean
+  onSave: (ticker: string, price: number, qty: number, fillDate: string) => Promise<boolean>
+  error: string
+}) => {
+  const [open, setOpen] = useState(false)
+  const [shares, setShares] = useState('')
+  const [price, setPrice] = useState('')
+  const [date, setDate] = useState(today)
+  return <>
+    <button type="button" disabled={disabled} className="mt-1 text-[#0071e3] disabled:text-[#6e6e73]"
+      onClick={() => setOpen(!open)}>{open ? 'Cancel buy record' : 'Record buy'}</button>
+    {open && <form aria-label={`Record ${ticker} buy`} className="mt-2 space-y-2" onSubmit={async event => {
+      event.preventDefault()
+      if (disabled) return
+      if (await onSave(ticker, Number(price), Number(shares), date)) {
+        setOpen(false)
+        setShares('')
+        setPrice('')
+      }
+    }}>
+      <p>After your brokerage confirms the fill. This updates your manual tracker; it does not place an order or sync your brokerage.</p>
+      <label className="block">Filled shares<input aria-label="Filled shares" type="number" min="0.000001" step="any" required
+        className="block w-28 rounded border p-1" value={shares} onChange={event => setShares(event.target.value)} /></label>
+      <label className="block">Average fill price ($)<input aria-label="Average fill price" type="number" min="0.000001" step="any" required
+        className="block w-28 rounded border p-1" value={price} onChange={event => setPrice(event.target.value)} /></label>
+      <label className="block">Fill date<input aria-label="Fill date" type="date" required max={today()}
+        className="block rounded border p-1" value={date} onChange={event => setDate(event.target.value)} /></label>
+      {error && <p role="alert" className="text-[#b42318]">{error}</p>}
+      <button type="submit" disabled={disabled} className="text-[#0071e3] disabled:text-[#6e6e73]">{disabled ? 'Saving…' : 'Save confirmed buy'}</button>
+    </form>}
+  </>
 }
 
 // Explain observed vote changes without treating a missing reading as neutral.

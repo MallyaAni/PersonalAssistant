@@ -115,6 +115,14 @@ def _exit_reason(holding: Holding | None, in_book: bool, target: float) -> str:
     return "sell when its grade drops below A at a rebalance"
 
 
+# Keep the evening valuation when the live reader cannot reproduce its model.
+def compatible_value(record: dict, value: dict | None) -> dict:
+    rule = (record.get("provenance") or {}).get("rule") or {}
+    if "expectations-gap" in (rule.get("inputs") or []):
+        return {}
+    return value or {}
+
+
 # The board against the person's holdings, from the latest record.
 def board(
     record: dict,
@@ -132,7 +140,7 @@ def board(
     candle. The evening decision (targets, actions) is unchanged by it.
     """
     technical = technical or {}
-    value = value or {}
+    value = compatible_value(record, value)
     grades = record.get("grades") or {}
     targets = {row["ticker"]: float(row["weight"]) for row in record.get("book") or []}
     levels = dict(record.get("levels") or {})
@@ -274,7 +282,7 @@ def live_grades(
 ) -> dict[str, dict]:
     """Return {ticker: live grade, score and analyst ranks} where read."""
     technical = technical or {}
-    value = value or {}
+    value = compatible_value(record, value)
     out: dict[str, dict] = {}
     for ticker, grade in (record.get("grades") or {}).items():
         live = _live_grade(grade, technical.get(ticker), value.get(ticker))

@@ -1879,6 +1879,7 @@ export interface DeskBrief {
 }
 
 export interface DeskRecord {
+  provenance?: {rule?: {name?: string; inputs?: string[]}; code_revision?: string; model?: string | null};
   event_risk?: {
     outcome?: {session: string; status: string; unrestored: Record<string, number>} | null;
     execution_pending?: boolean;
