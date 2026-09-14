@@ -28,7 +28,11 @@ fills or rebalance-clock advancement. Public checkpoint `49e62285` shows the
 settled reduction and actual receipts. Both gated backend deployments passed
 3523 unit tests and 100 routing cases; 18 public API responses and desktop/mobile
 interaction checks passed without blocking errors. The full general application
-post-deploy sweep is still pending.
+post-deploy sweep passed 50 journeys with zero gaps and 70 persisted traces;
+all six search-harness checks passed. Five image journeys were skipped because
+the separate image service was unavailable. The final verdict at 17:13:53 UTC
+was green. An unattended 13:00 ET collector tick also refreshed the settled
+event without any additional order, fill or rebalance-clock change.
 
 ## 2026-09-14 — Make trading decisions and execution evidence distinguishable
 

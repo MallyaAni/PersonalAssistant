@@ -49,6 +49,9 @@ the same fills, positions, order sequence 9 and ordinary rebalance clock:
 last rebalance September 10, sessions since rebalance 1. The event cycle
 remains active, so ordinary allocation previews stay paused until restoration.
 This verifies paper execution, not real-account execution or strategy returns.
+The unattended 13:00 ET cron tick refreshed event status at 17:00:25 UTC with
+the same nine-order sequence, fills, zero pending/open orders and unchanged
+rebalance clock. This confirms operation on the configured 15-minute schedule.
 
 VERIFIED authenticated public Chrome desktop/mobile workflow: asset
 `/assets/index-DJFyec85.js`, 18 successful API responses, all 93 grades, five
@@ -64,7 +67,13 @@ Evidence on Mac: `/private/tmp/desk-event-{before,submitted,settled}.json`,
 `/private/tmp/desk-event-public-proof.log`. Deployment logs on Spark:
 `/tmp/desk-event-{recovery,activation,final-ui}-deploy.log`. The repeat deployment
 also triggered the full general application sweep and search harness because
-its source diff was empty; those broader post checks are still running.
+its source diff was empty. VERIFIED final post-deploy verdict at 17:13:53 UTC:
+50 journeys passed, zero gaps, 70 persisted traces for 47 routed journeys;
+all six search-harness checks passed. Both harness accounts were cleaned up.
+UNVERIFIED outside trading scope: five image journeys were skipped because the
+picture service was unreachable; 19 unit-suite skips likewise are not passes.
+The full post-check marker names backend checkpoint `98597484`; the deployed
+application marker remains the newer, browser-verified UI `49e62285`.
 
 ## 2026-09-14 — Trading review, allocation percentages and execution evidence
 
