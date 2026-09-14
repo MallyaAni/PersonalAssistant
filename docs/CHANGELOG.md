@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-14 — Explicit CUDA research execution and bounded replication
+
+Growth pilot accepts --device cpu/cuda with CPU default and fail-closed CUDA.
+Source bd2816c2 passed 17 focused tests and lint; a two-epoch/two-episode GPU
+smoke's four saved cost curves replayed on both devices. Original strict replay
+is blocked by feature hash even with isolated NumPy 2.5.2; a separate diagnostic
+matched all 12 original NAV paths exactly. See the GPU replication research report.
+No production policy or account changes; no investment superiority claimed.
+
 ## 2026-09-14 — Trained neural/RL growth research, separate regime reports
 
 Added a CPU-only daily growth pilot with purged chronological splits, supervised

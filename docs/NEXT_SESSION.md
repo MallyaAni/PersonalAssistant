@@ -1,5 +1,19 @@
 # Next session
 
+## 2026-09-14 — Bounded desktop GPU replication
+
+Research source checkpoint bd2816c2 adds explicit CPU/CUDA selection, default CPU,
+with fail-closed unavailable CUDA and portable saved weights. VERIFIED: one-seed
+two-epoch/two-episode CUDA smoke completed on RTX 5080 in 4.88 seconds; four saved
+cost curves replayed on both CPU and CUDA; 17 focused tests and lint passed.
+Original strict replay remains BLOCKED by feature hash despite matching prices
+and an isolated NumPy 2.5.2 retry. Diagnostic original-model paths match all 12
+recorded curves exactly; raw neural CPU/CUDA predictions differ by at most
+2.3842e-7 without changing baskets. Do not call that diagnostic hash-verified.
+Original artifacts preserved; no strategy promotion, live deploy or Spark change.
+Evidence: docs/research/growth-gpu-replication-2026-09-14.md. No broader work is
+part of this checkpoint. Diagram impact: NONE — internal device selection only.
+
 ## 2026-09-14 — Neural/RL growth pilot completed, not adopted
 
 User authorized trying neural and RL models and requested distinct evaluation
