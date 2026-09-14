@@ -5,6 +5,13 @@ Everything below was checked by running it, not by reading it.
 
 ## 2026-09-13 — audit actual pick publication, fills and technical timing
 
+Research checkpoint `24c4f3db2340990299d4d3d38617d6593962aad7` is pushed.
+Its evaluator file hashes match the isolated runtime artifact recorded in the
+report; nine focused tests passed in 0.12s and Ruff passed. The read-only
+acceptance path fetched saved grades, SIP candles and broker receipts without
+submitting orders. This is a verified research checkpoint, not a claim that
+the experimental timing rules improve funded live returns.
+
 Read-only `market_pick_audit` evaluates saved grades, never regenerating the
 past with current code. Five records, 34 A+ observations, 11 distinct names;
 ten have post-publication prices. Five of ten rose from the first tradable
