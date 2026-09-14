@@ -231,29 +231,33 @@ def _reconcile(client, state, store_root: Path, live: bool):
     return updated, settled
 
 
-# The settled orders as record rows, each with its fill price and what the
-# closing auction of the fill session would have paid instead. An order
-# planned on session s fills at the open of the next session on the panel,
-# so that session's close is the counterfactual.
+# Compare aggregate fills with the broker's actual completion-session close.
 def _settled_rows(settled, panel) -> list[dict]:
-    from backend.agents.trading.desk import paper
+    from backend.agents.trading.desk import execution_evidence, paper
 
     rows = []
     for s in settled:
         close = float("nan")
-        planned = np.datetime64(s.session) if s.session else None
-        if planned is not None and s.symbol in panel.tickers:
-            later = np.flatnonzero(panel.dates > planned)
-            if len(later):
-                close = float(panel.close[later[0], panel.index(s.symbol)])
+        completed = execution_evidence.completion_session(s.execution)
+        if completed is not None and s.symbol in panel.tickers:
+            matched = np.flatnonzero(panel.dates == np.datetime64(completed))
+            if len(matched):
+                close = float(panel.close[matched[0], panel.index(s.symbol)])
         rows.append(
             {
                 "symbol": s.symbol,
                 "side": s.side,
                 "qty": s.qty,
                 "status": s.status,
+                "terminal": s.terminal,
                 "filled": s.filled_qty,
                 "filled_price": s.filled_price,
+                "client_order_id": s.client_order_id,
+                "execution": s.execution,
+                "completion_session": completed,
+                "decision_shortfall_bps": execution_evidence.decision_shortfall_bps(
+                    s.side, s.filled_price, s.execution.get("reference_price")
+                ),
                 "close_shortfall_bps": paper.close_shortfall_bps(
                     s.side, s.filled_price, close
                 ),
@@ -264,11 +268,8 @@ def _settled_rows(settled, panel) -> list[dict]:
 
 # Send the plan: buys as day orders queued for the next open, sells as
 # market-on-close orders queued for the next session's closing auction, and
-# what the broker said. A buy queued before the open fills at the first
-# print after it; a sell queued for the close fills at the closing auction,
-# so the desk never exits into an opening print it has not seen (an exit
-# decided on yesterday's close used to pay whatever the next open printed,
-# and on 2026-09-11 sold ETN at the day's low before a two-point rally).
+# what the broker said. Queued orders can fill late or fail; their actual
+# outcomes and timestamps are recorded separately by reconciliation.
 # The market-on-close sell can be cancelled up to the close, which the
 # intraday green-day rule does for names trading up at the open.
 # Submitting while the market is open would fill a day order now, at
@@ -277,7 +278,7 @@ def _settled_rows(settled, panel) -> list[dict]:
 # told why.
 def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[str]]:
     """Return (submitted rows, refusals) after sending `orders` when `live`."""
-    from backend.agents.trading.desk import paper
+    from backend.agents.trading.desk import execution_evidence, paper
     from backend.market import alpaca_trading
 
     submitted: list[dict] = []
@@ -314,7 +315,7 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
             continue
         try:
             if order.side == "sell" and not order.event_id:
-                client.submit_market_on_close(
+                response = client.submit_market_on_close(
                     order.symbol,
                     order.qty,
                     order.side,
@@ -322,7 +323,7 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
                     or paper.order_id(session, order.symbol, order.side),
                 )
             else:
-                client.submit_market_on_open(
+                response = client.submit_market_on_open(
                     order.symbol,
                     order.qty,
                     order.side,
@@ -335,6 +336,9 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
                     "side": order.side,
                     "qty": order.qty,
                     "reason": order.reason,
+                    "client_order_id": order.client_order_id
+                    or paper.order_id(session, order.symbol, order.side),
+                    "execution": execution_evidence.broker_evidence(response),
                 }
             )
             print(line)
@@ -342,6 +346,21 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
             refused.append(f"{order.side} {order.symbol}: {exc}")
             print(line + f"  REFUSED: {exc}")
     return submitted, refused
+
+
+# Save broker acknowledgments without treating accepted orders as confirmed fills.
+def _remember_acknowledgments(state, submitted, root, live, orders):
+    from backend.agents.trading.desk import paper
+
+    if not live or not orders:
+        return
+    acknowledged = {row["client_order_id"]: row["execution"] for row in submitted}
+    for row in state.pending:
+        row["execution"] = {
+            **row.get("execution", {}),
+            **acknowledged.get(row["client_order_id"], {}),
+        }
+    paper.save_state(root, state)
 
 
 # Which open orders belong to this desk, matched by the client order id
@@ -467,6 +486,7 @@ def paper_trade(
     # leaves a record the next session can ask the broker about, rather
     # than a gap that has to be guessed at from positions.
     if live and orders:
+        decision_at = datetime.now(tz=UTC).isoformat()
         new_state.pending = [
             {
                 "client_order_id": o.client_order_id
@@ -477,6 +497,12 @@ def paper_trade(
                 "session": session,
                 "reason": o.reason,
                 "event_id": o.event_id,
+                "execution": {
+                    "decision_at": decision_at,
+                    "reference_price": prices.get(o.symbol),
+                    "reference_session": str(panel.dates[last]),
+                    "reference_source": "daily panel close",
+                },
             }
             for o in orders
         ]
@@ -484,6 +510,7 @@ def paper_trade(
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
     submitted, refused = _submit(client, orders, session, live)
+    _remember_acknowledgments(new_state, submitted, store_root, live, orders)
     if not orders:
         print("  nothing to do")
     # A rebalance the broker would not take is not a rebalance. The clock

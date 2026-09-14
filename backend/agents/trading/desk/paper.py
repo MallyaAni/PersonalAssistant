@@ -30,7 +30,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from backend.agents.trading.desk import planner
+from backend.agents.trading.desk import execution_evidence, planner
 
 REBALANCE_EVERY = 20
 MIN_TRADE = 0.005
@@ -327,6 +327,7 @@ class Settled:
     # outstanding quantity is not coming, so it is concluded, not kept
     # pending for an answer that can never arrive.
     terminal: bool = False
+    execution: dict = field(default_factory=dict)
 
 
 # Pure: match what was written down against what the broker reports.
@@ -378,6 +379,10 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
                 filled_price=price,
                 terminal=status in ("filled", "dead", "missing", SKIPPED)
                 or (status == "partial" and raw not in _WORKING),
+                execution={
+                    **row.get("execution", {}),
+                    **execution_evidence.broker_evidence(order),
+                },
             )
         )
     return out
@@ -433,6 +438,11 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
             "filled_price": s.filled_price,
             "terminal": s.terminal,
             "event_id": prior.get("event_id"),
+            "execution": {
+                **journal.get(s.client_order_id, {}).get("execution", {}),
+                **prior.get("execution", {}),
+                **s.execution,
+            },
         }
     new.journal = [journal[k] for k in sorted(journal)]
     still_working = {
@@ -441,7 +451,10 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
         if s.status == "open" or (s.status == "partial" and not s.terminal)
     }
     new.pending = [
-        row
+        {
+            **row,
+            "execution": journal[str(row.get("client_order_id") or "")]["execution"],
+        }
         for row in state.pending
         if str(row.get("client_order_id") or "") in still_working
     ]
@@ -503,6 +516,8 @@ def skip_sell(state: PaperState, client_order_id: str) -> PaperState:
         "filled_qty": 0,
         "filled_price": 0.0,
         "terminal": True,
+        "execution": row.get("execution", {}),
+        "event_id": row.get("event_id"),
     }
     new.journal = [journal[k] for k in sorted(journal)]
     return new

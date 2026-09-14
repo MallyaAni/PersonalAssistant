@@ -204,9 +204,7 @@ def test_a_canceled_partial_is_concluded_and_the_clock_goes_back():
         unconfirmed_rebalance="2026-09-07",
         pending=_pending("2026-09-07", "AAA"),
     )
-    settled = paper.settle(
-        state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)]
-    )
+    settled = paper.settle(state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)])
     after = paper.apply_settlements(state, settled)
     # Concluded: not stuck pending, and its outcome is in the journal.
     assert after.pending == []
@@ -239,9 +237,7 @@ def test_a_rejected_leg_is_not_forgotten_when_another_fills_later():
     after1 = paper.apply_settlements(state, round1)
     assert [row["symbol"] for row in after1.pending] == ["BBB"]
     # BBB fills in a later round; AAA's rejection is still in the journal.
-    round2 = paper.settle(
-        after1.pending, [_broker("2026-09-07", "BBB", "filled", 10)]
-    )
+    round2 = paper.settle(after1.pending, [_broker("2026-09-07", "BBB", "filled", 10)])
     after2 = paper.apply_settlements(after1, round2)
     assert after2.unconfirmed_rebalance is None
     assert after2.last_rebalance == "2026-08-10"
@@ -266,9 +262,7 @@ def test_an_in_flight_cancel_or_replace_keeps_the_partial_pending(raw):
         unconfirmed_rebalance="2026-09-07",
         pending=_pending("2026-09-07", "AAA"),
     )
-    settled = paper.settle(
-        state.pending, [_broker("2026-09-07", "AAA", raw, 3)]
-    )
+    settled = paper.settle(state.pending, [_broker("2026-09-07", "AAA", raw, 3)])
     assert not settled[0].terminal
     after = paper.apply_settlements(state, settled)
     # Still pending, still unconfirmed: the rebalance is not concluded.
@@ -349,9 +343,7 @@ def test_the_journal_survives_the_state_file(tmp_path):
     )
     after = paper.apply_settlements(
         state,
-        paper.settle(
-            state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)]
-        ),
+        paper.settle(state.pending, [_broker("2026-09-07", "AAA", "canceled", 3)]),
     )
     paper.save_state(tmp_path, after)
     loaded = paper.load_state(tmp_path)
@@ -376,8 +368,7 @@ def test_the_fill_price_is_kept_and_the_close_is_judged_against_it():
     assert paper.close_shortfall_bps("buy", 100.0, float("nan")) is None
 
 
-# The record row takes the close of the session after the plan's, since
-# that is when a market-on-open order fills.
+# A delayed execution must use its broker-reported completion session, not the plan.
 def test_the_record_uses_the_close_of_the_fill_session():
     import numpy as np
 
@@ -398,13 +389,75 @@ def test_the_record_uses_the_close_of_the_fill_session():
         themes={},
         benchmark="SPY",
     )
-    settled = [
-        paper.Settled("id", "AAA", "sell", 10, "2026-09-04", "filled", 10, 105.0),
+    pending = _pending("2026-09-04", "AAA")
+    pending[0]["side"] = "sell"
+    broker = _broker("2026-09-04", "AAA", "filled", 10)
+    broker.update(filled_at="2026-09-09T13:33:06.308Z", filled_avg_price="105")
+    settled = paper.settle(pending, [broker]) + [
         paper.Settled("id2", "ZZZ", "buy", 10, "2026-09-04", "filled", 10, 50.0),
     ]
     rows = market_daily._settled_rows(settled, panel)
-    # Planned on the 4th, filled at the 8th's open; the 8th closed at 110,
-    # above the 105 fill, so the close would have been better for a sell.
+    # The broker completed on the 9th; the 8th's 110 close is irrelevant.
     assert rows[0]["filled_price"] == 105.0
-    assert np.isclose(rows[0]["close_shortfall_bps"], -(110.0 - 105.0) / 105.0 * 1e4)
+    assert np.isclose(rows[0]["close_shortfall_bps"], -(120.0 - 105.0) / 105.0 * 1e4)
     assert rows[1]["close_shortfall_bps"] is None  # a name the panel lacks
+    legacy = paper.Settled("old", "AAA", "buy", 10, "2026-09-04", "filled", 10, 105)
+    unknown = market_daily._settled_rows([legacy], panel)[0]
+    assert unknown["close_shortfall_bps"] is None
+    assert unknown["completion_session"] is None
+
+
+# Partial receipts retain intent and broker evidence through restart and completion.
+def test_execution_evidence_survives_partial_fill_and_restart(tmp_path):
+    pending = _pending("2026-09-04", "AAA")
+    pending[0]["execution"] = {
+        "decision_at": "2026-09-07T23:45:29Z",
+        "reference_price": 100.0,
+        "reference_session": "2026-09-04",
+        "reference_source": "daily panel close",
+    }
+    order = _broker("2026-09-04", "AAA", "partially_filled", 3)
+    order.update(
+        submitted_at="2026-09-08T08:03:00Z",
+        filled_at=None,
+        filled_avg_price="102",
+        time_in_force="day",
+    )
+    state = paper.apply_settlements(
+        paper.PaperState(pending=pending), paper.settle(pending, [order])
+    )
+    paper.save_state(tmp_path, state)
+    state = paper.load_state(tmp_path)
+    assert state.journal[0]["execution"]["submitted_at"] == order["submitted_at"]
+    assert state.pending[0]["execution"]["reference_price"] == 100
+    assert state.journal[0]["execution"].get("filled_at") is None
+    order.update(status="filled", filled_qty="10", filled_at="2026-09-09T13:33:06.308Z")
+    del order["submitted_at"]  # A sparse later observation must not erase evidence.
+    state = paper.apply_settlements(state, paper.settle(state.pending, [order]))
+    paper.save_state(tmp_path, state)
+    saved = paper.load_state(tmp_path)
+    assert not saved.pending
+    assert len(saved.journal) == 1
+    assert saved.journal[0]["execution"]["submitted_at"] == "2026-09-08T08:03:00Z"
+    assert saved.journal[0]["execution"]["filled_at"] == order["filled_at"]
+    assert (
+        saved.journal[0]["execution"]["decision_at"]
+        == pending[0]["execution"]["decision_at"]
+    )
+
+
+# Unknown or naive times remain unknown, and exchange dates respect timezone boundaries.
+def test_execution_dates_and_adverse_drift_have_explicit_basis():
+    from backend.agents.trading.desk import execution_evidence as evidence
+
+    for value in (None, "yesterday", "2026-09-09T13:33:06", "2026-09-09"):
+        assert evidence.completion_session({"filled_at": value}) is None
+    assert (
+        evidence.completion_session({"filled_at": "2026-09-10T00:01:00Z"})
+        == "2026-09-09"
+    )
+    assert evidence.decision_shortfall_bps("buy", 102, 100) == pytest.approx(200)
+    assert evidence.decision_shortfall_bps("sell", 102, 100) == pytest.approx(-200)
+    for value in (None, 0, float("nan"), float("inf")):
+        assert evidence.decision_shortfall_bps("buy", 102, value) is None
+    assert evidence.broker_evidence({"account_id": "private", "filled_at": "bad"}) == {}

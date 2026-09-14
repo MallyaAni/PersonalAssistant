@@ -201,6 +201,17 @@ AniOS is therefore a local development scaffold, not a hardened system for sensi
 
 ## Current development requirements
 
+The trading desk's execution evidence is stored with its existing paper state
+in `data/market/paper/state.json` and in dated desk records. It adds decision
+time/reference price and allowlisted broker creation, submission, completion,
+cancellation, expiration and failure times; no account IDs or credentials are
+copied. The nightly CLI and intraday reconciler maintain the state; the
+desk-owner-protected API exposes dated records to the dashboard. Record pruning
+follows the existing market-record policy; the recovery journal has no automatic
+expiry. Removal requires an operator-managed archive/reset of the paper state
+and relevant dated records, including backups under their existing retention
+policy. Deleting active recovery state is not an ordinary UI history deletion.
+
 - Never commit real API keys, tokens, passwords, private documents, or user memories.
 - Use non-production credentials for local development and rotate any credential that is accidentally exposed.
 - Do not include secrets, full prompts, personal content, or raw external documents in logs unless a narrowly scoped diagnostic explicitly requires it and the output is handled safely.

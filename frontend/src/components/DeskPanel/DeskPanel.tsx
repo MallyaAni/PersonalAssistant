@@ -49,6 +49,15 @@ const marketTime = (value: string | null | undefined) => {
   })} ET`
 }
 
+// Keep seconds visible when comparing decision, broker submission and completion times.
+const executionTime = (value: string | undefined) => {
+  if (!value || Number.isNaN(Date.parse(value))) return 'not recorded'
+  return `${new Date(value).toLocaleString('en-US', {
+    timeZone: 'America/New_York', year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  })} ET`
+}
+
 const GRADE_ORDER: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
 const GRADE_STYLE: Record<string, string> = {
   'A+': 'bg-[#e6f4ea] text-[#1e7a3a]',
@@ -1132,8 +1141,8 @@ const PracticeAccount = ({
         </span>
       </h3>
       <p className="mb-2 text-xs text-[#6e6e73]">
-        A simulated account that follows the desk with real prices and no real money. Its track record is the
-        desk&rsquo;s.
+        A paper account that follows the desk with market data and simulated execution.
+        Its results include missed and delayed fills and can differ from the strategy simulation.
       </p>
       <p className="text-sm text-[#1d1d1f]">
         Worth {money(equityValue)} · cash {money(cash)}
@@ -1145,18 +1154,50 @@ const PracticeAccount = ({
         {!fromBroker && record && (
           <>
             {' '}·{' '}
-            {record.plan === 'rebalance'
-              ? 'every grade was re-checked and the sizes reset'
-              : record.plan === 'exits'
-                ? 'only names that lost their grade are sold'
-                : 'nothing to trade'}
+            Recorded plan: {record.plan}
           </>
         )}
       </p>
       {orders.length > 0 && (
         <p className="mt-2 text-sm text-[#6e6e73]">
-          Orders waiting for the open: {orders.map((o) => `${o.side} ${o.qty} ${o.symbol}`).join(', ')}
+          {fromBroker ? 'Open broker orders' : 'Submissions in the evening record'}:
+          {' '}{orders.map((o) => `${o.side} ${o.qty} ${o.symbol}`).join(', ')}.
+          {' '}{fromBroker
+            ? 'Open orders may still fill, expire or be canceled.'
+            : 'These submissions do not confirm current order status or fills.'}
         </p>
+      )}
+      {(record?.settled?.length ?? 0) > 0 && (
+        <details className="mt-3 text-xs text-[#6e6e73]">
+          <summary className="cursor-pointer font-medium text-[#1d1d1f]">Execution receipts · {record?.session}</summary>
+          <p className="mt-2">Broker outcomes observed in this evening record, not a live execution feed.
+            Completion time is for the whole order; partial fills can occur earlier.
+            Price drift compares the average fill with the recorded decision reference, not a tradable quote.
+            Positive drift is worse execution; negative drift is better.</p>
+          <ul className="mt-2 space-y-3">
+            {record?.settled?.map((fill, index) => (
+              <li key={fill.client_order_id ?? `${fill.symbol}-${index}`} className="border-t border-black/[0.05] pt-2">
+                <p className="font-medium text-[#1d1d1f]">{fill.side} {fill.symbol} · {fill.filled} of {fill.qty} shares filled
+                  {fill.filled > 0 && fill.filled_price > 0 ? ` at ${priceMoney(fill.filled_price)} average` : ''}
+                  {' '}· {fill.status === 'dead' ? 'closed without a fill'
+                    : fill.status === 'missing' ? 'not found in broker response'
+                      : fill.status === 'skipped' ? 'remaining shares deliberately held'
+                        : fill.status === 'partial' && fill.terminal ? 'partially filled; remainder closed'
+                          : fill.status}</p>
+                <p>Decision: {executionTime(fill.execution?.decision_at)}
+                  {' '}· Broker submission: {executionTime(fill.execution?.submitted_at)}
+                  {' '}· Order completion time: {executionTime(fill.execution?.filled_at)}</p>
+                {fill.execution?.reference_price != null && (
+                  <p>Reference: {priceMoney(fill.execution.reference_price)} · {fill.execution.reference_session}
+                    {' '}· {fill.execution.reference_source}</p>
+                )}
+                <p>Decision-price drift: {fill.decision_shortfall_bps != null && Number.isFinite(fill.decision_shortfall_bps)
+                  ? `${fill.decision_shortfall_bps > 0 ? '+' : ''}${fill.decision_shortfall_bps.toFixed(1)} bp`
+                  : 'unavailable'}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
       {/* The broker's live book is already shown in its own section above the
           board; only the evening record's positions are repeated here, when the

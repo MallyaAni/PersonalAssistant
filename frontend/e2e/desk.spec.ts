@@ -917,6 +917,42 @@ test('analyzes the person’s own trading from their documents', async ({ page }
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// Actual receipts must expose dated evidence and keep legacy missing fields unknown.
+test('execution receipts distinguish decisions, fills and historical submissions', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      latest: {...latest, paper: {...latest.paper, settled: [
+        {symbol: 'AAPL', side: 'buy', qty: 10, filled: 10, filled_price: 102, status: 'filled', decision_shortfall_bps: 200,
+          execution: {decision_at: '2026-09-07T23:45:29Z', submitted_at: '2026-09-08T08:03:00Z', filled_at: '2026-09-09T13:33:06Z',
+            reference_price: 100, reference_session: '2026-09-04', reference_source: 'daily panel close'}},
+        {symbol: 'NVDA', side: 'sell', qty: 10, filled: 3, filled_price: 91, status: 'partial'},
+      ]}}, sessions: ['2026-09-08'],
+    }),
+  }))
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({reason: 'unreachable'}),
+  }))
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'Show the details: practice account and every grade'}).click()
+  const account = page.locator('section', {has: page.getByRole('heading', {name: /^Practice account/})})
+  await expect(account).toContainText('Recorded plan:')
+  await expect(account).not.toContainText('sizes reset')
+  await expect(account).not.toContainText('Orders waiting for the open')
+  await account.locator('summary', {hasText: 'Execution receipts'}).click()
+  const receipts = account.locator('details')
+  await expect(receipts).toContainText('Sep 9, 2026, 09:33:06 AM ET')
+  await expect(receipts).toContainText('10 of 10 shares filled at $102.00 average')
+  await expect(receipts).toContainText('Decision-price drift: +200.0 bp')
+  await expect(receipts).toContainText('3 of 10 shares filled at $91.00 average')
+  await expect(receipts).toContainText('Order completion time: not recorded')
+  await expect(receipts).toContainText('Decision-price drift: unavailable')
+  await page.setViewportSize({width: 390, height: 844})
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // A new policy must distinguish enabled automation from a historical execution receipt.
 test('FOMC policy explains activation without inventing an executed reduction', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)

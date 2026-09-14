@@ -193,6 +193,10 @@ def test_daily_pipeline_persists_before_submission_and_reconciles(
             stored = paper.load_state(tmp_path)
             assert stored.pending[0]["client_order_id"] == client_order_id
             assert stored.pending[0]["event_id"]
+            evidence = stored.pending[0]["execution"]
+            assert evidence["decision_at"]
+            assert evidence["reference_price"] == 100
+            assert evidence["reference_session"] == str(_report().panel.dates[-1])
             self.orders.append(
                 {
                     "client_order_id": client_order_id,
@@ -203,6 +207,7 @@ def test_daily_pipeline_persists_before_submission_and_reconciles(
                     "filled_qty": 0,
                 }
             )
+            return {"submitted_at": "2026-09-12T00:01:02Z", "time_in_force": "day"}
 
         # Supply actual outcomes for the reconciliation boundary.
         def orders_since(self, since):
@@ -218,12 +223,17 @@ def test_daily_pipeline_persists_before_submission_and_reconciles(
     market_daily.paper_trade(report, tmp_path, "2026-09-11", True)
     assert len(broker.orders) == 1
     assert paper.load_state(tmp_path).pending[0]["qty"] == 50
+    assert (
+        paper.load_state(tmp_path).pending[0]["execution"]["submitted_at"]
+        == "2026-09-12T00:01:02Z"
+    )
     broker.orders[0].update(status="filled", filled_qty=50, filled_avg_price=100)
     broker.qty = 50
     market_daily.paper_trade(report, tmp_path, "2026-09-14", True)
     saved = paper.load_state(tmp_path)
     assert not saved.pending
     assert saved.journal[0]["filled_qty"] == 50
+    assert saved.journal[0]["execution"]["submitted_at"] == "2026-09-12T00:01:02Z"
     assert saved.last_rebalance == original.last_rebalance
     assert saved.sessions_since_rebalance == 3
     monkeypatch.setattr(event_risk, "decision", lambda panel: policy(1))

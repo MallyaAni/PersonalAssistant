@@ -3,6 +3,39 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — durable execution timing and honest receipt display
+
+Started clean on `main` at `4490ee0a`, pulled/rebased origin (already current).
+Reproduced two failures: reconciliation discarded broker timestamps, and a
+delayed fill was compared with the close after its plan instead of its actual
+completion date. Fixed both without changing trade selection or order sizing.
+
+Pending intent now stores decision time, reference price, source and session
+before submission. Broker acknowledgments and reconciled outcomes preserve
+allowlisted timestamps through partial fills and restarts. The journal remains
+one latest receipt per client order ID. Missing legacy timing remains unknown.
+Comparison dates use exchange time and the broker's order completion date;
+aggregate fill prices are not claimed to timestamp each partial execution.
+Decision-price drift is positive when adverse and is not quote-based slippage.
+
+Dashboard details expose receipts, exact times to the second, reference prices,
+and missing-evidence labels. Historical submissions no longer claim to be
+waiting at the open; planned rebalances no longer claim completed resizing.
+
+VERIFIED before deployment: **477 market/trading tests passed, 8 skipped**
+in 5.22s; **19 browser cases passed** in 49.6s; TypeScript, Vite build and Ruff
+passed. Actual read-only broker acceptance reconciled **34 orders / 24 filled**
+into a disposable state file and read all 34 back. All 24 fills used their
+recorded completion dates. Old decision-price references stayed unknown.
+No live paper state or broker order was modified by that check. The first
+isolated run lacked prompt files; copying the matching prompts resolved the
+environment failure. Runtime evidence is `/tmp/desk-execution-proof.json` in
+the backend container, with SHA-256 hashes of all three production modules.
+
+UNVERIFIED until the next checkpoint: deployment and authenticated public
+browser acceptance of the new build. Future return improvement still needs
+funded technical timing/re-entry evaluation and an untouched forward sample.
+
 ## 2026-09-13 — audit actual pick publication, fills and technical timing
 
 Research checkpoint `24c4f3db2340990299d4d3d38617d6593962aad7` is pushed.

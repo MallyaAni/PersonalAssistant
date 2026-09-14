@@ -2029,6 +2029,26 @@ export interface DeskPaper {
   plan: string;
   positions: { symbol: string; qty: number; market_value: number; avg_entry_price: number; current_price: number; unrealized_pl: number }[];
   orders: { symbol: string; side: string; qty: number; reason: string }[];
+  settled?: {
+    client_order_id?: string;
+    symbol: string;
+    side: string;
+    qty: number;
+    filled: number;
+    filled_price: number;
+    status: string;
+    terminal?: boolean;
+    completion_session?: string | null;
+    decision_shortfall_bps?: number | null;
+    execution?: {
+      decision_at?: string;
+      submitted_at?: string;
+      filled_at?: string;
+      reference_price?: number;
+      reference_session?: string;
+      reference_source?: string;
+    };
+  }[];
 }
 
 export interface DeskOrder {

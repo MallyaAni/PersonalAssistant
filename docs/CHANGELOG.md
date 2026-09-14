@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-13 — Preserve execution evidence and stop guessing fill dates
+
+A delayed fill could be compared with the wrong session's close because the
+desk assumed next-session execution and dropped broker timestamps. Persist
+decision references and broker times through acknowledgment, partial fill and
+completion; compare against the actual exchange completion date. Unknown
+legacy dates produce no fabricated comparison. Dashboard details now show
+dated receipts and decision-price drift, and distinguish historical submissions
+from open orders and completed fills. No trading rule or sizing change.
+
+Validation: 477 trading/market tests passed (8 skipped), 19 browser cases passed,
+TypeScript/Vite/Ruff passed. Read-only actual-broker acceptance persisted and
+read back 34 receipts, including 24 completed orders, in a disposable ledger.
+Alpaca's [order properties](https://docs.alpaca.markets/us/docs/brokerapi-trading)
+and [fill-event semantics](https://docs.alpaca.markets/us/docs/websocket-streaming)
+distinguish aggregate order completion from individual partial-fill events;
+the dashboard preserves that distinction.
+
 ## 2026-09-13 — Adopt FOMC exposure policy and audit actual trade timing
 
 Enabled the user-selected, provisional three-session FOMC reduction when
