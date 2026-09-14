@@ -134,7 +134,9 @@ def _green_day_skip(data_dir: Path, latest: dict, quotes: dict, log_path: Path) 
     if not (570 <= now.hour * 60 + now.minute < 660) or now.weekday() >= 5:
         return
     state = paper.load_state(data_dir)
-    pending_sells = [p for p in state.pending if p.get("side") == "sell"]
+    pending_sells = [
+        p for p in state.pending if p.get("side") == "sell" and not p.get("event_id")
+    ]
     action_rows = {r.get("ticker"): r for r in latest.get("actions") or []}
     clients = None
     skipped: list[str] = []
@@ -253,6 +255,7 @@ def run(data_dir: Path, equity: float) -> Path:
         and r["target_weight"] > 0
         and r["shares"] == 0
         and r["ticker"] not in blocked
+        and not r.get("event_paused", False)
     ]
     previous: dict | None = None
     if path.exists():

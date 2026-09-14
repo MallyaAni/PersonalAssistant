@@ -393,7 +393,30 @@ def _event_target(target, path, t, rebalanced, previous, reason):
     return target, scale, reason, changed
 
 
-# Walk the desk's rules, optionally applying a research-only close-time exposure path.
+# Fill one event transition and retain only the shares that actually changed hands.
+def _settle_event(book, baseline, sold, scale, prices, t):
+    if baseline is None:
+        baseline = book.shares.copy()
+        sold = np.zeros_like(baseline)
+    before = book.shares.copy()
+    if scale < 1:
+        cut = np.maximum(0, baseline * (1 - scale) - sold)
+        order = np.maximum(0, before - cut)
+        reason = "FOMC risk reduction"
+    else:
+        restore = np.minimum(sold, np.maximum(0, baseline - before))
+        order = before + restore
+        reason = "FOMC risk restoration"
+    book.settle_split(order, prices, prices, t, reason)
+    sold += before - book.shares
+    if scale == 1 and np.all(
+        np.minimum(sold, np.maximum(0, baseline - book.shares)) < 1e-8
+    ):
+        baseline = None
+    return baseline, sold
+
+
+# Walk the desk's rules, optionally applying the selected event execution lifecycle.
 def run(
     report,
     since: date | None = None,
@@ -414,6 +437,7 @@ def run(
     exit_at_close: bool = False,
     green_day_skip: bool = False,
     event_exposure: np.ndarray | None = None,
+    event_lifecycle: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -472,6 +496,8 @@ def run(
     # applying the absolute scale again would halve the account every day.
     event_exposure = _event_path(event_exposure, len(panel.dates))
     previous_scale = 1.0
+    event_baseline = None
+    event_sold = None
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
     start = int(np.searchsorted(panel.dates, np.datetime64(since))) if since else 0
@@ -491,9 +517,23 @@ def run(
     equity[start] = book.equity(closes[start])
     top = np.full(rows, np.nan)
     dip_adds = 0
+    next_rebalance = start
     for t in range(start, rows - 1):
+        scale = float(event_exposure[t]) if event_exposure is not None else 1.0
+        # The promoted lifecycle defers a rebalance and restores only executed cuts.
+        if event_lifecycle and (scale < 1 or event_baseline is not None):
+            event_baseline, event_sold = _settle_event(
+                book, event_baseline, event_sold, scale, opens[t + 1], t + 1
+            )
+            equity[t + 1] = book.equity(closes[t + 1])
+            returns[t + 1] = equity[t + 1] / equity[t] - 1 if equity[t] > 0 else np.nan
+            invested[t + 1] = book.invested(closes[t + 1])
+            top[t + 1] = book.top_weight(closes[t + 1])
+            continue
         # Decided on t's close, filled at t+1's open.
-        if (t - start) % rebalance == 0:
+        rebalanced = t >= next_rebalance
+        if rebalanced:
+            next_rebalance = t + rebalance
             target = decide(report, panel, config, t)
             if fired is not None or blocked is not None:
                 total = book.equity(closes[t])
@@ -521,7 +561,7 @@ def run(
             target,
             event_exposure,
             t,
-            (t - start) % rebalance == 0,
+            rebalanced,
             previous_scale,
             reason,
         )

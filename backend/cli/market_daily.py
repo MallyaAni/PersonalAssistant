@@ -313,7 +313,7 @@ def _submit(client, orders, session: str, live: bool) -> tuple[list[dict], list[
             print(line + "  REFUSED: the market is open")
             continue
         try:
-            if order.side == "sell":
+            if order.side == "sell" and not order.event_id:
                 client.submit_market_on_close(
                     order.symbol,
                     order.qty,
@@ -387,7 +387,7 @@ def paper_trade(
     report, store_root: Path, session: str, live: bool, rebalance_now: bool = False
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
-    from backend.agents.trading.desk import actions, paper
+    from backend.agents.trading.desk import actions, event_execution, event_risk, paper
     from backend.market import alpaca_trading
 
     client = alpaca_trading.client_from_env()
@@ -412,26 +412,46 @@ def paper_trade(
     # did not fill has not happened - so this runs first and can put the
     # clock back before the plan is made.
     state, settled = _reconcile(client, state, store_root, live)
+    policy = event_risk.decision(panel)
+    # Withdraw stale legs before replacing them, and wait for confirmed outcomes.
+    # A pending cancel can still fill; never overwrite its durable intent.
+    stale = [
+        row["client_order_id"] for row in state.pending if row.get("session") != session
+    ]
+    if live and stale:
+        client.cancel_orders(stale)
+        state, more = _reconcile(client, state, store_root, live)
+        settled.extend(more)
+    account = client.account()
+    held = {p.symbol: p.qty for p in client.positions()}
     # Nothing is passed for `finished`: the band exit that used to fill it
     # was measured inside the book's own rules and cost 3.0% a year. See
     # the note at the top of `desk/exit.py`.
     blocked, blocking_flags = _band_blocked(report)
-    orders, new_state, what = paper.plan(
-        session,
-        state,
-        account.equity,
-        held,
-        prices,
-        targets,
-        grades,
-        force_rebalance=rebalance_now,
-        entry_blocked=blocked,
-    )
+    event_active = bool(state.event_cycle) or policy.get("factor") == event_risk.REDUCED
+    if state.pending or event_active or not policy["calendar_known"]:
+        orders, new_state, what = event_execution.plan(
+            session, state, held, prices, account.cash, policy
+        )
+    else:
+        orders, new_state, what = paper.plan(
+            session,
+            state,
+            account.equity,
+            held,
+            prices,
+            targets,
+            grades,
+            force_rebalance=rebalance_now,
+            entry_blocked=blocked,
+        )
     print(
         f"\npaper book ({what}{', forced tonight' if rebalance_now else ''}), "
         f"equity {account.equity:,.0f}:"
     )
-    held_back = sum(1 for o in orders if o.side == "buy" and o.symbol in blocked)
+    held_back = sum(
+        1 for o in orders if o.side == "buy" and o.symbol in blocked and not o.event_id
+    )
     if held_back:
         print(
             f"  {held_back} buy orders held back: "
@@ -456,17 +476,13 @@ def paper_trade(
                 "qty": int(o.qty),
                 "session": session,
                 "reason": o.reason,
+                "event_id": o.event_id,
             }
             for o in orders
         ]
         if what == "rebalance":
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
-        # Withdraw only what this desk wrote down and is still open; a broad
-        # cancel would also withdraw an order the person placed by hand.
-        desk_open = _desk_open_order_ids(client.open_orders())
-        if desk_open:
-            client.cancel_orders(desk_open)
     submitted, refused = _submit(client, orders, session, live)
     if not orders:
         print("  nothing to do")
@@ -499,6 +515,7 @@ def paper_trade(
     entry["orders"] = submitted
     entry["refused"] = refused
     entry["plan"] = what
+    entry["event_risk"] = {**policy, "plan": what, "cycle": new_state.event_cycle}
     entry["settled"] = _settled_rows(settled, panel)
     entry["until_rebalance"] = max(
         actions.REBALANCE - int(new_state.sessions_since_rebalance), 0
@@ -564,6 +581,8 @@ def record(
     llm_model: str | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
+    from backend.agents.trading.desk import event_risk
+
     panel = report.panel
     last = len(panel.dates) - 1
     state = report.regime.today()
@@ -624,7 +643,10 @@ def record(
                 "names": len(panel.tickers) - 1,
                 "benchmark": panel.benchmark,
             },
-            "strategy": {"rebalance_every": actions.REBALANCE},
+            "strategy": {
+                "rebalance_every": actions.REBALANCE,
+                "event_risk": event_risk.VERSION,
+            },
             "model": llm_model or None,
         },
         "regime": {
@@ -645,6 +667,12 @@ def record(
         ],
         "briefs": briefs or {},
         "paper": paper,
+        "event_risk": {
+            **event_risk.decision(panel),
+            "execution_pending": bool(
+                ((paper or {}).get("event_risk") or {}).get("cycle")
+            ),
+        },
         # The track record the page draws: the rules walked forward against
         # SPY and QQQ, and the paper account's live equity since it started.
         # Absent on records written before this existed.
@@ -753,14 +781,20 @@ def save(root: Path, data: dict, allow_overwrite: bool = False) -> Path:
 # again (the backend serving the page has no torch).
 def curve_block(report, store) -> dict | None:
     """Return the backtest curve block, or None when it cannot be drawn."""
-    from backend.agents.trading.desk import scorecard, simulate
+    from backend.agents.trading.desk import event_risk, scorecard, simulate
 
     panel = report.panel
     try:
         # The published curve runs the live execution policy - the band
         # blocker on buys, sells at the close, the green-day hold - not the
         # bare rebalance, so what the page shows is what the account runs.
-        sim = simulate.run(report, use_exits=False, **simulate.LIVE_POLICY)
+        sim = simulate.run(
+            report,
+            use_exits=False,
+            event_exposure=event_risk.live_path(panel),
+            event_lifecycle=True,
+            **simulate.LIVE_POLICY,
+        )
     except Exception:
         return None
     if len(sim.dates) < 2 or sim.equity is None or not np.isfinite(sim.equity[0]):
@@ -794,6 +828,8 @@ def curve_block(report, store) -> dict | None:
     stats = sim.stats()
     return {
         "label": "these rules run over the history: a backtest, not a record",
+        "event_policy": event_risk.VERSION,
+        "evaluation_periods": event_risk.evaluation_slices(sim),
         "asof": str(panel.dates[-1]),
         "dates": dates,
         "rules": rules,

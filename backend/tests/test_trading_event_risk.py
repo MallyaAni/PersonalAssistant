@@ -97,3 +97,49 @@ def test_research_snapshot_bounds_nested_readers(tmp_path):
     pinned = ResearchStore(tmp_path, before)
     assert pinned.read_frame("edgar_tone", "AAA")[0]["value"] == [1]
     assert pinned.read_frame("edgar_tone", "AAA", later)[0]["value"] == [1]
+
+
+# The adopted lifecycle postpones a due rebalance until the event's shares are restored.
+def test_event_lifecycle_defers_rebalance_without_repeated_scaling():
+    report = _report(np.full((24, 6), 100.0))
+    scale = np.ones(24)
+    scale[4:9] = 0.5
+    decisions = []
+
+    # Record the actual rebalance sessions alongside a constant allocation.
+    def allocation(report, panel, config, t):
+        decisions.append(t)
+        return np.asarray([0.5, 0, 0, 0, 0, 0])
+
+    result = simulate.run(
+        report,
+        allocator=allocation,
+        rebalance=5,
+        use_exits=False,
+        cost_bps=10,
+        event_exposure=scale,
+        event_lifecycle=True,
+    )
+    assert decisions == [0, 10, 15, 20]
+    np.testing.assert_allclose(result.invested[5:10], result.invested[5], atol=1e-9)
+    assert 0.49 < result.invested[10] < 0.51
+
+
+# Era reporting slices one equity path and does not manufacture a new cash account.
+def test_evaluation_eras_preserve_the_boundary_equity():
+    from types import SimpleNamespace
+
+    result = SimpleNamespace(
+        dates=np.asarray(
+            ["2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22", "2026-07-29"],
+            dtype="datetime64[D]",
+        ),
+        equity=np.asarray([100, 105, 110, 99, 121]),
+    )
+    before, after = event_risk.evaluation_slices(result)
+    assert before["total_return"] == pytest.approx(0.05)
+    assert after["total_return"] == pytest.approx(121 / 105 - 1)
+    assert after["since"] == "2026-06-18"
+    assert after["base_session"] == "2026-06-17"
+    assert after["drawdown"] == pytest.approx(0.1)
+    assert after["completed_meetings"] == ["2026-07-29"]

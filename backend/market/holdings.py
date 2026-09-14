@@ -143,6 +143,12 @@ def board(
     held = {h.ticker: h for h in holdings}
     # The rebalance clock is the paper book's; the levels carry none.
     until = (record.get("paper") or {}).get("until_rebalance")
+    event = record.get("event_risk") or {}
+    event_paused = (
+        event.get("factor") == 0.5
+        or event.get("execution_pending", False)
+        or event.get("calendar_known") is False
+    )
     rows = []
     for ticker in sorted(set(targets) | set(held)):
         holding = held.get(ticker)
@@ -234,11 +240,13 @@ def board(
                 # because its daily is rejecting its upper Bollinger band.
                 "rejecting_band": bool(level.get("rejecting_band", False)),
                 "until_rebalance": countdown,
+                "event_paused": bool(event_paused),
                 # Whether the paper book's next session is a rebalance: only
                 # then are the target-vs-held changes executable at the next
                 # open. Otherwise they are targets for the next rebalance,
                 # and the page must not present them as tomorrow's orders.
-                "rebalance_due": countdown is None or int(countdown) <= 1,
+                "rebalance_due": not event_paused
+                and (countdown is None or int(countdown) <= 1),
                 "leaves_if": _exit_reason(holding, in_book, target),
             }
         )

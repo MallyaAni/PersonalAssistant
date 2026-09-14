@@ -101,6 +101,8 @@ def _snapshot_age_seconds(snap: dict) -> float | None:
 # summary, and the sessions on file.
 @router.get("/desk")
 async def latest_desk(user_id: UserId) -> dict[str, object]:
+    from backend.agents.trading.desk import event_risk
+
     _operator_only(user_id)
     latest, previous = deskrecord.latest_pair(_root())
     if latest is None:
@@ -108,6 +110,11 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     return {
         "user_id": user_id,
         "latest": latest,
+        "event_policy": {
+            "enabled": True,
+            "version": event_risk.VERSION,
+            "evaluation_since": str(event_risk.GUIDANCE_CHANGE),
+        },
         "summary": deskrecord.summary(latest),
         "changes": deskrecord.changes(latest, previous).to_dict(),
         "sessions": deskrecord.sessions(_root()),

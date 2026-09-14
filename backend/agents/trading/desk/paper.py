@@ -5,7 +5,9 @@ The rules are the ones that measured best, and nothing else:
 * Every `REBALANCE_EVERY` sessions the paper book is brought to the desk's
   target weights (buys and sells at the next open, whole shares, moves
   smaller than `MIN_TRADE` of equity skipped).
-* Between rebalances the book is left alone. Nothing else trades. There
+* Between rebalances the book is left alone except for the versioned FOMC
+  cycle in event_execution.py. It cuts held shares once and restores confirmed
+  reductions after the meeting, without restarting the rebalance clock. There
   is no price stop, because every stop measured worse than none on every
   name; no grade-based exit, because it cut winners; and no band exit,
   because that cost 3.0% a year when it was finally measured inside these
@@ -22,6 +24,8 @@ file anyone can read.
 """
 
 import json
+import os
+import tempfile
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -69,6 +73,7 @@ class PaperState:
     # second order carrying an id it has already seen, and the replacement
     # never reached the market.
     order_seq: int = 0
+    event_cycle: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -82,6 +87,7 @@ class PaperOrder:
     # The id this submission will carry on the broker, chosen at plan time
     # so the write-down and the submit use the same one.
     client_order_id: str | None = None
+    event_id: str | None = None
 
 
 # Where the state lives.
@@ -100,12 +106,26 @@ def load_state(root: Path) -> PaperState:
     return PaperState(**data)
 
 
-# Write the state.
+# Replace the state atomically so a crash cannot truncate pending order intent.
 def save_state(root: Path, state: PaperState) -> Path:
     """Write the PaperState and return its path."""
     path = state_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(asdict(state), indent=2), encoding="utf-8")
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=path.parent, delete=False
+    ) as handle:
+        temporary = Path(handle.name)
+        try:
+            handle.write(json.dumps(asdict(state), indent=2))
+            handle.flush()
+            os.fsync(handle.fileno())
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
     return path
 
 
@@ -394,6 +414,14 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     new = PaperState(**asdict(state))
     journal = {str(row.get("client_order_id") or ""): row for row in state.journal}
     for s in settled:
+        prior = next(
+            (
+                row
+                for row in state.pending
+                if row.get("client_order_id") == s.client_order_id
+            ),
+            journal.get(s.client_order_id, {}),
+        )
         journal[s.client_order_id] = {
             "client_order_id": s.client_order_id,
             "symbol": s.symbol,
@@ -404,6 +432,7 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
             "filled_qty": s.filled_qty,
             "filled_price": s.filled_price,
             "terminal": s.terminal,
+            "event_id": prior.get("event_id"),
         }
     new.journal = [journal[k] for k in sorted(journal)]
     still_working = {
@@ -420,7 +449,11 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
         return new
     # The rebalance's whole set of legs, from the journal's latest entry per
     # order, so a terminal leg is never forgotten when another fills later.
-    legs = [e for e in new.journal if e["session"] == state.unconfirmed_rebalance]
+    legs = [
+        e
+        for e in new.journal
+        if e["session"] == state.unconfirmed_rebalance and not e.get("event_id")
+    ]
     if not legs or any(not e["terminal"] for e in legs):
         # Nothing to conclude yet; ask again next session.
         return new

@@ -3,6 +3,48 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — adopt provisional FOMC execution and separate evaluation eras
+
+The user explicitly chose the three-session conditional de-risking policy and
+asked to judge the post-guidance period separately. This supersedes the prior
+decision below to leave automatic FOMC changes disabled.
+
+Implemented `fomc-3-session-weakness/1`: negative five-session SPY performance
+inside the window triggers a one-time 50% reduction of held shares. The signal
+latches through decision day. Event sells bypass ordinary close/green-day rules.
+Confirmed event fills alone authorize restoration, bounded by snapshot shares
+and cash; failed/partial legs retry remaining quantities. Pending cancellations
+block replacement. A cycle defers ordinary rebalances while their clock continues.
+State writes are atomic, journal receipts retain event IDs, and legacy state loads.
+
+The nightly simulation and scorecard use the same deferred-rebalance lifecycle,
+with the overlay effective from June 18 for current-policy replay. `market_fomc
+--selected` additionally stress-tests that lifecycle across older meetings.
+The old scale-only research results below are a different execution variant.
+Evaluation periods now partition a continuous account at the June 17 close;
+they do not restart the account or rebalance clock at the regime boundary.
+
+VERIFIED before final gate: market/trading suite 465 passed, 8 skipped;
+18 browser cases passed in 50.9s; TypeScript and production build passed.
+The new pipeline fixture reads pending intent from disk before broker submission
+and confirms fills through the real settlement code. No real broker orders were
+used for tests. Four selected-lifecycle research comparisons completed on pinned
+September 11 inputs: June 18 inception, 10 bp costs, baseline -0.234% vs candidate
++1.522%, maximum drawdown 10.591% vs 7.293%. At 25 bp: -0.359% vs +1.298%.
+One completed meeting plus September's incomplete lead-in is not conclusive.
+
+UNVERIFIED until deployment: production execution and the public dashboard.
+Enabled configuration takes effect on the next nightly run; old records are
+not rewritten and do not prove a cut. Manual holdings have no event fill ledger:
+the dashboard explicitly limits automation to paper, and withholds ordinary
+target execution during active cycles. No automatic real-money orders are added.
+
+Next requested investigation: audit every stored A+ pick from the last week
+against its actual publication timestamp, subsequent daily/intraday prices and
+broker fills. Distinguish selection, blocked entries, rebalance delay and fills.
+Records exist Sep 4, 8, 9, 10, 11; the first three lack source revisions.
+Do not use a grade's session close as an executable price when publication was later.
+
 ## 2026-09-13 — final dashboard deployment and FOMC evaluation
 
 VERIFIED deployment: `e0b53de0`, through `scripts/deploy.sh --wait-post`, exit 0.

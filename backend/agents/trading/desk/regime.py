@@ -20,9 +20,10 @@ Three things it measures every session, from the book's own names:
   distance, which is the point: the desk is told the map changed before
   anyone knows what the new map is.
 
-Calendar and macro facts (FOMC distance, expiry days, VIX) are reported as
-context. None of them changes a size: the measured calendar effects are
-one-day and the volatility target already answers a rising VIX.
+This analyst reports calendar and macro facts without changing their sizes.
+The separate, provisional FOMC execution policy in event_risk.py reduces
+held shares before a meeting when market weakness triggers it. Keeping it
+outside this analyst prevents applying the same reduction twice.
 """
 
 from dataclasses import dataclass

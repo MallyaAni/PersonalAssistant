@@ -15,6 +15,17 @@ import pytest
 from backend.market import holdings
 
 
+# Ordinary target orders wait for an active FOMC cycle even when rebalance is due.
+def test_event_cycle_withholds_regular_target_execution():
+    record = _record()
+    record["paper"] = {"until_rebalance": 0}
+    record["event_risk"] = {"factor": 1.0, "execution_pending": True}
+    rows = holdings.board(record, [], 100000, {})
+    assert rows
+    assert all(row["event_paused"] for row in rows)
+    assert not any(row["rebalance_due"] for row in rows)
+
+
 def test_rows_are_validated_and_normalised():
     rows = holdings.parse(
         [

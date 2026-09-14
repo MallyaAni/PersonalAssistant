@@ -571,6 +571,13 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
         ))}
       </div>
       <CurveChart backtest={backtest} paper={curve?.paper} />
+      {backtest.evaluation_periods?.map((period) => (
+        <p key={period.label} className="mt-3 text-xs text-[#6e6e73]">
+          <b>{period.label}</b> · {period.since} to {period.through}: return {(period.total_return * 100).toFixed(2)}%,
+          maximum drawdown {(period.drawdown * 100).toFixed(2)}% · {period.sessions} sessions,
+          {' '}{period.completed_meetings.length} completed FOMC meetings. {period.basis}.
+        </p>
+      ))}
     </section>
   )
 }
@@ -780,6 +787,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // of teaching a daily trading cadence the backtest does not use.
   const rebalanceDue = rows.length > 0 ? rows[0].rebalance_due : true
   const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? null
+  const event = latest?.event_risk
+  const eventPaused = event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
 
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6">
@@ -831,13 +840,28 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {latest && <RegimeBanner regime={latest.regime} />}
 
+      {payload.event_policy?.enabled && (
+        <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
+          <h3 className="font-semibold">FOMC de-risking enabled · provisional policy</h3>
+          <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
+            The reduction lasts through decision day. Paper orders execute at the next open, even on a green day;
+            restoration is limited to confirmed reductions and available cash. Regular rebalances wait while the event cycle finishes.</p>
+          <p className="mt-2">{event
+            ? `Decision at the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
+            : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
+          <p className="mt-2">This automates the paper account. Your manually tracked positions require your own broker orders;
+            the regular target table is not a record of FOMC fills. Performance after {payload.event_policy.evaluation_since} is evaluated separately from the earlier guidance regime.
+            The new regime has a limited sample; these results do not establish optimal timing.</p>
+        </section>
+      )}
+
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
 
       {latest && (
         <section className="overflow-x-auto rounded-2xl border border-black/[0.08] bg-white p-4">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 className="text-sm font-semibold text-[#1d1d1f]">
-              {rebalanceDue ? 'Next scheduled trades' : 'Targets for the next rebalance'}
+              {eventPaused ? 'Regular targets · FOMC adjustments take priority' : rebalanceDue ? 'Next scheduled trades' : 'Targets for the next rebalance'}
               {!rebalanceDue && countdown !== null && (
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
                   in {countdown} trading days
@@ -933,7 +957,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                   onOpenName={() => setOpenName(r.ticker)}
                   marking={marking !== null}
                   onDone={
-                    canWrite && holdingsReady && rebalanceDue
+                    canWrite && holdingsReady && rebalanceDue && !eventPaused
                       ? async (price, qty) => {
                           setMarking(r.ticker)
                           try {

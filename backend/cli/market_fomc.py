@@ -53,6 +53,11 @@ def main() -> None:
     )
     parser.add_argument("--asof", type=date.fromisoformat, required=True)
     parser.add_argument("--since", type=date.fromisoformat, default=date(2021, 1, 1))
+    parser.add_argument(
+        "--selected",
+        action="store_true",
+        help="Evaluate only the adopted three-session conditional lifecycle",
+    )
     args = parser.parse_args()
     if args.since < date(2021, 1, 1) or args.since >= args.asof:
         parser.error("--since must be at least 2021-01-01 and earlier than --asof")
@@ -73,8 +78,8 @@ def main() -> None:
                 cost_bps=cost,
                 **simulate.LIVE_POLICY,
             )
-            for window in (1, 3, 5, 10):
-                for conditional in (False, True):
+            for window in (3,) if args.selected else (1, 3, 5, 10):
+                for conditional in (True,) if args.selected else (False, True):
                     path = event_risk.exposure_path(
                         report.panel, decisions, window, require_weakness=conditional
                     )
@@ -84,6 +89,7 @@ def main() -> None:
                         use_exits=False,
                         cost_bps=cost,
                         event_exposure=path,
+                        event_lifecycle=args.selected,
                         **simulate.LIVE_POLICY,
                     )
                     delta = result.stats()["total"] - base.stats()["total"]
@@ -110,7 +116,13 @@ def main() -> None:
                                         < 1
                                     )
                                 ),
-                                "live_enabled": False,
+                                "live_enabled": args.selected,
+                                "execution_lifecycle": event_risk.VERSION
+                                if args.selected
+                                else "research scale-only",
+                                "evaluation_periods": event_risk.evaluation_slices(
+                                    result
+                                ),
                                 "qualification": (
                                     "exploratory; current universe; revised inputs; "
                                     "no causal or out-of-sample claim"

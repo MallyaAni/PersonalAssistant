@@ -36,7 +36,7 @@ from pathlib import Path
 import numpy as np
 
 from backend.agents.trading.desk import desk as trading_desk
-from backend.agents.trading.desk import planner, scorecard, simulate
+from backend.agents.trading.desk import event_risk, planner, scorecard, simulate
 from backend.agents.trading.desk.simulate import SimResult
 from backend.market import challenger, deskrecord
 from backend.market.store import MarketStore
@@ -291,13 +291,23 @@ def main() -> None:
     start = date.fromisoformat(args.since)
     results = {
         f"the rule: {challenger.strategy(report)}": simulate.run(
-            report, since=start, use_exits=False, **simulate.LIVE_POLICY
+            report,
+            since=start,
+            use_exits=False,
+            event_exposure=event_risk.live_path(report.panel),
+            event_lifecycle=True,
+            **simulate.LIVE_POLICY,
         )
     }
     shadow = getattr(report, "alternate", None)
     if shadow is not None:
         results[f"shadow: {challenger.strategy(shadow)}"] = simulate.run(
-            shadow, since=start, use_exits=False, **simulate.LIVE_POLICY
+            shadow,
+            since=start,
+            use_exits=False,
+            event_exposure=event_risk.live_path(shadow.panel),
+            event_lifecycle=True,
+            **simulate.LIVE_POLICY,
         )
     print(f"the book from {args.since}, full rules, costs included:")
     print(scorecard.render(results, store, args.loss_limit))

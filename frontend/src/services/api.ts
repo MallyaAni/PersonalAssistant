@@ -1879,6 +1879,16 @@ export interface DeskBrief {
 }
 
 export interface DeskRecord {
+  event_risk?: {
+    execution_pending?: boolean;
+    enabled: boolean;
+    session: string;
+    decision_date: string | null;
+    factor: number | null;
+    calendar_known: boolean;
+    spy_five_session_return: number | null;
+    evaluation_since: string;
+  };
   session: string;
   written: string;
   regime: {
@@ -1920,6 +1930,10 @@ export interface DeskCurve {
     spy: number[];
     qqq: number[];
     stats: Record<string, number | null>;
+    evaluation_periods?: {
+      label: string; since: string; through: string; total_return: number;
+      drawdown: number; sessions: number; completed_meetings: string[]; basis: string;
+    }[];
   };
   paper?: {
     label: string;
@@ -2028,6 +2042,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
+  event_policy?: { enabled: boolean; version: string; evaluation_since: string };
   latest: DeskRecord | null;
   summary?: { session: string; counts: Record<string, number>; gross: number; names: string[]; flags: string[] };
   changes?: {

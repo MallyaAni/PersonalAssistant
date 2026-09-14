@@ -917,6 +917,42 @@ test('analyzes the person’s own trading from their documents', async ({ page }
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// A new policy must distinguish enabled automation from a historical execution receipt.
+test('FOMC policy explains activation without inventing an executed reduction', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      latest: deskRecord(), sessions: ['2026-09-08'],
+      event_policy: {enabled: true, version: 'fomc-3-session-weakness/1', evaluation_since: '2026-06-18'},
+    }),
+  }))
+  await page.goto('/#desk')
+  const banner = page.getByRole('region', {name: 'FOMC exposure policy'})
+  await expect(banner).toContainText('FOMC de-risking enabled')
+  await expect(banner).toContainText('does not confirm any reduction')
+  await expect(banner).toContainText('This automates the paper account')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// An active event must not expose ordinary rebalance targets as executable fill rows.
+test('FOMC reduction takes priority over regular target execution', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      latest: {...deskRecord(), event_risk: {
+        session: '2026-09-11', enabled: true, factor: 0.5, calendar_known: true,
+        decision_date: '2026-09-16', execution_pending: true,
+      }}, sessions: ['2026-09-11'],
+      event_policy: {enabled: true, version: 'fomc-3-session-weakness/1', evaluation_since: '2026-06-18'},
+    }),
+  }))
+  await page.goto('/#desk')
+  await expect(page.getByRole('heading', {name: 'Regular targets · FOMC adjustments take priority', exact: false})).toBeVisible()
+  await expect(page.getByRole('button', {name: 'record fill', exact: true})).toHaveCount(0)
+  await expect(page.getByRole('region', {name: 'FOMC exposure policy'})).toContainText('reduction triggered or still in force')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // A brand-new account has no record yet: the page must explain what it is
 // and what happens next, not render a blank board.
 test('an empty record becomes the getting-started guide', async ({ page }) => {
