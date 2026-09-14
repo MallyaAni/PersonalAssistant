@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-09-14 — Trading review, allocation percentages and execution evidence
+
+Started on main `42b928b9` with three unfinished task files. Pull initially
+refused the dirty tree; fetch confirmed origin/main was the same revision.
+Objective: repair the actual review HTTP 500, distinguish current research
+percentages from nightly portfolio targets, and show broker execution evidence.
+FAILED boundary: autopsy called nonexistent `AgentMemoryManager.search`.
+It now uses the owner's `knowledge.search`; regression tests instantiate the
+real facade instead of inventing its interface. The browser offers cancel,
+timeout and retry, and avoids duplicate development-effect requests.
+
+Rankings show fresh research target percentages without cash input; session,
+bar, pause and expiry checks withhold unavailable targets. The page reloads
+allocations each minute. Cash-funded share arithmetic expands on demand.
+Nightly analysis/risk/portfolio targets are dated. Paper execution reads actual
+FILL activity by execution date, keeps partial executions and identifies a
+truncated 100-row page. Missing history does not erase the account or imply
+no fills. Archived receipts omit missing timing/drift fields.
+
+VERIFIED pre-deploy: 28 focused backend tests, 33 browser workflows (57.4s),
+6 real DeepSeek autopsy tests (117.22s), TypeScript and Vite build.
+The browser tests cover independent target expiry, zero versus missing targets,
+empty versus unavailable broker history, document review and manual recording.
+Deployment/public acceptance is pending until the receipt below is added.
+No broker mutations were performed. FOMC catch-up remains unresolved; restoration
+still follows calendar/cash, not a fresh technical all-clear. The UI says so.
+Research allocations have no demonstrated superiority in forward net returns.
+
 ## 2026-09-14 — Compact trading dashboard and FOMC diagnosis
 
 Started clean on `main` at `cce79a11`; pulled origin/main, already current.

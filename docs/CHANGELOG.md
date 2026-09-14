@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-14 — Make trading decisions and execution evidence distinguishable
+
+Fixed the trading review HTTP 500 caused by calling a nonexistent memory-manager
+method. Added bounded browser waiting, cancellation and retry. Stock rankings
+show expiring research target percentages without a cash input; nightly analysis,
+risk and allocation plans carry their source date. Cash share calculation is
+optional. Added broker fill activity separately from planned changes, preserving
+partial fills and distinguishing unavailable history from no fills. Historical
+receipts no longer repeat absent timing and drift fields.
+
+Validation: 28 focused backend tests, 33 browser workflows and 6 real DeepSeek
+autopsy functional tests passed. Trading policy and broker orders are unchanged.
+
 ## 2026-09-14 — Compact trading decisions
 
 Rankings lead the page; actual paper cash and planned cash are labelled separately.

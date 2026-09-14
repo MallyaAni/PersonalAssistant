@@ -41,7 +41,7 @@ interface DeskPanelProps {
 
 // The page asks for a fresh record every few minutes: the desk writes one
 // a session, so that is plenty. Prices follow the fifteen-minute candle.
-const REFRESH_MS = 5 * 60 * 1000
+const REFRESH_MS = 60 * 1000
 const CANDLE_MS = 15 * 60 * 1000
 const POLL_MS = 60 * 1000
 
@@ -337,13 +337,14 @@ const SummaryStrip = ({
 // The regime in front of the board, not at the bottom: the warnings change
 // how much of the board to trust, so they lead it. Plain words for each
 // flag, and a line when the desk has sized down because of them.
-const RegimeBanner = ({ regime }: { regime: DeskRecord['regime'] }) => {
+const RegimeBanner = ({ regime, session }: { regime: DeskRecord['regime']; session: string }) => {
   const flags = regime.flags ?? []
   if (flags.length === 0) return null
   const exposure = regime.exposure ?? 1
   return (
     <section className="rounded-xl border border-[#9a6200]/30 bg-[#fff6e5] px-3 py-2" role="note">
-      <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {flags.length} flags</summary>
+      <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {session} close · {flags.length} flags</summary>
+      <p className="mt-1 text-xs">Reassessed nightly. Intraday research sizing has its own dated inputs.</p>
       <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#7a5200]">
         {flags.map((flag) => (
           <li key={flag}>{FLAG_WORDS[flag] ?? flag}</li>
@@ -792,11 +793,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   }, [userId, equity, holdings, payload?.latest?.session])
 
   useEffect(() => {
-    const deadlines = Object.values(gradeContext.until).map(Date.parse).filter(value => value > now)
+    const deadlines = [...Object.values(gradeContext.until), payload?.intraday_research?.valid_until ?? ''].map(Date.parse).filter(value => value > now)
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
     return () => window.clearTimeout(timer)
-  }, [gradeContext, now])
+  }, [gradeContext, now, payload?.intraday_research?.valid_until])
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
@@ -880,7 +881,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <span className="text-[#6e6e73]">Plan applies at the scheduled rebalance</span>
       </section>}
 
-      {latest && <RegimeBanner regime={latest.regime} />}
+      {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
       {latest && <details className="rounded-xl border border-black/[0.08] px-3 py-2 text-xs">
         <summary className="cursor-pointer font-medium">Inflation · {payload.economics?.assessment?.status === 'model_assessment' && !payload.economics.collection_stale && Date.now() - Date.parse(payload.economics.observed_at) < 36 * 3600000 ? payload.economics.assessment.pressure : 'unavailable'} · research</summary>
@@ -888,7 +889,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </details>}
 
       {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes}
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} now={now}
           holdings={holdingsReady ? holdings : null} marking={marking !== null}
           onRecordBuy={canWrite && holdingsReady ? async (ticker, price, qty, fillDate) => {
             setMarking(ticker)
@@ -924,6 +925,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             The reduction lasts through decision day. Paper orders are queued for the next open, even on a green day;
             actual fill times and prices can differ.
             Restoration is limited to confirmed reductions and available cash. Regular rebalances wait while event orders remain unresolved.
+            Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear.
             If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
           </details>
           <p className="mt-2 text-xs">{event
@@ -997,6 +999,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               )}
             </div>
           </div>
+          <p className="mb-2 text-xs text-[#6e6e73]">Recorded holdings → nightly targets · {latest.session} close. Suggested changes, not submitted orders.</p>
           {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
             <p className="mb-2 text-xs text-[#9a6200]">
               Since the last plan: {intraday.changed.join(' · ')}
@@ -1015,7 +1018,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {canWrite && holdingsReady && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
-          {canWrite && holdingsReady && <FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} />}
+          {canWrite && holdingsReady && <details className="mb-3 text-xs"><summary className="cursor-pointer text-[#0071e3]">Calculate shares with available cash</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} /></details>}
           <table className="w-full text-sm">
             <thead className="text-left text-[#6e6e73]">
               <tr>
@@ -1064,6 +1067,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         </section>
       )}
 
+      <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
+        <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>
+        <p>{paperLive?.orders ? `${paperLive.orders.length} open orders` : 'Open orders unavailable'}</p>
+        {paperLive?.orders?.map((order, i) => <p key={i}>{order.side} {order.qty} {order.symbol} · {order.status}</p>)}
+        <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
+        {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side} {fill.qty} {fill.symbol} at {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
+      </section>
       {paperLive && paperLive.positions && paperLive.positions.length > 0 && (
         <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
       )}
@@ -1234,10 +1244,7 @@ const PracticeAccount = ({
       {(record?.settled?.length ?? 0) > 0 && (
         <details className="mt-3 text-xs text-[#6e6e73]">
           <summary className="cursor-pointer font-medium text-[#1d1d1f]">Execution receipts · {record?.session}</summary>
-          <p className="mt-2">Broker outcomes observed in this evening record, not a live execution feed.
-            Completion time is for the whole order; partial fills can occur earlier.
-            Price drift compares the average fill with the recorded decision reference, not a tradable quote.
-            Positive drift is worse execution; negative drift is better.</p>
+          <p className="mt-2">Archived outcomes. Completion is for the whole order. Drift compares average fill with decision price; positive is worse.</p>
           <ul className="mt-2 space-y-3">
             {record?.settled?.map((fill, index) => (
               <li key={fill.client_order_id ?? `${fill.symbol}-${index}`} className="border-t border-black/[0.05] pt-2">
@@ -1248,16 +1255,14 @@ const PracticeAccount = ({
                       : fill.status === 'skipped' ? 'remaining shares deliberately held'
                         : fill.status === 'partial' && fill.terminal ? 'partially filled; remainder closed'
                           : fill.status}</p>
-                <p>Decision: {executionTime(fill.execution?.decision_at)}
-                  {' '}· Broker submission: {executionTime(fill.execution?.submitted_at)}
-                  {' '}· Order completion time: {executionTime(fill.execution?.filled_at)}</p>
+                {fill.execution?.decision_at && <p>Decision: {executionTime(fill.execution.decision_at)}</p>}
+                {fill.execution?.submitted_at && <p>Broker submission: {executionTime(fill.execution.submitted_at)}</p>}
+                {fill.execution?.filled_at && <p>Order completion time: {executionTime(fill.execution.filled_at)}</p>}
                 {fill.execution?.reference_price != null && (
                   <p>Reference: {priceMoney(fill.execution.reference_price)} · {fill.execution.reference_session}
                     {' '}· {fill.execution.reference_source}</p>
                 )}
-                <p>Decision-price drift: {fill.decision_shortfall_bps != null && Number.isFinite(fill.decision_shortfall_bps)
-                  ? `${fill.decision_shortfall_bps > 0 ? '+' : ''}${fill.decision_shortfall_bps.toFixed(1)} bp`
-                  : 'unavailable'}</p>
+                {fill.decision_shortfall_bps != null && Number.isFinite(fill.decision_shortfall_bps) && <p>Decision-price drift: {`${fill.decision_shortfall_bps > 0 ? '+' : ''}${fill.decision_shortfall_bps.toFixed(1)} bp`}</p>}
               </li>
             ))}
           </ul>
@@ -1567,6 +1572,8 @@ const EveryGrade = ({
   onRecordBuy,
   saveError,
   onOpenName,
+  research,
+  now,
 }: {
   latest: NonNullable<DeskPayload['latest']>
   rows: DeskMineRow[]
@@ -1577,6 +1584,8 @@ const EveryGrade = ({
   onRecordBuy?: (ticker: string, price: number, qty: number, fillDate: string) => Promise<boolean>
   saveError: string
   onOpenName: (ticker: string) => void
+  research: DeskPayload['intraday_research']
+  now: number
 }) => {
   const [openBrief, setOpenBrief] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -1624,7 +1633,7 @@ const EveryGrade = ({
         {latest.provenance?.rule?.inputs?.includes('expectations-gap') && <p className="mt-2">
           Valuation stays at the evening reading: the intraday reader does not yet reproduce the growth-model blend.
           Only eligible technical readings refresh this decision's intraday grades.</p>}
-        <p className="mt-2">These rankings do not calculate a new intraday allocation or confirm an entry.
+        <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means no current allocation is available; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
       </details>
       <div className="overflow-x-auto">
@@ -1636,7 +1645,8 @@ const EveryGrade = ({
             <th>Grade</th>
             <th>Bar price</th>
             <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
-            <th>Evening thesis</th>
+            <th>Analysis · {latest.session} close</th>
+            <th title="Experimental allocation from the displayed completed bar; not an order">Research target</th>
             <th>Your position</th>
           </tr>
         </thead>
@@ -1691,6 +1701,11 @@ const EveryGrade = ({
                       {briefs[ticker] && <ArchivedCommentary brief={briefs[ticker]} written={latest.written} />}
                     </div>
                   )}
+                </td>
+                <td className="min-w-40 text-xs">
+                  {research?.status === 'available' && !research.event_paused && research.session === latest.session && research.bar === quote?.bar && Date.parse(research.valid_until ?? '') > now && Number.isFinite(research.targets?.[ticker])
+                    ? `${(100 * research.targets![ticker]).toFixed(1)}%`
+                    : '—'}
                 </td>
                 <td className="min-w-40 text-xs">
                   <div>{holdings === null ? 'Positions unavailable' : `${(holdings.find(h => h.ticker === ticker)?.shares ?? 0).toLocaleString()} shares recorded`}</div>
@@ -2248,27 +2263,37 @@ const AutopsyView = ({ userId, onClose }: { userId: string; onClose: () => void 
   const [autopsy, setAutopsy] = useState<TradingAutopsy | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(true)
+  const [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let alive = true
-    void getTradingAutopsy(userId)
-      .then((a) => alive && setAutopsy(a))
-      .catch((err) => alive && setError(err instanceof Error ? err.message : 'The analysis could not run.'))
-      .finally(() => alive && setBusy(false))
+    const controller = new AbortController()
+    setBusy(true)
+    setError('')
+    const deadline = window.setTimeout(() => controller.abort(), 120_000)
+    // Defer until React's development effect replay has finished to avoid duplicate reviews.
+    void Promise.resolve().then(() => alive ? getTradingAutopsy(userId, controller.signal) : null)
+      .then((a) => alive && a && setAutopsy(a))
+      .catch((err) => alive && setError(controller.signal.aborted ? 'The review timed out. Please retry.' : err instanceof Error ? err.message : 'The analysis could not run.'))
+      .finally(() => { window.clearTimeout(deadline); if (alive) setBusy(false) })
     return () => {
       alive = false
+      window.clearTimeout(deadline)
+      controller.abort()
     }
-  }, [userId])
+  }, [userId, attempt])
   if (busy) {
     return (
-      <section className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]">
+      <section role="status" className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]">
         Reading the trading documents available for this review…
+        <button type="button" onClick={onClose} className="ml-3 text-[#0071e3]">Cancel</button>
       </section>
     )
   }
   if (error) {
     return (
-      <section className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#b42318]">
+      <section role="alert" className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#b42318]">
         {error}
+        <button type="button" onClick={() => setAttempt(a => a + 1)} className="ml-3 text-[#0071e3]">Retry review</button>
       </section>
     )
   }
@@ -2283,8 +2308,7 @@ const AutopsyView = ({ userId, onClose }: { userId: string; onClose: () => void 
           </button>
         </div>
         <p className="mt-1 text-sm text-[#6e6e73]">
-          {autopsy?.reason ?? 'Nothing to show yet.'} Share a statement, a journal, or notes about your trades and try
-          again.
+          {autopsy?.reason ?? 'Share a statement or trading journal in chat, then retry this review.'}
         </p>
       </section>
     )

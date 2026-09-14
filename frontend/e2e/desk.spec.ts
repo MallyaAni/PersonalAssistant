@@ -8,6 +8,40 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Percent allocations need no cash input and disappear at their evidence deadline.
+test('research percentages expire independently of account sizing', async ({page}) => {
+  await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: deskRecord(), sessions: ['2026-09-08'], intraday_research: {
+      status: 'available', session: '2026-09-08', bar: '20:00',
+      valid_until: '2026-09-09T14:00:30Z', targets: {AAPL: .047, NVDA: 0},
+    },
+  }}))
+  await page.goto('/#desk')
+  const rankings = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings'})})
+  await expect(rankings.locator('tr', {hasText: 'AAPL'})).toContainText('4.7%')
+  await expect(rankings.locator('tr', {hasText: 'NVDA'})).toContainText('0.0%')
+  await expect(page.getByLabel('Available cash to allocate ($)')).not.toBeVisible()
+  await page.clock.fastForward(31_000)
+  await expect(rankings).not.toContainText('4.7%')
+  await expect(rankings).not.toContainText('0.0%')
+})
+
+// Execution history distinguishes an empty broker response from missing evidence.
+test('paper execution distinguishes fills from unavailable history', async ({page}) => {
+  await page.route(`**/market/${USER}/desk/paper`, route => route.fulfill({json: {
+    orders: [], activity: {session: '2026-09-14', complete: true, fills: []},
+  }}))
+  await page.goto('/#desk')
+  const execution = page.getByLabel('Paper execution', {exact: true})
+  await expect(execution).toContainText('0 open orders')
+  await expect(execution).toContainText('No fills · 2026-09-14')
+  await page.route(`**/market/${USER}/desk/paper`, route => route.fulfill({json: {orders: [], activity: {reason: 'offline'}}}))
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect(execution).toContainText('fill history unavailable')
+  await expect(execution).not.toContainText('No fills')
+})
+
 // Fail browser acceptance on application exceptions and blocking console errors.
 function observeBlockingBrowserErrors(page: Page) {
   const consoleErrors: string[] = []
@@ -488,6 +522,7 @@ test('previews one confirmed cash budget and clears changed inputs', async ({ pa
   })
   await page.goto('/#desk')
   const cash = page.getByLabel('Available cash to allocate ($)')
+  await page.getByText('Calculate shares with available cash', {exact: true}).click()
   await cash.fill('200')
   await page.getByRole('button', {name: 'Confirm cash and preview'}).click()
   await expect(page.getByText('Additions reduced together to fit cash.', {exact: false})).toBeVisible()
@@ -498,6 +533,7 @@ test('previews one confirmed cash budget and clears changed inputs', async ({ pa
   // This fixture has no saved conversation; leave every desk storage key intact.
   await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
   await page.reload()
+  await page.getByText('Calculate shares with available cash', {exact: true}).click()
   await expect(cash).toHaveValue('')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
@@ -515,6 +551,7 @@ test('research sizing displays reductions and clears the previous policy', async
     }})
   })
   await page.goto('/#desk')
+  await page.getByText('Calculate shares with available cash', {exact: true}).click()
   await page.getByLabel('Sizing policy').selectOption('intraday_research')
   await expect(page.getByText('Research only · current technical sizing', {exact: false})).toBeVisible()
   await page.getByLabel('Available cash to allocate ($)').fill('0')
@@ -615,7 +652,7 @@ test('shows each thing once, not twice', async ({ page }) => {
   await expect(everyGrade.locator('tbody tr').last().locator('td').nth(2).locator('span')).toHaveText('B')
   await expect(everyGrade.locator('tbody tr').last()).toContainText('intraday')
   await expect(everyGrade.locator('tbody tr').last()).toContainText('Since evening: T no view → for')
-  await expect(everyGrade.getByRole('columnheader', {name: 'Evening thesis'})).toBeVisible()
+  await expect(everyGrade.getByRole('columnheader', {name: 'Analysis · 2026-09-08 close'})).toBeVisible()
   await expect(everyGrade).not.toContainText('no change in comparable analyst votes')
   await expect(everyGrade).toContainText('not probability of profit')
   await page.getByText('Performance & practice account', {exact: true}).click()
@@ -1084,6 +1121,17 @@ test('analyzes the person’s own trading from their documents', async ({ page }
 })
 
 // A grade must expire while the page is open, even if a cached endpoint repeats it.
+// A missing-document response gives one clear next step without duplicated instructions.
+test('trading review shows the empty-document response', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/trading/autopsy', route => route.fulfill({json: {result: null, reason: 'Share a statement or journal in chat, then retry.'}}))
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'analyze my trading'}).click()
+  await expect(page.getByText('Share a statement or journal in chat, then retry.', {exact: true})).toBeVisible()
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// A grade must expire while the page is open, even if a cached endpoint repeats it.
 test('an intraday grade expires without requiring a page reload', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
@@ -1169,8 +1217,9 @@ test('execution receipts distinguish decisions, fills and historical submissions
   await expect(receipts).toContainText('10 of 10 shares filled at $102.00 average')
   await expect(receipts).toContainText('Decision-price drift: +200.0 bp')
   await expect(receipts).toContainText('3 of 10 shares filled at $91.00 average')
-  await expect(receipts).toContainText('Order completion time: not recorded')
-  await expect(receipts).toContainText('Decision-price drift: unavailable')
+  await expect(receipts).not.toContainText('not recorded')
+  await expect(receipts).not.toContainText('unavailable')
+  await expect(receipts.locator('li').last()).not.toContainText('Order completion time:')
   await page.setViewportSize({width: 390, height: 844})
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})

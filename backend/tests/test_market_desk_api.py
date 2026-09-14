@@ -602,7 +602,8 @@ async def test_holdings_are_saved_and_the_board_is_computed_against_them(
 # The practice account's live state comes from the broker, and a missing
 # key is an answer with a reason, not an error.
 @pytest.mark.asyncio
-async def test_the_paper_account_is_read_live(tmp_path, monkeypatch):
+@pytest.mark.parametrize("activity_fails", [False, True])
+async def test_the_paper_account_is_read_live(tmp_path, monkeypatch, activity_fails):
     from backend.market import alpaca_trading
 
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
@@ -616,6 +617,24 @@ async def test_the_paper_account_is_read_live(tmp_path, monkeypatch):
 
         def open_orders(self):
             return [{"symbol": "HPE", "side": "buy", "qty": "201", "status": "new"}]
+
+        # Return a partial fill observed today, independent of the evening record.
+        def fill_activity(self, session):
+            if activity_fails:
+                raise alpaca_trading.AlpacaTradingError("history offline")
+            return {
+                "session": session.isoformat(),
+                "complete": True,
+                "fills": [
+                    {
+                        "symbol": "HPE",
+                        "side": "buy",
+                        "qty": 2.5,
+                        "price": 50.0,
+                        "filled_at": "2026-09-14T13:32:00Z",
+                    }
+                ],
+            }
 
     monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: Fake())
     token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
@@ -634,6 +653,13 @@ async def test_the_paper_account_is_read_live(tmp_path, monkeypatch):
     assert body["equity"] == 101000.0
     assert body["day_pl"] == 1000.0
     assert body["positions"][0]["symbol"] == "ADBE"
+    if activity_fails:
+        assert body["activity"] == {
+            "reason": "Today's fill history could not be loaded"
+        }
+    else:
+        assert body["activity"]["complete"] is True
+        assert body["activity"]["fills"][0]["qty"] == 2.5
     assert body["orders"] == [
         {"symbol": "HPE", "side": "buy", "qty": 201.0, "status": "new"}
     ]
@@ -828,8 +854,10 @@ async def test_the_autopsy_reads_the_persons_own_documents(tmp_path, monkeypatch
         ):
             return {"content": json.dumps(payload)}
 
-    class FakeManager:
+    class FakeKnowledge:
+        # Return the owner's document passages at the knowledge boundary.
         async def search(self, user_id, query, top_k):
+            assert user_id == "trader"
             return [
                 {
                     "content": "bought at 40, sold at 32",
@@ -837,7 +865,12 @@ async def test_the_autopsy_reads_the_persons_own_documents(tmp_path, monkeypatch
                 }
             ]
 
-    app.dependency_overrides[get_agent_memory_manager] = lambda: FakeManager()
+    from backend.memory.retrieval import SemanticRetrievalPolicy
+    from backend.services.agent_memory_manager import AgentMemoryManager
+
+    manager = AgentMemoryManager(None, None, SemanticRetrievalPolicy(), "test")
+    manager.knowledge = FakeKnowledge()
+    app.dependency_overrides[get_agent_memory_manager] = lambda: manager
     monkeypatch.setattr(market_api, "get_structured_llm_client", lambda: FakeWriter())
     try:
         token = issue_user_token("trader", ttl_seconds=60, scopes=["memory:read"])
@@ -858,15 +891,22 @@ async def test_the_autopsy_reads_the_persons_own_documents(tmp_path, monkeypatch
     assert body["passages_used"] == 1
 
 
+# Empty knowledge produces an actionable response through the real facade.
 @pytest.mark.asyncio
 async def test_the_autopsy_without_documents_explains_why(tmp_path, monkeypatch):
     from backend.core.dependencies import get_agent_memory_manager
 
-    class EmptyManager:
+    class EmptyKnowledge:
+        # Represent a user with no relevant uploaded passages.
         async def search(self, user_id, query, top_k):
             return []
 
-    app.dependency_overrides[get_agent_memory_manager] = lambda: EmptyManager()
+    from backend.memory.retrieval import SemanticRetrievalPolicy
+    from backend.services.agent_memory_manager import AgentMemoryManager
+
+    manager = AgentMemoryManager(None, None, SemanticRetrievalPolicy(), "test")
+    manager.knowledge = EmptyKnowledge()
+    app.dependency_overrides[get_agent_memory_manager] = lambda: manager
     try:
         token = issue_user_token("trader", ttl_seconds=60, scopes=["memory:read"])
         async with AsyncClient(

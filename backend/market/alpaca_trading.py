@@ -12,6 +12,7 @@ import json
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 from urllib import error, request
 
@@ -124,6 +125,31 @@ class AlpacaTradingClient:
     def open_orders(self) -> list[dict[str, Any]]:
         """Return the open orders."""
         return self._call("GET", "/orders?status=open&limit=500") or []
+
+    # Read executions by their fill date, including orders submitted on earlier days.
+    def fill_activity(self, session: date) -> dict[str, Any]:
+        rows = (
+            self._call(
+                "GET",
+                f"/account/activities/FILL?date={session.isoformat()}"
+                "&page_size=100&direction=asc",
+            )
+            or []
+        )
+        return {
+            "session": session.isoformat(),
+            "complete": len(rows) < 100,
+            "fills": [
+                {
+                    "symbol": row["symbol"],
+                    "side": row["side"],
+                    "qty": float(row["qty"]),
+                    "price": float(row["price"]),
+                    "filled_at": row.get("transaction_time"),
+                }
+                for row in rows
+            ],
+        }
 
     # Every order of any status since `after`, so a plan submitted on one
     # session can be checked on the next.

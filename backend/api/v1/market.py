@@ -574,7 +574,14 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
         state = paper.load_state(Path(settings.MARKET_DATA_ROOT))
         start = state.start_equity
         day_base = equity - day_pl
+        try:
+            activity = client.fill_activity(
+                datetime.now(desk_freshness.NEW_YORK).date()
+            )
+        except (alpaca_trading.AlpacaTradingError, ValueError, KeyError, TypeError):
+            activity = {"reason": "Today's fill history could not be loaded"}
         return {
+            "activity": activity,
             "equity": equity,
             "cash": account.cash,
             "day_pl": day_pl,
@@ -680,7 +687,7 @@ async def trading_autopsy(
     """Return the autopsy of the caller's own trading documents, or why not."""
     from backend.agents.trading.autopsy import MAX_PASSAGES, TradeAutopsy
 
-    passages = await agent_memory.search(
+    passages = await agent_memory.knowledge.search(
         user_id,
         "trading trades buy sell position entry exit loss win earnings",
         top_k=MAX_PASSAGES,

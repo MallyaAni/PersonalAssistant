@@ -2065,7 +2065,7 @@ export interface DeskOrder {
 }
 
 export interface DeskPayload {
-  intraday_research?: { status: string; reason?: string; bar?: string; valid_until?: string; valuation?: string; macro?: { defensive: boolean; exposure: number; base_exposure: number } };
+  intraday_research?: { status: string; reason?: string; session?: string; targets?: Record<string, number>; event_paused?: boolean; bar?: string; valid_until?: string; valuation?: string; macro?: { defensive: boolean; exposure: number; base_exposure: number } };
   economics?: DeskEconomics | null;
   event_policy?: { enabled: boolean; version: string; evaluation_since: string };
   latest: DeskRecord | null;
@@ -2307,6 +2307,7 @@ export const getDeskIntraday = async (userId: string): Promise<DeskIntraday | nu
 // lifetime move from the paper book's starting equity, `day_pl_pct` today's
 // move, so the page can read percentages beside the dollar figures.
 export interface DeskPaperLive {
+  activity?: { session?: string; complete?: boolean; reason?: string; fills?: { symbol: string; side: string; qty: number; price: number; filled_at?: string }[] };
   as_of?: string;
   reason?: string;
   equity?: number;
@@ -2426,9 +2427,10 @@ export const getDeskEarnings = async (userId: string, symbol: string): Promise<D
 };
 
 // The autopsy of the caller's own trading documents.
-export const getTradingAutopsy = async (userId: string): Promise<TradingAutopsy> => {
+export const getTradingAutopsy = async (userId: string, signal?: AbortSignal): Promise<TradingAutopsy> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/trading/autopsy`,
+    { signal },
   );
   if (!response.ok) throw new Error(`The analysis could not run (HTTP ${response.status}).`);
   return (await response.json()) as TradingAutopsy;
