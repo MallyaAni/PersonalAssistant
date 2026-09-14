@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-14 — Explained opportunity index and growth objective
+
+Live checkpoint 2cc8ebff adds expiring 0–10 analyst evidence scores, factor
+weights/reasons and score ordering. Nightly valuation is disclosed; missing
+inputs withhold scores. A real-data test caught absent rotation percentiles;
+the fix explicitly uses the recorded rotation vote and is regression-tested.
+Ticker recommendation history and the separate $100,000 USD paper ledger are
+live. The unattended 19:45 observation persisted with no positions or fills.
+Daily evidence refresh now covers 531 tracked stocks; adopted grading remains
+93 and the expanded nightly run has not yet been observed.
+
+Research reward now measures incremental log net NAV, without Sharpe division;
+no trained policy is promoted. Exact deployment passed 3570 unit tests (19
+skipped), 100 real routing tests, backup/restart and cheap post-checks. Public
+desktop/mobile acceptance verified score disclosures, history, USD, and manual
+Buy cancellation with zero browser/network errors. Details in NEXT_SESSION.
+
 ## 2026-09-14 — Dated plan actions and separate forward evidence
 
 Added compact plan actions with target percentages, position deltas and expiring

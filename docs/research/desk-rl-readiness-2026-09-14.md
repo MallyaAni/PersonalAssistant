@@ -14,7 +14,17 @@ SNDK's 19:00 UTC live record retained its nightly value rank (0.949) while its
 technical rank moved to 0.9677. The plain intraday value reader produced a value
 rank, but it is intentionally rejected for an expectations-blended nightly rule.
 Therefore the current board is not a comprehensive current-price valuation screen.
-The reported GLW daily loss was not independently verified by this audit.
+Read-only IEX snapshots at approximately 19:17 UTC independently showed GLW
+at $144.475 versus $166.39 previous close (-13.17%) and SNDK at $1558.35
+versus $1632.99 (-4.57%). These are dated indicative observations, not fills.
+
+A subsequent inventory found 1,472,051 daily rows across 531 stock histories;
+518 have at least 750 rows. Only 93 are complete through September 11; the
+other 438 are complete through September 4. No intraday Parquet or trained .pt
+model files were found in the inspected market store. This does not establish
+that older experimental corpora are unavailable elsewhere. The one-day forward
+log limits policy evaluation, but does not rule out historical daily training.
+Daily prices alone do not supply point-in-time analyst features or filings.
 
 ## First RL experiment
 

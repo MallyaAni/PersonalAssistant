@@ -1,5 +1,25 @@
 # Next session
 
+## Latest verified live checkpoint — 2cc8ebff
+
+Supersedes the pending deployment statements below. Normal scripts/deploy.sh
+passed 3570 unit tests (19 skipped, 143.70s) and 100 real routing tests (477.77s).
+Backup/restart completed; post marker: 2026-09-14T19:51:02Z 2cc8ebff ok (cheap).
+Public browser asset index-C6vOi0E9.js verified numeric opportunity score,
+nightly-valuation and recorded-vote disclosures, one 94-row board, USD first,
+FOMC Wait, cancelled manual Buy, 25 recommendation rows and paper USD 100%.
+Mobile board width 364/364px; zero page, console or required network errors.
+Final targeted opportunity browser case passed (4.8s); TypeScript passed.
+Evidence: /private/tmp/desk-opportunity-public.log and public browser screenshots.
+Final source changes are pushed; follow-up documentation records this evidence.
+
+UNVERIFIED: tonight's expanded 531-name refresh, broader adopted grading,
+calibrated current-price return forecasts, and any trained growth RL policy.
+The data inventory found 1,472,051 daily rows (531 stocks, 518 with >=750 rows),
+but 438 histories lag at September 4. Only 93 are current through September 11.
+No intraday Parquet or .pt model artifacts were found in the inspected store;
+historical experiment corpora elsewhere remain unverified. See research report.
+
 ## Latest verified live checkpoint — 413447fa
 
 Deployed through scripts/deploy.sh: 3563 unit tests passed, 19 skipped (149.83s),
@@ -15,7 +35,8 @@ personal holdings hashes unchanged. First 19:30 cron paper observation FAILED:
 container-root initialization made the new folder unwritable by the host user.
 Fixed ownership of ONLY desk/board-paper to match intraday-research. An observation
 as the host UID then persisted sequence 2 at 19:32:01 UTC, unchanged $100,000 cash
-and no fills. Verify the next unattended tick before claiming scheduler acceptance.
+and no fills. VERIFIED unattended scheduler acceptance: sequence 3 persisted at
+19:45:29 UTC with $100,000 cash/equity, no positions and no fills.
 
 Current follow-up implements a transparent 0–10 analyst evidence index, its
 component weights/dates/reasons, current-score stock ordering, and prospective
