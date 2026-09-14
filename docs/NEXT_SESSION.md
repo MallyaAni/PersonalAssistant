@@ -3,6 +3,43 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — configurable FOMC research overlay
+
+The user clarified that a selloff can begin any number of days before FOMC
+and wants the strategy to account for it. Added `market_fomc`: a read-only
+comparison of predeclared 1/3/5/10-session windows, 50% temporary exposure,
+and unconditional versus negative-five-session-SPY variants. Weakness
+latches until the event to avoid repeated trades on one-day rebounds.
+Exposure is decided at a close and changes at the next open; the window
+covers the specified pre-meeting sessions plus the decision session, then
+restores at the following open. Event changes explicitly execute even on
+a green open, with normal LIVE_POLICY behavior for other orders. The
+existing simulator charges actual traded notional and preserves partial
+positions; the scale is applied relatively between rebalances so it cannot
+halve the book anew every day.
+
+Research defaults to 2021 onward. The older calendar includes emergency 2020
+actions and lacks point-in-time cancellation metadata, so using it for a
+pre-event strategy would be lookahead. Each `since` starts a new cash account;
+the post-June-17 slice is separate, with only one completed meeting as of
+September 11. All variants are shown at 10 and 25 bp costs, not just a winner.
+Current-universe and revised-input limitations remain explicit. There is no
+live planner import or enabled exposure rule.
+
+VERIFIED: market/trading suite 454 passed, 8 skipped in 6.51s before adding
+the neutral-overlay invariant; the five event-risk tests also pass, including
+exact equality to LIVE_POLICY when the scale stays at one. Ruff passes.
+The actual 32-case comparison is running on the immutable September 11 input
+cut; runtime results and profitable strategy qualification remain UNVERIFIED.
+Command: `python -m backend.cli.market_fomc --asof 2026-09-11`.
+
+Confirmed-fill checkpoint `55670719` pushed. Browser suite 16 passed; the
+additional oversized partial-sell check passed in 4.9s. Public-asset replay
+of earnings checkpoint `c68fb498` rendered 93 grade rows and AAOI details,
+zero browser/network errors, mobile width 340/340. It uses captured real
+GET responses with a mocked session and no account writes; it does not prove
+an authenticated production browser session. Latest fill deployment pending.
+
 ## 2026-09-13 — confirmed fills instead of estimated "done" positions
 
 The dashboard previously updated positions at its suggested quantity and

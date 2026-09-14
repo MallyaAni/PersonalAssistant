@@ -369,7 +369,31 @@ def _signals_for(
     return fired, blocked, trend_up, dips
 
 
-# Walk the desk's own rules from `since` to the end of the panel.
+# Validate a research exposure path before any simulated orders are planned.
+def _event_path(path: np.ndarray | None, rows: int) -> np.ndarray | None:
+    if path is None:
+        return None
+    path = np.asarray(path, dtype=float)
+    if path.shape != (rows,) or not np.all(
+        np.isfinite(path) & (path > 0) & (path <= 1)
+    ):
+        raise ValueError("Event exposure must be one finite (0, 1] value per session")
+    return path
+
+
+# Scale fresh targets absolutely and held targets relatively, avoiding repeated cuts.
+def _event_target(target, path, t, rebalanced, previous, reason):
+    if path is None:
+        return target, previous, reason, False
+    scale = float(path[t])
+    target = target * (scale if rebalanced else scale / previous)
+    changed = scale != previous
+    if changed:
+        reason = "FOMC risk reduction" if scale < previous else "FOMC risk restoration"
+    return target, scale, reason, changed
+
+
+# Walk the desk's rules, optionally applying a research-only close-time exposure path.
 def run(
     report,
     since: date | None = None,
@@ -389,6 +413,7 @@ def run(
     trim: float = 1.0,
     exit_at_close: bool = False,
     green_day_skip: bool = False,
+    event_exposure: np.ndarray | None = None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -442,6 +467,11 @@ def run(
         report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
     )
     panel: Panel = report.panel
+    # A research overlay changes exposure only when its close-time scale changes.
+    # Between rebalances the held weights already contain yesterday's scale;
+    # applying the absolute scale again would halve the account every day.
+    event_exposure = _event_path(event_exposure, len(panel.dates))
+    previous_scale = 1.0
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
     start = int(np.searchsorted(panel.dates, np.datetime64(since))) if since else 0
@@ -468,9 +498,7 @@ def run(
             if fired is not None or blocked is not None:
                 total = book.equity(closes[t])
                 weights = (
-                    (book.shares * closes[t]) / total
-                    if total > 0
-                    else np.zeros(names)
+                    (book.shares * closes[t]) / total if total > 0 else np.zeros(names)
                 )
                 target = _gated_targets(target, fired, blocked, weights, t)
             reason = "rebalanced out"
@@ -489,17 +517,29 @@ def run(
         # fill at different prices (the paper account sells on the close
         # and never into a green open since 2026-09-11), so the fill is
         # split by side.
+        target, previous_scale, reason, event_changed = _event_target(
+            target,
+            event_exposure,
+            t,
+            (t - start) % rebalance == 0,
+            previous_scale,
+            reason,
+        )
         order = book.plan(target, closes[t])
         buy_prices = opens[t + 1]
         sell_prices = opens[t + 1]
-        if exit_at_close:
+        if exit_at_close and not event_changed:
             sell_prices = closes[t + 1]
-        if green_day_skip:
+        # Event-risk changes are explicitly next-open orders, including a green open.
+        # Restoring a deferred cut's theoretical size would add unintended risk.
+        if green_day_skip and not event_changed:
             # Hold a sell back when the name opens up for the day: the
             # desk does not exit into a name's own rally.
-            up_at_open = (opens[t + 1] > closes[t]) & np.isfinite(
-                opens[t + 1]
-            ) & np.isfinite(closes[t])
+            up_at_open = (
+                (opens[t + 1] > closes[t])
+                & np.isfinite(opens[t + 1])
+                & np.isfinite(closes[t])
+            )
             skip = (order < book.shares) & up_at_open
             order = np.where(skip, book.shares, order)
         book.settle_split(order, buy_prices, sell_prices, t + 1, reason)
@@ -695,8 +735,12 @@ class _Book:
     # close since 2026-09-11, so a buy and a sell on the same session
     # trade at different prices and the ledger must not pretend otherwise.
     def settle_split(
-        self, order: np.ndarray, buy_prices: np.ndarray, sell_prices: np.ndarray,
-        session: int, reason: str,
+        self,
+        order: np.ndarray,
+        buy_prices: np.ndarray,
+        sell_prices: np.ndarray,
+        session: int,
+        reason: str,
     ) -> None:
         """Fill the plan, buys at `buy_prices` and sells at `sell_prices`."""
         before = self.shares > 0
