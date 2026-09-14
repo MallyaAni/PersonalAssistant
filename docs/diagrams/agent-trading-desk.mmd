@@ -25,6 +25,8 @@ flowchart TB
     Plan --> Shadow
     Shadow --> View
     Research --> Audit[RL readiness audit<br/>research only; no policy promotion]
+    Store --> Pilot[Isolated daily neural and RL pilot<br/>net wealth, pre/post-event evaluation]
+    Pilot --> Audit
 
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;

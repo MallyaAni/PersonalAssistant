@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-09-14 — Neural/RL growth pilot in progress
+
+User authorized trying neural and RL models and requested distinct evaluation
+after Warsh's guidance change. Official June 17 statement already omitted forward
+guidance; August 28 Jackson Hole speech elaborated on the position. Both boundaries
+are reported, with event days separate from full post-event sessions. Do not assert
+a statistically established permanent break or causal explanation of stock losses.
+
+New isolated CPU CLI market_growth_pilot trains a small supervised return network
+and sequential categorical policy-gradient allocator with cash/partial exposure.
+2018–2023 training, 2024 selection, 2025+ retrospective evaluation; labels purged
+at boundaries. The NN is not an in-sample input to RL. Reward is undiscounted
+net log wealth. Trades delayed to next close, holdings drift, fees are funded,
+held-price gaps invalidate the run. Costs 10 and 30 bp per traded dollar.
+Current-book membership and adjusted fractional prices are explicit limitations;
+this pilot does not replay the full desk, intraday quotes or adopted FOMC overlay.
+No promotion or production deployment is intended for a research-only CLI.
+
+VERIFIED: 12 targeted accounting/causality/objective tests, lint. Training results
+and model superiority UNVERIFIED until the actual bounded run completes.
+Diagram impact: UPDATED — market-data, agent-trading-desk.
+
 ## Latest verified live checkpoint — 2cc8ebff
 
 Supersedes the pending deployment statements below. Normal scripts/deploy.sh

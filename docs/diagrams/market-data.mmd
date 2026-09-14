@@ -23,6 +23,8 @@ flowchart TB
     Windows --> Model[Learned rankers<br/>mlp · gru · xsect · master · lgbm<br/>purged walk-forward, seed ensembles]
     Model -.-> Harness
     Harness --> Report([Sweep table and book report<br/>every score on the same sessions, net of cost])
+    Panel --> Pilot[Daily growth pilot<br/>neural scorer + sequential RL<br/>delayed funded execution, CPU only]
+    Pilot --> Research[(Separate research artifacts<br/>frozen models, NAV paths, regime splits<br/>no automatic promotion)]
 
     CLI[CLI: market_snapshot · market_edgar<br/>market_tone · market_sweep · market_book] -.-> Refresh
     CLI -.-> Report
@@ -41,5 +43,6 @@ flowchart TB
     class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book application;
     class Store data;
     class Yahoo,Edgar external;
-    class Model,Reader model;
+    class Model,Reader,Pilot model;
+    class Research data;
     class Rule,Drop warning;
