@@ -602,7 +602,7 @@ async def test_holdings_are_saved_and_the_board_is_computed_against_them(
 # The practice account's live state comes from the broker, and a missing
 # key is an answer with a reason, not an error.
 @pytest.mark.asyncio
-@pytest.mark.parametrize("activity_fails", [False, True])
+@pytest.mark.parametrize("activity_fails", [None, "broker", "network"])
 async def test_the_paper_account_is_read_live(tmp_path, monkeypatch, activity_fails):
     from backend.market import alpaca_trading
 
@@ -620,6 +620,8 @@ async def test_the_paper_account_is_read_live(tmp_path, monkeypatch, activity_fa
 
         # Return a partial fill observed today, independent of the evening record.
         def fill_activity(self, session):
+            if activity_fails == "network":
+                raise OSError("connection timed out")
             if activity_fails:
                 raise alpaca_trading.AlpacaTradingError("history offline")
             return {

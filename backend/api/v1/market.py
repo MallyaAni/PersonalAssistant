@@ -578,7 +578,13 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
             activity = client.fill_activity(
                 datetime.now(desk_freshness.NEW_YORK).date()
             )
-        except (alpaca_trading.AlpacaTradingError, ValueError, KeyError, TypeError):
+        except (
+            alpaca_trading.AlpacaTradingError,
+            OSError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ):
             activity = {"reason": "Today's fill history could not be loaded"}
         return {
             "activity": activity,
