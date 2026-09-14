@@ -368,7 +368,7 @@ test.beforeEach(async ({ page }) => {
         net_income_usd_m: 29789.0,
         gross_margin_pct: 50.1,
         summary: 'Apple reported record June-quarter revenue and EPS, with double-digit growth across products.',
-        prompt_version: 'release_tone/2',
+        prompt_version: 'release_tone/3',
         same_day: true,
       },
     }),
@@ -545,26 +545,65 @@ test('drills into a name’s own history', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// A fresh 8-K shows its earnings read in the drill-down the day it lands:
-// the tone the release reader scored, the numbers it extracted, and the
-// "released today" marker — ahead of the next nightly grade, which has not
-// folded it into the score yet.
-test('shows a same-day earnings read in the drill-down', async ({ page }) => {
+// Reaction timing, extracted tone and precise financials must not imply a release date or revision.
+test('shows accurately dated earnings evidence in the drill-down', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
   await page.getByRole('button', { name: 'AAPL', exact: true }).click()
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByText('Latest earnings read')).toBeVisible()
-  await expect(dialog.getByText('released today')).toBeVisible()
-  await expect(dialog.getByText('guidance raised · demand raised')).toBeVisible()
+  await expect(dialog.getByText('Latest stored earnings read')).toBeVisible()
+  await expect(dialog.getByText('Market reaction on or after Sep 13, 2026')).toBeVisible()
+  await expect(dialog.getByText('guidance positive · demand positive · pricing neutral or not stated · capex neutral or not stated')).toBeVisible()
   await expect(dialog.getByText('record June-quarter revenue', { exact: false })).toBeVisible()
-  await expect(dialog.getByText(/Revenue \$109\.4B/)).toBeVisible()
+  await expect(dialog.getByText(/Revenue \$109,417M/)).toBeVisible()
   await expect(dialog.getByText(/EPS \$2\.02/)).toBeVisible()
-  await expect(dialog.getByText(/Net income \$29\.8B/)).toBeVisible()
+  await expect(dialog.getByText(/Net income \$29,789M/)).toBeVisible()
   await expect(dialog.getByText(/Gross margin 50\.1%/)).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Older extraction versions must not present financials with known loss-sign defects as usable evidence.
+test('withholds legacy earnings figures and retains signed precision after retry', async ({ page }) => {
+  let corrected = false
+  await page.route(`**/desk/earnings/AAPL`, route => {
+    return route.fulfill({ json: { user_id: USER, symbol: 'AAPL', read: {
+      reaction_date: '2025-12-20', guidance: 0, demand: 0, pricing: 0, capex: 0,
+      supply_constrained: 0, quarter_end: '2025-09-30', revenue_usd_m: 101.234,
+      eps_usd: -0.42, net_income_usd_m: -22.8, gross_margin_pct: null,
+      summary: null, prompt_version: corrected ? 'release_tone/3' : 'release_tone/2', same_day: false,
+    } } })
+  })
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+  await page.getByRole('button', { name: 'AAPL', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'AAPL history' })
+  await expect(dialog.getByText('Financial figures withheld: this older extraction may misreport losses.')).toBeVisible()
+  await expect(dialog.getByText(/Net income/)).toHaveCount(0)
+  await expect(dialog.getByText(/Market reaction on or after Dec 20, 2025/)).toBeVisible()
+  corrected = true
+  await dialog.getByRole('button', { name: 'Refresh earnings' }).click()
+  await expect(dialog.getByText(/Net income −\$22\.8M/)).toBeVisible()
+  await expect(dialog.getByText(/Revenue \$101\.234M/)).toBeVisible()
+  await expect(dialog.getByText(/Quarter ending Sep 30, 2025/)).toBeVisible()
+  await expect(dialog.getByText(/EPS −\$0\.42/)).toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A failed request is recoverable and distinct from a successful response with no stored release.
+test('retries an unavailable earnings read without disguising it as no release', async ({ page }) => {
+  let available = false
+  await page.route(`**/desk/earnings/AAPL`, route => {
+    return available ? route.fulfill({ json: { read: null } }) : route.abort('failed')
+  })
+  await page.goto('/#desk')
+  await page.getByRole('button', { name: 'AAPL', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: 'AAPL history' })
+  await expect(dialog.getByText('Earnings read unavailable.')).toBeVisible()
+  available = true
+  await dialog.getByRole('button', { name: 'Retry earnings' }).click()
+  await expect(dialog.getByText('No earnings read stored for this name.')).toBeVisible()
 })
 
 // A covered name that is not in the book is still graded every evening, and

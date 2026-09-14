@@ -1713,54 +1713,85 @@ const gradeChanges = (rows: DeskHistoryRow[]) => {
 const looksLikeRawDump = (text: string) =>
   /\b[a-zA-Z]+\d*_[a-zA-Z]+(?:_[a-zA-Z]+)*\b\s*[+-]?\d+(?:\.\d+)?/.test(text)
 
-// The newest earnings release read for a name, shown the day an 8-K lands:
-// the tone the release reader scored (guidance / demand / pricing / capex)
-// and the numbers it extracted. Every value is what the release reader
-// already stored — no new model call, and no analyst-consensus comparison:
-// only what the release itself said.
+// Format stored dollar figures without losing a loss sign or rounding millions to whole units.
+const earningsDollars = (value: number | null, suffix = '') =>
+  value == null ? null : `${value < 0 ? '−' : ''}$${Math.abs(value).toLocaleString('en-US', { maximumFractionDigits: 6, minimumFractionDigits: suffix ? 0 : 2 })}${suffix}`
+
+// Date-only evidence retains its full day and year without a UTC timezone shift.
+const evidenceDate = (value: string) =>
+  new Date(`${value}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+// Present the stored extraction's timing, meaning and known limitations beside its figures.
 const EarningsRead = ({ read }: { read: NonNullable<DeskEarnings['read']> }) => {
-  const tone = (value: number) => (value > 0 ? 'raised' : value < 0 ? 'lowered' : 'flat')
-  const billed = (m: number | null) =>
-    m == null ? null : m >= 1000 ? `$${(m / 1000).toFixed(1)}B` : `$${m.toFixed(0)}M`
+  // Zero combines neutral and unstated evidence in the stored schema.
+  const tone = (value: number) => (value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral or not stated')
   const dims = ['guidance', 'demand', 'pricing', 'capex'] as const
-  const tones = dims.map((k) => ({ k, v: read[k] })).filter((t) => t.v !== 0)
+  // v2 has confirmed positive-as-loss defects; only the corrected reader is qualified here.
+  const signedFinancials = read.prompt_version === 'release_tone/3'
   const facts = [
-    ['Revenue', billed(read.revenue_usd_m)],
-    ['EPS', read.eps_usd != null ? `$${read.eps_usd.toFixed(2)}` : null],
-    ['Net income', billed(read.net_income_usd_m)],
+    ['Revenue', earningsDollars(read.revenue_usd_m, 'M')],
+    ['EPS', earningsDollars(read.eps_usd)],
+    ['Net income', earningsDollars(read.net_income_usd_m, 'M')],
     ['Gross margin', read.gross_margin_pct != null ? `${read.gross_margin_pct.toFixed(1)}%` : null],
     [
       'Quarter',
       read.quarter_end
-        ? `ending ${new Date(`${read.quarter_end}T00:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
+        ? `ending ${evidenceDate(read.quarter_end)}`
         : null,
     ],
   ].filter(([, v]) => v != null) as [string, string][]
   return (
     <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-x-2">
-        <h4 className="text-sm font-semibold text-[#1d1d1f]">Latest earnings read</h4>
-        <span className={`text-xs ${read.same_day ? 'font-medium text-[#0b5cad]' : 'text-[#6e6e73]'}`}>
-          {read.same_day ? 'released today' : `released ${shortDate(read.reaction_date)}`}
+        <h4 className="text-sm font-semibold text-[#1d1d1f]">Latest stored earnings read</h4>
+        <span className="text-xs text-[#6e6e73]">
+          Market reaction on or after {evidenceDate(read.reaction_date)}
         </span>
       </div>
-      {tones.length > 0 ? (
-        <p className="mt-1 text-sm text-[#1d1d1f]">
-          {tones.map((t, i) => (
-            <span key={t.k}>
-              {i > 0 && ' · '}
-              {t.k} {tone(t.v)}
-            </span>
-          ))}
-        </p>
-      ) : (
-        <p className="mt-1 text-sm text-[#6e6e73]">No strong signals in the release itself.</p>
-      )}
+      <p className="mt-1 text-xs text-[#6e6e73]">Model-extracted outlook tone; positive capex means increased spending. These are not analyst estimate comparisons.</p>
+      <p className="mt-1 text-sm text-[#1d1d1f]">{dims.map(k => `${k} ${tone(read[k])}`).join(' · ')}</p>
       {read.summary && <p className="mt-1 text-sm leading-relaxed text-[#1d1d1f]">{read.summary}</p>}
-      {facts.length > 0 && (
+      {signedFinancials && facts.length > 0 && (
         <p className="mt-1 text-xs text-[#6e6e73]">{facts.map(([k, v]) => `${k} ${v}`).join(' · ')}</p>
       )}
+      {!signedFinancials && <p className="mt-1 text-xs text-amber-800">Financial figures withheld: this older extraction may misreport losses.</p>}
+      <p className="mt-1 text-xs text-[#6e6e73]">Reader {read.prompt_version || 'unknown'}. A new read does not confirm that the displayed grade includes it.</p>
     </div>
+  )
+}
+
+// Refresh stored earnings while open and make absence, loading and retryable failures explicit.
+const EarningsPanel = ({ userId, ticker }: { userId: string; ticker: string }) => {
+  const [earnings, setEarnings] = useState<DeskEarnings | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+  useEffect(() => {
+    let alive = true
+    // Clear previous evidence until this request establishes the current stored state.
+    const load = async () => {
+      setEarnings(null)
+      setFailed(false)
+      try {
+        const result = await getDeskEarnings(userId, ticker)
+        if (alive) setEarnings(result)
+      } catch {
+        if (alive) setFailed(true)
+      }
+    }
+    void load()
+    const timer = window.setInterval(() => { void load() }, 15 * 60 * 1000)
+    return () => { alive = false; window.clearInterval(timer) }
+  }, [userId, ticker, attempt])
+  return (
+    <section aria-label="Earnings evidence" className="mt-3">
+      {earnings?.read && <EarningsRead read={earnings.read} />}
+      {!earnings?.read && <p role="status" className="text-xs text-[#6e6e73]">
+        {failed ? 'Earnings read unavailable.' : earnings ? 'No earnings read stored for this name.' : 'Loading earnings read…'}
+      </p>}
+      <button type="button" onClick={() => setAttempt(value => value + 1)} className="mt-1 text-xs text-[#0b5cad] underline">
+        {failed ? 'Retry earnings' : 'Refresh earnings'}
+      </button>
+    </section>
   )
 }
 
@@ -1785,18 +1816,12 @@ const NameDetail = ({
   onClose: () => void
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
-  const [earnings, setEarnings] = useState<DeskEarnings | null>(null)
   const [error, setError] = useState('')
   useEffect(() => {
     let alive = true
     void getDeskHistory(userId, ticker)
       .then((h) => alive && setHistory(h))
       .catch((err) => alive && setError(err instanceof Error ? err.message : 'no history'))
-    // The earnings read is fetched on open too, so a fresh 8-K is visible
-    // the day it lands even though the nightly grade has not folded it in.
-    void getDeskEarnings(userId, ticker)
-      .then((e) => alive && setEarnings(e))
-      .catch(() => alive && setEarnings(null))
     return () => {
       alive = false
     }
@@ -1870,7 +1895,7 @@ const NameDetail = ({
           quote={live.quotes[ticker]}
           row={row ?? null}
         />
-        {earnings?.read && <EarningsRead read={earnings.read} />}
+        <EarningsPanel key={ticker} userId={userId} ticker={ticker} />
         {error ? (
           <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
         ) : !history ? (

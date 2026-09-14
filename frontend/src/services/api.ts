@@ -2317,9 +2317,8 @@ export const getDeskHistory = async (userId: string, ticker: string): Promise<De
 // The newest earnings release read for one name, straight from the release
 // reader's store: the tone it scored (guidance / demand / pricing / capex),
 // the numbers it extracted, and the session the market could first react.
-// `read` is null when the name has no release on file; `same_day` tells the
-// page an 8-K landed today so it can say so instead of waiting for the
-// next nightly grade.
+// `read` is null when the name has no release on file. `same_day` compares
+// the earliest reaction date with today; it is not a publication timestamp.
 export interface DeskEarnings {
   user_id: string;
   symbol: string;
@@ -2341,11 +2340,12 @@ export interface DeskEarnings {
   } | null;
 }
 
+// Distinguish unavailable earnings data from a successful lookup with no stored release.
 export const getDeskEarnings = async (userId: string, symbol: string): Promise<DeskEarnings> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/earnings/${encodeURIComponent(symbol)}`,
   );
-  if (!response.ok) return { user_id: userId, symbol, read: null };
+  if (!response.ok) throw new Error(`Earnings read unavailable (HTTP ${response.status}).`);
   return (await response.json()) as DeskEarnings;
 };
 

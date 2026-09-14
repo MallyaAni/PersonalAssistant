@@ -3,6 +3,36 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — earnings-panel evidence correction (after `5d05adfb`)
+
+Started clean on main `5d05adfb` after pulling opencode's earnings panel.
+The reaction date is an earliest date, potentially on a weekend after an
+after-hours filing; it does not prove the release was published that day.
+The panel now says "Market reaction on or after" with the full date and year.
+Tone labels describe the stored scores, including zero's neutral-or-unstated
+ambiguity, instead of claiming every positive outlook was raised. Financials
+retain signed dollar precision and the exact quarter-end date. Known v2
+loss-sign defects make those legacy financials unsuitable for display; they
+are withheld pending corrected extraction. The reader version is visible.
+Errors, no stored release, and loading are distinct, with a working retry and
+15-minute refresh while the drill-down stays open.
+
+VERIFIED: 14 browser tests passed in 39.0 seconds against the current main
+checkout's Vite server on port 5187 with deterministic API fixtures; includes
+legacy suppression, signed figures and failed-request recovery. TypeScript
+and production Vite build pass. No prompt or strategy rule changed here.
+Deployment pending. The original three new acceptance cases failed against
+the incoming panel; the two sequential-response fixtures were then corrected
+to tolerate React StrictMode's duplicate mount reads.
+
+FOMC clarification: current main and the Spark research checkout both remain
+at `5d05adfb` before these corrections. `regime.py` explicitly leaves calendar
+effects out of position sizing. Opencode's entry below records the backtest
+and says automatic FOMC de-risking was not adopted. The user's hypothesis is
+being reviewed; the calendar boundary correction is a separate checkpoint.
+Staging earnings rebuild is complete and UNPUBLISHED, not still running as
+the older opencode entries say. Its 93-company completion was verified above.
+
 ## 2026-09-13 — dashboard caption accuracy (candidate after `6f9baa70`)
 
 Objective: align captions with their data without changing trading decisions.
