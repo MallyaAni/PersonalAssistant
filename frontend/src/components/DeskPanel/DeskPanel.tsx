@@ -846,7 +846,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
             The reduction lasts through decision day. Paper orders are queued for the next open, even on a green day;
             actual fill times and prices can differ.
-            restoration is limited to confirmed reductions and available cash. Regular rebalances wait while the event cycle finishes.</p>
+            Restoration is limited to confirmed reductions and available cash. Regular rebalances wait while the event cycle finishes.</p>
           <p className="mt-2">{event
             ? `Decision at the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
