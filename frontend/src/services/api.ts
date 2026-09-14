@@ -2249,6 +2249,26 @@ export interface DeskMine {
   grades_live: Record<string, DeskLiveGrade>;
 }
 
+export interface DeskFundingPreview {
+  session: string;
+  calculated_at: string;
+  estimated_cost: number;
+  unallocated_cash: number;
+  cash_limited: boolean;
+  price_times: Record<string, string | null>;
+  rows: { ticker: string; reference_price: number; held_shares: number; target_total_shares: number; additional_shares: number; estimated_cost: number }[];
+}
+
+// Send confirmed planning cash in the request body, without storing it in a URL.
+export const getDeskFundingPreview = async (userId: string, equity: number, availableCash: number): Promise<DeskFundingPreview> => {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/funding-preview`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ equity, available_cash: availableCash }),
+  });
+  if (!response.ok) throw new Error('Sizing preview unavailable. Check account equity, cash and market data.');
+  return await response.json() as DeskFundingPreview;
+};
+
 // Preserve the evidence deadlines so an open page can expire an intraday grade.
 export const getDeskMine = async (userId: string, equity: number): Promise<DeskMine> => {
   const response = await authenticatedFetch(

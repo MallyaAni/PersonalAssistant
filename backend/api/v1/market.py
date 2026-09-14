@@ -29,6 +29,7 @@ from backend.market import (
     alpaca_trading,
     desk_freshness,
     deskrecord,
+    funding,
     holdings,
     language,
     live_quotes,
@@ -493,6 +494,38 @@ async def desk_mine(
         "grade_valid_until": desk_freshness.grade_expiries(
             {"as_of": as_of, "quotes": quotes}, set(technical) | set(value)
         ),
+    }
+
+
+# Preview the entire buy budget without persisting cash or placing orders.
+@router.post("/desk/funding-preview")
+async def desk_funding_preview(user_id: UserId, inputs: dict) -> dict[str, object]:
+    _operator_only(user_id)
+    try:
+        equity = float(
+            funding.amount(inputs.get("equity"), "Account equity", positive=True)
+        )
+        cash = float(funding.amount(inputs.get("available_cash"), "Available cash"))
+        latest, _ = deskrecord.latest_pair(_root())
+        if latest is None:
+            raise HTTPException(
+                status_code=409, detail="No evening decision is available"
+            )
+        snap = _live_snapshot() or {}
+        quotes = snap.get("quotes") or {}
+        held = holdings.load(_root())
+        rows = holdings.board(latest, held, equity, quotes)
+        result = funding.preview(rows, equity, cash)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {
+        **result,
+        "session": latest.get("session"),
+        "calculated_at": datetime.now(UTC).isoformat(),
+        "price_times": {
+            r["ticker"]: (quotes.get(r["ticker"]) or {}).get("bar")
+            for r in result["rows"]
+        },
     }
 
 

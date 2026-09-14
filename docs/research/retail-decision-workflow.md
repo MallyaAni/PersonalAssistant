@@ -3,6 +3,16 @@
 Design recorded September 14, 2026. This is a proposed evaluation path, not an
 enabled strategy or evidence of higher returns.
 
+Implementation checkpoint: the dashboard now has an explicit cash-limited
+preview of the existing evening targets. The backend funds all additions
+together, floors whole shares, subtracts existing holdings, and excludes
+unexecuted sale proceeds and FOMC-paused additions. Cash stays in page memory;
+holdings/equity/context changes and reload require reconfirmation. The preview
+expires after fifteen minutes and labels last-known reference prices. It is not
+dynamic intraday allocation or an executable-price recommendation. CPI/PPI/PCE
+ingestion, DeepSeek economic interpretation and the new-policy evaluation below
+remain unfinished.
+
 ## Objective
 
 Help the operator decide what to own over days or weeks, how much to hold, and

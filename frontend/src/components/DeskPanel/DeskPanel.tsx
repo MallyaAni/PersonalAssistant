@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { RefreshCw, X } from 'lucide-react'
+import { FundingPreview } from './FundingPreview'
 import {
   getDesk,
   getDeskEarnings,
@@ -1016,12 +1017,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {canWrite && holdingsReady && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
+          {canWrite && holdingsReady && <FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} />}
           <table className="w-full text-sm">
             <thead className="text-left text-[#6e6e73]">
               <tr>
                 <th className="py-1">Name</th>
                 <th>Target move</th>
-                <th>Size</th>
+                <th title="Unfunded target difference; use the cash-limited preview for a shared budget">Target difference</th>
                 <th>Grade</th>
                 <th title={TRIGGER_LEGEND}>Why</th>
               </tr>

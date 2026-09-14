@@ -201,6 +201,14 @@ AniOS is therefore a local development scaffold, not a hardened system for sensi
 
 ## Current development requirements
 
+The trading desk funding preview accepts operator-entered cash and equity in a
+POST body, accessible through the existing desk identity checks. It computes
+against the shared recorded holdings but writes no files or account state.
+Cash is held only in page memory and the request lifetime, is not sent to a
+model, and is not deliberately logged or retained. Reloading or changing the
+holdings/account-size context clears the browser value. Existing infrastructure
+request-body logging must remain disabled for this endpoint.
+
 The trading desk's execution evidence is stored with its existing paper state
 in `data/market/paper/state.json` and in dated desk records. It adds decision
 time/reference price and allowlisted broker creation, submission, completion,

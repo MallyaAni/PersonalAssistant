@@ -14,6 +14,7 @@ from backend.core.auth import issue_user_token
 from backend.main import app
 
 
+# Write a dated desk fixture for the real HTTP handlers to read.
 def _write(root, session, grades, book, flags, curve=None):
     path = root / "desk" / f"asof={session}" / "desk.json"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -34,6 +35,52 @@ def _write(root, session, grades, book, flags, curve=None):
         ),
         encoding="utf-8",
     )
+
+
+# Exercise funding over HTTP and prove the read-only preview leaves holdings intact.
+@pytest.mark.asyncio
+async def test_funding_preview_uses_saved_holdings_without_writing_cash(
+    tmp_path, monkeypatch
+):
+    from backend.market import holdings
+
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(
+        tmp_path,
+        "2026-09-04",
+        {"AAA": "A+", "BBB": "A"},
+        [("AAA", 0.15), ("BBB", 0.15)],
+        [],
+    )
+    holdings.save(tmp_path, [holdings.Holding("AAA", 100, 9, "2026-09-01")])
+    (tmp_path / "desk" / "live.json").write_text(
+        json.dumps({"quotes": {"AAA": {"last": 10}, "BBB": {"last": 20}}})
+    )
+    before = {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")}
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/api/v1/market/desk_user/desk/funding-preview",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"equity": 10000, "available_cash": 200},
+        )
+        assert response.status_code == 200, response.text
+        result = response.json()
+        assert result["estimated_cost"] == 190
+        assert {r["ticker"]: r["additional_shares"] for r in result["rows"]} == {
+            "AAA": 5,
+            "BBB": 7,
+        }
+        denied = await client.post(
+            "/api/v1/market/someone_else/desk/funding-preview",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"equity": 10000, "available_cash": 200},
+        )
+        assert denied.status_code == 403
+    assert {str(p): p.read_bytes() for p in tmp_path.rglob("*.json")} == before
 
 
 @pytest.mark.asyncio

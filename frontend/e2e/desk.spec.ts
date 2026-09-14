@@ -426,6 +426,34 @@ test.beforeEach(async ({ page }) => {
 // The page must lead with the numbers a person can trust or act on: the
 // practice account, the rules against the market, the exposure, and the
 // warnings — not the analysts' tables.
+// Confirm cash explicitly and discard the preview whenever the budget changes.
+test('previews one confirmed cash budget and clears changed inputs', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/api/v1/conversations/ani.mallya/*', route => route.fulfill({json: {messages: []}}))
+  await page.route('**/desk/funding-preview', route => {
+    expect(route.request().postDataJSON()).toEqual({ equity: 100000, available_cash: 200 })
+    return route.fulfill({json: {
+      session: '2026-09-08', calculated_at: new Date().toISOString(), estimated_cost: 190,
+      unallocated_cash: 10, cash_limited: true, price_times: {},
+      rows: [{ticker: 'AAPL', reference_price: 190, held_shares: 0, target_total_shares: 31, additional_shares: 1, estimated_cost: 190}],
+    }})
+  })
+  await page.goto('/#desk')
+  const cash = page.getByLabel('Available cash to allocate ($)')
+  await cash.fill('200')
+  await page.getByRole('button', {name: 'Confirm cash and preview'}).click()
+  await expect(page.getByText('Additions reduced together to fit cash.', {exact: false})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Additional shares', exact: true})).toBeVisible()
+  await cash.fill('100')
+  await expect(page.getByRole('columnheader', {name: 'Additional shares', exact: true})).toHaveCount(0)
+  await page.waitForLoadState('networkidle')
+  // This fixture has no saved conversation; leave every desk storage key intact.
+  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
+  await page.reload()
+  await expect(cash).toHaveValue('')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 test('renders the desk at a glance with the track record', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
