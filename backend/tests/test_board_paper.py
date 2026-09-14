@@ -103,10 +103,145 @@ def test_observer_is_idempotent_and_uses_shared_planner(tmp_path, monkeypatch):
     monkeypatch.setattr(
         board_paper.event_status, "for_planning", lambda record, root: record
     )
-    monkeypatch.setattr(board_paper.decision_view, "build", lambda *args: decisions)
+    monkeypatch.setattr(
+        board_paper.decision_view, "build", lambda *args, **kwargs: decisions
+    )
     first = board_paper.observe(tmp_path, {}, {}, research, NOW)
     second = board_paper.observe(tmp_path, {}, {}, research, NOW)
     assert first == second == board_paper.latest(tmp_path)
     assert first["decisions"]["AAPL"]["action"] == "Wait"
     assert first["cash"] == 1000
     assert len(list((tmp_path / "desk/board-paper").glob("*.json"))) == 2
+
+
+# A held position crosses sessions using fresh actions even before today's close.
+def test_overnight_position_marks_and_splits_once(tmp_path, monkeypatch):
+    from backend.market.yahoo import CorporateAction, TickerHistory
+
+    previous = NOW - timedelta(days=1)
+    state = board_paper.initialize(tmp_path, 1000, previous)
+    state.update(
+        sequence=1,
+        cash=900,
+        positions={
+            "AAPL": {
+                "shares": 1,
+                "entry_price": 100,
+                "mark": 100,
+                "entry_date": "2026-09-11",
+            }
+        },
+        bar="old",
+    )
+    board_paper.append(tmp_path / "desk/board-paper", state)
+    calls = []
+
+    # Record a current provider observation whose daily bars still end yesterday.
+    def fetch(symbol, start, end, **kwargs):
+        calls.append(symbol)
+        return TickerHistory(
+            symbol,
+            (),
+            (
+                CorporateAction(NOW.date(), "split", 2),
+                CorporateAction(NOW.date(), "dividend", 1),
+            ),
+            previous.date(),
+            NOW,
+        )
+
+    monkeypatch.setattr("backend.market.yahoo.fetch_history", fetch)
+    decisions, research = inputs(NOW, action="Wait")
+    snapshot = {
+        "as_of": NOW.isoformat(),
+        "quotes": {"AAPL": {"last": 40, "bar": research["bar"]}},
+    }
+    monkeypatch.setattr(
+        board_paper.event_status, "for_planning", lambda record, root: record
+    )
+    monkeypatch.setattr(
+        board_paper.decision_view, "build", lambda *args, **kwargs: decisions
+    )
+    result = board_paper.observe(tmp_path, {}, snapshot, research, NOW)
+    assert result["equity"] == 982
+    assert result["receivables"] == 2
+    assert result["positions"]["AAPL"]["shares"] == 2
+    assert result["positions"]["AAPL"]["entry_price"] == 50
+    assert board_paper.latest(tmp_path) == result
+    assert board_paper.observe(tmp_path, {}, snapshot, research, NOW) == result
+    assert calls == ["AAPL"]
+
+
+# Both trade directions follow the same experimental target used to size the fill.
+@pytest.mark.parametrize(
+    ("nightly", "target", "action"),
+    [(0.10, 0.02, "Reduce"), (0.03, 0.10, "Buy eligible")],
+)
+def test_paper_direction_matches_selected_target(tmp_path, nightly, target, action):
+    from backend.market import decision_view, holdings
+    from backend.tests.test_decision_view import setup
+
+    record, snapshot, quoted, now = setup()
+    record["book"][0]["weight"] = nightly
+    targets = {ticker: target if ticker == "S11" else 0 for ticker in record["grades"]}
+    held = [holdings.Holding("S11", 60, 100, "2026-09-14")]
+    decisions = decision_view.build(
+        record, held, 100000, snapshot, quoted, now, targets
+    )
+    assert decisions["rows"]["S11"]["action"] == action
+    state = board_paper.initialize(tmp_path, 100000, now - timedelta(minutes=15))
+    state.update(
+        cash=94000,
+        positions={
+            "S11": {
+                "shares": 60,
+                "mark": 100,
+                "entry_price": 100,
+                "entry_date": "2026-09-14",
+            }
+        },
+        pending={"S11": {"action": action, "weight": target}},
+    )
+    research = {
+        "status": "available",
+        "targets": targets,
+        "valid_until": (now + timedelta(minutes=15)).isoformat(),
+    }
+    result = board_paper.transition(state, decisions, research, now)
+    board_paper.append(tmp_path / "desk/board-paper", result)
+    saved = board_paper.latest(tmp_path)
+    assert saved["fills"][0]["side"] == ("sell" if action == "Reduce" else "buy")
+    assert (saved["positions"]["S11"]["shares"] < 60) == (action == "Reduce")
+
+
+# A failed corporate-action provider cannot silently move or corrupt the ledger.
+def test_overnight_provider_failure_preserves_ledger(tmp_path, monkeypatch):
+    state = board_paper.initialize(tmp_path, 1000, NOW - timedelta(days=1))
+    state.update(
+        sequence=1,
+        cash=900,
+        positions={
+            "AAPL": {
+                "shares": 1,
+                "mark": 100,
+                "entry_price": 100,
+                "entry_date": "2026-09-11",
+            }
+        },
+        bar="old",
+    )
+    board_paper.append(tmp_path / "desk/board-paper", state)
+
+    # Model an unavailable provider without issuing a network request.
+    def fail(*args, **kwargs):
+        raise ValueError("Provider unavailable")
+
+    monkeypatch.setattr(board_paper.forward_actions, "current", fail)
+    _, research = inputs(NOW)
+    snapshot = {
+        "as_of": NOW.isoformat(),
+        "quotes": {"AAPL": {"last": 80, "bar": research["bar"]}},
+    }
+    with pytest.raises(ValueError, match="Provider unavailable"):
+        board_paper.observe(tmp_path, {}, snapshot, research, NOW)
+    assert board_paper.latest(tmp_path) == state

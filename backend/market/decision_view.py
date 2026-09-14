@@ -46,8 +46,21 @@ def action_for_row(
 
 
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
-def build(record, held, equity, snapshot, quoted, now=None):
+def build(record, held, equity, snapshot, quoted, now=None, targets=None):
     now = now or datetime.now(UTC)
+    if targets is not None:
+        if (
+            set(targets) != set(record.get("grades") or {})
+            or not all(math.isfinite(w) and 0 <= w <= 1 for w in targets.values())
+            or sum(targets.values()) > 1.000001
+        ):
+            raise ValueError("Complete funded allocation required")
+        record = {
+            **record,
+            "book": [
+                {"ticker": name, "weight": weight} for name, weight in targets.items()
+            ],
+        }
     technical, value = desk_freshness.grade_inputs(snapshot, record, now)
     rows = {
         r["ticker"]: r
@@ -124,6 +137,8 @@ def build(record, held, equity, snapshot, quoted, now=None):
         "written": record.get("written"),
         "equity": equity,
         "holdings": {h.ticker: h.shares for h in held},
-        "policy": "Scheduled next-open strategy; personal execution is manual",
+        "policy": "Experimental targets; adopted gates; manual execution"
+        if targets is not None
+        else "Scheduled next-open strategy; personal execution is manual",
         "rows": result,
     }

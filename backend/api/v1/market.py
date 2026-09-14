@@ -453,6 +453,7 @@ async def desk_mine(
         return {"user_id": user_id, "session": None, "rows": []}
     from backend.market import event_status
 
+    original = latest
     latest = event_status.for_planning(latest, _root())
     snap = _live_snapshot()
     from backend.market import decision_view, execution_quotes
@@ -460,7 +461,24 @@ async def desk_mine(
     quoted = await asyncio.to_thread(
         execution_quotes.fetch, list(latest.get("grades") or {})
     )
-    decisions = decision_view.build(latest, rows, equity, snap or {}, quoted)
+    from backend.market import intraday_research
+
+    now = datetime.now(UTC)
+    research = intraday_research.load(_root(), original["session"], now)
+    targets = None
+    if (
+        research.get("status") == "available"
+        and research.get("record_sha256") == intraday_research.record_hash(original)
+        and all(
+            research.get("bar") == quote.get("bar")
+            for quote in ((snap or {}).get("quotes") or {}).values()
+        )
+        and (snap or {}).get("quotes")
+    ):
+        targets = research.get("targets")
+    decisions = decision_view.build(
+        latest, rows, equity, snap or {}, quoted, now, targets
+    )
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)
         return {

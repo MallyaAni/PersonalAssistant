@@ -14,6 +14,62 @@ from backend.core.auth import issue_user_token
 from backend.main import app
 
 
+# The HTTP action and target agree with the experimental weight displayed by the board.
+@pytest.mark.asyncio
+async def test_current_research_target_drives_action_over_http(tmp_path, monkeypatch):
+    from backend.api.v1 import market
+    from backend.market import (
+        event_status,
+        execution_quotes,
+        holdings,
+        intraday_research,
+    )
+    from backend.tests.test_decision_view import setup
+
+    record, snapshot, quoted, now = setup()
+    record["written"] = record["session"]
+
+    class Clock(datetime):
+        # Freeze the request at the fresh completed bar.
+        @classmethod
+        def now(cls, tz=None):
+            return now
+
+    monkeypatch.setattr(market, "datetime", Clock)
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(market.deskrecord, "latest_pair", lambda root: (record, None))
+    monkeypatch.setattr(market, "_live_snapshot", lambda: snapshot)
+    monkeypatch.setattr(event_status, "for_planning", lambda record, root: record)
+    monkeypatch.setattr(execution_quotes, "fetch", lambda names: quoted)
+    holdings.save(tmp_path, [holdings.Holding("S11", 60, 100, "2026-09-14")])
+    research = {
+        "status": "available",
+        "session": record["session"],
+        "as_of": now.isoformat(),
+        "valid_until": (now + timedelta(minutes=10)).isoformat(),
+        "bar": snapshot["quotes"]["S11"]["bar"],
+        "record_sha256": intraday_research.record_hash(record),
+        "targets": {t: 0.02 if t == "S11" else 0 for t in record["grades"]},
+    }
+    folder = tmp_path / "desk/intraday-research"
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "latest.json").write_text(json.dumps(research))
+    token = issue_user_token("desk_user", scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        response = await client.get("/api/v1/market/desk_user/desk/mine?equity=100000")
+    assert response.status_code == 200, response.text
+    row = response.json()["decisions"]["rows"]["S11"]
+    assert row["target_weight"] == 0.02
+    assert row["action"] == "Reduce"
+    assert holdings.load(tmp_path)[0].shares == 60
+
+
 # The existing desk route reads the persisted independent paper run without changing it.
 @pytest.mark.asyncio
 async def test_forward_paper_summary_is_read_from_persisted_account(

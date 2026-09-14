@@ -21,7 +21,7 @@ from backend.market import (
     holdings,
 )
 
-VERSION = "board-paper/1"
+VERSION = "board-paper/2"
 SLIPPAGE = 0.001  # Additional 10 bp per side beyond the observed bid/ask.
 
 
@@ -197,11 +197,28 @@ def transition(state, decisions, research, now):
     }
 
 
+# Apply newly observed ex-date actions once before marking an overnight account.
+def roll_overnight(root, state, now):
+    start = forward_actions.session(state["as_of"])
+    end = forward_actions.session(now.isoformat())
+    if not state["positions"] or start == end:
+        return
+    actions, _ = forward_actions.current(root, state["positions"], start, now)
+    shares = {ticker: p["shares"] for ticker, p in state["positions"].items()}
+    state["receivables"] += forward_actions.apply(shares, start, end, actions)
+    for ticker, quantity in shares.items():
+        state["positions"][ticker]["entry_price"] *= (
+            state["positions"][ticker]["shares"] / quantity
+        )
+        state["positions"][ticker]["shares"] = quantity
+
+
 # Observe one fresh candle using the same planner as the personal dashboard.
 def observe(root, record, snapshot, research, now=None):
     folder = root / "desk/board-paper"
     if not folder.exists():
         return None
+    live_clock = now is None
     now = now or datetime.now(UTC)
     with (folder / "state.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
@@ -223,22 +240,11 @@ def observe(root, record, snapshot, research, now=None):
         ).hexdigest()
         if state.get("execution_policy") != policy:
             state["pending"] = {}
-        start, end = (
-            forward_actions.session(state["as_of"]),
-            forward_actions.session(now.isoformat()),
-        )
-        if state["positions"] and start != end:
-            actions, through = forward_actions.load(root, state["positions"])
-            if through is None or through < end.isoformat():
-                # Keep the last dated NAV rather than invent action-free holdings.
-                return state
-            shares = {ticker: p["shares"] for ticker, p in state["positions"].items()}
-            state["receivables"] += forward_actions.apply(shares, start, end, actions)
-            for ticker, quantity in shares.items():
-                state["positions"][ticker]["entry_price"] *= (
-                    state["positions"][ticker]["shares"] / quantity
-                )
-                state["positions"][ticker]["shares"] = quantity
+        roll_overnight(root, state, now)
+        # Network collection can outlive quote eligibility; recheck before trading.
+        now = datetime.now(UTC) if live_clock else now
+        if desk_freshness.describe(snapshot, now)["stale"]:
+            return latest(root)
         for ticker, position in state["positions"].items():
             quote = (snapshot.get("quotes") or {}).get(ticker)
             if not quote:
@@ -255,7 +261,13 @@ def observe(root, record, snapshot, research, now=None):
         )
         planned = event_status.for_planning(record, root)
         decisions = decision_view.build(
-            planned, held, equity, snapshot, research.get("execution_quotes") or {}, now
+            planned,
+            held,
+            equity,
+            snapshot,
+            research.get("execution_quotes") or {},
+            now,
+            targets=research.get("targets"),
         )
         result = transition(state, decisions, research, now)
         result["previous_sha256"] = previous
