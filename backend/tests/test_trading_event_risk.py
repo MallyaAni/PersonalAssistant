@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 
 from backend.agents.trading.desk import event_risk, simulate
+from backend.cli.market_fomc import ResearchStore
+from backend.market.store import MarketStore
 from backend.tests.test_trading_simulate import _report
 
 
@@ -84,3 +86,14 @@ def test_disabled_overlay_preserves_the_live_policy_exactly():
     np.testing.assert_array_equal(base.equity, disabled.equity)
     np.testing.assert_array_equal(base.invested, disabled.invested)
     assert base.traded == disabled.traded
+
+
+# A nested loader that forgets asof still cannot read a later extraction partition.
+def test_research_snapshot_bounds_nested_readers(tmp_path):
+    store = MarketStore(tmp_path)
+    before, later = date(2026, 9, 11), date(2026, 9, 13)
+    store.write_frame("edgar_tone", before, "AAA", {"value": [1]}, {})
+    store.write_frame("edgar_tone", later, "AAA", {"value": [9]}, {})
+    pinned = ResearchStore(tmp_path, before)
+    assert pinned.read_frame("edgar_tone", "AAA")[0]["value"] == [1]
+    assert pinned.read_frame("edgar_tone", "AAA", later)[0]["value"] == [1]

@@ -27,6 +27,24 @@ from backend.market.calendar import fomc_decisions
 from backend.market.store import MarketStore
 
 
+# Bound even nested readers that omit asof, including the expectations-gap loader.
+class ResearchStore(MarketStore):
+    # Pin every partition lookup to the evaluation's requested input cut.
+    def __init__(self, root: Path, asof: date):
+        super().__init__(root)
+        self.cutoff = asof
+
+    # Hide later bar partitions from readers that ask for the latest available one.
+    def asofs(self) -> list[date]:
+        return [day for day in super().asofs() if day <= self.cutoff]
+
+    # Apply the same bound to all generic filing, tone and macro frames.
+    def _latest_of_kind(self, kind: str, ticker: str, asof: date | None):
+        return super()._latest_of_kind(
+            kind, ticker, min(asof or self.cutoff, self.cutoff)
+        )
+
+
 # Measure candidate exposure on an immutable data cut without publishing it.
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -38,7 +56,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.since < date(2021, 1, 1) or args.since >= args.asof:
         parser.error("--since must be at least 2021-01-01 and earlier than --asof")
-    report = desk.run(MarketStore(args.data_dir), asof=args.asof)
+    report = desk.run(ResearchStore(args.data_dir, args.asof), asof=args.asof)
     decisions = [d for d in fomc_decisions() if d >= date(2021, 1, 1)]
     for since in (args.since, date(2026, 6, 18)):
         # Count independent completed events, not the many names or days around each.

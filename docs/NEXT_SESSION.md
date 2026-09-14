@@ -3,6 +3,18 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — pin every FOMC research input to the requested date
+
+The desk passes `asof` to its primary loaders, but the nested expectations-gap
+loader omits it. Added a research-store boundary that bounds both bar and
+generic-frame lookups even when nested readers ask for latest. Regression
+test writes an earlier and later tone partition, then proves both an omitted
+and a too-late asof return the earlier value. Six event-risk tests pass in
+0.30s, Ruff passes. The first 32-case output was exploratory and unpinned;
+do not cite it as a September 11 snapshot. The pinned rerun is in progress.
+This change is isolated to the research CLI; existing live loaders are not
+changed, and their broader asof propagation remains an audit follow-up.
+
 ## 2026-09-13 — configurable FOMC research overlay
 
 The user clarified that a selloff can begin any number of days before FOMC
