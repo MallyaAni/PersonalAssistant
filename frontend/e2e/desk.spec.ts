@@ -16,6 +16,7 @@ function observeBlockingBrowserErrors(page: Page) {
     if (message.type() === 'error') consoleErrors.push(message.text())
   })
   page.on('pageerror', error => pageErrors.push(error.message))
+  page.on('requestfailed', request => consoleErrors.push(`Failed request: ${request.method()} ${request.url()}`))
   return { consoleErrors, pageErrors }
 }
 
@@ -471,7 +472,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByText('in 18 trading days', { exact: true })).toBeVisible()
   // No trade is scheduled before the rebalance, so no row carries a "done"
   // button: the targets read as targets, not as instructions to buy now.
-  await expect(page.getByRole('button', { name: 'done' })).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
   await expect(page.getByText('The desk adds to its best name.', { exact: false })).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -678,7 +679,7 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
   await page.goto('/#desk')
   await expect(page.getByText('uncovered', { exact: true })).toBeVisible()
   await expect(page.getByText('100 shares held')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'done' })).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
   // A fresh book with no rebalance clock: the next session is the first
   // decision, so the board shows the next scheduled trades.
   await expect(page.getByText('Next scheduled trades')).toBeVisible()
@@ -688,7 +689,18 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
 // The board names scheduled trades only when the paper
 // book is actually due a rebalance; otherwise the rows are targets for a
 // later one, and the countdown is named.
-test('a due rebalance shows the next scheduled trades', async ({ page }) => {
+for (const action of ['add', 'sell']) {
+// A confirmed partial fill persists its actual size and cost; opening the form writes nothing.
+test(`records a confirmed ${action} fill and reads the position back after reload`, async ({ page }) => {
+  let stored = [{ ticker: 'AAPL', shares: 60, entry_price: 91.25, entry_date: '2026-08-28' }]
+  let writes = 0
+  await page.route(`**/desk/holdings`, route => {
+    if (route.request().method() === 'PUT') {
+      stored = route.request().postDataJSON()
+      writes += 1
+    }
+    return route.fulfill({ json: { holdings: stored } })
+  })
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -697,7 +709,7 @@ test('a due rebalance shows the next scheduled trades', async ({ page }) => {
       rows: [
         {
           ticker: 'AAPL',
-          action: 'add',
+          action,
           in_book: true,
           grade: 'A',
           grade_live: 'A',
@@ -731,7 +743,42 @@ test('a due rebalance shows the next scheduled trades', async ({ page }) => {
   await page.goto('/#desk')
   await expect(page.getByText('Next scheduled trades')).toBeVisible()
   await expect(page.getByText('in 1 trading days')).toBeVisible()
+  await page.getByRole('button', { name: 'record fill', exact: true }).click()
+  expect(writes).toBe(0)
+  const form = page.getByRole('form', { name: 'Record AAPL fill' })
+  await expect(form.getByLabel('Filled shares')).toHaveValue('')
+  await expect(form.getByLabel('Average fill price')).toHaveValue('')
+  await form.getByLabel('Filled shares').fill('6.5')
+  await form.getByLabel('Average fill price').fill('98.76')
+  if (action === 'sell') {
+    await form.getByLabel('Filled shares').fill('80')
+    await form.getByRole('button', { name: 'Save confirmed fill' }).click()
+    await expect(page.getByText('Filled shares exceed the recorded position. Reconcile your positions first.')).toBeVisible()
+    expect(writes).toBe(0)
+    await form.getByLabel('Filled shares').fill('6.5')
+  }
+  await form.getByRole('button', { name: 'Save confirmed fill' }).click()
+  await expect(form).not.toBeVisible()
+  expect(writes).toBe(1)
+  const expectedShares = action === 'add' ? 66.5 : 53.5
+  expect(stored[0].shares).toBe(expectedShares)
+  expect(stored[0].entry_price).toBeCloseTo(action === 'add' ? (60 * 91.25 + 6.5 * 98.76) / 66.5 : 91.25, 6)
+  // The shell's unrelated draft conversation is ephemeral; only the holdings persist here.
+  await page.evaluate(() => localStorage.clear())
+  await page.reload()
+  await page.getByRole('button', { name: 'edit my positions' }).click()
+  await expect(page.locator(`input[value="${expectedShares}"]`)).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+}
+
+// A failed holdings read must not masquerade as an empty account that can be overwritten.
+test('withholds position editing when existing holdings cannot be loaded', async ({ page }) => {
+  await page.route('**/desk/holdings', route => route.fulfill({ status: 503, json: { detail: 'unavailable' } }))
+  await page.goto('/#desk')
+  await expect(page.getByRole('alert')).toContainText('Your positions could not be loaded.')
+  await expect(page.getByRole('button', { name: 'edit my positions' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'record fill', exact: true })).toHaveCount(0)
 })
 
 // A live drill-down must stay coherent as the candle moves: when the

@@ -150,24 +150,23 @@ const TrendUsd = ({ value }: { value: number }) => {
 const shortDate = (iso: string) =>
   new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 
-// The positions after the person has done what a row says, at the price
-// and size on the row. A buy opens the name, an add averages into it, a
-// trim takes shares off, a sell closes it. They edit the price afterward
-// if their fill differed.
+// Apply only the actual shares and average fill price confirmed from the broker.
 const afterTrade = (holdings: DeskHolding[], r: DeskMineRow, price: number, qty: number): DeskHolding[] => {
+  if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(qty) || qty <= 0) {
+    throw new Error('Enter positive filled shares and average fill price.')
+  }
   const rest = holdings.filter((h) => h.ticker !== r.ticker)
   const mine = holdings.find((h) => h.ticker === r.ticker)
-  if (r.action === 'sell') return rest
-  if (r.action === 'trim') {
-    if (!mine || mine.shares - qty <= 0) return rest
+  if (r.action === 'sell' || r.action === 'trim') {
+    if (!mine || qty > mine.shares) throw new Error('Filled shares exceed the recorded position. Reconcile your positions first.')
+    if (mine.shares === qty) return rest
     return [...rest, { ...mine, shares: mine.shares - qty }]
   }
-  if (r.action === 'add' && mine) {
+  if (mine) {
     const shares = mine.shares + qty
     const entry = (mine.shares * mine.entry_price + qty * price) / shares
-    return [...rest, { ...mine, shares, entry_price: Math.round(entry * 100) / 100 }]
+    return [...rest, { ...mine, shares, entry_price: entry }]
   }
-  if (qty <= 0) return holdings
   return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: today() }]
 }
 
@@ -592,9 +591,9 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         is your call to keep or close, not a sell instruction — and how many shares.
       </li>
       <li>
-        <b>Buy at the open</b> with a market order; sells fill at the close of the session that executes them (the one
-        after the session that decides them). When a
-        trade is placed, click <b>done</b> on its row and your positions update.
+        <b>Execution timing:</b> the strategy models buys at the next open and scheduled sells at the next close.
+        Your broker's actual fills can differ. After a fill, choose <b>record fill</b> and enter the filled shares
+        and average price. An order being placed does not update your position.
       </li>
       <li>
         <b>Selling:</b> at a rebalance a name is dropped when its grade falls to C or below. The footer shows the
@@ -658,6 +657,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
   const [paperLive, setPaperLive] = useState<DeskPaperLive | null>(null)
   const [holdings, setHoldings] = useState<DeskHolding[]>([])
+  const [holdingsReady, setHoldingsReady] = useState(false)
+  const [holdingsError, setHoldingsError] = useState('')
   const [rows, setRows] = useState<DeskMineRow[]>([])
   const [liveGrades, setLiveGrades] = useState<Record<string, DeskLiveGrade>>({})
   const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
@@ -672,6 +673,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [autopsy, setAutopsy] = useState(false)
   const [marking, setMarking] = useState<string | null>(null)
 
+  // Save a confirmed position change and retain the form when persistence fails.
   const save = async (next: DeskHolding[]) => {
     try {
       setHoldings(await putDeskHoldings(userId, next))
@@ -735,13 +737,21 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   }, [userId])
 
   useEffect(() => {
+    let alive = true
+    setHoldingsReady(false)
     void (async () => {
       try {
-        setHoldings(await getDeskHoldings(userId))
+        const result = await getDeskHoldings(userId)
+        if (alive) {
+          setHoldings(result)
+          setHoldingsReady(true)
+          setHoldingsError('')
+        }
       } catch {
-        // none saved yet
+        if (alive) setHoldingsError('Your positions could not be loaded. Reload the page to retry; position editing is unavailable until they load.')
       }
     })()
+    return () => { alive = false }
   }, [userId])
 
   useEffect(() => {
@@ -872,7 +882,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                 />
                 show hypothetical stops
               </label>
-              {canWrite ? (
+              {canWrite && holdingsReady ? (
                 <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
                   {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
                 </button>
@@ -886,7 +896,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               Since the last plan: {intraday.changed.join(' · ')}
             </p>
           )}
-          {canWrite && editing && (
+          {holdingsError && <p role="alert" className="mb-2 text-xs text-[#b42318]">{holdingsError}</p>}
+          {canWrite && holdingsReady && editing && (
             <Positions
               holdings={holdings}
               error={saveError}
@@ -895,7 +906,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               }}
             />
           )}
-          {canWrite && holdings.length === 0 && !editing && (
+          {canWrite && holdingsReady && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
           <table className="w-full text-sm">
@@ -920,14 +931,19 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                   open={openReason === r.ticker}
                   onReason={() => setOpenReason(openReason === r.ticker ? null : r.ticker)}
                   onOpenName={() => setOpenName(r.ticker)}
-                  marking={marking === r.ticker}
+                  marking={marking !== null}
                   onDone={
-                    canWrite && rebalanceDue
-                      ? async () => {
-                          const { price, qty } = sizing(r, live.quotes[r.ticker], equity)
+                    canWrite && holdingsReady && rebalanceDue
+                      ? async (price, qty) => {
                           setMarking(r.ticker)
-                          await save(afterTrade(holdings, r, price, qty))
-                          setMarking(null)
+                          try {
+                            return await save(afterTrade(holdings, r, price, qty))
+                          } catch (err) {
+                            setSaveError(err instanceof Error ? err.message : 'The fill was not recorded.')
+                            return false
+                          } finally {
+                            setMarking(null)
+                          }
                         }
                       : undefined
                   }
@@ -937,15 +953,15 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           </table>
           {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
           <p className="mt-2 text-xs text-[#6e6e73]">
-            Placed a trade on Schwab? Click <b>done</b> on its row to record it at the price shown (edit if your fill
-            differed). Names run in grade order, best first. Grades recompute each evening; the technical and value
+            After your broker confirms a fill, click <b>record fill</b> and enter its actual shares and average price.
+            Record each fill once; partial sells leave the remaining shares held. Names run in grade order, best first. Grades recompute each evening; the technical and value
             reads re-check them every 15 minutes at the live price, so a grade can move within the day. The book
             re-sorts at the next rebalance
             {rows.find((r) => r.until_rebalance !== null)?.until_rebalance != null
               ? ` (in ${rows.find((r) => r.until_rebalance !== null)?.until_rebalance} trading days)`
               : ' (about every 20 trading days)'}
             , when a name that falls to C or below is dropped; A+ names stay at full weight, A at three quarters,
-            eligible B at half. Buy at the open with a market order. Stops are off: tested variants reduced performance.
+            eligible B at half. The strategy models buys at the next open; your execution price may differ. Stops are off: tested variants reduced performance.
           </p>
         </section>
       )}
@@ -1164,13 +1180,16 @@ interface RowProps {
   onReason: () => void
   onOpenName: () => void
   marking: boolean
-  onDone?: () => Promise<void>
+  onDone?: (price: number, qty: number) => Promise<boolean>
 }
 
 // One name: what to do, how much for this account, the price now against
 // the close and the person's own cost, the grade, when it leaves, and why.
 // The "why" reads in plain words first; the analysts' numbers are inside.
 const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marking, onDone }: RowProps) => {
+  const [recording, setRecording] = useState(false)
+  const [filledShares, setFilledShares] = useState('')
+  const [fillPrice, setFillPrice] = useState('')
   const { price, qty } = sizing(r, quote, equity)
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
@@ -1202,13 +1221,32 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         {r.action !== 'hold' && r.action !== 'uncovered' && r.action !== 'blocked' && onDone && (
           <button
             type="button"
-            onClick={() => void onDone()}
+            onClick={() => setRecording(!recording)}
             disabled={marking}
-            title="I have placed this trade on my broker: record it in my positions at the price shown"
+            title="Record actual filled shares and average price confirmed by your broker"
             className="ml-1 text-xs text-[#0071e3] hover:underline disabled:text-[#6e6e73]"
           >
-            {marking ? 'saving' : 'done'}
+            {recording ? 'cancel fill' : 'record fill'}
           </button>
+        )}
+        {recording && onDone && (
+          <form aria-label={`Record ${r.ticker} fill`} className="mt-2 space-y-2" onSubmit={async (event) => {
+            event.preventDefault()
+            if (marking) return
+            if (await onDone(Number(fillPrice), Number(filledShares))) {
+              setRecording(false)
+              setFillPrice('')
+              setFilledShares('')
+            }
+          }}>
+            <label className="block text-xs">Filled shares
+              <input aria-label="Filled shares" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={filledShares} onChange={event => setFilledShares(event.target.value)} />
+            </label>
+            <label className="block text-xs">Average fill price ($)
+              <input aria-label="Average fill price" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={fillPrice} onChange={event => setFillPrice(event.target.value)} />
+            </label>
+            <button type="submit" disabled={marking} className="text-xs text-[#0071e3] disabled:text-[#6e6e73]">{marking ? 'saving' : 'Save confirmed fill'}</button>
+          </form>
         )}
         {liveDrop && (
           <div className="mt-0.5 text-xs font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">

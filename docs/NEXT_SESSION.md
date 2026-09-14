@@ -3,6 +3,24 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — confirmed fills instead of estimated "done" positions
+
+The dashboard previously updated positions at its suggested quantity and
+displayed price when a person said an order was placed, including deleting
+the entire holding for a sell. It now requires actual filled shares and
+average price in a blank form, makes no write on opening, retains partial
+sells, rejects selling more shares than recorded, and preserves average-cost
+precision on adds. The help and footer distinguish intended execution timing
+from actual broker fills. Holdings-read failures now block editing rather
+than allowing an unread account to be overwritten as an empty one.
+
+VERIFIED: 16 dashboard browser cases passed in 40.1s, including add and
+partial-sell persistence after reload and unavailable holdings; TypeScript
+and production build pass. Persistence in these browser cases uses the
+existing API contract with a stateful fixture, not writes to the user's
+account. No broker order was placed. This remains manual position tracking,
+not a broker-synchronized, idempotent fill ledger. Deployment pending.
+
 ## 2026-09-13 — FOMC boundary correction (after `c68fb498`)
 
 The incoming implementation mapped every future decision to `len(panel)`;

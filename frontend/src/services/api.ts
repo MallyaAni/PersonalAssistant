@@ -2167,11 +2167,12 @@ export interface DeskIntraday {
   changed: string[];
 }
 
+// Fail explicitly when positions cannot be read; missing access is not an empty account.
 export const getDeskHoldings = async (userId: string): Promise<DeskHolding[]> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/holdings`,
   );
-  if (!response.ok) return [];
+  if (!response.ok) throw new Error('Your positions could not be loaded.');
   return ((await response.json()) as { holdings: DeskHolding[] }).holdings;
 };
 
