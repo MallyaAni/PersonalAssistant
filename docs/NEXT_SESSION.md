@@ -3,6 +3,45 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — final dashboard deployment and FOMC evaluation
+
+VERIFIED deployment: `e0b53de0`, through `scripts/deploy.sh --wait-post`, exit 0.
+Unit gate **3439 passed, 19 skipped, 82 warnings in 141.87s**; real-model
+routing gate **100 passed in 507.30s**. Marker:
+`2026-09-14T00:53:20Z e0b53de0 ok (cheap)`. The deployed calendar and simulator
+hashes match their source. Container probe returns `[5,4,3]` to September 16
+and `[30,30,30]` to December 16 for September 9–11.
+
+VERIFIED dashboard: public asset `/assets/index-B05YbQv6.js` renders 93 grades
+and AAOI's drawer with captured production GET responses, no page/console/
+network errors, and mobile content contained at 340/340 pixels. Operator
+session is mocked in this replay; authenticated production browser behavior
+remains UNVERIFIED. Confirmed-fill interactions and reload persistence passed
+the 16-case local browser suite with a stateful API fixture, including partial
+sells; a later oversized-sell assertion also passed. No real account writes
+or orders were used for verification.
+
+VERIFIED research: both pinned runs completed at source `35ebc0f9`, whose CLI,
+event module and simulator hashes match the executed files. **48 unique
+comparisons**, four windows, two trigger variants, two cost assumptions, and
+three inception dates. See [full result and assumptions](research/fomc-window-evaluation-2026-09-13.md)
+and the accompanying JSON. The asof-bound CLI is committed and was run from
+the isolated research checkout; it is newer than the deployed backend image.
+The dashboard source is identical in `e0b53de0` and `35ebc0f9`.
+
+Judgment: the three-session conditional candidate improved the May 22–Sep 11
+return by 0.35 pp at 10 bp costs and 0.25 pp at 25 bp, with a shallower
+drawdown, but reduced return over 2021–2026. There are only two completed
+meetings under Warsh, or one after the June guidance announcement. This is
+not sufficient evidence of a superior automatic trading rule. Live FOMC
+order execution is not enabled. No previous historical decision was rewritten.
+
+Still open: publish corrected earnings only after resolving source/basis
+validation; actual-model grade-change explanations need structural checks;
+broader asof propagation and remaining same-candle retry/coverage gaps; a
+proper fill ledger and live FOMC lifecycle would need additional implementation
+and forward validation. The dashboard is improved and live, not perfect.
+
 ## 2026-09-13 — pin every FOMC research input to the requested date
 
 The desk passes `asof` to its primary loaders, but the nested expectations-gap
