@@ -1,13 +1,13 @@
-"""Train CPU-only neural and sequential RL research challengers.
+"""Train explicitly selected CPU/CUDA neural and sequential RL challengers.
 
 This is a price/calendar pilot, not a replay of the full adopted desk. It uses
 today's book membership, adjusted total-return prices, fractional research
 units and next-close execution. It cannot establish investable superiority.
-No API calls, broker changes, production configuration or GPU use occur.
+No API calls, broker changes or production configuration changes occur.
+CPU remains the default; CUDA is opt-in and must be available.
 """
 
 import argparse
-import copy
 import hashlib
 import json
 from datetime import date
@@ -33,7 +33,36 @@ def parser():
     p.add_argument("--epochs", type=int, default=15)
     p.add_argument("--episodes", type=int, default=120)
     p.add_argument("--verify", action="store_true")
+    p.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     return p
+
+
+# Refuse an unavailable accelerator rather than silently changing the experiment.
+def resolve_device(name):
+    if name not in ("cpu", "cuda"):
+        raise ValueError("Device must be cpu or cuda")
+    if name == "cuda" and not torch.cuda.is_available():
+        raise ValueError("CUDA requested but unavailable")
+    return torch.device(name)
+
+
+# Preserve portable weights independently of the device used for optimization.
+def portable_state(model):
+    return {
+        name: value.detach().cpu().clone() for name, value in model.state_dict().items()
+    }
+
+
+# Run inference on the network's explicit device and return NumPy accounting inputs.
+def predict(model, values):
+    device = next(model.parameters()).device
+    with torch.no_grad():
+        return (
+            model(torch.as_tensor(values, dtype=torch.float32, device=device))
+            .squeeze(-1)
+            .cpu()
+            .numpy()
+        )
 
 
 # Fit feature normalization exclusively on the requested training observations.
@@ -49,7 +78,8 @@ def return_network(width):
 
 
 # Fit a small stock-return network; select its epoch using 2024 labels only.
-def neural(data, train, validation, seed, epochs, output):
+def neural(data, train, validation, seed, epochs, output, device="cpu"):
+    device = resolve_device(str(device))
     torch.manual_seed(seed)
     labels = np.full(data.prices.shape, np.nan)
     with np.errstate(all="ignore"):
@@ -58,18 +88,21 @@ def neural(data, train, validation, seed, epochs, output):
     val_ok = data.eligible[validation] & np.isfinite(labels[validation])
     raw = data.features[train][train_ok]
     mean, scale = normalization(raw)
-    x = torch.tensor(np.clip((raw - mean) / scale, -5, 5), dtype=torch.float32)
-    y = torch.tensor(labels[train][train_ok], dtype=torch.float32)
+    x = torch.tensor(
+        np.clip((raw - mean) / scale, -5, 5), dtype=torch.float32, device=device
+    )
+    y = torch.tensor(labels[train][train_ok], dtype=torch.float32, device=device)
     vx = torch.tensor(
         np.clip((data.features[validation][val_ok] - mean) / scale, -5, 5),
         dtype=torch.float32,
+        device=device,
     )
-    vy = torch.tensor(labels[validation][val_ok], dtype=torch.float32)
-    model = return_network(x.shape[1])
+    vy = torch.tensor(labels[validation][val_ok], dtype=torch.float32, device=device)
+    model = return_network(x.shape[1]).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.001)
     best, best_state, best_epoch = float("inf"), None, None
     for epoch in range(epochs):
-        for batch in torch.randperm(len(x)).split(2048):
+        for batch in torch.randperm(len(x), device=device).split(2048):
             loss = nn.functional.mse_loss(model(x[batch]).squeeze(-1), y[batch])
             optimizer.zero_grad()
             loss.backward()
@@ -79,16 +112,13 @@ def neural(data, train, validation, seed, epochs, output):
         if score < best:
             best, best_state, best_epoch = (
                 score,
-                copy.deepcopy(model.state_dict()),
+                portable_state(model),
                 epoch + 1,
             )
     model.load_state_dict(best_state)
     model.eval()
     transformed = np.nan_to_num(np.clip((data.features - mean) / scale, -5, 5))
-    with torch.no_grad():
-        predicted = (
-            model(torch.tensor(transformed, dtype=torch.float32)).squeeze(-1).numpy()
-        )
+    predicted = predict(model, transformed)
     torch.save(
         {"state": best_state, "mean": mean.tolist(), "scale": scale.tolist()},
         output / f"neural-{seed}.pt",
@@ -121,7 +151,9 @@ def rl_chooser(data, model, mean, scale):
     def choose(t, holdings, cash):
         state = gp.policy_state(data, t, holdings, cash, mean, scale)
         with torch.no_grad():
-            logits, _ = model(torch.tensor(state))
+            logits, _ = model(
+                torch.tensor(state, device=next(model.parameters()).device)
+            )
         action = int(logits.argmax())
         return gp.actions(data, t)[action], gp.ACTION_NAMES[action]
 
@@ -129,11 +161,12 @@ def rl_chooser(data, model, mean, scale):
 
 
 # Train genuine sampled-action policy gradients with undiscounted net log wealth.
-def reinforcement(data, train, validation, seed, episodes, output):
+def reinforcement(data, train, validation, seed, episodes, output, device="cpu"):
+    device = resolve_device(str(device))
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     mean, scale = normalization(data.market[train])
-    model = Allocator(data.market.shape[1] + 1 + len(gp.ACTION_NAMES))
+    model = Allocator(data.market.shape[1] + 1 + len(gp.ACTION_NAMES)).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     best, best_state, best_episode = -float("inf"), None, None
     episode_steps = 26
@@ -145,7 +178,9 @@ def reinforcement(data, train, validation, seed, episodes, output):
         holdings, cash = np.zeros(data.prices.shape[1]), 1.0
         logps, values, rewards = [], [], []
         for t in range(first, first + 5 * episode_steps, 5):
-            state = torch.tensor(gp.policy_state(data, t, holdings, cash, mean, scale))
+            state = torch.tensor(
+                gp.policy_state(data, t, holdings, cash, mean, scale), device=device
+            )
             logits, value = model(state)
             distribution = torch.distributions.Categorical(logits=logits)
             action = distribution.sample()
@@ -157,7 +192,7 @@ def reinforcement(data, train, validation, seed, episodes, output):
             values.append(value)
             rewards.append(100 * reward)
         returns = torch.tensor(
-            np.cumsum(rewards[::-1])[::-1].copy(), dtype=torch.float32
+            np.cumsum(rewards[::-1])[::-1].copy(), dtype=torch.float32, device=device
         )
         values = torch.stack(values)
         advantage = returns - values.detach()
@@ -180,7 +215,7 @@ def reinforcement(data, train, validation, seed, episodes, output):
             if score > best:
                 best, best_state, best_episode = (
                     score,
-                    copy.deepcopy(model.state_dict()),
+                    portable_state(model),
                     episode + 1,
                 )
     model.load_state_dict(best_state)
@@ -212,7 +247,8 @@ def fixed_chooser(data, action=None, predictions=None, benchmark=False):
 
 
 # Prove saved models reproduce every recorded learned-policy account curve.
-def verify_artifacts(data, test, output):
+def verify_artifacts(data, test, output, device="cpu"):
+    device = resolve_device(str(device))
     manifest = json.loads((output / "manifest.json").read_text())
     recorded = json.loads((output / "results.json").read_text())["results"]
     for name, values in (("price", data.prices), ("feature", data.features)):
@@ -226,16 +262,16 @@ def verify_artifacts(data, test, output):
             )
             mean, scale = np.asarray(saved["mean"]), np.asarray(saved["scale"])
             if kind == "neural":
-                model = return_network(data.features.shape[-1])
+                model = return_network(data.features.shape[-1]).to(device)
                 model.load_state_dict(saved["state"])
                 transformed = np.nan_to_num(
                     np.clip((data.features - mean) / scale, -5, 5)
                 )
-                with torch.no_grad():
-                    predicted = model(torch.tensor(transformed, dtype=torch.float32))
-                chooser = fixed_chooser(data, predictions=predicted.squeeze(-1).numpy())
+                chooser = fixed_chooser(data, predictions=predict(model, transformed))
             else:
-                model = Allocator(data.market.shape[1] + 1 + len(gp.ACTION_NAMES))
+                model = Allocator(data.market.shape[1] + 1 + len(gp.ACTION_NAMES)).to(
+                    device
+                )
                 model.load_state_dict(saved["state"])
                 chooser = rl_chooser(data, model, mean, scale)
             for cost in (0.001, 0.003):
@@ -255,6 +291,7 @@ def verify_artifacts(data, test, output):
             {
                 "verified_frozen_model_curves": checked,
                 "training_revision": manifest["arguments"]["revision"],
+                "replay_device": str(device),
             }
         )
     )
@@ -263,6 +300,7 @@ def verify_artifacts(data, test, output):
 # Write one immutable research directory containing models, curves and provenance.
 def main():
     args = parser().parse_args()
+    device = resolve_device(args.device)
     if min(args.seeds, args.epochs, args.episodes) < 1:
         raise ValueError("Positive training bounds required")
     output = Path(args.output)
@@ -279,11 +317,13 @@ def main():
     if not all(len(x) for x in (train, val_labels, validation, test)):
         raise ValueError("A chronological split has no usable observations")
     if args.verify:
-        verify_artifacts(data, test, output)
+        verify_artifacts(data, test, output, device)
         return
     manifest = {
         "arguments": vars(args),
-        "device": "cpu",
+        "device": str(device),
+        "cuda": torch.version.cuda if device.type == "cuda" else None,
+        "gpu": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
         "torch": torch.__version__,
         "numpy": np.__version__,
         "tickers": list(data.tickers),
@@ -322,12 +362,14 @@ def main():
         flush=True,
     )
     for seed in range(args.seeds):
-        predictions, info = neural(data, train, val_labels, seed, args.epochs, output)
+        predictions, info = neural(
+            data, train, val_labels, seed, args.epochs, output, device
+        )
         training[f"neural-{seed}"] = info
         contenders[f"neural-{seed}"] = fixed_chooser(data, predictions=predictions)
         print(f"Neural seed={seed}: {info}", flush=True)
         chooser, info = reinforcement(
-            data, train, validation, seed, args.episodes, output
+            data, train, validation, seed, args.episodes, output, device
         )
         training[f"rl-{seed}"] = info
         contenders[f"rl-{seed}"] = chooser
