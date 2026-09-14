@@ -25,6 +25,21 @@ fewer, with the same 604px → 298px ranking position. These settled counts
 supersede the early-loading counts above. Final full browser run: 30 passed
 (1.2m); settled density/cash/mobile workflow: 1 passed (5.5s).
 
+VERIFIED deployed UI checkpoint `d42b1fd0` (initial compact commit `062bd6d6`).
+Both shipped through normal `scripts/deploy.sh --wait-post`; frontend-only
+selection rebuilt the gateway and ran the cheap post check without rerunning
+unchanged backend/model gates. Final marker:
+`2026-09-14T14:00:31Z d42b1fd0 ok (cheap)`. Public asset `index-D7Q0e5rY.js`:
+17 successful API responses, 93 grades, five inflation rows, zero-cash preview,
+cash values loaded, missing FOMC status, source details and manual-buy cancellation
+verified. No console/page/network errors. Target content is fully visible on
+desktop (934/934px) and mobile (1320/1320px); account width 356/356px. The default
+desktop screenshot shows all ten leading names in its first 1100px-high viewport.
+Temporary browser credentials and remote diagnostic helpers were removed.
+Logs: `/tmp/desk-compact-final-deploy.log` on Spark and
+`/private/tmp/desk-compact-final-public-proof.log` on Mac. No trading code or
+broker positions changed; the FOMC catch-up gap below remains unresolved.
+
 The user's market observation prompted a read-only exposure audit. At
 2026-09-14T13:49:50Z, paper cash was 58.87%, the paper account was down 1.92%
 on the day, and the evening weights implied 76.40% cash. These are different
