@@ -10,8 +10,11 @@ optional. Added broker fill activity separately from planned changes, preserving
 partial fills and distinguishing unavailable history from no fills. Historical
 receipts no longer repeat absent timing and drift fields.
 
-Validation: 28 focused backend tests, 33 browser workflows and 6 real DeepSeek
-autopsy functional tests passed. Trading policy and broker orders are unchanged.
+Validation: 29 focused backend tests, 33 browser workflows, two final precision
+cases and 6 real DeepSeek autopsy functional tests passed. Deployed `17d9f8d9`
+through the normal script after 3504 unit and 100 routing checks; public Chrome
+verified all 93 grades, the review HTTP 200, execution history and mobile layout
+with zero blocking errors. Trading policy and broker orders are unchanged.
 
 ## 2026-09-14 — Compact trading decisions
 

@@ -19,14 +19,35 @@ FILL activity by execution date, keeps partial executions and identifies a
 truncated 100-row page. Missing history does not erase the account or imply
 no fills. Archived receipts omit missing timing/drift fields.
 
-VERIFIED pre-deploy: 28 focused backend tests, 33 browser workflows (57.4s),
+VERIFIED pre-deploy: 29 focused backend tests (1.28s), 33 browser workflows (57.4s),
 6 real DeepSeek autopsy tests (117.22s), TypeScript and Vite build.
 The browser tests cover independent target expiry, zero versus missing targets,
 empty versus unavailable broker history, document review and manual recording.
-Deployment/public acceptance is pending until the receipt below is added.
+The final precision change also passed two expiry/percentage browser cases
+(6.2s) and TypeScript. Tiny positive weights display <0.1%, not zero.
 No broker mutations were performed. FOMC catch-up remains unresolved; restoration
 still follows calendar/cash, not a fresh technical all-clear. The UI says so.
 Research allocations have no demonstrated superiority in forward net returns.
+
+VERIFIED deployed application checkpoint `17d9f8d9` (backend `a3661769`).
+The first deploy was stopped before shipping to include the network-timeout
+case; the final normal backend deploy passed 3504 unit tests (19 skipped,
+140.16s) and 100 real routing cases (507.65s), then backed up and restarted.
+The precision-only deploy used the script's frontend path. Final marker:
+`2026-09-14T15:00:18Z 17d9f8d9 ok (cheap)`. No gate was bypassed.
+Running market API and broker-adapter hashes exactly match the source.
+
+Public Chrome acceptance: asset `/assets/index-Bz7YdVN7.js`, 18 successful
+API responses, all 93 grades, five inflation rows, zero-cash preview, review
+HTTP 200 with the no-trading-documents response, known/missing receipt metadata,
+current percentages and manual-buy cancellation. No page, console or network
+errors. Board content fits on desktop (958/958px) and mobile (1376/1376px);
+account width 356/356px. Paper execution showed zero open orders and no fills
+for September 14 at the observed snapshot. The prior 10:58 ET public screenshot
+also shows actual nonzero research percentages alongside dated nightly analysis.
+Temporary credentials were removed from Mac, host and container after acceptance.
+Logs: `/tmp/desk-finish-final-deploy.log`, `/tmp/desk-precision-deploy.log`
+on Spark; `/private/tmp/desk-precision-public-proof.log` on Mac.
 
 ## 2026-09-14 — Compact trading dashboard and FOMC diagnosis
 
