@@ -16,7 +16,9 @@ export const EconomicContext = ({ data }: { data?: DeskEconomics | null }) => {
           <td>{fact.period?.slice(0, 7) ?? 'Unavailable'}</td><td>{change(fact.month_change_pct)}</td><td>{change(fact.year_change_pct)}</td><td>{change(fact.previous_year_change_pct)}</td>
         </tr>)}</tbody>
       </table></div>
-      {data.assessment && !stale && <p className="mt-2 text-xs">{data.model ?? 'Model'} assessment: {data.assessment.pressure} inflation pressure. Evidence: {data.assessment.evidence_ids.join(', ') || 'insufficient available observations'}.</p>}
+      {data.assessment?.status === 'model_assessment' && !stale
+        ? <p className="mt-2 text-xs">{data.model ?? 'Model'} assessment: {data.assessment.pressure} inflation pressure. Evidence: {data.assessment.evidence_ids.join(', ') || 'insufficient available observations'}.</p>
+        : <p className="mt-2 text-xs">{stale ? 'Model assessment withheld because collection is stale.' : 'Model assessment unavailable; no model conclusion is shown.'}</p>}
     </>}
     <p className="mt-2 text-xs text-[#6e6e73]">Changes use seasonally adjusted indexes and current revisions. Release timestamps and consensus expectations are unavailable, so this does not measure a release surprise. Observation months older than 75 days and collections older than 36 hours are flagged. This layer does not change grades, exposure or orders.</p>
   </section>

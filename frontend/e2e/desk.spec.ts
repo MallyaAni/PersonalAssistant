@@ -426,7 +426,7 @@ test.beforeEach(async ({ page }) => {
 // The page must lead with the numbers a person can trust or act on: the
 // practice account, the rules against the market, the exposure, and the
 // warnings — not the analysts' tables.
-// Confirm cash explicitly and discard the preview whenever the budget changes.
+// Keep economic facts distinguishable from bounded model interpretation.
 test('separates dated inflation facts from research-only model judgement', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
