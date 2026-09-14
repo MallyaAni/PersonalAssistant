@@ -256,7 +256,10 @@ def _check_schema() -> dict[str, Any]:
         "additionalProperties": False,
         "required": ["consistency"],
         "properties": {
-            "consistency": {"type": "string", "enum": ["consistent", "contradicts"]},
+            "consistency": {
+                "type": "string",
+                "enum": ["consistent", "contradicts", "uncertain"],
+            },
         },
     }
 
@@ -347,18 +350,18 @@ class DeskNarrator:
             return None
 
     # Whether the brief contradicts the facts the desk measured. A
-    # judgement, so it is a model decision into a two-value schema; a check
-    # that fails to answer never discards a good brief. The facts it judges
+    # judgement, so it is a model decision into a two-value schema. Publication
+    # requires two valid consistency approvals; an unavailable check is unknown.
+    # The facts it judges
     # against are the clean stances and measurements read from the evidence
     # in code, not the raw prose a model could not reliably adjudicate. The
     # engine is not strictly deterministic at temperature 0, so one call
-    # can say "contradicts" on a good brief; a brief is dropped only when a
-    # majority of three independent calls say so, which a genuinely wrong
-    # brief produces and a right one almost never does.
+    # can disagree between calls; the bounded majority is a consistency check,
+    # not proof that the model cannot be wrong.
     def _contradicts(self, text: str, brief: DeskBrief) -> bool:
-        """Return whether the brief contradicts the evidence."""
+        """Return whether the brief lacks majority approval against its evidence."""
         if self.writer is None:
-            return False
+            return True
         brief_lines = (
             f"stance: {brief.stance}\n"
             f"verdict: {brief.verdict}\n"
@@ -366,7 +369,7 @@ class DeskNarrator:
             f"risks: {brief.risks}\n"
             f"watch: {brief.watch}"
         )
-        disagree = 0
+        consistent = 0
         for _ in range(3):
             try:
                 result = self.writer.chat(
@@ -375,8 +378,7 @@ class DeskNarrator:
                         {
                             "role": "user",
                             "content": (
-                                f"FACTS:\n{_check_facts(text)}\n\n"
-                                f"BRIEF:\n{brief_lines}"
+                                f"FACTS:\n{_check_facts(text)}\n\nBRIEF:\n{brief_lines}"
                             ),
                         },
                     ],
@@ -385,11 +387,11 @@ class DeskNarrator:
                     0.0,
                 )
                 payload = json.loads(result["content"])
-                if str(payload.get("consistency") or "consistent") == "contradicts":
-                    disagree += 1
+                if payload.get("consistency") == "consistent":
+                    consistent += 1
             except Exception:
                 continue
-        return disagree >= 2
+        return consistent < 2
 
     # Write the read for a name in a report, or None when the runtime is
     # away or the answer comes back empty.

@@ -135,3 +135,18 @@ async def test_a_brief_that_contradicts_the_evidence_is_dropped(narrator):
         watch="A bearish sentiment stance would drop the grade.",
     )
     assert narrator._contradicts(evidence, bad) is True
+
+
+# Matching an analyst's stance cannot excuse a false supporting measurement.
+async def test_correct_analyst_label_does_not_approve_a_reversed_fact(narrator):
+    from backend.agents.trading.desk.narrative import DeskBrief
+
+    evidence = "fundamental analyst: stance +1; revenue_yoy +0.25."
+    brief = DeskBrief(
+        stance=OWN,
+        verdict="Fundamentals support the grade.",
+        reasoning="The fundamental analyst is bullish because revenue fell year over year.",
+        risks="A weaker future release could change the outlook.",
+        watch="Watch the next reported revenue growth rate.",
+    )
+    assert narrator._contradicts(evidence, brief) is True

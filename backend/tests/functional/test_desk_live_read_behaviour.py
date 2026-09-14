@@ -79,6 +79,8 @@ def test_live_read_covers_horizons_and_levels(llm):
     # weekly turn, and the read must say what it argues.
     assert "engulf" in low, read
     assert re.search(r"(revers|turn|bearish|lower|down)", low) is not None, read
+    assert "monthly chart" not in low, read
+    assert "hourly chart" not in low, read
 
 
 # The real model preserves converted distances from the actual feature-to-text path.

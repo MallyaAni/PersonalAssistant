@@ -14,7 +14,7 @@ import numpy as np
 from backend.market.calendar import _fomc_distances, fomc_decisions
 from backend.market.panel import Panel
 
-VERSION = "fomc-3-session-weakness/1"
+VERSION = "fomc-3-session-weakness/2"
 GUIDANCE_CHANGE = date(2026, 6, 18)
 PRE_SESSIONS = 3
 REDUCED = 0.5

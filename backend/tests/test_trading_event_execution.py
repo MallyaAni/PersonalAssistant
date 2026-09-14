@@ -111,6 +111,25 @@ def test_restoration_constraints_preserve_remaining_intent(tmp_path):
     assert state.event_cycle
 
 
+# Exhausted restoration cash releases the cycle and records unbought shares.
+def test_unaffordable_restoration_releases_cycle_without_claiming_a_fill(tmp_path):
+    orders, state, _ = event_execution.plan(
+        "2026-09-11", paper.PaperState(), {"AAA": 100}, {"AAA": 100}, 0, policy()
+    )
+    state = persist(tmp_path, state, orders, "2026-09-11")
+    state = receipt(tmp_path, state, "filled", 50)
+    orders, state, what = event_execution.plan(
+        "2026-09-16", state, {"AAA": 50}, {"AAA": 100}, 0, policy(1)
+    )
+    paper.save_state(tmp_path, state)
+    saved = paper.load_state(tmp_path)
+    assert not orders
+    assert not saved.event_cycle
+    assert "cash-limited" in what
+    assert saved.event_outcomes[-1]["unrestored"] == {"AAA": 50}
+    assert event_execution.filled(saved, "buy") == {}
+
+
 # A rebound or missing weakness reading cannot unlatch a persisted pre-meeting cut.
 def test_persisted_latch_survives_changed_price_history():
     _, state, _ = event_execution.plan(

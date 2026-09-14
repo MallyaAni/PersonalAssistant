@@ -135,8 +135,8 @@ class ReleaseToneReader:
                 ],
                 self.max_tokens,
                 _schema(),
-                # Greedy: the same release must score the same every time,
-                # or a feature built from it is noise about the model.
+                # Greedy reduces variation but does not guarantee identical scores.
+                # The ingestion pipeline reuses the persisted extraction by accession.
                 0.0,
             )
             payload = json.loads(result["content"])
@@ -151,7 +151,9 @@ class ReleaseToneReader:
                 quarter_end=payload.get("quarter_end"),
                 revenue_usd_m=_opt(payload.get("revenue_usd_m"), 0, 1_000_000),
                 eps_usd=_opt(payload.get("eps_usd"), -1000, 100_000),
-                net_income_usd_m=_opt(payload.get("net_income_usd_m"), -100_000, 1_000_000),
+                net_income_usd_m=_opt(
+                    payload.get("net_income_usd_m"), -100_000, 1_000_000
+                ),
                 gross_margin_pct=_opt(payload.get("gross_margin_pct"), -1000, 100),
             )
         except Exception:

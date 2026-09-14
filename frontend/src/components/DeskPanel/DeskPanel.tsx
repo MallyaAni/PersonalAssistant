@@ -281,7 +281,7 @@ const SummaryStrip = ({
     ...(rulesTotal !== null
       ? [
           {
-            label: 'Stored simulation · under review',
+            label: backtest?.funding_model === 'cash-at-fill-v1' ? 'Cash-limited simulation' : 'Stored simulation · under review',
             value: (
               <>
                 <Trend value={rulesTotal * 100} />
@@ -296,8 +296,9 @@ const SummaryStrip = ({
                 </span>
               </>
             ),
-            note:
-              stats && stats.drawdown !== null
+            note: backtest?.funding_model === 'cash-at-fill-v1'
+              ? 'cash capped after costs; fractional simulated fills, not broker execution'
+              : stats && stats.drawdown !== null
                 ? `legacy simulation permits borrowing without financing costs · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
                 : 'legacy simulation permits borrowing without financing costs; not evidence for current cash-only returns',
           },
@@ -575,8 +576,9 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
           {backtest.label} · as of {shortDate(backtest.asof)} · the practice account is the only live sample
         </p>
       </div>
-      <p className="mb-3 text-xs text-amber-800">Legacy simulation under review: borrowing was permitted without financing costs.
-        These results do not establish the performance of a cash-only account or the current FOMC policy.</p>
+      <p className="mb-3 text-xs text-amber-800">{backtest.funding_model === 'cash-at-fill-v1'
+        ? 'Simulation assumptions: buys fit cash after costs; closing sales cannot fund earlier buys. Fractional fills and immediate use of completed sale proceeds are modeled; settlement delays, bid/ask spreads, market impact and broker rejections are not. Historical inputs and the selected universe can bias results.'
+        : 'Legacy simulation under review: borrowing was permitted without financing costs. These results do not establish the performance of a cash-only account or the current FOMC policy.'}</p>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {cells.map((c) => (
           <div key={c.label} className="rounded-xl bg-[#f5f5f7] px-3 py-2">
@@ -834,7 +836,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const eventPaused = event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
 
   return (
-    <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6">
+    <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6 [&>section]:shrink-0">
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -884,6 +886,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <RegimeBanner regime={latest.regime} />}
 
       {latest && (
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} onOpenName={(t) => setOpenName(t)} />
+      )}
+
+      {latest && (
         <section aria-label="Reading the current picks" className="rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#1d1d1f]">
           <h3 className="font-semibold">A grade ranks evidence; it does not confirm an entry</h3>
           <p className="mt-1">A+ is the highest grade under the current voting rules, not a probability of profit.
@@ -901,13 +907,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
             The reduction lasts through decision day. Paper orders are queued for the next open, even on a green day;
             actual fill times and prices can differ.
-            Restoration is limited to confirmed reductions and available cash. Regular rebalances wait while the event cycle finishes.</p>
+            Restoration is limited to confirmed reductions and available cash. Regular rebalances wait while event orders remain unresolved.
+            If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
           <p className="mt-2">{event
             ? `Decision at the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
+          {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
+            {' '}{Object.entries(event.outcome.unrestored).map(([symbol, qty]) => `${symbol} ${qty} shares unbought`).join(' · ')}.
+            These are unfilled quantities, not restored positions.</p>}
           <p className="mt-2">This automates the paper account. Your manually tracked positions require your own broker orders;
-            the regular target table is not a record of FOMC fills. Performance after {payload.event_policy.evaluation_since} is evaluated separately from the earlier guidance regime.
-            The new regime has a limited sample; these results do not establish optimal timing.</p>
+            the regular target table is not a record of FOMC fills. Performance after the selected {payload.event_policy.evaluation_since} boundary is evaluated separately.
+            This recent period has a limited sample; the split does not establish causation or optimal timing.</p>
         </section>
       )}
 
@@ -1059,15 +1069,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           onClick={() => setDetails(!details)}
           className="self-start text-sm text-[#0071e3] hover:underline"
         >
-          {details ? 'Hide the details' : 'Show the details: practice account and every grade'}
+          {details ? 'Hide the details' : 'Show practice account details'}
         </button>
       )}
 
       {latest && details && <PracticeAccount record={latest.paper} paperLive={paperLive} />}
-
-      {latest && details && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} onOpenName={(t) => setOpenName(t)} />
-      )}
 
       {openName && latest && (
         <NameDetail
@@ -1545,14 +1551,17 @@ const EveryGrade = ({
   latest,
   rows,
   liveGrades,
+  quotes,
   onOpenName,
 }: {
   latest: NonNullable<DeskPayload['latest']>
   rows: DeskMineRow[]
   liveGrades: Record<string, DeskLiveGrade>
+  quotes: DeskLive['quotes']
   onOpenName: (ticker: string) => void
 }) => {
   const [openBrief, setOpenBrief] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
   // Every name is re-graded at the candle: the live grades cover the whole
   // book, the board's rows cover what it carries, and the evening record
   // fills in for a name the candle has not read. Ordered by grade first and
@@ -1579,6 +1588,8 @@ const EveryGrade = ({
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Every grade</h3>
+      <p className="mb-2 text-sm text-[#1d1d1f]">Latest stock rankings · {Object.keys(liveGrades).length} of {grades.length} have unexpired intraday updates.
+        Others use the {latest.session} evening decision. Rankings are not entry confirmations.</p>
       <p className="mb-2 text-xs text-[#6e6e73]">
         {TRIGGER_LEGEND} The number is the analyst&rsquo;s rating, 0 to 100: where the name ranks across the book on
         that analyst&rsquo;s evidence, not its probability of profit. Ordered by grade, best first, then by score within the grade; each name is
@@ -1591,13 +1602,15 @@ const EveryGrade = ({
             <th className="py-1">Name</th>
             <th>Group</th>
             <th>Grade</th>
+            <th>Bar price</th>
             <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
             <th>Why</th>
           </tr>
         </thead>
         <tbody>
-          {grades.map(([ticker, g]) => {
+          {(showAll ? grades : grades.slice(0, 10)).map(([ticker, g]) => {
             const current = liveGrade.get(ticker) ?? g.grade
+            const quote = quotes[ticker]
             return (
               <tr key={ticker} className="border-t border-black/[0.05] align-top">
                 <td className="py-1">
@@ -1614,6 +1627,12 @@ const EveryGrade = ({
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
                   <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'indicative intraday grade' : 'evening decision'}</div>
+                </td>
+                <td className="text-xs text-[#6e6e73]">
+                  {quote ? <><span className="font-medium text-[#1d1d1f]">{priceMoney(quote.last)}</span>
+                    <div>IEX · {marketTime(quote.bar)} interval start</div>
+                    {Date.now() - Date.parse(quote.bar) >= 30 * 60 * 1000 && <div className="text-amber-800">last known bar</div>}
+                  </> : 'No bar price available'}
                 </td>
                 <td className="whitespace-nowrap font-mono text-xs">
                   {g.ranks ? ratings(liveGrades[ticker]?.ranks_live ?? g.ranks, liveGrades[ticker]?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}
@@ -1656,6 +1675,9 @@ const EveryGrade = ({
         </tbody>
       </table>
       </div>
+      {grades.length > 10 && <button type="button" className="mt-3 text-sm text-[#0071e3]" onClick={() => setShowAll(!showAll)}>
+        {showAll ? 'Show top 10 grades' : `Show all ${grades.length} grades`}
+      </button>}
     </section>
   )
 }

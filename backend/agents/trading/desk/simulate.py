@@ -58,6 +58,7 @@ REDEPLOY = True
 COST_BPS = 10.0
 MIN_TRADE = 0.005
 START_EQUITY = 1.0
+FUNDING_MODEL = "cash-at-fill-v1"
 
 # The one versioned execution policy the live paper account runs, used
 # wherever a backtest is published so the measured curve and the live book
@@ -407,12 +408,15 @@ def _settle_event(book, baseline, sold, scale, prices, t):
         restore = np.minimum(sold, np.maximum(0, baseline - before))
         order = before + restore
         reason = "FOMC risk restoration"
-    book.settle_split(order, prices, prices, t, reason)
+    book.settle(order, prices, t, reason)
     sold += before - book.shares
-    if scale == 1 and np.all(
-        np.minimum(sold, np.maximum(0, baseline - book.shares)) < 1e-8
-    ):
-        baseline = None
+    remaining = np.minimum(sold, np.maximum(0, baseline - book.shares))
+    priced = np.isfinite(prices) & (prices > 0)
+    if scale == 1:
+        complete = np.all(remaining < 1e-8)
+        cash_limited = book.cash <= 1e-12 and np.all(priced | (remaining < 1e-8))
+        if complete or cash_limited:
+            baseline = None
     return baseline, sold
 
 
@@ -582,7 +586,14 @@ def run(
             )
             skip = (order < book.shares) & up_at_open
             order = np.where(skip, book.shares, order)
-        book.settle_split(order, buy_prices, sell_prices, t + 1, reason)
+        book.settle_split(
+            order,
+            buy_prices,
+            sell_prices,
+            t + 1,
+            reason,
+            sell_at_close=exit_at_close and not event_changed,
+        )
         equity[t + 1] = book.equity(closes[t + 1])
         returns[t + 1] = (
             equity[t + 1] / equity[t] - 1.0 if equity[t] > 0 else float("nan")
@@ -756,19 +767,27 @@ class _Book:
         for column in np.flatnonzero(before & (self.shares <= 0)):
             self._log(column, session, prices, reason)
 
-    # Buy and sell the planned share difference at `prices`, charging for
-    # what moves. A name with no price that session cannot be traded and
-    # keeps the shares it has.
+    # Fill same-time sells first, then scale competing buys to cash after costs.
+    # Missing prices preserve holdings; only executed quantities enter the ledger.
     def _fill(self, order: np.ndarray, prices: np.ndarray) -> None:
-        tradable = np.isfinite(prices) & (prices > 0)
+        tradable = (
+            np.isfinite(prices) & (prices > 0) & np.isfinite(order) & (order >= 0)
+        )
         wanted = np.where(tradable, order, self.shares)
         move = wanted - self.shares
         if not move.any():
             return
-        notional = move * np.nan_to_num(prices)
-        self.cash -= float(notional.sum()) + float(np.abs(notional).sum()) * self.cost
-        self.traded += float(np.abs(notional).sum())
-        self.shares = np.maximum(wanted, 0.0)
+        priced = np.where(tradable, prices, 0.0)
+        sells = np.minimum(move, 0.0)
+        buys = np.maximum(move, 0.0)
+        proceeds = -float((sells * priced).sum())
+        available = self.cash + proceeds * (1.0 - self.cost)
+        requested = float((buys * priced).sum())
+        spend = requested * (1.0 + self.cost)
+        scale = min(1.0, max(0.0, available) / spend) if spend > 0 else 0.0
+        self.cash = max(0.0, available - spend * scale)
+        self.traded += proceeds + requested * scale
+        self.shares += sells + buys * scale
 
     # Fill the plan with buys paid at `buy_prices` and sells paid at
     # `sell_prices` - the paper account buys at the open and sells on the
@@ -781,39 +800,26 @@ class _Book:
         sell_prices: np.ndarray,
         session: int,
         reason: str,
+        sell_at_close: bool = True,
     ) -> None:
         """Fill the plan, buys at `buy_prices` and sells at `sell_prices`."""
         before = self.shares > 0
-        self._fill_split(order, buy_prices, sell_prices)
+        if sell_at_close:
+            self._fill_split(order, buy_prices, sell_prices)
+        else:
+            self._fill(order, buy_prices)
         for column in np.flatnonzero((self.shares > 0) & ~before):
             self.opened[column] = session
             self.paid[column] = float(buy_prices[column])
         for column in np.flatnonzero(before & (self.shares <= 0)):
             self._log(column, session, sell_prices, reason)
 
-    # The split-price fill: a name without a buy price cannot grow, a name
-    # without a sell price cannot shrink, and each side is paid at its own
-    # session price.
+    # Pay opening buys from existing cash before crediting any closing sale.
     def _fill_split(
         self, order: np.ndarray, buy_prices: np.ndarray, sell_prices: np.ndarray
     ) -> None:
-        buy_ok = np.isfinite(buy_prices) & (buy_prices > 0)
-        sell_ok = np.isfinite(sell_prices) & (sell_prices > 0)
-        wanted = self.shares.copy()
-        grow = (order > self.shares) & buy_ok
-        shrink = (order < self.shares) & sell_ok
-        wanted[grow] = order[grow]
-        wanted[shrink] = order[shrink]
-        move = wanted - self.shares
-        if not move.any():
-            return
-        price = np.empty_like(buy_prices, dtype=float)
-        price[grow] = buy_prices[grow]
-        price[shrink] = sell_prices[shrink]
-        notional = move * np.nan_to_num(price)
-        self.cash -= float(notional.sum()) + float(np.abs(notional).sum()) * self.cost
-        self.traded += float(np.abs(notional).sum())
-        self.shares = np.maximum(wanted, 0.0)
+        self._fill(np.maximum(order, self.shares), buy_prices)
+        self._fill(np.minimum(order, self.shares), sell_prices)
 
     # One position leaving, with what it made between its two fills.
     def _log(self, column: int, session: int, prices, reason: str) -> None:

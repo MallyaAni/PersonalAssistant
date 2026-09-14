@@ -542,7 +542,12 @@ def paper_trade(
     entry["orders"] = submitted
     entry["refused"] = refused
     entry["plan"] = what
-    entry["event_risk"] = {**policy, "plan": what, "cycle": new_state.event_cycle}
+    entry["event_risk"] = {
+        **policy,
+        "plan": what,
+        "cycle": new_state.event_cycle,
+        "outcome": new_state.event_outcomes[-1] if new_state.event_outcomes else None,
+    }
     entry["settled"] = _settled_rows(settled, panel)
     entry["until_rebalance"] = max(
         actions.REBALANCE - int(new_state.sessions_since_rebalance), 0
@@ -696,6 +701,7 @@ def record(
         "paper": paper,
         "event_risk": {
             **event_risk.decision(panel),
+            "outcome": ((paper or {}).get("event_risk") or {}).get("outcome"),
             "execution_pending": bool(
                 ((paper or {}).get("event_risk") or {}).get("cycle")
             ),
@@ -854,7 +860,8 @@ def curve_block(report, store) -> dict | None:
         qqq_curve = []
     stats = sim.stats()
     return {
-        "label": "these rules run over the history: a backtest, not a record",
+        "label": "historical simulation with cash-limited fills; not a live record",
+        "funding_model": simulate.FUNDING_MODEL,
         "event_policy": event_risk.VERSION,
         "evaluation_periods": event_risk.evaluation_slices(sim),
         "asof": str(panel.dates[-1]),

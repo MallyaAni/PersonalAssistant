@@ -505,7 +505,7 @@ test('shows each thing once, not twice', async ({ page }) => {
   // the details' "Practice account" panel keeps its summary but shows the
   // positions table only when the broker is away, because the live section
   // above already shows them.
-  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await page.getByRole('button', { name: 'Show practice account details' }).click()
   await expect(page.getByText('Every grade')).toBeVisible()
   // Ordered by grade, best first: AAPL (A), then NVDA (B) and MSFT (lifted
   // to B by its live read), and MSFT shows the live grade, not the close's.
@@ -527,7 +527,7 @@ test('shows each thing once, not twice', async ({ page }) => {
 test('drills into a name’s own history', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
-  await page.getByRole('button', { name: 'AAPL', exact: true }).click()
+  await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog).toBeVisible()
@@ -556,7 +556,7 @@ test('drills into a name’s own history', async ({ page }) => {
 test('shows accurately dated earnings evidence in the drill-down', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
-  await page.getByRole('button', { name: 'AAPL', exact: true }).click()
+  await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog).toBeVisible()
@@ -584,7 +584,7 @@ test('withholds legacy earnings figures and retains signed precision after retry
   })
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
-  await page.getByRole('button', { name: 'AAPL', exact: true }).click()
+  await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog.getByText('Financial figures withheld: this older extraction may misreport losses.')).toBeVisible()
   await expect(dialog.getByText(/Net income/)).toHaveCount(0)
@@ -605,7 +605,7 @@ test('retries an unavailable earnings read without disguising it as no release',
     return available ? route.fulfill({ json: { read: null } }) : route.abort('failed')
   })
   await page.goto('/#desk')
-  await page.getByRole('button', { name: 'AAPL', exact: true }).click()
+  await page.getByRole('button', { name: 'AAPL', exact: true }).first().click()
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
   await expect(dialog.getByText('Earnings read unavailable.')).toBeVisible()
   available = true
@@ -620,7 +620,7 @@ test('retries an unavailable earnings read without disguising it as no release',
 test('drills into a covered name outside the book and sees its live horizons', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
-  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await page.getByRole('button', { name: 'Show practice account details' }).click()
   await page.getByRole('button', { name: 'MSFT', exact: true }).click()
 
   const dialog = page.getByRole('dialog', { name: 'MSFT history' })
@@ -846,7 +846,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   })
 
   await page.goto('/#desk')
-  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await page.getByRole('button', { name: 'Show practice account details' }).click()
   await page.getByRole('button', { name: 'AAPL', exact: true }).last().click()
 
   const dialog = page.getByRole('dialog', { name: 'AAPL history' })
@@ -891,7 +891,7 @@ test('dates old candles separately from explanations and labels indicative grade
   }))
   await page.goto('/#desk')
   await expect(page.getByText('last known data · not current')).toBeVisible()
-  await page.getByRole('button', { name: 'Show the details: practice account and every grade' }).click()
+  await page.getByRole('button', { name: 'Show practice account details' }).click()
   await expect(page.getByText('indicative intraday grade')).toBeVisible()
   await page.getByRole('button', { name: 'MSFT', exact: true }).last().click()
   const dialog = page.getByRole('dialog', { name: 'MSFT history' })
@@ -935,7 +935,7 @@ test('an intraday grade expires without requiring a page reload', async ({ page 
     }),
   }))
   await page.goto('/#desk')
-  await page.getByRole('button', {name: 'Show the details: practice account and every grade'}).click()
+  await page.getByRole('button', {name: 'Show practice account details'}).click()
   const grades = page.locator('section', {has: page.getByRole('heading', {name: 'Every grade', exact: true})})
   const msft = grades.locator('tbody tr').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
   await expect(msft.locator('td').nth(2)).toContainText('B')
@@ -945,7 +945,6 @@ test('an intraday grade expires without requiring a page reload', async ({ page 
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
-// Actual receipts must expose dated evidence and keep legacy missing fields unknown.
 // A later decision must not inherit either targets or grades from an older snapshot.
 test('a mismatched decision cannot display the previous intraday targets or grades', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -957,11 +956,26 @@ test('a mismatched decision cannot display the previous intraday targets or grad
     }),
   }))
   await page.goto('/#desk')
-  await page.getByRole('button', {name: 'Show the details: practice account and every grade'}).click()
+  await page.getByRole('button', {name: 'Show practice account details'}).click()
   const grades = page.locator('section', {has: page.getByRole('heading', {name: 'Every grade', exact: true})})
   const msft = grades.locator('tbody tr').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
   await expect(msft.locator('td').nth(2)).toContainText('C')
   await expect(msft).not.toContainText('indicative intraday grade')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Funding labels follow the stored artifact, never the latest deployed simulator alone.
+test('cash-limited performance is distinguished from legacy simulated borrowing', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  latest.curve!.backtest!.funding_model = 'cash-at-fill-v1'
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({latest, changes: null}),
+  }))
+  await page.goto('/#desk')
+  await expect(page.getByLabel('The desk at a glance')).toContainText('Cash-limited simulation')
+  await expect(page.getByText('closing sales cannot fund earlier buys', {exact: false})).toBeVisible()
+  await expect(page.getByText('Legacy simulation under review', {exact: false})).not.toBeVisible()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -983,7 +997,7 @@ test('execution receipts distinguish decisions, fills and historical submissions
     status: 200, contentType: 'application/json', body: JSON.stringify({reason: 'unreachable'}),
   }))
   await page.goto('/#desk')
-  await page.getByRole('button', {name: 'Show the details: practice account and every grade'}).click()
+  await page.getByRole('button', {name: 'Show practice account details'}).click()
   const account = page.locator('section', {has: page.getByRole('heading', {name: /^Practice account/})})
   await expect(account).toContainText('Recorded plan:')
   await expect(account).not.toContainText('sizes reset')
@@ -1035,6 +1049,34 @@ test('FOMC reduction takes priority over regular target execution', async ({ pag
   await expect(page.getByRole('button', {name: 'record fill', exact: true})).toHaveCount(0)
   await expect(page.getByRole('region', {name: 'FOMC exposure policy'})).toContainText('reduction triggered or still in force')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// The target board must take its content height instead of clipping rows inside a flex item.
+test('target rows are not hidden inside a vertically collapsed section', async ({ page }) => {
+  await page.goto('/#desk')
+  const board = page.locator('section', {has: page.getByRole('columnheader', {name: 'Target move', exact: true})})
+  await expect(board.locator('tbody tr')).toHaveCount(2)
+  const size = await board.evaluate(element => ({height: element.clientHeight, content: element.scrollHeight}))
+  expect(size.content).toBeLessThanOrEqual(size.height)
+})
+
+// A cash-limited event ending must expose its unbought shares as an outcome.
+test('cash-limited FOMC restoration never claims the remainder was filled', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      latest: {...deskRecord(), event_risk: {
+        session: '2026-09-17', enabled: true, factor: 1, calendar_known: true,
+        decision_date: '2026-09-16', execution_pending: false,
+        outcome: {session: '2026-09-17', status: 'cash-limited', unrestored: {AAPL: 5}},
+      }}, event_policy: {enabled: true, version: 'fomc-3-session-weakness/2', evaluation_since: '2026-06-18'},
+    }),
+  }))
+  await page.goto('/#desk')
+  const banner = page.getByRole('region', {name: 'FOMC exposure policy'})
+  await expect(banner).toContainText('AAPL 5 shares unbought')
+  await expect(banner).toContainText('unfilled quantities, not restored positions')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
 // A brand-new account has no record yet: the page must explain what it is

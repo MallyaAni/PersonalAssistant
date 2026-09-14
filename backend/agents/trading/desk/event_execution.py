@@ -46,7 +46,8 @@ def plan(session, state, held, prices, cash, policy):
     sold, bought = filled(new, "sell"), filled(new, "buy")
     orders = []
     available = max(0.0, float(cash)) if math.isfinite(float(cash)) else 0.0
-    remaining = False
+    unpriced = False
+    unrestored = {}
     for symbol, baseline in sorted(new.event_cycle["baseline"].items()):
         current = max(0, int(held.get(symbol, 0)))
         if reducing:
@@ -60,9 +61,10 @@ def plan(session, state, held, prices, cash, policy):
             # Do not buy above the snapshot if positions changed outside this cycle.
             qty = min(wanted, max(0, int(baseline - current)))
             side = "buy"
-        remaining = remaining or qty > 0
+            unrestored[symbol] = qty
         price = float(prices.get(symbol) or 0)
         if not math.isfinite(price) or price <= 0:
+            unpriced = unpriced or qty > 0
             continue
         qty, available = _cash_limit(side, qty, price, available)
         if qty <= 0:
@@ -79,10 +81,29 @@ def plan(session, state, held, prices, cash, policy):
                 new.event_cycle["id"],
             )
         )
-    if not reducing and not remaining:
+    if reducing:
+        return orders, new, "FOMC reduction"
+    return _restoration_result(new, session, orders, unpriced, unrestored)
+
+
+# Release a settled cycle when restored or unaffordable, retaining unbought evidence.
+def _restoration_result(new, session, orders, unpriced, unrestored):
+    unrestored = {symbol: qty for symbol, qty in unrestored.items() if qty > 0}
+    if not unrestored:
         new.event_cycle = {}
         return [], new, "FOMC restoration complete"
-    return orders, new, "FOMC reduction" if reducing else "FOMC restoration"
+    if not orders and not unpriced:
+        new.event_outcomes.append(
+            {
+                "event_id": new.event_cycle["id"],
+                "session": session,
+                "status": "cash-limited",
+                "unrestored": unrestored,
+            }
+        )
+        new.event_cycle = {}
+        return [], new, "FOMC restoration cash-limited; regular rebalance released"
+    return orders, new, "FOMC restoration"
 
 
 # Count a newly observed session once while leaving the rebalance date untouched.

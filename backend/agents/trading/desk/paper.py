@@ -74,6 +74,7 @@ class PaperState:
     # never reached the market.
     order_seq: int = 0
     event_cycle: dict = field(default_factory=dict)
+    event_outcomes: list[dict] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

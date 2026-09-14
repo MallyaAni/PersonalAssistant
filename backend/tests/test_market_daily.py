@@ -385,6 +385,7 @@ def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
     assert len(block["qqq"]) == 4  # one entry per return given
     assert block["stats"]["total"] == pytest.approx(0.1)
     assert block["asof"] == "2026-09-03"
+    assert block["funding_model"] == sim_module.FUNDING_MODEL
 
 
 # The benchmark starts at zero like the rules, and its first return is the

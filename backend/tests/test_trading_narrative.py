@@ -168,8 +168,7 @@ def test_narrator_round_trip_and_refusals():
 
 
 # A brief that contradicts the evidence is dropped, not persisted; the page
-# shows the deterministic readings instead. A check that fails to answer
-# never discards a good brief.
+# shows the evidence readings instead. An unavailable check is not an approval.
 def test_a_brief_that_contradicts_the_evidence_is_dropped():
     payload = {
         "stance": "own",
@@ -186,7 +185,7 @@ def test_a_brief_that_contradicts_the_evidence_is_dropped():
     )
     assert (
         DeskNarrator(_Writer(payload, "not json")).brief_sync("evidence", "A+")
-        is not None
+        is None
     )
 
 

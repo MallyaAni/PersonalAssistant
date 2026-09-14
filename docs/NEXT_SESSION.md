@@ -5,6 +5,38 @@ Everything below was checked by running it, not by reading it.
 
 ## 2026-09-13 — dashboard evidence and expiry audit
 
+Follow-up checkpoint in progress: cash-at-fill-v1 funds buys from cash available
+at their execution time, never a later closing sale. FOMC restoration records
+an unaffordable remainder and releases the ordinary rebalance after settlement.
+VERIFIED: 486 market/trading tests passed, 8 skipped; the former funding xfail
+now passes. Frozen-input comparison and source hashes are in
+`docs/research/cash-funding-audit-2026-09-13.md`: negative cash falls from
+220/1429 sessions to zero; maximum gross exposure falls from 131.79% to 100%.
+Historical total return also falls, as the old record benefited from borrowing.
+Existing saved curves retain their legacy warning until genuinely recomputed.
+
+FAILED then fixed: the target board's 284-pixel contents were clipped inside
+a 32-pixel flex item. Sections now retain their content height. Rankings are
+visible in the main view, top ten with an expand-all control and dated IEX bars.
+VERIFIED: 24 browser regressions passed in 1.5 minutes, including clipping,
+grade expiry, record-fill persistence and the cash-limited FOMC outcome.
+
+DeepSeek validation now requires affirmative consistency votes before a brief
+can be published. Five real-model brief tests passed; the final live-read prompt
+passed two tests after removing a numerical example the model copied into its
+answer. FAILED: release-tone repeated scores differed (1.0 versus 0.8) at
+temperature zero; its property assertion remains as an evidenced xfail.
+Fourteen other release-tone functional tests passed. This is bounded evidence,
+not proof that every generated claim is correct. These changes are not yet live.
+
+User's next requested workflow: prominent current opportunities with changing
+recommended share counts, then a manual Record buy after an actual brokerage
+fill. Current implementation does not offer a validated intraday buy-now policy:
+only technical/value grades update intraday; allocations remain evening targets.
+Analyst weights are F/T/S/V=1 each, rotation=0.5; bearish core votes cap at B.
+LightGBM predicts revenue growth and blends its expectations gap into valuation;
+it does not directly predict a target share price. Preserve that distinction.
+
 Started clean on `main` at `f82b5e4b`; origin was already current. Objective:
 make displayed grades, prices, allocation instructions and performance labels
 match their dated evidence before further timing research. Acceptance includes
@@ -29,7 +61,15 @@ IEX bars from broker marks, and broker day P/L from calendar-day returns.
 Initial grade sizing multipliers no longer claim to be final allocations.
 Legacy simulation figures explicitly disclose unmodeled borrowing, and dated
 model commentary is not presented as verified current trade instruction.
-UNVERIFIED until deployment below: these changes on the public dashboard.
+VERIFIED deployment of `3c7ebb8d` through `scripts/deploy.sh --wait-post`, exit
+zero. Full unit gate: 3464 passed, 19 skipped, 1 known funding xfail in 148.49s;
+real-model routing: 100 passed in 513.29s. Post marker:
+`2026-09-14T03:20:13Z 3c7ebb8d ok (cheap)`.
+Authenticated public browser: `/assets/index-BbcQG98q.js`, 93 grades, help,
+receipts, AAOI details/earnings, 19 successful API responses, zero browser or
+network errors, mobile content 340/340 pixels. Real read-only GETs, no fixtures,
+no broker orders; all temporary tokens removed. This verifies the current UI,
+not every factual assertion in old generated commentary.
 Forecast accuracy, best-possible grades and improved future returns remain
 UNVERIFIED. Cash-constrained simulation is the next approved atomic fix.
 

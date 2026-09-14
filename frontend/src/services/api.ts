@@ -1880,6 +1880,7 @@ export interface DeskBrief {
 
 export interface DeskRecord {
   event_risk?: {
+    outcome?: {session: string; status: string; unrestored: Record<string, number>} | null;
     execution_pending?: boolean;
     enabled: boolean;
     session: string;
@@ -1923,6 +1924,7 @@ export interface DeskRecord {
 // Absent on records written before the feature existed.
 export interface DeskCurve {
   backtest?: {
+    funding_model?: string;
     label: string;
     asof: string;
     dates: string[];
