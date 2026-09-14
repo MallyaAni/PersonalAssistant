@@ -10,6 +10,8 @@ decisions are explicit instead of appearing to be monitored protection.
 
 Validation: 30 browser workflows passed, TypeScript/Vite passed. Same-fixture
 visible text fell from 811 to 326 words (60%); rankings moved from 604px to 298px.
+The final cleanup also removes unchanged-vote messages and repeated row dates;
+after all initial requests settle, the comparison is 934 → 369 words (60%).
 An exposure audit found the Friday record predates the FOMC policy and no event
 cycle was recorded despite a qualifying historical replay. That execution gap
 is documented in NEXT_SESSION and is not fixed by this presentation change.

@@ -1603,10 +1603,12 @@ const EveryGrade = ({
       a[0].localeCompare(b[0]),
   )
   const briefs = latest.briefs ?? {}
+  const barTimes = [...new Set(Object.values(quotes).map(quote => quote.bar).filter(Boolean))]
+  const commonBar = barTimes.length === 1 ? marketTime(barTimes[0]) : null
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
-      <p className="mb-2 text-xs text-[#6e6e73]">{Object.keys(liveGrades).length}/{grades.length} fresh · remaining grades: {latest.session} close · grades are not entry signals.</p>
+      <p className="mb-2 text-xs text-[#6e6e73]">{Object.keys(liveGrades).length}/{grades.length} fresh{commonBar ? ` · bars ${commonBar}` : ''}{Object.keys(liveGrades).length < grades.length ? ` · other grades: ${latest.session} close` : ''} · grades are not entry signals.</p>
       <details className="mb-3 text-xs text-[#6e6e73]">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
         <p className="mt-2">{TRIGGER_LEGEND} Ratings show relative rank, not probability of profit. Grade first; conviction breaks ties. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
@@ -1634,7 +1636,7 @@ const EveryGrade = ({
             <th>Grade</th>
             <th>Bar price</th>
             <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
-            <th>Why</th>
+            <th>Evening thesis</th>
             <th>Your position</th>
           </tr>
         </thead>
@@ -1658,14 +1660,10 @@ const EveryGrade = ({
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
                   <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'intraday' : 'close'}</div>
-                  {liveGrades[ticker] && <div className="text-xs text-[#6e6e73]">Updated: {[
-                    liveGrades[ticker].technical_now != null ? 'technical' : null,
-                    liveGrades[ticker].value_now != null ? 'valuation' : null,
-                  ].filter(Boolean).join(', ') || 'inputs not identified'}</div>}
                 </td>
                 <td className="text-xs text-[#6e6e73]">
                   {quote ? <><span className="font-medium text-[#1d1d1f]">{priceMoney(quote.last)}</span>
-                    <div title="IEX 15-minute interval start">{marketTime(quote.bar)}</div>
+                    {!commonBar && <div title="IEX 15-minute interval start">{marketTime(quote.bar)}</div>}
                     {Date.now() - Date.parse(quote.bar) >= 30 * 60 * 1000 && <div className="text-amber-800">last known bar</div>}
                   </> : 'No bar price available'}
                 </td>
@@ -1682,7 +1680,7 @@ const EveryGrade = ({
                       onClick={() => setOpenBrief(openBrief === ticker ? null : ticker)}
                       className="text-left text-[#0071e3] hover:underline"
                     >
-                      {openBrief === ticker ? 'Hide evening thesis' : `Evening thesis: ${g.headline || 'recorded analyst evidence'}`}
+                      {openBrief === ticker ? 'Hide thesis' : g.headline || 'View evidence'}
                     </button>
                   ) : (
                     <span className="text-[#6e6e73]">—</span>
@@ -1767,11 +1765,10 @@ const ConfirmedBuy = ({ticker, disabled, onSave, error}: {
 const VoteChanges = ({ evening, current }: { evening: Record<string, number>; current: Record<string, number> }) => {
   const words: Record<number, string> = { 1: 'for', 0: 'no view', [-1]: 'against' }
   const changes = TRIGGER_ORDER.filter(([key]) => key in evening && key in current && evening[key] !== current[key])
+  if (!changes.length) return null
   return (
     <p className="mb-1 text-[#1d1d1f]">
-      Since evening: {changes.length
-        ? changes.map(([key, letter]) => `${letter} ${words[evening[key]]} → ${words[current[key]]}`).join('; ')
-        : 'no change in comparable analyst votes'}. Ranks can move without changing a vote.
+      Since evening: {changes.map(([key, letter]) => `${letter} ${words[evening[key]]} → ${words[current[key]]}`).join('; ')}.
     </p>
   )
 }

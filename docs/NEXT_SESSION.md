@@ -17,6 +17,14 @@ paper cash from target-implied cash. Initial failures were old wording/hidden
 performance expectations; the removed footer's countdown was restored in the
 plan header so due trades retain their date context.
 
+Live inspection prompted a final row cleanup: unchanged votes no longer repeat
+"no change" and an explanation on every stock; one common bar timestamp and
+one thesis column label replace repeated row labels. Final settled comparison
+(after initial network requests finish) is 934 → 369 visible words, still 60%
+fewer, with the same 604px → 298px ranking position. These settled counts
+supersede the early-loading counts above. Final full browser run: 30 passed
+(1.2m); settled density/cash/mobile workflow: 1 passed (5.5s).
+
 The user's market observation prompted a read-only exposure audit. At
 2026-09-14T13:49:50Z, paper cash was 58.87%, the paper account was down 1.92%
 on the day, and the evening weights implied 76.40% cash. These are different
