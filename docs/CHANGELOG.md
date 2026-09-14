@@ -22,6 +22,13 @@ passed, 44 candidate/storage/evaluator/funding/authenticated API tests passed
 open; the real forward archive reported zero observations. Profitable intraday
 behavior remains unverified.
 
+Deployed application `ddabcd77`: 3499 unit tests passed / 19 skipped (140.46s),
+100 real routing cases passed (483.83s), normal backup/migration/build and cheap
+post check passed. Public Chrome verified the research selector and withholding,
+20 successful API responses and zero browser errors on asset `index-B5SQJDHt.js`.
+Desktop/mobile target content is fully visible. A later observation gap marks
+existing research holdings at current prices without executing expired targets.
+
 ## 2026-09-14 — Funded target previews and dated inflation context
 
 The manual desk now previews all target additions against one explicitly

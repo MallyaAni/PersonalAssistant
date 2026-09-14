@@ -16,10 +16,36 @@ Friday prices before Monday's open; both cost arms reported zero observations.
 The funded daily-cadence proxy favored the existing holding cadence; see
 `research/retail-decision-workflow.md` and its raw JSON artifact.
 
-UNVERIFIED: successful current-session research allocation from live prices
-before the market opens, deployment of this change, and superior net returns.
-The new research preview is not a validated replacement strategy. Record the
-deployed SHA, post marker and browser evidence below after deployment.
+VERIFIED deployed application checkpoint:
+`ddabcd7708719bae682385bb6bbbd06d832f73c5` (implementation `704f7431`, followed by
+the observation-gap accounting correction). The first deployment was stopped
+during its unit gate to make that correction before shipping. The final normal
+`scripts/deploy.sh --wait-post` run passed 3499 unit tests (19 skipped,
+140.46s) and 100 real routing cases (483.83s), then backed up, migrated and
+rebuilt. Marker: `2026-09-14T13:31:22Z ddabcd77 ok (cheap)`.
+Both deployment and cron checkouts carry this application revision; all three
+research implementation hashes match the running backend. The final focused
+backend run passed 51 tests (1.33s); the last UI wording change passed its
+targeted browser workflow (1 passed, 3.7s).
+
+Public Chrome acceptance used actual authenticated responses with all writes
+blocked except the read-only cash preview: asset `/assets/index-B5SQJDHt.js`,
+20 successful API responses, 93 grades, five inflation rows, zero-cash preview,
+research selection/stale-data message and policy-change clearing verified.
+No console/page/network errors. Board heights match content on desktop
+(1364/1364) and mobile (2618/2618); practice account width 340/340.
+The deployed safe CLI also correctly withheld stale Friday inputs during the
+unfinished Monday opening candle. No manual broker operations occurred.
+Temporary browser credentials were removed from Mac, remote host and container.
+
+UNVERIFIED: a successful current-session research allocation from live completed
+prices (first regular candle was not complete at acceptance time), and superior
+net returns. The preview is not a validated replacement strategy. Its next
+normal collector run can archive fresh decisions without manual broker calls.
+Use `backend.cli.evaluate_intraday_research` after observations accumulate;
+the target trackers deliberately do not claim to reproduce all scheduled exits.
+Logs: `/tmp/desk-intraday-final-deploy.log` on Spark and
+`/private/tmp/desk-intraday-public-proof.log` on Mac.
 
 ## 2026-09-14 — cash preview and economic evidence
 
