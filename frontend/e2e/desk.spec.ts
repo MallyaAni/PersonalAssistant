@@ -8,6 +8,26 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// A stale observation cannot erase a durable active cycle from the status heading.
+test('stale FOMC recovery keeps the active cycle paused', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], event_policy: {enabled: true},
+    event_status: {as_of: '2026-09-01T14:00:00Z', stale: true, active: true,
+      status: 'reduction settled', pending_orders: 0},
+  }}))
+  await page.goto('/#desk')
+  const banner = page.getByLabel('FOMC exposure policy')
+  await expect(banner).toContainText('FOMC · portfolio adjustments paused')
+  await expect(banner).toContainText('last known status')
+  await expect(banner).not.toContainText('decision missing')
+  await expect(banner).toContainText('An event cycle is recorded')
+  await expect(banner).not.toContainText('Enabled for the next nightly run')
+  await expect(page.getByLabel('Cash exposure')).toContainText('FOMC overrides the scheduled plan')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Current recovery evidence takes priority while the archived nightly decision stays dated.
 test('FOMC recovery displays current intent and pauses the portfolio plan', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
