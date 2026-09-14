@@ -844,7 +844,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
           <h3 className="font-semibold">FOMC de-risking enabled · provisional policy</h3>
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
-            The reduction lasts through decision day. Paper orders execute at the next open, even on a green day;
+            The reduction lasts through decision day. Paper orders are queued for the next open, even on a green day;
+            actual fill times and prices can differ.
             restoration is limited to confirmed reductions and available cash. Regular rebalances wait while the event cycle finishes.</p>
           <p className="mt-2">{event
             ? `Decision at the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`

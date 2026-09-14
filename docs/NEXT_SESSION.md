@@ -3,6 +3,25 @@
 Verified state as of 2026-09-13. `deep-matter.com` serves from spark1.
 Everything below was checked by running it, not by reading it.
 
+## 2026-09-13 — FOMC deployment verified
+
+Verified checkpoint `84d07faf`: deployed through `scripts/deploy.sh --wait-post`,
+exit 0. Full unit gate **3450 passed, 19 skipped, 82 warnings in 141.85s**;
+real-model routing **100 passed in 482.00s**. Post marker:
+`2026-09-14T01:31:47Z 84d07faf ok (cheap)`. The cron checkout was fast-forwarded
+to the same revision. No production broker order was used for testing.
+
+The deployed policy reads September 11 SPY five-session return **−1.1485%**, a
+known September 16 decision three sessions away, and requested factor **0.5**.
+This is a verified decision, not a submitted or filled reduction. The next
+scheduled daily job invokes the new paper lifecycle. No old record was rewritten.
+
+The public API reports the enabled policy. Browser replay of public asset
+`/assets/index-BD0xdKy0.js` shows the FOMC notice, 93 grades and AAOI's drawer;
+zero page/console/network errors, mobile content 340/340 pixels. The replay
+uses captured production GET responses and a mocked operator session; fully
+authenticated browser acceptance remains unverified.
+
 ## 2026-09-13 — adopt provisional FOMC execution and separate evaluation eras
 
 The user explicitly chose the three-session conditional de-risking policy and
