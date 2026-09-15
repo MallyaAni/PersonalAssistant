@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-14 — Price sensitivity extended: scenarios, value's share, whole-book repricing, a candidate design
+
+The diagnostic now runs two scenarios per price (the level for one
+session, and for the rule's three sessions so persistence is satisfied),
+traces how much value already contributes through the vote, the score and
+the sizing (the last is zero: the engine weight never reads the score),
+reprices the whole book to show that a uniform move leaves every
+allocation unchanged, shows a bounded valuation magnitude beside the rank
+(tanh of the P/S distance from the side's median over the book's median
+distance; not an expected return), and separates hard gates from bearish
+opinions. The tilt is disabled and shown only as a column. The note
+proposes one minimal design - the magnitude in the selection score, a
+candidacy rule that admits a name blocked only by opinions when its total
+conviction matches the weakest admitted name, and the tilt at a single
+fixed value - with its assumptions and a four-variant evaluation plan on
+the simulator. Nothing in production changes; no sweep; no training.
+
 ## 2026-09-14 — Price sensitivity of grade and target weight, and the proposed tilt
 
 `market_price_sensitivity`: one fixed information snapshot, one name's
