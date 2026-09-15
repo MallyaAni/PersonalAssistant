@@ -1230,6 +1230,7 @@ def main() -> None:
     from backend.market import nightly_lock
 
     args = build_parser().parse_args()
+    _git_revision()  # read now, before anything can move the checkout
     store = MarketStore(args.data_dir)
     lock = nightly_lock.acquire(Path(store.root) / DESK_KIND)
     if lock is None:
