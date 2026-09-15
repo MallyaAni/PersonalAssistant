@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-15 — Intraday timing: two registered studies, no timing edge, the open stays the entry
+
+On the 15-minute research store (93 book names, 1,413 sessions since
+2021): the open print is on average as good as the 15, 30 and 60-minute
+closes and the 30-minute VWAP, unconditionally and by gap direction;
+nothing near the registered 20 bp bar (the registered flush cell was
+degenerate and is discarded). For the registered reversal episodes,
+every confirmed entry (first close above a 9-EMA on 15, 30 or 60-minute
+bars, or above the prior low) is worse than the open entry, by 0.5 to
+2.0 points per episode, coarser bars worse. Decisions: no execution
+timing change, no confirmation, no intraday timeframe.
+`docs/research/intraday-timing-2026-09-15.md`, code in
+`backend/cli/market_intraday_timing.py`.
+
 ## 2026-09-15 — Post-decision reversal: registered, run once, insufficient evidence; both shadows recording
 
 The operator's observation that the names most beaten into the July 29
