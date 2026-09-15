@@ -58,6 +58,17 @@ strategy that changes only when untouched sessions say so.
    shadows: the history reference alone, a sector-neutral value leg, an
    exit rule. None is adopted on a backtest of this universe.
 
+## Where it stands (kept current)
+
+- 2026-09-15: stage one of the fundamentals correction live (as-of block
+  in every record); the nightly under a lock with a tone budget, per-name
+  failure isolation, the observer's receipt and the revision it started
+  from; the page names a late record or observation; the FOMC overlay's
+  gate registered and priced nightly against the book that never traded
+  it; execution against the decision price as a series. Open: stage two
+  of the fundamentals switch after a week of blocks; the FOMC verdict
+  after six meetings; nothing on strategy.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation
