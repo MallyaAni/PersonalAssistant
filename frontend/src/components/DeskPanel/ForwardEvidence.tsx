@@ -12,7 +12,7 @@ export const ForwardEvidence = ({evidence}: {evidence?: DeskForwardEvidence}) =>
     <p className="mt-2">Observed outcomes from immutable decisions. Research does not change orders. Grade outcomes use later bar prices, subtract SPY and modeled costs, and include wait signals. They are not profit probabilities.</p>
     {!evidence?.versions?.length && <p className="mt-2">{evidence?.reason ?? 'Collecting forward records; performance unavailable.'}</p>}
     {evidence?.versions?.map(version => <div key={version.version} className="mt-3">
-      <p>{version.version} · {version.decision_count} recorded decisions · {version.outcomes[0]?.decision_days ?? 0} validated days</p>
+      <p>{version.version} · {version.decision_count} recorded decisions · {version.outcomes[0]?.decision_days ?? 0} validated {(version.outcomes[0]?.decision_days ?? 0) === 1 ? 'day' : 'days'}</p>
       {version.corporate_actions_through && <p>Daily validation through {version.corporate_actions_through} · {version.pending_daily_validation ?? 0} decisions awaiting validation</p>}
       <p className="mt-1">First daily signal only. Means use non-overlapping date cohorts; approximate 95% intervals require 20 cohorts. No interval means insufficient evidence for that estimate.</p>
       {version.outcomes.map(outcome => <div key={outcome.cost_bps_per_side} className="mt-2 overflow-x-auto">

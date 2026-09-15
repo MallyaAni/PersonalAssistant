@@ -14,7 +14,7 @@ const STANDING: Record<string, string> = {
 export const FomcGate = ({gate}: {gate?: DeskFomcGate | null}) => (
   <details className="rounded-2xl border border-black/[0.08] bg-white p-4 text-xs text-[#6e6e73]" aria-label="FOMC overlay gate">
     <summary className="cursor-pointer font-medium">FOMC overlay gate · {gate ? `${gate.verdict.completed_meetings} of ${gate.verdict.required} meetings` : 'no block yet'}</summary>
-    {!gate ? <p className="mt-2">The gate block is written by the nightly once a meeting cycle has fills.</p> : <>
+    {!gate ? <p className="mt-2">Written by the nightly after each paper session; meetings appear once a cycle has confirmed fills.</p> : <>
       <p className="mt-2">Standing: <b>{STANDING[gate.verdict.standing] ?? gate.verdict.standing}</b> · effect after costs so far {dollars(gate.verdict.effect_after_costs)} ({percent(gate.verdict.effect_after_costs_pct)}) over {gate.verdict.completed_meetings} completed meetings.</p>
       <p className="mt-1">{gate.verdict.rule}</p>
       <div className="mt-2 overflow-x-auto">

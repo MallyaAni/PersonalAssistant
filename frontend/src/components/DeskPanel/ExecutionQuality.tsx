@@ -7,8 +7,8 @@ const dollars = (value: number | null | undefined) => value == null ? '—' : `$
 // paying up on a buy or selling down on a sell is a positive cost.
 export const ExecutionQuality = ({quality}: {quality?: DeskExecutionQuality | null}) => (
   <details className="rounded-2xl border border-black/[0.08] bg-white p-4 text-xs text-[#6e6e73]" aria-label="Execution quality">
-    <summary className="cursor-pointer font-medium">Execution against the decision price · {quality?.all_time.fills ? `${quality.all_time.fills} fills, ${bp(quality.all_time.bps)}` : 'no fills yet'}</summary>
-    {!quality ? <p className="mt-2">Written by the nightly once the paper account has fills.</p> : <>
+    <summary className="cursor-pointer font-medium">Execution against the decision price · {!quality ? 'not written yet' : quality.all_time.fills ? `${quality.all_time.fills} fills, ${bp(quality.all_time.bps)}` : 'no fills with a reference price yet'}</summary>
+    {!quality ? <p className="mt-2">Written by the nightly after each paper session.</p> : <>
       <p className="mt-2">{quality.basis}.</p>
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-left [&_td]:pr-3 [&_th]:pr-3" aria-label="Execution summary">

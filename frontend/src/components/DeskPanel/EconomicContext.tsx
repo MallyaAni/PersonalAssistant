@@ -8,7 +8,7 @@ export const EconomicContext = ({ data }: { data?: DeskEconomics | null }) => {
   return <section aria-label="Economic context" className="rounded-xl border border-black/10 bg-white p-4 text-sm">
     <h3 className="font-medium">Inflation evidence · research context</h3>
     {!data ? <p className="mt-2 text-xs text-[#6e6e73]">Economic evidence has not been collected. Missing data is not a benign-market signal.</p> : <>
-      <p className="mt-2 text-xs">Collected {data.observed_at}{stale ? ' · collection stale' : ''}. Monthly observations; collection time is not release time.</p>
+      <p className="mt-2 text-xs">Collected {new Date(data.observed_at).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})} ET{stale ? ' · collection stale' : ''}. Monthly observations; collection time is not release time.</p>
       <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-xs">
         <thead><tr><th>Measure</th><th>Observation month</th><th>Month over month</th><th>Year over year</th><th>Prior month’s year over year</th></tr></thead>
         <tbody>{data.facts.map(fact => <tr key={fact.id} className="border-t border-black/5">

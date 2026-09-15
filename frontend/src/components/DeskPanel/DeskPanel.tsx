@@ -310,7 +310,7 @@ const SummaryStrip = ({
               </>
             ),
             note: backtest?.funding_model === 'cash-at-fill-v1'
-              ? 'cash capped after costs; fractional simulated fills, not broker execution'
+              ? 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns'
               : stats && stats.drawdown !== null
                 ? `legacy simulation permits borrowing without financing costs · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
                 : 'legacy simulation permits borrowing without financing costs; not evidence for current cash-only returns',
@@ -623,7 +623,7 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
         <p key={period.label} className="mt-3 text-xs text-[#6e6e73]">
           <b>{period.label}</b> · {period.since} to {period.through}: return {(period.total_return * 100).toFixed(2)}%,
           maximum drawdown {(period.drawdown * 100).toFixed(2)}% · {period.sessions} sessions,
-          {' '}{period.completed_meetings.length} completed FOMC meetings. {period.basis}.
+          {' '}{period.completed_meetings.length} completed FOMC {period.completed_meetings.length === 1 ? 'meeting' : 'meetings'}. {period.basis}.
         </p>
       ))}
     </section>

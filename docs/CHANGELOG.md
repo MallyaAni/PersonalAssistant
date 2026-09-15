@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-15 — The Desk view read word for word against the live payloads
+
+The page was rendered from the day's real API payloads and every visible
+sentence checked against the record, the broker snapshot and the store.
+Corrected: the board's footer named a research simulation "Paper" at
+$100,000 beside the practice account at $97,537 (now "Board simulation ·
+research, not the practice account", with its start date); the
+record-a-purchase button read "Buy" (now "Record"); the execution block
+said "no fills yet" when it had simply not been written; the gate block's
+wording implied it waited for fills; "1 validated days" and "1 completed
+FOMC meetings"; a raw ISO timestamp with microseconds on the inflation
+block; and the headline simulation return now says it is a universe
+chosen with hindsight, not evidence of future returns. Everything else
+on the page matched the data: the late ML observation sentence, the FOMC
+pause, the 09-14 decision session, cash and planned cash, the five regime
+flags, the 50% multiplier, the broker positions and P/L, and the
+changes since 09-11.
+
 ## 2026-09-15 — Execution against the decision price, as a series
 
 Every paper fill already carried the price its decision was made at and
