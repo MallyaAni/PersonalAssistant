@@ -37,6 +37,48 @@ fingerprint, which is unchanged (0e175165d972a1ab), so existing ledger
 files continue. Two integration tests: a blocked scorer cannot prevent a
 ready observation, and incomplete required bars prevent it. Nothing
 retrained, promoted or deployed.
+## 2026-09-14 — Versioned as-of fundamentals for the research path
+
+The frozen path keeps one value per period (the earliest filed) and picks
+each fundamental's XBRL tag once per snapshot; the acceptance review showed
+a restatement can never reach a later decision and a later snapshot can
+rewrite a name's whole history by switching tags. `backend/market/
+fundamentals_asof.py` is the separately versioned correction: every filing
+of every candidate tag is kept as a `Version` with its filing date,
+accession and acceptance time where the feed has one; at each session the
+selector uses only versions available by then (acceptance date before
+16:00 New York, else the next day; filing date plus one day where there is
+no time), takes the latest-filed available version of each period, derives
+year-to-date and fourth-quarter figures from those, and chooses the tag
+from the periods available at that session. Same level names and ratio
+columns as the frozen path. `market_fundamentals_asof --refresh` stores the
+versions (`edgar_facts_versions`), `--audit` compares the two paths session
+by session. Six regression tests: a later filing cannot change an earlier
+feature; a restatement changes levels from its availability on; the
+next-day rule with and without acceptance times; competing tags; duplicate
+periods; the frame round-trip. The production fingerprint is unchanged
+(0e175165d972a1ab), the nightly and the shadow ledger read none of this,
+and nothing was retrained.
+
+Audit on the 93 bundle names, desktop store through 2026-09-04: 3,856
+periods restated with a different value; revenue levels differ from the
+frozen path on 31,763 of 165,791 sessions where both are known, 23,362 of
+them because the as-of tag differs from the snapshot-wide choice and 8,401
+under the same tag (restatements after availability, and quarters the
+as-of path derives from six- and nine-month spans that the frozen path
+never derives for revenue, earnings or gross profit); the as-of path has a
+revenue level on 26,115 further sessions the frozen path leaves empty.
+Earnings differ on 12,956 sessions and share counts on 12,221. Potentially
+affected: every result trained or scored on the frozen fundamentals - the
+ridge, tree and neural ladder (2018-2023 training, 2024 selection, the
+2025+ retrospective test) and therefore the frozen bundle's expectations;
+the desk's own valuation analyst and the expectations-gap input, which
+read the same frozen levels in production. Not affected: the growth pilot's
+neural and RL runs, which use price and volume features only. The
+evaluation specification is written down in
+`docs/research/ml-forward-evaluation-spec.md`: SPY fully invested and
+exempt from the stock cap, cash and gross exposure reported for every
+strategy, and the next-close dollar-allocation assumption stated exactly.
 
 ## 2026-09-14 — Frozen neural forward-paper comparison, observed nightly
 

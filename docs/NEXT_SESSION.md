@@ -18,6 +18,25 @@ tests, ruff, black. The nightly script pulls main before it runs, so the
 next 19:30 ET run carries the fix without a deploy; the API container does
 not run the nightly. First observation and next-session fill: pending
 until a run completes with the fix in place.
+## 2026-09-14 — As-of fundamentals correction (branch research/fundamentals-asof)
+
+The research path now has a versioned, as-of fundamental selector
+(`backend/market/fundamentals_asof.py`), its store kind
+`edgar_facts_versions`, a refresh/audit CLI and six regression tests. The
+frozen production experiment is untouched: fingerprint 0e175165d972a1ab,
+no edit to edgar, levels_pit, opportunity_learning, growth_pilot, calendar
+or opportunity_shadow. Nothing retrained.
+
+VERIFIED on the desktop: the six tests, ruff, black; versions fetched for
+all 93 bundle names (no failures); the audit run and its numbers in the
+changelog entry above this one. UNVERIFIED: nothing deployed from this
+branch; production reads none of it.
+
+Next atomic task, when the operator chooses: a retrain of the supervised
+ladder on the as-of path with the same splits, purging and selection as
+the 2026-09-14 run, as a new run directory, compared against the frozen
+bundle only on untouched sessions. Not before the forward ledger has its
+first fills verified. No parameter search.
 
 ## 2026-09-14 — Frozen ML forward-paper checkpoint (this branch)
 
