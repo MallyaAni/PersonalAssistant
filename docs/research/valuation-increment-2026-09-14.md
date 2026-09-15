@@ -1,5 +1,9 @@
 # Valuation increment over momentum and risk — one bounded run, 2026-09-14
 
+**Status: closed, insufficient evidence to advance.** Results preserved as
+run. No tuning, inverted predictions, other models or promoted variants.
+Reopening needs a new, specific hypothesis and an agreed evaluation budget.
+
 Research only. Production, the nightly and the frozen shadow ledger are
 unchanged; no parameter was searched; the specification below was fixed
 before the run and the run happened once (a second execution only fixed
