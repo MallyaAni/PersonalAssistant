@@ -9,6 +9,17 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-15 — Nightly hardening (branch nightly-hardening) and the roadmap
+
+The nightly now holds a lock, budgets the tone step at three hours and
+writes the ML observer's receipt into the record. `docs/TRADING_ROADMAP.md`
+is the order of work: data correctness first (as-of fundamentals, stage
+two after a week of recorded blocks), a nightly that always ends with a
+record (next: a red dashboard status when a session has no record or no
+observation by a deadline), measurement on untouched sessions, execution
+measured, strategy last and only through a named shadow with a gate
+written before its first session.
+
 ## 2026-09-15 — As-of fundamentals, stage one (branch fundamentals-asof-shadow)
 
 Every nightly record now carries `fundamentals_asof`: the plain rule on

@@ -15,6 +15,7 @@ can be read back later exactly as it was seen.
 import argparse
 import json
 import shutil
+import time
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -69,6 +70,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--llm-url", default="")
     parser.add_argument("--llm-model", default="")
     parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument(
+        "--tone-budget-minutes",
+        type=float,
+        default=180.0,
+        help="stop scoring releases after this long; unscored names carry "
+        "their earlier scores (0 for no budget)",
+    )
     parser.add_argument(
         "--brief", nargs="*", default=[], help="tickers to write briefs for"
     )
@@ -144,6 +152,7 @@ def refresh(
     llm_url: str = "",
     llm_model: str = "",
     concurrency: int = 4,
+    tone_budget_minutes: float = 0.0,
     bars=snapshot.refresh,
     filings=market_edgar.refresh,
     tone=market_tone.refresh_tickers,
@@ -172,6 +181,9 @@ def refresh(
     # the 531-name research universe a rescoring ran past the next session
     # and the desk wrote no record. Breadth tone is a research refresh
     # (`market_tone --refresh --roles`), not the nightly's critical path.
+    deadline = (
+        time.monotonic() + 60.0 * tone_budget_minutes if tone_budget_minutes else None
+    )
     try:
         scored = tone(
             store,
@@ -180,6 +192,7 @@ def refresh(
             llm_url=llm_url,
             llm_model=llm_model,
             concurrency=concurrency,
+            deadline=deadline,
         )
     except Exception as exc:  # the runtime being away must not stop the desk
         print(f"tone: not scored ({type(exc).__name__}: {exc}); earlier scores carry")
@@ -743,6 +756,7 @@ def record(
     curve: dict | None = None,
     llm_model: str | None = None,
     fundamentals: dict | None = None,
+    ml_forward: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     from backend.agents.trading.desk import event_risk
@@ -812,6 +826,10 @@ def record(
                 "event_risk": event_risk.VERSION,
             },
             "model": llm_model or None,
+            # What the frozen ML observer did tonight: its status, sequence
+            # and session, or None when it did not observe, so a lost
+            # observation is visible in the record and not only in a log.
+            "ml_forward": ml_forward,
         },
         "regime": {
             k: (v if not isinstance(v, tuple) else list(v))
@@ -1193,11 +1211,31 @@ def _wanted_briefs_and_reads(
 
 # Run the day.
 def main() -> None:
-    """Entry point."""
+    """Entry point: one run at a time under the store's lock."""
+    from backend.market import nightly_lock
+
     args = build_parser().parse_args()
     store = MarketStore(args.data_dir)
+    lock = nightly_lock.acquire(Path(store.root) / DESK_KIND)
+    if lock is None:
+        return
+    try:
+        _run(args, store)
+    finally:
+        nightly_lock.release(lock)
+
+
+# The ML observer's receipt for the record, whichever way it was reached.
+def _ml_forward_receipt(row: dict | None) -> dict | None:
+    if not row:
+        return None
+    return {k: row.get(k) for k in ("status", "sequence", "session")}
+
+
+def _run(args, store: MarketStore) -> None:
     asof = args.asof or datetime.now(tz=UTC).date()
     current = args.asof is None
+    observed: dict = {}
     if args.refresh:
         refresh(
             store,
@@ -1206,12 +1244,15 @@ def main() -> None:
             llm_url=args.llm_url,
             llm_model=args.llm_model,
             concurrency=args.concurrency,
-            after_filings=lambda report, filing_failures: observe_ml_forward(
-                Path(store.root), current, report.failed_tickers, filing_failures
+            tone_budget_minutes=args.tone_budget_minutes,
+            after_filings=lambda report, filing_failures: observed.update(
+                row=observe_ml_forward(
+                    Path(store.root), current, report.failed_tickers, filing_failures
+                )
             ),
         )
     else:
-        observe_ml_forward(Path(store.root), current)
+        observed["row"] = observe_ml_forward(Path(store.root), current)
     report = trading_desk.run(store, args.asof)
     panel = report.panel
     print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
@@ -1257,6 +1298,7 @@ def main() -> None:
                 curve,
                 llm_model=args.llm_model,
                 fundamentals=fundamentals,
+                ml_forward=_ml_forward_receipt(observed.get("row")),
             ),
             allow_overwrite=args.force,
         )

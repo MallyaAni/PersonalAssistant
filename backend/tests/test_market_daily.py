@@ -228,6 +228,10 @@ def test_record_and_save(tmp_path):
     with_paper = market_daily.record(_report(), paper={"equity": 100.0})
     assert with_paper["paper"]["equity"] == 100.0
     assert data["fundamentals_asof"] is None
+    receipt = {"status": "Observed", "sequence": 1, "session": "2026-09-15"}
+    with_ml = market_daily.record(_report(), ml_forward=receipt)
+    assert with_ml["provenance"]["ml_forward"] == receipt
+    assert data["provenance"]["ml_forward"] is None
     block = {"summary": {"grades_changed": 1}}
     assert (
         market_daily.record(_report(), fundamentals=block)["fundamentals_asof"] == block

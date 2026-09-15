@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-15 — A nightly that ends with a record: one run at a time, a tone budget, the observer's receipt
+
+Three guards on the nightly path, none touching what the desk sizes.
+`market_daily` runs under a lock file in the store (`nightly_lock`): a
+second instance says who holds it and exits before any side effect; a
+lock whose process is gone, or older than twenty hours, is taken over.
+The release-tone step has a time budget (`--tone-budget-minutes`, three
+hours by default): past it the loop stops between names and the names
+not reached carry their earlier scores, so a rescoring can never hold
+the record past the next session. The frozen ML observer's receipt
+(status, sequence, session, or None) is written into the record's
+provenance, so a lost observation is visible in the record and not only
+in a log. `docs/TRADING_ROADMAP.md` states what "best" means for this
+system and the order of work. Tests: `test_nightly_lock.py`,
+`test_market_tone.py`, `test_market_daily.py`.
+
 ## 2026-09-15 — As-of fundamentals recorded beside the frozen path, and the nightly's tone step back to the book
 
 Two nightly changes, neither touching what the desk sizes or trades.

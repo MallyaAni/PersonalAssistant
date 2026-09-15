@@ -135,12 +135,28 @@ def refresh_tickers(
     llm_url: str = "",
     llm_model: str = "",
     concurrency: int = 4,
+    deadline: float | None = None,
 ) -> int:
-    """Refresh the tone layer for `tickers` into the as-of partition."""
+    """Refresh the tone layer for `tickers` into the as-of partition.
+
+    `deadline` is a `time.monotonic()` value; once it has passed the loop
+    stops between names and the names not reached carry their earlier
+    scores (partial results within a name are kept for the next run).
+    The desk behind this step must not wait on a rescoring that runs
+    past the next session.
+    """
     readers, model = clients(llm_url, llm_model, concurrency)
     pacer = edgar.Pacer()
     total = 0
-    for ticker in tickers:
+    for position, ticker in enumerate(tickers):
+        if deadline is not None and time.monotonic() > deadline:
+            left = len(tickers) - position
+            print(
+                f"tone: time budget exhausted after {position} names; "
+                f"{left} names carry earlier scores",
+                flush=True,
+            )
+            break
         if current_frame_exists(store, ticker, asof):
             continue
         scored, _missing, stored = _refresh_ticker(
