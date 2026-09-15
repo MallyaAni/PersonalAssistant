@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from backend.agents.trading.desk import execution_evidence
+from backend.market import report_files
 
 VERSION = "execution-quality/1"
 NAME = "execution.json"
@@ -123,9 +124,8 @@ def write(root: Path) -> dict | None:
     except Exception as exc:  # noqa: BLE001 - evidence, never a reason to stop
         print(f"\nexecution quality: not written ({type(exc).__name__}: {exc})")
         return None
-    target = path(root)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(block, indent=1), encoding="utf-8")
+    if not report_files.write_json(path(root), block, "execution quality"):
+        return None
     a, r = block["all_time"], block["recent"]
     bps = f"{a['bps']:+.1f} bp" if a["bps"] is not None else "no fills"
     recent = f"{r['bps']:+.1f} bp" if r["bps"] is not None else "no fills"

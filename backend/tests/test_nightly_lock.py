@@ -1,64 +1,90 @@
-"""The nightly lock: one run at a time, a dead holder's lock taken over.
+"""The nightly lock: one process at a time, enforced by the operating system.
 
-What has to hold: a second acquire while the first is held is refused and
-says who holds it; release frees it; a lock older than a legitimate run
-is taken over; a lock written by another process's pid is not released by
-this one.
+What has to hold: a second acquire in another process is refused while
+the first holds the lock, and succeeds once it is released; the race
+that undid the first version (an empty or half-written lock file seen by
+a second process) cannot admit two holders, because the file's contents
+decide nothing; a holder that dies releases the lock without cleanup;
+concurrent starters admit exactly one; the note in the file names the
+holder.
 """
 
-from datetime import UTC, datetime, timedelta
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from backend.market import nightly_lock
 
+REPO = Path(__file__).resolve().parents[2]
+HOLDER = """
+import sys, time
+from pathlib import Path
+from backend.market import nightly_lock
+lock = nightly_lock.acquire(Path(sys.argv[1]))
+print("held" if lock else "refused", flush=True)
+if lock:
+    time.sleep(float(sys.argv[2]))
+    nightly_lock.release(lock)
+"""
 
-def test_second_acquire_is_refused_until_release(tmp_path, capsys):
-    first = nightly_lock.acquire(tmp_path)
-    assert first is not None
-    assert nightly_lock.acquire(tmp_path) is None
-    out = capsys.readouterr().out
-    assert "another run holds" in out
-    assert str(first.pid) in out
-    nightly_lock.release(first)
-    assert nightly_lock.acquire(tmp_path) is not None
 
-
-def test_a_lock_older_than_a_run_is_taken_over(tmp_path, capsys):
-    long_ago = datetime.now(tz=UTC) - timedelta(hours=30)
-    (tmp_path / nightly_lock.NAME).write_text(
-        f"999999\n{long_ago.isoformat(timespec='seconds')}\n", encoding="utf-8"
+def _holder(root: Path, seconds: float) -> subprocess.Popen:
+    return subprocess.Popen(
+        [sys.executable, "-c", HOLDER, str(root), str(seconds)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=str(REPO),
+        env={**os.environ, "PYTHONPATH": str(REPO)},
     )
+
+
+def test_a_second_process_is_refused_while_the_first_holds_the_lock(tmp_path):
+    first = _holder(tmp_path, 8.0)
+    assert first.stdout.readline().strip() == "held"
+    second = _holder(tmp_path, 0.0)
+    out, _ = second.communicate(timeout=60)
+    assert out.strip().splitlines()[-1] == "refused"
+    first.kill()
+    first.wait(timeout=30)
+    # A dead holder needs no cleanup: the lock went with the process.
     lock = nightly_lock.acquire(tmp_path)
     assert lock is not None
-    assert "taking over a stale lock" in capsys.readouterr().out
-    assert nightly_lock.read(tmp_path / nightly_lock.NAME).pid == lock.pid
-
-
-def test_release_leaves_another_processes_lock_alone(tmp_path):
-    lock = nightly_lock.acquire(tmp_path)
-    (tmp_path / nightly_lock.NAME).write_text(
-        f"{lock.pid + 1}\n{datetime.now(tz=UTC).isoformat(timespec='seconds')}\n",
-        encoding="utf-8",
-    )
     nightly_lock.release(lock)
-    assert (tmp_path / nightly_lock.NAME).exists()
 
 
-def test_an_unreadable_lock_file_is_treated_as_stale(tmp_path):
-    (tmp_path / nightly_lock.NAME).write_text("garbage", encoding="utf-8")
-    assert nightly_lock.acquire(tmp_path) is not None
+def test_an_empty_or_half_written_lock_file_cannot_admit_two_holders(tmp_path):
+    # The race Codex reproduced: the file exists but its note is not yet
+    # written. Contents decide nothing; only the OS lock does.
+    (tmp_path / nightly_lock.NAME).write_text("", encoding="utf-8")
+    first = nightly_lock.acquire(tmp_path)
+    assert first is not None
+    second = _holder(tmp_path, 0.0)
+    out, _ = second.communicate(timeout=60)
+    assert out.strip().splitlines()[-1] == "refused"
+    nightly_lock.release(first)
+    third = _holder(tmp_path, 0.0)
+    out, _ = third.communicate(timeout=60)
+    assert out.strip().splitlines()[-1] == "held"
 
 
-# A holder that is still running is never taken over, however long it has
-# run; only a dead holder, or an unknowable one past the age limit, is.
-def test_a_running_holder_is_never_stale_and_a_naive_stamp_is_read_as_utc(monkeypatch):
-    long_ago = datetime.now(tz=UTC) - timedelta(hours=30)
-    lock = nightly_lock.Lock(Path("x"), 4242, long_ago)
-    monkeypatch.setattr(nightly_lock, "_alive", lambda pid: True)
-    assert nightly_lock.stale(lock) is False
-    monkeypatch.setattr(nightly_lock, "_alive", lambda pid: None)
-    assert nightly_lock.stale(lock) is True
-    naive = nightly_lock.Lock(Path("x"), 4242, datetime.now() - timedelta(minutes=5))
-    assert nightly_lock.stale(naive) is False
-    monkeypatch.setattr(nightly_lock, "_alive", lambda pid: False)
-    assert nightly_lock.stale(naive) is True
+def test_concurrent_starters_admit_exactly_one(tmp_path):
+    procs = [_holder(tmp_path, 4.0) for _ in range(4)]
+    outs = [p.communicate(timeout=90)[0].strip().splitlines()[-1] for p in procs]
+    assert outs.count("held") == 1, outs
+    assert outs.count("refused") == 3, outs
+
+
+def test_the_note_names_the_holder_and_release_frees_it(tmp_path):
+    lock = nightly_lock.acquire(tmp_path)
+    assert lock is not None
+    nightly_lock.release(lock)
+    # The note outlives the lock; on Windows the locked byte cannot be read
+    # while held, so it is read after release on every platform.
+    pid, started = nightly_lock.read(tmp_path / nightly_lock.NAME)
+    assert pid == os.getpid()
+    assert started == lock.started.replace(microsecond=0)
+    again = nightly_lock.acquire(tmp_path)
+    assert again is not None
+    nightly_lock.release(again)

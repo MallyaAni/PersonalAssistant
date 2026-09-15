@@ -23,6 +23,7 @@ from pathlib import Path
 
 import numpy as np
 
+from backend.market import report_files
 from backend.market.panel import Panel
 
 VERSION = "post-decision-reversal/1"
@@ -324,7 +325,7 @@ def load(root: Path, name: str = NAME) -> dict:
 
 # Advance the ledger with the panel's sessions: open a cycle on a decision
 # close, fill its entry at the next open, close it at the exit close.
-def observe(
+def observe(  # noqa: C901
     root: Path,
     panel: Panel,
     decisions: list[date],
@@ -407,9 +408,8 @@ def observe(
     ledger["summary"] = (
         {"closed": len(closed), **_stats(closed)} if closed else {"closed": 0}
     )
-    target = path(root, name)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(ledger, indent=1), encoding="utf-8")
+    if not report_files.write_json(path(root, name), ledger, "reversal shadow"):
+        raise OSError(f"could not write {path(root, name)}")
     return ledger
 
 

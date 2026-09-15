@@ -162,7 +162,7 @@ def refresh_tickers(
             continue
         try:
             scored, _missing, stored = _refresh_ticker(
-                store, ticker, asof, since, readers, model, pacer
+                store, ticker, asof, since, readers, model, pacer, deadline
             )
         except RuntimeError as exc:
             # One name's failed fetch (an EDGAR 503 on a 2018 filing, on
@@ -184,11 +184,21 @@ def refresh_tickers(
 
 # Fetch releases with SEC pacing, retaining a count of retryable provider failures.
 def _release_texts(
-    ticker: str, cik: int, events: list, pacer: edgar.Pacer
+    ticker: str,
+    cik: int,
+    events: list,
+    pacer: edgar.Pacer,
+    deadline: float | None = None,
 ) -> tuple[list, int]:
     texts = []
     failures = 0
     for event in events:
+        # Past the budget, stop fetching: the rest count as failures so the
+        # name is retried next run with its partial results kept.
+        if deadline is not None and time.monotonic() > deadline:
+            failures += 1
+            texts.append((event, None))
+            continue
         try:
             texts.append((event, language.fetch_release_text(cik, event, pacer=pacer)))
         except Exception as exc:
@@ -199,7 +209,7 @@ def _release_texts(
 
 
 # Score one ticker's unscored releases and store the frame when complete.
-def _refresh_ticker(
+def _refresh_ticker(  # noqa: C901
     store: MarketStore,
     ticker: str,
     asof: date,
@@ -207,6 +217,7 @@ def _refresh_ticker(
     readers: list[ReleaseToneReader],
     model: str,
     pacer: edgar.Pacer,
+    deadline: float | None = None,
 ) -> tuple[int, int, int]:
     if current_frame_exists(store, ticker, asof):
         columns, _meta = store.read_frame(language.TONE_KIND, ticker, asof)
@@ -238,13 +249,18 @@ def _refresh_ticker(
     todo = [e for e in events if e.accession not in done]
 
     # Fetch texts serially (SEC pacing), score concurrently.
-    texts, failures = _release_texts(ticker, cik, todo, pacer)
+    texts, failures = _release_texts(ticker, cik, todo, pacer, deadline)
 
-    # Keep absence of an exhibit separate from a model failing on a fetched one.
+    # Keep absence of an exhibit separate from a model failing on a fetched
+    # one; past the budget a fetched text is not scored and counts as a
+    # failure, so the name is retried next run and its frame is not stored
+    # as complete.
     def work(item: tuple[int, tuple[edgar.EarningsEvent, str | None]]):
         index, (event, text) = item
         if not text:
             return event, None, False
+        if deadline is not None and time.monotonic() > deadline:
+            return event, None, True
         return event, readers[index % len(readers)].score_sync(text), True
 
     scored = 0

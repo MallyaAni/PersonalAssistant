@@ -26,6 +26,8 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
+from backend.market import report_files
+
 VERSION = "fomc-gate/1"
 FIRST_MEETING = "2026-09-16"
 MIN_MEETINGS = 6
@@ -262,9 +264,8 @@ def write(root: Path, store=None) -> dict | None:
     except Exception as exc:  # noqa: BLE001 - evidence, never a reason to stop
         print(f"\nFOMC gate: not written ({type(exc).__name__}: {exc})")
         return None
-    target = path(root)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(block, indent=1), encoding="utf-8")
+    if not report_files.write_json(path(root), block, "FOMC gate"):
+        return None
     v = block["verdict"]
     print(
         f"\nFOMC gate: {v['completed_meetings']} of {v['required']} meetings complete, "

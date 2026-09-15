@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-15 — Codex's two defects: the lock is the operating system's, report writes are contained and atomic; the tone deadline bites within a name
+
+The nightly lock created its file exclusively and then wrote the note;
+between those steps a second process could read an empty file, call it
+stale and delete it, and both would run (Codex reproduced the takeover).
+`nightly_lock` now takes an advisory OS lock on the file (`flock`, or
+`msvcrt.locking` on Windows) and holds the descriptor for the run; a
+dead holder's lock vanishes with it, so there is no staleness rule; the
+note is for people. Regression tests spawn real processes: a second
+starter is refused, an empty or half-written file admits one holder,
+four concurrent starters admit exactly one, a killed holder needs no
+cleanup. The optional report writes (FOMC gate, execution quality, the
+reversal shadows) sat outside their guards and ran after paper trading
+and before the record; a failed write could have left orders without a
+record. They now go through `report_files.write_json`: a temporary
+file renamed into place, any failure printed and swallowed; tests inject
+a write failure into each writer. The three-hour tone budget was checked
+only between names; it now stops a name's fetching and scoring too,
+counting the unreached releases as failures so the name is retried next
+run and its frame is not stored as complete. Policy and research
+parameters unchanged. Not deployed: the nightly path takes it at the
+next pull.
+
 ## 2026-09-15 — Intraday timing: two registered studies, no timing edge, the open stays the entry
 
 On the 15-minute research store (93 book names, 1,413 sessions since
