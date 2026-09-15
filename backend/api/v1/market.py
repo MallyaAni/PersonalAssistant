@@ -114,6 +114,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     from backend.market import (
         board_paper,
         event_status,
+        execution_quality,
         fomc_gate,
         forward_evidence,
         opportunity_shadow,
@@ -140,6 +141,8 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         # The FOMC overlay against the book that never traded it, meeting by
         # meeting, and the standing of the gate written before the outcomes.
         "fomc_gate": fomc_gate.load(_root()),
+        # Every paper fill against its decision price, as a series.
+        "execution_quality": execution_quality.load(_root()),
         "coverage": {
             "tracked": len(tracked),
             "graded": len(latest.get("grades") or {}),

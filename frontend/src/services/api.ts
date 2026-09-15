@@ -2084,6 +2084,8 @@ export interface DeskPayload {
   record_status?: {expected: string; due_at: string; record: {session: string | null; status: DeskStanding}; ml_forward: {session: string | null; status: DeskStanding}};
   // The FOMC overlay priced against the book that never traded it, and the gate's standing.
   fomc_gate?: DeskFomcGate | null;
+  // Every paper fill against its decision price, as a series.
+  execution_quality?: DeskExecutionQuality | null;
   board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;
   ml_forward?: {status: string; started_at?: string; observed_at?: string; session?: string | null; accounts: Record<string, {equity: number; total_return: number}>} | null;
   forward_evidence?: DeskForwardEvidence;
@@ -2104,6 +2106,20 @@ export interface DeskPayload {
   sessions: string[];
   // The record's track-record curve, for convenience at the top level.
   curve?: DeskCurve;
+}
+
+export interface DeskExecutionAggregate { fills: number; notional: number; dollars: number; bps: number | null }
+
+export interface DeskExecutionQuality {
+  version: string;
+  written: string;
+  all_time: DeskExecutionAggregate;
+  recent: DeskExecutionAggregate & {sessions: number};
+  by_kind: {rebalance: DeskExecutionAggregate; fomc: DeskExecutionAggregate};
+  by_side: {buy: DeskExecutionAggregate; sell: DeskExecutionAggregate};
+  series: (DeskExecutionAggregate & {session: string; cumulative_dollars: number})[];
+  worst: {session: string; symbol: string; side: string; kind: string; bps: number; dollars: number}[];
+  basis: string;
 }
 
 export interface DeskFomcGateMeeting {

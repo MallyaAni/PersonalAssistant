@@ -1302,9 +1302,10 @@ def _run(args, store: MarketStore) -> None:
         shadow = _challenger_block(store, report)
     fundamentals = _fundamentals_block(store, report, args.asof)
     if args.paper_trade:
-        from backend.market import fomc_gate
+        from backend.market import execution_quality, fomc_gate
 
         fomc_gate.write(Path(store.root), store)
+        execution_quality.write(Path(store.root))
     curve = curves(report, store, Path(store.root))
     try:
         path = save(

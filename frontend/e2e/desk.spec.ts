@@ -304,6 +304,33 @@ test('the FOMC gate shows each meeting against the book without the overlay', as
   await expect(table).toContainText('-1.88%')
 })
 
+// Execution against the decision price is a series on the page, by scope
+// and by session, with the sign that makes paying up a cost.
+test('execution quality shows fills against their decision prices', async ({page}) => {
+  const latest = deskRecord()
+  const agg = (fills: number, bps: number | null, dollars: number) => ({fills, notional: 10000, bps, dollars})
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], execution_quality: {
+      version: 'execution-quality/1', written: '2026-09-15T21:00:00+00:00', basis: 'signed so that paying up is positive',
+      all_time: agg(12, 6.4, 64), recent: {sessions: 3, ...agg(12, 6.4, 64)},
+      by_kind: {rebalance: agg(3, 12.1, 40), fomc: agg(9, 2.7, 24)},
+      by_side: {buy: agg(3, 12.1, 40), sell: agg(9, 2.7, 24)},
+      series: [{session: '2026-09-10', ...agg(3, 12.1, 40), cumulative_dollars: 40}, {session: '2026-09-14', ...agg(9, 2.7, 24), cumulative_dollars: 64}],
+      worst: [],
+    },
+  }}))
+  await page.goto('/?deskDetails=1#desk')
+  const quality = page.getByLabel('Execution quality')
+  await expect(quality).toContainText('12 fills, +6.4 bp')
+  await quality.locator('summary').click()
+  const summary = page.getByRole('table', {name: 'Execution summary'})
+  await expect(summary).toContainText('FOMC overlay')
+  await expect(summary).toContainText('+2.7 bp')
+  const bySession = page.getByRole('table', {name: 'Execution by session'})
+  await expect(bySession).toContainText('2026-09-14')
+  await expect(bySession).toContainText('+$64')
+})
+
 // A stale observation cannot erase a durable active cycle from the status heading.
 test('stale FOMC recovery keeps the active cycle paused', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)

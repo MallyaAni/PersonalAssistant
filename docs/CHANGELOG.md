@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-15 — Execution against the decision price, as a series
+
+Every paper fill already carried the price its decision was made at and
+the record showed the drift per order on the night. `backend/market/execution_quality.py`
+turns the journal into the series the roadmap asks for: all time, the
+last twenty sessions, scheduled rebalances against the FOMC overlay,
+buys against sells, by session with a cumulative dollar line, and the
+five worst fills; signed so that paying up on a buy or selling down on a
+sell is a cost. Written to `desk/execution.json` after each paper
+session, carried by the API and shown in the Desk view's details.
+Tests: `test_execution_quality.py`, the desk e2e.
+
 ## 2026-09-15 — The FOMC overlay's gate, written before the outcome, priced nightly
 
 The paper book's provisional FOMC rule (half exposure over three weak
