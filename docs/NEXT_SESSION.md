@@ -9,6 +9,14 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-14 — Price-to-position diagnostic (branch research/price-sensitivity)
+
+The sensitivity tool and the proposed, default-off attractiveness tilt
+are on this branch with their tests; the note names the five points where
+price sensitivity is lost. Next atomic task, if the operator wants it: run
+the simulator with the tilt at 0.25 and 0.5 from 2018-06 at matched
+volatility and by year, against the rule, before any production change.
+
 ## 2026-09-14 — Observer ordering fix (main)
 
 The nightly's ML observation now runs after bars and filings and before

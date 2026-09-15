@@ -19,6 +19,7 @@ from backend.market.sizing import (
     Position,
     SizingConfig,
     apply_limits,
+    apply_name_cap,
     realised_volatility,
     size_today,
 )
@@ -39,6 +40,17 @@ BOOK_CONFIG = SizingConfig(
 # worst drawdown -38.3% -> -34.6%, and more total return, so this is not
 # a trade of return for safety.
 TIGHTENING_POWER = 2.0
+# The proposed correction, off in production until it is measured: within
+# the book, a name's weight is inverse volatility times a grade step, so
+# two A names at the same volatility take the same size whatever their
+# price. `tilt_by_conviction` scales each selected name's target by
+# (1 + tilt * conviction), conviction in [-1, 1] from the valuation
+# analyst, then restores the gross and re-applies the name cap, so a
+# cheaper name at the same grade and volatility takes more and a dearer
+# one less, continuously, with nothing else in the path changed. 0 is
+# today's behaviour exactly; the sensitivity analysis
+# (`market_price_sensitivity --tilt`) shows what a value does.
+ATTRACTIVENESS_TILT = 0.0
 
 
 class RiskBudget(Protocol):
@@ -136,8 +148,14 @@ def desk_targets(
     regime: RiskBudget,
     config: SizingConfig = BOOK_CONFIG,
     held: np.ndarray | None = None,
+    tilt: float = ATTRACTIVENESS_TILT,
+    conviction: np.ndarray | None = None,
 ) -> tuple[list[Position], np.ndarray]:
-    """Return (the engine's positions, the final target weight per column)."""
+    """Return (the engine's positions, the final target weight per column).
+
+    `tilt` and `conviction` are the proposed attractiveness tilt; with the
+    default tilt of zero the result is today's book exactly.
+    """
     # A C-grade name is not a candidate at all, so it cannot take a slot.
     # The engine's top fraction counts the names it can see, so the
     # fraction is rescaled to keep the book the size it would be over the
@@ -154,9 +172,33 @@ def desk_targets(
         column = panel.index(position.ticker)
         letter = GRADES[3 - int(graded_today[column])]
         targets[column] = position.weight * SIZE_MULTIPLIER[letter] * regime.exposure
+    if tilt and conviction is not None:
+        targets = tilt_by_conviction(targets, conviction, tilt, config.name_cap)
     if regime.tightening:
         targets = _steepen_weights(targets, panel, scaled, config.name_cap)
     return positions, targets
+
+
+# Scale each held target by (1 + tilt * conviction), restore the gross the
+# grade and regime chose, and re-apply the name cap, which renormalising
+# can breach. Names without a conviction are left at 1.
+def tilt_by_conviction(
+    targets: np.ndarray, conviction: np.ndarray, tilt: float, cap: float | None
+) -> np.ndarray:
+    """Return `targets` tilted by conviction, same gross, inside the cap."""
+    if not tilt:
+        return targets
+    tilt = float(np.clip(tilt, 0.0, 1.0))
+    factor = 1.0 + tilt * np.clip(np.nan_to_num(conviction, nan=0.0), -1.0, 1.0)
+    tilted = np.where(targets > 0, targets * factor, targets)
+    gross_before = float(targets[targets > 0].sum())
+    gross_after = float(tilted[tilted > 0].sum())
+    if gross_before <= 0 or gross_after <= 0:
+        return targets
+    tilted = tilted * (gross_before / gross_after)
+    if cap:
+        tilted = apply_name_cap(tilted, cap, gross_before)
+    return tilted
 
 
 # Size today's book: the sizing engine on the graded scores, then each name
@@ -168,10 +210,12 @@ def size(
     regime: RiskBudget,
     config: SizingConfig = BOOK_CONFIG,
     held: np.ndarray | None = None,
+    tilt: float = ATTRACTIVENESS_TILT,
+    conviction: np.ndarray | None = None,
 ) -> list[Sized]:
     """Return the sized book, largest final weight first."""
     positions, targets = desk_targets(
-        scores_today, graded_today, panel, regime, config, held
+        scores_today, graded_today, panel, regime, config, held, tilt, conviction
     )
     out: list[Sized] = []
     for position in positions:

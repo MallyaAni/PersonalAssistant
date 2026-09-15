@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-14 — Price sensitivity of grade and target weight, and the proposed tilt
+
+`market_price_sensitivity`: one fixed information snapshot, one name's
+close moved from half to double, the valuation analyst recomputed on the
+book, the grade re-made with the other analysts fixed, the score rebuilt,
+the desk's own sizing run on the original volatilities; every valuation
+input, stance, conviction, vote, grade, score, cut, engine weight,
+multiplier, target, dollars and binding constraint printed per price with
+the reason for each change. A sensitivity analysis, not a backtest. On the
+2026-09-04 snapshot the target weight is constant across the whole range
+for every name examined: ORCL is C at every price (value +1 throughout,
+two bearish analysts), and ADBE, NTAP and SNDK keep 10.38%, 8.47% and
+4.13% from half to double because the engine weight is inverse volatility
+times a grade step and never reads the score. Price sensitivity is lost
+at candidacy by vote count, at the saturating cross-sectional rank, at the
+binary three-session stance, at the selection cut, and in the engine
+weight. The smallest correction within the architecture is
+`risk.tilt_by_conviction`, off by default: the selected names' targets
+scaled by (1 + tilt × value conviction), gross restored, cap re-applied;
+at 0.5 the weights become continuous in price (ADBE 11.84% → 10.73%).
+Tested; unmeasured; not in production. Note and data in
+`docs/research/price-sensitivity-2026-09-14.{md,json}`.
+
 ## 2026-09-14 — The ML observation runs before release-tone scoring
 
 The frozen ML observer sat after the whole nightly refresh, and the
