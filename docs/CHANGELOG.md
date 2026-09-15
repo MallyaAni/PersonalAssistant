@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-14 — Filing-refresh failures named; cached-data policy explicit; revision recorded
+
+`market_edgar.refresh` returns the names whose fetch failed. A successful
+fetch with no new filing still writes today's partition (the same facts, a
+new source time); a failed fetch writes nothing and the store keeps
+serving that name's last successful partition. The ML observer's gate
+reads both lists: bars are required fresh and a frozen-universe name whose
+bars failed stops the observation, while a name whose filing refresh
+failed is observed on its last successful filing snapshot and the run says
+so by name. Filings are point in time by filing date and change a few
+times a year, so that is the stated policy rather than an accident. The
+observation also prints the code revision of the checkout it runs from,
+because the nightly runs from the checkout and the deployed container can
+sit on a different commit. Tests cover the failed-filing path and the
+revision line. Fingerprint unchanged (0e175165d972a1ab).
+
 ## 2026-09-14 — The ML observation runs before release-tone scoring
 
 The frozen ML observer sat after the whole nightly refresh, and the

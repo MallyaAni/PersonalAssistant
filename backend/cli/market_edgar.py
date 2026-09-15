@@ -49,11 +49,20 @@ def _select(args: argparse.Namespace) -> tuple[str, ...]:
 
 
 # Fetch and store every ticker not already in the partition.
-def refresh(store: MarketStore, tickers: tuple[str, ...], asof: date) -> None:
-    """Fetch events and facts per ticker into the as-of partition."""
+def refresh(
+    store: MarketStore, tickers: tuple[str, ...], asof: date
+) -> tuple[str, ...]:
+    """Fetch events and facts per ticker into the as-of partition.
+
+    Returns the names whose fetch failed. A successful fetch with no new
+    filing still writes today's partition (the same facts, a new source
+    time); a failed fetch writes nothing, and the store keeps serving that
+    name's last successful partition, which is the cached-data policy.
+    """
     pacer = edgar.Pacer()
     cik_map = edgar.fetch_cik_map(pacer=pacer)
     stored = failed = skipped = 0
+    failed_names: list[str] = []
     started = time.time()
     for ticker in tickers:
         if store.has_frame(EVENTS, asof, ticker):
@@ -64,12 +73,14 @@ def refresh(store: MarketStore, tickers: tuple[str, ...], asof: date) -> None:
         if cik is None:
             print(f"{ticker:6} FAILED  no CIK on SEC's ticker list", flush=True)
             failed += 1
+            failed_names.append(ticker)
             continue
         try:
             record = edgar.fetch_company(ticker, cik, pacer=pacer)
         except edgar.EdgarUnavailableError as exc:
             print(f"{ticker:6} FAILED  {exc}", flush=True)
             failed += 1
+            failed_names.append(ticker)
             continue
         events, facts = edgar.record_frames(record)
         meta = {
@@ -90,6 +101,7 @@ def refresh(store: MarketStore, tickers: tuple[str, ...], asof: date) -> None:
         f"partition {asof}: {stored} stored, {skipped} kept, {failed} failed "
         f"in {minutes:.1f} min"
     )
+    return tuple(failed_names)
 
 
 # Report what the newest partition holds per ticker.

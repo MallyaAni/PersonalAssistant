@@ -159,9 +159,9 @@ def refresh(
             else ""
         )
     )
-    filings(store, research_tickers(), asof)
+    filing_failures = filings(store, research_tickers(), asof) or ()
     if after_filings is not None:
-        after_filings(report)
+        after_filings(report, filing_failures)
     if skip_tone:
         print("tone: skipped")
         return
@@ -637,8 +637,20 @@ def _paper_trade(
 # this gate; nothing here backdates or relaxes them. Lives in this module
 # so the shadow module, whose source is part of the experiment
 # fingerprint, is untouched.
-def observe_ml_forward(root: Path, current: bool, bar_failures=()) -> dict | None:
-    """Observe the frozen ML accounts once the required data is on disk."""
+def observe_ml_forward(
+    root: Path, current: bool, bar_failures=(), filing_failures=()
+) -> dict | None:
+    """Observe the frozen ML accounts once the required data is on disk.
+
+    Bars are required fresh: a frozen-universe name whose bars failed to
+    refresh stops the observation. Filings are point in time by filing
+    date and change a few times a year, so a name whose filing refresh
+    failed is observed on its last successful filing snapshot, and the
+    run says so by name; a successful refresh that found no new filing
+    is not a failure and is not reported. The revision the observation
+    runs from is the checkout's, printed here, because the nightly runs
+    from the checkout and not from the deployed container.
+    """
     from backend.market import opportunity_shadow
 
     if not current:
@@ -649,6 +661,14 @@ def observe_ml_forward(root: Path, current: bool, bar_failures=()) -> dict | Non
     if missing:
         print(f"ML forward: skipped, today's bars incomplete for {', '.join(missing)}")
         return None
+    stale = sorted(frozen & set(filing_failures))
+    if stale:
+        print(
+            "ML forward: filings for "
+            + ", ".join(stale)
+            + " did not refresh today; their last successful filing snapshot is used"
+        )
+    print(f"ML forward: code revision {_git_revision()} (the nightly's checkout)")
     return opportunity_shadow.observe_if_current(root, True)
 
 
@@ -1142,8 +1162,8 @@ def main() -> None:
             llm_url=args.llm_url,
             llm_model=args.llm_model,
             concurrency=args.concurrency,
-            after_filings=lambda report: observe_ml_forward(
-                Path(store.root), current, report.failed_tickers
+            after_filings=lambda report, filing_failures: observe_ml_forward(
+                Path(store.root), current, report.failed_tickers, filing_failures
             ),
         )
     else:

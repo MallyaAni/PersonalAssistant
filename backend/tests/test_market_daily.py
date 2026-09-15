@@ -75,6 +75,7 @@ def test_ml_observation_runs_before_tone_and_survives_a_blocked_scorer(
 
     def filings(store, tickers, asof):
         calls.append("filings")
+        return ("ZZZZ",)  # a failed name outside the frozen universe
 
     def tone(store, tickers, asof, **kw):
         calls.append("tone")
@@ -92,8 +93,8 @@ def test_ml_observation_runs_before_tone_and_survives_a_blocked_scorer(
         bars=bars,
         filings=filings,
         tone=tone,
-        after_filings=lambda report: market_daily.observe_ml_forward(
-            tmp_path, True, report.failed_tickers
+        after_filings=lambda report, failed: market_daily.observe_ml_forward(
+            tmp_path, True, report.failed_tickers, failed
         ),
     )
     assert calls == ["bars", "filings", "ml", "tone"]
@@ -123,6 +124,13 @@ def test_incomplete_bars_prevent_the_ml_observation(tmp_path, monkeypatch, capsy
     assert "bars incomplete" in capsys.readouterr().out
     market_daily.observe_ml_forward(tmp_path, True, ("^VIX",))
     assert observed == [1]
+    # A failed filing refresh for a frozen name is named and does not stop
+    # the observation: the last successful filing snapshot is the policy.
+    market_daily.observe_ml_forward(tmp_path, True, (), (frozen_name,))
+    out = capsys.readouterr().out
+    assert observed == [1, 1]
+    assert f"filings for {frozen_name} did not refresh today" in out
+    assert "code revision" in out
 
 
 def _report() -> DeskReport:
