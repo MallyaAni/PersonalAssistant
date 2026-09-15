@@ -130,6 +130,12 @@ def research_tickers() -> tuple[str, ...]:
 
 
 # Refresh every layer the desk reads, in the order it needs them.
+#
+# `after_filings(report)` runs once bars and filings are on disk and before
+# the release-tone scoring. The frozen ML observer goes there: it reads
+# prices and filings only, and the tone step runs a model over every new
+# release for hours, so an observer placed after it saw the session's
+# date roll past midnight and refused, correctly, to backdate.
 def refresh(
     store: MarketStore,
     asof: date,
@@ -141,6 +147,7 @@ def refresh(
     bars=snapshot.refresh,
     filings=market_edgar.refresh,
     tone=market_tone.refresh_tickers,
+    after_filings=None,
 ) -> None:
     """Pull bars, filings and new release scores into the as-of partition."""
     report = bars(store, bar_tickers(), asof=asof)
@@ -153,6 +160,8 @@ def refresh(
         )
     )
     filings(store, research_tickers(), asof)
+    if after_filings is not None:
+        after_filings(report)
     if skip_tone:
         print("tone: skipped")
         return
@@ -618,6 +627,29 @@ def _paper_trade(
         f"{entry['pl']:+,.0f} ({entry['pl_pct'] * 100:+.1f}%)"
     )
     return entry
+
+
+# The frozen ML observer, gated on the data it needs: today's bars for
+# every name in the frozen universe. A bar that failed to refresh would
+# leave that name without a price at the close, and the observer must not
+# read a session that is only partly there. The observer's own checks
+# (the session must be today's, every forecast finite) still apply after
+# this gate; nothing here backdates or relaxes them. Lives in this module
+# so the shadow module, whose source is part of the experiment
+# fingerprint, is untouched.
+def observe_ml_forward(root: Path, current: bool, bar_failures=()) -> dict | None:
+    """Observe the frozen ML accounts once the required data is on disk."""
+    from backend.market import opportunity_shadow
+
+    if not current:
+        return None
+    with np.load(opportunity_shadow.BUNDLE, allow_pickle=False) as saved:
+        frozen = set(saved["tickers"].tolist())
+    missing = sorted(frozen & set(bar_failures))
+    if missing:
+        print(f"ML forward: skipped, today's bars incomplete for {', '.join(missing)}")
+        return None
+    return opportunity_shadow.observe_if_current(root, True)
 
 
 # The day's record, as plain data.
@@ -1101,6 +1133,7 @@ def main() -> None:
     args = build_parser().parse_args()
     store = MarketStore(args.data_dir)
     asof = args.asof or datetime.now(tz=UTC).date()
+    current = args.asof is None
     if args.refresh:
         refresh(
             store,
@@ -1109,10 +1142,12 @@ def main() -> None:
             llm_url=args.llm_url,
             llm_model=args.llm_model,
             concurrency=args.concurrency,
+            after_filings=lambda report: observe_ml_forward(
+                Path(store.root), current, report.failed_tickers
+            ),
         )
-    from backend.market import opportunity_shadow
-
-    opportunity_shadow.observe_if_current(Path(store.root), args.asof is None)
+    else:
+        observe_ml_forward(Path(store.root), current)
     report = trading_desk.run(store, args.asof)
     panel = report.panel
     print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")

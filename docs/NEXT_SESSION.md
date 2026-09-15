@@ -9,6 +9,16 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-14 — Observer ordering fix (main)
+
+The nightly's ML observation now runs after bars and filings and before
+release-tone scoring (`observe_ml_forward`, `refresh(after_filings=...)`).
+Fingerprint unchanged; no ledger reset. VERIFIED: 25 nightly and shadow
+tests, ruff, black. The nightly script pulls main before it runs, so the
+next 19:30 ET run carries the fix without a deploy; the API container does
+not run the nightly. First observation and next-session fill: pending
+until a run completes with the fix in place.
+
 ## 2026-09-14 — Frozen ML forward-paper checkpoint (this branch)
 
 Branch `research/growth-gpu-audit` carries the finished forward-paper

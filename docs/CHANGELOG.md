@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-14 — The ML observation runs before release-tone scoring
+
+The frozen ML observer sat after the whole nightly refresh, and the
+refresh ends with the release-tone scoring, a model pass over every new
+release that ran for hours (Friday's record was written at 02:31 the next
+day). An observer that reaches the session after midnight sees a date
+that is no longer today's and refuses, correctly, to backdate, so on such
+nights the experiment never observed. The observer's inputs are prices
+and filings only (`build_panel`, `gp.dataset`, `trailing_levels`); it
+reads no tone frame. `market_daily.refresh` now takes an `after_filings`
+hook that runs once bars and filings are on disk and before tone, and
+`observe_ml_forward` is that hook: it skips, with a printed reason, when a
+frozen-universe name's bars failed to refresh, and otherwise calls the
+unchanged observer. A run without `--refresh` observes as before, once;
+an explicit `--asof` never observes. Freshness checks, decision
+timestamps, next-session fills and duplicate protection are the shadow
+module's and are untouched; its source is part of the experiment
+fingerprint, which is unchanged (0e175165d972a1ab), so existing ledger
+files continue. Two integration tests: a blocked scorer cannot prevent a
+ready observation, and incomplete required bars prevent it. Nothing
+retrained, promoted or deployed.
+
 ## 2026-09-14 — Frozen neural forward-paper comparison, observed nightly
 
 Exported the 2024-validation-selected neural scorer from research source

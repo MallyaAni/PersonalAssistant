@@ -59,6 +59,72 @@ def test_refresh_order_and_tickers(tmp_path):
     assert set(market_daily.book_tickers()) < set(calls[1][1])
 
 
+# The frozen ML observer runs once bars and filings are on disk and before
+# the release-tone scoring, so a scorer that blocks for hours (or is away)
+# cannot stop a ready observation; and it runs exactly once per refresh.
+def test_ml_observation_runs_before_tone_and_survives_a_blocked_scorer(
+    tmp_path, monkeypatch
+):
+    from backend.market import opportunity_shadow
+
+    calls = []
+
+    def bars(store, tickers, asof):
+        calls.append("bars")
+        return _BarsReport()
+
+    def filings(store, tickers, asof):
+        calls.append("filings")
+
+    def tone(store, tickers, asof, **kw):
+        calls.append("tone")
+        raise TimeoutError("scorer blocked")
+
+    def observe(root, enabled):
+        calls.append("ml")
+        return {"status": "Observed frozen policies", "sequence": 1}
+
+    monkeypatch.setattr(opportunity_shadow, "observe_if_current", observe)
+    store = MarketStore(tmp_path)
+    market_daily.refresh(
+        store,
+        date(2026, 9, 14),
+        bars=bars,
+        filings=filings,
+        tone=tone,
+        after_filings=lambda report: market_daily.observe_ml_forward(
+            tmp_path, True, report.failed_tickers
+        ),
+    )
+    assert calls == ["bars", "filings", "ml", "tone"]
+    assert calls.count("ml") == 1
+    # A historical run (an explicit --asof) never observes.
+    calls.clear()
+    market_daily.observe_ml_forward(tmp_path, False)
+    assert calls == []
+
+
+# Incomplete required data prevents the observation: a frozen-universe name
+# whose bars failed to refresh stops it, a failed name outside the frozen
+# universe does not. Nothing is backdated; the observer is simply not run.
+def test_incomplete_bars_prevent_the_ml_observation(tmp_path, monkeypatch, capsys):
+    from backend.market import opportunity_shadow
+
+    observed = []
+    monkeypatch.setattr(
+        opportunity_shadow,
+        "observe_if_current",
+        lambda root, enabled: observed.append(1),
+    )
+    with np.load(opportunity_shadow.BUNDLE, allow_pickle=False) as saved:
+        frozen_name = str(saved["tickers"][0])
+    assert market_daily.observe_ml_forward(tmp_path, True, (frozen_name,)) is None
+    assert observed == []
+    assert "bars incomplete" in capsys.readouterr().out
+    market_daily.observe_ml_forward(tmp_path, True, ("^VIX",))
+    assert observed == [1]
+
+
 def _report() -> DeskReport:
     t, n = 3, 2
     close = np.full((t, n + 1), 100.0)
