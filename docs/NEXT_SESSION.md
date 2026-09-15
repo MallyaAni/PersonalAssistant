@@ -9,6 +9,13 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-15 — FOMC gate (branch fomc-gate)
+
+The overlay's gate is registered and priced nightly; nothing to decide
+until six meetings are complete (about mid-2027). Restoration for the
+September cycle is due at the 09-17 open; the gate block will show the
+completed row after it. Do not tune the policy: a change restarts the count.
+
 ## 2026-09-15 — Nightly hardening (branch nightly-hardening) and the roadmap
 
 The nightly now holds a lock, budgets the tone step at three hours and

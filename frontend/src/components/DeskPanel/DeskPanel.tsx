@@ -3,6 +3,7 @@ import { RefreshCw, X } from 'lucide-react'
 import { FundingPreview } from './FundingPreview'
 import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
+import { FomcGate } from './FomcGate'
 import { StockBoard } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { OpportunityCard } from './OpportunityCard'
@@ -990,6 +991,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       )}
 
       <ForwardEvidence evidence={payload.forward_evidence} />
+      <FomcGate gate={payload.fomc_gate} />
 
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">

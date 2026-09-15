@@ -114,6 +114,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     from backend.market import (
         board_paper,
         event_status,
+        fomc_gate,
         forward_evidence,
         opportunity_shadow,
         record_status,
@@ -136,6 +137,9 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         # Whether the last completed session has its record and its ML
         # observation, so the page can say when it is showing an old decision.
         "record_status": record_status.describe(_root()),
+        # The FOMC overlay against the book that never traded it, meeting by
+        # meeting, and the standing of the gate written before the outcomes.
+        "fomc_gate": fomc_gate.load(_root()),
         "coverage": {
             "tracked": len(tracked),
             "graded": len(latest.get("grades") or {}),

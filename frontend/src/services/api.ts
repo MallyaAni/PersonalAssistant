@@ -2082,6 +2082,8 @@ export interface DeskPayload {
   coverage?: {tracked: number; graded: number};
   // The last completed session and whether its record and ML observation exist.
   record_status?: {expected: string; due_at: string; record: {session: string | null; status: DeskStanding}; ml_forward: {session: string | null; status: DeskStanding}};
+  // The FOMC overlay priced against the book that never traded it, and the gate's standing.
+  fomc_gate?: DeskFomcGate | null;
   board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;
   ml_forward?: {status: string; started_at?: string; observed_at?: string; session?: string | null; accounts: Record<string, {equity: number; total_return: number}>} | null;
   forward_evidence?: DeskForwardEvidence;
@@ -2102,6 +2104,29 @@ export interface DeskPayload {
   sessions: string[];
   // The record's track-record curve, for convenience at the top level.
   curve?: DeskCurve;
+}
+
+export interface DeskFomcGateMeeting {
+  decision_date: string;
+  status: string;
+  complete: boolean;
+  window?: [string, string];
+  effect?: number;
+  effect_pct?: number | null;
+  effect_after_costs?: number;
+  effect_after_costs_pct?: number | null;
+  drawdown_live?: number;
+  drawdown_without?: number;
+}
+
+export interface DeskFomcGate {
+  version: string;
+  written: string;
+  first_meeting: string;
+  cost_bp: number;
+  meetings: DeskFomcGateMeeting[];
+  verdict: {standing: 'waiting' | 'keep' | 'retire'; completed_meetings: number; required: number; effect_after_costs: number; effect_after_costs_pct: number; meetings_with_deeper_live_drawdown: number; rule: string};
+  basis: string;
 }
 
 export interface DeskForwardEvidence {

@@ -276,6 +276,34 @@ test('forward evidence distinguishes unobserved outcomes from zero performance',
   await expect(evidence).not.toContainText('0.00%')
 })
 
+// The FOMC overlay's gate: the counterfactual priced beside the live book
+// per meeting, and the pre-registered standing, never an action.
+test('the FOMC gate shows each meeting against the book without the overlay', async ({page}) => {
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], fomc_gate: {
+      version: 'fomc-gate/1', written: '2026-09-15T21:00:00+00:00', first_meeting: '2026-09-16', cost_bp: 25,
+      basis: 'paper account fills and closes',
+      meetings: [{decision_date: '2026-09-16', status: 'cycle open', complete: false, window: ['2026-09-11', '2026-09-14'],
+        effect: 203.45, effect_pct: 0.002047, effect_after_costs: 154.45, effect_after_costs_pct: 0.001554,
+        drawdown_live: -0.01677, drawdown_without: -0.01882}],
+      verdict: {standing: 'waiting', completed_meetings: 0, required: 6, effect_after_costs: 0, effect_after_costs_pct: 0,
+        meetings_with_deeper_live_drawdown: 0, rule: 'after 6 completed meetings from 2026-09-16: keep when positive after costs'},
+    },
+  }}))
+  await page.goto('/?deskDetails=1#desk')
+  const gate = page.getByLabel('FOMC overlay gate')
+  await expect(gate).toContainText('0 of 6 meetings')
+  await gate.locator('summary').click()
+  await expect(gate).toContainText('waiting for enough meetings')
+  const table = page.getByRole('table', {name: 'FOMC meetings'})
+  await expect(table).toContainText('2026-09-16')
+  await expect(table).toContainText('+$203 (0.20%)')
+  await expect(table).toContainText('+$154 (0.16%)')
+  await expect(table).toContainText('-1.68%')
+  await expect(table).toContainText('-1.88%')
+})
+
 // A stale observation cannot erase a durable active cycle from the status heading.
 test('stale FOMC recovery keeps the active cycle paused', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)

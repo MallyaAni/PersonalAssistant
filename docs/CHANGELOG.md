@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-15 — The FOMC overlay's gate, written before the outcome, priced nightly
+
+The paper book's provisional FOMC rule (half exposure over three weak
+pre-meeting sessions, restored after) rests on two completed meetings;
+the 2021-2026 simulation is against it. It stays as it is and is judged
+by a gate registered today (`docs/research/fomc-gate-2026-09-15.md`): six
+completed meetings from 2026-09-16, keep when the summed effect after
+25 bp on the overlay's traded notional is positive and the live drawdown
+is not deeper in more than half the meetings, otherwise retire; a
+policy change restarts the count. `backend/market/fomc_gate.py` prices
+the counterfactual exactly from the paper account's own fills and
+closes (the book without the overlay holds every share it sold until it
+bought it back), writes `desk/fomc-gate.json` after each paper session,
+the API carries it and the Desk view shows it per meeting. Tonight's
+first row: the September cut is ahead by about $203 at the 09-14 close,
+cycle open, gate waiting at 0 of 6. Tests: `test_fomc_gate.py`, the desk e2e.
+
 ## 2026-09-15 — A nightly that ends with a record: one run at a time, a tone budget, the observer's receipt
 
 Three guards on the nightly path, none touching what the desk sizes.
