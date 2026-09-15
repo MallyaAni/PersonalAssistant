@@ -27,9 +27,9 @@ class _BarsReport:
     failed_tickers: list = field(default_factory=list)
 
 
-# Refresh the broad universe plus benchmarks and macro, then filings and
-# tone for every stock member in that order; an unavailable tone
-# runtime that is away does not stop the desk.
+# Refresh the broad universe plus benchmarks and macro, then filings for
+# every stock member and tone for the book, in that order; a tone runtime
+# that is away does not stop the desk.
 def test_refresh_order_and_tickers(tmp_path):
     calls = []
 
@@ -53,10 +53,13 @@ def test_refresh_order_and_tickers(tmp_path):
     assert "^VIX" in bar_tickers
     assert "SNDK" in bar_tickers
     assert "SPY" not in calls[1][1]
-    assert calls[1][1] == calls[2][1]
     assert "DUK" in calls[1][1]
     assert set(calls[1][1]) == set(market_daily.research_tickers())
     assert set(market_daily.book_tickers()) < set(calls[1][1])
+    # Tone is the book's alone: a release is fetched and read one at a time,
+    # and the research universe's backlog ran past the next session.
+    assert set(calls[2][1]) == set(market_daily.book_tickers())
+    assert "DUK" not in calls[2][1]
 
 
 # The frozen ML observer runs once bars and filings are on disk and before

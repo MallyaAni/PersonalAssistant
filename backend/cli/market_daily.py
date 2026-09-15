@@ -6,7 +6,7 @@
 
 `--refresh` pulls daily bars for all tracked stocks, benchmarks and the
 macro series, EDGAR events and facts for all tracked stocks, and scores any
-release not yet scored (only the new ones: earlier scores carry forward).
+book release not yet scored (only the new ones: earlier scores carry forward).
 Then the desk runs and prints the regime, the grades and the book, and the
 whole record is written to `data/market/desk/asof=DATE/desk.json` so a day
 can be read back later exactly as it was seen.
@@ -165,10 +165,15 @@ def refresh(
     if skip_tone:
         print("tone: skipped")
         return
+    # Tone is scored for the book only. A release is fetched from EDGAR one
+    # at a time under SEC pacing and read by the model, minutes per name; on
+    # the 531-name research universe a rescoring ran past the next session
+    # and the desk wrote no record. Breadth tone is a research refresh
+    # (`market_tone --refresh --roles`), not the nightly's critical path.
     try:
         scored = tone(
             store,
-            research_tickers(),
+            book_tickers(),
             asof,
             llm_url=llm_url,
             llm_model=llm_model,
