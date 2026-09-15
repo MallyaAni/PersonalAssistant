@@ -1195,6 +1195,7 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(
 
 # The page reads these keys from the desk payload; the browser tests stub
 # the API, so this is the one place a renamed or dropped key is caught.
+@pytest.mark.asyncio
 async def test_the_desk_payload_carries_every_key_the_page_reads(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
