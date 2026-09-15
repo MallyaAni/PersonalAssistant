@@ -696,3 +696,15 @@ def test_curves_never_raise(monkeypatch, tmp_path):
     monkeypatch.setattr(paper, "load_state", lambda root: paper.PaperState())
     out = market_daily.curves(None, None, tmp_path)
     assert out == {"backtest": None, "paper": None}
+
+
+# The record names the revision the process started from, not whatever the
+# checkout has moved to since: the intraday cron and a deploy both pull
+# main under a running nightly.
+def test_the_record_revision_is_the_one_the_process_started_from(monkeypatch):
+    monkeypatch.setattr(market_daily, "_STARTED_FROM", None)
+    readings = iter(["aaaaaaa", "bbbbbbb"])
+    monkeypatch.setattr(market_daily, "_read_git_revision", lambda: next(readings))
+    first = market_daily.record(_report())["provenance"]["code_revision"]
+    second = market_daily.record(_report())["provenance"]["code_revision"]
+    assert first == second == "aaaaaaa"

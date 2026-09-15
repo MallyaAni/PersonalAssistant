@@ -925,7 +925,22 @@ def refuse_existing_record(root: Path, session: str, force: bool = False) -> boo
 
 # The checkout's revision, so a record says exactly which code produced it;
 # "unknown" when the revision cannot be read (no git, or not a checkout).
+# The revision this process started from. The checkout can move under a
+# running nightly (the intraday cron and a deploy both pull main), and on
+# 2026-09-15 a record written by code from one revision named the next;
+# what produced the record is the code that was loaded, so it is read once
+# at import and not again.
+_STARTED_FROM: str | None = None
+
+
 def _git_revision() -> str:
+    global _STARTED_FROM
+    if _STARTED_FROM is None:
+        _STARTED_FROM = _read_git_revision()
+    return _STARTED_FROM
+
+
+def _read_git_revision() -> str:
     try:
         import subprocess
 
