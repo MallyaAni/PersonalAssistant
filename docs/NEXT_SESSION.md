@@ -41,6 +41,23 @@ ladder on the as-of path with the same splits, purging and selection as
 the 2026-09-14 run, as a new run directory, compared against the frozen
 bundle only on untouched sessions. Not before the forward ledger has its
 first fills verified. No parameter search.
+## 2026-09-14 — Price-to-position diagnostic (branch research/price-sensitivity)
+
+The sensitivity tool and the proposed, default-off attractiveness tilt
+are on this branch with their tests; the note names the five points where
+price sensitivity is lost. Next atomic task, if the operator wants it: run
+the simulator with the tilt at 0.25 and 0.5 from 2018-06 at matched
+volatility and by year, against the rule, before any production change.
+
+## 2026-09-14 — Observer ordering fix (main)
+
+The nightly's ML observation now runs after bars and filings and before
+release-tone scoring (`observe_ml_forward`, `refresh(after_filings=...)`).
+Fingerprint unchanged; no ledger reset. VERIFIED: 25 nightly and shadow
+tests, ruff, black. The nightly script pulls main before it runs, so the
+next 19:30 ET run carries the fix without a deploy; the API container does
+not run the nightly. First observation and next-session fill: pending
+until a run completes with the fix in place.
 
 ## 2026-09-14 — Frozen ML forward-paper checkpoint (this branch)
 

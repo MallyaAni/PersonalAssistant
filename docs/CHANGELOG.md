@@ -63,6 +63,67 @@ evaluation specification is written down in
 `docs/research/ml-forward-evaluation-spec.md`: SPY fully invested and
 exempt from the stock cap, cash and gross exposure reported for every
 strategy, and the next-close dollar-allocation assumption stated exactly.
+## 2026-09-14 — Price sensitivity extended: scenarios, value's share, whole-book repricing, a candidate design
+
+The diagnostic now runs two scenarios per price (the level for one
+session, and for the rule's three sessions so persistence is satisfied),
+traces how much value already contributes through the vote, the score and
+the sizing (the last is zero: the engine weight never reads the score),
+reprices the whole book to show that a uniform move leaves every
+allocation unchanged, shows a bounded valuation magnitude beside the rank
+(tanh of the P/S distance from the side's median over the book's median
+distance; not an expected return), and separates hard gates from bearish
+opinions. The tilt is disabled and shown only as a column. The note
+proposes one minimal design - the magnitude in the selection score, a
+candidacy rule that admits a name blocked only by opinions when its total
+conviction matches the weakest admitted name, and the tilt at a single
+fixed value - with its assumptions and a four-variant evaluation plan on
+the simulator. Nothing in production changes; no sweep; no training.
+
+## 2026-09-14 — Price sensitivity of grade and target weight, and the proposed tilt
+
+`market_price_sensitivity`: one fixed information snapshot, one name's
+close moved from half to double, the valuation analyst recomputed on the
+book, the grade re-made with the other analysts fixed, the score rebuilt,
+the desk's own sizing run on the original volatilities; every valuation
+input, stance, conviction, vote, grade, score, cut, engine weight,
+multiplier, target, dollars and binding constraint printed per price with
+the reason for each change. A sensitivity analysis, not a backtest. On the
+2026-09-04 snapshot the target weight is constant across the whole range
+for every name examined: ORCL is C at every price (value +1 throughout,
+two bearish analysts), and ADBE, NTAP and SNDK keep 10.38%, 8.47% and
+4.13% from half to double because the engine weight is inverse volatility
+times a grade step and never reads the score. Price sensitivity is lost
+at candidacy by vote count, at the saturating cross-sectional rank, at the
+binary three-session stance, at the selection cut, and in the engine
+weight. The smallest correction within the architecture is
+`risk.tilt_by_conviction`, off by default: the selected names' targets
+scaled by (1 + tilt × value conviction), gross restored, cap re-applied;
+at 0.5 the weights become continuous in price (ADBE 11.84% → 10.73%).
+Tested; unmeasured; not in production. Note and data in
+`docs/research/price-sensitivity-2026-09-14.{md,json}`.
+
+## 2026-09-14 — The ML observation runs before release-tone scoring
+
+The frozen ML observer sat after the whole nightly refresh, and the
+refresh ends with the release-tone scoring, a model pass over every new
+release that ran for hours (Friday's record was written at 02:31 the next
+day). An observer that reaches the session after midnight sees a date
+that is no longer today's and refuses, correctly, to backdate, so on such
+nights the experiment never observed. The observer's inputs are prices
+and filings only (`build_panel`, `gp.dataset`, `trailing_levels`); it
+reads no tone frame. `market_daily.refresh` now takes an `after_filings`
+hook that runs once bars and filings are on disk and before tone, and
+`observe_ml_forward` is that hook: it skips, with a printed reason, when a
+frozen-universe name's bars failed to refresh, and otherwise calls the
+unchanged observer. A run without `--refresh` observes as before, once;
+an explicit `--asof` never observes. Freshness checks, decision
+timestamps, next-session fills and duplicate protection are the shadow
+module's and are untouched; its source is part of the experiment
+fingerprint, which is unchanged (0e175165d972a1ab), so existing ledger
+files continue. Two integration tests: a blocked scorer cannot prevent a
+ready observation, and incomplete required bars prevent it. Nothing
+retrained, promoted or deployed.
 
 ## 2026-09-14 — Frozen neural forward-paper comparison, observed nightly
 

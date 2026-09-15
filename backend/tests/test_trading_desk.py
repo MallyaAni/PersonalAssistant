@@ -304,10 +304,7 @@ def test_tightening_cuts_exposure_and_steepens_the_book():
     # split, and that is what this asserts.
     calm_gross = sum(calm_weights.values())
     tight_gross = sum(tight_weights.values())
-    assert (
-        tight_weights["STEADY"] / tight_gross
-        > calm_weights["STEADY"] / calm_gross
-    )
+    assert tight_weights["STEADY"] / tight_gross > calm_weights["STEADY"] / calm_gross
 
     # And the tilt does not breach the name cap on its way there.
     #
@@ -344,3 +341,27 @@ def test_tightening_cuts_exposure_and_steepens_the_book():
     # cut is what changes the total.
     assert tight_gross == pytest.approx(calm_gross * tight.today().exposure)
     assert any("steadier" in s.position.note for s in tight_book)
+
+
+# The proposed attractiveness tilt: off, it changes nothing; on, a cheaper
+# name at the same grade and volatility takes more than a dearer one, the
+# gross is unchanged, and no name breaches the cap.
+def test_attractiveness_tilt_is_off_by_default_and_reweights_within_the_book():
+    from backend.agents.trading.desk import risk
+
+    targets = np.array([0.10, 0.10, 0.10, 0.0])
+    conviction = np.array([0.8, -0.8, 0.0, 0.9])  # the fourth is not held
+    assert np.array_equal(
+        risk.tilt_by_conviction(targets, conviction, 0.0, 0.15), targets
+    )
+    tilted = risk.tilt_by_conviction(targets, conviction, 0.5, 0.15)
+    assert tilted[3] == 0.0
+    assert tilted[0] > tilted[2] > tilted[1]
+    assert abs(tilted.sum() - targets.sum()) < 1e-12
+    assert tilted.max() <= 0.15 + 1e-12
+    # The cap binds: a strong conviction cannot carry a name past it.
+    capped = risk.tilt_by_conviction(
+        np.array([0.14, 0.14, 0.02]), np.array([1.0, -1.0, 0.0]), 1.0, 0.15
+    )
+    assert capped.max() <= 0.15 + 1e-12
+    assert abs(capped.sum() - 0.30) < 1e-12
