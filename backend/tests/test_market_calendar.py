@@ -74,12 +74,18 @@ def test_calendar_distances_and_windows():
     assert np.array_equal(per_name[:, 0], per_name[:, 1])
 
 
-# The committed file parses and covers the period.
-def test_committed_decisions_cover_2015_to_2026():
+# The committed file parses and covers the period, and reaches the FOMC
+# gate's horizon: six completed meetings from 2026-09-16 need the 2027
+# schedule, or the policy pauses for an unknown calendar in January.
+def test_committed_decisions_cover_2015_to_2027():
     decisions = calendar.fomc_decisions()
     assert decisions[0].year == 2015
     assert any(d.year == 2026 for d in decisions)
     assert len(decisions) >= 90
+    later = [d for d in decisions if d >= date(2026, 9, 16)]
+    assert len(later) >= 6
+    assert date(2027, 6, 9) in decisions
+    assert date(2027, 12, 8) in decisions
 
 
 # A decision whose date falls after the panel's last session is still a

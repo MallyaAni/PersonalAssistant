@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-15 — The FOMC calendar covers 2027
+
+The decision-day file ended at 2026-12-09; from January the policy would
+have reported the calendar unavailable and paused, and the gate could
+never have reached six meetings. The eight 2027 decision days from the
+Federal Reserve's published (tentative) schedule are added, with a test
+that the file reaches the gate's horizon. Sessions through 2028 were
+already covered by the holiday calendar.
+
 ## 2026-09-15 — The Desk view read word for word against the live payloads
 
 The page was rendered from the day's real API payloads and every visible
