@@ -2076,7 +2076,7 @@ export interface DeskOrder {
   reason: string;
 }
 
-export type DeskStanding = 'none' | 'current' | 'pending' | 'late';
+export type DeskStanding = 'current' | 'pending' | 'late';
 
 export interface DeskPayload {
   coverage?: {tracked: number; graded: number};

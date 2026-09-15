@@ -61,10 +61,13 @@ def due_at(session: date) -> datetime:
 
 # One item's standing against the expected session.
 def standing(have: str | None, expected: date, now: datetime) -> str:
-    """Return 'none', 'current', 'pending' or 'late'."""
-    if not have:
-        return "none"
-    if date.fromisoformat(have) >= expected:
+    """Return 'current', 'pending' or 'late'.
+
+    Nothing on file is treated like an old session: pending until the
+    morning after the expected session, late after it. A frozen
+    experiment that has never observed is late, not exempt.
+    """
+    if have and date.fromisoformat(have) >= expected:
         return "current"
     return "late" if now >= due_at(expected) else "pending"
 
