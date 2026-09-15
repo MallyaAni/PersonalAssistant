@@ -1242,10 +1242,15 @@ def main() -> None:
 
 
 # The ML observer's receipt for the record, whichever way it was reached.
-def _ml_forward_receipt(row: dict | None) -> dict | None:
+# The observer returns its ledger state either way, so the receipt says
+# whether that state is tonight's session or an earlier one it fell back to.
+def _ml_forward_receipt(row: dict | None, session: str | None = None) -> dict | None:
     if not row:
         return None
-    return {k: row.get(k) for k in ("status", "sequence", "session")}
+    return {
+        **{k: row.get(k) for k in ("status", "sequence", "session")},
+        "observed_tonight": bool(session) and row.get("session") == session,
+    }
 
 
 def _run(args, store: MarketStore) -> None:
@@ -1319,7 +1324,7 @@ def _run(args, store: MarketStore) -> None:
                 curve,
                 llm_model=args.llm_model,
                 fundamentals=fundamentals,
-                ml_forward=_ml_forward_receipt(observed.get("row")),
+                ml_forward=_ml_forward_receipt(observed.get("row"), session),
             ),
             allow_overwrite=args.force,
         )

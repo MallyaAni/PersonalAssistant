@@ -708,3 +708,14 @@ def test_the_record_revision_is_the_one_the_process_started_from(monkeypatch):
     first = market_daily.record(_report())["provenance"]["code_revision"]
     second = market_daily.record(_report())["provenance"]["code_revision"]
     assert first == second == "aaaaaaa"
+
+
+# The receipt says whether the observer's state is tonight's session: a run
+# that fell back to an earlier ledger state is visible as not observed.
+def test_ml_receipt_says_whether_tonight_was_observed():
+    row = {"status": "Observed", "sequence": 3, "session": "2026-09-15"}
+    assert market_daily._ml_forward_receipt(row, "2026-09-15")["observed_tonight"]
+    stale = market_daily._ml_forward_receipt(row, "2026-09-16")
+    assert stale["observed_tonight"] is False
+    assert stale["session"] == "2026-09-15"
+    assert market_daily._ml_forward_receipt(None, "2026-09-16") is None

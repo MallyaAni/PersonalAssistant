@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-15 — The checkout never moves under a running nightly; the ML receipt says whether tonight was observed
+
+Both cron scripts on spark1 (`~/desk_daily.sh`, `~/desk_intraday.sh`,
+backed up as `.bak-20260915`) now skip `git pull` while
+`data/market/desk/nightly.lock` is held and log that they did, so a
+record can no longer name code it did not run and a lazy import can no
+longer load a newer module mid-run. The record's `provenance.ml_forward`
+receipt carries `observed_tonight`: the observer returns its ledger
+state either way, and the flag says whether that state is the session
+the record is for.
+
 ## 2026-09-15 — The FOMC calendar covers 2027
 
 The decision-day file ended at 2026-12-09; from January the policy would
