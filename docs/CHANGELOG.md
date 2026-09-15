@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-14 — The price-sensitive candidate: specification resolved, one design evaluated
+
+Three specification points settled in code and tests
+(`backend/market/attractiveness.py`): the relative valuation magnitude
+written exactly and shown algebraically, and by test on the real peer
+function, to be unchanged under a whole-book repricing, so it cannot see
+market-wide expensiveness and is labelled as relative; a history
+reference (the name's own log multiple against its trailing three-year
+median) that falls by exactly the repricing, with its limitations stated
+and not yet used; candidacy shown to use signed evidence, so a stronger
+bearish opinion never raises the score, eligibility or weight, and
+nobody is admitted when the grade rule admits nobody. One candidate
+(magnitude in the ordering score, candidacy up to the weakest admitted
+name, score-admitted names sized as B, the tilt at 0.5) evaluated in the
+desk's simulator from 2018-06 against the rule, both on the corrected
+as-of fundamentals, risk matched by the engine's lagged target and by a
+lagged trailing-volatility scaling, never by realised full-period
+volatility; ablations to explain, not to choose. Result: the candidate
+is indistinguishable from the rule (+25.6% against
++25.4% CAGR, Sharpe 1.49 against 1.47,
+four years of nine); the magnitude-only score is the one piece with a
+consistent sign (+1.1 points, seven of nine) at a deeper drawdown; the
+tilt-only control explains most of the rest. Nothing establishes a better
+allocation. Note and data in `docs/research/price-candidate-2026-09-14.*`.
+Production unchanged; the tilt disabled.
+
 ## 2026-09-14 — The ladder rerun once on as-of fundamentals; old versus corrected
 
 The research feature builder (`market_opportunity_learning --fundamentals

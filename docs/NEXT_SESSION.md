@@ -9,6 +9,14 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-14 — Price-sensitive candidate (branch research/price-candidate)
+
+Specification resolved and one candidate evaluated; see the research
+note. The candidate does not beat the rule on this period. Next, if the
+operator wants it: the history reference measured alone the same way,
+and the candidate as a second shadow track on untouched sessions. No
+production change, no sweep, no training.
+
 ## 2026-09-14 — Corrected-data rerun (branch research/fundamentals-asof)
 
 The ladder was rerun once on the as-of fundamentals with the original
