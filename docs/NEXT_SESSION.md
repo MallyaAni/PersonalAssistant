@@ -11,6 +11,10 @@ Deployment does not activate an ML trading policy or reset any paper account.
 
 ## 2026-09-14 — Price-sensitive candidate (branch research/price-candidate)
 
+CLOSED: no demonstrated improvement. Results preserved; no more variants;
+production unchanged. Next: surface the diagnostic's per-stock reasoning on
+the dashboard (plan in the changelog), with no change to trading behaviour.
+
 Specification resolved and one candidate evaluated; see the research
 note. The candidate does not beat the rule on this period. Next, if the
 operator wants it: the history reference measured alone the same way,

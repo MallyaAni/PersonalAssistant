@@ -1,5 +1,10 @@
 # The price-sensitive candidate — specification and evaluation, 2026-09-14
 
+**Closed 2026-09-14: no demonstrated improvement.** The results below are
+preserved as measured; no further variants are run; production sizing is
+unchanged and the tilt stays disabled. The diagnostic that produced them is
+kept for the dashboard's explanation of each stock's size.
+
 Research only. Production, the nightly and the frozen shadow ledger are
 unchanged; the tilt stays disabled; no parameter was searched and no
 model trained. Code: `backend/market/attractiveness.py`,

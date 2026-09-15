@@ -2,6 +2,9 @@
 
 ## 2026-09-14 — The price-sensitive candidate: specification resolved, one design evaluated
 
+Closed the same day as **no demonstrated improvement**: results kept, no
+further variants, production sizing unchanged, tilt disabled.
+
 Three specification points settled in code and tests
 (`backend/market/attractiveness.py`): the relative valuation magnitude
 written exactly and shown algebraically, and by test on the real peer
