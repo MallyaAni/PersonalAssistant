@@ -104,6 +104,10 @@ def audit(store: MarketStore, names, asof: date | None) -> dict:
         versions = versions_by[ticker]
         trace: dict = {}
         fresh = fa.levels_for(versions, panel.dates, trace)
+        # The same selector restricted to the frozen path's year-to-date rule:
+        # its differences from the frozen path are availability, revision and
+        # tag corrections; the full selector's differences from it are coverage.
+        narrow = fa.levels_for(versions, panel.dates, None, fa.FROZEN_YTD_NAMES)
         # Periods refiled with a different value are restatements; the same
         # value refiled as a later filing's comparative is not.
         values_by_period: dict = {}
@@ -120,6 +124,15 @@ def audit(store: MarketStore, names, asof: date | None) -> dict:
             with np.errstate(all="ignore"):
                 rel = np.abs(a - b) / np.maximum(np.abs(b), 1e-9)
             differ = both & (rel > 1e-9)
+            n = narrow[name]
+            both_n = np.isfinite(n) & np.isfinite(b)
+            with np.errstate(all="ignore"):
+                rel_n = np.abs(n - b) / np.maximum(np.abs(b), 1e-9)
+                rel_c = np.abs(a - n) / np.maximum(np.abs(n), 1e-9)
+            corrections = both_n & (rel_n > 1e-9)
+            coverage = (np.isfinite(a) & ~np.isfinite(n)) | (
+                np.isfinite(a) & np.isfinite(n) & (rel_c > 1e-9)
+            )
             source = {"revenue": "revenue", "earnings": "net_income"}.get(name, name)
             tags = trace.get(source)
             tag_differs = (
@@ -130,6 +143,8 @@ def audit(store: MarketStore, names, asof: date | None) -> dict:
             differing[name] = {
                 "sessions_both_known": int(both.sum()),
                 "sessions_differ": int(differ.sum()),
+                "correction_sessions": int(corrections.sum()),
+                "coverage_sessions": int(coverage.sum()),
                 "differ_with_same_tag": int((differ & ~tag_differs).sum()),
                 "differ_with_other_tag": int((differ & tag_differs).sum()),
                 "only_asof_known": int((np.isfinite(a) & ~np.isfinite(b)).sum()),
@@ -145,6 +160,18 @@ def audit(store: MarketStore, names, asof: date | None) -> dict:
         "names": len(per_name),
         "periods_restated_with_a_different_value": sum(
             v["periods_restated_with_a_different_value"] for v in per_name.values()
+        ),
+        "revenue_correction_sessions": sum(
+            v["levels"]["revenue"]["correction_sessions"] for v in per_name.values()
+        ),
+        "revenue_coverage_sessions": sum(
+            v["levels"]["revenue"]["coverage_sessions"] for v in per_name.values()
+        ),
+        "earnings_correction_sessions": sum(
+            v["levels"]["earnings"]["correction_sessions"] for v in per_name.values()
+        ),
+        "earnings_coverage_sessions": sum(
+            v["levels"]["earnings"]["coverage_sessions"] for v in per_name.values()
         ),
         "revenue_differ_with_same_tag": sum(
             v["levels"]["revenue"]["differ_with_same_tag"] for v in per_name.values()

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-14 — The ladder rerun once on as-of fundamentals; old versus corrected
+
+The research feature builder (`market_opportunity_learning --fundamentals
+asof`) now consumes the versioned selector from the stored versions and
+fingerprints them in the manifest; two more tests prove the complete
+feature path against hand arithmetic (a fourth quarter from the year, a
+second from a six-month span, every ratio column) and that the CLI reads
+the selector from the store. The audit separates corrections from added
+coverage: revenue differs from the frozen path on 31,698
+sessions by availability, revision or tag and on 263
+by coverage. The ridge, tree and neural configurations were rerun once
+with the original seeds, splits, purging, epoch selection and costs, and
+compared with the original run by `market_opportunity_compare`, all
+figures retrospective: validation winner still the network (epoch 15, was
+10); at 10 bp the network +63.7% → +65.0%, ridge +61.0% → +74.3%, trees
++121.1% → +172.4%, the fixed valuation rule +255.5% → +150.0%; momentum,
+equal weight, SPY and USD identical, prices byte-identical. No learned
+model beats the equal-weight control except the trees. Report and data in
+`docs/research/opportunity-learning-asof-2026-09-14.{md,json}`. Nothing
+promoted; production and its frozen ledger unchanged.
+
 ## 2026-09-14 — Versioned as-of fundamentals for the research path
 
 The frozen path keeps one value per period (the earliest filed) and picks
