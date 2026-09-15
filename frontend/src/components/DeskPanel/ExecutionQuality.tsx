@@ -12,14 +12,14 @@ export const ExecutionQuality = ({quality}: {quality?: DeskExecutionQuality | nu
       <p className="mt-2">{quality.basis}.</p>
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-left [&_td]:pr-3 [&_th]:pr-3" aria-label="Execution summary">
-          <thead><tr><th>Scope</th><th>Fills</th><th>Cost</th><th>Dollars</th></tr></thead>
+          <thead><tr><th>Scope</th><th>Fills</th><th>Net cost</th><th>Mean distance</th><th>Dollars</th></tr></thead>
           <tbody>
-            <tr><td>All time</td><td>{quality.all_time.fills}</td><td>{bp(quality.all_time.bps)}</td><td>{dollars(quality.all_time.dollars)}</td></tr>
-            <tr><td>Last {quality.recent.sessions} sessions</td><td>{quality.recent.fills}</td><td>{bp(quality.recent.bps)}</td><td>{dollars(quality.recent.dollars)}</td></tr>
-            <tr><td>Scheduled rebalances</td><td>{quality.by_kind.rebalance.fills}</td><td>{bp(quality.by_kind.rebalance.bps)}</td><td>{dollars(quality.by_kind.rebalance.dollars)}</td></tr>
-            <tr><td>FOMC overlay</td><td>{quality.by_kind.fomc.fills}</td><td>{bp(quality.by_kind.fomc.bps)}</td><td>{dollars(quality.by_kind.fomc.dollars)}</td></tr>
-            <tr><td>Buys</td><td>{quality.by_side.buy.fills}</td><td>{bp(quality.by_side.buy.bps)}</td><td>{dollars(quality.by_side.buy.dollars)}</td></tr>
-            <tr><td>Sells</td><td>{quality.by_side.sell.fills}</td><td>{bp(quality.by_side.sell.bps)}</td><td>{dollars(quality.by_side.sell.dollars)}</td></tr>
+            <tr><td>All time</td><td>{quality.all_time.fills}</td><td>{bp(quality.all_time.bps)}</td><td>{bp(quality.all_time.abs_bps)}</td><td>{dollars(quality.all_time.dollars)}</td></tr>
+            <tr><td>Last {quality.recent.sessions} sessions</td><td>{quality.recent.fills}</td><td>{bp(quality.recent.bps)}</td><td>{bp(quality.recent.abs_bps)}</td><td>{dollars(quality.recent.dollars)}</td></tr>
+            <tr><td>Scheduled rebalances</td><td>{quality.by_kind.rebalance.fills}</td><td>{bp(quality.by_kind.rebalance.bps)}</td><td>{bp(quality.by_kind.rebalance.abs_bps)}</td><td>{dollars(quality.by_kind.rebalance.dollars)}</td></tr>
+            <tr><td>FOMC overlay</td><td>{quality.by_kind.fomc.fills}</td><td>{bp(quality.by_kind.fomc.bps)}</td><td>{bp(quality.by_kind.fomc.abs_bps)}</td><td>{dollars(quality.by_kind.fomc.dollars)}</td></tr>
+            <tr><td>Buys</td><td>{quality.by_side.buy.fills}</td><td>{bp(quality.by_side.buy.bps)}</td><td>{bp(quality.by_side.buy.abs_bps)}</td><td>{dollars(quality.by_side.buy.dollars)}</td></tr>
+            <tr><td>Sells</td><td>{quality.by_side.sell.fills}</td><td>{bp(quality.by_side.sell.bps)}</td><td>{bp(quality.by_side.sell.abs_bps)}</td><td>{dollars(quality.by_side.sell.dollars)}</td></tr>
           </tbody>
         </table>
       </div>
@@ -27,6 +27,12 @@ export const ExecutionQuality = ({quality}: {quality?: DeskExecutionQuality | nu
         <table className="w-full text-left [&_td]:pr-3 [&_th]:pr-3" aria-label="Execution by session">
           <thead><tr><th>Session</th><th>Fills</th><th>Cost</th><th>Dollars</th><th>Cumulative</th></tr></thead>
           <tbody>{quality.series.slice(-10).map(row => <tr key={row.session}><td>{row.session}</td><td>{row.fills}</td><td>{bp(row.bps)}</td><td>{dollars(row.dollars)}</td><td>{dollars(row.cumulative_dollars)}</td></tr>)}</tbody>
+        </table>
+      </div>}
+      {quality.worst.length > 0 && <div className="mt-2 overflow-x-auto">
+        <table className="w-full text-left [&_td]:pr-3 [&_th]:pr-3" aria-label="Worst fills">
+          <thead><tr><th>Session</th><th>Name</th><th>Side</th><th>Kind</th><th>Cost</th><th>Dollars</th></tr></thead>
+          <tbody>{quality.worst.map(row => <tr key={`${row.session}-${row.symbol}-${row.side}`}><td>{row.session}</td><td>{row.symbol}</td><td>{row.side}</td><td>{row.kind}</td><td>{bp(row.bps)}</td><td>{dollars(row.dollars)}</td></tr>)}</tbody>
         </table>
       </div>}
       <p className="mt-3">Written {quality.written}. A rising cumulative line is the desk paying more to reach its positions; it does not say whether the positions were right.</p>

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-15 — Review fixes: the gate counts only closed round trips, the observer cannot abort the run, the lock never preempts a live holder
+
+From opencode's read-only review of the day's changes. The FOMC gate
+counts a meeting only when every share the overlay sold was bought
+back; a cycle the policy released with shares unbought is shown as
+"ended unrestored" and does not advance the six-meeting count. The ML
+observer's bundle read is guarded, so a missing or unreadable bundle
+skips the observation and says so instead of killing the nightly before
+the record. The nightly lock never takes over a holder whose process is
+alive, reads a naive timestamp as UTC, and a refused run exits 75 so
+cron reports it. Execution quality carries the notional-weighted mean
+absolute distance beside the net, and the page shows the five worst
+fills. The record-purchase button and the board simulation carry
+accessibility labels that match their visible words. A backend test
+pins every key the page reads from the desk payload, since the browser
+tests stub the API. The two nightly blocks are written by tonight's run;
+the earlier changelog line that read as a record was a preview.
+
 ## 2026-09-15 — The checkout never moves under a running nightly; the ML receipt says whether tonight was observed
 
 Both cron scripts on spark1 (`~/desk_daily.sh`, `~/desk_intraday.sh`,
@@ -63,9 +81,9 @@ policy change restarts the count. `backend/market/fomc_gate.py` prices
 the counterfactual exactly from the paper account's own fills and
 closes (the book without the overlay holds every share it sold until it
 bought it back), writes `desk/fomc-gate.json` after each paper session,
-the API carries it and the Desk view shows it per meeting. Tonight's
-first row: the September cut is ahead by about $203 at the 09-14 close,
-cycle open, gate waiting at 0 of 6. Tests: `test_fomc_gate.py`, the desk e2e.
+the API carries it and the Desk view shows it per meeting. Previewed on the
+real state before the first nightly write: the September cut ahead by
+about $203 at the 09-14 close, cycle open, gate waiting at 0 of 6. Tests: `test_fomc_gate.py`, the desk e2e.
 
 ## 2026-09-15 — A nightly that ends with a record: one run at a time, a tone budget, the observer's receipt
 

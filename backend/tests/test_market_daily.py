@@ -5,6 +5,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -719,3 +720,31 @@ def test_ml_receipt_says_whether_tonight_was_observed():
     assert stale["observed_tonight"] is False
     assert stale["session"] == "2026-09-15"
     assert market_daily._ml_forward_receipt(None, "2026-09-16") is None
+
+
+# A missing or unreadable bundle skips the observation and says so; it
+# never aborts the run before the record.
+def test_an_unreadable_bundle_skips_the_observation(monkeypatch, tmp_path, capsys):
+    from backend.market import opportunity_shadow
+
+    monkeypatch.setattr(opportunity_shadow, "BUNDLE", tmp_path / "missing.npz")
+    assert market_daily.observe_ml_forward(tmp_path, True) is None
+    assert "bundle unreadable" in capsys.readouterr().out
+
+
+# A refused run (another nightly holds the lock) exits non-zero so cron
+# reports it instead of recording a silent success.
+def test_a_refused_run_exits_non_zero(monkeypatch, tmp_path):
+    from backend.market import nightly_lock
+
+    monkeypatch.setattr(nightly_lock, "acquire", lambda root: None)
+    monkeypatch.setattr(
+        market_daily,
+        "build_parser",
+        lambda: SimpleNamespace(
+            parse_args=lambda: SimpleNamespace(data_dir=str(tmp_path))
+        ),
+    )
+    with pytest.raises(SystemExit) as raised:
+        market_daily.main()
+    assert raised.value.code == 75

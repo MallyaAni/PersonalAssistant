@@ -694,8 +694,14 @@ def observe_ml_forward(
 
     if not current:
         return None
-    with np.load(opportunity_shadow.BUNDLE, allow_pickle=False) as saved:
-        frozen = set(saved["tickers"].tolist())
+    try:
+        with np.load(opportunity_shadow.BUNDLE, allow_pickle=False) as saved:
+            frozen = set(saved["tickers"].tolist())
+    except (OSError, ValueError, KeyError) as exc:
+        # A missing or unreadable bundle is the experiment's problem, not
+        # the desk's: say so and write the record without an observation.
+        print(f"ML forward: skipped, bundle unreadable ({type(exc).__name__}: {exc})")
+        return None
     missing = sorted(frozen & set(bar_failures))
     if missing:
         print(f"ML forward: skipped, today's bars incomplete for {', '.join(missing)}")
@@ -1234,7 +1240,7 @@ def main() -> None:
     store = MarketStore(args.data_dir)
     lock = nightly_lock.acquire(Path(store.root) / DESK_KIND)
     if lock is None:
-        return
+        raise SystemExit(75)  # EX_TEMPFAIL: cron sees a refused run, not a silent one
     try:
         _run(args, store)
     finally:

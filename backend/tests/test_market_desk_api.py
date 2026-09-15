@@ -1191,3 +1191,43 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(
             assert row["value_now"] is None
             assert row["stances_live"]["value"] == 1
             assert row["ranks_live"]["value"] == 0.8
+
+
+# The page reads these keys from the desk payload; the browser tests stub
+# the API, so this is the one place a renamed or dropped key is caught.
+async def test_the_desk_payload_carries_every_key_the_page_reads(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-04", {"SNDK": "A+", "MU": "B"}, [("SNDK", 0.08)], [])
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/desk_user/desk",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    for key in (
+        "latest",
+        "sessions",
+        "summary",
+        "changes",
+        "curve",
+        "coverage",
+        "board_paper",
+        "ml_forward",
+        "record_status",
+        "fomc_gate",
+        "execution_quality",
+        "event_status",
+        "forward_evidence",
+        "intraday_research",
+        "economics",
+        "event_policy",
+    ):
+        assert key in payload, key
+    status = payload["record_status"]
+    assert set(status) == {"expected", "due_at", "record", "ml_forward"}
+    assert status["record"]["status"] in {"current", "pending", "late"}

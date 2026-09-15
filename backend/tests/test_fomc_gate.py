@@ -121,3 +121,26 @@ def test_cycles_before_the_first_meeting_are_ignored_and_the_active_one_is_marke
     found = fg.cycles(_state(fills, active_id="fomc-3-session-weakness/2:2026-09-16"))
     assert [c["decision_date"] for c in found] == ["2026-09-16"]
     assert found[0]["active"] is True
+
+
+# A cycle that ended with shares unbought is shown but never counted: its
+# effect would keep moving with those shares, so it cannot close a meeting.
+def test_a_cycle_ended_unrestored_is_reported_but_not_complete():
+    fills = [
+        _fill("2026-09-14", "NVDA", "sell", 10, 200.0),
+        _fill("2026-09-17", "NVDA", "buy", 4, 190.0),
+    ]
+    history = [
+        {"session": "2026-09-11", "equity": 100_000.0},
+        {"session": "2026-09-14", "equity": 100_000.0},
+        {"session": "2026-09-17", "equity": 99_500.0},
+    ]
+    marks = {"NVDA": {"2026-09-11": 200.0, "2026-09-14": 200.0, "2026-09-17": 190.0}}
+    cycle = fg.cycles(_state(fills))[0]  # no active cycle: the policy released it
+    row = fg.meeting_row(cycle, history, _close(marks))
+    assert row["complete"] is False
+    assert row["status"] == "ended unrestored: NVDA 6"
+    assert row["unrestored"] == {"NVDA": 6}
+    assert fg.verdict([row] * 6)["completed_meetings"] == 0
+    assert fg.unrestored(fills) == {"NVDA": 6}
+    assert fg.unrestored(fills + [_fill("2026-09-18", "NVDA", "buy", 6, 195.0)]) == {}

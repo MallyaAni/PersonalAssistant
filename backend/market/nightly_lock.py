@@ -63,7 +63,12 @@ def stale(lock: Lock, now: datetime | None = None) -> bool:
     alive = _alive(lock.pid)
     if alive is False:
         return True
-    return now - lock.started > STALE_AFTER
+    if alive is True:
+        return False  # a running holder is never taken over, however long it runs
+    started = lock.started
+    if started.tzinfo is None:
+        started = started.replace(tzinfo=UTC)
+    return now - started > STALE_AFTER
 
 
 # Take the lock, or return None with the holder printed.

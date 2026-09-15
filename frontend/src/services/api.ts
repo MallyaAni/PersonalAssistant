@@ -2108,7 +2108,7 @@ export interface DeskPayload {
   curve?: DeskCurve;
 }
 
-export interface DeskExecutionAggregate { fills: number; notional: number; dollars: number; bps: number | null }
+export interface DeskExecutionAggregate { fills: number; notional: number; dollars: number; bps: number | null; abs_bps?: number | null }
 
 export interface DeskExecutionQuality {
   version: string;

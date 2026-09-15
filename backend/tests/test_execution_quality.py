@@ -84,3 +84,18 @@ def test_write_and_load_round_trip(tmp_path, capsys):
     assert block is not None
     assert "1 fills, +100.0 bp" in capsys.readouterr().out
     assert eq.load(root)["all_time"]["fills"] == 1
+
+
+# Opposite-signed fills net toward zero; the absolute figure keeps their size.
+def test_aggregate_keeps_the_absolute_distance_beside_the_net():
+    rows = eq.fill_rows(
+        _state(
+            [
+                _row("2026-09-10", "NVDA", "buy", 10, 101.0, 100.0),  # +100 bp
+                _row("2026-09-10", "AMD", "buy", 10, 99.0, 100.0),  # -100 bp
+            ]
+        )
+    )
+    agg = eq.aggregate(rows)
+    assert abs(agg["bps"]) < 1e-9
+    assert abs(agg["abs_bps"] - 100.0) < 1e-9

@@ -80,6 +80,17 @@ def overlay_difference(
     return total
 
 
+# Shares the overlay sold and never bought back, by symbol.
+def unrestored(fills: list[dict]) -> dict[str, int]:
+    """Return {symbol: net shares still sold} over the cycle's fills."""
+    net: dict[str, int] = {}
+    for row in fills:
+        qty = int(row.get("filled_qty") or 0)
+        symbol = row["symbol"]
+        net[symbol] = net.get(symbol, 0) + (qty if row.get("side") == "sell" else -qty)
+    return {s: q for s, q in net.items() if q > 0}
+
+
 # The overlay's traded notional in a cycle, for the cost-adjusted column.
 def traded_notional(fills: list[dict]) -> float:
     """Return the sum of |qty x price| over the cycle's confirmed fills."""
@@ -122,12 +133,27 @@ def meeting_row(cycle: dict, history: list[dict], close: Callable) -> dict:
     base = live[0]
     effect = live[-1] - without[-1]
     cost = traded_notional(cycle["fills"]) * COST_BP / 10_000
+    left = unrestored(cycle["fills"])
+    # Complete means the round trip closed: every share the overlay sold
+    # was bought back. A cycle the policy released with shares unbought
+    # (cash-limited) is shown but does not count toward the gate, since
+    # its effect would keep moving with those shares' prices.
+    complete = not cycle["active"] and not left
+    if cycle["active"]:
+        status = "cycle open"
+    elif left:
+        status = "ended unrestored: " + ", ".join(
+            f"{s} {q}" for s, q in sorted(left.items())
+        )
+    else:
+        status = "restored"
     return {
         "decision_date": cycle["decision_date"],
         "window": [window[0], window[-1]],
         "sessions": len(window) - 1,
-        "complete": not cycle["active"],
-        "status": "restored" if not cycle["active"] else "cycle open",
+        "complete": complete,
+        "status": status,
+        "unrestored": left,
         "effect": effect,
         "effect_pct": effect / base if base else None,
         "effect_after_costs": effect - cost,

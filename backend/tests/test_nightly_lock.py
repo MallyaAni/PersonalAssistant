@@ -7,6 +7,7 @@ this one.
 """
 
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from backend.market import nightly_lock
 
@@ -46,3 +47,18 @@ def test_release_leaves_another_processes_lock_alone(tmp_path):
 def test_an_unreadable_lock_file_is_treated_as_stale(tmp_path):
     (tmp_path / nightly_lock.NAME).write_text("garbage", encoding="utf-8")
     assert nightly_lock.acquire(tmp_path) is not None
+
+
+# A holder that is still running is never taken over, however long it has
+# run; only a dead holder, or an unknowable one past the age limit, is.
+def test_a_running_holder_is_never_stale_and_a_naive_stamp_is_read_as_utc(monkeypatch):
+    long_ago = datetime.now(tz=UTC) - timedelta(hours=30)
+    lock = nightly_lock.Lock(Path("x"), 4242, long_ago)
+    monkeypatch.setattr(nightly_lock, "_alive", lambda pid: True)
+    assert nightly_lock.stale(lock) is False
+    monkeypatch.setattr(nightly_lock, "_alive", lambda pid: None)
+    assert nightly_lock.stale(lock) is True
+    naive = nightly_lock.Lock(Path("x"), 4242, datetime.now() - timedelta(minutes=5))
+    assert nightly_lock.stale(naive) is False
+    monkeypatch.setattr(nightly_lock, "_alive", lambda pid: False)
+    assert nightly_lock.stale(naive) is True

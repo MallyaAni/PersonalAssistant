@@ -60,11 +60,15 @@ def aggregate(rows: list[dict]) -> dict:
     """Return {fills, notional, dollars, bps} for the rows."""
     notional = sum(r["notional"] for r in rows)
     dollars = sum(r["dollars"] for r in rows)
+    # The net can sit near zero while fills scatter widely on both sides;
+    # the absolute figure says how far from the decision price fills land.
+    absolute = sum(abs(r["dollars"]) for r in rows)
     return {
         "fills": len(rows),
         "notional": notional,
         "dollars": dollars,
         "bps": dollars / notional * 1e4 if notional else None,
+        "abs_bps": absolute / notional * 1e4 if notional else None,
     }
 
 

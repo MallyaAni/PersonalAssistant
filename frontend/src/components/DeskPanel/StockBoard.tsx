@@ -79,12 +79,12 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             </td>
             <td className="text-xs">{isCash ? 'Hold' : paused ? <span title="FOMC cycle takes priority">Wait</span> : action(row.ticker, row.weight)}</td>
             <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
-            <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Buy ${row.ticker}`} className="rounded-full bg-[#0071e3] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
+            <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="rounded-full bg-[#0071e3] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
         })}</tbody>
       </table>
     </div>
-    {paper?.equity !== undefined && <p aria-label="Forward paper account" className="border-t px-3 py-2 text-[11px] text-[#6e6e73]" title="Separate local simulation, not a brokerage account. Delayed quotes, spread and 10 bp extra cost per side. No real orders. Overnight marks wait for corporate-action validation.">
+    {paper?.equity !== undefined && <p aria-label="Board simulation" className="border-t px-3 py-2 text-[11px] text-[#6e6e73]" title="Separate local simulation, not a brokerage account. Delayed quotes, spread and 10 bp extra cost per side. No real orders. Overnight marks wait for corporate-action validation.">
       Board simulation · research, not the practice account · {paper.equity.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} · USD {percentage(paper.cash / paper.equity)} · {((paper.equity / paper.initial_capital - 1) * 100).toFixed(2)}% since start {new Date(paper.started_at).toLocaleDateString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric'})}
       <span className="ml-1">· {new Date(paper.as_of).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})} ET{now - Date.parse(paper.as_of) >= 900000 ? ' · awaiting update' : ''}</span>
     </p>}
