@@ -148,6 +148,7 @@ def refresh(
     filings=market_edgar.refresh,
     tone=market_tone.refresh_tickers,
     after_filings=None,
+    versions=None,
 ) -> None:
     """Pull bars, filings and new release scores into the as-of partition."""
     report = bars(store, bar_tickers(), asof=asof)
@@ -160,6 +161,7 @@ def refresh(
         )
     )
     filing_failures = filings(store, research_tickers(), asof) or ()
+    _refresh_versions(store, asof, versions)
     if after_filings is not None:
         after_filings(report, filing_failures)
     if skip_tone:
@@ -183,6 +185,25 @@ def refresh(
         print(f"tone: not scored ({type(exc).__name__}: {exc}); earlier scores carry")
         return
     print(f"tone: {scored} new releases scored")
+
+
+# Every filed version of the book's facts, for the as-of comparison the
+# record carries (`fundamentals_shadow`). A failure here is named and never
+# stops the desk: the comparison is evidence, not an input to the book.
+def _refresh_versions(store: MarketStore, asof: date, versions=None) -> list[str]:
+    if versions is None:
+        from backend.cli.market_fundamentals_asof import refresh as versions
+
+    try:
+        failed = list(versions(store, book_tickers(), asof) or ())
+    except Exception as exc:  # noqa: BLE001 - the desk runs on what is stored
+        print(f"filing versions: not refreshed ({type(exc).__name__}: {exc})")
+        return []
+    print(
+        f"filing versions: {len(failed)} failed"
+        + (" (" + ", ".join(failed) + ")" if failed else "")
+    )
+    return failed
 
 
 # Drop partitions of the re-fetched layers older than `days`, keeping the
@@ -695,6 +716,18 @@ def _challenger_block(store, report) -> dict | None:
     return block
 
 
+# The as-of fundamentals comparison for tonight's record; a failure is
+# printed and the record is written without it.
+def _fundamentals_block(store, report, asof) -> dict | None:
+    from backend.market import fundamentals_shadow
+
+    try:
+        return fundamentals_shadow.block(store, report, asof)
+    except Exception as exc:  # noqa: BLE001 - evidence, never a reason to stop
+        print(f"\nas-of fundamentals: not compared ({type(exc).__name__}: {exc})")
+        return None
+
+
 def _strategy_name(report) -> str:
     from backend.market import challenger
 
@@ -709,6 +742,7 @@ def record(
     challenger: dict | None = None,
     curve: dict | None = None,
     llm_model: str | None = None,
+    fundamentals: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     from backend.agents.trading.desk import event_risk
@@ -811,6 +845,11 @@ def record(
         # The shadow desk, when one ran tonight: its book and grades, never
         # traded, priced forward by the scorecard beside the rule's.
         "challenger": challenger,
+        # The plain rule on as-of filing versions against the frozen path:
+        # which grades, scores and weights the corrected data would change
+        # tonight. Evidence for switching the value analyst's input; never
+        # traded. Absent before this existed or when no versions are stored.
+        "fundamentals_asof": fundamentals,
         # Levels for every book name, targeted or not, so the person's own
         # board can size a name the desk holds nothing of.
         "levels": {
@@ -1204,6 +1243,7 @@ def main() -> None:
     shadow = None
     if args.challenger:
         shadow = _challenger_block(store, report)
+    fundamentals = _fundamentals_block(store, report, args.asof)
     curve = curves(report, store, Path(store.root))
     try:
         path = save(
@@ -1216,6 +1256,7 @@ def main() -> None:
                 shadow,
                 curve,
                 llm_model=args.llm_model,
+                fundamentals=fundamentals,
             ),
             allow_overwrite=args.force,
         )

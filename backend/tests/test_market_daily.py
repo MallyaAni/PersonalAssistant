@@ -44,9 +44,24 @@ def test_refresh_order_and_tickers(tmp_path):
         calls.append(("tone", tuple(tickers), asof))
         raise ConnectionError("runtime away")
 
+    def versions(store, tickers, asof):
+        calls.append(("versions", tuple(tickers), asof))
+        raise ConnectionError("EDGAR away")
+
     store = MarketStore(tmp_path)
-    market_daily.refresh(store, date(2026, 9, 6), bars=bars, filings=filings, tone=tone)
-    assert [c[0] for c in calls] == ["bars", "filings", "tone"]
+    market_daily.refresh(
+        store,
+        date(2026, 9, 6),
+        bars=bars,
+        filings=filings,
+        tone=tone,
+        versions=versions,
+    )
+    # The filing versions follow the filings and cover the book; their
+    # failure is named and does not stop the tone step or the desk.
+    assert [c[0] for c in calls] == ["bars", "filings", "versions", "tone"]
+    assert set(calls[2][1]) == set(market_daily.book_tickers())
+    calls = [c for c in calls if c[0] != "versions"]
     bar_tickers = calls[0][1]
     assert MARKET_BENCHMARK in bar_tickers
     assert "QQQ" in bar_tickers  # a displayed benchmark is refreshed, not flat
@@ -99,6 +114,7 @@ def test_ml_observation_runs_before_tone_and_survives_a_blocked_scorer(
         after_filings=lambda report, failed: market_daily.observe_ml_forward(
             tmp_path, True, report.failed_tickers, failed
         ),
+        versions=lambda store, tickers, asof: [],
     )
     assert calls == ["bars", "filings", "ml", "tone"]
     assert calls.count("ml") == 1
@@ -211,6 +227,11 @@ def test_record_and_save(tmp_path):
     assert data["paper"] is None
     with_paper = market_daily.record(_report(), paper={"equity": 100.0})
     assert with_paper["paper"]["equity"] == 100.0
+    assert data["fundamentals_asof"] is None
+    block = {"summary": {"grades_changed": 1}}
+    assert (
+        market_daily.record(_report(), fundamentals=block)["fundamentals_asof"] == block
+    )
     path = market_daily.save(Path(tmp_path), data)
     assert path == Path(tmp_path) / "desk" / "asof=2026-09-03" / "desk.json"
     assert json.loads(path.read_text(encoding="utf-8"))["session"] == "2026-09-03"

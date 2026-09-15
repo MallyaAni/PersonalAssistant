@@ -9,6 +9,17 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-15 — As-of fundamentals, stage one (branch fundamentals-asof-shadow)
+
+Every nightly record now carries `fundamentals_asof`: the plain rule on
+the stored filing versions against the frozen path, grade, score and
+weight differences named. Review a week of those blocks before stage
+two (the value analyst reading `fundamentals_asof.levels`); the switch
+changes grades and is a correction of an input, not a strategy change.
+The nightly's tone step is the book's alone again; breadth tone runs
+separately. The valuation-increment and price-candidate lines are
+closed: insufficient evidence to advance.
+
 ## 2026-09-14 — Observer ordering fix (main)
 
 The nightly's ML observation now runs after bars and filings and before

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-15 — As-of fundamentals recorded beside the frozen path, and the nightly's tone step back to the book
+
+Two nightly changes, neither touching what the desk sizes or trades.
+The release-tone step scores the book's 93 names again, not the 531-name
+research universe the 09-14 change widened it to: a release is fetched
+and read one at a time, about four minutes a name, and the version-3
+rescoring ran 13 hours past the close with no 09-14 record. Filings stay
+at the research universe. Breadth tone is `market_tone --refresh --roles
+focus,member`, outside the nightly.
+
+The corrected fundamental data enters production as evidence first. The
+refresh now stores every filed version of the book's facts
+(`edgar_facts_versions`, `market_fundamentals_asof.refresh`, failures
+named, never fatal), and each record carries `fundamentals_asof`
+(`backend/market/fundamentals_shadow.py`): the plain rule run again on
+the same session with the value analyst reading `fundamentals_asof.levels`
+(the version available that day, restatements kept), and the names whose
+grade, score or book weight differ from the frozen path, with the
+turnover a switch would cost. Stage two, once the differences have been
+seen on real nights, is the value analyst reading the as-of levels and
+this block becoming the frozen path's shadow. Tests:
+`test_fundamentals_shadow.py`, `test_market_daily.py`.
+
 ## 2026-09-14 — Filing-refresh failures named; cached-data policy explicit; revision recorded
 
 `market_edgar.refresh` returns the names whose fetch failed. A successful
