@@ -313,7 +313,8 @@ def main() -> None:
             for v, s in r["variants"].items():
                 p = s["paired_vs_open"]
                 print(
-                    f"  {v:14} mean {100 * s['mean']:+.2f}%  paired vs open {100 * p['mean']:+.2f}% "
+                    f"  {v:14} mean {100 * s['mean']:+.2f}%  "
+                    f"paired vs open {100 * p['mean']:+.2f}% "
                     f"t {p['t']:+.2f}  confirmed {100 * s['confirmed_share']:.0f}%"
                 )
     if args.report:
