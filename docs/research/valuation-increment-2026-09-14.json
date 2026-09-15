@@ -1,0 +1,213 @@
+{
+ "specification": {
+  "alpha": 10.0,
+  "horizon": 20,
+  "beta_lookback": 120,
+  "overlap_lag": 20,
+  "train": "2018-01-01..2024-01-01 every fifth session, endpoint purged",
+  "last_training_label_endpoint": "2023-12-27",
+  "first_validation_session": "2024-01-02",
+  "history_reference": "strictly trailing 756 sessions, at least 250 known, today excluded",
+  "membership": "not point in time; 93 names chosen in 2026; selection bias applies to every number",
+  "examined": "2024..2026-09-11 examined by earlier work; not untouched"
+ },
+ "coverage": {
+  "train_rows": 16985,
+  "oos_rows": 46836,
+  "oos_rows_eligible_before_history_requirement": 58190
+ },
+ "coefficients_valuation_model": {
+  "return5": -0.08750590682029724,
+  "return20": -0.41982999444007874,
+  "return60": -1.0001022815704346,
+  "return120": 0.8178999423980713,
+  "vol20": -0.08274371922016144,
+  "distance_ma20": -0.1269676834344864,
+  "distance_ma60": 0.9166585803031921,
+  "relative_volume": 0.25124821066856384,
+  "value_rank": 0.9913853406906128,
+  "magnitude": -0.6076346635818481,
+  "history_reference": 0.6097428798675537
+ },
+ "periods": {
+  "2024": {
+   "sessions": 252,
+   "baseline_ic": {
+    "mean": -0.0673656431952093,
+    "t": -1.8981639489296893,
+    "n": 252,
+    "n_effective": 29.54202540567713
+   },
+   "valuation_ic": {
+    "mean": -0.06549638031282604,
+    "t": -2.6539288256293303,
+    "n": 252,
+    "n_effective": 41.73747710786973
+   },
+   "difference": {
+    "mean": 0.0018692628823832513,
+    "t": 0.07063492905053348,
+    "n": 252,
+    "n_effective": 22.04740769190556
+   }
+  },
+  "2025": {
+   "sessions": 250,
+   "baseline_ic": {
+    "mean": -0.006268889671806376,
+    "t": -0.2114724084640713,
+    "n": 250,
+    "n_effective": 34.2839272389628
+   },
+   "valuation_ic": {
+    "mean": -0.033609694997010546,
+    "t": -0.9782621318263037,
+    "n": 250,
+    "n_effective": 23.11188166577946
+   },
+   "difference": {
+    "mean": -0.027340805325204172,
+    "t": -0.8227420713850024,
+    "n": 250,
+    "n_effective": 24.34824731392174
+   }
+  },
+  "2026 (partial)": {
+   "sessions": 153,
+   "baseline_ic": {
+    "mean": 0.029671759605599046,
+    "t": 0.4934345607147344,
+    "n": 153,
+    "n_effective": 16.60420558119357
+   },
+   "valuation_ic": {
+    "mean": 0.07728404194793778,
+    "t": 2.031294961152637,
+    "n": 153,
+    "n_effective": 21.25397344608422
+   },
+   "difference": {
+    "mean": 0.04761228234233874,
+    "t": 0.6036536880945552,
+    "n": 153,
+    "n_effective": 11.055118003319722
+   }
+  }
+ },
+ "combined_out_of_sample": {
+  "sessions": 655,
+  "baseline_ic": {
+   "mean": -0.02137951951677508,
+   "t": -0.8883759284447176,
+   "n": 655,
+   "n_effective": 71.39410450732075
+  },
+  "valuation_ic": {
+   "mean": -0.019974126977176057,
+   "t": -0.9302373000399216,
+   "n": 655,
+   "n_effective": 66.05982985434389
+  },
+  "difference": {
+   "mean": 0.0014053925395990298,
+   "t": 0.05421887185157845,
+   "n": 655,
+   "n_effective": 49.237907000795865
+  }
+ },
+ "gate": {
+  "rule": "combined difference t > 2 and mean > 0 in at least two of three periods (2026 partial)",
+  "passed": false,
+  "reading": "insufficient evidence to advance this specification; not proof that valuation has no value"
+ },
+ "books_out_of_sample": {
+  "baseline@10bps": {
+   "net_return": 2.5435718721544793,
+   "drawdown": -0.43465402897116634,
+   "volatility": 0.4980429565525069,
+   "turnover_total": 49.62157997731631,
+   "top_weight": 0.1,
+   "cash_exposure": 0.02941176470588235,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  },
+  "+valuation@10bps": {
+   "net_return": 1.8006079763419098,
+   "drawdown": -0.326807914759093,
+   "volatility": 0.3478731860592196,
+   "turnover_total": 39.25943786399305,
+   "top_weight": 0.1,
+   "cash_exposure": 0.02941176470588235,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  },
+  "SPY@10bps": {
+   "net_return": 0.6778504271463488,
+   "drawdown": -0.187552509470316,
+   "volatility": 0.1555001614312886,
+   "turnover_total": 0.999000999001002,
+   "top_weight": 1.0,
+   "cash_exposure": 0.0,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  },
+  "equal@10bps": {
+   "net_return": 2.88805800327991,
+   "drawdown": -0.3342682475211787,
+   "volatility": 0.3270151012923561,
+   "turnover_total": 4.695299787187036,
+   "top_weight": 0.011904761904761904,
+   "cash_exposure": -1.6326809185664067e-17,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  },
+  "baseline@30bps": {
+   "net_return": 2.208568493129384,
+   "drawdown": -0.4379232566691321,
+   "volatility": 0.49835983203688017,
+   "turnover_total": 49.54366150703636,
+   "top_weight": 0.1,
+   "cash_exposure": 0.02941176470588235,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  },
+  "+valuation@30bps": {
+   "net_return": 1.5890287851003677,
+   "drawdown": -0.3285042340219365,
+   "volatility": 0.34795791536250564,
+   "turnover_total": 39.207381320280845,
+   "top_weight": 0.1,
+   "cash_exposure": 0.02941176470588235,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  },
+  "SPY@30bps": {
+   "net_return": 0.6745047632836434,
+   "drawdown": -0.18755250947031632,
+   "volatility": 0.15551340013879575,
+   "turnover_total": 0.9970089730807609,
+   "top_weight": 1.0,
+   "cash_exposure": 0.0,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  },
+  "equal@30bps": {
+   "net_return": 2.8517265778783036,
+   "drawdown": -0.3345668355960837,
+   "volatility": 0.3270428836711325,
+   "turnover_total": 4.692619601505253,
+   "top_weight": 0.011904761904761904,
+   "cash_exposure": -1.6326809185664067e-17,
+   "decisions": 34,
+   "first_execution": "2024-01-03",
+   "last_session": "2026-09-11"
+  }
+ }
+}

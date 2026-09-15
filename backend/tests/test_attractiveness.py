@@ -99,3 +99,24 @@ def test_score_admitted_names_are_sized_as_b():
     mask = np.array([[True, True, False]])
     sized = att.sizing_grades(grades, mask)
     assert sized[0].tolist() == [3, grading.ORDINAL[grading.B], 0]
+
+
+# The strictly trailing reference never sees today: a spike on the last
+# session changes today's distance but not the median it is measured from.
+def test_trailing_reference_excludes_todays_observation():
+    x = np.full((300, 1), 1.0)
+    x[-1, 0] = 5.0
+    strict = att.trailing_reference(x, window=200, min_known=100)
+    inclusive = att.history_reference(x, window=200, min_known=100)
+    assert abs(strict[-1, 0] - (1.0 - 5.0)) < 1e-12
+    assert strict[-1, 0] == inclusive[-1, 0]  # a median is robust to one point
+    y = np.full((300, 1), 1.0)
+    y[-150:, 0] = 3.0  # a level shift over the last 150 sessions
+    strict_y = att.trailing_reference(y, window=200, min_known=100)
+    inclusive_y = att.history_reference(y, window=200, min_known=100)
+    # With 150 of the last 200 at 3.0 both medians are 3.0; move one session
+    # earlier and the strictly trailing window holds one fewer of the new level.
+    assert np.isfinite(strict_y[-1, 0])
+    assert np.isnan(strict_y[50, 0])
+    assert strict_y[0, 0] != strict_y[0, 0]  # NaN: nothing before the first session
+    assert inclusive_y.shape == strict_y.shape

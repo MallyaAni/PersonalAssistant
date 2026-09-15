@@ -95,6 +95,23 @@ def history_reference(
     return out
 
 
+# The same reference strictly trailing: the window ends the session before,
+# so today's observation never enters its own median.
+def trailing_reference(
+    log_multiple: np.ndarray, window: int = WINDOW, min_known: int = MIN_KNOWN
+) -> np.ndarray:
+    """Return (T, N) median over [t-window, t-1] minus today's value, NaN when young."""
+    x = np.asarray(log_multiple, dtype=float)
+    out = np.full(x.shape, np.nan)
+    for t in range(1, x.shape[0]):
+        past = x[max(0, t - window) : t]
+        known = np.isfinite(past).sum(axis=0)
+        with np.errstate(all="ignore"):
+            med = np.nanmedian(past, axis=0)
+        out[t] = np.where(known >= min_known, med - x[t], np.nan)
+    return out
+
+
 # The candidate's ordering score: every analyst's signed conviction, the
 # value leg the average of rank conviction and magnitude.
 def candidate_scores(

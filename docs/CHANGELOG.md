@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-14 — Valuation increment over momentum and risk: one bounded run, gate not met
+
+One fixed experiment (`backend/cli/market_valuation_increment.py`) on
+the corrected as-of fundamentals: two ridge models fitted once on
+2018–2023 (eight price and volume features; the same plus value rank,
+relative magnitude and a strictly trailing three-year history reference
+with today excluded, added to `attractiveness.trailing_reference`),
+beta-adjusted 20-session labels from the next close (verified against
+the price arithmetic), normalisation fitted on training rows only,
+identical eligible rows, per-session Spearman differences with
+Newey-West lag 20 and effective sample sizes, 2024, 2025 and partial
+2026 reported separately. Combined out-of-sample difference
++0.0014, t
++0.05, positive in 2 of three
+periods; gate not met: insufficient evidence to advance this
+specification. Funded books, SPY and equal weight at 10 and 30 bp for
+the record. Note and data in
+`docs/research/valuation-increment-2026-09-14.*`. Production unchanged.
+
 ## 2026-09-14 — The price-sensitive candidate: specification resolved, one design evaluated
 
 Closed the same day as **no demonstrated improvement**: results kept, no

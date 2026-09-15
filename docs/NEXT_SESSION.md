@@ -9,6 +9,13 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-14 — Valuation increment (branch research/valuation-increment)
+
+One bounded run, specification fixed beforehand; the gate was not met
+(combined HAC t 0.05). See `docs/research/valuation-increment-2026-09-14.md`.
+No production change, no tuning. Nothing is started next; the note lists
+what would be informative if the operator wants to continue.
+
 ## 2026-09-14 — Price-sensitive candidate (branch research/price-candidate)
 
 CLOSED: no demonstrated improvement. Results preserved; no more variants;
