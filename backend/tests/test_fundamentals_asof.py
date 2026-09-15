@@ -13,6 +13,7 @@ latest available filing; and a frame round-trips.
 from datetime import date, datetime
 
 import numpy as np
+import pytest
 
 from backend.market import fundamentals_asof as fa
 
@@ -309,6 +310,11 @@ def test_feature_path_matches_hand_calculation():
 # The research training CLI reads the as-of selector when asked, from the
 # stored versions, and fingerprints the versions it read.
 def test_training_cli_consumes_the_selector_from_the_store(tmp_path):
+    # The training CLI needs the research dependencies; the gate container
+    # has none of them, and this test is about the selector, not the model.
+    pytest.importorskip("joblib")
+    pytest.importorskip("sklearn")
+    pytest.importorskip("torch")
     from backend.cli import market_opportunity_learning as cli
     from backend.market.store import MarketStore
 
