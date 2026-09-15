@@ -1,0 +1,23 @@
+{
+ "panel": [
+  "2015-01-02",
+  "2026-09-04"
+ ],
+ "totals": {
+  "earnings_correction_sessions": 12955,
+  "earnings_coverage_sessions": 387,
+  "earnings_sessions_differ": 12956,
+  "names": 93,
+  "names_with_any_revenue_difference": 87,
+  "periods_restated_with_a_different_value": 3856,
+  "revenue_correction_sessions": 31698,
+  "revenue_coverage_sessions": 263,
+  "revenue_differ_with_other_tag": 23362,
+  "revenue_differ_with_same_tag": 8401,
+  "revenue_only_asof_known": 26115,
+  "revenue_only_frozen_known": 101,
+  "revenue_sessions_both_known": 165791,
+  "revenue_sessions_differ": 31763,
+  "shares_sessions_differ": 12221
+ }
+}

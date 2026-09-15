@@ -215,3 +215,113 @@ def test_instants_take_the_latest_available_end_from_the_richest_tag():
     v = fa.parse_versions(p)
     eq = fa.levels_for(v, sessions("2025-05-02", "2025-08-02", "2025-09-02"))["equity"]
     assert eq.tolist() == [10.0, 12.0, 13.0]
+
+
+def _panel(days, closes):
+    from backend.market.panel import Panel
+
+    n = len(closes[0])
+    close = np.array(closes, dtype=float)
+    return Panel(
+        dates=sessions(*days),
+        tickers=tuple(f"N{i}" for i in range(n)),
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.full(close.shape, 1000.0),
+        themes={},
+        benchmark=f"N{n - 1}",
+    )
+
+
+# The whole path: versions -> as-of levels -> the ratio columns the model
+# reads, against arithmetic done by hand, including a fourth quarter derived
+# from the year and a second quarter derived from a six-month span.
+def test_feature_path_matches_hand_calculation():
+    from backend.market import opportunity_learning as ol
+
+    rows = {
+        "Revenues": [
+            row("2025-01-01", "2025-03-31", 100, "2025-05-01", "q1"),
+            row("2025-01-01", "2025-06-30", 230, "2025-08-01", "h1"),  # Q2 = 130
+            row("2025-07-01", "2025-09-30", 120, "2025-11-01", "q3"),
+            row("2025-01-01", "2025-12-31", 500, "2026-02-15", "fy"),  # Q4 = 150
+        ],
+        "NetIncomeLoss": [
+            row("2025-01-01", "2025-03-31", 10, "2025-05-01", "q1"),
+            row("2025-04-01", "2025-06-30", 12, "2025-08-01", "q2"),
+            row("2025-07-01", "2025-09-30", 14, "2025-11-01", "q3"),
+            row("2025-10-01", "2025-12-31", 16, "2026-02-15", "q4"),
+        ],
+        "GrossProfit": [
+            row("2025-01-01", "2025-03-31", 60, "2025-05-01", "q1"),
+            row("2025-04-01", "2025-06-30", 60, "2025-08-01", "q2"),
+            row("2025-07-01", "2025-09-30", 60, "2025-11-01", "q3"),
+            row("2025-10-01", "2025-12-31", 60, "2026-02-15", "q4"),
+        ],
+        "NetCashProvidedByUsedInOperatingActivities": [
+            row("2025-01-01", "2025-03-31", 20, "2025-05-01", "q1"),
+            row("2025-01-01", "2025-06-30", 45, "2025-08-01", "h1"),  # Q2 = 25
+            row("2025-01-01", "2025-09-30", 75, "2025-11-01", "m9"),  # Q3 = 30
+            row("2025-01-01", "2025-12-31", 110, "2026-02-15", "fy"),  # Q4 = 35
+        ],
+        "StockholdersEquity": [
+            {"end": "2025-12-31", "val": 400, "filed": "2026-02-15", "accn": "fy"}
+        ],
+        "CommonStockSharesOutstanding": [
+            {"end": "2025-12-31", "val": 50, "filed": "2026-02-15", "accn": "fy"}
+        ],
+        "CashAndCashEquivalentsAtCarryingValue": [
+            {"end": "2025-12-31", "val": 80, "filed": "2026-02-15", "accn": "fy"}
+        ],
+        "LongTermDebtNoncurrent": [
+            {"end": "2025-12-31", "val": 120, "filed": "2026-02-15", "accn": "fy"}
+        ],
+    }
+    versions = fa.parse_versions(payload(**rows))
+    days = ["2026-02-13", "2026-02-16", "2026-02-17"]
+    panel = _panel(days, [[40.0, 1.0], [40.0, 1.0], [50.0, 1.0]])
+    data, values, names = fa.features(panel, {"N0": versions})
+    col = {name: i for i, name in enumerate(names)}
+    # Before the 02-15 filing's availability the year is not complete.
+    assert np.isnan(values[0, 0, col["log_sales_yield"]])
+    # On 02-16: revenue 100 + 130 + 120 + 150 = 500; cap = 40 * 50 = 2000.
+    assert values[1, 0, col["log_sales_yield"]] == np.log(500 / 2000)
+    assert values[1, 0, col["earnings_yield"]] == (10 + 12 + 14 + 16) / 2000
+    assert values[1, 0, col["book_yield"]] == 400 / 2000
+    assert values[1, 0, col["cash_flow_yield"]] == (20 + 25 + 30 + 35) / 2000
+    assert values[1, 0, col["net_margin"]] == 52 / 500
+    assert values[1, 0, col["gross_margin"]] == 240 / 500
+    assert values[1, 0, col["cash_flow_margin"]] == 110 / 500
+    assert values[1, 0, col["cash_to_cap"]] == 80 / 2000
+    assert values[1, 0, col["debt_to_cap"]] == 120 / 2000
+    # The next day at 50: the same levels over a larger capitalisation.
+    assert values[2, 0, col["log_sales_yield"]] == np.log(500 / 2500)
+    # Fewer than 252 sessions: no year-over-year growth yet.
+    assert np.isnan(values[1, 0, col["revenue_growth"]])
+    # The price block is the research dataset's own, unchanged.
+    assert names[: len(fa.gp.FEATURE_NAMES)] == fa.gp.FEATURE_NAMES
+    assert names[len(fa.gp.FEATURE_NAMES) :] == ol.FUNDAMENTAL_NAMES
+
+
+# The research training CLI reads the as-of selector when asked, from the
+# stored versions, and fingerprints the versions it read.
+def test_training_cli_consumes_the_selector_from_the_store(tmp_path):
+    from backend.cli import market_opportunity_learning as cli
+    from backend.market.store import MarketStore
+
+    versions = fa.parse_versions(payload(Revenues=QUARTERS))
+    store = MarketStore(tmp_path)
+    store.write_frame(fa.KIND, date(2026, 3, 1), "N0", fa.frame(versions), {})
+    days = ["2026-02-16", "2026-02-17"]
+    panel = _panel(days, [[40.0, 1.0], [41.0, 1.0]])
+    data, raw, names, digest = cli.features_for(panel, store, date(2026, 3, 1), "asof")
+    assert len(digest) == 64
+    assert names == (*fa.gp.FEATURE_NAMES, *fa.ol.FUNDAMENTAL_NAMES)
+    # Revenue is known (460) but shares are not: sales yield stays missing,
+    # which is the explicit-missingness rule, not a crash.
+    assert np.isnan(raw[0, 0, names.index("log_sales_yield")])
+    frozen = cli.features_for(panel, store, date(2026, 3, 1), "frozen")
+    assert frozen[3] is None

@@ -65,6 +65,12 @@ LEVEL_NAMES = (
     "revenue_growth",
 )
 _FLOW_TO_LEVEL = {"net_income": "earnings"}
+# The frozen path derives quarters from six- and nine-month spans only for
+# the cash-flow names, whose 10-Q spans run from the fiscal year's start.
+# The as-of path does it for every flow name by default; the audit can
+# restrict it to the frozen set to separate coverage from correction.
+FROZEN_YTD_NAMES = frozenset({"capex", "operating_cash_flow"})
+ALL_YTD_NAMES = frozenset(FLOW_NAMES)
 
 
 @dataclass(frozen=True, slots=True)
@@ -190,7 +196,7 @@ def _tag_order(name: str) -> list[str]:
 # each keyed by its end and carrying the value the latest available filing
 # of its parts implies.
 def _quarters(
-    available: Mapping[tuple[date | None, date], Version],
+    available: Mapping[tuple[date | None, date], Version], use_ytd: bool = True
 ) -> dict[date, float]:
     quarters: dict[tuple[date, date], float] = {}
     ytd: dict[tuple[date, date], float] = {}
@@ -199,7 +205,7 @@ def _quarters(
         kind = span_kind(start, end)
         if kind == "quarter":
             quarters[(start, end)] = v.value
-        elif kind == "ytd":
+        elif kind == "ytd" and use_ytd:
             ytd[(start, end)] = v.value
         elif kind == "year":
             years[(start, end)] = v.value
@@ -263,12 +269,16 @@ def _four_quarters(by_end: Mapping[date, float]) -> float:
 
 # One name's levels at every session, from versions available by then.
 def levels_for(
-    versions: Iterable[Version], dates: np.ndarray, trace: dict | None = None
+    versions: Iterable[Version],
+    dates: np.ndarray,
+    trace: dict | None = None,
+    ytd_names: frozenset = ALL_YTD_NAMES,
 ) -> dict[str, np.ndarray]:
     """Return {level name: (T,)} for one company, as-of each session.
 
     `trace`, when given, receives {name: [chosen tag per session]} so an
-    audit can tell a tag change from a value change.
+    audit can tell a tag change from a value change. `ytd_names` are the
+    flow names allowed to take quarters from year-to-date spans.
     """
     size = len(dates)
     calendar = dates.astype("datetime64[D]").astype(object)
@@ -297,7 +307,7 @@ def levels_for(
                 spans[(v.start, v.end)] = v
             dirty.add(v.name)
         for name in dirty:
-            current[name], chosen[name] = _select(name, state[name])
+            current[name], chosen[name] = _select(name, state[name], name in ytd_names)
         if trace is not None:
             for name in FLOW_NAMES + INSTANT_NAMES:
                 trace.setdefault(name, [None] * size)[t] = chosen.get(name)
@@ -316,7 +326,9 @@ def levels_for(
 # The value of one name now: the tag with the most periods available now
 # (ties by table order), then the trailing sum or the latest instant.
 def _select(
-    name: str, by_tag: Mapping[str, Mapping[tuple[date | None, date], Version]]
+    name: str,
+    by_tag: Mapping[str, Mapping[tuple[date | None, date], Version]],
+    use_ytd: bool = True,
 ) -> tuple[float, str | None]:
     best_tag, best_count = None, -1
     for tag in _tag_order(name):
@@ -324,7 +336,9 @@ def _select(
         if not spans:
             continue
         count = (
-            len(_quarters(spans)) if name in FLOW_NAMES else len({e for _, e in spans})
+            len(_quarters(spans, use_ytd))
+            if name in FLOW_NAMES
+            else len({e for _, e in spans})
         )
         if count > best_count:
             best_tag, best_count = tag, count
@@ -332,7 +346,7 @@ def _select(
         return float("nan"), None
     spans = by_tag[best_tag]
     if name in FLOW_NAMES:
-        return _four_quarters(_quarters(spans)), best_tag
+        return _four_quarters(_quarters(spans, use_ytd)), best_tag
     latest_end = max(e for _, e in spans)
     return spans[(None, latest_end)].value, best_tag
 
@@ -350,7 +364,9 @@ def snapshot_tag(name: str, versions: Iterable[Version]) -> str | None:
 
 # Levels for a panel: (T, N) per level name, from stored versions.
 def levels(
-    panel: Panel, versions_by_ticker: Mapping[str, Sequence[Version]]
+    panel: Panel,
+    versions_by_ticker: Mapping[str, Sequence[Version]],
+    ytd_names: frozenset = ALL_YTD_NAMES,
 ) -> dict[str, np.ndarray]:
     """Return {level name: (T, N)} aligned to the panel."""
     shape = (len(panel.dates), len(panel.tickers))
@@ -359,8 +375,21 @@ def levels(
         found = versions_by_ticker.get(ticker)
         if not found:
             continue
-        for name, series in levels_for(found, panel.dates).items():
+        for name, series in levels_for(found, panel.dates, None, ytd_names).items():
             out[name][:, column] = series
+    return out
+
+
+# The stored versions for a panel's names, as of a date.
+def load_versions(
+    store, panel: Panel, asof: date | None = None
+) -> dict[str, list[Version]]:
+    """Return {ticker: versions} for every name the store holds."""
+    out = {}
+    for ticker in panel.tickers:
+        found = store.read_frame(KIND, ticker, asof)
+        if found is not None:
+            out[ticker] = versions_from_frame(found[0])
     return out
 
 

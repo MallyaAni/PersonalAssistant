@@ -18,6 +18,19 @@ tests, ruff, black. The nightly script pulls main before it runs, so the
 next 19:30 ET run carries the fix without a deploy; the API container does
 not run the nightly. First observation and next-session fill: pending
 until a run completes with the fix in place.
+## 2026-09-14 — Corrected-data rerun (branch research/fundamentals-asof)
+
+The ladder was rerun once on the as-of fundamentals with the original
+configuration; the comparison with the frozen-data run is in
+`docs/research/opportunity-learning-asof-2026-09-14.md`, every figure
+retrospective. VERIFIED: nine selector tests and one comparison test, ruff,
+black; price fingerprint identical between runs; artifacts at
+`E:/AgentWorkspace/opportunity-learning-asof-20260914`. UNVERIFIED:
+nothing deployed; production fingerprint unchanged. Next: nothing to tune.
+The frozen production ledger accumulates untouched sessions; a decision to
+export the corrected-data network as a second shadow policy is the
+operator's, and would run beside the frozen one, never replace it.
+
 ## 2026-09-14 — As-of fundamentals correction (branch research/fundamentals-asof)
 
 The research path now has a versioned, as-of fundamental selector

@@ -23,6 +23,7 @@ from backend.cli.market_growth_pilot import (
     resolve_device,
     return_network,
 )
+from backend.market import fundamentals_asof as fa
 from backend.market import growth_pilot as gp
 from backend.market import opportunity_learning as ol
 from backend.market.store import MarketStore
@@ -36,7 +37,35 @@ def parser():
     p.add_argument("--output", required=True)
     p.add_argument("--asof", required=True)
     p.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
+    # Which fundamental data path feeds the ratios: the frozen production
+    # path (earliest-filed value, one tag per snapshot) or the versioned
+    # as-of selector. Same feature columns either way.
+    p.add_argument("--fundamentals", choices=("frozen", "asof"), default="frozen")
     return p
+
+
+# The research feature block from the chosen fundamental path; returns the
+# dataset, raw features, names, and a fingerprint of the fundamental data.
+def features_for(panel, facts_store, asof, fundamentals):
+    if fundamentals == "asof":
+        versions = fa.load_versions(facts_store, panel, asof)
+        missing = [
+            t for t in panel.tickers if t not in versions and t != panel.benchmark
+        ]
+        if missing:
+            raise ValueError(
+                f"No stored versions for {len(missing)} names: {missing[:5]}"
+            )
+        digest = hashlib.sha256()
+        for ticker in sorted(versions):
+            for v in versions[ticker]:
+                digest.update(
+                    f"{ticker}|{v.name}|{v.tag}|{v.start}|{v.end}|{v.value}|{v.filed}|{v.accession}".encode()
+                )
+        data, raw, names = fa.features(panel, versions)
+        return data, raw, names, digest.hexdigest()
+    data, raw, names = ol.features(panel, facts_store, asof)
+    return data, raw, names, None
 
 
 # Evaluate all predictions under identical twenty-session decisions and two cost levels.
@@ -77,8 +106,11 @@ def main():
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=False)
     panel, _ = book_panel(MarketStore(args.data_dir), date.fromisoformat(args.asof))
-    data, raw, names = ol.features(
-        panel, MarketStore(args.facts_dir), date.fromisoformat(args.asof)
+    data, raw, names, versions_sha = features_for(
+        panel,
+        MarketStore(args.facts_dir),
+        date.fromisoformat(args.asof),
+        args.fundamentals,
     )
     y = ol.labels(data.prices)
     train = gp.split_rows(data, "2018-01-01", "2024-01-01", horizon=21)[::5]
@@ -110,6 +142,11 @@ def main():
         "feature_names": names,
         "feature_sha256": hashlib.sha256(x.tobytes()).hexdigest(),
         "price_sha256": hashlib.sha256(data.prices.tobytes()).hexdigest(),
+        "fundamentals": args.fundamentals,
+        "fundamental_versions_sha256": versions_sha,
+        "fundamentals_asof_version": (
+            fa.VERSION if args.fundamentals == "asof" else None
+        ),
         "tickers": list(data.tickers),
         "numpy": np.__version__,
         "sklearn": sklearn.__version__,
