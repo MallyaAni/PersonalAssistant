@@ -9,6 +9,13 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-15 — Reversal shadows (branch reversal)
+
+Both registered forms failed their bar; both record forward from the
+09-16 decision. The page does not yet show `reversal_shadow`; add a
+details section when the first cycle has an entry. No retune on these
+events; a new specification is a new registration.
+
 ## 2026-09-15 — FOMC gate (branch fomc-gate)
 
 The overlay's gate is registered and priced nightly; nothing to decide

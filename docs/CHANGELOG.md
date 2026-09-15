@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-15 — Post-decision reversal: registered, run once, insufficient evidence; both shadows recording
+
+The operator's observation that the names most beaten into the July 29
+decision rose 33 to 47% within ten sessions became a registered
+experiment (`docs/research/post-decision-reversal-2026-09-15.md`, bar
+written before the run): worst decile by five-session return at the
+decision close, next-open entry, ten-session hold, beta-adjusted, 10 and
+30 bp, 45 meetings since 2021; and an any-day form on the same depth
+condition, 95 episodes. After 30 bp: +1.10% per meeting (t 1.01, 49%
+positive) and +1.24% per episode (t 1.30, 52%); most of the raw rise is
+the market and beta; July 2026 is the largest observation in either.
+Neither bar is met. `backend/market/reversal.py` records both forms
+forward as shadows from 2026-09-16 (`desk/reversal-shadow.json`,
+`desk/reversal-anyday-shadow.json`), advanced by the nightly and carried
+by the API under `reversal_shadow`; nothing is traded. Tests in
+`test_reversal.py`.
+
 ## 2026-09-15 — Review fixes: the gate counts only closed round trips, the observer cannot abort the run, the lock never preempts a live holder
 
 From opencode's read-only review of the day's changes. The FOMC gate

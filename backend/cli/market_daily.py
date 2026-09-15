@@ -735,6 +735,20 @@ def _challenger_block(store, report) -> dict | None:
     return block
 
 
+# The registered reversal shadows, advanced on tonight's panel: evidence
+# for a rule the desk does not run. Never a reason to stop.
+def _reversal_shadows(store, report) -> None:
+    from backend.market import reversal
+    from backend.market.calendar import fomc_decisions
+
+    try:
+        panel = report.panel
+        members = set(report.sides)
+        reversal.write_both(Path(store.root), panel, fomc_decisions(), members)
+    except Exception as exc:  # noqa: BLE001
+        print(f"\nreversal shadows: not written ({type(exc).__name__}: {exc})")
+
+
 # The as-of fundamentals comparison for tonight's record; a failure is
 # printed and the record is written without it.
 def _fundamentals_block(store, report, asof) -> dict | None:
@@ -1317,6 +1331,7 @@ def _run(args, store: MarketStore) -> None:
 
         fomc_gate.write(Path(store.root), store)
         execution_quality.write(Path(store.root))
+    _reversal_shadows(store, report)
     curve = curves(report, store, Path(store.root))
     try:
         path = save(

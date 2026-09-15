@@ -77,8 +77,56 @@ applies (mean after 30 bp > 0, t > 2, positive in at least 60% of
 episodes). If the any-day form passes and the meeting form does not, the
 meeting is not the condition; the depth is.
 
-## Results
+## Results — run once on 2026-09-15 after the registrations above
 
-Filled in by `python -m backend.cli.market_reversal --backtest` after
-this file was committed; see the section appended below and the JSON
-beside it.
+Bars through 2026-09-04 on the research copy of the store. JSON beside
+this file: `post-decision-reversal-2026-09-15.json` (meetings) and
+`post-decision-reversal-anyday-2026-09-15.json` (any day).
+
+**Meeting form, 45 decisions 2021-01-27 to 2026-07-29**
+
+| basket return, mean over meetings | mean | median | sd | positive | t |
+|---|---|---|---|---|---|
+| raw | +3.83% | +1.92% | 9.90% | 64% | 2.60 |
+| SPY over the same window | +1.10% | +0.85% | 2.80% | 67% | 2.63 |
+| beta-adjusted | +1.70% | +0.37% | 7.32% | 56% | 1.56 |
+| after 10 bp per side | +1.50% | +0.17% | 7.32% | 51% | 1.38 |
+| **after 30 bp per side (the bar)** | **+1.10%** | −0.23% | 7.32% | **49%** | **1.01** |
+
+Deep subset (into-meeting mean ≤ −10%): 18 meetings, +1.60% after
+30 bp, t 0.74, 56% positive. Not deep: 27 meetings, +0.77%. Without
+July 2026: +0.76%, t 0.71. By year after 30 bp: 2021 +0.2%, 2022 −1.9%,
+2023 +5.6%, 2024 +0.5%, 2025 −0.9%, 2026 +4.2%. Book contribution at 10%
+weight: about +0.11% per meeting.
+
+**Any-day form, 95 non-overlapping episodes since 2021**
+
+| basket return, mean over episodes | mean | median | sd | positive | t |
+|---|---|---|---|---|---|
+| raw | +3.11% | +1.24% | 11.07% | 61% | 2.74 |
+| beta-adjusted | +1.84% | +1.00% | 9.33% | 57% | 1.92 |
+| after 10 bp per side | +1.64% | +0.80% | 9.33% | 56% | 1.71 |
+| **after 30 bp per side (the bar)** | **+1.24%** | +0.40% | 9.33% | **52%** | **1.30** |
+
+Without July 2026: +1.17%, t 1.21. By year after 30 bp: 2021 +1.4%,
+2022 −0.9%, 2023 +1.4%, 2024 +1.6%, 2025 +2.6%, 2026 +2.0%.
+
+**Verdict on both: insufficient evidence to advance this specification.**
+Neither the primary nor the secondary bar is met. The raw basket does
+rise after a selloff, and so does SPY: most of the raw return is the
+market and the basket's beta, and what is left after costs is about a
+percent with a standard deviation seven to nine times larger. July 2026
+is the largest single observation in either form and moves the meeting
+mean by a third of a point on its own. The any-day form is the more
+promising of the two, with a t of 1.3 on 95 episodes and positive means
+in five of six years, but it does not clear a bar that was set to keep
+one July from becoming a rule.
+
+**What runs from here.** Both shadows record forward, trading nothing:
+the meeting form opens a cycle at each decision close from 2026-09-16,
+the any-day form at each trigger. Cycles fill at the next open and
+close ten sessions later; the ledgers sit beside the records and the
+API carries them. The same bar applies to the shadows' own cycles. A
+different specification (a shorter hold, a tighter decile, a
+confirmation at the open, a news condition) is a new registration, not
+a retune of this one.
