@@ -724,6 +724,16 @@ backend 401, backend `/health` 200), which still records the verdict and
 pages on red. `--run-post` forces the full set; an empty diff is treated as
 full. Pinned by `test_deploy_scripts.py` and validated on the policy's own
 deploy: `4e9f75af ok (cheap)`, gateway 401, `/health` 200.
+## 2026-09-10 - The live technical read sees the 9-day EMA and the three-session turn
+
+The read had no 9-day EMA and read the 21 and 50-day slopes over five
+sessions, so a name whose 9 and 21 had curled down off a rejected high
+two days earlier still read "rising" and "the trend is not stalling". The
+live detail now carries, per name at the live bar, the distance to the
+9-day EMA, whether the 9 and the 21 have turned over the last three
+sessions, and the 9/21 gap with whether it is widening or narrowing;
+the short-term lines say so in words, and the model's prose is written
+from those lines. Nothing is scored on them; the grade is unchanged.
 
 ## 2026-09-10 - Live quotes on the New York day
 
