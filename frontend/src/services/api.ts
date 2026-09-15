@@ -2076,8 +2076,12 @@ export interface DeskOrder {
   reason: string;
 }
 
+export type DeskStanding = 'none' | 'current' | 'pending' | 'late';
+
 export interface DeskPayload {
   coverage?: {tracked: number; graded: number};
+  // The last completed session and whether its record and ML observation exist.
+  record_status?: {expected: string; due_at: string; record: {session: string | null; status: DeskStanding}; ml_forward: {session: string | null; status: DeskStanding}};
   board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;
   ml_forward?: {status: string; started_at?: string; observed_at?: string; session?: string | null; accounts: Record<string, {equity: number; total_return: number}>} | null;
   forward_evidence?: DeskForwardEvidence;

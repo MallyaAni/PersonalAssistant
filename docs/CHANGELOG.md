@@ -12,9 +12,14 @@ not reached carry their earlier scores, so a rescoring can never hold
 the record past the next session. The frozen ML observer's receipt
 (status, sequence, session, or None) is written into the record's
 provenance, so a lost observation is visible in the record and not only
-in a log. `docs/TRADING_ROADMAP.md` states what "best" means for this
-system and the order of work. Tests: `test_nightly_lock.py`,
-`test_market_tone.py`, `test_market_daily.py`.
+in a log. And the page says when it is showing an old decision: the API
+carries `record_status` (`backend/market/record_status.py`), the last
+completed exchange session and whether its record and its ML observation
+exist, current, pending until seven the next morning, or late; the Desk
+view puts one sentence at the top when either is late. `docs/TRADING_ROADMAP.md`
+states what "best" means for this system and the order of work. Tests:
+`test_nightly_lock.py`, `test_market_tone.py`, `test_market_daily.py`,
+`test_record_status.py`, and the desk e2e.
 
 ## 2026-09-15 — As-of fundamentals recorded beside the frozen path, and the nightly's tone step back to the book
 

@@ -116,6 +116,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         event_status,
         forward_evidence,
         opportunity_shadow,
+        record_status,
     )
 
     event_live = event_status.load(_root())
@@ -132,6 +133,9 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "intraday_research": research,
         "board_paper": board_paper.summary(_root()),
         "ml_forward": opportunity_shadow.summary(_root()),
+        # Whether the last completed session has its record and its ML
+        # observation, so the page can say when it is showing an old decision.
+        "record_status": record_status.describe(_root()),
         "coverage": {
             "tracked": len(tracked),
             "graded": len(latest.get("grades") or {}),

@@ -33,6 +33,31 @@ test('frozen ML paper comparison shows independent account returns', async ({pag
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
+// The page says when it is showing an old decision: a record or an ML
+// observation missing for the last completed session by the next morning.
+test('a late record or observation is named at the top of the page', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/api/v1/conversations/ani.mallya/*', route => route.fulfill({json: {messages: []}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: deskRecord(), record_status: {expected: '2026-09-14', due_at: '2026-09-15T07:00-04:00',
+      record: {session: '2026-09-11', status: 'late'}, ml_forward: {session: null, status: 'late'}},
+  }}))
+  await page.goto('/#desk')
+  const status = page.getByRole('status', {name: 'Record status'})
+  await expect(status).toContainText('No decision record for 2026-09-14 yet')
+  await expect(status).toContainText('2026-09-11 decision')
+  await expect(status).toContainText('have not observed 2026-09-14')
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: deskRecord(), record_status: {expected: '2026-09-14', due_at: '2026-09-15T07:00-04:00',
+      record: {session: '2026-09-14', status: 'current'}, ml_forward: {session: '2026-09-11', status: 'pending'}},
+  }}))
+  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
+  await page.reload()
+  await expect(page.getByRole('table').first()).toBeVisible()
+  await expect(page.getByRole('status', {name: 'Record status'})).toHaveCount(0)
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Current opportunity evidence, not a larger position budget, determines stock priority.
 test('current opportunity scores change rank and explain their inputs', async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
