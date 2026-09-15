@@ -64,6 +64,19 @@ news, not the Fed, which the specification does not separate. Intraday
 timing (the first minutes after the open) is not modeled; the entry is
 the open print.
 
+## Generalisation, registered before its run
+
+The operator asked whether the meeting matters at all. It need not: the
+condition may simply be a deep five-session selloff in the book's worst
+decile. The **any-day form**, registered now: on any session since
+2021-01-27 where the worst decile's mean five-session return is at or
+below −10% and no episode is still holding, the same basket, next-open
+entry, ten-session hold, close exit, costs and beta adjustment. Episodes
+cannot overlap, so their windows are independent. The same primary bar
+applies (mean after 30 bp > 0, t > 2, positive in at least 60% of
+episodes). If the any-day form passes and the meeting form does not, the
+meeting is not the condition; the depth is.
+
 ## Results
 
 Filled in by `python -m backend.cli.market_reversal --backtest` after
