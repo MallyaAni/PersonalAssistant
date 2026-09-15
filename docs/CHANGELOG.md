@@ -9,7 +9,9 @@ lock whose process is gone, or older than twenty hours, is taken over.
 The release-tone step has a time budget (`--tone-budget-minutes`, three
 hours by default): past it the loop stops between names and the names
 not reached carry their earlier scores, so a rescoring can never hold
-the record past the next session. The frozen ML observer's receipt
+the record past the next session; and one name's failed fetch (an EDGAR
+503 on a 2018 IBM filing abandoned fifty names on 09-15) is named and
+skipped, the names after it still scored. The frozen ML observer's receipt
 (status, sequence, session, or None) is written into the record's
 provenance, so a lost observation is visible in the record and not only
 in a log. And the page says when it is showing an old decision: the API

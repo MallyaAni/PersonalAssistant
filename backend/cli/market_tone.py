@@ -148,6 +148,7 @@ def refresh_tickers(
     readers, model = clients(llm_url, llm_model, concurrency)
     pacer = edgar.Pacer()
     total = 0
+    incomplete: list[str] = []
     for position, ticker in enumerate(tickers):
         if deadline is not None and time.monotonic() > deadline:
             left = len(tickers) - position
@@ -159,11 +160,25 @@ def refresh_tickers(
             break
         if current_frame_exists(store, ticker, asof):
             continue
-        scored, _missing, stored = _refresh_ticker(
-            store, ticker, asof, since, readers, model, pacer
-        )
+        try:
+            scored, _missing, stored = _refresh_ticker(
+                store, ticker, asof, since, readers, model, pacer
+            )
+        except RuntimeError as exc:
+            # One name's failed fetch (an EDGAR 503 on a 2018 filing, on
+            # 2026-09-15) must not abandon every name after it: its partial
+            # results are kept for the next run and the loop goes on.
+            print(f"tone: {exc}; the name carries its earlier scores", flush=True)
+            incomplete.append(ticker)
+            continue
         if stored >= 0:
             total += scored
+    if incomplete:
+        print(
+            f"tone: {len(incomplete)} names incomplete ({', '.join(incomplete)}); "
+            "retried next run",
+            flush=True,
+        )
     return total
 
 
