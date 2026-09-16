@@ -5,7 +5,7 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { StockBoard } from './StockBoard'
+import { StockBoard, type BoardEvent } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { OpportunityCard } from './OpportunityCard'
 import {
@@ -897,6 +897,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const eventLive = payload.event_status
   const event = (!eventLive?.stale && eventLive?.policy) || latest?.event_risk
   const eventPaused = eventLive?.active || event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
+  // The board keeps its sizes during a cycle, at the exposure the desk holds.
+  // The exposure is unknown when the calendar is missing or when an active
+  // cycle's current policy status has not been read.
+  const boardEvent: BoardEvent | null = eventPaused ? {
+    exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
+    decisionDate: event?.decision_date ?? null,
+    calendarUnknown: event?.calendar_known === false,
+  } : null
 
   if (latest && !advanced) return <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
     <RecordStatus status={payload.record_status} />
@@ -909,7 +917,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </div>
     </header>
     <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} paper={payload.board_paper} ml={payload.ml_forward} coverage={payload.coverage} decisions={decisions}
-      holdings={holdingsReady ? holdings : null} paused={Boolean(eventPaused)} now={now}
+      holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
       holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
       onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
@@ -983,7 +991,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </details>}
 
       {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} now={now} decisions={decisions} equity={equity}
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity}
           holdings={holdingsReady ? holdings : null} marking={marking !== null}
           onRecordBuy={canWrite && holdingsReady ? recordBuy : undefined}
           saveError={saveError} onOpenName={(t) => setOpenName(t)} />
@@ -1705,6 +1713,7 @@ const EveryGrade = ({
   saveError,
   onOpenName,
   research,
+  event,
   now,
   decisions,
   equity,
@@ -1719,10 +1728,15 @@ const EveryGrade = ({
   saveError: string
   onOpenName: (ticker: string) => void
   research: DeskPayload['intraday_research']
+  event: BoardEvent | null
   now: number
   decisions?: DeskDecisions
   equity: number
 }) => {
+  // Research sizes at the exposure the desk holds during an FOMC cycle, and
+  // hidden while that exposure is unknown, the same as the board.
+  const sizesHidden = event !== null && (event.calendarUnknown || event.exposure === null)
+  const sizeExposure = event?.exposure ?? 1
   const [openBrief, setOpenBrief] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   // Every name is re-graded at the candle: the live grades cover the whole
@@ -1840,8 +1854,8 @@ const EveryGrade = ({
                   )}
                 </td>
                 <td className="min-w-40 text-xs">
-                  {research?.status === 'available' && !research.event_paused && research.session === latest.session && research.bar === quote?.bar && Date.parse(research.valid_until ?? '') > now && Number.isFinite(research.targets?.[ticker])
-                    ? allocationPercent(research.targets![ticker])
+                  {research?.status === 'available' && !sizesHidden && research.session === latest.session && research.bar === quote?.bar && Date.parse(research.valid_until ?? '') > now && Number.isFinite(research.targets?.[ticker])
+                    ? allocationPercent(research.targets![ticker] * sizeExposure)
                     : '—'}
                 </td>
                 <td className="min-w-40 text-xs">

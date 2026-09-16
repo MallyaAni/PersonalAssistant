@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-16 — Board sizes stay on during an FOMC cycle, at the exposure the desk holds
+
+The board hid every research size for the whole FOMC cycle behind "new
+buys paused", so its most useful column vanished for three or four
+sessions a meeting and a person could not tell a stale quote from the
+policy. The sizes now stay on the board at the exposure the desk actually
+holds: half while the reduction is in force (a 20% target reads 10%, cash
+carries the rest), full once restoration is queued. The header says so
+("FOMC · sizes at half exposure · restores at the open after the
+2026-09-16 decision") and keeps the sizing line beneath it. The Action
+column names the state per row: a name the account holds is "Hold · FOMC",
+a name it does not is "Wait · FOMC", each with the reason on hover. Sizes
+are hidden only while the exposure is unknown - a missing calendar, or an
+active cycle whose current policy status has not been read - and the
+header says which. The details view scales its research sizes the same
+way. Display only: the policy, the event ledger, the plan rows, the
+Record buttons and the intraday research ledger (which counts no fills
+while paused) are unchanged. Browser tests in
+`frontend/e2e/desk.spec.ts`; 53 pass in Chromium.
+
 ## 2026-09-16 — Desk page word-and-word review: flat zero, named waits, per-name sizing, positions error surfaced
 
 A user-perspective review of the desk page. Four readings fixed.

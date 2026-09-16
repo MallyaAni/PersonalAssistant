@@ -221,15 +221,55 @@ test('single board keeps cash and wait actions during FOMC', async ({page}) => {
   }}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(page.getByText('FOMC · new buys paused')).toBeVisible()
+  await expect(page.getByText('FOMC cycle in progress · sizes paused until the policy status is current')).toBeVisible()
   await expect(board.locator('tbody tr').first()).toContainText('Hold available cash')
   await expect(board.locator('tbody tr').first()).not.toContainText('100.0%')
-  await expect(board.locator('tbody tr').nth(1)).toContainText('Wait')
+  await expect(board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})).toContainText('Hold · FOMC')
+  await expect(board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})).toContainText('Wait · FOMC')
   await expect(board.locator('tbody tr')).toHaveCount(4)
   await page.getByRole('button', {name: 'Details', exact: true}).click()
   await expect(page.getByRole('heading', {name: 'Stock rankings', exact: true})).toBeVisible()
   await page.getByRole('button', {name: 'Back to stocks'}).click()
   await expect(board).toBeVisible()
+})
+
+// During a settled reduction the board keeps its sizes at the exposure the
+// desk holds: a 20% target reads 10%, cash carries the rest, a held name is
+// a hold and an unheld one a wait, and the header names the restore.
+test('a settled FOMC reduction shows sizes at half exposure with the restore date', async ({page}) => {
+  await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
+    as_of: '2026-09-09T14:00:00Z',
+    quotes: {
+      AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-09T13:45:00Z'},
+      NVDA: {symbol: 'NVDA', last: 130, bar: '2026-09-09T13:45:00Z'},
+      MSFT: {symbol: 'MSFT', last: 90, bar: '2026-09-09T13:45:00Z'},
+    },
+  }}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session],
+    event_status: {as_of: '2026-09-09T14:00:00Z', status: 'reduction settled', stale: false, active: true, pending_orders: 0,
+      policy: {enabled: true, session: '2026-09-08', decision_date: '2026-09-16', factor: 0.5, calendar_known: true,
+        spy_five_session_return: -0.011, evaluation_since: '2026-06-18'}},
+    intraday_research: {status: 'available', session: latest.session, event_paused: true,
+      bar: '2026-09-09T13:45:00Z', valid_until: '2026-09-09T14:15:00Z', targets: {AAPL: .2, NVDA: .05, MSFT: 0}},
+  }}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(page.getByText('FOMC · sizes at half exposure · restores at the open after the 2026-09-16 decision')).toBeVisible()
+  await expect(page.getByText('15-minute model allocations · experimental')).toBeVisible()
+  const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
+  await expect(aapl).toContainText('10.0%')
+  await expect(aapl).toContainText('Hold · FOMC')
+  const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
+  await expect(nvda).toContainText('2.5%')
+  await expect(nvda).toContainText('Wait · FOMC')
+  const cash = board.locator('tbody tr').filter({hasText: 'Cash held through FOMC'})
+  await expect(cash).toContainText('87.5%')
+  await expect(board.locator('tbody tr').first()).toContainText('Cash held through FOMC')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
 // The board's "Wait" must say which kind it is: when the plan feed answers

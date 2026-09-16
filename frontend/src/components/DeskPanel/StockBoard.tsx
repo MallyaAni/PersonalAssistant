@@ -9,15 +9,20 @@ const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `
 // Keep the confirmed fill date on the exchange's calendar.
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
 
+// What the board shows during an FOMC cycle: the exposure the desk actually
+// holds (null while the cycle's current policy status is unknown), the
+// decision the cycle belongs to, and whether the calendar itself is missing.
+export type BoardEvent = {exposure: number | null; decisionDate: string | null; calendarUnknown: boolean}
+
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, paused, now, action, onOpen, onBuy, saving, error, holdingsError}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
   ml?: DeskPayload['ml_forward'];
   decisions?: DeskDecisions;
   coverage?: DeskPayload['coverage'];
-  paused: boolean; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
+  event: BoardEvent | null; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
   onOpen: (ticker: string) => void;
   onBuy?: (ticker: string, price: number, shares: number, date: string) => Promise<boolean>;
   saving: boolean; error: string; holdingsError?: string;
@@ -32,19 +37,35 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // not share that bar gets a dash instead of turning the whole board off.
   // The cash row and the weight ranking still need the complete, synchronized
   // set, so those stay all-or-nothing.
+  // During an FOMC cycle the sizes stay on the board at the exposure the
+  // desk holds - half while reduced, full once restoration is queued - so a
+  // 20% target reads 10% and cash carries the rest. They are hidden only
+  // while that exposure is unknown: a missing calendar, or an active cycle
+  // whose current policy status has not been read.
+  const paused = event !== null
+  const hidden = paused && (event.calendarUnknown || event.exposure === null)
+  const exposure = paused && event.exposure !== null ? event.exposure : 1
   const researchCurrent = research?.status === 'available' && research.session === latest.session
     && !!research.valid_until && Date.parse(research.valid_until) > now
   const weightOf = (ticker: string) => {
-    if (!researchCurrent || paused || research.event_paused) return null
+    if (!researchCurrent || hidden) return null
     if (research!.bar !== live.quotes[ticker]?.bar) return null
     const weight = research!.targets?.[ticker]
-    return Number.isFinite(weight) && (weight as number) >= 0 ? (weight as number) : null
+    return Number.isFinite(weight) && (weight as number) >= 0 ? (weight as number) * exposure : null
   }
   const graded = Object.keys(latest.grades)
-  const sizedNames = researchCurrent && !paused && !research.event_paused ? graded.filter(ticker => weightOf(ticker) !== null) : []
+  const sizedNames = researchCurrent && !hidden ? graded.filter(ticker => weightOf(ticker) !== null) : []
   const fullCoverage = sizedNames.length === graded.length && graded.length > 0
-  const gross = fullCoverage ? Object.values(research!.targets ?? {}).reduce((sum, weight) => sum + weight, 0) : null
+  const gross = fullCoverage ? Object.values(research!.targets ?? {}).reduce((sum, weight) => sum + weight, 0) * exposure : null
   const sized = fullCoverage && gross !== null && gross <= 1.000001
+  const fomcLine = !paused ? null
+    : event.calendarUnknown ? 'FOMC calendar unavailable · exposure changes and sizing paused'
+    : event.exposure === null ? 'FOMC cycle in progress · sizes paused until the policy status is current'
+    : event.exposure < 1 ? `FOMC · sizes at ${event.exposure === 0.5 ? 'half' : `${Math.round(event.exposure * 100)}%`} exposure · restores at the open after the ${event.decisionDate ?? 'FOMC'} decision`
+    : 'FOMC · restoration queued for the next open · sizes at full exposure'
+  const sizingLine = sized ? '15-minute model allocations · experimental'
+    : researchCurrent && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
+    : 'Sizing unavailable · waiting for fresh data'
   // Compare only current scores tied to this exact nightly basis and completed price.
   const opportunity = (ticker: string) => {
     const value = decisions?.rows[ticker]?.opportunity
@@ -63,17 +84,15 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
   const emptyAccount = holdings !== null && holdings.length === 0
   const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
-  const cashIndex = paused ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
+  const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   const ranked = [...stocks]
   ranked.splice(cashIndex < 0 ? ranked.length : cashIndex, 0, cash)
   const bar = researchCurrent ? research!.bar : live.data_at
   const time = bar ? new Date(bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
     <div className="shrink-0 border-b border-black/[0.06] px-3 py-2 text-xs text-[#6e6e73]">
-      <p>{paused ? 'FOMC · new buys paused'
-        : sized ? '15-minute model allocations · experimental'
-        : researchCurrent && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
-        : 'Sizing unavailable · waiting for fresh data'}</p>
+      <p>{fomcLine ?? sizingLine}</p>
+      {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
       <p className="mt-0.5">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours</p>
       <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">Analysis {latest.session} close{live.stale ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
@@ -89,9 +108,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="w-7 text-xs text-[#6e6e73]">{index + 1}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span>{row.opportunity !== null && <span title="Opportunity evidence index; open for inputs and dates" className="ml-1 text-[10px] font-normal text-[#6e6e73]">· {row.opportunity!.toFixed(1)}/10</span>}</button>}
-              <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? 'Hold available cash' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
+              <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
-            <td className="text-xs">{isCash ? 'Hold' : paused ? <span title="FOMC cycle takes priority">Wait</span> : action(row.ticker, row.weight)}</td>
+            <td className="text-xs">{isCash ? 'Hold'
+              : paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
+              : action(row.ticker, row.weight)}</td>
             <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
             <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="rounded-full bg-[#0071e3] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
