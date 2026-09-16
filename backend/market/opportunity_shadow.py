@@ -16,6 +16,13 @@ from backend.market.panel import build_panel
 from backend.market.store import MarketStore
 
 BUNDLE = Path(__file__).parent / "data/opportunity_neural_v1.npz"
+# Declared continuations of a ledger across revisions: (from, to, reason)
+# rows. The identity hashes whole files so any drift is caught; a revision
+# that touches a hashed file without touching what the shadow reads is
+# continued by a declaration here, never by overwriting the fingerprint.
+# The file sits outside the hash because the successor identity cannot be
+# written into the code it hashes.
+MIGRATIONS = Path(__file__).parent / "data/opportunity_shadow_migrations.json"
 VERSION = "opportunity-shadow/1"
 POLICIES = ("neural", "valuation_rule", "momentum20", "SPY", "USD")
 
@@ -62,12 +69,38 @@ def latest(folder):
     return json.loads(paths[-1].read_text()) if paths else None
 
 
+# The declared continuation from `from_policy` to `to_policy`, or None.
+def migration(from_policy, to_policy, path=None):
+    """Return the declared migration row for the pair, or None."""
+    path = path or MIGRATIONS
+    if not path.exists():
+        return None
+    for row in json.loads(path.read_text(encoding="utf-8")):
+        if row.get("from") == from_policy and row.get("to") == to_policy:
+            return row
+    return None
+
+
 # Create explicitly separate cash accounts before any future return can be observed.
-def initialize(folder, tickers, policy, now):
+def initialize(folder, tickers, policy, now, migrations=None):
     prior = latest(folder)
     if prior:
-        if prior["policy"] != policy or prior["tickers"] != list(tickers):
+        if prior["tickers"] != list(tickers):
             raise ValueError("Frozen experiment changed; use a separate run directory")
+        if prior["policy"] != policy:
+            declared = migration(prior["policy"], policy, migrations)
+            if declared is None:
+                raise ValueError(
+                    "Frozen experiment changed; use a separate run directory"
+                )
+            # The ledger continues under the new identity, and every later
+            # row carries where it came from and why.
+            return {
+                **prior,
+                "policy": policy,
+                "policy_from": prior["policy"],
+                "migration": declared["reason"],
+            }
         return prior
     accounts = {
         f"{name}@{bps}bps": {

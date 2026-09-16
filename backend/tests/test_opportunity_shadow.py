@@ -1,5 +1,6 @@
 """Prospective inference, delayed funded fills and immutable isolated account proof."""
 
+import json
 from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
@@ -161,3 +162,60 @@ def test_nightly_wrapper_initializes_separate_accounts(tmp_path, monkeypatch):
     summary = shadow.summary(root)
     assert len(summary["accounts"]) == 10
     assert summary["accounts"]["neural@10bps"]["total_return"] == 0
+
+
+# A ledger written under an earlier identity continues when the pair of
+# identities is declared, and the rows after the change say so; any other
+# successor, or a different universe, still refuses. The 2026-09-16
+# grading fix changed a hashed file without changing the shadow's inputs,
+# and the ledger with its first observation and pending fills must not be
+# abandoned for it.
+def test_a_declared_migration_continues_the_ledger(tmp_path):
+    now = datetime(2026, 9, 15, 21, tzinfo=UTC)
+    declared = tmp_path / "migrations.json"
+    declared.write_text(
+        json.dumps([{"from": "old-identity", "to": "new-identity", "reason": "safe"}])
+    )
+    first = shadow.initialize(tmp_path, ("ABC", "SPY"), "old-identity", now)
+    assert first["policy"] == "old-identity"
+    continued = shadow.initialize(
+        tmp_path, ("ABC", "SPY"), "new-identity", now, migrations=declared
+    )
+    assert continued["policy"] == "new-identity"
+    assert continued["policy_from"] == "old-identity"
+    assert continued["migration"] == "safe"
+    assert continued["sequence"] == first["sequence"]
+    assert continued["accounts"] == first["accounts"]
+    row = shadow.advance(
+        continued,
+        "2026-09-15",
+        now,
+        np.array([1.0, 1.0]),
+        np.array([1.0, 1.0]),
+        {name: np.zeros(2) for name in shadow.POLICIES},
+    )
+    assert (row["policy"], row["policy_from"]) == ("new-identity", "old-identity")
+    with pytest.raises(ValueError, match="Frozen experiment changed"):
+        shadow.initialize(
+            tmp_path, ("ABC", "SPY"), "stranger", now, migrations=declared
+        )
+    with pytest.raises(ValueError, match="Frozen experiment changed"):
+        shadow.initialize(
+            tmp_path, ("ABC", "XYZ"), "new-identity", now, migrations=declared
+        )
+    with pytest.raises(ValueError, match="Frozen experiment changed"):
+        shadow.initialize(
+            tmp_path,
+            ("ABC", "SPY"),
+            "new-identity",
+            now,
+            migrations=tmp_path / "none.json",
+        )
+
+
+# The production ledger's identity is declared to continue into exactly the
+# identity the current code computes, so the deployed nightly continues it;
+# any later change to a hashed file needs its own declaration.
+def test_the_deployed_ledger_continues_into_the_current_identity():
+    deployed = "72162f008c6cdd54f04dffef3d40b4b48cb88610468bfc431b27392ab4b2cdd8"
+    assert shadow.migration(deployed, shadow.identity(shadow.BUNDLE)) is not None

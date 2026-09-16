@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-16 — The frozen ML ledger continues across a declared revision
+
+The ML forward shadow pins its experiment by hashing whole source files,
+`levels_pit.py` among them. The 09-16 grading fix changed that file's
+`point_in_time_levels` (the value analyst's input), so the deployed
+code's identity no longer matched the ledger's and the observer would
+have refused the ledger, with its first observation and pending fills,
+as a changed experiment. `trailing_levels`, the shadow's only input from
+that file, is unchanged. Continuation is now declared, never assumed:
+`backend/market/data/opportunity_shadow_migrations.json` lists (from,
+to, reason) identity pairs, kept outside the hash because the successor
+identity cannot be written into the code it hashes; `initialize` accepts
+exactly a declared pair and every later row carries `policy_from` and
+the reason. Any other successor, or a changed universe, still refuses.
+A test pins that the deployed ledger's identity continues into the
+identity the current code computes, so the next change to a hashed file
+fails the gate until it is declared. Found by Codex's review of c356bbe7.
+
 ## 2026-09-16 — Persistence length and release-event votes: closed, insufficient evidence
 
 The three-session persistence rule delayed ORCL's upgrade and ADBE's
