@@ -1,7 +1,7 @@
 [
  {
   "from": "72162f008c6cdd54f04dffef3d40b4b48cb88610468bfc431b27392ab4b2cdd8",
-  "to": "75a039b250b76286ce31e11fa2c632a4d7d5f4f801c121505398e1d65927f54f",
+  "to": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
   "declared": "2026-09-16",
   "reason": "Revision 4353db1c changed levels_pit.point_in_time_levels (filed share counts on the price's split basis, for the value analyst) and this revision added the migration path to opportunity_shadow; trailing_levels, the shadow's only input from levels_pit, and the model, features, execution and calendar are unchanged. The ledger holds the first observation (sequence 1, 2026-09-15) and its pending fills."
  }
