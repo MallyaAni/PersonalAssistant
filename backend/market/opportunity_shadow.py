@@ -40,10 +40,10 @@ def predict(x, weights):
 # Pin the model and execution implementation so an existing experiment cannot drift.
 def identity(bundle):
     code = b"".join(
-        Path(module.__file__).read_text().replace("\r\n", "\n").encode()
+        Path(module.__file__).read_text(encoding="utf-8").replace("\r\n", "\n").encode()
         for module in (gp, ol, edgar, levels_pit, calendar)
     )
-    code += Path(__file__).read_text().replace("\r\n", "\n").encode()
+    code += Path(__file__).read_text(encoding="utf-8").replace("\r\n", "\n").encode()
     return hashlib.sha256(bundle.read_bytes() + code).hexdigest()
 
 
@@ -66,7 +66,7 @@ def append(folder, row):
 # Load only the last completed transition; malformed records never reset an account.
 def latest(folder):
     paths = sorted(folder.glob("[0-9]*.json"))
-    return json.loads(paths[-1].read_text()) if paths else None
+    return json.loads(paths[-1].read_text(encoding="utf-8")) if paths else None
 
 
 # The declared continuation from `from_policy` to `to_policy`, or None.
