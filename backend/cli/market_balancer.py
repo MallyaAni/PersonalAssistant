@@ -150,7 +150,10 @@ def _green_day_skip_locked(
     action_rows = {r.get("ticker"): r for r in latest.get("actions") or []}
     clients = None
     skipped: list[str] = []
-    for row in pending_sells:
+    for order_id in [p["client_order_id"] for p in pending_sells]:
+        # skip_sell returns a fresh state; the row must be the one in it,
+        # or a hold written on a stale copy is lost when the state is saved.
+        row = next(p for p in state.pending if p["client_order_id"] == order_id)
         ticker = row.get("symbol", "")
         quote = quotes.get(ticker)
         if not _current_opening_candle(quote or {}, now):

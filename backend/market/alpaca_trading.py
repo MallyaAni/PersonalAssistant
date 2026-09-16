@@ -159,9 +159,30 @@ class AlpacaTradingClient:
     # existed the desk recorded "submitted" and never looked again, so a
     # rebalance the broker never carried out counted as one that had been.
     def orders_since(self, after: str, limit: int = 500) -> list[dict[str, Any]]:
-        """Return orders of any status submitted at or after `after` (ISO 8601)."""
-        query = f"/orders?status=all&limit={int(limit)}&after={after}&direction=asc"
-        return self._call("GET", query) or []
+        """Return every order of any status submitted at or after `after`.
+
+        The broker returns at most `limit` per page; a window spanning
+        several rebalances exceeds it, and an order past the page would
+        read as never traded. Pages are followed by the last order's
+        submission time until a short page arrives.
+        """
+        out: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        cursor = after
+        for _page in range(100):
+            query = (
+                f"/orders?status=all&limit={int(limit)}&after={cursor}&direction=asc"
+            )
+            page = self._call("GET", query) or []
+            fresh = [o for o in page if str(o.get("id")) not in seen]
+            for o in fresh:
+                seen.add(str(o.get("id")))
+            out.extend(fresh)
+            last = page[-1].get("submitted_at") if page else None
+            if len(page) < int(limit) or not last or last == cursor:
+                break
+            cursor = last
+        return out
 
     # Cancel the desk's own open orders, never the person's. A broad
     # DELETE /orders would withdraw an order placed by hand on Schwab as

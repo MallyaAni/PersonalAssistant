@@ -265,11 +265,23 @@ def _reconcile(client, state, store_root: Path, live: bool):
         print(f"  could not read the broker's orders: {exc}")
         return state, []
     known = {row.get("client_order_id") for row in broker}
-    if any(
-        row.get("event_id") and row["client_order_id"] not in known
+    # An event order the broker acknowledged (its execution carries the
+    # broker's own timestamps) but no longer lists is an unknown outcome:
+    # keep the intent. One the broker never acknowledged never traded, and
+    # settles as missing like any other, or the pending list would block
+    # every later plan forever.
+    unknown = [
+        row["client_order_id"]
         for row in state.pending
-    ):
-        print("  FOMC order outcome unknown; preserving intent for idempotent recovery")
+        if row.get("event_id")
+        and row["client_order_id"] not in known
+        and _acknowledged(row)
+    ]
+    if unknown:
+        print(
+            "  FOMC order outcome unknown; preserving intent for idempotent "
+            f"recovery ({', '.join(unknown)})"
+        )
         return state, []
     settled = paper.settle(state.pending, broker)
     if settled:
@@ -295,6 +307,23 @@ def _reconcile(client, state, store_root: Path, live: bool):
     if live:
         paper.save_state(store_root, updated)
     return updated, settled
+
+
+# Whether the broker ever acknowledged a pending order: its execution block
+# carries the broker's own timestamps only after a successful submission.
+def _acknowledged(row: dict) -> bool:
+    """Return True when the broker's acknowledgment was recorded for the row."""
+    execution = row.get("execution") or {}
+    return any(execution.get(k) for k in ("created_at", "submitted_at", "filled_at"))
+
+
+# Every pending desk order is withdrawn before a new plan is sent, whatever
+# session it was planned for. A same-session row can only exist on a forced
+# rerun, and leaving it working while the plan is sent again put the same
+# delta on the market twice.
+def _ids_to_withdraw(state) -> list[str]:
+    """Return the client order ids the plan must cancel before it is sent."""
+    return [row["client_order_id"] for row in state.pending]
 
 
 # Compare aggregate fills with the broker's actual completion-session close.
@@ -521,11 +550,10 @@ def _paper_trade(
     # clock back before the plan is made.
     state, settled = _reconcile(client, state, store_root, live)
     policy = event_risk.decision(panel)
-    # Withdraw stale legs before replacing them, and wait for confirmed outcomes.
-    # A pending cancel can still fill; never overwrite its durable intent.
-    stale = [
-        row["client_order_id"] for row in state.pending if row.get("session") != session
-    ]
+    # Withdraw every pending leg before replacing it, this session's included
+    # (a forced rerun), and wait for confirmed outcomes. A pending cancel can
+    # still fill; never overwrite its durable intent.
+    stale = _ids_to_withdraw(state)
     if live and stale:
         client.cancel_orders(stale)
         state, more = _reconcile(client, state, store_root, live)
