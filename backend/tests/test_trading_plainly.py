@@ -254,3 +254,23 @@ def test_a_level_distance_is_a_percentage_of_the_price_not_a_log():
     assert plainly._figure("technical", "resistance_distance", 0.25, None) == (
         "nearest resistance 25.0% above the price"
     )
+
+
+# The ORCL case: a release that read upbeat on guidance and demand, like
+# most of the book, is why the sentiment vote is bullish. Those readings
+# are the reason, not the 0.1 change in guidance tone the name happened
+# to differ on, which printed as "guidance tone unchanged".
+def test_a_reading_the_book_shares_still_argues_the_stance():
+    scale = {
+        ("sentiment", "tone_guidance"): (1.0, float("nan"), 1),
+        ("sentiment", "tone_demand"): (1.0, float("nan"), 1),
+        ("sentiment", "tone_guidance_change"): (0.0, float("nan"), 1),
+    }
+    cited = {"tone_guidance": 1.0, "tone_demand": 1.0, "tone_guidance_change": 0.1}
+    picked = plainly._notable("sentiment", cited, scale, stance=1)
+    assert [m for m, _v in picked] == ["tone_guidance", "tone_demand"]
+    clause = plainly._clause("sentiment", 1, 0.85, cited, scale)
+    assert clause == "+ Sentiment: upbeat on guidance; upbeat on demand"
+    # A bearish stance on the same release still names what set it apart.
+    against = plainly._notable("sentiment", cited, scale, stance=-1)
+    assert [m for m, _v in against] == ["tone_guidance_change"]

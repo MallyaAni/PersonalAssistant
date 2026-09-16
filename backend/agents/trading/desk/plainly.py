@@ -451,6 +451,15 @@ def _notable(
             # it shares with everyone is not.
             score = abs(float(value) - middle)
             direction = (float(value) - middle) * lean
+            # A reading the whole book shares still argues the stance when
+            # it points the stance's way. ORCL's release read upbeat on
+            # guidance and demand like most of the book, and those are why
+            # its sentiment vote is bullish; the 0.1 change in guidance
+            # tone it differed on printed as "guidance tone unchanged" and
+            # was the only line cited.
+            own = float(value) * lean
+            if stance != 0 and own * stance > 0 and score < abs(own):
+                score, direction = abs(own), own
         else:
             score = abs(float(value) - middle) / spread
             direction = (float(value) - middle) * lean

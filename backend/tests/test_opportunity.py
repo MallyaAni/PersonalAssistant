@@ -80,3 +80,27 @@ def test_score_fails_closed_for_missing_or_expired_inputs(issue):
     )
     assert result["score"] is None
     assert result["status"] == "unavailable"
+
+
+# After the candle's deadline the score is not current, but the evidence
+# still has a reading: the page shows it dated to its bar rather than
+# "not scored", which read as if the name had no evidence at all.
+def test_the_last_score_survives_the_deadline():
+    grade = {"ranks": {name: 0.9 for name in opportunity.grading.ANALYST_WEIGHTS}}
+    live = {"ranks_live": dict(grade["ranks"]), "technical_now": 0.9}
+    result = opportunity.explain(
+        grade,
+        live,
+        {"last": 100, "bar": "2026-09-14T19:45:00Z"},
+        NOW.isoformat(),
+        NOW,
+        "2026-09-11",
+    )
+    assert result["score"] is None
+    assert result["status"] == "unavailable"
+    assert 5 < result["last_score"] <= 10
+    live["ranks_live"].pop("value")
+    missing = opportunity.explain(
+        grade, live, {"last": 100}, NOW.isoformat(), NOW, "2026-09-11"
+    )
+    assert missing["last_score"] is None

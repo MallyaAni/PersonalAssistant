@@ -49,16 +49,21 @@ def explain(grade, live, quote, deadline, now, session):
     fresh = bool(
         live and until and now < until and price and math.isfinite(price) and price > 0
     )
-    score = (
+    # The evidence's own reading, whether or not the candle is still
+    # current: after the close the page shows it dated to its bar rather
+    # than "not scored", which read as if the name had no evidence.
+    last_score = (
         sum(p["score"] * p["weight"] for p in parts)
         / sum(grading.ANALYST_WEIGHTS.values())
-        if not missing and fresh
+        if not missing
         else None
     )
+    score = last_score if fresh else None
     return {
         "version": "analyst-opportunity/1",
         "score": score,
         "status": "indicative" if score is not None else "unavailable",
+        "last_score": last_score,
         "price": price if fresh else None,
         "bar": quote.get("bar"),
         "valid_until": deadline,

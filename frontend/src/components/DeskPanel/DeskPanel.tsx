@@ -1949,6 +1949,8 @@ const triggers = (stances: Record<string, number>) =>
 // put and call walls as distances from it (negative below, positive above).
 type DeskWalls = {
   expiry: string | null
+  through?: string | null
+  fetched_at?: string | null
   put_wall: number | null
   call_wall: number | null
   put_wall_oi: number
@@ -2075,7 +2077,7 @@ const LiveTechnical = ({
       )}
       {detail?.walls && (detail.walls.put_wall != null || detail.walls.call_wall != null) && (
         <p className="mt-2 text-xs text-[#6e6e73]">
-          Option walls {detail.walls.expiry ? `to ${detail.walls.expiry.slice(5)}` : ''}:{' '}
+          Option walls{detail.walls.expiry ? ` (expiries ${detail.walls.expiry.slice(5)}${detail.walls.through && detail.walls.through !== detail.walls.expiry ? ` to ${detail.walls.through.slice(5)}` : ''}` : ''}{detail.walls.fetched_at ? `${detail.walls.expiry ? ', ' : ' ('}open interest fetched ${marketTime(detail.walls.fetched_at)} ET)` : detail.walls.expiry ? ')' : ''}:{' '}
           {detail.walls.put_wall != null ? (
             <>
               put{' '}
@@ -2220,6 +2222,46 @@ const EarningsPanel = ({ userId, ticker }: { userId: string; ticker: string }) =
 // One name's drill-down: what the desk said about it over time, what came
 // next, and how it did under the desk's own rule versus holding it or the
 // benchmark. Read from the file the nightly run wrote.
+// The question a person opens the panel with, answered first: when the
+// grade last moved, which analyst moved it, on what readings, and the
+// rule that made the vote wait. ORCL went B to A+ on a sentiment vote
+// that had held the top of the book for three sessions since its Sep 11
+// release read, and nothing on the panel said so.
+const GradeMove = ({changes, session, reads}: {
+  changes: {date: string; from: string; to: string; moved: string[]; said?: boolean}[]
+  session: string
+  reads?: Record<string, string[]>
+}) => {
+  const latest = changes[0]
+  if (!latest) return null
+  const tonight = latest.date === session
+  const moved = latest.moved.map((text) => {
+    const analyst = text.split(' ')[0]
+    const readings = tonight ? (reads?.[analyst] ?? []).slice(0, 2) : []
+    return {text, readings}
+  })
+  const flipped = latest.moved.some((text) => / (for|against)$/.test(text))
+  return (
+    <section aria-label="Why the grade moved" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+      <p>
+        <span className="font-semibold">{tonight ? 'Moved in tonight\u2019s decision' : `Unchanged since ${shortDate(latest.date)}`}:</span>{' '}
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.from] ?? ''}`}>{latest.from}</span>
+        <span className="mx-1 text-[#6e6e73]">→</span>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.to] ?? ''}`}>{latest.to}</span>
+        {!tonight && <span className="ml-1 text-xs text-[#6e6e73]">on {shortDate(latest.date)}</span>}
+      </p>
+      {moved.length > 0 ? (
+        <ul className="mt-1 space-y-0.5 text-xs">
+          {moved.map((m) => <li key={m.text}>· {m.text.replace(/^(\w)/, (c) => c.toUpperCase())}{m.readings.length > 0 ? `: ${m.readings.join('; ')}` : ''}</li>)}
+        </ul>
+      ) : (
+        <p className="mt-1 text-xs text-[#6e6e73]">No analyst vote changed; the score crossed a grade line.</p>
+      )}
+      {flipped && <p className="mt-1 text-[11px] text-[#6e6e73]">A vote flips only after the analyst has held its new view for three sessions, so the move follows the evidence by that much. Price was not an input.</p>}
+    </section>
+  )
+}
+
 const NameDetail = ({
   userId,
   ticker,
@@ -2286,6 +2328,7 @@ const NameDetail = ({
             <X size={16} />
           </button>
         </div>
+        {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} />}
         <OpportunityCard reading={decisions?.session === latest.session ? decisions.rows[ticker]?.opportunity : undefined} now={now} />
         {history && <RecommendationTimeline history={history.recommendations} />}
         {compact && !history && !error && <p className="mb-3 text-xs">Loading recommendations…</p>}

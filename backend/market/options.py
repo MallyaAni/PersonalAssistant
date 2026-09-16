@@ -34,6 +34,13 @@ MAX_DAYS = 180
 # How far from the price a wall may sit before it is a curiosity rather
 # than a level a trader would draw.
 WALL_RANGE = 0.25
+# The expiries a wall is read across: open interest is summed per strike
+# over every expiry from tomorrow to this many days out. Reading one
+# expiry at a time put ORCL's put wall on a weekly with 2,224 contracts
+# while the monthly two days nearer held 55,000 at one strike.
+WALL_DAYS = 60
+# A strike needs this much open interest, summed, to be called a wall.
+MIN_WALL_OI = 500
 _SYMBOL = re.compile(r"^([A-Z.]+?)(\d{6})([CP])(\d{8})$")
 
 
@@ -61,6 +68,7 @@ class Walls:
     call_wall: float | None
     call_wall_oi: int
     net_gamma: float  # dealer gamma proxy: calls long, puts short, shares per 1% move
+    through: date | None = None  # the farthest expiry the walls were summed over
 
 
 # An OCC-style symbol into (expiry, kind, strike), or None.
@@ -146,30 +154,46 @@ def rows_from_frame(columns: dict[str, list]) -> list[ChainRow]:
 # proxy sums open interest times the feed's gamma across every stored
 # expiry with the usual dealer-side convention, calls long and puts
 # short, as shares dealers must trade per one percent move.
-def walls(rows: list[ChainRow], price: float, today: date, min_days: int = 5) -> Walls:
-    """Return the Walls read off `rows` at `price`."""
-    eligible = sorted({r.expiry for r in rows if (r.expiry - today).days >= min_days})
+def walls(  # noqa: C901 - two sides, one pass each
+    rows: list[ChainRow],
+    price: float,
+    today: date,
+    min_days: int = 1,
+    max_days: int = WALL_DAYS,
+    min_oi: int = MIN_WALL_OI,
+) -> Walls:
+    """Return the Walls read off `rows` at `price`, summed over the near expiries."""
+    eligible = sorted(
+        {r.expiry for r in rows if min_days <= (r.expiry - today).days <= max_days}
+    )
     expiry = eligible[0] if eligible else None
+    through = eligible[-1] if eligible else None
     put_wall = call_wall = None
     put_oi = call_oi = 0
     if expiry is not None and price > 0:
         lo, hi = price * (1.0 - WALL_RANGE), price * (1.0 + WALL_RANGE)
+        puts: dict[float, int] = {}
+        calls: dict[float, int] = {}
         for r in rows:
-            if r.expiry != expiry or r.open_interest <= 0:
+            if r.expiry not in eligible or r.open_interest <= 0:
                 continue
-            if r.kind == "put" and lo <= r.strike <= price and r.open_interest > put_oi:
-                put_wall, put_oi = r.strike, r.open_interest
-            if (
-                r.kind == "call"
-                and price <= r.strike <= hi
-                and r.open_interest > call_oi
+            if r.kind == "put" and lo <= r.strike <= price:
+                puts[r.strike] = puts.get(r.strike, 0) + r.open_interest
+            if r.kind == "call" and price <= r.strike <= hi:
+                calls[r.strike] = calls.get(r.strike, 0) + r.open_interest
+        for strike, oi in puts.items():
+            if oi >= min_oi and (oi > put_oi or (oi == put_oi and strike > put_wall)):
+                put_wall, put_oi = strike, oi
+        for strike, oi in calls.items():
+            if oi >= min_oi and (
+                oi > call_oi or (oi == call_oi and strike < call_wall)
             ):
-                call_wall, call_oi = r.strike, r.open_interest
+                call_wall, call_oi = strike, oi
     net = 0.0
     for r in rows:
         shares = r.gamma * r.open_interest * 100 * price * 0.01
         net += shares if r.kind == "call" else -shares
-    return Walls(price, expiry, put_wall, put_oi, call_wall, call_oi, net)
+    return Walls(price, expiry, put_wall, put_oi, call_wall, call_oi, net, through)
 
 
 # Fetch one name's chain. `transport` returns (status, headers, body)

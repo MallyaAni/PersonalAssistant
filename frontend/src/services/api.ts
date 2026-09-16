@@ -2340,6 +2340,7 @@ export interface DeskMine {
 
 export interface DeskOpportunity {
   version: string; score: number | null; status: string; price: number | null;
+  last_score?: number | null;
   bar: string | null; valid_until: string | null; valuation_current: boolean;
   parts: {analyst: string; score: number; weight: number; basis: string; evidence: string[]; source?: string}[];
   missing: string[]; method: string;

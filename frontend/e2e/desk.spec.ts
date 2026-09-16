@@ -1803,3 +1803,61 @@ test('a hypothetical stop remains a reference after price crosses it', async ({ 
   await expect(page.getByText('below the stop: sell')).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
+
+
+// The ticker panel answers "why did the grade move" first: which analyst
+// moved, on what readings, and the three-session rule. The opportunity
+// score after the close is the last reading dated to its bar, not "Not
+// scored"; the recommendations log folds identical readings into one row
+// that says how long it held; the option walls say which expiries and
+// when their open interest was fetched.
+test('the ticker panel explains the grade move, keeps the last score and folds the log', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  const observation = (id: string, recorded: string, grade: string, allocation: number) => ({
+    id, recorded_at: recorded, bar: '2026-09-08T19:45:00Z', grade, allocation, allocation_change: null, model_weight: 1,
+    event_paused: false, entry_state: 'trend', price: 100, version: 'policy/2', policy_sha256: 'abcdefgh', stock_total_return: null,
+  })
+  await page.route('**/desk/history/AAPL', route => route.fulfill({json: {
+    ticker: 'AAPL', horizon: 20, asof: '2026-09-08', backtest: null,
+    rows: [
+      {date: '2026-09-04', grade: 'B', votes: 1, stances: {fundamental: 1, technical: 0, sentiment: 0, value: 0, rotation: -1}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
+      {date: '2026-09-08', grade: 'A', votes: 3.2, stances: {fundamental: 1, technical: 1, sentiment: 0, value: 0, rotation: -1}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
+    ],
+    recommendations: {status: 'available', outcomes: {status: 'awaiting_daily_validation'}, invalid_archives: 0, older_records_not_shown: false,
+      observations: [
+        observation('c', '2026-09-08T18:45:10Z', 'A', .2),
+        observation('b', '2026-09-08T18:30:10Z', 'A', .2),
+        observation('a', '2026-09-08T18:15:10Z', 'B', .1),
+      ]},
+  }}))
+  await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-08T20:00:00Z', quotes: {
+    AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-08T19:45:00Z'},
+  }, technical_detail: {AAPL: {now: .8, short: {}, medium: {}, long: {}, walls: {
+    expiry: '2026-09-18', through: '2026-10-16', fetched_at: '2026-09-16T12:45:00Z',
+    put_wall: 95, call_wall: 110, put_wall_oi: 20000, call_wall_oi: 36000, net_gamma: 0, put_wall_distance: -.05, call_wall_distance: .1,
+  }}}}}))
+  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, holdings: {}, equity: 100000,
+    rows: {AAPL: {action: 'Wait', opportunity: {version: 'analyst-opportunity/1', score: null, last_score: 6.2, status: 'unavailable',
+      price: null, bar: '2026-09-08T19:45:00Z', valid_until: '2026-09-08T20:00:00Z', valuation_current: false,
+      parts: [{analyst: 'value', score: 6.2, weight: 1, basis: '2026-09-08', evidence: ['Recorded price/sales comparison']}], missing: [], method: 'Evidence index'}}},
+  }}}))
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: /^AAPL/}).click()
+  const move = page.getByRole('region', {name: 'Why the grade moved'})
+  await expect(move).toContainText('Moved in tonight’s decision')
+  await expect(move).toContainText('Technical neutral → for: daily trend up')
+  await expect(move).toContainText('three sessions')
+  const score = page.getByLabel('Price-to-opportunity score')
+  await expect(score).toContainText('6.2/10')
+  await expect(score).toContainText('Last reading at the Sep 8, 3:45 PM ET bar')
+  await expect(score).not.toContainText('Not scored')
+  const log = page.getByRole('table', {name: 'Recommendation timeline'})
+  await expect(log.locator('tbody tr')).toHaveCount(2)
+  await expect(log.locator('tbody tr').first()).toContainText('held through')
+  await expect(log.locator('tbody tr').first()).toContainText('2 readings')
+  await page.getByText('Analysis & backtest', {exact: true}).click()
+  await expect(page.getByText(/Option walls \(expiries 09-18 to 10-16, open interest fetched/)).toBeVisible()
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})

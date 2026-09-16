@@ -252,13 +252,17 @@ def _walls_for(store, symbol: str, price: float | None, today: date) -> dict | N
     frame = store.read_frame(options.KIND, symbol, today)
     if frame is None:
         return None
-    columns, _meta = frame
+    columns, meta = frame
     rows = options.rows_from_frame(columns)
     if not rows:
         return None
     w = options.walls(rows, price, today)
     out: dict = {
         "expiry": w.expiry.isoformat() if w.expiry else None,
+        "through": w.through.isoformat() if w.through else None,
+        # When the chain was fetched: open interest changes once a day,
+        # overnight, so the reader needs the date it is from, not the bar.
+        "fetched_at": meta.get("source_time"),
         "put_wall": w.put_wall,
         "call_wall": w.call_wall,
         "put_wall_oi": w.put_wall_oi,

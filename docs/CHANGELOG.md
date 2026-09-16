@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-16 — Ticker panel: the grade move first, reasons that argue the vote, a dated last score, a folded log, walls across expiries
+
+ORCL went B to A+ in the 09-15 record and the page could not say why.
+The sentiment vote turned bullish because its Sep 11 release read (upbeat
+on guidance and demand) had held the top of the book for three sessions,
+the persistence rule; price was no input. The reason line said
+"+ Sentiment: guidance tone unchanged", because the wording cited the
+reading most unusual against the book and 71 of 88 names read upbeat on
+guidance. `plainly._notable` now lets a reading the book shares argue the
+stance when it points the stance's way, so the line reads "upbeat on
+guidance; upbeat on demand". The ticker panel opens with the latest grade
+move in one sentence: which analyst moved, on what readings, and the
+three-session rule when a vote flipped. The opportunity card keeps its
+last score after the close, dated to its bar, instead of "Not scored"
+(`opportunity.explain` adds `last_score`; `score` still fails closed).
+The recommendations log folds identical readings into the row that first
+said them, with how long they held. Option walls are read across every
+expiry from tomorrow to sixty days out with open interest summed per
+strike and a 500-contract floor; the single-expiry rule had put ORCL's
+put wall on a weekly with 2,224 contracts while the monthly two days
+nearer held 55,000 at one strike. The walls now carry the expiries and
+when the chain was fetched. Open interest changes once a day, so the
+chain refresh belongs in a morning cron rather than at the end of the
+nightly; that move is scheduled for the 09-17 morning. Tests:
+`test_trading_plainly`, `test_market_options`, `test_opportunity`, and
+`frontend/e2e/desk.spec.ts` (54 pass in Chromium).
+
 ## 2026-09-16 — Board sizes stay on during an FOMC cycle, at the exposure the desk holds
 
 The board hid every research size for the whole FOMC cycle behind "new
