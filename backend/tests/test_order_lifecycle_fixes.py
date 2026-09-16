@@ -10,7 +10,22 @@ is complete.
 """
 
 import json
+import sys
+import types
 from pathlib import Path
+
+# The paper state file takes a POSIX advisory lock; on Windows the module is
+# absent, and a no-op stand-in lets this single-process test run there. The
+# gate on Linux runs the real one.
+if "fcntl" not in sys.modules:
+    try:
+        import fcntl  # noqa: F401
+    except ModuleNotFoundError:
+        fake = types.ModuleType("fcntl")
+        fake.LOCK_EX, fake.LOCK_SH, fake.LOCK_UN, fake.LOCK_NB = 2, 1, 8, 4
+        fake.flock = lambda fd, op: None
+        fake.lockf = lambda fd, op, *a: None
+        sys.modules["fcntl"] = fake
 
 from backend.agents.trading.desk import paper
 from backend.cli import market_balancer, market_daily
