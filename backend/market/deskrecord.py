@@ -63,7 +63,10 @@ def load(root: Path, session: str) -> dict | None:
     path = Path(root) / DESK_KIND / f"asof={session}" / "desk.json"
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    from backend.market import prose
+
+    record = json.loads(path.read_text(encoding="utf-8"))
+    return prose.merge(record, prose.load(Path(root), session))
 
 
 # The newest record and the one before it, either may be None.

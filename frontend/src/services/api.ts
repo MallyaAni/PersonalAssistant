@@ -1879,6 +1879,9 @@ export interface DeskBrief {
 }
 
 export interface DeskRecord {
+  // How the model-written briefs and reads stand beside this decision.
+  prose_status?: string;
+  prose_written?: string;
   provenance?: {rule?: {name?: string; inputs?: string[]}; code_revision?: string; model?: string | null};
   event_risk?: {
     outcome?: {session: string; status: string; unrestored: Record<string, number>} | null;

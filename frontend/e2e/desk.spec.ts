@@ -58,6 +58,18 @@ test('a late record or observation is named at the top of the page', async ({pag
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
+// A decision whose prose failed is still the decision: the page says the
+// briefs and reads are unavailable and shows the deterministic reads.
+test('a decision with unavailable prose is shown as the decision', async ({page}) => {
+  const latest = {...deskRecord(), prose_status: 'unavailable: brief SNDK: TimeoutError: runtime blocked'}
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.goto('/#desk')
+  const status = page.getByRole('status', {name: 'Record status'})
+  await expect(status).toContainText('Model-written briefs and reads')
+  await expect(status).toContainText('unavailable')
+  await expect(page.getByRole('table').first()).toBeVisible()
+})
+
 // Current opportunity evidence, not a larger position budget, determines stock priority.
 test('current opportunity scores change rank and explain their inputs', async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})

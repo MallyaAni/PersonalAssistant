@@ -132,6 +132,34 @@ store, plain rule from 2018-06: CAGR 25.24% to 25.05%, worst drawdown
 -23.4% to -22.1%, turnover unchanged; on the latest session one grade
 (DDOG C to B), four technical stances, and small weight shifts. Tests in
 `test_grading_input_fixes.py`.
+## 2026-09-15 — The decision is saved before the prose; prose lives beside it under a budget
+
+The nightly's record is the decision: grades, scores, the book, the
+paper orders. The model-written briefs and reads were produced before
+it and embedded in it, so a blocked prose request could hold the
+decision hostage (Codex's last point). Now `finish()` saves the core
+record first, then produces the prose under one total budget
+(`--prose-budget-minutes`, 45 by default, checked between names), and
+writes it to `prose.json` beside the record with the session and code
+revision it belongs to; the decision is never rewritten.
+`deskrecord.load` merges the prose into the record when it is read and
+sets `prose_status` (ready, partial, unavailable, embedded for older
+records, absent); the Desk view says in one sentence when the prose is
+unavailable or partial, and the deterministic reads stand. Tests: a
+blocked prose request cannot prevent the core record from being saved;
+the budget stops enrichment between names; a dead runtime is
+unavailable; merge on read; the page's sentence.
+
+Correction to the earlier bound: the 60-second EDGAR and 600-second
+model timeouts are per-request inactivity limits (connect and read
+phases), not total elapsed time; a server that keeps sending bytes can
+exceed them. The "about 17 minutes" overrun is therefore the bound
+for a request that stalls, not for one that drips. The prose budget is
+a total elapsed limit checked between calls, so a single call can still
+exceed it by one request.
+
+Held on the branch until the 2026-09-16 nightly has verified the
+previous day's changes on a real run.
 
 ## 2026-09-15 — Codex's two defects: the lock is the operating system's, report writes are contained and atomic; the tone deadline bites within a name
 

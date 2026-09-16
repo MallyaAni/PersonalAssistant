@@ -27,7 +27,7 @@ from backend.agents.trading.desk.narrative import DeskNarrator, brief_text
 from backend.cli import market_edgar, market_tone
 from backend.cli.market_desk import _print_book, _print_grades, _print_regime
 from backend.config.settings import settings
-from backend.market import snapshot
+from backend.market import prose, snapshot
 from backend.market.macro import SERIES
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -70,6 +70,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--llm-url", default="")
     parser.add_argument("--llm-model", default="")
     parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument(
+        "--prose-budget-minutes",
+        type=float,
+        default=45.0,
+        help="total time for the model-written briefs and reads, after the "
+        "record is saved; names past it are skipped and the block says so",
+    )
     parser.add_argument(
         "--tone-budget-minutes",
         type=float,
@@ -962,6 +969,31 @@ def record(
     }
 
 
+# Save the core record, then produce the prose beside it. The prose step
+# runs under its own budget and its failure, however it fails, leaves the
+# saved decision untouched and a prose block that says why.
+def finish(root: Path, core: dict, enrichment, allow_overwrite: bool = False) -> Path:
+    """Return the record's path, having saved it and then attempted the prose."""
+    from backend.market import prose as prose_store
+
+    path = save(root, core, allow_overwrite=allow_overwrite)
+    print(f"\nrecord written: {path}")
+    session = core["session"]
+    revision = core.get("provenance", {}).get("code_revision", "unknown")
+    started = time.monotonic()
+    try:
+        briefs, reads, status = enrichment(None, session, revision)
+    except Exception as exc:  # noqa: BLE001 - prose never touches the decision
+        briefs, reads, status = {}, {}, f"unavailable: {type(exc).__name__}: {exc}"
+    elapsed = time.monotonic() - started
+    prose_store.write(root, session, revision, briefs, reads, status, elapsed)
+    print(
+        f"\nprose: {status} ({len(briefs)} briefs, {len(reads)} reads, "
+        f"{elapsed / 60:.1f} min)"
+    )
+    return path
+
+
 # Where the day's record lives.
 def record_path(root: Path, session: str) -> Path:
     """Return the path of the desk record for a session."""
@@ -1314,7 +1346,7 @@ def _ml_forward_receipt(row: dict | None, session: str | None = None) -> dict | 
     }
 
 
-def _run(args, store: MarketStore) -> None:
+def _run(args, store: MarketStore) -> None:  # noqa: C901
     asof = args.asof or datetime.now(tz=UTC).date()
     current = args.asof is None
     observed: dict = {}
@@ -1350,7 +1382,6 @@ def _run(args, store: MarketStore) -> None:
     session = str(panel.dates[-1])
     if refuse_existing_record(Path(store.root), session, args.force):
         return
-    briefs, reads = _wanted_briefs_and_reads(report, args)
     entry = None
     if args.paper_trade or args.paper_dry_run:
         try:
@@ -1375,27 +1406,41 @@ def _run(args, store: MarketStore) -> None:
         execution_quality.write(Path(store.root))
     _reversal_shadows(store, report)
     curve = curves(report, store, Path(store.root))
-    try:
-        path = save(
-            Path(store.root),
-            record(
-                report,
-                briefs,
-                reads,
-                entry,
-                shadow,
-                curve,
-                llm_model=args.llm_model,
-                fundamentals=fundamentals,
-                ml_forward=_ml_forward_receipt(observed.get("row"), session),
-            ),
-            allow_overwrite=args.force,
+    core = record(
+        report,
+        {},
+        {},
+        entry,
+        shadow,
+        curve,
+        llm_model=args.llm_model,
+        fundamentals=fundamentals,
+        ml_forward=_ml_forward_receipt(observed.get("row"), session),
+    )
+
+    # The prose, after the record: model-written briefs and reads under one
+    # total budget, stored beside the decision and never inside it.
+    def enrichment(report_, session_, revision):
+        wanted = _wanted_tickers(report_, args.brief, args.brief_book)
+        read_wanted = _wanted_tickers(report_, args.read, args.read_book)
+        if not wanted and not read_wanted:
+            return {}, {}, "none requested"
+        readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
+        narrator = DeskNarrator(readers[0].writer)
+        return prose.enrich(
+            wanted,
+            read_wanted,
+            lambda t: briefs_for(report_, [t], narrator).get(t),
+            lambda t: reads_for(report_, [t], narrator).get(t),
+            60.0 * args.prose_budget_minutes,
         )
+
+    try:
+        finish(Path(store.root), core, enrichment, allow_overwrite=args.force)
     except FileExistsError as exc:
         print(f"\n{exc}")
         print("the existing record is kept; nothing was changed")
         return
-    print(f"\nrecord written: {path}")
     # Current collection stays outside historical decisions and portfolio sizing.
     from backend.cli import market_economics
 
