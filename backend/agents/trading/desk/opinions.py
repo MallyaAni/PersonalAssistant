@@ -56,10 +56,13 @@ class Opinion:
     # Bullish, neutral or bearish per name and session; neutral where the
     # analyst has no score.
     def stances(
-        self, fraction: float = STANCE_FRACTION, persistence: int = PERSISTENCE
+        self,
+        fraction: float = STANCE_FRACTION,
+        persistence: int = PERSISTENCE,
+        reset: np.ndarray | None = None,
     ) -> np.ndarray:
-        """Return (T, N) stances in {-1, 0, 1}, persisted."""
-        return persist(stances_from_ranks(self.ranks(), fraction), persistence)
+        """Return (T, N) stances in {-1, 0, 1}, persisted; `reset` marks events."""
+        return persist(stances_from_ranks(self.ranks(), fraction), persistence, reset)
 
     # How strongly this analyst likes each name, on a continuous scale
     # rather than in three buckets. NaN where it has no view.
@@ -79,8 +82,15 @@ class Opinion:
 
 # A raw stance becomes the held stance only once it has repeated for
 # `sessions` consecutive sessions; until then the previous stance holds.
-def persist(raw: np.ndarray, sessions: int) -> np.ndarray:
-    """Return (T, N) persisted stances."""
+# The wait is for a rank that flickers across a line. A session marked in
+# `reset` is a discrete event - a new earnings release the analyst has
+# just read - and the raw stance applies at once: the desk's freshest
+# evidence is not flicker. ORCL's upbeat report waited three sessions to
+# count, and ADBE's poor one left an A+ standing for three sessions.
+def persist(
+    raw: np.ndarray, sessions: int, reset: np.ndarray | None = None
+) -> np.ndarray:
+    """Return (T, N) persisted stances, applied at once where `reset` is set."""
     if sessions <= 1 or raw.shape[0] == 0:
         return raw
     held = raw.copy()
@@ -88,6 +98,9 @@ def persist(raw: np.ndarray, sessions: int) -> np.ndarray:
     for t in range(1, raw.shape[0]):
         run = np.where(raw[t] == raw[t - 1], run + 1, 1)
         held[t] = np.where(run >= sessions, raw[t], held[t - 1])
+        if reset is not None:
+            held[t] = np.where(reset[t], raw[t], held[t])
+            run = np.where(reset[t], sessions, run)
     return held
 
 

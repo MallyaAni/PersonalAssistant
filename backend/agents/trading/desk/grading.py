@@ -25,6 +25,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from backend.agents.trading.desk import sentiment as release_reader
 from backend.agents.trading.desk.opinions import BEARISH, BULLISH, Opinion
 
 A_PLUS = "A+"
@@ -37,6 +38,8 @@ ORDINAL: dict[str, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
 # How much of a full position each grade earns.
 SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 0.75, B: 0.5, C: 0.0}
 ROTATION_WEIGHT = 0.5
+# Whether a new release reading takes effect at once in the sentiment vote.
+RELEASE_RESETS = True
 # The weight each analyst carries in the desk's sum: equal, rotation at
 # half. A ridge fit toward these (`market_weights`, shrink 1) wanted
 # value 0.60, fundamental 0.50, sentiment 0.42, technical 0.38, rotation
@@ -128,10 +131,13 @@ def grade(
         rotation_stances = rotation.stances()
         gated = np.isnan(np.asarray(rotation.scores, dtype=float)).all(axis=1)
         rotation_stances = np.where(gated[:, None], 0, rotation_stances)
+    # A new release reading is an event, not flicker: the sentiment vote
+    # applies the session it is read (see `opinions.persist`).
+    reset = release_reader.release_sessions(sentiment) if RELEASE_RESETS else None
     return grade_stances(
         fundamental.stances(),
         technical.stances(),
-        sentiment.stances(),
+        sentiment.stances(reset=reset),
         rotation_stances,
         None if value is None else value.stances(),
         convictions,

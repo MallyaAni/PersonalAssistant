@@ -89,3 +89,23 @@ def test_one_name_grades_like_the_panel():
     )
     vetoed = {**base, "sentiment": 1, "value": 1, "fundamental": 1, "technical": -1}
     assert grade_from_stances(vetoed, ANALYST_WEIGHTS)[0] == "B"
+
+
+# A new release reading is an event, not flicker: the sentiment vote applies
+# the session it is read instead of waiting three sessions. ORCL's upbeat
+# Sep 11 report counted on Sep 15; ADBE's poor one left an A+ standing.
+def test_a_new_release_reading_votes_at_once():
+    from backend.agents.trading.desk import opinions, sentiment
+
+    raw = np.array([[0], [1], [1], [1], [0], [0], [0]])
+    held = opinions.persist(raw, 3)
+    assert held[:, 0].tolist() == [0, 0, 0, 1, 1, 1, 0]
+    reset = np.zeros_like(raw, dtype=bool)
+    reset[1, 0] = True  # the release is read on session 1
+    at_once = opinions.persist(raw, 3, reset)
+    assert at_once[:, 0].tolist() == [0, 1, 1, 1, 1, 1, 0]
+    # The mask: the first session a reading exists, and any session it changes.
+    guidance = np.array([[np.nan], [1.0], [1.0], [0.8], [0.8]])
+    opinion = opinions.Opinion("sentiment", guidance, {"tone_guidance": guidance})
+    mask = sentiment.release_sessions(opinion)
+    assert mask[:, 0].tolist() == [False, True, False, True, False]

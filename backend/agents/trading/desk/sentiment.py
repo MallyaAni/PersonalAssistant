@@ -60,6 +60,31 @@ CITED = SCORED + (
 )
 
 
+# The sessions on which a name's release reading is new: the first session
+# a scored release is on file, or one where any scored field differs from
+# the session before (a new release, or a re-read of the last one). The
+# vote applies at once on these sessions instead of waiting out the
+# persistence rule.
+def release_sessions(opinion: Opinion) -> np.ndarray:
+    """Return a (T, N) mask of sessions with a new release reading."""
+    fields = [
+        np.asarray(opinion.evidence[n], dtype=float)
+        for n in SCORED
+        if n in opinion.evidence
+    ]
+    if not fields:
+        return np.zeros(opinion.scores.shape, dtype=bool)
+    out = np.zeros(fields[0].shape, dtype=bool)
+    for values in fields:
+        now, before = values[1:], values[:-1]
+        with np.errstate(all="ignore"):
+            changed = (np.isfinite(now) & ~np.isfinite(before)) | (
+                np.isfinite(now) & np.isfinite(before) & (now != before)
+            )
+        out[1:] |= changed
+    return out
+
+
 # Score every name with a scored release from its tone; no view otherwise.
 def opine(tone: np.ndarray) -> Opinion:
     """Return the sentiment analyst's Opinion from the tone feature block."""
