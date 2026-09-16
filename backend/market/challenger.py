@@ -29,6 +29,7 @@ record, so the two tracks keep the same real days and the scorecard
 prices each strategy by name across the swap.
 """
 
+import warnings
 from dataclasses import replace
 
 import numpy as np
@@ -77,7 +78,14 @@ def with_gap(opinions: dict, gap: np.ndarray) -> dict:
 
     out = dict(opinions)
     value = out["value"]
-    blended = baselines.rank_blend(value.scores, gap)
+    # A name the gap does not cover keeps the plain valuation rank: a NaN
+    # here erased the value stance, and with it the bearish veto.
+    ranked = np.stack(
+        [baselines.percentile_rank(value.scores), baselines.percentile_rank(gap)]
+    )
+    with np.errstate(all="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        blended = np.nanmean(ranked, axis=0)
     evidence = dict(value.evidence)
     evidence["expectations_gap"] = gap
     out["value"] = replace(value, scores=blended, evidence=evidence)

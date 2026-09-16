@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-16 — Seven grading-input defects fixed, measured, landed
+
+From a code review of the desk's analysts against the store. Filed share
+counts are brought onto the price's split basis (NVDA's 10:1 read as a
+tenfold re-rating on split day and flipped its value stance); a name
+below every support is the most stretched of its session, not the least;
+the benchmark no longer enters the technical cross-section (its residual
+momentum against itself was float noise ranking it top of the book);
+levels use high and low on the close's adjusted basis (dividend payers
+read persistently low); a name the expectations gap does not cover keeps
+its valuation rank and its veto; the grade margin knows the
+fundamental-and-technical route to an A (false "at risk" flags); a gated
+rotation session carries no rotation vote. Measured on the research
+store, plain rule from 2018-06: CAGR 25.24% to 25.05%, worst drawdown
+-23.4% to -22.1%, turnover unchanged; on the latest session one grade
+(DDOG C to B), four technical stances, and small weight shifts. Tests in
+`test_grading_input_fixes.py`.
+
 ## 2026-09-15 — Codex's two defects: the lock is the operating system's, report writes are contained and atomic; the tone deadline bites within a name
 
 The nightly lock created its file exclusively and then wrote the note;

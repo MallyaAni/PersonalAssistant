@@ -121,11 +121,18 @@ def grade(
         convictions["rotation"] = rotation.conviction()
     if value is not None:
         convictions["value"] = value.conviction()
+    rotation_stances = None
+    if rotation is not None:
+        # The regime gates rotation off by blanking a whole session; the
+        # persistence rule must not carry the previous stance across it.
+        rotation_stances = rotation.stances()
+        gated = np.isnan(np.asarray(rotation.scores, dtype=float)).all(axis=1)
+        rotation_stances = np.where(gated[:, None], 0, rotation_stances)
     return grade_stances(
         fundamental.stances(),
         technical.stances(),
         sentiment.stances(),
-        None if rotation is None else rotation.stances(),
+        rotation_stances,
         None if value is None else value.stances(),
         convictions,
         weights,

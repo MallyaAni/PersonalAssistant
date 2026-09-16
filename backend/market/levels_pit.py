@@ -7,7 +7,7 @@ restatement. This reads the stored frames and returns those levels, so
 nothing else has to know how the filing store is shaped.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 
 import numpy as np
 
@@ -128,6 +128,52 @@ def trailing_levels(
 
 # Every level the valuation analyst needs, as (T, N) arrays aligned to the
 # panel and known at each session.
+# The splits on file for a name: (date, ratio) pairs from the store's
+# corporate-action history, empty when there is none.
+def _splits(store: MarketStore, ticker: str, asof=None) -> list[tuple[date, float]]:
+    try:
+        history = store.read(ticker, asof)
+    except Exception:  # noqa: BLE001 - no history is no splits
+        return []
+    if history is None:
+        return []
+    return [
+        (a.action_date, float(a.value))
+        for a in getattr(history, "actions", []) or []
+        if a.kind == "split" and float(a.value) > 0
+    ]
+
+
+# A filed share count is on the basis of its filing; the close it is
+# multiplied by is on today's split basis. Every split between the session
+# a count first appeared (its filing) and the session it is used on
+# multiplies it, so NVDA's 10:1 in 2024 does not read as a tenfold
+# re-rating until the next 10-Q and a tenfold cheapness before it.
+def split_adjusted_shares(
+    shares: np.ndarray, dates: np.ndarray, splits: list[tuple[date, float]]
+) -> np.ndarray:
+    """Return the share series with later splits applied to earlier filings."""
+    out = np.asarray(shares, dtype=float).copy()
+    if not splits or len(out) == 0:
+        return out
+    days = np.asarray(dates).astype("datetime64[D]")
+    first_seen = np.zeros(len(out), dtype=int)
+    for t in range(1, len(out)):
+        same = np.isfinite(out[t]) and np.isfinite(out[t - 1]) and out[t] == out[t - 1]
+        first_seen[t] = first_seen[t - 1] if same else t
+    split_days = [(np.datetime64(d), r) for d, r in splits]
+    for t in range(len(out)):
+        if not np.isfinite(out[t]):
+            continue
+        seen = days[first_seen[t]]
+        factor = 1.0
+        for day, ratio in split_days:
+            if seen < day <= days[t]:
+                factor *= ratio
+        out[t] = out[t] * factor
+    return out
+
+
 def point_in_time_levels(
     store: MarketStore, panel: Panel, asof=None
 ) -> dict[str, np.ndarray]:
@@ -159,7 +205,9 @@ def point_in_time_levels(
             out["revenue"][:, column] = series["revenue"][0] * QUARTERS
             out["earnings"][:, column] = series["net_income"][0] * QUARTERS
             out["equity"][:, column] = series["equity"][0]
-            out["shares"][:, column] = series["shares"][0]
+            out["shares"][:, column] = split_adjusted_shares(
+                series["shares"][0], panel.dates, _splits(store, ticker, asof)
+            )
             out["revenue_growth"][:, column] = (
                 series["revenue"][0] / series["revenue"][4] - 1.0
             )

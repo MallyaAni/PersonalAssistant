@@ -343,9 +343,7 @@ def _live_grade(
                 stances[name] = (
                     BULLISH
                     if r_now >= 1.0 - STANCE_FRACTION
-                    else BEARISH
-                    if r_now <= STANCE_FRACTION
-                    else 0
+                    else BEARISH if r_now <= STANCE_FRACTION else 0
                 )
             moved += float(
                 conviction_from_ranks(r_now, SHARPNESS)
@@ -364,5 +362,11 @@ def _live_grade(
         "close": close,
         "value_now": value_now,
         "value_close": value_close,
-        "margin": actions.grade_margin(votes, letter, release_bullish),
+        "margin": actions.grade_margin(
+            votes,
+            letter,
+            release_bullish,
+            stances.get("fundamental") == BULLISH
+            and stances.get("technical") == BULLISH,
+        ),
     }

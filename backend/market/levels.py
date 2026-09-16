@@ -97,7 +97,11 @@ def _slope(x: np.ndarray, n: int) -> np.ndarray:
 def level_features(panel: Panel) -> np.ndarray:
     """Return the trade-location features, causal."""
     close = panel.adj_close
-    high, low = panel.high, panel.low
+    # High and low on the same adjusted basis as the close, or a dividend
+    # payer's range and levels read persistently low against its close.
+    with np.errstate(all="ignore"):
+        factor = np.where(panel.close > 0, panel.adj_close / panel.close, np.nan)
+    high, low = panel.high * factor, panel.low * factor
     swing_low, swing_high = swing_points(high, low)
     e50, e200 = ema(close, 50), ema(close, 200)
     w21 = _weekly_ema(panel, close, 21)
@@ -177,7 +181,11 @@ def level_identity(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Return (support_level, support_kind, resistance_level, resistance_kind)."""
     close = panel.adj_close
-    high, low = panel.high, panel.low
+    # High and low on the same adjusted basis as the close, or a dividend
+    # payer's range and levels read persistently low against its close.
+    with np.errstate(all="ignore"):
+        factor = np.where(panel.close > 0, panel.adj_close / panel.close, np.nan)
+    high, low = panel.high * factor, panel.low * factor
     swing_low, swing_high = swing_points(high, low)
     e50, e200 = ema(close, 50), ema(close, 200)
     w21 = _weekly_ema(panel, close, 21)
@@ -195,12 +203,8 @@ def level_identity(
             axis=2,
         )
         any_finite = np.any(np.isfinite(candidates), axis=2)
-        best = np.argmax(
-            np.where(np.isfinite(candidates), candidates, -np.inf), axis=2
-        )
-        support_level = np.take_along_axis(
-            candidates, best[..., None], axis=2
-        )[..., 0]
+        best = np.argmax(np.where(np.isfinite(candidates), candidates, -np.inf), axis=2)
+        support_level = np.take_along_axis(candidates, best[..., None], axis=2)[..., 0]
         support_level = np.where(any_finite, support_level, np.nan)
         support_kind = np.where(any_finite, best + 1, KIND_NONE).astype(float)
         resistance_level = _nearest(swing_high, close, False, LEVEL_LOOKBACK)

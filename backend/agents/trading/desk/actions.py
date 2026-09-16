@@ -48,12 +48,22 @@ class Holding:
 
 # How far a name's votes sit above the line that keeps its grade: at or
 # below zero it is one bearish stance from losing it.
-def grade_margin(votes: float, grade: str, release_bullish: bool) -> float:
+def grade_margin(
+    votes: float, grade: str, release_bullish: bool, both_bullish: bool = False
+) -> float:
     """Return the votes above the threshold of `grade`."""
     if grade == grading.A_PLUS:
         return votes - 2.0
     if grade == grading.A:
-        return votes - (1.0 if release_bullish else 2.0)
+        # An A is reached by votes alone, by a bullish release, or by the
+        # fundamental and technical analysts agreeing; the margin is to the
+        # nearest route the name actually qualifies for.
+        thresholds = [2.0]
+        if release_bullish:
+            thresholds.append(1.0)
+        if both_bullish:
+            thresholds.append(1.5)
+        return votes - min(thresholds)
     if grade == grading.B:
         return votes - 0.5
     return votes - 0.5  # a C: how far below a B
@@ -138,7 +148,13 @@ def build(
                 "entry_price": holding.entry_price,
                 "entry": "market-on-open",
                 "until_rebalance": max(REBALANCE - int(sessions_since_rebalance), 0),
-                "grade_margin": grade_margin(votes, grade, bullish),
+                "grade_margin": grade_margin(
+                    votes,
+                    grade,
+                    bullish,
+                    stances.get("fundamental") == grading.BULLISH
+                    and stances.get("technical") == grading.BULLISH,
+                ),
                 "leaves_if": (
                     "the grade falls below A at a rebalance"
                     if target > 0
