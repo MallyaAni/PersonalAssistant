@@ -1232,3 +1232,6 @@ async def test_the_desk_payload_carries_every_key_the_page_reads(tmp_path, monke
     status = payload["record_status"]
     assert set(status) == {"expected", "due_at", "record", "ml_forward"}
     assert status["record"]["status"] in {"current", "pending", "late"}
+    # The page's record carries the prose state; a record without prose is
+    # absent (or embedded, for older records that carried it inside).
+    assert payload["latest"]["prose_state"] in {"absent", "embedded"}

@@ -51,6 +51,14 @@ Session = Annotated[str, PathParam(pattern=r"^\d{4}-\d{2}-\d{2}$")]
 
 # The desk is one person's, or the few the operator has named. A valid token
 # for any other user is refused here, before a record is read.
+# The record the page reads: the decision plus the model prose written
+# beside it, with a state the page can switch on.
+def _with_prose(record: dict) -> dict:
+    from backend.market import prose
+
+    return prose.merge(record, prose.load(_root(), record["session"]))
+
+
 def _operator_only(user_id: str) -> None:
     if user_id not in settings.market_desk_operators:
         raise HTTPException(status_code=403, detail="the desk is the operator's")
@@ -111,6 +119,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
     latest, previous = deskrecord.latest_pair(_root())
     if latest is None:
         return {"user_id": user_id, "latest": None, "sessions": []}
+    latest = _with_prose(latest)
     from backend.market import (
         board_paper,
         event_status,
@@ -819,6 +828,8 @@ async def trading_autopsy(
 async def desk_for_session(user_id: UserId, session: Session) -> dict[str, object]:
     _operator_only(user_id)
     record = deskrecord.load(_root(), session)
+    if record is not None:
+        record = _with_prose(record)
     if record is None:
         raise HTTPException(status_code=404, detail="no desk record for that session")
     return {"user_id": user_id, "record": record}

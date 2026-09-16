@@ -41,6 +41,19 @@ the real error and the button explains itself). The OpportunityCard guards a
 zero-weight part from rendering "NaN%". The plan row's "record fill" stays
 gated to due rebalances on purpose - the board's discretionary Record buttons
 cover off-schedule purchases, and browser tests assert that separation.
+## 2026-09-15 — Prose beside the decision (branch prose-beside-decision)
+
+Held off main until the 2026-09-16 nightly has verified the previous
+day's changes on a real run. Once merged, `desk.json` carries empty
+`briefs` and null `read`s by design; the model prose is `prose.json` in
+the same folder (with `prose-job.json` and `prose-results.jsonl` as the
+child's working files), merged on read with `prose_status`. The first
+nightly after merge is the acceptance path: check that `prose.json`
+exists beside the record, its status, and that the Desk view shows the
+briefs. `--prose-budget-minutes` (45) terminates the child at the wall
+clock; size it from the observed elapsed time in the block. Merge and
+deploy together: the API container merges the prose on read, so until it
+is rebuilt the page shows a decision with no briefs.
 
 ## 2026-09-15 — Reversal shadows (branch reversal)
 

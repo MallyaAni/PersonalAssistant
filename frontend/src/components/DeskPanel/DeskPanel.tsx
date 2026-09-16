@@ -430,14 +430,14 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
 // The page must never pass an old decision off as tonight's. When the last
 // completed session has no record, or the frozen ML accounts have not
 // observed it, by the next morning, say so in one sentence at the top.
-function RecordStatus({status, prose, session}: {status?: DeskPayload['record_status']; prose?: string; session?: string}) {
+function RecordStatus({status, prose, session}: {status?: DeskPayload['record_status']; prose?: {state?: string; status?: string}; session?: string}) {
   const lines: string[] = []
-  if (prose && /^(unavailable|partial|timed out)/.test(prose)) lines.push(`Model-written briefs and reads for ${session ?? 'this decision'}: ${prose}. The decision and its deterministic reads stand.`)
-  if (!status) return lines.length ? <div role="status" aria-label="Record status" className="rounded-xl border border-[#b45309]/30 bg-[#fffbeb] px-3 py-2 text-sm text-[#92400e]">{lines.map(line => <p key={line}>{line}</p>)}</div> : null
-  if (status.record.status === 'late') lines.push(status.record.session
+  if (prose?.state && ['partial', 'timed_out', 'unavailable'].includes(prose.state)) lines.push(`Model-written briefs and reads for ${session ?? 'this decision'}: ${prose.status ?? prose.state.replace('_', ' ')}. The decision and its deterministic reads stand.`)
+  if (prose?.state === 'absent') lines.push(`Model-written briefs and reads for ${session ?? 'this decision'} have not been written yet. The decision and its deterministic reads stand.`)
+  if (status?.record.status === 'late') lines.push(status.record.session
     ? `No decision record for ${status.expected} yet. Everything below is the ${status.record.session} decision.`
     : `No decision record for ${status.expected} yet.`)
-  if (status.ml_forward.status === 'late') lines.push(`The frozen ML paper accounts have not observed ${status.expected}.`)
+  if (status?.ml_forward.status === 'late') lines.push(`The frozen ML paper accounts have not observed ${status.expected}.`)
   if (lines.length === 0) return null
   return <div role="status" aria-label="Record status" className="rounded-xl border border-[#b45309]/30 bg-[#fffbeb] px-3 py-2 text-sm text-[#92400e]">
     {lines.map(line => <p key={line}>{line}</p>)}
@@ -908,7 +908,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   } : null
 
   if (latest && !advanced) return <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
-    <RecordStatus status={payload.record_status} prose={latest?.prose_status} session={latest?.session} />
+    <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />
     <header className="flex shrink-0 items-center justify-between gap-2">
       <h2 className="text-xl font-semibold">Desk</h2>
       <div className="flex items-center gap-3 text-xs text-[#0071e3]">
@@ -934,7 +934,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
-      <RecordStatus status={payload.record_status} prose={latest?.prose_status} session={latest?.session} />
+      <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">

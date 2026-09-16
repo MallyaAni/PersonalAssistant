@@ -1879,7 +1879,9 @@ export interface DeskBrief {
 }
 
 export interface DeskRecord {
-  // How the model-written briefs and reads stand beside this decision.
+  // How the model-written briefs and reads stand beside this decision:
+  // ready, partial, timed_out, unavailable, embedded (older records) or absent.
+  prose_state?: string;
   prose_status?: string;
   prose_written?: string;
   provenance?: {rule?: {name?: string; inputs?: string[]}; code_revision?: string; model?: string | null};

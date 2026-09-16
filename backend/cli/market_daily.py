@@ -23,11 +23,11 @@ import numpy as np
 
 from backend.agents.trading.desk import actions, plainly
 from backend.agents.trading.desk import desk as trading_desk
-from backend.agents.trading.desk.narrative import DeskNarrator, brief_text
+from backend.agents.trading.desk.narrative import brief_text
 from backend.cli import market_edgar, market_tone
 from backend.cli.market_desk import _print_book, _print_grades, _print_regime
 from backend.config.settings import settings
-from backend.market import prose, snapshot
+from backend.market import deskrecord, prose, snapshot
 from backend.market.macro import SERIES
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -74,8 +74,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--prose-budget-minutes",
         type=float,
         default=45.0,
-        help="total time for the model-written briefs and reads, after the "
-        "record is saved; names past it are skipped and the block says so",
+        help="wall-clock limit for the model-written briefs and reads, after "
+        "the record is saved; at the limit the request in flight is terminated, "
+        "what was written is kept and the block says it timed out",
     )
     parser.add_argument(
         "--tone-budget-minutes",
@@ -974,24 +975,35 @@ def record(
 # saved decision untouched and a prose block that says why.
 def finish(root: Path, core: dict, enrichment, allow_overwrite: bool = False) -> Path:
     """Return the record's path, having saved it and then attempted the prose."""
-    from backend.market import prose as prose_store
-
     path = save(root, core, allow_overwrite=allow_overwrite)
     print(f"\nrecord written: {path}")
+    enrich_prose(root, core, enrichment)
+    return path
+
+
+# The prose step on its own, after the decision is on disk: whatever the
+# enrichment does or fails to do, the block beside the record says so, and
+# every name that failed is named in the log.
+def enrich_prose(root: Path, core: dict, enrichment) -> tuple[str, str]:
+    """Return the prose block's (state, detail), having written it."""
     session = core["session"]
-    revision = core.get("provenance", {}).get("code_revision", "unknown")
+    revision = (core.get("provenance") or {}).get("code_revision", "unknown")
     started = time.monotonic()
     try:
-        briefs, reads, status = enrichment(None, session, revision)
+        briefs, reads, status, failures = enrichment()
     except Exception as exc:  # noqa: BLE001 - prose never touches the decision
-        briefs, reads, status = {}, {}, f"unavailable: {type(exc).__name__}: {exc}"
+        briefs, reads, failures = {}, {}, []
+        status = ("unavailable", f"{type(exc).__name__}: {exc}")
     elapsed = time.monotonic() - started
-    prose_store.write(root, session, revision, briefs, reads, status, elapsed)
+    landed = prose.write(root, session, revision, briefs, reads, status, elapsed)
     print(
-        f"\nprose: {status} ({len(briefs)} briefs, {len(reads)} reads, "
-        f"{elapsed / 60:.1f} min)"
+        f"\nprose: {status[0].replace('_', ' ')}: {status[1]} ({len(briefs)} briefs, "
+        f"{len(reads)} reads, {elapsed / 60:.1f} min)"
+        + ("" if landed else "; the block was NOT written")
     )
-    return path
+    for line in failures:
+        print(f"  {line}")
+    return status
 
 
 # Where the day's record lives.
@@ -1239,50 +1251,27 @@ def write_history(store, report, horizon: int = 20) -> int:
     return count
 
 
-# Write and print the briefs for some names through the local model.
-def briefs_for(report, tickers, narrator: DeskNarrator) -> dict[str, dict]:
-    """Return {ticker: brief fields} for the names the model could brief."""
-    out: dict[str, dict] = {}
-    for ticker in tickers:
-        if ticker not in report.panel.tickers:
-            print(f"\n{ticker}: not in the book")
-            continue
-        grade = report.brief(ticker)["grade"]
-        brief = narrator.brief_sync(brief_text(report, ticker), grade)
-        if brief is None:
-            print(f"\n{ticker}: no brief (runtime away or the answer did not fit)")
-            continue
-        out[ticker] = {
-            "stance": brief.stance,
-            "verdict": brief.verdict,
-            "reasoning": brief.reasoning,
-            "risks": brief.risks,
-            "watch": brief.watch,
-        }
-        print(f"\n{ticker} ({grade}, {brief.stance}): {brief.verdict}")
-        print(f"  {brief.reasoning}")
-        print(f"  risks: {brief.risks}")
-        print(f"  watch: {brief.watch}")
-    return out
+# The prose job: the evidence text (and grade, for a brief) of every name
+# asked for that is in the book. A name outside the book is skipped and said.
+def _prose_job(report, args) -> dict:
+    """Return {briefs: [...], reads: [...]} for the child process."""
 
+    def items(names, with_grade):
+        out = []
+        for ticker in names:
+            if ticker not in report.panel.tickers:
+                print(f"\n{ticker}: not in the book")
+                continue
+            item = {"ticker": ticker, "text": brief_text(report, ticker)}
+            if with_grade:
+                item["grade"] = report.brief(ticker)["grade"]
+            out.append(item)
+        return out
 
-# Write and print the reads for some names through the local model. A read
-# is the whole desk's evidence in plain words, so the page can show every
-# trigger without the model at the edge omitting or inventing one.
-def reads_for(report, tickers, narrator: DeskNarrator) -> dict[str, str | None]:
-    """Return {ticker: read text} for the names the model could read."""
-    out: dict[str, str | None] = {}
-    for ticker in tickers:
-        if ticker not in report.panel.tickers:
-            print(f"\n{ticker}: not in the book")
-            continue
-        read = narrator.read_sync(brief_text(report, ticker))
-        if read is None:
-            print(f"\n{ticker}: no read (runtime away or empty)")
-            continue
-        out[ticker] = read
-        print(f"\n{ticker}: {read[:160]}")
-    return out
+    return {
+        "briefs": items(_wanted_tickers(report, args.brief, args.brief_book), True),
+        "reads": items(_wanted_tickers(report, args.read, args.read_book), False),
+    }
 
 
 # The names a step should process: the ones named, plus every name in the
@@ -1299,24 +1288,6 @@ def _wanted_tickers(report, named: list[str], whole_book: bool) -> list[str]:
 
 # The model-written briefs and reads the run asked for, or empty dicts when
 # the runtime is away: the day still runs, just without prose.
-def _wanted_briefs_and_reads(
-    report, args
-) -> tuple[dict[str, dict], dict[str, str | None]]:
-    """Return the briefs and reads the run asked for."""
-    briefs: dict[str, dict] = {}
-    wanted = _wanted_tickers(report, args.brief, args.brief_book)
-    read_wanted = _wanted_tickers(report, args.read, args.read_book)
-    reads: dict[str, str | None] = {}
-    if wanted or read_wanted:
-        readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
-        narrator = DeskNarrator(readers[0].writer)
-        if wanted:
-            briefs = briefs_for(report, wanted, narrator)
-        if read_wanted:
-            reads = reads_for(report, read_wanted, narrator)
-    return briefs, reads
-
-
 # Run the day.
 def main() -> None:
     """Entry point: one run at a time under the store's lock."""
@@ -1408,11 +1379,9 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
     curve = curves(report, store, Path(store.root))
     core = record(
         report,
-        {},
-        {},
-        entry,
-        shadow,
-        curve,
+        paper=entry,
+        challenger=shadow,
+        curve=curve,
         llm_model=args.llm_model,
         fundamentals=fundamentals,
         ml_forward=_ml_forward_receipt(observed.get("row"), session),
@@ -1420,40 +1389,35 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
 
     # The prose, after the record: model-written briefs and reads under one
     # total budget, stored beside the decision and never inside it.
-    def enrichment(_report, session_, _revision):
-        wanted = _wanted_tickers(report, args.brief, args.brief_book)
-        read_wanted = _wanted_tickers(report, args.read, args.read_book)
-        job = {
-            "briefs": [
-                {
-                    "ticker": t,
-                    "grade": report.brief(t)["grade"],
-                    "text": brief_text(report, t),
-                }
-                for t in wanted
-                if t in report.panel.tickers
-            ],
-            "reads": [
-                {"ticker": t, "text": brief_text(report, t)}
-                for t in read_wanted
-                if t in report.panel.tickers
-            ],
-        }
+    def enrichment():
         return prose.run_with_deadline(
-            job,
-            Path(store.root) / DESK_KIND / f"asof={session_}",
+            _prose_job(report, args),
+            deskrecord.folder(Path(store.root), session),
             60.0 * args.prose_budget_minutes,
             args.llm_url,
             args.llm_model,
+            args.concurrency,
         )
 
     try:
-        finish(Path(store.root), core, enrichment, allow_overwrite=args.force)
+        path = save(Path(store.root), core, allow_overwrite=args.force)
     except FileExistsError as exc:
         print(f"\n{exc}")
         print("the existing record is kept; nothing was changed")
         return
-    # Current collection stays outside historical decisions and portfolio sizing.
+    print(f"\nrecord written: {path}")
+    # The cheap work that belongs with the record lands before the prose,
+    # so a drill-down never shows tonight's grades over yesterday's history
+    # and a kill during the prose wait loses nothing but prose.
+    written = write_history(store, report)
+    if written:
+        print(f"history: {written} names written")
+    removed = prune(Path(store.root), asof, args.prune_days)
+    if removed:
+        print(f"pruned {len(removed)} old partitions")
+    enrich_prose(Path(store.root), core, enrichment)
+    # Current collection stays outside historical decisions and portfolio
+    # sizing; it uses the model runtime, so it follows the prose.
     from backend.cli import market_economics
 
     market_economics.refresh_if_current(
@@ -1462,12 +1426,6 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         args.llm_url,
         args.llm_model,
     )
-    written = write_history(store, report)
-    if written:
-        print(f"history: {written} names written")
-    removed = prune(Path(store.root), asof, args.prune_days)
-    if removed:
-        print(f"pruned {len(removed)} old partitions")
 
 
 if __name__ == "__main__":

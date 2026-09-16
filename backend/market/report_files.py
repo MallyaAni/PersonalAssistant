@@ -40,3 +40,15 @@ def write_json(target: Path, block: dict, label: str) -> bool:
     except Exception as exc:  # noqa: BLE001 - evidence, never a reason to stop
         print(f"\n{label}: not written ({type(exc).__name__}: {exc})")
         return False
+
+
+# Read a block written by write_json; None when missing, torn or unreadable.
+def read_json(target: Path) -> dict | None:
+    """Return the block, or None."""
+    target = Path(target)
+    if not target.exists():
+        return None
+    try:
+        return json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None

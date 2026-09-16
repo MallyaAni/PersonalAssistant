@@ -133,38 +133,47 @@ store, plain rule from 2018-06: CAGR 25.24% to 25.05%, worst drawdown
 (DDOG C to B), four technical stances, and small weight shifts. Tests in
 `test_grading_input_fixes.py`.
 ## 2026-09-15 — The decision is saved before the prose; prose lives beside it under a budget
+## 2026-09-15 — The decision is saved before the prose; prose lives beside it under a wall-clock deadline (pending its first real nightly)
 
 The nightly's record is the decision: grades, scores, the book, the
 paper orders. The model-written briefs and reads were produced before
-it and embedded in it, so a blocked prose request could hold the
-decision hostage (Codex's last point). Now `finish()` saves the core
-record first, then produces the prose under one total budget
-(`--prose-budget-minutes`, 45 by default, checked between names), and
-writes it to `prose.json` beside the record with the session and code
-revision it belongs to; the decision is never rewritten.
-The enrichment runs in a child process under a wall-clock deadline: the
+it and embedded in it, so a blocked or endlessly dripping prose request
+could hold the decision hostage (Codex's last two points). Now
+`finish()` saves the core record first. The prose is then produced by a
+spawned child process under `--prose-budget-minutes` (45 by default): the
 parent writes the job, the child appends each finished brief or read to
 a results file as it completes, and at the deadline the parent
 terminates the child, whose sockets go with it, and keeps what it had
-written. `deskrecord.load` merges the prose into the record when it is
-read and sets `prose_status` (ready, partial, timed out, unavailable,
-embedded for older records, absent); the Desk view says in one sentence
-when the prose is not ready, and the deterministic reads stand. Tests: a
-model server that keeps producing bytes past the deadline is terminated
-and its connection released while the decision stays saved; a blocked
-request cannot prevent the core record; what the child wrote before the
-kill is kept; merge on read; the page's sentence.
+written. The block lands in `prose.json` beside the record, linked by
+session and code revision, marked ready, partial, timed out or
+unavailable; `deskrecord.load` merges it into the record on read and
+sets `prose_state` (ready, partial, timed_out, unavailable; embedded for
+older records; absent) with `prose_status` as the sentence; the Desk view
+switches on the state and says in one sentence when the prose is not
+ready, and the deterministic reads stand. The decision is never rewritten.
+The child spreads the calls over `--concurrency` clients; its job file is
+removed once read and its results file kept only as a trace of a failure.
 
-Correction to the earlier bound: the 60-second EDGAR and 600-second
-model timeouts are per-request inactivity limits (connect and read
-phases), not total elapsed time; a server that keeps sending bytes can
-exceed them. The "about 17 minutes" overrun is therefore the bound
-for a request that stalls, not for one that drips. The prose budget is
-a total elapsed limit checked between calls, so a single call can still
-exceed it by one request.
+Validated so far by unit tests: a local model server that keeps
+producing bytes past the deadline is terminated and its connection
+released while the decision stays saved; a blocked request cannot
+prevent the core record; what the child wrote before the kill is kept;
+merge on read; the page's sentences, including the real timeout string.
+Not yet validated on a real nightly: the first run after merge is the
+acceptance path (`prose.json` beside `desk.json` on spark1, the page
+reading the merged record). Until then this is a tested mechanism, not
+a verified change.
 
-Held on the branch until the 2026-09-16 nightly has verified the
-previous day's changes on a real run.
+Correction to the earlier bound, corrected again on review: the EDGAR
+fetch goes through curl_cffi, whose scalar timeout is a total-operation
+limit, so a filing fetch is bounded at 60 seconds per attempt whatever
+the server does. The model client is httpx, whose scalar timeout is a
+per-phase inactivity limit, so a model server that keeps sending bytes
+can exceed 600 seconds. That is why the prose deadline terminates the
+child rather than waiting for a timeout, and why the same hazard remains
+in the tone stage and the economics refresh, which share that client:
+a total-elapsed limit in the shared provider would close it for every
+caller and is the next fix, outside the desk's own files.
 
 ## 2026-09-15 — Codex's two defects: the lock is the operating system's, report writes are contained and atomic; the tone deadline bites within a name
 

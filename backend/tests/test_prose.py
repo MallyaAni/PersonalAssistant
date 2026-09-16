@@ -28,6 +28,7 @@ class _Drip(BaseHTTPRequestHandler):
     dropped = threading.Event()
     started = threading.Event()
 
+    # Any POST is a model call: acknowledge it and never finish the body.
     def do_POST(self):  # noqa: N802 - http.server's name
         self.rfile.read(int(self.headers.get("Content-Length", 0)))
         self.send_response(200)
@@ -43,16 +44,19 @@ class _Drip(BaseHTTPRequestHandler):
         except OSError:
             _Drip.dropped.set()
 
+    # A GET (a model list or health probe) answers at once.
     def do_GET(self):  # noqa: N802
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(b"{}")
 
+    # Keep the test output free of request logging.
     def log_message(self, *args):
         pass
 
 
+# The dripping server on a free local port, stopped after the test.
 @pytest.fixture
 def drip_server():
     server = ThreadingHTTPServer(("127.0.0.1", 0), _Drip)
@@ -65,6 +69,10 @@ def drip_server():
     server.server_close()
 
 
+# The bound Codex asked for: a response that keeps sending bytes cannot
+# outlive the wall-clock deadline, because the child holding it is killed.
+# The elapsed bound allows the budget, two grace periods and process
+# start-up on a slow machine.
 def test_a_request_that_keeps_producing_bytes_is_terminated_at_the_deadline(
     tmp_path, drip_server
 ):
@@ -73,21 +81,26 @@ def test_a_request_that_keeps_producing_bytes_is_terminated_at_the_deadline(
         "reads": [],
     }
     started = time.monotonic()
-    briefs, reads, status = prose.run_with_deadline(
-        job, tmp_path / "work", budget_seconds=6.0, llm_url=drip_server, llm_model="m"
+    briefs, reads, status, failures = prose.run_with_deadline(
+        job, tmp_path / "work", budget_seconds=15.0, llm_url=drip_server, llm_model="m"
     )
     elapsed = time.monotonic() - started
     assert _Drip.started.is_set(), "the child never reached the server"
-    assert status.startswith("timed out after 0 min: 0 of 1 written")
+    assert status[0] == "timed_out"
+    assert status[1].startswith("timed out after 0 min: 0 of 1 written")
     assert briefs == {}
     assert reads == {}
-    assert elapsed < 6.0 + prose.TERMINATE_GRACE_SECONDS * 2 + 10
+    assert elapsed < 15.0 + prose.TERMINATE_GRACE_SECONDS * 2 + 10
+    assert failures == []
     # The child's connection died with it: the server saw the drop.
     assert _Drip.dropped.wait(timeout=15), "the dripping connection was not released"
 
 
+# A prose step that blocks and then fails leaves the decision saved and
+# the block saying why; the deterministic reads remain on the record.
 def test_a_blocked_prose_request_cannot_prevent_the_core_record(tmp_path, capsys):
-    def blocked(report, session, revision):
+    # The enrichment as the nightly sees it: it hangs, then raises.
+    def blocked():
         time.sleep(0.2)
         raise TimeoutError("runtime blocked")
 
@@ -98,19 +111,22 @@ def test_a_blocked_prose_request_cannot_prevent_the_core_record(tmp_path, capsys
     assert saved["session"] == "2026-09-03"
     assert saved["briefs"] == {}
     block = prose.load(tmp_path, "2026-09-03")
-    assert block["status"].startswith("unavailable")
-    assert "runtime blocked" in block["status"]
-    merged = deskrecord.load(tmp_path, "2026-09-03")
-    assert merged["prose_status"].startswith("unavailable")
+    assert block["state"] == "unavailable"
+    assert "runtime blocked" in block["detail"]
+    merged = prose.merge(deskrecord.load(tmp_path, "2026-09-03"), block)
+    assert merged["prose_state"] == "unavailable"
+    assert merged["prose_status"].startswith("unavailable: TimeoutError")
     assert merged["grades"]["SNDK"]["read"] is None
     assert "reads" in merged["grades"]["SNDK"]  # the deterministic lines stand
     assert "prose: unavailable" in capsys.readouterr().out
 
 
+# Results are appended line by line, so a kill loses at most the line in
+# flight; the status names what was kept and what was not.
 def test_what_the_child_wrote_before_the_kill_is_kept(tmp_path):
     results = tmp_path / prose.RESULTS_NAME
     results.write_text(
-        json.dumps({"kind": "brief", "ticker": "A", "fields": {"verdict": "v"}})
+        json.dumps({"kind": "brief", "ticker": "A", "value": {"verdict": "v"}})
         + "\n"
         + json.dumps({"kind": "read", "ticker": "B", "error": "no read"})
         + "\n"
@@ -121,20 +137,24 @@ def test_what_the_child_wrote_before_the_kill_is_kept(tmp_path):
     assert briefs == {"A": {"verdict": "v"}}
     assert reads == {}
     assert failures == ["read B: no read"]
-    assert prose.status_of(1, 3, failures, True, 120).startswith(
-        "timed out after 2 min: 1 of 3 written"
+    state, detail = prose.status_of(1, 3, failures, True, 120)
+    assert state == "timed_out"
+    assert detail.startswith("timed out after 2 min: 1 of 3 written")
+    assert prose.status_of(1, 3, failures, False, 120)[0] == "partial"
+    assert prose.status_of(0, 3, failures, False, 120) == (
+        "unavailable",
+        "read B: no read",
     )
-    assert prose.status_of(1, 3, failures, False, 120).startswith("partial: 1 of 3")
-    assert prose.status_of(0, 3, failures, False, 120).startswith(
-        "unavailable: read B: no read"
-    )
-    assert prose.status_of(3, 3, [], False, 120) == "ready"
+    assert prose.status_of(3, 3, [], False, 120)[0] == "ready"
 
 
+# The record on disk stays the decision; the page's record carries the
+# prose merged in with its status.
 def test_prose_is_merged_into_the_record_when_read(tmp_path):
     data = market_daily.record(_report())
     market_daily.save(Path(tmp_path), data)
-    assert deskrecord.load(tmp_path, "2026-09-03")["prose_status"] == "absent"
+    raw = deskrecord.load(tmp_path, "2026-09-03")
+    assert prose.merge(raw, None)["prose_state"] == "absent"
     prose.write(
         tmp_path,
         "2026-09-03",
@@ -149,11 +169,11 @@ def test_prose_is_merged_into_the_record_when_read(tmp_path):
             }
         },
         {"SNDK": "a model-written read"},
-        "ready",
+        ("ready", "2 of 2 written"),
         3.0,
     )
-    merged = deskrecord.load(tmp_path, "2026-09-03")
-    assert merged["prose_status"] == "ready"
+    merged = prose.merge(raw, prose.load(tmp_path, "2026-09-03"))
+    assert merged["prose_state"] == "ready"
     assert merged["briefs"]["SNDK"]["verdict"] == "v"
     assert merged["grades"]["SNDK"]["read"] == "a model-written read"
     raw = json.loads(market_daily.record_path(tmp_path, "2026-09-03").read_text())
@@ -161,7 +181,43 @@ def test_prose_is_merged_into_the_record_when_read(tmp_path):
     assert raw["grades"]["SNDK"]["read"] is None
 
 
+# Records written before this change carry their prose inside; they read
+# as embedded, not as missing.
 def test_an_older_record_with_embedded_prose_reads_as_embedded(tmp_path):
     data = market_daily.record(_report(), {"SNDK": {"stance": "own", "verdict": "v"}})
     market_daily.save(Path(tmp_path), data)
-    assert deskrecord.load(tmp_path, "2026-09-03")["prose_status"] == "embedded"
+    raw = deskrecord.load(tmp_path, "2026-09-03")
+    assert "prose_state" not in raw  # the reader stays the decision alone
+    assert prose.merge(raw, None)["prose_state"] == "embedded"
+
+
+# The child leaves at once when its parent is gone, so a killed nightly
+# never leaves an orphan calling the model.
+def test_the_child_watchdog_exits_when_the_parent_is_gone():
+    import threading
+
+    exits = []
+
+    def leave(code):
+        exits.append(code)
+        raise SystemExit(code)
+
+    stop = threading.Event()
+    calls = iter([True, True, False])
+    with pytest.raises(SystemExit):
+        prose._watch_parent(lambda: next(calls), stop, interval=0.01, leave=leave)
+    assert exits == [3]
+
+
+# A child that wrote every row but was still winding down at the deadline
+# is complete, not timed out; a crash inside the child becomes a row that
+# names the cause and the names it never reached.
+def test_complete_is_not_timed_out_and_a_crash_is_named(tmp_path):
+    state, detail = prose.status_of(3, 3, [], False, 120)
+    assert state == "ready"
+    failures = ["worker: RuntimeError: clients failed"]
+    state, detail = prose.status_of(1, 4, failures, False, 120)
+    assert state == "partial"
+    assert "3 not attempted" in detail
+    state, detail = prose.status_of(0, 4, failures, False, 120)
+    assert (state, detail) == ("unavailable", "worker: RuntimeError: clients failed")

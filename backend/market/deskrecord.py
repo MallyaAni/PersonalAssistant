@@ -30,6 +30,12 @@ def sessions(root: Path) -> list[str]:
     return sorted(out)
 
 
+# One session's folder: the record, its prose and its working files.
+def folder(root: Path, session: str) -> Path:
+    """Return the folder a session's record lives in."""
+    return Path(root) / DESK_KIND / f"asof={session}"
+
+
 # One session's record, or None.
 # What the records actually said about one name, night by night: the
 # grade, the votes and the stances each record carried. The history file
@@ -60,13 +66,10 @@ def said(root: Path, ticker: str) -> dict[str, dict]:
 
 def load(root: Path, session: str) -> dict | None:
     """Return the record for `session`."""
-    path = Path(root) / DESK_KIND / f"asof={session}" / "desk.json"
+    path = folder(root, session) / "desk.json"
     if not path.exists():
         return None
-    from backend.market import prose
-
-    record = json.loads(path.read_text(encoding="utf-8"))
-    return prose.merge(record, prose.load(Path(root), session))
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 # The newest record and the one before it, either may be None.

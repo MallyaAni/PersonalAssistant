@@ -61,7 +61,7 @@ test('a late record or observation is named at the top of the page', async ({pag
 // A decision whose prose failed is still the decision: the page says the
 // briefs and reads are unavailable and shows the deterministic reads.
 test('a decision with unavailable prose is shown as the decision', async ({page}) => {
-  const latest = {...deskRecord(), prose_status: 'unavailable: brief SNDK: TimeoutError: runtime blocked'}
+  const latest = {...deskRecord(), prose_state: 'unavailable', prose_status: 'unavailable: brief SNDK: TimeoutError(\'runtime blocked\')'}
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
   await page.goto('/#desk')
   const status = page.getByRole('status', {name: 'Record status'})
@@ -73,7 +73,7 @@ test('a decision with unavailable prose is shown as the decision', async ({page}
 // The nightly's actual timeout status, when the model kept sending bytes past
 // the deadline and the enrichment was terminated, is shown as a warning.
 test('a decision whose prose timed out is shown with the timeout status', async ({page}) => {
-  const latest = {...deskRecord(), prose_status: 'timed out after 45 min: 3 of 12 written; the request in flight was terminated'}
+  const latest = {...deskRecord(), prose_state: 'timed_out', prose_status: 'timed out: timed out after 45 min: 3 of 12 written; the request in flight was terminated'}
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
   await page.goto('/#desk')
   const status = page.getByRole('status', {name: 'Record status'})
