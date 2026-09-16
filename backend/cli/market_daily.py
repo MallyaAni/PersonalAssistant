@@ -1420,19 +1420,31 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
 
     # The prose, after the record: model-written briefs and reads under one
     # total budget, stored beside the decision and never inside it.
-    def enrichment(report_, session_, revision):
-        wanted = _wanted_tickers(report_, args.brief, args.brief_book)
-        read_wanted = _wanted_tickers(report_, args.read, args.read_book)
-        if not wanted and not read_wanted:
-            return {}, {}, "none requested"
-        readers, _model = market_tone.clients(args.llm_url, args.llm_model, 1)
-        narrator = DeskNarrator(readers[0].writer)
-        return prose.enrich(
-            wanted,
-            read_wanted,
-            lambda t: briefs_for(report_, [t], narrator).get(t),
-            lambda t: reads_for(report_, [t], narrator).get(t),
+    def enrichment(_report, session_, _revision):
+        wanted = _wanted_tickers(report, args.brief, args.brief_book)
+        read_wanted = _wanted_tickers(report, args.read, args.read_book)
+        job = {
+            "briefs": [
+                {
+                    "ticker": t,
+                    "grade": report.brief(t)["grade"],
+                    "text": brief_text(report, t),
+                }
+                for t in wanted
+                if t in report.panel.tickers
+            ],
+            "reads": [
+                {"ticker": t, "text": brief_text(report, t)}
+                for t in read_wanted
+                if t in report.panel.tickers
+            ],
+        }
+        return prose.run_with_deadline(
+            job,
+            Path(store.root) / DESK_KIND / f"asof={session_}",
             60.0 * args.prose_budget_minutes,
+            args.llm_url,
+            args.llm_model,
         )
 
     try:

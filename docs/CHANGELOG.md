@@ -142,13 +142,18 @@ record first, then produces the prose under one total budget
 (`--prose-budget-minutes`, 45 by default, checked between names), and
 writes it to `prose.json` beside the record with the session and code
 revision it belongs to; the decision is never rewritten.
-`deskrecord.load` merges the prose into the record when it is read and
-sets `prose_status` (ready, partial, unavailable, embedded for older
-records, absent); the Desk view says in one sentence when the prose is
-unavailable or partial, and the deterministic reads stand. Tests: a
-blocked prose request cannot prevent the core record from being saved;
-the budget stops enrichment between names; a dead runtime is
-unavailable; merge on read; the page's sentence.
+The enrichment runs in a child process under a wall-clock deadline: the
+parent writes the job, the child appends each finished brief or read to
+a results file as it completes, and at the deadline the parent
+terminates the child, whose sockets go with it, and keeps what it had
+written. `deskrecord.load` merges the prose into the record when it is
+read and sets `prose_status` (ready, partial, timed out, unavailable,
+embedded for older records, absent); the Desk view says in one sentence
+when the prose is not ready, and the deterministic reads stand. Tests: a
+model server that keeps producing bytes past the deadline is terminated
+and its connection released while the decision stays saved; a blocked
+request cannot prevent the core record; what the child wrote before the
+kill is kept; merge on read; the page's sentence.
 
 Correction to the earlier bound: the 60-second EDGAR and 600-second
 model timeouts are per-request inactivity limits (connect and read
