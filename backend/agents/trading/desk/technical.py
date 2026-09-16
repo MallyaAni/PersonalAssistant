@@ -75,9 +75,12 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
     stretch = loc[:, :, lidx["support_distance"]]
     # A name below every level has nothing under it: it is the most
     # stretched name of the session, not the least, so it takes the
-    # session's largest distance rather than zero.
+    # session's largest distance rather than zero. Rows with no finite
+    # distance stay -inf and fall to the zero below, never warning.
     with np.errstate(all="ignore"):
-        worst = np.nanmax(np.where(np.isfinite(stretch), stretch, np.nan), axis=1)
+        worst = np.max(
+            np.where(np.isfinite(stretch), stretch, -np.inf), axis=1
+        )
     worst = np.where(np.isfinite(worst), worst, 0.0)
     stretch = np.where(
         np.isfinite(stretch) | ~np.isfinite(panel.adj_close),
@@ -93,11 +96,6 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
         rising = baselines.rank_blend(weekly, daily, momentum, range_position)
         up = np.isfinite(ai_trend) & (ai_trend > 0)
         scores = np.where(up[:, None], rising, falling)
-    # The benchmark is the yardstick, never a candidate: residual momentum
-    # against itself is float noise that ranked it top of the book.
-    if panel.benchmark in panel.tickers:
-        scores = np.array(scores, dtype=float, copy=True)
-        scores[:, panel.index(panel.benchmark)] = np.nan
     # The benchmark is the yardstick, never a candidate: residual momentum
     # against itself is float noise that ranked it top of the book.
     if panel.benchmark in panel.tickers:

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-16 — Order lifecycle: every pending leg withdrawn before re-planning, never-sent event orders settle, the balancer's hold survives, the broker listing follows pages
+
+From a code review of the paper-trading path. A forced same-session
+rerun re-sent the whole delta while the first batch still worked; every
+pending desk order is now withdrawn before a plan is sent, this
+session's rows included only on a forced rerun. An FOMC order the broker
+never acknowledged froze reconciliation forever (no id to match, so the
+pending list blocked every later plan); only an acknowledged order the
+broker no longer lists keeps its intent, and one never acknowledged
+settles as missing. The green-day loop wrote the second hold on a stale
+copy of the row; it now looks the row up in the current state. The
+broker's order listing returned one page, so an order past it read as
+never traded; `orders_since` now follows pages by the last submission
+time until a short page arrives, never counting an order twice. Tests in
+`test_order_lifecycle_fixes.py`.
+
 ## 2026-09-16 — Seven grading-input defects fixed, measured, landed
 
 From a code review of the desk's analysts against the store. Filed share
