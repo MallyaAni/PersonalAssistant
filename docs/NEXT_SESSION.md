@@ -1,5 +1,17 @@
 # Next session
 
+## 2026-09-16 — Persistence length closed; ticker panel; FOMC board; walls
+
+The persistence study is closed (three sessions stays; see the research
+note). The ticker panel now leads with the grade move; the board keeps
+sizes during an FOMC cycle at the desk's exposure; walls sum open
+interest across expiries to sixty days. Still to do on the 09-17
+morning: move `market_options --refresh` out of `~/desk_daily.sh` into
+a weekday 08:45 ET cron (the nightly's fetch is labelled with the next
+UTC date and would make the morning fetch skip); verify the FOMC
+restoration fills and the cycle closing; name prompt-version tone
+re-scores as a data revision in the record when they move a grade.
+
 ## Deployment handoff
 
 All requested source changes are pushed for manual deployment. Research-only

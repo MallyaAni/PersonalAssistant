@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-16 — Persistence length and release-event votes: closed, insufficient evidence
+
+The three-session persistence rule delayed ORCL's upgrade and ADBE's
+downgrade by three sessions each after their Sep 10 reports. Persistence
+of two and one, and a rule that lets a new release reading vote the night
+it is read (branch `release-event-vote`, unmerged), were run through the
+harness: every variant is worse on CAGR and Sharpe (25.05% and 1.46 for
+the live rule against 24.6/1.43, 23.8/1.39 and 24.3/1.43). The live rule
+stays. `docs/research/persistence-length-2026-09-16.md`. The same check
+found PANW's Sep 11 vote flip was a tone re-score under a new prompt
+version, not a new release; a data revision the record does not yet name.
+
 ## 2026-09-16 — Ticker panel: the grade move first, reasons that argue the vote, a dated last score, a folded log, walls across expiries
 
 ORCL went B to A+ in the 09-15 record and the page could not say why.
