@@ -221,3 +221,28 @@ def test_complete_is_not_timed_out_and_a_crash_is_named(tmp_path):
     assert "3 not attempted" in detail
     state, detail = prose.status_of(0, 4, failures, False, 120)
     assert (state, detail) == ("unavailable", "worker: RuntimeError: clients failed")
+
+
+# Prose from an earlier run of the same session is not this decision's: a
+# forced rerun killed after the record was saved and before the prose was
+# rewritten leaves last run's briefs on file, and they must read as absent.
+def test_prose_older_than_the_decision_is_not_merged():
+    record = {
+        "session": "2026-09-03",
+        "written": "2026-09-03T23:10:00+00:00",
+        "grades": {"AAA": {"grade": "A"}},
+    }
+    block = {
+        "state": "ready",
+        "written": "2026-09-03T22:40:00+00:00",
+        "briefs": {"AAA": {"verdict": "old"}},
+        "reads": {"AAA": "old read"},
+    }
+    merged = prose.merge(record, block)
+    assert merged["prose_state"] == "absent"
+    assert "predates" in merged["prose_status"]
+    assert "briefs" not in merged
+    assert "read" not in merged["grades"]["AAA"]
+    fresh = prose.merge(record, {**block, "written": "2026-09-03T23:20:00+00:00"})
+    assert fresh["prose_state"] == "ready"
+    assert fresh["briefs"] == {"AAA": {"verdict": "old"}}

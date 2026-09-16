@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-16 — Prose branch rebased onto main and reviewed; prose older than its decision reads as absent
+
+`prose-beside-decision` (the decision saved before the model-written
+briefs and reads, prose under a wall-clock deadline in a child process,
+merged into the API on read) rebased onto main across the nightly lock,
+the record receipts, the order-lifecycle and grading changes; only the
+docs conflicted. A read-only review of the rebased diff against main
+found one defect: a forced rerun killed after the record was saved and
+before the prose was rewritten left the previous run's briefs, about the
+old grades, on file and served as ready. `prose.merge` now treats a block
+written before the record it sits beside as absent, with the reason in
+`prose_status`. Verified: `test_prose` 8/8 including the real spawn-child
+drip test; the desk and market subset 738 passed (the model seed-ensemble
+test fails identically on main against the desktop store); tsc; the desk
+browser suite 56/56.
+
 ## 2026-09-16 — The frozen ML ledger continues across a declared revision
 
 The ML forward shadow pins its experiment by hashing whole source files,

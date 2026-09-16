@@ -291,6 +291,17 @@ def merge(record: dict, block: dict | None) -> dict:
             g.get("read") for g in (record.get("grades") or {}).values()
         )
         return {**record, "prose_state": "embedded" if embedded else "absent"}
+    # Prose written before the decision it sits beside belongs to an earlier
+    # run of the same session: a forced rerun killed between saving the
+    # record and enriching it would otherwise serve last run's briefs, about
+    # the old grades, as ready.
+    written, theirs_written = record.get("written"), block.get("written")
+    if written and theirs_written and str(theirs_written) < str(written):
+        return {
+            **record,
+            "prose_state": "absent",
+            "prose_status": "absent: prose on file predates this decision",
+        }
     grades = {k: dict(v) for k, v in (record.get("grades") or {}).items()}
     for ticker, read in (block.get("reads") or {}).items():
         if ticker in grades and read:
