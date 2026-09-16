@@ -9,6 +9,27 @@ only in an isolated training environment. Run bash scripts/deploy.sh on the
 deployment host; its gates and post-checks still determine live verification.
 Deployment does not activate an ML trading policy or reset any paper account.
 
+## 2026-09-16 — Desk page word-and-word fixes verified and deployed
+
+Frontend-only change, `5d871d2a`, deployed through `scripts/deploy.sh`; marker
+`2026-09-16T16:53:19Z 5d871d2a ok (cheap)`, post-deploy checks green, gateway
+bundle `index-DcAt9SFH.js` carries the new strings. VERIFIED: `tsc --noEmit`
+clean and all 52 desk Playwright tests passing in Chromium (four new tests pin
+the changed behavior). A user-perspective review of the desk page fixed four
+readings that would mislead: `Trend`/`TrendUsd` drew a green up arrow on a $0
+day P/L, so zero read as a gain (flat now keeps a neutral mark); the board's
+Action column collapsed four different conditions into the single word "Wait"
+(now "Wait · expired", "Wait · no size shown", "Wait · unavailable" on the
+compact board); one stale quote disabled sizing for the whole board (a name
+whose live quote does not share the research bar now gets a dash, the header
+names how many sizes are current, and the cash row plus weight ranking stay
+all-or-nothing so no incomplete figure is shown); a failed holdings read left
+the simple view's Positions button silently dead (the board's alert now carries
+the real error and the button explains itself). The OpportunityCard guards a
+zero-weight part from rendering "NaN%". The plan row's "record fill" stays
+gated to due rebalances on purpose - the board's discretionary Record buttons
+cover off-schedule purchases, and browser tests assert that separation.
+
 ## 2026-09-15 — Reversal shadows (branch reversal)
 
 Both registered forms failed their bar; both record forward from the
