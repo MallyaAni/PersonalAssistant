@@ -181,6 +181,38 @@ test('single board ranks cash and updates allocations with the next candle', asy
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
+// One stale quote must not disable sizes for the rest of the board: a name
+// whose live quote does not share the research bar gets a dash, while the
+// names that do keep their sizes and the header says how many are current.
+test('one stale quote no longer disables sizes for the rest of the board', async ({page}) => {
+  await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
+    as_of: '2026-09-09T14:00:00Z',
+    quotes: {
+      AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-09T13:45:00Z'},
+      // NVDA has not advanced to the research bar, so only its size is stale.
+      NVDA: {symbol: 'NVDA', last: 130, bar: '2026-09-09T13:30:00Z'},
+      MSFT: {symbol: 'MSFT', last: 90, bar: '2026-09-09T13:45:00Z'},
+    },
+  }}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], intraday_research: {status: 'available', session: latest.session,
+      bar: '2026-09-09T13:45:00Z', valid_until: '2026-09-09T14:15:00Z', targets: {AAPL: .2, NVDA: .05, MSFT: 0}},
+  }}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(page.getByText('Research sizes for 2 of 3 names')).toBeVisible()
+  const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
+  await expect(aapl).toContainText('20.0%')
+  const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
+  await expect(nvda).toContainText('—')
+  const msft = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^MSFT/})})
+  await expect(msft).toContainText('0.0%')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // FOMC pauses do not erase rankings or pretend the user's account is entirely cash.
 test('single board keeps cash and wait actions during FOMC', async ({page}) => {
   const latest = deskRecord()
@@ -198,6 +230,19 @@ test('single board keeps cash and wait actions during FOMC', async ({page}) => {
   await expect(page.getByRole('heading', {name: 'Stock rankings', exact: true})).toBeVisible()
   await page.getByRole('button', {name: 'Back to stocks'}).click()
   await expect(board).toBeVisible()
+})
+
+// The board's "Wait" must say which kind it is: when the plan feed answers
+// with no readable decision, the Action column says the decision is
+// unavailable rather than pretending the desk itself said wait.
+test('the board names an unreadable plan as unavailable, not a plain wait', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}}}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.locator('tbody tr').nth(1)).toContainText('Wait · unavailable')
+  await expect(board.locator('tbody tr').nth(1)).not.toContainText('Buy eligible')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
 // A Buy click opens a confirmation; only a saved real fill changes persisted holdings.
@@ -985,6 +1030,22 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// Zero is not an up move: a flat day P/L keeps a neutral mark rather than
+// drawing a green up arrow beside +$0.
+test('a zero day P/L reads flat, not as an up move', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({
+    as_of: '2026-09-08T20:00:00Z', equity: 104200, cash: 12000, day_pl: 0, pl_pct: 0.042, day_pl_pct: 0,
+  })}))
+  await page.goto('/?deskDetails=1#desk')
+  await page.getByText('Performance & practice account', { exact: true }).click()
+  const glance = page.getByLabel('The desk at a glance')
+  await expect(glance.getByText('· $0')).toBeVisible()
+  await expect(glance.getByText('↑ +$0')).toHaveCount(0)
+  await expect(glance.getByText('· 0.0%')).toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // The page used to show the buys twice - once in a standalone "Best buys
 // right now" list with its own Buy button and once as the board's buy rows -
 // and the broker's live positions twice - once in its own section and once
@@ -1292,6 +1353,19 @@ test('withholds position editing when existing holdings cannot be loaded', async
   await expect(page.getByRole('button', { name: 'edit my positions' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Record buy', exact: true })).toHaveCount(0)
+})
+
+// The simple board must explain a disabled Positions button, not leave it
+// silently dead: the error the advanced page shows belongs here too. The
+// deliberate 503 logs to the browser console, so this test does not assert
+// a clean console.
+test('the simple view names why position editing is unavailable', async ({ page }) => {
+  await page.route('**/desk/holdings', route => route.fulfill({ status: 503, json: { detail: 'unavailable' } }))
+  await page.goto('/#desk')
+  await expect(page.getByRole('alert')).toContainText('Your positions could not be loaded.')
+  const positions = page.getByRole('button', { name: 'Positions', exact: true })
+  await expect(positions).toBeDisabled()
+  await expect(positions).toHaveAttribute('title', /could not be loaded/)
 })
 
 // An off-schedule purchase outside the target book persists only after its actual fill is confirmed.

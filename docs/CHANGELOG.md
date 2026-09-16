@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-16 — Desk page word-and-word review: flat zero, named waits, per-name sizing, positions error surfaced
+
+A user-perspective review of the desk page. Four readings fixed.
+`Trend`/`TrendUsd` drew a green up arrow on a $0 P/L ("↑ +$0"); a flat
+value now keeps a neutral mark. The board's Action column used the single
+word "Wait" for four different conditions - a genuine desk wait, an
+expired decision, an eligible buy whose size could not be shown, and no
+readable decision at all - so a stalled page was indistinguishable from a
+desk that said wait; the compact board now says which kind ("Wait ·
+expired", "Wait · no size shown", "Wait · unavailable"). One stale quote
+used to disable sizing for the whole board, because the research gate
+demanded every graded name share the research bar; a name whose live
+quote does not share the bar now gets a dash and the header names how
+many sizes are current, while the cash row and weight ranking stay
+all-or-nothing. A failed holdings read left the simple view's Positions
+button silently disabled; the board's alert now carries the real error
+and the button explains itself. The OpportunityCard no longer renders
+"NaN%" if a score ever arrives with a zero-weight part. The scheduled
+plan row's "record fill" stays gated to due rebalances, which the board's
+discretionary "Record" buttons cover outside the schedule. Browser tests
+in `frontend/e2e/desk.spec.ts`.
+
 ## 2026-09-16 — Order lifecycle: every pending leg withdrawn before re-planning, never-sent event orders settle, the balancer's hold survives, the broker listing follows pages
 
 From a code review of the paper-trading path. A forced same-session

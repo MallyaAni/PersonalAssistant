@@ -155,8 +155,13 @@ const today = () => new Intl.DateTimeFormat('en-CA', {
 
 // A signed value in green or red with an arrow, so the direction reads
 // without color (a colour-blind reader sees the arrow, not the shade).
+// A flat zero keeps a neutral mark instead of an arrow: zero is not an up move.
 const Trend = ({ value, suffix = '%' }: { value: number; suffix?: string }) => {
-  const up = value >= 0
+  const up = value > 0
+  const down = value < 0
+  if (!up && !down) {
+    return <span className="text-[#6e6e73]" aria-label={`flat ${value.toFixed(1)}${suffix}`}><span aria-hidden="true">·</span> {value.toFixed(1)}{suffix}</span>
+  }
   return (
     <span className={up ? 'text-[#1e7a3a]' : 'text-[#b42318]'} aria-label={`${up ? 'up' : 'down'} ${value.toFixed(1)}${suffix}`}>
       <span aria-hidden="true">{up ? '↑' : '↓'}</span> {up ? '+' : ''}
@@ -167,9 +172,13 @@ const Trend = ({ value, suffix = '%' }: { value: number; suffix?: string }) => {
 }
 
 // A dollar P/L in green or red with an arrow and a currency sign, so the
-// direction reads without colour and the figure reads as money.
+// direction reads without colour and the figure reads as money. Flat at zero.
 const TrendUsd = ({ value }: { value: number }) => {
-  const up = value >= 0
+  const up = value > 0
+  const down = value < 0
+  if (!up && !down) {
+    return <span className="text-[#6e6e73]" aria-label={`flat ${money(Math.abs(value))}`}><span aria-hidden="true">·</span> {money(Math.abs(value))}</span>
+  }
   return (
     <span className={up ? 'text-[#1e7a3a]' : 'text-[#b42318]'} aria-label={`${up ? 'up' : 'down'} ${signedMoney(value)}`}>
       <span aria-hidden="true">{up ? '↑' : '↓'}</span> {signedMoney(value)}
@@ -894,13 +903,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     <header className="flex shrink-0 items-center justify-between gap-2">
       <h2 className="text-xl font-semibold">Desk</h2>
       <div className="flex items-center gap-3 text-xs text-[#0071e3]">
-        <button disabled={!canWrite || !holdingsReady} onClick={() => setEditing(true)}>Positions</button>
+        <button disabled={!canWrite || !holdingsReady} title={holdingsError || undefined} onClick={() => setEditing(true)}>Positions</button>
         <button onClick={() => setAdvanced(true)}>Details</button>
         <button aria-label="Refresh" onClick={() => {void load();void poll()}}><RefreshCw size={16} /></button>
       </div>
     </header>
     <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} paper={payload.board_paper} ml={payload.ml_forward} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} paused={Boolean(eventPaused)} now={now}
+      holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
       onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
     {editing && <div role="dialog" aria-modal="true" aria-label="Your positions" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -1655,11 +1665,19 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
   const matches = decisions && holdings !== null && decisions.session === latest.session && decisions.written === latest.written && decisions.equity === equity
     && holdings.length === Object.keys(decisions.holdings).length && holdings.every(h => decisions.holdings[h.ticker] === h.shares)
   const row = matches ? decisions.rows[ticker] : undefined
-  if (!row) return <span title="Decision unavailable" className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>{compact ? 'Wait' : 'Wait · decision unavailable'}</span>
+  // The board's "Wait" must say which kind it is: a readable decision that
+  // genuinely says wait, an expired one, an eligible buy whose size cannot
+  // be shown, or no readable decision at all (the plan feed failed or no
+  // longer matches this account). All four used to share the single word
+  // "Wait", so a stalled page was indistinguishable from a desk that
+  // actually said wait.
+  if (!row) return <span title="Decision unavailable. Refresh to re-read the plan for this account." className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>{compact ? 'Wait · unavailable' : 'Wait · decision unavailable'}</span>
   const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
-  const action = expired || (row.action === 'Buy eligible' && !allocationAllowed) ? 'Wait' : row.action
-  const reason = expired && row.action !== 'Wait' ? 'Refresh price evidence' : row.reason
-  if (compact) return <span title={reason} aria-label={`${ticker} plan action`}>{action}</span>
+  const blocked = row.action === 'Buy eligible' && !allocationAllowed
+  const wait = (expired || blocked) && row.action !== 'Wait'
+  const action = wait ? 'Wait' : row.action
+  const reason = wait ? (expired ? 'Refresh price evidence' : row.reason) : row.reason
+  if (compact) return <span title={reason} aria-label={`${ticker} plan action`}>{wait ? `Wait · ${expired ? 'expired' : 'no size shown'}` : action}</span>
   return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
     <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {allocationPercent(row.target_weight)} plan</span></div>
     <div className="text-[#6e6e73]">{reason}</div>

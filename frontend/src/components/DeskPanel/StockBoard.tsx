@@ -10,7 +10,7 @@ const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, paused, now, action, onOpen, onBuy, saving, error}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, paused, now, action, onOpen, onBuy, saving, error, holdingsError}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
@@ -20,20 +20,31 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   paused: boolean; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
   onOpen: (ticker: string) => void;
   onBuy?: (ticker: string, price: number, shares: number, date: string) => Promise<boolean>;
-  saving: boolean; error: string;
+  saving: boolean; error: string; holdingsError?: string;
 }) => {
   const [buy, setBuy] = useState<string | null>(null)
   const [shares, setShares] = useState('')
   const [price, setPrice] = useState('')
   const [date, setDate] = useState(today)
   const pending = useRef(false)
-  const current = research?.status === 'available' && research.session === latest.session
-    && Date.parse(research.valid_until ?? '') > now
-    && Object.keys(research.targets ?? {}).every(ticker => ticker in latest.grades)
-    && Object.keys(latest.grades).every(ticker => research.bar === live.quotes[ticker]?.bar
-      && Number.isFinite(research.targets?.[ticker]) && research.targets![ticker] >= 0)
-  const gross = current ? Object.values(research.targets ?? {}).reduce((sum, weight) => sum + weight, 0) : null
-  const sized = current && gross !== null && gross <= 1.000001 && !paused && !research.event_paused
+  // A research size is shown only while it is current for that one name: the
+  // allocation was built on a single bar, so a name whose own live quote does
+  // not share that bar gets a dash instead of turning the whole board off.
+  // The cash row and the weight ranking still need the complete, synchronized
+  // set, so those stay all-or-nothing.
+  const researchCurrent = research?.status === 'available' && research.session === latest.session
+    && !!research.valid_until && Date.parse(research.valid_until) > now
+  const weightOf = (ticker: string) => {
+    if (!researchCurrent || paused || research.event_paused) return null
+    if (research!.bar !== live.quotes[ticker]?.bar) return null
+    const weight = research!.targets?.[ticker]
+    return Number.isFinite(weight) && (weight as number) >= 0 ? (weight as number) : null
+  }
+  const graded = Object.keys(latest.grades)
+  const sizedNames = researchCurrent && !paused && !research.event_paused ? graded.filter(ticker => weightOf(ticker) !== null) : []
+  const fullCoverage = sizedNames.length === graded.length && graded.length > 0
+  const gross = fullCoverage ? Object.values(research!.targets ?? {}).reduce((sum, weight) => sum + weight, 0) : null
+  const sized = fullCoverage && gross !== null && gross <= 1.000001
   // Compare only current scores tied to this exact nightly basis and completed price.
   const opportunity = (ticker: string) => {
     const value = decisions?.rows[ticker]?.opportunity
@@ -45,7 +56,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
     opportunity: opportunity(ticker),
-    weight: sized ? research.targets![ticker] : null,
+    weight: weightOf(ticker),
   })).sort((a, b) => (b.opportunity ?? -1) - (a.opportunity ?? -1)
     || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
     || (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
@@ -55,11 +66,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const cashIndex = paused ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   const ranked = [...stocks]
   ranked.splice(cashIndex < 0 ? ranked.length : cashIndex, 0, cash)
-  const bar = current ? research.bar : live.data_at
+  const bar = researchCurrent ? research!.bar : live.data_at
   const time = bar ? new Date(bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
     <div className="shrink-0 border-b border-black/[0.06] px-3 py-2 text-xs text-[#6e6e73]">
-      <p>{paused ? 'FOMC · new buys paused' : sized ? '15-minute model allocations · experimental' : 'Sizing unavailable · waiting for fresh data'}</p>
+      <p>{paused ? 'FOMC · new buys paused'
+        : sized ? '15-minute model allocations · experimental'
+        : researchCurrent && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
+        : 'Sizing unavailable · waiting for fresh data'}</p>
       <p className="mt-0.5">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours</p>
       <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">Analysis {latest.session} close{live.stale ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
@@ -88,7 +102,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       Board simulation · research, not the practice account · {paper.equity.toLocaleString('en-US', {style: 'currency', currency: 'USD'})} · USD {percentage(paper.cash / paper.equity)} · {((paper.equity / paper.initial_capital - 1) * 100).toFixed(2)}% since start {new Date(paper.started_at).toLocaleDateString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric'})}
       <span className="ml-1">· {new Date(paper.as_of).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'})} ET{now - Date.parse(paper.as_of) >= 900000 ? ' · awaiting update' : ''}</span>
     </p>}
-    {holdings === null && <p role="alert" className="px-3 py-2 text-xs text-[#b42318]">Positions unavailable. Recording is disabled.</p>}
+    {holdings === null && <p role="alert" className="px-3 py-2 text-xs text-[#b42318]">{holdingsError ?? 'Positions unavailable. Recording is disabled.'}</p>}
     {ml && <details aria-label="ML forward comparison" className="shrink-0 border-t px-3 py-2 text-xs">
       <summary className="cursor-pointer">ML paper comparison · {ml.session ?? 'awaiting first close'}</summary>
       <p className="my-2 text-[#6e6e73]">Separate simulated accounts starting at $100,000 each. Frozen model; no real orders. Updated nightly. Costs of 10 or 30 basis points per traded dollar are included. This research portfolio does not follow the live desk’s FOMC policy.</p>
