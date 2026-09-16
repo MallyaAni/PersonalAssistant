@@ -70,6 +70,19 @@ test('a decision with unavailable prose is shown as the decision', async ({page}
   await expect(page.getByRole('table').first()).toBeVisible()
 })
 
+// The nightly's actual timeout status, when the model kept sending bytes past
+// the deadline and the enrichment was terminated, is shown as a warning.
+test('a decision whose prose timed out is shown with the timeout status', async ({page}) => {
+  const latest = {...deskRecord(), prose_status: 'timed out after 45 min: 3 of 12 written; the request in flight was terminated'}
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.goto('/#desk')
+  const status = page.getByRole('status', {name: 'Record status'})
+  await expect(status).toContainText('Model-written briefs and reads')
+  await expect(status).toContainText('timed out after 45 min: 3 of 12 written; the request in flight was terminated')
+  await expect(status).toContainText('The decision and its deterministic reads stand')
+  await expect(page.getByRole('table').first()).toBeVisible()
+})
+
 // Current opportunity evidence, not a larger position budget, determines stock priority.
 test('current opportunity scores change rank and explain their inputs', async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})

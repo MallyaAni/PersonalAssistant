@@ -432,7 +432,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
 // observed it, by the next morning, say so in one sentence at the top.
 function RecordStatus({status, prose, session}: {status?: DeskPayload['record_status']; prose?: string; session?: string}) {
   const lines: string[] = []
-  if (prose && /^(unavailable|partial)/.test(prose)) lines.push(`Model-written briefs and reads for ${session ?? 'this decision'}: ${prose}. The decision and its deterministic reads stand.`)
+  if (prose && /^(unavailable|partial|timed out)/.test(prose)) lines.push(`Model-written briefs and reads for ${session ?? 'this decision'}: ${prose}. The decision and its deterministic reads stand.`)
   if (!status) return lines.length ? <div role="status" aria-label="Record status" className="rounded-xl border border-[#b45309]/30 bg-[#fffbeb] px-3 py-2 text-sm text-[#92400e]">{lines.map(line => <p key={line}>{line}</p>)}</div> : null
   if (status.record.status === 'late') lines.push(status.record.session
     ? `No decision record for ${status.expected} yet. Everything below is the ${status.record.session} decision.`
