@@ -152,3 +152,127 @@ def test_the_deadline_stops_fetching_and_scoring_within_a_name(monkeypatch, tmp_
     assert fetched == []
     assert scored == []
     assert not store.has_frame(language.TONE_KIND, date(2026, 9, 15), "AAA")
+
+
+def _events_frame(store, n=3):
+    from datetime import datetime
+
+    from backend.market import edgar
+
+    events = [
+        edgar.EarningsEvent(
+            accepted=datetime(2026, 1, 1 + i, 12),
+            filed=date(2026, 1, 1 + i),
+            accession=f"acc-{i}",
+            items=("2.02",),
+        )
+        for i in range(n)
+    ]
+    store.write_frame(
+        "edgar_events",
+        date(2026, 9, 15),
+        "AAA",
+        {
+            "accepted": [e.accepted.isoformat() for e in events],
+            "filed": [e.filed for e in events],
+            "accession": [e.accession for e in events],
+            "items": [",".join(e.items) for e in events],
+        },
+        {"cik": "1"},
+    )
+
+
+def _tone():
+    from types import SimpleNamespace
+
+    return SimpleNamespace(
+        guidance=0,
+        demand=0,
+        pricing=0,
+        capex=0,
+        supply_constrained=False,
+        summary="",
+        truncated=False,
+        quarter_end=None,
+        revenue_usd_m=None,
+        eps_usd=None,
+        net_income_usd_m=None,
+        gross_margin_pct=None,
+    )
+
+
+# A fetch in flight when the deadline passes finishes, and no further fetch
+# starts: the overrun is bounded by one request, not by the name's backlog.
+def test_a_blocking_fetch_overruns_by_at_most_one_request(monkeypatch, tmp_path):
+    import time as clock
+    from types import SimpleNamespace
+
+    from backend.market import edgar, language
+    from backend.market.store import MarketStore
+
+    store = MarketStore(tmp_path)
+    _events_frame(store, n=4)
+    fetched = []
+
+    def slow_fetch(cik, event, pacer=None):
+        clock.sleep(0.5)
+        fetched.append(event.accession)
+        return "text"
+
+    monkeypatch.setattr(language, "fetch_release_text", slow_fetch)
+    reader = SimpleNamespace(score_sync=lambda text: _tone())
+    started = clock.monotonic()
+    with pytest.raises(RuntimeError, match="incomplete"):
+        market_tone._refresh_ticker(
+            store,
+            "AAA",
+            date(2026, 9, 15),
+            date(2015, 1, 1),
+            [reader],
+            "m",
+            edgar.Pacer(sleep=lambda s: None),
+            deadline=started + 0.2,
+        )
+    elapsed = clock.monotonic() - started
+    assert fetched == ["acc-0"]  # the one in flight at the deadline
+    assert elapsed < 1.5  # one request's worth, not four
+
+
+# The same for inference: a scoring call in flight finishes, the queued
+# ones are not started, and the name is left incomplete for retry.
+def test_a_blocking_inference_call_overruns_by_at_most_one_call(monkeypatch, tmp_path):
+    import time as clock
+    from types import SimpleNamespace
+
+    from backend.market import edgar, language
+    from backend.market.store import MarketStore
+
+    store = MarketStore(tmp_path)
+    _events_frame(store, n=4)
+    monkeypatch.setattr(
+        language, "fetch_release_text", lambda cik, event, pacer=None: "text"
+    )
+    scored = []
+
+    def slow_score(text):
+        clock.sleep(0.5)
+        scored.append(text)
+        return _tone()
+
+    reader = SimpleNamespace(score_sync=slow_score)
+    started = clock.monotonic()
+    with pytest.raises(RuntimeError, match="incomplete"):
+        market_tone._refresh_ticker(
+            store,
+            "AAA",
+            date(2026, 9, 15),
+            date(2015, 1, 1),
+            [reader],
+            "m",
+            edgar.Pacer(sleep=lambda s: None),
+            deadline=started + 0.2,
+        )
+    elapsed = clock.monotonic() - started
+    assert len(scored) == 1  # the one in flight at the deadline
+    assert elapsed < 1.5
+    assert not store.has_frame(language.TONE_KIND, date(2026, 9, 15), "AAA")

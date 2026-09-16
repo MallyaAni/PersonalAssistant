@@ -19,7 +19,15 @@ file renamed into place, any failure printed and swallowed; tests inject
 a write failure into each writer. The three-hour tone budget was checked
 only between names; it now stops a name's fetching and scoring too,
 counting the unreached releases as failures so the name is retried next
-run and its frame is not stored as complete. Policy and research
+run and its frame is not stored as complete. In-flight requests are
+bounded: a filing fetch is at most two page requests of three attempts
+each at a 60-second transport timeout with 2, 4 and 6-second backoffs
+(about 6.5 minutes worst case), and a model call is one request at the
+600-second client timeout, retried only on an immediate rejection; so
+the deadline can be overrun by at most one fetch plus one inference,
+about 17 minutes in the worst case and seconds in the usual one. Two
+regression tests hold a fetch and a model call across the deadline and
+assert the overrun is one request, not the backlog. Policy and research
 parameters unchanged. Not deployed: the nightly path takes it at the
 next pull.
 
