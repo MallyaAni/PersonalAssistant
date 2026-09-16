@@ -9,6 +9,22 @@ from pathlib import Path
 # protected route fail on a real workstation and pass on a clean checkout.
 os.environ["ANIOS_TEST_MODE"] = "1"
 
+# The paper state file takes a POSIX advisory lock; on Windows the module is
+# absent, and a no-op stand-in lets single-process tests run there. The
+# deploy gate on Linux runs the real one.
+try:
+    import fcntl  # noqa: F401
+except ModuleNotFoundError:
+    import sys
+    import types
+
+    _fake_fcntl = types.ModuleType("fcntl")
+    _fake_fcntl.LOCK_EX, _fake_fcntl.LOCK_SH = 2, 1
+    _fake_fcntl.LOCK_UN, _fake_fcntl.LOCK_NB = 8, 4
+    _fake_fcntl.flock = lambda fd, op: None
+    _fake_fcntl.lockf = lambda fd, op, *a: None
+    sys.modules["fcntl"] = _fake_fcntl
+
 # Pytest creates several event loops, so async database uses get fresh connections.
 os.environ.setdefault("DATABASE_USE_NULL_POOL", "true")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")

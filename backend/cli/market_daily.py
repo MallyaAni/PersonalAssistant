@@ -317,13 +317,16 @@ def _acknowledged(row: dict) -> bool:
     return any(execution.get(k) for k in ("created_at", "submitted_at", "filled_at"))
 
 
-# Every pending desk order is withdrawn before a new plan is sent, whatever
-# session it was planned for. A same-session row can only exist on a forced
-# rerun, and leaving it working while the plan is sent again put the same
-# delta on the market twice.
-def _ids_to_withdraw(state) -> list[str]:
+# The pending desk orders withdrawn before a new plan is sent: every row
+# from another session, and on a forced rerun this session's rows too, or
+# the same delta goes on the market twice while the first batch still works.
+def _ids_to_withdraw(state, session: str, force: bool = False) -> list[str]:
     """Return the client order ids the plan must cancel before it is sent."""
-    return [row["client_order_id"] for row in state.pending]
+    return [
+        row["client_order_id"]
+        for row in state.pending
+        if force or row.get("session") != session
+    ]
 
 
 # Compare aggregate fills with the broker's actual completion-session close.
@@ -509,19 +512,29 @@ def _band_blocked(report) -> tuple[set[str], dict[str, bool]]:
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Returns the day's entry for the desk record.
 def paper_trade(
-    report, store_root: Path, session: str, live: bool, rebalance_now: bool = False
+    report,
+    store_root: Path,
+    session: str,
+    live: bool,
+    rebalance_now: bool = False,
+    force: bool = False,
 ) -> dict:
     from backend.agents.trading.desk import paper
 
     if not live:
-        return _paper_trade(report, store_root, session, False, rebalance_now)
+        return _paper_trade(report, store_root, session, False, rebalance_now, force)
     with paper.transaction(store_root):
-        return _paper_trade(report, store_root, session, live, rebalance_now)
+        return _paper_trade(report, store_root, session, live, rebalance_now, force)
 
 
 # Reconcile and execute one nightly plan while holding the shared paper-state lock.
 def _paper_trade(
-    report, store_root: Path, session: str, live: bool, rebalance_now: bool = False
+    report,
+    store_root: Path,
+    session: str,
+    live: bool,
+    rebalance_now: bool = False,
+    force: bool = False,
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import actions, event_execution, event_risk, paper
@@ -553,7 +566,7 @@ def _paper_trade(
     # Withdraw every pending leg before replacing it, this session's included
     # (a forced rerun), and wait for confirmed outcomes. A pending cancel can
     # still fill; never overwrite its durable intent.
-    stale = _ids_to_withdraw(state)
+    stale = _ids_to_withdraw(state, session, force)
     if live and stale:
         client.cancel_orders(stale)
         state, more = _reconcile(client, state, store_root, live)
@@ -1347,6 +1360,7 @@ def _run(args, store: MarketStore) -> None:
                 session,
                 live=args.paper_trade,
                 rebalance_now=args.rebalance_now,
+                force=args.force,
             )
         except Exception as exc:  # the account being away must not lose the record
             print(f"\npaper book: not traded ({type(exc).__name__}: {exc})")

@@ -77,15 +77,19 @@ def test_an_acknowledged_event_order_missing_at_the_broker_keeps_its_intent(
     assert "outcome unknown" in capsys.readouterr().out
 
 
-# Every pending desk order is withdrawn before a plan is sent, including a
-# row planned this session by a forced rerun.
-def test_every_pending_order_is_withdrawn_before_replanning():
+# Other sessions' pending orders are always withdrawn before a plan is
+# sent; this session's only on a forced rerun, where the first batch would
+# otherwise keep working while the plan is sent again.
+def test_pending_orders_are_withdrawn_before_replanning():
     state = paper.PaperState()
     state.pending = [
         {"client_order_id": "anios-2026-09-15-buy-nvda-0", "session": "2026-09-15"},
         {"client_order_id": "anios-2026-09-16-buy-nvda-1", "session": "2026-09-16"},
     ]
-    assert market_daily._ids_to_withdraw(state) == [
+    assert market_daily._ids_to_withdraw(state, "2026-09-16") == [
+        "anios-2026-09-15-buy-nvda-0"
+    ]
+    assert market_daily._ids_to_withdraw(state, "2026-09-16", force=True) == [
         "anios-2026-09-15-buy-nvda-0",
         "anios-2026-09-16-buy-nvda-1",
     ]
