@@ -726,10 +726,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [stops, setStops] = useState(() => readStored(STOPS_KEY) === 'on')
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
-  const [advanced, setAdvanced] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    return params.get('deskDetails') === '1' || params.get('deskView') === 'research'
-  })
+  // Every grade in detail is a fold on the one page; the URL can open it.
+  const [detailsOpen, setDetailsOpen] = useState(() => new URLSearchParams(window.location.search).get('deskDetails') === '1')
   // Details is two views. Plan is what the desk will do and why: rankings,
   // the plan rows, FOMC, changes, execution. Research is measurement on a
   // slower clock: the gate, execution quality, forward evidence, the ML
@@ -919,37 +917,25 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} eventLive={eventLive} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0} countdown={countdown} rebalanceDue={rebalanceDue}
     holdings={holdingsReady ? holdings.length : null} eligible={eligibleNow} /> : null
+  // What a board row shows when opened in place.
+  const expandRow = (ticker: string) => {
+    const g = latest?.grades?.[ticker]
+    if (!latest || !g) return null
+    const lines = (g.reason ?? '').split('\n').filter(Boolean)
+    return <div className="grid gap-2 text-xs sm:grid-cols-[1fr_auto]">
+      <div>
+        <p className="font-medium text-[#1d1d1f]">{g.headline}</p>
+        <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">{lines.map(line => <li key={line}>{line}</li>)}</ul>
+        <div className="mt-2 text-[#6e6e73]"><DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} /></div>
+      </div>
+      <button type="button" className="self-start text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
+    </div>
+  }
   const boardEvent: BoardEvent | null = eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null,
     calendarUnknown: event?.calendar_known === false,
   } : null
-
-  if (latest && !advanced) return <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
-    {todayLine}
-    <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />
-    <header className="flex shrink-0 items-center justify-between gap-2">
-      <h2 className="text-xl font-semibold">Desk</h2>
-      <div className="flex items-center gap-3 text-xs text-[#0071e3]">
-        <button disabled={!canWrite || !holdingsReady} title={holdingsError || undefined} onClick={() => setEditing(true)}>Positions</button>
-        <button onClick={() => setAdvanced(true)}>Details</button>
-        <button aria-label="Refresh" onClick={() => {void load();void poll()}}><RefreshCw size={16} /></button>
-      </div>
-    </header>
-    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
-      holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
-      holdingsError={holdingsError}
-      action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
-      onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
-    {editing && <div role="dialog" aria-modal="true" aria-label="Your positions" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-4">
-        <div className="mb-3 flex justify-between"><h3 className="font-semibold">Your positions</h3><button onClick={() => setEditing(false)} aria-label="Close positions"><X size={18} /></button></div>
-        <label className="mb-3 flex items-center gap-2 text-sm">Account value $<input aria-label="Account value" type="number" min="1" value={equity} className="w-32 rounded border p-1" onChange={event => {const value = Number(event.target.value);setEquity(value);writeStored(EQUITY_KEY, String(value))}} /></label>
-        <Positions holdings={holdings} error={saveError} onSave={async next => {if (await save(next)) setEditing(false)}} />
-      </div>
-    </div>}
-    {openName && <NameDetail compact userId={userId} ticker={openName} latest={latest} row={rows.find(row => row.ticker === openName) ?? null} live={live} liveGrades={liveGrades} decisions={decisions} now={now} paused={Boolean(eventPaused)} onClose={() => setOpenName(null)} />}
-  </div>
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
@@ -959,11 +945,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
-            {latest && <button onClick={() => setAdvanced(false)} className="text-xs text-[#0071e3]">Back to stocks</button>}
-            {latest && <nav aria-label="Details view" className="flex items-center gap-1 rounded-full border border-black/[0.08] bg-white p-0.5 text-xs">
-              <button type="button" aria-pressed={!research} onClick={() => setResearch(false)} className={`rounded-full px-2.5 py-0.5 ${!research ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f]'}`}>Plan</button>
-              <button type="button" aria-pressed={research} onClick={() => setResearch(true)} className={`rounded-full px-2.5 py-0.5 ${research ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f]'}`}>Research</button>
-            </nav>}
+            {latest && !research && <button disabled={!canWrite || !holdingsReady} title={holdingsError || undefined} onClick={() => setEditing(true)} className="text-xs text-[#0071e3] disabled:opacity-40">Positions</button>}
+            {latest && !research && <button type="button" onClick={() => setDetailsOpen(!detailsOpen)} className="text-xs text-[#0071e3]">{detailsOpen ? 'Back to stocks' : 'Details'}</button>}
+            {latest && <button type="button" onClick={() => setResearch(!research)} className="text-xs text-[#0071e3]">{research ? 'Back to the desk' : 'Research'}</button>}
             <button
               type="button"
               onClick={() => setHelp(!help)}
@@ -1005,6 +989,16 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
       {!research && <>
+      {latest && <div className="flex max-h-[75vh] flex-col">
+      <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
+      holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
+      holdingsError={holdingsError}
+      action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
+      expand={expandRow} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
+      </div>}
+      <details open={detailsOpen} onToggle={e => setDetailsOpen(e.currentTarget.open)} aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
+        <summary className="cursor-pointer text-sm font-medium">Every grade in detail</summary>
+        <div className="mt-3 flex flex-col gap-3">
       {latest && <section aria-label="Cash exposure" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
         <span>Paper cash <b>{paperLive?.cash != null && paperLive.equity && paperLive.equity > 0 ? `${(100 * paperLive.cash / paperLive.equity).toFixed(1)}%` : 'unavailable'}</b></span>
         <span title="Cash implied by evening target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
@@ -1031,6 +1025,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             Bar times identify the start of the 15-minute interval, not a current executable price.</p>
         </details>
       )}
+        </div>
+      </details>
 
 
       {payload.event_policy?.enabled && (
@@ -1234,8 +1230,16 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </>}
 
 
+      {editing && <div role="dialog" aria-modal="true" aria-label="Your positions" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+        <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-4">
+          <div className="mb-3 flex justify-between"><h3 className="font-semibold">Your positions</h3><button onClick={() => setEditing(false)} aria-label="Close positions"><X size={18} /></button></div>
+          <label className="mb-3 flex items-center gap-2 text-sm">Account value $<input aria-label="Account value" type="number" min="1" value={equity} className="w-32 rounded border p-1" onChange={event => {const value = Number(event.target.value);setEquity(value);writeStored(EQUITY_KEY, String(value))}} /></label>
+          <Positions holdings={holdings} error={saveError} onSave={async next => {if (await save(next)) setEditing(false)}} />
+        </div>
+      </div>}
       {openName && latest && (
         <NameDetail
+          compact
           userId={userId}
           ticker={openName}
           paused={Boolean(eventPaused)}
@@ -2392,6 +2396,7 @@ const NameDetail = ({
     }
   }, [userId, ticker])
   const brief = latest.briefs?.[ticker]
+  const walls = (live.technical_detail?.[ticker] as {walls?: DeskWalls} | undefined)?.walls
   const gradeRead = latest.grades?.[ticker]?.read ?? null
   const gradeReads = latest.grades?.[ticker]?.reads
   const bt = history?.backtest
@@ -2450,6 +2455,22 @@ const NameDetail = ({
             </span>
           </div>
         )}
+        {/* Four lines a reader needs: the call, the reasons, the plan, the
+            price. Everything else waits behind one fold. */}
+        {latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+          <p className="font-medium text-[#1d1d1f]">{latest.grades[ticker].headline}</p>
+          <ul className="mt-1 space-y-0.5 text-xs text-[#1d1d1f]">{(latest.grades[ticker].reason ?? '').split('\n').filter(Boolean).map(line => <li key={line}>{line}</li>)}</ul>
+          <div className="mt-2 text-xs text-[#6e6e73]">
+            {row ? <DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={null} equity={0} now={now} /> : 'Not on the board'}
+          </div>
+          <p className="mt-2 text-xs text-[#6e6e73]">
+            {live.quotes[ticker]?.last != null ? `${money(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
+            {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
+            {walls && (walls.put_wall != null || walls.call_wall != null) ? ` · option walls ${walls.put_wall != null ? priceMoney(walls.put_wall) : '—'} / ${walls.call_wall != null ? priceMoney(walls.call_wall) : '—'}` : ''}
+          </p>
+        </section>}
+        <details aria-label="All the evidence" className="mb-3">
+          <summary className="cursor-pointer text-xs text-[#0071e3]">All the evidence</summary>
         {/* The readings the grade came from, before anything derived from them. */}
         {gradeReads && (
           <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
@@ -2485,6 +2506,7 @@ const NameDetail = ({
           row={row ?? null}
         />
         <EarningsPanel key={ticker} userId={userId} ticker={ticker} />
+        </details>
         {/* Everything derived or historical sits under one fold: the
             continuous score, the fifteen-minute log, the grade changes and
             the backtest. A person opens the panel to ask why, not to scroll. */}

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { Fragment, useRef, useState, type ReactNode } from 'react'
 import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
 
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
@@ -37,7 +37,7 @@ export const MlComparison = ({ml}: {ml?: DeskPayload['ml_forward']}) => {
 }
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
@@ -48,12 +48,16 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   onOpen: (ticker: string) => void;
   onBuy?: (ticker: string, price: number, shares: number, date: string) => Promise<boolean>;
   saving: boolean; error: string; holdingsError?: string;
+  // What a row shows when opened in place: the plan for that name, its
+  // reasons and a way to the full panel.
+  expand?: (ticker: string) => ReactNode;
 }) => {
   const [buy, setBuy] = useState<string | null>(null)
   const [shares, setShares] = useState('')
   const [price, setPrice] = useState('')
   const [date, setDate] = useState(today)
   const [showAvoid, setShowAvoid] = useState(false)
+  const [opened, setOpened] = useState<string | null>(null)
   const pending = useRef(false)
   // A research size is shown only while it is current for that one name: the
   // allocation was built on a single bar, so a name whose own live quote does
@@ -133,8 +137,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
           const isCash = row.ticker === '__cash__'
-          return <tr key={row.ticker} className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
-            <td className="w-7 text-xs text-[#6e6e73]">{index + 1}</td>
+          const open = opened === row.ticker
+          return <Fragment key={row.ticker}><tr className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
+            <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span>{row.opportunity !== null && <span title="Opportunity evidence index; open for inputs and dates" className="ml-1 text-[10px] font-normal text-[#6e6e73]">· {row.opportunity!.toFixed(1)}/10</span>}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
@@ -145,6 +150,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
             <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
+          {open && expand && <tr><td colSpan={5} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
+          </Fragment>
         })}</tbody>
       </table>
       {(avoided.length > 0 || (showAvoid && stocks.length > 20)) && <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setShowAvoid(!showAvoid)}>

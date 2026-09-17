@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-16 — One page: the board with rows that open in place, the plan beneath, research a link away; the name panel in four lines
+
+The Stocks / Plan / Research split is gone. The desk is one page: the
+today line, the board, then what changed, the portfolio plan, FOMC and
+paper execution, with "Every grade in detail" as a fold beneath (the
+Details button and `?deskDetails=1` open it). Each board row opens in
+place with the name's headline, its reason lines, its plan action and a
+way to the full panel. Research is a link from the header and its own
+page with a way back. The name panel opens with why the grade moved,
+then "In short": the headline, the reason lines, the plan action and
+one price line (last price at its bar, technical rank, option walls);
+everything else sits behind "All the evidence" and "Score, log &
+backtest". Browser tests follow the sections; 57 pass in Chromium.
+
 ## 2026-09-16 — Less on the page: a today line, the three accounts named once, C grades folded, readings folded
 
 The page had too much going on. First on every view now is one line
