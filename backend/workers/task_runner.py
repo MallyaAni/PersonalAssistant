@@ -85,6 +85,12 @@ class TaskRunner:
         if not task:
             await self._finish(run["id"], "failed", error_code="task_missing")
             return True
+        # A stale one-time reminder is enqueued for an apology, not for a late
+        # firing of an instruction whose only slot has already passed.
+        if run.get("error_code") == "missed_slot":
+            await self._apologize_missed(task)
+            await self._finish(run["id"], "missed", task, error_code="missed_slot")
+            return True
         stop = asyncio.Event()
         heartbeat = asyncio.create_task(self._renew(run["id"], stop))
         try:
@@ -142,7 +148,21 @@ class TaskRunner:
             )
             await self._finish(run_id, "failed", task, turn.reply, "delivery_failed")
             return
+        # Record the send the moment it happened, before any closing work: a
+        # crash between here and _finish must not let another worker deliver
+        # the same reminder twice.
+        if not await self._mark_delivered(run_id):
+            await self._finish(run_id, "failed", task, turn.reply, "not_mine")
+            return
         await self._finish(run_id, "delivered", task, turn.reply)
+
+    # Stamp the send in its own transaction, so the record survives a crash
+    # in the instant after it returns.
+    async def _mark_delivered(self, run_id: str) -> bool:
+        async with AsyncSessionLocal() as db:
+            return await ScheduledTaskRepository(db).mark_delivered(
+                run_id, self.worker_id
+            )
 
     # Close a run, or put it back on the queue when it still has attempts.
     # A run that has finally given up is told to the person rather than
@@ -189,6 +209,33 @@ class TaskRunner:
             )
         except Exception:
             logger.warning("scheduled_task_apology_failed", extra={"task": task["id"]})
+
+    # The one-time variant: the task's only slot passed while nobody was
+    # watching, so it will not run again - say that plainly, and offer to
+    # set it anew, rather than promising it is still on the schedule.
+    async def _apologize_missed(self, task: dict) -> None:
+        if task.get("channel") not in _MESSAGES_CHANNELS:
+            return
+        address = await self._address_for(str(task["user_id"]))
+        if address is None:
+            return
+        instruction = str(task.get("instruction") or "your one-time reminder")
+        try:
+            await self.chat.invoke_tool(
+                settings.DISCOVERY_IMESSAGE_TOOL,
+                {
+                    "to": address,
+                    "body": (
+                        "Heads up - your one-time reminder "
+                        f'("{instruction[:80]}") was due while I was down, '
+                        "so I missed it. Want me to set it again?"
+                    ),
+                },
+            )
+        except Exception:
+            logger.warning(
+                "scheduled_task_missed_apology_failed", extra={"task": task["id"]}
+            )
 
     # The instruction as a chat turn on the task's own conversation. Marked
     # so the reply model knows it is a firing, not a person typing.

@@ -110,8 +110,12 @@ async def test_a_quiet_firing_is_finished_without_a_message(monkeypatch) -> None
     async def address_for(user_id):
         return "+17039290948"
 
+    async def mark_delivered(run_id):
+        return True
+
     monkeypatch.setattr(runner, "_finish", finish)
     monkeypatch.setattr(runner, "_address_for", address_for)
+    monkeypatch.setattr(runner, "_mark_delivered", mark_delivered)
     monkeypatch.setattr(runner.chat, "_deliver", deliver)
 
     await runner._deliver("run-1", {"channel": "imessage", "user_id": "ani.mallya"}, TurnResult("NOTHING_TO_REPORT"))

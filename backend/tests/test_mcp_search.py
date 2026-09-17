@@ -63,7 +63,11 @@ async def test_mcp_search_invokes_fixed_tool_and_returns_bounded_results():
     found = await _provider(invocation).search("latest Python", max_results=3)
 
     assert invocation.calls == [
-        ("internet", "search_web", {"query": "latest Python", "max_results": 3})
+        (
+            "internet",
+            "search_web",
+            {"query": "latest Python", "max_results": 3, "frugal": False},
+        )
     ]
     assert found.provider == "mcp:internet/search_web"
     assert [item.title for item in found.results] == ["Current result"]

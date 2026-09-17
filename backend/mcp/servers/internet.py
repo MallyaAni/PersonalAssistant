@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+from datetime import UTC, datetime
 
 import httpx
 
@@ -19,12 +20,57 @@ from backend.search.quota import (
     SQLiteMonthlySearchQuota,
 )
 from backend.search.tavily import TavilySearchProvider, TavilyUsageClient
-from backend.search.types import SearchResults
+from backend.search.types import SearchResults, frugal_search
 
 mcp = FastMCP("AniOS Internet Search")
 
 # Status codes that mean "the key's plan is spent", not "try again".
 _QUOTA_STATUSES = frozenset({402, 429, 432})
+
+# Providers the meter has said are spent, until a top-up or the month rolls
+# over. The MCP server is a long-lived process, so this is the only memory
+# that survives between searches; without it an out-of-credits Tavily is
+# probed first on every single search even though the meter already knows
+# it is empty (review, 2026-09-17).
+_EXHAUSTED_UNTIL: dict[str, datetime] = {}
+
+
+# Whether a provider is known spent right now.
+def _provider_exhausted(name: str) -> bool:
+    until = _EXHAUSTED_UNTIL.get(name)
+    return until is not None and until > datetime.now(UTC)
+
+
+# Remember that a provider refused for lack of credit, until the month ends.
+def _mark_provider_exhausted(name: str) -> None:
+    now = datetime.now(UTC)
+    if now.month == 12:
+        until = now.replace(year=now.year + 1, month=1, day=1)
+    else:
+        until = now.replace(month=now.month + 1, day=1)
+    _EXHAUSTED_UNTIL[name] = until
+
+
+# A provider the meter now shows with credit is no longer spent.
+def _clear_provider_exhausted(name: str) -> None:
+    _EXHAUSTED_UNTIL.pop(name, None)
+
+
+# Which rung refused, read from the host of the request that got the status.
+# A Tavily 432 means the shared pool (Tavily's credits) is gone; a Google or
+# Brave 429 is that rung's own problem and must not read as the pool being
+# spent - the pool has to survive one rung's rate limit.
+def _refusing_provider(exc: httpx.HTTPStatusError) -> str:
+    request = getattr(exc, "request", None)
+    url = getattr(request, "url", None)
+    host = (url.host or "").lower() if url is not None else ""
+    if "tavily" in host:
+        return "tavily"
+    if "brave" in host:
+        return "brave"
+    if "google" in host:
+        return "google"
+    return "tavily"
 # How much of one source survives, and how much the whole payload may carry.
 #
 # Both were fixed numbers - 500 characters a result, 3,500 for the payload -
@@ -106,7 +152,7 @@ def _build_search_provider() -> HybridSearchProvider:
         timeout_seconds=float(os.getenv("SEARCH_TIMEOUT_SECONDS", "15")),
         max_content_chars=max_content_chars,
         min_score=float(os.getenv("SEARCH_MIN_SCORE", "0.4")),
-        search_depth=os.getenv("SEARCH_DEPTH", "basic"),
+        search_depth=os.getenv("SEARCH_DEPTH", "advanced"),
     )
     brave = BraveSearchProvider(
         api_key=os.getenv("BRAVE_SEARCH_API_KEY") or None,
@@ -120,19 +166,32 @@ def _build_search_provider() -> HybridSearchProvider:
         ),
     )
     # The chain is order, not mixing: the operator names it, the better one
-    # first, the next when the first has spent its period. Brave leads by
-    # default since 2026-08-25 - a broad, fresh index at ~1,000 free requests
-    # a month; Tavily's richer extracted text follows when Brave is out.
+    # first, the next when the first has spent its period. A provider the
+    # meter knows is spent is skipped outright rather than probed and refused
+    # on every search. Brave leads by default since 2026-08-25 - a broad,
+    # fresh index at ~1,000 free requests a month; Tavily's richer extracted
+    # text follows when Brave is out.
     order = [
         name.strip().lower()
         for name in (os.getenv("SEARCH_PROVIDER_ORDER") or "brave,google,tavily").split(",")
         if name.strip()
     ]
     by_name = {"brave": brave, "google": google, "tavily": tavily}
-    chain = [by_name[name] for name in order if name in by_name]
-    for provider in (brave, google, tavily):
-        if provider not in chain:
-            chain.append(provider)
+    chain = [
+        by_name[name]
+        for name in order
+        if name in by_name and not _provider_exhausted(name)
+    ]
+    for name in ("brave", "google", "tavily"):
+        if by_name[name] not in chain and not _provider_exhausted(name):
+            chain.append(by_name[name])
+    # All spent: fall back to the full chain so the normal exhaustion path
+    # answers "every rung is out" rather than building an empty provider.
+    if not chain:
+        chain = [by_name[name] for name in order if name in by_name]
+        for name in ("brave", "google", "tavily"):
+            if by_name[name] not in chain:
+                chain.append(by_name[name])
     return HybridSearchProvider(
         primary=chain[-2] if len(chain) > 1 else chain[0],
         fallback=chain[-1],
@@ -275,8 +334,14 @@ def _build_search_cache() -> SQLiteSearchCache:
 
 # Search with Google first, Tavily fallback, or both for explicit verification.
 @mcp.tool()
-async def search_web(query: str, max_results: int = 0) -> str:
+async def search_web(query: str, max_results: int = 0, frugal: bool = False) -> str:
     """Research a minimized public query with bounded free-provider policy."""
+    if frugal:
+        # The backend sets a ContextVar for harness searches, but this runs in
+        # the MCP subprocess where that value cannot cross; the caller passes
+        # it explicitly so a deploy harness still gets the cheap depth instead
+        # of billing two credits for a one-credit answer (review, 2026-09-17).
+        frugal_search.set(True)
     provider = _build_search_provider()
     # The caller may ask for fewer, never more: this argument defaulted to 5
     # and was passed straight through, so it quietly outranked
@@ -298,6 +363,8 @@ async def search_web(query: str, max_results: int = 0) -> str:
     except (EveryProviderExhausted, SearchQuotaExceededError):
         # Every rung has spent its period: a fact the caller acts on - mark
         # the pool spent, tell the person which allowance - not a retry.
+        for name in ("tavily", "brave", "google"):
+            _mark_provider_exhausted(name)
         return json.dumps(
             {"provider": "all", "error": "quota_exhausted", "status": 402, "results": []}
         )
@@ -308,8 +375,15 @@ async def search_web(query: str, max_results: int = 0) -> str:
         # payload so the reason survives the MCP boundary.
         status = exc.response.status_code
         if status in _QUOTA_STATUSES:
+            refusing = _refusing_provider(exc)
+            _mark_provider_exhausted(refusing)
             return json.dumps(
-                {"provider": "tavily", "error": "quota_exhausted", "status": status, "results": []}
+                {
+                    "provider": refusing,
+                    "error": "quota_exhausted",
+                    "status": status,
+                    "results": [],
+                }
             )
         raise
     await cache.put(query, wanted, found)
@@ -686,6 +760,17 @@ async def search_credits() -> str:
                 "brave": await _brave_meter(),
             }
         )
+    # A top-up shows up here before a search ever succeeds again: clear the
+    # "spent" memory so the chain resumes probing the provider.
+    if isinstance(report.get("remaining"), int) and report["remaining"] > 0:
+        _clear_provider_exhausted("tavily")
+    brave_meter = await _brave_meter()
+    if (
+        isinstance(brave_meter, dict)
+        and isinstance(brave_meter.get("remaining"), int)
+        and brave_meter["remaining"] > 0
+    ):
+        _clear_provider_exhausted("brave")
     limit = report.get("limit")
     spent = report.get("spent")
     percent = (

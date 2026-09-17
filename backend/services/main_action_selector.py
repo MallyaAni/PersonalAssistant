@@ -726,12 +726,15 @@ class MainActionSelector:
         # both stay valid, and step one is not a new measurement.
         if steps_taken:
             done = "\n".join(f"- {line}" for line in steps_taken)
+            # The loop forbids an identical repeat structurally (turn_steps
+            # adds every applied action to `seen`), so the prompt must not
+            # promise a retry it cannot honour; a failed step is retried only
+            # across a durable resume, not within the same turn.
             body += (
                 f"\n\nAlready done this turn:\n{done}\n\n"
                 "Call the next tool this message still needs, or no tool if "
                 "everything it asked for has been done. Never repeat something "
-                "already listed above, unless the bracket after it says it "
-                "did not happen."
+                "already listed above."
             )
         index = catalog_block(catalogue)
         if index:

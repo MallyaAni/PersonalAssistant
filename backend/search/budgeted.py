@@ -51,7 +51,16 @@ current_search_identity: ContextVar[SearchIdentity | None] = ContextVar(
 
 
 class SearchProviderQuotaError(Exception):
-    """The provider itself refused: the key has spent its plan for the period."""
+    """The provider itself refused: the key has spent its plan for the period.
+
+    `provider` names which rung refused, so a refusal that is *not* the shared
+    pool's provider (Tavily) cannot be mistaken for the pool running out - a
+    Google 429 is a rate limit on one rung, not the end of everyone's month.
+    """
+
+    def __init__(self, message: str, provider: str = "tavily") -> None:
+        self.provider = provider
+        super().__init__(message)
 
 
 @dataclass(frozen=True, slots=True)
@@ -225,12 +234,16 @@ class BudgetedSearchProvider(SearchProvider):
     ) -> SearchResults:
         try:
             found = await self.inner.search(query, max_results=max_results)
-        except SearchProviderQuotaError:
+        except SearchProviderQuotaError as exc:
+            # The pool counts Tavily's credits, so only Tavily's refusal marks
+            # it spent. Another rung's 429/402 is that rung's own problem; the
+            # pool must not be poisoned for the rest of the month over it.
             now = datetime.now(UTC)
-            try:
-                await self.budget.reconcile(self.budget.monthly_credits, now)
-            except Exception:
-                pass
+            if exc.provider == "tavily":
+                try:
+                    await self.budget.reconcile(self.budget.monthly_credits, now)
+                except Exception:
+                    pass
             raise SearchBudgetExceededError("this month", _next_month(now)) from None
         # The pool counts Tavily's credits. A search another rung served
         # spent none of them, so the reservation goes back; and Brave's own

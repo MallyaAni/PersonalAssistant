@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -9,8 +10,23 @@ from backend.memory.digest import summarise
 from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.tool_memory_service import ToolMemoryService
 
+logger = logging.getLogger(__name__)
+
 # Retrieved context lists that compete for one shared per-turn relevance budget.
 _BUDGETED_KEYS = ("semantic", "entities", "knowledge", "procedures", "toolbox")
+
+
+# A store that fails costs its part, never the turn: log and return the
+# fallback, so a transient DB or embedding failure degrades to "answer
+# without that store" rather than losing the whole reply. The caller had no
+# recovery path before this - one failing read killed the entire turn
+# (review, 2026-09-17).
+async def _best_effort(label: str, awaitable: Any, fallback: Any) -> Any:
+    try:
+        return await awaitable
+    except Exception as exc:
+        logger.warning("memory_store_read_failed store=%s error=%s", label, exc)
+        return fallback
 
 
 # Build a conversation digest that cannot grow without bound.
@@ -191,18 +207,24 @@ class MemoryCoordinatorAgent:
     ) -> dict[str, Any]:
         plan, cache_hit = plan_result or await self.plan(user_id, query)
         now = datetime.now(UTC)
-        await self.stores.working.upsert(
-            user_id,
-            conversation_id,
-            "memory_query_plan",
-            plan.model_dump_json(),
-            "request_coordination",
-            now + self.working_ttl,
+        await _best_effort(
+            "working.upsert",
+            self.stores.working.upsert(
+                user_id,
+                conversation_id,
+                "memory_query_plan",
+                plan.model_dump_json(),
+                "request_coordination",
+                now + self.working_ttl,
+            ),
+            None,
         )
 
         # Embed the query once so every selected vector store reuses one vector.
         if query_embedding is None and plan.needs_vector():
-            query_embedding = await self.stores.embed_query(query)
+            query_embedding = await _best_effort(
+                "embed_query", self.stores.embed_query(query), None
+            )
 
         context = dict(base_context)
         context["memory_plan"] = {
@@ -211,15 +233,21 @@ class MemoryCoordinatorAgent:
             "trace_id": trace_id,
         }
         if plan.use_working:
-            working = await self.stores.working.list_active(user_id, conversation_id)
+            working = await _best_effort(
+                "working.list_active",
+                self.stores.working.list_active(user_id, conversation_id),
+                (),
+            )
             # The plan is persisted for operational inspection, not as a fact
             # for the reply model. Feeding its own routing JSON back as personal
             # memory wastes context and lets internal coordination bias answers.
             visible_working = _visible_working(working)
             context["working"] = visible_working
         if plan.use_entities:
-            context["entities"] = await self.stores.entities.search(
-                user_id, query, 3, query_embedding
+            context["entities"] = await _best_effort(
+                "entities.search",
+                self.stores.entities.search(user_id, query, 3, query_embedding),
+                (),
             )
         if plan.use_knowledge:
             # The turn may already hold document passages from its own two-probe
@@ -229,28 +257,42 @@ class MemoryCoordinatorAgent:
             # shown, and the reply invented one (kept turn, 2026-09-02). Keep what
             # the turn found; search only when it found nothing.
             if not context.get("knowledge"):
-                context["knowledge"] = await self.stores.knowledge.search(
-                    user_id, query, 3, query_embedding
+                context["knowledge"] = await _best_effort(
+                    "knowledge.search",
+                    self.stores.knowledge.search(user_id, query, 3, query_embedding),
+                    (),
                 )
         summaries = []
-        latest_summary = await self.stores.summaries.latest(user_id, conversation_id)
+        latest_summary = await _best_effort(
+            "summaries.latest",
+            self.stores.summaries.latest(user_id, conversation_id),
+            None,
+        )
         if latest_summary is not None:
             summaries.append(latest_summary)
         if plan.use_summaries:
-            searched = await self.stores.summaries.search(
-                user_id, query, 3, query_embedding
+            searched = await _best_effort(
+                "summaries.search",
+                self.stores.summaries.search(user_id, query, 3, query_embedding),
+                (),
             )
             known_ids = {item["id"] for item in summaries}
             summaries.extend(item for item in searched if item["id"] not in known_ids)
         if summaries:
             context["summaries"] = summaries[:3]
         if plan.use_procedures:
-            context["procedures"] = await self.stores.procedures.search(
-                user_id, query, 3, query_embedding
+            context["procedures"] = await _best_effort(
+                "procedures.search",
+                self.stores.procedures.search(user_id, query, 3, query_embedding),
+                (),
             )
         if plan.use_toolbox:
-            context["toolbox"] = await self.toolbox.search_descriptors(
-                user_id, query, None, 3, query_embedding
+            context["toolbox"] = await _best_effort(
+                "toolbox.search_descriptors",
+                self.toolbox.search_descriptors(
+                    user_id, query, None, 3, query_embedding
+                ),
+                (),
             )
         return self._apply_context_budget(context)
 

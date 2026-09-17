@@ -43,3 +43,45 @@ async def test_undo_with_no_tasks_still_takes_back_the_last_change():
     outcome = await service._manage_tasks("ani", ManageTasksAction(operation="undo"))
     assert outcome["kind"] == "undone", outcome
     assert service.memory.deleted == ["m1"]
+
+
+class _Scheduled:
+    def __init__(self):
+        self.deleted = []
+
+    async def list_for_user(self, user_id, enabled_only=False):
+        return []
+
+    async def latest_undoable(self, user_id, conversation_id=None):
+        return {
+            "id": "c2",
+            "kind": "scheduled",
+            "operation": "create",
+            "before": None,
+            "after": {"id": "t9", "instruction": "stretch at 18:00"},
+            "task_id": "t9",
+        }
+
+    async def delete_owned(self, user_id, task_id):
+        self.deleted.append(task_id)
+        return True
+
+    async def mark_undone(self, user_id, change_id):
+        return True
+
+    async def record_change(self, *args, **kwargs):
+        return {}
+
+
+@pytest.mark.asyncio
+async def test_a_fresh_schedule_is_removed_by_undo() -> None:
+    service = ConversationService.__new__(ConversationService)
+    service.scheduled_tasks = _Scheduled()
+    service.memory = None
+    service.discovery_runs = None
+    service.main_action_selector = None
+    outcome = await service._manage_tasks("ani", ManageTasksAction(operation="undo"))
+    assert outcome["kind"] == "undone", outcome
+    assert service.scheduled_tasks.deleted == ["t9"], (
+        "undo must delete the created reminder"
+    )

@@ -99,11 +99,18 @@ def _response_schema(
 ) -> dict[str, Any]:
     schema = response_type.model_json_schema()
     slides = schema.get("properties", {}).get("slides")
-    # An exact requested count is a bound the grammar can enforce directly
-    # instead of validating and re-prompting after generation.
-    if expected_slide_count is not None and isinstance(slides, dict):
-        slides["minItems"] = expected_slide_count
-        slides["maxItems"] = expected_slide_count
+    if isinstance(slides, dict):
+        if expected_slide_count is not None:
+            # An exact requested count is a bound the grammar can enforce
+            # directly instead of validating and re-prompting after generation.
+            slides["minItems"] = expected_slide_count
+            slides["maxItems"] = expected_slide_count
+        else:
+            # A brief that names no count gets the documented default band, so
+            # a one-line brief cannot come back as a thirty-slide deck while
+            # the prompt promises three to eight.
+            slides["minItems"] = 3
+            slides["maxItems"] = 8
     if required_layout is not None:
         _require_layout_fields(schema, required_layout)
     return schema
@@ -606,6 +613,9 @@ class LLMPresentationProvider(PresentationProvider):
             # `lease=False` says the caller already holds the deck's lease. The
             # Redis lock is not reentrant, so acquiring again here would wait on
             # a lock this same call stack is holding, which never clears.
+            # Greedy: the same brief must render the same deck, not a new one
+            # on every rebuild, which is what the provider's sampling default
+            # produced (review, 2026-09-17).
             if lease and self.model_gate is not None and self.background:
                 async with self.model_gate.background():
                     result = await asyncio.to_thread(
@@ -613,6 +623,7 @@ class LLMPresentationProvider(PresentationProvider):
                         messages,
                         max_tokens or self.max_tokens,
                         schema,
+                        0.0,
                     )
             else:
                 result = await asyncio.to_thread(
@@ -620,6 +631,7 @@ class LLMPresentationProvider(PresentationProvider):
                     messages,
                     max_tokens or self.max_tokens,
                     schema,
+                    0.0,
                 )
             content = result.get("content")
             try:

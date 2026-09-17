@@ -4409,7 +4409,15 @@ class ConversationService:
                     "requested": action.which,
                 }
             before = next(item for item in taught if item["id"] == chosen)
-            await self.skills.delete_owned(user_id, chosen)
+            removed = await self.skills.delete_owned(user_id, chosen)
+            if not removed:
+                # The datastore refused or the skill is already gone: do not
+                # claim a deletion that never happened.
+                return {
+                    "kind": "not_found",
+                    "skills": taught,
+                    "requested": action.which,
+                }
             return {"kind": "deleted", "skill": before}
         except Exception as exc:
             logger.warning(
@@ -4939,6 +4947,19 @@ class ConversationService:
         task = await self.scheduled_tasks.create(
             user_id, action.instruction, cadence, channel
         )
+        # A fresh reminder is a change the person can take back: without a
+        # receipt "undo that" right after the confirmation either answered
+        # "nothing to undo" or undid an older memory save instead (review,
+        # 2026-09-17).
+        await self.scheduled_tasks.record_change(
+            user_id,
+            "scheduled",
+            "create",
+            None,
+            task,
+            task_id=task["id"],
+            conversation_id=_turn_conversation.get(),
+        )
         return {"kind": "scheduled", "task": task}
 
     # List, or change one task the person named by meaning. Which task they
@@ -4976,11 +4997,23 @@ class ConversationService:
         if not selected:
             return {"kind": "not_found", "tasks": tasks, "requested": action.which}
         if action.operation == "cancel":
+            cancelled: list[dict[str, Any]] = []
             for before in selected:
-                await self.scheduled_tasks.delete_owned(user_id, before["id"])
+                removed = await self.scheduled_tasks.delete_owned(user_id, before["id"])
+                if not removed:
+                    # A row already gone (or refused) must not be reported as
+                    # cancelled; the change log would point at nothing.
+                    continue
                 await self.scheduled_tasks.record_change(
                     user_id, "task", "cancel", before, None, task_id=before["id"], conversation_id=_turn_conversation.get())
-            return {"kind": "cancelled", "tasks": selected}
+                cancelled.append(before)
+            if not cancelled:
+                return {
+                    "kind": "not_found",
+                    "tasks": selected,
+                    "requested": action.which,
+                }
+            return {"kind": "cancelled", "tasks": cancelled}
         if action.operation == "reschedule":
             moved: list[dict[str, Any]] = []
             first_failure: dict[str, Any] | None = None
@@ -4997,14 +5030,22 @@ class ConversationService:
             # No task moved; report what stopped it (a missing place, an
             # invalid cadence) rather than claiming a move that never happened.
             return {**(first_failure or {}), "kind": first_failure.get("kind") if first_failure else "not_found", "tasks": selected}
+        changed: list[dict[str, Any]] = []
         for before in selected:
-            await self.scheduled_tasks.set_enabled(
+            flipped = await self.scheduled_tasks.set_enabled(
                 user_id, before["id"], action.operation == "resume"
             )
+            if not flipped:
+                # A task that refused the change (missing, not owned) must not
+                # be reported as paused or resumed.
+                continue
             task = await self.scheduled_tasks.get_owned(user_id, before["id"]) or before
             await self.scheduled_tasks.record_change(
                 user_id, "task", action.operation, before, task, task_id=before["id"], conversation_id=_turn_conversation.get())
-        return {"kind": f"{action.operation}d", "tasks": selected}
+            changed.append(task)
+        if not changed:
+            return {"kind": "not_found", "tasks": selected, "requested": action.which}
+        return {"kind": f"{action.operation}d", "tasks": changed}
 
     # Put back what the most recent change replaced: a cancelled reminder is
     # re-created from its snapshot, a moved one moves back, a paused one
@@ -5032,6 +5073,26 @@ class ConversationService:
             return {"kind": "nothing_to_undo"}
         before, after = change.get("before"), change.get("after")
         restored: dict[str, Any] | None = None
+        if change["kind"] == "scheduled":
+            # A reminder created this turn is undone by removing it: there is
+            # nothing earlier to put back (review, 2026-09-17).
+            task_id = str((after or {}).get("id") or "")
+            if not task_id:
+                return {"kind": "failed"}
+            removed = await self.scheduled_tasks.delete_owned(user_id, task_id)
+            if not removed:
+                return {"kind": "nothing_to_undo"}
+            await self.scheduled_tasks.mark_undone(user_id, change["id"])
+            await self.scheduled_tasks.record_change(
+                user_id,
+                change["kind"],
+                "undo",
+                after,
+                None,
+                task_id=change.get("task_id"),
+                conversation_id=_turn_conversation.get(),
+            )
+            return {"kind": "undone", "change": change, "task": after}
         if change["kind"] == "memory":
             receipt = after or {}
             if receipt.get("undoable") is False:

@@ -66,15 +66,16 @@ class _Budget:
 
 
 class _Inner:
-    def __init__(self, quota: bool = False) -> None:
+    def __init__(self, quota: bool = False, provider: str = "tavily") -> None:
         self.quota = quota
+        self.provider = provider
 
     def is_enabled(self) -> bool:
         return True
 
     async def search(self, query, max_results=None):
         if self.quota:
-            raise SearchProviderQuotaError("432")
+            raise SearchProviderQuotaError("432", provider=self.provider)
         return SearchResults(query=query, results=(), provider="test")
 
 
@@ -114,6 +115,22 @@ async def test_the_providers_refusal_marks_the_pool_spent_and_reads_as_the_month
         current_search_identity.reset(token)
     assert refused.value.window == "this month"
     assert budget.reconciled == [1000], "the pool is marked spent to the ceiling"
+
+
+@pytest.mark.asyncio
+async def test_another_rungs_refusal_does_not_poison_the_pool() -> None:
+    budget = _Budget()
+    provider = BudgetedSearchProvider(  # type: ignore[arg-type]
+        _Inner(quota=True, provider="google"), budget, 1
+    )
+    token = current_search_identity.set(GUEST)
+    try:
+        with pytest.raises(SearchBudgetExceededError) as refused:
+            await provider.search("anything")
+    finally:
+        current_search_identity.reset(token)
+    assert refused.value.window == "this month"
+    assert budget.reconciled == [], "a Google 429 must not mark the Tavily pool spent"
 
 
 class _Redis:

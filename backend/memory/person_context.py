@@ -20,11 +20,14 @@ object refuses to hand a non-leaving entry to the first.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 
 from backend.memory.purposes import CONSTRAINT_PURPOSE
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # How many interests the query composer is shown as advice - only so the
 # list stays a list - and how many the interest judgement may choose from.
@@ -203,6 +206,12 @@ async def build_person_context(
                         Known(label, "interest", "stated", "discovery_profile", may_leave=True)
                     )
         except Exception:
+            # A failed profile read must be audible: without it the interests
+            # silently empty and every recommendation reads as though the
+            # person has none.
+            logger.warning(
+                "person_context_interests_unreadable", extra={"user": user_id}
+            )
             interests = []
 
     preferences: list[Known] = []
@@ -224,6 +233,12 @@ async def build_person_context(
                         )
                     )
         except Exception:
+            # Preferences and constraints carry the data that must never be
+            # crossed (allergies, budget caps); a failed read dropping them
+            # silently is a fail-open on exactly that data, so say so.
+            logger.warning(
+                "person_context_preferences_unreadable", extra={"user": user_id}
+            )
             preferences = []
 
     described = ""

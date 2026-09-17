@@ -24,9 +24,12 @@ separate, permissioned stage.
 
 import asyncio
 import json
+import logging
 from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, time
 from typing import Any, Protocol
+
+logger = logging.getLogger(__name__)
 
 from backend.agents.scout.aiming import AimPlanner
 from backend.agents.scout.describing import EventDescriber, Readable
@@ -867,7 +870,17 @@ class DiscoveryRunner:
         )
         try:
             return await source.fetch()
-        except Exception:
+        except Exception as exc:
+            # A search infrastructure failure must not look like "the internet
+            # had nothing" - an empty digest is indistinguishable from an
+            # outage, which is how three days of silent zero-find sweeps went
+            # unremarked. Log it, and remember it so the run can name the cause.
+            logger.warning(
+                "discovery_search_source_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
             return ()
 
     # Embed candidates for both novelty and ranking, in one batch rather than

@@ -5,7 +5,7 @@ from typing import Any
 
 from backend.core.interfaces import SearchProvider
 from backend.search.budgeted import SearchProviderQuotaError
-from backend.search.types import SearchResult, SearchResults
+from backend.search.types import SearchResult, SearchResults, frugal_search
 from backend.services.mcp_invocation_service import MCPInvocationService
 
 
@@ -68,10 +68,17 @@ class MCPWebSearchProvider(SearchProvider):
         if not self.is_enabled():
             raise RuntimeError("The MCP internet-search server is not available.")
         bounded = max(1, min(max_results or self.max_results, self.max_results))
+        # The frugal flag rides in the arguments: a ContextVar set here cannot
+        # cross into the internet MCP subprocess, which is where Tavily decides
+        # the depth it bills (review, 2026-09-17).
         result = await self.invocation.invoke(
             self.server_id,
             self.tool_name,
-            {"query": query, "max_results": bounded},
+            {
+                "query": query,
+                "max_results": bounded,
+                "frugal": frugal_search.get(),
+            },
         )
         if result.is_error:
             raise RuntimeError("The MCP internet-search tool returned an error.")
@@ -82,7 +89,8 @@ class MCPWebSearchProvider(SearchProvider):
         if isinstance(payload, dict) and payload.get("error") == "quota_exhausted":
             raise SearchProviderQuotaError(
                 f"The search provider refused: plan limit reached "
-                f"(HTTP {payload.get('status', '?')})."
+                f"(HTTP {payload.get('status', '?')}).",
+                provider=str(payload.get("provider") or "tavily"),
             )
         raw_results = payload.get("results") if isinstance(payload, dict) else None
         raw_provider = payload.get("provider") if isinstance(payload, dict) else None

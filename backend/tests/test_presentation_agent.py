@@ -126,6 +126,7 @@ class StubPlanningLLM:
         messages: list[dict[str, str]],
         max_tokens: int = 1_024,
         response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         self.requests.append((messages, max_tokens))
         self.schemas.append(response_schema)
@@ -217,9 +218,12 @@ async def test_compact_plan_sends_a_constraining_response_schema() -> None:
     assert slide_schema["properties"]["notes"]["type"] == "string"
 
 
-# An unconstrained slide count leaves the array bounds to the declared model.
+# A brief that names no count still gets the documented 3-8 band, so a
+# one-line brief cannot come back as a thirty-slide deck while the prompt
+# promises three to eight (review, 2026-09-17).
 @pytest.mark.asyncio
-async def test_compact_plan_schema_omits_bounds_without_a_requested_count() -> None:
+async def test_compact_plan_enforces_the_default_band_without_a_requested_count(
+) -> None:
     llm = StubPlanningLLM([{"content": json.dumps(_compact_plan(3))}])
     provider = LLMPresentationProvider(
         llm,  # type: ignore[arg-type]
@@ -229,8 +233,8 @@ async def test_compact_plan_schema_omits_bounds_without_a_requested_count() -> N
     await provider.create("create a presentation on horses")
     schema = llm.schemas[0]
     assert schema is not None
-    assert schema["properties"]["slides"]["minItems"] == 1
-    assert schema["properties"]["slides"]["maxItems"] == 30
+    assert schema["properties"]["slides"]["minItems"] == 3
+    assert schema["properties"]["slides"]["maxItems"] == 8
 
 
 # Verify a wrong slide count receives one bounded compact-plan correction.

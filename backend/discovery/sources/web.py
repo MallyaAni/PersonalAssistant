@@ -23,7 +23,10 @@ boundary like any feed.
 
 from collections.abc import Iterable
 from datetime import UTC, datetime
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # One date parser, in core, imported by everything that reads a date out of
 # text (backend/core/dates.py).
@@ -98,8 +101,16 @@ class WebEventSource(EventSource):
                 results = await self.search.search(
                     query, max_results=MAX_RESULTS_PER_QUERY
                 )
-            except Exception:
-                # One failed query degrades coverage, never the sweep.
+            except Exception as exc:
+                # One failed query degrades coverage, never the sweep - but the
+                # failure must be audible, or an exhausted search reads as "the
+                # internet had nothing". An all-exhausted sweep logs every query.
+                logger.warning(
+                    "discovery_search_query_failed source=%s query=%r error=%s",
+                    self._source_id,
+                    query,
+                    exc,
+                )
                 continue
             events.extend(
                 _events_from(self._source_id, results.results, seen_urls, self.region)

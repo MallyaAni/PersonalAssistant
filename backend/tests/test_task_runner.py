@@ -45,9 +45,13 @@ class _Harness:
         async def fake_address(user_id):
             return address
 
+        async def fake_mark_delivered(run_id):
+            return True
+
         monkeypatch.setattr(self.runner, "_turn", fake_turn)
         monkeypatch.setattr(self.runner, "_finish", fake_finish)
         monkeypatch.setattr(self.runner, "_address_for", fake_address)
+        monkeypatch.setattr(self.runner, "_mark_delivered", fake_mark_delivered)
 
     async def _invoke(self, tool, arguments):
         self.sent.append(arguments)

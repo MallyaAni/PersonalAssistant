@@ -397,10 +397,31 @@ class ScheduledTaskRepository:
             # is worse than nothing, and the person cannot tell it from a bug.
             # The slot is skipped; the task itself has already moved on.
             if slot is not None and (moment - slot).total_seconds() > stale_after:
-                logger.info(
-                    "scheduled_task_slot_stale",
-                    extra={"task": str(task.id), "slot": slot.isoformat()},
+                if task.cadence != "once":
+                    logger.info(
+                        "scheduled_task_slot_stale",
+                        extra={"task": str(task.id), "slot": slot.isoformat()},
+                    )
+                    continue
+                # A one-time reminder IS its single slot: silently dropping it
+                # means it never arrives and never explains itself, which is
+                # the one outcome the runner's own apology rule forbids. A
+                # stale once-task is enqueued for an apology instead (review,
+                # 2026-09-17).
+                run = ScheduledTaskRun(
+                    task_id=task.id,
+                    user_id=task.user_id,
+                    status="queued",
+                    scheduled_for=slot,
+                    error_code="missed_slot",
                 )
+                self.session.add(run)
+                try:
+                    await self.session.flush()
+                except IntegrityError:
+                    await self.session.rollback()
+                    continue
+                created.append(_run_dict(run))
                 continue
             run = ScheduledTaskRun(
                 task_id=task.id,
@@ -418,12 +439,24 @@ class ScheduledTaskRepository:
         await self.session.commit()
         return created
 
+    # A delivery the worker recorded is permanent: stamp it so a crash
+    # between sending the bubbles and closing the row cannot let the next
+    # worker send them all over again. Runs in its own transaction, so the
+    # record survives whatever happens to the caller right after.
+    async def mark_delivered(self, run_id: str, worker_id: str) -> bool:
+        run = await self.session.get(ScheduledTaskRun, uuid.UUID(str(run_id)))
+        if run is None or run.worker_id != worker_id:
+            return False
+        run.delivered_at = datetime.now(UTC)
+        await self.session.commit()
+        return True
+
     # Take the oldest claimable run: queued, or running with a lapsed lease.
     #
     # A run whose delivery already happened is never re-claimed, whatever its
-    # lease says: `finish` is the only thing that closes a run, so a worker
-    # killed between sending the bubbles and closing the row would otherwise
-    # have the next worker send them all over again.
+    # lease says: `mark_delivered` records the send the moment it returns, so
+    # a worker killed between sending the bubbles and closing the row would
+    # otherwise have the next worker send them all over again.
     async def claim_next(
         self, worker_id: str, lease_seconds: float, now: datetime | None = None
     ) -> dict[str, Any] | None:
@@ -437,7 +470,8 @@ class ScheduledTaskRepository:
                         ScheduledTaskRun.status == "queued",
                         (ScheduledTaskRun.status == "running")
                         & (ScheduledTaskRun.lease_expires_at < moment),
-                    )
+                    ),
+                    ScheduledTaskRun.delivered_at.is_(None),
                 )
                 .order_by(ScheduledTaskRun.scheduled_for.asc())
                 .with_for_update(skip_locked=True)

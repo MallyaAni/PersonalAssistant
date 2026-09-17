@@ -58,6 +58,7 @@ class RecordingPlanningLLM:
         messages: list[dict[str, str]],
         max_tokens: int = 1_024,
         response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         with self.lock:
             self.tally["running"] += 1

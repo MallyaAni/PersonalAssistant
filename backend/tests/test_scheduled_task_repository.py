@@ -116,6 +116,77 @@ async def test_once_task_disables_itself_after_its_slot():
         await _cleanup(user_id)
 
 
+# A one-time reminder whose only slot passed while nothing was running is
+# not dropped silently: it is enqueued for an apology, so the person hears
+# it was missed rather than never hearing about it at all.
+@pytest.mark.asyncio
+async def test_a_stale_once_task_is_enqueued_for_an_apology():
+    user_id = f"task_{uuid.uuid4().hex[:12]}"
+    try:
+        moment = datetime.now(UTC)
+        async with AsyncSessionLocal() as session:
+            repo = ScheduledTaskRepository(session)
+            once = Cadence(
+                cadence="once",
+                hour=9,
+                weekday=0,
+                timezone=_ZONE,
+                on_date=(datetime.now(UTC) + timedelta(days=2)).date(),
+            )
+            task = await repo.create(user_id, "file taxes", once, "imessage")
+            await session.execute(
+                update(ScheduledTask)
+                .where(ScheduledTask.id == uuid.UUID(task["id"]))
+                .values(next_run_at=moment - timedelta(minutes=30))
+            )
+            await session.commit()
+            runs = _mine(
+                await repo.enqueue_due_runs(now=moment, stale_after_seconds=60),
+                user_id,
+            )
+            assert len(runs) == 1
+            assert runs[0]["error_code"] == "missed_slot"
+            after = await repo.get_owned(user_id, task["id"])
+            assert after["enabled"] is False, (
+                "a once-task stays disabled after its slot"
+            )
+    finally:
+        await _cleanup(user_id)
+
+
+# A delivered run is never re-claimed, whatever its lease says: a worker
+# killed after recording the send must not cause a second delivery.
+@pytest.mark.asyncio
+async def test_a_delivered_run_is_never_re_claimed():
+    user_id = f"task_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = ScheduledTaskRepository(session)
+            task = await repo.create(user_id, "stretch", _daily(), "imessage")
+            await _force_due(user_id)
+            await repo.enqueue_due_runs()
+        async with AsyncSessionLocal() as session:
+            repo = ScheduledTaskRepository(session)
+            run = await repo.claim_next("worker-a", 60)
+            assert run and run["user_id"] == user_id
+            assert await repo.mark_delivered(run["id"], "worker-a") is True
+        async with AsyncSessionLocal() as session:
+            # Simulate a dead worker whose lease lapsed after sending.
+            await session.execute(
+                update(ScheduledTaskRun)
+                .where(ScheduledTaskRun.id == uuid.UUID(run["id"]))
+                .values(lease_expires_at=datetime.now(UTC) - timedelta(seconds=1))
+            )
+            await session.commit()
+        async with AsyncSessionLocal() as session:
+            again = await ScheduledTaskRepository(session).claim_next("worker-b", 60)
+            assert again is None or again["user_id"] != user_id, (
+                "delivered run is not re-claimed"
+            )
+    finally:
+        await _cleanup(user_id)
+
+
 # Two workers polling at once must not both take the same run, and a
 # finished run stamps its task with the outcome.
 @pytest.mark.asyncio

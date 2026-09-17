@@ -176,3 +176,29 @@ async def test_the_internet_server_reports_the_brave_meter(monkeypatch, tmp_path
     payload = json.loads(await internet.search_credits())
     assert payload["brave"] == {"used": 1, "limit": 900, "remaining": 899, "period": "this calendar month, counted locally under the free credit"}
     assert payload["order"] == "brave,google,tavily"
+
+
+# A provider the meter already knows is spent is not probed first on every
+# search: the chain is built without it, so an out-of-credits Tavily does not
+# burn a refused call ahead of the rung that can still answer.
+def test_a_provider_the_meter_knows_is_spent_is_skipped_in_the_chain(
+    monkeypatch,
+) -> None:
+    from backend.mcp.servers import internet
+
+    monkeypatch.setenv("SEARCH_PROVIDER_ORDER", "tavily,brave,google")
+    for name in ("tavily", "brave", "google"):
+        internet._clear_provider_exhausted(name)
+    try:
+        internet._mark_provider_exhausted("tavily")
+        chain = internet._build_search_provider().chain
+        names = [type(p).__name__ for p in chain]
+        assert "TavilySearchProvider" not in names, (
+            "an exhausted Tavily is skipped, not probed"
+        )
+        assert names[0] == "BraveSearchProvider", (
+            "the next rung leads when Tavily is spent"
+        )
+    finally:
+        for name in ("tavily", "brave", "google"):
+            internet._clear_provider_exhausted(name)
