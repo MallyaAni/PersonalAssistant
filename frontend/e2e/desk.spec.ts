@@ -1947,3 +1947,37 @@ test('details splits into plan and research and the simple page carries only dec
   await expect(page.getByText('Stock rankings')).toBeVisible()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
+
+
+// The page must work on a phone: at 400px nothing scrolls sideways on
+// the board, with every grade in detail open, on the research page, or
+// with a name panel open. Tables may scroll inside their own box.
+const noSidewaysScroll = async (page: Page, where: string) => {
+  const widths = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
+    main: (document.querySelector('main') as HTMLElement | null)?.scrollWidth ?? 0}))
+  expect(widths.scroll, `${where}: page`).toBeLessThanOrEqual(widths.client + 1)
+  expect(widths.main, `${where}: main`).toBeLessThanOrEqual(widths.client + 1)
+}
+test('the desk fits a phone without sideways scrolling', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.setViewportSize({width: 400, height: 800})
+  await page.goto('/#desk')
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
+  await noSidewaysScroll(page, 'stocks')
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  await expect(page.getByText('Open the full panel')).toBeVisible()
+  await noSidewaysScroll(page, 'row open')
+  await page.getByRole('button', {name: 'Details', exact: true}).click()
+  await expect(page.getByText('Stock rankings')).toBeVisible()
+  await noSidewaysScroll(page, 'details open')
+  await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+  const dialog = page.getByRole('dialog', {name: 'AAPL history'})
+  await expect(dialog).toBeVisible()
+  await noSidewaysScroll(page, 'name panel')
+  await page.getByRole('button', {name: 'Close', exact: true}).click()
+  await page.getByRole('button', {name: 'Research', exact: true}).click()
+  await expect(page.getByText('Performance & practice account', {exact: true})).toBeVisible()
+  await page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true }))
+  await noSidewaysScroll(page, 'research')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-16 — The desk on a phone, and the name panel's plan line is the real one
+
+Read the live page at 400px in every state: the board, a row opened in
+place, every grade in detail, a name panel, the research page. Nothing
+scrolls sideways; wide tables scroll inside their own box. A browser test
+now pins that at phone width. Fixes from the read: the name panel's "In
+short" plan line said "decision unavailable" because it was given an
+empty account; it now takes the recorded positions and equity, so it says
+what the board says. The headline was said twice under the badges and in
+"In short"; once now. The market-risk note's second line was unreadable
+in the dark theme on its cream background. Desk browser suite 58/58.
+
 ## 2026-09-16 — One page: the board with rows that open in place, the plan beneath, research a link away; the name panel in four lines
 
 The Stocks / Plan / Research split is gone. The desk is one page: the

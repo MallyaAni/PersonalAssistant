@@ -363,7 +363,7 @@ const RegimeBanner = ({ regime, session }: { regime: DeskRecord['regime']; sessi
   return (
     <section className="rounded-xl border border-[#9a6200]/30 bg-[#fff6e5] px-3 py-2" role="note">
       <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {session} close · {flags.length} flags</summary>
-      <p className="mt-1 text-xs">Reassessed nightly. Intraday research sizing has its own dated inputs.</p>
+      <p className="mt-1 text-xs text-[#7a5200]">Reassessed nightly. Intraday research sizing has its own dated inputs.</p>
       <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#7a5200]">
         {flags.map((flag) => (
           <li key={flag}>{FLAG_WORDS[flag] ?? flag}</li>
@@ -1243,6 +1243,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           userId={userId}
           ticker={openName}
           paused={Boolean(eventPaused)}
+          holdings={holdingsReady ? holdings : null}
+          equity={equity}
           latest={latest}
           row={rows.find((r) => r.ticker === openName) ?? null}
           live={live}
@@ -2371,6 +2373,8 @@ const NameDetail = ({
   decisions,
   now = Date.now(),
   paused = false,
+  holdings = null,
+  equity = 0,
 }: {
   userId: string
   ticker: string
@@ -2383,6 +2387,8 @@ const NameDetail = ({
   decisions?: DeskDecisions
   now?: number
   paused?: boolean
+  holdings?: DeskHolding[] | null
+  equity?: number
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
   const [error, setError] = useState('')
@@ -2438,7 +2444,6 @@ const NameDetail = ({
               {row.grade_live}
               <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `indicative · evening ${row.grade}` : 'evening decision'}</span>
             </span>
-            {row.why && <span className="text-xs text-[#6e6e73]">{row.why}</span>}
           </div>
         )}
         {!row && latest.grades?.[ticker] && (
@@ -2461,7 +2466,7 @@ const NameDetail = ({
           <p className="font-medium text-[#1d1d1f]">{latest.grades[ticker].headline}</p>
           <ul className="mt-1 space-y-0.5 text-xs text-[#1d1d1f]">{(latest.grades[ticker].reason ?? '').split('\n').filter(Boolean).map(line => <li key={line}>{line}</li>)}</ul>
           <div className="mt-2 text-xs text-[#6e6e73]">
-            {row ? <DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={null} equity={0} now={now} /> : 'Not on the board'}
+            {row ? <DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdings} equity={equity} now={now} /> : 'Not on the board'}
           </div>
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${money(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
