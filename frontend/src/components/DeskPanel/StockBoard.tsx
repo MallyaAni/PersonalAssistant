@@ -53,6 +53,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const [shares, setShares] = useState('')
   const [price, setPrice] = useState('')
   const [date, setDate] = useState(today)
+  const [showAvoid, setShowAvoid] = useState(false)
   const pending = useRef(false)
   // A research size is shown only while it is current for that one name: the
   // allocation was built on a single bar, so a name whose own live quote does
@@ -107,8 +108,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const emptyAccount = holdings !== null && holdings.length === 0
   const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
-  const ranked = [...stocks]
-  ranked.splice(cashIndex < 0 ? ranked.length : cashIndex, 0, cash)
+  // A grade C is "avoid it"; on a ninety-name board those rows are two
+  // thirds of the page and say the same thing. They fold unless the account
+  // holds the name. Small boards show everything.
+  const foldAvoid = stocks.length > 20 && !showAvoid
+  const avoided = foldAvoid ? stocks.filter(stock => stock.grade === 'C' && !holdings?.some(position => position.ticker === stock.ticker)) : []
+  const shown = foldAvoid ? stocks.filter(stock => !avoided.includes(stock)) : stocks
+  const ranked = [...shown]
+  ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
   const bar = researchCurrent ? research!.bar : live.data_at
   const time = bar ? new Date(bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
@@ -136,10 +143,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               : paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
               : action(row.ticker, row.weight)}</td>
             <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
-            <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="rounded-full bg-[#0071e3] px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
+            <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
         })}</tbody>
       </table>
+      {(avoided.length > 0 || (showAvoid && stocks.length > 20)) && <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setShowAvoid(!showAvoid)}>
+        {showAvoid ? 'Hide the grade C names' : `Show ${avoided.length} more · grade C, avoid`}
+      </button>}
     </div>
     <BoardSimulation paper={paper} now={now} />
     {holdings === null && <p role="alert" className="px-3 py-2 text-xs text-[#b42318]">{holdingsError ?? 'Positions unavailable. Recording is disabled.'}</p>}

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-16 — Less on the page: a today line, the three accounts named once, C grades folded, readings folded
+
+The page had too much going on. First on every view now is one line
+that says what the desk is doing and whether there is anything to do:
+"Market closed · 9 FOMC restorations fill at the open. Nothing for you to
+do until the open." or "No positions recorded yet, so the plan compares
+against an empty account." On the board the sixty-odd grade C names fold
+behind "Show 63 more · grade C, avoid" (a held name stays), and the
+Record control is a text link rather than ninety blue buttons. Research
+opens by naming its three simulated accounts once (practice account,
+board simulation, ML paper comparison) so the three dollar figures stop
+competing. In the name panel the live read's three bullet columns fold
+under "All readings, by timeframe", since the prose and the evening
+analysis already say it. After the close, a missing IEX quote reads "No
+usable quote after the close" rather than "Invalid or empty quote" with
+a ten-percent spread. Forward evidence states its caveats once instead
+of once per candidate. Desk browser suite 57/57.
+
 ## 2026-09-16 — A release re-read under a new prompt is a data revision the record names
 
 PANW's Sep 2 release was scored 1.0 on guidance and demand; on 09-11 the

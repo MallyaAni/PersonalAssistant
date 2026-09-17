@@ -1270,6 +1270,7 @@ test('drills into a covered name outside the book and sees its live horizons', a
   // candle even though the evening record says C.
   await expect(dialog.getByText('Bindicative intraday grade', { exact: true })).toBeVisible()
   await expect(dialog.getByText('Technical read')).toBeVisible()
+  await dialog.getByText('All readings, by timeframe').click()
   await expect(dialog.getByText('Daily chart', { exact: true })).toBeVisible()
   await expect(dialog.getByText('Weekly chart', { exact: true })).toBeVisible()
   await expect(dialog.getByText('Longer-term reference levels')).toBeVisible()
@@ -1573,6 +1574,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   candle = 1
   await page.clock.fastForward('15:00')
   await expect(dialog.getByText('A breakdown has broken support — the rally is over.', { exact: false })).toBeVisible()
+  await dialog.getByText('All readings, by timeframe').click()
   await expect(dialog.getByText('4.1% below the 21-day EMA', { exact: false })).toBeVisible()
   await expect(dialog.getByText(/\$110/)).toBeVisible()
   await expect(dialog.getByText(/Technical rank at the available candle/)).toContainText('20')
@@ -1914,6 +1916,10 @@ test('details splits into plan and research and the simple page carries only dec
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
+  // The first line says what the desk is doing and whether there is anything to do.
+  const today = page.getByLabel('Today')
+  await expect(today).toContainText(/Market (open|closed)/)
+  await expect(today).toContainText(/rebalance/)
   await expect(page.getByLabel('ML forward comparison')).toHaveCount(0)
   await expect(page.getByLabel('Board simulation')).toHaveCount(0)
   await page.getByRole('button', {name: 'Details', exact: true}).click()
@@ -1924,6 +1930,7 @@ test('details splits into plan and research and the simple page carries only dec
   await expect(page.getByText('Performance & practice account', {exact: true})).toHaveCount(0)
   await page.getByRole('button', {name: 'Research', exact: true}).click()
   await expect(page.getByText('Performance & practice account', {exact: true})).toBeVisible()
+  await expect(page.getByLabel('What the research accounts are')).toContainText('Three simulated accounts')
   await expect(page.getByText('Stock rankings')).toHaveCount(0)
   await page.getByRole('button', {name: 'Plan', exact: true}).click()
   await expect(page.getByText('Stock rankings')).toBeVisible()

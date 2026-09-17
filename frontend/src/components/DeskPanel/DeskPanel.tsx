@@ -912,6 +912,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // The board keeps its sizes during a cycle, at the exposure the desk holds.
   // The exposure is unknown when the calendar is missing or when an active
   // cycle's current policy status has not been read.
+  const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
+    ? Object.values(decisions.rows).filter(row => row.action === 'Buy eligible' && Date.parse(row.valid_until ?? '') > now).length : 0
+  const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
+    exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
+    decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
+  } : null} eventLive={eventLive} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0} countdown={countdown} rebalanceDue={rebalanceDue}
+    holdings={holdingsReady ? holdings.length : null} eligible={eligibleNow} /> : null
   const boardEvent: BoardEvent | null = eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null,
@@ -919,6 +926,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   } : null
 
   if (latest && !advanced) return <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 sm:p-4">
+    {todayLine}
     <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />
     <header className="flex shrink-0 items-center justify-between gap-2">
       <h2 className="text-xl font-semibold">Desk</h2>
@@ -945,6 +953,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
+      {todayLine}
       <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
@@ -1203,6 +1212,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </>}
 
       {research && <>
+      <section aria-label="What the research accounts are" className="rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs text-[#6e6e73]">
+        <p><span className="font-medium text-[#1d1d1f]">Three simulated accounts, none real money.</span> The <span className="font-medium text-[#1d1d1f]">practice account</span> is the desk itself at the paper broker: its orders, fills and equity are the ones this page plans against. The <span className="font-medium text-[#1d1d1f]">board simulation</span> replays the 15-minute board's sizes as research. The <span className="font-medium text-[#1d1d1f]">ML paper comparison</span> runs frozen models beside SPY and cash and never trades.</p>
+      </section>
       {latest && <details className="rounded-xl border border-black/[0.08] px-3 py-2 text-xs">
         <summary className="cursor-pointer font-medium">Inflation · {payload.economics?.assessment?.status === 'model_assessment' && !payload.economics.collection_stale && Date.now() - Date.parse(payload.economics.observed_at) < 36 * 3600000 ? payload.economics.assessment.pressure : 'unavailable'} · research</summary>
         <EconomicContext data={payload.economics} />
@@ -1723,7 +1735,9 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
       <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
       <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
       <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
-      <div>{row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</div>
+      <div>{!marketOpenNow(now) && row.quote.reason && /market closed|invalid or empty|unavailable/i.test(row.quote.reason)
+        ? 'No usable quote after the close; sizes use the last completed bar'
+        : <>{row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</>}</div>
       {row.valid_until && <div>Expires {executionTime(row.valid_until)}</div>}
     </details>
   </div>
@@ -2087,11 +2101,16 @@ const LiveTechnical = ({
       {fl ? (
         <>
           {read && <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>}
-          <div className="grid gap-3 sm:grid-cols-3">
-            {column('Daily chart', fl.short)}
-            {column('Weekly chart', fl.medium)}
-            {column('Longer-term reference levels', fl.long)}
-          </div>
+          {/* The readings behind the prose, folded: the paragraph and the
+              evening analysis already carry them in words. */}
+          <details className="mt-2">
+            <summary className="cursor-pointer text-xs text-[#0071e3]">All readings, by timeframe</summary>
+            <div className="mt-2 grid gap-3 sm:grid-cols-3">
+              {column('Daily chart', fl.short)}
+              {column('Weekly chart', fl.medium)}
+              {column('Longer-term reference levels', fl.long)}
+            </div>
+          </details>
         </>
       ) : read ? (
         <p className="whitespace-pre-line text-sm leading-relaxed text-[#1d1d1f]">{read}</p>
@@ -2297,6 +2316,43 @@ const GradeMove = ({changes, session, reads, revision}: {
       {revised && <p className="mt-1 text-[11px] text-[#9a6200]">{revised}</p>}
     </section>
   )
+}
+
+// Whether the exchange is open right now, on New York time.
+const marketOpenNow = (now: number) => {
+  const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false}).formatToParts(new Date(now))
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
+  const weekday = get('weekday')
+  const minutes = Number(get('hour')) * 60 + Number(get('minute'))
+  return !['Sat', 'Sun'].includes(weekday) && minutes >= 9 * 60 + 30 && minutes < 16 * 60
+}
+
+// One line, first on the page: what the desk is doing and whether there is
+// anything for the person to do. After the close the board is ninety rows
+// of "Wait", and the one sentence that matters was missing.
+const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebalanceDue, holdings, eligible}: {
+  now: number
+  event?: {decision_date: string | null} | null
+  boardEvent: BoardEvent | null
+  eventLive?: {status?: string; pending_orders?: number}
+  orders: number
+  countdown: number | null
+  rebalanceDue: boolean
+  holdings: number | null
+  eligible: number
+}) => {
+  const open = marketOpenNow(now)
+  const parts: string[] = [open ? 'Market open' : 'Market closed']
+  if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`the desk is at ${boardEvent.exposure === 0.5 ? 'half' : `${Math.round(boardEvent.exposure * 100)}%`} exposure through the ${event?.decision_date ?? 'FOMC'} decision`)
+  else if (boardEvent) parts.push(orders > 0 ? `${orders} FOMC restoration${orders === 1 ? '' : 's'} fill at the ${open ? 'next fill' : 'open'}` : 'an FOMC cycle is closing')
+  if (!boardEvent) parts.push(rebalanceDue ? 'a rebalance is due at the next open' : countdown !== null ? `next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no rebalance scheduled')
+  let action: string
+  if (holdings !== null && holdings === 0) action = 'No positions recorded yet, so the plan compares against an empty account. Add them under Positions.'
+  else if (eligible > 0) action = `${eligible} name${eligible === 1 ? ' is' : 's are'} buy-eligible now.`
+  else action = open ? 'Nothing to act on right now.' : 'Nothing for you to do until the open.'
+  return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
+    <span className="font-medium">{parts.join(' · ')}.</span> <span className="text-[#6e6e73]">{action}</span>
+  </section>
 }
 
 const NameDetail = ({
