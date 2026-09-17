@@ -52,6 +52,37 @@ def test_storage_failure_withholds_preview(tmp_path, monkeypatch):
     assert "private" not in json.dumps(result)
 
 
+# A failed or expired run carries the last allocation for the decision forward
+# instead of blanking the board between sessions.
+def test_failed_run_keeps_the_last_collected_allocation(tmp_path, monkeypatch):
+    record, snapshot, _, _, _ = inputs()
+    decision = {
+        "version": "research/v1",
+        "session": record["session"],
+        "bar": "2026-01-01T15:00:00+00:00",
+        "valid_until": "2026-01-01T15:30:00+00:00",
+        "targets": {"AAA": 0.05},
+        "grades": {"AAA": {"grade_live": "B"}},
+        "record_sha256": "sha",
+    }
+    monkeypatch.setattr(intraday_research, "build", lambda *args: dict(decision))
+    first = intraday_research.publish(tmp_path, record, snapshot)
+    assert first["status"] == "available"
+
+    def expired(*args):
+        raise ValueError("Inputs expired during collection")
+
+    monkeypatch.setattr(intraday_research, "build", expired)
+    result = intraday_research.publish(tmp_path, record, snapshot)
+    assert result["status"] == "unavailable"
+    assert result["session"] == record["session"]
+    assert result["targets"] == {"AAA": 0.05}
+    assert result["valid_until"] == decision["valid_until"]
+    loaded = intraday_research.load(tmp_path, record["session"])
+    assert loaded["targets"] == {"AAA": 0.05}
+    assert loaded["status"] == "unavailable"
+
+
 # Fill after the recommendation, account for fees, and keep cash nonnegative.
 def test_forward_tracker_uses_next_prices_and_real_cash():
     rows = []

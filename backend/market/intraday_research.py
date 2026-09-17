@@ -138,6 +138,26 @@ def publish(root: Path, record: dict, snapshot: dict) -> dict:
             else str(exc),
             "as_of": datetime.now(UTC).isoformat(),
         }
+        # Keep the last collected allocation for this decision on the board
+        # through the close and feed gaps: a failed or expired run replaces
+        # nothing the page can still show, it only marks availability.
+        try:
+            previous = json.loads((folder / "latest.json").read_text())
+            if previous.get("session") == record.get("session") and previous.get(
+                "targets"
+            ):
+                for key in (
+                    "session",
+                    "bar",
+                    "valid_until",
+                    "targets",
+                    "grades",
+                    "record_sha256",
+                ):
+                    if key in previous:
+                        result[key] = previous[key]
+        except (ValueError, OSError):
+            pass
     descriptor, name = tempfile.mkstemp(dir=folder, prefix="latest-", suffix=".tmp")
     pending = Path(name)
     try:

@@ -105,27 +105,30 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const paused = event !== null
   const hidden = paused && (event.calendarUnknown || event.exposure === null)
   const exposure = paused && event.exposure !== null ? event.exposure : 1
-  const researchCurrent = research?.status === 'available' && research.session === latest.session
-    && !!research.valid_until && Date.parse(research.valid_until) > now
+  // Sizes are the 15-minute model allocations and stay on the board once
+  // collected for this decision: through the close and through a gap in the
+  // candle run, so the column never blanks between sessions. Only a change
+  // of decision, or a hidden FOMC exposure, drops them.
+  const marketClosed = !marketOpenAt(now)
+  const showSizes = research?.session === latest.session && !!research?.targets
   const weightOf = (ticker: string) => {
-    if (!researchCurrent || hidden) return null
-    if (research!.bar !== live.quotes[ticker]?.bar) return null
+    if (!showSizes || hidden) return null
+    if (!marketClosed && research!.bar !== live.quotes[ticker]?.bar) return null
     const weight = research!.targets?.[ticker]
     return Number.isFinite(weight) && (weight as number) >= 0 ? (weight as number) * exposure : null
   }
   const graded = Object.keys(latest.grades)
-  const sizedNames = researchCurrent && !hidden ? graded.filter(ticker => weightOf(ticker) !== null) : []
+  const sizedNames = showSizes && !hidden ? graded.filter(ticker => weightOf(ticker) !== null) : []
   const fullCoverage = sizedNames.length === graded.length && graded.length > 0
   const gross = fullCoverage ? Object.values(research!.targets ?? {}).reduce((sum, weight) => sum + weight, 0) * exposure : null
   const sized = fullCoverage && gross !== null && gross <= 1.000001
-  const marketClosed = !marketOpenAt(now)
   const fomcLine = !paused ? null
     : event.calendarUnknown ? 'FOMC calendar unavailable · exposure changes and sizing paused'
     : event.exposure === null ? 'FOMC cycle in progress · sizes paused until the policy status is current'
     : event.exposure < 1 ? `FOMC · sizes at ${event.exposure === 0.5 ? 'half' : `${Math.round(event.exposure * 100)}%`} exposure · restores at the open after the ${event.decisionDate ?? 'FOMC'} decision`
     : 'FOMC · restoration queued for the next open'
   const sizingLine = sized ? '15-minute model allocations · experimental'
-    : researchCurrent && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
+    : showSizes && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
     : marketClosed ? 'Sizes return with the first completed bar after the open' : 'Sizing unavailable · waiting for fresh data'
   // Compare only current scores tied to this exact nightly basis and completed price.
   const opportunity = (ticker: string) => {
@@ -155,7 +158,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const filtered = searchText ? stocks.filter((s) => s.ticker.toLowerCase().includes(searchText)) : stocks
   const ranked = [...filtered]
   if (!searchText) ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
-  const bar = researchCurrent ? research!.bar : live.data_at
+  const bar = showSizes && !marketClosed ? research!.bar : live.data_at
   const time = bar ? new Date(bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
     <div className="shrink-0 border-b border-black/[0.06] px-3 py-2 text-xs text-[#6e6e73]">
@@ -166,7 +169,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     </div>
     {toolbar}
     <div className="min-h-0 flex-1 overflow-auto">
-      <table className="w-full text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
+      <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
             <th colSpan={6} className="py-2 pr-3 font-normal">

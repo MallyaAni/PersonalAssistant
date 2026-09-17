@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-17 — The board always shows size, reaches every column on a phone, and a finished FOMC cycle no longer pauses it
+
+The user's follow-ups after the FOMC/IEX deploy were: (1) the Plan column
+still read as "unhelpful bullshit", (2) on a phone nothing right of "Size
+%" was reachable, (3) sizes should always be visible and "stale" is never
+the right word. Three stacked causes, all fixed and verified (tsc clean,
+63/63 desk e2e, unit suite 3688, ruff clean).
+
+- **Plan column "Wait · FOMC" returned**: `DeskPanel` computed
+  `eventPaused` partly from the record's frozen
+  `event_risk.execution_pending` (frontend/src/components/DeskPanel/
+  DeskPanel.tsx:912); once `event_status` went stale after close the board
+  fell back to the flag and paused every name again. It now reads
+  `event_status.planning_paused` only (field added to the `DeskPayload`
+  type in frontend/src/services/api.ts:2100). A stale observation is not a
+  pause; the frozen nightly flag never is.
+- **Mobile: columns beyond "Size %" unreachable**: the board table was
+  `w-full`, so its cells shrank/clipped and there was nothing to pan. The
+  table is `min-w-max` (frontend/src/components/DeskPanel/StockBoard.tsx),
+  so the board's own `overflow-auto` box pans to the Record button while
+  the page never scrolls sideways. E2e: the phone test now pans the box
+  and asserts "Record purchase of AAPL" is visible.
+- **Sizes blanked after close**: a failed/expired run overwrote
+  `latest.json` with no `targets`. `intraday_research.publish` now carries
+  the last collected allocation (session, bar, valid_until, targets,
+  grades, record_sha256) forward on an unavailable run, and the frontend
+  shows sizes when `research.session === latest.session && targets`
+  exist — it never says "stale". Restored today's `latest.json` from the
+  last archived decision (decision-498a7d..., session 2026-09-16, 93
+  names); the deployed backend already serves it. New test
+  `test_failed_run_keeps_the_last_collected_allocation`. Pinned by the
+  desk e2e FOMC cases (mocks now carry `planning_paused: true`).
+
+Open and unchanged: fresh overnight/pre/post prices need a SIP entitlement
+(external); the board shows the last in-session allocation instead. The
+strict whole-set freshness gate (one stale bar marks research
+unavailable) still awaits the design decision below.
+
 ## 2026-09-17 — The board's blanket "Wait · FOMC cycle takes priority" is gone (backend fix deployed)
 
 Deployed and live: main `6aab7204`, post-deploy

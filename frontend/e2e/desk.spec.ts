@@ -142,7 +142,7 @@ test('current opportunity scores change rank and explain their inputs', async ({
 test('empty paused account shows USD at 100 percent', async ({page}) => {
   await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
-    latest: deskRecord(), event_status: {active: true, stale: false},
+    latest: deskRecord(), event_status: {active: true, stale: false, planning_paused: true},
     board_paper: {version: 'board-paper/1', started_at: new Date().toISOString(), as_of: new Date().toISOString(), initial_capital: 100000, cash: 100000, equity: 100000, sequence: 0, status: 'Started in USD'},
   }}))
   await page.goto('/#desk')
@@ -220,8 +220,12 @@ test('single board ranks cash and updates allocations with the next candle', asy
   await expect(board.locator('tbody tr').nth(2)).toContainText('USD')
   await expect(board.locator('tbody tr').nth(2)).toContainText('5.0%')
   await page.setViewportSize({width: 390, height: 844})
-  const dimensions = await board.evaluate(element => ({width: element.getBoundingClientRect().width, available: element.parentElement!.clientWidth}))
-  expect(dimensions.width).toBeLessThanOrEqual(dimensions.available)
+  // The board's own box pans to reach the right-hand columns on a phone,
+  // while the page itself never scrolls sideways.
+  await noSidewaysScroll(page, 'board at 390')
+  const scroller = board.locator('xpath=ancestor::div[contains(@class,"overflow-auto")]')
+  const canPan = await scroller.evaluate(el => el.scrollWidth > el.clientWidth)
+  expect(canPan).toBe(true)
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -261,7 +265,7 @@ test('one stale quote no longer disables sizes for the rest of the board', async
 test('single board keeps cash and wait actions during FOMC', async ({page}) => {
   const latest = deskRecord()
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
-    latest, sessions: [latest.session], event_status: {active: true, stale: true},
+    latest, sessions: [latest.session], event_status: {active: true, stale: true, planning_paused: true},
   }}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
@@ -293,7 +297,7 @@ test('a settled FOMC reduction shows sizes at half exposure with the restore dat
   }}))
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest, sessions: [latest.session],
-    event_status: {as_of: '2026-09-09T14:00:00Z', status: 'reduction settled', stale: false, active: true, pending_orders: 0,
+    event_status: {as_of: '2026-09-09T14:00:00Z', status: 'reduction settled', stale: false, active: true, planning_paused: true, pending_orders: 0,
       policy: {enabled: true, session: '2026-09-08', decision_date: '2026-09-16', factor: 0.5, calendar_known: true,
         spy_five_session_return: -0.011, evaluation_since: '2026-06-18'}},
     intraday_research: {status: 'available', session: latest.session, event_paused: true,
@@ -465,7 +469,7 @@ test('stale FOMC recovery keeps the active cycle paused', async ({page}) => {
   const latest = deskRecord()
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest, sessions: [latest.session], event_policy: {enabled: true},
-    event_status: {as_of: '2026-09-01T14:00:00Z', stale: true, active: true,
+    event_status: {as_of: '2026-09-01T14:00:00Z', stale: true, active: true, planning_paused: true,
       status: 'reduction settled', pending_orders: 0},
   }}))
   await page.goto('/?deskDetails=1#desk')
@@ -485,7 +489,7 @@ test('FOMC recovery displays current intent and pauses the portfolio plan', asyn
   const latest = deskRecord()
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest, sessions: [latest.session], event_policy: {enabled: true},
-    event_status: {as_of: new Date().toISOString(), stale: false, active: true,
+    event_status: {as_of: new Date().toISOString(), stale: false, active: true, planning_paused: true,
       status: 'reduction pending', pending_orders: 2,
       policy: {session: latest.session, factor: .5, calendar_known: true, decision_date: '2026-09-16'}},
   }}))
@@ -1880,6 +1884,8 @@ test('FOMC reduction takes priority over regular target execution', async ({ pag
         session: '2026-09-11', enabled: true, factor: 0.5, calendar_known: true,
         decision_date: '2026-09-16', execution_pending: true,
       }}, sessions: ['2026-09-11'],
+      event_status: {as_of: new Date().toISOString(), stale: false, active: true, planning_paused: true,
+        status: 'reduction pending', pending_orders: 0, policy: {session: '2026-09-11', factor: 0.5, calendar_known: true, decision_date: '2026-09-16'}},
       event_policy: {enabled: true, version: 'fomc-3-session-weakness/1', evaluation_since: '2026-06-18'},
     }),
   }))
@@ -2077,6 +2083,10 @@ test('the desk fits a phone without sideways scrolling', async ({page}) => {
   await page.goto('/#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await noSidewaysScroll(page, 'stocks')
+  // The board's own box pans, so the right-hand columns (Record) are reachable.
+  const scroller = page.getByRole('table', {name: 'Ranked stocks and cash'}).locator('xpath=ancestor::div[contains(@class,"overflow-auto")]')
+  await scroller.evaluate(el => el.scrollTo(el.scrollWidth, 0))
+  await expect(page.getByRole('button', {name: 'Record purchase of AAPL'})).toBeVisible()
   await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
   await expect(page.getByText('Open the full panel')).toBeVisible()
   await noSidewaysScroll(page, 'row open')

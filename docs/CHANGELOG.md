@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-17 — The board always shows size, reaches every column on a phone, and stops reading a finished FOMC cycle as a live pause
+
+The Plan column's "Wait · FOMC" came from a second place besides the
+nightly record: `DeskPanel` computed `eventPaused` partly from the
+record's frozen `event_risk.execution_pending`, so once the live event
+status went stale after close the board fell back to the flag and paused
+every name again. It now reads the live `event_status.planning_paused`
+only — a stale observation is not a pause, and the frozen flag never is.
+Sizes stopped appearing after close because a failed or expired run
+overwrote `latest.json` with no `targets`; `intraday_research.publish`
+now carries the last collected allocation (session, bar, valid_until,
+targets, grades, record_sha256) forward on an unavailable run, and the
+frontend shows sizes whenever the research session matches the record and
+targets exist — "stale" is never said. On a phone the board table was
+`w-full`, so the right-hand columns beyond "Size %" shrank or clipped with
+nothing to pan; the table is `min-w-max` now, so the board's own scroll box
+pans to the Record button while the page still never scrolls sideways.
+Verified: tsc clean, 63/63 desk e2e (FOMC mocks now carry
+`planning_paused`; the phone test pans the box and reaches "Record
+purchase of AAPL"), full unit suite 3688, ruff clean, and the deployed
+backend serves the restored last allocation (93 names). Fresh overnight,
+pre- and post-market prices still require a SIP entitlement (external);
+the board shows the last in-session allocation instead of blanking.
+
 ## 2026-09-17 — The board's blanket "Wait · FOMC cycle takes priority" is gone; IEX quotes pass the execution gate
 
 Deployed `6aab7204 ok (cheap)`. Two stacked causes made every plan row

@@ -909,7 +909,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? null
   const eventLive = payload.event_status
   const event = (!eventLive?.stale && eventLive?.policy) || latest?.event_risk
-  const eventPaused = eventLive?.active || event?.factor === 0.5 || event?.calendar_known === false || event?.execution_pending === true
+  // Planning is paused only on the live event state: an active cycle or a
+  // policy still in force. A stale observation is not a pause, and the
+  // nightly record's frozen execution_pending flag never is.
+  const eventPaused = eventLive?.planning_paused === true
   // The board keeps its sizes during a cycle, at the exposure the desk holds.
   // The exposure is unknown when the calendar is missing or when an active
   // cycle's current policy status has not been read.
