@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-16 — Desk layout: Stocks, Plan, Research; the name panel answers why first
+
+The page had one simple view that had stopped being simple and one
+Details view that scrolled through everything. Now: the simple page
+carries decisions only (the board; the ML comparison and the board
+simulation footer leave it). Details is two views under a Plan/Research
+switch (`?deskView=research` opens the second). Plan is what the desk
+will do and why: cash, the regime, the rankings, what changed, the plan
+rows, FOMC, paper execution, the practice account's own details.
+Research is measurement on a slower clock: inflation, forward evidence,
+the FOMC overlay gate, execution quality, the ML shadow, the board
+simulation, the track record. The regime banner shows in both. The name
+panel opens with why the grade is what it is and when it moved, then the
+evening readings and commentary, the live technical read and earnings;
+the opportunity score, the recommendations log, the grade changes and
+the backtest sit under one "Score, log & backtest" fold. Browser tests
+follow the sections to their new homes; 57 pass in Chromium.
+
 ## 2026-09-16 — Prose branch rebased onto main and reviewed; prose older than its decision reads as absent
 
 `prose-beside-decision` (the decision saved before the model-written

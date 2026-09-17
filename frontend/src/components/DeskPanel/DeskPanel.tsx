@@ -5,7 +5,7 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { StockBoard, type BoardEvent } from './StockBoard'
+import { BoardSimulation, MlComparison, StockBoard, type BoardEvent } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { OpportunityCard } from './OpportunityCard'
 import {
@@ -723,7 +723,15 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [stops, setStops] = useState(() => readStored(STOPS_KEY) === 'on')
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
-  const [advanced, setAdvanced] = useState(() => new URLSearchParams(window.location.search).get('deskDetails') === '1')
+  const [advanced, setAdvanced] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('deskDetails') === '1' || params.get('deskView') === 'research'
+  })
+  // Details is two views. Plan is what the desk will do and why: rankings,
+  // the plan rows, FOMC, changes, execution. Research is measurement on a
+  // slower clock: the gate, execution quality, forward evidence, the ML
+  // shadow, the practice account. Mixing them made one long scroll.
+  const [research, setResearch] = useState(() => new URLSearchParams(window.location.search).get('deskView') === 'research')
   const [editing, setEditing] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [openReason, setOpenReason] = useState<string | null>(null)
@@ -917,7 +925,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <button aria-label="Refresh" onClick={() => {void load();void poll()}}><RefreshCw size={16} /></button>
       </div>
     </header>
-    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} paper={payload.board_paper} ml={payload.ml_forward} coverage={payload.coverage} decisions={decisions}
+    <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
       holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
@@ -940,6 +948,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
             {latest && <button onClick={() => setAdvanced(false)} className="text-xs text-[#0071e3]">Back to stocks</button>}
+            {latest && <nav aria-label="Details view" className="flex items-center gap-1 rounded-full border border-black/[0.08] bg-white p-0.5 text-xs">
+              <button type="button" aria-pressed={!research} onClick={() => setResearch(false)} className={`rounded-full px-2.5 py-0.5 ${!research ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f]'}`}>Plan</button>
+              <button type="button" aria-pressed={research} onClick={() => setResearch(true)} className={`rounded-full px-2.5 py-0.5 ${research ? 'bg-[#1d1d1f] text-white' : 'text-[#1d1d1f]'}`}>Research</button>
+            </nav>}
             <button
               type="button"
               onClick={() => setHelp(!help)}
@@ -978,18 +990,16 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {!latest && <GettingStarted hasRecord={false} hasPositions={holdings.length > 0} onEnterPositions={() => setEditing(true)} />}
 
+      {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
+
+      {!research && <>
       {latest && <section aria-label="Cash exposure" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
         <span>Paper cash <b>{paperLive?.cash != null && paperLive.equity && paperLive.equity > 0 ? `${(100 * paperLive.cash / paperLive.equity).toFixed(1)}%` : 'unavailable'}</b></span>
         <span title="Cash implied by evening target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
         <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
       </section>}
 
-      {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
-      {latest && <details className="rounded-xl border border-black/[0.08] px-3 py-2 text-xs">
-        <summary className="cursor-pointer font-medium">Inflation · {payload.economics?.assessment?.status === 'model_assessment' && !payload.economics.collection_stale && Date.now() - Date.parse(payload.economics.observed_at) < 36 * 3600000 ? payload.economics.assessment.pressure : 'unavailable'} · research</summary>
-        <EconomicContext data={payload.economics} />
-      </details>}
 
       {latest && (
         <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity}
@@ -1010,9 +1020,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         </details>
       )}
 
-      <ForwardEvidence evidence={payload.forward_evidence} />
-      <FomcGate gate={payload.fomc_gate} />
-      <ExecutionQuality quality={payload.execution_quality} />
 
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
@@ -1037,6 +1044,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <p className="mt-1 text-xs">Paper account only · execute personal-account changes at your broker.</p>
         </section>
       )}
+
 
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
 
@@ -1178,11 +1186,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
       )}
 
-      {latest && <details className="rounded-xl border border-black/[0.08] p-3">
-        <summary className="cursor-pointer text-sm font-medium">Performance & practice account</summary>
-        <div className="mt-3 space-y-3"><SummaryStrip latest={latest} paperLive={paperLive} curve={curve} /><TrackRecord curve={curve} /></div>
-      </details>}
-
       {latest && (
         <button
           type="button"
@@ -1194,6 +1197,27 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       )}
 
       {latest && details && <PracticeAccount record={latest.paper} paperLive={paperLive} />}
+      </>}
+
+      {research && <>
+      {latest && <details className="rounded-xl border border-black/[0.08] px-3 py-2 text-xs">
+        <summary className="cursor-pointer font-medium">Inflation · {payload.economics?.assessment?.status === 'model_assessment' && !payload.economics.collection_stale && Date.now() - Date.parse(payload.economics.observed_at) < 36 * 3600000 ? payload.economics.assessment.pressure : 'unavailable'} · research</summary>
+        <EconomicContext data={payload.economics} />
+      </details>}
+
+      <ForwardEvidence evidence={payload.forward_evidence} />
+      <FomcGate gate={payload.fomc_gate} />
+      <ExecutionQuality quality={payload.execution_quality} />
+      <MlComparison ml={payload.ml_forward} />
+      <section className="rounded-xl border border-black/[0.08] bg-white"><BoardSimulation paper={payload.board_paper} now={now} /></section>
+
+      {latest && <details className="rounded-xl border border-black/[0.08] p-3">
+        <summary className="cursor-pointer text-sm font-medium">Performance & practice account</summary>
+        <div className="mt-3 space-y-3"><SummaryStrip latest={latest} paperLive={paperLive} curve={curve} /><TrackRecord curve={curve} /></div>
+      </details>}
+
+      </>}
+
 
       {openName && latest && (
         <NameDetail
@@ -2330,12 +2354,6 @@ const NameDetail = ({
           </button>
         </div>
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} />}
-        <OpportunityCard reading={decisions?.session === latest.session ? decisions.rows[ticker]?.opportunity : undefined} now={now} />
-        {history && <RecommendationTimeline history={history.recommendations} />}
-        {compact && !history && !error && <p className="mb-3 text-xs">Loading recommendations…</p>}
-        {compact && error && <p role="alert" className="mb-3 text-xs text-[#b42318]">{error}</p>}
-        <details open={!compact}>
-          <summary className={compact ? 'cursor-pointer text-xs text-[#0071e3]' : 'hidden'}>Analysis & backtest</summary>
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[row.action] ?? ''}`}>
@@ -2362,6 +2380,20 @@ const NameDetail = ({
             </span>
           </div>
         )}
+        {/* The readings the grade came from, before anything derived from them. */}
+        {gradeReads && (
+          <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
+            <h4 className="text-sm font-semibold text-[#1d1d1f]">Evening analysis · {latest.session}</h4>
+              <ul className="mt-1 space-y-1 text-sm text-[#1d1d1f]">
+                {Object.entries(gradeReads ?? {}).flatMap(([analyst, lines]) =>
+                  lines.map((line) => (
+                    <li key={`${analyst}-${line}`}>· {line}</li>
+                  )),
+                )}
+              </ul>
+          </div>
+        )}
+        {(brief || gradeRead) && <ArchivedCommentary brief={brief ?? undefined} read={gradeRead} written={latest.written} />}
         {/* The live technical read renders for any covered name, even one
             the board does not carry: the backend computes it on demand from
             a fresh quote, so a name outside the candle's snapshot (not in
@@ -2374,38 +2406,22 @@ const NameDetail = ({
           row={row ?? null}
         />
         <EarningsPanel key={ticker} userId={userId} ticker={ticker} />
-        {error ? (
-          <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
-        ) : !history ? (
-          <p className="text-sm text-[#6e6e73]">Loading the history…</p>
-        ) : (
-          <>
-            <p className="mb-2 text-xs leading-relaxed text-[#6e6e73]">
-              Historical returns grouped by grade: sessions graded A or better against the other sessions.
-              Annualized daily log-return means are conditional statistics, not funded portfolio returns or forecasts.
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {cells.map((c) => (
-                <div key={c.label} className="rounded-xl border border-black/[0.08] bg-white p-3">
-                  <p className="text-xs text-[#6e6e73]">{c.label}</p>
-                  <p className="text-base font-semibold text-[#1d1d1f]">{c.value}</p>
-                  <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
-                </div>
-              ))}
-            </div>
-            {gradeReads && (
-              <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
-                <h4 className="text-sm font-semibold text-[#1d1d1f]">Evening analysis · {latest.session}</h4>
-                  <ul className="mt-1 space-y-1 text-sm text-[#1d1d1f]">
-                    {Object.entries(gradeReads ?? {}).flatMap(([analyst, lines]) =>
-                      lines.map((line) => (
-                        <li key={`${analyst}-${line}`}>· {line}</li>
-                      )),
-                    )}
-                  </ul>
-              </div>
-            )}
-            {(brief || gradeRead) && <ArchivedCommentary brief={brief ?? undefined} read={gradeRead} written={latest.written} />}
+        {/* Everything derived or historical sits under one fold: the
+            continuous score, the fifteen-minute log, the grade changes and
+            the backtest. A person opens the panel to ask why, not to scroll. */}
+        <details open={!compact} aria-label="Score, log and backtest">
+          <summary className="cursor-pointer text-xs text-[#0071e3]">Score, log & backtest</summary>
+          <div className="mt-3">
+          <OpportunityCard reading={decisions?.session === latest.session ? decisions.rows[ticker]?.opportunity : undefined} now={now} />
+          {history && <RecommendationTimeline history={history.recommendations} />}
+          {!history && !error && <p className="mb-3 text-xs">Loading recommendations…</p>}
+          {error && <p role="alert" className="mb-3 text-xs text-[#b42318]">{error}</p>}
+          {error ? (
+            <p className="text-sm text-[#6e6e73]">{error}. The nightly run writes this after the next close.</p>
+          ) : !history ? (
+            <p className="text-sm text-[#6e6e73]">Loading the history…</p>
+          ) : (
+            <>
             <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">Grade changes</h4>
             {changes.length === 0 ? (
               <p className="mt-1 text-xs text-[#6e6e73]">No grade change in the history on file.</p>
@@ -2423,6 +2439,19 @@ const NameDetail = ({
                 ))}
               </ul>
             )}
+            <p className="mb-2 text-xs leading-relaxed text-[#6e6e73]">
+              Historical returns grouped by grade: sessions graded A or better against the other sessions.
+              Annualized daily log-return means are conditional statistics, not funded portfolio returns or forecasts.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {cells.map((c) => (
+                <div key={c.label} className="rounded-xl border border-black/[0.08] bg-white p-3">
+                  <p className="text-xs text-[#6e6e73]">{c.label}</p>
+                  <p className="text-base font-semibold text-[#1d1d1f]">{c.value}</p>
+                  <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
+                </div>
+              ))}
+            </div>
             <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">The last {recent.length} sessions</h4>
             <p className="mt-0.5 text-xs text-[#6e6e73]">
               Each night&rsquo;s grade with the analysts that voted for (+) or against (−) it, so a grade change shows
@@ -2456,8 +2485,9 @@ const NameDetail = ({
                 ))}
               </tbody>
             </table>
-          </>
-        )}
+            </>
+          )}
+          </div>
         </details>
       </div>
     </div>

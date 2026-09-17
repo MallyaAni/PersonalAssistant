@@ -19,7 +19,7 @@ test('frozen ML paper comparison shows independent account returns', async ({pag
         'SPY@10bps': {equity: 100500, total_return: .005},
       }},
   }}))
-  await page.goto('/#desk')
+  await page.goto('/?deskView=research#desk')
   await page.getByText('ML paper comparison · 2026-09-14', {exact: true}).click()
   const comparison = page.getByLabel('ML forward comparison')
   await expect(comparison).toContainText('no real orders')
@@ -105,6 +105,7 @@ test('current opportunity scores change rank and explain their inputs', async ({
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.locator('tbody tr').first()).toContainText('NVDA')
   await page.getByRole('button', {name: /^NVDA/}).click()
+  await page.getByText('Score, log & backtest', {exact: true}).click()
   const score = page.getByLabel('Price-to-opportunity score')
   await expect(score).toContainText('8.0/10')
   await expect(score).toContainText('valuation is nightly')
@@ -132,6 +133,7 @@ test('empty paused account shows USD at 100 percent', async ({page}) => {
   await expect(cash).toContainText('USD')
   await expect(cash).toContainText('100.0%')
   await expect(cash).toContainText('100% recorded')
+  await page.goto('/?deskView=research#desk')
   await expect(page.getByLabel('Board simulation')).toContainText('USD 100.0%')
   await expect(page.getByLabel('Board simulation')).toContainText('0.00% since start')
 })
@@ -154,6 +156,10 @@ test('ticker opens original recommendation timeline before detailed analysis', a
   }}))
   await page.goto('/#desk')
   await page.getByRole('button', {name: /^AAPL/}).click()
+  const fold = page.locator('details').filter({has: page.locator('summary', {hasText: 'Score, log & backtest'})})
+  await expect(fold).not.toHaveAttribute('open', '')
+  await fold.locator(':scope > summary').click()
+  await expect(fold).toHaveAttribute('open', '')
   const timeline = page.getByRole('region', {name: 'Recorded recommendations'})
   await expect(timeline.getByRole('table')).toBeVisible()
   await expect(timeline).toContainText('Wait · FOMC')
@@ -162,10 +168,6 @@ test('ticker opens original recommendation timeline before detailed analysis', a
   await expect(timeline).toContainText('not strategy profit')
   await expect(timeline).toContainText('policy/1')
   await expect(timeline).toContainText('await validated daily data')
-  const details = page.locator('details').filter({has: page.locator('summary', {hasText: 'Analysis & backtest'})})
-  await expect(details).not.toHaveAttribute('open', '')
-  await details.locator(':scope > summary').click()
-  await expect(details).toHaveAttribute('open', '')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -377,7 +379,7 @@ test('forward evidence distinguishes unobserved outcomes from zero performance',
       portfolios: [{cost_bps: 10, fill_intervals: 0, status: 'insufficient_forward_data', arms: {}}],
     }]},
   }}))
-  await page.goto('/?deskDetails=1#desk')
+  await page.goto('/?deskView=research#desk')
   await page.getByText('Forward evidence · research', {exact: true}).click()
   const evidence = page.locator('details', {has: page.getByText('Forward evidence · research', {exact: true})})
   await expect(evidence).toContainText('10 decisions awaiting validation')
@@ -401,7 +403,7 @@ test('the FOMC gate shows each meeting against the book without the overlay', as
         meetings_with_deeper_live_drawdown: 0, rule: 'after 6 completed meetings from 2026-09-16: keep when positive after costs'},
     },
   }}))
-  await page.goto('/?deskDetails=1#desk')
+  await page.goto('/?deskView=research#desk')
   const gate = page.getByLabel('FOMC overlay gate')
   await expect(gate).toContainText('0 of 6 meetings')
   await gate.locator('summary').click()
@@ -429,7 +431,7 @@ test('execution quality shows fills against their decision prices', async ({page
       worst: [],
     },
   }}))
-  await page.goto('/?deskDetails=1#desk')
+  await page.goto('/?deskView=research#desk')
   const quality = page.getByLabel('Execution quality')
   await expect(quality).toContainText('12 fills, +6.4 bp')
   await quality.locator('summary').click()
@@ -969,7 +971,7 @@ test('separates dated inflation facts from research-only model judgement', async
       facts: [{id: 'CPIAUCSL', label: 'CPI', status: 'available', period: '2026-08-01', source: 'https://fred.stlouisfed.org/series/CPIAUCSL', month_change_pct: .23, year_change_pct: 3.45, previous_year_change_pct: null}],
     },
   }}))
-  await page.goto('/?deskDetails=1#desk')
+  await page.goto('/?deskView=research#desk')
   const context = page.getByLabel('Economic context')
   await page.getByText(/^Inflation ·/).click()
   await expect(context).toContainText('2026-08')
@@ -1039,7 +1041,7 @@ test('research sizing displays reductions and clears the previous policy', async
 
 test('renders the desk at a glance with the track record', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.goto('/?deskDetails=1#desk')
+  await page.goto('/?deskView=research#desk')
   await page.getByText('Performance & practice account', {exact: true}).click()
   await expect(page.getByRole('main').getByRole('heading', { level: 2, name: 'Desk' })).toBeVisible()
 
@@ -1067,12 +1069,15 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByRole('note')).toContainText('target-size multiplier is 80%')
 
   // What moved since the last session, which the page used to throw away.
+  await page.getByRole('button', {name: 'Plan', exact: true}).click()
   await expect(page.getByText('What changed since the last session')).toBeVisible()
   await expect(page.getByText('Upgraded: NVDA B→A')).toBeVisible()
   await expect(page.getByText('Changes in target weights at the next rebalance: add AAPL')).toBeVisible()
 
   // The trust anchor: the curve and its summary numbers, as an SVG the page
-  // draws itself.
+  // draws itself. Research holds it.
+  await page.getByRole('button', {name: 'Research', exact: true}).click()
+  await page.getByText('Performance & practice account', {exact: true}).click()
   const record = page.getByText('The desk’s track record')
   await expect(record).toBeVisible()
   await expect(page.getByRole('img', { name: "The desk's track record against SPY and QQQ" })).toBeVisible()
@@ -1082,6 +1087,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
 // A row reads in plain words first, and the ticker opens the drill-down.
   // The board is not due a rebalance for 18 sessions, so it says "targets
   // for the next rebalance" rather than teaching a daily trading cadence.
+  await page.getByRole('button', {name: 'Plan', exact: true}).click()
   await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toBeVisible()
   await expect(page.getByLabel('Reading the current picks')).toContainText('not a probability of profit')
   await expect(page.getByRole('columnheader', {name: 'Target move', exact: true})).toBeVisible()
@@ -1102,7 +1108,7 @@ test('a zero day P/L reads flat, not as an up move', async ({ page }) => {
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({
     as_of: '2026-09-08T20:00:00Z', equity: 104200, cash: 12000, day_pl: 0, pl_pct: 0.042, day_pl_pct: 0,
   })}))
-  await page.goto('/?deskDetails=1#desk')
+  await page.goto('/?deskView=research#desk')
   await page.getByText('Performance & practice account', { exact: true }).click()
   const glance = page.getByLabel('The desk at a glance')
   await expect(glance.getByText('· $0')).toBeVisible()
@@ -1145,6 +1151,7 @@ test('shows each thing once, not twice', async ({ page }) => {
   await expect(everyGrade.getByRole('columnheader', {name: 'Analysis · 2026-09-08 close'})).toBeVisible()
   await expect(everyGrade).not.toContainText('no change in comparable analyst votes')
   await expect(everyGrade).toContainText('not probability of profit')
+  await page.getByRole('button', {name: 'Research', exact: true}).click()
   await page.getByText('Performance & practice account', {exact: true}).click()
   await expect(page.getByText('Practice account', { exact: true })).toBeVisible()
   await expect(page.getByText('Gain so far')).toHaveCount(0)
@@ -1683,7 +1690,7 @@ test('cash-limited performance is distinguished from legacy simulated borrowing'
   await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({latest, changes: null}),
   }))
-  await page.goto('/?deskDetails=1#desk')
+  await page.goto('/?deskView=research#desk')
   await page.getByText('Performance & practice account', {exact: true}).click()
   await expect(page.getByLabel('The desk at a glance')).toContainText('Cash-limited simulation')
   await expect(page.getByText('closing sales cannot fund earlier buys', {exact: false})).toBeVisible()
@@ -1874,6 +1881,8 @@ test('the ticker panel explains the grade move, keeps the last score and folds t
   await expect(move).toContainText('Moved in tonight’s decision')
   await expect(move).toContainText('Technical neutral → for: daily trend up')
   await expect(move).toContainText('three sessions')
+  await expect(page.getByText('Option walls', {exact: false})).toBeVisible()
+  await page.getByText('Score, log & backtest', {exact: true}).click()
   const score = page.getByLabel('Price-to-opportunity score')
   await expect(score).toContainText('6.2/10')
   await expect(score).toContainText('Last reading at the Sep 8, 3:45 PM ET bar')
@@ -1882,7 +1891,31 @@ test('the ticker panel explains the grade move, keeps the last score and folds t
   await expect(log.locator('tbody tr')).toHaveCount(2)
   await expect(log.locator('tbody tr').first()).toContainText('held through')
   await expect(log.locator('tbody tr').first()).toContainText('2 readings')
-  await page.getByText('Analysis & backtest', {exact: true}).click()
   await expect(page.getByText(/Option walls \(expiries 09-18 to 10-16, open interest fetched/)).toBeVisible()
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+
+// Details is two views. Plan holds the rankings, the plan rows and what
+// changed; Research holds the gate, execution quality, forward evidence,
+// the ML shadow and the practice account. The simple page carries neither
+// the ML comparison nor the board simulation any more.
+test('details splits into plan and research and the simple page carries only decisions', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.goto('/#desk')
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
+  await expect(page.getByLabel('ML forward comparison')).toHaveCount(0)
+  await expect(page.getByLabel('Board simulation')).toHaveCount(0)
+  await page.getByRole('button', {name: 'Details', exact: true}).click()
+  await expect(page.getByText('Stock rankings')).toBeVisible()
+  await page.getByRole('button', {name: 'Plan', exact: true}).click()
+  await expect(page.getByText('What changed since the last session')).toBeVisible()
+  await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toBeVisible()
+  await expect(page.getByText('Performance & practice account', {exact: true})).toHaveCount(0)
+  await page.getByRole('button', {name: 'Research', exact: true}).click()
+  await expect(page.getByText('Performance & practice account', {exact: true})).toBeVisible()
+  await expect(page.getByText('Stock rankings')).toHaveCount(0)
+  await page.getByRole('button', {name: 'Plan', exact: true}).click()
+  await expect(page.getByText('Stock rankings')).toBeVisible()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
