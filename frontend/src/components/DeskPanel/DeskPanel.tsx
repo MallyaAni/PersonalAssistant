@@ -186,8 +186,11 @@ const TrendUsd = ({ value }: { value: number }) => {
   )
 }
 
-const shortDate = (iso: string) =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+const shortDate = (iso: string) => {
+  const date = new Date(`${iso}T00:00:00`)
+  const thisYear = date.getFullYear() === new Date().getFullYear()
+  return date.toLocaleDateString(undefined, thisYear ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' })
+}
 
 // Apply only the actual shares and average fill price confirmed from the broker.
 const afterTrade = (holdings: DeskHolding[], r: Pick<DeskMineRow, 'ticker' | 'action'>, price: number, qty: number, fillDate = today()): DeskHolding[] => {
@@ -937,7 +940,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <Positions holdings={holdings} error={saveError} onSave={async next => {if (await save(next)) setEditing(false)}} />
       </div>
     </div>}
-    {openName && <NameDetail compact userId={userId} ticker={openName} latest={latest} row={rows.find(row => row.ticker === openName) ?? null} live={live} liveGrades={liveGrades} decisions={decisions} now={now} onClose={() => setOpenName(null)} />}
+    {openName && <NameDetail compact userId={userId} ticker={openName} latest={latest} row={rows.find(row => row.ticker === openName) ?? null} live={live} liveGrades={liveGrades} decisions={decisions} now={now} paused={Boolean(eventPaused)} onClose={() => setOpenName(null)} />}
   </div>
 
   return (
@@ -1035,7 +1038,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
           </details>
           <p className="mt-2 text-xs">{event
-            ? `Using the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
+            ? `Using the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : eventLive?.active && !eventLive.stale ? `the reduction is done${eventLive.sold ? ` (${Object.keys(eventLive.sold).length} names sold)` : ''}; restoration is queued for the open after the decision` : eventLive?.active ? 'an event cycle is open; restoration follows the decision' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : eventLive?.active ? 'An event cycle is recorded; the current policy observation is unavailable.'
             : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
@@ -1223,6 +1226,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <NameDetail
           userId={userId}
           ticker={openName}
+          paused={Boolean(eventPaused)}
           latest={latest}
           row={rows.find((r) => r.ticker === openName) ?? null}
           live={live}
@@ -1712,7 +1716,7 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
   const reason = wait ? (expired ? 'Refresh price evidence' : row.reason) : row.reason
   if (compact) return <span title={reason} aria-label={`${ticker} plan action`}>{wait ? `Wait · ${expired ? 'expired' : 'no size shown'}` : action}</span>
   return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
-    <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {allocationPercent(row.target_weight)} plan</span></div>
+    <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {row.target_weight > 0 ? `${allocationPercent(row.target_weight)} plan` : 'no target until the next rebalance'}</span></div>
     <div className="text-[#6e6e73]">{reason}</div>
     <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
       <div>Using {money(equity)} account value</div>
@@ -2266,14 +2270,17 @@ const GradeMove = ({changes, session, reads}: {
     return {text, readings}
   })
   const flipped = latest.moved.some((text) => / (for|against)$/.test(text))
+  // The technical vote is price; the note that price was no input belongs
+  // only to a move by the other analysts.
+  const priceMoved = latest.moved.some((text) => text.startsWith('technical'))
   return (
     <section aria-label="Why the grade moved" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
       <p>
-        <span className="font-semibold">{tonight ? 'Moved in tonight\u2019s decision' : `Unchanged since ${shortDate(latest.date)}`}:</span>{' '}
+        <span className="font-semibold">{tonight ? 'Moved in tonight\u2019s decision' : `Last moved ${shortDate(latest.date)}`}:</span>{' '}
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.from] ?? ''}`}>{latest.from}</span>
         <span className="mx-1 text-[#6e6e73]">→</span>
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.to] ?? ''}`}>{latest.to}</span>
-        {!tonight && <span className="ml-1 text-xs text-[#6e6e73]">on {shortDate(latest.date)}</span>}
+        {!tonight && <span className="ml-1 text-xs text-[#6e6e73]">· unchanged since</span>}
       </p>
       {moved.length > 0 ? (
         <ul className="mt-1 space-y-0.5 text-xs">
@@ -2282,7 +2289,7 @@ const GradeMove = ({changes, session, reads}: {
       ) : (
         <p className="mt-1 text-xs text-[#6e6e73]">No analyst vote changed; the score crossed a grade line.</p>
       )}
-      {flipped && <p className="mt-1 text-[11px] text-[#6e6e73]">A vote flips only after the analyst has held its new view for three sessions, so the move follows the evidence by that much. Price was not an input.</p>}
+      {flipped && <p className="mt-1 text-[11px] text-[#6e6e73]">A vote flips only after the analyst has held its new view for three sessions, so the move follows the evidence by that much.{priceMoved ? ' The technical vote is price: trend, averages and levels.' : ' Price was not an input.'}</p>}
     </section>
   )
 }
@@ -2298,6 +2305,7 @@ const NameDetail = ({
   compact = false,
   decisions,
   now = Date.now(),
+  paused = false,
 }: {
   userId: string
   ticker: string
@@ -2309,6 +2317,7 @@ const NameDetail = ({
   compact?: boolean
   decisions?: DeskDecisions
   now?: number
+  paused?: boolean
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
   const [error, setError] = useState('')
@@ -2357,7 +2366,7 @@ const NameDetail = ({
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[row.action] ?? ''}`}>
-              target: {row.action}
+              target: {row.action}{paused ? ' · paused for FOMC' : ''}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade_live] ?? ''}`}>
               {row.grade_live}
@@ -2384,13 +2393,22 @@ const NameDetail = ({
         {gradeReads && (
           <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
             <h4 className="text-sm font-semibold text-[#1d1d1f]">Evening analysis · {latest.session}</h4>
-              <ul className="mt-1 space-y-1 text-sm text-[#1d1d1f]">
-                {Object.entries(gradeReads ?? {}).flatMap(([analyst, lines]) =>
-                  lines.map((line) => (
-                    <li key={`${analyst}-${line}`}>· {line}</li>
-                  )),
-                )}
-              </ul>
+            {/* One block per analyst with the vote it cast, so fifty readings
+                read as five arguments rather than one list. */}
+            {Object.entries(gradeReads ?? {}).map(([analyst, lines]) => {
+              const vote = latest.grades?.[ticker]?.stances?.[analyst]
+              const mark = vote === 1 ? '+ for' : vote === -1 ? '− against' : '· neutral'
+              return (
+                <div key={analyst} className="mt-2">
+                  <p className="text-xs font-semibold capitalize text-[#1d1d1f]">{analyst} <span className="font-normal text-[#6e6e73]">{mark}</span></p>
+                  <ul className="mt-0.5 space-y-0.5 text-sm text-[#1d1d1f]">
+                    {lines.map((line) => (
+                      <li key={`${analyst}-${line}`}>· {line}</li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            })}
           </div>
         )}
         {(brief || gradeRead) && <ArchivedCommentary brief={brief ?? undefined} read={gradeRead} written={latest.written} />}

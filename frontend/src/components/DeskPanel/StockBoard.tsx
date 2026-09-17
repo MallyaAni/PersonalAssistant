@@ -84,7 +84,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : event.calendarUnknown ? 'FOMC calendar unavailable · exposure changes and sizing paused'
     : event.exposure === null ? 'FOMC cycle in progress · sizes paused until the policy status is current'
     : event.exposure < 1 ? `FOMC · sizes at ${event.exposure === 0.5 ? 'half' : `${Math.round(event.exposure * 100)}%`} exposure · restores at the open after the ${event.decisionDate ?? 'FOMC'} decision`
-    : 'FOMC · restoration queued for the next open · sizes at full exposure'
+    : 'FOMC · restoration queued for the next open'
   const sizingLine = sized ? '15-minute model allocations · experimental'
     : researchCurrent && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
     : 'Sizing unavailable · waiting for fresh data'
@@ -126,7 +126,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
           const isCash = row.ticker === '__cash__'
-          return <tr key={row.ticker} className={`border-t border-black/[0.05] ${isCash ? 'bg-[#f0f5fa]' : ''}`}>
+          return <tr key={row.ticker} className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{index + 1}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span>{row.opportunity !== null && <span title="Opportunity evidence index; open for inputs and dates" className="ml-1 text-[10px] font-normal text-[#6e6e73]">· {row.opportunity!.toFixed(1)}/10</span>}</button>}

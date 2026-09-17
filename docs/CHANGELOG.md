@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-16 — Wording found reading the live page after the layout change
+
+Read every section of deep-matter.com signed in, with all folds open. Fixed:
+the Stocks header no longer promises "sizes at full exposure" beside
+"Sizing unavailable"; the cash row uses a translucent background so it
+reads in the dark theme; the FOMC section on the decision night says the
+reduction is done and the restoration is queued for the open, instead of
+"no pre-meeting reduction requested"; a plan row with a zero target says
+"no target until the next rebalance" rather than "0.0% plan"; the name
+panel's move line reads "Last moved Sep 15 · unchanged since" without the
+doubled date, says "the technical vote is price" when the technical vote
+moved instead of "price was not an input", marks the target badge
+"paused for FOMC" while the cycle runs, groups the evening readings by
+analyst with the vote each cast, and shows the year on grade changes from
+another year. Not defects: the option walls still read one expiry with no
+fetch time because the 16:45 intraday snapshot predates the walls code and
+the 09:00 run replaces it; the ML shadow's −0.10% / −0.30% are the first
+fill's costs. Desk browser suite 57/57.
+
 ## 2026-09-16 — Desk layout: Stocks, Plan, Research; the name panel answers why first
 
 The page had one simple view that had stopped being simple and one
