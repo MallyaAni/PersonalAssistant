@@ -30,6 +30,7 @@ export const FundingPreview = ({ userId, equity, research, paused = false }: { u
       {mode === 'intraday_research' && <p className="mt-1">Current technical grades; evening growth-model valuation retained. Building inflation plus negative daily and weekly benchmark trends tightens the exposure ceiling without compounding cuts. Experimental; scheduled policy unchanged.</p>}
     </details>
     {mode === 'intraday_research' && research?.status !== 'available' && <p className="my-2 text-xs text-amber-800">{research?.reason ?? 'Waiting for a complete fresh research allocation.'}</p>}
+    {mode === 'intraday_research' && research?.status === 'available' && <p className="my-2 text-xs text-[#1e7a3a]">Intraday + macro research is ready ({research.session}). Enter cash and confirm to preview the allocation.</p>}
     <form className="flex flex-wrap items-end gap-3" onSubmit={async event => {
       event.preventDefault()
       if (busy) return

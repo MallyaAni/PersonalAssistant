@@ -1053,6 +1053,18 @@ test('research sizing displays reductions and clears the previous policy', async
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
+// A refused preview must name the backend's reason - no evening decision, a
+// stale or foreign research allocation, a bad figure - instead of a generic
+// failure the person cannot act on.
+test('a refused preview surfaces the backend reason', async ({ page }) => {
+  await page.route('**/desk/funding-preview', route => route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({detail: 'No evening decision is available'}) }))
+  await page.goto('/?deskDetails=1#desk')
+  await page.getByText('Calculate shares with available cash', {exact: true}).click()
+  await page.getByLabel('Available cash to allocate ($)').fill('200')
+  await page.getByRole('button', {name: 'Confirm cash and preview'}).click()
+  await expect(page.getByText('No evening decision is available')).toBeVisible()
+})
+
 test('renders the desk at a glance with the track record', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
@@ -1174,6 +1186,32 @@ test('shows each thing once, not twice', async ({ page }) => {
 })
 
 // Clicking a name must open its own history: what the desk said each
+// The board opens with the top page of names and pages on request, so a
+// ninety-name list is never a wall to scroll through; a search finds any
+// ticker directly.
+test('the board opens with top names, pages on request, and a search finds a ticker', async ({ page }) => {
+  const latest = deskRecord()
+  for (let i = 0; i < 15; i += 1) {
+    const t = `T${String(i).padStart(2, '0')}`
+    latest.grades[t] = {
+      grade: i < 8 ? 'A' : 'B', votes: 1, stances: { fundamental: 1, technical: 0, sentiment: 0, value: 0, rotation: 0 },
+      score: 1 - i / 20, side: 'ai', headline: `name ${i}`, reason: 'F holds',
+    }
+  }
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.locator('tbody tr')).toHaveCount(10)
+  await page.getByRole('button', {name: /Show more/}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(19)
+  await page.getByLabel('Search the stock list').fill('AAPL')
+  await expect(board.locator('tbody tr')).toHaveCount(1)
+  await expect(board.locator('tbody tr').first()).toContainText('AAPL')
+  await page.getByLabel('Search the stock list').fill('nope')
+  await expect(page.getByText('No name matches')).toBeVisible()
+  await expect(board.locator('tbody tr')).toHaveCount(0)
+})
+
 // session, what came next, and the name's own backtest against holding it
 // and the benchmark.
 test('drills into a name’s own history', async ({ page }) => {

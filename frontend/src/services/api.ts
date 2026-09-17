@@ -2392,7 +2392,18 @@ export const getDeskFundingPreview = async (userId: string, equity: number, avai
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ equity, available_cash: availableCash, ...(mode === 'evening' ? {} : {mode}) }),
   });
-  if (!response.ok) throw new Error('Sizing preview unavailable. Check account equity, cash and market data.');
+  if (!response.ok) {
+    // The backend names the reason - no evening decision, the research
+    // allocation missing or belonging to another decision, a bad figure -
+    // and masking it with a generic failure leaves the person guessing. Read
+    // the detail through when the body carries it.
+    let detail = 'Sizing preview unavailable. Check account equity, cash and market data.'
+    try {
+      const body = await response.json()
+      if (body && typeof body.detail === 'string' && body.detail) detail = body.detail
+    } catch { /* keep the fallback */ }
+    throw new Error(detail)
+  }
   return await response.json() as DeskFundingPreview;
 };
 

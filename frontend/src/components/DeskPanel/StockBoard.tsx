@@ -72,7 +72,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const [shares, setShares] = useState('')
   const [price, setPrice] = useState('')
   const [date, setDate] = useState(today)
-  const [showAvoid, setShowAvoid] = useState(false)
+  const [query, setQuery] = useState('')
+  const [visible, setVisible] = useState(10)
   const [opened, setOpened] = useState<string | null>(null)
   const pending = useRef(false)
   // A research size is shown only while it is current for that one name: the
@@ -129,14 +130,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const emptyAccount = holdings !== null && holdings.length === 0
   const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
-  // A grade C is "avoid it"; on a ninety-name board those rows are two
-  // thirds of the page and say the same thing. They fold unless the account
-  // holds the name. Small boards show everything.
-  const foldAvoid = stocks.length > 20 && !showAvoid
-  const avoided = foldAvoid ? stocks.filter(stock => stock.grade === 'C' && !holdings?.some(position => position.ticker === stock.ticker)) : []
-  const shown = foldAvoid ? stocks.filter(stock => !avoided.includes(stock)) : stocks
-  const ranked = [...shown]
-  ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
+  // The board opens with the top page of names and pages on request, so a
+  // ninety-name list never becomes a wall to scroll through. A search narrows
+  // to the names that match, and the cash row anchors only the full board: a
+  // search looks for a name, not for uninvested cash.
+  const searchText = query.trim().toLowerCase()
+  const filtered = searchText ? stocks.filter((s) => s.ticker.toLowerCase().includes(searchText)) : stocks
+  const ranked = [...filtered]
+  if (!searchText) ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
   const bar = researchCurrent ? research!.bar : live.data_at
   const time = bar ? new Date(bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
@@ -145,12 +146,24 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
       <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setVisible(10) }}
+          placeholder="Search a ticker"
+          aria-label="Search the stock list"
+          className="w-full max-w-52 rounded-md border border-black/[0.12] bg-white px-2 py-1 text-sm text-[#1d1d1f] placeholder:text-[#9ca3af]"
+        />
+        {searchText && <span className="text-[#6e6e73]">{filtered.length} match{filtered.length === 1 ? '' : 'es'}</span>}
+      </div>
     </div>
     {toolbar}
     <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]"><tr><th className="py-2">#</th><th>Stock</th><th title="The desk's plan for this name against your recorded position">Plan</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr></thead>
         <tbody>{ranked.map((row, index) => {
+          if (index >= visible) return null
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
           const isCash = row.ticker === '__cash__'
@@ -172,9 +185,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
         })}</tbody>
       </table>
       {footer}
-      {(avoided.length > 0 || (showAvoid && stocks.length > 20)) && <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setShowAvoid(!showAvoid)}>
-        {showAvoid ? 'Hide the grade C names' : `Show ${avoided.length} more · grade C, avoid`}
-      </button>}
+      {searchText && filtered.length === 0 && (
+        <p className="border-t border-black/[0.05] px-3 py-2 text-xs text-[#6e6e73]">No name matches “{query}”. Clear the search to see the ranked board.</p>
+      )}
+      {ranked.length > visible && (
+        <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setVisible((v) => v + 10)}>
+          Show more · {Math.min(ranked.length, visible + 10)} of {ranked.length} names
+        </button>
+      )}
     </div>
     <BoardSimulation paper={paper} now={now} />
     {holdings === null && <p role="alert" className="px-3 py-2 text-xs text-[#b42318]">{holdingsError ?? 'Positions unavailable. Recording is disabled.'}</p>}
