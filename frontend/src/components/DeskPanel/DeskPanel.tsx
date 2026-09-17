@@ -436,7 +436,11 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
 function RecordStatus({status, prose, session}: {status?: DeskPayload['record_status']; prose?: {state?: string; status?: string}; session?: string}) {
   const lines: string[] = []
   if (prose?.state && ['partial', 'timed_out', 'unavailable'].includes(prose.state)) lines.push(`Model-written briefs and reads for ${session ?? 'this decision'}: ${prose.status ?? prose.state.replace('_', ' ')}. The decision and its deterministic reads stand.`)
-  if (prose?.state === 'absent') lines.push(`Model-written briefs and reads for ${session ?? 'this decision'} have not been written yet. The decision and its deterministic reads stand.`)
+  // An absent block is the usual "not written yet", except when prose from an
+  // earlier run of the same session predates this decision: then the block's
+  // own status names why it was refused, and the page must say that rather
+  // than a generic "have not been written yet".
+  if (prose?.state === 'absent') lines.push(`Model-written briefs and reads for ${session ?? 'this decision'}: ${prose.status ?? 'have not been written yet'}. The decision and its deterministic reads stand.`)
   if (status?.record.status === 'late') lines.push(status.record.session
     ? `No decision record for ${status.expected} yet. Everything below is the ${status.record.session} decision.`
     : `No decision record for ${status.expected} yet.`)
@@ -1062,7 +1066,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               onClick={() => setAutopsy(!autopsy)}
               className="rounded-full border border-black/[0.08] bg-white px-2.5 py-0.5 text-xs font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]"
             >
-              {autopsy ? 'hide the review' : 'analyze my trading'}
+              {autopsy ? 'Hide the review' : 'Analyze my trading'}
             </button>
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} />}
@@ -1204,7 +1208,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </>}
 
 
-      {editing && <div role="dialog" aria-modal="true" aria-label="Your positions" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      {/* With a decision on file the positions editor is the inline form in the
+          board's plan toolbar; this modal is only for the no-record case, where
+          there is no board to edit against. The two never appear together. */}
+      {editing && !latest && <div role="dialog" aria-modal="true" aria-label="Your positions" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
         <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-4">
           <div className="mb-3 flex justify-between"><h3 className="font-semibold">Your positions</h3><button onClick={() => setEditing(false)} aria-label="Close positions"><X size={18} /></button></div>
           <label className="mb-3 flex items-center gap-2 text-sm">Account value $<input aria-label="Account value" type="number" min="1" value={equity} className="w-32 rounded border p-1" onChange={event => {const value = Number(event.target.value);setEquity(value);writeStored(EQUITY_KEY, String(value))}} /></label>
@@ -2234,7 +2241,11 @@ const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebala
   const open = marketOpenNow(now)
   const parts: string[] = [open ? 'Market open' : 'Market closed']
   if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`the desk is at ${boardEvent.exposure === 0.5 ? 'half' : `${Math.round(boardEvent.exposure * 100)}%`} exposure through the ${event?.decision_date ?? 'FOMC'} decision`)
-  else if (boardEvent) parts.push(orders > 0 ? `${orders} FOMC restoration${orders === 1 ? '' : 's'} fill at the ${open ? 'next fill' : 'open'}` : 'an FOMC cycle is closing')
+  else if (boardEvent) parts.push(orders > 0
+    ? open
+      ? `${orders} FOMC restoration${orders === 1 ? ' is' : 's are'} being placed now`
+      : `${orders} FOMC restoration${orders === 1 ? ' fills' : 's fill'} at the open`
+    : 'an FOMC cycle is closing')
   if (!boardEvent) parts.push(rebalanceDue ? 'a rebalance is due at the next open' : countdown !== null ? `next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no rebalance scheduled')
   let action: string
   if (holdings !== null && holdings === 0) action = 'No positions recorded yet, so the plan compares against an empty account. Add them under Positions.'
@@ -2350,7 +2361,7 @@ const NameDetail = ({
             {row ? <DecisionCell terse allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdings} equity={equity} now={now} /> : 'Not on the board'}
           </div>
           <p className="mt-2 text-xs text-[#6e6e73]">
-            {live.quotes[ticker]?.last != null ? `${money(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
+            {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
             {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
             {walls && (walls.put_wall != null || walls.call_wall != null) ? ` · option walls ${walls.put_wall != null ? priceMoney(walls.put_wall) : '—'} / ${walls.call_wall != null ? priceMoney(walls.call_wall) : '—'}` : ''}
           </p>

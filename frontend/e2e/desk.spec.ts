@@ -83,6 +83,22 @@ test('a decision whose prose timed out is shown with the timeout status', async 
   await expect(page.getByRole('table').first()).toBeVisible()
 })
 
+// Prose from an earlier run of the same session - a forced rerun killed after
+// the record was saved and before the prose was rewritten - is not this
+// decision's. The page must name the reason it was refused, not claim that
+// nothing was written.
+test('a decision whose stored prose predates it is shown as absent with the reason', async ({page}) => {
+  const latest = {...deskRecord(), prose_state: 'absent', prose_status: 'absent: prose on file predates this decision'}
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.goto('/#desk')
+  const status = page.getByRole('status', {name: 'Record status'})
+  await expect(status).toContainText('Model-written briefs and reads')
+  await expect(status).toContainText('prose on file predates this decision')
+  await expect(status).toContainText('The decision and its deterministic reads stand')
+  await expect(status).not.toContainText('have not been written yet')
+  await expect(page.getByRole('table').first()).toBeVisible()
+})
+
 // Current opportunity evidence, not a larger position budget, determines stock priority.
 test('current opportunity scores change rank and explain their inputs', async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
@@ -1445,6 +1461,18 @@ test('the simple view names why position editing is unavailable', async ({ page 
   await expect(positions).toHaveAttribute('title', /could not be loaded/)
 })
 
+// A record on file means the positions editor is the inline form in the
+// board's toolbar. The full-screen modal used to render alongside it, so
+// editing positions showed two overlapping editors at once; exactly one
+// editor must appear.
+test('editing positions opens one inline editor, never a second modal', async ({ page }) => {
+  await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: [{ticker: 'AAPL', shares: 5, entry_price: 100, entry_date: '2026-09-01'}]}}))
+  await page.goto('/#desk')
+  await page.getByRole('button', { name: 'edit my positions' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.locator('input[placeholder="cost per share"]').first()).toBeVisible()
+})
+
 // An off-schedule purchase outside the target book persists only after its actual fill is confirmed.
 test('records a discretionary buy from rankings and reloads its actual shares and cost', async ({ page }) => {
   let stored = [{ticker: 'AAPL', shares: 5, entry_price: 100, entry_date: '2026-09-01'}]
@@ -1621,7 +1649,7 @@ test('dates old candles separately from explanations and labels indicative grade
 test('analyzes the person’s own trading from their documents', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/?deskDetails=1#desk')
-  await page.getByRole('button', { name: 'analyze my trading' }).click()
+  await page.getByRole('button', { name: 'Analyze my trading' }).click()
 
   const review = page.getByText('Your trading, in review')
   await expect(review).toBeVisible()
@@ -1642,7 +1670,7 @@ test('trading review shows the empty-document response', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/trading/autopsy', route => route.fulfill({json: {result: null, reason: 'Share a statement or journal in chat, then retry.'}}))
   await page.goto('/?deskDetails=1#desk')
-  await page.getByRole('button', {name: 'analyze my trading'}).click()
+  await page.getByRole('button', {name: 'Analyze my trading'}).click()
   await expect(page.getByText('Share a statement or journal in chat, then retry.', {exact: true})).toBeVisible()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
