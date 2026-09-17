@@ -1098,8 +1098,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
       holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
-      expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
+      expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
       </div>}
+      {holdingsReady && holdings.length > 0 && (
+        <YourPositions holdings={holdings} live={live} rows={rows} />
+      )}
       {detailsOpen && <details open aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
         <summary className="cursor-pointer text-sm font-medium">Every grade in detail · diagnostic view</summary>
         <div className="mt-3 flex flex-col gap-3">
@@ -1148,28 +1151,39 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
             {' '}{Object.entries(event.outcome.unrestored).map(([symbol, qty]) => `${symbol} ${qty} shares unbought`).join(' · ')}.
             These are unfilled quantities, not restored positions.</p>}
-          <p className="mt-1 text-xs">Paper account only · execute personal-account changes at your broker.</p>
+          <p className="mt-1 text-xs">The reduction is executed in the practice account below; your personal book is unchanged until you act at your broker.</p>
         </section>
       )}
 
 
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
-      {latest && <section aria-label="Cash exposure" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
-        <span>Paper cash <b>{paperLive?.cash != null && paperLive.equity && paperLive.equity > 0 ? `${(100 * paperLive.cash / paperLive.equity).toFixed(1)}%` : 'unavailable'}</b></span>
-        <span title="Cash implied by evening target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
+      {latest && <section aria-label="Your planned cash" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
+        <span title="Cash implied by the plan's target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
         <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
       </section>}
 
 
-      <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
-        <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>
-        <p>{paperLive?.orders ? `${paperLive.orders.length} open orders` : 'Open orders unavailable'}</p>
-        {paperLive?.orders?.map((order, i) => <p key={i}>{order.side} {order.qty} {order.symbol} · {order.status}</p>)}
-        <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
-        {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side} {fill.qty} {fill.symbol} at {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
-      </section>
-      {paperLive && paperLive.positions && paperLive.positions.length > 0 && (
-        <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
+      {latest && (
+        <details className="rounded-2xl border border-black/[0.08] bg-white" aria-label="Practice account">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#1d1d1f]">
+            Practice account
+            <span className="ml-2 text-xs font-normal text-[#6e6e73]">simulated funds · the desk's paper book, not your money</span>
+          </summary>
+          <div className="space-y-3 px-4 pb-4">
+            <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} />
+            <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
+              <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>
+              <p>{paperLive?.orders ? `${paperLive.orders.length} open orders` : 'Open orders unavailable'}</p>
+              {paperLive?.orders?.map((order, i) => <p key={i}>{order.side} {order.qty} {order.symbol} · {order.status}</p>)}
+              <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
+              {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side} {fill.qty} {fill.symbol} at {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
+            </section>
+            {paperLive && paperLive.positions && paperLive.positions.length > 0 && (
+              <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
+            )}
+            <TrackRecord curve={curve} />
+          </div>
+        </details>
       )}
 
       </>}
@@ -1188,11 +1202,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <ExecutionQuality quality={payload.execution_quality} />
       <MlComparison ml={payload.ml_forward} />
       <section className="rounded-xl border border-black/[0.08] bg-white"><BoardSimulation paper={payload.board_paper} now={now} /></section>
-
-      {latest && <details className="rounded-xl border border-black/[0.08] p-3">
-        <summary className="cursor-pointer text-sm font-medium">Performance & practice account</summary>
-        <div className="mt-3 space-y-3"><SummaryStrip latest={latest} paperLive={paperLive} curve={curve} /><TrackRecord curve={curve} /></div>
-      </details>}
 
       {latest && (
         <button
@@ -1308,6 +1317,85 @@ const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number
             <td className="py-1.5 text-right text-xs">
               <TrendUsd value={totalPl} />
             </td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  )
+}
+
+// The trader's own recorded book at live prices: each position's value and
+// P/L against its entry, and the total, so the live view leads with the
+// person's money rather than the practice account's. Priced from the live
+// candle, then the plan's recorded price, then its last close.
+const YourPositions = ({ holdings, live, rows }: {
+  holdings: DeskHolding[]
+  live: DeskLive
+  rows: DeskMineRow[]
+}) => {
+  const priced = holdings.map((h) => {
+    const quote = live.quotes[h.ticker]?.last
+    const row = rows.find((r) => r.ticker === h.ticker)
+    const last = quote ?? row?.last ?? row?.last_close ?? null
+    const value = last !== null ? last * h.shares : null
+    const pl = last !== null ? (last - h.entry_price) * h.shares : null
+    const plPct = last !== null && h.entry_price > 0 ? (last / h.entry_price - 1) * 100 : null
+    return { ...h, last, value, pl, plPct }
+  })
+  const totalValue = priced.reduce((s, p) => s + (p.value ?? 0), 0)
+  const totalPl = priced.reduce((s, p) => s + (p.pl ?? 0), 0)
+  const cost = priced.reduce((s, p) => s + p.shares * p.entry_price, 0)
+  const totalPlPct = cost > 0 ? (totalPl / cost) * 100 : null
+  return (
+    <section aria-label="Your positions" className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">
+          Your positions
+          <span className="ml-2 text-xs font-normal text-[#6e6e73]">{priced.length} recorded {priced.length === 1 ? 'holding' : 'holdings'} · P/L against your recorded entry</span>
+        </h3>
+        <span className="text-xs text-[#6e6e73]">
+          Value {money(totalValue)} · P/L <TrendUsd value={totalPl} />
+          {totalPlPct !== null && <span className="ml-1">(<Trend value={totalPlPct} />)</span>}
+        </span>
+      </div>
+      <table className="w-full text-sm">
+        <thead className="text-left text-xs text-[#6e6e73]">
+          <tr>
+            <th className="py-1">position</th>
+            <th className="py-1 text-right">shares</th>
+            <th className="py-1 text-right">entry</th>
+            <th className="py-1 text-right">last</th>
+            <th className="py-1 text-right">value</th>
+            <th className="py-1 text-right">P/L</th>
+          </tr>
+        </thead>
+        <tbody>
+          {priced.map((p) => (
+            <tr key={p.ticker} className="border-t border-black/[0.05]">
+              <td className="py-1.5 font-medium text-[#1d1d1f]">{p.ticker}</td>
+              <td className="py-1.5 text-right text-[#6e6e73]">{p.shares.toLocaleString()}</td>
+              <td className="py-1.5 text-right text-[#6e6e73]">{priceMoney(p.entry_price)}</td>
+              <td className="py-1.5 text-right">{p.last !== null ? priceMoney(p.last) : <span className="text-[#9ca3af]">—</span>}</td>
+              <td className="py-1.5 text-right">{p.value !== null ? money(p.value) : '—'}</td>
+              <td className="whitespace-nowrap py-1.5 text-right">
+                {p.pl !== null ? (
+                  <>
+                    <TrendUsd value={p.pl} />
+                    {p.plPct !== null && <span className="ml-1 text-xs text-[#6e6e73]">(<Trend value={p.plPct} />)</span>}
+                  </>
+                ) : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr className="border-t border-black/[0.08]">
+            <td className="py-1.5 text-xs text-[#6e6e73]">{priced.length} open positions</td>
+            <td />
+            <td />
+            <td />
+            <td className="py-1.5 text-right text-xs text-[#6e6e73]">{money(totalValue)}</td>
+            <td className="py-1.5 text-right text-xs"><TrendUsd value={totalPl} /></td>
           </tr>
         </tfoot>
       </table>

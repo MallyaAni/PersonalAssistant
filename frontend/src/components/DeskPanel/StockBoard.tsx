@@ -6,6 +6,20 @@ const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
 // Format a portfolio weight without rounding a small positive allocation to zero.
 const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `${(weight * 100).toFixed(1)}%`
 
+// A name's move against its last close, in green or red with an arrow so the
+// direction reads without colour; nothing when there is no close to compare
+// against. This is the row a trader scans for, so it sits beside the price.
+const ChangeMark = ({ last, close }: { last: number; close: number | null | undefined }) => {
+  if (close == null || close <= 0 || !Number.isFinite(last)) return null
+  const change = (last / close - 1) * 100
+  const up = change > 0
+  const down = change < 0
+  const cls = up ? 'text-[#1e7a3a]' : down ? 'text-[#b42318]' : 'text-[#6e6e73]'
+  const mark = up ? '↑' : down ? '↓' : '·'
+  const sign = change > 0 ? '+' : ''
+  return <span className={`ml-1 ${cls}`} title="vs the last close">{mark} {sign}{change.toFixed(1)}%</span>
+}
+
 // Whether the exchange is open at `now`, on New York time.
 export const marketOpenAt = (now: number) => {
   const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false}).formatToParts(new Date(now))
@@ -45,7 +59,7 @@ export const MlComparison = ({ml}: {ml?: DeskPayload['ml_forward']}) => {
 }
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, extraNames = []}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, closes, extraNames = []}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
@@ -64,6 +78,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   toolbar?: ReactNode;
   trade?: (ticker: string) => ReactNode;
   footer?: ReactNode;
+  // Each name's last close, to show today's move against it on the row.
+  closes?: Record<string, number | null>;
   // Names the account holds that the desk does not grade: listed last,
   // never folded, so a held position is never invisible.
   extraNames?: string[];
@@ -128,6 +144,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
   const emptyAccount = holdings !== null && holdings.length === 0
+  const heldNames = new Set((holdings ?? []).map((h) => h.ticker))
   const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   // The board opens with the top page of names and pages on request, so a
@@ -146,24 +163,34 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
       <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
-      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setVisible(10) }}
-          placeholder="Search a ticker"
-          aria-label="Search the stock list"
-          className="w-full max-w-52 rounded-md border border-black/[0.12] bg-white px-2 py-1 text-sm text-[#1d1d1f] placeholder:text-[#9ca3af]"
-        />
-        {searchText && <span className="text-[#6e6e73]">{filtered.length} match{filtered.length === 1 ? '' : 'es'}</span>}
-      </div>
     </div>
     {toolbar}
     <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
-        <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]"><tr><th className="py-2">#</th><th>Stock</th><th className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts.">Opportunity</th><th title="The desk's plan for this name against your recorded position">Plan</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr></thead>
+        <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
+          <tr className="border-b border-black/[0.06]">
+            <th colSpan={6} className="py-2 pr-3 font-normal">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); setVisible(10) }}
+                  placeholder="Search a ticker"
+                  aria-label="Search the stock list"
+                  className="w-full max-w-52 rounded-md border border-black/[0.12] bg-white px-2 py-1 text-sm text-[#1d1d1f] placeholder:text-[#9ca3af]"
+                />
+                {searchText && <span className="text-[#6e6e73]">{filtered.length} match{filtered.length === 1 ? '' : 'es'}</span>}
+              </div>
+            </th>
+          </tr>
+          <tr><th className="py-2">#</th><th>Stock</th><th className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts.">Opportunity</th><th title="The desk's plan for this name against your recorded position">Plan</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr>
+        </thead>
         <tbody>{ranked.map((row, index) => {
-          if (index >= visible) return null
+          // A held position stays on the board even beyond the current
+          // page: a held name must never scroll out of sight. The cash row
+          // is not exempt, because planned cash already reads in the strip
+          // above the board and the top page should stay "top names".
+          if (index >= visible && !heldNames.has(row.ticker)) return null
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
           const isCash = row.ticker === '__cash__'
@@ -172,7 +199,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span></button>}
-              <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
+              <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : '—'}</td>
             <td className="text-xs">{isCash ? 'Hold'
