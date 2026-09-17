@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-17 — Two sections, not three: the ranking is the board, the plan is the trade list
+
+"Every grade in detail" repeated the board in a wider table and sat
+between the board and the plan. It is off the page (reachable as a
+diagnostic view with `?deskDetails=1`), and the row that opens on the
+board now carries what it alone had: the analysts' vote codes, the
+research target and the recorded position. The cash strip moves above
+the plan. The plan says what it is: "The board above is the ranking.
+This is the trade list: the desk's targets at the close turned into share
+counts for your recorded holdings." Other repeats removed: the board
+header no longer restates the session the page header names; the FOMC
+section says the order count once; the practice account's own details
+sit with its performance on the research page. The browser-error helper
+no longer counts a request the browser aborted on navigation as an
+error. Desk browser suite 58/58.
+
 ## 2026-09-16 — The plan table says what it means: no per-row "evening decision", "one vote from dropping to B", honest sizing messages
 
 The plan table printed the grade's source under every row, so after the

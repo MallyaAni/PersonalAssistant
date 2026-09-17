@@ -135,8 +135,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     <div className="shrink-0 border-b border-black/[0.06] px-3 py-2 text-xs text-[#6e6e73]">
       <p>{fomcLine ?? sizingLine}</p>
       {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
-      <p className="mt-0.5">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours</p>
-      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">Analysis {latest.session} close{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
+      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
     </div>
     <div className="min-h-0 flex-1 overflow-auto">

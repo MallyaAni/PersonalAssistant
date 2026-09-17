@@ -727,7 +727,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
   // Every grade in detail is a fold on the one page; the URL can open it.
-  const [detailsOpen, setDetailsOpen] = useState(() => new URLSearchParams(window.location.search).get('deskDetails') === '1')
+  const detailsOpen = new URLSearchParams(window.location.search).get('deskDetails') === '1'
   // Details is two views. Plan is what the desk will do and why: rankings,
   // the plan rows, FOMC, changes, execution. Research is measurement on a
   // slower clock: the gate, execution quality, forward evidence, the ML
@@ -922,11 +922,18 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const g = latest?.grades?.[ticker]
     if (!latest || !g) return null
     const lines = (g.reason ?? '').split('\n').filter(Boolean)
+    const r = rows.find(row => row.ticker === ticker)
+    const research = payload.intraday_research
+    const target = research?.status === 'available' && research.session === latest.session && Date.parse(research.valid_until ?? '') > now
+      && Number.isFinite(research.targets?.[ticker]) ? allocationPercent(research.targets![ticker]) : null
+    const held = holdingsReady ? holdings.find(h => h.ticker === ticker)?.shares ?? 0 : null
     return <div className="grid gap-2 text-xs sm:grid-cols-[1fr_auto]">
       <div>
         <p className="font-medium text-[#1d1d1f]">{g.headline}</p>
+        <p className="mt-0.5 font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{g.ranks ? ratings(r?.ranks_live ?? g.ranks, r?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}</p>
         <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">{lines.map(line => <li key={line}>{line}</li>)}</ul>
         <div className="mt-2 text-[#6e6e73]"><DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} /></div>
+        <p className="mt-1 text-[#6e6e73]">Research target {target ?? '—'} · {held === null ? 'positions unavailable' : `${held.toLocaleString()} shares recorded`}</p>
       </div>
       <button type="button" className="self-start text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
     </div>
@@ -946,7 +953,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
             {latest && !research && <button disabled={!canWrite || !holdingsReady} title={holdingsError || undefined} onClick={() => setEditing(true)} className="text-xs text-[#0071e3] disabled:opacity-40">Positions</button>}
-            {latest && !research && <button type="button" onClick={() => setDetailsOpen(!detailsOpen)} className="text-xs text-[#0071e3]">{detailsOpen ? 'Back to stocks' : 'Details'}</button>}
             {latest && <button type="button" onClick={() => setResearch(!research)} className="text-xs text-[#0071e3]">{research ? 'Back to the desk' : 'Research'}</button>}
             <button
               type="button"
@@ -996,14 +1002,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
       expand={expandRow} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
       </div>}
-      <details open={detailsOpen} onToggle={e => setDetailsOpen(e.currentTarget.open)} aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
-        <summary className="cursor-pointer text-sm font-medium">Every grade in detail</summary>
+      {detailsOpen && <details open aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
+        <summary className="cursor-pointer text-sm font-medium">Every grade in detail · diagnostic view</summary>
         <div className="mt-3 flex flex-col gap-3">
-      {latest && <section aria-label="Cash exposure" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
-        <span>Paper cash <b>{paperLive?.cash != null && paperLive.equity && paperLive.equity > 0 ? `${(100 * paperLive.cash / paperLive.equity).toFixed(1)}%` : 'unavailable'}</b></span>
-        <span title="Cash implied by evening target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
-        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
-      </section>}
 
 
 
@@ -1026,13 +1027,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         </details>
       )}
         </div>
-      </details>
+      </details>}
 
 
       {payload.event_policy?.enabled && (
         <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
           <h3 className="font-semibold">FOMC · {!eventLive?.stale && eventLive?.status ? eventLive.status : eventPaused ? 'portfolio adjustments paused' : !event ? 'decision missing' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
-          {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''} · {eventLive.pending_orders} event orders awaiting reconciliation</p>}
+          {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''}</p>}
           <details className="mt-1 text-xs"><summary className="cursor-pointer">Policy & execution</summary>
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
             The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day.
@@ -1055,6 +1056,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
 
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
+      {latest && <section aria-label="Cash exposure" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
+        <span>Paper cash <b>{paperLive?.cash != null && paperLive.equity && paperLive.equity > 0 ? `${(100 * paperLive.cash / paperLive.equity).toFixed(1)}%` : 'unavailable'}</b></span>
+        <span title="Cash implied by evening target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
+        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
+      </section>}
 
       {latest && (
         <section className="overflow-x-auto rounded-2xl border border-black/[0.08] bg-white p-4">
@@ -1115,7 +1121,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               )}
             </div>
           </div>
-          <p className="mb-2 text-xs text-[#6e6e73]">Recorded holdings → nightly targets · {latest.session} close. Suggested changes, not submitted orders.</p>
+          <p className="mb-2 text-xs text-[#6e6e73]">The board above is the ranking. This is the trade list: the desk's targets at the {latest.session} close turned into share counts for your recorded holdings, largest change first. Suggested changes, not submitted orders.</p>
           {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
             <p className="mb-2 text-xs text-[#9a6200]">
               Since the last plan: {intraday.changed.join(' · ')}
@@ -1194,17 +1200,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
       )}
 
-      {latest && (
-        <button
-          type="button"
-          onClick={() => setDetails(!details)}
-          className="self-start text-sm text-[#0071e3] hover:underline"
-        >
-          {details ? 'Hide the details' : 'Show practice account details'}
-        </button>
-      )}
-
-      {latest && details && <PracticeAccount record={latest.paper} paperLive={paperLive} />}
       </>}
 
       {research && <>
@@ -1227,6 +1222,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <div className="mt-3 space-y-3"><SummaryStrip latest={latest} paperLive={paperLive} curve={curve} /><TrackRecord curve={curve} /></div>
       </details>}
 
+      {latest && (
+        <button
+          type="button"
+          onClick={() => setDetails(!details)}
+          className="self-start text-sm text-[#0071e3] hover:underline"
+        >
+          {details ? 'Hide the details' : 'Show practice account details'}
+        </button>
+      )}
+
+      {latest && details && <PracticeAccount record={latest.paper} paperLive={paperLive} />}
       </>}
 
 
