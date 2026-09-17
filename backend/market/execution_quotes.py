@@ -90,10 +90,13 @@ def describe(raw, feed, market_open, now=None):
         reason = "Market closed or clock unavailable"
     elif stamp is None or not 0 <= (now - stamp).total_seconds() < MAX_AGE_SECONDS:
         reason = "Quote expired"
-    elif feed != "sip":
-        reason = "IEX only; consolidated quote required"
+    elif feed not in ("sip", "iex"):
+        reason = "Unsupported quote feed"
     elif spread > MAX_SPREAD_BPS:
         reason = "Spread exceeds 25 bp"
     else:
-        return {**result, "eligible": True, "reason": "Quote checks passed"}
+        # The account has no consolidated feed, so an IEX quote is the best
+        # dated evidence available; label the source rather than withholding.
+        reason = f"{feed.upper()} quote checks passed"
+        return {**result, "eligible": True, "reason": reason}
     return {**result, "reason": reason}

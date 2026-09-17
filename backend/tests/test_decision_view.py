@@ -30,7 +30,6 @@ def setup():
     "block",
     [
         None,
-        "iex",
         "stale",
         "closed",
         "spread",
@@ -47,7 +46,6 @@ def test_decision_requires_every_gate(block):
     record, snapshot, quoted, now = setup()
     quote = quoted["quotes"]["S11"]
     changes = {
-        "iex": (quoted, {"feed": "iex"}),
         "stale": (quote, {"t": (now - timedelta(seconds=31)).isoformat()}),
         "future": (quote, {"t": (now + timedelta(seconds=1)).isoformat()}),
         "closed": (quoted, {"market_open": False}),
@@ -67,6 +65,18 @@ def test_decision_requires_every_gate(block):
     ]
     assert (result["action"] == "Buy eligible") is (block is None)
     assert result["target_weight"] == 0.1
+
+
+# IEX is the only feed the account can read; its quotes pass the gate, labelled.
+def test_iex_quote_passes_the_gate():
+    record, snapshot, quoted, now = setup()
+    quoted["feed"] = "iex"
+    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
+        "S11"
+    ]
+    assert result["action"] == "Buy eligible"
+    assert result["quote"]["feed"] == "iex"
+    assert result["quote"]["eligible"]
 
 
 # A name with no recorded position cannot be labeled Hold when buying is ineligible.

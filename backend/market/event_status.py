@@ -33,12 +33,15 @@ def load(root):
     }
 
 
-# Pause current planning for durable event intent without changing archived records.
+# Reflect the live event state in the plan without changing archived records:
+# force execution pending while a cycle pauses planning, and clear a stale
+# pending flag from a finished cycle so the board is not stuck on "Wait".
 def for_planning(record, root):
     status = load(root)
-    if not status["planning_paused"]:
-        return record
-    return {
-        **record,
-        "event_risk": {**(record.get("event_risk") or {}), "execution_pending": True},
-    }
+    if status["planning_paused"]:
+        event_risk = {**(record.get("event_risk") or {}), "execution_pending": True}
+        return {**record, "event_risk": event_risk}
+    event_risk = record.get("event_risk") or {}
+    if event_risk.get("execution_pending"):
+        return {**record, "event_risk": {**event_risk, "execution_pending": False}}
+    return record

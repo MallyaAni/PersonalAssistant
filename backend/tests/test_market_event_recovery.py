@@ -262,6 +262,19 @@ def test_qualified_recovery_pauses_planning_before_orders_exist(tmp_path):
     ]
 
 
+# A record frozen with a finished cycle's pending flag must not keep planning
+# paused once the live event state has moved on.
+def test_stale_execution_pending_clears_when_the_cycle_is_over(tmp_path):
+    record = {
+        "session": "2026-09-11",
+        "event_risk": {"factor": 1.0, "execution_pending": True},
+    }
+    paper.save_state(tmp_path, paper.PaperState())
+    assert event_status.for_planning(record, tmp_path)["event_risk"][
+        "execution_pending"
+    ] is False
+
+
 # The intraday exception is structurally restricted to event sells while open.
 @pytest.mark.parametrize(
     ("side", "event_id", "opened"),
