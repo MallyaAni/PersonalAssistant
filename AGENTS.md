@@ -335,6 +335,27 @@ a plain `docker restart` or `up -d` alone reuses the old image and changes
 nothing. If the user reports a frontend fix as not taking effect after a
 hard refresh, suspect this before suspecting the browser.
 
+**The `frontend` container serves the deploy clone's tree, not the shared
+checkout, so local validation of uncommitted frontend work silently tests
+the deployed code.** `anios_frontend` mounts `~/deploy/anios/frontend` →
+`/app` (the same tree the gateway builds), so `docker compose exec -T
+frontend npx tsc --noEmit` and Playwright run via `--volumes-from
+anios_frontend` both typecheck and exercise the *deployed* frontend,
+ignoring edits in `/home/animallya96/anios/frontend`. On 2026-09-17 an e2e
+run reported "60/60 passed" — against the previous deploy, none of the new
+tests running at all, and the new search test "passing" against code that
+had no search bar. To validate uncommitted frontend work, serve the shared
+checkout on its own port and point Playwright at it:
+`docker run --rm -d --name shared-dev --network host -v
+/home/animallya96/anios/frontend:/app -w /app
+mcr.microsoft.com/playwright:v1.61.1-noble sleep 3600` then
+`docker exec -d shared-dev npx vite --host 127.0.0.1 --port 5174
+--strictPort`, and run tests with
+`ANIOS_FRONTEND_URL=http://localhost:5174` (the shared checkout has its own
+`node_modules`). Confirm the target first: check what `docker inspect
+anios_frontend --format '{{range .Mounts}}{{.Source}}->{{.Destination}}'`
+reports before trusting any frontend validation.
+
 **Recreating `anios_backend` used to break `gateway` until `gateway` was
 also restarted — fixed, and worth knowing why.** `nginx.gateway.conf` proxies `/api/` to `http://backend:8000`
 and resolves that hostname to an IP once, when its worker processes start —

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-17 — Desk board: ticker search and paged top-10 list, and honest sizing-preview reasons
+
+Deployed and live: main `a031bba`, post-deploy
+`2026-09-17T13:42:11Z a031bba9 ok (cheap)`, gateway bundle
+`index-CK2euoze.js` (the served index.html references it, and the bundle
+carries "Search a ticker"). The ranked board opened as a wall of names to
+scroll through, worst on a phone. It now opens with the top ten names and
+pages on a "Show more" button, and a "Search a ticker" box filters the list
+by ticker (case-insensitive, with a live match count and a "No name
+matches" state); this replaces the old grade-C fold, and the cash row
+anchors only the full, non-search board. The funding preview previously
+masked the backend's 422 reason behind a generic message that a broad
+regex then rewrote, so an unavailable or foreign research allocation read
+as a vague failure; `getDeskFundingPreview` now surfaces the backend detail
+verbatim, and selecting "Intraday + macro research" gives immediate
+feedback (ready, or the reason it is not). Verified: tsc clean; the desk
+browser suite 62/62 in Chromium against this tree, including three new
+tests (search and paging, no-match state, refused-preview reason), and a
+live DOM walk showing the search box rendered above the ranked list. The
+intraday research allocation is currently unavailable (last ran
+2026-09-16 16:45), so intraday sizing waits for the next market open; the
+page now says why.
+
 ## 2026-09-17 — Desk page trading-UX fixes, deployed and verified live
 
 A word-by-word pass over the desk page for the person trading with it.
