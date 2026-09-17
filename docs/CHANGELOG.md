@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-17 — One list: the plan is a column of the ranked board
+
+"Portfolio plan" was a second list of the same names. It is gone as a
+section. Each row of the ranked board now carries the desk's plan for
+that name in a Plan column: the move (buy, add, trim, sell, hold), the
+share count for this account, when it is due, the record-fill control,
+the position held with its P/L, the grade's caveats (intraday grade, one
+vote from dropping, the hypothetical stop) and whether the name is
+buy-eligible right now; under an FOMC cycle it reads "Hold · FOMC" or
+"Wait · FOMC". The plan's controls (account size, hypothetical stops,
+positions, the cash-limited share preview) sit in a toolbar above the
+list, with the schedule ("FOMC takes priority · in 16 trading days"). A
+held name the desk does not grade is listed last, never folded. The
+footer keeps "Record confirmed broker fills only." Desk browser suite
+58/58.
+
 ## 2026-09-17 — Two sections, not three: the ranking is the board, the plan is the trade list
 
 "Every grade in detail" repeated the board in a wider table and sat

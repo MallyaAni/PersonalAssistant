@@ -942,7 +942,7 @@ test('compact decision view keeps rankings above the fold', async ({ page }) => 
   const errors = observeBlockingBrowserErrors(page)
   await page.setViewportSize({width: 1440, height: 1000})
   await page.goto('/?deskDetails=1#desk')
-  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  const board = page.getByLabel('Stocks and cash', {exact: true})
   await expect(board).toBeVisible()
   await page.waitForLoadState('networkidle')
   const text = await page.getByRole('main').innerText()
@@ -1090,7 +1090,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toBeVisible()
   await page.goto('/?deskDetails=1#desk')
   await expect(page.getByLabel('Reading the current picks')).toContainText('not a probability of profit')
-  await expect(page.getByRole('columnheader', {name: 'Target move', exact: true})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Plan', exact: true})).toBeVisible()
   await expect(page.getByText('not scheduled yet', {exact: true}).first()).toBeVisible()
   await expect(page.getByRole('columnheader', {name: 'broker mark', exact: true})).toBeVisible()
   await expect(page.getByText('in 18 trading days', { exact: true })).toBeVisible()
@@ -1778,8 +1778,8 @@ test('FOMC reduction takes priority over regular target execution', async ({ pag
 // The target board must take its content height instead of clipping rows inside a flex item.
 test('target rows are not hidden inside a vertically collapsed section', async ({ page }) => {
   await page.goto('/?deskDetails=1#desk')
-  const board = page.locator('section', {has: page.getByRole('columnheader', {name: 'Target move', exact: true})})
-  await expect(board.locator('tbody tr')).toHaveCount(2)
+  const board = page.getByLabel('Stocks and cash', {exact: true})
+  await expect(board.locator('tbody tr')).toHaveCount(4)
   const size = await board.evaluate(element => ({height: element.clientHeight, content: element.scrollHeight}))
   expect(size.content).toBeLessThanOrEqual(size.height)
 })

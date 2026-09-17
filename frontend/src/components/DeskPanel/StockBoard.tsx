@@ -45,7 +45,7 @@ export const MlComparison = ({ml}: {ml?: DeskPayload['ml_forward']}) => {
 }
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, extraNames = []}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
@@ -59,6 +59,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // What a row shows when opened in place: the plan for that name, its
   // reasons and a way to the full panel.
   expand?: (ticker: string) => ReactNode;
+  // The account's controls above the list, the plan for a name in its row,
+  // and the note under the list.
+  toolbar?: ReactNode;
+  trade?: (ticker: string) => ReactNode;
+  footer?: ReactNode;
+  // Names the account holds that the desk does not grade: listed last,
+  // never folded, so a held position is never invisible.
+  extraNames?: string[];
 }) => {
   const [buy, setBuy] = useState<string | null>(null)
   const [shares, setShares] = useState('')
@@ -109,12 +117,12 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       && value?.bar === live.quotes[ticker]?.bar && Date.parse(value?.valid_until ?? '') > now
       && Number.isFinite(value?.score) ? value!.score : null
   }
-  const stocks = Object.entries(latest.grades).map(([ticker, grade]) => ({
+  const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
     ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
     opportunity: opportunity(ticker),
     weight: weightOf(ticker),
-  })).sort((a, b) => (b.opportunity ?? -1) - (a.opportunity ?? -1)
+  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, weight: null}))].sort((a, b) => (b.opportunity ?? -1) - (a.opportunity ?? -1)
     || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
     || (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
@@ -138,9 +146,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
     </div>
+    {toolbar}
     <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
-        <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]"><tr><th className="py-2">#</th><th>Stock</th><th>Action</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr></thead>
+        <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]"><tr><th className="py-2">#</th><th>Stock</th><th title="The desk's plan for this name against your recorded position">Plan</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr></thead>
         <tbody>{ranked.map((row, index) => {
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
@@ -153,8 +162,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs">{isCash ? 'Hold'
-              : paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
-              : action(row.ticker, row.weight)}</td>
+              : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
+              : action(row.ticker, row.weight))}</td>
             <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
             <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
@@ -162,6 +171,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           </Fragment>
         })}</tbody>
       </table>
+      {footer}
       {(avoided.length > 0 || (showAvoid && stocks.length > 20)) && <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setShowAvoid(!showAvoid)}>
         {showAvoid ? 'Hide the grade C names' : `Show ${avoided.length} more · grade C, avoid`}
       </button>}

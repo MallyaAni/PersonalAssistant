@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 import { FundingPreview } from './FundingPreview'
 import { EconomicContext } from './EconomicContext'
@@ -735,7 +735,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [research, setResearch] = useState(() => new URLSearchParams(window.location.search).get('deskView') === 'research')
   const [editing, setEditing] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [openReason, setOpenReason] = useState<string | null>(null)
   const [openName, setOpenName] = useState<string | null>(null)
   const [autopsy, setAutopsy] = useState(false)
   const [marking, setMarking] = useState<string | null>(null)
@@ -938,6 +937,101 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <button type="button" className="self-start text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
     </div>
   }
+  // The account's controls sit above the list: the plan is a column of it.
+  const planToolbar = latest ? <div className="shrink-0 border-b border-black/[0.06] px-3 py-2">
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+            <h3 className="text-xs font-medium text-[#1d1d1f]">
+              Portfolio plan
+              <span className="ml-2 text-xs font-normal text-[#6e6e73]">{eventPaused ? 'FOMC takes priority' : rebalanceDue ? 'scheduled trades due' : 'not due yet'}</span>
+              {countdown !== null && (
+                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+                  in {countdown} trading days
+                </span>
+              )}
+              {live.as_of && (
+                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+                  IEX 15-minute bar starting {marketTime(live.data_at)}
+                  {(live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
+                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
+                      last known data · not current
+                    </span>
+                  )}
+                </span>
+              )}
+              {live.reason && <span className="ml-2 text-xs text-amber-800">{live.reason}</span>}
+            </h3>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
+              <label className="flex items-center gap-2">
+                account size $
+                <input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={Math.round(equity)}
+                  onChange={(e) => {
+                    const value = Number(e.target.value) || 0
+                    setEquity(value)
+                    writeStored(EQUITY_KEY, String(value))
+                  }}
+                  className="w-28 rounded-md border border-black/[0.12] px-2 py-1 text-right text-sm text-[#1d1d1f]"
+                />
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={stops}
+                  onChange={(e) => {
+                    setStops(e.target.checked)
+                    writeStored(STOPS_KEY, e.target.checked ? 'on' : 'off')
+                  }}
+                />
+                show hypothetical stops
+              </label>
+              {canWrite && holdingsReady ? (
+                <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
+                  {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
+                </button>
+              ) : (
+                <span className="text-[#6e6e73]">read-only: the operator's book</span>
+              )}
+            </div>
+          </div>
+          {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
+            <p className="mb-2 text-xs text-[#9a6200]">
+              Since the last plan: {intraday.changed.join(' · ')}
+            </p>
+          )}
+          {holdingsError && <p role="alert" className="mb-2 text-xs text-[#b42318]">{holdingsError}</p>}
+          {canWrite && holdingsReady && editing && (
+            <Positions
+              holdings={holdings}
+              error={saveError}
+              onSave={async (next) => {
+                if (await save(next)) setEditing(false)
+              }}
+            />
+          )}
+          {canWrite && holdingsReady && holdings.length === 0 && !editing && (
+            <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
+          )}
+          {canWrite && holdingsReady && <details className="mb-1 text-xs"><summary className="cursor-pointer text-[#0071e3]">Calculate shares with available cash</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} paused={Boolean(eventPaused)} /></details>}
+  </div> : null
+  // The plan for a name on the board: the trade against the recorded position.
+  const tradeCell = (ticker: string) => {
+    const r = rows.find(row => row.ticker === ticker)
+    if (!r || !latest) return null
+    return <TradeCell r={r} quote={live.quotes[ticker]} equity={equity} stops={stops} marking={marking !== null}
+      scheduleLabel={eventPaused ? 'FOMC takes priority' : !r.rebalance_due ? 'not scheduled yet' : 'scheduled target; not a fill'}
+      onDone={canWrite && holdingsReady && rebalanceDue && !eventPaused ? async (price, qty) => {
+        setMarking(r.ticker)
+        try { return await save(afterTrade(holdings, r, price, qty)) }
+        catch (err) { setSaveError(err instanceof Error ? err.message : 'The fill was not recorded.'); return false }
+        finally { setMarking(null) }
+      } : undefined}
+      eligibility={eventPaused
+        ? <span title={holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle; restoration follows the decision' : 'No new buys during the FOMC cycle'}>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
+        : <DecisionCell compact allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />} />
+  }
   const boardEvent: BoardEvent | null = eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null,
@@ -1000,7 +1094,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
       holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
-      expand={expandRow} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
+      expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
       </div>}
       {detailsOpen && <details open aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
         <summary className="cursor-pointer text-sm font-medium">Every grade in detail · diagnostic view</summary>
@@ -1062,132 +1156,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
       </section>}
 
-      {latest && (
-        <section className="overflow-x-auto rounded-2xl border border-black/[0.08] bg-white p-4">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-            <h3 className="text-sm font-semibold text-[#1d1d1f]">
-              Portfolio plan
-              <span className="ml-2 text-xs font-normal text-[#6e6e73]">{eventPaused ? 'FOMC takes priority' : rebalanceDue ? 'scheduled trades due' : 'not due yet'}</span>
-              {countdown !== null && (
-                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  in {countdown} trading days
-                </span>
-              )}
-              {live.as_of && (
-                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  IEX 15-minute bar starting {marketTime(live.data_at)}
-                  {(live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
-                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
-                      last known data · not current
-                    </span>
-                  )}
-                </span>
-              )}
-              {live.reason && <span className="ml-2 text-xs text-amber-800">{live.reason}</span>}
-            </h3>
-            <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
-              <label className="flex items-center gap-2">
-                account size $
-                <input
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={Math.round(equity)}
-                  onChange={(e) => {
-                    const value = Number(e.target.value) || 0
-                    setEquity(value)
-                    writeStored(EQUITY_KEY, String(value))
-                  }}
-                  className="w-28 rounded-md border border-black/[0.12] px-2 py-1 text-right text-sm text-[#1d1d1f]"
-                />
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={stops}
-                  onChange={(e) => {
-                    setStops(e.target.checked)
-                    writeStored(STOPS_KEY, e.target.checked ? 'on' : 'off')
-                  }}
-                />
-                show hypothetical stops
-              </label>
-              {canWrite && holdingsReady ? (
-                <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
-                  {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
-                </button>
-              ) : (
-                <span className="text-[#6e6e73]">read-only: the operator's book</span>
-              )}
-            </div>
-          </div>
-          <p className="mb-2 text-xs text-[#6e6e73]">The board above is the ranking. This is the trade list: the desk's targets at the {latest.session} close turned into share counts for your recorded holdings, largest change first. Suggested changes, not submitted orders.</p>
-          {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
-            <p className="mb-2 text-xs text-[#9a6200]">
-              Since the last plan: {intraday.changed.join(' · ')}
-            </p>
-          )}
-          {holdingsError && <p role="alert" className="mb-2 text-xs text-[#b42318]">{holdingsError}</p>}
-          {canWrite && holdingsReady && editing && (
-            <Positions
-              holdings={holdings}
-              error={saveError}
-              onSave={async (next) => {
-                if (await save(next)) setEditing(false)
-              }}
-            />
-          )}
-          {canWrite && holdingsReady && holdings.length === 0 && !editing && (
-            <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
-          )}
-          {canWrite && holdingsReady && <details className="mb-3 text-xs"><summary className="cursor-pointer text-[#0071e3]">Calculate shares with available cash</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} paused={Boolean(eventPaused)} /></details>}
-          <table className="w-full text-sm">
-            <thead className="text-left text-[#6e6e73]">
-              <tr>
-                <th className="py-1">Name</th>
-                <th>Target move</th>
-                <th title="Unfunded target difference; use the cash-limited preview for a shared budget">Target difference</th>
-                <th title="Grades are the evening decision's unless marked as intraday">Grade</th>
-                <th title={TRIGGER_LEGEND}>Why</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <Row
-                  key={r.ticker}
-                  r={r}
-                  ranks={latest.grades[r.ticker]?.ranks}
-                  quote={live.quotes[r.ticker]}
-                  equity={equity}
-                  stops={stops}
-                  open={openReason === r.ticker}
-                  onReason={() => setOpenReason(openReason === r.ticker ? null : r.ticker)}
-                  onOpenName={() => setOpenName(r.ticker)}
-                  marking={marking !== null}
-                  scheduleLabel={eventPaused ? 'FOMC takes priority' : !r.rebalance_due ? 'not scheduled yet' : 'scheduled target; not a fill'}
-                  onDone={
-                    canWrite && holdingsReady && rebalanceDue && !eventPaused
-                      ? async (price, qty) => {
-                          setMarking(r.ticker)
-                          try {
-                            return await save(afterTrade(holdings, r, price, qty))
-                          } catch (err) {
-                            setSaveError(err instanceof Error ? err.message : 'The fill was not recorded.')
-                            return false
-                          } finally {
-                            setMarking(null)
-                          }
-                        }
-                      : undefined
-                  }
-                />
-              ))}
-            </tbody>
-          </table>
-          {saveError && !editing && <p className="mt-2 text-xs text-[#b42318]">{saveError}</p>}
-          <p className="mt-2 text-xs text-[#6e6e73]">Record confirmed broker fills only. No automatic price stops.</p>
-        </section>
-      )}
 
       <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
         <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>
@@ -1459,24 +1427,20 @@ const PracticeAccount = ({
   )
 }
 
-interface RowProps {
+// The desk's plan for one name against the person's recorded position: the
+// move, the share count for this account, when it is due, the record-fill
+// control, the position held, the grade's caveats and whether it is
+// eligible to buy right now. This is the column that used to be a table.
+const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, eligibility }: {
   r: DeskMineRow
-  ranks?: Record<string, number>
   quote?: DeskQuote
   equity: number
   stops: boolean
-  open: boolean
-  onReason: () => void
-  onOpenName: () => void
   marking: boolean
   scheduleLabel: string
   onDone?: (price: number, qty: number) => Promise<boolean>
-}
-
-// One name: what to do, how much for this account, the price now against
-// the close and the person's own cost, the grade, when it leaves, and why.
-// The "why" reads in plain words first; the analysts' numbers are inside.
-const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marking, scheduleLabel, onDone }: RowProps) => {
+  eligibility: ReactNode
+}) => {
   const [recording, setRecording] = useState(false)
   const [filledShares, setFilledShares] = useState('')
   const [fillPrice, setFillPrice] = useState('')
@@ -1484,144 +1448,56 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
   const hit = trailing !== null && price > 0 && price <= trailing
-  // "At risk" reads the live grade's margin when the candle has one, so the
-  // marker moves with the price rather than the evening grade; the evening
-  // margin stands in for a name the candle has not read.
-  const atRisk =
-    r.in_book &&
-    r.target_weight > 0 &&
-    (r.grade_margin_live ?? r.grade_margin ?? 1) <= 0
-  // The board's action comes from the evening target against the current
-  // weight, and the grade badge reads the candle. When the live grade is a
-  // C - the rebalance drop line - but the action still says buy or add,
-  // the two disagree, and the row must say so in one line: the desk will
-  // drop this name at the next rebalance if it closes here.
+  const atRisk = r.in_book && r.target_weight > 0 && (r.grade_margin_live ?? r.grade_margin ?? 1) <= 0
   const liveDrop = r.in_book && r.grade_live === 'C' && (r.action === 'buy' || r.action === 'add')
+  const moving = ['buy', 'add', 'trim', 'sell'].includes(r.action)
   return (
-    <tr className="border-t border-black/[0.05] align-top">
-      <td className="py-1.5">
-        <button type="button" onClick={onOpenName} className="font-medium text-[#1d1d1f] hover:text-[#0071e3] hover:underline" title="Open the name's history">
-          {r.ticker}
-        </button>
-      </td>
-      <td>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>
-          {r.action}
-        </span>
-        {['buy', 'add', 'trim', 'sell'].includes(r.action) && <div className="mt-1 text-xs text-[#6e6e73]">{scheduleLabel}</div>}
+    <div className="text-xs">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>{r.action}</span>
+        {r.action === 'hold' ? <span>{pct(r.current_weight)} of the account</span>
+          : r.action === 'uncovered' ? <span className="font-medium">{r.shares.toLocaleString()} shares held</span>
+          : r.action === 'blocked' ? <span className="text-[#6e6e73]">{r.blocked_reason ?? 'buy held back by the band rule'}</span>
+          : <span className="font-medium">{qty.toLocaleString()} share{qty === 1 ? '' : 's'}</span>}
+        {moving && <span className="text-[#6e6e73]">{scheduleLabel}</span>}
         {r.action !== 'hold' && r.action !== 'uncovered' && r.action !== 'blocked' && onDone && (
-          <button
-            type="button"
-            onClick={() => setRecording(!recording)}
-            disabled={marking}
-            title="Record actual filled shares and average price confirmed by your broker"
-            className="ml-1 text-xs text-[#0071e3] hover:underline disabled:text-[#6e6e73]"
-          >
+          <button type="button" onClick={() => setRecording(!recording)} disabled={marking} title="Record actual filled shares and average price confirmed by your broker" className="text-[#0071e3] hover:underline disabled:text-[#6e6e73]">
             {recording ? 'cancel fill' : 'record fill'}
           </button>
         )}
-        {recording && onDone && (
-          <form aria-label={`Record ${r.ticker} fill`} className="mt-2 space-y-2" onSubmit={async (event) => {
-            event.preventDefault()
-            if (marking) return
-            if (await onDone(Number(fillPrice), Number(filledShares))) {
-              setRecording(false)
-              setFillPrice('')
-              setFilledShares('')
-            }
-          }}>
-            <label className="block text-xs">Filled shares
-              <input aria-label="Filled shares" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={filledShares} onChange={event => setFilledShares(event.target.value)} />
-            </label>
-            <label className="block text-xs">Average fill price ($)
-              <input aria-label="Average fill price" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={fillPrice} onChange={event => setFillPrice(event.target.value)} />
-            </label>
-            <button type="submit" disabled={marking} className="text-xs text-[#0071e3] disabled:text-[#6e6e73]">{marking ? 'saving' : 'Save confirmed fill'}</button>
-          </form>
-        )}
-        {liveDrop && (
-          <div className="mt-0.5 text-xs font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">
-            indicative C: removed if still C at the next rebalance
-          </div>
-        )}
-      </td>
-      <td className="whitespace-nowrap">
-        {r.action === 'hold' ? (
-          <span>{pct(r.current_weight)} of the account</span>
-        ) : r.action === 'uncovered' ? (
-          <span className="font-medium">{r.shares.toLocaleString()} shares held</span>
-        ) : r.action === 'blocked' ? (
-          <span className="text-xs text-[#6e6e73]">{r.blocked_reason ?? 'buy held back by the band rule'}</span>
-        ) : (
-          <span className="font-medium">{qty.toLocaleString()} share{qty === 1 ? '' : 's'}</span>
-        )}
-        {r.shares > 0 && r.entry_price !== null && (
-          <div className="text-xs text-[#6e6e73]">
-            you hold {r.shares} at {priceMoney(r.entry_price)}
-            {r.pl_pct !== null && r.last !== null && (
-              <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}>
-                {' '}
-                <TrendUsd value={r.shares * (r.last - r.entry_price)} />
-                <span className="ml-1">(<Trend value={r.pl_pct * 100} />)</span>
-              </span>
-            )}
-          </div>
-        )}
-      </td>
-      <td className="whitespace-nowrap">
-        {r.in_book ? (
-          <>
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>{r.grade_live}</span>
-            {r.grade_source === 'intraday' && <div className="text-xs text-[#6e6e73]">intraday grade</div>}
-            {r.grade_live !== r.grade && (
-              <span className="ml-1 text-xs text-[#6e6e73]" title="indicative grade using available intraday technical and value inputs; the evening decision governs scheduled targets">
-                {r.grade} at the close
-              </span>
-            )}
-            {atRisk && r.grade_live === r.grade && (
-              <span className="ml-1 text-xs text-[#9a6200]" title="The vote total sits at the line for this grade. This is not a probability of loss; a core analyst veto can also change the grade.">
-                one vote from dropping to {GRADE_BELOW[r.grade_live] ?? 'C'}
-              </span>
-            )}
-            {trailing !== null && (
-              <div className={`text-xs ${hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}`}>
-                {hit ? 'hypothetical stop breached — not an active exit rule' : `hypothetical stop ${priceMoney(trailing)} — not an active exit rule`}
-              </div>
-            )}
-          </>
-        ) : (
-          <span className="text-xs text-[#6e6e73]">not covered</span>
-        )}
-      </td>
-      <td className="text-xs text-[#6e6e73]">
-        {r.in_book && r.why ? (
-          <button type="button" onClick={onReason} className="text-left text-[#1d1d1f] hover:text-[#0071e3] hover:underline" title="why the desk holds this grade">
-            {open ? 'hide evening thesis' : `Evening thesis: ${r.why}`}
-          </button>
-        ) : (
-          r.why
-        )}
-        {open && (
-          <>
-            <div className="mt-1 font-mono text-[#1d1d1f]" title={`${TRIGGER_LEGEND} the number is the analyst's rating, 0 to 100`}>
-              {r.in_book && ranks ? ratings(r.ranks_live ?? ranks, r.stances_live ?? r.stances ?? {}) : null}
-            </div>
-            {r.technical_now !== null && r.technical_close !== null && (
-              <div className="text-[#6e6e73]">
-                technical at the bar price: {Math.round(r.technical_now * 100)} (was {Math.round(r.technical_close * 100)} at the close)
-                {r.value_now !== null && r.value_now !== undefined && r.value_close !== null && r.value_close !== undefined && (
-                  <span>
-                    {' '}· value {Math.round(r.value_now * 100)} (was {Math.round(r.value_close * 100)})
-                  </span>
-                )}
-              </div>
-            )}
-
-            {r.reason && <ReasonLines text={r.reason} />}
-          </>
-        )}
-      </td>
-    </tr>
+      </div>
+      {recording && onDone && (
+        <form aria-label={`Record ${r.ticker} fill`} className="mt-2 space-y-2" onSubmit={async (event) => {
+          event.preventDefault()
+          if (marking) return
+          if (await onDone(Number(fillPrice), Number(filledShares))) { setRecording(false); setFillPrice(''); setFilledShares('') }
+        }}>
+          <label className="block">Filled shares
+            <input aria-label="Filled shares" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={filledShares} onChange={event => setFilledShares(event.target.value)} />
+          </label>
+          <label className="block">Average fill price ($)
+            <input aria-label="Average fill price" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={fillPrice} onChange={event => setFillPrice(event.target.value)} />
+          </label>
+          <button type="submit" disabled={marking} className="text-[#0071e3] disabled:text-[#6e6e73]">{marking ? 'saving' : 'Save confirmed fill'}</button>
+        </form>
+      )}
+      {r.why && <div className="text-[#6e6e73]">{r.why}</div>}
+      {liveDrop && <div className="mt-0.5 font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">indicative C: removed if still C at the next rebalance</div>}
+      {r.shares > 0 && r.entry_price !== null && (
+        <div className="text-[#6e6e73]">
+          you hold {r.shares} at {priceMoney(r.entry_price)}
+          {r.pl_pct !== null && r.last !== null && (
+            <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}>
+              {' '}<TrendUsd value={r.shares * (r.last - r.entry_price)} /><span className="ml-1">(<Trend value={r.pl_pct * 100} />)</span>
+            </span>
+          )}
+        </div>
+      )}
+      {r.in_book && r.grade_live !== r.grade && <div className="text-[#6e6e73]" title="indicative grade using available intraday technical and value inputs; the evening decision governs scheduled targets">{r.grade} at the close, {r.grade_live} intraday</div>}
+      {atRisk && r.grade_live === r.grade && <div className="text-[#9a6200]" title="The vote total sits at the line for this grade. This is not a probability of loss; a core analyst veto can also change the grade.">one vote from dropping to {GRADE_BELOW[r.grade_live] ?? 'C'}</div>}
+      {trailing !== null && <div className={hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}>{hit ? 'hypothetical stop breached — not an active exit rule' : `hypothetical stop ${priceMoney(trailing)} — not an active exit rule`}</div>}
+      <div className="mt-0.5">{eligibility}</div>
+    </div>
   )
 }
 
