@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-17 — The desk page is now a live trader dashboard with the practice account in its own section
+
+Deployed `22b26f82 ok (cheap)`. The desk view leads with the active
+trader's own book: a new "Your positions" table shows the trader's
+recorded holdings at live prices with value and P/L against entry and a
+total, each board row shows its move against the last close beside the
+price (green/red arrow, `↑ +2.0%`), a held position stays visible even
+beyond the pagination fold (the "held position is never invisible"
+invariant that paging had broken), and the ticker search moved out of the
+banner into the table header, directly above the rows it filters. All
+paper material now lives in one collapsible "Practice account" section at
+the bottom, labelled "simulated funds · the desk's paper book, not your
+money": the summary strip, paper execution, practice positions and the
+track record. "Paper cash" left the live cash strip (now "Your planned
+cash"), the inline Paper execution and Practice positions sections are
+gone, the research view's redundant "Performance & practice account"
+block is removed, and the FOMC section no longer says "Paper account
+only". Verified: tsc clean, desk browser suite 63/63 in Chromium both
+against the shared checkout and against the deployed frontend (a new
+test pins the %-change and held-past-the-fold behavior); the gateway
+bundle `index-URP5vr5N.js` carries the new strings. Also newly live with
+this deploy: `d4eb1e8` (morning-after recovery learns its fills,
+grade-first sort) and `8bdc3a3` (Opportunity column). The morning-after
+recovery only runs once the recovery hash is re-activated on the
+deployed backend.
+
 ## 2026-09-17 — The opportunity score is its own column beside the plan
 
 The board shows the opportunity score (the analysts' combined conviction

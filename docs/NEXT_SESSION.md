@@ -1,9 +1,10 @@
 # Next session
 
-## 2026-09-17 — Desk page split into a live trader dashboard + one Practice account section (NOT yet deployed)
+## 2026-09-17 — Desk page split into a live trader dashboard + one Practice account section
 
-Uncommitted working-tree changes in `frontend/` only (not deployed; the live
-site still runs `a031bba`). The desk view is now purely the active trader's
+Deployed and live: main `22b26f8`, post-deploy
+`2026-09-17T17:33:05Z 22b26f82 ok (cheap)`, gateway bundle
+`index-URP5vr5N.js`. The desk view is now purely the active trader's
 dashboard: the board (with the search moved into the table header, directly
 above the rows it filters), a new "Your positions" readout showing the
 trader's OWN recorded holdings with live price, value and P/L vs entry plus
@@ -19,16 +20,15 @@ reworded to "executed in the practice account below". Board rows now show
 each name's move against its last close beside the price (green/red arrow,
 `↑ +2.0%`), and a held position stays visible even beyond the pagination
 fold (the "held position is never invisible" invariant that paging broke).
-VERIFIED against the shared checkout (port 5174, per the AGENTS.md
-frontend-mount trap): tsc clean, desk browser suite 63/63 in Chromium (one
-new test pins the %-change and the held-past-the-fold behavior), and a DOM
-walk confirming the search input sits inside the table `<thead>`,
-"Your positions" renders `AAPL 60 $91.25 $102.00 $6,120 +$645 (+11.8%)`,
-and no "Paper cash"/"Paper execution" text in the live flow. Also on origin
-but NOT yet deployed: `d4eb1e8` (market_event_recovery `after_decision` +
-grade-first sort) and `8bdc3a3` (Opportunity column). The morning-after
-recovery fix only runs after the recovery hash is re-activated on a deployed
-backend.
+VERIFIED: tsc clean, desk browser suite 63/63 in Chromium both against the
+shared checkout (port 5174) and against the deployed frontend
+(`anios_frontend` on 5173), one new test pins the %-change and the
+held-past-the-fold behavior. This deploy also carried `d4eb1e8`
+(market_event_recovery `after_decision`, grade-first sort) and `8bdc3a3`
+(Opportunity column). The morning-after recovery fix only runs after the
+recovery hash is re-activated on the deployed backend - the next task is to
+verify the live FOMC restoration status on the deployed system once the
+intraday run activates it.
 
 ## 2026-09-17 — Desk board: ticker search + paged top-10, and honest sizing reasons
 
