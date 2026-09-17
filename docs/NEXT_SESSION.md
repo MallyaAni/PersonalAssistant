@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-16 evening — Operational state for the 09-17 morning check
+
+Deployed and live: main 5e86b1dc (post-deploy `ok` 20:42 ET): the prose
+branch merged (decision saved before prose), the desk layout
+(Stocks / Plan / Research), the ML ledger continuation. The 09-16 record
+was written 20:25 ET on 5d7a753; the ML observer continued the ledger
+(sequence 2, policy_from 72162f00…). Nine FOMC restoration buys are
+acknowledged by the broker (created 20:24 ET) for the 09-17 open: AAOI 15,
+AMD 4, ANET 19, LITE 1, MDB 4, NTAP 20, NVDA 12, SMCI 60, SNDK 1; the
+cycle `fomc-3-session-weakness/2:2026-09-16` is open until they fill.
+Check after 09:45 ET: fills in `data/market/paper/state.json` and
+`desk/execution.json`, `event-live.json` inactive, the gate's first row
+complete. Option chains: `market_options --refresh` moved out of
+`~/desk_daily.sh` (backup `.bak-20260916`) into a weekday 08:45 ET cron
+writing `~/desk_options.log` (crontab backup `~/crontab.bak-20260916`).
+Tonight's nightly fetch is labelled `asof=2026-09-17` (UTC date at
+00:27Z), so the 09-17 morning fetch skips; the first morning-fresh chain is
+09-18. Data revision still to name in the record: a tone re-score under a
+new prompt version that moves a grade (PANW, 09-11 and 09-15). No strategy
+or sizing change; the release-event vote stays unpromoted.
+
 ## 2026-09-16 — Persistence length closed; ticker panel; FOMC board; walls
 
 The persistence study is closed (three sessions stays; see the research
