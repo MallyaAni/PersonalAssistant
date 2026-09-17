@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-09-17 — System review fixes deployed (Scout, search pool, undo, tasks)
+
+Deployed and live: main `33e2618c`, post-deploy `2026-09-17T07:00:43Z 33e2618c ok`
+(full sweep + search harness, not cheap: the change touched the search chain and
+the router prompt). One journey flaky on retry ("forget that (memory undo)"),
+the rest green; search harness passed live: a what's-on question answered from
+8 web sources, meter reads "Brave: 125 of 900 requests left this month".
+
+**Scout root cause (verified): Tavily's free credits are exhausted — 1000/1000
+spent, remaining 0 — so the chain falls to Brave, whose results are evergreen
+club/blog/directory pages that novelty-suppression then drops → 0 finds for 3
+days.** The tavily-first order is a deliberate 2026-08-29 decision (`.env` and
+`.env.example` agree; do NOT revert it). In-code fixes now: a provider the meter
+knows is spent is skipped when the chain is built (no wasted 432 probe first);
+a last-rung 429 is attributed to the actual provider and only Tavily's own
+refusal reconciles the shared pool spent (a Google rate limit can no longer
+freeze everyone's search for the month); discovery search failures are logged
+instead of swallowed. **To actually restore rich Scout finds: top up Tavily
+credits (external).** jenos1's digest failure is separate and external too:
+`channel_unreachable` on their iMessage number since 09-15 (bridge/contact).
+
+Also fixed in this batch: undo of a freshly created reminder (was "nothing to
+undo" or undid an older memory save); `prepare_context` guards every store read
+(a failing store costs its part, not the whole reply); a failed preferences read
+is logged (constraints never drop silently); a once-task whose only slot passed
+while down is enqueued for an apology, not dropped forever; a delivered run is
+never re-claimed (mark_delivered right after send); skill/task mutations report
+what the datastore actually did; Deck calls run greedy + enforce the 3-8 slide
+band; frugal_search crosses the MCP boundary explicitly; the turn prompt no
+longer promises a same-turn retry the loop forbids. Pinned by unit tests.
+
+Deferred (P3, feature-sized, not in this batch): episodic recall's keyword gate
++ recent-5 (needs embedding or a model-decided intent); `MemoryEntityRelation`
+written via API but never read in recall; `_BUDGETED_KEYS` excludes working/
+summaries from the shared context budget.
+
+Note for the workspace: the other session (trading desk) has UNCOMMITTED edits
+in `frontend/e2e/desk.spec.ts` and `frontend/src/components/DeskPanel/DeskPanel.tsx`;
+they are not mine, were not committed or deployed here, and must not be swept
+into another commit.
+
 ## 2026-09-16 evening — Operational state for the 09-17 morning check
 
 Deployed and live: main 5e86b1dc (post-deploy `ok` 20:42 ET): the prose

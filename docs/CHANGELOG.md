@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-17 — System review fixes: Scout degrades loudly, search pool cannot be poisoned, undo and task delivery hold
+
+Full-system code review fixes, deployed as `33e2618c`, post-deploy `ok` (full
+sweep + search harness; harness measured a what's-on question answered from 8
+web sources with Brave at 125/900 for the month while exhausted Tavily was
+skipped).
+
+Scout's 0-find days: verified root cause is external — Tavily free credits
+exhausted (0/1000; every discovery probe spent one). In-code, the search chain
+now skips a provider the meter knows is spent, a last-rung rate limit is
+attributed to the provider that actually refused and only Tavily's own refusal
+reconciles the shared pool spent (a Google 429 could previously freeze every
+provider for the month), and discovery search failures are logged instead of
+swallowed. Restoring rich Scout finds needs a Tavily top-up.
+
+Also: undo now covers a freshly created reminder (previously "nothing to undo"
+or undid an older memory save); `prepare_context` reads every store
+best-effort so one failing store costs its part, not the reply; a failed
+preferences read logs instead of dropping the constraint silently; a once-task
+whose only slot passed while the system was down is enqueued with
+`missed_slot` for an apology instead of being dropped; delivered runs are never
+re-claimed (`delivered_at IS NOT NULL` excluded from claim); skill/task
+mutations report what the datastore did; Deck runs greedy and enforces the 3-8
+slide band; `frugal_search` crosses the MCP boundary explicitly; the turn
+prompt no longer promises a same-turn retry the loop forbids.
+
 ## 2026-09-17 — One list: the plan is a column of the ranked board
 
 "Portfolio plan" was a second list of the same names. It is gone as a
