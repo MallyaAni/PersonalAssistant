@@ -1068,7 +1068,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
 
   // What moved since the last session, which the page used to throw away.
   await page.getByRole('button', {name: 'Back to the desk', exact: true}).click()
-  await expect(page.getByText('What changed since the last session')).toBeVisible()
+  await expect(page.getByRole('heading', {name: /^What changed/})).toBeVisible()
   await expect(page.getByText('Upgraded: NVDA B→A')).toBeVisible()
   await expect(page.getByText('Changes in target weights at the next rebalance: add AAPL')).toBeVisible()
 
@@ -1936,7 +1936,7 @@ test('details splits into plan and research and the simple page carries only dec
   await expect(page.getByText('growing earnings, steady trend').first()).toBeVisible()
   await page.getByRole('button', {name: 'Details', exact: true}).click()
   await expect(page.getByText('Stock rankings')).toBeVisible()
-  await expect(page.getByText('What changed since the last session')).toBeVisible()
+  await expect(page.getByRole('heading', {name: /^What changed/})).toBeVisible()
   await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toBeVisible()
   await expect(page.getByText('Performance & practice account', {exact: true})).toHaveCount(0)
   await page.getByRole('button', {name: 'Research', exact: true}).click()

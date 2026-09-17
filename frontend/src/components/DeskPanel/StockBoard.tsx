@@ -6,6 +6,14 @@ const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
 // Format a portfolio weight without rounding a small positive allocation to zero.
 const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `${(weight * 100).toFixed(1)}%`
 
+// Whether the exchange is open at `now`, on New York time.
+export const marketOpenAt = (now: number) => {
+  const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false}).formatToParts(new Date(now))
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
+  const minutes = Number(get('hour')) * 60 + Number(get('minute'))
+  return !['Sat', 'Sun'].includes(get('weekday')) && minutes >= 9 * 60 + 30 && minutes < 16 * 60
+}
+
 // Keep the confirmed fill date on the exchange's calendar.
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
 
@@ -85,6 +93,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const fullCoverage = sizedNames.length === graded.length && graded.length > 0
   const gross = fullCoverage ? Object.values(research!.targets ?? {}).reduce((sum, weight) => sum + weight, 0) * exposure : null
   const sized = fullCoverage && gross !== null && gross <= 1.000001
+  const marketClosed = !marketOpenAt(now)
   const fomcLine = !paused ? null
     : event.calendarUnknown ? 'FOMC calendar unavailable · exposure changes and sizing paused'
     : event.exposure === null ? 'FOMC cycle in progress · sizes paused until the policy status is current'
@@ -92,7 +101,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : 'FOMC · restoration queued for the next open'
   const sizingLine = sized ? '15-minute model allocations · experimental'
     : researchCurrent && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
-    : 'Sizing unavailable · waiting for fresh data'
+    : marketClosed ? 'Sizes return with the first completed bar after the open' : 'Sizing unavailable · waiting for fresh data'
   // Compare only current scores tied to this exact nightly basis and completed price.
   const opportunity = (ticker: string) => {
     const value = decisions?.rows[ticker]?.opportunity
@@ -127,7 +136,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <p>{fomcLine ?? sizingLine}</p>
       {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
       <p className="mt-0.5">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours</p>
-      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">Analysis {latest.session} close{live.stale ? ' · market data stale' : ''}</p>
+      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">Analysis {latest.session} close{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
     </div>
     <div className="min-h-0 flex-1 overflow-auto">

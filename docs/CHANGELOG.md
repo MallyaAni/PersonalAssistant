@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-16 — The last word-by-word read of the one-page desk
+
+Read every section of the final live page with all folds open. Fixed:
+after the close the board says "Sizes return with the first completed
+bar after the open" instead of "waiting for fresh data", and drops
+"market data stale" for a closed market; the FOMC section names the
+queued restoration orders even when the intraday status is old; "What
+changed since the last session · since Sep 15" says since once; the
+name panel's move line ends "unchanged since then"; the target badge
+that duplicated the plan line is gone; the plan line inside "In short"
+no longer carries the Position & quote fold. Desk browser suite 58/58.
+
 ## 2026-09-16 — The desk on a phone, and the name panel's plan line is the real one
 
 Read the live page at 400px in every state: the board, a row opened in

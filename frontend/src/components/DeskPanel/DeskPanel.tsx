@@ -395,7 +395,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">
-        What changed since the last session
+        What changed
         <span className="ml-2 text-xs font-normal text-[#6e6e73]">
           {changes.since ? `since ${shortDate(changes.since)}` : 'the first session on file'}
         </span>
@@ -1043,7 +1043,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
           </details>
           <p className="mt-2 text-xs">{event
-            ? `Using the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : eventLive?.active && !eventLive.stale ? `the reduction is done${eventLive.sold ? ` (${Object.keys(eventLive.sold).length} names sold)` : ''}; restoration is queued for the open after the decision` : eventLive?.active ? 'an event cycle is open; restoration follows the decision' : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
+            ? `Using the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : eventLive?.active && !eventLive.stale ? `the reduction is done${eventLive.sold ? ` (${Object.keys(eventLive.sold).length} names sold)` : ''}; restoration is queued for the open after the decision` : eventLive?.active ? `the reduction is done; ${paperLive?.orders?.length ? `${paperLive.orders.length} restoration orders are` : 'restoration is'} queued for the open after the decision` : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : eventLive?.active ? 'An event cycle is recorded; the current policy observation is unavailable.'
             : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
@@ -1713,9 +1713,9 @@ const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
   ? '<0.1%' : `${(100 * weight).toFixed(1)}%`
 
 // Withhold actions whose price, decision or account context no longer matches the page.
-const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact = false, allocationAllowed = true}: {
+const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact = false, terse = false, allocationAllowed = true}: {
   ticker: string; decisions?: DeskDecisions; latest: DeskRecord; holdings: DeskHolding[] | null; equity: number; now: number
-  compact?: boolean; allocationAllowed?: boolean
+  compact?: boolean; terse?: boolean; allocationAllowed?: boolean
 }) => {
   const matches = decisions && holdings !== null && decisions.session === latest.session && decisions.written === latest.written && decisions.equity === equity
     && holdings.length === Object.keys(decisions.holdings).length && holdings.every(h => decisions.holdings[h.ticker] === h.shares)
@@ -1736,7 +1736,7 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
   return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
     <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {row.target_weight > 0 ? `${allocationPercent(row.target_weight)} plan` : 'no target until the next rebalance'}</span></div>
     <div className="text-[#6e6e73]">{reason}</div>
-    <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
+    {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
       <div>Using {money(equity)} account value</div>
       <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
       <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
@@ -1745,7 +1745,7 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
         ? 'No usable quote after the close; sizes use the last completed bar'
         : <>{row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</>}</div>
       {row.valid_until && <div>Expires {executionTime(row.valid_until)}</div>}
-    </details>
+    </details>}
   </div>
 }
 
@@ -2309,7 +2309,7 @@ const GradeMove = ({changes, session, reads, revision}: {
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.from] ?? ''}`}>{latest.from}</span>
         <span className="mx-1 text-[#6e6e73]">→</span>
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.to] ?? ''}`}>{latest.to}</span>
-        {!tonight && <span className="ml-1 text-xs text-[#6e6e73]">· unchanged since</span>}
+        {!tonight && <span className="ml-1 text-xs text-[#6e6e73]">· unchanged since then</span>}
       </p>
       {moved.length > 0 ? (
         <ul className="mt-1 space-y-0.5 text-xs">
@@ -2437,9 +2437,6 @@ const NameDetail = ({
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[row.action] ?? ''}`}>
-              target: {row.action}{paused ? ' · paused for FOMC' : ''}
-            </span>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade_live] ?? ''}`}>
               {row.grade_live}
               <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `indicative · evening ${row.grade}` : 'evening decision'}</span>
@@ -2466,7 +2463,7 @@ const NameDetail = ({
           <p className="font-medium text-[#1d1d1f]">{latest.grades[ticker].headline}</p>
           <ul className="mt-1 space-y-0.5 text-xs text-[#1d1d1f]">{(latest.grades[ticker].reason ?? '').split('\n').filter(Boolean).map(line => <li key={line}>{line}</li>)}</ul>
           <div className="mt-2 text-xs text-[#6e6e73]">
-            {row ? <DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdings} equity={equity} now={now} /> : 'Not on the board'}
+            {row ? <DecisionCell terse allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdings} equity={equity} now={now} /> : 'Not on the board'}
           </div>
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${money(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
