@@ -161,7 +161,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     {toolbar}
     <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
-        <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]"><tr><th className="py-2">#</th><th>Stock</th><th title="The desk's plan for this name against your recorded position">Plan</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr></thead>
+        <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]"><tr><th className="py-2">#</th><th>Stock</th><th className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts.">Opportunity</th><th title="The desk's plan for this name against your recorded position">Plan</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr></thead>
         <tbody>{ranked.map((row, index) => {
           if (index >= visible) return null
           const held = holdings?.find(position => position.ticker === row.ticker)
@@ -171,16 +171,17 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           return <Fragment key={row.ticker}><tr className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
-              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span>{row.opportunity !== null && <span title="Opportunity: the analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts." className="ml-1 text-[10px] font-normal text-[#6e6e73]">· opportunity {row.opportunity!.toFixed(1)}/10</span>}</button>}
+              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span></button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
+            <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : '—'}</td>
             <td className="text-xs">{isCash ? 'Hold'
               : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
               : action(row.ticker, row.weight))}</td>
             <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
             <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
-          {open && expand && <tr><td colSpan={5} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
+          {open && expand && <tr><td colSpan={6} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
           </Fragment>
         })}</tbody>
       </table>

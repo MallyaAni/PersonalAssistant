@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-17 — The opportunity score is its own column beside the plan
+
+The board shows the opportunity score (the analysts' combined conviction
+at the current bar, 0 to 10) in an Opportunity column between Stock and
+Plan, with what it is on hover, instead of a small figure under the
+ticker. On a phone the column hides so the plan stays on screen; the
+score is in the name panel there. Desk browser suite 62/62.
+
 ## 2026-09-17 — The morning after the decision learns its fills; the board sorts by grade; the score is named
 
 All nine FOMC restoration orders filled at the open between 09:30 and
