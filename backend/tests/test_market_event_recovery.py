@@ -277,3 +277,74 @@ def test_dispatcher_rejects_non_reduction_orders(tmp_path, side, event_id, opene
     assert not submitted
     assert refused
     assert not broker.calls
+
+
+# The morning after the decision, the restoration orders the nightly queued
+# for the open are reconciled from broker evidence and the cycle is released
+# once every share is back; an order still working keeps the cycle open,
+# and an order the broker does not list waits for the nightly.
+@pytest.mark.parametrize("outcome", ["filled", "working", "unlisted"])
+def test_the_morning_after_learns_the_restoration_fills(tmp_path, outcome):
+    broker = Broker(tmp_path)
+    now = datetime(2026, 9, 17, 14, 20, tzinfo=UTC)
+    state = paper.PaperState()
+    state.event_cycle = {
+        "id": "fomc-3-session-weakness/2:2026-09-16",
+        "decision_date": "2026-09-16",
+        "baseline": {"AAA": 100.0},
+    }
+    state.journal = [
+        {
+            "client_order_id": "anios-2026-09-14-sell-aaa-1",
+            "symbol": "AAA",
+            "side": "sell",
+            "qty": 50,
+            "filled_qty": 50,
+            "status": "filled",
+            "event_id": state.event_cycle["id"],
+            "session": "2026-09-14",
+        }
+    ]
+    state.pending = [
+        {
+            "client_order_id": "anios-2026-09-16-buy-aaa-2",
+            "symbol": "AAA",
+            "side": "buy",
+            "qty": 50,
+            "session": "2026-09-16",
+            "reason": "FOMC risk restoration",
+            "event_id": state.event_cycle["id"],
+            "execution": {
+                "created_at": "2026-09-17T00:24:51Z",
+                "submitted_at": "2026-09-17T00:24:51Z",
+            },
+        }
+    ]
+    paper.save_state(tmp_path, state)
+    if outcome != "unlisted":
+        broker.rows["anios-2026-09-16-buy-aaa-2"] = {
+            "client_order_id": "anios-2026-09-16-buy-aaa-2",
+            "symbol": "AAA",
+            "side": "buy",
+            "qty": 50,
+            "filled_qty": 50 if outcome == "filled" else 0,
+            "filled_avg_price": 100 if outcome == "filled" else None,
+            "status": "filled" if outcome == "filled" else "accepted",
+            "filled_at": now.isoformat() if outcome == "filled" else None,
+        }
+    broker.qty = 100 if outcome == "filled" else 50
+    result = recovery.recover(tmp_path, LATEST, snapshot(), POLICY, broker, now)
+    back = paper.load_state(tmp_path)
+    assert not broker.calls  # nothing is submitted after the decision
+    if outcome == "filled":
+        assert result["status"] == "restoration filled; the cycle is closed"
+        assert result["active"] is False
+        assert back.event_cycle == {}
+        assert back.pending == []
+    elif outcome == "working":
+        assert result["status"] == "restoration orders working at the broker"
+        assert back.event_cycle["decision_date"] == "2026-09-16"
+        assert len(back.pending) == 1
+    else:
+        assert result["status"] == "awaiting nightly restoration"
+        assert back.event_cycle["decision_date"] == "2026-09-16"

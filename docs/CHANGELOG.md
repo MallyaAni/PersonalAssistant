@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-17 — The morning after the decision learns its fills; the board sorts by grade; the score is named
+
+All nine FOMC restoration orders filled at the open between 09:30 and
+09:33 ET, and at 10:13 the page still said "Wait · FOMC" with nine
+pending orders, because fills were reconciled only by the nightly: the
+intraday recovery returned "awaiting nightly restoration" the day after
+a decision before looking at the broker. `market_event_recovery.recover`
+now reconciles the restoration orders from broker evidence every fifteen
+minutes and releases the cycle once every share the reduction sold is
+back ("restoration filled; the cycle is closed"); an order still working
+keeps the cycle open and says so; an order the broker does not list
+waits for the nightly. Nothing is submitted after the decision. Tests
+pin all three outcomes. The board sorts by grade first, then by the
+opportunity score, so a B never sits above an A; the score is labelled
+"opportunity 7.2/10" with what it is on hover. Recovery, walls and the
+board are live from the next intraday run after this deploy activates
+the recovery hash. Desk browser suite 62/62.
+
 ## 2026-09-17 — Desk board: ticker search and paged top-10 list, and honest sizing-preview reasons
 
 Deployed and live: main `a031bba`, post-deploy

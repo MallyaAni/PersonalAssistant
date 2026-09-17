@@ -93,7 +93,7 @@ def ineligible(state, latest, snapshot, policy, client, today):
 
 
 # Execute only the remaining reduction, preserving IDs across uncertain submissions.
-def recover(root, latest, snapshot, policy, client, now):
+def recover(root, latest, snapshot, policy, client, now):  # noqa: C901 - one branch per outcome
     if client.base_url != alpaca_trading.PAPER_URL:
         raise ValueError("Recovery requires the official paper endpoint")
     state = paper.load_state(root)
@@ -102,6 +102,14 @@ def recover(root, latest, snapshot, policy, client, now):
     if not active:
         return {**result, "status": "monitoring"}
     today = now.astimezone(desk_freshness.NEW_YORK).date()
+    decision = state.event_cycle.get("decision_date") or policy.get("decision_date")
+    # After the decision the only thing to learn intraday is whether the
+    # nightly's restoration orders filled at the open. They are reconciled
+    # here and the cycle is released when every share is back, so the page
+    # says so the same morning; it used to wait for the next nightly and
+    # showed nine pending orders all day after they had filled at 09:30.
+    if state.event_cycle and decision and today > date.fromisoformat(decision):
+        return after_decision(root, state, policy, client, result, today)
     reason = ineligible(state, latest, snapshot, policy, client, today)
     if reason:
         return {**result, "status": reason}
@@ -183,6 +191,51 @@ def recover(root, latest, snapshot, policy, client, now):
         "status": "reduction pending" if state.pending else "reduction settled",
         "pending_orders": len(state.pending),
         "refused_orders": len(refused),
+        "sold": event_execution.filled(state, "sell"),
+        "cycle": state.event_cycle,
+    }
+
+
+# The morning after the decision: reconcile the restoration orders the
+# nightly queued for the open, and release the cycle once every share the
+# reduction sold is back. Nothing is submitted here.
+def after_decision(root, state, policy, client, result, today):
+    if state.pending:
+        state, missing = reconcile(client, state)
+        paper.save_state(root, state)
+        if missing:
+            return {
+                **result,
+                "status": "awaiting nightly restoration",
+                "pending_orders": len(state.pending),
+                "cycle": state.event_cycle,
+            }
+    if state.pending:
+        return {
+            **result,
+            "status": "restoration orders working at the broker",
+            "pending_orders": len(state.pending),
+            "sold": event_execution.filled(state, "sell"),
+            "cycle": state.event_cycle,
+        }
+    held = {p.symbol: p.qty for p in client.positions()}
+    _orders, released, _note = event_execution.plan(
+        today.isoformat(), state, held, {}, 0.0, policy, advance_clock=False
+    )
+    if not released.event_cycle:
+        paper.save_state(root, released)
+        return {
+            **result,
+            "active": False,
+            "status": "restoration filled; the cycle is closed",
+            "pending_orders": 0,
+            "bought": event_execution.filled(state, "buy"),
+            "cycle": {},
+        }
+    return {
+        **result,
+        "status": "awaiting nightly restoration",
+        "pending_orders": 0,
         "sold": event_execution.filled(state, "sell"),
         "cycle": state.event_cycle,
     }

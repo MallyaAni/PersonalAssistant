@@ -119,7 +119,8 @@ test('current opportunity scores change rank and explain their inputs', async ({
   }}}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.locator('tbody tr').first()).toContainText('NVDA')
+  // Grade first: the A name leads the B name whatever their opportunity scores.
+  await expect(board.locator('tbody tr').first()).toContainText('AAPL')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^NVDA/}).click()
   await page.getByText('Score, log & backtest', {exact: true}).click()
   const score = page.getByLabel('Price-to-opportunity score')
@@ -213,9 +214,9 @@ test('single board ranks cash and updates allocations with the next candle', asy
   await expect(page.getByRole('heading', {name: /^Portfolio plan/})).toHaveCount(1)
   next = true
   await page.clock.fastForward(15 * 60_000)
-  await expect(board.locator('tbody tr').first()).toContainText('NVDA')
-  await expect(board.locator('tbody tr').first()).toContainText('55.0%')
-  await expect(board.locator('tbody tr').first()).toContainText('$110.00')
+  const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
+  await expect(nvda).toContainText('55.0%')
+  await expect(nvda).toContainText('$110.00')
   await expect(board.locator('tbody tr').nth(2)).toContainText('USD')
   await expect(board.locator('tbody tr').nth(2)).toContainText('5.0%')
   await page.setViewportSize({width: 390, height: 844})

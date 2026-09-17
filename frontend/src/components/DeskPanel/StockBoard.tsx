@@ -123,9 +123,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     score: grades[ticker]?.score_live ?? grade.score,
     opportunity: opportunity(ticker),
     weight: weightOf(ticker),
-  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, weight: null}))].sort((a, b) => (b.opportunity ?? -1) - (a.opportunity ?? -1)
+  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, weight: null}))].sort((a, b) => (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
+    || (b.opportunity ?? -1) - (a.opportunity ?? -1)
     || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
-    || (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
   const emptyAccount = holdings !== null && holdings.length === 0
   const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
@@ -171,7 +171,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           return <Fragment key={row.ticker}><tr className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
-              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span>{row.opportunity !== null && <span title="Opportunity evidence index; open for inputs and dates" className="ml-1 text-[10px] font-normal text-[#6e6e73]">· {row.opportunity!.toFixed(1)}/10</span>}</button>}
+              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span>{row.opportunity !== null && <span title="Opportunity: the analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts." className="ml-1 text-[10px] font-normal text-[#6e6e73]">· opportunity {row.opportunity!.toFixed(1)}/10</span>}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs">{isCash ? 'Hold'
