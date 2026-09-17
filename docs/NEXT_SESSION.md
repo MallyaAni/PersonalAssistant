@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-09-17 — Desk page trading-UX fixes deployed and verified
+
+Frontend-only, deployed and live: main `962def5`, post-deploy
+`2026-09-17T12:56:47Z 962def51 ok (cheap)`, gateway bundle
+`index-DzmiQsst.js` carries the new strings. VERIFIED: tsc clean and the
+desk browser suite 60/60 in Chromium (two new tests pin the changed
+behavior). The desk's positions editor rendered twice - the inline form in
+the board's plan toolbar and the full-screen "Your positions" modal - so
+editing showed two overlapping editors at once; the modal is now only the
+no-record fallback. The "absent" prose status shows the block's own reason
+("prose on file predates this decision") instead of a generic "have not
+been written yet". The Today line's FOMC restoration wording no longer
+reads "fill at the next fill" (open: "are being placed now", closed: "fill
+at the open"). Header buttons are capitalized to match ("Analyze my
+trading", "Hide the review"), and the name panel's "In short" price keeps
+cents. The other agent's backend search/discovery work is committed
+separately (`33e2618`).
+
 ## 2026-09-17 — System review fixes deployed (Scout, search pool, undo, tasks)
 
 Deployed and live: main `33e2618c`, post-deploy `2026-09-17T07:00:43Z 33e2618c ok`
