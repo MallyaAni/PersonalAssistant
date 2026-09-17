@@ -1,5 +1,54 @@
 # Next session
 
+## 2026-09-17 — The board's blanket "Wait · FOMC cycle takes priority" is gone (backend fix deployed)
+
+Deployed and live: main `6aab7204`, post-deploy
+`2026-09-17T21:03:45Z 6aab7204 ok (cheap)`, backend image recreated
+21:03Z; gateway probe reads 401 (auth boundary intact). Two stacked causes
+made every plan row read "Wait" with a reason that contradicted reality.
+(1) A nightly record written during the FOMC gate freezes
+`event_risk.execution_pending = true`; `event_status.for_planning` only
+ever SET that flag, never cleared it once the cycle ended, so
+`decision_view` paused every name as "FOMC cycle takes priority" until the
+next nightly record. `for_planning` now mirrors the live event state both
+ways (backend/market/event_status.py:39). (2) The account has no SIP
+entitlement (Alpaca 403 "subscription does not permit querying recent SIP
+data"), so `execution_quotes.describe` rejected every quote as "IEX only;
+consolidated quote required" and no name could ever be "Buy eligible";
+IEX quotes now pass the gate with the feed labelled in the reason, age /
+spread / size checks unchanged (backend/market/execution_quotes.py:93).
+Pinned by `test_stale_execution_pending_clears_when_the_cycle_is_over`
+and `test_iex_quote_passes_the_gate`; unit suite 3687 passed, routing gate
+100 passed. VERIFIED live on the deployed container: `for_planning` returns
+`execution_pending = False`; the "FOMC cycle takes priority" reason no
+longer appears — after hours the rows read "No allocation in the adopted
+plan" (research unavailable) / "Quote unavailable" (no fresh quote), which
+are the genuine states. During market hours with research available and
+fresh IEX quotes the plan should now show real actions.
+
+Still open, diagnosed but not changed:
+- **Intraday research availability flip-flops** ("Complete fresh price and
+  technical coverage required"): `intraday_candidate.calculate` requires
+  every tracked name's quote bar to be 15-30 min old at a candle boundary
+  (`SNAPSHOT_SECONDS=900 <= age < BAR_SECONDS=1800`), so one name whose bar
+  ages out (illiquid/halted) marks the whole set `unavailable`. Observed
+  available 18:30, unavailable 18:45, available 19:30. This is why the
+  "Intraday + macro research" button intermittently shows the amber reason.
+  Needs a decision: is the strict whole-set gate the right design?
+- **The technical score is trend-based, not day-based** (user felt it was
+  "unreliable/late" because ORCL was up ~4.4% while its technical read was
+  ~0.29). That read is correct: ORCL sits ~11% BELOW its 200-day EMA with
+  daily/weekly trends down; a single green day does not move a trend model.
+  No code change; the board's daily %-move column carries the "today" part.
+- **Option walls** (user asked): the 09-16 "walls across expiries to sixty
+  days" fix is deployed and correct across all 93 tracked tickers (0
+  incoherent walls; ORCL put 140 @ 34,868 OI / call 170 @ 67,005 OI).
+  They do NOT update every 15 min — open interest changes once a day
+  (nightly fetch + weekday 08:45 ET cron; today's 08:45 run stored 0
+  because the nightly already wrote the 09-17 partition, so the next fresh
+  chain is 09-18). The 15-min cycle updates price/technical/grades and
+  re-renders wall DISTANCES, not the wall levels.
+
 ## 2026-09-17 — Desk page split into a live trader dashboard + one Practice account section
 
 Deployed and live: main `22b26f8`, post-deploy

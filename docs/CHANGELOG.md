@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-17 — The board's blanket "Wait · FOMC cycle takes priority" is gone; IEX quotes pass the execution gate
+
+Deployed `6aab7204 ok (cheap)`. Two stacked causes made every plan row
+read "Wait" with a reason that contradicted what the user saw. A nightly
+record written during the FOMC gate freezes `event_risk.execution_pending
+= true`, and `event_status.for_planning` only ever set that flag, never
+cleared it once the cycle ended — so `decision_view` paused every name
+until the next nightly record. `for_planning` now mirrors the live event
+state in both directions, clearing a stale pending flag when the cycle is
+over. The account also has no SIP entitlement (Alpaca 403), so
+`execution_quotes.describe` rejected every quote as "IEX only;
+consolidated quote required" and no name could ever show an eligible buy;
+IEX quotes now pass the gate with the feed labelled in the reason while
+the age, spread and size checks still hold. Pinned by
+`test_stale_execution_pending_clears_when_the_cycle_is_over` and
+`test_iex_quote_passes_the_gate`; the full unit suite (3687) and the
+routing gate (100) pass. Live verification against the deployed container:
+`for_planning` returns `execution_pending = False` and the "FOMC cycle
+takes priority" reason no longer appears (after hours the rows read "No
+allocation in the adopted plan" / "Quote unavailable", the genuine states).
+Diagnosed but left for a decision: the intraday research availability
+flip-flops because it requires every tracked name's bar to be 15-30
+minutes old at a candle boundary, so a single stale bar marks the whole
+set "unavailable".
+
 ## 2026-09-17 — The desk page is now a live trader dashboard with the practice account in its own section
 
 Deployed `22b26f82 ok (cheap)`. The desk view leads with the active
