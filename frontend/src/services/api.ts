@@ -1865,6 +1865,9 @@ export interface DeskGrade {
   // written deterministically, complete by construction — is the fallback.
   read?: string | null;
   reads?: Record<string, string[]>;
+  // A release re-read under a new prompt since the previous session: the
+  // same filing, a different reading, so a vote can move without news.
+  revision?: {accession: string; reaction_date: string; prompt_version: [string | null, string | null]; fields: Record<string, [number | null, number | null]>} | null;
   // Each analyst's rating of the name, 0 to 1, its rank across the book
   // that day. Absent on records written before it was recorded.
   ranks?: Record<string, number>;

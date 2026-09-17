@@ -27,7 +27,7 @@ from backend.agents.trading.desk.narrative import brief_text
 from backend.cli import market_edgar, market_tone
 from backend.cli.market_desk import _print_book, _print_grades, _print_regime
 from backend.config.settings import settings
-from backend.market import deskrecord, prose, snapshot
+from backend.market import deskrecord, prose, snapshot, tone_revisions
 from backend.market.macro import SERIES
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -826,6 +826,7 @@ def record(
     llm_model: str | None = None,
     fundamentals: dict | None = None,
     ml_forward: dict | None = None,
+    revisions: dict[str, dict] | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     from backend.agents.trading.desk import event_risk
@@ -861,6 +862,9 @@ def record(
             # runtime was away, so a missing read still answers "why".
             "read": (reads or {}).get(ticker),
             "reads": plainly.reads(view, scale),
+            # A release re-read under a new prompt since the last session:
+            # a vote can move on it without any news, and the page says so.
+            "revision": (revisions or {}).get(ticker),
             # Each analyst's rating: the name's rank across the book on that
             # analyst's evidence, 0 to 1, so the page can show the parts.
             "ranks": {
@@ -1305,6 +1309,28 @@ def main() -> None:
         nightly_lock.release(lock)
 
 
+# The names whose release reading was re-scored since the previous session
+# without a new release, printed and carried into the record; never fatal.
+def _tone_revisions(store: MarketStore, report) -> dict[str, dict]:
+    dates = report.panel.dates
+    if len(dates) < 2:
+        return {}
+    try:
+        session = date.fromisoformat(str(dates[-1])[:10])
+        previous = date.fromisoformat(str(dates[-2])[:10])
+        names = [t for t in report.panel.tickers if t != report.panel.benchmark]
+        found = tone_revisions.detect(store, names, session, previous)
+    except Exception as exc:  # noqa: BLE001 - reporting must not stop the record
+        print(f"tone revisions: skipped ({type(exc).__name__}: {exc})")
+        return {}
+    if found:
+        names_read = ", ".join(sorted(found))
+        print(f"tone revisions: {len(found)} re-read since {previous}: {names_read}")
+    else:
+        print("tone revisions: none")
+    return found
+
+
 # The ML observer's receipt for the record, whichever way it was reached.
 # The observer returns its ledger state either way, so the receipt says
 # whether that state is tonight's session or an earlier one it fell back to.
@@ -1377,6 +1403,7 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         execution_quality.write(Path(store.root))
     _reversal_shadows(store, report)
     curve = curves(report, store, Path(store.root))
+    revisions = _tone_revisions(store, report)
     core = record(
         report,
         paper=entry,
@@ -1385,6 +1412,7 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         llm_model=args.llm_model,
         fundamentals=fundamentals,
         ml_forward=_ml_forward_receipt(observed.get("row"), session),
+        revisions=revisions,
     )
 
     # The prose, after the record: model-written briefs and reads under one

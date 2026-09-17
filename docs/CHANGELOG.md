@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-16 — A release re-read under a new prompt is a data revision the record names
+
+PANW's Sep 2 release was scored 1.0 on guidance and demand; on 09-11 the
+same release was re-read under `release_tone/2` as 0.8 and 0.8, and its
+sentiment vote flipped in one night with nothing new filed, because the
+recomputed history already held three sessions of the new reading. The
+nightly now compares each name's newest release reading with the previous
+session's (`backend/market/tone_revisions.py`): the same accession with a
+different scored field or prompt version is a revision, carried in the
+record as `grades[name].revision` and printed in the log; never fatal. The
+name panel's move section says "Data revision: the 2026-09-02 release was
+re-read under release_tone/2: guidance 1 → 0.8 · demand 1 → 0.8. A vote
+can move on a re-read without a new release." Tests:
+`backend/tests/test_tone_revisions.py`; the desk browser suite 57/57.
+
 ## 2026-09-16 — Wording found reading the live page after the layout change
 
 Read every section of deep-matter.com signed in, with all folds open. Fixed:

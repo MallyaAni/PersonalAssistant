@@ -1846,6 +1846,10 @@ test('a hypothetical stop remains a reference after price crosses it', async ({ 
 test('the ticker panel explains the grade move, keeps the last score and folds the log', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
+  // The same release re-read under a new prompt: named as a data revision.
+  ;(latest.grades.AAPL as {revision?: unknown}).revision = {accession: '0001-19', reaction_date: '2026-09-02',
+    prompt_version: ['release_tone/1', 'release_tone/2'], fields: {guidance: [1, 0.8], demand: [1, 0.8]}}
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
   const observation = (id: string, recorded: string, grade: string, allocation: number) => ({
     id, recorded_at: recorded, bar: '2026-09-08T19:45:00Z', grade, allocation, allocation_change: null, model_weight: 1,
     event_paused: false, entry_state: 'trend', price: 100, version: 'policy/2', policy_sha256: 'abcdefgh', stock_total_return: null,
@@ -1882,6 +1886,7 @@ test('the ticker panel explains the grade move, keeps the last score and folds t
   await expect(move).toContainText('Technical neutral → for: daily trend up')
   await expect(move).toContainText('three sessions')
   await expect(move).toContainText('The technical vote is price')
+  await expect(move).toContainText('Data revision: the 2026-09-02 release was re-read under release_tone/2: guidance 1 → 0.8 · demand 1 → 0.8')
   await expect(move).not.toContainText('Price was not an input')
   const evening = page.getByRole('dialog', {name: / history$/}).locator('div', {hasText: /^Evening analysis/}).first()
   await expect(evening).toContainText('technical + for')

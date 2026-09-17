@@ -2256,13 +2256,17 @@ const EarningsPanel = ({ userId, ticker }: { userId: string; ticker: string }) =
 // rule that made the vote wait. ORCL went B to A+ on a sentiment vote
 // that had held the top of the book for three sessions since its Sep 11
 // release read, and nothing on the panel said so.
-const GradeMove = ({changes, session, reads}: {
+const GradeMove = ({changes, session, reads, revision}: {
   changes: {date: string; from: string; to: string; moved: string[]; said?: boolean}[]
   session: string
   reads?: Record<string, string[]>
+  revision?: NonNullable<DeskPayload['latest']>['grades'][string]['revision']
 }) => {
   const latest = changes[0]
-  if (!latest) return null
+  // A re-read of the same release is named even when the grade did not
+  // move: the vote it feeds may move on the next sessions.
+  const revised = revision ? `Data revision: the ${revision.reaction_date} release was re-read${revision.prompt_version[1] ? ` under ${revision.prompt_version[1]}` : ''}${Object.keys(revision.fields).length ? `: ${Object.entries(revision.fields).map(([field, [from, to]]) => `${field.replace('_', ' ')} ${from ?? '—'} → ${to ?? '—'}`).join(' · ')}` : ''}. A vote can move on a re-read without a new release.` : null
+  if (!latest) return revised ? <section aria-label="Why the grade moved" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3 text-sm"><p className="text-[11px] text-[#9a6200]">{revised}</p></section> : null
   const tonight = latest.date === session
   const moved = latest.moved.map((text) => {
     const analyst = text.split(' ')[0]
@@ -2290,6 +2294,7 @@ const GradeMove = ({changes, session, reads}: {
         <p className="mt-1 text-xs text-[#6e6e73]">No analyst vote changed; the score crossed a grade line.</p>
       )}
       {flipped && <p className="mt-1 text-[11px] text-[#6e6e73]">A vote flips only after the analyst has held its new view for three sessions, so the move follows the evidence by that much.{priceMoved ? ' The technical vote is price: trend, averages and levels.' : ' Price was not an input.'}</p>}
+      {revised && <p className="mt-1 text-[11px] text-[#9a6200]">{revised}</p>}
     </section>
   )
 }
@@ -2362,7 +2367,7 @@ const NameDetail = ({
             <X size={16} />
           </button>
         </div>
-        {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} />}
+        {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[row.action] ?? ''}`}>
