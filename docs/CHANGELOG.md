@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-16 — The plan table says what it means: no per-row "evening decision", "one vote from dropping to B", honest sizing messages
+
+The plan table printed the grade's source under every row, so after the
+close every row said "evening decision"; it now marks only intraday
+grades and says once, on the column, where grades come from. "Near grade
+threshold" reads "one vote from dropping to B" (or A, or C). The name
+panel's grade badge reads "at the 2026-09-16 close" or "intraday". The
+share-sizing preview, run live with $25,000: evening targets work and
+now say "No additions while the FOMC cycle is open" instead of "under the
+current targets and event controls"; the research mode needs a completed
+bar from today's session and now says so instead of "check account
+equity, cash and market data". Desk browser suite 58/58.
+
 ## 2026-09-16 — The last word-by-word read of the one-page desk
 
 Read every section of the final live page with all folds open. Fixed:

@@ -1271,7 +1271,7 @@ test('drills into a covered name outside the book and sees its live horizons', a
   await expect(dialog.getByText('expensive and the trend is quiet').first()).toBeVisible()
   // The drill-down shows the same live grade as the list: MSFT is B at the
   // candle even though the evening record says C.
-  await expect(dialog.getByText('Bindicative intraday grade', { exact: true })).toBeVisible()
+  await expect(dialog.getByText('Bintraday grade', { exact: true })).toBeVisible()
   await dialog.getByText('All the evidence', {exact: true}).click()
   await expect(dialog.getByText('Technical read')).toBeVisible()
   await dialog.getByText('All readings, by timeframe').click()
@@ -1667,7 +1667,7 @@ test('an intraday grade expires without requiring a page reload', async ({ page 
   await expect(msft.locator('td').nth(2)).toContainText('B')
   await page.clock.fastForward('01:01')
   await expect(msft.locator('td').nth(2)).toContainText('C')
-  await expect(msft).not.toContainText('indicative intraday grade')
+  await expect(msft).not.toContainText('intraday grade')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -1686,7 +1686,7 @@ test('a mismatched decision cannot display the previous intraday targets or grad
   const grades = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings', exact: true})})
   const msft = grades.locator('tbody tr').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
   await expect(msft.locator('td').nth(2)).toContainText('C')
-  await expect(msft).not.toContainText('indicative intraday grade')
+  await expect(msft).not.toContainText('intraday grade')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 

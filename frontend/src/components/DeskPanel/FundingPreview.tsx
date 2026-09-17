@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getDeskFundingPreview, type DeskFundingPreview, type DeskPayload } from '../../services/api'
 
 // Keep a confirmed cash preview local to this account/holdings version and expire it.
-export const FundingPreview = ({ userId, equity, research }: { userId: string; equity: number; research?: DeskPayload['intraday_research'] }) => {
+export const FundingPreview = ({ userId, equity, research, paused = false }: { userId: string; equity: number; research?: DeskPayload['intraday_research']; paused?: boolean }) => {
   const [mode, setMode] = useState('evening')
   const [cash, setCash] = useState('')
   const [preview, setPreview] = useState<DeskFundingPreview | null>(null)
@@ -35,7 +35,12 @@ export const FundingPreview = ({ userId, equity, research }: { userId: string; e
       if (busy) return
       setPreview(null); setError(''); setBusy(true)
       try { setPreview(await getDeskFundingPreview(userId, equity, Number(cash), mode)) }
-      catch (err) { setError(err instanceof Error ? err.message : 'Preview unavailable.') }
+      catch (err) {
+        const text = err instanceof Error ? err.message : 'Preview unavailable.'
+        // The research sizing needs a completed bar from today's session; after
+        // the close the API refuses, and the reason is the clock, not the account.
+        setError(/fresh price|technical coverage|market data/i.test(text) ? 'Research sizing needs a completed bar from today’s session. Use it during market hours; evening targets work any time.' : text)
+      }
       finally { setBusy(false) }
     }}>
       <label className="text-xs">Available cash to allocate ($)
@@ -54,7 +59,7 @@ export const FundingPreview = ({ userId, equity, research }: { userId: string; e
           <td className="py-2">{row.ticker}</td><td>${row.reference_price.toFixed(2)}<div className="text-[#6e6e73]">{preview.price_times[row.ticker] ? `Bar starts ${preview.price_times[row.ticker]}` : 'Reference time unavailable'}</div></td>
           <td>{row.held_shares}</td><td>{row.target_total_shares}</td><td>{row.additional_shares}</td>
         </tr>)}</tbody>
-      </table> : <p className="mt-2 text-xs">No eligible additions under the current targets and event controls.</p>}
+      </table> : <p className="mt-2 text-xs">{paused ? 'No additions while the FOMC cycle is open; the plan resumes when it closes.' : 'No eligible additions under the current targets.'}</p>}
       {!!preview.reductions?.length && <div className="mt-3 text-xs">
         <p>Research target reductions · no sale proceeds included in this budget</p>
         {preview.reductions.map(row => <p key={row.ticker} className="mt-1">{row.ticker}: {row.held_shares} held → {row.target_total_shares} target shares · reduction {row.reduction_shares}</p>)}

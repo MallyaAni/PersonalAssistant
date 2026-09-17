@@ -1134,14 +1134,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {canWrite && holdingsReady && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
-          {canWrite && holdingsReady && <details className="mb-3 text-xs"><summary className="cursor-pointer text-[#0071e3]">Calculate shares with available cash</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} /></details>}
+          {canWrite && holdingsReady && <details className="mb-3 text-xs"><summary className="cursor-pointer text-[#0071e3]">Calculate shares with available cash</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} paused={Boolean(eventPaused)} /></details>}
           <table className="w-full text-sm">
             <thead className="text-left text-[#6e6e73]">
               <tr>
                 <th className="py-1">Name</th>
                 <th>Target move</th>
                 <th title="Unfunded target difference; use the cash-limited preview for a shared budget">Target difference</th>
-                <th>Grade</th>
+                <th title="Grades are the evening decision's unless marked as intraday">Grade</th>
                 <th title={TRIGGER_LEGEND}>Why</th>
               </tr>
             </thead>
@@ -1566,15 +1566,15 @@ const Row = ({ r, ranks, quote, equity, stops, open, onReason, onOpenName, marki
         {r.in_book ? (
           <>
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[r.grade_live] ?? ''}`}>{r.grade_live}</span>
-            <div className="text-xs text-[#6e6e73]">{r.grade_source === 'intraday' ? 'indicative intraday grade' : 'evening decision'}</div>
+            {r.grade_source === 'intraday' && <div className="text-xs text-[#6e6e73]">intraday grade</div>}
             {r.grade_live !== r.grade && (
               <span className="ml-1 text-xs text-[#6e6e73]" title="indicative grade using available intraday technical and value inputs; the evening decision governs scheduled targets">
                 {r.grade} at the close
               </span>
             )}
             {atRisk && r.grade_live === r.grade && (
-              <span className="ml-1 text-xs text-[#9a6200]" title="The vote total is near a grade threshold. This is not a probability of loss; a core analyst veto can also change the grade.">
-                near grade threshold
+              <span className="ml-1 text-xs text-[#9a6200]" title="The vote total sits at the line for this grade. This is not a probability of loss; a core analyst veto can also change the grade.">
+                one vote from dropping to {GRADE_BELOW[r.grade_live] ?? 'C'}
               </span>
             )}
             {trailing !== null && (
@@ -2168,6 +2168,8 @@ const LiveTechnical = ({
 // The sessions where the grade moved, with the analysts whose stance
 // changed and how: "technical turned against", "value no longer for".
 const STANCE_WORD: Record<number, string> = { 1: 'for', 0: 'neutral', [-1]: 'against' }
+// The grade one vote down from each grade.
+const GRADE_BELOW: Record<string, string> = { 'A+': 'A', A: 'B', B: 'C' }
 const gradeChanges = (rows: DeskHistoryRow[]) => {
   const out: { date: string; from: string; to: string; moved: string[]; said?: boolean }[] = []
   for (let i = 1; i < rows.length; i += 1) {
@@ -2439,7 +2441,7 @@ const NameDetail = ({
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade_live] ?? ''}`}>
               {row.grade_live}
-              <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `indicative · evening ${row.grade}` : 'evening decision'}</span>
+              <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `intraday · ${row.grade} at the close` : `at the ${latest.session} close`}</span>
             </span>
           </div>
         )}
@@ -2450,7 +2452,7 @@ const NameDetail = ({
                 evening grade while the list beside it shows the candle's. */}
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[(liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade) as keyof typeof GRADE_STYLE] ?? ''}`}>
               {liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade}
-              <span className="ml-1 font-normal">{liveGrades[ticker] ? 'indicative intraday grade' : 'evening decision'}</span>
+              <span className="ml-1 font-normal">{liveGrades[ticker] ? 'intraday grade' : `at the ${latest.session} close`}</span>
             </span>
             <span className="text-xs text-[#6e6e73]">
               {latest.grades[ticker].headline ?? 'graded but not in the book'}
