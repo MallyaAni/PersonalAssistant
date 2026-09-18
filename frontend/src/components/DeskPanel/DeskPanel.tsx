@@ -650,38 +650,75 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
 // The one-screen explanation for someone who has never seen the page, used
 // both as the help popover and the empty-state guide.
 const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?: boolean }) => (
-  <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-xl'}`}>
-    <ol className="list-decimal space-y-1.5 pl-5">
-      <li>
-        <b>After each trading session</b> the desk updates the grades and targets for about ninety AI and software stocks. Trades
-        follow the rebalance schedule (about every four weeks). Initial grade multipliers are A+ 1, A 0.75 and eligible B 0.5;
-        volatility, caps and market conditions also determine final weights. A daily target is not an order.
-      </li>
-      <li>
-        <b>Enter your positions</b> (type or paste from Schwab) and set your account size. The board then says, name
-        by name, <b>buy, add, trim, sell or hold</b> — or <b>uncovered</b> for a holding the desk does not rate, which
-        is your call to keep or close, not a sell instruction — and how many shares.
-      </li>
-      <li>
-        <b>Execution timing:</b> the strategy models buys at the next open and scheduled sells at the next close.
-        Your broker's actual fills can differ. After a fill, choose <b>record fill</b> and enter the filled shares
-        and average price. An order being placed does not update your position.
-      </li>
-      <li>
-        <b>Selling:</b> at a rebalance a name is dropped when its grade falls to C or below. The footer shows the
-        countdown to the next check. No automatic price stop is active; displayed hypothetical stops are references only.
-      </li>
-      <li>
-        <b>Prices</b> on the target board come from available IEX 15-minute bars, with an evening-close fallback.
-        They are not executable bid/ask quotes. Practice positions use separate broker marks.
-      </li>
-      <li>
-        <b>Why:</b> click a name or its reason to read the desk’s case for it, and what would change its mind.
-      </li>
-    </ol>
+  <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-2xl'}`}>
+    <p className="font-medium">Reading this page</p>
+    <p className="mt-1 text-[#6e6e73]">
+      Every night after the close the desk re-grades about ninety AI and software names and writes one
+      decision. The board is that decision. Nothing here is an order, and nothing here trades your own
+      account.
+    </p>
+    <dl className="mt-3 space-y-2">
+      <div>
+        <dt className="font-medium">Grade</dt>
+        <dd className="text-[#6e6e73]">
+          A+ down to C, from five analysts voting: business fundamentals, price trend, earnings-release
+          tone, price against value, and which group is leading. A vote only changes after an analyst has
+          held its new view for three sessions, so a grade follows the evidence by about that much. One
+          bearish core analyst caps a name at B whatever the others say.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-medium">Opportunity</dt>
+        <dd className="text-[#6e6e73]">
+          The same five analysts on a nought-to-ten scale at the latest completed bar. It is their combined
+          conviction, not a forecast of a return, and unlike the grade it is continuous: it moves with price
+          while the grade waits for its three sessions. That is why a name can hold an A while its
+          opportunity slides.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-medium">Plan</dt>
+        <dd className="text-[#6e6e73]">
+          What the desk would do at its next rebalance, with the share count for the account size you set.
+          Rebalances run about every four weeks, and the line above the board says how far away the next one
+          is. Until then these are targets. Buy, add, trim and sell are the desk&rsquo;s intent;
+          uncovered means you hold something the desk does not rate, which is yours to decide.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-medium">Size %</dt>
+        <dd className="text-[#6e6e73]">
+          Share of the whole account, not an order quantity. &ldquo;Not in the book&rdquo; means the name is
+          graded but was not picked: sizing ranks on the continuous score and then divides by volatility, with
+          the grade acting as a multiplier on top, so a high grade in a violent name can lose to a middling
+          grade in a steady one. A+ names with no size are normal.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-medium">Prices</dt>
+        <dd className="text-[#6e6e73]">
+          Fifteen-minute IEX bars while the market is open, and the last completed bar once it closes. They are
+          bar prices, not executable bid and ask, and the board says which bar it is using. Outside
+          09:00 to 16:45 New York on a weekday nothing on the board moves.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-medium">What is real</dt>
+        <dd className="text-[#6e6e73]">
+          One paper account at the broker, shown as the practice account. It places real paper orders and its
+          fills are real fills. Everything under Research is simulation, including the ML comparison, and none
+          of it places an order anywhere. Your own brokerage account is never touched: after you trade it
+          yourself, use Record to tell this page what filled.
+        </dd>
+      </div>
+    </dl>
+    <p className="mt-3 text-xs text-[#6e6e73]">
+      Click any column heading to sort by it, click a name for its full history, or click the arrow beside a
+      row to see why the desk grades it that way without leaving the board.
+    </p>
     {onClose && (
       <button type="button" onClick={onClose} className="mt-3 text-xs text-[#0071e3] hover:underline">
-        close
+        Close
       </button>
     )}
   </div>
