@@ -11,6 +11,9 @@ interface SidebarProps {
   // The operator surface is hidden for a guest. The server refuses it anyway;
   // this keeps the workspace from advertising something they cannot use.
   isAdmin?: boolean
+  // An allowlisted account (named in market_desk_operators) may open the desk
+  // even when it is not the admin; it sees the same icon the admin does.
+  deskAccess?: boolean
   userId?: string
   activeConversationId?: string
   onOpenConversation?: (conversationId: string) => void
@@ -23,6 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeView,
   onViewChange,
   isAdmin = false,
+  deskAccess = false,
   userId,
   activeConversationId,
   onOpenConversation,
@@ -121,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <Zap size={19} className={activeView === 'automations' ? 'text-[#0071e3]' : ''} />
           <span className="inline">Automations</span>
         </button>
-        {isAdmin && (
+        {(isAdmin || deskAccess) && (
         <button
           aria-label="Desk"
           onClick={() => onViewChange('desk')}

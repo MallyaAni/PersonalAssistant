@@ -1128,7 +1128,10 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // No trade is scheduled before the rebalance, so no row carries a "done"
   // button: the targets read as targets, not as instructions to buy now.
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
-  await expect(page.getByText('The desk adds to its best name.', { exact: false })).toBeVisible()
+  // The analyst conviction line lives with the rest of the reasoning in the
+  // row's expanded details, not in the collapsed plan cell.
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  await expect(page.getByText('growing earnings, steady trend', { exact: false }).first()).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -2103,4 +2106,37 @@ test('the desk fits a phone without sideways scrolling', async ({page}) => {
   await page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true }))
   await noSidewaysScroll(page, 'research')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// An allowlisted account that is not the admin still gets the Desk icon in
+// the sidebar (the page was granted via desk_access but the icon was gated
+// on is_admin alone); a plain guest sees neither the icon nor the admin.
+test('the Desk icon appears for an allowlisted account and stays hidden for a guest', async ({page}) => {
+  const record = deskRecord()
+  const deskBody = JSON.stringify({
+    latest: record, summary: {session: record.session, counts: {A: 1, B: 1}, gross: 0.8, names: ['AAPL', 'NVDA'], flags: []},
+    changes: {since: '2026-09-04', upgrades: [], downgrades: [], orders: [], flags_raised: [], flags_cleared: []},
+    sessions: [record.session],
+  })
+  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({authentication_required: true, user_id: 'vjmallya', expires_at: '2026-09-09T00:00:00Z', is_admin: false, desk_access: true}),
+  }))
+  await page.route('http://localhost:8000/api/v1/conversations/vjmallya', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({conversations: []}),
+  }))
+  await page.route('http://localhost:8000/api/v1/market/vjmallya/desk', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: deskBody,
+  }))
+  await page.goto('/')
+  await expect(page.getByRole('button', {name: 'Desk', exact: true})).toBeVisible()
+  await page.getByRole('button', {name: 'Desk', exact: true}).click()
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
+  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:vjmallya'))
+  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({authentication_required: true, user_id: 'a.guest', expires_at: '2026-09-09T00:00:00Z', is_admin: false}),
+  }))
+  await page.reload()
+  await expect(page.getByRole('button', {name: 'Desk', exact: true})).toHaveCount(0)
 })

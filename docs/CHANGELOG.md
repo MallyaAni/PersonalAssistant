@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-17 — The plan cell reads like a trader's note, and an allowlisted account gets the Desk icon
+
+The collapsed Plan cell mixed three voices that fought: the planned trade
+("buy 35 shares"), the desk's analyst-conviction headline ("Own: fundamental
+and value for, none against" — cryptic because analyst names like "Own" read
+as English), and the execution gate as a bare "Wait" that contradicted the
+buy. The analyst headline and the "one vote from dropping to A" grade-margin
+note now live only in the row's expanded details and the name panel; the
+collapsed cell keeps the action, the share count, and the schedule. A bare
+"Wait" no longer appears beside a buy: the compact decision cell says the
+real reason inline ("Wait · Market closed or clock unavailable" after close)
+and says nothing when an eligible buy is already stated by the badge and
+shares. Separately, the sidebar Desk button was gated on `is_admin` alone
+while the page itself is granted by `auth.desk_access`, so an allowlisted
+account such as vjmallya (backend `MARKET_DESK_USERS=vjmallya`, verified in
+the running container) could open the desk only by URL with no icon; the
+Sidebar now takes `deskAccess` and shows the icon for `is_admin ||
+desk_access`, while a guest still sees neither. Pinned by the desk e2e
+(plan-cell assertions plus a new "Desk icon appears for an allowlisted
+account and stays hidden for a guest"); tsc clean, desk suite 64/64.
+
 ## 2026-09-17 — The board always shows size, reaches every column on a phone, and stops reading a finished FOMC cycle as a live pause
 
 The Plan column's "Wait · FOMC" came from a second place besides the

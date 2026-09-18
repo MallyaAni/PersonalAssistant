@@ -1037,7 +1037,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       } : undefined}
       eligibility={eventPaused
         ? <span title={holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle; restoration follows the decision' : 'No new buys during the FOMC cycle'}>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
-        : <DecisionCell compact allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />} />
+        : <DecisionCell compact allocationAllowed ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />} />
   }
   const boardEvent: BoardEvent | null = eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
@@ -1546,7 +1546,6 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
   const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
   const trailing = stops && high > 0 ? high * 0.88 : null
   const hit = trailing !== null && price > 0 && price <= trailing
-  const atRisk = r.in_book && r.target_weight > 0 && (r.grade_margin_live ?? r.grade_margin ?? 1) <= 0
   const liveDrop = r.in_book && r.grade_live === 'C' && (r.action === 'buy' || r.action === 'add')
   const moving = ['buy', 'add', 'trim', 'sell'].includes(r.action)
   return (
@@ -1579,7 +1578,6 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
           <button type="submit" disabled={marking} className="text-[#0071e3] disabled:text-[#6e6e73]">{marking ? 'saving' : 'Save confirmed fill'}</button>
         </form>
       )}
-      {r.why && <div className="text-[#6e6e73]">{r.why}</div>}
       {liveDrop && <div className="mt-0.5 font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">indicative C: removed if still C at the next rebalance</div>}
       {r.shares > 0 && r.entry_price !== null && (
         <div className="text-[#6e6e73]">
@@ -1592,7 +1590,6 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
         </div>
       )}
       {r.in_book && r.grade_live !== r.grade && <div className="text-[#6e6e73]" title="indicative grade using available intraday technical and value inputs; the evening decision governs scheduled targets">{r.grade} at the close, {r.grade_live} intraday</div>}
-      {atRisk && r.grade_live === r.grade && <div className="text-[#9a6200]" title="The vote total sits at the line for this grade. This is not a probability of loss; a core analyst veto can also change the grade.">one vote from dropping to {GRADE_BELOW[r.grade_live] ?? 'C'}</div>}
       {trailing !== null && <div className={hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}>{hit ? 'hypothetical stop breached — not an active exit rule' : `hypothetical stop ${priceMoney(trailing)} — not an active exit rule`}</div>}
       <div className="mt-0.5">{eligibility}</div>
     </div>
@@ -1712,7 +1709,15 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
   const wait = (expired || blocked) && row.action !== 'Wait'
   const action = wait ? 'Wait' : row.action
   const reason = wait ? (expired ? 'Refresh price evidence' : row.reason) : row.reason
-  if (compact) return <span title={reason} aria-label={`${ticker} plan action`}>{wait ? `Wait · ${expired ? 'expired' : 'no size shown'}` : action}</span>
+  if (compact) {
+    // In a trade row the action badge and share count already state what is
+    // planned, so this line says only what blocks it: a genuine wait with its
+    // reason, an expired decision, or no decision at all. A redundant "Wait"
+    // beside "buy 35 shares" read as a contradiction.
+    if (wait) return <span title={reason} aria-label={`${ticker} plan action`}>{`Wait · ${expired ? 'expired' : 'no size shown'}`}</span>
+    if (action === 'Wait') return <span title={reason} aria-label={`${ticker} plan action`}>Wait · {reason}</span>
+    return null
+  }
   return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
     <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {row.target_weight > 0 ? `${allocationPercent(row.target_weight)} plan` : 'no target until the next rebalance'}</span></div>
     <div className="text-[#6e6e73]">{reason}</div>

@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-17 — Plan cell cleaned to the trade line; allowlisted accounts get the Desk icon
+
+Frontend-only, deployed after c898dbbf. (1) The collapsed Plan cell mixed
+the planned trade, the analyst-conviction headline, and the execution gate
+as a bare "Wait" that contradicted "buy 35 shares". The headline ("Own:
+fundamental and value for, none against" — "Own" is an analyst name, which
+is why it reads as English) and the "one vote from dropping to A" margin
+note now live only in the row's expanded details and the name panel. The
+compact decision cell shows the real reason inline — "Wait · Market closed
+or clock unavailable" after close — and renders nothing for an eligible
+buy (the badge + shares already say it), so "buy … Wait" no longer appears.
+Frontend/src/components/DeskPanel/DeskPanel.tsx (TradeCell, DecisionCell
+compact, expandRow). (2) The sidebar Desk button was gated on `is_admin`
+alone while the page is granted by `auth.desk_access`; vjmallya
+(allowlisted in the backend, `MARKET_DESK_USERS=vjmallya`, verified in the
+running container) had no icon. Sidebar now takes `deskAccess`
+(Sidebar.tsx, App.tsx) and shows the icon for `is_admin || desk_access`;
+guests still see neither. Pinned by the desk e2e: plan-cell assertions plus
+a new "Desk icon appears for an allowlisted account and stays hidden for a
+guest". tsc clean, desk suite 64/64, hash-routing 2/2, theme 6/6.
+
 ## 2026-09-17 — The board always shows size, reaches every column on a phone, and a finished FOMC cycle no longer pauses it
 
 The user's follow-ups after the FOMC/IEX deploy were: (1) the Plan column

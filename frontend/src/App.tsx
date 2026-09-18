@@ -140,6 +140,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
       {isSidebarOpen && (
         <Sidebar
           isAdmin={auth.is_admin}
+          deskAccess={auth.desk_access}
           activeView={activeView}
           onViewChange={view => {
             setActiveView(view)
