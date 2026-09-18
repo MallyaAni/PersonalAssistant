@@ -1732,6 +1732,19 @@ const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
   ? '<0.1%' : `${(100 * weight).toFixed(1)}%`
 
 // Withhold actions whose price, decision or account context no longer matches the page.
+// A quote guard is real-time information, and the board was printing it as
+// a refusal. "Wait · Spread exceeds 25 bp" tells a trader nothing they can
+// act on; the same fact, said as what to do about it, does. The backend's
+// own wording stays in the tooltip, because it is what the guard is called.
+const actOnIt = (reason?: string | null): string | null => {
+  if (!reason) return null
+  if (/spread exceeds/i.test(reason)) return 'Spread is wide right now; work a limit rather than crossing it'
+  if (/market closed/i.test(reason)) return 'Market closed; no executable quote until the open'
+  if (/invalid or empty|unavailable/i.test(reason)) return 'No usable quote this moment; the size stands, the price does not'
+  if (/refresh price evidence/i.test(reason)) return 'Price evidence has expired; reload for a current quote'
+  return reason
+}
+
 const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact = false, terse = false, allocationAllowed = true}: {
   ticker: string; decisions?: DeskDecisions; latest: DeskRecord; holdings: DeskHolding[] | null; equity: number; now: number
   compact?: boolean; terse?: boolean; allocationAllowed?: boolean
@@ -1757,12 +1770,12 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
     // reason, an expired decision, or no decision at all. A redundant "Wait"
     // beside "buy 35 shares" read as a contradiction.
     if (wait) return <span title={reason} aria-label={`${ticker} plan action`}>{`Wait · ${expired ? 'expired' : 'no size shown'}`}</span>
-    if (action === 'Wait') return <span title={reason} aria-label={`${ticker} plan action`}>Wait · {reason}</span>
+    if (action === 'Wait') return <span title={reason} aria-label={`${ticker} plan action`}>{actOnIt(reason) ?? 'Wait'}</span>
     return null
   }
   return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
     <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {row.target_weight > 0 ? `${allocationPercent(row.target_weight)} of the account` : 'not picked by the sizing engine'}</span></div>
-    <div className="text-[#6e6e73]">{reason}</div>
+    <div className="text-[#6e6e73]">{actOnIt(reason) ?? reason}</div>
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
       <div>Using {money(equity)} account value</div>
       <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
