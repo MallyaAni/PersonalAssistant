@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-09-17 — Scout digests emptied because the search query never moved; deploy the rolling window
+
+Committed and pushed as 7f170cc (discovery) + 3de021b (handoff), on top of
+ecd5672; working tree clean, origin/main in sync at 3de021b. NOT yet
+deployed (this handoff is written before deploy). Root cause of the
+empty-digest streak: `backend/discovery/sources/web.py::_queries` named a
+fixed month ("September 2026" all of September), so every sweep asked the
+same question, the engine returned the same top pages, and the novelty
+filter marked them all seen — arsalon's live sweeps ran 10-12 candidates
+with 0 novel for days, and ani.mallya/jenos1 showed the same signature.
+Fix: each interest query names a month a week further ahead than the last
+(general stays current month), the sweep's `moment` is threaded into the
+source so rehearsals are reproducible, and December rolls into January via
+`timedelta`. Skeleton still `{subject} {place} {month year}` — the
+measured phrasing. Also fixed `listing_filter.py` letting two Bali
+directory pages through as happenings: `/d/indonesia--bali/` (rule only
+matched US `/d/va--` slugs) and "The Events Calendar" plural (rule only
+matched singular). Both are now labelled cases; `evaluate_discovery_ranking`
+listing_recall 0.857→0.875, retention 1.0, no wrongly-rejected. Unit gate
+passed 3694 (a first run had one flaky `test_agent_runs` failure that
+passed in isolation and on rerun). Note: 11 `test_aiming_behaviour` cases
+failed on the live runtime — pre-existing model drift (the model elaborates
+no-fact interests like "Chess" → "chess clubs and tournaments" against the
+prompt's contract); NOT caused by this change, which never touched the aim
+prompt (`prompts/scout/aim` byte-identical). Next: deploy through
+`scripts/deploy.sh` from `~/deploy/anios`, then verify with the sweep and
+search harness.
+
 ## 2026-09-17 — Board readability: opportunity, size and plan stay filled after the nightly decision
 
 Deployed ecd56727 (after the other agent's ee0d115; pushed through a

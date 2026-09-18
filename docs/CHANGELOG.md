@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-17 — Roll the discovery search window and reject non-US directory pages
+
+A Scout sweep asked "VIP bars Canggu, Bali September 2026" every day of
+September. A search engine returned the same top pages for that static
+query, the novelty filter marked them all seen after the first sweep, and
+the digest emptied for days while 10-12 candidates kept coming with 0 novel
+(measured 2026-09-17 on arsalon's live sweeps; ani.mallya and jenos1 showed
+the same signature). The web query skeleton stays the measured
+`{subject} {place} {month year}` — "events near X upcoming" kept 0 of 5
+results where naming the month kept 6 of 9 — but the month now rolls
+forward with the sweep: each interest query names a month a week further
+ahead than the last, so one sweep spans several upcoming months and a
+December sweep names January of the next year. The sweep's own clock is
+threaded into the source so a rehearsal is reproducible. `evaluate_discovery_ranking` still passes with the window in place.
+
+The listing filter let two Bali directory pages into a delivered digest as
+happenings: an Eventbrite `/d/indonesia--bali/` city browse (the rule only
+matched US state slugs like `/d/va--arlington`) and a page titled "The
+Events Calendar" (the rule only matched the singular "event calendar").
+Both slugs now reject; both are labelled cases, and the evaluation moves
+`listing_recall` from 0.857 to 0.875 with `happening_retention` unchanged
+at 1.0 and no wrongly rejected happening.
+
 ## 2026-09-17 — Keep the board's opportunity, size and plan readable after the nightly decision
 
 The desk showed three empty or wrong columns on the evening a fresh record
