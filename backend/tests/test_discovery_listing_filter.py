@@ -47,6 +47,19 @@ from backend.discovery.listing_filter import looks_like_a_directory
             "Nature and History Events",
             "https://www.arlingtonva.us/Parks-Recreation/Parks-Events/nature-events",
         ),
+        # A non-US faceted city browse is the same directory shape as the US
+        # state form above; the two-letter slug rule only caught /d/va--... and
+        # let the Bali page reach a delivered digest.
+        (
+            "Discover Canggu Bali Events & Activities | Eventbrite",
+            "https://www.eventbrite.com/d/indonesia--bali/canggu-bali/",
+        ),
+        # "The Events Calendar" plural outran the singular "event calendar"
+        # rule and reached the same digest as a happening.
+        (
+            "What's Happening in Bali 2026 – The Events Calendar",
+            "https://www.villa-bali.com/guide/bali-2026-events-calendar/",
+        ),
     ],
 )
 def test_directory_pages_are_recognized(title: str, url: str):

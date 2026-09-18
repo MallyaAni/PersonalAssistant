@@ -22,7 +22,9 @@ Three rules keep this from undoing what has already been measured:
   `{subject} {place} {month year}`. The phrasing was measured, and the comment in
   `sources/web.py::_queries` records it: `"events near X upcoming"` kept 0 of 5
   results while naming the month kept 6 of 9. Free-form queries would throw that
-  away;
+  away. The month itself is a rolling window now: each interest query names a
+  month a week further ahead than the last, so a sweep near month-end asks about
+  the month coming and a December sweep names January of the next year;
 - **the budget does not move.** Same number of queries, better aimed;
 - **failure is exactly today's behaviour.** Anything the model returns that
   cannot be validated — too long, carrying a date, naming the place the skeleton

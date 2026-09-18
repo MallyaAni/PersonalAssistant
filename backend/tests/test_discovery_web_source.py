@@ -180,6 +180,64 @@ async def test_one_query_per_interest_rather_than_a_combined_one():
     assert any("pottery" in query for query in search.queries)
 
 
+# The month a query names must move with the sweep, or every sweep of the month
+# asks the same question and a search engine returns the same pages, which the
+# novelty filter then marks seen - a digest that empties for days while the
+# candidates keep coming. Each interest query steps a week further ahead, so
+# one sweep spans several upcoming months.
+@pytest.mark.asyncio
+async def test_queries_roll_forward_week_by_week():
+    search = _StubSearch([])
+    source = WebEventSource(
+        "web-search",
+        search,
+        "Arlington",
+        ("hiking", "pottery", "jazz"),
+        region="Virginia",
+        include_general=False,
+        max_queries=3,
+        # Mid-month: one and two weeks ahead stay in August, three weeks ahead
+        # crosses into September, so the sweep asks about two months at once.
+        now=datetime(2026, 8, 15, 12, 0, tzinfo=UTC),
+    )
+
+    await source.fetch()
+
+    assert search.queries == [
+        "hiking Arlington, Virginia August 2026",
+        "pottery Arlington, Virginia August 2026",
+        "jazz Arlington, Virginia September 2026",
+    ]
+
+
+# A December sweep must name January of the following year, not January of the
+# same one - the stringly month arithmetic that breaks at year end is exactly
+# what a rolling window is there to avoid.
+@pytest.mark.asyncio
+async def test_a_december_sweep_rolls_into_january_of_the_next_year():
+    search = _StubSearch([])
+    source = WebEventSource(
+        "web-search",
+        search,
+        "Arlington",
+        ("hiking", "pottery"),
+        region="Virginia",
+        include_general=True,
+        max_queries=3,
+        # The general query keeps the current month; the interest queries step a
+        # week each, and a week after 28 December is 4 January of the next year.
+        now=datetime(2026, 12, 28, 12, 0, tzinfo=UTC),
+    )
+
+    await source.fetch()
+
+    assert search.queries == [
+        "events happening in Arlington, Virginia December 2026",
+        "hiking Arlington, Virginia January 2027",
+        "pottery Arlington, Virginia January 2027",
+    ]
+
+
 # One query names no interest, so a sweep can surface something the user never
 # thought to ask for. Every other query is interest-shaped by construction,
 # which means the loop could otherwise only return more of what it knew about.

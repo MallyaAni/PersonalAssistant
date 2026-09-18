@@ -436,7 +436,7 @@ class DiscoveryRunner:
             )
         aim = await self._aim(profile, context, primary)
 
-        events = events + await self._search_events(user_id, profile, budget, aim)
+        events = events + await self._search_events(user_id, profile, budget, aim, moment)
 
         candidates = await self._embed(events)
         # A rehearsal treats everything as new. Applying novelty would show an
@@ -820,11 +820,13 @@ class DiscoveryRunner:
 
     # Search for what no feed publishes. Failure here is silent by design: a
     # sweep with working feeds must not fail because a search provider is down.
-    async def _search_events(        self,
+    async def _search_events(
+        self,
         user_id: str,
         profile: DiscoveryProfile,
         budget: RequestBudget,
         aim: SweepAim,
+        now: datetime | None = None,
     ) -> tuple[DiscoveredEvent, ...]:
         if self.search is None or not settings.DISCOVERY_WEB_SEARCH_ENABLED:
             return ()
@@ -867,6 +869,7 @@ class DiscoveryRunner:
             subjects=aim.subjects(),
             budget=budget,
             max_queries=granted,
+            now=now,
         )
         try:
             return await source.fetch()

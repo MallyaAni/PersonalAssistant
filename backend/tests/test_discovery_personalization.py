@@ -39,6 +39,9 @@ from backend.models.memory import MemoryFact, SemanticMemory
 from backend.search.types import SearchResult, SearchResults
 
 _NOW = datetime(2026, 8, 1, 12, 0, tzinfo=UTC)
+# The month the fixed rehearsal clock names, so the rolling window's expected
+# output is written once and reused wherever a query is asserted.
+_aug = "August 2026"
 
 
 # The stored column is fixed at 768 dimensions, so test vectors are the real
@@ -429,18 +432,19 @@ async def test_the_skeleton_and_the_budget_are_unchanged():
         region="Virginia",
         include_general=False,
         max_queries=2,
+        now=_NOW,
     )
 
     await source.fetch()
 
     # `{subject} {place} {month year}` — the phrasing that was measured. Naming
     # the month kept 6 of 9 results where "events near X upcoming" kept 0 of 5.
-    # The month is the sweep's real clock, so it is read, not assumed (the
-    # month rolls over at midnight UTC and must not freeze a test to August).
-    month = datetime.now(UTC).strftime("%B %Y")
+    # The month is the sweep's own clock, so a rehearsal passes its fixed moment
+    # and the window stays put; the queries step forward a week each so a sweep
+    # near month-end asks about the month coming rather than the one ending.
     assert search.queries == [
-        f"casual weekend group runs Arlington, Virginia {month}",
-        f"beginner pottery classes Arlington, Virginia {month}",
+        f"casual weekend group runs Arlington, Virginia {_aug}",
+        f"beginner pottery classes Arlington, Virginia {_aug}",
     ]
 
 
@@ -710,10 +714,9 @@ async def test_a_sweep_searches_and_ranks_with_what_memory_knows(monkeypatch):
             result = await runner.sweep(user_id, profile, now=_NOW, persist=False)
 
         # The query is about this person, in the skeleton that was measured. The
-        # month is the sweep's real clock, so it is read, not assumed.
-        month = datetime.now(UTC).strftime("%B %Y")
+        # month is the sweep's own clock, read from the fixed rehearsal moment.
         assert (
-            f"casual weekend group runs Arlington, Virginia {month}"
+            f"casual weekend group runs Arlington, Virginia {_aug}"
             in search.queries
         )
         # And the vector a candidate was scored against is no longer two words.
@@ -777,9 +780,8 @@ async def test_a_sweep_with_the_flags_off_searches_the_bare_label(monkeypatch):
 
             await runner.sweep(user_id, profile, now=_NOW, persist=False)
 
-        # The month is the sweep's real clock, so it is read, not assumed.
-        month = datetime.now(UTC).strftime("%B %Y")
-        assert f"Run Clubs Arlington, Virginia {month}" in search.queries
+        # The month is the sweep's own clock, read from the fixed moment.
+        assert f"Run Clubs Arlington, Virginia {_aug}" in search.queries
         # Nothing was read out of memory and nothing was asked of the model.
         assert writer.prompts == []
     finally:

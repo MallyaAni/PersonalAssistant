@@ -435,6 +435,36 @@
       "interest": "exploring new places",
       "place_matches": false,
       "note": "Reached a delivered digest on 2026-08-31. The walk is at Arlington Court in Devon, England, not Arlington, Virginia. The snippet names only the estate's town; the URL (/visit/devon/) says where it actually is, which the state-only deterministic guard never reads. Caught by the locate judge now that it sees the URL."
+    },
+    {
+      "title": "Discover Canggu Bali Events & Activities | Eventbrite",
+      "url": "https://www.eventbrite.com/d/indonesia--bali/canggu-bali/",
+      "summary": "A faceted browse of every Eventbrite event in the Bali/Canggu region.",
+      "locality": "Canggu, Bali, Indonesia",
+      "interests": [
+        "VIP clubs",
+        "VIP bars",
+        "hip hop dance"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "Reached a delivered digest for arsalon on 2026-09-17. A non-US /d/ city browse; the two-letter state slug rule matched /d/va--arlington but not /d/indonesia--bali."
+    },
+    {
+      "title": "What's Happening in Bali 2026 – The Events Calendar",
+      "url": "https://www.villa-bali.com/guide/bali-2026-events-calendar/",
+      "summary": "A guide page collecting Bali events, titled as a calendar.",
+      "locality": "Canggu, Bali, Indonesia",
+      "interests": [
+        "VIP clubs",
+        "VIP bars",
+        "hip hop dance"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "Reached a delivered digest for arsalon on 2026-09-17. The plural 'Events Calendar' outran the singular 'event calendar' title rule."
     }
   ]
 }

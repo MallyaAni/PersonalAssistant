@@ -59,7 +59,11 @@ _DIRECTORY_PATH = re.compile(
     # the browse path, /d/va--arlington is what replaced it. Three /d/ pages
     # reached real digests - one delivered a "Paint & Sip" whose link opened
     # a city-wide search listing where no such event was visible.
-    r"|/directory|/listings?/|/events/p/|/b/[a-z]{2}--|/d/[a-z]{2}--"
+    r"|/directory|/listings?/|/events/p/|/b/[a-z]{2}--|/d/[a-z]{2,}--"
+    # A faceted city browse is a directory whatever the city is called: the
+    # short form above matches US state slugs (/d/va--arlington), and a
+    # country or city name is the same page (/d/indonesia--bali). One /d/
+    # browse page for a non-US city reached a delivered digest as a happening.
     # A standing programme rather than a date. Arlington County's own site put
     # a concert series at /Government/Programs/Arts/Programs/Lubber-Run, which
     # is a description of a thing the county runs every summer.
@@ -97,7 +101,7 @@ _DIRECTORY_PATH = re.compile(
 # guide to a category is a directory under another name.
 _DIRECTORY_TITLE = re.compile(
     r"(^\s*(the\s+)?(\d+\s+)?best\b|^\s*top\s+\d+|\bthings\s+to\s+do\b"
-    r"|\bnear\s+me\b|\bevent\s+calendar\b|\ball\s+events\b"
+    r"|\bnear\s+me\b|\bevents?\s+calendar\b|\ball\s+events\b"
     r"|\bevents?\s+(and|&|\+)\s+tickets\b|\bwhat'?s\s+on\b"
     # "Arlington, VA Events, Calendar & Tickets" — the ticketing sites separate
     # the words, so requiring "events & tickets" adjacent missed them.

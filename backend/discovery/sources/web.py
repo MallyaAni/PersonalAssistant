@@ -22,7 +22,7 @@ boundary like any feed.
 """
 
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import logging
 from typing import Any
 
@@ -52,6 +52,20 @@ from backend.discovery.listing_filter import looks_like_a_directory
 MAX_QUERIES_PER_SWEEP = 4
 MAX_RESULTS_PER_QUERY = 8
 
+# How many days ahead each successive interest query names its month. The
+# general query names the current month; the first interest names the month
+# one step ahead, the second two, and so on, so a single sweep asks about
+# several upcoming months and the same question is never asked twice in a row.
+WINDOW_STEP_DAYS = 7
+
+
+# The month and year a date this many days ahead falls in. Rolling the window
+# forward means a sweep near the end of the month asks about next month, and a
+# December sweep asks about January of the next year — both handled by the
+# calendar arithmetic rather than by stringly month math.
+def _month_year(moment: datetime, days_ahead: int) -> str:
+    return (moment + timedelta(days=days_ahead)).strftime("%B %Y")
+
 
 class WebEventSource(EventSource):
     """Search for local happenings that publish no feed."""
@@ -66,10 +80,15 @@ class WebEventSource(EventSource):
         max_queries: int = MAX_QUERIES_PER_SWEEP,
         region: str | None = None,
         include_general: bool = True,
+        now: datetime | None = None,
     ) -> None:
         self._source_id = source_id
         self.search = search
         self.locality = locality
+        # The sweep's own clock. A rehearsal passes its fixed moment so the
+        # rolling month window is reproducible; a live sweep passes None and
+        # reads the real time here.
+        self.now = now
         # A bare town name is ambiguous to a search engine exactly as it is to a
         # person: querying "hiking near Arlington" returns Texas and Washington
         # alongside Virginia. The region is what makes the query mean one place.
@@ -146,8 +165,17 @@ class WebEventSource(EventSource):
         # directory pages — measured, not guessed: it kept 0 of 5 results while
         # naming the month kept 6 of 9 across three different interests. A date
         # appears on a page about one happening and not on a landing page.
-        moment = now or datetime.now(UTC)
-        when = moment.strftime("%B %Y")
+        #
+        # The named month rolls forward with the sweep's own clock rather than
+        # being frozen to the current one: a sweep that asked "September 2026"
+        # every day of September got the same top pages back each time, the
+        # novelty filter marked them all seen, and the digest emptied for days
+        # while the candidates kept coming (measured 2026-09-17: 10 candidates,
+        # 0 novel). Each interest query names a later month than the last, so one
+        # sweep spans several upcoming months, and `timedelta` does the boundary
+        # arithmetic — December rolls into January and the year advances.
+        moment = now or self.now or datetime.now(UTC)
+        general_when = _month_year(moment, days_ahead=0)
         queries: list[str] = []
         # One query that names no interest, so a sweep can surface something the
         # user never thought to ask for. Every other query is interest-shaped by
@@ -155,13 +183,14 @@ class WebEventSource(EventSource):
         # it already knew about. It goes first so a tight budget spends its one
         # request here rather than on the fourth variation of one interest.
         if self.include_general:
-            queries.append(f"events happening in {place} {when}".strip())
-        for subject in self.subjects[: self.max_queries]:
+            queries.append(f"events happening in {place} {general_when}".strip())
+        for index, subject in enumerate(self.subjects[: self.max_queries]):
             topic = clean_text(subject, 60)
             if topic:
+                when = _month_year(moment, days_ahead=(index + 1) * WINDOW_STEP_DAYS)
                 queries.append(f"{topic} {place} {when}".strip())
         if not queries:
-            queries.append(f"local events {place} {when}".strip())
+            queries.append(f"local events {place} {general_when}".strip())
         return tuple(queries[: self.max_queries])
 
 
