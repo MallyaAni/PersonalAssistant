@@ -351,11 +351,18 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="text-xs">{isCash ? 'Hold'
               : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
               : action(row.ticker, row.weight))}</td>
-            <td className="text-xs tabular-nums" aria-label={isCash ? undefined : `${row.ticker} shares`}>{isCash || row.shares === null ? '' : row.shares.toLocaleString()}</td>
+            <td className="text-xs tabular-nums" aria-label={isCash ? undefined : `${row.ticker} shares`}>{isCash || row.shares === null ? ''
+              : row.shares > 0 ? row.shares.toLocaleString()
+              // A target smaller than one share at this price. Printing "0"
+              // reads as "the desk wants none of this", which is the
+              // opposite of what it means: the desk wants a position this
+              // account is too small to express in whole shares. SNDK at
+              // $1,735 against a sub-1% target is the live case.
+              : <span className="cursor-help text-[#6e6e73]" title="Target is under one share at this price. Not an instruction to buy none.">&lt;1</span>}</td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
               : isCash ? '—'
               : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
-              : <span className="text-[#6e6e73]" title="Graded, but the sizing engine did not pick it: names are sized on the continuous score, and the grade is a multiplier on top">not in the book</span>}</td>
+              : <span className="cursor-help text-[#6e6e73]" title="Graded but unsized. Sizing ranks on the continuous score; the grade is a multiplier on top.">—</span>}</td>
             <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
           {open && expand && <tr><td colSpan={8} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}

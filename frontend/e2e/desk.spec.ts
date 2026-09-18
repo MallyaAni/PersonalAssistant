@@ -2346,3 +2346,26 @@ test('the board carries the share count and leads with the book', async ({page})
   expect(ranked.indexOf('NVDA')).toBeLessThan(ranked.indexOf('AAPL'))
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
+
+// A target smaller than one share at the name's price. Found on the live
+// board, where SNDK trades near $1,735 and a sub-1% target of the account
+// does not reach a whole share. Printing "0" read as "the desk wants none
+// of this", which is the opposite of what it means.
+test('a target too small for one share says so rather than printing zero', async ({page}) => {
+  const latest = deskRecord()
+  latest.book = [
+    {ticker: 'AAPL', grade: 'A+', weight: 0.005, engine_weight: 0.005, volatility: 0.2, exposure: 1},
+  ] as typeof latest.book
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-08T20:00:00Z', quotes: {
+    AAPL: {symbol: 'AAPL', last: 1735, bar: '2026-09-08T19:45:00Z'},
+  }}}))
+  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, holdings: {}, equity: 100000, rows: {},
+  }}}))
+  await page.goto('/?deskDetails=1#desk')
+  // 0.5% of 100k is $500; one share costs $1,735.
+  const cell = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL shares')
+  await expect(cell).toHaveText('<1')
+  await expect(cell).not.toHaveText('0')
+})

@@ -21,15 +21,24 @@ const marketTime = (stamp?: string | null) =>
       })
     : null
 
-// What the trigger is, in a trader's words rather than the code's.
+// A blotter label, not a sentence. The detail lives in the tooltip.
 const headline = (row: DeskEntryRow): string => {
+  if (row.trigger === 'dip') return row.with_the_basket_falling ? 'Dip · group down' : 'Dip'
+  if (row.trigger === 'breakout') return 'Breakout'
+  return '—'
+}
+
+// What the label means, for the hover rather than the row.
+const detail = (row: DeskEntryRow): string => {
   if (row.trigger === 'dip') {
     return row.with_the_basket_falling
-      ? 'Dip, and the AI group is falling with it'
-      : 'Dip below its own range'
+      ? 'Below its lower band with the AI group falling too. Strongest reading measured: about +2.1% over 5 sessions.'
+      : 'Stretched below its 21-day average or its lower band. About +1.2% over 5 sessions.'
   }
-  if (row.trigger === 'breakout') return 'Breaking out in an agreed trend'
-  return 'No setup yet'
+  if (row.trigger === 'breakout') {
+    return 'Top of its 60-session range with the daily and weekly trends agreeing. About +1.3% over 20 sessions.'
+  }
+  return 'Neither trigger is firing at this bar.'
 }
 
 // Where the price is, said plainly. The band position is the measure the
@@ -88,16 +97,16 @@ export const EntriesNow = ({ userId, onOpen }: { userId: string; onOpen?: (ticke
       className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3"
     >
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">Where to start now</h3>
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Entries</h3>
         <span className="text-[11px] text-[#6e6e73]">
-          {data.bar ? `From the ${marketTime(data.bar)} ET bar` : 'Awaiting a live bar'}
+          {data.bar ? `${marketTime(data.bar)} ET` : 'No live bar'}
         </span>
       </div>
       {/* The reasoning folds away. A trader in front of a moving price wants
           the names, not a paragraph; the paragraph matters once, and then
           only when they want to check what the number rests on. */}
       <details className="mb-2 text-[11px] text-[#6e6e73]">
-        <summary className="cursor-pointer text-[#0071e3]">What these setups are worth</summary>
+        <summary className="cursor-pointer text-[#0071e3]">Edge</summary>
         <p className="mt-1">
           The grade says what to hold. This says whether now is a moment to begin, among the names
           already graded A+ or A. Two setups were measured on this book: a dip pays about 1.2% over
@@ -111,10 +120,9 @@ export const EntriesNow = ({ userId, onOpen }: { userId: string; onOpen?: (ticke
 
       {!data.reason && firing.length === 0 && !showAll && (
         <p className="text-xs text-[#6e6e73]">
-          No dip or breakout is firing in the top grades at this bar. That is the common case; the
-          setups are meant to be rare.{' '}
+          No trigger at this bar.{' '}
           <button type="button" className="text-[#0071e3] hover:underline" onClick={() => setShowAll(true)}>
-            Show where they all sit anyway
+            Show all
           </button>
         </p>
       )}
@@ -132,19 +140,17 @@ export const EntriesNow = ({ userId, onOpen }: { userId: string; onOpen?: (ticke
               </button>
               <span className="text-[#6e6e73]">{row.grade}</span>
               {row.trigger && (
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${TRIGGER_STYLE[row.trigger] ?? ''}`}>
+                <span title={detail(row)} className={`cursor-help rounded px-1.5 py-0.5 text-[10px] font-medium ${TRIGGER_STYLE[row.trigger] ?? ''}`}>
                   {headline(row)}
                 </span>
               )}
-              {!row.trigger && <span className="text-[#6e6e73]">{headline(row)}</span>}
+              {!row.trigger && <span title={detail(row)} className="cursor-help text-[#6e6e73]">{headline(row)}</span>}
               {row.last !== null && (
                 <span className="tabular-nums font-medium">${row.last.toFixed(2)}</span>
               )}
               <span className="text-[#6e6e73]">{whereItSits(row)}</span>
               {row.horizon_sessions !== null && (
-                <span className="text-[#6e6e73]">
-                  · measured over {row.horizon_sessions} sessions
-                </span>
+                <span className="text-[#6e6e73]">{row.horizon_sessions}d</span>
               )}
             </li>
           ))}
@@ -157,7 +163,7 @@ export const EntriesNow = ({ userId, onOpen }: { userId: string; onOpen?: (ticke
           className="mt-2 text-[11px] text-[#0071e3] hover:underline"
           onClick={() => setShowAll(true)}
         >
-          Show the {data.rows.length - firing.length} top-graded names with no setup yet
+          Show {data.rows.length - firing.length} without a trigger
         </button>
       )}
     </section>
