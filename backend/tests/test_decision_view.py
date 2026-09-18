@@ -155,3 +155,61 @@ def test_quote_access_falls_back_without_hiding_feed(monkeypatch):
     assert len(calls) == 2
     assert "private" not in json.dumps(result)
     execution_quotes._cache.clear()
+
+
+# A single venue's book is not the market.
+#
+# This account has no consolidated feed, so quotes come from IEX, which
+# carries a few percent of US volume. When IEX has nothing resting near the
+# touch, its book reads absurdly wide while the national best bid and offer
+# is tight. Measured on the live book at 13:49 on 2026-09-18: ALAB showed
+# 1021 bp, AAOI 536, BE 439, LITE 178, in the same second that NVDA showed
+# 0.5 and ORCL 2.0 on the same feed. Six of twelve plan names were refused
+# on that artefact, and the board told the operator "Spread exceeds 25 bp",
+# asserting a fact about the market that had not been established.
+#
+# The asymmetry is the whole point: the NBBO is at least as tight as any one
+# venue, so a TIGHT single-venue spread proves the market is tight, while a
+# wide one proves nothing at all.
+def _wide(feed: str):
+    _, _, quoted, now = setup()
+    raw = quoted["quotes"]["S11"]
+    mid = (float(raw["bp"]) + float(raw["ap"])) / 2
+    blown = {**raw, "bp": mid * 0.95, "ap": mid * 1.05}  # about 1000 bp
+    return execution_quotes.describe(blown, feed, True, now)
+
+
+def test_a_wide_spread_on_the_consolidated_feed_still_disqualifies():
+    read = _wide("sip")
+    assert read["spread_bps"] > execution_quotes.MAX_SPREAD_BPS
+    assert read["eligible"] is False
+    assert read["reason"] == "Spread exceeds 25 bp"
+
+
+def test_a_wide_spread_on_one_venue_is_unverified_rather_than_wide():
+    read = _wide("iex")
+    assert read["spread_bps"] > execution_quotes.MAX_SPREAD_BPS
+    # It is reported, so a trader can see it, but it does not refuse the row
+    # and it never claims the market is wide.
+    assert read["eligible"] is True
+    assert read["spread_verified"] is False
+    assert "unverified" in read["reason"]
+    assert "exceeds" not in read["reason"]
+
+
+def test_a_tight_single_venue_spread_still_proves_the_market_is_tight():
+    _, _, quoted, now = setup()
+    read = execution_quotes.describe(quoted["quotes"]["S11"], "iex", True, now)
+    assert read["spread_bps"] <= execution_quotes.MAX_SPREAD_BPS
+    assert read["eligible"] is True
+    assert read["spread_verified"] is True
+
+
+# The relaxation is about the spread and nothing else: a stale, closed or
+# malformed quote is refused on either feed exactly as before.
+def test_the_other_guards_are_untouched_on_a_single_venue_feed():
+    _, _, quoted, now = setup()
+    raw = quoted["quotes"]["S11"]
+    assert execution_quotes.describe(raw, "iex", False, now)["eligible"] is False
+    assert execution_quotes.describe({**raw, "ap": 0}, "iex", True, now)["eligible"] is False
+    assert execution_quotes.describe({**raw, "t": "unknown"}, "iex", True, now)["eligible"] is False

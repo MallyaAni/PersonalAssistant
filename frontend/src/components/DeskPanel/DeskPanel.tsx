@@ -1738,6 +1738,7 @@ const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
 // own wording stays in the tooltip, because it is what the guard is called.
 const actOnIt = (reason?: string | null): string | null => {
   if (!reason) return null
+  if (/unverified/i.test(reason)) return 'Only one venue is quoting here, so the spread is unknown; check your broker before crossing'
   if (/spread exceeds/i.test(reason)) return 'Spread is wide right now; work a limit rather than crossing it'
   if (/market closed/i.test(reason)) return 'Market closed; no executable quote until the open'
   if (/invalid or empty|unavailable/i.test(reason)) return 'No usable quote this moment; the size stands, the price does not'

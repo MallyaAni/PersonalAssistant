@@ -92,11 +92,33 @@ def describe(raw, feed, market_open, now=None):
         reason = "Quote expired"
     elif feed not in ("sip", "iex"):
         reason = "Unsupported quote feed"
-    elif spread > MAX_SPREAD_BPS:
+    elif spread > MAX_SPREAD_BPS and feed == "sip":
         reason = "Spread exceeds 25 bp"
+    elif spread > MAX_SPREAD_BPS:
+        # A single venue's book is not the market. This account has no
+        # consolidated feed, so the quote comes from IEX, which carries a
+        # few percent of volume; when IEX has nothing resting near the
+        # touch its book reads absurdly wide while the national best bid
+        # and offer is tight. Measured on this book at 13:49 on
+        # 2026-09-18: ALAB 1021 bp, AAOI 536, BE 439, LITE 178, against
+        # NVDA 0.5 and ORCL 2.0 on the same feed in the same second. Six
+        # of twelve plan names were refused on an artefact.
+        #
+        # The test is kept in the direction where it proves something. The
+        # NBBO is at least as tight as any one venue, so a TIGHT IEX
+        # spread is proof the market is tight. A wide one is the absence
+        # of evidence, not evidence of a wide market, and the board must
+        # not report it as the latter. Sizing never used the quote anyway:
+        # it prices from the fifteen-minute bar.
+        return {
+            **result,
+            "eligible": True,
+            "spread_verified": False,
+            "reason": "One venue's book is thin here, so the spread is unverified",
+        }
     else:
         # The account has no consolidated feed, so an IEX quote is the best
         # dated evidence available; label the source rather than withholding.
         reason = f"{feed.upper()} quote checks passed"
-        return {**result, "eligible": True, "reason": reason}
+        return {**result, "eligible": True, "spread_verified": True, "reason": reason}
     return {**result, "reason": reason}
