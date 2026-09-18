@@ -68,7 +68,37 @@ The shipped leg lost on every dimension that matters. It had the worst
 drawdown of the four and the worst stability, and two of the three
 alternatives beat its return.
 
-## Decision: signed
+## First decision: signed. It was wrong.
+
+`signed` was adopted on the table above and shipped. It is a better measure
+than the original, and it does fix the case that was diagnosed. It also
+introduced a second discontinuity that the adoption test did not cover.
+
+`_nearest_signed` keeps whichever swing low is nearest **in absolute
+terms**. So the level it is measuring against switches the moment price
+passes the midpoint between two levels, and the sign flips with it:
+
+| Swing lows | Price move | Gap before | Gap after | Jump |
+|---|---|---|---|---|
+| 90 and 100 | 95.1 to 94.9 (0.21%) | −0.0515 | +0.0516 | 49x the price move |
+
+The deterministic guard missed it because its fixture put both levels
+*below* the price, so the midpoint case never arose. The harness missed it
+because a noisier leg can still earn a return.
+
+Measured properly across the book, on the percentile the blend actually
+consumes rather than on the raw measure, `signed` barely moved the needle:
+
+| Leg | Quiet sessions moving the leg > 40 pts | Mean step | Names still unstable |
+|---|---|---|---|
+| support | 3.98% | 10.06 pts | 92 of 94 |
+| signed | 2.61% | 7.40 pts | 89 of 94 |
+| **band** | **0.83%** | 8.62 pts | **17 of 94** |
+
+A name counts as unstable when more than one quiet session in a hundred
+reshuffles it by more than 40 percentile points.
+
+## Decision: band
 
 `none` edges the return and the Sharpe. That margin — 0.76 points of CAGR and
 0.023 of Sharpe over eight years — is well inside the noise of a single
@@ -78,27 +108,38 @@ alone, permanently. That is the exact complaint that started this work: the
 operator looked at CRWV near an $80 support under its lower band and could
 not see why the desk called it bottom-of-book.
 
-`band` is by far the most stable and is the measure a trader actually reads,
-but it gave up both return and Sharpe against `signed`.
+`band` selects no level at all. It is where the close sits in its own
+twenty-session range, so no level can drop in, drop out, or be switched
+away from, and neither discontinuity can occur by construction. It cuts
+violent flips roughly five-fold and unstable names from 89 to 17.
 
-`signed` fixes the discontinuity, takes the best drawdown of the four, and
-keeps the mean-reversion read. It ships.
+It costs about a point of CAGR against `signed` (26.07% vs 27.07%) and 0.06
+of Sharpe. That trade is worth taking: `signed`'s edge was measured on a leg
+that was still jumping, `band` still beats the shipped original on drawdown
+(−20.42% vs −21.98%), and it is the reading a trader actually has in front
+of them on the chart. The operator's original complaint was precisely that
+the desk could not see a name sitting on its lower band.
 
 ## Verification across the book
 
-Re-scored all 94 columns and compared the leg's behaviour on quiet sessions:
+Re-scored all 94 columns on production data and compared each candidate's
+behaviour on quiet sessions, as the percentile the blend consumes:
 
-| | old | new |
-|---|---|---|
-| Quiet sessions moving the leg > 40 pts | 3.98% | **2.61%** |
-| Mean leg move on a quiet session | 10.05 pts | **7.40 pts** |
-| 99th percentile move | 66.12 pts | **60.49 pts** |
-| Down days > 1% where the leg's rank *rose* > 5 pts | 51.7% | **47.5%** |
+| Leg | Flips > 40 pts | Mean step | p99 step | Names still unstable |
+|---|---|---|---|---|
+| support (was live) | 3.98% | 10.06 pts | 66.17 pts | 92 of 94 |
+| signed (briefly live) | 2.61% | 7.40 pts | 60.56 pts | 89 of 94 |
+| **band (ships)** | **0.83%** | 8.62 pts | **38.55 pts** | **17 of 94** |
 
-Per name: 85 improved, 2 unchanged, 7 slightly worse (ANET, CRWD, GLXY, MOD,
-SNOW, SPY, TSM). The worst regression is GLXY at 4.92% → 6.56%; every other
-regression is under a point. The aggregate is a 34% reduction in violent
-flips.
+`signed` reduced the average but left 89 of 94 names unstable by the same
+standard, which is why "fixed" was the wrong word for it. `band` is the
+first candidate that changes the answer for most of the book.
+
+The 17 names `band` leaves unstable are a different problem: the band is
+narrow for a name whose twenty-session range has collapsed, so a small move
+is a large fraction of it. That is a property of the measure rather than a
+defect in it, and it is not a level dropping in or out. It is not addressed
+here.
 
 ## The defect the deploy gate caught
 

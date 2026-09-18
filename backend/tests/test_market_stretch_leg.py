@@ -206,3 +206,45 @@ def test_a_name_with_no_swing_low_is_still_scored_on_every_leg():
     # Its three trend legs are strong, so it may still rank well overall;
     # what matters is that the fourth leg reached it at all.
     assert falling[0] < rising[0]
+
+
+# The second discontinuity, found only after the first fix shipped. A
+# measure that picks the NEAREST level in absolute terms switches which
+# level it is measuring the moment price passes the midpoint between two of
+# them, and the sign flips with it. `_nearest_signed` does exactly that:
+# with swing lows at 90 and 100, a 0.21% step across 95 moves the gap from
+# -0.0515 to +0.0516, a jump of 49 times the price move. It fixed the
+# crossing case and broke the midpoint case.
+#
+# This is why the shipped leg is `band`, which selects no level at all.
+def test_the_signed_measure_jumps_at_the_midpoint_between_two_levels():
+    stamped = np.array([[90.0], [100.0], [np.nan], [np.nan]])
+    close = np.array([[120.0], [120.0], [95.1], [94.9]])
+    gap = levels._nearest_signed(stamped, close, levels.LEVEL_LOOKBACK)
+    move = abs(94.9 - 95.1) / 95.1
+    jump = abs(gap[3, 0] - gap[2, 0])
+    assert gap[2, 0] < 0 < gap[3, 0], "the measured level should switch here"
+    assert jump > 20.0 * move, (
+        "if this no longer jumps, _nearest_signed has been made continuous "
+        "and may be reconsidered for the stretch role"
+    )
+
+
+# The band position has no level to select and no level to lose, so the
+# same midpoint that breaks the signed measure does nothing to it.
+def test_the_band_measure_has_no_midpoint_to_jump_at():
+    # A path that drifts across the middle of its own range, twice.
+    close = np.concatenate(
+        [np.linspace(90.0, 100.0, 40), np.linspace(100.0, 90.0, 40)]
+    ).reshape(-1, 1)
+    position = levels.band_position(close)
+    good = np.isfinite(position[:, 0])
+    with np.errstate(all="ignore"):
+        move = np.abs(np.diff(close[:, 0]) / close[:-1, 0])
+    step = np.abs(np.diff(position[good, 0]))
+    # No single session may move the position more than a quarter of the
+    # band when price moved less than two percent.
+    quiet = move[: len(step)] < 0.02
+    assert step[quiet].max() < 0.25, (
+        f"the band position jumped {step[quiet].max():.3f} on a quiet session"
+    )

@@ -49,15 +49,32 @@ MOMENTUM_SKIP = 21
 #   band      26.07%    1.407  -20.42%    2.6%
 #   none      27.83%    1.493  -20.59%   -
 #
+# "signed" was adopted first and was wrong. It fixes the crossing case but
+# introduces a second discontinuity: picking the NEAREST level in absolute
+# terms means the measured level switches the moment price passes the
+# midpoint between two of them, and the sign flips with it. With swing lows
+# at 90 and 100, a 0.21% step across 95 moves the gap by 49 times the price
+# move. Measured across the book on the percentile the blend actually
+# consumes, it barely helped:
+#
+#   leg        quiet sessions moving the leg > 40 pts   names still unstable
+#   support                  3.98%                          92 of 94
+#   signed                   2.61%                          89 of 94
+#   band                     0.83%                          17 of 94
+#
+# "band" selects no level at all, so it has neither discontinuity: it is
+# where the close sits in its own twenty-session range, and no level can
+# drop in, drop out or be switched away from. It costs about a point of
+# CAGR against "signed", but "signed"'s edge was measured on a leg that was
+# still jumping, and "band" still beats the shipped original on drawdown.
+# It is also the reading a trader actually has on the chart.
+#
 # "none" edges the return and the Sharpe, but by a margin well inside the
 # noise of eight years, and dropping the leg would leave the desk with no
 # mean-reversion reading at all: a name resting on support below its
-# averages would be scored on trend alone forever. "signed" fixes the
-# discontinuity, takes the best drawdown of the four, and keeps that read.
-# Re-measured after the no-swing-low fallback below was added, and the
-# figures were identical to every decimal place, so this table describes
-# the code as it ships. See docs/research/stretch-leg-2026-09-18.md.
-STRETCH_LEG = "signed"
+# averages would be scored on trend alone forever.
+# See docs/research/stretch-leg-2026-09-18.md.
+STRETCH_LEG = "band"
 LOCATION_CITED = (
     "support_distance",
     "resistance_distance",
