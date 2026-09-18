@@ -395,7 +395,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">
-        What changed
+        What changed{' '}
         <span className="ml-2 text-xs font-normal text-[#6e6e73]">
           {changes.since ? `since ${shortDate(changes.since)}` : 'the first session on file'}
         </span>
@@ -947,25 +947,24 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // The account's controls sit above the list: the plan is a column of it.
   const planToolbar = latest ? <div className="shrink-0 border-b border-black/[0.06] px-3 py-2">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-            <h3 className="text-xs font-medium text-[#1d1d1f]">
-              Portfolio plan
-              <span className="ml-2 text-xs font-normal text-[#6e6e73]">{eventPaused ? 'FOMC takes priority' : rebalanceDue ? 'scheduled trades due' : 'not due yet'}</span>
-              {countdown !== null && (
-                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  in {countdown} trading days
-                </span>
-              )}
+            <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
+              {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
+                : rebalanceDue ? `Rebalance due: these trades go in at the next open.${countdown !== null ? ` Next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}.` : ''}`
+                : countdown !== null ? `Next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}. Until then these are targets, not trades.`
+                : 'No rebalance scheduled. These are targets, not trades.'}
               {live.as_of && (
-                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  IEX 15-minute bar starting {marketTime(live.data_at)}
-                  {(live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
+                <span className="ml-2 font-normal text-[#6e6e73]">
+                  {marketOpenNow(now)
+                    ? `Prices from the ${marketTime(live.data_at)} bar.`
+                    : `Market closed; prices are the ${marketTime(live.data_at)} bar.`}
+                  {marketOpenNow(now) && (live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
                     <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
-                      last known data · not current
+                      not updating
                     </span>
                   )}
                 </span>
               )}
-              {live.reason && <span className="ml-2 text-xs text-amber-800">{live.reason}</span>}
+              {live.reason && <span className="ml-2 font-normal text-amber-800">{live.reason}</span>}
             </h3>
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
               <label className="flex items-center gap-2">
@@ -1028,7 +1027,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const r = rows.find(row => row.ticker === ticker)
     if (!r || !latest) return null
     return <TradeCell r={r} quote={live.quotes[ticker]} equity={equity} stops={stops} marking={marking !== null}
-      scheduleLabel={eventPaused ? 'FOMC takes priority' : !r.rebalance_due ? 'not scheduled yet' : 'scheduled target; not a fill'}
+      scheduleLabel={eventPaused ? 'held for the FOMC cycle' : !r.rebalance_due ? 'at the next rebalance' : 'at the next open'}
       onDone={canWrite && holdingsReady && rebalanceDue && !eventPaused ? async (price, qty) => {
         setMarking(r.ticker)
         try { return await save(afterTrade(holdings, r, price, qty)) }
@@ -1036,7 +1035,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         finally { setMarking(null) }
       } : undefined}
       eligibility={eventPaused
-        ? <span title={holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle; restoration follows the decision' : 'No new buys during the FOMC cycle'}>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
+        ? <span>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle' : 'No new buys during the FOMC cycle'}</span>
+        : !marketOpenNow(now) ? null
         : <DecisionCell compact allocationAllowed ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />} />
   }
   const boardEvent: BoardEvent | null = eventPaused ? {
@@ -1154,7 +1154,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
             {' '}{Object.entries(event.outcome.unrestored).map(([symbol, qty]) => `${symbol} ${qty} shares unbought`).join(' · ')}.
             These are unfilled quantities, not restored positions.</p>}
-          <p className="mt-1 text-xs">The reduction is executed in the practice account below; your personal book is unchanged until you act at your broker.</p>
+          <p className="mt-1 text-xs">{eventLive?.active
+            ? 'The reduction runs in the practice account below; your own book is unchanged until you act at your broker.'
+            : 'Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.'}</p>
         </section>
       )}
 
@@ -1556,7 +1558,7 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
           : r.action === 'uncovered' ? <span className="font-medium">{r.shares.toLocaleString()} shares held</span>
           : r.action === 'blocked' ? <span className="text-[#6e6e73]">{r.blocked_reason ?? 'buy held back by the band rule'}</span>
           : <span className="font-medium">{qty.toLocaleString()} share{qty === 1 ? '' : 's'}</span>}
-        {moving && <span className="text-[#6e6e73]">{scheduleLabel}</span>}
+        {moving && scheduleLabel && <span className="text-[#6e6e73]">{scheduleLabel}</span>}
         {r.action !== 'hold' && r.action !== 'uncovered' && r.action !== 'blocked' && onDone && (
           <button type="button" onClick={() => setRecording(!recording)} disabled={marking} title="Record actual filled shares and average price confirmed by your broker" className="text-[#0071e3] hover:underline disabled:text-[#6e6e73]">
             {recording ? 'cancel fill' : 'record fill'}
@@ -1719,7 +1721,7 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
     return null
   }
   return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
-    <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {row.target_weight > 0 ? `${allocationPercent(row.target_weight)} plan` : 'no target until the next rebalance'}</span></div>
+    <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {row.target_weight > 0 ? `${allocationPercent(row.target_weight)} of the account` : 'not picked by the sizing engine'}</span></div>
     <div className="text-[#6e6e73]">{reason}</div>
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
       <div>Using {money(equity)} account value</div>
@@ -2528,7 +2530,7 @@ const NameDetail = ({
                     <span className="text-[#6e6e73]">→</span>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[c.to] ?? ''}`}>{c.to}</span>
                     <span className="text-xs text-[#6e6e73]">{c.moved.length > 0 ? c.moved.join(', ') : 'no change in recorded votes; cause not recorded'}</span>
-                    {c.said && <span className="text-[10px] uppercase tracking-wide text-[#0b5cad]">said</span>}
+                    {c.said && <span title="The desk published this grade that night; a row without the mark is today's rules replayed over past prices" className="text-[10px] tracking-wide text-[#0b5cad]">published</span>}
                   </li>
                 ))}
               </ul>
@@ -2549,8 +2551,9 @@ const NameDetail = ({
             <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">The last {recent.length} sessions</h4>
             <p className="mt-0.5 text-xs text-[#6e6e73]">
               Each night&rsquo;s grade with the analysts that voted for (+) or against (−) it, so a grade change shows
-              which analyst moved. Rows marked &ldquo;said&rdquo; are what the desk wrote that night; the rest are
-              simulated grades from the rules used to generate this stored history.
+              which analyst moved. A row marked &ldquo;published&rdquo; is the grade the desk actually wrote that
+              night. The rest are today&rsquo;s rules replayed over past prices, so they show what the desk
+              would say now rather than what it said then.
             </p>
             <table className="mt-1 w-full text-sm">
               <thead className="text-left text-[#6e6e73]">
@@ -2566,7 +2569,7 @@ const NameDetail = ({
                   <tr key={row.date} className="border-t border-black/[0.05]">
                     <td className="py-1 text-[#6e6e73]">
                       {shortDate(row.date)}
-                      {row.said && <span className="ml-1 text-[10px] uppercase tracking-wide text-[#0b5cad]">said</span>}
+                      {row.said && <span title="The desk published this grade that night" className="ml-1 text-[10px] tracking-wide text-[#0b5cad]">published</span>}
                     </td>
                     <td><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade] ?? ''}`}>{row.grade}</span></td>
                     <td className="whitespace-nowrap font-mono text-xs text-[#1d1d1f]">
