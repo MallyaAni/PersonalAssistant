@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-17 — Keep the board's opportunity, size and plan readable after the nightly decision
+
+The desk showed three empty or wrong columns on the evening a fresh record
+was written. The opportunity index dropped to nothing the moment its candle
+deadline passed, and again whenever one analyst had no rank — a name like
+CRWV, missing its value rank, was scored "unavailable" on the four analysts
+that did read it. The size column blanked until the candle run produced an
+allocation for the new session. And the just-written plan was labelled
+"Nightly decision outdated or calendar unavailable", because currency was
+required to be the session *after* the record's own, while the nightly
+record is written on the evening of its own session. Now: `explain` always
+returns the conviction index dated to its bar, renormalized over the
+analysts that have a reading, and only a name with no analyst reading at
+all stays unavailable; `decision_view` accepts a decision written on the
+evening of its own session (offset 0) as current alongside the next
+session; the board falls back to the adopted plan's target weights before
+the candle run has sized the new session, captioning the column so the
+numbers are not mistaken for live model allocations; and the opportunity
+cell no longer blanks when `valid_until` has passed — the reading is dated
+to its bar and stays. Size after close stays last-known; fresh overnight
+prices need SIP entitlement, which the account does not have.
+
 ## 2026-09-17 — Execution quality tells the waiting apart from the trading
 
 The block measured every fill against the price its decision was made at
