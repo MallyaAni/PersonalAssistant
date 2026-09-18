@@ -151,3 +151,58 @@ def test_the_band_candidate_has_no_levels_to_drop():
     good = np.isfinite(position[:, 0])
     steps = np.abs(np.diff(position[good, 0]))
     assert steps.max() < 0.35, "the band position jumped without a level to lose"
+
+
+# A name that has climbed for a year without printing a swing low has no
+# level beneath it. `support_distance` floors on the moving averages so it
+# is rarely absent, but `support_gap` reads swing lows alone and is absent
+# for exactly that name. It must still be scored, at the stretched end of
+# the scale, or it silently scores on one leg fewer than the rest of the
+# book. This is the defect that failed the deploy gate on 2026-09-18.
+def test_a_name_with_no_swing_low_is_still_scored_on_every_leg():
+    from datetime import date, timedelta
+
+    from backend.agents.trading.desk import technical as analyst
+    from backend.market.panel import Panel
+
+    t, n = 400, 4
+    rng = np.random.default_rng(5)
+    returns = np.zeros((t, n))
+    returns[:, 0] = 0.004  # a straight climb: never prints a swing low
+    returns[:, 1] = rng.normal(0.0, 0.015, t)
+    returns[:, 2] = -0.001
+    returns[:, 3] = -0.002
+    close = 100.0 * np.exp(np.cumsum(returns, axis=0))
+    close = np.column_stack([close, np.full(t, 100.0)])
+    dates = np.array(
+        [date(2024, 1, 1) + timedelta(days=i) for i in range(t)], dtype="datetime64[D]"
+    )
+    tickers = tuple([f"N{i}" for i in range(n)] + ["SPY"])
+    panel = Panel(
+        dates=dates,
+        tickers=tickers,
+        open=close,
+        high=close * 1.005,
+        low=close * 0.995,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1e6),
+        themes={x: () for x in tickers},
+        benchmark="SPY",
+    )
+    loc = levels.level_features(panel)
+    idx = {n_: i for i, n_ in enumerate(levels.LEVEL_NAMES)}
+    # The premise: the climber really has no swing low to measure against.
+    assert not np.isfinite(loc[-1, 0, idx["support_gap"]])
+
+    falling = analyst.opine(panel, np.full(t, -0.1)).scores[-1, :n]
+    rising = analyst.opine(panel, np.full(t, 0.1)).scores[-1, :n]
+    assert np.isfinite(falling[0]), (
+        "a name with no swing low dropped out of the falling blend"
+    )
+    # And the fade is actually applied to it rather than skipped: a name
+    # with nothing beneath it must score worse in the falling playbook,
+    # where stretch is penalised, than in the rising one, where it is not.
+    # Its three trend legs are strong, so it may still rank well overall;
+    # what matters is that the fourth leg reached it at all.
+    assert falling[0] < rising[0]

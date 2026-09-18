@@ -100,6 +100,27 @@ SNOW, SPY, TSM). The worst regression is GLXY at 4.92% → 6.56%; every other
 regression is under a point. The aggregate is a 34% reduction in violent
 flips.
 
+## The defect the deploy gate caught
+
+The first deploy of this change failed the gate on
+`test_technical_analyst_switches_on_theme_trend`, and it was right to.
+
+`support_distance` takes the highest of the nearest swing low *and* the 50,
+200 and weekly 21 averages below the close, so it is almost never absent.
+`support_gap` reads swing lows alone. A name that has climbed for a year
+without printing a swing low therefore has no value at all, and it fell out
+of the blend: that name scored on three legs while the rest of the book
+scored on four, silently.
+
+The original code already handled this for its own measure, treating "no
+level beneath you" as the stretched end of the scale rather than the
+supported end. That rule now applies to whichever measure is selected, in
+`technical._fill_with_the_most_stretched`, and
+`test_a_name_with_no_swing_low_is_still_scored_on_every_leg` pins it.
+
+This is the second time in this change that the safety net rather than the
+reasoning caught the error, and both were worth the cycle.
+
 ## Guard
 
 `backend/tests/test_market_stretch_leg.py` pins the mechanism rather than a

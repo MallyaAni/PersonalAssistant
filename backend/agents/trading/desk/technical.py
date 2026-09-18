@@ -82,6 +82,23 @@ CITED = (
 )
 
 
+# A name the stretch measure cannot read takes the session's largest value,
+# because having no level beneath you is the stretched end of the scale
+# rather than the supported end. A session where nothing is finite stays at
+# zero rather than warning, and a name with no price at all keeps its NaN so
+# it is absent from the cross-section instead of ranking in it.
+def _fill_with_the_most_stretched(
+    measure: np.ndarray, close: np.ndarray
+) -> np.ndarray:
+    """Return `measure` with unreadable names set to the session's largest."""
+    with np.errstate(all="ignore"):
+        worst = np.max(np.where(np.isfinite(measure), measure, -np.inf), axis=1)
+    worst = np.where(np.isfinite(worst), worst, 0.0)
+    return np.where(
+        np.isfinite(measure) | ~np.isfinite(close), measure, worst[:, None]
+    )
+
+
 # Score every name by the playbook the theme's trend selects; cite the rest.
 def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
     """Return the technical analyst's Opinion for the panel."""
@@ -93,24 +110,26 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
     weekly = loc[:, :, lidx["weekly_trend"]]
     daily = loc[:, :, lidx["daily_trend"]]
     range_position = loc[:, :, lidx["range_position_60"]]
-    stretch = loc[:, :, lidx["support_distance"]]
-    # A name below every level has nothing under it: it is the most
-    # stretched name of the session, not the least, so it takes the
-    # session's largest distance rather than zero. Rows with no finite
-    # distance stay -inf and fall to the zero below, never warning.
-    with np.errstate(all="ignore"):
-        worst = np.max(np.where(np.isfinite(stretch), stretch, -np.inf), axis=1)
-    worst = np.where(np.isfinite(worst), worst, 0.0)
-    stretch = np.where(
-        np.isfinite(stretch) | ~np.isfinite(panel.adj_close),
-        stretch,
-        worst[:, None],
-    )
     # Falling theme: the stretch fade is the best leg and joins the trends.
+    # Whichever measure plays that role, a name it cannot read has nothing
+    # under it and is the most stretched name of the session, not the
+    # least, so it takes the session's largest value rather than dropping
+    # out of the blend. `support_distance` floors on the 50, 200 and weekly
+    # 21 averages as well as the swing lows, so it is rarely absent;
+    # `support_gap` reads swing lows alone, so a name that has climbed for
+    # a year without printing one is absent every session and would score
+    # on three legs while the rest of the book scored on four.
+    stretch = _fill_with_the_most_stretched(
+        loc[:, :, lidx["support_distance"]], panel.adj_close
+    )
     if STRETCH_LEG == "signed":
-        fade = -loc[:, :, lidx["support_gap"]]
+        fade = -_fill_with_the_most_stretched(
+            loc[:, :, lidx["support_gap"]], panel.adj_close
+        )
     elif STRETCH_LEG == "band":
-        fade = -loc[:, :, lidx["band_position"]]
+        fade = -_fill_with_the_most_stretched(
+            loc[:, :, lidx["band_position"]], panel.adj_close
+        )
     else:
         fade = -stretch
     falling = (
