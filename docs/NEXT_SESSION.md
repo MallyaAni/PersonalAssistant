@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-09-17 — Board readability: opportunity, size and plan stay filled after the nightly decision
+
+Deployed ecd56727 (after the other agent's ee0d115; pushed through a
+worktree because the shared checkout held uncommitted discovery work).
+The user reported the Opportunity column empty for every name, the Plan
+column saying the wrong thing, Size % empty for all, and tickers like CRWV
+with no opportunity score. Three root causes, all fixed and verified live:
+
+- **Opportunity empty**: `backend/market/opportunity.py` dropped the score
+  to None the moment the candle's deadline passed and again whenever one
+  analyst had no rank (CRWV has no value rank, so four present analysts
+  were discarded). `explain` now always returns the conviction index dated
+  to its bar, renormalized over the analysts that have a reading; only a
+  name with no analyst reading at all is unavailable. The board cell no
+  longer blanks on `valid_until` (StockBoard `opportunity()`).
+- **Plan wrong**: `backend/market/decision_view.py` required currency to
+  be the session AFTER the record's own, so a decision written on the
+  evening of its session (record session == today, offset 0) was labelled
+  "Nightly decision outdated or calendar unavailable". `current_decision`
+  now accepts offset 0 or 1. Live now: book names show "Wait · Market
+  closed or clock unavailable" / "Invalid or empty quote" (honest) instead
+  of the bogus outdated label.
+- **Size % empty**: research (session 2026-09-16) lags a new nightly record
+  (session 2026-09-17) until the candle run sizes it. StockBoard falls back
+  to the adopted plan's target weights (`latest.book`) with the caption
+  "Plan target weights · next rebalance"; cash row shows the unallocated
+  remainder.
+
+Verified: unit gate 3694 passed, routing gate 100 passed, ruff clean, tsc
+clean, desk e2e 66/66 (2 new: plan-target fallback, opportunity after the
+close; 1 updated to the new contract) on both the shared checkout (5174)
+and the deployed build (5173). Live operator API: all 9 book names now
+return opportunity scores (NTAP 8.66 … AAOI 7.25) and honest Wait reasons;
+CRWV opportunity 3.44/10 (was None). CRWV's "weird score history" is the
+data, not a rendering bug: 370 sessions all grade C, score -1.09, rule
+backtest in_annualised -1.92. Post-deploy cheap checks green; the sweep
+and search harness were correctly skipped (change does not touch the
+search chain).
+
 ## 2026-09-17 — Plan cell cleaned to the trade line; allowlisted accounts get the Desk icon
 
 Frontend-only, deployed after c898dbbf. (1) The collapsed Plan cell mixed
