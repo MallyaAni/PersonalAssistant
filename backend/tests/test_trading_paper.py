@@ -125,9 +125,15 @@ def test_hold_then_exit_when_the_analyst_says_so():
     assert what2 == "hold"
 
 
-# The twentieth session since the last rebalance realigns the whole book.
+# The session that completes the rebalance clock realigns the whole book.
+# Read from the constant, not written as 20: the cadence moved to 120 when
+# price entries took over the timing, and a hardcoded number would have made
+# that look like a regression instead of the change it was.
 def test_rebalance_clock():
-    state = paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=19)
+    state = paper.PaperState(
+        last_rebalance="2026-08-01",
+        sessions_since_rebalance=paper.REBALANCE_EVERY - 1,
+    )
     orders, new, what = paper.plan(
         "2026-09-04",
         state,
@@ -483,3 +489,81 @@ def test_cancel_orders_reports_an_unconfirmed_cancel():
     client = alpaca_trading.AlpacaTradingClient("k", "s", transport=transport)
     outcomes = client.cancel_orders(["anios-2026-09-10-sell-etn-7"])
     assert outcomes == {"anios-2026-09-10-sell-etn-7": "unconfirmed"}
+
+
+# Mid-cycle price entries: the calendar chooses what the book holds, price
+# chooses when each name is entered. Measured 2026-09-18; the constants and
+# the evidence are at the top of paper.py.
+def test_a_price_entry_is_funded_from_the_other_holdings():
+    state = paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3)
+    orders, new, what = paper.plan(
+        "2026-09-04",
+        state,
+        100_000.0,
+        {"MU": 200.0, "AMD": 200.0, "SNDK": 0.0},
+        {"MU": 100.0, "AMD": 100.0, "SNDK": 50.0},
+        {"MU": 0.2, "AMD": 0.2, "SNDK": 0.0},
+        {"MU": "A", "AMD": "A", "SNDK": "A+"},
+        entries={"SNDK": 1.0},
+    )
+    assert what == "entries"
+    by_symbol = {o.symbol: o for o in orders}
+    # 3% of 100k at $50 is 60 shares.
+    assert by_symbol["SNDK"].side == "buy"
+    assert by_symbol["SNDK"].qty == 60
+    # Funded: the two equal holdings each give up half of the $3,000.
+    assert by_symbol["MU"].side == "sell"
+    assert by_symbol["AMD"].side == "sell"
+    assert by_symbol["MU"].qty == 15
+    assert by_symbol["AMD"].qty == 15
+    # Gross is unchanged: what is sold pays for what is bought.
+    bought = by_symbol["SNDK"].qty * 50.0
+    sold = by_symbol["MU"].qty * 100.0 + by_symbol["AMD"].qty * 100.0
+    assert abs(bought - sold) < 1.0
+    # Sells are sequenced before the buy so the cash is there.
+    assert [o.side for o in orders][0] == "sell"
+
+
+# A name already at the cap takes nothing more, however far it has moved.
+def test_a_capped_name_is_not_added_to():
+    state = paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3)
+    orders, _new, what = paper.plan(
+        "2026-09-04",
+        state,
+        100_000.0,
+        {"SNDK": 300.0, "MU": 100.0},
+        {"SNDK": 50.0, "MU": 100.0},
+        {"SNDK": 0.15, "MU": 0.1},
+        {"SNDK": "A+", "MU": "A"},
+        entries={"SNDK": 1.0},
+    )
+    assert orders == []
+    assert what == "hold"
+
+
+# The band-rejection gate still blocks a buy, entries included.
+def test_a_blocked_name_gets_no_price_entry():
+    state = paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3)
+    orders, _new, _what = paper.plan(
+        "2026-09-04",
+        state,
+        100_000.0,
+        {"MU": 200.0},
+        {"MU": 100.0, "SNDK": 50.0},
+        {"MU": 0.2},
+        {"MU": "A", "SNDK": "A+"},
+        entry_blocked={"SNDK"},
+        entries={"SNDK": 1.0},
+    )
+    assert orders == []
+
+
+# With nothing else held there is nothing to fund from, so the gross is
+# never grown to pay for an entry.
+def test_an_entry_never_grows_the_gross():
+    state = paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3)
+    orders, _new, _what = paper.plan(
+        "2026-09-04", state, 100_000.0, {}, {"SNDK": 50.0}, {}, {"SNDK": "A+"},
+        entries={"SNDK": 1.0},
+    )
+    assert orders == []

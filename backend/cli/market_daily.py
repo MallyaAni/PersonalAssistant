@@ -499,6 +499,44 @@ def _desk_open_order_ids(open_orders: list[dict]) -> list[str]:
 # but never bought, whatever its grade says. Measured on the book since
 # 2015 this narrow blocker beat the ungated book on return, Sharpe and
 # drawdown, where requiring a full dip-or-breakout trigger starved it.
+def _price_entries(report) -> dict[str, float]:
+    """Return {ticker: stretch} for tonight's mid-cycle entry candidates.
+
+    A name the desk grades A or better, sitting more than `ENTRY_TAIL` from
+    its own 21-day average in either direction. Both tails, because both
+    paid: among names the desk already wants, more than 15% below returned
+    +2.70% over ten sessions at a 61.2% hit rate and more than 15% above
+    returned +1.97%, against a +0.49% baseline for the middle. The evidence
+    and the harness figures are at the top of `desk/paper.py`.
+    """
+    from backend.agents.trading.desk import paper as paper_rules
+    from backend.market import technical as daily_technical
+
+    panel = report.panel
+    last = len(panel.dates) - 1
+    close = panel.adj_close
+    e21 = daily_technical.ema(close, 21)
+    with np.errstate(all="ignore"):
+        stretch = (close[last] - e21[last]) / e21[last]
+    letters = report.graded.grades
+    out: dict[str, float] = {}
+    for column, ticker in enumerate(panel.tickers):
+        if ticker == panel.benchmark:
+            continue
+        value = float(stretch[column])
+        if not np.isfinite(value) or abs(value) < paper_rules.ENTRY_TAIL:
+            continue
+        grade = letters[last, column]
+        letter = grade if isinstance(grade, str) else _GRADE_LETTER.get(int(grade))
+        if letter in paper_rules.ENTRY_MIN_GRADE:
+            out[ticker] = value
+    return out
+
+
+# The ordinal the grader stores, back to the letter the paper rules name.
+_GRADE_LETTER = {3: "A+", 2: "A", 1: "B", 0: "C"}
+
+
 def _band_blocked(report) -> tuple[set[str], dict[str, bool]]:
     """Return (blocked, {ticker: rejecting-the-band}) for the last session."""
     from backend.agents.trading.desk import exit as exit_analyst
@@ -601,6 +639,7 @@ def _paper_trade(
             grades,
             force_rebalance=rebalance_now,
             entry_blocked=blocked,
+            entries=_price_entries(report),
         )
     print(
         f"\npaper book ({what}{', forced tonight' if rebalance_now else ''}), "

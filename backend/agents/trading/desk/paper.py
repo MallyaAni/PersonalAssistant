@@ -33,8 +33,36 @@ from pathlib import Path
 
 from backend.agents.trading.desk import execution_evidence, planner
 
-REBALANCE_EVERY = 20
+REBALANCE_EVERY = 120
 MIN_TRADE = 0.005
+# Mid-cycle entries, measured 2026-09-18. The calendar decides WHAT the book
+# holds; price decides WHEN each name is entered. A name graded A or better
+# sitting more than ENTRY_TAIL from its 21-day average, in either direction,
+# takes ENTRY_ADD of equity funded from the other holdings, capped at
+# ENTRY_NAME_CAP.
+#
+# Both tails, because both pay. Among names the desk already wants, against a
+# +0.49% ten-session baseline: more than 15% below the 21-day returned +2.70%
+# at a 61.2% hit rate, more than 15% above returned +1.97%, and the middle
+# returned about +0.35%. It holds outside this book too, which is what makes
+# it a rule rather than a cohort: on the 439 names the desk does not trade,
+# graded on the three analysts available there, deep dips returned +0.86%
+# against a +0.10% baseline.
+#
+# Funded rather than from cash: the add is taken pro rata from the other
+# holdings, so gross exposure is unchanged and only the selection moves.
+# Unfunded it returned less at a worse Sharpe and a deeper drawdown.
+#
+# Through the harness across 20 start phases, against the 20-session
+# calendar it replaces: 57.56% a year [47.44..71.93] at Sharpe 1.373 and a
+# -44.75% worst drawdown, against 28.60% [24.18..32.79] at 1.453 and
+# -28.57%. Its worst phase beats the old rule's best. Every figure carries
+# the universe's survivorship, which market_survivorship measures at
+# nineteen points a year, and both rules carry it equally.
+ENTRY_TAIL = 0.15
+ENTRY_ADD = 0.03
+ENTRY_NAME_CAP = 0.15
+ENTRY_MIN_GRADE = ("A", "A+")
 PAPER_KIND = "paper"
 
 
@@ -150,6 +178,91 @@ def save_state(root: Path, state: PaperState) -> Path:
 # state after it. `held` is {symbol: shares}, `prices` {symbol: last close},
 # `targets` {symbol: weight} from the desk's book, `grades` {symbol:
 # letter} for every name graded today.
+# Mid-cycle entries: buy the tail names, funded pro rata from the rest.
+#
+# Gross is unchanged by construction. The buys are sized first, then the
+# same dollar value is raised by trimming every OTHER holding in proportion
+# to what it already holds, so the exposure the regime chose is untouched
+# and only the selection moves. A name at its cap is not added to, and a
+# trim too small to clear MIN_TRADE is dropped rather than sent.
+def _entry_orders(
+    entries: dict[str, float],
+    held: dict[str, float],
+    prices: dict[str, float],
+    equity: float,
+    session: str,
+    state: "PaperState",
+    blocked: set[str] | None,
+) -> list["PaperOrder"]:
+    """Return the funded buy and trim orders for tonight's tail entries."""
+    if equity <= 0 or not entries:
+        return []
+    blocked = blocked or set()
+    buys: list[tuple[str, int, float]] = []
+    for symbol in sorted(entries):
+        price = float(prices.get(symbol) or 0.0)
+        if price <= 0 or symbol in blocked:
+            continue
+        current = float(held.get(symbol, 0)) * price / equity
+        want = min(ENTRY_ADD, ENTRY_NAME_CAP - current)
+        if want < MIN_TRADE:
+            continue
+        qty = int(round(want * equity / price))
+        if qty > 0:
+            buys.append((symbol, qty, qty * price))
+    if not buys:
+        return []
+
+    donors = {
+        s: float(q) * float(prices.get(s) or 0.0)
+        for s, q in held.items()
+        if q > 0 and s not in entries and (prices.get(s) or 0) > 0
+    }
+    pool = sum(donors.values())
+    if pool <= 0:
+        return []
+    # If the rest of the book cannot fund the whole add, the add shrinks
+    # rather than the gross growing.
+    needed = sum(value for _, _, value in buys)
+    if needed > pool:
+        scale = pool / needed
+        buys = [(s, max(1, int(q * scale)), v * scale) for s, q, v in buys]
+        needed = sum(v for _, _, v in buys)
+
+    orders: list[PaperOrder] = []
+    for symbol, value in sorted(donors.items()):
+        price = float(prices[symbol])
+        qty = int(round(needed * (value / pool) / price))
+        qty = min(qty, int(held[symbol]))
+        if qty <= 0 or qty * price < MIN_TRADE * equity:
+            continue
+        seq = state.order_seq
+        state.order_seq += 1
+        orders.append(
+            PaperOrder(
+                symbol,
+                "sell",
+                qty,
+                "funding a price entry",
+                client_order_id=order_id(session, symbol, "sell", seq),
+            )
+        )
+    for symbol, qty, _ in buys:
+        seq = state.order_seq
+        state.order_seq += 1
+        orders.append(
+            PaperOrder(
+                symbol,
+                "buy",
+                qty,
+                "price entry: a tail of its own 21-day average",
+                client_order_id=order_id(session, symbol, "buy", seq),
+            )
+        )
+        state.opened.setdefault(symbol, session)
+    return orders
+
+
 # The rebalance's orders: the shared planner's moves, rounded to the whole
 # shares a broker accepts, gated on the band-reversal blocker, skipping a
 # move too small to be worth its cost. Sells and trims pass whatever the
@@ -212,6 +325,7 @@ def plan(
     finished: dict[str, str] | None = None,
     force_rebalance: bool = False,
     entry_blocked: set[str] | None = None,
+    entries: dict[str, float] | None = None,
 ) -> tuple[list[PaperOrder], PaperState, str]:
     """Return (orders, new state, what the day was).
 
@@ -281,7 +395,15 @@ def plan(
                     )
                 )
                 new.opened.pop(symbol, None)
-        what = "hold" if not orders else "exits"
+        # Price entries, after the session's exits are written. The calendar
+        # chose what the book holds; this chooses when each name is entered.
+        if entries:
+            orders.extend(
+                _entry_orders(
+                    entries, held, prices, equity, session, new, entry_blocked
+                )
+            )
+        what = "hold" if not orders else "entries" if entries else "exits"
     # Sells first, so the buys have the cash.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))
     return orders, new, what
