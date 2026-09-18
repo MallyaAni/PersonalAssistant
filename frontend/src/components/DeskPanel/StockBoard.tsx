@@ -189,10 +189,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : event.exposure === null ? 'FOMC cycle in progress · sizes paused until the policy status is current'
     : event.exposure < 1 ? `FOMC · sizes at ${event.exposure === 0.5 ? 'half' : `${Math.round(event.exposure * 100)}%`} exposure · restores at the open after the ${event.decisionDate ?? 'FOMC'} decision`
     : 'FOMC · restoration queued for the next open'
-  const sizingLine = !showSizes ? 'Plan target weights · next rebalance'
-    : sized ? '15-minute model allocations · experimental'
-    : sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
-    : marketClosed ? 'Sizes return with the first completed bar after the open' : 'Sizing unavailable · waiting for fresh data'
+  // The policy toggle beside this already names which sizing is showing, so
+  // the line says what is true of it rather than repeating the label.
+  const sizingLine = !showSizes ? 'Target weights the scheduled rebalance will use'
+    : sized ? 'Sized on this bar · experimental'
+    : sizedNames.length > 0 ? `Sized on this bar for ${sizedNames.length} of ${graded.length} names`
+    : marketClosed ? 'Sizes return with the first completed bar after the open'
+    : 'Sizing unavailable · waiting for fresh data'
   // The conviction index is dated to its bar and survives the close, so the
   // column is never blank overnight or pre- and post-market; only the
   // decision it belongs to changes what is shown.
@@ -230,7 +233,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const emptyAccount = holdings !== null && holdings.length === 0
   const heldNames = new Set((holdings ?? []).map((h) => h.ticker))
   const planGross = !showSizes && !hidden
-    ? Object.values(planTargets).reduce((sum, w) => sum + (Number.isFinite(w) ? (w as number) : 0), 0)
+    // `* exposure` to match weightOf: every row is scaled by it, so the cash
+    // remainder must be too or the column does not sum to the account during
+    // an FOMC cycle.
+    ? Object.values(planTargets).reduce((sum, w) => sum + (Number.isFinite(w) ? (w as number) : 0), 0) * exposure
     : null
   const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, narrow: [] as string[], shares: null, weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : paused && emptyAccount ? 1 : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length

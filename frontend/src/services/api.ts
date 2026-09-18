@@ -2092,6 +2092,8 @@ export interface DeskPayload {
   record_status?: {expected: string; due_at: string; record: {session: string | null; status: DeskStanding}; ml_forward: {session: string | null; status: DeskStanding}};
   // The FOMC overlay priced against the book that never traded it, and the gate's standing.
   fomc_gate?: DeskFomcGate | null;
+  // Candidate rules and the indices, split by regime. Evidence, not policy.
+  strategy_bench?: StrategyBench | null;
   // Every paper fill against its decision price, as a series.
   execution_quality?: DeskExecutionQuality | null;
   board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;
@@ -2524,6 +2526,38 @@ export const getDeskHistory = async (userId: string, ticker: string): Promise<De
   if (!response.ok) throw new Error(`No history for ${ticker} yet (HTTP ${response.status}).`);
   return (await response.json()) as DeskHistory;
 };
+
+// Candidate trading rules and the indices on identical numbers, split by
+// regime. Evidence only: just one of these rules is the one that trades.
+export interface StrategyBenchRow {
+  name: string;
+  total: number | null;
+  annual: number | null;
+  volatility: number | null;
+  drawdown: number | null;
+  sharpe: number | null;
+}
+
+export interface StrategyBenchBlock {
+  regime: string;
+  from: string;
+  to: string;
+  sessions: number;
+  // What share of the whole sample this regime is, so a 24-session crash
+  // is not read as half the evidence.
+  share: number | null;
+  rows: StrategyBenchRow[];
+}
+
+export interface StrategyBench {
+  version: string;
+  sessions: number;
+  from: string | null;
+  to: string | null;
+  note?: string;
+  caveat?: string;
+  blocks: StrategyBenchBlock[];
+}
 
 // Where each name the desk wants to hold sits as an ENTRY, right now.
 // The board answers what to hold; this answers whether now is a moment to

@@ -8,6 +8,7 @@ import { BoardSimulation, MlComparison, StockBoard, type BoardEvent } from './St
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { TickerChart } from './TickerChart'
 import { EntriesNow } from './EntriesNow'
+import { StrategyBench } from './StrategyBench'
 import { OpportunityCard } from './OpportunityCard'
 import {
   getDesk,
@@ -1250,6 +1251,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </details>}
 
       <ForwardEvidence evidence={payload.forward_evidence} />
+      <StrategyBench bench={payload.strategy_bench} />
       <FomcGate gate={payload.fomc_gate} />
       <ExecutionQuality quality={payload.execution_quality} />
       <MlComparison ml={payload.ml_forward} />

@@ -130,6 +130,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         opportunity_shadow,
         record_status,
         reversal,
+        strategy_bench,
     )
 
     event_live = event_status.load(_root())
@@ -154,6 +155,10 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "fomc_gate": fomc_gate.load(_root()),
         # Every paper fill against its decision price, as a series.
         "execution_quality": execution_quality.load(_root()),
+        # Candidate trading rules and the indices on identical numbers, split
+        # by regime. Evidence for the Research view; only the shipped rule
+        # trades anywhere.
+        "strategy_bench": strategy_bench.load(_root()),
         # The registered reversal shadows: cycles recorded, nothing traded.
         "reversal_shadow": {
             "meetings": reversal.load(_root()),
