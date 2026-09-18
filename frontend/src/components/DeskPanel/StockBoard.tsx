@@ -323,9 +323,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <th className="py-2">#</th>
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
             <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current`}>Grade</SortHead>
-            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts. A star marks a name scored without the full panel.">Opportunity</SortHead>
+            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10. It does rank forward returns, weakly, and moves closely with the grade rather than independently of it. A star marks a name scored without the full panel.">Opportunity</SortHead>
             <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name against your recorded position">Plan</SortHead>
-            <SortHead column="weight" sort={sort} onSort={setSort} title="Percentage of total portfolio value, not an order quantity. A graded name with no size was not picked by the sizing engine, which ranks on the continuous score rather than on the grade.">Size %</SortHead>
+            <SortHead column="weight" sort={sort} onSort={setSort} title="Share of the account. The Shares column turns it into a count.">Size %</SortHead>
             <SortHead column="shares" sort={sort} onSort={setSort} title="Whole shares at the account value and the price on this row, under the sizing policy above. Before fees; check your broker's price.">Shares</SortHead>
             <th><span className="sr-only">Record purchase</span></th>
           </tr>
