@@ -2288,3 +2288,66 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('weeks,')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
+
+
+// A name can be scored without the full panel of analysts: CoreWeave has no
+// share count on file at EDGAR, so the value analyst has no reading and the
+// opportunity score is the other four renormalised to full weight. That is
+// a materially different number from one backed by five analysts, and until
+// now nothing on screen said so — the board printed 3.4/10 for a narrow read
+// exactly as it printed 3.4/10 for a complete one.
+test('a name scored without the full analyst panel says so on the board and in the card', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.route('**/desk/history/AAPL', route => route.fulfill({json: {ticker: 'AAPL', rows: [], backtest: null}}))
+  // A minimal but valid chart, so the drill-down's chart is not the subject
+  // of this test and does not log a failed fetch into the console check.
+  await page.route('**/desk/chart/**', route => route.fulfill({json: {
+    user_id: USER, ticker: 'AAPL', timeframe: 'daily', timeframes: ['daily', 'weekly'], adjusted: true,
+    basis: 'adjusted for splits and dividends, the basis the desk grades on', sessions: 2,
+    bars: [
+      {date: '2026-09-07', open: 99, high: 101, low: 98, close: 100, volume: 1000},
+      {date: '2026-09-08', open: 100, high: 102, low: 99, close: 101, volume: 1000},
+    ],
+    overlays: {ema21: [99, 100]}, levels: {high_52w: [120, 120]},
+  }}))
+  const bar = '2026-09-09T13:45:00Z'
+  await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-09T14:00:00Z', quotes: {
+    AAPL: {symbol: 'AAPL', last: 100, bar}, NVDA: {symbol: 'NVDA', last: 100, bar},
+  }}}))
+  const reading = (score: number, missing: string[]) => ({
+    version: 'analyst-opportunity/1', score, last_score: score, status: 'indicative', price: 100, bar,
+    valid_until: '2026-09-09T14:15:00Z', valuation_current: false, method: 'Evidence index', missing,
+    parts: [
+      {analyst: 'fundamental', score: 7.8, weight: 1, basis: '2026-09-08', evidence: ['Revenue growth top of book']},
+      {analyst: 'technical', score: 1.0, weight: 1, basis: '2026-09-08', evidence: ['Weekly trend down']},
+    ],
+  })
+  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, holdings: {}, equity: 100000,
+    rows: {
+      AAPL: {action: 'Wait', opportunity: reading(3.4, ['value'])},
+      NVDA: {action: 'Wait', opportunity: reading(8.1, [])},
+    },
+  }}}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  // The narrow read is starred; the complete one is not.
+  const narrow = board.getByLabel('AAPL opportunity')
+  const complete = board.getByLabel('NVDA opportunity')
+  await expect(narrow).toContainText('3.4/10')
+  await expect(narrow).toContainText('*')
+  await expect(complete).toContainText('8.1/10')
+  await expect(complete).not.toContainText('*')
+  await expect(narrow.getByTitle(/Scored without value/)).toBeVisible()
+
+  // And the card spells out what the star meant.
+  await board.getByRole('button', {name: /^AAPL/}).click()
+  await page.getByText('Score, log & backtest', {exact: true}).click()
+  const card = page.getByLabel('Price-to-opportunity score')
+  await expect(card).toContainText('Value did not vote')
+  await expect(card).toContainText('renormalised to full weight')
+  await expect(card).toContainText('not the same as a neutral vote')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})

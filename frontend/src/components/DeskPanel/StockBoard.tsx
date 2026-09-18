@@ -185,12 +185,18 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       && value?.bar === live.quotes[ticker]?.bar
       && Number.isFinite(value?.score) ? value!.score : null
   }
+  // Which analysts had no reading for this name. The score is renormalised
+  // over the rest, so a name scored on a narrow panel is not comparable to
+  // one scored on the full five, and the board has to say so rather than
+  // printing a number that looks like everyone else's.
+  const narrow = (ticker: string): string[] => decisions?.rows[ticker]?.opportunity?.missing ?? []
   const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
     ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
     opportunity: opportunity(ticker),
+    narrow: narrow(ticker),
     weight: weightOf(ticker),
-  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, weight: null}))].sort((a, b) => (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
+  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, narrow: [] as string[], weight: null}))].sort((a, b) => (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
     || (b.opportunity ?? -1) - (a.opportunity ?? -1)
     || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
@@ -199,7 +205,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const planGross = !showSizes && !hidden
     ? Object.values(planTargets).reduce((sum, w) => sum + (Number.isFinite(w) ? (w as number) : 0), 0)
     : null
-  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : paused && emptyAccount ? 1 : null}
+  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, narrow: [] as string[], weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : paused && emptyAccount ? 1 : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   // The board opens with the top page of names and pages on request, so a
   // ninety-name list never becomes a wall to scroll through. A search narrows
@@ -262,7 +268,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <th className="py-2">#</th>
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
             <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current`}>Grade</SortHead>
-            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts.">Opportunity</SortHead>
+            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts. A star marks a name scored without the full panel.">Opportunity</SortHead>
             <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name against your recorded position">Plan</SortHead>
             <SortHead column="weight" sort={sort} onSort={setSort} title="Percentage of total portfolio value, not an order quantity. A graded name with no size was not picked by the sizing engine, which ranks on the continuous score rather than on the grade.">Size %</SortHead>
             <th><span className="sr-only">Record purchase</span></th>
@@ -285,7 +291,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} grade`}>{isCash ? '' : <span title={grades[row.ticker] ? 'Intraday grade' : `Grade at the ${latest.session} close`} className={grades[row.ticker] ? 'font-medium text-[#1d1d1f]' : ''}>{row.grade}{grades[row.ticker] ? ' ·' : ''}</span>}</td>
-            <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : '—'}</td>
+            <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? <>
+              {row.opportunity.toFixed(1)}/10
+              {!!row.narrow.length && <span
+                className="ml-0.5 cursor-help font-medium text-[#9a6700]"
+                title={`Scored without ${row.narrow.join(' and ')}: this name is missing the data ${row.narrow.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score is the rest renormalised. Open the name for the parts.`}
+              >*</span>}
+            </> : '—'}</td>
             <td className="text-xs">{isCash ? 'Hold'
               : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
               : action(row.ticker, row.weight))}</td>

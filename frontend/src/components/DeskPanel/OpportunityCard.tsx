@@ -23,6 +23,13 @@ export const OpportunityCard = ({reading, now}: {reading?: DeskOpportunity; now:
         <p className="text-[11px] text-[#6e6e73]">{part.score > 5 ? 'Raises score' : part.score < 5 ? 'Lowers score' : 'Neutral'} · {part.basis === 'intraday' ? 'current bar' : `${part.basis} close`}{part.source === 'recorded_vote' ? ' · recorded vote' : ''}</p>
         {part.evidence[0] && <p className="mt-0.5 text-[11px] text-[#6e6e73]">{part.basis === 'intraday' ? 'Prior-close context: ' : ''}{part.evidence[0]}</p>}
       </div>)}</div>
+      {!!reading!.missing?.length && <p className="mt-3 rounded bg-[#fff8e6] p-2 text-[11px] text-[#6e6e73]">
+        <span className="font-medium text-[#1d1d1f]">{reading!.missing.map(a => a[0].toUpperCase() + a.slice(1)).join(' and ')} did not vote.</span>{' '}
+        This name is missing the data {reading!.missing.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score above is the
+        remaining {reading!.parts.length} renormalised to full weight, and the weights below are shares of what is left.
+        That is not the same as {reading!.missing.length === 1 ? 'a neutral vote' : 'neutral votes'}: a name can rank high here on a
+        narrow read. Compare it against names with the full panel carefully.
+      </p>}
       <p className="mt-3 text-[11px] text-[#6e6e73]">A high score does not override Wait, FOMC restrictions or position limits.</p>
     </>}
   </section>
