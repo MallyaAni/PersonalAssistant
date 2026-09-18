@@ -218,11 +218,19 @@ export const TickerChart = ({
     let live = true
     setData(null)
     setError(null)
-    getDeskChart(userId, ticker, timeframe)
-      .then((payload) => live && setData(payload))
-      .catch((e: Error) => live && setError(e.message))
+    const read = (first: boolean) => {
+      getDeskChart(userId, ticker, timeframe)
+        .then((payload) => live && setData(payload))
+        .catch((e: Error) => live && first && setError(e.message))
+    }
+    read(true)
+    // The averages, bands and levels are computed on the server against the
+    // live candle, so they only move if the payload is re-read. Without this
+    // the candle walked while every line beside it stayed at the last close.
+    const timer = window.setInterval(() => read(false), 60_000)
     return () => {
       live = false
+      window.clearInterval(timer)
     }
   }, [userId, ticker, timeframe])
 

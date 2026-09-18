@@ -1085,103 +1085,6 @@ test('separates dated inflation facts from research-only model judgement', async
 })
 
 // Confirm cash explicitly and discard the preview whenever the budget changes.
-// The share count does not depend on free cash: the target is a percentage
-// of the account and the equity is known, so the answer exists on arrival.
-// Cash only ever answered the second question - how much of that target can
-// be reached today - so it is an optional limit, not a gate in front of it.
-test('share sizing answers without a cash figure and takes one as a limit', async ({ page }) => {
-  const errors = observeBlockingBrowserErrors(page)
-  await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
-  const budgets: number[] = []
-  await page.route('**/desk/funding-preview', route => {
-    const body = route.request().postDataJSON()
-    budgets.push(body.available_cash)
-    const limited = body.available_cash < 100000
-    return route.fulfill({json: {
-      session: '2026-09-08', calculated_at: new Date().toISOString(),
-      estimated_cost: limited ? 190 : 5890, unallocated_cash: limited ? 10 : 94110,
-      cash_limited: limited, price_times: {},
-      rows: [{ticker: 'AAPL', reference_price: 190, held_shares: 0, target_total_shares: 31, additional_shares: limited ? 1 : 31, estimated_cost: 190}],
-    }})
-  })
-  await page.goto('/?deskDetails=1#desk')
-
-  // No typing, no button: the target is on screen, and the whole account is
-  // the budget until the trader says otherwise.
-  // Nothing is held here, so "held" and "target total" would repeat the last
-  // column. One column, named for what it is.
-  await expect(page.getByRole('columnheader', {name: 'Shares', exact: true})).toBeVisible()
-  await expect(page.getByRole('columnheader', {name: 'Held', exact: true})).toHaveCount(0)
-  await expect(page.getByRole('columnheader', {name: 'Target total', exact: true})).toHaveCount(0)
-  await expect(page.getByText('Buying the whole target costs $5890.00', {exact: false})).toBeVisible()
-  await expect(page.getByLabel('Cash ($)')).toHaveCount(0)
-  expect(budgets[0]).toBe(100000)
-
-  // The limit is opt-in, and constrains the same answer rather than gating it.
-  await page.getByLabel('Limit to the cash I can deploy').check()
-  await page.getByLabel('Cash ($)').fill('200')
-  await expect(page.getByText('Additions reduced together to fit the cash limit.', {exact: false})).toBeVisible()
-  await expect(page.getByRole('columnheader', {name: 'Buy now', exact: true})).toBeVisible()
-  expect(budgets.at(-1)).toBe(200)
-
-  // Clearing the limit returns to the unconstrained target.
-  await page.getByLabel('Limit to the cash I can deploy').uncheck()
-  await expect(page.getByRole('columnheader', {name: 'Shares', exact: true})).toBeVisible()
-  expect(budgets.at(-1)).toBe(100000)
-  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
-})
-
-// Once something IS held, the three columns each say a different thing and
-// all three earn their place.
-test('share sizing separates held from target once a position exists', async ({page}) => {
-  await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
-  await page.route('**/desk/funding-preview', route => route.fulfill({json: {
-    session: '2026-09-08', calculated_at: new Date().toISOString(),
-    estimated_cost: 1900, unallocated_cash: 0, cash_limited: false, price_times: {},
-    rows: [{ticker: 'AAPL', reference_price: 190, held_shares: 21, target_total_shares: 31, additional_shares: 10, estimated_cost: 1900}],
-  }}))
-  await page.goto('/?deskDetails=1#desk')
-  await expect(page.getByRole('columnheader', {name: 'Held', exact: true})).toBeVisible()
-  await expect(page.getByRole('columnheader', {name: 'Target total', exact: true})).toBeVisible()
-  await expect(page.getByRole('columnheader', {name: 'Still to buy', exact: true})).toBeVisible()
-  await expect(page.getByRole('columnheader', {name: 'Shares', exact: true})).toHaveCount(0)
-})
-
-// Keep experimental allocations explicit and clear their results on policy changes.
-test('research sizing displays reductions and clears the previous policy', async ({ page }) => {
-  const errors = observeBlockingBrowserErrors(page)
-  await page.route('**/desk/funding-preview', route => {
-    const mode = route.request().postDataJSON().mode
-    if (mode !== 'intraday_research') return route.fulfill({json: {
-      mode: 'evening', session: '2026-09-08', calculated_at: new Date().toISOString(),
-      estimated_cost: 0, unallocated_cash: 0, rows: [], price_times: {},
-    }})
-    return route.fulfill({json: {
-      mode: 'intraday_research', session: '2026-09-08', calculated_at: new Date().toISOString(),
-      valid_until: new Date(Date.now() + 600000).toISOString(), macro: {exposure: .5, defensive: true},
-      estimated_cost: 0, unallocated_cash: 0, rows: [], price_times: {},
-      reductions: [{ticker: 'AAPL', held_shares: 20, target_total_shares: 10, reduction_shares: 10}],
-    }})
-  })
-  await page.goto('/?deskDetails=1#desk')
-  await page.getByLabel('Sizing policy').selectOption('intraday_research')
-  await expect(page.getByText('Sized on the current bar’s technical read', {exact: false})).toBeVisible()
-  await expect(page.getByText('defensive macro condition active', {exact: false})).toBeVisible()
-  await expect(page.getByText('AAPL: 20 held → 10 target shares · reduction 10')).toBeVisible()
-  await page.getByLabel('Sizing policy').selectOption('evening')
-  await expect(page.getByText('AAPL: 20 held → 10 target shares · reduction 10')).toHaveCount(0)
-  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
-})
-
-// A refused preview must name the backend's reason - no evening decision, a
-// stale or foreign research allocation, a bad figure - instead of a generic
-// failure the person cannot act on.
-test('a refused preview surfaces the backend reason', async ({ page }) => {
-  await page.route('**/desk/funding-preview', route => route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({detail: 'No evening decision is available'}) }))
-  await page.goto('/?deskDetails=1#desk')
-  await expect(page.getByText('No evening decision is available')).toBeVisible()
-})
-
 test('renders the desk at a glance with the track record', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
@@ -2404,5 +2307,42 @@ test('a name scored without the full analyst panel says so on the board and in t
   await expect(card).toContainText('Value did not vote')
   await expect(card).toContainText('renormalised to full weight')
   await expect(card).toContainText('not the same as a neutral vote')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+
+// Share sizing belongs in the one list, not in a panel of its own, and the
+// list is ordered the way it is used: the book first, biggest position
+// first, because "what do I own and how much" is the first question. The
+// graded universe behind it is a watchlist.
+test('the board carries the share count and leads with the book', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  latest.book = [
+    {ticker: 'NVDA', grade: 'A', weight: 0.04, engine_weight: 0.04, volatility: 0.3, exposure: 1},
+    {ticker: 'AAPL', grade: 'A+', weight: 0.01, engine_weight: 0.01, volatility: 0.2, exposure: 1},
+  ] as typeof latest.book
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-08T20:00:00Z', quotes: {
+    AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-08T19:45:00Z'},
+    NVDA: {symbol: 'NVDA', last: 200, bar: '2026-09-08T19:45:00Z'},
+  }}}))
+  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, holdings: {}, equity: 100000, rows: {},
+  }}}))
+  await page.goto('/?deskDetails=1#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.getByRole('columnheader', {name: 'Shares', exact: true})).toBeVisible()
+
+  // 4% of 100k at $200 is 20 shares; 1% at $100 is 10.
+  await expect(board.getByLabel('NVDA shares')).toHaveText('20')
+  await expect(board.getByLabel('AAPL shares')).toHaveText('10')
+
+  // NVDA carries the bigger weight, so it leads even though AAPL grades
+  // higher. Grade-major ordering buried the position a trader acts on.
+  const ranked = await page.evaluate(() => [...document.querySelectorAll('[aria-label$=" shares"]')]
+    .map(el => (el.getAttribute('aria-label') ?? '').replace(' shares', '')))
+  expect(ranked).toContain('NVDA')
+  expect(ranked.indexOf('NVDA')).toBeLessThan(ranked.indexOf('AAPL'))
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })

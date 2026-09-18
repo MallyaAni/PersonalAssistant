@@ -158,6 +158,7 @@ def build(
     ticker: str,
     sessions: int = DEFAULT_SESSIONS,
     timeframe: str = DAILY,
+    live_bar: dict | None = None,
 ) -> Chart | None:
     """Return the drawable history for `ticker`, or None when it has none."""
     if timeframe not in TIMEFRAMES:
@@ -176,6 +177,39 @@ def build(
     open_, high, low = column("open"), column("high"), column("low")
     close, adj_close, volume = column("close"), column("adjusted_close"), column("volume")
     dates = np.array([np.datetime64(b.session_date, "D") for b in bars])
+
+    # Today's session, from the same quote the board reads, appended before
+    # anything is computed. Without it the candle moved while every average
+    # and band beside it stayed at the last close, which is the one thing a
+    # chart must not do: the picture would say price is far under its 21-day
+    # average using a 21-day average that had not seen today. Appending here
+    # rather than in the browser keeps one implementation of the maths.
+    #
+    # No adjustment factor applies to a bar that has not closed, so the raw
+    # and adjusted prices are the same for it.
+    if live_bar:
+        session = live_bar.get("session")
+        last = live_bar.get("last")
+        if session is not None and last is not None and np.isfinite(float(last)):
+            stamp = np.datetime64(str(session), "D")
+            price = float(last)
+            fields = (
+                float(live_bar.get("open") or price),
+                float(live_bar.get("high") or price),
+                float(live_bar.get("low") or price),
+                price,
+            )
+            if stamp > dates[-1]:
+                dates = np.append(dates, stamp)
+                open_ = np.vstack([open_, [[fields[0]]]])
+                high = np.vstack([high, [[fields[1]]]])
+                low = np.vstack([low, [[fields[2]]]])
+                close = np.vstack([close, [[price]]])
+                adj_close = np.vstack([adj_close, [[price]]])
+                volume = np.vstack([volume, [[np.nan]]])
+            elif stamp == dates[-1]:
+                open_[-1, 0], high[-1, 0], low[-1, 0] = fields[0], fields[1], fields[2]
+                close[-1, 0] = adj_close[-1, 0] = price
 
     # The same adjustment levels.py applies, so the candles sit on the line
     # the averages are computed from.
@@ -261,9 +295,10 @@ def payload(
     ticker: str,
     sessions: int = DEFAULT_SESSIONS,
     timeframe: str = DAILY,
+    live_bar: dict | None = None,
 ) -> dict[str, object] | None:
     """Return `build`'s chart as plain JSON-ready data, or None."""
-    chart = build(store, ticker, sessions, timeframe)
+    chart = build(store, ticker, sessions, timeframe, live_bar)
     if chart is None:
         return None
     return {

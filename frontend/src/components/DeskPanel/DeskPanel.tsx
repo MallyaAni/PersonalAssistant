@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshCw, X } from 'lucide-react'
-import { FundingPreview } from './FundingPreview'
 import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
@@ -957,7 +956,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // cycle's current policy status has not been read.
   const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
     ? Object.values(decisions.rows).filter(row => row.action === 'Buy eligible' && Date.parse(row.valid_until ?? '') > now).length : 0
-  const wideEnoughForSizing = typeof window !== 'undefined' && window.innerWidth >= 1024
   const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
@@ -1060,7 +1058,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {canWrite && holdingsReady && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
-          {canWrite && holdingsReady && <details open={wideEnoughForSizing} className="mb-1 text-xs"><summary className="cursor-pointer text-[#0071e3]">How many shares the targets come to</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} paused={Boolean(eventPaused)} /></details>}
   </div> : null
   // The plan for a name on the board: the trade against the recorded position.
   const tradeCell = (ticker: string) => {

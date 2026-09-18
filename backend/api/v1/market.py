@@ -858,8 +858,29 @@ async def desk_chart(
             detail=f"timeframe must be one of {', '.join(ticker_chart.TIMEFRAMES)}",
         )
     capped = max(20, min(int(sessions), 2000))
+    # The same candle the board reads, so the averages and bands include
+    # today rather than ending at the last close while the price moves.
+    snap = _live_snapshot() or {}
+    quote = (snap.get("quotes") or {}).get(ticker.upper()) or {}
+    live_bar = None
+    if quote.get("last") is not None and quote.get("bar"):
+        live_bar = {
+            "session": datetime.fromisoformat(str(quote["bar"]))
+            .astimezone(desk_freshness.NEW_YORK)
+            .date()
+            .isoformat(),
+            "last": quote.get("last"),
+            "open": quote.get("open"),
+            "high": quote.get("high"),
+            "low": quote.get("low"),
+        }
     built = await asyncio.to_thread(
-        ticker_chart.payload, MarketStore(_root()), ticker.upper(), capped, timeframe
+        ticker_chart.payload,
+        MarketStore(_root()),
+        ticker.upper(),
+        capped,
+        timeframe,
+        live_bar,
     )
     if built is None:
         raise HTTPException(status_code=404, detail="no price history for that name")
