@@ -54,7 +54,9 @@ MOMENTUM_SKIP = 21
 # mean-reversion reading at all: a name resting on support below its
 # averages would be scored on trend alone forever. "signed" fixes the
 # discontinuity, takes the best drawdown of the four, and keeps that read.
-# See docs/research/stretch-leg-2026-09-18.md.
+# Re-measured after the no-swing-low fallback below was added, and the
+# figures were identical to every decimal place, so this table describes
+# the code as it ships. See docs/research/stretch-leg-2026-09-18.md.
 STRETCH_LEG = "signed"
 LOCATION_CITED = (
     "support_distance",

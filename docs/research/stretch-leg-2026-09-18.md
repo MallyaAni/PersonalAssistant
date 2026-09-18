@@ -121,6 +121,15 @@ supported end. That rule now applies to whichever measure is selected, in
 This is the second time in this change that the safety net rather than the
 reasoning caught the error, and both were worth the cycle.
 
+The harness was re-run afterwards to check the fallback had not moved the
+result, and it returned the same figures to every decimal place: signed at
+27.0739891063996% CAGR, 1.469525705533127 Sharpe, −19.016597514819866%
+drawdown, against support at 26.70091205253433% / 1.4477984264436379 /
+−21.97652504096569%. So no name in this book over these eight years was
+both unreadable by the swing-low measure and large enough in the traded
+portfolio to shift a return. The table above therefore describes the code
+that ships, fallback included.
+
 ## Guard
 
 `backend/tests/test_market_stretch_leg.py` pins the mechanism rather than a
