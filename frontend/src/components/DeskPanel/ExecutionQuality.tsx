@@ -1,6 +1,11 @@
 import type { DeskExecutionQuality } from '../../services/api'
 
 const bp = (value: number | null | undefined) => value == null ? '—' : `${value > 0 ? '+' : ''}${value.toFixed(1)} bp`
+// Slippage and drift are weighted over the fills that have a benchmark; when
+// that is not every fill they cannot be read against the total without
+// saying so, and the count says it.
+const fills = (a: {fills: number; measured?: number}) =>
+  a.measured == null || a.measured === a.fills ? `${a.fills}` : `${a.fills} (${a.measured} split)`
 const dollars = (value: number | null | undefined) => value == null ? '—' : `${value < 0 ? '−' : '+'}$${Math.abs(value).toLocaleString(undefined, {maximumFractionDigits: 0})}`
 
 // Every paper fill against the price its decision was made at, as a series,
@@ -11,19 +16,19 @@ const dollars = (value: number | null | undefined) => value == null ? '—' : `$
 // buy or selling down on a sell is a positive cost.
 export const ExecutionQuality = ({quality}: {quality?: DeskExecutionQuality | null}) => (
   <details className="rounded-2xl border border-black/[0.08] bg-white p-4 text-xs text-[#6e6e73]" aria-label="Execution quality">
-    <summary className="cursor-pointer font-medium">Execution · {!quality ? 'not written yet' : quality.all_time.fills ? `${quality.all_time.fills} fills, ${bp(quality.all_time.slippage_bps)} slippage` : 'no fills with a reference price yet'}</summary>
+    <summary className="cursor-pointer font-medium">Execution · {!quality ? 'not written yet' : !quality.all_time.fills ? 'no fills with a reference price yet' : quality.all_time.slippage_bps != null ? `${quality.all_time.fills} fills, ${bp(quality.all_time.slippage_bps)} slippage` : `${quality.all_time.fills} fills, ${bp(quality.all_time.bps)} against the decision price`}</summary>
     {!quality ? <p className="mt-2">Written by the nightly after each paper session.</p> : <>
       <p className="mt-2">{quality.basis}.</p>
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-left [&_td]:pr-3 [&_th]:pr-3" aria-label="Execution summary">
           <thead><tr><th>Scope</th><th>Fills</th><th title="Benchmark to fill: what the trading cost">Slippage</th><th title="Decision price to benchmark: the market's own move while the order waited. Already in the account's return; shown to explain the total.">Drift</th><th title="Decision price to fill: drift and slippage together">Total</th><th>Dollars</th></tr></thead>
           <tbody>
-            <tr><td>All time</td><td>{quality.all_time.fills}</td><td>{bp(quality.all_time.slippage_bps)}</td><td>{bp(quality.all_time.drift_bps)}</td><td>{bp(quality.all_time.bps)}</td><td>{dollars(quality.all_time.dollars)}</td></tr>
-            <tr><td>Last {quality.recent.sessions} sessions</td><td>{quality.recent.fills}</td><td>{bp(quality.recent.slippage_bps)}</td><td>{bp(quality.recent.drift_bps)}</td><td>{bp(quality.recent.bps)}</td><td>{dollars(quality.recent.dollars)}</td></tr>
-            <tr><td>Scheduled rebalances</td><td>{quality.by_kind.rebalance.fills}</td><td>{bp(quality.by_kind.rebalance.slippage_bps)}</td><td>{bp(quality.by_kind.rebalance.drift_bps)}</td><td>{bp(quality.by_kind.rebalance.bps)}</td><td>{dollars(quality.by_kind.rebalance.dollars)}</td></tr>
-            <tr><td>FOMC overlay</td><td>{quality.by_kind.fomc.fills}</td><td>{bp(quality.by_kind.fomc.slippage_bps)}</td><td>{bp(quality.by_kind.fomc.drift_bps)}</td><td>{bp(quality.by_kind.fomc.bps)}</td><td>{dollars(quality.by_kind.fomc.dollars)}</td></tr>
-            <tr><td>Buys</td><td>{quality.by_side.buy.fills}</td><td>{bp(quality.by_side.buy.slippage_bps)}</td><td>{bp(quality.by_side.buy.drift_bps)}</td><td>{bp(quality.by_side.buy.bps)}</td><td>{dollars(quality.by_side.buy.dollars)}</td></tr>
-            <tr><td>Sells</td><td>{quality.by_side.sell.fills}</td><td>{bp(quality.by_side.sell.slippage_bps)}</td><td>{bp(quality.by_side.sell.drift_bps)}</td><td>{bp(quality.by_side.sell.bps)}</td><td>{dollars(quality.by_side.sell.dollars)}</td></tr>
+            <tr><td>All time</td><td>{fills(quality.all_time)}</td><td>{bp(quality.all_time.slippage_bps)}</td><td>{bp(quality.all_time.drift_bps)}</td><td>{bp(quality.all_time.bps)}</td><td>{dollars(quality.all_time.dollars)}</td></tr>
+            <tr><td>Last {quality.recent.sessions} sessions</td><td>{fills(quality.recent)}</td><td>{bp(quality.recent.slippage_bps)}</td><td>{bp(quality.recent.drift_bps)}</td><td>{bp(quality.recent.bps)}</td><td>{dollars(quality.recent.dollars)}</td></tr>
+            <tr><td>Scheduled rebalances</td><td>{fills(quality.by_kind.rebalance)}</td><td>{bp(quality.by_kind.rebalance.slippage_bps)}</td><td>{bp(quality.by_kind.rebalance.drift_bps)}</td><td>{bp(quality.by_kind.rebalance.bps)}</td><td>{dollars(quality.by_kind.rebalance.dollars)}</td></tr>
+            <tr><td>FOMC overlay</td><td>{fills(quality.by_kind.fomc)}</td><td>{bp(quality.by_kind.fomc.slippage_bps)}</td><td>{bp(quality.by_kind.fomc.drift_bps)}</td><td>{bp(quality.by_kind.fomc.bps)}</td><td>{dollars(quality.by_kind.fomc.dollars)}</td></tr>
+            <tr><td>Buys</td><td>{fills(quality.by_side.buy)}</td><td>{bp(quality.by_side.buy.slippage_bps)}</td><td>{bp(quality.by_side.buy.drift_bps)}</td><td>{bp(quality.by_side.buy.bps)}</td><td>{dollars(quality.by_side.buy.dollars)}</td></tr>
+            <tr><td>Sells</td><td>{fills(quality.by_side.sell)}</td><td>{bp(quality.by_side.sell.slippage_bps)}</td><td>{bp(quality.by_side.sell.drift_bps)}</td><td>{bp(quality.by_side.sell.bps)}</td><td>{dollars(quality.by_side.sell.dollars)}</td></tr>
           </tbody>
         </table>
       </div>

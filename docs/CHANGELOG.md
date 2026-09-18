@@ -28,15 +28,42 @@ the session it completed in rather than the session it was planned in (a
 by slippage, since a name that gapped overnight is not an execution
 failure.
 
+An adversarial review of the change before it merged raised eight real
+defects, two of them blocking, and all eight are fixed here. A fill whose
+broker stamp was missing fell back to its plan session and read the
+benchmark from the session *before* the fill, producing a confident wrong
+split (a probe put one 76 times out); the price lookup now uses the fill
+session alone, so such a row keeps its total and reports no split. The
+store read was pinned to partitions at or before the fill session, but the
+nightly labels its partition with the UTC date, so after 20:00 New York
+the fill session's own partition is unreachable and every fill would have
+gone unsplit for ever, unconditionally from the EST switch; the read now
+takes the newest partition and the bar's own session date is what matches.
+An order resubmitted into the middle of the session it filled in was never
+queued for the open, so it now reports no split instead of booking the
+morning's move as slippage. The worst table ranks only fills that have a
+slippage rather than falling back to the total. The page shows how many
+fills the split covered ("18 (9 split)") and falls back to the total in
+the collapsed headline when no fill has a benchmark, so the panel always
+carries a number. The basis string drops the claim that drift is "already
+counted in the account's return", which is false for an entry the desk
+never held, and says instead that equity is struck from actual fills so
+adding drift would double-count; it also now says the benchmark is a
+consolidated daily print while the fill is the broker's, so a few basis
+points of any slippage figure are that difference. Regression tests cover
+both blocking paths, including one against a real store whose partition is
+labelled the next day.
+
 Verified on the real September fills, run through the new code against a
 copy of the live paper state and bars: 18 of 18 split, total unchanged at
 +115.3 bp / +$454, of which drift +122.2 bp / +$482 and slippage −6.9 bp
 / −$27. The buys are +243.1 bp drift and −9.0 bp slippage; the intraday
 event sells are 0.0 drift and −4.8 bp slippage. The worst table now leads
 with SNDK (+95.4 bp slippage) rather than AAOI, whose +438.6 bp total was
-a +411.4 bp gap. Tests: `test_execution_quality` 9, including the real
-NVDA restoration fill and the order-type benchmarks; the desk browser
-suite 64/64.
+a +411.4 bp gap. Tests: `test_execution_quality` 13, including the real
+NVDA restoration fill, the order-type benchmarks and both blocking
+regressions; 70 across the affected backend files; the desk browser suite
+64/64.
 
 ## 2026-09-17 — The plan cell reads like a trader's note, and an allowlisted account gets the Desk icon
 

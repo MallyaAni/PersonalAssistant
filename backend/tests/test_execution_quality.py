@@ -106,7 +106,9 @@ def test_report_series_and_kinds():
     assert block["by_kind"]["fomc"]["fills"] == 1
     assert block["by_kind"]["rebalance"]["fills"] == 1
     assert block["by_side"]["sell"]["fills"] == 1
-    assert block["worst"][0]["symbol"] in ("NVDA", "SMCI")
+    # Neither row has a broker stamp, so neither is split and neither can
+    # be ranked by slippage.
+    assert block["worst"] == []
     assert eq.report(_state([]))["all_time"]["bps"] is None
 
 
@@ -168,7 +170,7 @@ def test_the_overnight_gap_is_drift_and_the_rest_is_slippage():
     # The split always adds back to the total, in dollars and in points.
     assert abs(out["drift_dollars"] + out["slippage_dollars"] - out["dollars"]) < 1e-9
     assert abs(out["drift_bps"] + out["slippage_bps"] - out["bps"]) < 1e-9
-    assert store.asked == [("NVDA", date(2026, 9, 17))]
+    assert store.asked == [("NVDA", None)]
 
 
 # The benchmark follows the way the order was sent, because the order
@@ -305,3 +307,129 @@ def test_the_worst_fills_are_ranked_by_slippage():
     assert "slippage is the benchmark to the fill" in block["basis"]
     # Dated to the session they filled in, not the session they were planned.
     assert [r["session"] for r in block["series"]] == ["2026-09-14"]
+
+
+# The blocking defect the review found: without the broker's stamp the fill
+# session is unknown, and reading the plan session's bar instead produces a
+# confident, wrong split. The store here HOLDS that bar, so the old
+# empty-store test could never have caught it.
+def test_a_fill_without_a_broker_stamp_is_never_split_from_the_plan_session():
+    from datetime import date
+
+    store = _Store(
+        {
+            "NVDA": [
+                _Bar(date(2026, 9, 16), 205.0, 213.89999389648438),
+                _Bar(date(2026, 9, 17), 218.388, 219.0),
+            ]
+        }
+    )
+    row = _row(
+        "2026-09-16",
+        "NVDA",
+        "buy",
+        12,
+        217.865,
+        213.89999389648438,
+        event="fomc-3-session-weakness/2:2026-09-16",
+    )  # no filled_at
+    (out,) = eq.fill_rows(_state([row]), store)
+    assert out["benchmark"] is None
+    assert out["drift_bps"] is None
+    assert out["slippage_bps"] is None
+    assert round(out["bps"], 1) == 185.4  # the total still stands
+    assert store.asked == []  # the store is never even asked
+
+
+# A scheduled sell without a stamp would benchmark to its own decision close
+# and report the entire gap as slippage. It must not be split either.
+def test_a_scheduled_sell_without_a_stamp_reports_no_slippage():
+    from datetime import date
+
+    store = _Store({"BBB": [_Bar(date(2026, 9, 11), 99.0, 100.0)]})
+    row = _row("2026-09-11", "BBB", "sell", 10, 90.0, 100.0)
+    (out,) = eq.fill_rows(_state([row]), store)
+    assert out["slippage_bps"] is None
+    assert round(out["bps"], 1) == 1000.0
+
+
+# The second blocking defect: the nightly labels its bars partition with the
+# UTC date, so after 20:00 New York there is no partition at or before the
+# session it just fetched. Reading the newest partition and matching on the
+# bar's own session date finds it anyway. This uses the real MarketStore.
+def test_the_benchmark_is_found_when_the_partition_is_labelled_the_next_day(tmp_path):
+    import pytest
+
+    pytest.importorskip("pyarrow")
+    from datetime import UTC, date, datetime
+
+    from backend.market.store import MarketStore
+    from backend.market.yahoo import DailyBar, TickerHistory
+
+    store = MarketStore(tmp_path)
+    bars = (
+        DailyBar(date(2026, 9, 16), 205.0, 214.0, 204.0, 213.9, 213.9, 1_000),
+        DailyBar(date(2026, 9, 17), 218.388, 220.0, 217.0, 219.0, 219.0, 1_000),
+    )
+    # Fetched at 23:07 New York on the 17th, so the partition is the 18th.
+    store.write(
+        date(2026, 9, 18),
+        TickerHistory(
+            ticker="NVDA",
+            bars=bars,
+            actions=(),
+            complete_through=date(2026, 9, 17),
+            source_time=datetime(2026, 9, 18, 3, 7, tzinfo=UTC),
+        ),
+    )
+    assert store.latest_asof("NVDA", date(2026, 9, 17)) is None  # the trap
+    row = _row(
+        "2026-09-16",
+        "NVDA",
+        "buy",
+        12,
+        217.865,
+        213.89999389648438,
+        event="fomc-3-session-weakness/2:2026-09-16",
+        filled_at="2026-09-17T13:33:10.875610Z",
+    )
+    (out,) = eq.fill_rows(_state([row]), store)
+    assert out["benchmark"] == 218.388
+    assert round(out["drift_bps"], 1) == 209.8
+    assert round(out["slippage_bps"], 1) == -24.5
+
+
+# An order sent into the middle of the session it filled in was never queued
+# for the open, so the morning's move is not its slippage.
+def test_an_order_submitted_inside_the_session_has_no_opening_benchmark():
+    from datetime import date
+
+    store = _Store({"AAA": [_Bar(date(2026, 9, 14), 100.0, 105.0)]})
+    queued = _row(
+        "2026-09-11",
+        "AAA",
+        "buy",
+        10,
+        102.0,
+        100.0,
+        filled_at="2026-09-14T13:31:00Z",
+        submitted_at="2026-09-14T08:00:41Z",  # 04:00 New York, before the open
+    )
+    (ahead,) = eq.fill_rows(_state([queued]), store)
+    assert ahead["benchmark"] == 100.0
+    assert round(ahead["slippage_bps"], 1) == 200.0
+
+    retried = _row(
+        "2026-09-11",
+        "AAA",
+        "buy",
+        10,
+        102.0,
+        100.0,
+        filled_at="2026-09-14T15:05:00Z",
+        submitted_at="2026-09-14T15:00:00Z",  # 11:00 New York, mid-session
+    )
+    (inside,) = eq.fill_rows(_state([retried]), store)
+    assert inside["benchmark"] is None
+    assert inside["slippage_bps"] is None
+    assert round(inside["bps"], 1) == 200.0

@@ -31,8 +31,9 @@ order.
 from __future__ import annotations
 
 import json
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from backend.agents.trading.desk import execution_evidence
 from backend.market import report_files
@@ -44,6 +45,9 @@ RECENT = 20
 # bar and fills seconds later in the same session: there is no waiting to
 # tell apart, so its benchmark is that reference and its drift is zero.
 INTRADAY_SOURCE = "completed 15-minute bar"
+NEW_YORK = ZoneInfo("America/New_York")
+OPEN_MINUTE = 9 * 60 + 30
+CLOSE_MINUTE = 16 * 60
 
 
 # Where an order first reached the market, by the way it was sent: a
@@ -58,9 +62,30 @@ def benchmark_kind(row: dict) -> str:
     return "open"
 
 
+# Whether the order was sent into the session it filled in rather than
+# queued ahead of it. A retry that goes out at eleven o'clock has no
+# opening price to be measured against: the morning already happened
+# before it was sent, and booking that as slippage inverts the sign on a
+# sell into a rally.
+def _submitted_within(execution: dict, session: str | None) -> bool:
+    """Return True when the order was submitted inside `session`'s hours."""
+    stamp = execution_evidence.timestamp(execution.get("submitted_at"))
+    if not stamp or not session:
+        return False
+    try:
+        when = datetime.fromisoformat(stamp).astimezone(NEW_YORK)
+    except (TypeError, ValueError):
+        return False
+    if when.date().isoformat() != session:
+        return False
+    return OPEN_MINUTE <= when.hour * 60 + when.minute < CLOSE_MINUTE
+
+
 # The benchmark price itself, read from the store's own bar for the session
-# the fill actually completed in. None when the bar is not on file, which
-# leaves the fill's total measured and its split unknown rather than wrong.
+# the fill actually completed in. None when the session is unknown, when the
+# bar is not on file, or when the order was sent into that session rather
+# than queued ahead of it - each of which leaves the fill's total measured
+# and its split unknown rather than wrong.
 def benchmark_price(row: dict, store, session: str | None, reference: float):
     """Return the price the order could first have traded at, or None."""
     kind = benchmark_kind(row)
@@ -68,8 +93,14 @@ def benchmark_price(row: dict, store, session: str | None, reference: float):
         return reference
     if store is None or not session:
         return None
+    if kind == "open" and _submitted_within(row.get("execution") or {}, session):
+        return None
     try:
-        history = store.read(row.get("symbol"), date.fromisoformat(session))
+        # The newest partition, not one pinned to the session: the nightly
+        # labels its partition with the UTC date, so after 20:00 New York
+        # there is no partition at or before the session it just fetched.
+        # The session_date match below is what guarantees the right bar.
+        history = store.read(row.get("symbol"))
     except Exception:  # noqa: BLE001 - evidence, never a reason to stop
         return None
     if history is None:
@@ -109,7 +140,11 @@ def fill_rows(state, store=None) -> list[dict]:
         decision_session = row.get("session")
         filled = execution_evidence.completion_session(execution)
         session = filled or decision_session
-        mark = benchmark_price(row, store, session, reference)
+        # The benchmark is read for the session the fill completed in and
+        # for no other. A row whose broker stamp is missing keeps its total
+        # and reports no split; the plan session's bar is always on file and
+        # would produce a confident, wrong answer.
+        mark = benchmark_price(row, store, filled, reference)
         sign = 1 if row.get("side") == "buy" else -1
         drift = None if mark is None else sign * qty * (mark - reference)
         slip = None if mark is None else sign * qty * (float(fill) - mark)
@@ -195,25 +230,30 @@ def report(state, now: datetime | None = None, store=None) -> dict:
         "series": series,
         # The worst fills are the worst *trades*: a name that gapped is not
         # an execution failure, and sorting on the total would leave this
-        # table permanently occupied by whichever names moved overnight.
+        # table permanently occupied by whichever names moved overnight. A
+        # fill with no slippage has nothing to rank and is left out rather
+        # than ranked by a different quantity.
         "worst": sorted(
-            rows,
-            key=lambda r: -(
-                r["slippage_bps"] if r["slippage_bps"] is not None else r["bps"]
-            ),
+            [r for r in rows if r["slippage_bps"] is not None],
+            key=lambda r: -r["slippage_bps"],
         )[:5],
         "basis": (
             "slippage is the benchmark to the fill: what the trading cost. "
             "Drift is the decision price to the benchmark - the market's own "
-            "move between deciding and reaching the market - and is already "
-            "counted in the account's return and in the FOMC gate, so it is "
-            "shown for attribution and never added to a result. The benchmark "
-            "is the fill session's open for an order queued for the open, its "
-            "close for a scheduled sell sent into the closing auction, and the "
-            "reference bar itself for an intraday cut. Signed so that paying "
-            "up on a buy or selling down on a sell is positive; basis points "
-            "of the decision's reference notional; the paper account pays no "
-            "commission"
+            "move between deciding and reaching the market. Equity is already "
+            "struck from actual fill prices, so adding drift to any result "
+            "would double-count it; it is shown to explain the total and is "
+            "never a figure to add. The benchmark is the fill session's open "
+            "for an order queued ahead of the open, its close for a scheduled "
+            "sell sent into the closing auction, and the reference bar itself "
+            "for an intraday cut; a fill whose session, bar or order path is "
+            "not one of those is counted in the total and left out of the "
+            "split. The benchmark comes from the daily consolidated bar while "
+            "the fill comes from the broker, so a few basis points of any "
+            "slippage figure are that difference rather than execution. "
+            "Signed so that paying up on a buy or selling down on a sell is "
+            "positive; basis points of the decision's reference notional; the "
+            "paper account pays no commission"
         ),
     }
 
