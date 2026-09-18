@@ -18,6 +18,26 @@ RUN apt-get update && apt-get install -y \
     graphviz \
     && rm -rf /var/lib/apt/lists/*
 
+# TLS group pinning, for the network rather than for security.
+#
+# python:3.12-slim now ships OpenSSL 3.5, which offers the post-quantum
+# X25519MLKEM768 key share by default. Some middlebox between this machine
+# and the internet silently drops the resulting ClientHello: the TCP
+# connection completes and the handshake then hangs until it times out.
+# Measured on spark1 on 2026-09-18 against pypi.org, same container, same
+# second: the default groups time out after 8s, `Groups = x25519:secp256r1`
+# completes TLS 1.3 in 0.01s. The host's own OpenSSL is 3.0.13, which never
+# offers the post-quantum share, which is why pip worked from the host and
+# failed inside every build.
+#
+# Both groups named here are the standard classical ones, so this costs
+# nothing but the post-quantum hedge on this machine's build traffic.
+# Delete the block once the network stops dropping those handshakes; the
+# symptom is `pip install` looping on "Read timed out" while curl on the
+# host is fine.
+COPY docker/classic-tls-groups.cnf /etc/ssl/classic-tls-groups.cnf
+ENV OPENSSL_CONF=/etc/ssl/classic-tls-groups.cnf
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

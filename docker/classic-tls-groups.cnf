@@ -1,0 +1,14 @@
+# Classical TLS key-exchange groups only. See the Dockerfile's base
+# stage for why: a middlebox on this network drops the post-quantum
+# ClientHello that OpenSSL 3.5 sends by default, and the handshake
+# hangs rather than failing.
+openssl_conf = init
+
+[init]
+ssl_conf = ssl_sect
+
+[ssl_sect]
+system_default = sys
+
+[sys]
+Groups = x25519:secp256r1
