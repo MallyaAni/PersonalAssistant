@@ -34,7 +34,15 @@ def action_for_row(
     if reason:
         return "Wait", reason
     if not row["rebalance_due"]:
-        return ("Hold" if row["shares"] > 0 else "Wait"), "Next rebalance not due"
+        # A name already held is genuinely waiting for the rebalance, since
+        # that is when its weight is reset. A name NOT held is not waiting
+        # for a date at all: nothing about starting a position depends on
+        # the schedule, and saying so made every unheld row read as blocked
+        # by a calendar. An account with no recorded positions saw that on
+        # all ninety-three.
+        if row["shares"] > 0:
+            return "Hold", "Weight is reset at the next rebalance"
+        return "Wait", "Not held; size shown is the target, not an order"
     direction = action_for(target, current)
     if row["rejecting_band"] and direction in ("buy", "add"):
         return "Wait", "Upper-band rejection blocks additions"
