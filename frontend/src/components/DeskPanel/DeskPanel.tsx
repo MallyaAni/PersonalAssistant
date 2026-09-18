@@ -7,6 +7,7 @@ import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
 import { BoardSimulation, MlComparison, StockBoard, type BoardEvent } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
+import { TickerChart } from './TickerChart'
 import { OpportunityCard } from './OpportunityCard'
 import {
   getDesk,
@@ -2545,6 +2546,10 @@ const NameDetail = ({
         <details open={!compact} aria-label="Score, log and backtest">
           <summary className="cursor-pointer text-xs text-[#0071e3]">Score, log & backtest</summary>
           <div className="mt-3">
+          {/* The picture first: a grade is easier to argue with when the
+              trader can see the bars, the averages it was scored from, and
+              where every previous grade change landed. */}
+          <TickerChart key={ticker} userId={userId} ticker={ticker} history={history ?? undefined} />
           <OpportunityCard reading={decisions?.session === latest.session ? decisions.rows[ticker]?.opportunity : undefined} now={now} />
           {history && <RecommendationTimeline history={history.recommendations} />}
           {!history && !error && <p className="mb-3 text-xs">Loading recommendations…</p>}

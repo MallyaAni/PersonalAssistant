@@ -2525,6 +2525,50 @@ export const getDeskHistory = async (userId: string, ticker: string): Promise<De
   return (await response.json()) as DeskHistory;
 };
 
+// One name's drawable price history: the bars a trader looks at, plus the
+// averages, bands and levels the analysts actually score on. Split from the
+// history call on purpose — that one answers what the desk concluded, this
+// one answers what it was looking at. `timeframe` is daily or weekly and
+// nothing else, because those are the only two the desk reads.
+export interface DeskChartBar {
+  date: string;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  volume: number | null;
+}
+
+export interface DeskChart {
+  user_id: string;
+  ticker: string;
+  timeframe: 'daily' | 'weekly';
+  timeframes: string[];
+  adjusted: boolean;
+  basis: string;
+  sessions: number;
+  bars: DeskChartBar[];
+  // Lines drawn on the price: the EMAs, the 200 simple, the band edges.
+  overlays: Record<string, (number | null)[]>;
+  // Reference levels the reads quote by name: swing points, the 52-week
+  // extremes, the 60-session range.
+  levels: Record<string, (number | null)[]>;
+}
+
+export const getDeskChart = async (
+  userId: string,
+  ticker: string,
+  timeframe: 'daily' | 'weekly' = 'daily',
+  sessions = 260,
+): Promise<DeskChart> => {
+  const query = new URLSearchParams({ timeframe, sessions: String(sessions) });
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/chart/${encodeURIComponent(ticker)}?${query}`,
+  );
+  if (!response.ok) throw new Error(`No price history for ${ticker} yet (HTTP ${response.status}).`);
+  return (await response.json()) as DeskChart;
+};
+
 // The newest earnings release read for one name, straight from the release
 // reader's store: the tone it scored (guidance / demand / pricing / capex),
 // the numbers it extracted, and the session the market could first react.

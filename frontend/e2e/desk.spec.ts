@@ -2207,3 +2207,84 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
   await page.reload()
   await expect(page.getByRole('button', {name: 'Desk', exact: true})).toHaveCount(0)
 })
+
+
+// The drill-down chart. It draws to a canvas, so nothing inside it can be
+// asserted on; every number it shows is mirrored into text beneath it, and
+// that mirror is what this test reads. The timeframes offered are the two
+// the desk actually scores from, daily and weekly, and nothing else.
+test('the ticker chart draws the desk’s own timeframes and mirrors its readings in text', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.route('**/desk/history/AAPL', route => route.fulfill({json: {
+    ticker: 'AAPL', horizon: 20, asof: '2026-09-08', backtest: null,
+    rows: [
+      {date: '2026-09-02', grade: 'C', votes: -1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
+      {date: '2026-09-04', grade: 'B', votes: 1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
+      {date: '2026-09-08', grade: 'A', votes: 3.2, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: false},
+    ],
+    recommendations: {status: 'available', outcomes: {status: 'awaiting_daily_validation'}, invalid_archives: 0, older_records_not_shown: false, observations: []},
+  }}))
+  // Thirty sessions of a gentle rise, with every line the daily view draws.
+  const days: string[] = []
+  for (let cursor = new Date(Date.UTC(2026, 6, 6)); days.length < 30; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    if (cursor.getUTCDay() !== 0 && cursor.getUTCDay() !== 6) days.push(cursor.toISOString().slice(0, 10))
+  }
+  const at = (base: number) => days.map((_, i) => Number((base + i * 0.5).toFixed(2)))
+  const chartBody = (timeframe: string) => ({
+    user_id: USER, ticker: 'AAPL', timeframe, timeframes: ['daily', 'weekly'], adjusted: true,
+    basis: 'adjusted for splits and dividends, the basis the desk grades on',
+    sessions: days.length,
+    bars: days.map((date, i) => ({date, open: 100 + i * 0.5, high: 101 + i * 0.5, low: 99 + i * 0.5, close: 100.5 + i * 0.5, volume: 1000})),
+    overlays: timeframe === 'weekly'
+      ? {ema9: at(99), ema21: at(98)}
+      : {ema9: at(100), ema21: at(99), ema50: at(97), ema200: at(94), sma200: at(93), band_lower: at(96), band_middle: at(100), band_upper: at(104)},
+    levels: {swing_low: at(95), swing_high: at(110), high_52w: at(120), low_52w: at(80), range60_high: at(115), range60_low: at(90)},
+  })
+  await page.route('**/desk/chart/AAPL*', route => {
+    const timeframe = new URL(route.request().url()).searchParams.get('timeframe') ?? 'daily'
+    return route.fulfill({json: chartBody(timeframe)})
+  })
+  await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-08T20:00:00Z', quotes: {
+    AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-08T19:45:00Z'},
+  }}}))
+  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, holdings: {}, equity: 100000, rows: {},
+  }}}))
+  await page.goto('/#desk')
+  await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+  await expect(page.getByRole('dialog', {name: 'AAPL history'})).toBeVisible()
+  await page.getByText('Score, log & backtest', {exact: true}).click()
+
+  const chart = page.getByRole('region', {name: 'AAPL price chart'})
+  await expect(chart).toBeVisible()
+  await expect(chart.getByTestId('ticker-chart-canvas').locator('canvas').first()).toBeVisible()
+
+  // Only the two scored timeframes are on offer.
+  const frames = chart.getByRole('group', {name: 'Chart timeframe'})
+  await expect(frames.getByRole('button')).toHaveCount(2)
+  await expect(frames.getByRole('button', {name: 'D'})).toHaveAttribute('aria-pressed', 'true')
+  await expect(chart).toContainText('The desk reads daily and weekly only')
+
+  // The daily readings are mirrored in text, with distance from price.
+  await expect(chart).toContainText('EMA 21')
+  await expect(chart).toContainText('EMA 200')
+  await expect(chart).toContainText('Band upper')
+  await expect(chart).toContainText('52-week high')
+  await expect(chart).toContainText('Last close')
+
+  // Both grade changes are named, and the published one is distinguished.
+  await expect(chart).toContainText('2 grade changes marked')
+  await expect(chart).toContainText('C→B')
+  await expect(chart).toContainText('B→A')
+  await expect(chart).toContainText('published that night')
+
+  // Weekly re-reads and swaps to the lines the weekly legs are built from.
+  await frames.getByRole('button', {name: 'W'}).click()
+  await expect(frames.getByRole('button', {name: 'W'})).toHaveAttribute('aria-pressed', 'true')
+  await expect(chart).toContainText('Weekly EMA 21')
+  await expect(chart).not.toContainText('EMA 200')
+  await expect(chart).toContainText('weeks,')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})

@@ -48,6 +48,20 @@ def position(
         return np.where(span > 0, (close - (middle - sigma * spread)) / span, np.nan)
 
 
+# The three band lines themselves, for drawing rather than for scoring. The
+# scoring measures above collapse the bands to one number; a chart needs the
+# lines, and they must come from this same construction so the picture a
+# trader reads and the number the desk scores can never disagree.
+def edges(
+    close: np.ndarray, window: int = WINDOW, sigma: float = SIGMA
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return (lower, middle, upper) band lines, each shaped like `close`."""
+    middle = _middle(close, window)
+    spread = _spread(close, window)
+    with np.errstate(all="ignore"):
+        return middle - sigma * spread, middle, middle + sigma * spread
+
+
 # The band's width as a fraction of its middle: a scale-free measure of how
 # much this name has been moving lately.
 def width(close: np.ndarray, window: int = WINDOW, sigma: float = SIGMA) -> np.ndarray:

@@ -39,8 +39,23 @@ MOMENTUM_SKIP = 21
 # the original nearest-swing-low distance, which sawtooths as levels drop in
 # and out; "signed" keeps the level through the crossing; "band" is the
 # close's position in its own twenty-session band; "none" drops the leg.
-# Measured before adoption; see docs/research/stretch-leg-*.md.
-STRETCH_LEG = "support"
+#
+# Measured over 2018-06 to 2026-09 through the desk's own harness before
+# adoption, and "support" lost on every dimension that matters:
+#
+#   leg        CAGR    Sharpe   max DD   quiet-session flips > 40 pts
+#   support   26.70%    1.448  -21.98%   14.6%   <- the shipped sawtooth
+#   signed    27.07%    1.470  -19.02%   10.8%   <- adopted
+#   band      26.07%    1.407  -20.42%    2.6%
+#   none      27.83%    1.493  -20.59%   -
+#
+# "none" edges the return and the Sharpe, but by a margin well inside the
+# noise of eight years, and dropping the leg would leave the desk with no
+# mean-reversion reading at all: a name resting on support below its
+# averages would be scored on trend alone forever. "signed" fixes the
+# discontinuity, takes the best drawdown of the four, and keeps that read.
+# See docs/research/stretch-leg-2026-09-18.md.
+STRETCH_LEG = "signed"
 LOCATION_CITED = (
     "support_distance",
     "resistance_distance",

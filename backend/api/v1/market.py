@@ -37,6 +37,7 @@ from backend.market import (
     language,
     live_quotes,
     live_technical,
+    ticker_chart,
 )
 from backend.market.store import MarketStore
 
@@ -733,6 +734,33 @@ async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
         **history,
         "recommendations": recommendations,
     }
+
+
+# One name's drawable price history with the averages and bands the desk
+# scores on. Split from /desk/history deliberately: that endpoint answers
+# "what did the desk conclude", this one answers "what was it looking at",
+# and a drill-down that only wants the grades should not pay to read bars.
+@router.get("/desk/chart/{ticker}")
+async def desk_chart(
+    user_id: UserId,
+    ticker: str,
+    sessions: int = ticker_chart.DEFAULT_SESSIONS,
+    timeframe: str = ticker_chart.DAILY,
+) -> dict[str, object]:
+    """Return adjusted bars, overlay lines and levels for one name."""
+    _operator_only(user_id)
+    if timeframe not in ticker_chart.TIMEFRAMES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"timeframe must be one of {', '.join(ticker_chart.TIMEFRAMES)}",
+        )
+    capped = max(20, min(int(sessions), 2000))
+    built = await asyncio.to_thread(
+        ticker_chart.payload, MarketStore(_root()), ticker.upper(), capped, timeframe
+    )
+    if built is None:
+        raise HTTPException(status_code=404, detail="no price history for that name")
+    return {"user_id": user_id, **built}
 
 
 # The newest earnings release read for one name, straight from the store the
