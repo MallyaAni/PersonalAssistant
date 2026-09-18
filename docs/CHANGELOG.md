@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-09-17 — Execution quality tells the waiting apart from the trading
+
+The block measured every fill against the price its decision was made at
+and called the whole distance execution. A nightly order is decided at
+one session's close and reaches the market at the next session's open, so
+the market's move in between was inside the number: the nine FOMC
+restoration buys read +234 bp, which looked like a disaster and was
+almost entirely the overnight gap. Each fill is now split at the
+benchmark it could first have traded at, and the two parts add back to
+the old total exactly. Drift is decision price to benchmark; slippage is
+benchmark to fill and is the headline. The benchmark follows the way the
+order was sent: the fill session's open for an order queued for the open,
+that session's close for a scheduled sell sent into the closing auction,
+and the reference bar itself for an intraday event cut, whose drift is
+structurally zero. A fill whose benchmark bar is not on file keeps its
+total and reports no split, and `measured` says how many fills the split
+covered, so a partial split never reads as a figure for every fill.
+Drift is display-only: for an overlay fill it is already inside the FOMC
+gate's effect (proved from the two formulas: the gate is fill-to-fill and
+the reference price never enters it), and for a rebalance fill it is
+already inside the account's realised return, so it is never netted into
+a result. `fomc_gate.py` is untouched, since changing it would restart
+the six-meeting count. Two further fixes fell out: a fill is now dated to
+the session it completed in rather than the session it was planned in (a
+09-17 fill was filed under 2026-09-16), and the worst-fills table ranks
+by slippage, since a name that gapped overnight is not an execution
+failure.
+
+Verified on the real September fills, run through the new code against a
+copy of the live paper state and bars: 18 of 18 split, total unchanged at
++115.3 bp / +$454, of which drift +122.2 bp / +$482 and slippage −6.9 bp
+/ −$27. The buys are +243.1 bp drift and −9.0 bp slippage; the intraday
+event sells are 0.0 drift and −4.8 bp slippage. The worst table now leads
+with SNDK (+95.4 bp slippage) rather than AAOI, whose +438.6 bp total was
+a +411.4 bp gap. Tests: `test_execution_quality` 9, including the real
+NVDA restoration fill and the order-type benchmarks; the desk browser
+suite 64/64.
+
 ## 2026-09-17 — The plan cell reads like a trader's note, and an allowlisted account gets the Desk icon
 
 The collapsed Plan cell mixed three voices that fought: the planned trade

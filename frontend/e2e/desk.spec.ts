@@ -438,29 +438,55 @@ test('the FOMC gate shows each meeting against the book without the overlay', as
 
 // Execution against the decision price is a series on the page, by scope
 // and by session, with the sign that makes paying up a cost.
-test('execution quality shows fills against their decision prices', async ({page}) => {
+test('execution quality leads with slippage and shows the drift beside it', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  const agg = (fills: number, bps: number | null, dollars: number) => ({fills, notional: 10000, bps, dollars})
+  // The real September shape: the restoration buys measured +234 bp against
+  // their decision price, of which +243 bp was the overnight gap and -9 bp
+  // was the trading. The page must lead with the -9.
+  const agg = (fills: number, bps: number, dollars: number, slippage: number | null, drift: number | null) =>
+    ({fills, notional: 10000, bps, dollars, measured: slippage === null ? 0 : fills, measured_notional: 10000,
+      slippage_bps: slippage, drift_bps: drift})
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest, sessions: [latest.session], execution_quality: {
-      version: 'execution-quality/1', written: '2026-09-15T21:00:00+00:00', basis: 'signed so that paying up is positive',
-      all_time: agg(12, 6.4, 64), recent: {sessions: 3, ...agg(12, 6.4, 64)},
-      by_kind: {rebalance: agg(3, 12.1, 40), fomc: agg(9, 2.7, 24)},
-      by_side: {buy: agg(3, 12.1, 40), sell: agg(9, 2.7, 24)},
-      series: [{session: '2026-09-10', ...agg(3, 12.1, 40), cumulative_dollars: 40}, {session: '2026-09-14', ...agg(9, 2.7, 24), cumulative_dollars: 64}],
-      worst: [],
+      version: 'execution-quality/2', written: '2026-09-17T23:48:48+00:00',
+      basis: 'slippage is the benchmark to the fill: what the trading cost',
+      all_time: agg(18, 115.3, 454, -6.7, 122.3), recent: {sessions: 2, ...agg(18, 115.3, 454, -6.7, 122.3)},
+      by_kind: {rebalance: agg(0, 0, 0, null, null), fomc: agg(18, 115.3, 454, -6.7, 122.3)},
+      by_side: {buy: agg(9, 234.1, 464, -8.7, 243.1), sell: agg(9, -4.8, -9, -4.8, 0)},
+      series: [{session: '2026-09-17', ...agg(9, 234.1, 464, -8.7, 243.1), cumulative_dollars: 454}],
+      worst: [
+        {session: '2026-09-17', symbol: 'SNDK', side: 'buy', kind: 'fomc', bps: 388.4, dollars: 59, slippage_bps: 92.7},
+        {session: '2026-09-17', symbol: 'AAOI', side: 'buy', kind: 'fomc', bps: 438.6, dollars: 64, slippage_bps: 26.1},
+      ],
     },
   }}))
   await page.goto('/?deskView=research#desk')
   const quality = page.getByLabel('Execution quality')
-  await expect(quality).toContainText('12 fills, +6.4 bp')
+  // The headline is the trading cost, not the overnight move.
+  await expect(quality).toContainText('18 fills, -6.7 bp slippage')
+  await expect(quality).not.toContainText('18 fills, +115.3 bp')
   await quality.locator('summary').click()
+  await expect(quality).toContainText('slippage is the benchmark to the fill')
   const summary = page.getByRole('table', {name: 'Execution summary'})
-  await expect(summary).toContainText('FOMC overlay')
-  await expect(summary).toContainText('+2.7 bp')
+  await expect(summary.getByRole('columnheader', {name: 'Slippage'})).toBeVisible()
+  await expect(summary.getByRole('columnheader', {name: 'Drift'})).toBeVisible()
+  await expect(summary.getByRole('columnheader', {name: 'Total'})).toBeVisible()
+  // The buys row carries all three: bad-looking total, big drift, small slippage.
+  const buys = summary.locator('tbody tr').filter({hasText: 'Buys'})
+  await expect(buys).toContainText('-8.7 bp')
+  await expect(buys).toContainText('+243.1 bp')
+  await expect(buys).toContainText('+234.1 bp')
+  // A kind with no split says so rather than showing a zero.
+  await expect(summary.locator('tbody tr').filter({hasText: 'Scheduled rebalances'})).toContainText('—')
   const bySession = page.getByRole('table', {name: 'Execution by session'})
-  await expect(bySession).toContainText('2026-09-14')
-  await expect(bySession).toContainText('+$64')
+  await expect(bySession).toContainText('2026-09-17')
+  await expect(bySession).toContainText('+$464')
+  // The worst table ranks the worst trading, not the biggest gap.
+  const worst = page.getByRole('table', {name: 'Worst fills'})
+  await expect(worst.locator('tbody tr').first()).toContainText('SNDK')
+  await expect(worst.locator('tbody tr').first()).toContainText('+92.7 bp')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
 // A stale observation cannot erase a durable active cycle from the status heading.

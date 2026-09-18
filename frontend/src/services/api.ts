@@ -2116,7 +2116,16 @@ export interface DeskPayload {
   curve?: DeskCurve;
 }
 
-export interface DeskExecutionAggregate { fills: number; notional: number; dollars: number; bps: number | null; abs_bps?: number | null }
+// Every fill's distance from its decision price, split at the benchmark the
+// order could first have traded at: drift is the market's move while the
+// order waited, slippage is what the trading itself cost. `measured` is how
+// many of the fills the split was available for.
+export interface DeskExecutionAggregate {
+  fills: number; notional: number; dollars: number; bps: number | null; abs_bps?: number | null;
+  measured?: number; measured_notional?: number;
+  drift_bps?: number | null; slippage_bps?: number | null;
+  drift_dollars?: number | null; slippage_dollars?: number | null;
+}
 
 export interface DeskExecutionQuality {
   version: string;
@@ -2126,7 +2135,8 @@ export interface DeskExecutionQuality {
   by_kind: {rebalance: DeskExecutionAggregate; fomc: DeskExecutionAggregate};
   by_side: {buy: DeskExecutionAggregate; sell: DeskExecutionAggregate};
   series: (DeskExecutionAggregate & {session: string; cumulative_dollars: number})[];
-  worst: {session: string; symbol: string; side: string; kind: string; bps: number; dollars: number}[];
+  worst: {session: string; symbol: string; side: string; kind: string; bps: number; dollars: number;
+    slippage_bps?: number | null; drift_bps?: number | null; benchmark_kind?: string}[];
   basis: string;
 }
 
