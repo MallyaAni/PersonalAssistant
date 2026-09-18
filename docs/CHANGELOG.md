@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-18 — Rolled discovery search window and non-US listing filter deployed
+
+Deployed as 8f2ff2a4 and verified on the live system (sweep_journeys and
+exercise_search_scenarios both green post-deploy). The query change is what
+fixes the empty-digest streak: a sweep no longer asks the same question
+every day of the month, so a search engine returns pages it has not returned
+before and the novelty filter has fresh signal. Listing recall on the
+labelled cases moved 0.857 → 0.875 after widening the directory rules to
+non-US `/d/<place>--` slugs and the plural "Events Calendar".
+
 ## 2026-09-17 — Roll the discovery search window and reject non-US directory pages
 
 A Scout sweep asked "VIP bars Canggu, Bali September 2026" every day of
