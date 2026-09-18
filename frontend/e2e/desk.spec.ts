@@ -1108,7 +1108,11 @@ test('share sizing answers without a cash figure and takes one as a limit', asyn
 
   // No typing, no button: the target is on screen, and the whole account is
   // the budget until the trader says otherwise.
-  await expect(page.getByRole('columnheader', {name: 'Still to buy', exact: true})).toBeVisible()
+  // Nothing is held here, so "held" and "target total" would repeat the last
+  // column. One column, named for what it is.
+  await expect(page.getByRole('columnheader', {name: 'Shares', exact: true})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Held', exact: true})).toHaveCount(0)
+  await expect(page.getByRole('columnheader', {name: 'Target total', exact: true})).toHaveCount(0)
   await expect(page.getByText('Buying the whole target costs $5890.00', {exact: false})).toBeVisible()
   await expect(page.getByLabel('Cash ($)')).toHaveCount(0)
   expect(budgets[0]).toBe(100000)
@@ -1122,9 +1126,25 @@ test('share sizing answers without a cash figure and takes one as a limit', asyn
 
   // Clearing the limit returns to the unconstrained target.
   await page.getByLabel('Limit to the cash I can deploy').uncheck()
-  await expect(page.getByRole('columnheader', {name: 'Still to buy', exact: true})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Shares', exact: true})).toBeVisible()
   expect(budgets.at(-1)).toBe(100000)
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Once something IS held, the three columns each say a different thing and
+// all three earn their place.
+test('share sizing separates held from target once a position exists', async ({page}) => {
+  await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
+  await page.route('**/desk/funding-preview', route => route.fulfill({json: {
+    session: '2026-09-08', calculated_at: new Date().toISOString(),
+    estimated_cost: 1900, unallocated_cash: 0, cash_limited: false, price_times: {},
+    rows: [{ticker: 'AAPL', reference_price: 190, held_shares: 21, target_total_shares: 31, additional_shares: 10, estimated_cost: 1900}],
+  }}))
+  await page.goto('/?deskDetails=1#desk')
+  await expect(page.getByRole('columnheader', {name: 'Held', exact: true})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Target total', exact: true})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Still to buy', exact: true})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Shares', exact: true})).toHaveCount(0)
 })
 
 // Keep experimental allocations explicit and clear their results on policy changes.

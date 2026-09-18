@@ -26,6 +26,10 @@ export const FundingPreview = ({ userId, equity, research, paused = false }: { u
   // With no cash limit the whole account is the budget, which is what makes
   // the unconstrained target the default answer rather than a special case.
   const budget = limiting && cash !== '' ? Number(cash) : equity
+  // Whether this account holds anything at all. With no recorded position
+  // the held and target columns carry no information the last column does
+  // not already carry.
+  const anyHeld = (preview?.rows ?? []).some(row => row.held_shares > 0)
 
   const load = useCallback(async (forMode: string, forBudget: number) => {
     setPreview(null)
@@ -103,10 +107,21 @@ export const FundingPreview = ({ userId, equity, research, paused = false }: { u
       {preview.mode === 'intraday_research' && <p className="mb-2 text-xs">Live allocation · valid until {preview.valid_until}. Exposure multiplier {((preview.macro?.exposure ?? 0) * 100).toFixed(0)}%{preview.macro?.defensive ? ' · defensive macro condition active' : ' · no additional macro reduction'}.</p>}
       <p className="text-xs">{preview.mode === 'intraday_research' ? 'Evening context from' : 'Targets from'} {preview.session}. Buying the whole target costs ${preview.estimated_cost.toFixed(2)}.{limiting ? ` Cash left $${preview.unallocated_cash.toFixed(2)}.` : ''}{preview.cash_limited ? ' Additions reduced together to fit the cash limit.' : ''}</p>
       {preview.rows.length ? <table className="mt-2 w-full text-left text-xs">
-        <thead><tr><th>Name</th><th>Price</th><th>Held</th><th>Target total</th><th>{limiting ? 'Buy now' : 'Still to buy'}</th></tr></thead>
+        {/* With nothing recorded, "held" is zero on every row and the target
+            and the amount still to buy are the same number printed twice.
+            Three columns where one is meaningful reads as a mistake, so the
+            table only separates them once there is a position to separate. */}
+        <thead><tr>
+          <th>Name</th><th>Price</th>
+          {anyHeld && <th>Held</th>}
+          {anyHeld && <th>Target total</th>}
+          <th>{anyHeld ? (limiting ? 'Buy now' : 'Still to buy') : (limiting ? 'Buy now' : 'Shares')}</th>
+        </tr></thead>
         <tbody>{preview.rows.map(row => <tr key={row.ticker}>
           <td className="py-2">{row.ticker}</td><td>${row.reference_price.toFixed(2)}<div className="text-[#6e6e73]">{preview.price_times[row.ticker] ? `Bar starts ${preview.price_times[row.ticker]}` : 'Reference time unavailable'}</div></td>
-          <td>{row.held_shares}</td><td>{row.target_total_shares}</td><td>{row.additional_shares}</td>
+          {anyHeld && <td>{row.held_shares}</td>}
+          {anyHeld && <td>{row.target_total_shares}</td>}
+          <td>{row.additional_shares}</td>
         </tr>)}</tbody>
       </table> : <p className="mt-2 text-xs">{paused ? 'No additions while the FOMC cycle is open; the plan resumes when it closes.' : 'No eligible additions under the current targets.'}</p>}
       {!!preview.reductions?.length && <div className="mt-3 text-xs">
