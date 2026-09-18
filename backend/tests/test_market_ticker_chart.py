@@ -187,3 +187,36 @@ def test_the_forming_week_is_drawn_and_flagged():
     built = ticker_chart.payload(_store(closes), "AAA", 6, "weekly")
     assert "last_bar_complete" in built
     assert ticker_chart.payload(_store(closes), "AAA", 6)["last_bar_complete"] is True
+
+
+# The payload crosses a JSON boundary, so every value in it must be a plain
+# Python type. A numpy bool reached `last_bar_complete` on the weekly path
+# and Pydantic refused it: the live weekly chart returned 500 while every
+# test here passed, because the daily branch short-circuits to a real bool
+# and never evaluates the numpy comparison.
+def test_the_payload_is_json_serialisable_on_every_timeframe():
+    import json
+
+    store = _store(list(np.linspace(40.0, 90.0, 320)))
+    for timeframe in ticker_chart.TIMEFRAMES:
+        built = ticker_chart.payload(store, "AAA", 30, timeframe)
+        assert isinstance(built["last_bar_complete"], bool), timeframe
+        assert not isinstance(built["last_bar_complete"], np.generic), timeframe
+        # The whole thing, not just that one field.
+        json.dumps(built)
+
+
+# The live candle is folded in before anything is computed, so the averages
+# include it rather than ending at the last close while the price moves.
+def test_the_live_candle_moves_the_averages_not_just_the_bar():
+    closes = list(np.linspace(100.0, 100.0, 320))  # flat, so any move shows
+    store = _store(closes)
+    flat = ticker_chart.build(store, "AAA", 30)
+    jumped = ticker_chart.build(
+        store, "AAA", 30,
+        live_bar={"session": "2025-03-25", "last": 150.0, "open": 150.0, "high": 151.0, "low": 149.0},
+    )
+    assert jumped.close[-1] == 150.0
+    # The 9-day average must have moved with it, not stayed at the close.
+    assert jumped.overlays["ema9"][-1] > flat.overlays["ema9"][-1]
+    assert jumped.dates[-1] >= flat.dates[-1]

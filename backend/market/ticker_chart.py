@@ -273,9 +273,17 @@ def build(
     return Chart(
         ticker=ticker.upper(),
         timeframe=timeframe,
-        last_bar_complete=(
-            timeframe == DAILY or bool(len(_week_ends(all_dates)))
-            and _week_ends(all_dates)[-1] == len(all_dates) - 1
+        # bool() around the whole thing, not just the length: a numpy
+        # comparison yields numpy.bool_, which Pydantic refuses to
+        # serialise. The daily branch short-circuits to a Python bool and
+        # hid it, so only the weekly timeframe returned a 500 in
+        # production while every test passed.
+        last_bar_complete=bool(
+            timeframe == DAILY
+            or (
+                len(_week_ends(all_dates))
+                and _week_ends(all_dates)[-1] == len(all_dates) - 1
+            )
         ),
         dates=tuple(str(d) for d in dates[cut]),
         open=_clean(open_[cut, 0]),
