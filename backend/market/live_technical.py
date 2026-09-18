@@ -181,6 +181,9 @@ def _live_read(store, quotes: dict, today: date) -> dict:
             "panel": live,
             "opinion": opinion,
             "value": value_opinion,
+            # The theme's trend, kept because the strongest measured dip
+            # edge is a name below its band *while the basket is falling*.
+            "ai_trend": view.ai_trend,
         },
     )
     return _cache["value"]  # type: ignore[return-value]
@@ -623,3 +626,59 @@ def _candle_line(candle: dict) -> str:
     if candle.get("detail"):
         return f"today's daily candle is a {candle['name']}, {candle['detail']}"
     return f"today's daily candle is a {candle['name']}"
+
+
+# Whether this is a moment to start a position, at the live price.
+#
+# `entry.py` measured two triggers on this book and has been in the
+# repository since, used by nothing but the backtest. The grade says what
+# to hold; this says when to begin, and a trader watching a price move has
+# no use for the first without the second. The measured edges, beta
+# adjusted, among names already bullish on fundamentals and tone:
+#
+#   dip, below the lower 20-day band while the basket falls  +2.1% / 5 sessions
+#   dip, more than 8% below the 21-day EMA                   +1.2% / 5 sessions
+#   dip, below the lower 20-day band                         +0.9% / 5 sessions
+#   breakout, top of the 60-session range, trends agreeing   +1.3% / 20 sessions
+#
+# Dips pay inside a week and decay to nothing by twenty sessions; breakouts
+# pay over the month. They are different trades and the horizon is part of
+# the reading, so it is returned rather than left for the reader to recall.
+def entry_now(store, quotes: dict, today: date | None = None) -> dict:
+    """Return {symbol: {...}} entry triggers at the live price."""
+    from backend.agents.trading.desk import entry as entry_analyst
+    from backend.market import levels
+
+    today = today or datetime.now(NEW_YORK).date()
+    read = _live_read(store, quotes, today)
+    panel = read["panel"]
+    location = levels.level_features(panel)
+    triggers = entry_analyst.entries(panel, location)
+    ai_trend = read.get("ai_trend")
+    last = panel.dates.shape[0] - 1
+    falling = bool(
+        ai_trend is not None
+        and np.isfinite(ai_trend[last])
+        and ai_trend[last] < 0
+    )
+    out: dict[str, dict] = {}
+    for symbol in quotes:
+        if symbol not in panel.tickers:
+            continue
+        j = panel.index(symbol)
+        kind = triggers.kind(last, j)
+        z = float(triggers.bollinger_z[last, j])
+        stretch = float(triggers.stretch_21[last, j])
+        if not np.isfinite(z) and not np.isfinite(stretch):
+            continue
+        out[symbol] = {
+            "trigger": kind,
+            # Where the 5-session dip edge was measured strongest.
+            "with_the_basket_falling": falling and kind == entry_analyst.DIP,
+            "band_z": z if np.isfinite(z) else None,
+            "stretch_21": stretch if np.isfinite(stretch) else None,
+            "horizon_sessions": (
+                5 if kind == entry_analyst.DIP else 20 if kind else None
+            ),
+        }
+    return out

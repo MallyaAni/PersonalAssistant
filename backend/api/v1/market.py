@@ -736,6 +736,109 @@ async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
     }
 
 
+# Where every graded name sits as an ENTRY, right now.
+#
+# The board answers "what should I hold". It never answered "is now a time
+# to buy it", which is the question a trader has while a price is moving.
+# The desk has measured that since `entry.py` was written and used it
+# nowhere but the backtest.
+#
+# Ordering is the point of this endpoint, so it is stated rather than left
+# to the browser: a name with a trigger firing comes before one without;
+# a dip comes before a breakout, because the dip edge is larger per session
+# and decays within the week while the breakout's runs a month; a dip while
+# the basket falls comes before an ordinary dip, that being the strongest
+# reading measured; and within a tie the better grade wins, then the deeper
+# position in the band. Names the desk does not want to hold at all are not
+# entries and are left out.
+@router.get("/desk/entries")
+async def desk_entries(
+    user_id: UserId, grades: str = "A+,A"
+) -> dict[str, object]:
+    """Return the graded names ranked by how good an entry they are now."""
+    _operator_only(user_id)
+    latest, _previous = deskrecord.latest_pair(_root())
+    if latest is None:
+        return {"user_id": user_id, "session": None, "rows": [], "reason": "no decision on file"}
+    wanted = {g.strip() for g in grades.split(",") if g.strip()}
+    snap = _live_snapshot() or {}
+    quoted = snap.get("quotes") or {}
+    graded = latest.get("grades") or {}
+    if not quoted:
+        return {
+            "user_id": user_id,
+            "session": latest.get("session"),
+            "as_of": snap.get("as_of"),
+            "rows": [],
+            "reason": "No live quotes this candle; entries need a current price.",
+        }
+
+    class _Quote:
+        def __init__(self, fields: dict) -> None:
+            self.__dict__.update(fields)
+
+    found = {
+        symbol: _Quote(fields)
+        for symbol, fields in quoted.items()
+        if (graded.get(symbol) or {}).get("grade") in wanted
+    }
+    if not found:
+        return {
+            "user_id": user_id,
+            "session": latest.get("session"),
+            "as_of": snap.get("as_of"),
+            "rows": [],
+            "reason": f"No name is graded {' or '.join(sorted(wanted))} right now.",
+        }
+    try:
+        reads = await asyncio.to_thread(
+            live_technical.entry_now, MarketStore(_root()), found
+        )
+    except Exception as exc:  # noqa: BLE001 - the board stands without this
+        raise HTTPException(status_code=503, detail=f"entry read unavailable: {exc}") from exc
+
+    order = {"dip": 0, "breakout": 1, None: 2}
+    rows = []
+    for symbol, read in reads.items():
+        grade = (graded.get(symbol) or {}).get("grade")
+        quote = quoted.get(symbol) or {}
+        rows.append(
+            {
+                "ticker": symbol,
+                "grade": grade,
+                "trigger": read["trigger"],
+                "with_the_basket_falling": read["with_the_basket_falling"],
+                "band_z": read["band_z"],
+                "stretch_21": read["stretch_21"],
+                "horizon_sessions": read["horizon_sessions"],
+                "last": quote.get("last"),
+                "bar": quote.get("bar"),
+            }
+        )
+    grade_rank = {"A+": 0, "A": 1, "B": 2, "C": 3}
+    rows.sort(
+        key=lambda r: (
+            order.get(r["trigger"], 2),
+            0 if r["with_the_basket_falling"] else 1,
+            grade_rank.get(r["grade"], 9),
+            r["band_z"] if r["band_z"] is not None else 9.0,
+        )
+    )
+    return {
+        "user_id": user_id,
+        "session": latest.get("session"),
+        "as_of": snap.get("as_of"),
+        "bar": (next(iter(quoted.values())) or {}).get("bar"),
+        "rows": rows,
+        # What each trigger was worth when it was measured, so the page can
+        # say it rather than implying an entry is free money.
+        "edges": {
+            "dip": {"horizon_sessions": 5, "excess": 0.012, "with_basket_falling": 0.021},
+            "breakout": {"horizon_sessions": 20, "excess": 0.013},
+        },
+    }
+
+
 # One name's drawable price history with the averages and bands the desk
 # scores on. Split from /desk/history deliberately: that endpoint answers
 # "what did the desk conclude", this one answers "what was it looking at",

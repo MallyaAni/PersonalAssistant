@@ -8,6 +8,7 @@ import { ExecutionQuality } from './ExecutionQuality'
 import { BoardSimulation, MlComparison, StockBoard, type BoardEvent } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { TickerChart } from './TickerChart'
+import { EntriesNow } from './EntriesNow'
 import { OpportunityCard } from './OpportunityCard'
 import {
   getDesk,
@@ -956,6 +957,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // cycle's current policy status has not been read.
   const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
     ? Object.values(decisions.rows).filter(row => row.action === 'Buy eligible' && Date.parse(row.valid_until ?? '') > now).length : 0
+  const wideEnoughForSizing = typeof window !== 'undefined' && window.innerWidth >= 1024
   const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
@@ -1058,7 +1060,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           {canWrite && holdingsReady && holdings.length === 0 && !editing && (
             <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
           )}
-          {canWrite && holdingsReady && <details className="mb-1 text-xs"><summary className="cursor-pointer text-[#0071e3]">Calculate shares with available cash</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} paused={Boolean(eventPaused)} /></details>}
+          {canWrite && holdingsReady && <details open={wideEnoughForSizing} className="mb-1 text-xs"><summary className="cursor-pointer text-[#0071e3]">How many shares the targets come to</summary><FundingPreview key={JSON.stringify([userId, equity, holdings, latest.session])} userId={userId} equity={equity} research={payload.intraday_research} paused={Boolean(eventPaused)} /></details>}
   </div> : null
   // The plan for a name on the board: the trade against the recorded position.
   const tradeCell = (ticker: string) => {
@@ -1151,7 +1153,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
 
       {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity}
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity} userId={userId}
           holdings={holdingsReady ? holdings : null} marking={marking !== null}
           onRecordBuy={canWrite && holdingsReady ? recordBuy : undefined}
           saveError={saveError} onOpenName={(t) => setOpenName(t)} />
@@ -1791,6 +1793,7 @@ const EveryGrade = ({
   now,
   decisions,
   equity,
+  userId,
 }: {
   latest: NonNullable<DeskPayload['latest']>
   rows: DeskMineRow[]
@@ -1806,6 +1809,7 @@ const EveryGrade = ({
   now: number
   decisions?: DeskDecisions
   equity: number
+  userId: string
 }) => {
   // Research sizes at the exposure the desk holds during an FOMC cycle, and
   // hidden while that exposure is unknown, the same as the board.
@@ -1840,6 +1844,11 @@ const EveryGrade = ({
   const commonBar = barTimes.length === 1 ? marketTime(barTimes[0]) : null
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      {/* The entry read first. The rankings below say what the desk wants to
+          hold, which is a different question from whether now is a moment to
+          buy it, and the line beneath them has always admitted as much:
+          "grades are not entry signals". This is the signal they are not. */}
+      <EntriesNow userId={userId} onOpen={onOpenName} />
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
       <p className="mb-2 text-xs text-[#6e6e73]">{Object.keys(liveGrades).length}/{grades.length} fresh{commonBar ? ` · bars ${commonBar}` : ''}{Object.keys(liveGrades).length < grades.length ? ` · other grades: ${latest.session} close` : ''} · grades are not entry signals.</p>
       <details className="mb-3 text-xs text-[#6e6e73]">

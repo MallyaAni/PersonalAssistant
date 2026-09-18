@@ -2525,6 +2525,53 @@ export const getDeskHistory = async (userId: string, ticker: string): Promise<De
   return (await response.json()) as DeskHistory;
 };
 
+// Where each name the desk wants to hold sits as an ENTRY, right now.
+// The board answers what to hold; this answers whether now is a moment to
+// start, which is the question while a price is moving. Ranked server-side,
+// because the ordering encodes which measured edge is larger.
+export interface DeskEntryRow {
+  ticker: string;
+  grade: string | null;
+  // "dip", "breakout", or null when neither trigger is firing.
+  trigger: 'dip' | 'breakout' | null;
+  // The strongest measured dip reading: below the band while the AI basket
+  // is falling.
+  with_the_basket_falling: boolean;
+  // Position in the 20-day band: -1 at the lower edge, +1 at the upper.
+  band_z: number | null;
+  // Close against the 21-day EMA, as a fraction.
+  stretch_21: number | null;
+  horizon_sessions: number | null;
+  last: number | null;
+  bar: string | null;
+}
+
+export interface DeskEntries {
+  user_id: string;
+  session: string | null;
+  as_of?: string | null;
+  bar?: string | null;
+  rows: DeskEntryRow[];
+  reason?: string;
+  edges?: {
+    dip: { horizon_sessions: number; excess: number; with_basket_falling: number };
+    breakout: { horizon_sessions: number; excess: number };
+  };
+}
+
+export const getDeskEntries = async (
+  userId: string,
+  grades = 'A+,A',
+): Promise<DeskEntries> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/entries?grades=${encodeURIComponent(grades)}`,
+  );
+  if (!response.ok) {
+    return { user_id: userId, session: null, rows: [], reason: `Entries unavailable (HTTP ${response.status}).` };
+  }
+  return (await response.json()) as DeskEntries;
+};
+
 // One name's drawable price history: the bars a trader looks at, plus the
 // averages, bands and levels the analysts actually score on. Split from the
 // history call on purpose — that one answers what the desk concluded, this

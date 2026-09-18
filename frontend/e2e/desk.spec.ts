@@ -731,6 +731,19 @@ test.beforeEach(async ({ page }) => {
     // flip every assertion with the time of day; an explicit choice is stable.
     localStorage.setItem('anios.theme', 'light')
   })
+  // The board reads the entry triggers on every render. A test that is not
+  // about entries still needs the request answered, or the browser logs a
+  // failed fetch into the console check. Tests about entries override this.
+  // Share sizing now answers on arrival rather than waiting for a cash
+  // figure, so every desk render asks for it. Tests about sizing override it.
+  await page.route('**/desk/funding-preview', route => route.fulfill({json: {
+    session: '2026-09-08', calculated_at: new Date().toISOString(),
+    estimated_cost: 0, unallocated_cash: 0, cash_limited: false, rows: [], price_times: {},
+  }}))
+  await page.route('**/desk/entries*', route => route.fulfill({json: {
+    user_id: USER, session: '2026-09-08', rows: [],
+    reason: 'No live quotes this candle; entries need a current price.',
+  }}))
   await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -1072,32 +1085,45 @@ test('separates dated inflation facts from research-only model judgement', async
 })
 
 // Confirm cash explicitly and discard the preview whenever the budget changes.
-test('previews one confirmed cash budget and clears changed inputs', async ({ page }) => {
+// The share count does not depend on free cash: the target is a percentage
+// of the account and the equity is known, so the answer exists on arrival.
+// Cash only ever answered the second question - how much of that target can
+// be reached today - so it is an optional limit, not a gate in front of it.
+test('share sizing answers without a cash figure and takes one as a limit', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
+  const budgets: number[] = []
   await page.route('**/desk/funding-preview', route => {
-    expect(route.request().postDataJSON()).toEqual({ equity: 100000, available_cash: 200 })
+    const body = route.request().postDataJSON()
+    budgets.push(body.available_cash)
+    const limited = body.available_cash < 100000
     return route.fulfill({json: {
-      session: '2026-09-08', calculated_at: new Date().toISOString(), estimated_cost: 190,
-      unallocated_cash: 10, cash_limited: true, price_times: {},
-      rows: [{ticker: 'AAPL', reference_price: 190, held_shares: 0, target_total_shares: 31, additional_shares: 1, estimated_cost: 190}],
+      session: '2026-09-08', calculated_at: new Date().toISOString(),
+      estimated_cost: limited ? 190 : 5890, unallocated_cash: limited ? 10 : 94110,
+      cash_limited: limited, price_times: {},
+      rows: [{ticker: 'AAPL', reference_price: 190, held_shares: 0, target_total_shares: 31, additional_shares: limited ? 1 : 31, estimated_cost: 190}],
     }})
   })
   await page.goto('/?deskDetails=1#desk')
-  const cash = page.getByLabel('Available cash to allocate ($)')
-  await page.getByText('Calculate shares with available cash', {exact: true}).click()
-  await cash.fill('200')
-  await page.getByRole('button', {name: 'Confirm cash and preview'}).click()
-  await expect(page.getByText('Additions reduced together to fit cash.', {exact: false})).toBeVisible()
-  await expect(page.getByRole('columnheader', {name: 'Additional shares', exact: true})).toBeVisible()
-  await cash.fill('100')
-  await expect(page.getByRole('columnheader', {name: 'Additional shares', exact: true})).toHaveCount(0)
-  await page.waitForLoadState('networkidle')
-  // This fixture has no saved conversation; leave every desk storage key intact.
-  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
-  await page.reload()
-  await page.getByText('Calculate shares with available cash', {exact: true}).click()
-  await expect(cash).toHaveValue('')
+
+  // No typing, no button: the target is on screen, and the whole account is
+  // the budget until the trader says otherwise.
+  await expect(page.getByRole('columnheader', {name: 'Still to buy', exact: true})).toBeVisible()
+  await expect(page.getByText('Buying the whole target costs $5890.00', {exact: false})).toBeVisible()
+  await expect(page.getByLabel('Cash ($)')).toHaveCount(0)
+  expect(budgets[0]).toBe(100000)
+
+  // The limit is opt-in, and constrains the same answer rather than gating it.
+  await page.getByLabel('Limit to the cash I can deploy').check()
+  await page.getByLabel('Cash ($)').fill('200')
+  await expect(page.getByText('Additions reduced together to fit the cash limit.', {exact: false})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Buy now', exact: true})).toBeVisible()
+  expect(budgets.at(-1)).toBe(200)
+
+  // Clearing the limit returns to the unconstrained target.
+  await page.getByLabel('Limit to the cash I can deploy').uncheck()
+  await expect(page.getByRole('columnheader', {name: 'Still to buy', exact: true})).toBeVisible()
+  expect(budgets.at(-1)).toBe(100000)
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -1105,7 +1131,11 @@ test('previews one confirmed cash budget and clears changed inputs', async ({ pa
 test('research sizing displays reductions and clears the previous policy', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/desk/funding-preview', route => {
-    expect(route.request().postDataJSON().mode).toBe('intraday_research')
+    const mode = route.request().postDataJSON().mode
+    if (mode !== 'intraday_research') return route.fulfill({json: {
+      mode: 'evening', session: '2026-09-08', calculated_at: new Date().toISOString(),
+      estimated_cost: 0, unallocated_cash: 0, rows: [], price_times: {},
+    }})
     return route.fulfill({json: {
       mode: 'intraday_research', session: '2026-09-08', calculated_at: new Date().toISOString(),
       valid_until: new Date(Date.now() + 600000).toISOString(), macro: {exposure: .5, defensive: true},
@@ -1114,11 +1144,8 @@ test('research sizing displays reductions and clears the previous policy', async
     }})
   })
   await page.goto('/?deskDetails=1#desk')
-  await page.getByText('Calculate shares with available cash', {exact: true}).click()
   await page.getByLabel('Sizing policy').selectOption('intraday_research')
-  await expect(page.getByText('Research only · current technical sizing', {exact: false})).toBeVisible()
-  await page.getByLabel('Available cash to allocate ($)').fill('0')
-  await page.getByRole('button', {name: 'Confirm cash and preview'}).click()
+  await expect(page.getByText('Sized on the current bar’s technical read', {exact: false})).toBeVisible()
   await expect(page.getByText('defensive macro condition active', {exact: false})).toBeVisible()
   await expect(page.getByText('AAPL: 20 held → 10 target shares · reduction 10')).toBeVisible()
   await page.getByLabel('Sizing policy').selectOption('evening')
@@ -1132,9 +1159,6 @@ test('research sizing displays reductions and clears the previous policy', async
 test('a refused preview surfaces the backend reason', async ({ page }) => {
   await page.route('**/desk/funding-preview', route => route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({detail: 'No evening decision is available'}) }))
   await page.goto('/?deskDetails=1#desk')
-  await page.getByText('Calculate shares with available cash', {exact: true}).click()
-  await page.getByLabel('Available cash to allocate ($)').fill('200')
-  await page.getByRole('button', {name: 'Confirm cash and preview'}).click()
   await expect(page.getByText('No evening decision is available')).toBeVisible()
 })
 

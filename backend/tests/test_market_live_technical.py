@@ -400,3 +400,86 @@ def test_the_short_read_sees_the_nine_day_ema_turn(monkeypatch):
     assert any(
         line.startswith("the 9-day EMA is") and "narrowing" in line for line in short
     )
+
+
+# The entry read: is this a moment to start, at the live price.
+#
+# `entry.py` has measured two triggers on this book since it was written and
+# was called by nothing but the backtest, so the board could say a name was
+# A+ without ever saying whether now was a time to buy it. These tests pin
+# the wiring and the classification, not the thresholds, which belong to
+# the analyst.
+def _long_panel(paths: dict[str, np.ndarray]) -> Panel:
+    names = tuple(paths) + ("SPY",)
+    rows = len(next(iter(paths.values())))
+    close = np.column_stack([*paths.values(), np.full(rows, 400.0)])
+    dates = np.array(
+        [np.datetime64("2025-01-01", "D") + np.timedelta64(i, "D") for i in range(rows)]
+    )
+    return Panel(
+        dates=dates,
+        tickers=names,
+        open=close,
+        high=close * 1.01,
+        low=close * 0.99,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1000.0),
+        themes={n: () for n in names},
+        benchmark="SPY",
+    )
+
+
+def _entry_read(monkeypatch, panel, ai_trend=None):
+    trend = ai_trend if ai_trend is not None else np.zeros(panel.dates.shape[0])
+    monkeypatch.setattr(
+        live_technical,
+        "_live_read",
+        lambda store, quotes, today: {"panel": panel, "ai_trend": trend},
+    )
+    quotes = {n: SimpleNamespace(last=1.0, bar="x") for n in panel.tickers}
+    return live_technical.entry_now(None, quotes, date(2026, 9, 18))
+
+
+# A name that has run up and then dropped hard under its 21-day average is
+# a dip, and the dip edge was measured over five sessions.
+def test_a_sharp_drop_below_the_21_day_average_is_a_dip(monkeypatch):
+    climb = np.linspace(100.0, 200.0, 290)
+    drop = np.linspace(200.0, 150.0, 10)  # ~25% under the 21 EMA by the end
+    out = _entry_read(monkeypatch, _long_panel({"AAA": np.concatenate([climb, drop])}))
+    assert out["AAA"]["trigger"] == "dip"
+    assert out["AAA"]["horizon_sessions"] == 5
+    assert out["AAA"]["stretch_21"] < -0.08
+    assert out["AAA"]["band_z"] < -1.0
+
+
+# A name at the top of its 60-session range with both trends up is a
+# breakout, and that edge was measured over twenty sessions.
+def test_a_name_at_the_top_of_its_range_in_an_agreed_trend_is_a_breakout(monkeypatch):
+    out = _entry_read(monkeypatch, _long_panel({"AAA": np.linspace(100.0, 300.0, 300)}))
+    assert out["AAA"]["trigger"] == "breakout"
+    assert out["AAA"]["horizon_sessions"] == 20
+
+
+# The strongest measured dip edge is a name below its band *while the
+# basket is falling*, so that condition is reported rather than left for
+# the reader to remember.
+def test_a_dip_while_the_basket_falls_is_marked(monkeypatch):
+    path = np.concatenate([np.linspace(100.0, 200.0, 290), np.linspace(200.0, 150.0, 10)])
+    panel = _long_panel({"AAA": path})
+    rows = panel.dates.shape[0]
+    calm = _entry_read(monkeypatch, panel, ai_trend=np.full(rows, 0.1))
+    assert calm["AAA"]["with_the_basket_falling"] is False
+    falling = _entry_read(monkeypatch, panel, ai_trend=np.full(rows, -0.1))
+    assert falling["AAA"]["with_the_basket_falling"] is True
+
+
+# A name doing neither has no trigger and no horizon, and still reports
+# where it sits, because "nothing yet" is an answer a trader can act on.
+def test_a_name_with_no_trigger_still_reports_where_it_sits(monkeypatch):
+    rng = np.random.default_rng(3)
+    flat = 100.0 * np.exp(np.cumsum(rng.normal(0.0, 0.002, 300)))
+    out = _entry_read(monkeypatch, _long_panel({"AAA": flat}))
+    assert out["AAA"]["trigger"] is None
+    assert out["AAA"]["horizon_sessions"] is None
+    assert out["AAA"]["band_z"] is not None
