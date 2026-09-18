@@ -2,6 +2,10 @@ import { Fragment, useRef, useState, type ReactNode } from 'react'
 import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
 
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
+type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight'
+// The natural first direction for each column: a name list reads A to Z, a
+// measure reads biggest first.
+const DESCENDING_FIRST: Record<SortColumn, boolean> = {ticker: false, grade: true, opportunity: true, plan: false, weight: true}
 
 // Format a portfolio weight without rounding a small positive allocation to zero.
 const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `${(weight * 100).toFixed(1)}%`
@@ -11,7 +15,10 @@ const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `
 // against. This is the row a trader scans for, so it sits beside the price.
 const ChangeMark = ({ last, close }: { last: number; close: number | null | undefined }) => {
   if (close == null || close <= 0 || !Number.isFinite(last)) return null
-  const change = (last / close - 1) * 100
+  const raw = (last / close - 1) * 100
+  // Below a twentieth of a point the row would print a signed zero, which
+  // reads as a move that did not happen.
+  const change = Math.abs(raw) < 0.05 ? 0 : raw
   const up = change > 0
   const down = change < 0
   const cls = up ? 'text-[#1e7a3a]' : down ? 'text-[#b42318]' : 'text-[#6e6e73]'
@@ -58,8 +65,36 @@ export const MlComparison = ({ml}: {ml?: DeskPayload['ml_forward']}) => {
     </details>
 }
 
+// A column heading that sorts. It says which way it is sorting, and a third
+// click hands the board back to the desk's own ranking.
+const SortHead = ({column, sort, onSort, children, className = '', title}: {
+  column: SortColumn
+  sort: {column: SortColumn; descending: boolean} | null
+  onSort: (next: {column: SortColumn; descending: boolean} | null) => void
+  children: ReactNode
+  className?: string
+  title?: string
+}) => {
+  const active = sort?.column === column
+  return <th className={className} aria-sort={!active ? 'none' : sort!.descending ? 'descending' : 'ascending'}>
+    <button
+      type="button"
+      title={title}
+      className="flex items-center gap-1 font-normal hover:text-[#0071e3]"
+      onClick={() => onSort(
+        !active ? {column, descending: DESCENDING_FIRST[column]}
+        : sort!.descending === DESCENDING_FIRST[column] ? {column, descending: !DESCENDING_FIRST[column]}
+        : null,
+      )}
+    >
+      {children}
+      <span aria-hidden="true" className={active ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{!active ? '↕' : sort!.descending ? '↓' : '↑'}</span>
+    </button>
+  </th>
+}
+
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, closes, extraNames = []}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
@@ -78,6 +113,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   toolbar?: ReactNode;
   trade?: (ticker: string) => ReactNode;
   footer?: ReactNode;
+  // What the Plan column says for a name, so that column can sort.
+  planAction?: (ticker: string) => string;
   // Each name's last close, to show today's move against it on the row.
   closes?: Record<string, number | null>;
   // Names the account holds that the desk does not grade: listed last,
@@ -91,6 +128,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const [query, setQuery] = useState('')
   const [visible, setVisible] = useState(10)
   const [opened, setOpened] = useState<string | null>(null)
+  // Any column sorts on a click: first click takes the useful direction for
+  // that column (best grade, biggest score, biggest size, A to Z), a second
+  // reverses it, a third returns to the desk's own ranking.
+  const [sort, setSort] = useState<{column: SortColumn; descending: boolean} | null>(null)
   const pending = useRef(false)
   // A research size is shown only while it is current for that one name: the
   // allocation was built on a single bar, so a name whose own live quote does
@@ -166,8 +207,29 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // search looks for a name, not for uninvested cash.
   const searchText = query.trim().toLowerCase()
   const filtered = searchText ? stocks.filter((s) => s.ticker.toLowerCase().includes(searchText)) : stocks
-  const ranked = [...filtered]
-  if (!searchText) ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
+  // A chosen column replaces the desk's ranking; a name the column cannot
+  // measure sorts to the bottom either way, so a dash never leads the board.
+  const sorted = !sort ? filtered : [...filtered].sort((a, b) => {
+    const missing = (row: typeof a) =>
+      sort.column === 'opportunity' ? row.opportunity === null
+      : sort.column === 'weight' ? row.weight === null
+      : sort.column === 'grade' ? !row.grade
+      : false
+    if (missing(a) !== missing(b)) return missing(a) ? 1 : -1
+    const of = (row: typeof a) =>
+      sort.column === 'ticker' ? row.ticker
+      : sort.column === 'grade' ? (ORDER[row.grade] ?? -1)
+      : sort.column === 'opportunity' ? (row.opportunity ?? -Infinity)
+      : sort.column === 'plan' ? (planAction?.(row.ticker) ?? '')
+      : (row.weight ?? -Infinity)
+    const left = of(a), right = of(b)
+    const order = typeof left === 'string' && typeof right === 'string'
+      ? left.localeCompare(right as string)
+      : (left as number) - (right as number)
+    return (sort.descending ? -order : order) || a.ticker.localeCompare(b.ticker)
+  })
+  const ranked = [...sorted]
+  if (!searchText && !sort) ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
   const bar = showSizes && !marketClosed ? research!.bar : live.data_at
   const time = bar ? new Date(bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
@@ -182,7 +244,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
-            <th colSpan={6} className="py-2 pr-3 font-normal">
+            <th colSpan={7} className="py-2 pr-3 font-normal">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="search"
@@ -196,7 +258,15 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               </div>
             </th>
           </tr>
-          <tr><th className="py-2">#</th><th>Stock</th><th className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts.">Opportunity</th><th title="The desk's plan for this name against your recorded position">Plan</th><th title="Percentage of total portfolio value, not an order quantity">Size %</th><th><span className="sr-only">Record purchase</span></th></tr>
+          <tr>
+            <th className="py-2">#</th>
+            <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
+            <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current`}>Grade</SortHead>
+            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at the current bar, 0 to 10. Not a return forecast; open the name for the parts.">Opportunity</SortHead>
+            <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name against your recorded position">Plan</SortHead>
+            <SortHead column="weight" sort={sort} onSort={setSort} title="Percentage of total portfolio value, not an order quantity. A graded name with no size was not picked by the sizing engine, which ranks on the continuous score rather than on the grade.">Size %</SortHead>
+            <th><span className="sr-only">Record purchase</span></th>
+          </tr>
         </thead>
         <tbody>{ranked.map((row, index) => {
           // A held position stays on the board even beyond the current
@@ -211,17 +281,21 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           return <Fragment key={row.ticker}><tr className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
-              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}<span title={grades[row.ticker] ? 'Intraday grade' : `Grade at ${latest.session} close`} className="ml-1.5 text-[10px] font-normal text-[#6e6e73]">{row.grade}</span></button>}
+              {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
+            <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} grade`}>{isCash ? '' : <span title={grades[row.ticker] ? 'Intraday grade' : `Grade at the ${latest.session} close`} className={grades[row.ticker] ? 'font-medium text-[#1d1d1f]' : ''}>{row.grade}{grades[row.ticker] ? ' ·' : ''}</span>}</td>
             <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : '—'}</td>
             <td className="text-xs">{isCash ? 'Hold'
               : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
               : action(row.ticker, row.weight))}</td>
-            <td className="text-xs">{row.weight === null ? '—' : percentage(row.weight)}</td>
+            <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
+              : isCash ? '—'
+              : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
+              : <span className="text-[#6e6e73]" title="Graded, but the sizing engine did not pick it: names are sized on the continuous score, and the grade is a multiplier on top">not in the book</span>}</td>
             <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
-          {open && expand && <tr><td colSpan={6} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
+          {open && expand && <tr><td colSpan={7} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
           </Fragment>
         })}</tbody>
       </table>

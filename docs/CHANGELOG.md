@@ -9,6 +9,27 @@ every day of the month, so a search engine returns pages it has not returned
 before and the novelty filter has fresh signal. Listing recall on the
 labelled cases moved 0.857 → 0.875 after widening the directory rules to
 non-US `/d/<place>--` slugs and the plural "Events Calendar".
+## 2026-09-18 — The board sorts, the grade gets a column, and the plan says something a trader can read
+
+Clicked through every control on the live desk and read the words. The
+board now has a Grade column of its own, and every column sorts on a
+click: first click takes the useful direction, second reverses, third
+hands the list back to the desk's ranking. A name the sizing engine did
+not pick shows "not in the book" instead of a bare dash, because six
+A-grade names carry no weight (the engine ranks on the continuous score
+and the grade is a multiplier on top) and an em-dash read as missing
+data. The plan toolbar used to render as "Portfolio plannot due yetin 15
+trading daysIEX 15-minute bar starting Sep 17, 03:45 PM ETlast known data
+· not current"; it now reads "Next rebalance in 15 sessions. Until then
+these are targets, not trades. Market closed; prices are the 3:45 PM
+bar." The plan cell said four contradicting things at once ("BUY / 1
+share / not scheduled yet / Wait · Invalid or empty quote"): the schedule
+now reads "at the next rebalance", and the broker's raw refusal text no
+longer reaches the page at all once the market is closed. "said" was
+internal jargon on two badges and in the legend; it reads "published",
+with the replay explained in a sentence. A flat price no longer prints
+"-0.0%". The FOMC block no longer claims a reduction is executing when
+none is. Desk browser suite 66/66.
 
 ## 2026-09-17 — Roll the discovery search window and reject non-US directory pages
 
