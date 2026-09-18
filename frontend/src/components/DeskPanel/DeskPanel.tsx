@@ -687,6 +687,16 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         </dd>
       </div>
       <div>
+        <dt className="font-medium">Selling</dt>
+        <dd className="text-[#6e6e73]">
+          There is no sell signal, on purpose. The desk screened twenty-one exit triggers, from price
+          crossing every average to its own grade and rank falling, and not one was followed by a fall:
+          holding a name graded B or better beat the benchmark by 1.95% over the next twenty sessions,
+          and every trigger raised that number rather than lowering it. An exit overlay cost 3.0% a year
+          and lowered Sharpe in five of six years. The rebalance is the exit.
+        </dd>
+      </div>
+      <div>
         <dt className="font-medium">Size %</dt>
         <dd className="text-[#6e6e73]">
           Share of the whole account, not an order quantity. &ldquo;Not in the book&rdquo; means the name is
