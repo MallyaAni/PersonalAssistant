@@ -20,6 +20,8 @@ from backend.market.technical import _weekly_ema, ema
 
 LEVEL_NAMES: tuple[str, ...] = (
     "support_distance",
+    "support_gap",
+    "band_position",
     "resistance_distance",
     "reward_risk",
     "range_position_60",
@@ -85,6 +87,54 @@ def _nearest(
     return out
 
 
+# The distance to the nearest swing low, keeping the level when price
+# crosses it. `_nearest` takes the highest swing low strictly BELOW the
+# close, so a close that ticks under its support discards that level and
+# jumps to the next one far beneath; the measure then sawtooths, and a
+# name can score better for falling. This keeps whichever swing low is
+# nearest in absolute terms and signs the distance: positive above the
+# level, negative below it, continuous through the crossing.
+def _nearest_signed(levels: np.ndarray, close: np.ndarray, lookback: int) -> np.ndarray:
+    """Return the signed distance to the nearest swing low, as a fraction."""
+    rows, cols = close.shape
+    out = np.full((rows, cols), np.nan)
+    for t in range(rows):
+        window = levels[max(0, t - lookback + 1) : t + 1]
+        if not len(window):
+            continue
+        with np.errstate(invalid="ignore"):
+            gap = (close[t] - window) / close[t]
+            nearest = np.nanargmin(
+                np.where(np.isfinite(gap), np.abs(gap), np.inf), axis=0
+            )
+            picked = gap[nearest, np.arange(cols)]
+        out[t] = np.where(np.isfinite(picked), picked, np.nan)
+    return out
+
+
+# Where the close sits inside its own recent range of variation: the
+# Bollinger position, zero at the lower band and one at the upper. It is
+# continuous by construction, so no level dropping out can move it, and it
+# says what a trader means by "stretched" without depending on which swing
+# points happen to be on file.
+def band_position(
+    close: np.ndarray, window: int = 20, deviations: float = 2.0
+) -> np.ndarray:
+    """Return (T, N) position in the close's own band, 0 at the lower edge."""
+    rows = close.shape[0]
+    out = np.full(close.shape, np.nan)
+    for t in range(window - 1, rows):
+        piece = close[t - window + 1 : t + 1]
+        with np.errstate(invalid="ignore"):
+            middle = np.nanmean(piece, axis=0)
+            spread = np.nanstd(piece, axis=0)
+        width = 2.0 * deviations * spread
+        with np.errstate(invalid="ignore", divide="ignore"):
+            position = (close[t] - (middle - deviations * spread)) / width
+        out[t] = np.where(np.isfinite(width) & (width > 0), position, np.nan)
+    return out
+
+
 # Slope over `n` sessions as a fraction of the level.
 def _slope(x: np.ndarray, n: int) -> np.ndarray:
     out = np.full_like(x, np.nan)
@@ -114,6 +164,9 @@ def level_features(panel: Panel) -> np.ndarray:
             support = np.fmax(support, candidate)
         resistance = _nearest(swing_high, close, False, LEVEL_LOOKBACK)
         support_distance = (close - support) / close
+    support_gap = _nearest_signed(swing_low, close, LEVEL_LOOKBACK)
+    band = band_position(close)
+    with np.errstate(invalid="ignore", divide="ignore"):
         resistance_distance = (resistance - close) / close
         reward_risk = resistance_distance / np.maximum(support_distance, 0.01)
         high60 = _rolling(high, 60, largest=True)
@@ -157,6 +210,8 @@ def level_features(panel: Panel) -> np.ndarray:
     return np.stack(
         [
             support_distance,
+            support_gap,
+            band,
             resistance_distance,
             reward_risk,
             range_position,

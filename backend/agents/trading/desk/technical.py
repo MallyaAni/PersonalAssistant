@@ -35,6 +35,12 @@ from backend.market.panel import Panel
 NAME = "technical"
 MOMENTUM_SESSIONS = 120
 MOMENTUM_SKIP = 21
+# Which measure plays the stretch role while the theme falls. "support" is
+# the original nearest-swing-low distance, which sawtooths as levels drop in
+# and out; "signed" keeps the level through the crossing; "band" is the
+# close's position in its own twenty-session band; "none" drops the leg.
+# Measured before adoption; see docs/research/stretch-leg-*.md.
+STRETCH_LEG = "support"
 LOCATION_CITED = (
     "support_distance",
     "resistance_distance",
@@ -78,9 +84,7 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
     # session's largest distance rather than zero. Rows with no finite
     # distance stay -inf and fall to the zero below, never warning.
     with np.errstate(all="ignore"):
-        worst = np.max(
-            np.where(np.isfinite(stretch), stretch, -np.inf), axis=1
-        )
+        worst = np.max(np.where(np.isfinite(stretch), stretch, -np.inf), axis=1)
     worst = np.where(np.isfinite(worst), worst, 0.0)
     stretch = np.where(
         np.isfinite(stretch) | ~np.isfinite(panel.adj_close),
@@ -88,7 +92,17 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
         worst[:, None],
     )
     # Falling theme: the stretch fade is the best leg and joins the trends.
-    falling = baselines.rank_blend(weekly, daily, momentum, -stretch)
+    if STRETCH_LEG == "signed":
+        fade = -loc[:, :, lidx["support_gap"]]
+    elif STRETCH_LEG == "band":
+        fade = -loc[:, :, lidx["band_position"]]
+    else:
+        fade = -stretch
+    falling = (
+        baselines.rank_blend(weekly, daily, momentum)
+        if STRETCH_LEG == "none"
+        else baselines.rank_blend(weekly, daily, momentum, fade)
+    )
     if ai_trend is None:
         scores = falling
     else:
