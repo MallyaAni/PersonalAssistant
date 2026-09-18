@@ -67,6 +67,17 @@ def test_decision_requires_every_gate(block):
     assert result["target_weight"] == 0.1
 
 
+# A decision written on the evening of its own session is current, not
+# "outdated" until the next session: the nightly record carries today's date.
+def test_just_written_decision_is_current():
+    record, snapshot, quoted, now = setup()
+    record["session"] = "2026-09-14"
+    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
+        "S11"
+    ]
+    assert "Nightly decision outdated" not in result.get("reason", "")
+
+
 # IEX is the only feed the account can read; its quotes pass the gate, labelled.
 def test_iex_quote_passes_the_gate():
     record, snapshot, quoted, now = setup()

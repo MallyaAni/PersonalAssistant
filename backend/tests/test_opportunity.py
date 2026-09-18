@@ -63,9 +63,11 @@ def test_score_moves_with_current_evidence_and_explains_weights():
     assert "not a predicted return" in later["method"]
 
 
-# Missing or expired evidence is unknown, not a neutral or impressive invented score.
+# Missing or expired evidence is not "not scored": whatever reading exists
+# still shows, dated to its bar. A name with no analyst reading at all stays
+# unavailable rather than inventing a score.
 @pytest.mark.parametrize("issue", ["missing", "expired", "no_live"])
-def test_score_fails_closed_for_missing_or_expired_inputs(issue):
+def test_the_reading_survives_missing_or_expired_inputs(issue):
     grade = {"ranks": {name: 0.9 for name in opportunity.grading.ANALYST_WEIGHTS}}
     live = {"ranks_live": dict(grade["ranks"]), "technical_now": 0.9}
     deadline = NOW + timedelta(minutes=15)
@@ -78,8 +80,19 @@ def test_score_fails_closed_for_missing_or_expired_inputs(issue):
     result = opportunity.explain(
         grade, live, {"last": 100}, deadline.isoformat(), NOW, "2026-09-11"
     )
+    assert result["score"] is not None
+    assert result["status"] == "indicative"
+    assert 0 <= result["score"] <= 10
+
+
+# A name with no analyst reading at all is unknown, not a neutral score.
+def test_no_reading_at_all_is_unavailable():
+    result = opportunity.explain(
+        {"ranks": {}}, None, {"last": 100}, NOW.isoformat(), NOW, "2026-09-11"
+    )
     assert result["score"] is None
     assert result["status"] == "unavailable"
+    assert result["last_score"] is None
 
 
 # After the candle's deadline the score is not current, but the evidence
@@ -96,11 +109,16 @@ def test_the_last_score_survives_the_deadline():
         NOW,
         "2026-09-11",
     )
-    assert result["score"] is None
-    assert result["status"] == "unavailable"
+    assert result["score"] == result["last_score"]
+    assert result["status"] == "indicative"
+    assert result["price"] is None
     assert 5 < result["last_score"] <= 10
+    # A missing analyst renormalizes over the analysts that do have a
+    # reading: the name is scored on the rest rather than dropped entirely.
     live["ranks_live"].pop("value")
     missing = opportunity.explain(
         grade, live, {"last": 100}, NOW.isoformat(), NOW, "2026-09-11"
     )
-    assert missing["last_score"] is None
+    assert missing["last_score"] is not None
+    assert "value" in missing["missing"]
+    assert 0 <= missing["score"] <= 10

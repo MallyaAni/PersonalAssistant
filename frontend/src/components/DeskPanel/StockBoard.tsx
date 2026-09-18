@@ -107,19 +107,23 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const exposure = paused && event.exposure !== null ? event.exposure : 1
   // Sizes are the 15-minute model allocations and stay on the board once
   // collected for this decision: through the close and through a gap in the
-  // candle run, so the column never blanks between sessions. Only a change
-  // of decision, or a hidden FOMC exposure, drops them.
+  // candle run, so the column never blanks between sessions. Before the
+  // candle run has produced an allocation for the current decision (a new
+  // nightly record, overnight, pre- or post-market) the board shows the
+  // adopted plan's target weights instead, so the column always reads.
   const marketClosed = !marketOpenAt(now)
   const showSizes = research?.session === latest.session && !!research?.targets
+  const planTargets = Object.fromEntries((latest.book ?? []).map(b => [b.ticker, b.weight]))
   const weightOf = (ticker: string) => {
-    if (!showSizes || hidden) return null
-    if (!marketClosed && research!.bar !== live.quotes[ticker]?.bar) return null
-    const weight = research!.targets?.[ticker]
+    if (hidden) return null
+    const weights = showSizes ? (research!.targets ?? {}) : planTargets
+    if (showSizes && !marketClosed && research!.bar !== live.quotes[ticker]?.bar) return null
+    const weight = weights[ticker]
     return Number.isFinite(weight) && (weight as number) >= 0 ? (weight as number) * exposure : null
   }
   const graded = Object.keys(latest.grades)
-  const sizedNames = showSizes && !hidden ? graded.filter(ticker => weightOf(ticker) !== null) : []
-  const fullCoverage = sizedNames.length === graded.length && graded.length > 0
+  const sizedNames = !hidden ? graded.filter(ticker => weightOf(ticker) !== null) : []
+  const fullCoverage = showSizes && sizedNames.length === graded.length && graded.length > 0
   const gross = fullCoverage ? Object.values(research!.targets ?? {}).reduce((sum, weight) => sum + weight, 0) * exposure : null
   const sized = fullCoverage && gross !== null && gross <= 1.000001
   const fomcLine = !paused ? null
@@ -127,14 +131,17 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : event.exposure === null ? 'FOMC cycle in progress · sizes paused until the policy status is current'
     : event.exposure < 1 ? `FOMC · sizes at ${event.exposure === 0.5 ? 'half' : `${Math.round(event.exposure * 100)}%`} exposure · restores at the open after the ${event.decisionDate ?? 'FOMC'} decision`
     : 'FOMC · restoration queued for the next open'
-  const sizingLine = sized ? '15-minute model allocations · experimental'
-    : showSizes && sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
+  const sizingLine = !showSizes ? 'Plan target weights · next rebalance'
+    : sized ? '15-minute model allocations · experimental'
+    : sizedNames.length > 0 ? `Research sizes for ${sizedNames.length} of ${graded.length} names`
     : marketClosed ? 'Sizes return with the first completed bar after the open' : 'Sizing unavailable · waiting for fresh data'
-  // Compare only current scores tied to this exact nightly basis and completed price.
+  // The conviction index is dated to its bar and survives the close, so the
+  // column is never blank overnight or pre- and post-market; only the
+  // decision it belongs to changes what is shown.
   const opportunity = (ticker: string) => {
     const value = decisions?.rows[ticker]?.opportunity
     return decisions?.session === latest.session && decisions.written === latest.written
-      && value?.bar === live.quotes[ticker]?.bar && Date.parse(value?.valid_until ?? '') > now
+      && value?.bar === live.quotes[ticker]?.bar
       && Number.isFinite(value?.score) ? value!.score : null
   }
   const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
@@ -148,7 +155,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
   const emptyAccount = holdings !== null && holdings.length === 0
   const heldNames = new Set((holdings ?? []).map((h) => h.ticker))
-  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : paused && emptyAccount ? 1 : null}
+  const planGross = !showSizes && !hidden
+    ? Object.values(planTargets).reduce((sum, w) => sum + (Number.isFinite(w) ? (w as number) : 0), 0)
+    : null
+  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : paused && emptyAccount ? 1 : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   // The board opens with the top page of names and pages on request, so a
   // ninety-name list never becomes a wall to scroll through. A search narrows

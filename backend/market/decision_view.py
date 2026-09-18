@@ -77,13 +77,14 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None):
         or event.get("calendar_known") is False
     )
     result = {}
-    current_decision = (
-        calendar._future_session_offset(
-            np.datetime64(record["session"]),
-            np.datetime64(now.astimezone(desk_freshness.NEW_YORK).date()),
-        )
-        == 1
+    # The plan is current the session it names and the one after (the nightly
+    # record is written on the evening of its own session, so requiring
+    # strictly the next session labelled a just-written plan "outdated").
+    offset = calendar._future_session_offset(
+        np.datetime64(record["session"]),
+        np.datetime64(now.astimezone(desk_freshness.NEW_YORK).date()),
     )
+    current_decision = offset in (0, 1)
     for symbol in sorted(set(record.get("grades") or {}) | set(rows)):
         row = rows.get(symbol)
         quote = execution_quotes.describe(

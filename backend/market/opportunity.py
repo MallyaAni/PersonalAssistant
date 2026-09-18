@@ -52,13 +52,14 @@ def explain(grade, live, quote, deadline, now, session):
     # The evidence's own reading, whether or not the candle is still
     # current: after the close the page shows it dated to its bar rather
     # than "not scored", which read as if the name had no evidence.
+    # The index is a weighted average over the analysts that have a reading
+    # at all - a name missing one analyst's rank (value for a young name)
+    # is scored on the rest, renormalized, instead of dropping to nothing.
+    present = sum(p["weight"] for p in parts)
     last_score = (
-        sum(p["score"] * p["weight"] for p in parts)
-        / sum(grading.ANALYST_WEIGHTS.values())
-        if not missing
-        else None
+        sum(p["score"] * p["weight"] for p in parts) / present if present > 0 else None
     )
-    score = last_score if fresh else None
+    score = last_score
     return {
         "version": "analyst-opportunity/1",
         "score": score,

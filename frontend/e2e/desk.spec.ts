@@ -133,8 +133,10 @@ test('current opportunity scores change rank and explain their inputs', async ({
   await page.clock.fastForward(16000)
   await expect(board.locator('tbody tr').first()).toContainText('AAPL')
   await expect(board.locator('tbody tr').first()).toContainText('9.0/10')
+  // The reading is dated to its bar, so it survives the close and the
+  // deadline: it is not "expired" but the last evidence, still ranked.
   await page.clock.fastForward(15 * 60000)
-  await expect(board).not.toContainText('/10')
+  await expect(board).toContainText('9.0/10')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -258,6 +260,45 @@ test('one stale quote no longer disables sizes for the rest of the board', async
   await expect(nvda).toContainText('—')
   const msft = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^MSFT/})})
   await expect(msft).toContainText('0.0%')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// A new nightly decision with no candle-run allocation yet (research still
+// names the previous session) keeps the Size column reading the adopted
+// plan's target weights instead of blanking until the first bar.
+test('before a candle-run allocation the board shows plan target weights', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session], intraday_research: {status: 'available', session: '2026-09-07',
+      bar: '2026-09-07T19:45:00Z', valid_until: '2026-09-07T20:15:00Z', targets: {AAPL: .2}},
+  }}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(page.getByText('Plan target weights · next rebalance')).toBeVisible()
+  const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
+  await expect(aapl).toContainText('6.0%')
+  const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
+  await expect(nvda).toContainText('0.0%')
+  const msft = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^MSFT/})})
+  await expect(msft).toContainText('—')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// The opportunity column is the conviction index dated to its bar: it stays
+// readable after the close (valid_until long passed) instead of blanking.
+test('opportunity stays readable after the close', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  await page.route(`**/market/${USER}/desk/mine?*`, route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, holdings: {}, equity: 100000,
+    rows: {AAPL: {action: 'Wait', opportunity: {version: 'analyst-opportunity/1', score: 6.2, status: 'indicative',
+      price: null, bar: '20:00', valid_until: '2026-09-08T19:30:00Z', valuation_current: false,
+      parts: [{analyst: 'value', score: 6.2, weight: 1, basis: '2026-09-08', evidence: ['Recorded price/sales comparison']}], missing: [], method: 'Evidence index'}}}}}}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
+  await expect(aapl).toContainText('6.2/10')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
