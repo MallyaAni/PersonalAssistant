@@ -102,9 +102,14 @@ def test_weekly_bars_close_on_the_week_and_carry_its_extremes():
     closes = list(np.linspace(100.0, 200.0, 300))
     chart = ticker_chart.build(_store(closes), "AAA", sessions=8, timeframe="weekly")
     assert chart.timeframe == "weekly"
-    # Every drawn weekly bar ends on a Friday in an unbroken run of weekdays.
-    for stamp in chart.dates:
+    # Every closed weekly bar ends on a Friday in an unbroken run of
+    # weekdays. The newest may be a week still forming, which is included
+    # on purpose and flagged, because a trader reads the forming bar.
+    closed = chart.dates if chart.last_bar_complete else chart.dates[:-1]
+    for stamp in closed:
         assert date.fromisoformat(stamp).weekday() == 4
+    if not chart.last_bar_complete:
+        assert date.fromisoformat(chart.dates[-1]).weekday() != 4
     # A weekly bar spans its days: its range contains its own open and close.
     for o, h, low, c in zip(chart.open, chart.high, chart.low, chart.close):
         assert low <= o <= h
@@ -164,3 +169,21 @@ def test_the_payload_is_aligned_and_plain():
     for line in built["levels"].values():
         assert len(line) == 12
     assert list(built["bars"][0]) == ["date", "open", "high", "low", "close", "volume"]
+
+
+# The week in progress must be drawn, not withheld until Friday, or the
+# newest weekly bar can be four sessions stale while the daily chart beside
+# it is current.
+def test_the_forming_week_is_drawn_and_flagged():
+    # 302 weekday sessions from a Monday: the last week is short.
+    closes = list(np.linspace(100.0, 160.0, 302))
+    weekly = ticker_chart.build(_store(closes), "AAA", sessions=6, timeframe="weekly")
+    daily = ticker_chart.build(_store(closes), "AAA", sessions=6)
+    # Whatever the calendar, the two timeframes end in the same week.
+    assert weekly.dates[-1] >= daily.dates[-1][:8] + "01"
+    if not weekly.last_bar_complete:
+        # A forming bar still carries a real range and its own close.
+        assert weekly.low[-1] <= weekly.close[-1] <= weekly.high[-1]
+    built = ticker_chart.payload(_store(closes), "AAA", 6, "weekly")
+    assert "last_bar_complete" in built
+    assert ticker_chart.payload(_store(closes), "AAA", 6)["last_bar_complete"] is True

@@ -2456,7 +2456,7 @@ const NameDetail = ({
   ]
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/25" onClick={onClose} role="dialog" aria-label={`${ticker} history`}>
-      <div className="h-full w-full max-w-xl overflow-y-auto bg-[#f5f5f7] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="h-full w-full overflow-y-auto bg-[#f5f5f7] p-5 shadow-xl lg:w-[78vw] 2xl:w-[1600px]" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[#1d1d1f]">
             {ticker}
@@ -2465,6 +2465,14 @@ const NameDetail = ({
             <X size={16} />
           </button>
         </div>
+        <div className="lg:flex lg:flex-row-reverse lg:items-start lg:gap-6">
+        {/* The picture before the prose. A trader looks at the chart first,
+            so it leads on a phone and holds the right two-fifths of a wide
+            window, staying in place while the reasoning scrolls beside it. */}
+        <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
+          <TickerChart key={ticker} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} tall />
+        </div>
+        <div className="lg:min-w-0 lg:flex-1">
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -2546,10 +2554,6 @@ const NameDetail = ({
         <details open={!compact} aria-label="Score, log and backtest">
           <summary className="cursor-pointer text-xs text-[#0071e3]">Score, log & backtest</summary>
           <div className="mt-3">
-          {/* The picture first: a grade is easier to argue with when the
-              trader can see the bars, the averages it was scored from, and
-              where every previous grade change landed. */}
-          <TickerChart key={ticker} userId={userId} ticker={ticker} history={history ?? undefined} />
           <OpportunityCard reading={decisions?.session === latest.session ? decisions.rows[ticker]?.opportunity : undefined} now={now} />
           {history && <RecommendationTimeline history={history.recommendations} />}
           {!history && !error && <p className="mb-3 text-xs">Loading recommendations…</p>}
@@ -2628,6 +2632,8 @@ const NameDetail = ({
           )}
           </div>
         </details>
+        </div>
+        </div>
       </div>
     </div>
   )

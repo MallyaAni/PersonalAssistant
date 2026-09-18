@@ -67,6 +67,10 @@ class Chart:
 
     ticker: str
     timeframe: str
+    # False when the newest bar is a week still forming. Daily bars are
+    # always complete here: today's session arrives from the live quote in
+    # the browser, not from the store.
+    last_bar_complete: bool
     dates: tuple[str, ...]
     open: tuple[float | None, ...]
     high: tuple[float | None, ...]
@@ -115,6 +119,12 @@ def _weekly_bars(
 ) -> tuple[np.ndarray, ...]:
     """Return (dates, open, high, low, close, volume) resampled to weeks."""
     ends = _week_ends(dates)
+    # The week in progress has no Friday yet, so `_week_ends` does not close
+    # it and the newest bar would be up to a week old. A trader reads the
+    # forming bar on every other platform, so it is included and the caller
+    # is told the last one is not complete.
+    if not len(ends) or ends[-1] != len(dates) - 1:
+        ends = np.append(ends, len(dates) - 1)
     starts = np.concatenate([[0], ends[:-1] + 1]) if len(ends) else np.array([], int)
     keep = [i for i, (a, b) in enumerate(zip(starts, ends)) if b >= a]
     starts, ends = starts[keep], ends[keep]
@@ -173,6 +183,7 @@ def build(
         factor = np.where(close > 0, adj_close / close, np.nan)
     open_, high, low = open_ * factor, high * factor, low * factor
 
+    all_dates = dates
     # Swing levels are found on daily bars whatever the drawn timeframe,
     # because that is where the desk finds them.
     swing_low, swing_high = levels.swing_points(high, low)
@@ -228,6 +239,10 @@ def build(
     return Chart(
         ticker=ticker.upper(),
         timeframe=timeframe,
+        last_bar_complete=(
+            timeframe == DAILY or bool(len(_week_ends(all_dates)))
+            and _week_ends(all_dates)[-1] == len(all_dates) - 1
+        ),
         dates=tuple(str(d) for d in dates[cut]),
         open=_clean(open_[cut, 0]),
         high=_clean(high[cut, 0]),
@@ -254,6 +269,7 @@ def payload(
     return {
         "ticker": chart.ticker,
         "timeframe": chart.timeframe,
+        "last_bar_complete": chart.last_bar_complete,
         "timeframes": list(TIMEFRAMES),
         "adjusted": True,
         "basis": "adjusted for splits and dividends, the basis the desk grades on",

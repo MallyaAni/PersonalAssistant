@@ -10,7 +10,7 @@ import {
   type ISeriesApi,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { getDeskChart, type DeskChart } from '../../services/api'
+import { getDeskChart, type DeskChart, type DeskChartBar } from '../../services/api'
 import type { DeskHistory } from '../../services/api'
 
 // The picture behind the grade. The board says what the desk concluded; this
@@ -31,6 +31,15 @@ import type { DeskHistory } from '../../services/api'
 // tests assert on and what a screen reader announces.
 
 type Timeframe = 'daily' | 'weekly'
+
+// The candle's live quote for this name, as the board already holds it.
+export type LiveQuote = {
+  last: number
+  open?: number | null
+  high?: number | null
+  low?: number | null
+  bar?: string | null
+}
 
 // The lines drawn on price, in draw order, with the colour each is given.
 // The band edges are dashed because they are a range rather than a trend,
@@ -90,6 +99,68 @@ const ordered = <T extends { time: UTCTimestamp }>(points: T[]): T[] => {
   return [...byTime.values()].sort((a, b) => (a.time as number) - (b.time as number))
 }
 
+// The New York session a timestamp belongs to. A bar stamped after
+// midnight UTC is still the previous trading day in New York, so the
+// session cannot be read off the ISO string.
+const sessionOf = (stamp: string): string => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(stamp))
+  return parts
+}
+
+// Fold the live quote into the drawn bars so the newest candle is the one
+// moving right now rather than the last completed session. On the daily
+// chart today is a new bar; on the weekly chart today extends the week
+// still forming. Without this the chart is correct but always behind, and
+// a trader reading it during the session is looking at yesterday.
+const withLiveBar = (
+  bars: DeskChartBar[],
+  timeframe: Timeframe,
+  lastBarComplete: boolean,
+  quote?: LiveQuote,
+): { bars: DeskChartBar[]; live: boolean } => {
+  if (!quote || !Number.isFinite(quote.last) || !quote.bar || !bars.length) {
+    return { bars, live: false }
+  }
+  const session = sessionOf(quote.bar)
+  const newest = bars[bars.length - 1]
+  if (session < newest.date) return { bars, live: false }
+  const high = Math.max(quote.high ?? quote.last, quote.last)
+  const low = Math.min(quote.low ?? quote.last, quote.last)
+  // Daily: today is its own bar. Weekly: today belongs to the forming week
+  // when there is one, and opens a new week when the last one closed.
+  const extend =
+    timeframe === 'weekly' ? !lastBarComplete || session <= newest.date : session === newest.date
+  if (extend) {
+    const merged: DeskChartBar = {
+      ...newest,
+      high: Math.max(newest.high ?? high, high),
+      low: Math.min(newest.low ?? low, low),
+      close: quote.last,
+      date: timeframe === 'weekly' ? newest.date : session,
+    }
+    return { bars: [...bars.slice(0, -1), merged], live: true }
+  }
+  return {
+    bars: [
+      ...bars,
+      {
+        date: session,
+        open: quote.open ?? newest.close ?? quote.last,
+        high,
+        low,
+        close: quote.last,
+        volume: null,
+      },
+    ],
+    live: true,
+  }
+}
+
 // Grade changes from the replayed history, as one marker per session where
 // the letter differs from the session before it. A row the desk actually
 // published is marked more strongly than one that is today's rules replayed
@@ -126,10 +197,14 @@ export const TickerChart = ({
   userId,
   ticker,
   history,
+  quote,
+  tall = false,
 }: {
   userId: string
   ticker: string
   history?: DeskHistory
+  quote?: LiveQuote
+  tall?: boolean
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   const [data, setData] = useState<DeskChart | null>(null)
@@ -151,8 +226,18 @@ export const TickerChart = ({
     }
   }, [userId, ticker, timeframe])
 
+  // One merged series, so the picture and the readings below it can never
+  // disagree about what the newest bar is.
+  const merged = useMemo(
+    () =>
+      data
+        ? withLiveBar(data.bars, timeframe, data.last_bar_complete !== false, quote)
+        : { bars: [] as DeskChartBar[], live: false },
+    [data, timeframe, quote],
+  )
+
   useEffect(() => {
-    if (!holder.current || !data || !data.bars.length) return
+    if (!holder.current || !data || !merged.bars.length) return
     let chart: IChartApi
     try {
       chart = createChart(holder.current, {
@@ -184,7 +269,7 @@ export const TickerChart = ({
     try {
       candles.setData(
         ordered(
-          data.bars
+          merged.bars
             .filter((b) => b.open !== null && b.high !== null && b.low !== null && b.close !== null)
             .map((b) => ({
               time: stamp(b.date),
@@ -221,7 +306,7 @@ export const TickerChart = ({
       })
       series.setData(
         ordered(
-          data.bars
+          merged.bars
             .map((b, i) => ({ time: stamp(b.date), value: values[i] }))
             .filter((p): p is { time: UTCTimestamp; value: number } => p.value !== null),
         ),
@@ -229,7 +314,7 @@ export const TickerChart = ({
       drawn.push(series)
     }
 
-    const markers = ordered(gradeMarkers(history, data.bars[0].date))
+    const markers = ordered(gradeMarkers(history, merged.bars[0].date))
     if (markers.length) createSeriesMarkers(candles, markers)
     chart.timeScale().fitContent()
     setDrawFailed(false)
@@ -239,13 +324,13 @@ export const TickerChart = ({
       chartRef.current = null
       drawn.length = 0
     }
-  }, [data, timeframe, history])
+  }, [data, merged, timeframe, history])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
   const summary = useMemo(() => {
-    if (!data || !data.bars.length) return null
-    const last = data.bars[data.bars.length - 1]
+    if (!data || !merged.bars.length) return null
+    const last = merged.bars[merged.bars.length - 1]
     const lines = timeframe === 'weekly' ? WEEKLY_LINES : DAILY_LINES
     const readings = lines
       .map((line) => {
@@ -257,15 +342,15 @@ export const TickerChart = ({
       })
       .filter((r): r is { label: string; value: number; away: number } => r !== null)
     return { last, readings }
-  }, [data, timeframe])
+  }, [data, merged, timeframe])
 
-  const changes = useMemo(() => gradeMarkers(history, data?.bars[0]?.date ?? '0000'), [history, data])
+  const changes = useMemo(() => gradeMarkers(history, merged.bars[0]?.date ?? '0000'), [history, merged])
 
   return (
     <section className="mb-4" aria-label={`${ticker} price chart`}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-xs font-medium text-[#1d1d1f]">
-          Price, the averages the desk scores on, and every grade change
+          Price against the averages the desk scores on, with every grade change marked
         </h4>
         <div className="flex gap-1" role="group" aria-label="Chart timeframe">
           {(['daily', 'weekly'] as Timeframe[]).map((frame) => (
@@ -295,21 +380,28 @@ export const TickerChart = ({
 
       {data && (
         <>
-          <div ref={holder} className={`w-full ${drawFailed ? 'hidden' : 'h-72'}`} data-testid="ticker-chart-canvas" />
+          <div
+            ref={holder}
+            className={`w-full ${drawFailed ? 'hidden' : tall ? 'h-[52vh] min-h-80' : 'h-72'}`}
+            data-testid="ticker-chart-canvas"
+          />
           {drawFailed && (
             <p className="rounded bg-[#f5f5f7] p-2 text-xs text-[#6e6e73]">
               The chart could not be drawn from this data. The readings below are unaffected.
             </p>
           )}
           <p className="mt-1 text-[11px] text-[#6e6e73]">
-            {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'}, {data.basis}. The desk reads
-            daily and weekly only, so those are the timeframes offered here.
+            {merged.live
+              ? `The newest ${timeframe === 'weekly' ? 'week' : 'bar'} is today, still moving, from the latest 15-minute quote.`
+              : `The newest bar is the last completed ${timeframe === 'weekly' ? 'week' : 'session'}; the market is closed or no quote has arrived.`}{' '}
+            {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} shown, {data.basis}. The desk
+            reads daily and weekly only, so those are the timeframes offered here.
           </p>
 
           {summary && (
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">
               <div className="flex justify-between gap-2">
-                <dt className="text-[#6e6e73]">Last close</dt>
+                <dt className="text-[#6e6e73]">{merged.live ? 'Price now' : 'Last close'}</dt>
                 <dd className="tabular-nums font-medium">
                   {summary.last.close === null ? '—' : `$${summary.last.close.toFixed(2)}`}
                 </dd>

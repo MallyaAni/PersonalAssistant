@@ -2545,6 +2545,9 @@ export interface DeskChart {
   timeframe: 'daily' | 'weekly';
   timeframes: string[];
   adjusted: boolean;
+  // False when the newest bar is a week still forming. Daily bars are
+  // always complete: today arrives from the live quote in the browser.
+  last_bar_complete: boolean;
   basis: string;
   sessions: number;
   bars: DeskChartBar[];

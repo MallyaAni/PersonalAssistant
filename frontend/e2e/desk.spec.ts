@@ -2255,10 +2255,18 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await page.goto('/#desk')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
   await expect(page.getByRole('dialog', {name: 'AAPL history'})).toBeVisible()
-  await page.getByText('Score, log & backtest', {exact: true}).click()
 
+  // The chart leads the panel: visible without opening anything, and ahead
+  // of the written reasoning in the document, so a phone shows it first.
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
   await expect(chart).toBeVisible()
+  const order = await page.evaluate(() => {
+    const c = document.querySelector('[aria-label$="price chart"]')
+    const why = document.querySelector('[aria-label="Why the grade moved"]')
+    if (!c || !why) return 'missing'
+    return c.compareDocumentPosition(why) & Node.DOCUMENT_POSITION_FOLLOWING ? 'chart first' : 'chart later'
+  })
+  expect(order).toBe('chart first')
   await expect(chart.getByTestId('ticker-chart-canvas').locator('canvas').first()).toBeVisible()
 
   // Only the two scored timeframes are on offer.
@@ -2272,7 +2280,9 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('EMA 200')
   await expect(chart).toContainText('Band upper')
   await expect(chart).toContainText('52-week high')
-  await expect(chart).toContainText('Last close')
+  await expect(chart).toContainText('The newest bar is today, still moving')
+  await expect(chart).toContainText('Price now')
+  await expect(chart).not.toContainText('Last close')
 
   // Both grade changes are named, and the published one is distinguished.
   await expect(chart).toContainText('2 grade changes marked')
@@ -2285,7 +2295,8 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(frames.getByRole('button', {name: 'W'})).toHaveAttribute('aria-pressed', 'true')
   await expect(chart).toContainText('Weekly EMA 21')
   await expect(chart).not.toContainText('EMA 200')
-  await expect(chart).toContainText('weeks,')
+  await expect(chart).toContainText('weeks shown,')
+  await expect(chart).toContainText('The newest week is today, still moving')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
