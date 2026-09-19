@@ -282,3 +282,34 @@ def test_the_entry_carries_the_weight_to_put_on_now():
     nearly = {"shares": 5, "current_weight": paper.ENTRY_NAME_CAP - 0.01,
               "rejecting_band": False, "target_weight": 0.06}
     assert decision_view.entry_action(nearly, 0.2, "A+")[1] == pytest.approx(0.01)
+
+
+# A grade falling is not a sell. Measured on this book, a name whose grade
+# falls out of A or better still beat the benchmark by 1.49% over the next
+# twenty sessions against a +1.95% baseline (`desk/exit.py`), and the paper
+# book carries no grade-based exit because it cut winners. The view
+# recommended one anyway for part of 2026-09-19; this is the regression test.
+def test_a_downgrade_is_never_a_sell_between_resets():
+    _, _, _, now = setup()
+    row = {
+        "in_book": True,
+        "until_rebalance": 40,
+        "rebalance_due": False,
+        "rejecting_band": False,
+        "grade_live": "C",
+        "shares": 25,
+        "target_weight": 0.0,
+        "current_weight": 0.04,
+    }
+    action, move, _reason = decision_view.action_for_row(
+        row,
+        {"eligible": True, "reason": "Quote checks passed"},
+        now + timedelta(seconds=20),
+        False,
+        True,
+        0.0,
+        0.04,
+        now,
+    )
+    assert action == decision_view.Action.HOLD
+    assert move == 0.0

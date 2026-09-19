@@ -70,10 +70,14 @@ def action_for_row(
     if entry is not None:
         action, size, why = entry
         return action, (size or 0.0), why
-    # The desk wants nothing in a name it grades C, and that is a sell whether
-    # or not the reset has come round: the operator asked what to own now.
-    if row["shares"] > 0 and target <= 0:
-        return Action.SELL, -current, "Graded C; the desk wants none of it"
+    # A grade falling is NOT a sell, however much it looks like one. Measured
+    # on this book over 86,209 holding sessions, a name whose grade falls out
+    # of A or better still beat the benchmark by 1.49% over the next twenty
+    # sessions (t +4.3) against a +1.95% baseline: the downgrade follows the
+    # fall rather than leading it. `desk/exit.py` has the table and the note
+    # at the top of `desk/paper.py` records why the book carries no
+    # grade-based exit - it cut winners. This view briefly recommended one
+    # anyway, which put a retired rule in front of the operator as advice.
     if not row["rebalance_due"]:
         if row["shares"] > 0:
             return Action.HOLD, 0.0, "At its weight; no signal at this price"

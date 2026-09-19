@@ -192,6 +192,10 @@ class DipRule:
     # the book's own rules the same way. The signal is responsible for
     # its own grade condition.
     signal: np.ndarray | None = None
+    # A (T, N) per-name entry size in weight, used in place of `add` when
+    # given. The flat `add` sizes every entry the same; this lets the size
+    # follow the score that ranked the name in the first place.
+    size: np.ndarray | None = None
 
 
 # Which (session, name) pairs the dip rule fires on: the name's fall over
@@ -229,7 +233,7 @@ def _dip_signal(report, panel: Panel, rule: DipRule) -> np.ndarray:
 
 # Add the rule's weight to every firing name, from cash, inside the name
 # cap; returns the new target and how many names were added to.
-def _dip_add(target, fired, rule: DipRule, book, prices) -> tuple[np.ndarray, int]:
+def _dip_add(target, fired, rule: DipRule, book, prices, sizes=None) -> tuple[np.ndarray, int]:
     out = target.copy()
     added = 0
     taken = 0.0
@@ -239,7 +243,13 @@ def _dip_add(target, fired, rule: DipRule, book, prices) -> tuple[np.ndarray, in
         room = rule.name_cap - out[column]
         if room <= 1e-6:
             continue
-        amount = min(rule.add, room)
+        # A per-name size when the caller supplies one, so an entry can be
+        # sized on how good the opportunity is rather than taking the same
+        # slice of the account whatever the name.
+        want = rule.add if sizes is None else float(sizes[column])
+        if not np.isfinite(want) or want <= 0:
+            continue
+        amount = min(want, room)
         out[column] += amount
         taken += amount
         added += 1
@@ -552,7 +562,10 @@ def run(
                 evidence, closes[t], t, redeploy, grace, trend_up, trim
             )
             if dips is not None and dips[t].any():
-                target, added = _dip_add(target, dips[t], dip, book, closes[t])
+                target, added = _dip_add(
+                    target, dips[t], dip, book, closes[t],
+                    None if dip.size is None else dip.size[t],
+                )
                 if added:
                     reason = "dip add"
                     dip_adds += added
