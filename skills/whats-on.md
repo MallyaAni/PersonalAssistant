@@ -4,7 +4,7 @@ description: What is on somewhere on given days - listed events, gigs, nightlife
 ---
 Search the web now for what is on: the events happening in the place the person asked about, on the days they asked about. Name the place in the query (from their message, or where they are when the message does not say) and turn words like "this weekend" or "Weds-Sunday" into the calendar dates before searching. Use the local listings, venue pages and event sites the search returns; never fill a gap from memory. This is a live web search, never a look back through past conversations.
 
-Then present it the way people want it. (The presentation below is also applied automatically to any search whose results are events; prompts/reply/events_format.md is the canonical wording.)
+Then present it the way people want it. (The presentation below is also applied automatically to any search whose results are events; the code listing in `backend/core/events_listing.py` is the canonical wording, and since 2026-09-19 the automatic events answer is always that code listing or an honest "nothing I can date" line, never model-written prose.)
 
 Group the results by day, in date order, and give each event on its own lines:
 - Day and date, then the event name and the artist or act.

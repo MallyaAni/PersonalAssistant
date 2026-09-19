@@ -240,11 +240,13 @@ def _caller_is_operator() -> bool:
 # tried and measured worse. So the menu is what changes: a pack the person
 # has not asked for by name is not offered at all.
 #
-# The cost of that is small and known: the events formatting a listing wants
-# is applied to any search whose results are events (prompts/reply/events_format.md),
-# so an unnamed "what's happening this weekend?" still comes back in that
-# shape from an ordinary search. A skill the person taught is theirs and is
-# always offered - this rule is only about what shipped in the box.
+# The cost of that is small and known: the events answer a listing wants is
+# applied to any search whose results are events (rendered by code in
+# backend/core/events_listing.py, not by a prompt - see
+# backend/services/conversation_service.py), so an unnamed "what's happening
+# this weekend?" still comes back in that shape from an ordinary search. A
+# skill the person taught is theirs and is always offered - this rule is only
+# about what shipped in the box.
 def _is_pack(skill: dict[str, Any]) -> bool:
     return str(skill.get("id") or "").startswith("pack:")
 

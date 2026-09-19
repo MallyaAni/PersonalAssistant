@@ -174,9 +174,13 @@ async def test_the_opening_hours_record_is_dropped_and_the_drop_is_declared():
 
 
 @pytest.mark.asyncio
-async def test_a_turn_the_extraction_cannot_type_still_answers_from_the_model():
-    # The fallback that keeps this from being a cliff: an extraction returning
-    # nothing leaves the prose path exactly as it was, behind the link fence.
+async def test_a_turn_the_extraction_cannot_type_answers_with_the_honest_disclosure():
+    # Blocked 2026-09-19: an extraction returning nothing used to leave the
+    # prose path as it was - the reply model wrote the listing from the raw
+    # snippets, and on 2026-09-19 that presented the Arlington Festival of
+    # the Arts (April 25-26) as happening "today" for ani.mallya, a date no
+    # result stated. The prose fallback is gone: the honest disclosure is
+    # rendered by code, and the model is never asked to write the listing.
     class EmptyExtraction(EventsLLM):
         def chat(self, messages, max_tokens=512, schema=None, temperature=None):
             properties = set(((schema or {}).get("properties") or {}))
@@ -190,10 +194,14 @@ async def test_a_turn_the_extraction_cannot_type_still_answers_from_the_model():
 
     llm = EmptyExtraction()
     answer = await _reply(_service(llm))
-    assert llm.streamed is True
-    # And the fence is still in front of it: the model's invented link is gone.
+    # The model was never asked to write the listing, so what it would have
+    # said is nowhere in the reply.
+    assert llm.streamed is False
+    assert "a listing the model wrote itself" not in answer, answer
     assert "goo.gl" not in answer, answer
-    assert "a listing the model wrote itself" in answer, answer
+    # The reply is the code-rendered disclosure, honest that nothing could be
+    # confirmed.
+    assert "couldn't confirm their dates" in answer, answer
 
 
 # Results the ranker judged off the asked subject are not typed into a

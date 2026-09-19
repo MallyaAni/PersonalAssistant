@@ -3120,7 +3120,34 @@ class ConversationService:
                                     exc_info=True,
                                 )
                         else:
-                            context["events_format"] = True
+                            # Blocked 2026-09-19: a turn whose results are
+                            # events but could not be typed used to hand the
+                            # raw snippets to the reply model to write the
+                            # listing itself. Given free rein it presented the
+                            # Arlington Festival of the Arts (April 25-26) as
+                            # happening "today, Saturday Sept 19" for
+                            # ani.mallya - a date no result stated, recalled
+                            # from its own knowledge. The honest disclosure is
+                            # rendered here, by code, and the model is never
+                            # asked for the listing, so it cannot assert a
+                            # date it never had.
+                            from backend.core.events_listing import (
+                                render_nothing_found,
+                            )
+
+                            disclosure = (
+                                render_nothing_found(found)
+                                if found is not None
+                                else ""
+                            )
+                            if not disclosure:
+                                disclosure = (
+                                    "I found some event listings but couldn't "
+                                    "confirm their dates - none I can vouch "
+                                    "for as still ahead of today. Say the "
+                                    "word and I'll look again."
+                                )
+                            context["events_listing"] = disclosure
                     # Fares get the trip shape first and every price labelled
                     # for what it is - the operator's Rome/Amalfi answer.
                     if _results_were_travel.get():
