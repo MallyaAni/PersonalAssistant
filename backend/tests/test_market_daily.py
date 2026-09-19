@@ -748,3 +748,75 @@ def test_a_refused_run_exits_non_zero(monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as raised:
         market_daily.main()
     assert raised.value.code == 75
+
+
+# A panel long enough for a 21-day average, flat until the last session so
+# each name's stretch is set by one close and nothing else.
+def _stretch_report(last_closes: dict[str, float], grades_by_name: dict[str, str]):
+    names = tuple(last_closes) + ("SPY",)
+    t = 40
+    close = np.full((t, len(names)), 100.0)
+    for j, name in enumerate(names[:-1]):
+        close[-1, j] = last_closes[name]
+    dates = np.array(
+        [date(2026, 8, 1) + timedelta(days=i) for i in range(t)], dtype="datetime64[D]"
+    )
+    panel = Panel(
+        dates=dates,
+        tickers=names,
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1e6),
+        themes={n: (AI_COMPUTE,) for n in names[:-1]},
+        benchmark="SPY",
+    )
+    grades = np.zeros((t, len(names)), dtype=int)
+    for j, name in enumerate(names[:-1]):
+        grades[:, j] = grading.ORDINAL[grades_by_name[name]]
+    graded = grading.Graded(
+        grades, np.zeros((t, len(names))), {"fundamental": np.zeros((t, len(names)))}
+    )
+    state = regime.RegimeState(
+        -0.06, 0.19, 0.0, -0.52, -3.6, 4.8, "software", -0.217, -0.223, 0.5, 1.0, ()
+    )
+    view = regime.RegimeView(
+        [state] * t, Opinion("rotation", np.full((t, len(names)), np.nan))
+    )
+    return DeskReport(
+        panel,
+        {n: "ai" for n in names[:-1]},
+        {},
+        view,
+        graded,
+        grades.astype(float),
+        [],
+    )
+
+
+# The mid-cycle entry takes the upper tail only. The dip tail was measured
+# again over the regime the book trades and stopped paying there: against a
+# +0.44% ten-session baseline it returned +0.93% with an overlap-corrected
+# t of 0.47, and through the harness dropping it improved return, Sharpe and
+# turnover together. A name far BELOW its 21-day average is no longer an
+# entry, however good its grade.
+def test_price_entries_take_the_upper_tail_only():
+    report = _stretch_report(
+        {"UP": 120.0, "DOWN": 80.0, "UPBUTC": 120.0},
+        {"UP": "A+", "DOWN": "A+", "UPBUTC": "C"},
+    )
+    from backend.agents.trading.desk import paper
+
+    entries = market_daily._price_entries(report)
+    assert set(entries) == {"UP"}, entries
+    assert entries["UP"] >= paper.ENTRY_TAIL
+
+
+# The benchmark is never an entry: it is the thing the book is measured
+# against, not a name the book holds.
+def test_price_entries_never_return_the_benchmark():
+    report = _stretch_report({"UP": 120.0}, {"UP": "A+"})
+    report.panel.adj_close[-1, -1] = 150.0
+    assert "SPY" not in market_daily._price_entries(report)

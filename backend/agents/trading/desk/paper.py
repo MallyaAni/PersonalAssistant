@@ -35,30 +35,54 @@ from backend.agents.trading.desk import execution_evidence, planner
 
 REBALANCE_EVERY = 120
 MIN_TRADE = 0.005
-# Mid-cycle entries, measured 2026-09-18. The calendar decides WHAT the book
-# holds; price decides WHEN each name is entered. A name graded A or better
-# sitting more than ENTRY_TAIL from its 21-day average, in either direction,
-# takes ENTRY_ADD of equity funded from the other holdings, capped at
-# ENTRY_NAME_CAP.
+# Mid-cycle entries, measured 2026-09-18 and corrected 2026-09-19. The
+# calendar decides WHAT the book holds; price decides WHEN each name is
+# entered. A name graded A or better sitting more than ENTRY_TAIL ABOVE its
+# 21-day average takes ENTRY_ADD of equity funded from the other holdings,
+# capped at ENTRY_NAME_CAP.
 #
-# Both tails, because both pay. Among names the desk already wants, against a
-# +0.49% ten-session baseline: more than 15% below the 21-day returned +2.70%
-# at a 61.2% hit rate, more than 15% above returned +1.97%, and the middle
-# returned about +0.35%. It holds outside this book too, which is what makes
-# it a rule rather than a cohort: on the 439 names the desk does not trade,
-# graded on the three analysts available there, deep dips returned +0.86%
-# against a +0.10% baseline.
+# The upper tail only. The rule shipped on 2026-09-18 took both tails, on a
+# forward-return table that counted a ten-session window on every session and
+# so counted each observation about ten times over. Corrected for that
+# overlap and split at the regime boundary, the dip tail does not survive:
+# from 2020-10 it returned +0.93% against a +0.44% baseline with t 0.47, and
+# with the 2020, 2022 and Q4-2018 dislocations removed it returned +0.45%
+# over baseline at t 0.40. Forty percent of the 15% dip bucket sits in three
+# calendar months. The edge was real before 2020 (+6.15% at a 75.8% hit rate)
+# and is not there now.
+#
+# Through the harness across 20 start phases, taking the upper tail only
+# against taking both, at the same threshold, funding and grade floor:
+#
+#                        CAGR   worst   Sharpe   worst DD   turn/yr
+#   from 2021  both      43.83  36.62    1.205    -49.06      6.01x
+#              upper     47.43  40.52    1.354    -45.33      5.49x
+#   from 2018  both      36.80  29.82    1.138    -44.92      5.82x
+#              upper     34.12  29.44    1.178    -42.19      5.02x
+#
+# In the regime the book trades the upper tail is better on every column at
+# once; over the whole history it gives up 2.7 points of CAGR for a better
+# Sharpe, a shallower drawdown and less turnover. Dropping the dip was a
+# single pre-specified comparison, not a search: the forward returns and the
+# outside literature had both condemned it first. The thresholds themselves
+# were NOT re-fitted, because 20% was not separable from 15% once the sample
+# was counted honestly, and a volatility-scaled trigger measured worse than
+# either from 2021.
+#
+# For the calendar book with no price entries at all: 34.38% at Sharpe 1.468
+# and -30.04%. It keeps the best Sharpe and much the shallowest drawdown, so
+# the entries remain a deliberate trade of risk for return rather than a free
+# improvement. `desk/entry.py` measures a DIFFERENT dip - 8% below the EMA or
+# below the lower band, over five sessions - and that one still pays at its
+# own horizon; it is not what was dropped here, and the book's 120-session
+# hold was never able to harvest it.
 #
 # Funded rather than from cash: the add is taken pro rata from the other
 # holdings, so gross exposure is unchanged and only the selection moves.
 # Unfunded it returned less at a worse Sharpe and a deeper drawdown.
 #
-# Through the harness across 20 start phases, against the 20-session
-# calendar it replaces: 57.56% a year [47.44..71.93] at Sharpe 1.373 and a
-# -44.75% worst drawdown, against 28.60% [24.18..32.79] at 1.453 and
-# -28.57%. Its worst phase beats the old rule's best. Every figure carries
-# the universe's survivorship, which market_survivorship measures at
-# nineteen points a year, and both rules carry it equally.
+# Every figure carries the universe's survivorship, which market_survivorship
+# measures at nineteen points a year, and every rule above carries it equally.
 ENTRY_TAIL = 0.15
 ENTRY_ADD = 0.03
 ENTRY_NAME_CAP = 0.15

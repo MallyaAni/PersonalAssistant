@@ -802,7 +802,14 @@ async def desk_entries(
     except Exception as exc:  # noqa: BLE001 - the board stands without this
         raise HTTPException(status_code=503, detail=f"entry read unavailable: {exc}") from exc
 
-    order = {"dip": 0, "breakout": 1, None: 2}
+    # Breakout first, because that is the trigger the book now acts on. The
+    # paper book's mid-cycle entry takes the upper tail only: the dip tail
+    # was measured again over the regime the book trades and stopped paying
+    # there. The dip rows stay, because the dip this panel reads is a
+    # different and shorter signal than the one that was dropped - five
+    # sessions, not the book's hold - and it is still worth a trader seeing.
+    # They rank below the entries the desk will actually take.
+    order = {"breakout": 0, "dip": 1, None: 2}
     rows = []
     for symbol, read in reads.items():
         grade = (graded.get(symbol) or {}).get("grade")

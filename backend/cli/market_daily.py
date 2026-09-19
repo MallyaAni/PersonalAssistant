@@ -502,12 +502,10 @@ def _desk_open_order_ids(open_orders: list[dict]) -> list[str]:
 def _price_entries(report) -> dict[str, float]:
     """Return {ticker: stretch} for tonight's mid-cycle entry candidates.
 
-    A name the desk grades A or better, sitting more than `ENTRY_TAIL` from
-    its own 21-day average in either direction. Both tails, because both
-    paid: among names the desk already wants, more than 15% below returned
-    +2.70% over ten sessions at a 61.2% hit rate and more than 15% above
-    returned +1.97%, against a +0.49% baseline for the middle. The evidence
-    and the harness figures are at the top of `desk/paper.py`.
+    A name the desk grades A or better, sitting more than `ENTRY_TAIL` ABOVE
+    its own 21-day average. The upper tail only: the dip tail was measured
+    again over the regime the book now trades and does not pay there. The
+    evidence and the harness figures are at the top of `desk/paper.py`.
     """
     from backend.agents.trading.desk import paper as paper_rules
     from backend.market import technical as daily_technical
@@ -524,7 +522,7 @@ def _price_entries(report) -> dict[str, float]:
         if ticker == panel.benchmark:
             continue
         value = float(stretch[column])
-        if not np.isfinite(value) or abs(value) < paper_rules.ENTRY_TAIL:
+        if not np.isfinite(value) or value < paper_rules.ENTRY_TAIL:
             continue
         grade = letters[last, column]
         letter = grade if isinstance(grade, str) else _GRADE_LETTER.get(int(grade))
