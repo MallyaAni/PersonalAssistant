@@ -41,8 +41,8 @@ def action_for_row(
         # by a calendar. An account with no recorded positions saw that on
         # all ninety-three.
         if row["shares"] > 0:
-            return "Hold", "Weight is reset at the next rebalance"
-        return "Wait", "Not held; size shown is the target, not an order"
+            return "Hold", "Weight is reset at the next scheduled reset"
+        return "Wait", "Not held; bought when it breaks out or at the reset"
     direction = action_for(target, current)
     if row["rejecting_band"] and direction in ("buy", "add"):
         return "Wait", "Upper-band rejection blocks additions"

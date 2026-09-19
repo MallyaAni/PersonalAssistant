@@ -409,7 +409,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
           ))}
           {changes.orders.length > 0 && (
             <li>
-              Changes in target weights at the next rebalance:{' '}
+              Changes in target weights at the next weight reset:{' '}
               {changes.orders.map((o) => `${o.action} ${o.ticker}`).join(', ')}
             </li>
           )}
@@ -681,10 +681,12 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">Plan</dt>
         <dd className="text-[#6e6e73]">
-          What the desk would do at its next rebalance. Rebalances run about every four weeks, and the line
-          above the board says how far away the next one is. Until then these are targets. Buy, add, trim and
-          sell are the desk&rsquo;s intent; uncovered means you hold something the desk does not rate, which
-          is yours to decide.
+          What the desk intends for each name. Two clocks drive it. The weight reset brings the whole book
+          back to target and runs about twice a year; the line above the board says how far away it is.
+          Between resets price decides: a name graded A or A+ that breaks more than 15% above its 21-day
+          average is bought that night, funded by trimming the rest, so the gross does not move. Buy, add,
+          trim and sell are the desk&rsquo;s intent; uncovered means you hold something the desk does not
+          rate, which is yours to decide.
         </dd>
       </div>
       <div>
@@ -999,8 +1001,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
               {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
                 : rebalanceDue ? `Rebalance due: these trades go in at the next open.${countdown !== null ? ` Next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}.` : ''}`
-                : countdown !== null ? `Next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}. Until then these are targets, not trades.`
-                : 'No rebalance scheduled. These are targets, not trades.'}
+                : countdown !== null ? `Weights reset in ${countdown} session${countdown === 1 ? '' : 's'}. A graded name that breaks out is bought before then.`
+                : 'No weight reset scheduled. A graded name that breaks out is still bought.'}
               {live.as_of && (
                 <span className="ml-2 font-normal text-[#6e6e73]">
                   {marketOpenNow(now)
@@ -1075,7 +1077,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const r = rows.find(row => row.ticker === ticker)
     if (!r || !latest) return null
     return <TradeCell r={r} quote={live.quotes[ticker]} equity={equity} stops={stops} marking={marking !== null}
-      scheduleLabel={eventPaused ? 'held for the FOMC cycle' : !r.rebalance_due ? 'at the next rebalance' : 'at the next open'}
+      scheduleLabel={eventPaused ? 'held for the FOMC cycle' : !r.rebalance_due ? 'at the weight reset, or sooner on a breakout' : 'at the next open'}
       onDone={canWrite && holdingsReady && rebalanceDue && !eventPaused ? async (price, qty) => {
         setMarking(r.ticker)
         try { return await save(afterTrade(holdings, r, price, qty)) }
@@ -1212,7 +1214,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
       {latest && <section aria-label="Your planned cash" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
         <span title="Cash implied by the plan's target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
-        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
+        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Weights apply at the reset; breakouts are bought before it'}</span>
       </section>}
 
 
@@ -1629,7 +1631,7 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
           <button type="submit" disabled={marking} className="text-[#0071e3] disabled:text-[#6e6e73]">{marking ? 'saving' : 'Save confirmed fill'}</button>
         </form>
       )}
-      {liveDrop && <div className="mt-0.5 font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">indicative C: removed if still C at the next rebalance</div>}
+      {liveDrop && <div className="mt-0.5 font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">indicative C: removed if still C at the weight reset</div>}
       {r.shares > 0 && r.entry_price !== null && (
         <div className="text-[#6e6e73]">
           you hold {r.shares} at {priceMoney(r.entry_price)}
@@ -2414,7 +2416,7 @@ const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebala
       ? `${orders} FOMC restoration${orders === 1 ? ' is' : 's are'} being placed now`
       : `${orders} FOMC restoration${orders === 1 ? ' fills' : 's fill'} at the open`
     : 'an FOMC cycle is closing')
-  if (!boardEvent) parts.push(rebalanceDue ? 'a rebalance is due at the next open' : countdown !== null ? `next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no rebalance scheduled')
+  if (!boardEvent) parts.push(rebalanceDue ? 'a weight reset is due at the next open' : countdown !== null ? `weights reset in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no weight reset scheduled')
   let action: string
   if (holdings !== null && holdings === 0) action = 'No positions recorded yet, so the plan compares against an empty account. Add them under Positions.'
   else if (eligible > 0) action = `${eligible} name${eligible === 1 ? ' is' : 's are'} buy-eligible now.`

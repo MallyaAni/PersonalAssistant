@@ -78,7 +78,7 @@ export const FundingPreview = ({ userId, equity, research, paused = false }: { u
     </label>
     <p className="my-2 text-xs text-[#6e6e73]">
       {mode === 'evening'
-        ? 'The scheduled targets, priced at reference prices. This is what the next rebalance acts on.'
+        ? 'The scheduled targets, priced at reference prices. This is what the weight reset acts on.'
         : 'Sized on the current bar’s technical read. Research only; the scheduled plan is unchanged.'}
       {' '}No orders are placed from this page.
     </p>

@@ -181,7 +181,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : 'FOMC · restoration queued for the next open'
   // The policy toggle beside this already names which sizing is showing, so
   // the line says what is true of it rather than repeating the label.
-  const sizingLine = !showSizes ? 'Plan targets the next rebalance will use'
+  const sizingLine = !showSizes ? 'Target weights · a graded breakout is bought before the reset'
     : sized ? 'Sizes for this bar'
     : sizedNames.length > 0 ? `Sized on this bar for ${sizedNames.length} of ${graded.length} names`
     : marketClosed ? 'Sizes return with the first completed bar after the open'

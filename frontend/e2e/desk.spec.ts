@@ -275,7 +275,7 @@ test('before a candle-run allocation the board shows plan target weights', async
   }}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(page.getByText('Plan targets the next rebalance will use')).toBeVisible()
+  await expect(page.getByText('Target weights · a graded breakout is bought before the reset')).toBeVisible()
   const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
   await expect(aapl).toContainText('6.0%')
   const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
@@ -1128,7 +1128,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // What moved since the last session, which the page used to throw away.
   await expect(page.getByRole('heading', {name: /^What changed/})).toBeVisible()
   await expect(page.getByText('Upgraded: NVDA B→A')).toBeVisible()
-  await expect(page.getByText('Changes in target weights at the next rebalance: add AAPL')).toBeVisible()
+  await expect(page.getByText('Changes in target weights at the next weight reset: add AAPL')).toBeVisible()
 
   // A row reads in plain words first, and the ticker opens the drill-down.
   // The board is not due a rebalance for 18 sessions, so it says "targets
@@ -1136,9 +1136,9 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByRole('heading', {name: 'Plan status'})).toBeVisible()
   await expect(page.getByLabel('Reading the current picks')).toContainText('not a probability of profit')
   await expect(page.getByRole('columnheader', {name: 'Plan', exact: true})).toBeVisible()
-  await expect(page.getByText('at the next rebalance', {exact: true}).first()).toBeVisible()
+  await expect(page.getByText('at the weight reset, or sooner on a breakout', {exact: true}).first()).toBeVisible()
   await expect(page.getByRole('columnheader', {name: 'broker mark', exact: true})).toBeVisible()
-  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Next rebalance in 18 sessions')
+  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Weights reset in 18 sessions')
   // No trade is scheduled before the rebalance, so no row carries a "done"
   // button: the targets read as targets, not as instructions to buy now.
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
@@ -2062,7 +2062,7 @@ test('details splits into plan and research and the simple page carries only dec
   // The first line says what the desk is doing and whether there is anything to do.
   const today = page.getByLabel('Today')
   await expect(today).toContainText(/Market (open|closed)/)
-  await expect(today).toContainText(/rebalance/)
+  await expect(today).toContainText(/weights reset|weight reset/)
   await expect(page.getByLabel('ML forward comparison')).toHaveCount(0)
   await expect(page.getByLabel('Board simulation')).toHaveCount(0)
   // A row opens in place with the name's reasons and plan.
