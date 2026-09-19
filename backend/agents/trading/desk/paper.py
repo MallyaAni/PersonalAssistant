@@ -31,7 +31,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from backend.agents.trading.desk import execution_evidence, planner
+from backend.agents.trading.desk import execution_evidence, market_gate, planner
 
 REBALANCE_EVERY = 120
 MIN_TRADE = 0.005
@@ -104,6 +104,10 @@ class PaperState:
     order_seq: int = 0
     event_cycle: dict = field(default_factory=dict)
     event_outcomes: list[dict] = field(default_factory=list)
+    # The exposure the book currently sits at, set by the market gate (1.0
+    # normally, GATE_SCALE while SPY is under its 50-day). Defaults to full
+    # exposure so a state written before the gate existed loads unchanged.
+    gate_factor: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -326,6 +330,8 @@ def plan(
     force_rebalance: bool = False,
     entry_blocked: set[str] | None = None,
     entries: dict[str, float] | None = None,
+    gate: float = 1.0,
+    cash: float | None = None,
 ) -> tuple[list[PaperOrder], PaperState, str]:
     """Return (orders, new state, what the day was).
 
@@ -342,6 +348,13 @@ def plan(
     trims pass regardless. Measured on the book since 2015 this held only
     those buys back and beat the ungated book on return, Sharpe and
     drawdown, where requiring a full entry trigger starved the book.
+
+    `gate` is the market gate's exposure factor for tonight (1.0, or 0.5
+    while SPY is under its 50-day). On a rebalance it scales the targets,
+    so the book lands at the gated gross; between rebalances a change in
+    the factor sells the book down to the new level or buys it back,
+    because a crash between rebalances is exactly when the de-risk must
+    happen. Entries keep firing while the book is halved.
     """
     if session in state.sessions_seen and not force_rebalance:
         return [], state, "already planned for this session"
@@ -367,7 +380,9 @@ def plan(
         # 1,740 stock floors to 2 shares, 29% short of what was asked for,
         # and the book came out 12% under its target gross. Rounding to
         # nearest halves the error and does not bias it one way.
-        target_map = {s: float(w) for s, w in targets.items() if w > 0}
+        # The market gate scales the targets, so a rebalance lands at the
+        # gated gross (half the normal book while SPY is under its 50-day).
+        target_map = {s: float(w) * gate for s, w in targets.items() if w > 0}
         held_map = {s: float(q) for s, q in held.items() if q > 0}
         price_map = {s: float(p) for s, p in prices.items() if p and p > 0}
         orders = _rebalance_orders(
@@ -377,6 +392,7 @@ def plan(
             session,
             new,
         )
+        new.gate_factor = gate
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
@@ -397,13 +413,26 @@ def plan(
                 new.opened.pop(symbol, None)
         # Price entries, after the session's exits are written. The calendar
         # chose what the book holds; this chooses when each name is entered.
+        # The market gate acts first: when SPY crossed under its 50-day the
+        # book is sold down, and when SPY is back above it is restored.
+        gate_changed = gate != state.gate_factor
+        if gate_changed:
+            orders.extend(
+                market_gate.transition_orders(
+                    session, new, held, prices, cash if cash is not None else equity, gate
+                )
+            )
+            new.gate_factor = gate
         if entries:
             orders.extend(
                 _entry_orders(
                     entries, held, prices, equity, session, new, entry_blocked
                 )
             )
-        what = "hold" if not orders else "entries" if entries else "exits"
+        if gate_changed:
+            what = "market gate reduced" if gate < state.gate_factor else "market gate restored"
+        else:
+            what = "hold" if not orders else "entries" if entries else "exits"
     # Sells first, so the buys have the cash.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))
     return orders, new, what

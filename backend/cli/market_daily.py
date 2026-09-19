@@ -583,7 +583,13 @@ def _paper_trade(
     force: bool = False,
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
-    from backend.agents.trading.desk import actions, event_execution, event_risk, paper
+    from backend.agents.trading.desk import (
+        actions,
+        event_execution,
+        event_risk,
+        market_gate,
+        paper,
+    )
     from backend.market import alpaca_trading
 
     client = alpaca_trading.client_from_env()
@@ -609,6 +615,7 @@ def _paper_trade(
     # clock back before the plan is made.
     state, settled = _reconcile(client, state, store_root, live)
     policy = event_risk.decision(panel)
+    gate = market_gate.decision(panel)
     # Withdraw every pending leg before replacing it, this session's included
     # (a forced rerun), and wait for confirmed outcomes. A pending cancel can
     # still fill; never overwrite its durable intent.
@@ -640,6 +647,8 @@ def _paper_trade(
             force_rebalance=rebalance_now,
             entry_blocked=blocked,
             entries=_price_entries(report),
+            gate=gate["factor"],
+            cash=account.cash,
         )
     print(
         f"\npaper book ({what}{', forced tonight' if rebalance_now else ''}), "
@@ -724,6 +733,11 @@ def _paper_trade(
         "plan": what,
         "cycle": new_state.event_cycle,
         "outcome": new_state.event_outcomes[-1] if new_state.event_outcomes else None,
+    }
+    entry["market_gate"] = {
+        **gate,
+        "plan": what,
+        "exposure": new_state.gate_factor,
     }
     entry["settled"] = _settled_rows(settled, panel)
     entry["until_rebalance"] = max(
@@ -868,7 +882,7 @@ def record(
     revisions: dict[str, dict] | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
-    from backend.agents.trading.desk import event_risk
+    from backend.agents.trading.desk import event_risk, market_gate
 
     panel = report.panel
     last = len(panel.dates) - 1
@@ -936,6 +950,7 @@ def record(
             "strategy": {
                 "rebalance_every": actions.REBALANCE,
                 "event_risk": event_risk.VERSION,
+                "market_gate": market_gate.VERSION,
             },
             "model": llm_model or None,
             # What the frozen ML observer did tonight: its status, sequence
@@ -967,6 +982,13 @@ def record(
             "execution_pending": bool(
                 ((paper or {}).get("event_risk") or {}).get("cycle")
             ),
+        },
+        # The market gate tonight: whether SPY is under its 50-day and the
+        # exposure the book sits at, so the page shows the lead risk control
+        # (a cash position) rather than only the grades that lag it.
+        "market_gate": {
+            **market_gate.decision(panel),
+            "exposure": (paper or {}).get("market_gate", {}).get("exposure", 1.0),
         },
         # The track record the page draws: the rules walked forward against
         # SPY and QQQ, and the paper account's live equity since it started.

@@ -360,6 +360,46 @@ test('a settled FOMC reduction shows sizes at half exposure with the restore dat
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
+// The market gate is the lead "when" control: SPY under its 50-day halves the
+// book, and the page must show that before the grades. The banner names the
+// trigger, the board sizes halve, and the today line carries the reduction
+// the same way it carries an FOMC one.
+test('the market gate halves the board sizes and leads the today line', async ({page}) => {
+  await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = {...deskRecord(), market_gate: {
+    version: 'spy-50d-gate/1', session: '2026-09-08', factor: 0.5, below: true,
+    spy: 501.2, ema50: 512.4, exposure: 0.5, plan: 'market gate reduced',
+  }}
+  await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
+    as_of: '2026-09-09T14:00:00Z',
+    quotes: {
+      AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-09T13:45:00Z'},
+      NVDA: {symbol: 'NVDA', last: 130, bar: '2026-09-09T13:45:00Z'},
+      MSFT: {symbol: 'MSFT', last: 90, bar: '2026-09-09T13:45:00Z'},
+    },
+  }}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest, sessions: [latest.session],
+    intraday_research: {status: 'available', session: latest.session,
+      bar: '2026-09-09T13:45:00Z', valid_until: '2026-09-09T14:15:00Z', targets: {AAPL: .2, NVDA: .05, MSFT: 0}},
+  }}))
+  await page.goto('/#desk')
+  const gate = page.getByLabel('Market gate')
+  await expect(gate).toContainText('exposure reduced')
+  await expect(gate).toContainText('SPY closed at $501.20')
+  await expect(gate).toContainText('50% of target')
+  await expect(page.getByText('Market gate · exposure reduced', {exact: true})).toBeVisible()
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
+  await expect(aapl).toContainText('10.0%')
+  const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
+  await expect(nvda).toContainText('2.5%')
+  await expect(page.getByLabel('Today')).toContainText('market gate holds the book at 50% while SPY is below its 50-day')
+  await expect(page.getByLabel('Your planned cash')).toContainText('the market gate retains half of the plan in cash')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // The board's "Wait" must say which kind it is: when the plan feed answers
 // with no readable decision, the Action column says the decision is
 // unavailable rather than pretending the desk itself said wait.

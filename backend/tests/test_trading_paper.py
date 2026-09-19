@@ -567,3 +567,95 @@ def test_an_entry_never_grows_the_gross():
         entries={"SNDK": 1.0},
     )
     assert orders == []
+
+
+# The market gate scales the rebalance targets, so a rebalance lands at
+# the gated gross rather than the full one.
+def test_a_rebalance_scales_targets_by_the_market_gate():
+    state = paper.PaperState()
+    orders, new, what = paper.plan(
+        "2026-09-04",
+        state,
+        equity=100_000.0,
+        held={},
+        prices={"MU": 200.0, "AMD": 100.0},
+        targets={"MU": 0.2, "AMD": 0.2},
+        grades={"MU": "A", "AMD": "A"},
+        gate=0.5,
+    )
+    assert what == "rebalance"
+    by = {o.symbol: o for o in orders}
+    # Half of the 0.2 targets: 10% of 100k is 50 shares of $200, 100 of $100.
+    assert by["MU"].qty == 50
+    assert by["AMD"].qty == 100
+    assert new.gate_factor == 0.5
+
+
+# When SPY crosses under its 50-day between rebalances the book is sold
+# down to the gate at the next open, because a crash is when the de-risk
+# must happen, not at the next rebalance.
+def test_the_gate_sells_the_book_down_mid_cycle():
+    state = paper.PaperState(
+        last_rebalance="2026-08-01", sessions_since_rebalance=3, gate_factor=1.0
+    )
+    orders, new, what = paper.plan(
+        "2026-09-04",
+        state,
+        equity=100_000.0,
+        held={"MU": 100.0, "AMD": 200.0},
+        prices={"MU": 200.0, "AMD": 100.0},
+        targets={},
+        grades={},
+        gate=0.5,
+    )
+    assert what == "market gate reduced"
+    by = {o.symbol: o for o in orders}
+    assert by["MU"].side == "sell" and by["MU"].qty == 50
+    assert by["AMD"].side == "sell" and by["AMD"].qty == 100
+    assert new.gate_factor == 0.5
+
+
+# When SPY is back above its 50-day the book is bought back to full.
+def test_the_gate_restores_the_book_when_spy_is_back_above():
+    state = paper.PaperState(
+        last_rebalance="2026-08-01", sessions_since_rebalance=3, gate_factor=0.5
+    )
+    orders, new, what = paper.plan(
+        "2026-09-04",
+        state,
+        equity=100_000.0,
+        held={"MU": 50.0, "AMD": 100.0},
+        prices={"MU": 200.0, "AMD": 100.0},
+        targets={},
+        grades={},
+        gate=1.0,
+    )
+    assert what == "market gate restored"
+    by = {o.symbol: o for o in orders}
+    assert by["MU"].side == "buy" and by["MU"].qty == 50
+    assert by["AMD"].side == "buy" and by["AMD"].qty == 100
+    assert new.gate_factor == 1.0
+
+
+# Entries keep firing while the book is halved; the gate and the entry
+# orders share the same plan.
+def test_entries_fire_while_the_gate_is_active():
+    state = paper.PaperState(
+        last_rebalance="2026-08-01", sessions_since_rebalance=3, gate_factor=0.5
+    )
+    orders, new, what = paper.plan(
+        "2026-09-04",
+        state,
+        equity=100_000.0,
+        held={"MU": 100.0},
+        prices={"MU": 100.0, "SNDK": 50.0},
+        targets={},
+        grades={"MU": "A", "SNDK": "A+"},
+        entries={"SNDK": 1.0},
+        gate=0.5,
+    )
+    assert what == "entries"
+    by = {o.symbol: o for o in orders}
+    assert by["SNDK"].side == "buy"
+    assert by["MU"].side == "sell"
+    assert new.gate_factor == 0.5

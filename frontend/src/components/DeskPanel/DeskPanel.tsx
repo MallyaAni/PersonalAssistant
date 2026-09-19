@@ -10,6 +10,7 @@ import { TickerChart } from './TickerChart'
 import { EntriesNow } from './EntriesNow'
 import { StrategyBench } from './StrategyBench'
 import { OpportunityCard } from './OpportunityCard'
+import { MarketGate } from './MarketGate'
 import {
   getDesk,
   getDeskEarnings,
@@ -339,7 +340,9 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note: 'share of the practice account in positions',
+      note: latest.market_gate?.below && typeof latest.market_gate.exposure === 'number' && latest.market_gate.exposure < 1
+        ? `share of the practice account in positions; held at ${Math.round(latest.market_gate.exposure * 100)}% by the market gate`
+        : 'share of the practice account in positions',
     },
   ]
   return (
@@ -971,7 +974,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} eventLive={eventLive} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0} countdown={countdown} rebalanceDue={rebalanceDue}
-    holdings={holdingsReady ? holdings.length : null} eligible={eligibleNow} /> : null
+    holdings={holdingsReady ? holdings.length : null} eligible={eligibleNow} gate={latest.market_gate} /> : null
   // What a board row shows when opened in place.
   const expandRow = (ticker: string) => {
     const g = latest?.grades?.[ticker]
@@ -1092,7 +1095,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     decisionDate: event?.decision_date ?? null,
     calendarUnknown: event?.calendar_known === false,
   } : null
-
+  // The market gate's share of the book, read from the record: half while SPY
+  // is under its 50-day, full otherwise. Multiplied into the sizes the board
+  // and the grade detail show, so neither displays full targets under a halved
+  // book, and shown only when the record carries the gate.
+  const gateFactor =
+    latest?.market_gate && typeof latest.market_gate.exposure === 'number' && (latest.market_gate.below || (latest.market_gate.exposure ?? 1) < 1)
+      ? latest.market_gate.exposure
+      : 1
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
       {todayLine}
@@ -1143,10 +1153,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
+      {latest && <MarketGate gate={latest.market_gate} session={latest.session} />}
+
       {!research && <>
       {latest && <div className="flex max-h-[75vh] flex-col">
       <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
-      holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
+      holdings={holdingsReady ? holdings : null} event={boardEvent} gateFactor={gateFactor} now={now}
       holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
@@ -1161,7 +1173,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
 
       {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity} userId={userId}
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} gateFactor={gateFactor} now={now} decisions={decisions} equity={equity} userId={userId}
           holdings={holdingsReady ? holdings : null} marking={marking !== null}
           onRecordBuy={canWrite && holdingsReady ? recordBuy : undefined}
           saveError={saveError} onOpenName={(t) => setOpenName(t)} />
@@ -1212,7 +1224,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
       {latest && <section aria-label="Your planned cash" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
         <span title="Cash implied by the plan's target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
-        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Plan applies at the scheduled rebalance'}</span>
+        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : (latest.market_gate?.below && typeof latest.market_gate.exposure === 'number' && latest.market_gate.exposure < 1) ? 'the market gate retains half of the plan in cash' : 'Plan applies at the scheduled rebalance'}</span>
       </section>}
 
 
@@ -1813,6 +1825,7 @@ const EveryGrade = ({
   onOpenName,
   research,
   event,
+  gateFactor,
   now,
   decisions,
   equity,
@@ -1829,15 +1842,17 @@ const EveryGrade = ({
   onOpenName: (ticker: string) => void
   research: DeskPayload['intraday_research']
   event: BoardEvent | null
+  gateFactor: number
   now: number
   decisions?: DeskDecisions
   equity: number
   userId: string
 }) => {
   // Research sizes at the exposure the desk holds during an FOMC cycle, and
-  // hidden while that exposure is unknown, the same as the board.
+  // hidden while that exposure is unknown, the same as the board. The market
+  // gate scales them the same way it scales the board.
   const sizesHidden = event !== null && (event.calendarUnknown || event.exposure === null)
-  const sizeExposure = event?.exposure ?? 1
+  const sizeExposure = (event?.exposure ?? 1) * gateFactor
   const [openBrief, setOpenBrief] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   // Every name is re-graded at the candle: the live grades cover the whole
@@ -2395,7 +2410,7 @@ const marketOpenNow = (now: number) => {
 // One line, first on the page: what the desk is doing and whether there is
 // anything for the person to do. After the close the board is ninety rows
 // of "Wait", and the one sentence that matters was missing.
-const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebalanceDue, holdings, eligible}: {
+const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebalanceDue, holdings, eligible, gate}: {
   now: number
   event?: {decision_date: string | null} | null
   boardEvent: BoardEvent | null
@@ -2405,9 +2420,12 @@ const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebala
   rebalanceDue: boolean
   holdings: number | null
   eligible: number
+  gate?: DeskRecord['market_gate']
 }) => {
   const open = marketOpenNow(now)
   const parts: string[] = [open ? 'Market open' : 'Market closed']
+  const gated = gate && typeof gate.below === 'boolean' && gate.below && typeof gate.exposure === 'number'
+  if (gated) parts.push(`the market gate holds the book at ${Math.round(gate!.exposure! * 100)}% while SPY is below its 50-day`)
   if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`the desk is at ${boardEvent.exposure === 0.5 ? 'half' : `${Math.round(boardEvent.exposure * 100)}%`} exposure through the ${event?.decision_date ?? 'FOMC'} decision`)
   else if (boardEvent) parts.push(orders > 0
     ? open

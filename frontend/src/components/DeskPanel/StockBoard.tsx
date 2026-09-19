@@ -94,14 +94,14 @@ const SortHead = ({column, sort, onSort, children, className = '', title}: {
 }
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, gateFactor = 1, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
   ml?: DeskPayload['ml_forward'];
   decisions?: DeskDecisions;
   coverage?: DeskPayload['coverage'];
-  event: BoardEvent | null; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
+  event: BoardEvent | null; gateFactor?: number; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
   onOpen: (ticker: string) => void;
   onBuy?: (ticker: string, price: number, shares: number, date: string) => Promise<boolean>;
   saving: boolean; error: string; holdingsError?: string;
@@ -145,7 +145,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // whose current policy status has not been read.
   const paused = event !== null
   const hidden = paused && (event.calendarUnknown || event.exposure === null)
-  const exposure = paused && event.exposure !== null ? event.exposure : 1
+  // The FOMC exposure and the market gate both scale the sizes; they compose,
+  // so a half-by-FOMC and half-by-gate book shows a quarter. Outside a cycle
+  // the gate alone decides, defaulting to full when it is not active.
+  const exposure = (paused && event.exposure !== null ? event.exposure : 1) * gateFactor
   // Sizes are the 15-minute model allocations and stay on the board once
   // collected for this decision: through the close and through a gap in the
   // candle run, so the column never blanks between sessions. Before the
@@ -190,10 +193,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : event.exposure < 1 ? `FOMC · sizes at ${event.exposure === 0.5 ? 'half' : `${Math.round(event.exposure * 100)}%`} exposure · restores at the open after the ${event.decisionDate ?? 'FOMC'} decision`
     : 'FOMC · restoration queued for the next open'
   // The policy toggle beside this already names which sizing is showing, so
-  // the line says what is true of it rather than repeating the label.
-  const sizingLine = !showSizes ? 'Target weights the scheduled rebalance will use'
-    : sized ? 'Sized on this bar · experimental'
-    : sizedNames.length > 0 ? `Sized on this bar for ${sizedNames.length} of ${graded.length} names`
+  // the line says what is true of it rather than repeating the label. The
+  // market gate scales the sizes the same way the FOMC cycle does, so a line
+  // that says why.
+  const gateLine = gateFactor < 1 ? ` · market gate at ${Math.round(gateFactor * 100)}% exposure` : ''
+  const sizingLine = !showSizes ? `Target weights the scheduled rebalance will use${gateLine}`
+    : sized ? `Sized on this bar · experimental${gateLine}`
+    : sizedNames.length > 0 ? `Sized on this bar for ${sizedNames.length} of ${graded.length} names${gateLine}`
     : marketClosed ? 'Sizes return with the first completed bar after the open'
     : 'Sizing unavailable · waiting for fresh data'
   // The conviction index is dated to its bar and survives the close, so the

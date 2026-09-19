@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-09-19 — The board drops its redundant Shares column and tightens its wording
+
+Deployed 95bbb7fd (origin/main; pushed through a worktree because the
+shared checkout holds the other agent's uncommitted market-gate work).
+The user reported "there's a column called size and shares and both show %
+— is one redundant?" and "the wording in areas is still misleading".
+Shares was redundant: both columns came from the same target weight, so it
+said the same allocation twice in different units, and "<1" read like a
+percentage. The Shares column (StockBoard `sharesOf`, the header, the cell,
+the sort) is gone; Size % is the single allocation statement and the help
+text/tooltips no longer mention a share count. Wording made honest:
+"Sizes for this bar" replaces "Sized on this bar · experimental"; "Plan
+targets the next rebalance will use" replaces "Target weights the scheduled
+rebalance will use"; the bar line says "updates every 15 minutes while the
+market is open" instead of claiming updates during a closed market; the
+opportunity column drops the hedged "does rank forward returns, weakly"
+for "not a return forecast"; the opportunity card is headed "Opportunity"
+not "Price-to-opportunity"; a Wait whose evidence expired says "evidence
+expired", one with no size says "no size available". Verified: tsc clean,
+desk e2e against the worktree build on 5173 = 56/66 with every changed
+test green; the 10 failures are PRE-EXISTING and environmental — the
+backend publishes to host port 8100 while the frontend dev default and the
+e2e mock base URL are hardcoded to localhost:8000, which is now the vLLM
+server (returns ACAO `*`, so the /desk/chart/* fetches the name panel
+makes CORS-fail). Deployed gateway bundle verified (no "Price-to-
+opportunity", new strings present), post-deploy cheap checks green.
+
 ## 2026-09-17 — Rolling discovery search window and non-US listing filter deployed and verified
 
 Deployed and verified 2026-09-18 04:19 UTC: commit 8f2ff2a4 through

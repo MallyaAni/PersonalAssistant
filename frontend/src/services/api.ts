@@ -1899,6 +1899,16 @@ export interface DeskRecord {
     spy_five_session_return: number | null;
     evaluation_since: string;
   };
+  market_gate?: {
+    version?: string;
+    session?: string;
+    factor?: number;
+    below?: boolean;
+    spy?: number;
+    ema50?: number;
+    exposure?: number;
+    plan?: string;
+  };
   session: string;
   written: string;
   regime: {
