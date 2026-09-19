@@ -66,7 +66,7 @@ async def test_current_research_target_drives_action_over_http(tmp_path, monkeyp
     assert response.status_code == 200, response.text
     row = response.json()["decisions"]["rows"]["S11"]
     assert row["target_weight"] == 0.02
-    assert row["action"] == "Reduce"
+    assert row["action"] == "Sell"
     assert holdings.load(tmp_path)[0].shares == 60
 
 

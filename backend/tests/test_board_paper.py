@@ -86,7 +86,7 @@ def test_revalidation_blocks_previous_intent(tmp_path, blocked):
     elif blocked == "expired":
         research["valid_until"] = NOW.isoformat()
     else:
-        decisions["rows"]["AAPL"]["action"] = "Wait"
+        decisions["rows"]["AAPL"]["action"] = "Hold"
     result = board_paper.transition(row, decisions, research, later)
     assert result["fills"] == []
     assert result["pending"] == {}
@@ -96,7 +96,7 @@ def test_revalidation_blocks_previous_intent(tmp_path, blocked):
 # Repeated collection of a candle cannot duplicate a journal record or a fill.
 def test_observer_is_idempotent_and_uses_shared_planner(tmp_path, monkeypatch):
     board_paper.initialize(tmp_path, 1000, NOW - timedelta(minutes=15))
-    decisions, research = inputs(NOW, action="Wait")
+    decisions, research = inputs(NOW, action="Hold")
     monkeypatch.setattr(
         board_paper.desk_freshness, "describe", lambda snapshot, now: {"stale": False}
     )
@@ -109,7 +109,7 @@ def test_observer_is_idempotent_and_uses_shared_planner(tmp_path, monkeypatch):
     first = board_paper.observe(tmp_path, {}, {}, research, NOW)
     second = board_paper.observe(tmp_path, {}, {}, research, NOW)
     assert first == second == board_paper.latest(tmp_path)
-    assert first["decisions"]["AAPL"]["action"] == "Wait"
+    assert first["decisions"]["AAPL"]["action"] == "Hold"
     assert first["cash"] == 1000
     assert len(list((tmp_path / "desk/board-paper").glob("*.json"))) == 2
 
@@ -151,7 +151,7 @@ def test_overnight_position_marks_and_splits_once(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr("backend.market.yahoo.fetch_history", fetch)
-    decisions, research = inputs(NOW, action="Wait")
+    decisions, research = inputs(NOW, action="Hold")
     snapshot = {
         "as_of": NOW.isoformat(),
         "quotes": {"AAPL": {"last": 40, "bar": research["bar"]}},
