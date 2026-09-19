@@ -2,6 +2,7 @@
 
 import math
 from datetime import UTC, datetime
+from enum import Enum
 
 import numpy as np
 
@@ -17,47 +18,74 @@ from backend.market import (
 VERSION = "desk-decision-view/1"
 
 
-# Select the first blocking fact before interpreting the scheduled weight change.
+# The three things the operator can do about a name. A fixed set, so it is a
+# type rather than a string literal repeated at a dozen call sites: the old
+# vocabulary had seven spellings across the backend, the API contract and the
+# page, and "Buy eligible" against "Buy tonight" against "buy" was a bug
+# waiting to happen. The str mixin keeps it a plain string over the wire.
+class Action(str, Enum):
+    """What to do about a name right now."""
+
+    BUY = "Buy"
+    SELL = "Sell"
+    HOLD = "Hold"
+
+
+# Three words and a share count: Buy, Sell or Hold, at the live price.
+#
+# The column used to carry seven states - Buy eligible, Reduce, Wait, Hold,
+# blocked, uncovered, and a schedule label beside a share count - and most of
+# them answered the desk's calendar rather than the operator's question. He
+# reads the board during the session and has to decide what to own by the
+# close. So: what does the desk want this name's position to be, right now,
+# and how many shares is that away from what he holds?
+#
+# Everything that used to be its own action is now a Hold with a reason: a
+# blocked buy, a stale decision, an FOMC pause and an unpriced name are all
+# states in which the answer to "what do I do" is nothing. The reason says
+# which, on hover.
 def action_for_row(
     row, quote, deadline, paused, current_decision, target, current, now, entry=None
 ):
+    """Return (action, weight, reason): Buy, Sell or Hold, and the weight to move."""
+    # Said the way a trader would say it. These were written from inside the
+    # system - "No allocation in the adopted plan", "Rebalance timing
+    # unavailable" - which names the desk's internals rather than telling the
+    # operator what is true of the name in front of him.
     checks = (
-        (paused, "FOMC cycle takes priority"),
-        (not row, "No allocation in the adopted plan"),
-        (row and not row["in_book"], "Outside desk coverage; review manually"),
-        (not current_decision, "Nightly decision outdated or calendar unavailable"),
+        (paused, "FOMC hold"),
+        (not row, "Not in the book"),
+        (row and not row["in_book"], "Not covered by the desk"),
+        (not current_decision, "Last night's decision is stale"),
         (not quote["eligible"], quote["reason"]),
-        (not deadline or deadline <= now, "Current technical evidence unavailable"),
-        (row and row["until_rebalance"] is None, "Rebalance timing unavailable"),
+        (not deadline or deadline <= now, "No current price reading"),
+        (row and row["until_rebalance"] is None, "Reset timing unknown"),
     )
     reason = next((message for blocked, message in checks if blocked), None)
     if reason:
-        return "Wait", reason
-    # The book's own mid-cycle entry, read at the live price. This has to be
-    # decided before the rebalance branch below, because that branch answers
-    # only the calendar's question and the calendar is now six months wide.
-    # Without this the row that the desk is about to buy tonight reads "Wait",
-    # which is the opposite of what the operator has to do about it.
+        return Action.HOLD, 0.0, reason
+    # The live entry comes first. It is the one thing on this page that is
+    # actionable between resets, and the calendar branch below would otherwise
+    # bury it under an answer about a date six months out.
     if entry is not None:
-        return entry
+        action, size, why = entry
+        return action, (size or 0.0), why
+    # The desk wants nothing in a name it grades C, and that is a sell whether
+    # or not the reset has come round: the operator asked what to own now.
+    if row["shares"] > 0 and target <= 0:
+        return Action.SELL, -current, "Graded C; the desk wants none of it"
     if not row["rebalance_due"]:
-        # A name already held is genuinely waiting for the rebalance, since
-        # that is when its weight is reset. A name NOT held is not waiting
-        # for a date at all: nothing about starting a position depends on
-        # the schedule, and saying so made every unheld row read as blocked
-        # by a calendar. An account with no recorded positions saw that on
-        # all ninety-three.
         if row["shares"] > 0:
-            return "Hold", "Weight is reset at the next scheduled reset"
-        return "Wait", "Not held; no entry signal at this price"
+            return Action.HOLD, 0.0, "At its weight; no signal at this price"
+        return Action.HOLD, 0.0, "Not held; no entry signal at this price"
     direction = action_for(target, current)
     if row["rejecting_band"] and direction in ("buy", "add"):
-        return "Wait", "Upper-band rejection blocks additions"
+        return Action.HOLD, 0.0, "Rejecting its upper band; the buy is held back"
     if direction in ("buy", "add") and row["grade_live"] in ("A", "A+"):
-        return "Buy eligible", "Scheduled addition; confirm cash and broker price"
+        return Action.BUY, target - current, "Reset is due; below its target weight"
     if direction in ("trim", "sell"):
-        return "Reduce", "Scheduled target below recorded position"
-    return ("Hold" if row["shares"] > 0 else "Wait"), "No eligible addition"
+        return Action.SELL, target - current, "Reset is due; above its target weight"
+    return Action.HOLD, 0.0, "At its target weight"
 
 
 # The book's mid-cycle entry, decided at the live price rather than at the
@@ -100,12 +128,12 @@ def entry_action(row, stretch, grade_live):
     held = row["shares"] > 0
     room = paper.ENTRY_NAME_CAP - row["current_weight"]
     if held and room <= 0:
-        return "Hold", None, f"{above}, already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
+        return Action.HOLD, None, f"{above}, already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
     size = min(paper.ENTRY_ADD, room)
     if size <= 0:
-        return "Hold", None, f"{above}, no room under the {paper.ENTRY_NAME_CAP:.0%} name cap"
+        return Action.HOLD, None, f"{above}, no room under the {paper.ENTRY_NAME_CAP:.0%} name cap"
     return (
-        "Add" if held else "Buy",
+        Action.BUY,
         size,
         f"{above}, funded by trimming the rest",
     )
@@ -170,7 +198,7 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             (readings.get(symbol) or {}).get("grade")
             or (record.get("grades") or {}).get(symbol, {}).get("grade"),
         )
-        action, reason = action_for_row(
+        action, move, reason = action_for_row(
             row,
             quote,
             desk_freshness.timestamp(expiries.get(symbol)),
@@ -179,8 +207,9 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             target,
             current,
             now,
-            entry[:1] + entry[2:] if entry else None,
+            entry,
         )
+
         deadlines = [
             desk_freshness.timestamp(v)
             for v in (expiries.get(symbol), quote.get("valid_until"))
@@ -197,9 +226,11 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             ),
             "action": action,
             "reason": reason,
-            # The weight to put on at this moment when an entry is firing,
-            # which is a different number from the target it moves toward.
-            "entry_weight": entry[1] if entry else None,
+            # How much of the account to move, as a weight. The desk reasons
+            # in weights and the board shows them; a share count would need
+            # the operator's account value, which is a number the page should
+            # not have to ask him for.
+            "move_weight": move,
             "target_weight": target,
             "current_weight": current,
             "delta_weight": target - current,

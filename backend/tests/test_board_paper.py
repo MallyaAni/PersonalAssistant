@@ -10,7 +10,7 @@ NOW = datetime(2026, 9, 14, 18, 30, tzinfo=UTC)
 
 
 # Give the simulator explicit quote evidence with a bounded expiry.
-def inputs(now, action="Buy eligible", weight=0.1):
+def inputs(now, action="Buy", weight=0.1):
     quote = {
         "eligible": True,
         "at": now.isoformat(),
@@ -175,7 +175,7 @@ def test_overnight_position_marks_and_splits_once(tmp_path, monkeypatch):
 # Both trade directions follow the same experimental target used to size the fill.
 @pytest.mark.parametrize(
     ("nightly", "target", "action"),
-    [(0.10, 0.02, "Reduce"), (0.03, 0.10, "Buy eligible")],
+    [(0.10, 0.02, "Sell"), (0.03, 0.10, "Buy")],
 )
 def test_paper_direction_matches_selected_target(tmp_path, nightly, target, action):
     from backend.market import decision_view, holdings
@@ -210,8 +210,8 @@ def test_paper_direction_matches_selected_target(tmp_path, nightly, target, acti
     result = board_paper.transition(state, decisions, research, now)
     board_paper.append(tmp_path / "desk/board-paper", result)
     saved = board_paper.latest(tmp_path)
-    assert saved["fills"][0]["side"] == ("sell" if action == "Reduce" else "buy")
-    assert (saved["positions"]["S11"]["shares"] < 60) == (action == "Reduce")
+    assert saved["fills"][0]["side"] == ("sell" if action == "Sell" else "buy")
+    assert (saved["positions"]["S11"]["shares"] < 60) == (action == "Sell")
 
 
 # A failed corporate-action provider cannot silently move or corrupt the ledger.

@@ -63,7 +63,7 @@ def test_decision_requires_every_gate(block):
     result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
         "S11"
     ]
-    assert (result["action"] == "Buy eligible") is (block is None)
+    assert (result["action"] == "Buy") is (block is None)
     assert result["target_weight"] == 0.1
 
 
@@ -85,14 +85,16 @@ def test_iex_quote_passes_the_gate():
     result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
         "S11"
     ]
-    assert result["action"] == "Buy eligible"
+    assert result["action"] == "Buy"
     assert result["quote"]["feed"] == "iex"
     assert result["quote"]["eligible"]
 
 
-# A name with no recorded position cannot be labeled Hold when buying is ineligible.
-@pytest.mark.parametrize(("shares", "expected"), [(0, "Wait"), (10, "Hold")])
-def test_no_eligible_addition_distinguishes_unheld_names(shares, expected):
+# There are three actions now. A name the desk cannot buy is a Hold whether or
+# not it is held; the reason carries which case it is, and the share count is
+# zero because there is nothing to trade.
+@pytest.mark.parametrize(("shares", "expected"), [(0, "Hold"), (10, "Hold")])
+def test_an_ineligible_name_is_a_hold_with_no_shares(shares, expected):
     _, _, _, now = setup()
     row = {
         "in_book": True,
@@ -102,7 +104,7 @@ def test_no_eligible_addition_distinguishes_unheld_names(shares, expected):
         "grade_live": "B",
         "shares": shares,
     }
-    action, reason = decision_view.action_for_row(
+    action, move, reason = decision_view.action_for_row(
         row,
         {"eligible": True, "reason": "Quote checks passed"},
         now + timedelta(seconds=20),
@@ -113,7 +115,8 @@ def test_no_eligible_addition_distinguishes_unheld_names(shares, expected):
         now,
     )
     assert action == expected
-    assert reason == "No eligible addition"
+    assert move == 0.0
+    assert reason == "At its target weight"
 
 
 # Expired provider caches are checked by their quote time, not their fetch time.
@@ -224,7 +227,7 @@ def test_the_other_guards_are_untouched_on_a_single_venue_feed():
     [
         (0, 0.0, "A+", 0.18, "Buy"),
         (0, 0.0, "A", 0.16, "Buy"),
-        (10, 0.05, "A+", 0.18, "Add"),
+        (10, 0.05, "A+", 0.18, "Buy"),
         # At the name cap the desk cannot add, so the row says so rather than
         # promising a buy that `_entry_orders` would decline to size.
         (10, 0.15, "A+", 0.18, "Hold"),

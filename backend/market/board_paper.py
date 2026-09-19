@@ -100,7 +100,7 @@ def transition(state, decisions, research, now):
             and until
             and now < until
             and row["quote"].get("eligible")
-            and row["action"] in ("Buy eligible", "Reduce")
+            and row["action"] in ("Buy", "Sell")
             and ticker in targets
         ):
             eligible[ticker] = {"action": row["action"], "weight": targets[ticker]}
@@ -112,7 +112,7 @@ def transition(state, decisions, research, now):
     buy_cash = cash
     # Sales cannot fund buys during the same observation.
     for ticker, intent in sorted(
-        state["pending"].items(), key=lambda item: item[1]["action"] != "Reduce"
+        state["pending"].items(), key=lambda item: item[1]["action"] != "Sell"
     ):
         current = eligible.get(ticker)
         if not current or current["action"] != intent["action"]:
@@ -129,7 +129,7 @@ def transition(state, decisions, research, now):
                 "entry_date": now.date().isoformat(),
             },
         )
-        buying = intent["action"] == "Buy eligible"
+        buying = intent["action"] == "Buy"
         weight = (
             min(intent["weight"], current["weight"])
             if buying

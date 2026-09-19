@@ -368,8 +368,10 @@ test('the board names an unreadable plan as unavailable, not a plain wait', asyn
   await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}}}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.locator('tbody tr').nth(1)).toContainText('Wait · unavailable')
-  await expect(board.locator('tbody tr').nth(1)).not.toContainText('Buy eligible')
+  // An unreadable decision is a Hold with the reason on hover: there are
+  // three actions, and 'nothing to do' is one of them.
+  await expect(board.locator('tbody tr').nth(1)).toContainText('Hold')
+  await expect(board.locator('tbody tr').nth(1)).not.toContainText('Buy')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -424,8 +426,8 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
   await expect(cell).toContainText('Using $100,000')
   await expect(cell).toContainText('10:00:30 AM')
   await page.clock.fastForward(31_000)
-  await expect(cell).toContainText('Wait')
-  await expect(cell).not.toContainText('Buy eligible')
+  await expect(cell).toContainText('Hold')
+  await expect(cell).not.toContainText('Buy')
   await expect(cell).toContainText('expired')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
@@ -1136,7 +1138,6 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByRole('heading', {name: 'Plan status'})).toBeVisible()
   await expect(page.getByLabel('Reading the current picks')).toContainText('not a probability of profit')
   await expect(page.getByRole('columnheader', {name: 'Plan', exact: true})).toBeVisible()
-  await expect(page.getByText('at the weight reset', {exact: true}).first()).toBeVisible()
   await expect(page.getByRole('columnheader', {name: 'broker mark', exact: true})).toBeVisible()
   await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Weights reset in 18 sessions')
   // No trade is scheduled before the rebalance, so no row carries a "done"
@@ -1453,6 +1454,9 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
   await page.goto('/?deskDetails=1#desk')
   await expect(page.getByText('uncovered', { exact: true })).toBeVisible()
   await expect(page.getByText('100 shares held')).toBeVisible()
+  // The desk has no view on a name it does not cover, so the signal is
+  // Hold and never a sell.
+  await expect(page.getByLabel('AAPL plan action').first()).toContainText('Hold')
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
   // A fresh book with no rebalance clock: the next session is the first
   // decision, so the board shows the next scheduled trades.
@@ -1963,28 +1967,6 @@ test('an empty record becomes the getting-started guide', async ({ page }) => {
 })
 
 // Displaying a hypothetical stop must never turn its breach into a sell instruction.
-test('a hypothetical stop remains a reference after price crosses it', async ({ page }) => {
-  const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live`, route => route.fulfill({
-    status: 200, contentType: 'application/json',
-    body: JSON.stringify({as_of: '2026-09-08T20:00:00Z', stale: true, quotes: {
-      AAPL: {symbol: 'AAPL', last: 80, high: 105, low: 80, open: 102, bar: '2026-09-08T19:45:00Z'},
-    }}),
-  }))
-  await page.goto('/?deskDetails=1#desk')
-  await page.getByRole('checkbox', {name: 'show hypothetical stops'}).check()
-  await expect(page.getByText('hypothetical stop breached — not an active exit rule')).toBeVisible()
-  await expect(page.getByText('below the stop: sell')).toHaveCount(0)
-  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
-})
-
-
-// The ticker panel answers "why did the grade move" first: which analyst
-// moved, on what readings, and the three-session rule. The opportunity
-// score after the close is the last reading dated to its bar, not "Not
-// scored"; the recommendations log folds identical readings into one row
-// that says how long it held; the option walls say which expiries and
-// when their open interest was fetched.
 test('the ticker panel explains the grade move, keeps the last score and folds the log', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()

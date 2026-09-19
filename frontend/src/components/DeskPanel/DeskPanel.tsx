@@ -116,9 +116,8 @@ const FLAG_WORDS: Record<string, string> = {
   'the ten-year yield is rising sharply': 'interest rates are rising fast, which usually hurts these stocks',
 }
 
-// Per-browser conveniences: the account size typed in, and the stops switch.
+// Per-browser convenience: the account size typed in.
 const EQUITY_KEY = 'desk.equity'
-const STOPS_KEY = 'desk.stops'
 const readStored = (key: string): string | null => {
   try {
     return window.localStorage.getItem(key)
@@ -777,8 +776,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [gradeContext, setGradeContext] = useState<{session?: string | null; until: Record<string, string>}>({until: {}})
   const [now, setNow] = useState(Date.now)
   const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
-  const [equity, setEquity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
-  const [stops, setStops] = useState(() => readStored(STOPS_KEY) === 'on')
+  const [equity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
   // Every grade in detail is a fold on the one page; the URL can open it.
@@ -968,7 +966,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // The exposure is unknown when the calendar is missing or when an active
   // cycle's current policy status has not been read.
   const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
-    ? Object.values(decisions.rows).filter(row => (row.action === 'Buy eligible' || row.action === 'Buy tonight' || row.action === 'Add tonight') && Date.parse(row.valid_until ?? '') > now).length : 0
+    ? Object.values(decisions.rows).filter(row => row.action !== 'Hold' && Date.parse(row.valid_until ?? '') > now).length : 0
   const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
@@ -1018,32 +1016,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               {live.reason && <span className="ml-2 font-normal text-amber-800">{live.reason}</span>}
             </h3>
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
-              <label className="flex items-center gap-2">
-                account size $
-                <input
-                  type="number"
-                  min={0}
-                  step={1000}
-                  value={Math.round(equity)}
-                  onChange={(e) => {
-                    const value = Number(e.target.value) || 0
-                    setEquity(value)
-                    writeStored(EQUITY_KEY, String(value))
-                  }}
-                  className="w-28 rounded-md border border-black/[0.12] px-2 py-1 text-right text-sm text-[#1d1d1f]"
-                />
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={stops}
-                  onChange={(e) => {
-                    setStops(e.target.checked)
-                    writeStored(STOPS_KEY, e.target.checked ? 'on' : 'off')
-                  }}
-                />
-                show hypothetical stops
-              </label>
               {canWrite && holdingsReady ? (
                 <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
                   {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
@@ -1076,7 +1048,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const tradeCell = (ticker: string) => {
     const r = rows.find(row => row.ticker === ticker)
     if (!r || !latest) return null
-    return <TradeCell r={r} quote={live.quotes[ticker]} equity={equity} stops={stops} marking={marking !== null}
+    return <TradeCell r={r} quote={live.quotes[ticker]} equity={equity} marking={marking !== null}
       scheduleLabel={eventPaused ? 'held for the FOMC cycle' : !r.rebalance_due ? 'at the weight reset' : 'at the next open'}
       onDone={canWrite && holdingsReady && rebalanceDue && !eventPaused ? async (price, qty) => {
         setMarking(r.ticker)
@@ -1086,7 +1058,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       } : undefined}
       eligibility={eventPaused
         ? <span>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle' : 'No new buys during the FOMC cycle'}</span>
-        : !marketOpenNow(now) ? null
         : <DecisionCell compact allocationAllowed ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />} />
   }
   const boardEvent: BoardEvent | null = eventPaused ? {
@@ -1279,7 +1250,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {editing && !latest && <div role="dialog" aria-modal="true" aria-label="Your positions" className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
         <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-4">
           <div className="mb-3 flex justify-between"><h3 className="font-semibold">Your positions</h3><button onClick={() => setEditing(false)} aria-label="Close positions"><X size={18} /></button></div>
-          <label className="mb-3 flex items-center gap-2 text-sm">Account value $<input aria-label="Account value" type="number" min="1" value={equity} className="w-32 rounded border p-1" onChange={event => {const value = Number(event.target.value);setEquity(value);writeStored(EQUITY_KEY, String(value))}} /></label>
+
           <Positions holdings={holdings} error={saveError} onSave={async next => {if (await save(next)) setEditing(false)}} />
         </div>
       </div>}
@@ -1582,11 +1553,10 @@ const PracticeAccount = ({
 // move, the share count for this account, when it is due, the record-fill
 // control, the position held, the grade's caveats and whether it is
 // eligible to buy right now. This is the column that used to be a table.
-const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, eligibility }: {
+const TradeCell = ({ r, quote, equity, marking, scheduleLabel, onDone, eligibility }: {
   r: DeskMineRow
   quote?: DeskQuote
   equity: number
-  stops: boolean
   marking: boolean
   scheduleLabel: string
   onDone?: (price: number, qty: number) => Promise<boolean>
@@ -1596,20 +1566,32 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
   const [filledShares, setFilledShares] = useState('')
   const [fillPrice, setFillPrice] = useState('')
   const { price, qty } = sizing(r, quote, equity)
-  const high = Math.max(r.high_20 ?? 0, quote?.high ?? 0)
-  const trailing = stops && high > 0 ? high * 0.88 : null
-  const hit = trailing !== null && price > 0 && price <= trailing
   const liveDrop = r.in_book && r.grade_live === 'C' && (r.action === 'buy' || r.action === 'add')
-  const moving = ['buy', 'add', 'trim', 'sell'].includes(r.action)
+  // A share count is an order or it is noise. Between resets the target-minus-
+  // current delta is neither: the reset is up to six months out and the number
+  // will be recomputed before it ever becomes a trade, so rendering it as
+  // "BUY 32 shares at the weight reset" put an instruction in front of the
+  // operator for an event he cannot act on. It shows only on the session the
+  // reset is due. What to do in between is the live signal, which is the
+  // eligibility line below.
+  // The live signal leads the cell. `r.action` is the rebalance delta from
+  // holdings.board - target minus current - and it answers the calendar, not
+  // the operator. It used to be the cell's headline, so a name the desk was
+  // buying on a breakout read "BUY 32 shares at the weight reset" while the
+  // signal sat underneath as grey text. Clamping the word to "hold" between
+  // resets made it worse, because the pill's colour still keyed off the
+  // ungated action: a buy delta rendered a green badge reading HOLD.
+  //
+  // So the badge is gone. `eligibility` carries Buy, Sell or Hold and the
+  // shares to trade at the live price, and what remains here is the position
+  // itself and the affordances for recording a fill.
+  const moving = r.rebalance_due && ['buy', 'add', 'trim', 'sell'].includes(r.action)
   return (
     <div className="text-xs">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${ACTION_STYLE[r.action] ?? ''}`}>{r.action}</span>
-        {r.action === 'hold' ? <span>{pct(r.current_weight)} of the account</span>
-          : r.action === 'uncovered' ? <span className="font-medium">{r.shares.toLocaleString()} shares held</span>
-          : r.action === 'blocked' ? <span className="text-[#6e6e73]">{r.blocked_reason ?? 'buy held back by the band rule'}</span>
-          : <span className="font-medium">{qty.toLocaleString()} share{qty === 1 ? '' : 's'}</span>}
-        {moving && scheduleLabel && <span className="text-[#6e6e73]">{scheduleLabel}</span>}
+      <div>{eligibility}</div>
+      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[#6e6e73]">
+        {r.action === 'uncovered' && <span className="font-medium">uncovered</span>}
+        {r.action === 'uncovered' && <span>{r.shares.toLocaleString()} shares held</span>}
         {r.action !== 'hold' && r.action !== 'uncovered' && r.action !== 'blocked' && onDone && (
           <button type="button" onClick={() => setRecording(!recording)} disabled={marking} title="Record actual filled shares and average price confirmed by your broker" className="text-[#0071e3] hover:underline disabled:text-[#6e6e73]">
             {recording ? 'cancel fill' : 'record fill'}
@@ -1631,7 +1613,7 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
           <button type="submit" disabled={marking} className="text-[#0071e3] disabled:text-[#6e6e73]">{marking ? 'saving' : 'Save confirmed fill'}</button>
         </form>
       )}
-      {liveDrop && <div className="mt-0.5 font-medium text-[#9a6200]" title="The evening decision still says buy. The indicative intraday grade is C; the next rebalance uses its own updated decision.">indicative C: removed if still C at the weight reset</div>}
+
       {r.shares > 0 && r.entry_price !== null && (
         <div className="text-[#6e6e73]">
           you hold {r.shares} at {priceMoney(r.entry_price)}
@@ -1642,9 +1624,6 @@ const TradeCell = ({ r, quote, equity, stops, marking, scheduleLabel, onDone, el
           )}
         </div>
       )}
-      {r.in_book && r.grade_live !== r.grade && <div className="text-[#6e6e73]" title="indicative grade using available intraday technical and value inputs; the evening decision governs scheduled targets">{r.grade} at the close, {r.grade_live} intraday</div>}
-      {trailing !== null && <div className={hit ? 'font-medium text-[#b42318]' : 'text-[#6e6e73]'}>{hit ? 'hypothetical stop breached — not an active exit rule' : `hypothetical stop ${priceMoney(trailing)} — not an active exit rule`}</div>}
-      <div className="mt-0.5">{eligibility}</div>
     </div>
   )
 }
@@ -1770,26 +1749,26 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
   // longer matches this account). All four used to share the single word
   // "Wait", so a stalled page was indistinguishable from a desk that
   // actually said wait.
-  if (!row) return <span title="Decision unavailable. Refresh to re-read the plan for this account." className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>{compact ? 'Wait · unavailable' : 'Wait · decision unavailable'}</span>
+  // There is no readable decision, so there is nothing to do: Hold, and say
+  // why on hover. "Wait" was a fourth action pretending the page knew
+  // something; it did not.
+  if (!row) return <span title="No current decision for this account. Refresh to re-read it." className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>Hold</span>
   const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
-  const blocked = row.action === 'Buy eligible' && !allocationAllowed
-  const wait = (expired || blocked) && row.action !== 'Wait'
-  const action = wait ? 'Wait' : row.action
-  const reason = wait ? (expired ? 'Refresh price evidence' : row.reason) : row.reason
+  const blocked = row.action === 'Buy' && !allocationAllowed
+  const stale = (expired || blocked) && row.action !== 'Hold'
+  const action = stale ? 'Hold' : row.action
+  const reason = stale ? (expired ? 'Price evidence expired; reload' : row.reason) : row.reason
   if (compact) {
-    // In a trade row the action badge and share count already state what is
-    // planned, so this line says only what blocks it: a genuine wait with its
-    // reason, an expired decision, or no decision at all. A redundant "Wait"
-    // beside "buy 35 shares" read as a contradiction.
-    if (wait) return <span title={reason} aria-label={`${ticker} plan action`}>{`Wait · ${expired ? 'evidence expired' : 'no size available'}`}</span>
-    if (action === 'Wait') return <span title={reason} aria-label={`${ticker} plan action`}>{actOnIt(reason) ?? 'Wait'}</span>
-    return null
+    // Inside a trade row the badge above already carries the action, so this
+    // line adds only the count when there is something to trade.
+    if (action === 'Hold') return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>Hold</span>
+    return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>{action}{Math.abs(row.move_weight) > 0 ? ` ${allocationPercent(Math.abs(row.move_weight))}` : ''}</span>
   }
   // A Plan column is a signal, not a sentence. The allocation has its own
   // column and the reasoning is a hover: a trader scanning ninety-four rows
   // reads the word, and asks why only for the one row he stops on.
-  return <div className="min-w-16" aria-label={`${ticker} plan action`} title={actOnIt(reason) ?? reason}>
-    <div className="font-medium">{action}</div>
+  return <div className="min-w-24" aria-label={`${ticker} plan action`} title={actOnIt(reason) ?? reason}>
+    <div className="font-medium">{action}{action !== 'Hold' && Math.abs(row.move_weight) > 0 ? <span className="ml-1 font-normal text-[#6e6e73]">{allocationPercent(Math.abs(row.move_weight))}</span> : null}</div>
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
       <div>Using {money(equity)} account value</div>
       <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
