@@ -79,7 +79,16 @@ def test_book_sides():
     assert sides["NVDA"] == AI_SIDE
     assert sides["CRWD"] == SOFTWARE_SIDE
     assert sides["MSFT"] == SOFTWARE_SIDE
+    # A regulated utility stays out by decision: the book is AI and software,
+    # and restoring all nineteen utilities carrying the power-cooling theme
+    # measured better (38.45% a year at Sharpe 1.247 against 34.12% at 1.178)
+    # without being the same book. The merchant and nuclear generators that
+    # sell into datacenters are in, and they are the distinction.
     assert "DUK" not in sides
+    assert sides["CEG"] == AI_SIDE
+    # Corning was absent only because no theme was ever assigned to it, while
+    # COHR - same sub-industry, same datacenter optical business - was in.
+    assert sides["GLW"] == AI_SIDE
     assert "SPY" not in sides
     custom = (
         UniverseMember("AAA", "member", (AI_COMPUTE,), sub_industry="Semiconductors"),

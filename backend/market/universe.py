@@ -152,6 +152,9 @@ OVERLAY: tuple[UniverseMember, ...] = (
     UniverseMember("CSCO", MEMBER, (NETWORKING,), "Cisco"),
     UniverseMember("CIEN", MEMBER, (NETWORKING,), "Ciena"),
     UniverseMember("COHR", MEMBER, (NETWORKING,), "Coherent"),
+    # Same sub-industry as COHR and the same datacenter optical business, and
+    # absent from the book only because no theme was ever assigned to it.
+    UniverseMember("GLW", MEMBER, (NETWORKING,), "Corning"),
     UniverseMember("LITE", MEMBER, (NETWORKING,), "Lumentum"),
     UniverseMember("FN", MEMBER, (NETWORKING,), "Fabrinet"),
     UniverseMember("AAOI", MEMBER, (NETWORKING,), "Applied Opto"),
@@ -325,7 +328,23 @@ _AI_THEMES = frozenset({AI_COMPUTE, MEMORY_STORAGE, NETWORKING, POWER_COOLING})
 # theme (a hyperscaler that also sells software, like MSFT, is software; a
 # chip name is AI). Benchmarks and everything else are left out.
 def book_sides(universe: tuple[UniverseMember, ...]) -> dict[str, str]:
-    """Return {ticker: "ai" | "software"} for the AI-and-software book."""
+    """Return {ticker: "ai" | "software"} for the AI-and-software book.
+
+    The gate is (in OVERLAY) or (in a book sub-industry), and it runs BEFORE
+    the themes are read, so a power name joins only by being listed by hand.
+    Six are in - CEG, VST, TLN, GEV, VRT, ETN, merchant and nuclear power and
+    electrical equipment sold into datacenters - and nineteen regulated
+    utilities carrying the same `power-cooling` theme are out.
+
+    Restoring all nineteen measured better: 38.45% a year at Sharpe 1.247 and
+    -42.05% against 34.12% at 1.178 and -42.19% over twenty start phases, and
+    49.80% against 47.43% from 2021 at an unchanged Sharpe for 2.8 points more
+    drawdown. It is NOT done here, because the book is AI and software by
+    decision rather than by accident, and a regulated utility is a different
+    asset from a merchant generator with a datacenter contract. The measurement
+    is an argument for the operator to weigh, not a licence to widen the book's
+    mandate on a backtest.
+    """
     overlay = {m.ticker for m in OVERLAY}
     sides: dict[str, str] = {}
     for m in universe:
