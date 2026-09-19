@@ -269,7 +269,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             same list read two ways rather than two screens. */}
         {liveSizingReady && !hidden && (
           <div className="flex shrink-0 gap-1" role="group" aria-label="Sizing policy">
-            {([['live', 'This bar'], ['plan', 'Next rebalance']] as const).map(([value, label]) => (
+            {([['live', 'This bar'], ['plan', 'At the reset']] as const).map(([value, label]) => (
               <button
                 key={value}
                 type="button"

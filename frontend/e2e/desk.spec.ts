@@ -1456,7 +1456,7 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
   // A fresh book with no rebalance clock: the next session is the first
   // decision, so the board shows the next scheduled trades.
-  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Rebalance due')
+  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Weight reset due')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -1515,8 +1515,8 @@ test(`records a confirmed ${action} fill and reads the position back after reloa
   }))
   const errors = observeBlockingBrowserErrors(page)
   await page.goto('/?deskDetails=1#desk')
-  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Rebalance due')
-  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Next rebalance in 1 session')
+  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Weight reset due')
+  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Next reset in 1 session')
   await page.getByRole('button', { name: 'record fill', exact: true }).click()
   expect(writes).toBe(0)
   const form = page.getByRole('form', { name: 'Record AAPL fill' })

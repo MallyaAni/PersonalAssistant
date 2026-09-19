@@ -1000,7 +1000,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
               {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
-                : rebalanceDue ? `Rebalance due: these trades go in at the next open.${countdown !== null ? ` Next rebalance in ${countdown} session${countdown === 1 ? '' : 's'}.` : ''}`
+                : rebalanceDue ? `Weight reset due: these trades go in at the next open.${countdown !== null ? ` Next reset in ${countdown} session${countdown === 1 ? '' : 's'}.` : ''}`
                 : countdown !== null ? `Weights reset in ${countdown} session${countdown === 1 ? '' : 's'}. A graded name that breaks out is bought before then.`
                 : 'No weight reset scheduled. A graded name that breaks out is still bought.'}
               {live.as_of && (
@@ -2419,7 +2419,7 @@ const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebala
   if (!boardEvent) parts.push(rebalanceDue ? 'a weight reset is due at the next open' : countdown !== null ? `weights reset in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no weight reset scheduled')
   let action: string
   if (holdings !== null && holdings === 0) action = 'No positions recorded yet, so the plan compares against an empty account. Add them under Positions.'
-  else if (eligible > 0) action = `${eligible} name${eligible === 1 ? ' is' : 's are'} buy-eligible now.`
+  else if (eligible > 0) action = `${eligible} name${eligible === 1 ? '' : 's'} to act on now.`
   else action = open ? 'Nothing to act on right now.' : 'Nothing for you to do until the open.'
   return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
     <span className="font-medium">{parts.join(' · ')}.</span> <span className="text-[#6e6e73]">{action}</span>
