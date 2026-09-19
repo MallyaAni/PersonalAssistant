@@ -213,3 +213,56 @@ def test_the_other_guards_are_untouched_on_a_single_venue_feed():
     assert execution_quotes.describe(raw, "iex", False, now)["eligible"] is False
     assert execution_quotes.describe({**raw, "ap": 0}, "iex", True, now)["eligible"] is False
     assert execution_quotes.describe({**raw, "t": "unknown"}, "iex", True, now)["eligible"] is False
+
+
+# The book's mid-cycle entry is what the operator can act on today, so it is
+# decided before the rebalance calendar, which is now 120 sessions wide. Without
+# this the name the desk buys tonight read "Wait · not held", the opposite of
+# what to do about it.
+@pytest.mark.parametrize(
+    "shares,weight,grade,stretch,expected",
+    [
+        (0, 0.0, "A+", 0.18, "Buy tonight"),
+        (0, 0.0, "A", 0.16, "Buy tonight"),
+        (10, 0.05, "A+", 0.18, "Add tonight"),
+        # At the name cap the desk cannot add, so the row says so rather than
+        # promising a buy that `_entry_orders` would decline to size.
+        (10, 0.15, "A+", 0.18, "Hold"),
+        # Below the threshold, below the grade floor, and the retired dip tail:
+        # none of these is an entry, so the calendar answers instead.
+        (0, 0.0, "A+", 0.12, None),
+        (0, 0.0, "B", 0.18, None),
+        (0, 0.0, "A+", -0.30, None),
+    ],
+)
+def test_the_live_entry_answers_before_the_calendar(shares, weight, grade, stretch, expected):
+    row = {"shares": shares, "current_weight": weight, "rejecting_band": False,
+           "target_weight": 0.04}
+    assert (decision_view.entry_action(row, stretch, grade) or (None,))[0] == expected
+
+
+# The band gate the nightly applies is applied here too, so the page never
+# advertises a buy the nightly is going to hold back.
+def test_a_breakout_rejecting_its_band_is_not_offered_as_a_buy():
+    row = {"shares": 0, "current_weight": 0.0, "rejecting_band": True,
+           "target_weight": 0.04}
+    action, reason = decision_view.entry_action(row, 0.2, "A+")
+    assert action == "Wait"
+    assert "upper band" in reason
+
+
+# A name with no live reading falls through to the calendar rather than
+# inventing an entry from a missing price.
+def test_a_missing_live_stretch_is_not_an_entry():
+    row = {"shares": 0, "current_weight": 0.0, "rejecting_band": False,
+           "target_weight": 0.04}
+    assert decision_view.entry_action(row, None, "A+") is None
+    assert decision_view.entry_action(row, float("nan"), "A+") is None
+
+
+# A name the sizing engine did not pick has no target, so however far it has
+# run it is not an entry. The row used to read "Buy tonight - not picked by
+# the sizing engine", two statements that cannot both be true.
+def test_a_name_with_no_target_is_never_an_entry():
+    row = {"shares": 0, "current_weight": 0.0, "rejecting_band": False, "target_weight": 0.0}
+    assert decision_view.entry_action(row, 0.25, "A+") is None

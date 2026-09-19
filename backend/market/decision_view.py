@@ -19,7 +19,7 @@ VERSION = "desk-decision-view/1"
 
 # Select the first blocking fact before interpreting the scheduled weight change.
 def action_for_row(
-    row, quote, deadline, paused, current_decision, target, current, now
+    row, quote, deadline, paused, current_decision, target, current, now, entry=None
 ):
     checks = (
         (paused, "FOMC cycle takes priority"),
@@ -33,6 +33,13 @@ def action_for_row(
     reason = next((message for blocked, message in checks if blocked), None)
     if reason:
         return "Wait", reason
+    # The book's own mid-cycle entry, read at the live price. This has to be
+    # decided before the rebalance branch below, because that branch answers
+    # only the calendar's question and the calendar is now six months wide.
+    # Without this the row that the desk is about to buy tonight reads "Wait",
+    # which is the opposite of what the operator has to do about it.
+    if entry is not None:
+        return entry
     if not row["rebalance_due"]:
         # A name already held is genuinely waiting for the rebalance, since
         # that is when its weight is reset. A name NOT held is not waiting
@@ -53,8 +60,38 @@ def action_for_row(
     return ("Hold" if row["shares"] > 0 else "Wait"), "No eligible addition"
 
 
+# The book's mid-cycle entry, decided at the live price rather than at the
+# close, so the row says what the desk will do tonight instead of what the
+# calendar says months from now. The threshold, the grade floor and the name
+# cap are read from `paper` rather than restated, because a copy of a trading
+# rule in the presentation layer is a copy that drifts.
+def entry_action(row, stretch, grade_live):
+    """Return (action, reason) when tonight's entry fires on this name, else None."""
+    from backend.agents.trading.desk import paper
+
+    if stretch is None or not math.isfinite(stretch) or stretch < paper.ENTRY_TAIL:
+        return None
+    if grade_live not in paper.ENTRY_MIN_GRADE:
+        return None
+    # The nightly only enters a name the book wants to hold, so a name with no
+    # target is not a candidate however far it has run. Without this the row
+    # read "Buy tonight - not picked by the sizing engine", which is two
+    # statements that cannot both be true.
+    if not row or not row.get("target_weight"):
+        return None
+    # The same two gates the nightly applies before it sizes anything.
+    if row and row.get("rejecting_band"):
+        return "Wait", "Breaking out, but the daily is rejecting its upper band"
+    above = f"{stretch * 100:.0f}% above its 21-day"
+    if row and row["shares"] > 0:
+        if row["current_weight"] >= paper.ENTRY_NAME_CAP:
+            return "Hold", f"{above}; already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
+        return "Add tonight", f"{above}; funded by trimming the rest"
+    return "Buy tonight", f"{above}; funded by trimming the rest"
+
+
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
-def build(record, held, equity, snapshot, quoted, now=None, targets=None):
+def build(record, held, equity, snapshot, quoted, now=None, targets=None, entries=None):
     now = now or datetime.now(UTC)
     if targets is not None:
         if (
@@ -115,6 +152,12 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None):
             target,
             current,
             now,
+            entry_action(
+                row,
+                (entries or {}).get(symbol),
+                (readings.get(symbol) or {}).get("grade")
+                or (record.get("grades") or {}).get(symbol, {}).get("grade"),
+            ),
         )
         deadlines = [
             desk_freshness.timestamp(v)

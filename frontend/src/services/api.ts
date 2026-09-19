@@ -2374,7 +2374,9 @@ export interface DeskDecisions {
   holdings: Record<string, number>;
   rows: Record<string, {
     opportunity?: DeskOpportunity;
-    action: 'Buy eligible' | 'Wait' | 'Hold' | 'Reduce';
+    // 'Buy tonight' and 'Add tonight' are the book's own mid-cycle entry
+    // read at the live price; the others answer the rebalance calendar.
+    action: 'Buy eligible' | 'Buy tonight' | 'Add tonight' | 'Wait' | 'Hold' | 'Reduce';
     reason: string;
     target_weight: number;
     current_weight: number;

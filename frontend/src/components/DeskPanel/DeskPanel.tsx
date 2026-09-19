@@ -968,7 +968,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // The exposure is unknown when the calendar is missing or when an active
   // cycle's current policy status has not been read.
   const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
-    ? Object.values(decisions.rows).filter(row => row.action === 'Buy eligible' && Date.parse(row.valid_until ?? '') > now).length : 0
+    ? Object.values(decisions.rows).filter(row => (row.action === 'Buy eligible' || row.action === 'Buy tonight' || row.action === 'Add tonight') && Date.parse(row.valid_until ?? '') > now).length : 0
   const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
@@ -1893,7 +1893,7 @@ const EveryGrade = ({
           Only eligible technical readings refresh this decision's intraday grades.</p>}
         <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
-        <p className="mt-2">Plan action checks the scheduled next-open strategy against your recorded positions. Buy eligible requires fresh consolidated quotes, positive displayed size, a spread no wider than 25 basis points and current technical evidence. It still requires a cash-funded preview and a broker price check. IEX quotes cover one exchange; quoted prices and sizes do not guarantee a fill. Research targets are evaluated separately.</p>
+        <p className="mt-2">Plan action answers two questions. <b>Buy tonight</b> and <b>Add tonight</b> are the desk&rsquo;s own mid-cycle entry, read at the live price: a name graded A or A+ sitting more than 15% above its 21-day average, which the nightly buys that evening and funds by trimming the rest, so the gross does not move. They re-read on every completed bar, and a name rejecting its upper band is held back. <b>Buy eligible</b> and <b>Reduce</b> answer the weight reset instead, and appear only on the session it falls due. Buy eligible requires fresh consolidated quotes, positive displayed size, a spread no wider than 25 basis points and current technical evidence, and still requires a cash-funded preview and a broker price check. IEX quotes cover one exchange; quoted prices and sizes do not guarantee a fill. Research targets are evaluated separately.</p>
       </details>
       <div className="overflow-x-auto">
       <table className="w-full text-sm [&_td]:pr-3 [&_th]:pr-3">
