@@ -275,7 +275,7 @@ test('before a candle-run allocation the board shows plan target weights', async
   }}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(page.getByText('Target weights · a graded breakout is bought before the reset')).toBeVisible()
+  await expect(page.getByText('Target weights', {exact: true})).toBeVisible()
   const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
   await expect(aapl).toContainText('6.0%')
   const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
@@ -1136,7 +1136,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByRole('heading', {name: 'Plan status'})).toBeVisible()
   await expect(page.getByLabel('Reading the current picks')).toContainText('not a probability of profit')
   await expect(page.getByRole('columnheader', {name: 'Plan', exact: true})).toBeVisible()
-  await expect(page.getByText('at the weight reset, or sooner on a breakout', {exact: true}).first()).toBeVisible()
+  await expect(page.getByText('at the weight reset', {exact: true}).first()).toBeVisible()
   await expect(page.getByRole('columnheader', {name: 'broker mark', exact: true})).toBeVisible()
   await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Weights reset in 18 sessions')
   // No trade is scheduled before the rebalance, so no row carries a "done"

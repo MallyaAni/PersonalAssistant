@@ -222,9 +222,9 @@ def test_the_other_guards_are_untouched_on_a_single_venue_feed():
 @pytest.mark.parametrize(
     "shares,weight,grade,stretch,expected",
     [
-        (0, 0.0, "A+", 0.18, "Buy tonight"),
-        (0, 0.0, "A", 0.16, "Buy tonight"),
-        (10, 0.05, "A+", 0.18, "Add tonight"),
+        (0, 0.0, "A+", 0.18, "Buy"),
+        (0, 0.0, "A", 0.16, "Buy"),
+        (10, 0.05, "A+", 0.18, "Add"),
         # At the name cap the desk cannot add, so the row says so rather than
         # promising a buy that `_entry_orders` would decline to size.
         (10, 0.15, "A+", 0.18, "Hold"),
@@ -246,7 +246,7 @@ def test_the_live_entry_answers_before_the_calendar(shares, weight, grade, stret
 def test_a_breakout_rejecting_its_band_is_not_offered_as_a_buy():
     row = {"shares": 0, "current_weight": 0.0, "rejecting_band": True,
            "target_weight": 0.04}
-    action, reason = decision_view.entry_action(row, 0.2, "A+")
+    action, _size, reason = decision_view.entry_action(row, 0.2, "A+")
     assert action == "Wait"
     assert "upper band" in reason
 
@@ -266,3 +266,16 @@ def test_a_missing_live_stretch_is_not_an_entry():
 def test_a_name_with_no_target_is_never_an_entry():
     row = {"shares": 0, "current_weight": 0.0, "rejecting_band": False, "target_weight": 0.0}
     assert decision_view.entry_action(row, 0.25, "A+") is None
+
+
+# The size is the weight to put on now, not the target it moves toward: a
+# fresh buy takes ENTRY_ADD, and a held name takes only the room left under
+# the name cap.
+def test_the_entry_carries_the_weight_to_put_on_now():
+    from backend.agents.trading.desk import paper
+
+    fresh = {"shares": 0, "current_weight": 0.0, "rejecting_band": False, "target_weight": 0.06}
+    assert decision_view.entry_action(fresh, 0.2, "A+")[1] == paper.ENTRY_ADD
+    nearly = {"shares": 5, "current_weight": paper.ENTRY_NAME_CAP - 0.01,
+              "rejecting_band": False, "target_weight": 0.06}
+    assert decision_view.entry_action(nearly, 0.2, "A+")[1] == pytest.approx(0.01)

@@ -1001,8 +1001,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
               {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
                 : rebalanceDue ? `Weight reset due: these trades go in at the next open.${countdown !== null ? ` Next reset in ${countdown} session${countdown === 1 ? '' : 's'}.` : ''}`
-                : countdown !== null ? `Weights reset in ${countdown} session${countdown === 1 ? '' : 's'}. A graded name that breaks out is bought before then.`
-                : 'No weight reset scheduled. A graded name that breaks out is still bought.'}
+                : countdown !== null ? `Weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
+                : 'No weight reset scheduled.'}
               {live.as_of && (
                 <span className="ml-2 font-normal text-[#6e6e73]">
                   {marketOpenNow(now)
@@ -1077,7 +1077,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const r = rows.find(row => row.ticker === ticker)
     if (!r || !latest) return null
     return <TradeCell r={r} quote={live.quotes[ticker]} equity={equity} stops={stops} marking={marking !== null}
-      scheduleLabel={eventPaused ? 'held for the FOMC cycle' : !r.rebalance_due ? 'at the weight reset, or sooner on a breakout' : 'at the next open'}
+      scheduleLabel={eventPaused ? 'held for the FOMC cycle' : !r.rebalance_due ? 'at the weight reset' : 'at the next open'}
       onDone={canWrite && holdingsReady && rebalanceDue && !eventPaused ? async (price, qty) => {
         setMarking(r.ticker)
         try { return await save(afterTrade(holdings, r, price, qty)) }
@@ -1214,7 +1214,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
       {latest && <section aria-label="Your planned cash" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
         <span title="Cash implied by the plan's target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
-        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Weights apply at the reset; breakouts are bought before it'}</span>
+        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Weights apply at the reset'}</span>
       </section>}
 
 
@@ -1785,9 +1785,11 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
     if (action === 'Wait') return <span title={reason} aria-label={`${ticker} plan action`}>{actOnIt(reason) ?? 'Wait'}</span>
     return null
   }
-  return <div className="min-w-44 max-w-56" aria-label={`${ticker} plan action`}>
-    <div className="font-medium">{action} <span className="font-normal text-[#6e6e73]">· {row.target_weight > 0 ? `${allocationPercent(row.target_weight)} of the account` : 'not picked by the sizing engine'}</span></div>
-    <div className="text-[#6e6e73]">{actOnIt(reason) ?? reason}</div>
+  // A Plan column is a signal, not a sentence. The allocation has its own
+  // column and the reasoning is a hover: a trader scanning ninety-four rows
+  // reads the word, and asks why only for the one row he stops on.
+  return <div className="min-w-16" aria-label={`${ticker} plan action`} title={actOnIt(reason) ?? reason}>
+    <div className="font-medium">{action}</div>
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
       <div>Using {money(equity)} account value</div>
       <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>

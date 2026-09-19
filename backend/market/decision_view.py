@@ -49,7 +49,7 @@ def action_for_row(
         # all ninety-three.
         if row["shares"] > 0:
             return "Hold", "Weight is reset at the next scheduled reset"
-        return "Wait", "Not held; bought when it breaks out or at the reset"
+        return "Wait", "Not held; no entry signal at this price"
     direction = action_for(target, current)
     if row["rejecting_band"] and direction in ("buy", "add"):
         return "Wait", "Upper-band rejection blocks additions"
@@ -66,7 +66,21 @@ def action_for_row(
 # cap are read from `paper` rather than restated, because a copy of a trading
 # rule in the presentation layer is a copy that drifts.
 def entry_action(row, stretch, grade_live):
-    """Return (action, reason) when tonight's entry fires on this name, else None."""
+    """Return (action, size, reason) when the entry fires now, else None.
+
+    Said in the present tense, and sized. The first version of this answered
+    "when does the paper book act", so a name reading 18% above its 21-day at
+    eleven in the morning said "Buy tonight" - which describes the desk's cron
+    job, not the decision in front of the operator. He is looking at a live
+    price and has to size a position against it now. The signal is firing at
+    that price, so the row says Buy, and says how much.
+
+    `size` is the weight to put on at this moment, not the eventual target:
+    ENTRY_ADD of equity, trimmed to whatever room is left under
+    ENTRY_NAME_CAP, which is the increment the nightly would size and the one
+    the operator can act on. The target it moves toward is already its own
+    column.
+    """
     from backend.agents.trading.desk import paper
 
     if stretch is None or not math.isfinite(stretch) or stretch < paper.ENTRY_TAIL:
@@ -75,19 +89,26 @@ def entry_action(row, stretch, grade_live):
         return None
     # The nightly only enters a name the book wants to hold, so a name with no
     # target is not a candidate however far it has run. Without this the row
-    # read "Buy tonight - not picked by the sizing engine", which is two
-    # statements that cannot both be true.
+    # read "Buy - not picked by the sizing engine", which is two statements
+    # that cannot both be true.
     if not row or not row.get("target_weight"):
         return None
-    # The same two gates the nightly applies before it sizes anything.
-    if row and row.get("rejecting_band"):
-        return "Wait", "Breaking out, but the daily is rejecting its upper band"
+    # The same gate the nightly applies before it sizes anything.
+    if row.get("rejecting_band"):
+        return "Wait", None, "Breaking out, but the daily is rejecting its upper band"
     above = f"{stretch * 100:.0f}% above its 21-day"
-    if row and row["shares"] > 0:
-        if row["current_weight"] >= paper.ENTRY_NAME_CAP:
-            return "Hold", f"{above}; already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
-        return "Add tonight", f"{above}; funded by trimming the rest"
-    return "Buy tonight", f"{above}; funded by trimming the rest"
+    held = row["shares"] > 0
+    room = paper.ENTRY_NAME_CAP - row["current_weight"]
+    if held and room <= 0:
+        return "Hold", None, f"{above}, already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
+    size = min(paper.ENTRY_ADD, room)
+    if size <= 0:
+        return "Hold", None, f"{above}, no room under the {paper.ENTRY_NAME_CAP:.0%} name cap"
+    return (
+        "Add" if held else "Buy",
+        size,
+        f"{above}, funded by trimming the rest",
+    )
 
 
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
@@ -143,6 +164,12 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
         # Compare percentages at the quoted midpoint when valid prices exist.
         if row and "bid" in quote and math.isfinite(equity) and equity > 0:
             current = row["shares"] * (quote["bid"] + quote["ask"]) / (2 * equity)
+        entry = entry_action(
+            row,
+            (entries or {}).get(symbol),
+            (readings.get(symbol) or {}).get("grade")
+            or (record.get("grades") or {}).get(symbol, {}).get("grade"),
+        )
         action, reason = action_for_row(
             row,
             quote,
@@ -152,12 +179,7 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             target,
             current,
             now,
-            entry_action(
-                row,
-                (entries or {}).get(symbol),
-                (readings.get(symbol) or {}).get("grade")
-                or (record.get("grades") or {}).get(symbol, {}).get("grade"),
-            ),
+            entry[:1] + entry[2:] if entry else None,
         )
         deadlines = [
             desk_freshness.timestamp(v)
@@ -175,6 +197,9 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             ),
             "action": action,
             "reason": reason,
+            # The weight to put on at this moment when an entry is firing,
+            # which is a different number from the target it moves toward.
+            "entry_weight": entry[1] if entry else None,
             "target_weight": target,
             "current_weight": current,
             "delta_weight": target - current,
