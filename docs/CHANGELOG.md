@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-19 — The board drops its redundant Shares column and tightens its wording
+
+The Size % and Shares columns both came from the same target weight, so two
+columns said the same allocation twice, in different units, and "<1" (a
+target too small to reach a whole share) read like a percentage. The Shares
+column is gone; Size % is the single allocation statement, and the help
+text and tooltips no longer reference a share count. The remaining wording
+is honest about what the columns are: "Sizes for this bar" replaces
+"Sized on this bar · experimental", "Plan targets the next rebalance will
+use" replaces "Target weights the scheduled rebalance will use", the bar
+line says "updates every 15 minutes while the market is open" instead of
+claiming updates during a closed market, the opportunity column drops the
+hedged "does rank forward returns, weakly" claim in favour of "not a
+return forecast", and the opportunity card is headed "Opportunity" rather
+than the misleading "Price-to-opportunity". A Wait that has expired says
+"evidence expired" and one whose size cannot be shown says "no size
+available" instead of the vague "no size shown".
+
 ## 2026-09-18 — Rolled discovery search window and non-US listing filter deployed
 
 Deployed as 8f2ff2a4 and verified on the live system (sweep_journeys and

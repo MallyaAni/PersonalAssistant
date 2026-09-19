@@ -123,7 +123,7 @@ test('current opportunity scores change rank and explain their inputs', async ({
   await expect(board.locator('tbody tr').first()).toContainText('AAPL')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^NVDA/}).click()
   await page.getByText('Score, log & backtest', {exact: true}).click()
-  const score = page.getByLabel('Price-to-opportunity score')
+  const score = page.getByLabel('Opportunity score')
   await expect(score).toContainText('8.0/10')
   await expect(score).toContainText('valuation is nightly')
   await expect(score).toContainText('Recorded price/sales comparison')
@@ -275,7 +275,7 @@ test('before a candle-run allocation the board shows plan target weights', async
   }}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(page.getByText('Target weights the scheduled rebalance will use')).toBeVisible()
+  await expect(page.getByText('Plan targets the next rebalance will use')).toBeVisible()
   const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
   await expect(aapl).toContainText('6.0%')
   const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
@@ -347,7 +347,7 @@ test('a settled FOMC reduction shows sizes at half exposure with the restore dat
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(page.getByText('FOMC · sizes at half exposure · restores at the open after the 2026-09-16 decision')).toBeVisible()
-  await expect(page.getByText('Sized on this bar · experimental')).toBeVisible()
+  await expect(page.getByText('Sizes for this bar')).toBeVisible()
   const aapl = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})
   await expect(aapl).toContainText('10.0%')
   await expect(aapl).toContainText('Held through the FOMC cycle')
@@ -2037,7 +2037,7 @@ test('the ticker panel explains the grade move, keeps the last score and folds t
   await expect(evening).toContainText('fundamental + for')
   await expect(page.getByText(/Option walls \(expiries/)).toBeVisible()
   await page.getByText('Score, log & backtest', {exact: true}).click()
-  const score = page.getByLabel('Price-to-opportunity score')
+  const score = page.getByLabel('Opportunity score')
   await expect(score).toContainText('6.2/10')
   await expect(score).toContainText('Last reading at the Sep 8, 3:45 PM ET bar')
   await expect(score).not.toContainText('Not scored')
@@ -2303,7 +2303,7 @@ test('a name scored without the full analyst panel says so on the board and in t
   // And the card spells out what the star meant.
   await board.getByRole('button', {name: /^AAPL/}).click()
   await page.getByText('Score, log & backtest', {exact: true}).click()
-  const card = page.getByLabel('Price-to-opportunity score')
+  const card = page.getByLabel('Opportunity score')
   await expect(card).toContainText('Value did not vote')
   await expect(card).toContainText('renormalised to full weight')
   await expect(card).toContainText('not the same as a neutral vote')
@@ -2311,11 +2311,12 @@ test('a name scored without the full analyst panel says so on the board and in t
 })
 
 
-// Share sizing belongs in the one list, not in a panel of its own, and the
-// list is ordered the way it is used: the book first, biggest position
-// first, because "what do I own and how much" is the first question. The
-// graded universe behind it is a watchlist.
-test('the board carries the share count and leads with the book', async ({page}) => {
+// Sizing belongs in the one list, and the list is ordered the way it is
+// used: the book first, biggest position first, because "what do I own and
+// how much" is the first question. The graded universe behind it is a
+// watchlist. The Size % column is the single allocation statement; there is
+// no separate share-count column to read as a duplicate of it.
+test('the board leads with the book and shows the allocation without a shares column', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
   latest.book = [
@@ -2332,40 +2333,17 @@ test('the board carries the share count and leads with the book', async ({page})
   }}}))
   await page.goto('/?deskDetails=1#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.getByRole('columnheader', {name: 'Shares', exact: true})).toBeVisible()
-
-  // 4% of 100k at $200 is 20 shares; 1% at $100 is 10.
-  await expect(board.getByLabel('NVDA shares')).toHaveText('20')
-  await expect(board.getByLabel('AAPL shares')).toHaveText('10')
+  await expect(board.getByRole('columnheader', {name: 'Size %', exact: true})).toBeVisible()
+  await expect(board.getByRole('columnheader', {name: 'Shares', exact: true})).toHaveCount(0)
 
   // NVDA carries the bigger weight, so it leads even though AAPL grades
   // higher. Grade-major ordering buried the position a trader acts on.
-  const ranked = await page.evaluate(() => [...document.querySelectorAll('[aria-label$=" shares"]')]
-    .map(el => (el.getAttribute('aria-label') ?? '').replace(' shares', '')))
+  await expect(board.getByLabel('NVDA size')).toContainText('4.0%')
+  await expect(board.getByLabel('AAPL size')).toContainText('1.0%')
+  const ranked = await page.evaluate(() => [...document.querySelectorAll('tbody tr')]
+    .map(row => (row.querySelector('td:nth-child(2) button')?.textContent ?? '').trim())
+    .filter(Boolean))
   expect(ranked).toContain('NVDA')
   expect(ranked.indexOf('NVDA')).toBeLessThan(ranked.indexOf('AAPL'))
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
-})
-
-// A target smaller than one share at the name's price. Found on the live
-// board, where SNDK trades near $1,735 and a sub-1% target of the account
-// does not reach a whole share. Printing "0" read as "the desk wants none
-// of this", which is the opposite of what it means.
-test('a target too small for one share says so rather than printing zero', async ({page}) => {
-  const latest = deskRecord()
-  latest.book = [
-    {ticker: 'AAPL', grade: 'A+', weight: 0.005, engine_weight: 0.005, volatility: 0.2, exposure: 1},
-  ] as typeof latest.book
-  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
-  await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-08T20:00:00Z', quotes: {
-    AAPL: {symbol: 'AAPL', last: 1735, bar: '2026-09-08T19:45:00Z'},
-  }}}))
-  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
-    session: latest.session, written: latest.written, holdings: {}, equity: 100000, rows: {},
-  }}}))
-  await page.goto('/?deskDetails=1#desk')
-  // 0.5% of 100k is $500; one share costs $1,735.
-  const cell = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL shares')
-  await expect(cell).toHaveText('<1')
-  await expect(cell).not.toHaveText('0')
 })

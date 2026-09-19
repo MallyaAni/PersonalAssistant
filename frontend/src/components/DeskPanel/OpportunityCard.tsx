@@ -10,8 +10,8 @@ export const OpportunityCard = ({reading, now}: {reading?: DeskOpportunity; now:
   const barTime = reading?.bar ? new Date(reading.bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
   const shown = current || last !== null
   const total = reading?.parts.reduce((sum, part) => sum + part.weight, 0) ?? 0
-  return <section aria-label="Price-to-opportunity score" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3">
-    <div className="flex items-baseline justify-between gap-2"><h4 className="text-sm font-semibold">Price-to-opportunity</h4><strong className={current ? '' : 'text-[#6e6e73]'}>{current ? `${reading!.score!.toFixed(1)}/10` : last !== null ? `${last.toFixed(1)}/10` : 'Not scored'}</strong></div>
+  return <section aria-label="Opportunity score" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3">
+    <div className="flex items-baseline justify-between gap-2"><h4 className="text-sm font-semibold">Opportunity</h4><strong className={current ? '' : 'text-[#6e6e73]'}>{current ? `${reading!.score!.toFixed(1)}/10` : last !== null ? `${last.toFixed(1)}/10` : 'Not scored'}</strong></div>
     <p className="mt-1 text-xs text-[#6e6e73]">{current ? `Indicative at ${reading!.price!.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}`
       : last !== null ? `Last reading${barTime ? ` at the ${barTime} ET bar` : ''} · refreshes with the next candle`
       : 'Fresh, complete analyst evidence is required.'}</p>

@@ -2,10 +2,10 @@ import { Fragment, useRef, useState, type ReactNode } from 'react'
 import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
 
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
-type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight' | 'shares'
+type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight'
 // The natural first direction for each column: a name list reads A to Z, a
 // measure reads biggest first.
-const DESCENDING_FIRST: Record<SortColumn, boolean> = {ticker: false, grade: true, opportunity: true, plan: false, weight: true, shares: true}
+const DESCENDING_FIRST: Record<SortColumn, boolean> = {ticker: false, grade: true, opportunity: true, plan: false, weight: true}
 
 // Format a portfolio weight without rounding a small positive allocation to zero.
 const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `${(weight * 100).toFixed(1)}%`
@@ -169,16 +169,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     const weight = weights[ticker]
     return Number.isFinite(weight) && (weight as number) >= 0 ? (weight as number) * exposure : null
   }
-  // The share count the trader actually enters at a broker. It comes from
-  // the same weight the Size % column shows and the same price the row
-  // shows, so the two can never disagree, and it moves with the policy.
-  const sharesOf = (ticker: string) => {
-    const weight = weightOf(ticker)
-    const price = live.quotes[ticker]?.last
-    const equity = decisions?.equity
-    if (weight === null || !price || !equity || !Number.isFinite(price)) return null
-    return Math.floor((equity * weight) / price)
-  }
   const graded = Object.keys(latest.grades)
   const sizedNames = !hidden ? graded.filter(ticker => weightOf(ticker) !== null) : []
   const fullCoverage = showSizes && sizedNames.length === graded.length && graded.length > 0
@@ -191,8 +181,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : 'FOMC · restoration queued for the next open'
   // The policy toggle beside this already names which sizing is showing, so
   // the line says what is true of it rather than repeating the label.
-  const sizingLine = !showSizes ? 'Target weights the scheduled rebalance will use'
-    : sized ? 'Sized on this bar · experimental'
+  const sizingLine = !showSizes ? 'Plan targets the next rebalance will use'
+    : sized ? 'Sizes for this bar'
     : sizedNames.length > 0 ? `Sized on this bar for ${sizedNames.length} of ${graded.length} names`
     : marketClosed ? 'Sizes return with the first completed bar after the open'
     : 'Sizing unavailable · waiting for fresh data'
@@ -216,8 +206,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     opportunity: opportunity(ticker),
     narrow: narrow(ticker),
     weight: weightOf(ticker),
-    shares: sharesOf(ticker),
-  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, narrow: [] as string[], weight: null, shares: null}))].sort((a, b) =>
+  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, narrow: [] as string[], weight: null}))].sort((a, b) =>
     // The book leads. A trader's first question is what to own and how
     // much, and the handful of names carrying a target weight is the whole
     // answer; the rest of the graded universe is a watchlist behind it.
@@ -238,7 +227,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     // an FOMC cycle.
     ? Object.values(planTargets).reduce((sum, w) => sum + (Number.isFinite(w) ? (w as number) : 0), 0) * exposure
     : null
-  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, narrow: [] as string[], shares: null, weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : paused && emptyAccount ? 1 : null}
+  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, narrow: [] as string[], weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : paused && emptyAccount ? 1 : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   // The board opens with the top page of names and pages on request, so a
   // ninety-name list never becomes a wall to scroll through. A search narrows
@@ -251,7 +240,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const sorted = !sort ? filtered : [...filtered].sort((a, b) => {
     const missing = (row: typeof a) =>
       sort.column === 'opportunity' ? row.opportunity === null
-      : sort.column === 'shares' ? row.shares === null
       : sort.column === 'weight' ? row.weight === null
       : sort.column === 'grade' ? !row.grade
       : false
@@ -261,7 +249,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       : sort.column === 'grade' ? (ORDER[row.grade] ?? -1)
       : sort.column === 'opportunity' ? (row.opportunity ?? -Infinity)
       : sort.column === 'plan' ? (planAction?.(row.ticker) ?? '')
-      : sort.column === 'shares' ? (row.shares ?? -Infinity)
       : (row.weight ?? -Infinity)
     const left = of(a), right = of(b)
     const order = typeof left === 'string' && typeof right === 'string'
@@ -297,7 +284,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
         )}
       </div>
       {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
-      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · 15-minute updates during market hours{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
+      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · updates every 15 minutes while the market is open{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
     </div>
     {toolbar}
@@ -305,7 +292,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
-            <th colSpan={8} className="py-2 pr-3 font-normal">
+            <th colSpan={7} className="py-2 pr-3 font-normal">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="search"
@@ -323,10 +310,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <th className="py-2">#</th>
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
             <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current`}>Grade</SortHead>
-            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10. It does rank forward returns, weakly, and moves closely with the grade rather than independently of it. A star marks a name scored without the full panel.">Opportunity</SortHead>
+            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10, not a return forecast. A star marks a name scored without the full panel.">Opportunity</SortHead>
             <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name against your recorded position">Plan</SortHead>
-            <SortHead column="weight" sort={sort} onSort={setSort} title="Share of the account. The Shares column turns it into a count.">Size %</SortHead>
-            <SortHead column="shares" sort={sort} onSort={setSort} title="Whole shares at the account value and the price on this row, under the sizing policy above. Before fees; check your broker's price.">Shares</SortHead>
+            <SortHead column="weight" sort={sort} onSort={setSort} title="Share of the account under the sizing policy above.">Size %</SortHead>
             <th><span className="sr-only">Record purchase</span></th>
           </tr>
         </thead>
@@ -357,21 +343,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="text-xs">{isCash ? 'Hold'
               : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
               : action(row.ticker, row.weight))}</td>
-            <td className="text-xs tabular-nums" aria-label={isCash ? undefined : `${row.ticker} shares`}>{isCash || row.shares === null ? ''
-              : row.shares > 0 ? row.shares.toLocaleString()
-              // A target smaller than one share at this price. Printing "0"
-              // reads as "the desk wants none of this", which is the
-              // opposite of what it means: the desk wants a position this
-              // account is too small to express in whole shares. SNDK at
-              // $1,735 against a sub-1% target is the live case.
-              : <span className="cursor-help text-[#6e6e73]" title="Target is under one share at this price. Not an instruction to buy none.">&lt;1</span>}</td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
               : isCash ? '—'
               : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
               : <span className="cursor-help text-[#6e6e73]" title="Graded but unsized. Sizing ranks on the continuous score; the grade is a multiplier on top.">—</span>}</td>
             <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
           </tr>
-          {open && expand && <tr><td colSpan={8} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
+          {open && expand && <tr><td colSpan={7} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
           </Fragment>
         })}</tbody>
       </table>

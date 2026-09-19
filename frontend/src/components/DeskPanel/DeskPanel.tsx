@@ -681,10 +681,10 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">Plan</dt>
         <dd className="text-[#6e6e73]">
-          What the desk would do at its next rebalance, with the share count for the account size you set.
-          Rebalances run about every four weeks, and the line above the board says how far away the next one
-          is. Until then these are targets. Buy, add, trim and sell are the desk&rsquo;s intent;
-          uncovered means you hold something the desk does not rate, which is yours to decide.
+          What the desk would do at its next rebalance. Rebalances run about every four weeks, and the line
+          above the board says how far away the next one is. Until then these are targets. Buy, add, trim and
+          sell are the desk&rsquo;s intent; uncovered means you hold something the desk does not rate, which
+          is yours to decide.
         </dd>
       </div>
       <div>
@@ -1779,7 +1779,7 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
     // planned, so this line says only what blocks it: a genuine wait with its
     // reason, an expired decision, or no decision at all. A redundant "Wait"
     // beside "buy 35 shares" read as a contradiction.
-    if (wait) return <span title={reason} aria-label={`${ticker} plan action`}>{`Wait · ${expired ? 'expired' : 'no size shown'}`}</span>
+    if (wait) return <span title={reason} aria-label={`${ticker} plan action`}>{`Wait · ${expired ? 'evidence expired' : 'no size available'}`}</span>
     if (action === 'Wait') return <span title={reason} aria-label={`${ticker} plan action`}>{actOnIt(reason) ?? 'Wait'}</span>
     return null
   }
