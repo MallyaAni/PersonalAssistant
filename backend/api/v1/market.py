@@ -515,9 +515,8 @@ async def desk_mine(
         and (snap or {}).get("quotes")
     ):
         targets = research.get("targets")
-    # Each name's distance from its own 21-day average at the live price, so
-    # the plan can say what the book will do tonight rather than what the
-    # calendar will do in six months. A failure here costs the entry line and
+    # Each name's position on its own 20-day band at the live price, which is
+    # the book's entry trigger. A failure here costs the entry line and
     # nothing else: the plan still renders from the record.
     entries: dict[str, float] = {}
     if snap and snap.get("quotes"):
@@ -533,9 +532,9 @@ async def desk_mine(
                 {s: _Quote(f) for s, f in (snap.get("quotes") or {}).items()},
             )
             entries = {
-                symbol: read["stretch_21"]
+                symbol: read["band_z"]
                 for symbol, read in reads.items()
-                if read.get("stretch_21") is not None
+                if read.get("band_z") is not None
             }
         except Exception as exc:  # noqa: BLE001 - the plan stands without it
             print(f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})")

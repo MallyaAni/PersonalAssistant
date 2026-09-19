@@ -97,7 +97,7 @@ def action_for_row(
 # calendar says months from now. The threshold, the grade floor and the name
 # cap are read from `paper` rather than restated, because a copy of a trading
 # rule in the presentation layer is a copy that drifts.
-def entry_action(row, stretch, grade_live):
+def entry_action(row, band, grade_live):
     """Return (action, size, reason) when the entry fires now, else None.
 
     Said in the present tense, and sized. The first version of this answered
@@ -115,7 +115,7 @@ def entry_action(row, stretch, grade_live):
     """
     from backend.agents.trading.desk import paper
 
-    if stretch is None or not math.isfinite(stretch) or stretch < paper.ENTRY_TAIL:
+    if band is None or not math.isfinite(band) or band < paper.ENTRY_BAND_Z:
         return None
     if grade_live not in paper.ENTRY_MIN_GRADE:
         return None
@@ -128,7 +128,7 @@ def entry_action(row, stretch, grade_live):
     # The same gate the nightly applies before it sizes anything.
     if row.get("rejecting_band"):
         return "Wait", None, "Breaking out, but the daily is rejecting its upper band"
-    above = f"{stretch * 100:.0f}% above its 21-day"
+    above = f"{band:.1f} on its 20-day band"
     held = row["shares"] > 0
     room = paper.ENTRY_NAME_CAP - row["current_weight"]
     if held and room <= 0:

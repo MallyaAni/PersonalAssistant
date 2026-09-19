@@ -500,29 +500,29 @@ def _desk_open_order_ids(open_orders: list[dict]) -> list[str]:
 # 2015 this narrow blocker beat the ungated book on return, Sharpe and
 # drawdown, where requiring a full dip-or-breakout trigger starved it.
 def _price_entries(report) -> dict[str, float]:
-    """Return {ticker: stretch} for tonight's mid-cycle entry candidates.
+    """Return {ticker: band position} for tonight's mid-cycle entry candidates.
 
-    A name the desk grades A or better, sitting more than `ENTRY_TAIL` ABOVE
-    its own 21-day average. The upper tail only: the dip tail was measured
-    again over the regime the book now trades and does not pay there. The
-    evidence and the harness figures are at the top of `desk/paper.py`.
+    A name the desk grades A or better trading above `ENTRY_BAND_Z` on its own
+    20-day band. The band replaced a distance from the 21-day average, which
+    fired only after a name had already run 43% and so confirmed moves rather
+    than finding them; the evidence and the harness figures are at the top of
+    `desk/paper.py`. `entry.bollinger_z` is the same function the live read
+    uses, so the page and the book cannot disagree about where the band is.
     """
+    from backend.agents.trading.desk import entry as entry_analyst
     from backend.agents.trading.desk import paper as paper_rules
-    from backend.market import technical as daily_technical
 
     panel = report.panel
     last = len(panel.dates) - 1
     close = panel.adj_close
-    e21 = daily_technical.ema(close, 21)
-    with np.errstate(all="ignore"):
-        stretch = (close[last] - e21[last]) / e21[last]
+    band = entry_analyst.bollinger_z(close)[last]
     letters = report.graded.grades
     out: dict[str, float] = {}
     for column, ticker in enumerate(panel.tickers):
         if ticker == panel.benchmark:
             continue
-        value = float(stretch[column])
-        if not np.isfinite(value) or value < paper_rules.ENTRY_TAIL:
+        value = float(band[column])
+        if not np.isfinite(value) or value < paper_rules.ENTRY_BAND_Z:
             continue
         grade = letters[last, column]
         letter = grade if isinstance(grade, str) else _GRADE_LETTER.get(int(grade))

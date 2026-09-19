@@ -223,25 +223,25 @@ def test_the_other_guards_are_untouched_on_a_single_venue_feed():
 # this the name the desk buys tonight read "Wait · not held", the opposite of
 # what to do about it.
 @pytest.mark.parametrize(
-    "shares,weight,grade,stretch,expected",
+    "shares,weight,grade,band,expected",
     [
-        (0, 0.0, "A+", 0.18, "Buy"),
-        (0, 0.0, "A", 0.16, "Buy"),
-        (10, 0.05, "A+", 0.18, "Buy"),
+        (0, 0.0, "A+", 1.50, "Buy"),
+        (0, 0.0, "A", 1.30, "Buy"),
+        (10, 0.05, "A+", 1.50, "Buy"),
         # At the name cap the desk cannot add, so the row says so rather than
         # promising a buy that `_entry_orders` would decline to size.
-        (10, 0.15, "A+", 0.18, "Hold"),
+        (10, 0.15, "A+", 1.50, "Hold"),
         # Below the threshold, below the grade floor, and the retired dip tail:
         # none of these is an entry, so the calendar answers instead.
-        (0, 0.0, "A+", 0.12, None),
-        (0, 0.0, "B", 0.18, None),
-        (0, 0.0, "A+", -0.30, None),
+        (0, 0.0, "A+", 0.90, None),
+        (0, 0.0, "B", 1.50, None),
+        (0, 0.0, "A+", -1.50, None),
     ],
 )
-def test_the_live_entry_answers_before_the_calendar(shares, weight, grade, stretch, expected):
+def test_the_live_entry_answers_before_the_calendar(shares, weight, grade, band, expected):
     row = {"shares": shares, "current_weight": weight, "rejecting_band": False,
            "target_weight": 0.04}
-    assert (decision_view.entry_action(row, stretch, grade) or (None,))[0] == expected
+    assert (decision_view.entry_action(row, band, grade) or (None,))[0] == expected
 
 
 # The band gate the nightly applies is applied here too, so the page never
@@ -249,7 +249,7 @@ def test_the_live_entry_answers_before_the_calendar(shares, weight, grade, stret
 def test_a_breakout_rejecting_its_band_is_not_offered_as_a_buy():
     row = {"shares": 0, "current_weight": 0.0, "rejecting_band": True,
            "target_weight": 0.04}
-    action, _size, reason = decision_view.entry_action(row, 0.2, "A+")
+    action, _size, reason = decision_view.entry_action(row, 1.5, "A+")
     assert action == "Wait"
     assert "upper band" in reason
 
@@ -268,7 +268,7 @@ def test_a_missing_live_stretch_is_not_an_entry():
 # the sizing engine", two statements that cannot both be true.
 def test_a_name_with_no_target_is_never_an_entry():
     row = {"shares": 0, "current_weight": 0.0, "rejecting_band": False, "target_weight": 0.0}
-    assert decision_view.entry_action(row, 0.25, "A+") is None
+    assert decision_view.entry_action(row, 2.0, "A+") is None
 
 
 # The size is the weight to put on now, not the target it moves toward: a
@@ -278,10 +278,10 @@ def test_the_entry_carries_the_weight_to_put_on_now():
     from backend.agents.trading.desk import paper
 
     fresh = {"shares": 0, "current_weight": 0.0, "rejecting_band": False, "target_weight": 0.06}
-    assert decision_view.entry_action(fresh, 0.2, "A+")[1] == paper.ENTRY_ADD
+    assert decision_view.entry_action(fresh, 1.5, "A+")[1] == paper.ENTRY_ADD
     nearly = {"shares": 5, "current_weight": paper.ENTRY_NAME_CAP - 0.01,
               "rejecting_band": False, "target_weight": 0.06}
-    assert decision_view.entry_action(nearly, 0.2, "A+")[1] == pytest.approx(0.01)
+    assert decision_view.entry_action(nearly, 1.5, "A+")[1] == pytest.approx(0.01)
 
 
 # A grade falling is not a sell. Measured on this book, a name whose grade

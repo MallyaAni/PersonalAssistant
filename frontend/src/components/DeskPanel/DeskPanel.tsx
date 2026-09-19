@@ -682,8 +682,8 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         <dd className="text-[#6e6e73]">
           What the desk intends for each name. Two clocks drive it. The weight reset brings the whole book
           back to target and runs about twice a year; the line above the board says how far away it is.
-          Between resets price decides: a name graded A or A+ that breaks more than 15% above its 21-day
-          average is bought that night, funded by trimming the rest, so the gross does not move. Buy, add,
+          Between resets price decides: a name graded A or A+ that pushes through the upper edge of its own
+          20-day band is bought that night, funded by trimming the rest, so the gross does not move. Buy, add,
           trim and sell are the desk&rsquo;s intent; uncovered means you hold something the desk does not
           rate, which is yours to decide.
         </dd>
@@ -1874,7 +1874,7 @@ const EveryGrade = ({
           Only eligible technical readings refresh this decision's intraday grades.</p>}
         <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
-        <p className="mt-2">Plan is one of three things. <b>Buy</b> when a name graded A or A+ trades more than 15% above its 21-day average, which the desk buys that session and funds by trimming the rest, so gross exposure does not move; a name rejecting its upper band is held back. <b>Sell</b> when the weight reset is due and the name sits above its target. A grade falling is not a sell: measured on this book, a name dropping out of A still beat the benchmark over the next twenty sessions, so the desk holds it to the reset. <b>Hold</b> otherwise, including when the price evidence is stale or a quote is unusable — the reason is on hover. The percentage beside Buy or Sell is how much of the account to move. Quoted prices and sizes do not guarantee a fill, and recording a fill is yours to do at your broker.</p>
+        <p className="mt-2">Plan is one of three things. <b>Buy</b> when a name graded A or A+ pushes through the upper edge of its own 20-day band, which the desk buys that session and funds by trimming the rest, so gross exposure does not move. The band replaced a distance from the 21-day average, which only fired after a name had already run 43% and so confirmed moves instead of finding them. <b>Sell</b> when the weight reset is due and the name sits above its target. A grade falling is not a sell: measured on this book, a name dropping out of A still beat the benchmark over the next twenty sessions, so the desk holds it to the reset. <b>Hold</b> otherwise, including when the price evidence is stale or a quote is unusable — the reason is on hover. The percentage beside Buy or Sell is how much of the account to move. Quoted prices and sizes do not guarantee a fill, and recording a fill is yours to do at your broker.</p>
       </details>
       <div className="overflow-x-auto">
       <table className="w-full text-sm [&_td]:pr-3 [&_th]:pr-3">

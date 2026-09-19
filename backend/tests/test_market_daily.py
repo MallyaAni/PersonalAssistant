@@ -796,13 +796,10 @@ def _stretch_report(last_closes: dict[str, float], grades_by_name: dict[str, str
     )
 
 
-# The mid-cycle entry takes the upper tail only. The dip tail was measured
-# again over the regime the book trades and stopped paying there: against a
-# +0.44% ten-session baseline it returned +0.93% with an overlap-corrected
-# t of 0.47, and through the harness dropping it improved return, Sharpe and
-# turnover together. A name far BELOW its 21-day average is no longer an
-# entry, however good its grade.
-def test_price_entries_take_the_upper_tail_only():
+# The mid-cycle entry fires on the band's upper edge only. A name pinned to
+# the LOWER band is not an entry however good its grade: the dip leg was
+# measured over the regime the book trades and stopped paying there.
+def test_price_entries_take_the_upper_band_only():
     report = _stretch_report(
         {"UP": 120.0, "DOWN": 80.0, "UPBUTC": 120.0},
         {"UP": "A+", "DOWN": "A+", "UPBUTC": "C"},
@@ -811,7 +808,7 @@ def test_price_entries_take_the_upper_tail_only():
 
     entries = market_daily._price_entries(report)
     assert set(entries) == {"UP"}, entries
-    assert entries["UP"] >= paper.ENTRY_TAIL
+    assert entries["UP"] >= paper.ENTRY_BAND_Z
 
 
 # The benchmark is never an entry: it is the thing the book is measured

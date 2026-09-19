@@ -37,8 +37,8 @@ REBALANCE_EVERY = 120
 MIN_TRADE = 0.005
 # Mid-cycle entries, measured 2026-09-18 and corrected 2026-09-19. The
 # calendar decides WHAT the book holds; price decides WHEN each name is
-# entered. A name graded A or better sitting more than ENTRY_TAIL ABOVE its
-# 21-day average takes ENTRY_ADD of equity funded from the other holdings,
+# entered. A name graded A or better trading above ENTRY_BAND_Z on its own
+# 20-day band takes ENTRY_ADD of equity funded from the other holdings,
 # capped at ENTRY_NAME_CAP.
 #
 # The upper tail only. The rule shipped on 2026-09-18 took both tails, on a
@@ -83,7 +83,29 @@ MIN_TRADE = 0.005
 #
 # Every figure carries the universe's survivorship, which market_survivorship
 # measures at nineteen points a year, and every rule above carries it equally.
-ENTRY_TAIL = 0.15
+# The trigger is the band, not the distance from the average. Measured over
+# twenty start phases against the 15%-over-the-21-day rule it replaces:
+#
+#              fires    ran   next     CAGR   Sharpe       DD   turn
+#   from 2021    722  43.0%   4.6%   48.42%   1.381  -44.84%   5.62x   (15% rule)
+#                868  14.1%   2.7%   50.60%   1.458  -42.74%   4.69x   (band)
+#   from 2018    722  43.0%   4.6%   34.02%   1.182  -41.13%   5.09x   (15% rule)
+#                868  14.1%   2.7%   37.89%   1.238  -36.44%   5.13x   (band)
+#
+# Better on return, Sharpe and drawdown in both windows at the same turnover.
+# The columns that matter most are `ran` and `next`: the median twenty-session
+# move a name had ALREADY made when the trigger fired, and the move that
+# followed. The old rule fired after a name had run 43% and caught 4.6% of
+# what came next - it was confirming moves rather than finding them, which is
+# what a distance from a lagging average has to do. The band fires at 14.1%.
+#
+# Looser bands earn more and are a different business: 1.5 sigma returns 55.4%
+# a year at THIRTY times turnover. Requiring both triggers is worse than
+# either alone, 30.1% and 47.7%, because the intersection is both late and
+# rare. `entry.bollinger_z` is the same function the live read uses, and it
+# halves the sigma - 2.5 sigma is 1.25 there - so the page and the book cannot
+# drift apart.
+ENTRY_BAND_Z = 1.25
 ENTRY_ADD = 0.03
 ENTRY_NAME_CAP = 0.15
 ENTRY_MIN_GRADE = ("A", "A+")
