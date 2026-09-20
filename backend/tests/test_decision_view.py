@@ -25,24 +25,17 @@ def setup():
     return record, snapshot, quoted, now
 
 
-# Every missing quote or strategy gate blocks an otherwise eligible addition.
-@pytest.mark.parametrize(
-    "block",
-    [
-        None,
-        "stale",
-        "closed",
-        "spread",
-        "size",
-        "future",
-        "band",
-        "fomc",
-        "schedule",
-        "timing",
-        "technical",
-    ],
-)
-def test_decision_requires_every_gate(block):
+# What the desk WANTS and what can be TRADED are different questions, and the
+# gates split along that line.
+#
+# A strategy gate blocks: an FOMC pause really is a hold, a name rejecting its
+# upper band is one the desk itself holds back, and a name whose reset is not
+# due has no scheduled trade. An execution gate does not: a wide spread, a
+# stale quote or a closed market say nothing about whether the desk wants the
+# name, and treating them as a view turned all ninety-three rows into Hold
+# whenever the market was shut - which is most of the time the page is read.
+@pytest.mark.parametrize("block", [None, "band", "fomc", "schedule"])
+def test_a_strategy_gate_blocks_the_buy(block):
     record, snapshot, quoted, now = setup()
     quote = quoted["quotes"]["S11"]
     changes = {
@@ -65,6 +58,29 @@ def test_decision_requires_every_gate(block):
     ]
     assert (result["action"] == "Buy") is (block is None)
     assert result["target_weight"] == 0.1
+
+
+# An execution gate leaves the action alone and says what is in the way, so the
+# operator learns the desk wants the name AND that he cannot cross the spread
+# for it right now.
+@pytest.mark.parametrize("block", ["stale", "closed", "spread", "size", "future", "timing", "technical"])
+def test_an_execution_gate_annotates_rather_than_blocking(block):
+    record, snapshot, quoted, now = setup()
+    quote = quoted["quotes"]["S11"]
+    changes = {
+        "stale": (quote, {"t": (now - timedelta(seconds=31)).isoformat()}),
+        "future": (quote, {"t": (now + timedelta(seconds=1)).isoformat()}),
+        "closed": (quoted, {"market_open": False}),
+        "spread": (quote, {"ap": 102}),
+        "size": (quote, {"bs": 0}),
+        "timing": (record, {"paper": {}}),
+        "technical": (snapshot, {"technical": {}}),
+    }
+    target, replacement = changes[block]
+    target.update(replacement)
+    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"]["S11"]
+    assert result["action"] == "Buy", f"{block} should not suppress the desk's view"
+    assert "(" in result["reason"], f"{block} should say what is in the way"
 
 
 # A decision written on the evening of its own session is current, not

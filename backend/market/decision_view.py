@@ -48,28 +48,51 @@ def action_for_row(
     row, quote, deadline, paused, current_decision, target, current, now, entry=None
 ):
     """Return (action, weight, reason): Buy, Sell or Hold, and the weight to move."""
-    # Said the way a trader would say it. These were written from inside the
-    # system - "No allocation in the adopted plan", "Rebalance timing
-    # unavailable" - which names the desk's internals rather than telling the
-    # operator what is true of the name in front of him.
-    checks = (
+    # Two different questions, and they used to be one.
+    #
+    # "What does the desk want done with this name" is answered by the record:
+    # the grade, the target weight, the reset clock. "Can it be traded right
+    # now" is answered by the quote. Every gate below used to force a Hold, so
+    # a closed market turned all ninety-three rows into Hold whatever the desk
+    # thought - and a closed market is most of the time the operator reads
+    # this page. The quote being unusable is a fact ABOUT the execution, not a
+    # view about the name.
+    #
+    # So only what genuinely leaves nothing to decide still blocks: an FOMC
+    # pause really is a hold, a name with no row has no position and no target,
+    # and a name outside coverage has no opinion behind it. Everything else
+    # annotates: the action stands and the reason says what is in the way.
+    blocking = (
         (paused, "FOMC hold"),
         (not row, "Not in the book"),
         (row and not row["in_book"], "Not covered by the desk"),
-        (not current_decision, "Last night's decision is stale"),
-        (not quote["eligible"], quote["reason"]),
-        (not deadline or deadline <= now, "No current price reading"),
-        (row and row["until_rebalance"] is None, "Reset timing unknown"),
     )
-    reason = next((message for blocked, message in checks if blocked), None)
+    reason = next((message for blocked, message in blocking if blocked), None)
     if reason:
         return Action.HOLD, 0.0, reason
+    advisory = next(
+        (
+            message
+            for blocked, message in (
+                (not current_decision, "last night's decision is stale"),
+                (not quote["eligible"], str(quote["reason"]).lower()),
+                (not deadline or deadline <= now, "no current price reading"),
+                (row["until_rebalance"] is None, "reset timing unknown"),
+            )
+            if blocked
+        ),
+        None,
+    )
     # The live entry comes first. It is the one thing on this page that is
     # actionable between resets, and the calendar branch below would otherwise
     # bury it under an answer about a date six months out.
+    def said(action, move, why):
+        """Return the action with whatever is standing in its way appended."""
+        return action, move, f"{why} ({advisory})" if advisory else why
+
     if entry is not None:
         action, size, why = entry
-        return action, (size or 0.0), why
+        return said(action, size or 0.0, why)
     # A name the desk no longer grades A is sold, and the money goes into the
     # names it still wants. This was removed earlier on the evidence that a
     # downgrade is followed by outperformance rather than a fall - which is
@@ -80,19 +103,19 @@ def action_for_row(
     # moving money to a better name, so the row says Sell and the book buys
     # elsewhere the same session. `desk/exit.py` carries the table.
     if row["shares"] > 0 and row["grade_live"] not in ("A", "A+"):
-        return Action.SELL, -current, "Graded below A; the money belongs elsewhere"
+        return said(Action.SELL, -current, "Graded below A; the money belongs elsewhere")
     if not row["rebalance_due"]:
         if row["shares"] > 0:
-            return Action.HOLD, 0.0, "At its weight; no signal at this price"
-        return Action.HOLD, 0.0, "Not held; no entry signal at this price"
+            return said(Action.HOLD, 0.0, "At its weight; no signal at this price")
+        return said(Action.HOLD, 0.0, "Not held; no entry signal at this price")
     direction = action_for(target, current)
     if row["rejecting_band"] and direction in ("buy", "add"):
-        return Action.HOLD, 0.0, "Rejecting its upper band; the buy is held back"
+        return said(Action.HOLD, 0.0, "Rejecting its upper band; the buy is held back")
     if direction in ("buy", "add") and row["grade_live"] in ("A", "A+"):
-        return Action.BUY, target - current, "Reset is due; below its target weight"
+        return said(Action.BUY, target - current, "Reset is due; below its target weight")
     if direction in ("trim", "sell"):
-        return Action.SELL, target - current, "Reset is due; above its target weight"
-    return Action.HOLD, 0.0, "At its target weight"
+        return said(Action.SELL, target - current, "Reset is due; above its target weight")
+    return said(Action.HOLD, 0.0, "At its target weight")
 
 
 # The book's mid-cycle entry, decided at the live price rather than at the
