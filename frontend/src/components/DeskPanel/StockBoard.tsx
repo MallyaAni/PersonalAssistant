@@ -189,7 +189,7 @@ const PlanHead = ({sort, onSort, plans, shown, onShown}: {
 }
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, onBuy, saving, error, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   paper?: DeskPayload['board_paper'];
@@ -198,8 +198,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   coverage?: DeskPayload['coverage'];
   event: BoardEvent | null; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
   onOpen: (ticker: string) => void;
-  onBuy?: (ticker: string, price: number, shares: number, date: string) => Promise<boolean>;
-  saving: boolean; error: string; holdingsError?: string;
+  holdingsError?: string;
   // What a row shows when opened in place: the plan for that name, its
   // reasons and a way to the full panel.
   expand?: (ticker: string) => ReactNode;
@@ -216,10 +215,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // never folded, so a held position is never invisible.
   extraNames?: string[];
 }) => {
-  const [buy, setBuy] = useState<string | null>(null)
-  const [shares, setShares] = useState('')
-  const [price, setPrice] = useState('')
-  const [date, setDate] = useState(today)
   const [query, setQuery] = useState('')
   // Which plans to list. All three on is the whole board, the view this has
   // always shown, so the filter costs a reader who ignores it nothing.
@@ -230,7 +225,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // that column (best grade, biggest score, biggest size, A to Z), a second
   // reverses it, a third returns to the desk's own ranking.
   const [sort, setSort] = useState<{column: SortColumn; descending: boolean} | null>(null)
-  const pending = useRef(false)
   // A research size is shown only while it is current for that one name: the
   // allocation was built on a single bar, so a name whose own live quote does
   // not share that bar gets a dash instead of turning the whole board off.
@@ -419,7 +413,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
-            <th colSpan={7} className="py-2 pr-3 font-normal">
+            <th colSpan={6} className="py-2 pr-3 font-normal">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="search"
@@ -448,7 +442,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 disagree on purpose - target 0.8%, sell the 1.9% held - and
                 two bare percentages side by side read as a contradiction. */}
             <SortHead column="weight" sort={sort} onSort={setSort} title="The weight the desk wants in this name at the next weight reset, as a share of the account. Not the move in the Plan column, which is what it is trading today.">Target %</SortHead>
-            <th><span className="sr-only">Record purchase</span></th>
+
           </tr>
         </thead>
         <tbody>{ranked.map((row, index) => {
@@ -482,9 +476,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               : isCash ? '—'
               : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
               : <span className="cursor-help text-[#6e6e73]" title="Graded but unsized. Sizing ranks on the continuous score; the grade is a multiplier on top.">—</span>}</td>
-            <td className="text-right">{!isCash && <button disabled={!onBuy || saving} aria-label={`Record purchase of ${row.ticker}`} className="text-xs text-[#0071e3] disabled:opacity-40 hover:underline" onClick={() => {setBuy(row.ticker);setShares('');setPrice('');setDate(today())}}>Record</button>}</td>
+
           </tr>
-          {open && expand && <tr><td colSpan={7} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
+          {open && expand && <tr><td colSpan={6} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
           </Fragment>
         })}</tbody>
       </table>
@@ -501,23 +495,5 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     <BoardSimulation paper={paper} now={now} />
     {holdings === null && <p role="alert" className="px-3 py-2 text-xs text-[#b42318]">{holdingsError ?? 'Positions unavailable. Recording is disabled.'}</p>}
     <MlComparison ml={ml} />
-    {buy && <div role="dialog" aria-modal="true" aria-label={`Record ${buy} buy`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <form className="w-full max-w-sm space-y-3 rounded-2xl bg-white p-5 text-sm shadow-xl" onSubmit={async event => {
-        event.preventDefault()
-        if (saving || pending.current || !onBuy) return
-        pending.current = true
-        try {
-          if (await onBuy(buy, Number(price), Number(shares), date)) setBuy(null)
-        } finally { pending.current = false }
-      }}>
-        <h3 className="font-semibold">Record {buy} buy</h3>
-        <p className="text-xs text-[#6e6e73]">Enter your confirmed brokerage fill. This tracks your position; it does not place an order.</p>
-        <label className="block">Shares<input autoFocus aria-label="Filled shares" className="mt-1 block w-full rounded-lg border p-2" type="number" min="0.000001" step="any" required value={shares} onChange={event => setShares(event.target.value)} /></label>
-        <label className="block">Fill price $<input aria-label="Average fill price" className="mt-1 block w-full rounded-lg border p-2" type="number" min="0.000001" step="any" required value={price} onChange={event => setPrice(event.target.value)} /></label>
-        <label className="block">Date<input aria-label="Fill date" className="mt-1 block w-full rounded-lg border p-2" type="date" required max={today()} value={date} onChange={event => setDate(event.target.value)} /></label>
-        {error && <p role="alert" className="text-xs text-[#b42318]">{error}</p>}
-        <div className="flex justify-end gap-4"><button type="button" disabled={saving} onClick={() => setBuy(null)}>Cancel</button><button className="rounded-full bg-[#0071e3] px-4 py-2 text-white disabled:opacity-40" disabled={saving} type="submit">{saving ? 'Saving…' : 'Save position'}</button></div>
-      </form>
-    </div>}
   </section>
 }
