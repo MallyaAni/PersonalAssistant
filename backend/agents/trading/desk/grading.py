@@ -53,7 +53,32 @@ ORDINAL: dict[str, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
 # whole history - which contains the COVID crash - is one point. Steeper was
 # worse in both windows and A+ only worst of all, so the direction is the
 # ladder flattening rather than the grade mattering more.
-SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 1.0, B: 1.0, C: 0.0}
+#
+# B is nevertheless zero, and that is not a return decision. Flattening the
+# ladder gave B a full position while the desk's only exit rotates out of
+# anything below A, so the book bought B-graded names and sold them days
+# later. It is not theoretical: LITE was graded B on every session of the
+# live account, was bought anyway, and stood as a Sell within the week. The
+# entry rule already requires A (`paper.ENTRY_MIN_GRADE`) and the rotation
+# requires A; the reset was the only rule that disagreed with the other two.
+#
+# Measured on the rules the account actually runs - band entries funded, the
+# rotation capped at the name cap - over six start phases and two cost
+# levels, dropping B against keeping it:
+#
+#                  dCAGR   dSharpe   dDrawdown   phases better
+#   reset  20     -0.37%    +0.033      +1.87%        6 of 6
+#   reset  20 *   +0.18%    +0.044      +2.16%        6 of 6
+#   reset 120     -0.62%    -0.007      +0.19%        3 of 6
+#                                               (* at 30 bps)
+#
+# So at the reset the book runs it buys a fifth of a point of Sharpe and
+# nearly two points of drawdown for no return, and at realistic costs it
+# gains return too, because the churn it removes is exactly the names the
+# rotation was about to sell. The gain is a function of the cadence: at a
+# long reset there is nothing to win, because a downgraded name is carried
+# to the next reset either way.
+SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 1.0, B: 0.0, C: 0.0}
 ROTATION_WEIGHT = 0.5
 # The weight each analyst carries in the desk's sum: equal, rotation at
 # half. A ridge fit toward these (`market_weights`, shrink 1) wanted

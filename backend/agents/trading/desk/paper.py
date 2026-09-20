@@ -33,7 +33,34 @@ from pathlib import Path
 
 from backend.agents.trading.desk import execution_evidence, planner
 
-REBALANCE_EVERY = 120
+# The weight reset: maintenance, not timing. Price decides WHEN a name is
+# entered (the band below); this decides WHAT the book holds and trims
+# winners back, which price cannot do.
+#
+# It was 120 from d9c3e399, whose own message says "20, 40 and 60 sessions
+# are statistically indistinguishable across phases" and never argued for
+# 120. That measurement predates both rules that now share the work: the
+# band entry replaced the 15%-from-the-21-day-average rule it was measured
+# against, and the grade rotation did not exist. Re-measured on the rules
+# the account actually runs, over six start phases at two cost levels, 20
+# against 120:
+#
+#               dCAGR   dSharpe   phases better
+#   at 10 bps  +3.49%    +0.129   12 of 12 on both
+#   at 30 bps  +2.17%    +0.093   12 of 12, 11 of 12
+#
+# Thirty basis points is five times the account's measured slippage, so the
+# extra 40% of turnover is paid for several times over.
+#
+# The worry that set 120 was the opposite one - that a short reset lets the
+# calendar pick entry prices, worth "up to 15 points of CAGR" on identical
+# data. That is now the band's job, and the spread across start phases says
+# it is doing it: at reset 20 the CAGR range across phases is 5.7 points
+# with a 0.033 spread in Sharpe, against 5.7 and 0.028 at 120 - no worse -
+# while 60, which looks attractive on means, is the unstable one at 9.6 and
+# 0.072. The worst phase at 20 scores Sharpe 1.437, above the mean of 1.348
+# the book was getting at 120.
+REBALANCE_EVERY = 20
 MIN_TRADE = 0.005
 # Mid-cycle entries, measured 2026-09-18 and corrected 2026-09-19. The
 # calendar decides WHAT the book holds; price decides WHEN each name is
@@ -236,9 +263,22 @@ def save_state(root: Path, state: PaperState) -> Path:
 # 24 points of CAGR a year against holding, because the money stops working.
 # Redeployed it is the best rule the exit study found - at this reset it earned
 # the same return as holding with a 7.3 point shallower drawdown and a better
-# Sharpe, and its advantage grows with the reset length exactly as the
-# mechanism predicts (+0.34 points at a 20-session reset, +7.47 at 120). The
-# table and the cadence test are in `desk/exit.py`.
+# Sharpe.
+#
+# This used to claim the advantage GROWS with the reset length (+0.34 points
+# at 20, +7.47 at 120). It is the other way round, in every build and window
+# re-measured: capped at the account's name cap, rotation minus holding is
+# +3.42 points at a 20-session reset and -8.32 at 120, positive in twelve of
+# fourteen phases at 20 and none of fourteen at 120. The mechanism is the
+# reverse of the one stated - a short reset would have dropped the name
+# anyway, so the rotation acts early and keeps the proceeds working, while at
+# a long reset it sells into a name the calendar was going to re-select. At
+# 120 the rotation is a de-risking device, buying about eleven points of
+# shallower drawdown, and not a return device.
+#
+# The cross-reference that stood here pointed at `desk/exit.py` for the
+# table; `exit.py` opens "Nothing here trades" and its only table is the
+# retired band overlay. The numbers above are from the cadence sweeps.
 def _rotation_orders(
     leaving: dict[str, str],
     held: dict[str, float],

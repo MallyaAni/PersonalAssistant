@@ -506,9 +506,12 @@ def _downgraded(report, held: dict[str, float]) -> dict[str, str]:
     does not. Measured over twelve start phases at this reset, against holding
     to the next weight reset: the same return, a better Sharpe and a 7.3 point
     shallower drawdown. The advantage is a function of how long the book holds
-    - +0.34 points of CAGR at a 20-session reset, +7.47 at 120 - because the
-    rotation does the work the calendar used to do, and at four weeks the
-    calendar was already doing it.
+    - and it is largest at a SHORT reset, not a long one: +3.42 points of CAGR
+    at a 20-session reset against -8.32 at 120, positive in twelve of fourteen
+    start phases at 20 and none of fourteen at 120. The docstring here claimed
+    the opposite for a day. At a long reset the rotation sells into a name the
+    calendar was going to re-select anyway, so it earns its keep there as a
+    de-risking device rather than a return one.
     """
     from backend.agents.trading.desk import paper as paper_rules
 
