@@ -317,7 +317,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     || (b.opportunity ?? -1) - (a.opportunity ?? -1)
     || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
-  const emptyAccount = holdings !== null && holdings.length === 0
   const heldNames = new Set((holdings ?? []).map((h) => h.ticker))
   const planGross = !showSizes && !hidden
     // `* exposure` to match weightOf: every row is scaled by it, so the cash
@@ -325,7 +324,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     // an FOMC cycle.
     ? Object.values(planTargets).reduce((sum, w) => sum + (Number.isFinite(w) ? (w as number) : 0), 0) * exposure
     : null
-  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, narrow: [] as string[], weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : paused && emptyAccount ? 1 : null}
+  // What the desk leaves uninvested, which is one minus what it has sized.
+  //
+  // This used to fall back to 100% when the operator had recorded no holdings
+  // of his own, and print "Cash - 100% recorded" beside it. Both were reading
+  // his bookkeeping: an empty holdings file is not a statement that the desk
+  // is in cash. Nothing else on this board reads that file any more, and the
+  // cash row is part of the same book as the rows above it.
+  const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, narrow: [] as string[], weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : null}
   const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
   // The board opens with the top page of names and pages on request, so a
   // ninety-name list never becomes a wall to scroll through. A search narrows
@@ -350,9 +356,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     count: stocks.filter(s => s.ticker !== '__cash__' && planOf(s.ticker) === name).length,
   }))
   const everyPlan = PLAN_ACTIONS.every(name => shownPlans[name])
-  const byPlan = everyPlan
-    ? stocks
-    : stocks.filter(s => s.ticker === '__cash__' || shownPlans[planOf(s.ticker)])
+  // Cash is not one of the three plans, so a board narrowed to a plan drops
+  // it rather than pinning it to a list it is not part of. It was exempted to
+  // keep it from vanishing; vanishing is the correct behaviour when the
+  // question is "what is the desk trading".
+  const byPlan = everyPlan ? stocks : stocks.filter(s => s.ticker !== '__cash__' && shownPlans[planOf(s.ticker)])
   const filtered = searchText ? byPlan.filter((s) => s.ticker.toLowerCase().includes(searchText)) : byPlan
   // A chosen column replaces the desk's ranking; a name the column cannot
   // measure sorts to the bottom either way, so a dash never leads the board.
@@ -451,7 +459,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
-              <div className="text-[11px] text-[#6e6e73]">{isCash ? emptyAccount ? 'Cash · 100% recorded' : paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
+              <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} grade`}>{isCash ? '' : <span title={grades[row.ticker] ? 'Intraday grade' : `Grade at the ${latest.session} close`} className={grades[row.ticker] ? 'font-medium text-[#1d1d1f]' : ''}>{row.grade}{grades[row.ticker] ? ' ·' : ''}</span>}</td>
             <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? <>

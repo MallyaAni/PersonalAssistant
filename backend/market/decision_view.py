@@ -143,7 +143,13 @@ def action_for_row(
         return said(
             Action.SELL,
             -current,
-            f"Graded {row['grade_live']}; the desk rotates the money into the names it still wants",
+            # The whole position, not a trim. The percentage beside a Sell is
+            # how big the position IS, while the one beside a Buy is how much
+            # to ADD - the same-looking number means two different things, and
+            # a row that does not say which invites selling 7.8% of an account
+            # instead of closing a 7.8% holding.
+            f"Sell all of it: graded {row['grade_live']}, and the desk rotates "
+            f"the money into the names it still wants",
         )
 
     # Everything else is a Hold, and the reason says which kind.
@@ -230,7 +236,7 @@ def entry_action(row, band, grade_live, current=0.0):
     return (
         Action.BUY,
         size,
-        f"{above}, funded by trimming the rest",
+        f"Add {size:.1%} of the account: {above}, funded by trimming the rest",
     )
 
 
