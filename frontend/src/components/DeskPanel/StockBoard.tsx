@@ -1,6 +1,12 @@
 import { Fragment, useRef, useState, type ReactNode } from 'react'
 import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
 
+// The three things the desk can be doing about a name. Declared here because
+// this is the board that lists them and DeskPanel already imports from it; the
+// other direction would be a cycle.
+export const PLAN_ACTIONS = ['Buy', 'Sell', 'Hold'] as const
+export type PlanAction = (typeof PLAN_ACTIONS)[number]
+
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
 type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight'
 // The natural first direction for each column: a name list reads A to Z, a
@@ -126,6 +132,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const [price, setPrice] = useState('')
   const [date, setDate] = useState(today)
   const [query, setQuery] = useState('')
+  // Which plans to list. All three on is the whole board, the view this has
+  // always shown, so the filter costs a reader who ignores it nothing.
+  const [shownPlans, setShownPlans] = useState<Record<PlanAction, boolean>>({Buy: true, Sell: true, Hold: true})
   const [visible, setVisible] = useState(10)
   const [opened, setOpened] = useState<string | null>(null)
   // Any column sorts on a click: first click takes the useful direction for
@@ -234,7 +243,28 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // to the names that match, and the cash row anchors only the full board: a
   // search looks for a name, not for uninvested cash.
   const searchText = query.trim().toLowerCase()
-  const filtered = searchText ? stocks.filter((s) => s.ticker.toLowerCase().includes(searchText)) : stocks
+  // And the plan filter, which answers the question the search box cannot:
+  // not "where is this name" but "what is the desk actually doing today".
+  // On a ninety-name board the handful of Buys and Sells is a few rows among
+  // eighty-odd Holds, and finding them meant reading every one.
+  //
+  // The cash row is not a plan, so it is never filtered out by one.
+  // Anything that is not one of the three counts as Hold rather than opening a
+  // fourth bucket no checkbox controls: a stray word would otherwise become a
+  // row that every filter hides. "Wait" reached this column once already.
+  const planOf = (ticker: string): PlanAction => {
+    const said = planAction?.(ticker)
+    return PLAN_ACTIONS.includes(said as PlanAction) ? (said as PlanAction) : 'Hold'
+  }
+  const plans = PLAN_ACTIONS.map(name => ({
+    name,
+    count: stocks.filter(s => s.ticker !== '__cash__' && planOf(s.ticker) === name).length,
+  }))
+  const everyPlan = PLAN_ACTIONS.every(name => shownPlans[name])
+  const byPlan = everyPlan
+    ? stocks
+    : stocks.filter(s => s.ticker === '__cash__' || shownPlans[planOf(s.ticker)])
+  const filtered = searchText ? byPlan.filter((s) => s.ticker.toLowerCase().includes(searchText)) : byPlan
   // A chosen column replaces the desk's ranking; a name the column cannot
   // measure sorts to the bottom either way, so a dash never leads the board.
   const sorted = !sort ? filtered : [...filtered].sort((a, b) => {
@@ -303,6 +333,24 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                   className="w-full max-w-52 rounded-md border border-black/[0.12] bg-white px-2 py-1 text-sm text-[#1d1d1f] placeholder:text-[#9ca3af]"
                 />
                 {searchText && <span className="text-[#6e6e73]">{filtered.length} match{filtered.length === 1 ? '' : 'es'}</span>}
+                {planAction && (
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="font-medium text-[#1d1d1f]">Show</span>
+                    {plans.map(({name, count}) => (
+                      <label key={name} className="flex cursor-pointer items-center gap-1.5 font-normal">
+                        <input
+                          type="checkbox"
+                          className="cursor-pointer accent-[#0071e3]"
+                          checked={shownPlans[name]}
+                          aria-label={`Show ${name} rows`}
+                          onChange={(e) => { setShownPlans({...shownPlans, [name]: e.target.checked}); setVisible(10) }}
+                        />
+                        <span className="text-[#1d1d1f]">{name}</span>
+                        <span>({count})</span>
+                      </label>
+                    ))}
+                  </span>
+                )}
               </div>
             </th>
           </tr>

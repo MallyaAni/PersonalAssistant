@@ -4,7 +4,7 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { BoardSimulation, MlComparison, StockBoard, type BoardEvent } from './StockBoard'
+import { BoardSimulation, MlComparison, PLAN_ACTIONS, StockBoard, type BoardEvent, type PlanAction } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { TickerChart } from './TickerChart'
 import { EntriesNow } from './EntriesNow'
@@ -1122,6 +1122,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
       holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} now={now} />}
+      planAction={(ticker) => planFor(ticker, decisions, latest, now).action}
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
       </div>}
       {holdingsReady && holdings.length > 0 && (
@@ -1735,9 +1736,6 @@ const actOnIt = (reason?: string | null): string | null => {
   if (/refresh price evidence/i.test(reason)) return 'Price evidence has expired; reload for a current quote'
   return reason
 }
-
-export const PLAN_ACTIONS = ['Buy', 'Sell', 'Hold'] as const
-export type PlanAction = (typeof PLAN_ACTIONS)[number]
 
 // The plan as the column shows it, which is not always the action the board
 // sent: an expired quote or a blocked allocation reduces a Buy or a Sell to a
