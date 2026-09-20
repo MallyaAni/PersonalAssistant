@@ -190,18 +190,26 @@ const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
     size: number
   }[] = []
   const rank: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
+  const wanted = (grade: string) => grade === 'A' || grade === 'A+'
   for (let i = 1; i < rows.length; i += 1) {
     const before = rows[i - 1].grade
     const now = rows[i].grade
     if (!before || !now || before === now) continue
     const up = (rank[now] ?? -1) > (rank[before] ?? -1)
+    // Crossing OUT of A is not grade drift, it is the desk's only exit: the
+    // rotation that sells the name and puts the money into the ones it still
+    // wants. The chart drew every grade change the same way, so the one
+    // change that is a trade looked like the four that are not, and the
+    // entry circles had no counterpart. B to C is drift - the desk was
+    // already out - and so is anything on the way back up.
+    const sold = wanted(before) && !wanted(now)
     out.push({
       time: stamp(rows[i].date),
       position: up ? 'belowBar' : 'aboveBar',
-      color: GRADE_COLOR[now] ?? '#6e6e73',
+      color: sold ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
-      text: `${before}→${now}`,
-      size: rows[i].said ? 2 : 1,
+      text: sold ? `sell · ${before}→${now}` : `${before}→${now}`,
+      size: sold ? 2 : rows[i].said ? 2 : 1,
     })
   }
   return out
@@ -418,6 +426,18 @@ export const TickerChart = ({
               : `The newest bar is the last completed ${timeframe === 'weekly' ? 'week' : 'session'}; the market is closed or no quote has arrived.`}{' '}
             {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} shown, {data.basis}. The desk
             reads daily and weekly only, so those are the timeframes offered here.
+          </p>
+          {/* A mark nobody can read is decoration. Both of the desk's rules are
+              on the price now, so the legend has to name both. */}
+          <p className="mt-1 text-[11px] text-[#6e6e73]">
+            <span className="font-medium text-[#0b5cad]">{'●'} entry</span>{' '}
+            marks a session the price closed through the upper edge of its 20-day band, the
+            desk's buy trigger.{' '}
+            <span className="font-medium text-[#b42318]">{'↓'} sell</span>{' '}
+            marks a session the grade fell out of A, the desk's only exit: it sells and puts the
+            money into the names it still wants. Paler arrows are grade changes that are not
+            trades. A signal shown here is the rule replayed over these prices, not a record of
+            an order.
           </p>
 
           {summary && (
