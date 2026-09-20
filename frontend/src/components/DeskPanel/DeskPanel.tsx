@@ -363,7 +363,11 @@ const RegimeBanner = ({ regime, session }: { regime: DeskRecord['regime']; sessi
   const exposure = regime.exposure ?? 1
   return (
     <section className="rounded-xl border border-[#9a6200]/30 bg-[#fff6e5] px-3 py-2" role="note">
-      <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {session} close · {flags.length} flags</summary>
+      {/* The multiplier goes in the summary, not at the bottom of the fold.
+          It is what halves the book - on the live record exposure 0.5 against
+          an FOMC gate that is idle - and a reader looking at 57% cash had to
+          open a collapsed section to find the only sentence explaining it. */}
+      <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {session} close · {flags.length} flags{exposure < 1 ? ` · target sizing at ${Math.round(exposure * 100)}%` : ''}</summary>
       <p className="mt-1 text-xs text-[#7a5200]">Reassessed nightly. Intraday research sizing has its own dated inputs.</p>
       <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#7a5200]">
         {flags.map((flag) => (
@@ -372,7 +376,9 @@ const RegimeBanner = ({ regime, session }: { regime: DeskRecord['regime']; sessi
       </ul>
       {exposure < 1 && (
         <p className="mt-2 text-sm text-[#7a5200]">
-          The current target-size multiplier is {Math.round(exposure * 100)}%. Actual positions may differ until orders fill.
+          The current target-size multiplier is {Math.round(exposure * 100)}%, from these flags and not from the
+          FOMC policy below, which is separate and is only in force when it says so. The rest of the
+          account stays uninvested until the flags clear. Actual positions may differ until orders fill.
         </p>
       )}
       </details>
@@ -680,12 +686,19 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">Plan</dt>
         <dd className="text-[#6e6e73]">
-          What the desk intends for each name. Two clocks drive it. The weight reset brings the whole book
-          back to target and runs about twice a year; the line above the board says how far away it is.
-          Between resets price decides: a name graded A or A+ that pushes through the upper edge of its own
-          20-day band is bought that night, funded by trimming the rest, so the gross does not move. Buy, add,
-          trim and sell are the desk&rsquo;s intent; uncovered means you hold something the desk does not
-          rate, which is yours to decide.
+          One of three things, and never a fourth. <b>Buy</b> when a name graded A or A+ closes through
+          the upper edge of its own 20-day band; the desk buys it that night and funds it by trimming the
+          rest, so the gross does not move. The band replaced a distance from the 21-day average, which
+          only fired after a name had already run 43% and so confirmed moves instead of finding them.
+          <b>Sell</b> when the desk holds a name it no longer grades A or better. <b>Hold</b> otherwise,
+          and the hover says which kind: holding a position, waiting for an entry that has not fired, or
+          blocked because the price evidence is stale.
+          {' '}Two clocks drive it. The weight reset brings the whole book back to target every 20
+          sessions, about monthly, and the line above the board says how far away it is. Between resets,
+          price decides.
+          {' '}Every plan here describes the desk&rsquo;s own book and reads the same whatever you have
+          recorded in your positions. The distance between a position and its target weight is not an
+          instruction: the desk only trades toward those weights at a reset.
         </dd>
       </div>
       <div>
@@ -1125,6 +1138,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
       {!research && <>
+      {/* The entry read sits above the board. It was inside `EveryGrade`,
+          behind ?deskDetails=1 - a parameter nothing on the site writes, so
+          nobody could reach it - while its own comment calls it the one thing
+          on the page that is a signal rather than a ranking. */}
+      {latest && <EntriesNow userId={userId} onOpen={setOpenName} />}
       {latest && <div className="flex max-h-[75vh] flex-col">
       <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
@@ -1136,7 +1154,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {holdingsReady && holdings.length > 0 && (
         <YourPositions holdings={holdings} live={live} rows={rows} />
       )}
-      {detailsOpen && <details open aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
+      {/* Openable from the page, not only from a URL parameter a reader would
+          have to be told about. The parameter still opens it, so a link that
+          carries it keeps working. */}
+      <details open={detailsOpen} aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
         <summary className="cursor-pointer text-sm font-medium">Every grade in detail · diagnostic view</summary>
         <div className="mt-3 flex flex-col gap-3">
 
@@ -1161,11 +1182,19 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         </details>
       )}
         </div>
-      </details>}
+      </details>
 
 
+      {/* Amber only when the gate is actually doing something. It is a
+          provisional policy that spends most of its life monitoring - on the
+          live record factor 1.0, nothing pending, the decision 28 sessions
+          away - and rendering it as a standing warning put the reader's eye
+          on a rule that was idle while the rule halving his book sat
+          collapsed above it. */}
       {payload.event_policy?.enabled && (
-        <section aria-label="FOMC exposure policy" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]">
+        <section aria-label="FOMC exposure policy" className={eventPaused || event?.factor === 0.5 || eventLive?.active
+          ? "rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]"
+          : "rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]"}>
           <h3 className="font-semibold">FOMC · {!eventLive?.stale && eventLive?.status ? eventLive.status : eventPaused ? 'portfolio adjustments paused' : !event ? 'decision missing' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
           {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''}</p>}
           <details className="mt-1 text-xs"><summary className="cursor-pointer">Policy & execution</summary>
@@ -1909,11 +1938,9 @@ const EveryGrade = ({
   const commonBar = barTimes.length === 1 ? marketTime(barTimes[0]) : null
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-      {/* The entry read first. The rankings below say what the desk wants to
-          hold, which is a different question from whether now is a moment to
-          buy it, and the line beneath them has always admitted as much:
-          "grades are not entry signals". This is the signal they are not. */}
-      <EntriesNow userId={userId} onOpen={onOpenName} />
+      {/* The entry read moved above the board in the Plan view, where it is
+          reachable. It said "the entry read first" while sitting inside a
+          diagnostic table behind a URL parameter nothing writes. */}
       <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
       <p className="mb-2 text-xs text-[#6e6e73]">{Object.keys(liveGrades).length}/{grades.length} fresh{commonBar ? ` · bars ${commonBar}` : ''}{Object.keys(liveGrades).length < grades.length ? ` · other grades: ${latest.session} close` : ''} · grades are not entry signals.</p>
       <details className="mb-3 text-xs text-[#6e6e73]">
