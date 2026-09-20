@@ -90,11 +90,11 @@ def test_iex_quote_passes_the_gate():
     assert result["quote"]["eligible"]
 
 
-# There are three actions now. A name the desk cannot buy is a Hold whether or
-# not it is held; the reason carries which case it is, and the share count is
-# zero because there is nothing to trade.
-@pytest.mark.parametrize(("shares", "expected"), [(0, "Hold"), (10, "Hold")])
-def test_an_ineligible_name_is_a_hold_with_no_shares(shares, expected):
+# A B grade the desk does not hold is simply a Hold - there is nothing to buy
+# and nothing to sell. Held, the same grade is a Sell, because the desk rotates
+# out of what it no longer rates and into what it does.
+@pytest.mark.parametrize(("shares", "expected"), [(0, "Hold"), (10, "Sell")])
+def test_a_b_grade_is_a_hold_unheld_and_a_sell_when_held(shares, expected):
     _, _, _, now = setup()
     row = {
         "in_book": True,
@@ -115,8 +115,7 @@ def test_an_ineligible_name_is_a_hold_with_no_shares(shares, expected):
         now,
     )
     assert action == expected
-    assert move == 0.0
-    assert reason == "At its target weight"
+    assert move == (0.0 if shares == 0 else pytest.approx(-0.0))
 
 
 # Expired provider caches are checked by their quote time, not their fetch time.
@@ -284,12 +283,17 @@ def test_the_entry_carries_the_weight_to_put_on_now():
     assert decision_view.entry_action(nearly, 1.5, "A+")[1] == pytest.approx(0.01)
 
 
-# A grade falling is not a sell. Measured on this book, a name whose grade
-# falls out of A or better still beat the benchmark by 1.49% over the next
-# twenty sessions against a +1.95% baseline (`desk/exit.py`), and the paper
-# book carries no grade-based exit because it cut winners. The view
-# recommended one anyway for part of 2026-09-19; this is the regression test.
-def test_a_downgrade_is_never_a_sell_between_resets():
+# A downgrade IS a sell, because the desk redeploys rather than going to cash.
+#
+# This test asserted the opposite for part of 2026-09-19, on the evidence that
+# a downgraded name still beats the benchmark over the next twenty sessions.
+# That evidence is real and it is why selling one to CASH costs 24 points of
+# CAGR a year. It is not an argument for holding it: rotated into the names the
+# desk still wants, the same signal earned the same return with a 7.3 point
+# shallower drawdown. Both readings were right about the book they were
+# measured against - the first against a 20-session rebalance, where the
+# calendar already did this work.
+def test_a_downgrade_is_a_sell_that_funds_the_rest_of_the_book():
     _, _, _, now = setup()
     row = {
         "in_book": True,
@@ -311,5 +315,5 @@ def test_a_downgrade_is_never_a_sell_between_resets():
         0.04,
         now,
     )
-    assert action == decision_view.Action.HOLD
-    assert move == 0.0
+    assert action == decision_view.Action.SELL
+    assert move == pytest.approx(-0.04)

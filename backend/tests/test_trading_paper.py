@@ -108,8 +108,16 @@ def test_hold_then_exit_when_the_analyst_says_so():
         finished={"MU": "a bearish candle at the top of its Bollinger band"},
     )
     assert what == "exits"
-    assert [(o.symbol, o.side, o.qty) for o in orders] == [("MU", "sell", 40)]
+    # The sale is only half of it: the money follows the names the desk still
+    # wants. MU frees 40 x $150 = $6,000, SNDK is the only taker and has room
+    # under the name cap, so it buys 30 shares at $200. Selling to cash - which
+    # is what this did before - measured 24 points of CAGR a year worse.
+    assert [(o.symbol, o.side, o.qty) for o in orders] == [
+        ("MU", "sell", 40),
+        ("SNDK", "buy", 30),
+    ]
     assert "bearish candle" in orders[0].reason
+    assert "redeploying" in orders[1].reason
     assert new.sessions_since_rebalance == 4
     assert "MU" not in new.opened
     quiet, _new, what2 = paper.plan(

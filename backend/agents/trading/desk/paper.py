@@ -231,6 +231,86 @@ def save_state(root: Path, state: PaperState) -> Path:
 # to what it already holds, so the exposure the regime chose is untouched
 # and only the selection moves. A name at its cap is not added to, and a
 # trim too small to clear MIN_TRADE is dropped rather than sent.
+# Sell a name the desk has turned against and put the money into the ones it
+# still wants. NOT a sale to cash: measured, selling a downgrade to cash costs
+# 24 points of CAGR a year against holding, because the money stops working.
+# Redeployed it is the best rule the exit study found - at this reset it earned
+# the same return as holding with a 7.3 point shallower drawdown and a better
+# Sharpe, and its advantage grows with the reset length exactly as the
+# mechanism predicts (+0.34 points at a 20-session reset, +7.47 at 120). The
+# table and the cadence test are in `desk/exit.py`.
+def _rotation_orders(
+    leaving: dict[str, str],
+    held: dict[str, float],
+    prices: dict[str, float],
+    equity: float,
+    session: str,
+    state: "PaperState",
+    blocked: set[str] | None,
+) -> list["PaperOrder"]:
+    """Return the sell orders for downgraded names and the buys they fund."""
+    if equity <= 0 or not leaving:
+        return []
+    blocked = blocked or set()
+    sells: list[tuple[str, int, float]] = []
+    for symbol in sorted(leaving):
+        qty = int(held.get(symbol, 0))
+        price = float(prices.get(symbol) or 0.0)
+        if qty <= 0 or price <= 0:
+            continue
+        sells.append((symbol, qty, qty * price))
+    if not sells:
+        return []
+
+    # Everything still held that the desk has not turned against, and that is
+    # not blocked from buying tonight.
+    takers = {
+        s: float(q) * float(prices.get(s) or 0.0)
+        for s, q in held.items()
+        if q > 0 and s not in leaving and s not in blocked and (prices.get(s) or 0) > 0
+    }
+    orders: list[PaperOrder] = []
+    for symbol, qty, _ in sells:
+        seq = state.order_seq
+        state.order_seq += 1
+        orders.append(
+            PaperOrder(
+                symbol,
+                "sell",
+                qty,
+                leaving[symbol],
+                client_order_id=order_id(session, symbol, "sell", seq),
+            )
+        )
+        state.opened.pop(symbol, None)
+    pool = sum(takers.values())
+    freed = sum(value for _, _, value in sells)
+    if pool <= 0 or freed <= 0:
+        # Nothing left to redeploy into, so the proceeds wait for the reset
+        # rather than being forced somewhere the desk does not want them.
+        return orders
+    for symbol, value in sorted(takers.items()):
+        price = float(prices[symbol])
+        current = float(held[symbol]) * price / equity
+        room = ENTRY_NAME_CAP - current
+        want = min(freed * (value / pool), max(0.0, room) * equity)
+        qty = int(round(want / price))
+        if qty <= 0 or qty * price < MIN_TRADE * equity:
+            continue
+        seq = state.order_seq
+        state.order_seq += 1
+        orders.append(
+            PaperOrder(
+                symbol,
+                "buy",
+                qty,
+                "redeploying a downgraded name",
+                client_order_id=order_id(session, symbol, "buy", seq),
+            )
+        )
+    return orders
+
+
 def _entry_orders(
     entries: dict[str, float],
     held: dict[str, float],
@@ -426,21 +506,12 @@ def plan(
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
-        for symbol, why in done.items():
-            qty = int(held.get(symbol, 0))
-            if qty > 0:
-                seq = new.order_seq
-                new.order_seq += 1
-                orders.append(
-                    PaperOrder(
-                        symbol,
-                        "sell",
-                        qty,
-                        why,
-                        client_order_id=order_id(session, symbol, "sell", seq),
-                    )
-                )
-                new.opened.pop(symbol, None)
+        # A name the desk has turned against is sold and the money follows the
+        # names it still wants. The sale alone was what this used to do, and a
+        # sale alone is the variant that loses 24 points of CAGR.
+        orders.extend(
+            _rotation_orders(done, held, prices, equity, session, new, entry_blocked)
+        )
         # Price entries, after the session's exits are written. The calendar
         # chose what the book holds; this chooses when each name is entered.
         if entries:

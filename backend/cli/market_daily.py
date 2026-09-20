@@ -499,6 +499,32 @@ def _desk_open_order_ids(open_orders: list[dict]) -> list[str]:
 # but never bought, whatever its grade says. Measured on the book since
 # 2015 this narrow blocker beat the ungated book on return, Sharpe and
 # drawdown, where requiring a full dip-or-breakout trigger starved it.
+def _downgraded(report, held: dict[str, float]) -> dict[str, str]:
+    """Return {ticker: reason} for held names the desk no longer grades A.
+
+    The desk holds a name while it grades A or better and rotates out when it
+    does not. Measured over twelve start phases at this reset, against holding
+    to the next weight reset: the same return, a better Sharpe and a 7.3 point
+    shallower drawdown. The advantage is a function of how long the book holds
+    - +0.34 points of CAGR at a 20-session reset, +7.47 at 120 - because the
+    rotation does the work the calendar used to do, and at four weeks the
+    calendar was already doing it.
+    """
+    from backend.agents.trading.desk import paper as paper_rules
+
+    letters = report.graded.grades
+    last = len(report.panel.dates) - 1
+    out: dict[str, str] = {}
+    for column, ticker in enumerate(report.panel.tickers):
+        if ticker == report.panel.benchmark or not held.get(ticker):
+            continue
+        grade = letters[last, column]
+        letter = grade if isinstance(grade, str) else _GRADE_LETTER.get(int(grade))
+        if letter not in paper_rules.ENTRY_MIN_GRADE:
+            out[ticker] = f"graded {letter}; the desk wants the money elsewhere"
+    return out
+
+
 def _price_entries(report) -> dict[str, float]:
     """Return {ticker: band position} for tonight's mid-cycle entry candidates.
 
@@ -617,9 +643,16 @@ def _paper_trade(
         settled.extend(more)
     account = client.account()
     held = {p.symbol: p.qty for p in client.positions()}
-    # Nothing is passed for `finished`: the band exit that used to fill it
-    # was measured inside the book's own rules and cost 3.0% a year. See
-    # the note at the top of `desk/exit.py`.
+    # `finished` carries the names the desk has turned against, and nothing
+    # else. The band exit that used to fill it cost 3.0% a year and stays
+    # retired; every price-based rule measured worse than holding, because a
+    # price rule sells winners in an uptrend. A grade falling is different:
+    # it is the analysts saying the thesis broke, not the chart looking tired.
+    #
+    # It is a ROTATION, not an exit. `paper._rotation_orders` puts the money
+    # into the names the desk still wants; selling the same signal to cash
+    # measured 24 points of CAGR a year worse than holding. See the table at
+    # the top of `desk/exit.py`.
     blocked, blocking_flags = _band_blocked(report)
     event_active = bool(state.event_cycle) or policy.get("factor") == event_risk.REDUCED
     if state.pending or event_active or not policy["calendar_known"]:
@@ -635,6 +668,7 @@ def _paper_trade(
             prices,
             targets,
             grades,
+            finished=_downgraded(report, held),
             force_rebalance=rebalance_now,
             entry_blocked=blocked,
             entries=_price_entries(report),

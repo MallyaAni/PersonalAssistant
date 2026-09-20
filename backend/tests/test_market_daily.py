@@ -817,3 +817,25 @@ def test_price_entries_never_return_the_benchmark():
     report = _stretch_report({"UP": 120.0}, {"UP": "A+"})
     report.panel.adj_close[-1, -1] = 150.0
     assert "SPY" not in market_daily._price_entries(report)
+
+
+# The desk holds while it grades A or better and rotates out when it does not.
+# Only held names can be rotated out of, and the benchmark never is.
+def test_downgraded_names_are_selected_for_rotation():
+    report = _stretch_report(
+        {"KEEP": 100.0, "DROP": 100.0, "UNHELD": 100.0},
+        {"KEEP": "A", "DROP": "C", "UNHELD": "C"},
+    )
+    out = market_daily._downgraded(report, {"KEEP": 10.0, "DROP": 5.0})
+    assert set(out) == {"DROP"}, out
+    assert "graded C" in out["DROP"]
+
+
+# A B grade is below the desk's hold line too: the entry floor is A or better,
+# and the rotation reads the same constant rather than a second opinion.
+def test_a_b_grade_is_rotated_out_like_a_c():
+    from backend.agents.trading.desk import paper
+
+    assert "B" not in paper.ENTRY_MIN_GRADE
+    report = _stretch_report({"BEE": 100.0}, {"BEE": "B"})
+    assert set(market_daily._downgraded(report, {"BEE": 7.0})) == {"BEE"}

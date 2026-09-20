@@ -70,14 +70,17 @@ def action_for_row(
     if entry is not None:
         action, size, why = entry
         return action, (size or 0.0), why
-    # A grade falling is NOT a sell, however much it looks like one. Measured
-    # on this book over 86,209 holding sessions, a name whose grade falls out
-    # of A or better still beat the benchmark by 1.49% over the next twenty
-    # sessions (t +4.3) against a +1.95% baseline: the downgrade follows the
-    # fall rather than leading it. `desk/exit.py` has the table and the note
-    # at the top of `desk/paper.py` records why the book carries no
-    # grade-based exit - it cut winners. This view briefly recommended one
-    # anyway, which put a retired rule in front of the operator as advice.
+    # A name the desk no longer grades A is sold, and the money goes into the
+    # names it still wants. This was removed earlier on the evidence that a
+    # downgrade is followed by outperformance rather than a fall - which is
+    # true, and is why selling one to CASH costs 24 points of CAGR a year. It
+    # is not an argument for holding it: rotated into the rest of the book the
+    # same signal earned the same return as holding with a 7.3 point shallower
+    # drawdown and a better Sharpe. The desk is not leaving the market, it is
+    # moving money to a better name, so the row says Sell and the book buys
+    # elsewhere the same session. `desk/exit.py` carries the table.
+    if row["shares"] > 0 and row["grade_live"] not in ("A", "A+"):
+        return Action.SELL, -current, "Graded below A; the money belongs elsewhere"
     if not row["rebalance_due"]:
         if row["shares"] > 0:
             return Action.HOLD, 0.0, "At its weight; no signal at this price"
