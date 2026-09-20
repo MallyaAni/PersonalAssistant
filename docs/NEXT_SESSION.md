@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-09-20 — Within-batch near-duplicate suppression and repeat-fill recency guard deployed; Scout trimmed to jenos1 + ani.mallya
+
+Deployed and verified 2026-09-20 22:25 UTC: commit `ca63c093` through
+`scripts/deploy.sh` from `~/deploy/anios`. Gate: unit 3758 passed (was 3747;
+11 new), routing gate passed. Post-deploy checks cheap-only
+(`2026-09-20T22:25:19Z ca63c093 ok (cheap)`) — `backend/discovery/` is not in
+`deploy.sh`'s `search_paths`, so the credit-consuming sweep/search harness was
+correctly skipped, matching the user's "don't lose internet credits" constraint.
+Backend container verified live: `REPEAT_RECENCY_DAYS` (feedback_loop.py:57),
+`_near_any` (novelty.py:377), `last_send_dates` + `window` (runner.py:811-814).
+
+Two Scout defects fixed, both diagnosed from live rows:
+
+1. **Within-digest duplicates** (the "multiple recommendations of the same
+   thing today"): ani.mallya's 09-20 19:00 UTC digest carried FRESHFARM x3 and
+   Clarendon Day x2 in ONE message — the same happening surfaced from different
+   Google URLs → different `external_id` → different digests → all passed
+   novelty. Their embeddings were cosine distance 0.045/0.051, under
+   `NEAR_DUPLICATE_DISTANCE = 0.08`. Root cause: `novel()` in
+   `backend/discovery/novelty.py` deduped within-batch only by digest identity
+   (`seen_in_batch`) and checked near-duplicates only against *history*
+   (`has_near_duplicate`), never within the batch. Fix: `admitted_embeddings`
+   tracking + `_near_any()` so a candidate within the near-duplicate distance
+   of an already-admitted candidate in the same batch is skipped.
+2. **`_repeat_fill` cross-day repeats**: jenos1's 09-19 20:00 UTC digest
+   re-offered COLLECTIVE at The Light Horse (starts 2026-10-03) with
+   `shortlist_rank: -1` (repeat-fill) — the cap (`MAX_REPEAT_SENDS = 3`)
+   bounds how often, not how soon. Fix: `last_send_dates()` reads the most
+   recent send per digest; `_repeat_fill` skips anything sent within
+   `REPEAT_RECENCY_DAYS = 14`.
+
+Tests: 20 in `test_discovery_novelty.py` (2 new for within-batch dedup, 2 new
+for recency, stub `_StubEmbeddings` now prefers the longest matching key so two
+distinct jazz events get distinct vectors — both events collapsed under the
+identical `_vec(1.0)` before); 50 in feedback_loop/discovery_runs/delivery;
+ruff clean on the test file (remaining runner.py E402/E501 pre-existing). The
+previously-failing `test_market_desk_api.py::test_current_research_target_drives_action_over_http`
+now passes (other agent's desk work since).
+
+Scout recipients trimmed: disabled `enabled=False` on all `discovery_schedules`
+except ani.mallya (daily 19:00 UTC) and jenos1 (daily 20:00 UTC). Disabled:
+arsalon, ibraa, and 10 stale test/probe schedules (`del_*`, `api_del_*`,
+`sch_7489b1d36309`, `scout_probe_v4`). Verified live: 14 rows, 2 enabled.
+
+Note: ani.mallya's "multiple recommendations" were within-digest, not
+cross-day; jenos1's COLLECTIVE was cross-day repeat-fill. jenos1's 09-20 digest
+was empty (novel 0). The provider order stays `tavily,brave,google` per the
+user's explicit instruction (Google credits are paid; wait for Tavily to
+replenish) — no reorder was made.
+
+Open: `_near_any` runs cosine distance in Python against the in-memory batch
+(small, fine). A real-utterances phrasing check for the recency window could
+be added but is not required for a structural guard. Watch ani.mallya's and
+jenos1's next digests for the within-digest duplicate and repeat-fill
+behaviour; if either misbehaves, `evaluate_discovery_ranking` is the judge.
+
 ## 2026-09-17 — Rolling discovery search window and non-US listing filter deployed and verified
 
 Deployed and verified 2026-09-18 04:19 UTC: commit 8f2ff2a4 through
