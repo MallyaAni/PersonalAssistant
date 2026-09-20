@@ -34,8 +34,26 @@ C = "C"
 GRADES: tuple[str, ...] = (A_PLUS, A, B, C)
 # Ordinal for ranking: higher is better.
 ORDINAL: dict[str, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
-# How much of a full position each grade earns.
-SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 0.75, B: 0.5, C: 0.0}
+# How much of a full position each grade earns. The grade SELECTS - a C is not
+# a candidate at all - and above that line it does not size.
+#
+# The ladder used to run 1.0 / 0.75 / 0.5, which is a strong claim: an A+ worth
+# twice a B. Swept over twelve start phases against flat, steeper, A+ only and
+# dropping B, Sharpe sat between 1.426 and 1.448 for EVERY scheme. The ladder
+# was not buying risk-adjusted return; it was holding a smaller book, and a
+# smaller book earns less. Flat with the volatility target at 0.30:
+#
+#                        CAGR   Sharpe   worst DD
+#   from 2021  ladder  51.23%    1.434   -42.74%
+#              flat    58.42%    1.449   -46.12%
+#   from 2018  ladder  39.35%    1.283   -34.89%
+#              flat    44.73%    1.323   -35.87%
+#
+# Better on return and Sharpe in both windows, and the drawdown cost over the
+# whole history - which contains the COVID crash - is one point. Steeper was
+# worse in both windows and A+ only worst of all, so the direction is the
+# ladder flattening rather than the grade mattering more.
+SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 1.0, B: 1.0, C: 0.0}
 ROTATION_WEIGHT = 0.5
 # The weight each analyst carries in the desk's sum: equal, rotation at
 # half. A ridge fit toward these (`market_weights`, shrink 1) wanted

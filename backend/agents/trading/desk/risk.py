@@ -29,8 +29,21 @@ from backend.market.sizing import (
 # and 41% at 1.28 and -39% for equal weight. The concentration is what
 # the grade is for; the volatility target is what keeps the drawdown
 # at half the theme's.
+# The volatility target scales the whole book DOWN when its estimated
+# volatility exceeds the target, so a target set too low holds cash in calm
+# markets for no reason. At 0.25 that constraint bound often enough to cost
+# return without buying safety: raising it to 0.30 earned +3.5 and +2.0 points
+# of CAGR in the two windows at a better Sharpe, and the drawdown over the
+# whole history barely moved (-34.89% to -34.67%).
+#
+# 0.40 earns more again and is NOT taken. In the 2021 window it looks nearly
+# free because drawdown saturates near -46% whatever the exposure, but that
+# window contains no crash; measured over the whole history with COVID in it,
+# 0.40 with a flat grade multiplier falls to -43.03% against -34.89%. Eight
+# points of drawdown is what leverage costs when a real fall arrives, and the
+# modern window simply cannot see it.
 BOOK_CONFIG = SizingConfig(
-    top_fraction=0.1, short_fraction=0.0, target_volatility=0.25, name_cap=0.15
+    top_fraction=0.1, short_fraction=0.0, target_volatility=0.30, name_cap=0.15
 )
 # While money is tightening the engine's inverse-volatility weights are
 # raised to this power, so the steady names take a larger share of the

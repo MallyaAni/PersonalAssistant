@@ -216,7 +216,9 @@ def test_name_backtest_holds_only_while_graded():
     bt = trading_desk.name_backtest(report, "N0", "A", cost_bps=0.0)
     assert bt.sessions_in == 10
     assert bt.switches == 2
-    assert bt.rule_return == pytest.approx(0.75 * 0.10)
+    # Sized by the grade's own multiplier rather than a literal: the ladder was
+    # flattened once and this assertion was the only thing that noticed.
+    assert bt.rule_return == pytest.approx(grading.SIZE_MULTIPLIER["A"] * 0.10)
     assert bt.hold_return == pytest.approx(0.01 * (t - 1))
     rows = trading_desk.history(report, "N0", 5)
     assert rows[10].grade == "A"
