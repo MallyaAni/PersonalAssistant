@@ -175,7 +175,10 @@ const entryMarkers = (chart: DeskChart | undefined) =>
     position: 'belowBar' as const,
     color: '#0b5cad',
     shape: 'circle' as const,
-    text: 'entry',
+    // "Buy", not "entry". The board's column says Buy and this marks the same
+    // rule firing on the same session; two words for one action is the drift
+    // the three-action vocabulary was introduced to end.
+    text: 'buy',
     size: 1,
   }))
 
@@ -430,9 +433,9 @@ export const TickerChart = ({
           {/* A mark nobody can read is decoration. Both of the desk's rules are
               on the price now, so the legend has to name both. */}
           <p className="mt-1 text-[11px] text-[#6e6e73]">
-            <span className="font-medium text-[#0b5cad]">{'●'} entry</span>{' '}
-            marks a session the price closed through the upper edge of its 20-day band, the
-            desk's buy trigger.{' '}
+            <span className="font-medium text-[#0b5cad]">{'●'} buy</span>{' '}
+            marks a session the price closed through the upper edge of its 20-day band, which is
+            the desk's buy trigger and the same rule the Plan column reads.{' '}
             <span className="font-medium text-[#b42318]">{'↓'} sell</span>{' '}
             marks a session the grade fell out of A, the desk's only exit: it sells and puts the
             money into the names it still wants. Paler arrows are grade changes that are not
