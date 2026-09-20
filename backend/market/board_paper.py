@@ -23,6 +23,10 @@ from backend.market import (
 
 VERSION = "board-paper/2"
 SLIPPAGE = 0.001  # Additional 10 bp per side beyond the observed bid/ask.
+# The smallest gap worth crossing a spread for, shared with the paper book so
+# this account and the desk's agree on what counts as a trade rather than
+# churning on rounding.
+MIN_TRADE = 0.005
 
 
 # Write one complete state atomically without overwriting an earlier observation.
@@ -92,23 +96,46 @@ def transition(state, decisions, research, now):
     valid = valid and not research.get("event_paused")
     valid = valid and all(math.isfinite(w) and 0 <= w <= 1 for w in targets.values())
     valid = valid and sum(targets.values()) <= 1.000001
-    eligible = {}
-    for ticker, row in rows.items():
-        until = desk_freshness.timestamp(row.get("valid_until"))
-        if (
-            valid
-            and until
-            and now < until
-            and row["quote"].get("eligible")
-            and row["action"] in ("Buy", "Sell")
-            and ticker in targets
-        ):
-            eligible[ticker] = {"action": row["action"], "weight": targets[ticker]}
     equity = (
         cash
         + state["receivables"]
         + sum(p["shares"] * p["mark"] for p in positions.values())
     )
+    # Which way to trade is this account's own question, not the desk board's.
+    #
+    # It used to be read off `row["action"]`, which answered "what is the DESK
+    # doing about this name" - a different question with a different answer.
+    # The desk trades a name on a breakout or a downgrade and otherwise holds;
+    # this account exists to sit at the research targets, and it cannot get
+    # there on the desk's signals. Borrowing them also ran the dependency the
+    # wrong way: the board briefly grew a target-gap rule that belonged here,
+    # and on the live book that rule printed Sell on eight names the desk had
+    # no intention of selling.
+    #
+    # So the direction comes from the distance between this account's own
+    # weight and the target it is being moved to. The board is still consulted
+    # for whether the name can be TRADED - the quote and the freshness - which
+    # is what it does know.
+    eligible = {}
+    for ticker, row in rows.items():
+        until = desk_freshness.timestamp(row.get("valid_until"))
+        if not (
+            valid
+            and until
+            and now < until
+            and row["quote"].get("eligible")
+            and ticker in targets
+        ):
+            continue
+        position = positions.get(ticker) or {}
+        held = position.get("shares", 0.0) * position.get("mark", 0.0)
+        gap = targets[ticker] - (held / equity if equity > 0 else 0.0)
+        if abs(gap) < MIN_TRADE:
+            continue
+        eligible[ticker] = {
+            "action": "Buy" if gap > 0 else "Sell",
+            "weight": targets[ticker],
+        }
     buy_cash = cash
     # Sales cannot fund buys during the same observation.
     for ticker, intent in sorted(

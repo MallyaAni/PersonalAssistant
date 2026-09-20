@@ -72,7 +72,7 @@ def test_delayed_fill_and_cash_debit_are_persisted_together(tmp_path):
 
 
 # A changed gate cancels the intent instead of manufacturing a profitable fill.
-@pytest.mark.parametrize("blocked", ["pause", "quote", "expired", "wait"])
+@pytest.mark.parametrize("blocked", ["pause", "quote", "expired", "reached"])
 def test_revalidation_blocks_previous_intent(tmp_path, blocked):
     row = board_paper.initialize(tmp_path, 1000, NOW)
     decisions, research = inputs(NOW)
@@ -86,7 +86,11 @@ def test_revalidation_blocks_previous_intent(tmp_path, blocked):
     elif blocked == "expired":
         research["valid_until"] = NOW.isoformat()
     else:
-        decisions["rows"]["AAPL"]["action"] = "Hold"
+        # The target is already where the account stands, so there is nothing
+        # left to trade. This case used to be "the board said Hold", which no
+        # longer blocks: the board answers what the DESK is doing about the
+        # name, and this account's direction is its own distance to target.
+        research["targets"]["AAPL"] = 0.0
     result = board_paper.transition(row, decisions, research, later)
     assert result["fills"] == []
     assert result["pending"] == {}
@@ -188,7 +192,10 @@ def test_paper_direction_matches_selected_target(tmp_path, nightly, target, acti
     decisions = decision_view.build(
         record, held, 100000, snapshot, quoted, now, targets
     )
-    assert decisions["rows"]["S11"]["action"] == action
+    # The direction is this account's, not the desk board's: the board says
+    # what the DESK is doing about S11, which is a different question and on
+    # most sessions a Hold. What matters here is that the row is tradeable.
+    assert decisions["rows"]["S11"]["quote"]["eligible"]
     state = board_paper.initialize(tmp_path, 100000, now - timedelta(minutes=15))
     state.update(
         cash=94000,

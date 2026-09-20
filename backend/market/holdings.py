@@ -124,6 +124,16 @@ def compatible_value(record: dict, value: dict | None) -> dict:
 
 
 # The board against the person's holdings, from the latest record.
+# A position's size, or zero when the broker's field is missing or unparseable.
+# A flat line can survive in a positions list after a sell, so an entry that
+# reads zero is not a position.
+def _quantity(position: dict) -> float:
+    try:
+        return float(position.get("qty") or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def board(
     record: dict,
     holdings: list[Holding],
@@ -157,8 +167,19 @@ def board(
         or event.get("execution_pending", False)
         or event.get("calendar_known") is False
     )
+    # The desk's own positions belong on the board whatever the operator
+    # holds. A name the book bought at the last reset and has since downgraded
+    # is sized at zero by the engine, so it appears in neither `targets` nor
+    # `held` and had no row at all: the rotation the nightly will run on it
+    # tonight was invisible unless the operator happened to own it himself. On
+    # the live record that hid three of the desk's nine positions.
+    book = {
+        position["symbol"]
+        for position in ((record.get("paper") or {}).get("positions") or [])
+        if position.get("symbol") and _quantity(position)
+    }
     rows = []
-    for ticker in sorted(set(targets) | set(held)):
+    for ticker in sorted(set(targets) | set(held) | book):
         holding = held.get(ticker)
         quote = quotes.get(ticker) or {}
         level = levels.get(ticker) or {}

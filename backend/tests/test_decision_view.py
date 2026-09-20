@@ -25,6 +25,13 @@ def setup():
     return record, snapshot, quoted, now
 
 
+# A live band reading through the desk's threshold, which is the only thing
+# that makes a row read Buy between resets. The board used to manufacture one
+# by comparing a position to its target weight; it does not any more, so a
+# test that wants a Buy has to supply the signal that causes one.
+FIRING = {"S11": 1.5}
+
+
 # What the desk WANTS and what can be TRADED are different questions, and the
 # gates split along that line.
 #
@@ -34,7 +41,7 @@ def setup():
 # stale quote or a closed market say nothing about whether the desk wants the
 # name, and treating them as a view turned all ninety-three rows into Hold
 # whenever the market was shut - which is most of the time the page is read.
-@pytest.mark.parametrize("block", [None, "band", "fomc", "schedule"])
+@pytest.mark.parametrize("block", [None, "band", "fomc"])
 def test_a_strategy_gate_blocks_the_buy(block):
     record, snapshot, quoted, now = setup()
     quote = quoted["quotes"]["S11"]
@@ -53,9 +60,9 @@ def test_a_strategy_gate_blocks_the_buy(block):
     if block:
         target, replacement = changes[block]
         target.update(replacement)
-    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
-        "S11"
-    ]
+    result = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entries=FIRING
+    )["rows"]["S11"]
     assert (result["action"] == "Buy") is (block is None)
     assert result["target_weight"] == 0.1
 
@@ -78,9 +85,80 @@ def test_an_execution_gate_annotates_rather_than_blocking(block):
     }
     target, replacement = changes[block]
     target.update(replacement)
-    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"]["S11"]
+    result = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entries=FIRING
+    )["rows"]["S11"]
     assert result["action"] == "Buy", f"{block} should not suppress the desk's view"
     assert "(" in result["reason"], f"{block} should say what is in the way"
+
+
+# The gap between a position and its target weight is not an instruction.
+#
+# The board briefly read it as one, so a name sized below its target printed
+# Buy on any session. The targets are a fresh sizing computed every night, not
+# a standing order: on the live record the book held 43% of its equity against
+# targets summing to 22%, and reading the difference as an instruction printed
+# Sell on eight names the desk had no intention of selling. Nothing is traded
+# toward those weights until a reset, and no backtest supports doing so.
+def test_the_distance_to_a_target_weight_is_not_a_trade():
+    record, snapshot, quoted, now = setup()
+    record["paper"] = {"until_rebalance": 40}  # the reset is months away
+    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"]["S11"]
+    assert result["action"] == "Hold"
+    assert result["move_weight"] == 0.0
+    # And it still says what the desk wants, so the row is not merely silent.
+    assert "10%" in result["reason"]
+
+
+# A Hold on a name the desk owns says what it owns.
+#
+# "Hold" alone was read as "the desk has no position here", which on a board
+# where nine of ninety-three rows are the book is the wrong reading on exactly
+# the rows that matter. The weight comes from the desk's account, so it is
+# there whether or not the operator records anything.
+def test_a_hold_on_a_desk_position_names_the_weight():
+    record, snapshot, quoted, now = setup()
+    record["paper"] = {
+        "until_rebalance": 40,
+        "equity": 100000.0,
+        "positions": [{"symbol": "S11", "qty": 80.0, "market_value": 8000.0}],
+    }
+    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"]["S11"]
+    assert result["action"] == "Hold"
+    assert result["move_weight"] == 0.0
+    assert result["current_weight"] == pytest.approx(0.08)
+    assert "8.0%" in result["reason"]
+
+
+# The whole column is the desk's, so nothing in it moves when the operator's
+# holdings file changes - including when he has never written one. This is the
+# property the rest of the module is arranged around: every action, size and
+# reason is a statement about the book.
+def test_the_board_is_identical_whatever_the_operator_records():
+    from backend.market.holdings import Holding
+
+    record, snapshot, quoted, now = setup()
+    record["paper"] = {
+        "until_rebalance": 40,
+        "equity": 100000.0,
+        "positions": [{"symbol": "S11", "qty": 80.0, "market_value": 8000.0}],
+    }
+
+    def board(held):
+        rows = decision_view.build(
+            record, held, 100000, snapshot, quoted, now, entries=FIRING
+        )["rows"]
+        return {
+            t: (r["action"], r["move_weight"], r["current_weight"], r["reason"])
+            for t, r in rows.items()
+        }
+
+    nothing = board([])
+    # A stale file naming a position the desk does not hold, and one that
+    # happens to agree with it. Neither is allowed to change a single cell.
+    assert board([Holding("S11", 5.0, 100.0, "2026-08-01")]) == nothing
+    assert board([Holding("S11", 80.0, 100.0, "2026-08-01")]) == nothing
+    assert board([Holding("S99", 999.0, 12.0, "2026-01-02")]) == nothing
 
 
 # A decision written on the evening of its own session is current, not
@@ -98,19 +176,24 @@ def test_just_written_decision_is_current():
 def test_iex_quote_passes_the_gate():
     record, snapshot, quoted, now = setup()
     quoted["feed"] = "iex"
-    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
-        "S11"
-    ]
+    result = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entries=FIRING
+    )["rows"]["S11"]
     assert result["action"] == "Buy"
     assert result["quote"]["feed"] == "iex"
     assert result["quote"]["eligible"]
 
 
-# A B grade the desk does not hold is simply a Hold - there is nothing to buy
-# and nothing to sell. Held, the same grade is a Sell, because the desk rotates
-# out of what it no longer rates and into what it does.
-@pytest.mark.parametrize(("shares", "expected"), [(0, "Hold"), (10, "Sell")])
-def test_a_b_grade_is_a_hold_unheld_and_a_sell_when_held(shares, expected):
+# A B grade on a name the DESK does not hold is simply a Hold - there is
+# nothing to sell. A B grade on one it does hold is a Sell, because the desk
+# rotates out of what it no longer rates and into what it does.
+#
+# The position is the desk's own weight, not the operator's share count. The
+# same rotation runs in the nightly off `client.positions()`, so sourcing it
+# from a holdings file here made the page a second, wrong answer to a question
+# the book had already settled.
+@pytest.mark.parametrize(("weight", "expected"), [(0.0, "Hold"), (0.08, "Sell")])
+def test_a_b_grade_is_a_hold_unheld_and_a_sell_when_the_desk_holds_it(weight, expected):
     _, _, _, now = setup()
     row = {
         "in_book": True,
@@ -118,7 +201,6 @@ def test_a_b_grade_is_a_hold_unheld_and_a_sell_when_held(shares, expected):
         "rebalance_due": True,
         "rejecting_band": False,
         "grade_live": "B",
-        "shares": shares,
     }
     action, move, reason = decision_view.action_for_row(
         row,
@@ -127,11 +209,11 @@ def test_a_b_grade_is_a_hold_unheld_and_a_sell_when_held(shares, expected):
         False,
         True,
         0.1,
-        0,
+        weight,
         now,
     )
     assert action == expected
-    assert move == (0.0 if shares == 0 else pytest.approx(-0.0))
+    assert move == (0.0 if weight == 0 else pytest.approx(-weight))
 
 
 # Expired provider caches are checked by their quote time, not their fetch time.
@@ -238,42 +320,43 @@ def test_the_other_guards_are_untouched_on_a_single_venue_feed():
 # this the name the desk buys tonight read "Wait · not held", the opposite of
 # what to do about it.
 @pytest.mark.parametrize(
-    "shares,weight,grade,band,expected",
+    "weight,grade,band,expected",
     [
-        (0, 0.0, "A+", 1.50, "Buy"),
-        (0, 0.0, "A", 1.30, "Buy"),
-        (10, 0.05, "A+", 1.50, "Buy"),
+        (0.0, "A+", 1.50, "Buy"),
+        (0.0, "A", 1.30, "Buy"),
+        (0.05, "A+", 1.50, "Buy"),
         # At the name cap the desk cannot add, so the row says so rather than
         # promising a buy that `_entry_orders` would decline to size.
-        (10, 0.15, "A+", 1.50, "Hold"),
+        (0.15, "A+", 1.50, "Hold"),
         # Below the threshold, below the grade floor, and the retired dip tail:
         # none of these is an entry, so the calendar answers instead.
-        (0, 0.0, "A+", 0.90, None),
-        (0, 0.0, "B", 1.50, None),
-        (0, 0.0, "A+", -1.50, None),
+        (0.0, "A+", 0.90, None),
+        (0.0, "B", 1.50, None),
+        (0.0, "A+", -1.50, None),
     ],
 )
-def test_the_live_entry_answers_before_the_calendar(shares, weight, grade, band, expected):
-    row = {"shares": shares, "current_weight": weight, "rejecting_band": False,
-           "target_weight": 0.04}
-    assert (decision_view.entry_action(row, band, grade) or (None,))[0] == expected
+def test_the_live_entry_answers_before_the_calendar(weight, grade, band, expected):
+    # `weight` is the desk's own position in the name: the cap the nightly
+    # checks is the cap on the book, so the room left under it is the book's.
+    row = {"rejecting_band": False, "target_weight": 0.04}
+    assert (decision_view.entry_action(row, band, grade, weight) or (None,))[0] == expected
 
 
 # The band gate the nightly applies is applied here too, so the page never
 # advertises a buy the nightly is going to hold back.
 def test_a_breakout_rejecting_its_band_is_not_offered_as_a_buy():
-    row = {"shares": 0, "current_weight": 0.0, "rejecting_band": True,
-           "target_weight": 0.04}
+    row = {"rejecting_band": True, "target_weight": 0.04}
     action, _size, reason = decision_view.entry_action(row, 1.5, "A+")
-    assert action == "Wait"
+    # One of the three actions, not a fourth word. This branch returned "Wait"
+    # for as long as nothing reached it.
+    assert action == decision_view.Action.HOLD
     assert "upper band" in reason
 
 
 # A name with no live reading falls through to the calendar rather than
 # inventing an entry from a missing price.
 def test_a_missing_live_stretch_is_not_an_entry():
-    row = {"shares": 0, "current_weight": 0.0, "rejecting_band": False,
-           "target_weight": 0.04}
+    row = {"rejecting_band": False, "target_weight": 0.04}
     assert decision_view.entry_action(row, None, "A+") is None
     assert decision_view.entry_action(row, float("nan"), "A+") is None
 
@@ -282,7 +365,7 @@ def test_a_missing_live_stretch_is_not_an_entry():
 # run it is not an entry. The row used to read "Buy tonight - not picked by
 # the sizing engine", two statements that cannot both be true.
 def test_a_name_with_no_target_is_never_an_entry():
-    row = {"shares": 0, "current_weight": 0.0, "rejecting_band": False, "target_weight": 0.0}
+    row = {"rejecting_band": False, "target_weight": 0.0}
     assert decision_view.entry_action(row, 2.0, "A+") is None
 
 
@@ -292,11 +375,11 @@ def test_a_name_with_no_target_is_never_an_entry():
 def test_the_entry_carries_the_weight_to_put_on_now():
     from backend.agents.trading.desk import paper
 
-    fresh = {"shares": 0, "current_weight": 0.0, "rejecting_band": False, "target_weight": 0.06}
-    assert decision_view.entry_action(fresh, 1.5, "A+")[1] == paper.ENTRY_ADD
-    nearly = {"shares": 5, "current_weight": paper.ENTRY_NAME_CAP - 0.01,
-              "rejecting_band": False, "target_weight": 0.06}
-    assert decision_view.entry_action(nearly, 1.5, "A+")[1] == pytest.approx(0.01)
+    row = {"rejecting_band": False, "target_weight": 0.06}
+    assert decision_view.entry_action(row, 1.5, "A+", 0.0)[1] == paper.ENTRY_ADD
+    # A name the DESK already holds close to its cap takes only the room left.
+    nearly = paper.ENTRY_NAME_CAP - 0.01
+    assert decision_view.entry_action(row, 1.5, "A+", nearly)[1] == pytest.approx(0.01)
 
 
 # A downgrade IS a sell, because the desk redeploys rather than going to cash.

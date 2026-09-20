@@ -987,7 +987,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <p className="font-medium text-[#1d1d1f]">{g.headline}</p>
         <p className="mt-0.5 font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{g.ranks ? ratings(r?.ranks_live ?? g.ranks, r?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}</p>
         <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">{lines.map(line => <li key={line}>{line}</li>)}</ul>
-        <div className="mt-2 text-[#6e6e73]"><DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} /></div>
+        <div className="mt-2 text-[#6e6e73]"><DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
         <p className="mt-1 text-[#6e6e73]">Research target {target ?? '—'} · {held === null ? 'positions unavailable' : `${held.toLocaleString()} shares recorded`}</p>
       </div>
       <button type="button" className="self-start text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
@@ -1058,7 +1058,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       } : undefined}
       eligibility={eventPaused
         ? <span>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle' : 'No new buys during the FOMC cycle'}</span>
-        : <DecisionCell compact allocationAllowed ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />} />
+        : <DecisionCell compact allocationAllowed ticker={ticker} decisions={decisions} latest={latest} now={now} />} />
   }
   const boardEvent: BoardEvent | null = eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
@@ -1121,7 +1121,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
       holdingsError={holdingsError}
-      action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} holdings={holdingsReady ? holdings : null} equity={equity} now={now} />}
+      action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} now={now} />}
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} onBuy={canWrite && holdingsReady ? recordBuy : undefined} saving={marking !== null} error={saveError} />
       </div>}
       {holdingsReady && holdings.length > 0 && (
@@ -1736,28 +1736,50 @@ const actOnIt = (reason?: string | null): string | null => {
   return reason
 }
 
-const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact = false, terse = false, allocationAllowed = true}: {
-  ticker: string; decisions?: DeskDecisions; latest: DeskRecord; holdings: DeskHolding[] | null; equity: number; now: number
-  compact?: boolean; terse?: boolean; allocationAllowed?: boolean
-}) => {
-  const matches = decisions && holdings !== null && decisions.session === latest.session && decisions.written === latest.written && decisions.equity === equity
-    && holdings.length === Object.keys(decisions.holdings).length && holdings.every(h => decisions.holdings[h.ticker] === h.shares)
-  const row = matches ? decisions.rows[ticker] : undefined
-  // The board's "Wait" must say which kind it is: a readable decision that
-  // genuinely says wait, an expired one, an eligible buy whose size cannot
-  // be shown, or no readable decision at all (the plan feed failed or no
-  // longer matches this account). All four used to share the single word
-  // "Wait", so a stalled page was indistinguishable from a desk that
-  // actually said wait.
-  // There is no readable decision, so there is nothing to do: Hold, and say
-  // why on hover. "Wait" was a fourth action pretending the page knew
-  // something; it did not.
-  if (!row) return <span title="No current decision for this account. Refresh to re-read it." className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>Hold</span>
+export const PLAN_ACTIONS = ['Buy', 'Sell', 'Hold'] as const
+export type PlanAction = (typeof PLAN_ACTIONS)[number]
+
+// The plan as the column shows it, which is not always the action the board
+// sent: an expired quote or a blocked allocation reduces a Buy or a Sell to a
+// Hold. The filter above the table has to agree with the cell beneath it, so
+// both read this rather than each deciding for itself.
+//
+// Whether a decision is readable at all used to depend on the operator's
+// recorded positions: the board was only accepted if his holdings file and
+// his account value matched the ones it had been built from, so recording
+// nothing - or recording anything slightly out of date - dropped all
+// ninety-three rows to Hold at once. The board is a statement about the
+// desk's own book and reads neither, so the only question left is whether
+// the decision belongs to the record on screen.
+const planFor = (
+  ticker: string,
+  decisions: DeskDecisions | undefined,
+  latest: DeskRecord,
+  now: number,
+  allocationAllowed = true,
+): {row?: DeskDecisions['rows'][string]; action: PlanAction; reason: string} => {
+  const current = decisions && decisions.session === latest.session && decisions.written === latest.written
+  const row = current ? decisions.rows[ticker] : undefined
+  // No readable decision, so there is nothing to do: Hold, and say why on
+  // hover. "Wait" was a fourth action pretending the page knew something.
+  if (!row) return {action: 'Hold', reason: 'No current decision for this account. Refresh to re-read it.'}
   const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
   const blocked = row.action === 'Buy' && !allocationAllowed
   const stale = (expired || blocked) && row.action !== 'Hold'
-  const action = stale ? 'Hold' : row.action
-  const reason = stale ? (expired ? 'Price evidence expired; reload' : row.reason) : row.reason
+  return {
+    row,
+    action: (stale ? 'Hold' : row.action) as PlanAction,
+    reason: stale ? (expired ? 'Price evidence expired; reload' : row.reason) : row.reason,
+  }
+}
+
+const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = false, allocationAllowed = true}: {
+  ticker: string; decisions?: DeskDecisions; latest: DeskRecord; now: number
+  compact?: boolean; terse?: boolean; allocationAllowed?: boolean
+}) => {
+  const {row, action, reason} = planFor(ticker, decisions, latest, now, allocationAllowed)
+  if (!row) return <span title={reason} className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>Hold</span>
+  const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
   if (compact) {
     // Inside a trade row the badge above already carries the action, so this
     // line adds only the count when there is something to trade.
@@ -1769,9 +1791,11 @@ const DecisionCell = ({ticker, decisions, latest, holdings, equity, now, compact
   // reads the word, and asks why only for the one row he stops on.
   return <div className="min-w-24" aria-label={`${ticker} plan action`} title={actOnIt(reason) ?? reason}>
     <div className="font-medium">{action}{action !== 'Hold' && Math.abs(row.move_weight) > 0 ? <span className="ml-1 font-normal text-[#6e6e73]">{allocationPercent(Math.abs(row.move_weight))}</span> : null}</div>
-    {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Position & quote</summary>
-      <div>Using {money(equity)} account value</div>
-      <div>Recorded {allocationPercent(row.current_weight)} · change {(row.delta_weight * 100).toFixed(1)} pp</div>
+    {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Desk position & quote</summary>
+      {/* The desk's own book, not the reader's. These two lines used to read
+          "Using $X account value" and "Recorded Y%", both of which described
+          his holdings file; nothing in this column is computed from it. */}
+      <div>Desk holds {allocationPercent(row.current_weight)} · wants {allocationPercent(row.target_weight)} at the next reset</div>
       <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
       <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
       <div>{!marketOpenNow(now) && row.quote.reason && /market closed|invalid or empty|unavailable/i.test(row.quote.reason)
@@ -1823,6 +1847,11 @@ const EveryGrade = ({
   const sizeExposure = event?.exposure ?? 1
   const [openBrief, setOpenBrief] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
+  // Which plans to list. All three on is the whole book, which is the view
+  // this table has always shown; turning two off is how a reader gets to the
+  // handful of names the desk is actually trading without reading ninety-odd
+  // rows to find them.
+  const [shown, setShown] = useState<Record<PlanAction, boolean>>({Buy: true, Sell: true, Hold: true})
   // Every name is re-graded at the candle: the live grades cover the whole
   // book, the board's rows cover what it carries, and the evening record
   // fills in for a name the candle has not read. Ordered by grade first and
@@ -1845,6 +1874,15 @@ const EveryGrade = ({
       scoreOf(b[0], b[1]) - scoreOf(a[0], a[1]) ||
       a[0].localeCompare(b[0]),
   )
+  // The plan each row will show, read once so the filter and the cells cannot
+  // disagree, and counted so a box that would empty the table says so before
+  // it is ticked.
+  const plans = new Map(grades.map(([ticker]) => [ticker, planFor(ticker, decisions, latest, now).action]))
+  const counts = PLAN_ACTIONS.reduce(
+    (out, action) => ({...out, [action]: [...plans.values()].filter(a => a === action).length}),
+    {} as Record<PlanAction, number>,
+  )
+  const listed = grades.filter(([ticker]) => shown[plans.get(ticker) ?? 'Hold'])
   const briefs = latest.briefs ?? {}
   const barTimes = [...new Set(Object.values(quotes).map(quote => quote.bar).filter(Boolean))]
   const commonBar = barTimes.length === 1 ? marketTime(barTimes[0]) : null
@@ -1874,8 +1912,26 @@ const EveryGrade = ({
           Only eligible technical readings refresh this decision's intraday grades.</p>}
         <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
-        <p className="mt-2">Plan is one of three things. <b>Buy</b> when a name graded A or A+ pushes through the upper edge of its own 20-day band, which the desk buys that session and funds by trimming the rest, so gross exposure does not move. The band replaced a distance from the 21-day average, which only fired after a name had already run 43% and so confirmed moves instead of finding them. <b>Sell</b> when the desk no longer grades the name A or better, or when the weight reset is due and it sits above target. A sell is a rotation, not an exit: the money goes into the names the desk still wants that same session. Selling the same signal to cash measured 24 points a year worse than simply holding. <b>Hold</b> otherwise, including when the price evidence is stale or a quote is unusable — the reason is on hover. The percentage beside Buy or Sell is how much of the account to move. Quoted prices and sizes do not guarantee a fill, and recording a fill is yours to do at your broker.</p>
+        <p className="mt-2">Plan is one of three things. <b>Buy</b> when a name graded A or A+ pushes through the upper edge of its own 20-day band, which the desk buys that session and funds by trimming the rest, so gross exposure does not move. The band replaced a distance from the 21-day average, which only fired after a name had already run 43% and so confirmed moves instead of finding them. <b>Sell</b> when the desk holds the name and no longer grades it A or better. A sell is a rotation, not an exit: the money goes into the names the desk still wants that same session. Selling the same signal to cash measured 24 points a year worse than simply holding. <b>Hold</b> otherwise — the hover says which kind, whether the desk is holding a position, waiting for an entry that has not fired, or blocked because the price evidence is stale. Every plan here describes the desk's own book and is the same whatever you have recorded in your positions; the distance between a position and its target weight is not an instruction, because the desk only trades toward those weights at a reset. The percentage beside Buy or Sell is how much of the book to move. Quoted prices and sizes do not guarantee a fill, and recording a fill is yours to do at your broker.</p>
       </details>
+      <fieldset className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6e6e73]">
+        <legend className="sr-only">Filter the table by plan</legend>
+        <span className="font-medium text-[#1d1d1f]">Show</span>
+        {PLAN_ACTIONS.map(action => (
+          <label key={action} className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              className="cursor-pointer accent-[#0071e3]"
+              checked={shown[action]}
+              aria-label={`Show ${action} rows`}
+              onChange={event => setShown({...shown, [action]: event.target.checked})}
+            />
+            <span className="text-[#1d1d1f]">{action}</span>
+            <span className="tabular-nums">({counts[action]})</span>
+          </label>
+        ))}
+        {listed.length === 0 && <span>No names match; tick a box to list some.</span>}
+      </fieldset>
       <div className="overflow-x-auto">
       <table className="w-full text-sm [&_td]:pr-3 [&_th]:pr-3">
         <thead className="text-left text-[#6e6e73]">
@@ -1891,7 +1947,7 @@ const EveryGrade = ({
           </tr>
         </thead>
         <tbody>
-          {(showAll ? grades : grades.slice(0, 10)).map(([ticker, g]) => {
+          {(showAll ? listed : listed.slice(0, 10)).map(([ticker, g]) => {
             const current = liveGrade.get(ticker) ?? g.grade
             const quote = quotes[ticker]
             return (
@@ -1906,7 +1962,7 @@ const EveryGrade = ({
                     {ticker}
                   </button>
                 </td>
-                <td className="text-xs"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} holdings={holdings} equity={equity} now={now} /></td>
+                <td className="text-xs"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></td>
                 <td>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
                   <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'intraday' : 'close'}</div>
@@ -1957,8 +2013,8 @@ const EveryGrade = ({
         </tbody>
       </table>
       </div>
-      {grades.length > 10 && <button type="button" className="mt-3 text-sm text-[#0071e3]" onClick={() => setShowAll(!showAll)}>
-        {showAll ? 'Show top 10 grades' : `Show all ${grades.length} grades`}
+      {listed.length > 10 && <button type="button" className="mt-3 text-sm text-[#0071e3]" onClick={() => setShowAll(!showAll)}>
+        {showAll ? 'Show top 10 grades' : `Show all ${listed.length} grades`}
       </button>}
     </section>
   )
@@ -2517,7 +2573,7 @@ const NameDetail = ({
           <p className="font-medium text-[#1d1d1f]">{latest.grades[ticker].headline}</p>
           <ul className="mt-1 space-y-0.5 text-xs text-[#1d1d1f]">{(latest.grades[ticker].reason ?? '').split('\n').filter(Boolean).map(line => <li key={line}>{line}</li>)}</ul>
           <div className="mt-2 text-xs text-[#6e6e73]">
-            {row ? <DecisionCell terse allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} holdings={holdings} equity={equity} now={now} /> : 'Not on the board'}
+            {row ? <DecisionCell terse allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} now={now} /> : 'Not on the board'}
           </div>
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}

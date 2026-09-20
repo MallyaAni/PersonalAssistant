@@ -18,6 +18,43 @@ from backend.market import (
 VERSION = "desk-decision-view/1"
 
 
+# What the desk itself holds in a name, as a weight of the desk's own equity.
+#
+# Every action on this board is the desk's, so the only position any of them
+# involves is the desk's. The board used to read the operator's recorded
+# holdings instead, which made the whole column a function of bookkeeping he
+# does not always do: with nothing recorded the page said Hold ninety-three
+# times while the book held nine names, and with a stale file it said Sell on
+# a name he no longer owned. The nightly never consults that file either -
+# `market_daily` rotates on `client.positions()`, the paper account - so
+# reading it here made the page a second, wrong answer to a question the book
+# had already answered.
+#
+# The record carries the account under `paper`. A missing or nonsensical
+# equity yields no weights rather than a division by zero, and a name the desk
+# does not hold is absent rather than zero-valued, so callers can tell "flat"
+# from "unknown".
+def book_weights(record) -> dict[str, float]:
+    """Return {ticker: weight of the desk's equity} for the desk's own book."""
+    account = record.get("paper") or {}
+    try:
+        equity = float(account.get("equity"))
+    except (TypeError, ValueError):
+        return {}
+    if not math.isfinite(equity) or equity <= 0:
+        return {}
+    out: dict[str, float] = {}
+    for position in account.get("positions") or []:
+        ticker = position.get("symbol")
+        try:
+            value = float(position.get("market_value"))
+        except (TypeError, ValueError):
+            continue
+        if ticker and math.isfinite(value):
+            out[ticker] = value / equity
+    return out
+
+
 # The three things the operator can do about a name. A fixed set, so it is a
 # type rather than a string literal repeated at a dozen call sites: the old
 # vocabulary had seven spellings across the backend, the API contract and the
@@ -102,20 +139,39 @@ def action_for_row(
     # drawdown and a better Sharpe. The desk is not leaving the market, it is
     # moving money to a better name, so the row says Sell and the book buys
     # elsewhere the same session. `desk/exit.py` carries the table.
-    if row["shares"] > 0 and row["grade_live"] not in ("A", "A+"):
-        return said(Action.SELL, -current, "Graded below A; the money belongs elsewhere")
-    if not row["rebalance_due"]:
-        if row["shares"] > 0:
-            return said(Action.HOLD, 0.0, "At its weight; no signal at this price")
-        return said(Action.HOLD, 0.0, "Not held; no entry signal at this price")
-    direction = action_for(target, current)
-    if row["rejecting_band"] and direction in ("buy", "add"):
-        return said(Action.HOLD, 0.0, "Rejecting its upper band; the buy is held back")
-    if direction in ("buy", "add") and row["grade_live"] in ("A", "A+"):
-        return said(Action.BUY, target - current, "Reset is due; below its target weight")
-    if direction in ("trim", "sell"):
-        return said(Action.SELL, target - current, "Reset is due; above its target weight")
-    return said(Action.HOLD, 0.0, "At its target weight")
+    if current > 0 and row["grade_live"] not in ("A", "A+"):
+        return said(
+            Action.SELL,
+            -current,
+            f"Graded {row['grade_live']}; the desk rotates the money into the names it still wants",
+        )
+
+    # Everything else is a Hold, and the reason says which kind.
+    #
+    # There was briefly a fourth branch here that compared the position to the
+    # target weight and called the difference a Buy or a Sell. It is deleted,
+    # because the targets are a fresh sizing computed every night, not a
+    # standing order: on the live record the book holds 43% of its equity
+    # against targets summing to 22%, so reading the difference as an
+    # instruction printed Sell on eight names the desk has no intention of
+    # selling. The book only acts on those weights at a reset, and no backtest
+    # supports trading toward them in between - the two rules above are the
+    # ones that were measured.
+    #
+    # So a Hold says what the desk is holding rather than only that nothing is
+    # due. That is what the column owes a reader who records no positions of
+    # his own: the board still shows him the book.
+    if current > 0:
+        return said(Action.HOLD, 0.0, f"The desk holds {current:.1%}; the thesis is intact")
+    if target > 0:
+        return said(
+            Action.HOLD,
+            0.0,
+            f"Wanted at {target:.0%} at the next reset; no entry signal today",
+        )
+    return said(
+        Action.HOLD, 0.0, f"Graded {row['grade_live']}; the desk wants no position today"
+    )
 
 
 # The book's mid-cycle entry, decided at the live price rather than at the
@@ -123,7 +179,7 @@ def action_for_row(
 # calendar says months from now. The threshold, the grade floor and the name
 # cap are read from `paper` rather than restated, because a copy of a trading
 # rule in the presentation layer is a copy that drifts.
-def entry_action(row, band, grade_live):
+def entry_action(row, band, grade_live, current=0.0):
     """Return (action, size, reason) when the entry fires now, else None.
 
     Said in the present tense, and sized. The first version of this answered
@@ -153,10 +209,19 @@ def entry_action(row, band, grade_live):
         return None
     # The same gate the nightly applies before it sizes anything.
     if row.get("rejecting_band"):
-        return "Wait", None, "Breaking out, but the daily is rejecting its upper band"
+        # Hold, not "Wait". The enum exists because seven spellings of the
+        # action had drifted across the backend and the page, and this one
+        # survived behind a branch nothing reached: the board passed no live
+        # readings, so no entry was ever evaluated. It reaches the column now.
+        return Action.HOLD, None, "Breaking out, but the daily is rejecting its upper band"
     above = f"{band:.1f} on its 20-day band"
-    held = row["shares"] > 0
-    room = paper.ENTRY_NAME_CAP - row["current_weight"]
+    # The cap the nightly checks is the cap on the DESK's own position, so the
+    # room left under it is measured against the desk's weight. Measuring it
+    # against the operator's recorded holdings made the size an artefact of
+    # his bookkeeping: an unrecorded position showed a full 15% of room on a
+    # name the book was already capped out of.
+    held = current > 0
+    room = paper.ENTRY_NAME_CAP - current
     if held and room <= 0:
         return Action.HOLD, None, f"{above}, already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
     size = min(paper.ENTRY_ADD, room)
@@ -186,10 +251,33 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             ],
         }
     technical, value = desk_freshness.grade_inputs(snapshot, record, now)
+    book = book_weights(record)
+    # `holdings.board` speaks for a name that is targeted or held, which on the
+    # live record is twelve of ninety-three. The other eighty-one graded names
+    # arrived here with no row at all and the column called them "Not in the
+    # book" - which is false, and was most of what the operator saw. The desk
+    # grades them; it has simply sized them at zero today.
+    #
+    # Padding the book with that explicit zero gives every covered name a row
+    # to speak for it. It is done on a copy for this call only: `board` also
+    # feeds the positions view and the funding preview, where eighty-one empty
+    # rows would be noise in one and a changed denominator in the other.
+    listed = {row["ticker"] for row in (record.get("book") or [])}
+    covered = {
+        **record,
+        "book": [
+            *(record.get("book") or []),
+            *(
+                {"ticker": ticker, "weight": 0.0}
+                for ticker in sorted(record.get("grades") or {})
+                if ticker not in listed
+            ),
+        ],
+    }
     rows = {
         r["ticker"]: r
         for r in holdings.board(
-            record, held, equity, snapshot.get("quotes") or {}, technical, value
+            covered, held, equity, snapshot.get("quotes") or {}, technical, value
         )
     }
     expiries = desk_freshness.grade_expiries(snapshot, technical)
@@ -209,7 +297,13 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
         np.datetime64(now.astimezone(desk_freshness.NEW_YORK).date()),
     )
     current_decision = offset in (0, 1)
-    for symbol in sorted(set(record.get("grades") or {}) | set(rows)):
+    # The desk's universe: what it grades, plus anything it still holds. Which
+    # names appear must not depend on the operator's file either - a holding in
+    # something uncovered used to add a row that said "Not covered by the
+    # desk", so the length of the board moved with his bookkeeping. His own
+    # positions are reported by the positions view, which is where a name the
+    # desk has no view on belongs.
+    for symbol in sorted(set(record.get("grades") or {}) | set(book)):
         row = rows.get(symbol)
         quote = execution_quotes.describe(
             (quoted.get("quotes") or {}).get(symbol, {}),
@@ -218,15 +312,17 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             now,
         )
         target = row["target_weight"] if row else 0.0
-        current = row["current_weight"] if row else 0.0
-        # Compare percentages at the quoted midpoint when valid prices exist.
-        if row and "bid" in quote and math.isfinite(equity) and equity > 0:
-            current = row["shares"] * (quote["bid"] + quote["ask"]) / (2 * equity)
+        # The desk's own weight, not the operator's. The midpoint recompute
+        # that used to stand here scaled his recorded share count by his
+        # account value, which is the one number on this page the desk has no
+        # opinion about.
+        current = book.get(symbol, 0.0)
         entry = entry_action(
             row,
             (entries or {}).get(symbol),
             (readings.get(symbol) or {}).get("grade")
             or (record.get("grades") or {}).get(symbol, {}).get("grade"),
+            current,
         )
         action, move, reason = action_for_row(
             row,
@@ -262,6 +358,10 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             # not have to ask him for.
             "move_weight": move,
             "target_weight": target,
+            # The desk's position and the distance from it to the desk's own
+            # target. Both are the book's numbers; neither depends on what the
+            # operator has recorded, which is what keeps the column saying the
+            # same thing whether or not he keeps his holdings file current.
             "current_weight": current,
             "delta_weight": target - current,
             "valid_until": min(deadlines).isoformat() if deadlines else None,
