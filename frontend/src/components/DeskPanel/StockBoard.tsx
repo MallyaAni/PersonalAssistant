@@ -129,29 +129,36 @@ const PlanHead = ({sort, onSort, plans, shown, onShown}: {
   }, [open])
   return <th aria-sort={!active ? 'none' : sort!.descending ? 'descending' : 'ascending'}>
     <div ref={box} className="relative flex items-center gap-1">
-      <button
-        type="button"
-        title="The desk's plan for this name. Click to sort."
-        className="flex items-center gap-1 font-normal hover:text-[#0071e3]"
-        onClick={() => onSort(
-          !active ? {column: 'plan', descending: DESCENDING_FIRST.plan}
-          : sort!.descending === DESCENDING_FIRST.plan ? {column: 'plan', descending: !DESCENDING_FIRST.plan}
-          : null,
-        )}
-      >
-        Plan
-        <span aria-hidden="true" className={active ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{!active ? '↕' : sort!.descending ? '↓' : '↑'}</span>
-      </button>
+      {/* The heading filters and the arrow sorts, not the other way round.
+          Clicking the word "Plan" sorted the board, which is what every other
+          column does and is not what this one is for: on a board that is
+          eighty-eight Holds out of ninety-three, what a reader wants from this
+          column is to see the few names being traded, and sorting leaves all
+          ninety-three in place. Sorting is still here, on the arrow. */}
       <button
         type="button"
         aria-haspopup="true"
         aria-expanded={open}
         aria-label={filtered ? 'Filter the plan column (filtered)' : 'Filter the plan column'}
         title="Show only certain plans"
-        className={`rounded px-1 leading-none hover:text-[#0071e3] ${filtered ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}`}
+        className={`flex items-center gap-1 rounded font-normal hover:text-[#0071e3] ${filtered ? 'text-[#0071e3]' : ''}`}
         onClick={() => setOpen(!open)}
       >
-        <span aria-hidden="true">{'▾'}</span>
+        Plan
+        <span aria-hidden="true" className={filtered ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{'▾'}</span>
+      </button>
+      <button
+        type="button"
+        title="Sort the board by plan"
+        aria-label="Sort by plan"
+        className="rounded px-0.5 leading-none hover:text-[#0071e3]"
+        onClick={() => onSort(
+          !active ? {column: 'plan', descending: DESCENDING_FIRST.plan}
+          : sort!.descending === DESCENDING_FIRST.plan ? {column: 'plan', descending: !DESCENDING_FIRST.plan}
+          : null,
+        )}
+      >
+        <span aria-hidden="true" className={active ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{!active ? '↕' : sort!.descending ? '↓' : '↑'}</span>
       </button>
       {open && (
         <div role="group" aria-label="Show these plans" className="absolute left-0 top-full z-20 mt-1 w-40 rounded-lg border border-black/[0.1] bg-white p-2 shadow-lg">
