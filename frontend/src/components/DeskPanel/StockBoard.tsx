@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
 
 // The three things the desk can be doing about a name. Declared here because
@@ -96,6 +96,88 @@ const SortHead = ({column, sort, onSort, children, className = '', title}: {
       {children}
       <span aria-hidden="true" className={active ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{!active ? '↕' : sort!.descending ? '↓' : '↑'}</span>
     </button>
+  </th>
+}
+
+// The Plan heading: it sorts like the others, and it carries the filter for
+// its own column. A board of ninety names is mostly Hold - on the live book
+// eighty-eight of ninety-three - so the handful the desk is trading is a few
+// rows buried among them, below the first page. The filter is here rather
+// than in the toolbar because it belongs to this column and because a row of
+// checkboxes standing permanently above the table is noise for a reader who
+// never wants them.
+const PlanHead = ({sort, onSort, plans, shown, onShown}: {
+  sort: {column: SortColumn; descending: boolean} | null
+  onSort: (next: {column: SortColumn; descending: boolean} | null) => void
+  plans: {name: PlanAction; count: number}[]
+  shown: Record<PlanAction, boolean>
+  onShown: (next: Record<PlanAction, boolean>) => void
+}) => {
+  const [open, setOpen] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  const filtered = PLAN_ACTIONS.some(name => !shown[name])
+  const active = sort?.column === 'plan'
+  // Close on a click anywhere else, and on Escape, so the popover never
+  // strands itself over the board.
+  useEffect(() => {
+    if (!open) return
+    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false) }
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', key)
+    return () => { document.removeEventListener('mousedown', away); document.removeEventListener('keydown', key) }
+  }, [open])
+  return <th aria-sort={!active ? 'none' : sort!.descending ? 'descending' : 'ascending'}>
+    <div ref={box} className="relative flex items-center gap-1">
+      <button
+        type="button"
+        title="The desk's plan for this name. Click to sort."
+        className="flex items-center gap-1 font-normal hover:text-[#0071e3]"
+        onClick={() => onSort(
+          !active ? {column: 'plan', descending: DESCENDING_FIRST.plan}
+          : sort!.descending === DESCENDING_FIRST.plan ? {column: 'plan', descending: !DESCENDING_FIRST.plan}
+          : null,
+        )}
+      >
+        Plan
+        <span aria-hidden="true" className={active ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{!active ? '↕' : sort!.descending ? '↓' : '↑'}</span>
+      </button>
+      <button
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-label={filtered ? 'Filter the plan column (filtered)' : 'Filter the plan column'}
+        title="Show only certain plans"
+        className={`rounded px-1 leading-none hover:text-[#0071e3] ${filtered ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}`}
+        onClick={() => setOpen(!open)}
+      >
+        <span aria-hidden="true">{'▾'}</span>
+      </button>
+      {open && (
+        <div role="group" aria-label="Show these plans" className="absolute left-0 top-full z-20 mt-1 w-40 rounded-lg border border-black/[0.1] bg-white p-2 shadow-lg">
+          {plans.map(({name, count}) => (
+            <label key={name} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 font-normal text-[#1d1d1f] hover:bg-[#f5f5f7]">
+              <input
+                type="checkbox"
+                className="cursor-pointer accent-[#0071e3]"
+                checked={shown[name]}
+                aria-label={`Show ${name} rows`}
+                onChange={(e) => onShown({...shown, [name]: e.target.checked})}
+              />
+              <span className="flex-1">{name}</span>
+              <span className="tabular-nums text-[#6e6e73]">{count}</span>
+            </label>
+          ))}
+          <button
+            type="button"
+            className="mt-1 w-full rounded px-1 py-1 text-left font-normal text-[#0071e3] hover:bg-[#f5f5f7]"
+            onClick={() => onShown({Buy: true, Sell: true, Hold: true})}
+          >
+            Show all
+          </button>
+        </div>
+      )}
+    </div>
   </th>
 }
 
@@ -333,24 +415,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                   className="w-full max-w-52 rounded-md border border-black/[0.12] bg-white px-2 py-1 text-sm text-[#1d1d1f] placeholder:text-[#9ca3af]"
                 />
                 {searchText && <span className="text-[#6e6e73]">{filtered.length} match{filtered.length === 1 ? '' : 'es'}</span>}
-                {planAction && (
-                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="font-medium text-[#1d1d1f]">Show</span>
-                    {plans.map(({name, count}) => (
-                      <label key={name} className="flex cursor-pointer items-center gap-1.5 font-normal">
-                        <input
-                          type="checkbox"
-                          className="cursor-pointer accent-[#0071e3]"
-                          checked={shownPlans[name]}
-                          aria-label={`Show ${name} rows`}
-                          onChange={(e) => { setShownPlans({...shownPlans, [name]: e.target.checked}); setVisible(10) }}
-                        />
-                        <span className="text-[#1d1d1f]">{name}</span>
-                        <span>({count})</span>
-                      </label>
-                    ))}
-                  </span>
-                )}
               </div>
             </th>
           </tr>
@@ -359,7 +423,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
             <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current`}>Grade</SortHead>
             <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10, not a return forecast. A star marks a name scored without the full panel.">Opportunity</SortHead>
-            <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name against your recorded position">Plan</SortHead>
+            {planAction
+              ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />
+              : <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name">Plan</SortHead>}
             <SortHead column="weight" sort={sort} onSort={setSort} title="Share of the account under the sizing policy above.">Size %</SortHead>
             <th><span className="sr-only">Record purchase</span></th>
           </tr>

@@ -965,8 +965,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // The board keeps its sizes during a cycle, at the exposure the desk holds.
   // The exposure is unknown when the calendar is missing or when an active
   // cycle's current policy status has not been read.
+  // How many names the desk is actually trading. The quote deadline used to
+  // gate this count, so with the market shut - when `valid_until` is null on
+  // every row - it read zero while the desk had three sells standing. The
+  // count is about the desk's plan, not about whether a quote can be crossed
+  // this second.
   const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
-    ? Object.values(decisions.rows).filter(row => row.action !== 'Hold' && Date.parse(row.valid_until ?? '') > now).length : 0
+    ? Object.values(decisions.rows).filter(row => row.action !== 'Hold').length : 0
   const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
@@ -1737,10 +1742,22 @@ const actOnIt = (reason?: string | null): string | null => {
   return reason
 }
 
-// The plan as the column shows it, which is not always the action the board
-// sent: an expired quote or a blocked allocation reduces a Buy or a Sell to a
-// Hold. The filter above the table has to agree with the cell beneath it, so
-// both read this rather than each deciding for itself.
+// The plan as the column shows it. The filter and the cell beneath it have to
+// agree, so both read this rather than each deciding for itself.
+//
+// This does NOT reduce a Buy or a Sell to a Hold because the price evidence
+// has expired, and that is the whole point of it. The backend stopped doing
+// exactly that in c2b0735e - "a closed market is not an opinion about a
+// stock" - because a stale quote is a fact about EXECUTION, not a change of
+// view about the name, and the page is read outside market hours more often
+// than inside them. The page then re-imposed it here, one layer up: with the
+// market closed there is no quote deadline at all, every row's `valid_until`
+// comes back null, and all ninety-three actions were overwritten to Hold.
+// The desk's three Sells were invisible every evening and all weekend.
+//
+// The reason already carries the annotation - the backend appends "(quote
+// unavailable)" or "(no current price reading)" itself - so the row says what
+// is in the way without pretending the desk has no view.
 //
 // Whether a decision is readable at all used to depend on the operator's
 // recorded positions: the board was only accepted if his holdings file and
@@ -1761,13 +1778,13 @@ const planFor = (
   // No readable decision, so there is nothing to do: Hold, and say why on
   // hover. "Wait" was a fourth action pretending the page knew something.
   if (!row) return {action: 'Hold', reason: 'No current decision for this account. Refresh to re-read it.'}
-  const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
+  // A Buy still stands down where the caller says no allocation can be put on
+  // - that is a statement about this surface, not about the market being shut.
   const blocked = row.action === 'Buy' && !allocationAllowed
-  const stale = (expired || blocked) && row.action !== 'Hold'
   return {
     row,
-    action: (stale ? 'Hold' : row.action) as PlanAction,
-    reason: stale ? (expired ? 'Price evidence expired; reload' : row.reason) : row.reason,
+    action: (blocked ? 'Hold' : row.action) as PlanAction,
+    reason: row.reason,
   }
 }
 
