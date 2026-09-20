@@ -56,7 +56,20 @@ HYPE_EXPOSURE = 0.75
 # both of which only move after the damage, measured 1.34 and 1.38.
 TIGHTENING_RISE = 0.10
 TIGHTENING_LOOKBACK = 60
-TIGHTENING_EXPOSURE = 0.5
+# What the desk runs while money is tightening. It was 0.5, which with the
+# other limits left the book planning 22% of equity and holding 43% while the
+# rest sat in cash earning nothing.
+#
+# Measured on the live rules over 2015-2026 at the same realised volatility -
+# 25.74% against 25.72%, so this is not leverage dressed as alpha - raising it
+# to 0.75 is worth about +1.0 CAGR point on its own and is positive in four of
+# six DISJOINT calendar blocks. The paired-phase counts that look stronger are
+# one price path counted many times and should not be read as independent.
+#
+# It is also what keeps the 20-session reset from selling the book down: with
+# the floor at 0.5 the reset walks the account from 43% toward 25% over the
+# following weeks, which is a de-risking nobody asked for.
+TIGHTENING_EXPOSURE = 0.75
 
 
 @dataclass(frozen=True)

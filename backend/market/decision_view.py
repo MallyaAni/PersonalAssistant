@@ -196,10 +196,11 @@ def entry_action(row, band, grade_live, current=0.0):
     that price, so the row says Buy, and says how much.
 
     `size` is the weight to put on at this moment, not the eventual target:
-    ENTRY_ADD of equity, trimmed to whatever room is left under
-    ENTRY_NAME_CAP, which is the increment the nightly would size and the one
-    the operator can act on. The target it moves toward is already its own
-    column.
+    what `paper.entry_size` asks for at this band reading, trimmed to the room
+    left under ENTRY_NAME_CAP - the increment the nightly would size and the
+    one the operator can act on. It is no longer a flat number: a close
+    further through its band is a stronger reading at that price and earns a
+    larger position. The target it moves toward is already its own column.
     """
     from backend.agents.trading.desk import paper
 
@@ -230,7 +231,11 @@ def entry_action(row, band, grade_live, current=0.0):
     room = paper.ENTRY_NAME_CAP - current
     if held and room <= 0:
         return Action.HOLD, None, f"{above}, already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
-    size = min(paper.ENTRY_ADD, room)
+    # The same function the book sizes with, not a copy of its constant. The
+    # size now follows how far through the band the close is, so a board that
+    # reached for ENTRY_ADD directly would quote a number the nightly would
+    # not trade - which is how the action vocabulary drifted four times.
+    size = min(paper.entry_size(band), room)
     if size <= 0:
         return Action.HOLD, None, f"{above}, no room under the {paper.ENTRY_NAME_CAP:.0%} name cap"
     return (

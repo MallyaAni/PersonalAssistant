@@ -502,34 +502,42 @@ def test_cancel_orders_reports_an_unconfirmed_cancel():
 # Mid-cycle price entries: the calendar chooses what the book holds, price
 # chooses when each name is entered. Measured 2026-09-18; the constants and
 # the evidence are at the top of paper.py.
-def test_a_price_entry_is_funded_from_the_other_holdings():
+def test_a_price_entry_is_paid_from_cash_and_sized_by_the_band():
     state = paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3)
-    orders, new, what = paper.plan(
-        "2026-09-04",
-        state,
-        100_000.0,
-        {"MU": 200.0, "AMD": 200.0, "SNDK": 0.0},
-        {"MU": 100.0, "AMD": 100.0, "SNDK": 50.0},
-        {"MU": 0.2, "AMD": 0.2, "SNDK": 0.0},
-        {"MU": "A", "AMD": "A", "SNDK": "A+"},
-        entries={"SNDK": 1.0},
-    )
+
+    def plan_at(band):
+        return paper.plan(
+            "2026-09-04",
+            paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3),
+            100_000.0,
+            {"MU": 200.0, "AMD": 200.0, "SNDK": 0.0},
+            {"MU": 100.0, "AMD": 100.0, "SNDK": 50.0},
+            {"MU": 0.2, "AMD": 0.2, "SNDK": 0.0},
+            {"MU": "A", "AMD": "A", "SNDK": "A+"},
+            entries={"SNDK": band},
+        )
+
+    orders, _new, what = plan_at(1.5)
     assert what == "entries"
     by_symbol = {o.symbol: o for o in orders}
-    # 3% of 100k at $50 is 60 shares.
+    # Paid from cash, so the names the desk still wants are left alone. This
+    # test asserted the opposite until 2026-09-20: the add was funded by
+    # trimming them pro rata, which held gross exposure fixed and meant the
+    # book could never put money to work however strong the signal. On the
+    # live account that was 43% invested against 57% idle.
+    assert set(by_symbol) == {"SNDK"}
     assert by_symbol["SNDK"].side == "buy"
-    assert by_symbol["SNDK"].qty == 60
-    # Funded: the two equal holdings each give up half of the $3,000.
-    assert by_symbol["MU"].side == "sell"
-    assert by_symbol["AMD"].side == "sell"
-    assert by_symbol["MU"].qty == 15
-    assert by_symbol["AMD"].qty == 15
-    # Gross is unchanged: what is sold pays for what is bought.
-    bought = by_symbol["SNDK"].qty * 50.0
-    sold = by_symbol["MU"].qty * 100.0 + by_symbol["AMD"].qty * 100.0
-    assert abs(bought - sold) < 1.0
-    # Sells are sequenced before the buy so the cash is there.
-    assert [o.side for o in orders][0] == "sell"
+    assert all(o.side == "buy" for o in orders)
+    # Sized by how far through its band the name closed, not a flat 3%.
+    expected = paper.entry_size(1.5)
+    assert by_symbol["SNDK"].qty == int(round(expected * 100_000.0 / 50.0))
+    # And a stronger reading at that price is a bigger position.
+    weaker = {o.symbol: o for o in plan_at(paper.ENTRY_BAND_Z)[0]}
+    stronger = {o.symbol: o for o in plan_at(2.2)[0]}
+    assert weaker["SNDK"].qty < by_symbol["SNDK"].qty < stronger["SNDK"].qty
+    # The cap is still the backstop, whatever the reading.
+    huge = {o.symbol: o for o in plan_at(9.0)[0]}
+    assert huge["SNDK"].qty * 50.0 <= paper.ENTRY_NAME_CAP * 100_000.0 + 1.0
 
 
 # A name already at the cap takes nothing more, however far it has moved.

@@ -376,7 +376,15 @@ def test_the_entry_carries_the_weight_to_put_on_now():
     from backend.agents.trading.desk import paper
 
     row = {"rejecting_band": False, "target_weight": 0.06}
-    assert decision_view.entry_action(row, 1.5, "A+", 0.0)[1] == paper.ENTRY_ADD
+    # The size is the book's own function of the band reading, not a flat
+    # increment and not a copy of a constant: a board quoting ENTRY_ADD
+    # directly would name a size the nightly would not trade.
+    assert decision_view.entry_action(row, 1.5, "A+", 0.0)[1] == paper.entry_size(1.5)
+    # Further through the band is a stronger reading at that price, so it is
+    # a bigger position. This is the property the flat increment lacked.
+    weak = decision_view.entry_action(row, paper.ENTRY_BAND_Z, "A+", 0.0)[1]
+    strong = decision_view.entry_action(row, 2.0, "A+", 0.0)[1]
+    assert strong > weak > 0
     # A name the DESK already holds close to its cap takes only the room left.
     nearly = paper.ENTRY_NAME_CAP - 0.01
     assert decision_view.entry_action(row, 1.5, "A+", nearly)[1] == pytest.approx(0.01)

@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 import numpy as np
 import pytest
 
-from backend.agents.trading.desk import economist, intraday_candidate
+from backend.agents.trading.desk import economist, intraday_candidate, regime
 from backend.market.panel import Panel
 
 
@@ -79,7 +79,10 @@ def inputs():
 def test_current_grades_change_targets_and_macro_caps_do_not_stack():
     record, snapshot, economic, panel, now = inputs()
     result = intraday_candidate.calculate(record, snapshot, economic, panel, now)
-    assert result["macro"]["exposure"] == 0.5
+    # Against the constant, not a copy of it. This asserted a literal 0.5 and
+    # would have gone on passing if the tightening floor moved for any reason
+    # other than the one that moved it.
+    assert result["macro"]["exposure"] == regime.TIGHTENING_EXPOSURE
     assert result["macro"]["defensive"]
     assert result["grades"]["S11"]["grade_live"] == "A+"
     assert max(result["targets"].values()) <= 0.15

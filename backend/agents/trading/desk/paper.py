@@ -24,6 +24,7 @@ file anyone can read.
 """
 
 import json
+import math
 import os
 import tempfile
 from contextlib import contextmanager
@@ -104,9 +105,14 @@ MIN_TRADE = 0.005
 # own horizon; it is not what was dropped here, and the book's 120-session
 # hold was never able to harvest it.
 #
-# Funded rather than from cash: the add is taken pro rata from the other
-# holdings, so gross exposure is unchanged and only the selection moves.
-# Unfunded it returned less at a worse Sharpe and a deeper drawdown.
+# Paid from cash rather than funded by trimming the rest. This note used to
+# say the opposite - that unfunded returned less at a worse Sharpe and a
+# deeper drawdown - and that was measured before the band replaced the
+# 15%-over-the-average trigger and before the grade rotation existed. On the
+# live rules it is worth about +1.3 CAGR points, positive in four of six
+# disjoint calendar blocks, at unchanged realised volatility. Keeping gross
+# fixed meant the desk could never put money to work however strong the
+# signal: the account ran 43% invested against 57% idle.
 #
 # Every figure carries the universe's survivorship, which market_survivorship
 # measures at nineteen points a year, and every rule above carries it equally.
@@ -132,11 +138,60 @@ MIN_TRADE = 0.005
 # rare. `entry.bollinger_z` is the same function the live read uses, and it
 # halves the sigma - 2.5 sigma is 1.25 there - so the page and the book cannot
 # drift apart.
-ENTRY_BAND_Z = 1.25
-ENTRY_ADD = 0.03
+# The trigger, on entry.bollinger_z, which is a HALF-sigma scale: 1.10 is 2.2
+# sigma. It was 1.25 (2.5 sigma), where it fired 61 times a year across
+# ninety-four names, reached only 79 of them in eleven years, and had fired
+# exactly zero times in the live account's first ten sessions. That is the
+# operator's "very few signals", measured.
+#
+# Swept 0.40 to 2.00 on the live build over eight start phases and four cost
+# levels. 1.10 adds +2.31 CAGR points at 10 bps and +1.55 at 30 bps against
+# 1.25, better in eight phases of eight at both, for -0.017 of Sharpe and 0.30
+# points of drawdown. Its FLOOR improves on both counts (worst-phase Sharpe
+# 1.258 against 1.238), and the deployed share of the account goes 72% -> 76%.
+# It is the only point on the grid whose advantage never changes sign out to
+# 70 bps - 1.00 looks better at 10 bps and is second-worst by 70, because the
+# peak walks up the grid as trading gets dearer.
+ENTRY_BAND_Z = 1.10
+# The size at the trigger itself; `entry_size` scales it by how far through
+# the band the close is. A flat 3% is what this replaces.
+ENTRY_ADD = 0.023
 ENTRY_NAME_CAP = 0.15
 ENTRY_MIN_GRADE = ("A", "A+")
+# The band reading the size curve is anchored to: the trigger the sizing was
+# measured at, kept as its own constant so the trigger can move without
+# reshaping the curve. `entry_size` explains why.
+ENTRY_SIZE_REF = 1.25
 PAPER_KIND = "paper"
+
+
+# How much to put on, given how far through its band the name closed.
+#
+# One function, so the book and the board cannot disagree about the size the
+# way they once disagreed about the word for the action. `band` is
+# entry.bollinger_z at the close, on the same half-sigma scale as
+# ENTRY_BAND_Z; at the trigger itself the size is ENTRY_ADD and it grows with
+# the square of how far past it the close sits.
+#
+# The caller still trims this to the room left under ENTRY_NAME_CAP, which is
+# what keeps the tail bounded: at a band reading of 3.0 - half again beyond
+# anything the eleven-year history produced - this asks 13.3%, inside the cap
+# rather than clipped by it.
+#
+# The curve is anchored to ENTRY_SIZE_REF and NOT to the trigger, which is a
+# separate constant that has moved and may move again. Anchoring it to the
+# trigger would have made lowering the trigger steepen every entry at once:
+# at ENTRY_BAND_Z 1.10 the same formula asks 17.1% at a reading of 3.0, past
+# the cap, destroying the one property the exponent was chosen for. The two
+# changes were measured separately - the curve at a 1.25 trigger, the trigger
+# with a flat size - so composing them has to preserve each, and this does:
+# a weaker signal now earns a SMALLER position (1.78% at the 1.10 trigger)
+# rather than every signal earning a larger one.
+def entry_size(band: float) -> float:
+    """Return the weight of equity to add at a band reading of `band`."""
+    if not math.isfinite(band) or band < ENTRY_BAND_Z:
+        return 0.0
+    return ENTRY_ADD * (band / ENTRY_SIZE_REF) ** 2
 
 
 @dataclass
@@ -360,7 +415,32 @@ def _entry_orders(
     state: "PaperState",
     blocked: set[str] | None,
 ) -> list["PaperOrder"]:
-    """Return the funded buy and trim orders for tonight's tail entries."""
+    """Return tonight's entry buys, paid from cash.
+
+    `entries` maps a name to its position on its own 20-day band, and the
+    size follows it: a breakout further through the band is a stronger
+    reading at that price and earns a larger position. The flat increment it
+    replaces treated a name two sigma out and one four sigma out as the same
+    proposition, which is the one thing the operator said twice it should not
+    do. Scaling by the ANALYST score was measured and made returns fall
+    monotonically - that is a view about the name; this is a view about the
+    price, and they are not the same signal.
+
+    Exponent two, from a family of five that measure alike (1.5 through 4 all
+    beat the flat increment by between +0.29 and +0.57 CAGR points and are
+    statistically indistinguishable from one another). It is chosen for its
+    tail, not its mean: at an unseen band reading of 3.0 it asks 13.3%, still
+    inside ENTRY_NAME_CAP, so the cap stays a backstop. Exponent four asks
+    55% there and hard-clips, which only looks good because eleven years never
+    produced a reading above 2.12 to expose it.
+
+    Paid from CASH rather than by trimming the rest of the book. The trim kept
+    gross exposure fixed, which sounds prudent and means the desk could never
+    put money to work no matter how strong the signal - on the live account it
+    held 43% invested against 57% idle. Measured on the live rules, unfunded
+    is worth about +1.3 CAGR points and is positive in four of six disjoint
+    calendar blocks, at the same realised volatility.
+    """
     if equity <= 0 or not entries:
         return []
     blocked = blocked or set()
@@ -369,8 +449,9 @@ def _entry_orders(
         price = float(prices.get(symbol) or 0.0)
         if price <= 0 or symbol in blocked:
             continue
+        band = float(entries.get(symbol) or 0.0)
         current = float(held.get(symbol, 0)) * price / equity
-        want = min(ENTRY_ADD, ENTRY_NAME_CAP - current)
+        want = min(entry_size(band), ENTRY_NAME_CAP - current)
         if want < MIN_TRADE:
             continue
         qty = int(round(want * equity / price))
@@ -379,40 +460,7 @@ def _entry_orders(
     if not buys:
         return []
 
-    donors = {
-        s: float(q) * float(prices.get(s) or 0.0)
-        for s, q in held.items()
-        if q > 0 and s not in entries and (prices.get(s) or 0) > 0
-    }
-    pool = sum(donors.values())
-    if pool <= 0:
-        return []
-    # If the rest of the book cannot fund the whole add, the add shrinks
-    # rather than the gross growing.
-    needed = sum(value for _, _, value in buys)
-    if needed > pool:
-        scale = pool / needed
-        buys = [(s, max(1, int(q * scale)), v * scale) for s, q, v in buys]
-        needed = sum(v for _, _, v in buys)
-
     orders: list[PaperOrder] = []
-    for symbol, value in sorted(donors.items()):
-        price = float(prices[symbol])
-        qty = int(round(needed * (value / pool) / price))
-        qty = min(qty, int(held[symbol]))
-        if qty <= 0 or qty * price < MIN_TRADE * equity:
-            continue
-        seq = state.order_seq
-        state.order_seq += 1
-        orders.append(
-            PaperOrder(
-                symbol,
-                "sell",
-                qty,
-                "funding a price entry",
-                client_order_id=order_id(session, symbol, "sell", seq),
-            )
-        )
     for symbol, qty, _ in buys:
         seq = state.order_seq
         state.order_seq += 1
