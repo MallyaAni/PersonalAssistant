@@ -26,7 +26,7 @@ import asyncio
 import json
 import logging
 from dataclasses import dataclass, replace
-from datetime import UTC, date, datetime, time
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,9 @@ from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
 from backend.discovery.feedback_loop import (
     MAX_REPEAT_SENDS,
+    REPEAT_RECENCY_DAYS,
     adjusted_strengths,
+    last_send_dates,
     reacted_finds,
     send_counts,
     reaction_statements,
@@ -802,11 +804,23 @@ class DiscoveryRunner:
             # cost the person their digest, so an unreadable table falls back to
             # the unbounded behaviour rather than to an empty fill.
             already_sent = {}
+        # Recency is read the same way and fails the same way: a find sent
+        # within the recency window is not re-offered even if it has not hit its
+        # cap, so the same event does not come back on consecutive quiet days.
+        try:
+            last_sent = await last_send_dates(self.seen.session, user_id)
+        except Exception:
+            last_sent = {}
+        window = moment - timedelta(days=REPEAT_RECENCY_DAYS)
         candidates = tuple(
             c
             for c in repeats
             if c.digest not in chosen
             and already_sent.get(c.digest, 0) < MAX_REPEAT_SENDS
+            and not (
+                last_sent.get(c.digest) is not None
+                and last_sent.get(c.digest) >= window
+            )
         )
         if not candidates:
             return selected

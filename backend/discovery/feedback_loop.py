@@ -23,6 +23,7 @@ sweep behaves exactly as it did before this module existed.
 
 import json
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,6 +49,13 @@ MAX_STATEMENTS = 6
 # came from the sweep at all.
 MAX_REPEAT_SENDS = 3
 
+# How recently a find may have been sent before the repeat fill stops offering
+# it again. `MAX_REPEAT_SENDS` bounds how often one find may come back at all;
+# this bounds how soon the next send may happen, so a find sent yesterday is
+# not re-offered today even if it has not reached its cap. A find the person
+# never saw stays eligible: only a prior send starts this clock.
+REPEAT_RECENCY_DAYS = 14
+
 
 # How many times each find has already been sent to this user, by item digest.
 #
@@ -69,6 +77,27 @@ async def send_counts(session: AsyncSession, user_id: str) -> dict[str, int]:
         .group_by(DiscoverySentFind.item_digest)
     )
     return {digest: int(count) for digest, count in rows if digest}
+
+
+# When each find was last sent to this user, by item digest. The recency half
+# of the repeat-fill guard: a digest that has already been sent within
+# `REPEAT_RECENCY_DAYS` is not offered again, so the same event does not come
+# back on consecutive quiet days. Fails soft like `send_counts` above.
+async def last_send_dates(
+    session: AsyncSession, user_id: str
+) -> dict[str, datetime]:
+    rows = await session.execute(
+        select(
+            DiscoverySentFind.item_digest,
+            func.max(DiscoverySentFind.sent_at),
+        )
+        .where(
+            DiscoverySentFind.user_id == user_id,
+            DiscoverySentFind.item_digest.is_not(None),
+        )
+        .group_by(DiscoverySentFind.item_digest)
+    )
+    return {digest: sent_at for digest, sent_at in rows if digest and sent_at}
 
 
 @dataclass(frozen=True, slots=True)

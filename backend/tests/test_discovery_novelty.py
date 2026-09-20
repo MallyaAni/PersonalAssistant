@@ -149,10 +149,25 @@ class _StubEmbeddings:
         return [self._vector(text) for text in texts]
 
     def _vector(self, text: str) -> list[float]:
-        for key, vector in self.vectors.items():
-            if key.lower() in text.lower():
-                return vector
-        return _vec(0.0, 0.0, 1.0)
+        matches = [
+            (key, vector)
+            for key, vector in self.vectors.items()
+            if key.lower() in text.lower()
+        ]
+        if not matches:
+            return _vec(0.0, 0.0, 1.0)
+        # Prefer the most specific key, so "Jazz brunch" does not share the
+        # vector of "Jazz at the Green" just because both contain "jazz".
+        key, vector = max(matches, key=lambda kv: len(kv[0]))
+        return vector
+
+
+# Two distinct jazz events need distinct vectors, or the within-batch
+# near-duplicate guard would collapse them just like the real duplicates it
+# exists to catch. "Jazz at the Green" resolves to the jazz interest vector;
+# "Jazz brunch" is far enough away (cosine distance 0.29) to be a different
+# find while staying a strong match for the interest.
+_JAZZ_AND_BRUNCH = {"jazz": _vec(1.0), "brunch": _vec(0.5, 0.5)}
 
 
 class _FailingEmbeddings:
@@ -271,7 +286,7 @@ async def test_a_repeated_sweep_over_an_unchanged_feed_reoffers_still_upcoming()
             runner = DiscoveryRunner(
                 sources=sources,
                 seen=SeenItemRepository(session),
-                embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+                embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
                 adapter_factory=lambda _source, _budget: stub,
             )
             profile = DiscoveryProfile(
@@ -327,7 +342,7 @@ async def test_a_find_already_sent_its_fill_of_times_is_not_reoffered():
             runner = DiscoveryRunner(
                 sources=sources,
                 seen=SeenItemRepository(session),
-                embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+                embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
                 adapter_factory=lambda _source, _budget: stub,
             )
             profile = DiscoveryProfile(
@@ -363,7 +378,7 @@ async def test_a_find_already_sent_its_fill_of_times_is_not_reoffered():
                     user_id=user_id,
                     item_digest=spared,
                     message_guid=f"guid-spared-{uuid.uuid4().hex[:8]}",
-                    sent_at=_NOW,
+                    sent_at=_NOW - timedelta(days=30),
                 )
             )
             await session.commit()
@@ -375,6 +390,113 @@ async def test_a_find_already_sent_its_fill_of_times_is_not_reoffered():
             assert "Jazz brunch" in titles
             # But the one they have already been sent three times stops coming.
             assert "Jazz at the Green" not in titles
+    finally:
+        await _cleanup(user_id)
+
+
+@pytest.mark.asyncio
+async def test_a_find_sent_within_the_recency_window_is_not_reoffered():
+    from backend.discovery.feedback_loop import REPEAT_RECENCY_DAYS
+
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    events = (_event("evt-1", "Jazz at the Green"), _event("evt-2", "Jazz brunch"))
+    try:
+        async with AsyncSessionLocal() as session:
+            sources = DiscoverySourceRepository(session)
+            source = await sources.upsert_source(
+                user_id, "ics", "https://example.org/feed.ics"
+            )
+            stub = _StubSource(source.id, events)
+            runner = DiscoveryRunner(
+                sources=sources,
+                seen=SeenItemRepository(session),
+                embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
+                adapter_factory=lambda _source, _budget: stub,
+            )
+            profile = DiscoveryProfile(
+                interests=(
+                    Interest(
+                        id="i1", label="jazz", strength=3, provenance="user_explicit"
+                    ),
+                ),
+                localities=(),
+            )
+            first = await runner.sweep(user_id, profile, now=_NOW)
+            assert len(first.selected) == 2
+
+            # One find was sent yesterday, so the recency window still covers
+            # it; the other has never been sent, so it stays eligible.
+            by_title = {
+                item.event.title: item.candidate.digest for item in first.selected
+            }
+            recent = by_title["Jazz at the Green"]
+            session.add(
+                DiscoverySentFind(
+                    user_id=user_id,
+                    item_digest=recent,
+                    message_guid=f"guid-recent-{uuid.uuid4().hex[:8]}",
+                    sent_at=_NOW - timedelta(days=1),
+                )
+            )
+            await session.commit()
+
+            second = await runner.sweep(user_id, profile, now=_NOW)
+
+            titles = {item.event.title for item in second.selected}
+            # The quiet day still fills with the never-sent find...
+            assert "Jazz brunch" in titles
+            # ...but the one sent within the window is not re-offered, even
+            # though it is far from its MAX_REPEAT_SENDS cap.
+            assert "Jazz at the Green" not in titles
+            assert REPEAT_RECENCY_DAYS >= 1
+    finally:
+        await _cleanup(user_id)
+
+
+@pytest.mark.asyncio
+async def test_a_find_sent_before_the_recency_window_is_reoffered():
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    events = (_event("evt-1", "Jazz at the Green"),)
+    try:
+        async with AsyncSessionLocal() as session:
+            sources = DiscoverySourceRepository(session)
+            source = await sources.upsert_source(
+                user_id, "ics", "https://example.org/feed.ics"
+            )
+            stub = _StubSource(source.id, events)
+            runner = DiscoveryRunner(
+                sources=sources,
+                seen=SeenItemRepository(session),
+                embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
+                adapter_factory=lambda _source, _budget: stub,
+            )
+            profile = DiscoveryProfile(
+                interests=(
+                    Interest(
+                        id="i1", label="jazz", strength=3, provenance="user_explicit"
+                    ),
+                ),
+                localities=(),
+            )
+            first = await runner.sweep(user_id, profile, now=_NOW)
+            by_title = {
+                item.event.title: item.candidate.digest for item in first.selected
+            }
+            old = by_title["Jazz at the Green"]
+            session.add(
+                DiscoverySentFind(
+                    user_id=user_id,
+                    item_digest=old,
+                    message_guid=f"guid-old-{uuid.uuid4().hex[:8]}",
+                    sent_at=_NOW - timedelta(days=30),
+                )
+            )
+            await session.commit()
+
+            second = await runner.sweep(user_id, profile, now=_NOW)
+
+            titles = {item.event.title for item in second.selected}
+            assert "Jazz at the Green" in titles
     finally:
         await _cleanup(user_id)
 
@@ -437,6 +559,29 @@ async def test_one_feed_listing_the_same_event_twice_yields_one_candidate():
             )
 
             assert len(novel) == 1
+    finally:
+        await _cleanup(user_id)
+
+
+@pytest.mark.asyncio
+async def test_the_same_happening_under_two_urls_in_one_batch_yields_one_candidate():
+    # A search can return the same event from two different pages in a single
+    # sweep, and both pass identity novelty because they carry different URLs.
+    # On 2026-09-20 ani.mallya's digest reached her with FRESHFARM x3 and
+    # Clarendon Day x2 - the same happening under different results, each a
+    # distinct digest, all announced. Near-duplicates are now also tracked
+    # within the batch itself, so one sweep offers the happening once.
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            seen = SeenItemRepository(session)
+            one = ScoredCandidate(_event("evt-1", "Farmers market"), _vec(1.0))
+            two = ScoredCandidate(_event("evt-2", "Farmers market"), _vec(0.999, 0.01))
+
+            novel = await NoveltyFilter(seen).novel(user_id, (one, two), now=_NOW)
+
+            assert len(novel) == 1
+            assert novel[0].event.external_id == "evt-1"
     finally:
         await _cleanup(user_id)
 
@@ -518,7 +663,7 @@ async def test_a_rehearsal_records_nothing_and_repeats_identically():
             runner = DiscoveryRunner(
                 sources=sources,
                 seen=seen,
-                embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+                embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
                 adapter_factory=lambda _source, _budget: stub,
             )
             profile = DiscoveryProfile(
@@ -561,7 +706,7 @@ async def test_a_real_sweep_after_a_rehearsal_still_behaves_normally():
             runner = DiscoveryRunner(
                 sources=sources,
                 seen=SeenItemRepository(session),
-                embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+                embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
                 adapter_factory=lambda _source, _budget: stub,
             )
             profile = DiscoveryProfile(
@@ -602,7 +747,7 @@ async def test_a_sweep_records_the_decision_behind_its_selection():
         runner = DiscoveryRunner(
             sources=sources,
             seen=SeenItemRepository(session),
-            embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+            embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
             adapter_factory=lambda _source, _budget: _StubSource(source.id, events),
         )
         profile = DiscoveryProfile(

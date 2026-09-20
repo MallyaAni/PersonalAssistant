@@ -297,6 +297,13 @@ class NoveltyFilter:
         # A feed can list the same event twice within one response, so identity
         # is also tracked within this batch.
         seen_in_batch: set[str] = set()
+        # And the same happening can surface twice under different URLs in one
+        # sweep - a search returns the same farmers market from three pages -
+        # so near-duplicates are also tracked within this batch. Against
+        # history alone those copies all look new and all get announced, which
+        # is how one digest reached a phone with the same event three times
+        # (ani.mallya, 2026-09-20: FRESHFARM x3, Clarendon Day x2).
+        admitted_embeddings: list[list[float]] = []
         novel: list[ScoredCandidate] = []
         for candidate in candidates:
             digest = candidate.digest
@@ -304,11 +311,14 @@ class NoveltyFilter:
                 continue
             seen_in_batch.add(digest)
             if candidate.embedding is not None:
+                if _near_any(candidate.embedding, admitted_embeddings):
+                    continue
                 duplicate = await self.repository.has_near_duplicate(
                     user_id, candidate.embedding, now=now
                 )
                 if duplicate:
                     continue
+                admitted_embeddings.append(candidate.embedding)
             novel.append(candidate)
         return tuple(novel)
 
@@ -359,3 +369,25 @@ def _payload(event: DiscoveredEvent) -> dict[str, object]:
         "url": event.url,
         "summary": event.summary,
     }
+
+
+# Whether this embedding sits within the near-duplicate distance of any already
+# admitted in the same batch. Runs in Python rather than Postgres because the
+# history check keeps its own query; the batch is small and in memory already.
+def _near_any(embedding: list[float], admitted: list[list[float]]) -> bool:
+    if not admitted or not embedding:
+        return False
+    norm = sum(value * value for value in embedding) ** 0.5
+    if norm == 0.0:
+        return False
+    for other in admitted:
+        if not other:
+            continue
+        other_norm = sum(value * value for value in other) ** 0.5
+        if other_norm == 0.0:
+            continue
+        dot = sum(a * b for a, b in zip(embedding, other))
+        distance = 1.0 - dot / (norm * other_norm)
+        if distance < NEAR_DUPLICATE_DISTANCE:
+            return True
+    return False
