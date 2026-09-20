@@ -165,6 +165,20 @@ const withLiveBar = (
 // the letter differs from the session before it. A row the desk actually
 // published is marked more strongly than one that is today's rules replayed
 // over old prices, because only the first is something the desk said.
+// Where price met the desk's entry condition, so the rule can be checked
+// against the chart rather than against a table. The grade half is not
+// included - these mark a band breakout, and the grade arrows beside them say
+// whether the desk wanted the name at the time.
+const entryMarkers = (chart: DeskChart | undefined) =>
+  (chart?.entries ?? []).map((date) => ({
+    time: stamp(date),
+    position: 'belowBar' as const,
+    color: '#0b5cad',
+    shape: 'circle' as const,
+    text: 'entry',
+    size: 1,
+  }))
+
 const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
   const rows = (history?.rows ?? []).filter((r) => r.date >= since && r.grade)
   const out: {
@@ -322,7 +336,7 @@ export const TickerChart = ({
       drawn.push(series)
     }
 
-    const markers = ordered(gradeMarkers(history, merged.bars[0].date))
+    const markers = ordered([...gradeMarkers(history, merged.bars[0].date), ...entryMarkers(data)])
     if (markers.length) createSeriesMarkers(candles, markers)
     chart.timeScale().fitContent()
     setDrawFailed(false)

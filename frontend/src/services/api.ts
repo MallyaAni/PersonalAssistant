@@ -2631,6 +2631,10 @@ export interface DeskChart {
   // False when the newest bar is a week still forming. Daily bars are
   // always complete: today arrives from the live quote in the browser.
   last_bar_complete: boolean;
+  // Sessions the desk's price trigger fired on: the name was through the
+  // upper edge of its own band. The grade half of the entry is not applied
+  // here, so these are where price qualified, not where the desk bought.
+  entries?: string[];
   basis: string;
   sessions: number;
   bars: DeskChartBar[];

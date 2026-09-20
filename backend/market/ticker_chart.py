@@ -79,6 +79,8 @@ class Chart:
     volume: tuple[float | None, ...]
     overlays: dict[str, tuple[float | None, ...]]
     levels: dict[str, tuple[float | None, ...]]
+    # The sessions the desk's price trigger fired on, within the drawn range.
+    entries: tuple[str, ...] = ()
 
 
 # NaN and numpy scalars are not JSON, and a chart library wants a gap rather
@@ -163,6 +165,7 @@ def build(
     """Return the drawable history for `ticker`, or None when it has none."""
     if timeframe not in TIMEFRAMES:
         raise ValueError(f"timeframe must be one of {TIMEFRAMES}, not {timeframe!r}")
+    entry_fired: np.ndarray | None = None
     history = store.read(ticker.upper())
     if history is None or not history.bars:
         return None
@@ -259,6 +262,24 @@ def build(
         overlays["band_lower"] = lower
         overlays["band_middle"] = middle
         overlays["band_upper"] = upper
+        # Where the desk's own entry fired. The rule is a band position, and
+        # the band is already on the chart, so a marker on the bar that
+        # triggered lets the operator check the rule against the price
+        # instead of taking a backtest's word for it. The grade condition is
+        # not applied here - the chart has prices, not grades - so this is
+        # the price half of the trigger, and the grade markers the page
+        # already draws are the other half.
+        from backend.agents.trading.desk import entry as entry_analyst
+        from backend.agents.trading.desk import paper as paper_rules
+
+        band_z = entry_analyst.bollinger_z(adj_close)[:, 0]
+        with np.errstate(invalid="ignore"):
+            fired = np.isfinite(band_z) & (band_z >= paper_rules.ENTRY_BAND_Z)
+        # band_z is a ratio around 1.0, not a price. It is deliberately NOT
+        # an overlay: on a chart scaled to a $180 stock it would be a flat
+        # line at the bottom, and any attempt to draw it would wreck the
+        # axis. The dates it crossed are what the chart needs.
+        entry_fired = fired
         level_lines["swing_low"] = swing_low
         level_lines["swing_high"] = swing_high
         level_lines["high_52w"] = _rolling(high, YEAR_SESSIONS, True)
@@ -291,6 +312,11 @@ def build(
         low=_clean(low[cut, 0]),
         close=_clean(adj_close[cut, 0]),
         volume=_clean(volume[cut, 0]),
+        entries=tuple(
+            str(d)
+            for d, hit in zip(dates[cut], (entry_fired[cut] if entry_fired is not None else []))
+            if hit
+        ),
         overlays={k: _clean(v[cut, 0]) for k, v in overlays.items()},
         levels={k: _clean(v[cut, 0]) for k, v in level_lines.items()},
     )
@@ -323,6 +349,7 @@ def payload(
                 chart.dates, chart.open, chart.high, chart.low, chart.close, chart.volume
             )
         ],
+        "entries": list(chart.entries),
         "overlays": {k: list(v) for k, v in chart.overlays.items()},
         "levels": {k: list(v) for k, v in chart.levels.items()},
     }

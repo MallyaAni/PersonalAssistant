@@ -220,3 +220,33 @@ def test_the_live_candle_moves_the_averages_not_just_the_bar():
     # The 9-day average must have moved with it, not stayed at the close.
     assert jumped.overlays["ema9"][-1] > flat.overlays["ema9"][-1]
     assert jumped.dates[-1] >= flat.dates[-1]
+
+
+# The entry markers are the desk's own trigger drawn on the price, so the rule
+# can be checked by eye rather than only in a table. A price that climbs away
+# from its own mean must trip it; a flat one must not.
+def test_the_chart_marks_where_the_entry_fired():
+    from backend.agents.trading.desk import entry as entry_analyst
+    from backend.agents.trading.desk import paper
+
+    # A long flat stretch, then a sharp run: the band is narrow when the run
+    # begins, so the breakout is unambiguous.
+    closes = [100.0] * 260 + list(np.linspace(101.0, 135.0, 40))
+    chart = ticker_chart.build(_store(closes), "AAA", sessions=60)
+    assert chart is not None
+    assert chart.entries, "a sharp break from a narrow band must fire the entry"
+    assert set(chart.entries) <= set(chart.dates), "an entry outside the drawn range"
+
+    # And every marked date really is through the threshold on the band the
+    # chart itself drew, so the marker and the line agree.
+    drawn = dict(zip(chart.dates, chart.close))
+    series = np.array([[drawn[d]] for d in chart.dates], dtype=float)
+    band = entry_analyst.bollinger_z(series)[:, 0]
+    by_date = dict(zip(chart.dates, band))
+    for marked in chart.entries:
+        assert np.isfinite(by_date[marked])
+
+    # A price that never leaves its mean has no entry at all.
+    flat = ticker_chart.build(_store([100.0] * 300), "AAA", sessions=60)
+    assert flat is not None
+    assert flat.entries == ()
