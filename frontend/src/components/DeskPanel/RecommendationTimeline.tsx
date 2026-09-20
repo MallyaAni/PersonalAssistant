@@ -40,7 +40,7 @@ export const RecommendationTimeline = ({history}: {history?: DeskRecommendationH
             <td className="py-2"><span className="whitespace-nowrap">{recorded(row.recorded_at)}</span>{held > 1 && <div className="text-[10px] text-[#6e6e73]">held through {recorded(through)} · {held} readings</div>}<div className="text-[9px] text-[#6e6e73]">{row.version} · {row.policy_sha256?.slice(0, 8) ?? 'unidentified'}</div></td>
             <td className="py-2">{row.grade}{row.opportunity_score !== null && row.opportunity_score !== undefined && <div className="text-[10px] text-[#6e6e73]">{row.opportunity_score.toFixed(1)}/10</div>}</td>
             <td className="py-2">{row.allocation === null ? '—' : size(row.allocation)}{row.allocation_change !== null && Math.abs(row.allocation_change) > .00001 && <div className="text-[10px] text-[#6e6e73]">{row.allocation_change > 0 ? '+' : '−'}{Math.abs(row.allocation_change) < .001 ? '<0.1' : (Math.abs(row.allocation_change) * 100).toFixed(1)} pp</div>}</td>
-            <td className="py-2">{row.event_paused ? 'Wait · FOMC' : row.entry_state ?? 'Not recorded'}</td>
+            <td className="py-2">{row.event_paused ? 'Hold · FOMC' : row.entry_state ?? 'Not recorded'}</td>
             <td className="py-2">{row.price.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</td>
             <td className="py-2">{row.stock_total_return === null ? '—' : `${(row.stock_total_return * 100).toFixed(2)}%`}</td>
           </tr>)}</tbody>

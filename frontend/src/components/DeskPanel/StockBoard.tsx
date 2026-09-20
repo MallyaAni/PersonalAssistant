@@ -476,7 +476,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               >*</span>}
             </> : '—'}</td>
             <td className="text-xs">{isCash ? 'Hold'
-              : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'No new buys during the FOMC cycle'}>{held ? 'Hold · FOMC' : 'Wait · FOMC'}</span>
+              : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'Not held, and no new buys during the FOMC cycle'}>{'Hold · FOMC'}</span>
               : action(row.ticker, row.weight))}</td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
               : isCash ? '—'

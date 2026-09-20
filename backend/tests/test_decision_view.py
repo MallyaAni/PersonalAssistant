@@ -416,3 +416,48 @@ def test_a_downgrade_is_a_sell_that_funds_the_rest_of_the_book():
     )
     assert action == decision_view.Action.SELL
     assert move == pytest.approx(-0.04)
+
+
+# The column can print three words and no others.
+#
+# This is a guard, not a feature test. The vocabulary has drifted four times:
+# "Buy eligible", "Reduce", "Wait" and "entry" all reached a surface a trader
+# reads, and the enum was introduced precisely to stop it. It kept happening
+# anyway, because the drift was never in `action_for_row` - it was a bare
+# string written somewhere else and never checked against this list. Two of
+# them ("Wait · FOMC" on the board, "entry" on the chart) survived months.
+#
+# So every path through the builder is driven here at once: paused and not,
+# quoted and unquoted, held and unheld, entry firing and not, every grade.
+def test_the_board_can_only_ever_say_one_of_three_things():
+    record, snapshot, quoted, now = setup()
+    record["paper"] = {
+        "until_rebalance": 40,
+        "equity": 100000.0,
+        "positions": [{"symbol": "S11", "qty": 80.0, "market_value": 8000.0}],
+    }
+    said = set()
+    for paused in (False, True):
+        event = {"execution_pending": True} if paused else {}
+        for band in (None, 0.5, 1.5, 9.9, float("nan")):
+            for allowed in ({}, {"S11": 1.5}):
+                built = decision_view.build(
+                    {**record, "event_risk": event},
+                    [],
+                    100000,
+                    snapshot,
+                    quoted,
+                    now,
+                    entries={**allowed, **({"S11": band} if band is not None else {})},
+                )
+                for row in built["rows"].values():
+                    said.add(row["action"])
+                    # A word is not enough on its own: a Hold must not carry a
+                    # move, and a Buy or Sell must.
+                    if row["action"] == "Hold":
+                        assert row["move_weight"] == 0.0, row
+                    else:
+                        assert row["move_weight"] != 0.0, row
+                    assert row["reason"], row
+    assert said <= {a.value for a in decision_view.Action}, said
+    assert said <= {"Buy", "Sell", "Hold"}, said
