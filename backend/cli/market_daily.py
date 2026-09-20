@@ -1165,15 +1165,23 @@ def save(root: Path, data: dict, allow_overwrite: bool = False) -> Path:
 def curve_block(report, store) -> dict | None:
     """Return the backtest curve block, or None when it cannot be drawn."""
     from backend.agents.trading.desk import event_risk, scorecard, simulate
+    from backend.agents.trading.desk import paper as paper_rules
 
     panel = report.panel
     try:
         # The published curve runs the live execution policy - the band
         # blocker on buys, sells at the close, the green-day hold - not the
         # bare rebalance, so what the page shows is what the account runs.
+        # At the cadence the account actually runs. `simulate.run` defaults to
+        # `simulate.REBALANCE` (20) and this call did not override it, so the
+        # track record on the page was a different strategy from the one in
+        # the book: measured across start phases, the same rules at 20 earn
+        # about 38% a year at Sharpe 1.44 and at the live 120 about 29% at
+        # 1.13. The page was showing the better one.
         sim = simulate.run(
             report,
             use_exits=False,
+            rebalance=paper_rules.REBALANCE_EVERY,
             event_exposure=event_risk.live_path(panel),
             event_lifecycle=True,
             **simulate.LIVE_POLICY,

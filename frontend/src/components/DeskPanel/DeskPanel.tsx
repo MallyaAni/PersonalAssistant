@@ -691,11 +691,14 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">Selling</dt>
         <dd className="text-[#6e6e73]">
-          There is no sell signal, on purpose. The desk screened twenty-one exit triggers, from price
-          crossing every average to its own grade and rank falling, and not one was followed by a fall:
-          holding a name graded B or better beat the benchmark by 1.95% over the next twenty sessions,
-          and every trigger raised that number rather than lowering it. An exit overlay cost 3.0% a year
-          and lowered Sharpe in five of six years. The rebalance is the exit.
+          The desk sells a name it holds once the grade falls below A, and puts the money into the
+          names it still wants the same session. It is a rotation, never a trim: a Sell means close
+          the whole position. Selling the same signal to cash instead measured 24 points of return a
+          year worse than simply holding, which is why the money never sits still.
+          {' '}No PRICE-based exit survived screening: twenty-one triggers, from price crossing every
+          average to rank falling, and not one was followed by a fall — an exit overlay cost 3.0% a
+          year and lowered Sharpe in five of six years. Those stay retired. A grade falling is a
+          different thing: it is the analysts saying the thesis broke, not the chart looking tired.
         </dd>
       </div>
       <div>
@@ -1799,13 +1802,16 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
     // Inside a trade row the badge above already carries the action, so this
     // line adds only the count when there is something to trade.
     if (action === 'Hold') return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>Hold</span>
-    return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>{action}{Math.abs(row.move_weight) > 0 ? ` ${allocationPercent(Math.abs(row.move_weight))}` : ''}</span>
+    // "Sell 1.9%" beside a Target column reading 0.8% reads as a
+    // contradiction. A sell is always the whole position, so it says so, and
+    // a buy carries a + because it is an addition rather than a level.
+    return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>{action}{Math.abs(row.move_weight) > 0 ? (action === 'Sell' ? ` all · ${allocationPercent(Math.abs(row.move_weight))}` : ` +${allocationPercent(Math.abs(row.move_weight))}`) : ''}</span>
   }
   // A Plan column is a signal, not a sentence. The allocation has its own
   // column and the reasoning is a hover: a trader scanning ninety-four rows
   // reads the word, and asks why only for the one row he stops on.
   return <div className="min-w-24" aria-label={`${ticker} plan action`} title={actOnIt(reason) ?? reason}>
-    <div className="font-medium">{action}{action !== 'Hold' && Math.abs(row.move_weight) > 0 ? <span className="ml-1 font-normal text-[#6e6e73]">{allocationPercent(Math.abs(row.move_weight))}</span> : null}</div>
+    <div className="font-medium">{action}{action !== 'Hold' && Math.abs(row.move_weight) > 0 ? <span className="ml-1 font-normal text-[#6e6e73]">{action === 'Sell' ? `all · ${allocationPercent(Math.abs(row.move_weight))}` : `+${allocationPercent(Math.abs(row.move_weight))}`}</span> : null}</div>
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Desk position & quote</summary>
       {/* The desk's own book, not the reader's. These two lines used to read
           "Using $X account value" and "Recorded Y%", both of which described

@@ -441,7 +441,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             {planAction
               ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />
               : <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name">Plan</SortHead>}
-            <SortHead column="weight" sort={sort} onSort={setSort} title="Share of the account under the sizing policy above.">Size %</SortHead>
+            {/* "Size %" sat beside the Plan column, which also prints a
+                percentage, and the two are different quantities: this is the
+                weight the desk WANTS at the next reset, while Plan prints the
+                move it is making now. On a name being rotated out they
+                disagree on purpose - target 0.8%, sell the 1.9% held - and
+                two bare percentages side by side read as a contradiction. */}
+            <SortHead column="weight" sort={sort} onSort={setSort} title="The weight the desk wants in this name at the next weight reset, as a share of the account. Not the move in the Plan column, which is what it is trading today.">Target %</SortHead>
             <th><span className="sr-only">Record purchase</span></th>
           </tr>
         </thead>

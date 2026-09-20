@@ -9,7 +9,7 @@ twenty-session high.
 
 import numpy as np
 
-from backend.agents.trading.desk import actions, grading
+from backend.agents.trading.desk import actions, grading, paper
 from backend.tests.test_trading_simulate import _report
 
 
@@ -56,7 +56,12 @@ def test_board_orders_rows_and_carries_the_exit_plan():
     for r in rows:
         assert set(r["stances"]) == set(report.graded.stances)
         assert "reason" in r and "why" in r
-        assert r["until_rebalance"] == 15
+        # Against the book's own constant, not a copy of it. This asserted a
+        # literal 15, which was `actions.REBALANCE` at 20 minus the fixture's
+        # five sessions - and it went on passing after the book moved to a
+        # 120-session reset, while the page told the operator his weights
+        # reset in 14 sessions when the answer was 114.
+        assert r["until_rebalance"] == paper.REBALANCE_EVERY - 5
         assert r["entry"] == "market-on-open"
         assert r["rank"] is not None and r["grade"] in ("A+", "A", "B", "C")
     last = len(panel.dates) - 1

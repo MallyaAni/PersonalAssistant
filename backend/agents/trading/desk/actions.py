@@ -28,9 +28,15 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from backend.agents.trading.desk import grading, plainly
+from backend.agents.trading.desk import grading, paper, plainly
 
-REBALANCE = 20
+# The book's weight reset, which belongs to the paper book and is declared
+# there. This was a second hard-coded 20 while the book ran 120, and it is the
+# number the page renders: with six sessions since the last reset the desk
+# told the operator his weights reset in 14 sessions when the answer was 114.
+# Wrong by a factor of eight, on a board showing 57% cash that he was being
+# invited to believe self-corrects in three weeks.
+REBALANCE = paper.REBALANCE_EVERY
 HIGH_WINDOW = 20
 STOPS = (0.08, 0.12, 0.20)
 # A change below this fraction of equity is not worth an order.
