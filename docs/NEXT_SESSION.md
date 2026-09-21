@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-09-21 — Stalled execution review split into immediate ledger repair
+
+At20:31, both independent account failures below still reproduced unchanged;
+worker had read the review but produced no correction for22 minutes. Read-only
+runtime metrics showed1 active request,0 waiting, not an infrastructure outage.
+Stopped only PID3151214, confirmed exit. No model/service configuration changes.
+
+CURRENT **fresh session ses_f3a53b602ffeeYnSiQe8WiZaXi**, **PID3173728**, SAME
+`trading-funded-allocation-20260921` checkout, basea8674511 and existing draft.
+Log `/tmp/codex-opencode-ledger-fix-20260921.jsonl`, contract
+**CODEX_LEDGER_FIX_TASK.md**, expected **LEDGER_FIX_HANDOFF.md**.
+Worker read contract. Scope NOW: only sale-proceeds conservation, bounded
+whole-share sells/quantity validation and focused real-ledger tests. Exact
+formulas and reproductions supplied. Do not start another writer or resume old
+ses_f3a93c45affeaITi1eHsm9kTDO. Full shared paper/simulator integration remains
+NEXT, not cancelled; retain original contracts and five-group review for it.
+Do not call this narrow repair the finished allocation feature.
+
+Existing draft includes9 lines in paper.py but no completed paper path/tests;
+no new source accepted or deployed. External launch start-ledger-fix.sh and
+funded-ledger-fix-task.md record dispatch. Live remainsa89bba40. Starting
+mainb4d549c4, pull up to date, unrelated untracked evaluations preserved.
+Diagram impact: NONE — coordination and reproduced failure evidence only.
+
 ## 2026-09-21 — Funded draft rejected on actual ledger failures
 
 First execution draft now exists: new funded_execution.py and modified
