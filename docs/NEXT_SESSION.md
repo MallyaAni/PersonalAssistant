@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-09-21 — Ledger repairs independently verified; daily execution next
+
+**VERIFIED within isolated draft:** sale1 at100 with10bps/no recycling now
+credits99.9 cash, and whole-share held0.6 submits no sell and reports blocked
+residual. Root reran11 ledger tests and64 focused trading/parity/paper tests,
+all passed. External **check-ledger-conservation.py** additionally passed100
+deterministic mixed buy/sell baskets across0/5/10/20bps and both recycling modes:
+ending cash+positions+fees equals starting value, no negative shares/cash,
+non-recycling buys never spend sale proceeds. Worker reports110 broader tests;
+root independently verified64, not110. Remaining full-draft Ruff C901 in
+_continuous_orders and malformed economic test fixtures are deferred explicitly.
+Full execution is not accepted, committed or deployed from this partial proof.
+
+Ledger worker finished **LEDGER_FIX_HANDOFF.md** and PID3173728 exited.
+CURRENT **NEW session ses_f3a31cf89ffeD66z4gDLxfOJ5l**, **PID3237467**, same
+`trading-funded-allocation-20260921` checkout/basea8674511 with repaired draft.
+Current log `/tmp/codex-opencode-daily-execution-20260921.jsonl`, contract
+**CODEX_DAILY_EXECUTION_TASK.md**, result **DAILY_EXECUTION_HANDOFF.md**.
+Scope NOW: scheduled stable stock composition/daily risk decisions, explicitly
+dated causal SPY/QQQ context, complete truthful execution trace and focused
+actual-simulator tests. Preserve ledger fixes/default behavior. Full paper.plan
+pending/reservation/settlement, stock-entry/company-exit parity, real comparisons,
+one-table UI and deployment remain NEXT. No concurrent worker or old-session
+resume. Fresh task also requires fixing the lingering lint and unrealistic
+1.4-weight/overvalued-holdings test fixtures without weakening their checks.
+
+External post-ledger snapshots preserve reviewed boundary:
+funded-simulate-ledger-fixed-snapshot.py and
+funded-execution-ledger-fixed-snapshot.py. New contract/launch copies:
+daily-execution-task.md and start-daily-execution.sh. Original full task and
+review still govern later integration. Live remainsa89bba40.
+
+Asked optional user preference whether to prioritize faster direct Codex coding
+or conserve usage with OpenCode, given observed30-minute small fixes. No reply
+yet; continue existing OpenCode preference, not blocked. Honor any later answer.
+Starting main12741f63, pull up to date; no local production source imported,
+unrelated untracked evaluations preserved. Diagram impact: NONE — review and
+coordination evidence only.
+
 ## 2026-09-21 — Stalled execution review split into immediate ledger repair
 
 At20:31, both independent account failures below still reproduced unchanged;
