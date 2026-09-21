@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-09-21 23:45 UTC — UI review dispatched; index-permission fix reproduced
+
+UI initial worker finished PARALLEL_UI_HANDOFF.md and PID3264500 exited.
+Worker reports7 allocation+33 desk browser checks and build passed on its own
+checkout; root verified mount earlier, not those verdicts. Review REJECTED
+integration: UI reads DeskPayload.portfolio_allocation while actual API/tests
+return mine.decisions.portfolio_allocation. Existing DeskPanel has mine.decisions
+state. Date-only rendering and malformed-version guard also remain incorrect.
+CURRENT fresh UI **PID3463055**, same checkout, new session (discover via log),
+`/tmp/codex-opencode-parallel-ui-review-20260921.jsonl`, ui-current.tsv override.
+Task **CODEX_UI_FOLLOWUP.md** directs these three fixes and browser fixtures on
+the real nested response path, plus refresh/stale response behavior. No second
+writer; previous process exit confirmed. Other workers unchanged and active.
+
+Simulator draft now contains scheduled stable composition and dated inputs.
+**VERIFIED focused root reproduction:** index_eligible=False produces NO buys in
+continuous/whole modes; True buys400 SPY atprice200 with100000cash, target0.8.
+An existing400-share SPY position still exits with permissionFalse. **FAILED**
+post-fee projection: AAA15% purchase still reports .cash=.85 from old complement,
+expected84985/99985. Actual plan_funded source still divides holdings by original
+equity and sets cash=1-sum, ignoring fees. External check-parallel-review.py now
+asserts all these properties and fails the final projection assertion. This is
+already required by contract; keep it open for simulator handoff review.
+Tested funded_execution SHA256d344978a2b7d6211ce1d50ac79381c29e8b2020c4ebbf109001ae76cf428ed0c;
+simulate36ab2ad82f4831147b5aa9273935c217e109ed7ab5f063c8c92e3a9186a67ee1.
+No new source integrated/deployed; pending API/PAPER/EVAL reviews below remain.
+Starting main56fb2572, pull up to date, unrelated evaluations preserved.
+Diagram impact NONE — review/coordination evidence only.
+
 ## 2026-09-21 23:20 UTC — Acceptance follow-up launched; paper/evaluation review
 
 ACCEPTANCE finished PARALLEL_ACCEPTANCE_HANDOFF.md, PID3264502 exited. Root
