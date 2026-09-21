@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-09-21 22:50 UTC — API draft and acceptance assertions rejected
+
+Six processes still active, same PIDs/sessions; no final handoffs. API now has
+allocation_view.py and decision_view wiring, PAPER has state/order edits, UI
+has98-line StockBoard diff, ACCEPTANCE has456-line/13-test suite. Simulator and
+evaluation remain reading/generating without new owned source. No restarts this
+check. No source integrated or deployed.
+
+**FAILED root reproduction of actual API serializer** (external
+check-parallel-api.py, remote /tmp/codex-check-parallel-api.py): as_of-only input
+reports available/100%cash; .8+.8 weights reports available/160%stocks; SWVXX with
+no capability becomes stock/eligibleTrue; agreed versioned bucket payload becomes
+fictitious cash/indexes/stocks symbols and100%cash target. Serializer invented a
+different input protocol than PARALLEL_CONTRACT. Reject until canonical payload,
+missingness, totals and capabilities validated. Verify actual API caller passes
+freshness/account evidence and rendered UI consumes exact resulting shape.
+
+Root ran current independent-test draft: **13 passed**, but source review finds
+test_spy_is_exempt_from_the_name_cap_only_when_index_eligible explicitly expects
+the known permission bug (False merely capped) and lacks required benchmark
+dates. Passing this suite does NOT validate the corrected contract. Require
+economically consistent tests that actually fail the defects; do not weaken
+assertions. Review also rejects cash-complement-only projection proof.
+
+Corrections saved **parallel-api-review-20260921-2250.md** externally and as
+**CODEX_API_REVIEW.md** in API/acceptance worktrees. Consumption UNVERIFIED while
+active; explicitly send review after handoffs, preserving one writer per file.
+Earlier CODEX_REVIEW_NOTES.md still applies (index execution/date rendering).
+Starting main387d4ddb, pull up to date, tracked tree clean; unrelated evaluations
+preserved. Diagram impact NONE — independent review/coordination evidence only.
+
 ## 2026-09-21 22:25 UTC — Independent review findings queued for parallel workers
 
 All six current processes alive; simulator session is now confirmed
