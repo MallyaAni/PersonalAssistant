@@ -15,9 +15,14 @@ The historical Sep18 record is still honestly labelled untagged; do not
 overwrite it or claim that stored decision has corrected inputs.
 
 Visual inspection found misleading empty-account notices while displaying
-the recorded funded desk plan. Small frontend-only wording correction now
-distinguishes missing personal positions from the desk account. Build passed;
-its separate deploy and live acceptance must be recorded before calling it shipped.
+the recorded funded desk plan. **VERIFIED deployed 7d510d20** corrects these
+notices to distinguish missing personal positions from the desk account.
+TypeScript/Vite build and single-table fixture journey passed. Normal script
+used its frontend-only path; cheap post checks passed at 16:54:34 UTC.
+Live browser rechecked all 93 enum actions against their API rows, one table,
+desktop/mobile, absence of the misleading wording and presence of corrected
+wording; no page errors or failed market requests. Thus 7d510d20 is the
+verified deployed checkpoint, including backend fix 07f59af6.
 
 OpenCode SAME session/checkout/log as below, still active. It found and READ
 **CODEX_BENCHMARK_REVIEW.md** at 16:48 UTC, so no second writer or resume is
@@ -28,6 +33,11 @@ BENCHMARK_HANDOFF.md, inspect actual patch, run tests independently and compare
 real-data output to the independent reference. Then proceed to exposure
 milestone from CODEX_EXPOSURE_TASK.md, followed by one-table UI integration.
 No draft benchmark or exposure changes have been imported or promoted.
+16:55 UTC: worker process still alive, last log event is reading the review
+followed by step_start at 16:48. No correction edits or final handoff yet;
+do not mistake a live process for successful review completion. Check bounded
+progress next; if it stays stalled, stop only this worker before resuming with
+a compact correction task. Heartbeat updated with current logs and acceptance.
 
 Root computed and saved the corrected incumbent once on immutable Sep18 data:
 `corrected-exposure-report.pickle` (trusted local cache, do not load arbitrary
