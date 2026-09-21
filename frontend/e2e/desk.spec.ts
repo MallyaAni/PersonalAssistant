@@ -8,6 +8,33 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Missing index evidence remains visible, and old saved accounting is labelled honestly.
+test('benchmark comparison explains unavailable indexes and legacy accounting', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))
+  const bench = {
+    version: 'strategy-bench/2', sessions: 20, from: '2026-08-01', to: '2026-08-28',
+    blocks: [{regime: 'Whole sample', sessions: 20, share: 1, from: '2026-08-01', to: '2026-08-28', rows: [
+      {name: 'SPY', total: .02, annual: null, volatility: .15, drawdown: -.01, sharpe: 1},
+      {name: 'QQQ', total: null, annual: null, volatility: null, drawdown: null, sharpe: null, unavailable: 'QQQ has a missing adjusted price'},
+    ]}],
+  }
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest: deskRecord(), strategy_bench: bench}}))
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'Research', exact: true}).click()
+  await page.locator('summary', {hasText: 'Strategy benchmarks'}).click()
+  await expect(page.getByLabel('Benchmark accounting')).toContainText('funded next-open entry')
+  const comparison = page.getByRole('table', {name: 'Whole sample candidates'})
+  await expect(comparison).toContainText('Unavailable: QQQ has a missing adjusted price')
+  await expect(comparison.getByRole('row').filter({hasText: 'QQQ'})).not.toContainText('0.0%')
+  bench.version = 'strategy-bench/1'
+  await page.reload()
+  await page.getByRole('button', {name: 'Research', exact: true}).click()
+  await page.locator('summary', {hasText: 'Strategy benchmarks'}).click()
+  await expect(page.getByLabel('Benchmark accounting')).toContainText('Older comparison accounting')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Every stock stays in one table, and plan cells contain only the three actions.
 test('single-table strategy plan keeps actions, holdings and reasons consistent', async ({page}) => {
   await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))

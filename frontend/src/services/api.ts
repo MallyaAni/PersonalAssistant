@@ -2537,6 +2537,7 @@ export const getDeskHistory = async (userId: string, ticker: string): Promise<De
 // regime. Evidence only: just one of these rules is the one that trades.
 export interface StrategyBenchRow {
   name: string;
+  unavailable?: string;
   total: number | null;
   annual: number | null;
   volatility: number | null;
@@ -2561,6 +2562,7 @@ export interface StrategyBench {
   from: string | null;
   to: string | null;
   note?: string;
+  method?: string;
   caveat?: string;
   blocks: StrategyBenchBlock[];
 }

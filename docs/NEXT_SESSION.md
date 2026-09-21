@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-09-21 17:27 UTC — NEW allocation worker active; benchmark deploy running
+
+CURRENT worker is **ses_f3b027cf5ffeGAwFUe1w4JTDkC**, isolated checkout
+`/home/animallya96/codex-worktrees/trading-allocation-path-20260921`, base
+**703e3ac3**, contract CODEX_ALLOCATION_TASK.md, result ALLOCATION_HANDOFF.md,
+log `/tmp/codex-opencode-allocation-path-20260921.jsonl`. Single writer.
+Old benchmark session is STOPPED. Fresh worker has read relevant implementation
+and tests; it must implement optional shared daily allocation/priority execution
+in paper and simulator, preserve defaults, and stop for review. Contract copy:
+external `opencode-allocation-path-task.md`. Fixed volatility/residual-SPY and
+trend candidates, coordinated regime/FOMC absolute caps, explicit instrument
+capabilities, no invented SWVXX fills. Root supplies review and cached real-data
+evaluation before adoption; no fitting or broker calls authorized in worker.
+
+Benchmark source **703e3ac3** pushed, normal deployment underway in
+`/tmp/codex-trading-benchmark-deploy-20260921.log`. Finish gates and exact-source
+read-only runtime benchmark acceptance. Do not overwrite old comparison files.
+UI companion now explains unavailable benchmark rows and identifies older
+accounting. Two local browser journeys and TypeScript/Vite build passed;
+frontend-only deploy must follow the current backend deploy, then actual browser
+acceptance. Primary stock table remains unchanged. Do not run concurrent deploys.
+
 ## 2026-09-21 17:23 UTC — Benchmark source accepted; allocation implementation next
 
 Stopped only OpenCode PID2785653 after its corrected patch passed 56 tests but

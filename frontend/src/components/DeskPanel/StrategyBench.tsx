@@ -15,10 +15,12 @@ const num = (v: number | null | undefined) => (v == null ? '—' : v.toFixed(2))
 // An index is context rather than a candidate, so it reads differently.
 const isIndex = (name: string) => /^[A-Z]{2,4}$/.test(name)
 
+// Show comparison accounting and explicitly explain missing benchmark evidence.
 export const StrategyBench = ({ bench }: { bench?: Bench | null }) => {
   const [open, setOpen] = useState<string | null>('Whole sample')
   if (!bench?.blocks?.length) return null
 
+  // Highlight the strongest available metric without treating missing values as zero.
   const best = (rows: StrategyBenchRow[], key: keyof StrategyBenchRow) => {
     const vals = rows.map((r) => r[key]).filter((v): v is number => typeof v === 'number')
     return vals.length ? Math.max(...vals) : null
@@ -33,6 +35,11 @@ export const StrategyBench = ({ bench }: { bench?: Bench | null }) => {
       <p className="mt-2">
         Every candidate priced over identical sessions, split by regime so a headline return cannot
         hide where it came from. {bench.note}
+      </p>
+      <p className="mt-2" aria-label="Benchmark accounting">
+        {bench.version === 'strategy-bench/2'
+          ? 'SPY and QQQ: dividend-adjusted, funded next-open entry with trading costs.'
+          : 'Older comparison accounting: strict funded SPY and QQQ validation is not recorded.'}
       </p>
 
       <div className="mt-3 space-y-2">
@@ -73,6 +80,7 @@ export const StrategyBench = ({ bench }: { bench?: Bench | null }) => {
                           <td className={`py-1.5 ${isIndex(row.name) ? 'text-[#6e6e73]' : 'font-medium text-[#1d1d1f]'}`}>
                             {row.name}
                             {isIndex(row.name) && <span className="ml-1 text-[10px]">index</span>}
+                            {row.unavailable && <span className="block font-normal text-[#b42318]">Unavailable: {row.unavailable}</span>}
                           </td>
                           <td className="tabular-nums">{pct(row.total)}</td>
                           <td className={`tabular-nums ${row.annual != null && row.annual === bestAnnual ? 'font-medium text-[#1a7f37]' : ''}`}>

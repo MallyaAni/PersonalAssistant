@@ -12,6 +12,8 @@
   over 2,945 sessions. Both controls match separate return, drawdown and
   terminal-equity calculations to relative tolerance 1e-12. Incumbent results
   unchanged. No policy promotion or production comparison records rewritten.
+- Research view explains unavailable index rows and labels legacy accounting;
+  two browser journeys and TypeScript/Vite build passed locally.
 - Diagram impact: NONE — accounting boundary within existing market comparison.
 
 ## 2026-09-21 — Distinguish personal holdings from the funded desk account
