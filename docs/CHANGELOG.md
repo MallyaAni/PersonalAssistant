@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-21 — Restore funded desk previews during market hours
+
+- The account planner now reads the live grading contract's `grade_live`
+  field. A funded account with fresh grades previously raised HTTP 500 and
+  left the stock table showing fallback HOLD decisions.
+- Regression reproduces the actual funded HTTP request and checks a funded
+  BUY preview, unchanged saved holdings, and separation from research targets;
+  the unfunded path remains covered. Deployment acceptance tracked separately.
+- Diagram impact: NONE — correction of an existing consumer field.
+
 ## 2026-09-21 — Corrected fundamental inputs in the live desk
 
 - Fundamental scores now use versioned filing features, preserve missing

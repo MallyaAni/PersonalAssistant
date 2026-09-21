@@ -56,7 +56,7 @@ def apply_account_plan(result, record, snapshot, entries, paused, now):
     technical, value = desk_freshness.grade_inputs(snapshot, record, now)
     grades.update(
         {
-            s: r["grade"]
+            s: r["grade_live"]
             for s, r in holdings.live_grades(record, technical, value).items()
         }
     )

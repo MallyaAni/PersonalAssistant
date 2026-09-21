@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-09-21 — Live acceptance found funded-preview failure; correction pending deploy
+
+The fundamental correction deployed as **c36f4a4b** at 16:03 UTC through
+scripts/deploy.sh: 3815 unit tests passed (30 skips), 100 real-model routing
+tests passed, cheap post-deploy smoke passed. Main afac6045 differs only in
+test formatting. Read-only deployed runtime check confirmed the corrected
+fundamental source, September 18 input session, 94 stock columns and 88 scored
+names; module hash matches the independently compared source. No records written.
+The frozen September 18 record remains legacy/untagged until the next nightly.
+
+Actual browser acceptance FAILED: funded `/desk/mine` returns HTTP 500 when
+fresh live grades exist. `apply_account_plan` reads `grade`, but
+`holdings.live_grades` returns `grade_live`. Reproduced in the funded HTTP
+regression before changing production code. Fix the consumer, keep the public
+live-grade contract; test both funded and unfunded accounts with a consistent
+clock. Re-run normal deploy and external `run-live-desk-check.py`; the prior
+unit pass and healthy endpoints do not establish a working dashboard.
+
+OpenCode exposure worker was interrupted after excessive reading and resumed
+in the SAME session **ses_f3b57ff60ffeZdI3U3ov3bGq40**, same isolated checkout.
+CURRENT log `/tmp/codex-opencode-portfolio-benchmarks-20260921.jsonl`.
+First bounded milestone: strict SPY+QQQ benchmark loader, strategy-bench
+integration and tests; write **BENCHMARK_HANDOFF.md** and stop for review.
+Code edits now observed. No allocation promotion or training. The broader
+exposure contract remains the next milestone after benchmark review.
+
 ## 2026-09-21 — User clarified the actual allocation objective
 
 Additional user requirement: defensive allocation during bear markets or
@@ -28,6 +54,39 @@ timing model. No claim of perfect downturn foresight or zero lag. Continue
 supervision beyond the input fix; that alone is not this clarified objective.
 
 ## 2026-09-21 — User rejected stopping; live correctness migration active
+
+15:58 UTC: retry deployment has passed **3815 unit tests, 30 skips**; the
+100-case real-model routing gate is still running. No gate bypass. Retry log
+`/tmp/codex-trading-fundamentals-deploy-retry-20260921.log`; checkout used
+c36f4a4b. Main afac6045 only wraps one long test line; Ruff passes there.
+Do not mutate deploy checkout while its gate runs. After cutover verify the
+actual container hashes and source/date output using external read-only
+`E:/AgentWorkspace/entry-timing-pilot-20260920/check-fundamental-runtime.py`
+(pipe to deployed backend python), and run `run-live-desk-check.py` through
+existing SSH tunnel localhost:18080. The latter now verifies the actual
+fundamental source label, one table, enum cells and desktop/mobile behavior.
+New screenshots use `live-fundamentals-desktop/mobile.png` names.
+Nightly is `/home/animallya96/desk_daily.sh`; it pulls main into ~/anios when
+the nightly lock is free and runs ~/research-venv/bin/python market_daily.
+Do NOT run this script manually: it includes paper-trade. The already stored
+September 18 record remains immutable; current displayed input source can
+remain unrecorded until the next nightly, honestly labelled by the new UI.
+
+NEXT WORKER ACTIVE (old fundamental session finished): fresh OpenCode session
+`ses_f3b57ff60ffeZdI3U3ov3bGq40`, base afac6045, isolated checkout
+`/home/animallya96/codex-worktrees/trading-portfolio-exposure-20260921`.
+Contract CODEX_EXPOSURE_TASK.md, result EXPOSURE_HANDOFF.md, log
+`/tmp/codex-opencode-portfolio-exposure-20260921.jsonl`.
+Contract copy is external `opencode-portfolio-exposure-task.md` in the same
+desktop acceptance folder. Scope: strict mandatory SPY+QQQ benchmarks and
+optional shared stock/index/cash allocation plus priority execution in paper
+preview and simulator. Fixed transparent volatility/trend diagnostics, no
+tuning/training/automatic promotion. Instrument eligibility must distinguish
+cash, mutual funds and duration; no fabricated SWVXX fills. Full causal/funding
+parity tests and actual portfolio evaluation required before adoption, then
+bind accepted exposure payload to existing one-table UI. Worker cannot deploy
+or submit orders. Heartbeat prompt updated with this new worker and acceptance
+state; do not continue the older research or fundamental sessions by mistake.
 
 15:47 UTC: correction checkpoint 1c28ce80 pushed; local 102 tests, two actual
 browser journeys, production build, Ruff and all 32 diagram checks passed.

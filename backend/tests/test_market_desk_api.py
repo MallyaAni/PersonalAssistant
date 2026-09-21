@@ -15,13 +15,15 @@ from backend.main import app
 
 
 # Research allocations stay separate from the adopted plan over HTTP.
-# Reading the decision must also leave the personal holdings file unchanged.
+# Funded live-grade previews must work and leave personal holdings unchanged.
+@pytest.mark.parametrize("funded", [False, True])
 @pytest.mark.asyncio
 async def test_research_target_cannot_replace_adopted_plan_over_http(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, funded
 ):
     from backend.api.v1 import market
     from backend.market import (
+        desk_freshness,
         event_status,
         execution_quotes,
         holdings,
@@ -31,6 +33,8 @@ async def test_research_target_cannot_replace_adopted_plan_over_http(
 
     record, snapshot, quoted, now = setup()
     record["written"] = record["session"]
+    if funded:
+        record["paper"].update({"cash": 100000, "positions": []})
 
     class Clock(datetime):
         # Freeze the request at the fresh completed bar.
@@ -39,6 +43,7 @@ async def test_research_target_cannot_replace_adopted_plan_over_http(
             return now
 
     monkeypatch.setattr(market, "datetime", Clock)
+    monkeypatch.setattr(desk_freshness, "datetime", Clock)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
@@ -68,9 +73,14 @@ async def test_research_target_cannot_replace_adopted_plan_over_http(
         response = await client.get("/api/v1/market/desk_user/desk/mine?equity=100000")
     assert response.status_code == 200, response.text
     row = response.json()["decisions"]["rows"]["S11"]
+    assert response.json()["grades_live"]["S11"]["grade_live"] == "A+"
     assert row["target_weight"] == 0.1
     # And the row is one of the three actions, whatever the file says.
     assert row["action"] in ("Buy", "Sell", "Hold")
+    if funded:
+        assert row["action"] == "Buy"
+        assert row["move_weight"] > 0
+        assert "preview from recorded account" in row["reason"]
     assert holdings.load(tmp_path)[0].shares == 60
 
 
