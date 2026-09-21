@@ -9,7 +9,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 
-from backend.cli import market_entry_context as c
 from backend.market import entry_context as ec
 from backend.market import entry_pilot as ep
 from backend.market import fundamental_features as ff
@@ -17,6 +16,17 @@ from backend.market import fundamental_features as ff
 K = len(ff.FEATURE_NAMES)
 HORIZON = 10
 _NY = ZoneInfo("America/New_York")
+
+
+# Load the optional research CLI only for tests requiring its ML environment.
+@pytest.fixture
+def c():
+    pytest.importorskip("joblib", reason="requires optional research dependencies")
+    pytest.importorskip("sklearn", reason="requires optional research dependencies")
+    pytest.importorskip("threadpoolctl", reason="requires optional research dependencies")
+    from backend.cli import market_entry_context
+
+    return market_entry_context
 
 
 # A tiny feature tensor with one name, one real value and one known period end.
@@ -167,7 +177,7 @@ def test_context_columns_shape_and_medians():
 
 
 # A small synthetic run trains, replays, and reproduces its own artifacts.
-def test_small_synthetic_end_to_end_run_and_replay(tmp_path):
+def test_small_synthetic_end_to_end_run_and_replay(tmp_path, c):
     data = _synthetic_dataset()
     features = _synthetic_features(data.dates)
     out = tmp_path / "run"
@@ -251,7 +261,7 @@ def _panel_and_partition(tmp_path):
 
 
 # The build selects the newest 15m partition, and the store root fails.
-def test_build_data_uses_the_partition_not_the_store_root(tmp_path, monkeypatch):
+def test_build_data_uses_the_partition_not_the_store_root(tmp_path, monkeypatch, c):
     panel, data_dir = _panel_and_partition(tmp_path)
     monkeypatch.setattr(c, "book_panel", lambda store: (panel, {}))
     store = c.MarketStore(data_dir)
@@ -263,7 +273,7 @@ def test_build_data_uses_the_partition_not_the_store_root(tmp_path, monkeypatch)
 
 
 # main() runs the full boundary and verifies its own output before returning.
-def test_main_runs_and_self_verifies(tmp_path, monkeypatch):
+def test_main_runs_and_self_verifies(tmp_path, monkeypatch, c):
     panel, data_dir = _panel_and_partition(tmp_path)
     monkeypatch.setattr(c, "book_panel", lambda store: (panel, {}))
     out = tmp_path / "out"
@@ -284,7 +294,7 @@ def test_main_runs_and_self_verifies(tmp_path, monkeypatch):
 
 
 # One-ulp input tampering cannot change predictions but must still be rejected.
-def test_verify_rejects_tampered_input_that_preserves_predictions(tmp_path):
+def test_verify_rejects_tampered_input_that_preserves_predictions(tmp_path, c):
     data = _synthetic_dataset()
     features = _synthetic_features(data.dates)
     out = tmp_path / "run"
@@ -304,7 +314,7 @@ def test_verify_rejects_tampered_input_that_preserves_predictions(tmp_path):
 
 
 # Model artifacts are pinned too, and rejected before being loaded.
-def test_verify_rejects_tampered_model(tmp_path):
+def test_verify_rejects_tampered_model(tmp_path, c):
     data = _synthetic_dataset()
     features = _synthetic_features(data.dates)
     out = tmp_path / "run"
@@ -324,7 +334,7 @@ def test_verify_rejects_tampered_model(tmp_path):
 
 
 # Model results carry paired intervals against both baselines and (context) price.
-def test_model_results_carry_paired_intervals(tmp_path):
+def test_model_results_carry_paired_intervals(tmp_path, c):
     data = _synthetic_dataset()
     features = _synthetic_features(data.dates)
     out = tmp_path / "run"

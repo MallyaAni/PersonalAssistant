@@ -29,6 +29,16 @@ supervision beyond the input fix; that alone is not this clarified objective.
 
 ## 2026-09-21 — User rejected stopping; live correctness migration active
 
+15:47 UTC: correction checkpoint 1c28ce80 pushed; local 102 tests, two actual
+browser journeys, production build, Ruff and all 32 diagram checks passed.
+First normal deploy FAILED at collection of earlier research test_entry_context
+(missing optional joblib in gate image); deployed marker remains 8c17e72a.
+No service cutover occurred. Targeted test-fixture fix loads optional research
+CLI dependencies only for its six CLI tests, retaining seven pure context
+tests in the ordinary gate. All 13 pass on desktop research environment.
+Rerun normal deploy after committing this isolated gate fix; never skip gate.
+Deployment log: `/tmp/codex-trading-fundamentals-deploy-20260921.log`.
+
 15:44 UTC: independent current-data comparison COMPLETED successfully:
 exact legacy grades/scores/targets replay; valuation scores unchanged;
 8 grade changes, 7 target changes, 2.84556% one-way target turnover; scored
