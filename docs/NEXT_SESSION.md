@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-09-21 16:52 UTC — Funded live desk fixed and verified; benchmark review active
+
+**VERIFIED deployed 07f59af6**, exact running decision_view SHA256
+23333a5341df63b5b351f3ea2183d0acbb597ac513cf27da9941437af08b7517 matches source.
+Normal deploy: 3816 unit tests (30 skips), 100 real-model routing tests,
+cheap post checks passed at 16:49 UTC. Local targeted tests: 111 passed.
+Live authenticated browser: `/desk/mine` 200, 93 stock rows, one table,
+BUY/HOLD/SELL only, every rendered action equals its actual API decision,
+desktop/mobile layout and no blocking errors/failed market requests.
+Screenshots and `run-live-desk-check.py` live in external acceptance folder
+`E:/AgentWorkspace/entry-timing-pilot-20260920/`.
+The historical Sep18 record is still honestly labelled untagged; do not
+overwrite it or claim that stored decision has corrected inputs.
+
+Visual inspection found misleading empty-account notices while displaying
+the recorded funded desk plan. Small frontend-only wording correction now
+distinguishes missing personal positions from the desk account. Build passed;
+its separate deploy and live acceptance must be recorded before calling it shipped.
+
+OpenCode SAME session/checkout/log as below, still active. It found and READ
+**CODEX_BENCHMARK_REVIEW.md** at 16:48 UTC, so no second writer or resume is
+needed. Review requests: exact funded cost convention capital/(1+cost), reject
+missing early/regime returns rather than shortening periods, calendar and
+capital validation, and unavailable metadata even for short samples. Await
+BENCHMARK_HANDOFF.md, inspect actual patch, run tests independently and compare
+real-data output to the independent reference. Then proceed to exposure
+milestone from CODEX_EXPOSURE_TASK.md, followed by one-table UI integration.
+No draft benchmark or exposure changes have been imported or promoted.
+
+Root computed and saved the corrected incumbent once on immutable Sep18 data:
+`corrected-exposure-report.pickle` (trusted local cache, do not load arbitrary
+pickles), `corrected-exposure-baseline.npz/.json`, and independent SPY/QQQ
+accounting `independent-benchmark-reference.json`. Avoid repeating desk.run;
+use cached report for fixed, predeclared exposure candidates. Exact calendar:
+2015-01-02 initial NAV, first fill Jan5, through 2026-09-18, 2944 return sessions.
+Ten-basis-point one-way cost, no terminal liquidation, zero cash interest.
+Incumbent retrospective CAGR 44.56%, max drawdown 32.01%; SPY 13.77%/33.72%,
+QQQ 19.03%/35.12%. **These survivor-biased, reused historical results do not
+prove the objective achieved or future outperformance.** Incumbent maximum
+single-name holding drift reached 31.74%; target caps do not imply a held-weight
+cap. Full paths are saved for downside participation, re-entry and regime
+comparisons. No new model fitting experiment or production records written.
+
 ## 2026-09-21 — Live acceptance found funded-preview failure; correction pending deploy
 
 The fundamental correction deployed as **c36f4a4b** at 16:03 UTC through

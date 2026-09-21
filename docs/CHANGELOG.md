@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-21 — Distinguish personal holdings from the funded desk account
+
+- Empty personal-position notices no longer claim the displayed desk plan
+  was sized against an empty account. The table already shows the recorded
+  desk holdings separately; the notices now explain that distinction.
+- Build and browser acceptance are recorded in NEXT_SESSION. Diagram impact: NONE.
+
 ## 2026-09-21 — Restore funded desk previews during market hours
 
 - The account planner now reads the live grading contract's `grade_live`

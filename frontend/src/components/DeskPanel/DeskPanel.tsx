@@ -775,7 +775,7 @@ const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasReco
       {!hasRecord ? (
         <p>No evening decision is available yet. Check after the next trading session.</p>
       ) : (
-        <p>No positions recorded · sizing assumes an empty account.</p>
+        <p>No personal positions recorded. Desk positions are shown separately.</p>
       )}
       {hasRecord && (
         <button type="button" onClick={onEnterPositions} className="mt-2 rounded-full bg-[#1d1d1f] px-3 py-1.5 text-sm text-white">
@@ -2514,7 +2514,7 @@ const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebala
     : 'an FOMC cycle is closing')
   if (!boardEvent) parts.push(rebalanceDue ? 'a weight reset is due at the next open' : countdown !== null ? `weights reset in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no weight reset scheduled')
   let action: string
-  if (holdings !== null && holdings === 0) action = 'No positions recorded yet, so the plan compares against an empty account. Add them under Positions.'
+  if (holdings !== null && holdings === 0) action = 'No personal positions recorded yet. Add yours under Positions to compare with the desk.'
   else if (eligible > 0) action = `${eligible} name${eligible === 1 ? '' : 's'} to act on now.`
   else action = open ? 'Nothing to act on right now.' : 'Nothing for you to do until the open.'
   return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
