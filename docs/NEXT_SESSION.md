@@ -1,5 +1,145 @@
 # Next session
 
+## 2026-09-21 — User clarified the actual allocation objective
+
+Additional user requirement: defensive allocation during bear markets or
+unusual shocks (COVID example), including bonds or SWVXX. SWVXX verified as
+a money-market mutual fund, so treat it separately from duration-bearing
+bonds. Expand the allocation contract to cash/money-market/bonds, respecting
+broker eligibility, settlement, income and credit/duration risks. No
+hindsight crash-date triggers or promise to avoid every gap. See the updated
+portfolio objective for stress scenarios and re-entry acceptance.
+
+Latest user constraint: **SPY and QQQ are the benchmarks for gains and
+drawdown limits**. Objective: higher net compounded returns with no larger
+drawdowns than each benchmark separately over identical periods. This replaces
+the request for an arbitrary 10/15/20% absolute drawdown preference. Do not
+pick the easier benchmark or a hindsight blend, and never use future benchmark
+drawdown as a decision input. Details in the objective document below.
+
+Read `docs/research/portfolio-exposure-objective-2026-09-21.md`. User wants
+stocks at attractive prices, cash/indexes ahead of deteriorating conditions,
+and prompt participation in recoveries; volatile-stock red days are the key
+problem. They answered "I'm not sure" about drawdown tolerance. Do not invent
+a personal risk limit; compare return/downside trade-offs. After current live
+fundamental correction, prioritize a shared stock/index/cash exposure layer,
+including re-entry and execution priority, rather than another small entry-
+timing model. No claim of perfect downturn foresight or zero lag. Continue
+supervision beyond the input fix; that alone is not this clarified objective.
+
+## 2026-09-21 — User rejected stopping; live correctness migration active
+
+14:33 UTC: worker PID 2523627 still running, now wrote analyst/run-mode/source
+guard/metadata tests in test_fundamental_features, test_trading_desk and
+test_market_daily. Worker reports a separate 76-test execution regression run
+passed; root has NOT independently run the patch. No LIVE_HANDOFF yet. Root
+review found its new browser test still looks for `Stock rankings` in unused
+EveryGrade before checking SummaryStrip, so that test must exercise the
+actual `Ranked stocks and cash` table and rendered summary. Verify or correct
+before acceptance; do not accept a browser test merely because it exists.
+Worker is inspecting final diffs/imports, so allow this active pass to finish.
+QQQ omission confirmed on captured real inputs: QQQ absent from the stock
+panel, so current `_index_series` cannot emit that required comparison.
+
+14:08 UTC supervision: review worker PID 2523627 remains active in the same
+session, about 33 minutes into the correction. Source now rejects unknown run
+modes, checks actual feature availability at the decision session, removes
+the nightly legacy option, and renders source identity in SummaryStrip.
+Tests/handoff are not complete; no import or deployment yet. The redundant
+notice in unused EveryGrade remains and source/policy comments conflate
+`inputs` with execution policy; review cleanup with final patch.
+
+Incumbent capture FINISHED on copied current inputs: `live-baseline.log`
+and `live-migration-baseline.json/.npz`, session 2026-09-18, 94 non-SPY
+columns, expectations-gap active. This differs from the previously served
+93-row report; do not assume identical universe without comparing names.
+Prepared independent acceptance runner (NOT run until reviewed source is
+imported): `E:/AgentWorkspace/entry-timing-pilot-20260920/compare-live-fundamentals.py`.
+It checks exact legacy grades/scores/targets against the incumbent capture,
+unchanged valuation scores, corrected changes, and identical hypothetical
+100k funded account order previews. The accounts are synthetic, not the
+user's actual positions. Writes only external comparison JSON, no broker.
+
+Allocation-path inspection for NEXT atomic task: `risk.desk_targets` sizes
+stocks; `simulate._targets` explicitly zeroes SPY. Its allocator hook runs
+only on scheduled rebalance days. Broad risk reductions therefore require
+a shared priority path for held exposure, including recovery and actual-fill
+state, not only another sizing multiplier. Existing event lifecycle is FOMC-
+specific and must not conflict or repeatedly compound cuts. Also inspect
+`market_strategy_bench._index_series`: it skips indexes absent from the stock
+panel, while `book_panel` requests book names plus SPY only. This can omit QQQ
+silently and does not satisfy the user's two-benchmark requirement. Load both
+controls independently, align and fail explicitly on missing coverage. Read
+the objective document before specifying the next OpenCode task.
+`strategy_bench.stats` additionally turns every nonfinite daily return into
+zero: required benchmark gaps must fail coverage before reaching this
+function, rather than becoming apparent cash performance. Distinguish the
+deliberately initial zero-return NAV point from a missing market session.
+14:09 UTC: worker has begun analyst-level tests in
+`backend/tests/test_fundamental_features.py`; it is progressing, do not start
+another writer. Independent comparison runner compiles successfully.
+
+13:14 UTC in-progress review: worker active, 8 tracked files edited, still
+building tests. Do not import/deploy yet. Recheck these concrete findings in
+the final patch before acceptance: `_fundamental_opinion` treats any mode
+except "legacy" as corrected while `_fundamental_source_id` labels an unknown
+mode legacy; reject unsupported modes. Source coverage currently counts keys
+even for empty/no-available versions; test actual absence at the last session.
+The added UI source notice is inside `EveryGrade`, a component no longer
+rendered on the one-table page, while SummaryStrip still identifies a curve
+only by execution policy. Test the actual rendered source/older-curve label.
+`market_daily --fundamentals legacy` claims read-only but `_run` can still
+write records or paper-trade; constrain that option to the read-only CLI or
+enforce its no-write/no-trade contract structurally. Metadata on assembled
+value shadow reports must preserve the fundamental-source identity too.
+
+13:35 UTC: after 20 minutes with the same patch and repeated fixture reading,
+interrupted own worker PID 2434809 cleanly and resumed SAME session with the
+five specific review corrections above plus a request to write/run tests now.
+Current log is `/tmp/codex-opencode-live-fundamentals-review-20260921.jsonl`.
+No concurrent writer. Original log remains available. Follow the new log and
+LIVE_HANDOFF.md; do not mistake the existing unfinished patch for acceptance.
+Root started read-only incumbent capture on copied current inputs via
+`E:/AgentWorkspace/entry-timing-pilot-20260920/capture-live-baseline.py`, output
+`live-baseline.log`, then `live-migration-baseline.json/.npz` in that folder.
+It runs the full existing expectations-gap desk with four CPU threads; no
+broker calls/writes. Check completion before any production-source import;
+the incumbent snapshot is the comparator for corrected grades and targets.
+
+User: "ugh so are we leaving it like this or are we going to make it better?"
+Codex acknowledged stopping prematurely. Continue actual product work, not
+another research-only conclusion. Fresh OpenCode worker implements the live
+fundamental analyst input correction, starting main 83ae9753 in isolated
+`/home/animallya96/codex-worktrees/trading-live-fundamentals-20260921`.
+Contract `CODEX_LIVE_TASK.md`, result `LIVE_HANDOFF.md`, current log
+`/tmp/codex-opencode-live-fundamentals-20260921.jsonl`. Read log/session ID
+before sending follow-ups; this is a NEW session, not the earlier worker.
+New session ID: `ses_f3c0be438ffePE3J3uOAcb1tVZ`; worker PID 2434809.
+Read-only input snapshot exported for local actual-data comparison to
+`E:/AgentWorkspace/entry-timing-pilot-20260920/live-inputs-20260921/`:
+550 bar histories and actions, 531 event/fact histories, 93 versioned
+fundamentals, 266 tone histories, latest partition per ticker through Sep21.
+Archive sibling `live-inputs-20260921.tar.gz`. Public market inputs only;
+no paper accounts, credentials or live desk records copied. Keep this separate
+from local Sep4 research data and never write its outputs back to production.
+
+Scope: scored fundamental legs use the reviewed versioned adapter by default,
+NaN stays unavailable, minimum two actual inputs; explicit legacy comparison;
+total source failure stops assembly rather than manufacturing a report;
+data-source identity in report/record/curve. Value analyst and its existing
+shadow stay unchanged in this atomic correction. Preserve frozen opportunity
+fingerprints and all prior records. No order submission by worker. Codex must
+inspect and run actual corrected-vs-legacy grades/weights/order preview on
+stored data, focused tests, required deploy gate and live acceptance. Do not
+stop merely because worker wrote a patch or tests passed.
+
+Runtime read-only audit: live Sept 15–18 value-shadow blocks all cover 93/93
+names; 4,5,5,6 grades differ, hypothetical turnover about 2.98%,5.38%,2.99%,
+5.53%. These are VALUE-shadow comparisons, not proof of new fundamental-leg
+behavior. Version partitions exist each of those nights. Local price history
+ends Sep 4, so obtain the current read-only data for live-cutover comparisons
+instead of overwriting any live record from stale local inputs.
+
 ## 2026-09-21 07:25 UTC — Supervised experiment completed; no promotion
 
 Read `docs/research/entry-context-results-2026-09-21.md` for the morning
