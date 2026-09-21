@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-09-21 — Common-window comparison harness prepared during execution work
+
+Funded worker remains **ses_f3a93c45affeaITi1eHsm9kTDO**, PID3078917,
+same checkout/log/contracts below. At this check it completed relevant source
+reads and baseline tests but has not yet written implementation files. Keep
+single-writer isolation and allow current generation to finish; no restart or
+service change this turn. Execution remains **UNVERIFIED**, no new deployment.
+
+Root prepared external **allocation-scorecard.py**, exercised on immutable
+common-window-reference.npz. **VERIFIED** exact reproduction of frozen incumbent
+CAGR43.5673% and drawdown34.2315% (assertions1e-12); three independent metric
+boundary checks pass, including first-return loss measured against initial NAV.
+Output **allocation-scorecard-incumbent.json** includes each calendar year,
+2023-through-end, separate benchmark upside/downside capture, and2441
+overlapping252-return windows. Both return/drawdown objectives met in35.9689%
+of windows; SPY alone37.2798%, QQQ48.1770%. These overlapping retrospective
+windows are not independent evidence or a probability of future success.
+
+When execution candidate artifacts exist, run
+`allocation-scorecard.py vol=<npz> vol_trend=<npz>` with each NPZ containing
+dates, returns and equity. Harness rejects different calendars, incorrect
+initial NAV, missing evaluated returns or return/NAV mismatches. No strategy
+fitting or threshold changes; fixed metrics/protocol remain in external
+allocation-evaluation-acceptance.md. Only baseline scored so far; trace-derived
+fill/turnover/recovery and exposure-matched accounts still require the worker.
+
+Starting main0955d4e0, pulled up to date, tracked tree clean before handoff.
+Unrelated untracked evaluations preserved. Diagram impact: NONE — standalone
+evaluation harness and evidence only; no runtime component changes.
+
 ## 2026-09-21 — Funded allocation worker dispatched from reviewed module
 
 Pure allocation checkpoint **a8674511** pushed:36 repository tests and14
