@@ -1,6 +1,37 @@
 # Next session
 
+## 2026-09-21 — Reviewed fundamental adapter accepted for research
+
+OpenCode's second patch was independently inspected and imported: new
+`backend/market/fundamental_features.py`, its tests and research note.
+22 tests passed on desktop (no skips), Ruff clean. Stored-data acceptance:
+2,936 sessions, 95 columns, 93 names with versions; removing future filings
+left 2,264 pre-2024 feature rows and period dates identical. Finite features
+and non-NaT dates agree. Module SHA256
+`d364dce995936def72c78f2a97159535cc4fab25856ceaec8b43ff87108149fe`.
+Artifacts in `E:/AgentWorkspace/entry-timing-pilot-20260920/`, including
+`verify-fundamental-features.py` and `fundamental-feature-verification.json`.
+This is corrected research input, not a new live strategy. No production
+module or frozen fingerprint changed; deployment is not applicable.
+Starting main fbc777ea; unrelated evaluation files and prior handoff preserved.
+
 ## 2026-09-20 — Implementation delegated to OpenCode on Spark
+
+2026-09-21 overnight continuation: user explicitly asked Codex to supervise
+the worker and finish handling the task while they sleep. Thread heartbeat
+`supervise-trading-desk-implementation` is active every 20 minutes; inspect
+current state before starting work and disable it on completion or a genuine
+user-dependent blocker. Initial OpenCode patch completed (three new files,
+reported 16 passed / 1 skipped). Codex inspected the module and sent a review
+follow-up in the same session: deterministic nearest-quarter lag selection,
+per-feature reference-period dates so old ratios are not mistaken for fresh
+ones, numerical finite-output guards, and the return-type docstring. Current
+worker log is `/tmp/codex-opencode-trading-review-20260921.jsonl`. Wait for
+that run before importing the patch; independently test on the desktop venv
+including the previously skipped CLI case if dependencies are available.
+The initial module was copied outside the repository to
+`E:/AgentWorkspace/entry-timing-pilot-20260920/fundamental_features-review.py`
+for review only; do not mistake it for the revised patch. No integration yet.
 
 User explicitly requested local OpenCode coding to reduce Codex usage, with
 Codex retaining architecture and review. A bounded research feature task is
