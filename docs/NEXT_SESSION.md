@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-09-21 22:00 UTC — Parallel roles progressing; stalled simulator replaced
+
+Objective remains reviewed funded allocation, real comparison, one-table API/UI
+and deployment acceptance. **VERIFIED:** all six workers consumed their role
+contracts; API/acceptance explicitly read shared contract, UI began actual type
+and DeskPanel wiring edits. Other roles inspected relevant code; acceptance ran
+a synthetic actual-simulator prototype. No role handoff is complete yet and no
+new implementation is accepted, tested by root or deployed. All source changes
+remain isolated. Do not promote a partial UI/type diff.
+
+**FAILED worker progress:** simulator3264497 had not edited source after22min;
+last finished step had124134 context tokens and the current step had made no
+tool progress for about20min. Only that process was terminated; exit confirmed.
+Fresh simulator **PID3317369**, SAME checkout and preserved draft, NEW session
+(discover from current log), current log
+`/tmp/codex-opencode-parallel-simulator-fresh-20260921.jsonl`.
+`/tmp/codex-opencode-parallel-simulator-current.tsv` overrides original manifest
+for this role; compact status helper now honors that override. Do NOT resume
+ses_f3a31cf89ffeD66z4gDLxfOJ5l or PID3264497. Narrow fresh prompt directs the
+three existing corrections, without another architecture/history reread.
+Other five processes/ownership remain unchanged and must not be restarted.
+
+Fresh role sessions now discovered: paper ses_f3a1911fcffeJKVlnN8nIRY4hG;
+API ses_f3a191207ffejDR5uyk9DffAX2; UI ses_f3a1911d6ffecQU2lZ2DIp3UhZ;
+evaluation ses_f3a191206ffe3OrRdVPlEqgXTu;
+acceptance ses_f3a1911fcffeMzcQTm1Xkp8BjR.
+vLLM at this check6 running/0 queued; no service configuration changes.
+Starting maine3d8ef84, pull up to date, tracked tree clean; unrelated untracked
+evaluations preserved. Diagram impact NONE, coordination evidence only.
+
 ## 2026-09-21 — Six isolated OpenCode roles explicitly authorized and launched
 
 **CURRENT coordination supersedes all single-worker instructions below.** User
