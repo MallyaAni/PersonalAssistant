@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-21 — Benchmark deployed and accepted; allocation worker still active
+
+**VERIFIED deployed a89bba40**, containing benchmark backend 703e3ac3.
+Normal backend deploy: **3843 unit tests, 30 skips; 100 real-model routing
+tests** passed. Backend and subsequent frontend-only deploy cheap checks passed;
+latest verdict `2026-09-21T17:37:32Z a89bba40 ok (cheap)`.
+Logs `/tmp/codex-trading-benchmark-deploy-20260921.log` and
+`/tmp/codex-trading-benchmark-ui-deploy-20260921.log`.
+Read-only deployed runtime check (`check-benchmark-runtime.py`, external folder)
+loaded both controls over 2945 sessions through Sep18; exact match to independent
+desktop accounting. benchmarks.py SHA256
+a990da09ebd162e77252907c3faf19e7d2e9e38cbc568e28f744eaed70acb1c2 matches source.
+No comparison records or trades written.
+
+Actual deployed browser passed: 93 real stock rows, each action equals API,
+one table, desktop/mobile and no blocking errors. Additional missing-QQQ and
+legacy-accounting cases used response fixtures in that same headless browser
+against deployed assets; no production data changed. Both labels rendered as
+expected. `run-live-desk-check.py` now includes these separate fixture checks.
+
+Important diagnostic: incumbent's since-2023 drawdown is 32.01%, versus SPY
+18.76% and QQQ22.77%, despite better full-period historical returns. These
+fixed regime comparisons motivate the allocation work; they are not new
+holdout evidence or parameters to tune against.
+
+NEW worker remains active as recorded below (PID2894536). As of this check it
+has read relevant code but has not written implementation files. Leave single
+writer isolation; check bounded progress rather than mistaking a process for
+completion. Additional **CODEX_ALLOCATION_REVIEW.md** supplied: missing stock
+volatility cannot disable an independently known regime/FOMC/trend ceiling;
+withhold risk increases but execute established risk cuts on priced holdings.
+It also freezes the common evaluation start at panel.dates[252] after common
+warmup, before any candidate results, with every strategy/index account using
+that initial NAV and next-open execution. No per-candidate start selection.
+External contract copy `allocation-acceptance-clarification.md`.
+Review must confirm worker has consumed this clarification. No allocation
+policy is implemented, accepted or promoted yet. Continue this original task.
+
 ## 2026-09-21 17:27 UTC — NEW allocation worker active; benchmark deploy running
 
 CURRENT worker is **ses_f3b027cf5ffeGAwFUe1w4JTDkC**, isolated checkout
