@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-09-21 23:20 UTC — Acceptance follow-up launched; paper/evaluation review
+
+ACCEPTANCE finished PARALLEL_ACCEPTANCE_HANDOFF.md, PID3264502 exited. Root
+rejected its incorrect index-permission assertions and incomplete causal tests.
+CURRENT acceptance **PID3427220**, NEW session **ses_f39bfb482ffeZkKypCJKIJTIAf**,
+same checkout, log `/tmp/codex-opencode-parallel-acceptance-review-20260921.jsonl`.
+Override `/tmp/codex-opencode-parallel-acceptance-current.tsv` is honored by
+compact status helper. Fresh bounded task explicitly requires no ineligible SPY
+buys in either quantity mode, consistent economic fixtures, explicit dates,
+future-change tests, missing held NAV, full-exit trace and post-fee projections.
+Actual product failures must remain strict xfail with evidence, never weakened
+assertions or production edits. Revised handoff remains expected. Other five
+workers still active, unchanged; do not launch another writer in their areas.
+
+**FAILED actual paper.plan reproduction**, external check-paper-context.py:
+requested2025-09-08 with context dated2025-10-27 generated AAA buy111/SPY buy629
+and future as_of. Require session/context-date equality before using data or
+marking a session. Pending block also marks sessions_seen; clearing pending then
+retrying same date returns 'already planned', preventing action. Root isolated
+that boundary; final proof must use actual settlement/journal and persistence.
+Source review flags empty stable_desired fallback resurrecting caller selection,
+and company exits delayed to next rebalance rather than explicit immediate removal.
+
+EVALUATION wrote1237-line module including a second _FixedFundedLedger. Reject
+that candidate-execution duplication: use reviewed integrated simulate.run and
+shared plan_funded/_Book. Root independently checked useful metrics on frozen
+reference (initial NAV row excluded, no missing evaluated returns): incumbent
+CAGR43.56731585%/DD34.23146374%, SPY15.07488604%/33.71726769%,
+QQQ20.07402717%/35.11871218%, exactly matching prior controls. This verifies
+baseline metric arithmetic only, not candidate execution or strategy edge.
+
+PAPER/EVALUATION review saved externally
+parallel-paper-evaluation-review-20260921-2320.md and each checkout's
+CODEX_BOUNDARY_REVIEW.md. Reading is UNVERIFIED while active; send corrections
+explicitly when their current handoffs finish. Earlier API/UI review still open.
+UI browser container shared-ui-dev mount independently verified to point at its
+isolated frontend checkout, not deployed code; browser outcome not yet accepted.
+No source integrated/deployed. Starting maina0468bb2, pull up to date, unrelated
+evaluations preserved. Diagram impact NONE — review/coordination evidence only.
+
 ## 2026-09-21 22:50 UTC — API draft and acceptance assertions rejected
 
 Six processes still active, same PIDs/sessions; no final handoffs. API now has
