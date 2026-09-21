@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-21 — Strict SPY and QQQ comparison accounting
+
+- Both benchmarks load independently from stored adjusted prices, on the
+  strategy's calendar. Missing coverage is explicit, never omitted or filled
+  with zero returns. First-next-open costs use the funded ledger's convention;
+  terminal holdings remain marked without an extra liquidation fee.
+- Version-2 comparisons reject missing evaluated returns and mismatched
+  calendars; historical version-1 files retain their original identity.
+- Independent verification: 61 focused tests, Ruff, and real-data CLI exercise
+  over 2,945 sessions. Both controls match separate return, drawdown and
+  terminal-equity calculations to relative tolerance 1e-12. Incumbent results
+  unchanged. No policy promotion or production comparison records rewritten.
+- Diagram impact: NONE — accounting boundary within existing market comparison.
+
 ## 2026-09-21 — Distinguish personal holdings from the funded desk account
 
 - Empty personal-position notices no longer claim the displayed desk plan

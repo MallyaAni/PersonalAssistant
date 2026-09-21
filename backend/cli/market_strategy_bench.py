@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 
 from backend.agents.trading.desk import desk, event_risk, paper, simulate
-from backend.market import strategy_bench, technical
+from backend.market import benchmarks, strategy_bench, technical
 from backend.market.store import MarketStore
 from backend.market.universe import MARKET_INDICES
 
@@ -39,20 +39,8 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-# Each index's daily return aligned to the panel's sessions, where the store
-# has it. An index the store has never fetched is skipped rather than faked.
-def _index_series(panel, close: np.ndarray) -> dict[str, np.ndarray]:
-    out: dict[str, np.ndarray] = {}
-    for symbol in MARKET_INDICES:
-        if symbol not in panel.tickers:
-            continue
-        prices = close[:, panel.index(symbol)]
-        daily = np.full(len(prices), np.nan)
-        daily[1:] = prices[1:] / prices[:-1] - 1.0
-        out[symbol] = daily
-    return out
-
-
+# Run the desk once, price every candidate and both indexes on the same
+# sessions, and write the regime-split comparison beside the nightly records.
 def main(argv: list[str] | None = None) -> int:
     """Write the comparison and report where it went."""
     args = build_parser().parse_args(argv)
@@ -81,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
             rebalance=120, dip=simulate.DipRule(signal=tails, funded=True)
         ),
     }
-    series: dict[str, np.ndarray] = {}
+    series: dict[str, np.ndarray | benchmarks.BenchmarkSeries] = {}
     for label, options in candidates.items():
         series[label] = simulate.run(
             report,
@@ -91,7 +79,19 @@ def main(argv: list[str] | None = None) -> int:
             event_lifecycle=True,
             **options,
         ).returns
-    series.update(_index_series(panel, close))
+    # SPY and QQQ are loaded independently and strictly: each must carry
+    # adjusted prices and complete coverage of the same executable calendar,
+    # start at the same NAV, and be priced with the same one-way cost. A
+    # benchmark the store does not hold (or that has a gap) is reported as
+    # unavailable in the payload, never silently dropped and never zero-filled.
+    for symbol in MARKET_INDICES:
+        series[symbol] = benchmarks.load_benchmark(
+            store,
+            symbol,
+            panel.dates,
+            cost_bps=simulate.COST_BPS,
+            start_equity=simulate.START_EQUITY,
+        )
 
     payload = strategy_bench.build(
         panel.dates,

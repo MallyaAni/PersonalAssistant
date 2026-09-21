@@ -1,5 +1,30 @@
 # Next session
 
+## 2026-09-21 17:23 UTC — Benchmark source accepted; allocation implementation next
+
+Stopped only OpenCode PID2785653 after its corrected patch passed 56 tests but
+the 230k-token session stalled while preparing handoff. Confirmed process exit.
+Session ses_f3b57ff60ffeZdI3U3ov3bGq40 is finished; DO NOT resume it. Reviewed and
+imported exactly four benchmark files. Root closed remaining validation gaps,
+fixed the dividend test to model an actual ex-dividend price drop, added legacy
+roundtrip coverage and missing helper comments. **61 tests and Ruff passed.**
+
+Independently exercised actual market_strategy_bench.main with the trusted
+cached desk report and real stored bars, redirecting ONLY its output writer
+to external memory/file. `verify-benchmark-integration.py` confirms SPY/QQQ
+returns, drawdowns and terminal NAV match independently hand-accounted values
+to rtol 1e-12 over 2945 sessions; incumbent values unchanged. Output is external
+`reviewed-strategy-bench-v2.json`. CLI's printed default write path is misleading
+in this harness because save was intercepted: NO production or frozen store
+records were written. No strategy promotion. Source acceptance is complete;
+normal deployment/runtime confirmation remains separately recorded below.
+
+Next: fresh compact OpenCode session for optional shared allocation and execution
+path. Use the existing CODEX_EXPOSURE_TASK.md protocol plus explicit existing
+regime-cap coordination; do not let residual index allocation refill a broad
+equity risk cap, or multiply absolute exposure caps twice. Preserve incumbent
+default and risk services; evaluate only the fixed predeclared alternatives.
+
 ## 2026-09-21 16:52 UTC — Funded live desk fixed and verified; benchmark review active
 
 **VERIFIED deployed 07f59af6**, exact running decision_view SHA256
