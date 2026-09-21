@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-21 — Independent allocation review rejected first draft
+
+Objective remains shared stock/index/cash allocation, funded daily execution,
+both benchmark comparisons and one-table UI acceptance. **FAILED first pure
+allocation draft**: independent external `reproduce-allocation-review.py` loaded
+an exact snapshot of worker allocation.py and showed a rising price series
+above its 200-price SMA produced trend ceiling0 instead of1 (returns were
+passed to the price trend function). Explicit empty equity target with index
+ineligible retained15% AAA and reported unavailable. Zero/negative adjusted
+prices were also accepted as return evidence. No draft code was integrated.
+
+Stopped only worker PID2968035, confirmed exit, resumed SAME session
+**ses_f3b027cf5ffeGAwFUe1w4JTDkC** in the same allocation-path checkout.
+CURRENT **PID2993948**, log
+`/tmp/codex-opencode-allocation-math-review-20260921.jsonl`.
+Worker **read CODEX_ALLOCATION_MATH_REVIEW.md**, covering the above defects,
+stock-only desired symbols, explicit index eligibility, missing input handling
+and truthful binding reasons. Expected **ALLOCATION_DECISION_HANDOFF.md**.
+No concurrent writer. Module and protocol exist, tests/corrections remain
+**UNVERIFIED**. Review actual arithmetic before importing anything.
+
+External artifacts in `E:/AgentWorkspace/entry-timing-pilot-20260920/`:
+`allocation-review-snapshot.py`, `reproduce-allocation-review.py`,
+`allocation-math-review.md`; `allocation-execution-review-notes.md` records
+source-reviewed next milestone hazards. In particular, simulate._targets
+already applies regime.exposure, so it is not an unscaled composition;
+paper.bound_orders applies company cap to every symbol and excludes fees;
+_Book.equity omits unpriced holdings; SimTrade does not trace partial cuts.
+The optional execution path needs explicit treatment without changing defaults.
+These notes are not another worker task yet; first finish current math review.
+
+**VERIFIED live remains a89bba40**, benchmark/fundamental/account-label fixes
+and browser acceptance documented below. No new deployment, model fit, broker
+order or production record write. Heartbeat updated to current worker/review.
+Starting repository HEAD3be84cac on main, pull up to date; only existing
+untracked evaluation files were present. This checkpoint changes handoff only.
+Diagram impact: NONE — review evidence and task coordination only.
+
 ## 2026-09-21 — Allocation worker narrowed to first concrete implementation
 
 At 18:01 UTC, worker had spent 39 minutes reading and produced no code.
