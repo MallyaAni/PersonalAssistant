@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-09-21 — Funded draft rejected on actual ledger failures
+
+First execution draft now exists: new funded_execution.py and modified
+simulate.py in worker checkout, not imported. **FAILED independent in-memory
+account reproduction** (`reproduce-funded-draft.py` external, executed against
+worker source): _Book sells1 share at100 with10bps and recycle_sells=False;
+expected ending cash99.9, actual0, shares0. Draft excluded proceeds from buy
+budget AND from ending cash. Whole-share plan for heldAAA0.6,price100,equity60,
+cash0, all-cash target submitted sellqty1. No broker or production writes.
+
+Source review also found daily stock reselection instead of stable scheduled
+composition, whole-history benchmark availability checks/no date alignment,
+full exits omitted from trace deltas, fee-free projected cash and missing-price
+NAV omissions. Sent **CODEX_FUNDED_EXECUTION_REVIEW.md** with5 bounded correction
+groups and required ledger tests, retaining original paper/simulator scope.
+
+Stopped only PID3078917 and confirmed exit, resumed SAME session
+**ses_f3a93c45affeaITi1eHsm9kTDO**, CURRENT **PID3151214**, same
+`trading-funded-allocation-20260921` checkout/basea8674511. CURRENT log:
+`/tmp/codex-opencode-funded-review-20260921.jsonl`.
+Expected **FUNDED_ALLOCATION_HANDOFF.md**; original task + new review remain
+the contract. Single writer; do not start a competing worker. Review actual
+patch and independently replay failures before integration or comparisons.
+
+External snapshots `funded-execution-first-snapshot.py` and
+`funded-simulate-first-snapshot.py`, review `funded-execution-first-review.md`,
+reproducer and resume script preserve evidence. No current candidate results;
+do not score a simulator that destroys proceeds. Live remains a89bba40,
+accepted pure modulea8674511 stays inactive. Latest main before handoff26ddf3bb,
+tracked tree clean; existing untracked evaluations preserved. No deploy or fit.
+Diagram impact: NONE — review evidence and worker coordination only.
+
 ## 2026-09-21 — Common-window comparison harness prepared during execution work
 
 Funded worker remains **ses_f3a93c45affeaITi1eHsm9kTDO**, PID3078917,
