@@ -958,8 +958,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // board's target-vs-held changes executable at the next open. Otherwise
   // they are targets for the next rebalance, and the page says so instead
   // of teaching a daily trading cadence the backtest does not use.
-  const rebalanceDue = rows.length > 0 ? rows[0].rebalance_due : true
-  const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? null
+  const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? latest?.paper?.until_rebalance ?? null
+  const rebalanceDue = rows.length > 0 ? rows[0].rebalance_due : countdown !== null && countdown <= 1
   const eventLive = payload.event_status
   const event = (!eventLive?.stale && eventLive?.policy) || latest?.event_risk
   // Planning is paused only on the live event state: an active cycle or a
@@ -1809,13 +1809,13 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
     // "Sell 1.9%" beside a Target column reading 0.8% reads as a
     // contradiction. A sell is always the whole position, so it says so, and
     // a buy carries a + because it is an addition rather than a level.
-    return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>{action}{Math.abs(row.move_weight) > 0 ? (action === 'Sell' ? ` all · ${allocationPercent(Math.abs(row.move_weight))}` : ` +${allocationPercent(Math.abs(row.move_weight))}`) : ''}</span>
+    return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>{action.toUpperCase()}</span>
   }
   // A Plan column is a signal, not a sentence. The allocation has its own
   // column and the reasoning is a hover: a trader scanning ninety-four rows
   // reads the word, and asks why only for the one row he stops on.
   return <div className="min-w-24" aria-label={`${ticker} plan action`} title={actOnIt(reason) ?? reason}>
-    <div className="font-medium">{action}{action !== 'Hold' && Math.abs(row.move_weight) > 0 ? <span className="ml-1 font-normal text-[#6e6e73]">{action === 'Sell' ? `all · ${allocationPercent(Math.abs(row.move_weight))}` : `+${allocationPercent(Math.abs(row.move_weight))}`}</span> : null}</div>
+    <div className="font-medium">{action.toUpperCase()}</div>
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Desk position & quote</summary>
       {/* The desk's own book, not the reader's. These two lines used to read
           "Using $X account value" and "Recorded Y%", both of which described
