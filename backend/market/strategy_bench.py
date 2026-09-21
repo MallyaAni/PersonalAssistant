@@ -50,14 +50,16 @@ def stats(daily: np.ndarray) -> dict[str, float | None]:
     """Return total, annual, volatility, drawdown and Sharpe for a series."""
     r = np.where(np.isfinite(daily), daily, 0.0)
     if len(r) < 5:
-        return {k: None for k in ("total", "annual", "volatility", "drawdown", "sharpe")}
+        return {
+            k: None for k in ("total", "annual", "volatility", "drawdown", "sharpe")
+        }
     curve = np.cumprod(1 + r)
     years = len(r) / 252
     total = float(curve[-1] - 1)
     annual = float(curve[-1] ** (1 / years) - 1) if years > 0.15 else None
     vol = float(np.std(r) * np.sqrt(252))
-    drawdown = float((curve / np.maximum.accumulate(curve) - 1).min())
-    sharpe = (annual / vol) if (annual is not None and vol > 0) else None
+    drawdown = float((curve / np.maximum.accumulate(np.r_[1.0, curve])[1:] - 1).min())
+    sharpe = float(np.mean(r) * 252 / vol) if vol > 0 else None
     return {
         "total": total,
         "annual": annual,
@@ -103,10 +105,8 @@ def build(
         "note": note,
         "caveat": (
             "Survivorship: the constituent list is today's, delisted names are "
-            "absent, and market_survivorship measures nineteen points a year of "
-            "the book's return as name choice. Every candidate here carries that "
-            "same bias, so compare them against each other rather than reading "
-            "any single return as achievable."
+            "absent. Bias need not cancel between policies. These retrospective "
+            "comparisons do not establish achievable returns or an optimal strategy."
         ),
         "blocks": blocks,
     }

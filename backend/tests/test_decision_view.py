@@ -361,12 +361,10 @@ def test_a_missing_live_stretch_is_not_an_entry():
     assert decision_view.entry_action(row, float("nan"), "A+") is None
 
 
-# A name the sizing engine did not pick has no target, so however far it has
-# run it is not an entry. The row used to read "Buy tonight - not picked by
-# the sizing engine", two statements that cannot both be true.
-def test_a_name_with_no_target_is_never_an_entry():
+# A reset target does not veto a graded mid-cycle breakout in either planner.
+def test_a_graded_breakout_can_enter_without_a_reset_target():
     row = {"rejecting_band": False, "target_weight": 0.0}
-    assert decision_view.entry_action(row, 2.0, "A+") is None
+    assert decision_view.entry_action(row, 2.0, "A+")[0] == decision_view.Action.BUY
 
 
 # The size is the weight to put on now, not the target it moves toward: a

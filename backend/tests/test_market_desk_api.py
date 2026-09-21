@@ -14,16 +14,12 @@ from backend.core.auth import issue_user_token
 from backend.main import app
 
 
-# The experimental weight selected for the board is the one that reaches the
-# row over HTTP, and reading the board does not disturb the holdings file.
-#
-# This used to assert that the weight also drove the ACTION: a position above
-# its research target read Sell. It does not any more. The plan column states
-# what the desk is doing with its own book, and the desk does not trade toward
-# a target weight between resets - the research allocation is a sizing, and it
-# arrives as `target_weight` for the reader to size against.
+# Research allocations stay separate from the adopted plan over HTTP.
+# Reading the decision must also leave the personal holdings file unchanged.
 @pytest.mark.asyncio
-async def test_current_research_target_reaches_the_row_over_http(tmp_path, monkeypatch):
+async def test_research_target_cannot_replace_adopted_plan_over_http(
+    tmp_path, monkeypatch
+):
     from backend.api.v1 import market
     from backend.market import (
         event_status,
@@ -72,7 +68,7 @@ async def test_current_research_target_reaches_the_row_over_http(tmp_path, monke
         response = await client.get("/api/v1/market/desk_user/desk/mine?equity=100000")
     assert response.status_code == 200, response.text
     row = response.json()["decisions"]["rows"]["S11"]
-    assert row["target_weight"] == 0.02
+    assert row["target_weight"] == 0.1
     # And the row is one of the three actions, whatever the file says.
     assert row["action"] in ("Buy", "Sell", "Hold")
     assert holdings.load(tmp_path)[0].shares == 60

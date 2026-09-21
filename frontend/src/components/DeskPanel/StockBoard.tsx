@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
-import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord } from '../../services/api'
+import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord, DeskPaperLive } from '../../services/api'
 
 // The three things the desk can be doing about a name. Declared here because
 // this is the board that lists them and DeskPanel already imports from it; the
@@ -189,9 +189,10 @@ const PlanHead = ({sort, onSort, plans, shown, onShown}: {
 }
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, event, now, action, onOpen, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, broker, event, now, action, onOpen, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
+  broker?: DeskPaperLive | null;
   paper?: DeskPayload['board_paper'];
   ml?: DeskPayload['ml_forward'];
   decisions?: DeskDecisions;
@@ -251,7 +252,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // against "what this bar says" had to read two different places, so it is
   // a control now, and picking one re-sizes and re-ranks the list in place.
   const liveSizingReady = research?.session === latest.session && !!research?.targets
-  const [policy, setPolicy] = useState<'live' | 'plan'>('live')
+  const [policy, setPolicy] = useState<'live' | 'plan'>('plan')
   const showSizes = liveSizingReady && policy === 'live'
   const planTargets = Object.fromEntries((latest.book ?? []).map(b => [b.ticker, b.weight]))
   const weightOf = (ticker: string) => {
@@ -292,13 +293,16 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // one scored on the full five, and the board has to say so rather than
   // printing a number that looks like everyone else's.
   const narrow = (ticker: string): string[] => decisions?.rows[ticker]?.opportunity?.missing ?? []
+  const brokerPositions = broker && !broker.reason ? broker.positions ?? [] : latest.paper?.positions ?? []
+  const otherNames = [...new Set([...extraNames, ...Object.keys(decisions?.rows ?? {}),
+    ...Object.keys(planTargets), ...(holdings ?? []).map(h => h.ticker), ...brokerPositions.map(p => p.symbol)])]
   const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
     ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
     opportunity: opportunity(ticker),
     narrow: narrow(ticker),
     weight: weightOf(ticker),
-  })), ...extraNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, narrow: [] as string[], weight: null}))].sort((a, b) =>
+  })), ...otherNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, narrow: [] as string[], weight: null}))].sort((a, b) =>
     // The book leads. A trader's first question is what to own and how
     // much, and the handful of names carrying a target weight is the whole
     // answer; the rest of the graded universe is a watchlist behind it.
@@ -342,6 +346,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // fourth bucket no checkbox controls: a stray word would otherwise become a
   // row that every filter hides. "Wait" reached this column once already.
   const planOf = (ticker: string): PlanAction => {
+    if (paused) return 'Hold'
     const said = planAction?.(ticker)
     return PLAN_ACTIONS.includes(said as PlanAction) ? (said as PlanAction) : 'Hold'
   }
@@ -390,7 +395,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             same list read two ways rather than two screens. */}
         {liveSizingReady && !hidden && (
           <div className="flex shrink-0 gap-1" role="group" aria-label="Sizing policy">
-            {([['live', 'This bar'], ['plan', 'At the reset']] as const).map(([value, label]) => (
+            {([['live', 'Research · this bar'], ['plan', 'Strategy · reset targets']] as const).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
@@ -413,7 +418,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
-            <th colSpan={6} className="py-2 pr-3 font-normal">
+            <th colSpan={10} className="py-2 pr-3 font-normal">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="search"
@@ -442,6 +447,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 disagree on purpose - target 0.8%, sell the 1.9% held - and
                 two bare percentages side by side read as a contradiction. */}
             <SortHead column="weight" sort={sort} onSort={setSort} title="The weight the desk wants in this name at the next weight reset, as a share of the account. Not the move in the Plan column, which is what it is trading today.">Target %</SortHead>
+            <th>Move %</th>
+            <th>Desk position</th>
+            <th>Your position</th>
+            <th>Reason</th>
 
           </tr>
         </thead>
@@ -450,11 +459,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           // page: a held name must never scroll out of sight. The cash row
           // is not exempt, because planned cash already reads in the strip
           // above the board and the top page should stay "top names".
-          if (index >= visible && !heldNames.has(row.ticker)) return null
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
           const isCash = row.ticker === '__cash__'
           const open = opened === row.ticker
+          const decision = decisions?.session === latest.session && decisions.written === latest.written ? decisions.rows[row.ticker] : undefined
+          const plan = paused ? 'Hold' : planOf(row.ticker)
+          const position = brokerPositions.find(p => p.symbol === row.ticker)
+          const reason = paused ? 'FOMC cycle: regular trading paused' : decision?.reason ?? 'No current strategy decision'
           return <Fragment key={row.ticker}><tr className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
@@ -469,27 +481,24 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 title={`Scored without ${row.narrow.join(' and ')}: this name is missing the data ${row.narrow.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score is the rest renormalised. Open the name for the parts.`}
               >*</span>}
             </> : '—'}</td>
-            <td className="text-xs">{isCash ? 'Hold'
-              : trade?.(row.ticker) ?? (paused ? <span title={held ? exposure < 1 ? 'Held at reduced size through the decision; the rest restores at the next open' : 'Restoration queued for the next open' : 'Not held, and no new buys during the FOMC cycle'}>{'Hold · FOMC'}</span>
-              : action(row.ticker, row.weight))}</td>
+            <td className="text-xs font-semibold" aria-label={isCash ? undefined : `${row.ticker} plan action`} title={reason}>{isCash ? 'HOLD' : plan.toUpperCase()}</td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
               : isCash ? '—'
               : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
               : <span className="cursor-help text-[#6e6e73]" title="Graded but unsized. Sizing ranks on the continuous score; the grade is a multiplier on top.">—</span>}</td>
+            <td className="text-xs" aria-label={`${row.ticker} move`}>{isCash || plan === 'Hold' || !decision ? '—' : `${decision.move_weight > 0 ? '+' : ''}${percentage(decision.move_weight)}`}</td>
+            <td className="text-xs" aria-label={`${row.ticker} desk position`}>{isCash ? '—' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : '—'}</td>
+            <td className="text-xs" aria-label={`${row.ticker} your position`}>{isCash ? '—' : holdings === null ? 'Unavailable' : held ? <>{held.shares.toLocaleString()} shares<div>Entry {held.entry_price.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>{quote && Number.isFinite(quote.last) && <div>P/L {((quote.last - held.entry_price) * held.shares).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>}</> : '—'}</td>
+            <td className="max-w-72 whitespace-normal py-2 text-xs text-[#6e6e73]">{isCash ? 'Unallocated strategy weight' : reason}</td>
 
           </tr>
-          {open && expand && <tr><td colSpan={6} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
+          {open && expand && <tr><td colSpan={10} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
           </Fragment>
         })}</tbody>
       </table>
       {footer}
       {searchText && filtered.length === 0 && (
         <p className="border-t border-black/[0.05] px-3 py-2 text-xs text-[#6e6e73]">No name matches “{query}”. Clear the search to see the ranked board.</p>
-      )}
-      {ranked.length > visible && (
-        <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setVisible((v) => v + 10)}>
-          Show more · {Math.min(ranked.length, visible + 10)} of {ranked.length} names
-        </button>
       )}
     </div>
     <BoardSimulation paper={paper} now={now} />

@@ -1,5 +1,83 @@
 # Next session
 
+## 2026-09-20 — Shared strategy planner and one-table dashboard
+
+User requested implementation and dashboard repair, then explicitly asked to
+minimize usage. Retained the incumbent screened breakout/grade rule; the RTX
+5080 pilot did not justify a neural/RL promotion. No optimal-return claim.
+
+Implemented `cash-bounded-breakout-rotation/2`: rotation and breakout orders
+share name capacity, buy rounding cannot breach the decision-price cap, and
+opening buys use existing cash rather than future close-sale proceeds. The
+historical mid-cycle path and account-wide dashboard projection reuse the
+paper planner. Experimental targets no longer overwrite adopted API targets.
+Reset orders with known cash also receive joint funding and capacity checks.
+Whole-share paper fills and fractional historical fills remain distinct;
+prices/gaps, skipped sells and broker rejects can still change realized weights.
+
+Dashboard: one stock table, all names rendered, three enum-only plan cells,
+separate move/target weights, desk/personal positions and reasons. Removed
+duplicate default entry/position/grade tables. Research sizing is explicitly
+labelled and opt-in. Price-only chart circles say breakout, not buy. Older
+curves are labelled as an older policy. Sharpe and initial-loss drawdown
+definitions now agree between the simulator and comparison report.
+
+Local verification: 152 focused strategy/API tests passed, then 85 affected
+tests after the last account-cap changes. Eight new shared-planner/reporting
+tests pass. Two Playwright journeys pass, including all-stock rendering,
+enum enforcement, filtering, reload, row details, desktop/mobile layout,
+console/page errors and required desk requests. Frontend production build
+passes; existing CSS/chunk warnings remain. Ruff passes targeted modules.
+The browser journeys use API fixtures, not a claim of live deployment.
+
+Starting branch main at 09ee4a06, with one pre-existing local UI commit and
+untracked routing evaluations preserved. Deployment and corrected full-history
+curve checks are in progress; do not label them verified from this note.
+Diagram impact: NONE — shared internal policy calculation and existing views;
+no new service, datastore, model runtime or trust boundary.
+
+## 2026-09-20 — Conditional entry timing pilot executed on desktop RTX 5080
+
+User asked to audit Claude's latest buy/sell/hold and sizing work, then start
+learning experiments for intraday entries held several days to weeks. Added
+research-only `backend/market/entry_pilot.py`, CLI `market_entry_pilot`, and
+16 tests. Full protocol, measurements, limits and reproduction are in
+`docs/research/conditional-entry-pilot-2026-09-20.md`. No production policy or
+broker changes. Starting HEAD `09ee4a06`, already one local commit ahead of
+origin; unrelated untracked routing evaluations preserved. New work is not a
+verified committed/deployed checkpoint.
+
+VERIFIED: trained ridge, 8-/28-feature trees, and two GRU seeds on RTX 5080;
+129,823 rows, 63,811 training; 420 retrospective evaluation sessions with
+4,082 selected opportunities; all 66 CUDA account paths replay with exact
+decisions and NAV atol 1e-10. 16 new tests and 130 existing focused tests
+passed; new source Ruff clean. Full tree timing gain +0.234 bp/day versus
+immediate entry, paired block CI [-0.289,+0.792]; GRU +0.142
+[-0.570,+0.864]. No robust edge and no promotion. Source and dataset hashes
+in `E:/AgentWorkspace/entry-timing-pilot-20260920/run-02/manifest.json`.
+
+FAILED: initial data preflight found missing IEX execution bars, including
+early-close afternoons; before any fit the protocol moved both decisions to
+morning and records unquoted entries as unfilled cash slots. Strict CPU replay
+of CUDA GRU predictions also fails (max 0.007436 percentage-log-return units),
+although the selected test actions are unchanged. CUDA replay passes; do not
+relax the CPU tolerance or call cross-device numerics verified.
+
+Audit findings, not fixed in this atomic research task: the published curve
+omits current price entries and grade rotations; price-only chart markers are
+labelled buy; board requires a positive target that nightly entries do not;
+combined rotation plus entry can exceed the 15% cap (14% -> 16% reproduced).
+The sizing comment's hypothetical band=3 is impossible under the 20-observation
+self-normalized band (bound sqrt(19)/2). Detailed review saved at
+`E:/AgentWorkspace/entry-timing-pilot-20260920/strategy-audit.md`.
+
+Next: repair policy/accounting parity before judging production; preregister
+an event-conditioned entry study rather than tune against these reported test
+years. Sizing, exit policies, new RL training and untouched forward performance
+remain UNVERIFIED. Existing policy, sources and model services are unchanged.
+Diagram impact: NONE — internal experiment on the existing isolated research
+artifact path, no changed live architecture.
+
 ## 2026-09-20 — Within-batch near-duplicate suppression and repeat-fill recency guard deployed; Scout trimmed to jenos1 + ani.mallya
 
 Deployed and verified 2026-09-20 22:25 UTC: commit `ca63c093` through

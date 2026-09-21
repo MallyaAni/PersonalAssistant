@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-09-20 — Shared strategy accounting and one stock table
+
+- Joint rotation/entry capacity and cash bounds prevent independently planned
+  buys exceeding the 15% decision-price cap or spending later close proceeds.
+- Historical mid-cycle decisions and dashboard previews reuse paper planning;
+  research allocations cannot replace adopted targets over HTTP.
+- Default dashboard has one all-stock table, BUY/HOLD/SELL-only plan cells,
+  separate move/target weights, positions, reasons and expandable evidence.
+- Price-only chart markers are breakouts; old policy curves remain identified.
+  Comparison Sharpe and initial-loss drawdown use consistent definitions.
+- Verified locally: 152 focused checks, 85 affected checks after account-cap
+  changes, eight new policy/reporting tests, two browser journeys and build.
+  Deployment status is recorded separately in NEXT_SESSION.md.
+
+## 2026-09-20 — Research-only conditional entry timing comparison executed
+
+Added a frozen-protocol comparison of enter-now, wait-one-hour and skip for
+five-session holdings, with fixed stock selection and funded cohort accounting.
+Ridge, basic/full boosted trees and two small GRU seeds trained on the desktop
+RTX 5080; reloaded models reproduce all 66 CUDA evaluation account paths.
+16 new causality/accounting tests passed; 130 existing focused tests passed.
+The full tree's +0.234 bp/day versus immediate entry has a paired 95% block
+interval [-0.289,+0.792]; the GRU's +0.142 has [-0.570,+0.864]. No robust
+edge is demonstrated; no production policy is promoted or deployed.
+Strict CPU neural prediction replay failed; selected test actions were unchanged
+in a separate diagnostic. Protocol, data-preflight amendment, artifact hashes,
+cost results and limitations are recorded in
+`research/conditional-entry-pilot-2026-09-20.md`.
+
 ## 2026-09-19 — The board drops its redundant Shares column and tightens its wording
 
 The Size % and Shares columns both came from the same target weight, so two

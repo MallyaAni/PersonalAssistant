@@ -22,7 +22,7 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.agents.trading.desk import desk, simulate
+from backend.agents.trading.desk import desk, event_risk, paper, simulate
 from backend.market import strategy_bench, technical
 from backend.market.store import MarketStore
 from backend.market.universe import MARKET_INDICES
@@ -70,7 +70,13 @@ def main(argv: list[str] | None = None) -> int:
 
     first = panel.dates[0].astype("datetime64[D]").astype(object)
     candidates = {
-        "Desk, every 20 (ships)": dict(rebalance=20),
+        "Adopted cash-bounded strategy": dict(
+            rebalance=paper.REBALANCE_EVERY, **simulate.LIVE_POLICY
+        ),
+        "Calendar-only control": dict(
+            rebalance=paper.REBALANCE_EVERY,
+            **{**simulate.LIVE_POLICY, "live_midcycle": False},
+        ),
         "Desk, 120 + price entries": dict(
             rebalance=120, dip=simulate.DipRule(signal=tails, funded=True)
         ),
@@ -78,7 +84,12 @@ def main(argv: list[str] | None = None) -> int:
     series: dict[str, np.ndarray] = {}
     for label, options in candidates.items():
         series[label] = simulate.run(
-            report, since=first, use_exits=False, **options
+            report,
+            since=first,
+            use_exits=False,
+            event_exposure=event_risk.live_path(panel),
+            event_lifecycle=True,
+            **options,
         ).returns
     series.update(_index_series(panel, close))
 
@@ -86,8 +97,8 @@ def main(argv: list[str] | None = None) -> int:
         panel.dates,
         series,
         note=(
-            "Candidates priced over identical sessions. Only 'ships' is traded; "
-            "the other is a measured alternative, not a live policy."
+            "Candidates priced over identical sessions. The adopted policy uses "
+            "the shared paper planner; the controls are research alternatives."
         ),
     )
     strategy_bench.save(root, payload)

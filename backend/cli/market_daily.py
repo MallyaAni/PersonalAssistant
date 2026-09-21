@@ -675,6 +675,7 @@ def _paper_trade(
             force_rebalance=rebalance_now,
             entry_blocked=blocked,
             entries=_price_entries(report),
+            cash=account.cash,
         )
     print(
         f"\npaper book ({what}{', forced tonight' if rebalance_now else ''}), "
@@ -1223,6 +1224,7 @@ def curve_block(report, store) -> dict | None:
     return {
         "label": "historical simulation with cash-limited fills; not a live record",
         "funding_model": simulate.FUNDING_MODEL,
+        "strategy_policy": paper_rules.POLICY_VERSION,
         "event_policy": event_risk.VERSION,
         "evaluation_periods": event_risk.evaluation_slices(sim),
         "asof": str(panel.dates[-1]),

@@ -2,11 +2,10 @@
 
 import math
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 
 import numpy as np
 
-from backend.agents.trading.desk.actions import action_for
 from backend.market import (
     calendar,
     desk_freshness,
@@ -16,6 +15,95 @@ from backend.market import (
 )
 
 VERSION = "desk-decision-view/1"
+
+
+# Project one account-wide paper plan so all displayed moves share caps and cash.
+def apply_account_plan(result, record, snapshot, entries, paused, now):
+    from backend.agents.trading.desk import paper
+
+    account = record.get("paper") or {}
+    if paused or not account or account.get("cash") is None:
+        return
+    positions = account.get("positions") or []
+    quotes = snapshot.get("quotes") or {}
+    levels = record.get("levels") or {}
+    prices = {
+        s: float(
+            (quotes.get(s) or {}).get("last")
+            or (levels.get(s) or {}).get("last_close")
+            or 0
+        )
+        for s in result
+    }
+    held = {}
+    for position in positions:
+        symbol = position["symbol"]
+        held[symbol] = float(position.get("qty") or 0)
+        prices[symbol] = prices.get(symbol) or float(position.get("current_price") or 0)
+    cash = float(account["cash"])
+    if not math.isfinite(cash) or any(
+        not math.isfinite(q) or q < 0 for q in held.values()
+    ):
+        return
+    if any(
+        q and (not math.isfinite(prices[s]) or prices[s] <= 0) for s, q in held.items()
+    ):
+        return
+    equity = cash + sum(q * prices[s] for s, q in held.items())
+    if equity <= 0:
+        return
+    grades = {s: r.get("grade", "") for s, r in (record.get("grades") or {}).items()}
+    technical, value = desk_freshness.grade_inputs(snapshot, record, now)
+    grades.update(
+        {
+            s: r["grade"]
+            for s, r in holdings.live_grades(record, technical, value).items()
+        }
+    )
+    finished = {
+        s: "grade below A; close position"
+        for s in held
+        if s in grades and grades[s] not in paper.ENTRY_MIN_GRADE
+    }
+    blocked = {s for s, level in levels.items() if level.get("rejecting_band")}
+    remaining = account.get("until_rebalance")
+    state = paper.PaperState(
+        last_rebalance=record["session"],
+        sessions_since_rebalance=(
+            paper.REBALANCE_EVERY - int(remaining) if remaining is not None else 0
+        ),
+    )
+    orders, _, _ = paper.plan(
+        record["session"],
+        state,
+        equity,
+        held,
+        prices,
+        {r["ticker"]: r["weight"] for r in record.get("book") or []},
+        grades,
+        finished=finished,
+        entry_blocked=blocked,
+        entries=entries or {},
+        cash=max(0, cash),
+    )
+    moves = {}
+    for order in orders:
+        moves[order.symbol] = moves.get(order.symbol, 0) + order.qty * (
+            1 if order.side == "buy" else -1
+        )
+    reasons = {o.symbol: o.reason for o in orders}
+    for symbol, row in result.items():
+        qty = moves.get(symbol, 0)
+        row["action"] = (
+            Action.BUY if qty > 0 else Action.SELL if qty < 0 else Action.HOLD
+        )
+        row["move_weight"] = qty * prices.get(symbol, 0) / equity
+        row["current_weight"] = held.get(symbol, 0) * prices.get(symbol, 0) / equity
+        row["delta_weight"] = row["target_weight"] - row["current_weight"]
+        row["reason"] = reasons.get(
+            symbol, "No funded strategy order; retain current position"
+        )
+        row["reason"] += "; preview from recorded account and dated prices"
 
 
 # What the desk itself holds in a name, as a weight of the desk's own equity.
@@ -60,7 +148,7 @@ def book_weights(record) -> dict[str, float]:
 # vocabulary had seven spellings across the backend, the API contract and the
 # page, and "Buy eligible" against "Buy tonight" against "buy" was a bug
 # waiting to happen. The str mixin keeps it a plain string over the wire.
-class Action(str, Enum):
+class Action(StrEnum):
     """What to do about a name right now."""
 
     BUY = "Buy"
@@ -120,6 +208,7 @@ def action_for_row(
         ),
         None,
     )
+
     # The live entry comes first. It is the one thing on this page that is
     # actionable between resets, and the calendar branch below would otherwise
     # bury it under an answer about a date six months out.
@@ -168,7 +257,9 @@ def action_for_row(
     # due. That is what the column owes a reader who records no positions of
     # his own: the board still shows him the book.
     if current > 0:
-        return said(Action.HOLD, 0.0, f"The desk holds {current:.1%}; the thesis is intact")
+        return said(
+            Action.HOLD, 0.0, f"The desk holds {current:.1%}; the thesis is intact"
+        )
     if target > 0:
         return said(
             Action.HOLD,
@@ -176,7 +267,9 @@ def action_for_row(
             f"Wanted at {target:.0%} at the next reset; no entry signal today",
         )
     return said(
-        Action.HOLD, 0.0, f"Graded {row['grade_live']}; the desk wants no position today"
+        Action.HOLD,
+        0.0,
+        f"Graded {row['grade_live']}; the desk wants no position today",
     )
 
 
@@ -208,11 +301,8 @@ def entry_action(row, band, grade_live, current=0.0):
         return None
     if grade_live not in paper.ENTRY_MIN_GRADE:
         return None
-    # The nightly only enters a name the book wants to hold, so a name with no
-    # target is not a candidate however far it has run. Without this the row
-    # read "Buy - not picked by the sizing engine", which is two statements
-    # that cannot both be true.
-    if not row or not row.get("target_weight"):
+    # Mid-cycle eligibility follows the grade, independently of reset targets.
+    if not row:
         return None
     # The same gate the nightly applies before it sizes anything.
     if row.get("rejecting_band"):
@@ -220,7 +310,11 @@ def entry_action(row, band, grade_live, current=0.0):
         # action had drifted across the backend and the page, and this one
         # survived behind a branch nothing reached: the board passed no live
         # readings, so no entry was ever evaluated. It reaches the column now.
-        return Action.HOLD, None, "Breaking out, but the daily is rejecting its upper band"
+        return (
+            Action.HOLD,
+            None,
+            "Breaking out, but the daily is rejecting its upper band",
+        )
     above = f"{band:.1f} on its 20-day band"
     # The cap the nightly checks is the cap on the DESK's own position, so the
     # room left under it is measured against the desk's weight. Measuring it
@@ -230,18 +324,26 @@ def entry_action(row, band, grade_live, current=0.0):
     held = current > 0
     room = paper.ENTRY_NAME_CAP - current
     if held and room <= 0:
-        return Action.HOLD, None, f"{above}, already at the {paper.ENTRY_NAME_CAP:.0%} name cap"
+        return (
+            Action.HOLD,
+            None,
+            f"{above}, already at the {paper.ENTRY_NAME_CAP:.0%} name cap",
+        )
     # The same function the book sizes with, not a copy of its constant. The
     # size now follows how far through the band the close is, so a board that
     # reached for ENTRY_ADD directly would quote a number the nightly would
     # not trade - which is how the action vocabulary drifted four times.
     size = min(paper.entry_size(band), room)
     if size <= 0:
-        return Action.HOLD, None, f"{above}, no room under the {paper.ENTRY_NAME_CAP:.0%} name cap"
+        return (
+            Action.HOLD,
+            None,
+            f"{above}, no room under the {paper.ENTRY_NAME_CAP:.0%} name cap",
+        )
     return (
         Action.BUY,
         size,
-        f"Add {size:.1%} of the account: {above}, funded by trimming the rest",
+        f"Add up to {size:.1%} of the account: {above}, subject to available cash",
     )
 
 
@@ -379,6 +481,8 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             "quote": quote,
             "session": record["session"],
         }
+    if targets is None:
+        apply_account_plan(result, record, snapshot, entries, paused, now)
     return {
         "version": VERSION,
         "as_of": now.isoformat(),
@@ -386,8 +490,10 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
         "written": record.get("written"),
         "equity": equity,
         "holdings": {h.ticker: h.shares for h in held},
-        "policy": "Experimental targets; adopted gates; manual execution"
-        if targets is not None
-        else "Scheduled next-open strategy; personal execution is manual",
+        "policy": (
+            "Experimental targets; adopted gates; manual execution"
+            if targets is not None
+            else "Scheduled next-open strategy; personal execution is manual"
+        ),
         "rows": result,
     }

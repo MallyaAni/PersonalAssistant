@@ -28,7 +28,7 @@ import math
 import os
 import tempfile
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -158,6 +158,7 @@ ENTRY_BAND_Z = 1.10
 ENTRY_ADD = 0.023
 ENTRY_NAME_CAP = 0.15
 ENTRY_MIN_GRADE = ("A", "A+")
+POLICY_VERSION = "cash-bounded-breakout-rotation/2"
 # The band reading the size curve is anchored to: the trigger the sizing was
 # measured at, kept as its own constant so the trigger can move without
 # reshaping the curve. `entry_size` explains why.
@@ -165,28 +166,10 @@ ENTRY_SIZE_REF = 1.25
 PAPER_KIND = "paper"
 
 
-# How much to put on, given how far through its band the name closed.
-#
-# One function, so the book and the board cannot disagree about the size the
-# way they once disagreed about the word for the action. `band` is
-# entry.bollinger_z at the close, on the same half-sigma scale as
-# ENTRY_BAND_Z; at the trigger itself the size is ENTRY_ADD and it grows with
-# the square of how far past it the close sits.
-#
-# The caller still trims this to the room left under ENTRY_NAME_CAP, which is
-# what keeps the tail bounded: at a band reading of 3.0 - half again beyond
-# anything the eleven-year history produced - this asks 13.3%, inside the cap
-# rather than clipped by it.
-#
-# The curve is anchored to ENTRY_SIZE_REF and NOT to the trigger, which is a
-# separate constant that has moved and may move again. Anchoring it to the
-# trigger would have made lowering the trigger steepen every entry at once:
-# at ENTRY_BAND_Z 1.10 the same formula asks 17.1% at a reading of 3.0, past
-# the cap, destroying the one property the exponent was chosen for. The two
-# changes were measured separately - the curve at a 1.25 trigger, the trigger
-# with a flat size - so composing them has to preserve each, and this does:
-# a weaker signal now earns a SMALLER position (1.78% at the 1.10 trigger)
-# rather than every signal earning a larger one.
+# Size the incumbent breakout rule independently of the trigger threshold.
+# This is a screened heuristic, not a calibrated probability or proven optimum.
+# The 20-observation self-normalized band is bounded by sqrt(19)/2;
+# hypothetical band=3 readings cannot justify this exponent.
 def entry_size(band: float) -> float:
     """Return the weight of equity to add at a band reading of `band`."""
     if not math.isfinite(band) or band < ENTRY_BAND_Z:
@@ -342,6 +325,7 @@ def _rotation_orders(
     session: str,
     state: "PaperState",
     blocked: set[str] | None,
+    whole_shares: bool = True,
 ) -> list["PaperOrder"]:
     """Return the sell orders for downgraded names and the buys they fund."""
     if equity <= 0 or not leaving:
@@ -349,7 +333,7 @@ def _rotation_orders(
     blocked = blocked or set()
     sells: list[tuple[str, int, float]] = []
     for symbol in sorted(leaving):
-        qty = int(held.get(symbol, 0))
+        qty = int(held.get(symbol, 0)) if whole_shares else held.get(symbol, 0)
         price = float(prices.get(symbol) or 0.0)
         if qty <= 0 or price <= 0:
             continue
@@ -389,7 +373,7 @@ def _rotation_orders(
         current = float(held[symbol]) * price / equity
         room = ENTRY_NAME_CAP - current
         want = min(freed * (value / pool), max(0.0, room) * equity)
-        qty = int(round(want / price))
+        qty = math.floor(want / price + 1e-10) if whole_shares else want / price
         if qty <= 0 or qty * price < MIN_TRADE * equity:
             continue
         seq = state.order_seq
@@ -406,6 +390,7 @@ def _rotation_orders(
     return orders
 
 
+# Size price entries against the positions already reserved by this plan.
 def _entry_orders(
     entries: dict[str, float],
     held: dict[str, float],
@@ -414,32 +399,13 @@ def _entry_orders(
     session: str,
     state: "PaperState",
     blocked: set[str] | None,
+    whole_shares: bool = True,
 ) -> list["PaperOrder"]:
-    """Return tonight's entry buys, paid from cash.
+    """Size incumbent graded breakouts, with room reserved by earlier buys.
 
-    `entries` maps a name to its position on its own 20-day band, and the
-    size follows it: a breakout further through the band is a stronger
-    reading at that price and earns a larger position. The flat increment it
-    replaces treated a name two sigma out and one four sigma out as the same
-    proposition, which is the one thing the operator said twice it should not
-    do. Scaling by the ANALYST score was measured and made returns fall
-    monotonically - that is a view about the name; this is a view about the
-    price, and they are not the same signal.
-
-    Exponent two, from a family of five that measure alike (1.5 through 4 all
-    beat the flat increment by between +0.29 and +0.57 CAGR points and are
-    statistically indistinguishable from one another). It is chosen for its
-    tail, not its mean: at an unseen band reading of 3.0 it asks 13.3%, still
-    inside ENTRY_NAME_CAP, so the cap stays a backstop. Exponent four asks
-    55% there and hard-clips, which only looks good because eleven years never
-    produced a reading above 2.12 to expose it.
-
-    Paid from CASH rather than by trimming the rest of the book. The trim kept
-    gross exposure fixed, which sounds prudent and means the desk could never
-    put money to work no matter how strong the signal - on the live account it
-    held 43% invested against 57% idle. Measured on the live rules, unfunded
-    is worth about +1.3 CAGR points and is positive in four of six disjoint
-    calendar blocks, at the same realised volatility.
+    The joint planner budgets these candidates from known cash. The quadratic
+    increment is retained as an experimental baseline; no validated ML or
+    optimal-sizing claim is implied by its exponent.
     """
     if equity <= 0 or not entries:
         return []
@@ -454,7 +420,11 @@ def _entry_orders(
         want = min(entry_size(band), ENTRY_NAME_CAP - current)
         if want < MIN_TRADE:
             continue
-        qty = int(round(want * equity / price))
+        qty = (
+            math.floor(want * equity / price + 1e-10)
+            if whole_shares
+            else want * equity / price
+        )
         if qty > 0:
             buys.append((symbol, qty, qty * price))
     if not buys:
@@ -469,7 +439,7 @@ def _entry_orders(
                 symbol,
                 "buy",
                 qty,
-                "price entry: a tail of its own 21-day average",
+                "price entry: breakout through its own 20-day band",
                 client_order_id=order_id(session, symbol, "buy", seq),
             )
         )
@@ -526,6 +496,56 @@ def _rebalance_orders(
     return orders
 
 
+# Reserve name capacity jointly and fund opening buys only from existing cash.
+def midcycle_orders(
+    session,
+    state,
+    equity,
+    held,
+    prices,
+    grades,
+    finished,
+    entries,
+    blocked=None,
+    cash=None,
+    whole_shares=True,
+):
+    eligible = {
+        s: b
+        for s, b in entries.items()
+        if grades.get(s) in ENTRY_MIN_GRADE and s not in finished
+    }
+    orders = _rotation_orders(
+        finished, held, prices, equity, session, state, blocked, whole_shares
+    )
+    projected = dict(held)
+    for order in orders:
+        if order.side == "buy":
+            projected[order.symbol] = projected.get(order.symbol, 0) + order.qty
+    orders += _entry_orders(
+        eligible, projected, prices, equity, session, state, blocked, whole_shares
+    )
+    # Sales fill at the following close, after opening buys: no future proceeds.
+    budget = max(
+        0.0,
+        (
+            cash
+            if cash is not None
+            else equity - sum(q * prices.get(s, 0) for s, q in held.items())
+        ),
+    )
+    wanted = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    scale = min(1.0, budget / wanted) if wanted else 1.0
+    funded = []
+    for order in orders:
+        qty = order.qty
+        if order.side == "buy":
+            qty = math.floor(qty * scale + 1e-10) if whole_shares else qty * scale
+        if qty > 0:
+            funded.append(replace(order, qty=qty))
+    return funded
+
+
 # Plan this session's moves: rebalance to the targets, or the exits the
 # caller named.
 def plan(
@@ -540,6 +560,7 @@ def plan(
     force_rebalance: bool = False,
     entry_blocked: set[str] | None = None,
     entries: dict[str, float] | None = None,
+    cash: float | None = None,
 ) -> tuple[list[PaperOrder], PaperState, str]:
     """Return (orders, new state, what the day was).
 
@@ -597,21 +618,50 @@ def plan(
         # A name the desk has turned against is sold and the money follows the
         # names it still wants. The sale alone was what this used to do, and a
         # sale alone is the variant that loses 24 points of CAGR.
-        orders.extend(
-            _rotation_orders(done, held, prices, equity, session, new, entry_blocked)
+        orders = midcycle_orders(
+            session,
+            new,
+            equity,
+            held,
+            prices,
+            grades,
+            done,
+            entries or {},
+            entry_blocked,
+            cash,
         )
-        # Price entries, after the session's exits are written. The calendar
-        # chose what the book holds; this chooses when each name is entered.
-        if entries:
-            orders.extend(
-                _entry_orders(
-                    entries, held, prices, equity, session, new, entry_blocked
-                )
-            )
         what = "hold" if not orders else "entries" if entries else "exits"
     # Sells first, so the buys have the cash.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))
+    if cash is not None:
+        orders = bound_orders(orders, held, prices, equity, cash)
     return orders, new, what
+
+
+# Keep the combined whole-share order basket within cash and decision-price caps.
+def bound_orders(orders, held, prices, equity, cash):
+    if not math.isfinite(equity) or equity <= 0 or not math.isfinite(cash):
+        raise ValueError("A finite account equity and cash balance are required")
+    reserved = dict(held)
+    capped = []
+    for order in orders:
+        qty = order.qty
+        if order.side == "buy":
+            price = prices[order.symbol]
+            room = max(
+                0, ENTRY_NAME_CAP * equity / price - reserved.get(order.symbol, 0)
+            )
+            qty = min(qty, math.floor(room + 1e-10))
+            reserved[order.symbol] = reserved.get(order.symbol, 0) + qty
+        if qty > 0:
+            capped.append(replace(order, qty=qty))
+    total = sum(o.qty * prices[o.symbol] for o in capped if o.side == "buy")
+    scale = min(1, max(0, cash) / total) if total else 1
+    return [
+        replace(o, qty=math.floor(o.qty * scale + 1e-10)) if o.side == "buy" else o
+        for o in capped
+        if o.side == "sell" or math.floor(o.qty * scale + 1e-10) > 0
+    ]
 
 
 # What the broker says became of each order this desk wrote down.

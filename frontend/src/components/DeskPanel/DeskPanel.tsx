@@ -255,6 +255,7 @@ const SummaryStrip = ({
   const dayPl = paperLive?.day_pl
   const backtest = curve?.backtest
   const stats = backtest?.stats
+  const currentPolicy = backtest?.strategy_policy === 'cash-bounded-breakout-rotation/2'
   const last = (arr?: number[]) => (arr && arr.length ? arr[arr.length - 1] : null)
   const rulesTotal = last(backtest?.rules)
   const spyTotal = last(backtest?.spy)
@@ -307,7 +308,7 @@ const SummaryStrip = ({
     ...(rulesTotal !== null
       ? [
           {
-            label: backtest?.funding_model === 'cash-at-fill-v1' ? 'Cash-limited simulation' : 'Stored simulation · under review',
+            label: currentPolicy ? 'Current policy simulation' : 'Older policy simulation',
             value: (
               <>
                 <Trend value={rulesTotal * 100} />
@@ -322,7 +323,7 @@ const SummaryStrip = ({
                 </span>
               </>
             ),
-            note: backtest?.funding_model === 'cash-at-fill-v1'
+            note: !currentPolicy ? 'Predates the shared strategy rules; awaiting a new nightly simulation.' : backtest?.funding_model === 'cash-at-fill-v1'
               ? 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns'
               : stats && stats.drawdown !== null
                 ? `legacy simulation permits borrowing without financing costs · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
@@ -686,32 +687,19 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">Plan</dt>
         <dd className="text-[#6e6e73]">
-          One of three things, and never a fourth. <b>Buy</b> when a name graded A or A+ closes through
-          the upper edge of its own 20-day band; the desk buys it that night and funds it by trimming the
-          rest, so the gross does not move. The band replaced a distance from the 21-day average, which
-          only fired after a name had already run 43% and so confirmed moves instead of finding them.
-          <b>Sell</b> when the desk holds a name it no longer grades A or better. <b>Hold</b> otherwise,
-          and the hover says which kind: holding a position, waiting for an entry that has not fired, or
-          blocked because the price evidence is stale.
-          {' '}Two clocks drive it. The weight reset brings the whole book back to target every 20
-          sessions, about monthly, and the line above the board says how far away it is. Between resets,
-          price decides.
-          {' '}Every plan here describes the desk&rsquo;s own book and reads the same whatever you have
-          recorded in your positions. The distance between a position and its target weight is not an
-          instruction: the desk only trades toward those weights at a reset.
+          BUY adds a funded position; SELL reduces or closes one; HOLD makes no trade.
+          The Move % column is the change in account weight. Target % is the next reset allocation.
+          Between resets, A/A+ band breakouts can add from available cash and downgrades can rotate out.
+          The account-wide planner enforces the 15% entry cap. Decisions use dated evidence, and
+          opening buys cannot spend proceeds from sales due at the later close.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Selling</dt>
         <dd className="text-[#6e6e73]">
-          The desk sells a name it holds once the grade falls below A, and puts the money into the
-          names it still wants the same session. It is a rotation, never a trim: a Sell means close
-          the whole position. Selling the same signal to cash instead measured 24 points of return a
-          year worse than simply holding, which is why the money never sits still.
-          {' '}No PRICE-based exit survived screening: twenty-one triggers, from price crossing every
-          average to rank falling, and not one was followed by a fall — an exit overlay cost 3.0% a
-          year and lowered Sharpe in five of six years. Those stay retired. A grade falling is a
-          different thing: it is the analysts saying the thesis broke, not the chart looking tired.
+          A downgrade below A can close a holding between resets. At a reset, a SELL can also be a trim
+          toward the new target. Sale proceeds become available only after execution. Historical
+          comparisons use today's stock universe and do not establish future profitability.
         </dd>
       </div>
       <div>
@@ -987,7 +975,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // count is about the desk's plan, not about whether a quote can be crossed
   // this second.
   const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
-    ? Object.values(decisions.rows).filter(row => row.action !== 'Hold').length : 0
+    ? Object.values(decisions.rows).filter(row => row.action === 'Buy' || row.action === 'Sell').length : 0
   const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
@@ -1142,18 +1130,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           behind ?deskDetails=1 - a parameter nothing on the site writes, so
           nobody could reach it - while its own comment calls it the one thing
           on the page that is a signal rather than a ranking. */}
-      {latest && <EntriesNow userId={userId} onOpen={setOpenName} />}
       {latest && <div className="flex max-h-[75vh] flex-col">
       <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
-      holdings={holdingsReady ? holdings : null} event={boardEvent} now={now}
+      holdings={holdingsReady ? holdings : null} broker={paperLive} event={boardEvent} now={now}
       holdingsError={holdingsError}
       action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} now={now} />}
       planAction={(ticker) => planFor(ticker, decisions, latest, now).action}
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
       </div>}
-      {holdingsReady && holdings.length > 0 && (
-        <YourPositions holdings={holdings} live={live} rows={rows} />
-      )}
       {/* Openable from the page, not only from a URL parameter a reader would
           have to be told about. The parameter still opens it, so a link that
           carries it keeps working. */}
@@ -1163,12 +1147,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
 
 
-      {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity} userId={userId}
-          holdings={holdingsReady ? holdings : null} marking={marking !== null}
-          onRecordBuy={canWrite && holdingsReady ? recordBuy : undefined}
-          saveError={saveError} onOpenName={(t) => setOpenName(t)} />
-      )}
 
       {latest && (
         <details aria-label="Reading the current picks" className="px-1 text-xs text-[#6e6e73]">
@@ -1242,9 +1220,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
               {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side} {fill.qty} {fill.symbol} at {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
             </section>
-            {paperLive && paperLive.positions && paperLive.positions.length > 0 && (
-              <LivePositions paper={paperLive} equity={paperLive.equity ?? 0} />
-            )}
             <TrackRecord curve={curve} />
           </div>
         </details>
@@ -1812,10 +1787,10 @@ const planFor = (
   if (!row) return {action: 'Hold', reason: 'No current decision for this account. Refresh to re-read it.'}
   // A Buy still stands down where the caller says no allocation can be put on
   // - that is a statement about this surface, not about the market being shut.
-  const blocked = row.action === 'Buy' && !allocationAllowed
+  if (!PLAN_ACTIONS.includes(row.action as PlanAction)) return {action: 'Hold', reason: 'Unrecognized decision; refresh before acting.'}
   return {
     row,
-    action: (blocked ? 'Hold' : row.action) as PlanAction,
+    action: row.action as PlanAction,
     reason: row.reason,
   }
 }

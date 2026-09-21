@@ -1934,6 +1934,7 @@ export interface DeskRecord {
 export interface DeskCurve {
   backtest?: {
     funding_model?: string;
+    strategy_policy?: string;
     label: string;
     asof: string;
     dates: string[];

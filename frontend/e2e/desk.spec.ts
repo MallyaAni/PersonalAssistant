@@ -8,6 +8,50 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Every stock stays in one table, and plan cells contain only the three actions.
+test('single-table strategy plan keeps actions, holdings and reasons consistent', async ({page}) => {
+  await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))
+  const errors = observeBlockingBrowserErrors(page)
+  const failed: string[] = []
+  page.on('requestfailed', request => { if (request.url().includes('/market/')) failed.push(request.url()) })
+  const latest = deskRecord()
+  for (let i = 0; i < 18; i++) latest.grades[`TEST${i}` as keyof typeof latest.grades] = {...latest.grades.AAPL}
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest}}))
+  await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+    session: latest.session, written: latest.written, rows: {
+      AAPL: {action: 'Buy', reason: 'Funded breakout entry', move_weight: .01},
+      NVDA: {action: 'Sell', reason: 'Grade rotation', move_weight: -.02},
+      MSFT: {action: 'uncovered', reason: 'Legacy invalid action', move_weight: 0},
+    },
+  }}}))
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(page.getByRole('table')).toHaveCount(1)
+  await expect(board.getByLabel('AAPL plan action', {exact: true})).toHaveText('BUY')
+  await expect(board.getByLabel('NVDA plan action', {exact: true})).toHaveText('SELL')
+  await expect(board.getByLabel('MSFT plan action', {exact: true})).toHaveText('HOLD')
+  await expect(board.getByRole('button', {name: 'TEST17', exact: true})).toHaveCount(1)
+  await expect(board.getByLabel('AAPL move', {exact: true})).toHaveText('+1.0%')
+  await expect(board.getByLabel('AAPL your position', {exact: true})).toContainText('60 shares')
+  await expect(board.getByLabel('AAPL desk position', {exact: true})).toContainText('60 shares')
+  await expect(board).toContainText('Funded breakout entry')
+  await page.getByRole('button', {name: 'Filter the plan column', exact: true}).click()
+  await page.getByRole('checkbox', {name: /Hold/}).uncheck()
+  await page.getByRole('checkbox', {name: /Sell/}).uncheck()
+  await page.getByRole('button', {name: 'Filter the plan column (filtered)'}).click()
+  await expect(board.getByLabel('AAPL plan action', {exact: true})).toHaveText('BUY')
+  await expect(board.getByLabel('NVDA plan action', {exact: true})).toHaveCount(0)
+  await page.reload()
+  await expect(board.getByRole('button', {name: 'TEST17', exact: true})).toHaveCount(1)
+  await page.setViewportSize({width: 390, height: 844})
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  await page.screenshot({path: 'test-results/strategy-table-mobile.png', fullPage: true})
+  await page.setViewportSize({width: 1440, height: 1000})
+  await page.screenshot({path: 'test-results/strategy-table-desktop.png', fullPage: true})
+  expect(failed).toEqual([])
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Prospective model accounts are visible separately from the adopted plan and holdings.
 test('frozen ML paper comparison shows independent account returns', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -2082,15 +2126,15 @@ test('the desk fits a phone without sideways scrolling', async ({page}) => {
   await page.goto('/#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await noSidewaysScroll(page, 'stocks')
-  // The board's own box pans, so the right-hand columns (Record) are reachable.
+  // The table pans inside the page so its position and reason columns remain reachable.
   const scroller = page.getByRole('table', {name: 'Ranked stocks and cash'}).locator('xpath=ancestor::div[contains(@class,"overflow-auto")]')
   await scroller.evaluate(el => el.scrollTo(el.scrollWidth, 0))
-  await expect(page.getByRole('button', {name: 'Record purchase of AAPL'})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Reason', exact: true})).toBeVisible()
   await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
   await expect(page.getByText('Open the full panel')).toBeVisible()
   await noSidewaysScroll(page, 'row open')
   await page.goto('/?deskDetails=1#desk')
-  await expect(page.getByText('Stock rankings')).toBeVisible()
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await noSidewaysScroll(page, 'details open')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
   const dialog = page.getByRole('dialog', {name: 'AAPL history'})

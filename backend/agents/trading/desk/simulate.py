@@ -71,7 +71,60 @@ LIVE_POLICY: dict[str, bool] = {
     "block_overbought": True,
     "exit_at_close": True,
     "green_day_skip": True,
+    "live_midcycle": True,
 }
+
+
+# Replay the paper planner's joint rotation and entry orders without share rounding.
+def _live_midcycle(book, report, t, bands, blocked):
+    from backend.agents.trading.desk import paper
+
+    panel = report.panel
+    prices = {
+        s: float(panel.adj_close[t, j])
+        for j, s in enumerate(panel.tickers)
+        if np.isfinite(panel.adj_close[t, j]) and panel.adj_close[t, j] > 0
+    }
+    held = {
+        s: float(book.shares[j])
+        for j, s in enumerate(panel.tickers)
+        if book.shares[j] > 0
+    }
+    letters = {0: "C", 1: "B", 2: "A", 3: "A+"}
+    grades = {
+        s: (g if isinstance(g, str) else letters.get(int(g), "C"))
+        for s, g in zip(panel.tickers, report.graded.grades[t], strict=True)
+    }
+    finished = {
+        s: "grade rotation" for s in held if grades[s] not in paper.ENTRY_MIN_GRADE
+    }
+    entries = {
+        s: float(bands[t, j])
+        for j, s in enumerate(panel.tickers)
+        if s != panel.benchmark and np.isfinite(bands[t, j])
+    }
+    excluded = {
+        s for j, s in enumerate(panel.tickers) if blocked is not None and blocked[t, j]
+    }
+    orders = paper.midcycle_orders(
+        str(panel.dates[t]),
+        paper.PaperState(),
+        book.equity(panel.adj_close[t]),
+        held,
+        prices,
+        grades,
+        finished,
+        entries,
+        excluded,
+        book.cash,
+        whole_shares=False,
+    )
+    wanted = book.shares.copy()
+    for order in orders:
+        wanted[panel.index(order.symbol)] += order.qty * (
+            1 if order.side == "buy" else -1
+        )
+    return wanted
 
 
 @dataclass(frozen=True)
@@ -123,7 +176,9 @@ class SimResult:
         curve = np.cumprod(1.0 + daily)
         annual = float(daily.mean() * 252)
         volatility = float(daily.std() * np.sqrt(252))
-        drawdown = float((curve / np.maximum.accumulate(curve) - 1.0).min())
+        drawdown = float(
+            (curve / np.maximum.accumulate(np.r_[1.0, curve])[1:] - 1.0).min()
+        )
         years = len(daily) / 252.0
         # The objective's numbers: compounded money, what it cost to
         # trade, and how concentrated the book got. `cagr` is the
@@ -233,7 +288,9 @@ def _dip_signal(report, panel: Panel, rule: DipRule) -> np.ndarray:
 
 # Add the rule's weight to every firing name, from cash, inside the name
 # cap; returns the new target and how many names were added to.
-def _dip_add(target, fired, rule: DipRule, book, prices, sizes=None) -> tuple[np.ndarray, int]:
+def _dip_add(
+    target, fired, rule: DipRule, book, prices, sizes=None
+) -> tuple[np.ndarray, int]:
     out = target.copy()
     added = 0
     taken = 0.0
@@ -431,7 +488,7 @@ def _settle_event(book, baseline, sold, scale, prices, t):
 
 
 # Walk the desk's rules, optionally applying the selected event execution lifecycle.
-def run(
+def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     report,
     since: date | None = None,
     config=None,
@@ -452,6 +509,7 @@ def run(
     green_day_skip: bool = False,
     event_exposure: np.ndarray | None = None,
     event_lifecycle: bool = False,
+    live_midcycle: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -505,6 +563,9 @@ def run(
         report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
     )
     panel: Panel = report.panel
+    from backend.agents.trading.desk import entry
+
+    live_bands = entry.bollinger_z(panel.adj_close) if live_midcycle else None
     # A research overlay changes exposure only when its close-time scale changes.
     # Between rebalances the held weights already contain yesterday's scale;
     # applying the absolute scale again would halve the account every day.
@@ -563,7 +624,11 @@ def run(
             )
             if dips is not None and dips[t].any():
                 target, added = _dip_add(
-                    target, dips[t], dip, book, closes[t],
+                    target,
+                    dips[t],
+                    dip,
+                    book,
+                    closes[t],
                     None if dip.size is None else dip.size[t],
                 )
                 if added:
@@ -583,6 +648,9 @@ def run(
             reason,
         )
         order = book.plan(target, closes[t])
+        if live_midcycle and not rebalanced and not event_changed:
+            order = _live_midcycle(book, report, t, live_bands, blocked)
+            reason = "shared paper rotation and entry policy"
         buy_prices = opens[t + 1]
         sell_prices = opens[t + 1]
         if exit_at_close and not event_changed:
