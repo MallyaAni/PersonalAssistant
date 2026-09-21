@@ -1,6 +1,73 @@
 # Next session
 
+## 2026-09-21 07:02 UTC — Context experiment accepted for one bounded run
+
+OpenCode review corrections independently checked and imported: entry_context
+helper, market_entry_context CLI, test_entry_context and protocol. Desktop
+29 context/pilot tests pass with no skips; Ruff clean. No active OpenCode
+writer remains. CLI now uses the actual intraday partition, verifies input
+and model hashes before loading models, compares both controls and price-only,
+and automatically checks exact decisions/NAV after fitting. Research only.
+
+Next action: run external `run-context-bounded.py` with desktop venv. It writes
+`context-run-status.json` and `context-run.log` under
+`E:/AgentWorkspace/entry-timing-pilot-20260920/`; output `context-run-01`.
+It enforces a two-hour process deadline and the CLI caps threads at four.
+If status has started but no finished, inspect the existing process; never
+launch a duplicate. On completion inspect results/summary, manifest and actual
+return code; report negative findings as negative and do not tune. The fixed
+ten-session study is retrospective; it cannot authorize live promotion.
+
 ## 2026-09-21 — Reviewed fundamental adapter accepted for research
+
+Checkpoint `0a796a0c` pushed after the independent acceptance run. Next bounded
+OpenCode task dispatched in the SAME isolated checkout/session, contract
+`CODEX_CONTEXT_TASK.md`, log `/tmp/codex-opencode-entry-context-20260921.jsonl`,
+result `HANDOFF_CONTEXT.md`. This is a pre-specified 10-session paired tree
+ablation: 28 price features versus those plus 7 quarterly features, missingness
+and fiscal ages, all fundamentals lagged to the previous session. No tuning,
+no production promotion, no training on Spark. Review three new code/test
+files plus its protocol; then run once on desktop with four CPU threads and
+a two-hour runtime ceiling. Do not launch another writer until this one ends.
+A GPU run is optional and must be justified by new information; the point is
+to test the feature hypothesis cheaply before adding model complexity. All
+2024–2026 measurements remain retrospective/reused, never a fresh holdout.
+Full task copy: `E:/AgentWorkspace/entry-timing-pilot-20260920/opencode-ablation-task.md`.
+
+05:08 UTC supervision: worker still active (PID 1806650), no context-code
+files yet; it wrote the frozen protocol before fitting as requested. Last
+tool activity was recent, so do not interrupt or start a second writer.
+Review note for its eventual patch: protocol currently mentions only paired
+comparisons versus always-enter. The task requires context versus price-only
+and versus both baselines; verify the implementation includes these paired
+comparisons before running. The resumed session has grown to roughly 230k
+input tokens; for any later independent task use a fresh OpenCode session
+with a compact handoff rather than continuing to accumulate this context.
+
+05:29 UTC review of in-progress files: worker has written the CLI and helper,
+is still active and writing tests; do not import unfinished code. Context was
+compacted to ~73k so progress is moving. Concrete acceptance blockers in the
+current draft (recheck final files before requesting corrections):
+1. CLI main passes `store.root` into ep.build, but ep.build requires the
+   selected intraday partition (see intraday.partition(root / "bars_15m"));
+   this otherwise produces an empty dataset on the real store.
+2. verify never checks its recorded dataset_sha256; context arrays and
+   preprocessing need fingerprints too. A changed feature input must fail
+   replay even when it does not cross a tree split. Include a tampering test.
+3. evaluate_all has only paired_vs_enter; needs context versus same-mode
+   price-only and versus always-wait, preserved in summaries.
+4. main does not invoke verification after run; parent must explicitly run
+   --verify regardless. Test the CLI data-path boundary, not only run(data).
+No live or research training launched while these are unverified.
+
+06:08 UTC: first context implementation finished (worker claims 8 tests
+passed). Inspected final CLI: paired_vs_price was added, but wrong bar root,
+unchecked dataset digest and missing context/preprocessor fingerprints remain.
+Sent bounded correction in SAME OpenCode session; active log now
+`/tmp/codex-opencode-entry-context-review-20260921.jsonl`. Requested CLI path
+regression, input/model hashes checked before joblib loading, tampering tests,
+paired_vs_wait, and automatic verify after run; exact corrected commands in
+HANDOFF_CONTEXT.md. Do not copy/run the draft before this correction finishes.
 
 OpenCode's second patch was independently inspected and imported: new
 `backend/market/fundamental_features.py`, its tests and research note.
