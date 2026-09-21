@@ -23,7 +23,9 @@ _NY = ZoneInfo("America/New_York")
 def c():
     pytest.importorskip("joblib", reason="requires optional research dependencies")
     pytest.importorskip("sklearn", reason="requires optional research dependencies")
-    pytest.importorskip("threadpoolctl", reason="requires optional research dependencies")
+    pytest.importorskip(
+        "threadpoolctl", reason="requires optional research dependencies"
+    )
     from backend.cli import market_entry_context
 
     return market_entry_context
