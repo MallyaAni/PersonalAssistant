@@ -1,5 +1,65 @@
 # Next session
 
+## 2026-09-21 — Six isolated OpenCode roles explicitly authorized and launched
+
+**CURRENT coordination supersedes all single-worker instructions below.** User
+asked for parallel OpenCode sessions, noting model concurrency6. Keep one writer
+per owned file, with six isolated checkouts and a shared interface contract.
+Old daily worker PID3237467 was stopped and exit confirmed before seeding.
+Simulator resumes its existing session; five other sessions are fresh. All use
+spark/deepseek-v4-flash. No runtime configuration or live deployment changed.
+
+| Role | PID | Checkout suffix under /home/animallya96/codex-worktrees/ | Owned implementation |
+| --- | --- | --- | --- |
+| simulator | 3264497 | trading-funded-allocation-20260921 | funded_execution.py, simulate.py, ledger/simulator tests |
+| paper | 3264498 | trading-parallel-paper-20260921 | paper.py, optional paper_allocation.py, paper tests |
+| api | 3264499 | trading-parallel-api-20260921 | allocation_view.py, decision_view.py, API tests |
+| ui | 3264500 | trading-parallel-ui-20260921 | DeskPanel frontend/types, own browser spec |
+| evaluation | 3264501 | trading-parallel-evaluation-20260921 | allocation_evaluation.py, market_allocation_compare CLI, tests |
+| acceptance | 3264502 | trading-parallel-acceptance-20260921 | ONLY independent test_allocation_acceptance.py and notes |
+
+Manifest: `/tmp/codex-opencode-parallel-20260921.tsv`.
+Logs: `/tmp/codex-opencode-parallel-<role>-20260921.jsonl`.
+Each checkout has **PARALLEL_TASK.md** and **PARALLEL_CONTRACT.md**. Source copies
+are in external `E:/AgentWorkspace/entry-timing-pilot-20260920/parallel-*.md`.
+Simulator session remains **ses_f3a31cf89ffeD66z4gDLxfOJ5l**; API session observed
+**ses_f3a191207ffejDR5uyk9DffAX2**. Discover remaining session IDs from logs using
+`/tmp/opencode/fv-venv/bin/python /tmp/codex-parallel-status.py`.
+Expected results: DAILY_EXECUTION_HANDOFF.md for simulator, otherwise
+PARALLEL_<ROLE>_HANDOFF.md (uppercase role). Do not resume previous workers.
+
+**VERIFIED launch:** all six PIDs alive; read-only vLLM metrics reported6 running
+requests and5 queued. This establishes concurrency, not sixfold speedup or
+implementation acceptance. At initial check only simulator had completed a tool
+call; full contract consumption and role outputs remain **UNVERIFIED**. Supervise
+progress with compact logs. Preserve serving configuration and model services.
+
+All new worktrees basea8674511 and contain seeded unaccepted draft dependencies
+from the stopped simulator checkout (funded_execution.py, simulate.py, paper.py,
+test_ledger_fix.py). **Integrate ONLY owned diffs, never wholesale seeded trees.**
+Workers cannot commit/push/deploy/trade/train. Root owns review, cross-role fixes,
+actual ledger tests, final real-data comparison and normal deployment acceptance.
+
+Shared interfaces fix benchmark dates, stable unscaled stock composition,
+fee-aware plan quantities, optional paper allocation_context, and snapshot
+allocation_plan -> API portfolio_allocation -> existing single stock table.
+Unadopted preview cannot replace incumbent actions. Missing capability/evidence
+must remain explicit; no invented SWVXX fills or automatic policy promotion.
+UI task includes actual browser fixtures against its own source checkout.
+
+Evaluation inputs uploaded to `/tmp/codex-trading-evaluation-inputs-20260921`:
+trusted corrected report pickle, benchmark prices, common-window references,
+independent benchmark reference, scorecard and acceptance protocol. Pickle SHA256
+matches local/remote **d6f8fe0cbf74e7318352b8e9c02910cae00164a2a4900be6a8e24a9960401c26**.
+Evaluation worker builds runner and verifies controls now; final strategy scoring
+waits for reviewed integrated execution. Fixed windows/costs/objective still apply.
+
+Live remainsa89bba40, no new allocation source accepted/deployed. Earlier ledger
+evidence and remaining integration risks below remain applicable. User's newest
+request resolves optional coding preference: use parallel OpenCode, not blocked.
+Starting local maine6248c16, pull up to date; unrelated untracked evaluation files
+preserved. Diagram impact: NONE — coordination/dispatch evidence only.
+
 ## 2026-09-21 — Ledger repairs independently verified; daily execution next
 
 **VERIFIED within isolated draft:** sale1 at100 with10bps/no recycling now
