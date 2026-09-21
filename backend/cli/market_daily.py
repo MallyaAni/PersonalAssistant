@@ -891,6 +891,31 @@ def _strategy_name(report) -> str:
     return challenger.strategy(report)
 
 
+# The fundamental analyst's block for the record: the data source it read
+# and each name's cited fiscal period ends on the last session. A name with
+# no fundamental opinion on the last session is omitted; a record whose
+# report carries no fundamental analyst gets an empty dates map.
+def _fundamental_block(report) -> dict:
+    """Return {"source": ..., "dates": {ticker: {feature: end}}} for the record."""
+    from backend.agents.trading.desk import fundamental
+
+    opinion = report.opinions.get(fundamental.NAME)
+    panel = report.panel
+    last = len(panel.dates) - 1
+    dates = {}
+    if opinion is not None:
+        for column, ticker in enumerate(panel.tickers):
+            if ticker == panel.benchmark:
+                continue
+            if not np.isfinite(opinion.scores[last, column]):
+                continue
+            dates[ticker] = fundamental.cited_dates(opinion, last, column)
+    return {
+        "source": getattr(report, "fundamentals_source", "") or "",
+        "dates": dates,
+    }
+
+
 def record(
     report,
     briefs: dict[str, dict] | None = None,
@@ -968,6 +993,10 @@ def record(
                 "session": str(panel.dates[last]),
                 "names": len(panel.tickers) - 1,
                 "benchmark": panel.benchmark,
+                # Which data source the fundamental analyst read, so a figure
+                # in this record is never presented under a source it was not
+                # measured with. Empty on records written before this existed.
+                "fundamentals": getattr(report, "fundamentals_source", "") or "",
             },
             "strategy": {
                 "rebalance_every": actions.REBALANCE,
@@ -1016,6 +1045,11 @@ def record(
         # tonight. Evidence for switching the value analyst's input; never
         # traded. Absent before this existed or when no versions are stored.
         "fundamentals_asof": fundamentals,
+        # The fundamental analyst's data source and each name's cited fiscal
+        # period ends on the last session, so a corrected figure can be
+        # traced to the quarter it refers to. The `fundamentals_asof` block
+        # above is the value analyst's shadow and stays separate.
+        "fundamental": _fundamental_block(report),
         # Levels for every book name, targeted or not, so the person's own
         # board can size a name the desk holds nothing of.
         "levels": {
@@ -1225,6 +1259,10 @@ def curve_block(report, store) -> dict | None:
         "label": "historical simulation with cash-limited fills; not a live record",
         "funding_model": simulate.FUNDING_MODEL,
         "strategy_policy": paper_rules.POLICY_VERSION,
+        # The data source the simulation's analysts read, kept separate from
+        # the execution policy above, so the curve is never presented as
+        # measured under corrected inputs when it predates them.
+        "fundamentals_source": getattr(report, "fundamentals_source", "") or "",
         "event_policy": event_risk.VERSION,
         "evaluation_periods": event_risk.evaluation_slices(sim),
         "asof": str(panel.dates[-1]),
@@ -1329,6 +1367,7 @@ def write_history(store, report, horizon: int = 20) -> int:
             "ticker": ticker,
             "asof": str(report.panel.dates[-1]),
             "horizon": horizon,
+            "fundamentals_source": getattr(report, "fundamentals_source", "") or "",
             "rows": [_history_row(r) for r in rows],
             "backtest": _backtest_dict(backtest),
         }
@@ -1448,6 +1487,9 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         )
     else:
         observed["row"] = observe_ml_forward(Path(store.root), current)
+    # The record always reads the corrected as-of filing versions. The legacy
+    # frozen block is only for the read-only comparison CLI (`market_desk`),
+    # never for this writer: this run writes a record and can paper-trade.
     report = trading_desk.run(store, args.asof)
     panel = report.panel
     print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")

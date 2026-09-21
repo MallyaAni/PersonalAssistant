@@ -23,6 +23,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data-dir", default=settings.MARKET_DATA_ROOT)
     parser.add_argument("--asof", type=date.fromisoformat, default=None)
     parser.add_argument(
+        "--fundamentals",
+        choices=("corrected", "legacy"),
+        default="corrected",
+        help="which data source the fundamental analyst reads: the corrected "
+        "as-of filing versions (default) or the frozen EDGAR feature block, "
+        "for a read-only side-by-side comparison",
+    )
+    parser.add_argument(
         "--calibrate",
         action="store_true",
         help="print the forward beta-adjusted return of each grade at 20 and 60",
@@ -254,9 +262,13 @@ def _print_book_backtest(report, since) -> None:
 def main() -> None:
     """Entry point."""
     args = build_parser().parse_args()
-    report = trading_desk.run(MarketStore(args.data_dir), args.asof)
+    report = trading_desk.run(
+        MarketStore(args.data_dir), args.asof, fundamentals=args.fundamentals
+    )
     panel = report.panel
     print(f"desk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
+    if report.fundamentals_source:
+        print(f"fundamental data: {report.fundamentals_source}")
     _print_regime(report.regime.today())
     _print_grades(report, args.top)
     _print_book(report)

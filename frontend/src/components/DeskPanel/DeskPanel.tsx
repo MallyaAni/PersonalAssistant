@@ -256,6 +256,17 @@ const SummaryStrip = ({
   const backtest = curve?.backtest
   const stats = backtest?.stats
   const currentPolicy = backtest?.strategy_policy === 'cash-bounded-breakout-rotation/2'
+  // A curve whose simulation read the frozen EDGAR snapshot - or a record
+  // written before the source was carried - is an older fundamental-input
+  // simulation even when the execution policy version matches. The source is
+  // separate from the policy, so a matching version number must not present a
+  // legacy-input curve as measured under corrected fundamentals.
+  const currentFundamentals = backtest?.fundamentals_source === 'fundamentals-features/1'
+  const curveLabel = currentPolicy
+    ? currentFundamentals
+      ? 'Current policy simulation'
+      : 'Current policy, older fundamental inputs'
+    : 'Older policy simulation'
   const last = (arr?: number[]) => (arr && arr.length ? arr[arr.length - 1] : null)
   const rulesTotal = last(backtest?.rules)
   const spyTotal = last(backtest?.spy)
@@ -308,7 +319,7 @@ const SummaryStrip = ({
     ...(rulesTotal !== null
       ? [
           {
-            label: currentPolicy ? 'Current policy simulation' : 'Older policy simulation',
+            label: curveLabel,
             value: (
               <>
                 <Trend value={rulesTotal * 100} />
@@ -323,11 +334,13 @@ const SummaryStrip = ({
                 </span>
               </>
             ),
-            note: !currentPolicy ? 'Predates the shared strategy rules; awaiting a new nightly simulation.' : backtest?.funding_model === 'cash-at-fill-v1'
-              ? 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns'
-              : stats && stats.drawdown !== null
-                ? `legacy simulation permits borrowing without financing costs · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
-                : 'legacy simulation permits borrowing without financing costs; not evidence for current cash-only returns',
+            note: !currentPolicy ? 'Predates the shared strategy rules; awaiting a new nightly simulation.' : !currentFundamentals
+              ? 'Current policy, but its history was simulated on the frozen EDGAR snapshot (legacy or unrecorded fundamentals); it is not measured on the corrected point-in-time data.'
+              : backtest?.funding_model === 'cash-at-fill-v1'
+                ? 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns'
+                : stats && stats.drawdown !== null
+                  ? `legacy simulation permits borrowing without financing costs · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
+                  : 'legacy simulation permits borrowing without financing costs; not evidence for current cash-only returns',
           },
         ]
       : []),
@@ -342,15 +355,28 @@ const SummaryStrip = ({
       note: 'share of the practice account in positions',
     },
   ]
+  const fundamentalSource = latest.provenance?.data?.fundamentals
+  // The same concise source wording as the label beside the board, so the
+  // at-a-glance strip never claims a source the decision was not read with.
+  const fundamentalNotice = !fundamentalSource
+    ? 'Fundamentals: data source not tagged.'
+    : fundamentalSource === 'fundamentals-features/1'
+      ? 'Fundamentals: stored point-in-time filing versions.'
+      : 'Fundamentals: frozen EDGAR snapshot (legacy).'
   return (
-    <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="The desk at a glance">
-      {cells.map((c) => (
-        <div key={c.label} className="rounded-2xl border border-black/[0.08] bg-white p-3">
-          <p className="text-xs text-[#6e6e73]">{c.label}</p>
-          <p className="mt-0.5 truncate text-lg font-semibold text-[#1d1d1f]">{c.value}</p>
-          <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
-        </div>
-      ))}
+    <section className="rounded-2xl border border-black/[0.08] bg-white p-4" aria-label="The desk at a glance">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {cells.map((c) => (
+          <div key={c.label} className="rounded-2xl border border-black/[0.08] bg-white p-3">
+            <p className="text-xs text-[#6e6e73]">{c.label}</p>
+            <p className="mt-0.5 truncate text-lg font-semibold text-[#1d1d1f]">{c.value}</p>
+            <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 border-t border-black/[0.06] pt-2 text-xs text-[#6e6e73]">
+        {fundamentalNotice}
+      </p>
     </section>
   )
 }
@@ -1131,6 +1157,16 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           nobody could reach it - while its own comment calls it the one thing
           on the page that is a signal rather than a ranking. */}
       {latest && <div className="flex max-h-[75vh] flex-col">
+      {/* The one table on the page is StockBoard below; the fundamental data
+          source label sits immediately above it so a corrected decision is
+          never read as measured under the frozen legacy snapshot. */}
+      <p aria-label="Fundamental data source" className="border-b border-black/[0.06] px-3 py-1.5 text-[11px] text-[#6e6e73]">
+        {latest.provenance?.data?.fundamentals === 'fundamentals-features/1'
+          ? 'Fundamentals: stored point-in-time filing versions.'
+          : latest.provenance?.data?.fundamentals
+            ? 'Fundamentals: frozen EDGAR snapshot (legacy).'
+            : 'Fundamentals: data source not tagged.'}
+      </p>
       <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} broker={paperLive} event={boardEvent} now={now}
       holdingsError={holdingsError}

@@ -1887,7 +1887,7 @@ export interface DeskRecord {
   prose_state?: string;
   prose_status?: string;
   prose_written?: string;
-  provenance?: {rule?: {name?: string; inputs?: string[]}; code_revision?: string; model?: string | null};
+  provenance?: {rule?: {name?: string; inputs?: string[]}; code_revision?: string; model?: string | null; data?: {fundamentals?: string}};
   event_risk?: {
     outcome?: {session: string; status: string; unrestored: Record<string, number>} | null;
     execution_pending?: boolean;
@@ -1935,6 +1935,9 @@ export interface DeskCurve {
   backtest?: {
     funding_model?: string;
     strategy_policy?: string;
+    // Which data source the simulation's analysts read; empty before the
+    // corrected fundamental source was carried into the record.
+    fundamentals_source?: string;
     label: string;
     asof: string;
     dates: string[];

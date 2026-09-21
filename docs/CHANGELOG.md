@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-21 — Corrected fundamental inputs in the live desk
+
+- Fundamental scores now use versioned filing features, preserve missing
+  ratios, and require two observed scored inputs. Total source absence or
+  corruption stops report assembly; explicit legacy comparison remains in
+  the read-only CLI. Valuation and frozen model feature identities are unchanged.
+- Records carry the source and fiscal period dates; the single stock table
+  identifies its source and distinguishes curves computed with older inputs.
+- Independent current-data comparison through September 18: exact legacy
+  replay, unchanged valuation scores, 8 grades and 7 targets changed among
+  94 stock columns; one-way target turnover 2.846%. Scores available for
+  88 names versus 90 previously. Hypothetical funded order previews checked;
+  no broker orders submitted. These are correctness results, not return claims.
+- Independent acceptance: 102 focused backend tests, 19 feature tests after
+  fixture cleanup, two browser journeys, TypeScript/Vite build and Ruff passed.
+  Required deployment gates and live acceptance are tracked in NEXT_SESSION.
+- Diagram impact: NONE — input-source wiring and provenance within existing
+  market and frontend components; no new architectural boundary.
+
 ## 2026-09-20 — Shared strategy accounting and one stock table
 
 - Joint rotation/entry capacity and cash bounds prevent independently planned

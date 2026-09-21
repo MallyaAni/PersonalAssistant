@@ -555,3 +555,184 @@ def test_log_ratio_and_ratio_guard_against_overflow():
     assert np.isnan(ff._ratio(1.0, 0.0))
     assert ff._ratio(0.0, 100.0) == 0.0
     assert ff._log_ratio(100.0, 100.0) == 0.0
+
+
+# ---- the fundamental analyst on the corrected adapter ----
+
+# The corrected analyst keeps a ratio that was never filed missing, while the
+# legacy analyst reads the frozen block's fabricated zero as a valid input:
+# the same underlying facts give a different score only where the missing
+# value would have been invented.
+def test_corrected_analyst_keeps_a_missing_ratio_missing():
+    from backend.agents.trading.desk.fundamental import opine, opine_corrected
+    from backend.market import edgar
+    from backend.market.edgar import CompanyRecord, QuarterFact
+
+    days = ["2026-02-16", "2026-02-17"]
+    p = panel(days, [[40.0, 1.0, 1.0], [40.0, 1.0, 1.0]])
+    # N0 has filed eight revenue quarters but never a gross profit; N1 files
+    # one, so ranks are computable and the missing value is the only question.
+    v0 = fa.parse_versions(payload(Revenues=EIGHT))
+    v1 = fa.parse_versions(
+        payload(
+            Revenues=EIGHT,
+            GrossProfit=[
+                row(r["start"], r["end"], r["val"], r["filed"], r["accn"] + "g")
+                for r in EIGHT
+            ],
+        )
+    )
+    corrected = opine_corrected(ff.features(p, {"N0": v0, "N1": v1}))
+    # The missing margin stays NaN in evidence and is omitted by cite...
+    assert np.isnan(corrected.evidence["gross_margin"][0, 0])
+    assert "gross_margin" not in corrected.cite(0, 0)
+    # ...while the three real growth legs still earn a finite score.
+    assert np.isfinite(corrected.scores[0, 0])
+    # N1's filed margin is a real number, not a zero-fill either.
+    assert np.isfinite(corrected.evidence["gross_margin"][0, 1])
+
+    # The frozen path zero-fills that same missing margin, and the legacy
+    # analyst reads the fabricated zero as a valid input.
+    facts = tuple(
+        QuarterFact(
+            "revenue",
+            date.fromisoformat(r["start"]),
+            date.fromisoformat(r["end"]),
+            r["val"],
+            date.fromisoformat(r["filed"]),
+        )
+        for r in EIGHT
+    )
+    record = CompanyRecord("N0", 0, (), facts, datetime(2026, 2, 16, tzinfo=UTC))
+    legacy = opine(edgar.edgar_features(p, {"N0": record}))
+    assert legacy.evidence["gross_margin"][0, 0] == 0.0
+
+
+# The corrected analyst distinguishes a genuine zero from no evidence at all:
+# a true zero growth is a valid leg, and a name with no versions is simply
+# absent from the cross-section.
+def test_corrected_analyst_distinguishes_a_true_zero_from_no_evidence():
+    from backend.agents.trading.desk.fundamental import opine_corrected
+
+    # N0's Q1 2026 revenue equals Q1 2025's: year-over-year growth is a
+    # genuine zero. N1 is a normal filer; N2 has no versions at all.
+    v0 = fa.parse_versions(
+        payload(
+            Revenues=QUARTERS
+            + [row("2026-01-01", "2026-03-31", 100, "2026-05-01", "q1y")]
+        )
+    )
+    v1 = fa.parse_versions(
+        payload(
+            Revenues=EIGHT,
+            GrossProfit=[
+                row(r["start"], r["end"], r["val"], r["filed"], r["accn"] + "g")
+                for r in EIGHT
+            ],
+        )
+    )
+    p = panel(
+        ["2026-05-04", "2026-05-05"],
+        [[40.0, 1.0, 1.0, 1.0], [40.0, 1.0, 1.0, 1.0]],
+    )
+    out = opine_corrected(ff.features(p, {"N0": v0, "N1": v1}))
+    assert out.evidence["revenue_yoy"][0, 0] == 0.0
+    assert np.isfinite(out.scores[0, 0])
+    assert np.isnan(out.scores[0, 2])
+    assert out.cite(0, 2) == {}
+
+
+# A future restatement, a future quarter and a future competing tag, all
+# available only after the last session, cannot change the corrected analyst's
+# scores on any earlier session.
+def test_appending_future_filings_cannot_change_corrected_scores():
+    from backend.agents.trading.desk.fundamental import opine_corrected
+
+    base = fa.parse_versions(payload(Revenues=EIGHT))
+    extended = fa.parse_versions(
+        payload(
+            Revenues=EIGHT
+            + [
+                row("2025-04-01", "2025-06-30", 999, "2026-06-01", "q2a", "10-Q/A"),
+                row("2026-01-01", "2026-03-31", 160, "2026-06-01", "q1y"),
+            ],
+            RevenueFromContractWithCustomerExcludingAssessedTax=[
+                row(r["start"], r["end"], r["val"] + 1, r["filed"], r["accn"] + "b")
+                for r in EIGHT
+            ]
+            + [row("2026-01-01", "2026-03-31", 999, "2026-06-01", "q1yb")],
+        )
+    )
+    n1 = fa.parse_versions(
+        payload(
+            Revenues=EIGHT,
+            GrossProfit=[
+                row(r["start"], r["end"], r["val"], r["filed"], r["accn"] + "g")
+                for r in EIGHT
+            ],
+        )
+    )
+    p = panel(
+        ["2026-02-16", "2026-02-17"],
+        [[40.0, 1.0, 1.0], [40.0, 1.0, 1.0]],
+    )
+    before = opine_corrected(ff.features(p, {"N0": base, "N1": n1}))
+    after = opine_corrected(ff.features(p, {"N0": extended, "N1": n1}))
+    assert np.array_equal(before.scores, after.scores, equal_nan=True)
+    assert np.array_equal(
+        before.evidence["gross_margin"], after.evidence["gross_margin"], equal_nan=True
+    )
+
+
+# A name needs two real legs to earn a corrected score, exactly as the frozen
+# rule requires; one leg is not enough to rank it against anyone.
+def test_corrected_analyst_requires_two_real_legs():
+    from backend.agents.trading.desk.fundamental import opine_corrected
+
+    # N0 has only one year quarter pair on file: sequential growth is its
+    # only leg. N1 and N2 file eight quarters plus a margin, so every leg can
+    # be ranked across the cross-section and N0's single leg is the only
+    # difference in what it earns a score on.
+    v0 = fa.parse_versions(payload(Revenues=QUARTERS))
+    v1 = fa.parse_versions(
+        payload(
+            Revenues=EIGHT,
+            GrossProfit=[
+                row(r["start"], r["end"], r["val"], r["filed"], r["accn"] + "g")
+                for r in EIGHT
+            ],
+        )
+    )
+    p = panel(["2026-02-16"], [[40.0, 1.0, 1.0, 1.0]])
+    out = opine_corrected(ff.features(p, {"N0": v0, "N1": v1, "N2": v1}))
+    assert np.isnan(out.scores[0, 0])
+    assert "gross_margin" not in out.cite(0, 0)
+    assert np.isfinite(out.scores[0, 1])
+    assert np.isfinite(out.scores[0, 2])
+
+
+# The corrected analyst carries the data source and each feature's fiscal
+# period end, so a consumer can see which quarter a figure refers to.
+def test_corrected_analyst_exposes_fiscal_period_dates():
+    from backend.agents.trading.desk import fundamental
+    from backend.agents.trading.desk.fundamental import cited_dates, opine_corrected
+
+    v0 = fa.parse_versions(
+        payload(
+            Revenues=EIGHT,
+            GrossProfit=[
+                row(r["start"], r["end"], r["val"], r["filed"], r["accn"] + "g")
+                for r in EIGHT
+            ],
+        )
+    )
+    v1 = fa.parse_versions(payload(Revenues=EIGHT))
+    p = panel(["2026-02-16"], [[40.0, 1.0, 1.0]])
+    out = opine_corrected(ff.features(p, {"N0": v0, "N1": v1}))
+    assert out.meta["source"] == fundamental.CORRECTED_SOURCE
+    ends = cited_dates(out, 0, 0)
+    # Revenue growth and the margin both sit on the latest quarter end.
+    assert ends["revenue_yoy"] == "2025-12-31"
+    assert ends["gross_margin"] == "2025-12-31"
+    # A feature with nothing on file has no reference period: the empty string.
+    assert ends["net_margin"] == ""

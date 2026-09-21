@@ -37,12 +37,26 @@ def asof_report(store, report, asof: date | None = None):
     base = getattr(report, "alternate", None) or report
     panel = base.panel
     versions = fa.load_versions(store, panel, asof)
-    covered = [t for t in versions if t != panel.benchmark]
+    # A name whose frame exists but holds no versions is not covered: a
+    # present key is not a filing, so it must not inflate the comparison.
+    covered = [t for t in versions if t != panel.benchmark and versions[t]]
     if not covered:
         return None, 0
     levels = fa.levels(panel, versions)
     opinions = {**base.opinions, value.NAME: value.opine(panel, levels, base.sides)}
-    return trading_desk.assemble(panel, base.sides, opinions, base.regime), len(covered)
+    # The as-of desk carries the same fundamental opinion and therefore the
+    # same data source as the base run; naming it here keeps the shadow
+    # record honest without touching any of the valuation numerics above.
+    return (
+        trading_desk.assemble(
+            panel,
+            base.sides,
+            opinions,
+            base.regime,
+            fundamentals_source=base.fundamentals_source,
+        ),
+        len(covered),
+    )
 
 
 # What changed between the two runs on the last session, as plain data.

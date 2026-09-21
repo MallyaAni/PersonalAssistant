@@ -1195,6 +1195,57 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// The fundamental data source is named on the one rendered table (StockBoard,
+// aria-label "Ranked stocks and cash") and in the at-a-glance summary, and a
+// curve whose simulation read the frozen EDGAR snapshot is distinguished even
+// when the execution policy version matches: the source travels beside the
+// policy, so a matching version must not present legacy input as corrected.
+test('names the fundamental data source and flags older fundamental-input curves', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  latest.provenance = { data: { fundamentals: 'fundamentals-features/1' } }
+  latest.curve = {
+    ...latest.curve!,
+    backtest: {
+      ...latest.curve!.backtest,
+      strategy_policy: 'cash-bounded-breakout-rotation/2',
+      fundamentals_source: 'fundamentals-features/1',
+    },
+  }
+  await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.goto('/?deskDetails=1#desk')
+
+  // The desk renders a single table, StockBoard. Its source label sits
+  // immediately above it and reads the corrected source, visible without
+  // opening anything.
+  const board = page.getByLabel('Ranked stocks and cash')
+  await expect(board).toBeVisible()
+  await expect(page.getByLabel('Fundamental data source')).toContainText('stored point-in-time filing versions')
+
+  // The same source wording in the at-a-glance summary, and a curve whose
+  // policy and fundamentals are both current: the current-policy simulation.
+  await page.locator('summary', { hasText: 'Practice account' }).click()
+  const glance = page.getByLabel('The desk at a glance')
+  await expect(glance).toContainText('stored point-in-time filing versions')
+  await expect(glance.getByText('Current policy simulation', { exact: true })).toBeVisible()
+
+  // Same execution policy version, a record whose analyst read the frozen
+  // EDGAR snapshot: the board's label switches to the legacy source and the
+  // curve is flagged as older fundamental inputs rather than presented as
+  // the corrected simulation.
+  latest.provenance = { data: { fundamentals: 'edgar-frozen' } }
+  latest.curve = { ...latest.curve!, backtest: { ...latest.curve!.backtest, fundamentals_source: 'edgar-frozen' } }
+  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
+  await page.reload()
+  await expect(page.getByLabel('Fundamental data source')).toContainText('frozen EDGAR snapshot')
+  await page.locator('summary', { hasText: 'Practice account' }).click()
+  const glance2 = page.getByLabel('The desk at a glance')
+  await expect(glance2.getByText('Current policy, older fundamental inputs', { exact: true })).toBeVisible()
+  await expect(glance2).toContainText('frozen EDGAR snapshot')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Zero is not an up move: a flat day P/L keeps a neutral mark rather than
 // drawing a green up arrow beside +$0.
 test('a zero day P/L reads flat, not as an up move', async ({ page }) => {

@@ -2,7 +2,7 @@
 
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -242,6 +242,77 @@ def test_record_and_save(tmp_path):
     assert json.loads(path.read_text(encoding="utf-8"))["session"] == "2026-09-03"
 
 
+# The record names which data source the fundamental analyst read and carries
+# each cited figure's fiscal period end, so a corrected figure can be traced
+# to the quarter it refers to.
+def test_record_carries_the_fundamental_source_and_period_dates():
+    from backend.agents.trading.desk.opinions import Opinion
+
+    t = 3
+    n = 3  # SNDK, IREN, SPY
+    scores = np.full((t, n), np.nan)
+    scores[:, 0] = 0.8  # SNDK has a fundamental view
+    evidence = {"gross_margin": np.full((t, n), np.nan)}
+    period_ends = {"gross_margin": np.full((t, n), np.datetime64("NaT", "D"))}
+    period_ends["gross_margin"][:, 0] = np.datetime64("2025-12-31")
+    opinion = Opinion(
+        "fundamental",
+        scores,
+        evidence,
+        meta={"source": "fundamentals-features/1", "period_ends": period_ends},
+    )
+    report = replace(
+        _report(),
+        fundamentals_source="fundamentals-features/1",
+        opinions={"fundamental": opinion},
+    )
+    data = market_daily.record(report)
+    assert data["provenance"]["data"]["fundamentals"] == "fundamentals-features/1"
+    block = data["fundamental"]
+    assert block["source"] == "fundamentals-features/1"
+    # SNDK has a finite score, so its cited period ends are dated.
+    assert block["dates"]["SNDK"]["gross_margin"] == "2025-12-31"
+    # IREN has no finite score: it is not dated.
+    assert "IREN" not in block["dates"]
+
+
+# A legacy comparison run is labelled with the frozen source, and a name with
+# no finite score is never handed a fabricated date.
+def test_record_carries_the_legacy_source_when_the_desk_read_legacy():
+    report = replace(_report(), fundamentals_source="edgar-frozen")
+    data = market_daily.record(report)
+    assert data["provenance"]["data"]["fundamentals"] == "edgar-frozen"
+    assert data["fundamental"]["source"] == "edgar-frozen"
+    assert data["fundamental"]["dates"] == {}
+
+
+# The track-record curve names the fundamental data source its simulation's
+# analysts read, separate from the execution policy, so the page can tell a
+# corrected-input curve from an older one.
+def test_curve_block_carries_the_fundamental_data_source(monkeypatch):
+    from backend.agents.trading.desk import scorecard
+    from backend.agents.trading.desk import simulate as sim_module
+
+    report = replace(_report(), fundamentals_source="fundamentals-features/1")
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
+    monkeypatch.setattr(
+        scorecard,
+        "index_returns",
+        lambda store, ticker, dates: np.array([0.0, 0.0, 0.01, 0.0]),
+    )
+    block = market_daily.curve_block(report, None)
+    assert block is not None
+    assert block["fundamentals_source"] == "fundamentals-features/1"
+
+
 # A record is the day's decision and must not be silently replaced: saving
 # a second record for the same session is refused unless the caller says it
 # is deliberately rewriting it. And every record says what produced it.
@@ -396,8 +467,11 @@ def test_prune_keeps_newest_tone_and_records(tmp_path):
 def test_a_same_session_rerun_submits_no_trade(tmp_path, monkeypatch, capsys):
     market_daily.save(Path(tmp_path), market_daily.record(_report()))
     traded = []
+    seen_fundamentals = []
 
-    def fake_run(store, asof=None):
+    # Record the requested data source while returning the fixed desk fixture.
+    def fake_run(store, asof=None, fundamentals="corrected"):
+        seen_fundamentals.append(fundamentals)
         return _report()
 
     def fake_paper_trade(*args, **kwargs):
@@ -419,6 +493,9 @@ def test_a_same_session_rerun_submits_no_trade(tmp_path, monkeypatch, capsys):
     assert "refusing to re-run the day" in capsys.readouterr().out
     # The record on file is untouched, and no pending state was written.
     assert (Path(tmp_path) / "desk" / "asof=2026-09-03" / "desk.json").exists()
+    # The nightly asks the desk for the corrected fundamental source by
+    # default, and the guard runs before any trade is considered.
+    assert seen_fundamentals == ["corrected"]
 
 
 # A new day's tone refresh starts from the scores already stored, so only

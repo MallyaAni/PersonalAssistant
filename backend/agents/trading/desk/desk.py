@@ -59,6 +59,11 @@ class DeskReport:
     # the shadow track beside the live one without a second run.
     inputs: tuple[str, ...] = ()
     alternate: "DeskReport | None" = None
+    # Which data source the fundamental analyst read: `fundamental.CORRECTED_SOURCE`
+    # or `fundamental.LEGACY_SOURCE`. This names the data, so a grade or a
+    # recorded curve is never presented as measured under a source it was not.
+    # Separate from `inputs`, which names analyst augmentations such as the gap.
+    fundamentals_source: str = ""
 
     # The last session's grade and evidence for one name.
     def brief(self, ticker: str) -> dict[str, object]:
@@ -131,12 +136,20 @@ def tightening_for(store: MarketStore, panel: Panel, asof=None):
 EXPECTATIONS_GAP = "expectations-gap"
 LIVE_INPUTS: tuple[str, ...] = (EXPECTATIONS_GAP,)
 
+# The fundamental analyst's data source, passed to `run`. Corrected is the
+# desk's default: the as-of filing versions, where a missing ratio stays
+# missing instead of reading as a fabricated zero. Legacy is the frozen
+# EDGAR feature block, kept for explicit read-only side-by-side comparison.
+FUNDAMENTALS_CORRECTED = "corrected"
+FUNDAMENTALS_LEGACY = "legacy"
+
 
 # Run the whole desk as of a date.
 def run(
     store: MarketStore,
     asof: date | None = None,
     inputs: tuple[str, ...] = LIVE_INPUTS,
+    fundamentals: str = FUNDAMENTALS_CORRECTED,
 ) -> DeskReport:
     """Return the DeskReport for the book as of `asof` (latest if None).
 
@@ -144,23 +157,42 @@ def run(
     `()` for the plain rule. When the gap cannot be computed the desk
     falls back to the plain rule and says so in `inputs`, so a data
     fault never stops the record.
+
+    `fundamentals` names which data source the fundamental analyst reads:
+    the corrected as-of filing versions by default (`FUNDAMENTALS_CORRECTED`),
+    or the frozen EDGAR feature block (`FUNDAMENTALS_LEGACY`) for an
+    explicit read-only side-by-side comparison. Any other value is refused
+    before assembly, so corrected data can never be labelled legacy and a
+    misspelt mode is a caller error, not a silent change of data. In the
+    corrected mode a name with no stored versions gets no fundamental
+    opinion (never a fabricated zero and never a silent fallback), and a
+    store with no versions available for any book name at the decision
+    session raises `FundamentalSourceError` before assembly so no bogus
+    desk is written.
     """
+    if fundamentals not in (FUNDAMENTALS_CORRECTED, FUNDAMENTALS_LEGACY):
+        raise ValueError(
+            f"unknown fundamental data source {fundamentals!r}; expected "
+            f"{FUNDAMENTALS_CORRECTED!r} or {FUNDAMENTALS_LEGACY!r}"
+        )
     # The loaders live next to the torch models; importing them here keeps
-    # the desk importable where torch is absent (the gate container).
+    # the desk importable where torch is absent (the gate container). The
+    # legacy EDGAR loader is imported in `_fundamental_opinion`, which is the
+    # only path that reads it.
     from backend.market.levels_pit import point_in_time_levels
-    from backend.market.model import load_edgar_features, load_tone_features
+    from backend.market.model import load_tone_features
 
     panel, sides = book_panel(store, asof)
-    extra = load_edgar_features(store, panel, asof)
     tone = load_tone_features(store, panel, asof)
     view = regime.opine(panel, sides, tightening_for(store, panel, asof))
     opinions = {
-        fundamental.NAME: fundamental.opine(extra),
+        fundamental.NAME: _fundamental_opinion(store, panel, asof, fundamentals),
         technical.NAME: technical.opine(panel, view.ai_trend),
         sentiment.NAME: sentiment.opine(tone),
         value.NAME: value.opine(panel, point_in_time_levels(store, panel, asof), sides),
     }
-    plain = assemble(panel, sides, opinions, view)
+    source = _fundamental_source_id(fundamentals)
+    plain = assemble(panel, sides, opinions, view, (), fundamentals_source=source)
     if EXPECTATIONS_GAP not in inputs:
         return plain
     from backend.market import challenger
@@ -174,13 +206,86 @@ def run(
         print("expectations gap: no values on the book; the plain rule stands in")
         return plain
     live = assemble(
-        panel, sides, challenger.with_gap(opinions, gap), view, (EXPECTATIONS_GAP,)
+        panel,
+        sides,
+        challenger.with_gap(opinions, gap),
+        view,
+        (EXPECTATIONS_GAP,),
+        fundamentals_source=source,
     )
     return replace(live, alternate=plain)
 
 
+# The name of the fundamental data source a run mode reads.
+def _fundamental_source_id(mode: str) -> str:
+    """Return the source identifier for a fundamental run mode."""
+    if mode == FUNDAMENTALS_CORRECTED:
+        return fundamental.CORRECTED_SOURCE
+    if mode == FUNDAMENTALS_LEGACY:
+        return fundamental.LEGACY_SOURCE
+    raise ValueError(f"unknown fundamental data source {mode!r}")
+
+
+# The fundamental analyst's opinion for a run mode, raising on total absence
+# of the corrected source so a desk is never assembled without its input.
+def _fundamental_opinion(store, panel, asof, mode: str) -> Opinion:
+    """Return the fundamental Opinion for `mode` ("corrected" or "legacy")."""
+    if mode == FUNDAMENTALS_LEGACY:
+        from backend.market.model import load_edgar_features
+
+        extra = load_edgar_features(store, panel, asof)
+        return fundamental.opine(extra)
+    from backend.market import fundamental_features as ff
+    from backend.market import fundamentals_asof as fa
+
+    try:
+        versions = fa.load_versions(store, panel, asof)
+    except Exception as exc:  # noqa: BLE001 - a clear data error, not a bogus desk
+        raise fundamental.FundamentalSourceError(
+            "fundamental filing versions could not be read from the store: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+    # Drop the benchmark and any name whose stored frame has no versions at
+    # all: a present key is not evidence that a filing was ever on file.
+    usable = {
+        ticker: vs
+        for ticker, vs in versions.items()
+        if ticker != panel.benchmark and vs
+    }
+    if not usable:
+        raise fundamental.FundamentalSourceError(
+            "no fundamental filing versions are stored for any book name; "
+            "refusing to assemble a desk with a fabricated fundamental view"
+        )
+    try:
+        features = ff.features(panel, usable)
+    except Exception as exc:  # noqa: BLE001 - a clear data error, not a bogus desk
+        raise fundamental.FundamentalSourceError(
+            "fundamental filing versions could not be turned into features: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+    # The guard is about the decision, not the store: a frame on file is
+    # still no input when every filing in it is available only after the
+    # latest session, and a desk assembled then would rank the remaining
+    # analysts on a fundamental analyst that saw nothing.
+    if not features.available[-1, :].any():
+        raise fundamental.FundamentalSourceError(
+            "no fundamental filing versions are available for any book name "
+            "at the decision session; refusing to assemble a desk with a "
+            "fabricated fundamental view"
+        )
+    return fundamental.opine_corrected(features)
+
+
 # Grade, score and size a set of opinions into a report.
-def assemble(panel, sides, opinions, view, inputs: tuple[str, ...] = ()) -> DeskReport:
+def assemble(
+    panel,
+    sides,
+    opinions,
+    view,
+    inputs: tuple[str, ...] = (),
+    fundamentals_source: str = "",
+) -> DeskReport:
     """Return the DeskReport the desk's fixed rule makes of `opinions`."""
     graded = grading.grade(
         opinions[fundamental.NAME],
@@ -193,7 +298,17 @@ def assemble(panel, sides, opinions, view, inputs: tuple[str, ...] = ()) -> Desk
     scores = graded.as_scores(blended(opinions))
     last = len(panel.dates) - 1
     book = risk.size(scores[last], graded.grades[last], panel, view.today())
-    return DeskReport(panel, sides, opinions, view, graded, scores, book, inputs)
+    return DeskReport(
+        panel,
+        sides,
+        opinions,
+        view,
+        graded,
+        scores,
+        book,
+        inputs,
+        fundamentals_source=fundamentals_source,
+    )
 
 
 @dataclass(frozen=True)

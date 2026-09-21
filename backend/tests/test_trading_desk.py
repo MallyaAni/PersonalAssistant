@@ -355,3 +355,233 @@ def test_tightening_cuts_exposure_and_steepens_the_book():
     # cut is what changes the total.
     assert tight_gross == pytest.approx(calm_gross * tight.today().exposure)
     assert any("steadier" in s.position.note for s in tight_book)
+
+
+# ---- the desk's fundamental data source ----
+
+# A synthetic two-name book panel ending on the decision date, so the version
+# availability stored in the store lines up with the sessions the desk sees.
+def _desk_panel() -> Panel:
+    t = 372  # 2025-02-10 .. 2026-02-16
+    n = 2
+    close = np.full((t, n + 1), 100.0)
+    dates = np.array(
+        [date(2025, 2, 10) + timedelta(days=i) for i in range(t)],
+        dtype="datetime64[D]",
+    )
+    themes = {"N0": (AI_COMPUTE,), "N1": (AI_COMPUTE,)}
+    return Panel(
+        dates=dates,
+        tickers=("N0", "N1", "SPY"),
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1e6),
+        themes=themes,
+        benchmark="SPY",
+    )
+
+
+# A store holding corrected version frames: N0 has revenue but never a gross
+# profit, N1 files a gross profit too. All versions are public by the
+# decision session.
+def _write_corrected_versions(store, asof) -> None:
+    from backend.market import fundamentals_asof as fa
+    from backend.tests.test_fundamental_features import EIGHT, payload, row
+
+    n0 = fa.parse_versions(payload(Revenues=EIGHT))
+    n1 = fa.parse_versions(
+        payload(
+            Revenues=EIGHT,
+            GrossProfit=[
+                row(r["start"], r["end"], r["val"], r["filed"], r["accn"] + "g")
+                for r in EIGHT
+            ],
+        )
+    )
+    store.write_frame(fa.KIND, asof, "N0", fa.frame(n0), {"source": "test"})
+    store.write_frame(fa.KIND, asof, "N1", fa.frame(n1), {"source": "test"})
+
+
+# The desk's torch-bound loaders do not exist in the gate container; a stub
+# keeps the real `desk.run` path running while the corrected fundamental
+# analyst, the version adapter and the store are all real. The tone loader
+# returns the empty-book tone array (no view, never a crash); the legacy
+# EDGAR loader refuses, so a corrected run that reached it would fail loudly.
+@pytest.fixture
+def torch_loaders(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    from backend.market import language
+
+    # Supply the real empty tone representation without importing torch.
+    def load_tone_features(store, panel, asof=None):
+        return language.tone_features(panel, {})
+
+    # Fail if the corrected path unexpectedly reads the legacy feature block.
+    def load_edgar_features(store, panel, asof=None):
+        raise AssertionError("the legacy EDGAR loader must not run in corrected mode")
+
+    stub = SimpleNamespace(
+        load_edgar_features=load_edgar_features, load_tone_features=load_tone_features
+    )
+    monkeypatch.setitem(sys.modules, "backend.market.model", stub)
+    return stub
+
+
+# Run the real desk on the synthetic panel; the panel replaces the book's own
+# (which needs a full store), everything else in `run` is the real path.
+def _run_desk(store, monkeypatch, asof=date(2026, 2, 16), **kwargs):
+    from backend.agents.trading.desk import desk as trading_desk
+
+    panel = _desk_panel()
+    sides = {"N0": AI_SIDE, "N1": SOFTWARE_SIDE}
+    monkeypatch.setattr(
+        trading_desk, "book_panel", lambda store, asof=None: (panel, sides)
+    )
+    return trading_desk.run(store, asof, inputs=(), **kwargs)
+
+
+# The desk defaults to the corrected fundamental source: a missing ratio stays
+# missing in the evidence and never reaches a score as a fabricated zero.
+def test_desk_run_defaults_to_corrected_fundamentals(
+    tmp_path, monkeypatch, torch_loaders
+):
+    from backend.agents.trading.desk import fundamental
+    from backend.market.store import MarketStore
+
+    asof = date(2026, 2, 16)
+    store = MarketStore(tmp_path)
+    _write_corrected_versions(store, asof)
+    report = _run_desk(store, monkeypatch, asof)
+    assert report.fundamentals_source == fundamental.CORRECTED_SOURCE
+    opinion = report.opinions[fundamental.NAME]
+    assert opinion.meta["source"] == fundamental.CORRECTED_SOURCE
+    # N0's gross margin was never filed: missing in the evidence, and the
+    # real growth legs still earn a finite score.
+    assert np.isnan(opinion.evidence["gross_margin"][-1, 0])
+    assert np.isfinite(opinion.scores[-1, 0])
+    # N1 filed a gross profit: its margin is a real number.
+    assert np.isfinite(opinion.evidence["gross_margin"][-1, 1])
+
+
+# The explicit legacy option reads the frozen EDGAR block and is labelled as
+# such, so a side-by-side comparison is honest about which data it used.
+def test_desk_run_legacy_option_reads_the_frozen_block(
+    tmp_path, monkeypatch, torch_loaders
+):
+    from datetime import UTC, datetime
+
+    from backend.agents.trading.desk import fundamental
+    from backend.market import edgar
+    from backend.market.edgar import CompanyRecord, QuarterFact
+    from backend.market.store import MarketStore
+    from backend.tests.test_fundamental_features import EIGHT
+
+    asof = date(2026, 2, 16)
+    store = MarketStore(tmp_path)
+    _write_corrected_versions(store, asof)
+    facts = tuple(
+        QuarterFact(
+            "revenue",
+            date.fromisoformat(r["start"]),
+            date.fromisoformat(r["end"]),
+            r["val"],
+            date.fromisoformat(r["filed"]),
+        )
+        for r in EIGHT
+    )
+    record = CompanyRecord("N0", 0, (), facts, datetime(2026, 2, 16, tzinfo=UTC))
+    legacy = edgar.edgar_features(_desk_panel(), {"N0": record})
+    torch_loaders.load_edgar_features = lambda store, panel, asof=None: legacy
+    report = _run_desk(store, monkeypatch, asof, fundamentals="legacy")
+    assert report.fundamentals_source == fundamental.LEGACY_SOURCE
+    opinion = report.opinions[fundamental.NAME]
+    # The frozen block's zero-fill: the never-filed margin reads as a zero.
+    assert opinion.evidence["gross_margin"][-1, 0] == 0.0
+
+
+# A mode string that names neither source is refused before assembly, so a
+# misspelt mode can never label corrected data as legacy.
+def test_desk_run_refuses_unknown_fundamental_modes(
+    tmp_path, monkeypatch, torch_loaders
+):
+    from backend.agents.trading.desk import desk as trading_desk
+    from backend.market.store import MarketStore
+
+    with pytest.raises(ValueError, match="unknown fundamental data source"):
+        trading_desk.run(
+            MarketStore(tmp_path), date(2026, 2, 17), inputs=(), fundamentals="bogus"
+        )
+
+
+# A stored frame whose version list is empty is not a filing: the desk refuses
+# to assemble rather than count a present key as covered data.
+def test_desk_run_refuses_empty_version_frames(
+    tmp_path, monkeypatch, torch_loaders
+):
+    from backend.agents.trading.desk import fundamental
+    from backend.market import fundamentals_asof as fa
+    from backend.market.store import MarketStore
+
+    asof = date(2026, 2, 16)
+    store = MarketStore(tmp_path)
+    store.write_frame(fa.KIND, asof, "N0", fa.frame([]), {"source": "test"})
+    with pytest.raises(fundamental.FundamentalSourceError):
+        _run_desk(store, monkeypatch, asof)
+
+
+# A frame whose filings are all public only after the decision session is no
+# input to that decision: the desk refuses rather than rank on an analyst
+# that saw nothing.
+def test_desk_run_refuses_versions_available_only_after_the_decision(
+    tmp_path, monkeypatch, torch_loaders
+):
+    from backend.agents.trading.desk import fundamental
+    from backend.market import fundamentals_asof as fa
+    from backend.market.store import MarketStore
+    from backend.tests.test_fundamental_features import payload, row
+
+    asof = date(2026, 2, 16)
+    store = MarketStore(tmp_path)
+    late = fa.parse_versions(
+        payload(Revenues=[row("2025-01-01", "2025-03-31", 100, "2026-03-01", "late")])
+    )
+    store.write_frame(fa.KIND, asof, "N0", fa.frame(late), {"source": "test"})
+    with pytest.raises(fundamental.FundamentalSourceError):
+        _run_desk(store, monkeypatch, asof)
+
+
+# A malformed version frame fails as a named data error before assembly, not
+# as a bare ValueError from deep in the read path.
+def test_desk_run_raises_clearly_on_malformed_version_frames(
+    tmp_path, monkeypatch, torch_loaders
+):
+    from backend.agents.trading.desk import fundamental
+    from backend.market import fundamentals_asof as fa
+    from backend.market.store import MarketStore
+
+    asof = date(2026, 2, 16)
+    store = MarketStore(tmp_path)
+    store.write_frame(
+        fa.KIND,
+        asof,
+        "N0",
+        {
+            "name": ["revenue"],
+            "tag": ["us-gaap:Revenues"],
+            "start": ["2025-01-01"],
+            "end": ["2025-03-31"],
+            "value": ["not-a-number"],
+            "filed": ["2025-05-01"],
+            "accepted": [""],
+            "accession": ["a"],
+            "form": ["10-Q"],
+        },
+        {"source": "test"},
+    )
+    with pytest.raises(fundamental.FundamentalSourceError):
+        _run_desk(store, monkeypatch, asof)

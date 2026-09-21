@@ -47,6 +47,11 @@ class Opinion:
     scores: np.ndarray
     # {feature name: (T, N) array} the analyst would cite for a name.
     evidence: dict[str, np.ndarray] = field(default_factory=dict)
+    # Metadata interpreted by the analyst and serialized by the record writer: the
+    # data source/version its evidence came from, and per-feature fiscal
+    # period ends, so a record can say what a corrected figure actually
+    # refers to. Deliberately optional: most analysts carry nothing here.
+    meta: dict[str, object] = field(default_factory=dict)
 
     # Ranks in [0, 1] across the names with a score on each session.
     def ranks(self) -> np.ndarray:

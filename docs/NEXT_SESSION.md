@@ -29,6 +29,46 @@ supervision beyond the input fix; that alone is not this clarified objective.
 
 ## 2026-09-21 — User rejected stopping; live correctness migration active
 
+15:44 UTC: independent current-data comparison COMPLETED successfully:
+exact legacy grades/scores/targets replay; valuation scores unchanged;
+8 grade changes, 7 target changes, 2.84556% one-way target turnover; scored
+names 90 -> 88 among 94 non-SPY columns on September 18. Two hypothetical
+funded account previews pass cash bounds; no broker calls. Full artifact:
+`E:/AgentWorkspace/entry-timing-pilot-20260920/live-migration-comparison.json`.
+OpenCode UI correction finished; independently reviewed/imported ONLY its
+three frontend files. Root reran both named Playwright journeys: 2 passed;
+production TypeScript/Vite build passed (existing CSS/chunk warnings).
+Original worker no longer active. Patch is ready for normal deploy gate after
+diagram synchronization check. Preserve local backend cleanup when creating
+the checkpoint. Do not rewrite old live records or claim current served
+grades use corrected inputs until a new nightly record is actually produced.
+
+15:08 UTC: original worker finished; LIVE_HANDOFF reports 221 tests passed,
+but no frontend build/browser run. Independently reviewed and imported ONLY
+the nine changed backend files into desktop main (now 95e55e4a, documentation
+checkpoint pushed). Production patch remains uncommitted and undeployed.
+Root ran 102 focused tests (desk/daily/features/asof/shadow/paper/funding),
+all passed, no skips; Ruff clean. Fixed misleading comments about inputs vs
+execution policy, comments above new test helpers, and one test filing dated
+before its quarter end. The 19 feature tests pass after that fixture fix.
+
+Current-data comparison is RUNNING as desktop exec session 83773, process
+started 15:04:30 UTC, external `compare-live-fundamentals.py`; log
+`live-migration-comparison.log`, final `live-migration-comparison.json`.
+Do not rerun while active. It evaluates the full incumbent expectation-gap
+path twice, hence takes minutes. No live writes or broker calls.
+
+Sent bounded FRONTEND-ONLY correction to SAME OpenCode session
+`ses_f3c0be438ffePE3J3uOAcb1tVZ`; current log now
+`/tmp/codex-opencode-live-fundamentals-ui-20260921.jsonl`.
+Worker must remove notice from unused EveryGrade, render concise source on
+actual StockBoard area, fix test selector, and run browser/build against its
+own served tree (shared node_modules exists at ~/anios/frontend/node_modules).
+No backend edits by worker: root comment/fixture cleanup is now local and
+must not be overwritten by copying remote backend again. Import/review only
+frontend files after worker finishes; old LIVE_HANDOFF exists, so check log
+completion rather than treating its existence as proof the new pass ended.
+
 14:33 UTC: worker PID 2523627 still running, now wrote analyst/run-mode/source
 guard/metadata tests in test_fundamental_features, test_trading_desk and
 test_market_daily. Worker reports a separate 76-test execution regression run
