@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-09-21 07:25 UTC — Supervised experiment completed; no promotion
+
+Read `docs/research/entry-context-results-2026-09-21.md` for the morning
+handoff, actual results and remaining production limitations. Fixed context
+run at 48853b6e finished in 98 seconds, return code 0, all 54 account paths
+replayed with artifact hashes, predictions, exact decisions and NAV 1e-10.
+At 10 bps/side, pooled context-minus-price timing difference +0.072 bp/day,
+95% interval [-0.130,+0.269]; later-window skip versus always-enter was
+-22.803 [-40.577,-6.785]. No reliable incremental edge. No retuning, GPU
+escalation or live promotion justified. Prior RTX5080 pilot is already done.
+Results at `E:/AgentWorkspace/entry-timing-pilot-20260920/context-run-01/`.
+OpenCode work is complete and no worker remains active. Disable the overnight
+heartbeat after saving this handoff; the bounded supervised phase is done.
+Do not claim the broad "best desk" objective is achieved: the live legacy
+fundamental path and survivor bias remain unresolved, and fresh forward
+evidence needs future observations. Production remains gateway 8c17e72a;
+research additions are committed separately and have no deployment path.
+
 ## 2026-09-21 07:02 UTC — Context experiment accepted for one bounded run
 
 OpenCode review corrections independently checked and imported: entry_context
