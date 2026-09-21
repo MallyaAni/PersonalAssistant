@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-09-21 — Funded allocation worker dispatched from reviewed module
+
+Pure allocation checkpoint **a8674511** pushed:36 repository tests and14
+independent checks passed; Ruff check/format clean. allocation.py SHA256
+`1a35cc5a18b75b20f179fd795ab27e8e1f5cc7233e3d65f5796f0ac7c05fc616`.
+Not deployed; no runtime caller selects it yet. No strategy performance claim.
+
+CURRENT **NEW session ses_f3a93c45affeaITi1eHsm9kTDO**, PID3078917,
+isolated `/home/animallya96/codex-worktrees/trading-funded-allocation-20260921`,
+branch `codex/trading-funded-allocation-20260921`, base **a8674511**.
+Contract **CODEX_FUNDED_ALLOCATION_TASK.md**, **CODEX_EXECUTION_NOTES.md**;
+expected **FUNDED_ALLOCATION_HANDOFF.md**; current log
+`/tmp/codex-opencode-funded-allocation-20260921.jsonl`.
+Previous pure-math worker completed; do not resume it. Single writer.
+New task integrates optional shared daily allocation/quantity planning in actual
+paper.plan and simulate.run using _Book, stable composition, separate QQQ data,
+current-cash/fee funding, pending/conflicts, priority cuts and daily recovery.
+Simulation starts NAV1 with continuous shares; do not floor its orders to zero.
+Whole-share paper adapter must preserve cash/name bounds after rounding.
+An unavailable diagnostic can still contain an executable known-risk cut;
+missing held valuation must not silently shrink NAV and resize other assets.
+
+External full contract `funded-allocation-task.md`, launch
+`start-funded-allocation.sh`. Compact progress tool on Spark:
+`python3 /tmp/codex-compact-opencode-status.py <current-log>` avoids replaying
+large source outputs. Review actual diffs and ledger tests before adoption.
+External **allocation-evaluation-acceptance.md** now fixes metrics/episode
+definitions and common window before candidate outcomes. Use existing cached
+report, controls and aligned benchmark prices; no model rerun. Compare BOTH
+SPY/QQQ, downside participation, false exits, recovery, turnover/concentration
+and exposure-matched diagnostics. Binding one-table UI and normal deployment
+follow acceptance; not complete at another module/unit-pass checkpoint.
+
+Live remains a89bba40 with previously verified fixes. No orders, training,
+production writes or new deployment this turn. Tracked local tree clean after
+a8674511 before this handoff update; unrelated untracked evaluations preserved.
+
 ## 2026-09-21 — Pure allocation accepted; funded execution is next
 
 Worker ses_f3ab2cd27ffebDtYOXhZIrQYhB finished and PID3043917 exited.
