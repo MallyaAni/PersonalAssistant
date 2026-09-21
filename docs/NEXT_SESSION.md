@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-09-21 22:25 UTC — Independent review findings queued for parallel workers
+
+All six current processes alive; simulator session is now confirmed
+**ses_f3a04173dffe1lupkL9jg0F7mo**, PID3317369. Others unchanged. UI has actual
+types/DeskPanel/StockBoard edits; other workers are still inspecting/prototyping,
+without final owned source or handoffs. No completed patch to integrate yet.
+No workers interrupted this check. vLLM6 running/0 queued, services unchanged.
+
+**FAILED independent reproduction on seeded draft:** with cash=equity100000,
+SPYprice200 and desiredSPY0.8, index_eligible=False still buys400 continuous
+shares or75 whole shares. True buys400. Current execution incorrectly changes
+the cap instead of enforcing index permission. This is already required in
+simulator contract; retain until corrected. External check-parallel-review.py,
+remote `/tmp/codex-check-parallel-review.py`, exercised real plan_funded.
+
+**FAILED date rendering reproduction in partial UI:** date-only as_of2026-09-18
+through the banner's new Date/toLocaleString NY expression displaysSep17,8PM.
+Session dates must remain dates; convert actual timestamps only. Browser proof
+required after correction. Hardcoded practice-account label also needs actual
+account provenance or a neutral label; do not invent account identity.
+
+Acceptance worker's prototype index test used cash90/equity100,SPYprice200 and
+whole shares: both eligible/ineligible round to zero, hiding the defect. Its
+exit fixture values positions200+cash50 but equity100. Root recorded corrected
+economic fixtures; do not count prototype prints as passing acceptance tests.
+Root replayed prototypes (500 conservation baskets/229-session trace) but their
+missing-price-as-zero accounting cannot validate unavailable NAV behavior.
+
+Review saved externally **parallel-review-20260921-2225.md**, copied to
+simulator/acceptance/UI checkouts as **CODEX_REVIEW_NOTES.md**. Their reading it
+is **UNVERIFIED** while active; explicitly send these corrections after their
+handoffs, without starting concurrent writers. Other roles continue unchanged.
+No source accepted/deployed and no candidate performance scored. Starting
+mainf5fb335c, pull up to date, tracked tree clean; unrelated evaluations intact.
+Diagram impact NONE — review/coordination evidence only.
+
 ## 2026-09-21 22:00 UTC — Parallel roles progressing; stalled simulator replaced
 
 Objective remains reviewed funded allocation, real comparison, one-table API/UI
