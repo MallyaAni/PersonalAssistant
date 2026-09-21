@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-09-21 — Pure allocation accepted; funded execution is next
+
+Worker ses_f3ab2cd27ffebDtYOXhZIrQYhB finished and PID3043917 exited.
+Reviewed actual allocation.py and8 worker tests, independently reran14 external
+arithmetic/boundary checks: **14 passed**, including both missing-data defects.
+Imported only allocation.py, test_portfolio_allocation.py and protocol. Root
+added missing function comments, explicit complexity annotations (worker's two
+lint failures were not an acceptable clean result), corrected availability and
+empty-candidate documentation. **36 local tests**, **14 independent checks**,
+Ruff check/format and diff check pass on final local source. No orders, training
+or production writes. Pure arithmetic is verified; execution/performance and
+deployment remain **UNVERIFIED**. No live policy change yet.
+
+NEXT: fresh isolated OpenCode execution task based on this accepted module,
+following external allocation-execution-review-notes.md and full allocation
+contract. Must actually integrate shared funded paper/simulator orders, stable
+composition, separate QQQ history, pending/fills, priority cuts and re-entry;
+then root evaluates fixed candidates/common window and binds the one-table UI.
+Do not resume previous worker sessions. Check latest entry for execution worker
+identity before starting any writer. Existing live remains a89bba40.
+
+User challenged the inference that ML is unhelpful. Clarified that narrow
+timing/context experiments do not reject ML generally. ML remains in scope
+for distinct stock-relative-return, risk and execution hypotheses with adequate
+point-in-time data and independent evidence; no retuning reused holdout or new
+fit before the funded evaluation path is correct. Several-days/weeks objective
+and both SPY/QQQ benchmarks unchanged.
+
+Starting main ee6588e6, pulled up to date; only these task files staged.
+Diagram impact: NONE — pure module within existing desk; no new component flow.
+
 ## 2026-09-21 — Second independent math check; fresh bounded worker
 
 First review corrections now pass **12 of14 independent checks** in external
