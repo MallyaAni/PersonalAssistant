@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-09-21 — Second independent math check; fresh bounded worker
+
+First review corrections now pass **12 of14 independent checks** in external
+`test_allocation_independent.py`, against `allocation-corrected-snapshot.py`.
+Price-level trend, joint covariance calculation, absolute caps, unknown-stock
+event cuts, invalid price rejection, index eligibility and causality passed.
+**FAILED**: empty candidate still retains stock if benchmark history is missing;
+vol_trend permits risk increases with missing200-price trend history. These
+are concrete input-policy defects, not evidence about strategy profitability.
+Sent exact failures in **CODEX_ALLOCATION_SECOND_REVIEW.md**.
+
+Previous session had grown to173k context and spent another12 minutes without
+writing tests. Stopped PID2993948 and confirmed exit. **CURRENT fresh session
+ses_f3ab2cd27ffebDtYOXhZIrQYhB**, PID3043917, same isolated
+`trading-allocation-path-20260921` checkout. CURRENT log
+`/tmp/codex-opencode-allocation-finish-20260921.jsonl`.
+It has read the second-review contract and existing module with21k context.
+Task: two fixes, compact focused tests, Ruff, **ALLOCATION_DECISION_HANDOFF.md**,
+then stop for review. No concurrent writer, integration or deployment yet.
+DO NOT resume old ses_f3b027cf5ffeGAwFUe1w4JTDkC while this worker is active.
+
+Additional **VERIFIED** data boundary: trusted cached stock panel2945x95 has
+SPY but NO QQQ. Root created external **allocation-benchmark-prices.npz/.json**
+using `prepare-allocation-benchmarks.py`:2945 finite positive adjusted prices
+for EACH benchmark from immutable Sep18 snapshot; SPY exactly equals original
+panel. Pass these separately to optional execution context; do not append QQQ
+to frozen report matrices and misalign its scores/grades/ledger. No model rerun.
+Updated external `allocation-execution-review-notes.md` with this requirement.
+Common-window controls and all live acceptance remain as recorded below.
+
+Local start HEAD917c2cc3, main pulled up to date, existing untracked evaluations
+preserved. Handoff-only change; allocation remains **UNVERIFIED / not shipped**.
+Diagram impact: NONE — review evidence and task coordination only.
+
 ## 2026-09-21 — Independent allocation review rejected first draft
 
 Objective remains shared stock/index/cash allocation, funded daily execution,
