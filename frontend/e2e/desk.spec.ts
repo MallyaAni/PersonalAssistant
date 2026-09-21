@@ -44,6 +44,7 @@ test('single-table strategy plan keeps actions, holdings and reasons consistent'
   await page.reload()
   await expect(board.getByRole('button', {name: 'TEST17', exact: true})).toHaveCount(1)
   await page.setViewportSize({width: 390, height: 844})
+  if (await page.getByRole('button', {name: 'Hide Sidebar'}).isVisible()) await page.mouse.click(380, 500)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.screenshot({path: 'test-results/strategy-table-mobile.png', fullPage: true})
   await page.setViewportSize({width: 1440, height: 1000})

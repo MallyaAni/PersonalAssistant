@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-20 — Implementation delegated to OpenCode on Spark
+
+User explicitly requested local OpenCode coding to reduce Codex usage, with
+Codex retaining architecture and review. A bounded research feature task is
+running under `spark/deepseek-v4-flash`; no model-server changes were made.
+Isolated detached checkout on spark1:
+`/home/animallya96/codex-worktrees/trading-fundamental-features-20260920`,
+base `8c17e72aae2520fe46d69fe0e4dd5b0b317fdf5c`. Task contract is
+`CODEX_TASK.md` there; OpenCode session `ses_f3e2a9abcffe1RqJ2eMMs4hriB`;
+output `/tmp/codex-opencode-trading-20260920.jsonl`. Read `HANDOFF.md` when
+ready, inspect the actual diff, and independently run acceptance tests before
+integrating. No approval to deploy or promote its model/strategy was delegated.
+
+Scope: a separate versioned quarterly fundamental feature adapter, retaining
+NaN for unavailable inputs, aligned fiscal periods, as-of tag selection and
+prospective revisions, with append-future-data invariance tests. Frozen
+production/research fingerprints and existing shadow semantics must stay
+unchanged. This prepares valid inputs; it does not establish trading edge.
+Shared `~/anios` has unrelated AGENTS.md changes and scratch files: preserved.
+
+Deployment VERIFIED: backend checkpoint e1f2a87c passed 3,779 unit tests
+(24 skips) and all 100 routing tests through scripts/deploy.sh. Frontend
+follow-up 8c17e72a deployed through the same script; cheap post checks passed.
+Live authenticated Playwright against that gateway via an SSH loopback tunnel
+rendered all 93 names in one table with only BUY/HOLD/SELL, no page/console
+or required-market-response errors, and no page overflow at 390px. Screenshots
+and read-only test scripts are under
+`E:/AgentWorkspace/entry-timing-pilot-20260920/`. Direct LAN port 8080 is
+intentionally loopback-bound; testing needs the tunnel. Mobile navigation
+dismisses by tapping its backdrop, not the obscured header toggle.
+Two local desk browser journeys and nine strategy parity tests pass.
+
+Corrected historical simulation completed: 2,936 sessions through 2026-09-04,
+policy cash-bounded-breakout-rotation/2. Artifact corrected-policy-curve.json
+in the same external folder. Survivor-universe/data limits remain; the
+retrospective curve does not prove a durable edge. Name weights can drift
+above the entry cap after fills; a target cap is not a continuous risk limit.
+
 ## 2026-09-20 — Shared strategy planner and one-table dashboard
 
 User requested implementation and dashboard repair, then explicitly asked to
