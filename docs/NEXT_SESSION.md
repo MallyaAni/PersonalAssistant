@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-22 — Input audit reviewed; raw/adjusted and availability gates clarified
+
+Checkpoint `6df1109` integrates the root-corrected comparison input audit and
+explicit price-basis clarification, before outcomes. Cached Alpaca intraday bars
+use adjustment=all; do not feed them into raw conversion formulas. Tests must
+prove raw/adjusted scale equivalence and explicit basis before scoring.
+
+Root also verified saved session dates are not availability: the09-14 record
+was written09-15 at10:18:21 New York. Earlier entries cannot use it. Grades are
+deterministic, contrary to the worker's original model-output claim. Earliest
+archived-grade entry09-08 has a20-session outcome on10-06, outside the09-18
+cache. Primary comparison remains unmeasurable on that archive; do not shorten
+the horizon or substitute an unrelated old candidate evaluation.
+
+Evidence role is integrated/root-owned. Adapter796057 remains active; wait for
+its final handoff, then review against the updated root protocol (its seeded
+copy predates units clarification). New calendar888056 independently verifies
+2019–2025 official exchange schedules. Manifest/tasks/MAC_CONTINUATION.md
+describe exact ownership. Root added a verified2026–2028 early-close data file;
+the entry engine does not yet consume it. No historical scoring or deployment.
+
 ## 2026-09-22 — Comparison protocol fixed; two bounded OpenCode workers active
 
 Protocol checkpoint `b507f70` fixes the level mapping, comparator, eligibility,
