@@ -1,5 +1,30 @@
 # Next session
 
+## 2026-09-22 — Personal account integration reviewed and pushed
+
+Verified source checkpoint `95ee6fada42b2e6b7f73d0d207286306632bbc1b` on
+`codex/trading-integration-20260922`: **272 relevant checks pass**, including
+11 ASGI API cases plus personal isolation, funding, paper and parity suites.
+Log: `/tmp/codex-personal-combined-20260922.log` on Spark1. All three OpenCode
+workers are finished and integrated; root owns their files. Never recopy worker
+source over root corrections. Manifest `/tmp/codex-intraday-workers-20260922.json`
+and root `MAC_CONTINUATION.md` carry current ownership and next steps.
+
+Personal recommendations now use actual holdings and optional explicit cash,
+with eligibility checked before and after shared funding. Unknown cash cannot
+claim a funded buy. No uncovered liquidation or invented sale proceeds; paper
+remains separate. Root reproduced and corrected six additional boundary cases,
+including paper cash-scope leakage, unfunded entries and invalid account prices.
+Ruff passes for changed source/new tests; one pre-existing PT006 in the old
+decision test was reproduced at the parent and excluded from that lint check.
+
+No deployment or UI changes. Entry engine checkpoint `1a2c2c1` remains an isolated
+research library, with its earlier80 tests; these changes do not make it live.
+Performance relative to unchanged momentum is **UNVERIFIED**. Next: fixed causal
+setup mapping and fair entry-quality/turnover comparison on identical eligible
+data, zero added costs and an honest execution proxy. No fitting or threshold
+search; no midpoint-fill or best-strategy claim. See the detailed root handoff.
+
 ## 2026-09-22 — Causal entry research engine integrated; 80 checks pass
 
 Root checkpoint `1a2c2c1aa513667b7aa85f014d80acf94b365716` is pushed on
