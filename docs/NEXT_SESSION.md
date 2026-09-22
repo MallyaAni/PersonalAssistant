@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-09-22 — Preparation integrated; remaining gate is data evidence
+
+Source checkpoint `f7703e2` integrates reviewed preparation and root-corrected
+tests. VERIFIED: 55 preparation/replay checks, Ruff/format, scoped strict mypy.
+Log `/tmp/codex-preflight-integrated-20260922.log`. Root replaced a false prefix
+test (the worker compared the same corrupt cache twice) with separate clean
+input and added duplicate-preservation and missing-session denominator checks.
+All OpenCode roles have exited and are integrated/root-owned. Never recopy their
+old source, restart them or import seeded dependencies/Git history.
+
+Basis report `b989047ca00feb1ea55466f0411d752a49527f4c` is root-reviewed:
+`docs/research/intraday-price-basis-reconciliation-2026-09-22.md`. Eight bounded
+free IEX all/raw requests independently checked four action examples; evidence
+`/tmp/codex-provider-adjustments-20260922.json`. No source caches were written.
+Current AVGO/WRB responses differ from cached specimens; WDC/APTV cached values
+match current all-adjusted responses despite disagreement with daily inputs.
+Neither a universal correction nor all-September compatibility is established.
+The original worker's raw-price and September-readiness claims are superseded.
+FAILED: historical cross-provider scale compatibility. UNVERIFIED: performance
+comparison, midpoint fills and live adoption. No outcomes scored or deployment.
+
+User reports 17% weekly usage left: conserve review tokens, no feature expansion,
+repeated baselines, whole-cache audits or repeated provider samples. Read existing
+evidence first. Remaining work is a bounded compatible-input/forward-evidence
+path, not more strategy variants. Require explicit action/adjustment provenance
+across full prior-20-session history and outcome windows; four recent matching
+closes are insufficient. Keep fixed 20/5-session horizons and missing outcomes.
+Archived records through the cached 09-18 price end have no mature primary labels.
+Stay quiet when no new actionable evidence; no new worker merely to stay busy.
+
 ## 2026-09-22 — Corrected replay verified; preparation wiring underway
 
 Checkpoint `4730d6cb4877c7e7318cff6c20d9c9e5a2d52bf5` is pushed with the reviewed
