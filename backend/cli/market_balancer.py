@@ -128,7 +128,7 @@ def _green_day_skip(data_dir: Path, latest: dict, quotes: dict, log_path: Path) 
         _green_day_skip_locked(data_dir, latest, quotes, log_path)
 
 
-# Apply green-opening cancellations while holding the shared paper-state lock.
+# Cancel only legacy discretionary closing sells, preserving funded and risk orders.
 def _green_day_skip_locked(
     data_dir: Path, latest: dict, quotes: dict, log_path: Path
 ) -> None:
@@ -145,7 +145,12 @@ def _green_day_skip_locked(
         return
     state = paper.load_state(data_dir)
     pending_sells = [
-        p for p in state.pending if p.get("side") == "sell" and not p.get("event_id")
+        p
+        for p in state.pending
+        if p.get("side") == "sell"
+        and not p.get("event_id")
+        and not p.get("priority")
+        and p.get("execution_timing") != "next_open"
     ]
     action_rows = {r.get("ticker"): r for r in latest.get("actions") or []}
     clients = None

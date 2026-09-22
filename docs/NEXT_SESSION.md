@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-09-22 — Funded implementation reviewed; strategy remains experimental
+
+All six Mac OpenCode workers completed; none remains active. Owned paper changes
+and independently corrected ML research are integrated in Spark1
+`/home/animallya96/codex-worktrees/trading-integration-20260922`. No dashboard,
+production deployment, real orders or model-service changes.
+
+Root reproduced and fixed paper exclusions resurrecting on scheduled refresh,
+over-cutting retained names during missing-evidence exits, and stale external NAV
+doubling stock sizing. Exclusions now survive save/load; paper sizes against
+marked holdings+cash and shares simulator fallback semantics. Fee-driven company
+cap trims round up within whole shares held. Missing/invalid account values block.
+Two older tests assumed no settled cash or applied fills twice; corrected them to
+assert actual pre-fill funding and post-fill balances, preserving strict invariants.
+
+VERIFIED: broad trading/market/allocation run **874 passed**, **2 skipped**,
+48 warnings. FAILED: two learned-ranker coverage tests in `test_market_model.py`;
+both independently reproduce on untouched base `2d89aa8` (34 absent score rows,
+first213), not a regression from this change. Logs:
+`/tmp/codex-mac-trading-broad-20260922.log` and
+`/tmp/codex-market-model-baseline-failures-20260922.log`.
+UNVERIFIED: full deployment gates, production behavior, untouched strategy edge.
+No change to the learned model is authorized by this implementation milestone.
+Final focused acceptance: **374 passed**,5 existing warnings,5.13s; log
+`/tmp/codex-mac-final-focused-20260922.log`. Ruff reports five pre-existing
+findings in `backend/api/v1/market.py`, identical on base2d89aa8; remaining
+changed Python files pass. No unrelated lint cleanup or waiver was added.
+
+The fixed10bps evaluation and predeclared25bps stress are complete. Vol full-window
+CAGR22.01%/DD24.59%, but only34.08% rolling-both success; at25bps CAGR20.13%
+versusQQQ20.06%, rolling-both25.44%. Vol_trend failsQQQ return. These are reused,
+survivor-biased observations, not grounds for adoption. Do not rerun the unchanged
+fractional simulations or desk.run for later paper/whole-share-only changes.
+
+See `docs/research/trading-funded-validation-2026-09-22.md` for implementation,
+metrics/provenance and `docs/research/trading-ml-path-2026-09-22.md` for corrected
+primary-paper findings. The latter specifies one prospective10-session hypothesis,
+true PIT inputs/membership, overlap purging and same-cost next-open comparison
+against both benchmarks. It does not authorize fitting, sweeps, or live adoption.
+Root `MAC_CONTINUATION.md` holds local continuation details. Diagram impact: NONE.
+
 ## 2026-09-22 — Mac owns trading continuation; implementation before dashboard
 
 Windows is powered off. User transferred supervision to Mac task

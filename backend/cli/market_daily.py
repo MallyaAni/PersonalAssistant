@@ -381,6 +381,8 @@ def _settled_rows(settled, panel) -> list[dict]:
 # Submitting while the market is open would fill a day order now, at
 # whatever price, which is not the trade that was measured. Explicit intraday
 # recovery permits only event sells; all ordinary orders keep the nightly guard.
+# Funded allocation orders and mandatory risk cuts retain their measured next-open
+# execution, rather than inheriting the legacy closing-auction sell policy.
 # The nightly run
 # is after the close; a run by hand during the session is refused whole and
 # told why.
@@ -431,7 +433,12 @@ def _submit(
             print(line + "  REFUSED: the market is open")
             continue
         try:
-            if order.side == "sell" and not order.event_id:
+            if (
+                order.side == "sell"
+                and not order.event_id
+                and not order.priority
+                and order.execution_timing != "next_open"
+            ):
                 response = client.submit_market_on_close(
                     order.symbol,
                     order.qty,
@@ -463,6 +470,34 @@ def _submit(
             refused.append(f"{order.side} {order.symbol}: {exc}")
             print(line + f"  REFUSED: {exc}")
     return submitted, refused
+
+
+# Preserve execution policy and reference evidence before an order can be sent.
+def _pending_orders(orders, session, prices, reference_session):
+    from backend.agents.trading.desk import paper
+
+    decision_at = datetime.now(tz=UTC).isoformat()
+    return [
+        {
+            "client_order_id": order.client_order_id
+            or paper.order_id(session, order.symbol, order.side),
+            "symbol": order.symbol,
+            "side": order.side,
+            "qty": int(order.qty),
+            "session": session,
+            "reason": order.reason,
+            "event_id": order.event_id,
+            "priority": order.priority,
+            "execution_timing": order.execution_timing,
+            "execution": {
+                "decision_at": decision_at,
+                "reference_price": prices.get(order.symbol),
+                "reference_session": str(reference_session),
+                "reference_source": "daily panel close",
+            },
+        }
+        for order in orders
+    ]
 
 
 # Save broker acknowledgments without treating accepted orders as confirmed fills.
@@ -699,26 +734,7 @@ def _paper_trade(
     # leaves a record the next session can ask the broker about, rather
     # than a gap that has to be guessed at from positions.
     if live and orders:
-        decision_at = datetime.now(tz=UTC).isoformat()
-        new_state.pending = [
-            {
-                "client_order_id": o.client_order_id
-                or paper.order_id(session, o.symbol, o.side),
-                "symbol": o.symbol,
-                "side": o.side,
-                "qty": int(o.qty),
-                "session": session,
-                "reason": o.reason,
-                "event_id": o.event_id,
-                "execution": {
-                    "decision_at": decision_at,
-                    "reference_price": prices.get(o.symbol),
-                    "reference_session": str(panel.dates[last]),
-                    "reference_source": "daily panel close",
-                },
-            }
-            for o in orders
-        ]
+        new_state.pending = _pending_orders(orders, session, prices, panel.dates[last])
         if what == "rebalance":
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)

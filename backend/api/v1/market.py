@@ -525,7 +525,17 @@ async def desk_mine(
         except Exception as exc:  # noqa: BLE001 - the plan stands without it
             print(f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})")
     decisions = decision_view.build(
-        latest, rows, equity, snap or {}, quoted, now, None, entries
+        latest,
+        rows,
+        equity,
+        snap or {},
+        quoted,
+        now,
+        None,
+        entries,
+        # The allocation preview belongs to the account viewing it: a plan
+        # naming another account is an explicit unavailable preview.
+        expected_account=user_id,
     )
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)

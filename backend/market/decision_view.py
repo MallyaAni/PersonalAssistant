@@ -7,6 +7,7 @@ from enum import StrEnum
 import numpy as np
 
 from backend.market import (
+    allocation_view,
     calendar,
     desk_freshness,
     execution_quotes,
@@ -348,7 +349,18 @@ def entry_action(row, band, grade_live, current=0.0):
 
 
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
-def build(record, held, equity, snapshot, quoted, now=None, targets=None, entries=None):
+def build(
+    record,
+    held,
+    equity,
+    snapshot,
+    quoted,
+    now=None,
+    targets=None,
+    entries=None,
+    *,
+    expected_account=None,
+):
     now = now or datetime.now(UTC)
     if targets is not None:
         if (
@@ -494,6 +506,15 @@ def build(record, held, equity, snapshot, quoted, now=None, targets=None, entrie
             "Experimental targets; adopted gates; manual execution"
             if targets is not None
             else "Scheduled next-open strategy; personal execution is manual"
+        ),
+        # The optional funded-allocation metadata, shown as an explicit preview
+        # and never as the adopted plan. The serializer reports an explicit
+        # unavailable payload when the snapshot carries no allocation_plan, so
+        # the field is always present and never a made-up allocation.
+        "portfolio_allocation": allocation_view.serialize(
+            (snapshot or {}).get("allocation_plan"),
+            session=record.get("session"),
+            expected_account=expected_account,
         ),
         "rows": result,
     }

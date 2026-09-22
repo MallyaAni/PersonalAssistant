@@ -321,7 +321,10 @@ def decide(  # noqa: C901 - explicit composition, evidence and known-risk fallba
         factor = regime_cap / stock_sum
         capped = {name: weight * factor for name, weight in capped.items()}
         stock_sum = regime_cap
-    residual = max(0.0, regime_cap - stock_sum) if index_eligible else 0.0
+    # An explicitly empty stock composition requests cash, not an index entry.
+    residual = (
+        max(0.0, regime_cap - stock_sum) if index_eligible and stock_sum > 0.0 else 0.0
+    )
     candidate = dict(capped)
     if residual > 0.0:
         candidate[SPY] = residual
