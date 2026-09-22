@@ -36,9 +36,10 @@ class Quote:
     as_of: str  # when this was fetched, ISO
 
 
-# In-process memory of the last fetch per symbol, so a refresh inside the
-# same candle answers from memory.
-_cache: dict[str, tuple[float, Quote]] = {}
+# In-process memory of the last fetch per symbol: when it happened (monotonic
+# and wall clock) and the quote, so a refresh inside the same candle answers
+# from memory.
+_cache: dict[str, tuple[float, datetime, Quote]] = {}
 
 
 # Normalize provider timestamps, whose naive representation also means UTC.
@@ -81,6 +82,20 @@ def quote_from_bars(
 NEW_YORK = ZoneInfo("America/New_York")
 
 
+# The cache must turn over at a bar boundary, not 900 wall-clock seconds
+# after some arbitrary fetch: a read at 09:59 shows the 09:30 bar, and at
+# 10:00 the 09:45 bar is complete, so keeping the memory because only a
+# minute of wall clock passed would leave the board on the old candle.
+def _candle_start(when: datetime) -> datetime:
+    """Start of the fifteen-minute New York candle containing ``when``."""
+    ny = when.astimezone(NEW_YORK)
+    minutes = ny.hour * 60 + ny.minute - (9 * 60 + 30)
+    minutes -= minutes % 15
+    return datetime.combine(ny.date(), day_time(9, 30), NEW_YORK) + timedelta(
+        minutes=minutes
+    )
+
+
 # Quotes for the symbols on the given session, from memory when the
 # candle has not turned, else from the feed.
 def quotes(
@@ -97,26 +112,28 @@ def quotes(
     # asking the feed for tomorrow's bars gave the page no quotes, no live
     # read and no "prices as of" for those four hours every evening.
     today = session or clock().astimezone(NEW_YORK).date()
+    now_utc = clock()
     out: dict[str, Quote] = {}
     for symbol in symbols:
         held = _cache.get(symbol)
         if (
             held
             and now() - held[0] < CANDLE_SECONDS
-            and _bar_time(datetime.fromisoformat(held[1].bar))
+            and _candle_start(held[1]) == _candle_start(now_utc)
+            and _bar_time(datetime.fromisoformat(held[2].bar))
             .astimezone(NEW_YORK)
             .date()
             == today
         ):
-            out[symbol] = held[1]
+            out[symbol] = held[2]
             continue
         try:
             bars = fetch(symbol, today, today, headers=headers)
         except Exception:  # the feed is a convenience; the board stands without it
             continue
-        quote = quote_from_bars(symbol, bars, clock(), session=today)
+        quote = quote_from_bars(symbol, bars, now_utc, session=today)
         if quote is not None:
-            _cache[symbol] = (now(), quote)
+            _cache[symbol] = (now(), now_utc, quote)
             out[symbol] = quote
     return out
 

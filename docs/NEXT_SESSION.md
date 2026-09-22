@@ -1,45 +1,133 @@
 # Next session
 
-## 2026-09-22 — Funded implementation reviewed; strategy remains experimental
+## 2026-09-22 — OpenCode implementing the 15-minute entry layer
 
-All six Mac OpenCode workers completed; none remains active. Owned paper changes
-and independently corrected ML research are integrated in Spark1
-`/home/animallya96/codex-worktrees/trading-integration-20260922`. No dashboard,
-production deployment, real orders or model-service changes.
+User explicitly requested OpenCode implementation. Three isolated sessions launched
+on Spark1 with spark/deepseek-v4-flash; no model-service changes. Manifest
+`/tmp/codex-intraday-workers-20260922.json`; source basee71b906. Read each worker's
+INTRADAY_TASK.md for ownership and INTRADAY_HANDOFF.md when finished. Never restart
+an active worker or copy seeded dependencies.
 
-Root reproduced and fixed paper exclusions resurrecting on scheduled refresh,
-over-cutting retained names during missing-evidence exits, and stale external NAV
-doubling stock sizing. Exclusions now survive save/load; paper sizes against
-marked holdings+cash and shares simulator fallback semantics. Fee-driven company
-cap trims round up within whole shares held. Missing/invalid account values block.
-Two older tests assumed no settled cash or applied fills twice; corrected them to
-assert actual pre-fill funding and post-fill balances, preserving strict invariants.
+- entry: new intraday_entry.py, test_intraday_entry_structure.py and research
+  contract only; causal completed15-minute sequence, evolving daily candle,
+  supplied setup/levels, explicit invalidation/ambiguity and stable signal identity.
+- quotes: live_quotes.py and its tests only; reproduce/fix cache extending across
+  a completed15-minute boundary while preserving causal completed-bar filtering.
+- personal: decision_view.py and new personal isolation tests only; personal
+  guidance must not borrow paper weights/cash/fills; stale entry evidence must
+  not imply fresh executable readiness. Root handles any necessary route wiring.
 
-VERIFIED: broad trading/market/allocation run **874 passed**, **2 skipped**,
-48 warnings. FAILED: two learned-ranker coverage tests in `test_market_model.py`;
-both independently reproduce on untouched base `2d89aa8` (34 absent score rows,
-first213), not a regression from this change. Logs:
-`/tmp/codex-mac-trading-broad-20260922.log` and
+Read-only running-container audit pinned image
+sha256:997055765439e8d37539430c7ed87bb3707c6a619615532fecee18b057b4da90.
+It found daily technical features recomputed on one aggregated partial-day OHLC
+row, not a preserved15-minute path; personal/paper action coupling; and freshness
+often advisory on BUY. These are implementation/scope findings, not proof the
+momentum strategy loses money. No new strategy has yet beaten live momentum.
+New entry logic stays experimental until compared on identical causal data and
+user's zero-cost convention, with turnover/repeated signals/missed fills measured.
+No dashboard changes, live orders, fitting, threshold sweeps or desk.run authorized.
+
+## 2026-09-22 — Precise 15-minute entries are required
+
+User corrected the interpretation of avoiding overtrading: "i told you we need
+precise entries on the 15 min timeframe". The personal dashboard must provide
+precise entry setups/triggers on15-minute bars. Avoiding overtrading means
+rejecting weak/repeated signals and unnecessary position churn, NOT replacing
+15-minute timing with daily-only entries or imposing an arbitrary slow cadence.
+Portfolio selection/sizing and15-minute entry timing are separate decisions;
+paper execution remains a separate account/section.
+
+The fixed daily next-open vol/vol_trend evaluation does NOT validate15-minute
+entry quality. This work has not established that layer as complete. Inspect the
+existing intraday/entry implementation and validate causal15-minute triggers,
+invalidation, stale signals, repeat alerts and midpoint-target fill assumptions
+before claiming the user's dashboard workflow is ready. Do not invent thresholds
+or infer that15-minute precision requires frequent trades.
+
+## 2026-09-22 — Portfolio guidance must avoid overtrading; paper is separate
+
+User clarification: "remember to avoid overtrading, this dashboard will be used
+by me to make buys in my portfolio. the paper trading is its own section in the
+dashboard". Treat this as a product and strategy requirement, not permission to
+execute trades or begin dashboard changes ahead of implementation validation.
+
+The main dashboard supports the user's discretionary decisions using their own
+holdings, cash and allocation; the paper account has separate positions, cash,
+orders and performance in its own section. Never turn paper fills or its rebalance
+clock into instructions for the user's actual portfolio. Shared signals do not
+make the accounts interchangeable. Account scoping must remain explicit.
+
+Avoid unnecessary turnover even with the requested zero-cost assumption and
+midpoint execution target. Prefer HOLD when the investment case has not materially
+changed; surface additions, trims or exits only with a clear reason. Evaluate
+trade count, turnover, holding duration, rapid reversals and recommendation
+stability alongside return/drawdown. Do not copy the experimental daily resizing
+into personal recommendations or choose arbitrary cooldown/band thresholds without
+validation. Earlier measured policies turned over roughly10–11timesNAV annually
+(two-way); that is a diagnostic concern, not an accepted personal trading cadence.
+This entry records the requirement; no new anti-churn logic or dashboard UI is
+claimed implemented by this documentation change. Paper remains experimental.
+
+## 2026-09-22 — User requests zero costs and midpoint execution target
+
+Latest instruction supersedes cost-stress emphasis: "forget trading costs try to
+hit mid price". Midpoint is the desired execution target, not a claimed fill.
+Historical inputs contain daily OHLC/adjusted prices, not timestamped bid/ask
+history. Live quote reads are ephemeral. Therefore the new evaluation is explicitly
+**zero-cost next-open proxy**, not a verified midpoint backtest. No broker/order
+configuration was changed; no real trades or new data downloads.
+
+Ran fixed vol/vol_trend at0bps on sourcee71b906, same2016-01-04..2026-09-18,
+NAV1/next-open/zero cash yield, explicit researchSPY eligibility; no fitting or
+window/threshold changes. Both benchmarks also use0bps. CAGR/maxDD:
+vol23.2805%/23.8314%; vol_trend18.0976%/14.9875%; SPY15.0857%/33.7173%;
+QQQ20.0853%/35.1187%. Vol meets both full-window objectives and40.2294% of
+overlapping252-session windows; vol_trend still failsQQQ return (rolling29.4551%).
+Both trace checks clean. These remain reused survivor-biased history.
+
+Artifacts on Spark1 `/tmp/codex-mac-zero-cost-20260922/zero-cost.json` plus
+candidate arrays/traces, input/source/script hashes; script
+`/tmp/codex-trading-zero-cost-20260922.py`. Earlier10/25bps artifacts preserved,
+not relabeled. Future execution work should measure quote-midpoint limit fills
+and unfilled orders rather than assume that every midpoint attempt executes.
+
+## 2026-09-22 — Experimental trading checkpoint published; no adoption
+
+Source checkpoint `e71b906d60709876c93f7fd177b64aad9ac8294e` is pushed on
+`codex/trading-integration-20260922`. All six OpenCode workers finished. Spark1
+checkout `/home/animallya96/codex-worktrees/trading-integration-20260922` has no
+tracked modifications; only its local `MAC_CONTINUATION.md` is untracked.
+Do not restart completed workers or repeat the fixed historical simulations.
+
+VERIFIED: **374 focused tests passed**,5 existing warnings; exact tested tree
+`245d9f126c8cff959ded113a4724c4fca6ddc6e8` retained through rebase. Broad relevant
+validation:874 passed,2 skipped,2 failed. FAILED: both learned-ranker score-coverage
+tests reproduce identically on untouchedbase2d89aa8 (34missing rows, first213).
+Five Ruff findings in market.py also reproduce on that base; all other changed
+Python files pass. Logs on Spark1: `/tmp/codex-mac-final-focused-20260922.log`,
+`/tmp/codex-mac-trading-broad-20260922.log`,
 `/tmp/codex-market-model-baseline-failures-20260922.log`.
-UNVERIFIED: full deployment gates, production behavior, untouched strategy edge.
-No change to the learned model is authorized by this implementation milestone.
-Final focused acceptance: **374 passed**,5 existing warnings,5.13s; log
-`/tmp/codex-mac-final-focused-20260922.log`. Ruff reports five pre-existing
-findings in `backend/api/v1/market.py`, identical on base2d89aa8; remaining
-changed Python files pass. No unrelated lint cleanup or waiver was added.
 
-The fixed10bps evaluation and predeclared25bps stress are complete. Vol full-window
-CAGR22.01%/DD24.59%, but only34.08% rolling-both success; at25bps CAGR20.13%
-versusQQQ20.06%, rolling-both25.44%. Vol_trend failsQQQ return. These are reused,
-survivor-biased observations, not grounds for adoption. Do not rerun the unchanged
-fractional simulations or desk.run for later paper/whole-share-only changes.
+Paper now preserves exclusions across save/load and scheduled refresh, uses the
+same exclude-before-fallback order as simulation, and sizes from marked holdings
+plus cash rather than stale external NAV. Whole-share risk/cap cuts cannot round
+below an executable reduction. Next-open timing survives pending and dispatch.
+UNVERIFIED: full deployment gates, live behavior, untouched strategy edge.
+Nothing deployed/adopted; no orders, UI, model-service changes or real-data fitting.
 
-See `docs/research/trading-funded-validation-2026-09-22.md` for implementation,
-metrics/provenance and `docs/research/trading-ml-path-2026-09-22.md` for corrected
-primary-paper findings. The latter specifies one prospective10-session hypothesis,
-true PIT inputs/membership, overlap purging and same-cost next-open comparison
-against both benchmarks. It does not authorize fitting, sweeps, or live adoption.
-Root `MAC_CONTINUATION.md` holds local continuation details. Diagram impact: NONE.
+At10bps, vol CAGR22.01%/DD24.59% passes both full-window benchmarks but only34.08%
+of rolling windows. At predeclared25bps, CAGR20.13% barely exceedsQQQ20.06%, and
+rolling success drops to25.44%. Vol_trend failsQQQ return. Reused survivor-biased
+history does not justify adoption. Corrected primary-paper review specifies one
+prospective10-session hypothesis with true PIT membership/inputs and overlap
+purging; it authorizes no training or parameter sweep.
+
+On the source branch, see `docs/research/trading-funded-validation-2026-09-22.md`
+and `docs/research/trading-ml-path-2026-09-22.md`. Fixed artifacts remain under
+`/tmp/codex-mac-evaluation-reviewed-20260922/` and
+`/tmp/codex-mac-cost-stress-20260922/`. Next adoption decision requires genuinely
+untouched evidence and the normal gates; do not promote on the backtest aggregate.
+Diagram impact: NONE. Main receives this handoff only, not experimental source.
 
 ## 2026-09-22 — Mac owns trading continuation; implementation before dashboard
 
