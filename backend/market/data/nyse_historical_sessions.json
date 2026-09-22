@@ -1,0 +1,232 @@
+{
+  "description": "Official NYSE/ICE published full-day cash-equity closures and 13:00 New York early closes, 2019-2025 inclusive, for the intraday comparison. Every date comes from an official NYSE Group press release on ir.theice.com (the scheduled multi-year holiday and early-closing calendars) or, for the 2025-01-09 National Day of Mourning, the NYSE exceptional-closure announcement. Dates were not inferred from recurring holiday rules, bond-market hours, or OHLC completeness. Early closes are 13:00 America/New_York cash-equity session closes (1:15 p.m. for eligible options only; not represented here). A year is listed only if its schedule was verified against the official publications below.",
+  "checked": "2026-09-22",
+  "timezone": "America/New_York",
+  "years": {
+    "2019": {
+      "full_closures": [
+        "2019-01-01",
+        "2019-01-21",
+        "2019-02-18",
+        "2019-04-19",
+        "2019-05-27",
+        "2019-07-04",
+        "2019-09-02",
+        "2019-11-28",
+        "2019-12-25"
+      ],
+      "early_closes": {
+        "2019-07-03": "13:00",
+        "2019-11-29": "13:00",
+        "2019-12-24": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2018/NYSE-Group-Announces-2019-2020-and-2021-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2018-12-04",
+          "note": "Scheduled 2019 calendar. Full closures in the HOLIDAY table; early closes at 1:00 p.m. are the July 3, November 29, and December 24 footnotes."
+        }
+      ],
+      "coverage_notes": "Verified from the official 2019/2020/2021 NYSE calendar press release. 2019-12-24 (Christmas Eve) was an early close, not a closure; 2019-12-25 (Christmas) was a full closure. Independence Day fell on Thursday, so 2019-07-03 (Wednesday) was the early close before it."
+    },
+    "2020": {
+      "full_closures": [
+        "2020-01-01",
+        "2020-01-20",
+        "2020-02-17",
+        "2020-04-10",
+        "2020-05-25",
+        "2020-07-03",
+        "2020-09-07",
+        "2020-11-26",
+        "2020-12-25"
+      ],
+      "early_closes": {
+        "2020-11-27": "13:00",
+        "2020-12-24": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2018/NYSE-Group-Announces-2019-2020-and-2021-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2018-12-04",
+          "note": "Scheduled 2020 calendar."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2019/NYSE-Group-Announces-2020-2021-and-2022-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2019-12-09",
+          "note": "Independent re-announcement of the 2020 calendar; confirms all dates."
+        }
+      ],
+      "coverage_notes": "2020-07-03 was a full closure (Independence Day observed; July 4 fell Saturday), so there is no July 2020 early close. Early closes are November 27 (day after Thanksgiving) and December 24 (Christmas Eve). Confirmed by two official press releases."
+    },
+    "2021": {
+      "full_closures": [
+        "2021-01-01",
+        "2021-01-18",
+        "2021-02-15",
+        "2021-04-02",
+        "2021-05-31",
+        "2021-07-05",
+        "2021-09-06",
+        "2021-11-25",
+        "2021-12-24"
+      ],
+      "early_closes": {
+        "2021-11-26": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2019/NYSE-Group-Announces-2020-2021-and-2022-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2019-12-09",
+          "note": "Scheduled 2021 calendar."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2020/NYSE-Group-Announces-2021-2022-and-2023-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2020-12-28",
+          "note": "Independent re-announcement of the 2021 calendar; confirms all dates."
+        }
+      ],
+      "coverage_notes": "2021-07-05 was a full closure (Independence Day observed; July 4 fell Sunday) and 2021-12-24 was a full closure (Christmas observed; December 25 fell Saturday), so there is no Christmas Eve early close. The only early close is November 26 (day after Thanksgiving)."
+    },
+    "2022": {
+      "full_closures": [
+        "2022-01-17",
+        "2022-02-21",
+        "2022-04-15",
+        "2022-05-30",
+        "2022-06-20",
+        "2022-07-04",
+        "2022-09-05",
+        "2022-11-24",
+        "2022-12-26"
+      ],
+      "early_closes": {
+        "2022-11-25": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2020/NYSE-Group-Announces-2021-2022-and-2023-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2020-12-28",
+          "note": "Scheduled 2022 calendar."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2021/NYSE-Group-Announces-2022-2023-and-2024-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2021-12-27",
+          "note": "Independent re-announcement of the 2022 calendar; confirms all dates and the no-holiday note for New Year's Day."
+        },
+        {
+          "url": "https://web.archive.org/web/20221223140712/https://www.nyse.com/markets/hours-calendars",
+          "published": "2022-12-23",
+          "note": "Official NYSE calendar page captured 2022-12-23; lists only 2022-11-25 as the 2022 early close, confirming there was no December 2022 early close."
+        }
+      ],
+      "coverage_notes": "No New Year's Day closure (January 1 fell Saturday; no holiday observed pursuant to NYSE Rule 7.2, per the official release). 2022-06-20 was the observed Juneteenth (June 19 fell Sunday). Christmas observed on 2022-12-26 (December 25 fell Sunday); Christmas Eve fell on Saturday so there was no December 2022 early close, confirmed by the NYSE calendar page captured 2022-12-23."
+    },
+    "2023": {
+      "full_closures": [
+        "2023-01-02",
+        "2023-01-16",
+        "2023-02-20",
+        "2023-04-07",
+        "2023-05-29",
+        "2023-06-19",
+        "2023-07-04",
+        "2023-09-04",
+        "2023-11-23",
+        "2023-12-25"
+      ],
+      "early_closes": {
+        "2023-07-03": "13:00",
+        "2023-11-24": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2021/NYSE-Group-Announces-2022-2023-and-2024-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2021-12-27",
+          "note": "Scheduled 2023 calendar."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2022/NYSE-Group-Announces-2023-2024-and-2025-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2022-12-21",
+          "note": "Independent re-announcement of the 2023 calendar; confirms all dates."
+        },
+        {
+          "url": "https://web.archive.org/web/20231223040634/https://www.nyse.com/markets/hours-calendars",
+          "published": "2023-12-23",
+          "note": "Official NYSE calendar page captured 2023-12-23; lists 2023-07-03 and 2023-11-24 as the 2023 early closes, confirming there was no December 2023 early close."
+        }
+      ],
+      "coverage_notes": "2023-01-02 was the observed New Year's Day (January 1 fell Sunday). Early closes are July 3 (before Independence Day) and November 24 (day after Thanksgiving). Christmas Eve fell on Sunday, so there was no December 2023 early close, confirmed by the NYSE calendar page captured 2023-12-23."
+    },
+    "2024": {
+      "full_closures": [
+        "2024-01-01",
+        "2024-01-15",
+        "2024-02-19",
+        "2024-03-29",
+        "2024-05-27",
+        "2024-06-19",
+        "2024-07-04",
+        "2024-09-02",
+        "2024-11-28",
+        "2024-12-25"
+      ],
+      "early_closes": {
+        "2024-07-03": "13:00",
+        "2024-11-29": "13:00",
+        "2024-12-24": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2022/NYSE-Group-Announces-2023-2024-and-2025-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2022-12-21",
+          "note": "Scheduled 2024 calendar."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2023/NYSE-Group-Announces-2024-2025-and-2026-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2023-11-10",
+          "note": "Independent re-announcement of the 2024 calendar; confirms all dates."
+        }
+      ],
+      "coverage_notes": "Early closes are July 3 (before Independence Day), November 29 (day after Thanksgiving), and December 24 (Christmas Eve). No observed-holiday shifts needed in 2024; all holidays fell on their nominal dates."
+    },
+    "2025": {
+      "full_closures": [
+        "2025-01-01",
+        "2025-01-09",
+        "2025-01-20",
+        "2025-02-17",
+        "2025-04-18",
+        "2025-05-26",
+        "2025-06-19",
+        "2025-07-04",
+        "2025-09-01",
+        "2025-11-27",
+        "2025-12-25"
+      ],
+      "early_closes": {
+        "2025-07-03": "13:00",
+        "2025-11-28": "13:00",
+        "2025-12-24": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2023/NYSE-Group-Announces-2024-2025-and-2026-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2023-11-10",
+          "note": "Scheduled 2025 calendar."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2024/NYSE-Group-Announces-2025-2026-and-2027-Holiday-and-Early-Closings-Calendar/default.aspx",
+          "published": "2024-11-08",
+          "note": "Independent re-announcement of the 2025 calendar; confirms all scheduled dates."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2024/The-New-York-Stock-Exchange-Will-Close-Markets-on-January-9-to-Honor-the-Passing-of-Former-President-Jimmy-Carter-on-National-Day-of-Mourning/default.aspx",
+          "published": "2024-12-30",
+          "note": "Exceptional closure: NYSE Group will close all equity and options markets on 2025-01-09 for the National Day of Mourning for former President Jimmy Carter. Primary source for the 2025-01-09 closure."
+        }
+      ],
+      "coverage_notes": "2025-01-09 (Thursday) is the National Day of Mourning exceptional closure, announced 2024-12-30 by the NYSE and carried as its own source above; it is not part of the scheduled calendar. All other closures are the announced 2025 schedule. Early closes are July 3, November 28 (day after Thanksgiving), and December 24 (Christmas Eve)."
+    }
+  }
+}
