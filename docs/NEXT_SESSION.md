@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-22 — Causal comparison adapter verified; outcome replay underway
+
+Checkpoint `425ef664e9a86a785340bcbe335d6ac8d5ebe0dc` is pushed with the reviewed
+adapter and historical calendar. **131 relevant tests pass**, including44
+comparison cases. Root reproduced/fixed after-close incumbent readiness and
+naive availability, then added mandatory raw/adjusted basis, scale-equivalence
+proof and ledger unit protection. Log `/tmp/codex-comparison-integrated-20260922.log`.
+Ruff/format and scoped strict mypy pass; transitive legacy typing debt remains.
+
+Adapter/calendar roles are integrated and root-owned. New isolated OpenCode
+comparison_replay PID979209 owns only `intraday_replay.py` and its new test:
+causal observation replay, next-consecutive-bar-open proxy, fixed20/5-session
+outcomes, explicit missing/immature labels and common comparison denominators.
+No cached historical scoring or CLI yet. Read its exact task and wait for
+COMPARISON_HANDOFF.md; never restart active workers or import drafts.
+
+All existing data/eligibility caveats remain: this is an experimental flat-account
+entry-component comparison, not verified portfolio profitability or live momentum
+superiority. Recorded eligibility lacks mature primary labels at the cached end.
+No UI, deployment, real orders, model changes or repeated daily benchmarks.
+
 ## 2026-09-22 — Input audit reviewed; raw/adjusted and availability gates clarified
 
 Checkpoint `6df1109` integrates the root-corrected comparison input audit and
