@@ -77,10 +77,11 @@ async def test_research_target_cannot_replace_adopted_plan_over_http(
     assert row["target_weight"] == 0.1
     # And the row is one of the three actions, whatever the file says.
     assert row["action"] in ("Buy", "Sell", "Hold")
-    if funded:
-        assert row["action"] == "Buy"
-        assert row["move_weight"] > 0
-        assert "preview from recorded account" in row["reason"]
+    # A funded paper account cannot replace personal holdings or fund this read.
+    assert row["current_weight"] == pytest.approx(
+        60 * snapshot["quotes"]["S11"]["last"] / 100000
+    )
+    assert "preview from recorded account" not in row["reason"]
     assert holdings.load(tmp_path)[0].shares == 60
 
 

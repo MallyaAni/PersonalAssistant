@@ -107,41 +107,264 @@ def apply_account_plan(result, record, snapshot, entries, paused, now):
         row["reason"] += "; preview from recorded account and dated prices"
 
 
-# What the desk itself holds in a name, as a weight of the desk's own equity.
+# Reject cash values that cannot bound a personal recommendation basket.
+def _validate_cash(cash, equity):
+    """Raise ValueError for a nonfinite, negative or oversized personal cash figure."""
+    if not math.isfinite(cash) or cash < 0:
+        raise ValueError("A finite nonnegative personal cash balance is required")
+    if cash > equity:
+        raise ValueError("Personal cash cannot exceed account equity")
+
+
+# Fund eligible personal entries from explicit cash without borrowing paper state.
+def apply_personal_account_plan(
+    result, held, equity, cash, snapshot, entries, paused, now, record
+):
+    """Apply the desk's mid-cycle plan against the person's own account."""
+    if cash is not None:
+        _validate_cash(cash, equity)
+    if paused or not math.isfinite(equity) or equity <= 0:
+        return
+    prices = _account_prices(held, snapshot, record)
+    quotes = (snapshot or {}).get("quotes") or {}
+    levels = record.get("levels") or {}
+    for symbol in result:
+        if symbol in prices:
+            continue
+        raw = (
+            (quotes.get(symbol) or {}).get("last")
+            or (levels.get(symbol) or {}).get("last_close")
+            or 0
+        )
+        try:
+            prices[symbol] = float(raw)
+        except (TypeError, ValueError):
+            prices[symbol] = 0.0
+    shares = {holding.ticker: holding.shares for holding in held}
+    if cash is None:
+        return
+    if any(not math.isfinite(q) or q < 0 for q in shares.values()) or any(
+        q and (not math.isfinite(prices[s]) or prices[s] <= 0)
+        for s, q in shares.items()
+    ):
+        for row in result.values():
+            row["action"] = Action.HOLD
+            row["move_weight"] = 0.0
+            row["executable"] = False
+            row["blocker"] = "personal account cannot be valued"
+            row["reason"] = _not_executable_reason(
+                row["strategy_action"], row["strategy_move_weight"], row["blocker"]
+            )
+        return
+    from backend.agents.trading.desk import paper
+
+    grades = {s: r.get("grade", "") for s, r in (record.get("grades") or {}).items()}
+    technical, value = desk_freshness.grade_inputs(snapshot, record, now)
+    grades.update(
+        {
+            s: r["grade_live"]
+            for s, r in holdings.live_grades(record, technical, value).items()
+        }
+    )
+    # Only a name the desk actually covers and has turned against is an exit.
+    # A name without coverage has no grade behind a sale - it is a Hold for
+    # review, never a liquidation - and a name whose evidence is unusable
+    # cannot be traded right now either.
+    finished = {
+        s: "grade below A; close position"
+        for s in shares
+        if s in grades
+        and grades[s] not in paper.ENTRY_MIN_GRADE
+        and result.get(s, {}).get("executable")
+    }
+    blocked = {s for s, level in levels.items() if level.get("rejecting_band")}
+    # A buy needs its own fresh, eligible entry signal before it can consume
+    # any cash: a stale decision, an unusable quote, an expired reading, a
+    # blocked name or a downgrade are all filtered here, so a blocked name
+    # consumes no budget and the remaining candidates share the account-wide
+    # cash bound one way.
+    eligible_entries = {
+        s: b
+        for s, b in (entries or {}).items()
+        if grades.get(s) in paper.ENTRY_MIN_GRADE
+        and s not in finished
+        and s not in blocked
+        and result.get(s, {}).get("executable")
+    }
+    orders = _personal_midcycle_orders(
+        equity, shares, prices, finished, eligible_entries, cash
+    )
+    _fold_personal_orders(result, orders, prices, equity, shares)
+    _enforce_personal_readiness(result)
+
+
+# Enforce readiness AFTER the basket is folded, so no funded path can bypass
+# it. A row that is not executable - however its basket was folded - is an
+# actionable Hold, never a claim that can be traded now. And an executable Buy
+# that the cash-bound planner did not fund (no room under the name cap, or a
+# price it could not value) must not keep a fresh "add this much" claim.
+def _enforce_personal_readiness(result):
+    """Force every non-executable row to an actionable Hold and unfunded buys off."""
+    for row in result.values():
+        if not row.get("executable"):
+            row["action"] = Action.HOLD
+            row["move_weight"] = 0.0
+            continue
+        if row["strategy_action"] is Action.BUY and row["action"] is not Action.BUY:
+            row["action"] = Action.HOLD
+            row["move_weight"] = 0.0
+            if "not executable" not in row["reason"]:
+                row["reason"] = f"{row['reason']} (not funded from available cash)"
+
+
+# The reason for a row whose strategy opinion could not be executed, keeping
+# the desk's intent visible while saying plainly that nothing can be traded on
+# it right now. Used both when the evidence is unusable and when the funding
+# behind a buy is unknown or absent, so the blocker is never hidden in the
+# reason text alone - it is also reflected in `action` and `executable`.
+def _not_executable_reason(strategy_action, strategy_move_weight, blocker):
+    """Return the reason an actionable Hold cannot be executed right now."""
+    why = blocker or "evidence unusable"
+    if strategy_action is Action.BUY:
+        return (
+            f"Wants up to {strategy_move_weight:.1%} of the account "
+            f"(not executable: {why})"
+        )
+    if strategy_action is Action.SELL:
+        return f"Wants to close the position (not executable: {why})"
+    return f"Held (not executable: {why})"
+
+
+# Size the person's own mid-cycle basket. A covered downgrade is an explicit
+# exit; a graded breakout is a buy bounded by the person's available cash
+# alone. It deliberately does NOT recycle a downgrade into a buy of another
+# holding - that is the paper book's rotation, a rule for an account that
+# carries its own positions, and applying it here would turn the person's
+# board into entry guidance driven by someone else's sale. Every buy candidate
+# was already filtered for fresh evidence before this runs, so nothing here can
+# fund a stale read, and the buys share one account-wide cash bound rather than
+# each sizing alone.
+def _personal_midcycle_orders(equity, shares, prices, finished, entries, cash):
+    """Return the person's mid-cycle orders: covered exits and cash-bounded entries."""
+    from backend.agents.trading.desk import paper
+
+    orders: list[paper.PaperOrder] = []
+    for symbol in sorted(finished):
+        qty = shares.get(symbol, 0.0)
+        price = prices.get(symbol) or 0.0
+        if qty > 0 and price > 0:
+            orders.append(paper.PaperOrder(symbol, "sell", qty, finished[symbol]))
+    buys: list[tuple[str, float, float]] = []
+    for symbol in sorted(entries):
+        price = prices.get(symbol) or 0.0
+        if not math.isfinite(price) or price <= 0:
+            continue
+        band = float(entries[symbol] or 0.0)
+        current = shares.get(symbol, 0.0) * price / equity
+        want = min(paper.entry_size(band), paper.ENTRY_NAME_CAP - current)
+        if want < paper.MIN_TRADE:
+            continue
+        buys.append((symbol, want * equity / price, want * equity))
+    if buys:
+        total = sum(value for _, _, value in buys)
+        scale = min(1.0, max(0.0, cash) / total) if total else 1.0
+        for symbol, qty, _ in buys:
+            scaled = qty * scale
+            if scaled <= 0:
+                continue
+            orders.append(
+                paper.PaperOrder(
+                    symbol,
+                    "buy",
+                    scaled,
+                    "price entry: breakout through its own 20-day band",
+                )
+            )
+    return orders
+
+
+# Write one person's mid-cycle order basket onto the decision rows, so the
+# displayed moves share the same caps and cash rather than each row sizing
+# alone. A buy absent from the funded basket becomes Hold, with its strategy
+# intent preserved separately. Existing evidence blockers remain intact.
+def _fold_personal_orders(result, orders, prices, equity, shares):
+    """Fold the person's mid-cycle orders into the decision rows."""
+    moves: dict[str, float] = {}
+    reasons: dict[str, str] = {}
+    for order in orders:
+        sign = 1 if order.side == "buy" else -1
+        moves[order.symbol] = moves.get(order.symbol, 0.0) + order.qty * sign
+        reasons[order.symbol] = order.reason
+    for symbol, row in result.items():
+        row["current_weight"] = (
+            shares.get(symbol, 0.0) * prices.get(symbol, 0.0) / equity
+        )
+        row["delta_weight"] = row["target_weight"] - row["current_weight"]
+        if symbol not in moves:
+            if row["strategy_action"] is Action.BUY and row["executable"]:
+                row["action"] = Action.HOLD
+                row["move_weight"] = 0.0
+                row["executable"] = False
+                row["blocker"] = "no funded entry under account limits"
+                row["reason"] = _not_executable_reason(
+                    row["strategy_action"], row["strategy_move_weight"], row["blocker"]
+                )
+            continue
+        qty = moves[symbol]
+        row["action"] = (
+            Action.BUY if qty > 0 else Action.SELL if qty < 0 else Action.HOLD
+        )
+        row["move_weight"] = qty * prices.get(symbol, 0.0) / equity
+        row["reason"] = (
+            f"{reasons[symbol]}; sized against your holdings and dated prices"
+        )
+
+
+# What the person holds in a name, as a weight of the person's own equity.
 #
-# Every action on this board is the desk's, so the only position any of them
-# involves is the desk's. The board used to read the operator's recorded
-# holdings instead, which made the whole column a function of bookkeeping he
-# does not always do: with nothing recorded the page said Hold ninety-three
-# times while the book held nine names, and with a stale file it said Sell on
-# a name he no longer owned. The nightly never consults that file either -
-# `market_daily` rotates on `client.positions()`, the paper account - so
-# reading it here made the page a second, wrong answer to a question the book
-# had already answered.
-#
-# The record carries the account under `paper`. A missing or nonsensical
-# equity yields no weights rather than a division by zero, and a name the desk
-# does not hold is absent rather than zero-valued, so callers can tell "flat"
-# from "unknown".
-def book_weights(record) -> dict[str, float]:
-    """Return {ticker: weight of the desk's equity} for the desk's own book."""
-    account = record.get("paper") or {}
-    try:
-        equity = float(account.get("equity"))
-    except (TypeError, ValueError):
-        return {}
+# The board against the person's account is a statement about that account:
+# each row's current weight must move when the person's holdings move and
+# must not move when the desk's paper book changes. This used to read the
+# desk's own book off `record["paper"]` instead, which made the personal
+# column a function of an account it is not about - with a paper book that
+# held a name the person did not, the board showed a position he did not own,
+# and every paper fill silently changed his guidance. A missing or
+# nonsensical equity yields no weights rather than a division by zero, and a
+# name the person does not hold is absent rather than zero-valued, so callers
+# can tell "flat" from "unknown".
+def personal_weights(held, prices: dict[str, float], equity: float) -> dict[str, float]:
+    """Return {ticker: weight of the person's equity} from their own holdings."""
     if not math.isfinite(equity) or equity <= 0:
         return {}
     out: dict[str, float] = {}
-    for position in account.get("positions") or []:
-        ticker = position.get("symbol")
-        try:
-            value = float(position.get("market_value"))
-        except (TypeError, ValueError):
-            continue
-        if ticker and math.isfinite(value):
-            out[ticker] = value / equity
+    for holding in held:
+        price = prices.get(holding.ticker) or 0.0
+        value = holding.shares * price
+        if holding.ticker and math.isfinite(value) and price > 0:
+            out[holding.ticker] = value / equity
     return out
+
+
+# The person's own prices for the names they hold: the live quote where there
+# is one, else the recorded level's close, else the price they paid. A name
+# with no usable price is priced at zero, which is "cannot value", not "worth
+# nothing", so the callers treat a zero-priced holding as an invalid account.
+def _account_prices(held, snapshot, record) -> dict[str, float]:
+    """Return {ticker: price} for the supplied personal holdings."""
+    quotes = (snapshot or {}).get("quotes") or {}
+    levels = record.get("levels") or {}
+    prices: dict[str, float] = {}
+    for holding in held:
+        raw = (
+            (quotes.get(holding.ticker) or {}).get("last")
+            or (levels.get(holding.ticker) or {}).get("last_close")
+            or holding.entry_price
+        )
+        try:
+            prices[holding.ticker] = float(raw)
+        except (TypeError, ValueError):
+            prices[holding.ticker] = 0.0
+    return prices
 
 
 # The three things the operator can do about a name. A fixed set, so it is a
@@ -155,6 +378,31 @@ class Action(StrEnum):
     BUY = "Buy"
     SELL = "Sell"
     HOLD = "Hold"
+
+
+# Whether a row can be acted on right now, as opposed to what the desk wants
+# done with the name. A paused book, a stale nightly decision, an unusable
+# quote and an expired grade reading each leave nothing to execute; the reset
+# clock does not - a mid-cycle entry needs no rebalance date. Shared by
+# `action_for_row` (which rewrites a Buy entry's claim when it is not
+# executable) and by `build` (which reports the same answer as a field on the
+# row, so opinion and readiness stay distinct for the caller).
+def _execution_readiness(paused, current_decision, quote, deadline, now):
+    """Return (executable, blocker): whether the row can be traded right now."""
+    blocker = next(
+        (
+            message
+            for blocked, message in (
+                (paused, "FOMC hold"),
+                (not current_decision, "last night's decision is stale"),
+                (not quote.get("eligible"), str(quote.get("reason") or "").lower()),
+                (not deadline or deadline <= now, "no current price reading"),
+            )
+            if blocked
+        ),
+        None,
+    )
+    return blocker is None, blocker
 
 
 # Three words and a share count: Buy, Sell or Hold, at the live price.
@@ -196,6 +444,9 @@ def action_for_row(
     reason = next((message for blocked, message in blocking if blocked), None)
     if reason:
         return Action.HOLD, 0.0, reason
+    # The reset clock is deliberately not here: whether the paper book's next
+    # rebalance is due is another account's schedule, and a personal board must
+    # not read it. A mid-cycle entry needs no rebalance date either.
     advisory = next(
         (
             message
@@ -203,7 +454,6 @@ def action_for_row(
                 (not current_decision, "last night's decision is stale"),
                 (not quote["eligible"], str(quote["reason"]).lower()),
                 (not deadline or deadline <= now, "no current price reading"),
-                (row["until_rebalance"] is None, "reset timing unknown"),
             )
             if blocked
         ),
@@ -219,16 +469,26 @@ def action_for_row(
 
     if entry is not None:
         action, size, why = entry
+        # A Buy from a live entry is the desk's OPINION about the name. Whether
+        # it can be executed right now is a separate question, answered by the
+        # evidence: a stale decision, an unusable quote or an expired reading
+        # leave nothing to act on. When the evidence is missing, the row must
+        # not present a fresh "add this much" claim as executable - it says the
+        # desk wants the position and that this cannot be done yet. The reset
+        # clock is deliberately not part of executability: a mid-cycle entry
+        # needs no rebalance date.
+        executable, blocker = _execution_readiness(
+            paused, current_decision, quote, deadline, now
+        )
+        if action is Action.BUY and not executable:
+            return (
+                action,
+                size or 0.0,
+                f"Wants up to {size:.1%} of the account (not executable: {blocker})",
+            )
         return said(action, size or 0.0, why)
-    # A name the desk no longer grades A is sold, and the money goes into the
-    # names it still wants. This was removed earlier on the evidence that a
-    # downgrade is followed by outperformance rather than a fall - which is
-    # true, and is why selling one to CASH costs 24 points of CAGR a year. It
-    # is not an argument for holding it: rotated into the rest of the book the
-    # same signal earned the same return as holding with a 7.3 point shallower
-    # drawdown and a better Sharpe. The desk is not leaving the market, it is
-    # moving money to a better name, so the row says Sell and the book buys
-    # elsewhere the same session. `desk/exit.py` carries the table.
+    # Preserve the incumbent covered-downgrade exit opinion. A personal sale
+    # does not imply a replacement buy or make its future proceeds available.
     if current > 0 and row["grade_live"] not in ("A", "A+"):
         return said(
             Action.SELL,
@@ -238,8 +498,7 @@ def action_for_row(
             # to ADD - the same-looking number means two different things, and
             # a row that does not say which invites selling 7.8% of an account
             # instead of closing a 7.8% holding.
-            f"Sell all of it: graded {row['grade_live']}, and the desk rotates "
-            f"the money into the names it still wants",
+            f"Sell all of it: graded {row['grade_live']}",
         )
 
     # Everything else is a Hold, and the reason says which kind.
@@ -254,13 +513,11 @@ def action_for_row(
     # supports trading toward them in between - the two rules above are the
     # ones that were measured.
     #
-    # So a Hold says what the desk is holding rather than only that nothing is
-    # due. That is what the column owes a reader who records no positions of
-    # his own: the board still shows him the book.
+    # So a Hold says what the account being guided is holding rather than only
+    # that nothing is due. That is what the column owes a reader who records no
+    # positions of his own: the board still shows him the strategy's book.
     if current > 0:
-        return said(
-            Action.HOLD, 0.0, f"The desk holds {current:.1%}; the thesis is intact"
-        )
+        return said(Action.HOLD, 0.0, f"Held at {current:.1%}; the thesis is intact")
     if target > 0:
         return said(
             Action.HOLD,
@@ -317,11 +574,7 @@ def entry_action(row, band, grade_live, current=0.0):
             "Breaking out, but the daily is rejecting its upper band",
         )
     above = f"{band:.1f} on its 20-day band"
-    # The cap the nightly checks is the cap on the DESK's own position, so the
-    # room left under it is measured against the desk's weight. Measuring it
-    # against the operator's recorded holdings made the size an artefact of
-    # his bookkeeping: an unrecorded position showed a full 15% of room on a
-    # name the book was already capped out of.
+    # Apply the shared cap to the actual account supplied by the caller.
     held = current > 0
     room = paper.ENTRY_NAME_CAP - current
     if held and room <= 0:
@@ -360,8 +613,15 @@ def build(
     entries=None,
     *,
     expected_account=None,
+    cash=None,
 ):
     now = now or datetime.now(UTC)
+    # A personal cash figure that cannot bound a plan is a caller error, not a
+    # reason to fall back to the per-row opinions (which would silently claim
+    # unbounded buys). The explicit-targets research path never reads cash, so
+    # this gate applies only to the personal board.
+    if targets is None and cash is not None:
+        _validate_cash(cash, equity)
     if targets is not None:
         if (
             set(targets) != set(record.get("grades") or {})
@@ -376,7 +636,12 @@ def build(
             ],
         }
     technical, value = desk_freshness.grade_inputs(snapshot, record, now)
-    book = book_weights(record)
+    prices = _account_prices(held, snapshot, record)
+    # The person's own weight in each name, from their supplied holdings at the
+    # supplied equity - never from the desk's paper book. Personal guidance has
+    # to move when the person's holdings move and must not move when the paper
+    # account changes, so the paper account is not a source here.
+    book = personal_weights(held, prices, equity)
     # `holdings.board` speaks for a name that is targeted or held, which on the
     # live record is twelve of ninety-three. The other eighty-one graded names
     # arrived here with no row at all and the column called them "Not in the
@@ -422,12 +687,9 @@ def build(
         np.datetime64(now.astimezone(desk_freshness.NEW_YORK).date()),
     )
     current_decision = offset in (0, 1)
-    # The desk's universe: what it grades, plus anything it still holds. Which
-    # names appear must not depend on the operator's file either - a holding in
-    # something uncovered used to add a row that said "Not covered by the
-    # desk", so the length of the board moved with his bookkeeping. His own
-    # positions are reported by the positions view, which is where a name the
-    # desk has no view on belongs.
+    # The person's universe: what the desk grades, plus anything the person
+    # actually holds. A name the person holds but the desk does not cover gets
+    # a row that says so, because the exit question is the person's own.
     for symbol in sorted(set(record.get("grades") or {}) | set(book)):
         row = rows.get(symbol)
         quote = execution_quotes.describe(
@@ -437,10 +699,9 @@ def build(
             now,
         )
         target = row["target_weight"] if row else 0.0
-        # The desk's own weight, not the operator's. The midpoint recompute
-        # that used to stand here scaled his recorded share count by his
-        # account value, which is the one number on this page the desk has no
-        # opinion about.
+        # The person's own weight in the name, from their supplied holdings at
+        # the supplied equity. The desk's book is a separate account and must
+        # not shape what this person is told they currently hold.
         current = book.get(symbol, 0.0)
         entry = entry_action(
             row,
@@ -449,10 +710,11 @@ def build(
             or (record.get("grades") or {}).get(symbol, {}).get("grade"),
             current,
         )
+        deadline = desk_freshness.timestamp(expiries.get(symbol))
         action, move, reason = action_for_row(
             row,
             quote,
-            desk_freshness.timestamp(expiries.get(symbol)),
+            deadline,
             paused,
             current_decision,
             target,
@@ -460,6 +722,41 @@ def build(
             now,
             entry,
         )
+        # Whether the row can be acted on right now, distinct from what the
+        # desk wants done. Opinion and readiness are two questions, and the
+        # row answers both: `strategy_action`/`strategy_move_weight` say what
+        # the desk wants, `action`/`move_weight` say what can actually be
+        # done, and `executable` says whether the evidence and the funding
+        # support doing it now.
+        executable, blocker = _execution_readiness(
+            paused, current_decision, quote, deadline, now
+        )
+        # Investment intent is preserved as data for a future reviewed UI.
+        strategy_action = action
+        strategy_move_weight = move
+        # For a personal buy, unknown cash is not demonstrated funding and a
+        # zero cash bound leaves nothing to fund a buy: either way the opinion
+        # stands (a strategy Buy) but nothing is claimed executable.
+        if (
+            targets is None
+            and strategy_action is Action.BUY
+            and (cash is None or cash == 0)
+        ):
+            if cash is None:
+                blocker = blocker or "available cash is unknown"
+            else:
+                blocker = blocker or "no available cash"
+            executable = False
+        # On unusable evidence the actionable answer is always Hold with the
+        # blocker named; the desk's opinion is not hidden, it is preserved in
+        # the strategy fields above.
+        if not executable:
+            if strategy_action is Action.BUY or strategy_action is Action.SELL:
+                reason = _not_executable_reason(
+                    strategy_action, strategy_move_weight, blocker
+                )
+            action = Action.HOLD
+            move = 0.0
 
         deadlines = [
             desk_freshness.timestamp(v)
@@ -482,19 +779,31 @@ def build(
             # the operator's account value, which is a number the page should
             # not have to ask him for.
             "move_weight": move,
+            # The desk's investment intent, kept distinct from what can be
+            # acted on now: existing consumers read `action`/`move_weight`
+            # and do not know `executable`, so the opinion lives here and the
+            # actionable recommendation in the fields above.
+            "strategy_action": strategy_action,
+            "strategy_move_weight": strategy_move_weight,
+            # What stands in the way of executing right now, or None when
+            # nothing does; the same value that shapes `action`, `executable`
+            # and the reason text.
+            "blocker": blocker,
             "target_weight": target,
-            # The desk's position and the distance from it to the desk's own
-            # target. Both are the book's numbers; neither depends on what the
-            # operator has recorded, which is what keeps the column saying the
-            # same thing whether or not he keeps his holdings file current.
+            # The person's own position and the distance from it to the desk's
+            # target. Both come from the supplied holdings and equity, so they
+            # say what THIS person holds, not what the paper book holds.
             "current_weight": current,
             "delta_weight": target - current,
             "valid_until": min(deadlines).isoformat() if deadlines else None,
             "quote": quote,
             "session": record["session"],
+            "executable": executable,
         }
     if targets is None:
-        apply_account_plan(result, record, snapshot, entries, paused, now)
+        apply_personal_account_plan(
+            result, held, equity, cash, snapshot, entries, paused, now, record
+        )
     return {
         "version": VERSION,
         "as_of": now.isoformat(),

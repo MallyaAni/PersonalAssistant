@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from backend.market import decision_view, execution_quotes
+from backend.market.holdings import Holding
 from backend.tests.test_intraday_candidate import inputs
 
 
@@ -61,17 +62,18 @@ def test_a_strategy_gate_blocks_the_buy(block):
         target, replacement = changes[block]
         target.update(replacement)
     result = decision_view.build(
-        record, [], 100000, snapshot, quoted, now, entries=FIRING
+        record, [], 100000, snapshot, quoted, now, entries=FIRING, cash=100000
     )["rows"]["S11"]
     assert (result["action"] == "Buy") is (block is None)
     assert result["target_weight"] == 0.1
 
 
-# An execution gate leaves the action alone and says what is in the way, so the
-# operator learns the desk wants the name AND that he cannot cross the spread
-# for it right now.
-@pytest.mark.parametrize("block", ["stale", "closed", "spread", "size", "future", "timing", "technical"])
-def test_an_execution_gate_annotates_rather_than_blocking(block):
+# Unusable evidence blocks personal action while preserving investment intent;
+# the unrelated paper rebalance clock does not block a funded personal entry.
+@pytest.mark.parametrize(
+    "block", ["stale", "closed", "spread", "size", "future", "timing", "technical"]
+)
+def test_execution_evidence_blocks_actions_without_erasing_intent(block):
     record, snapshot, quoted, now = setup()
     quote = quoted["quotes"]["S11"]
     changes = {
@@ -86,10 +88,13 @@ def test_an_execution_gate_annotates_rather_than_blocking(block):
     target, replacement = changes[block]
     target.update(replacement)
     result = decision_view.build(
-        record, [], 100000, snapshot, quoted, now, entries=FIRING
+        record, [], 100000, snapshot, quoted, now, entries=FIRING, cash=100000
     )["rows"]["S11"]
-    assert result["action"] == "Buy", f"{block} should not suppress the desk's view"
-    assert "(" in result["reason"], f"{block} should say what is in the way"
+    assert result["strategy_action"] == "Buy"
+    assert result["action"] == ("Buy" if block == "timing" else "Hold")
+    assert result["executable"] is (block == "timing")
+    if block != "timing":
+        assert result["move_weight"] == 0
 
 
 # The gap between a position and its target weight is not an instruction.
@@ -103,40 +108,36 @@ def test_an_execution_gate_annotates_rather_than_blocking(block):
 def test_the_distance_to_a_target_weight_is_not_a_trade():
     record, snapshot, quoted, now = setup()
     record["paper"] = {"until_rebalance": 40}  # the reset is months away
-    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"]["S11"]
+    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"][
+        "S11"
+    ]
     assert result["action"] == "Hold"
     assert result["move_weight"] == 0.0
     # And it still says what the desk wants, so the row is not merely silent.
     assert "10%" in result["reason"]
 
 
-# A Hold on a name the desk owns says what it owns.
-#
-# "Hold" alone was read as "the desk has no position here", which on a board
-# where nine of ninety-three rows are the book is the wrong reading on exactly
-# the rows that matter. The weight comes from the desk's account, so it is
-# there whether or not the operator records anything.
-def test_a_hold_on_a_desk_position_names_the_weight():
+# A personal Hold names the person's marked weight, independent of paper holdings.
+def test_a_hold_on_a_personal_position_names_the_weight():
     record, snapshot, quoted, now = setup()
     record["paper"] = {
         "until_rebalance": 40,
         "equity": 100000.0,
         "positions": [{"symbol": "S11", "qty": 80.0, "market_value": 8000.0}],
     }
-    result = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"]["S11"]
+    held = [Holding("S11", 5.0, 100.0, "2026-08-01")]
+    result = decision_view.build(record, held, 100000, snapshot, quoted, now)["rows"][
+        "S11"
+    ]
+    expected = 5.0 * snapshot["quotes"]["S11"]["last"] / 100000
     assert result["action"] == "Hold"
     assert result["move_weight"] == 0.0
-    assert result["current_weight"] == pytest.approx(0.08)
-    assert "8.0%" in result["reason"]
+    assert result["current_weight"] == pytest.approx(expected)
+    assert f"{expected:.1%}" in result["reason"]
 
 
-# The whole column is the desk's, so nothing in it moves when the operator's
-# holdings file changes - including when he has never written one. This is the
-# property the rest of the module is arranged around: every action, size and
-# reason is a statement about the book.
-def test_the_board_is_identical_whatever_the_operator_records():
-    from backend.market.holdings import Holding
-
+# Personal holdings must change personal weights and expose uncovered holdings.
+def test_the_board_reflects_the_operator_records():
     record, snapshot, quoted, now = setup()
     record["paper"] = {
         "until_rebalance": 40,
@@ -144,6 +145,7 @@ def test_the_board_is_identical_whatever_the_operator_records():
         "positions": [{"symbol": "S11", "qty": 80.0, "market_value": 8000.0}],
     }
 
+    # Project the action and sizing fields for each supplied personal portfolio.
     def board(held):
         rows = decision_view.build(
             record, held, 100000, snapshot, quoted, now, entries=FIRING
@@ -154,11 +156,14 @@ def test_the_board_is_identical_whatever_the_operator_records():
         }
 
     nothing = board([])
-    # A stale file naming a position the desk does not hold, and one that
-    # happens to agree with it. Neither is allowed to change a single cell.
-    assert board([Holding("S11", 5.0, 100.0, "2026-08-01")]) == nothing
-    assert board([Holding("S11", 80.0, 100.0, "2026-08-01")]) == nothing
-    assert board([Holding("S99", 999.0, 12.0, "2026-01-02")]) == nothing
+    small = board([Holding("S11", 5.0, 100.0, "2026-08-01")])
+    large = board([Holding("S11", 80.0, 100.0, "2026-08-01")])
+    assert nothing["S11"][2] == 0
+    assert 0 < small["S11"][2] < large["S11"][2]
+    uncovered = board([Holding("S99", 999.0, 12.0, "2026-01-02")])
+    assert set(uncovered) == set(nothing) | {"S99"}
+    assert uncovered["S99"][0] == "Hold"
+    assert not uncovered["S99"][1]
 
 
 # A decision written on the evening of its own session is current, not
@@ -177,7 +182,7 @@ def test_iex_quote_passes_the_gate():
     record, snapshot, quoted, now = setup()
     quoted["feed"] = "iex"
     result = decision_view.build(
-        record, [], 100000, snapshot, quoted, now, entries=FIRING
+        record, [], 100000, snapshot, quoted, now, entries=FIRING, cash=100000
     )["rows"]["S11"]
     assert result["action"] == "Buy"
     assert result["quote"]["feed"] == "iex"
@@ -311,8 +316,14 @@ def test_the_other_guards_are_untouched_on_a_single_venue_feed():
     _, _, quoted, now = setup()
     raw = quoted["quotes"]["S11"]
     assert execution_quotes.describe(raw, "iex", False, now)["eligible"] is False
-    assert execution_quotes.describe({**raw, "ap": 0}, "iex", True, now)["eligible"] is False
-    assert execution_quotes.describe({**raw, "t": "unknown"}, "iex", True, now)["eligible"] is False
+    assert (
+        execution_quotes.describe({**raw, "ap": 0}, "iex", True, now)["eligible"]
+        is False
+    )
+    assert (
+        execution_quotes.describe({**raw, "t": "unknown"}, "iex", True, now)["eligible"]
+        is False
+    )
 
 
 # The book's mid-cycle entry is what the operator can act on today, so it is
@@ -339,7 +350,9 @@ def test_the_live_entry_answers_before_the_calendar(weight, grade, band, expecte
     # `weight` is the desk's own position in the name: the cap the nightly
     # checks is the cap on the book, so the room left under it is the book's.
     row = {"rejecting_band": False, "target_weight": 0.04}
-    assert (decision_view.entry_action(row, band, grade, weight) or (None,))[0] == expected
+    assert (decision_view.entry_action(row, band, grade, weight) or (None,))[
+        0
+    ] == expected
 
 
 # The band gate the nightly applies is applied here too, so the page never
@@ -388,17 +401,8 @@ def test_the_entry_carries_the_weight_to_put_on_now():
     assert decision_view.entry_action(row, 1.5, "A+", nearly)[1] == pytest.approx(0.01)
 
 
-# A downgrade IS a sell, because the desk redeploys rather than going to cash.
-#
-# This test asserted the opposite for part of 2026-09-19, on the evidence that
-# a downgraded name still beats the benchmark over the next twenty sessions.
-# That evidence is real and it is why selling one to CASH costs 24 points of
-# CAGR a year. It is not an argument for holding it: rotated into the names the
-# desk still wants, the same signal earned the same return with a 7.3 point
-# shallower drawdown. Both readings were right about the book they were
-# measured against - the first against a 20-session rebalance, where the
-# calendar already did this work.
-def test_a_downgrade_is_a_sell_that_funds_the_rest_of_the_book():
+# A covered downgrade preserves the exit opinion without assuming a future buy.
+def test_a_covered_downgrade_has_an_exit_opinion():
     _, _, _, now = setup()
     row = {
         "in_book": True,
@@ -455,6 +459,7 @@ def test_the_board_can_only_ever_say_one_of_three_things():
                     quoted,
                     now,
                     entries={**allowed, **({"S11": band} if band is not None else {})},
+                    cash=100000,
                 )
                 for row in built["rows"].values():
                     said.add(row["action"])

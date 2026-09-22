@@ -476,15 +476,25 @@ async def desk_intraday(user_id: UserId) -> dict[str, object]:
 
 # The board against the person's own holdings at the equity given: the
 # latest record's targets and levels, the live candle where the feed has
-# one, and the person's entry beside each name they hold.
+# one, and the person's entry beside each name they hold. Optional personal
+# cash bounds recommendations for this read without changing either account.
 @router.get("/desk/mine")
 async def desk_mine(
-    user_id: UserId, equity: float = Query(..., gt=0)
+    user_id: UserId,
+    equity: float = Query(..., gt=0),
+    available_cash: float | None = Query(None, ge=0),
 ) -> dict[str, object]:
     """Return action rows computed against the saved holdings."""
     _operator_only(user_id)
     if not math.isfinite(equity):
         raise HTTPException(status_code=422, detail="Equity must be finite")
+    if available_cash is not None and (
+        not math.isfinite(available_cash) or available_cash > equity
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="Available cash must be finite and no greater than equity",
+        )
     latest, _previous = deskrecord.latest_pair(_root())
     rows = holdings.load(_root())
     if latest is None:
@@ -536,6 +546,7 @@ async def desk_mine(
         # The allocation preview belongs to the account viewing it: a plan
         # naming another account is an explicit unavailable preview.
         expected_account=user_id,
+        cash=available_cash,
     )
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)
