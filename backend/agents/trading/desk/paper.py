@@ -215,6 +215,14 @@ class PaperState:
     order_seq: int = 0
     event_cycle: dict = field(default_factory=dict)
     event_outcomes: list[dict] = field(default_factory=list)
+    # The optional funded-allocation state, untouched on the incumbent path.
+    # Holds the desk's stable stock composition (exposure 1) - kept separately
+    # from the reduced executable target and the actual held shares, so a
+    # risk-only cut never loses the names to re-enter - plus the policy and the
+    # serialized `allocation_plan` display metadata. Absent until a caller
+    # plans with an `allocation_context`; old state JSON without it loads the
+    # same fresh state it always did.
+    allocation_state: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -229,6 +237,14 @@ class PaperOrder:
     # so the write-down and the submit use the same one.
     client_order_id: str | None = None
     event_id: str | None = None
+    # Risk-cut priority metadata on the funded-allocation path: set to the
+    # binding reason when a sell is a risk reduction that must not be
+    # suppressed by a min-trade threshold or a buy gate. None on the
+    # incumbent path, whose orders carry no such marker.
+    priority: str | None = None
+    # Optional funded plans execute both sides at the next open; legacy orders
+    # retain their existing auction policy when this field is absent.
+    execution_timing: str | None = None
 
 
 # Serialize paper writers across the nightly and intraday processes.
@@ -561,6 +577,7 @@ def plan(
     entry_blocked: set[str] | None = None,
     entries: dict[str, float] | None = None,
     cash: float | None = None,
+    allocation_context: "object | None" = None,
 ) -> tuple[list[PaperOrder], PaperState, str]:
     """Return (orders, new state, what the day was).
 
@@ -577,9 +594,48 @@ def plan(
     trims pass regardless. Measured on the book since 2015 this held only
     those buys back and beat the ungated book on return, Sharpe and
     drawdown, where requiring a full entry trigger starved the book.
+
+    `allocation_context` (default None) switches this call to the optional
+    funded-allocation path: a daily decision built by the shared
+    `allocation.decide` and `funded_execution.plan_funded` from the inputs
+    the context carries, with the paper-account boundary (stable selection,
+    pending-order gating, whole-share rounding, the band-reversal buy
+    blocker and the `allocation_plan` display payload) handled in
+    `paper_allocation`. `targets` and `grades` are then unused; `finished`
+    remains an explicit company exit and is merged into the context exclusions.
+    When it is
+    None the incumbent path is unchanged, byte for byte.
     """
     if session in state.sessions_seen and not force_rebalance:
         return [], state, "already planned for this session"
+    if allocation_context is not None:
+        from backend.agents.trading.desk.paper_allocation import (
+            _coerce,
+            plan_funded_paper,
+        )
+
+        context = _coerce(allocation_context)
+        context = replace(
+            context,
+            excluded_symbols=context.excluded_symbols | frozenset(finished or ()),
+        )
+
+        orders, new, what = plan_funded_paper(
+            session,
+            state,
+            equity,
+            held,
+            prices,
+            cash,
+            context,
+            force_rebalance=force_rebalance,
+            entry_blocked=entry_blocked,
+        )
+        return (
+            [replace(order, execution_timing="next_open") for order in orders],
+            new,
+            what,
+        )
     new = PaperState(**asdict(state))
     if session not in state.sessions_seen:
         new.sessions_seen = state.sessions_seen + [session]
@@ -934,5 +990,12 @@ def snapshot(
         "pl_pct": (equity / state.start_equity - 1.0) if state.start_equity else 0.0,
         "positions": positions,
     }
+    # The funded-allocation display metadata, when the optional path has run.
+    # Read from the state's persisted allocation_state, so a later session that
+    # carries the same plan forward still reports it; absent on the incumbent
+    # path, whose snapshots are unchanged.
+    plan_payload = (state.allocation_state or {}).get("plan")
+    if plan_payload is not None:
+        entry["allocation_plan"] = plan_payload
     state.history = [h for h in state.history if h.get("session") != session] + [entry]
     return entry

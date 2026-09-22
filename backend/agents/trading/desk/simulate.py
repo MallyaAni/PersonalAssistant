@@ -48,7 +48,7 @@ from datetime import date
 import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
-from backend.agents.trading.desk import grading, planner, risk
+from backend.agents.trading.desk import funded_execution, grading, planner, risk
 from backend.market.panel import Panel
 
 REBALANCE = 20
@@ -153,6 +153,9 @@ class SimResult:
     dip_adds: int = 0  # mid-cycle adds the dip rule made
     traded: float = 0.0  # notional bought and sold over the run
     top_weight: np.ndarray | None = None  # (T,) the largest position's share of equity
+    # The optional funded-allocation trace: one entry per decision day, from
+    # the real ledger, absent on the incumbent path.
+    trace: list[dict] | None = None
 
     # The usual four numbers, from the daily series.
     def stats(self) -> dict[str, float]:
@@ -487,6 +490,40 @@ def _settle_event(book, baseline, sold, scale, prices, t):
     return baseline, sold
 
 
+# Whether a value parses as a plain ISO YYYY-MM-DD date.
+def _is_iso_date(value: str) -> bool:
+    """Return True when `value` parses as a plain ISO YYYY-MM-DD date."""
+    try:
+        parsed = np.datetime64(value, "D")
+    except (TypeError, ValueError):
+        return False
+    return not np.isnat(parsed) and len(value) == 10
+
+
+# Normalize the optional explicit company-removal map into {ISO date: set}.
+def _excluded_by_session(raw) -> dict[str, frozenset[str]]:
+    """Return `raw` as {ISO date: frozenset of symbols}, validated.
+
+    A key that is not an ISO date is a caller error, because a silently
+    ignored date would leave a company exit unapplied. Values may be any
+    iterable of symbols; each is normalized to its string form so the map
+    matches `str(panel.dates[t])` however the caller wrote the key.
+    """
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError("excluded_symbols_by_session must be a mapping")
+    out: dict[str, frozenset[str]] = {}
+    for key, symbols in raw.items():
+        date_key = str(key)
+        if not _is_iso_date(date_key):
+            raise ValueError(
+                f"excluded_symbols_by_session keys must be ISO dates, got {date_key!r}"
+            )
+        out[date_key] = frozenset(str(symbol) for symbol in symbols)
+    return out
+
+
 # Walk the desk's rules, optionally applying the selected event execution lifecycle.
 def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     report,
@@ -510,6 +547,11 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     event_exposure: np.ndarray | None = None,
     event_lifecycle: bool = False,
     live_midcycle: bool = False,
+    funded_allocation: bool = False,
+    allocation_policy: str = "vol_trend",
+    index_eligible: bool = False,
+    benchmark_prices: dict | None = None,
+    excluded_symbols_by_session: dict | None = None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -557,6 +599,36 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     rally. Both are the paper account's live behavior since 2026-09-11 and
     are measured here so the change from the old all-at-the-open fills is
     visible.
+
+    `funded_allocation` is the optional shared allocation path. When enabled,
+    every session is a daily decision, but the stable unscaled stock
+    composition is refreshed only on the scheduled rebalance clock (respecting
+    `rebalance` and the initial `since` start) and supplied to each day's
+    decision unchanged between those sessions, so a daily risk cut or a missing
+    score on an ordinary day can neither lose the names to re-enter nor
+    resurrect one that left. `allocation.decide` applies the current absolute
+    regime and event ceilings against the dated SPY/QQQ context passed in
+    `benchmark_prices`, and the shared `funded_execution.plan_funded` sizes the
+    orders from the cash actually on hand - never from the proceeds of the same
+    day's sells. Risk reductions fill at the next open even on a green open;
+    there is no grace period and no closing-auction deferral, and the FOMC
+    lifecycle is not applied a second time (`event_exposure[t]` is used as the
+    absolute event ceiling instead). The options that would conflict -
+    `event_lifecycle`, `green_day_skip`, `exit_at_close`, `live_midcycle`, the
+    buy gates, `dip`, `exits` and a caller `allocator` - are refused rather
+    than silently ignored; `use_exits` is not consulted because the daily
+    decision replaces the exit analyst's between-rebalance exits. The result
+    carries a per-session `trace` derived from the real ledger - composition,
+    actual fills and fees, deltas over the union of holdings, plan blocked
+    reasons, and an explicit `unavailable` marker when a held valuation is
+    missing - so turnover, false exits, re-entry delay and actual exposure are
+    measurable. `excluded_symbols_by_session`, a map of ISO decision dates to
+    symbol sets, is the explicit company-removal input: the shared
+    `funded_execution.exclude_names` removes each named company from the stable
+    composition before that day's decision, the removal persists through every
+    later session and the next scheduled refresh (so a fresh selection cannot
+    resurrect it), and a missing grade, a risk cut or text is never an exit.
+    With `funded_allocation` False the incumbent path is unchanged.
     """
     decide = allocator or _targets
     fired, blocked, trend_up, dips = _signals_for(
@@ -564,6 +636,35 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     )
     panel: Panel = report.panel
     from backend.agents.trading.desk import entry
+
+    if funded_allocation:
+        # Refuse options the shared allocation path would have to ignore,
+        # rather than silently running a different book than was asked for.
+        incompatible: list[str] = []
+        if allocator is not None:
+            incompatible.append("allocator")
+        if event_lifecycle:
+            incompatible.append("event_lifecycle")
+        if green_day_skip:
+            incompatible.append("green_day_skip")
+        if exit_at_close:
+            incompatible.append("exit_at_close")
+        if live_midcycle:
+            incompatible.append("live_midcycle")
+        if dip is not None:
+            incompatible.append("dip")
+        if exits is not None:
+            incompatible.append("exits")
+        if entry_gate or block_overbought or band_dip_buy or trend_gated_exit:
+            incompatible.append(
+                "entry_gate/block_overbought/band_dip_buy/trend_gated_exit"
+            )
+        if incompatible:
+            raise ValueError(
+                "funded_allocation cannot be combined with: " + ", ".join(incompatible)
+            )
+        funded_execution.validate_benchmarks(panel, benchmark_prices)
+        excluded_map = _excluded_by_session(excluded_symbols_by_session)
 
     live_bands = entry.bollinger_z(panel.adj_close) if live_midcycle else None
     # A research overlay changes exposure only when its close-time scale changes.
@@ -588,12 +689,190 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     invested = np.zeros(rows)
     equity = np.full(rows, np.nan)
     rebalances = 0
+    stable_desired: dict[str, float] = {}
 
     equity[start] = book.equity(closes[start])
     top = np.full(rows, np.nan)
     dip_adds = 0
     next_rebalance = start
+    funded_trace: list[dict] = []
+    excluded: set[str] = set()
     for t in range(start, rows - 1):
+        if funded_allocation:
+            # An explicit company exit, named for this decision date, removes
+            # the name from the stable composition for this session and every
+            # later one - including the next scheduled refresh, so a fresh
+            # selection cannot resurrect it. Only the caller's explicit map
+            # removes a name; a missing grade or a risk cut never does.
+            if excluded_map:
+                removed = excluded_map.get(str(panel.dates[t]))
+                if removed:
+                    excluded.update(removed)
+            # The stable unscaled stock composition refreshes only on the
+            # scheduled rebalance clock, never between dates, so a daily risk
+            # cut or a missing score on an ordinary day can neither lose the
+            # names to re-enter nor resurrect one that left.
+            rebalanced = t >= next_rebalance
+            if rebalanced:
+                next_rebalance = t + rebalance
+                stable_desired = funded_execution.stable_composition(
+                    report, panel, config, t
+                )
+                rebalances += 1
+            if excluded:
+                stable_desired = funded_execution.exclude_names(
+                    stable_desired, excluded
+                )
+            # One daily shared decision: the supplied composition, the pure
+            # allocation under the current absolute regime and event ceilings,
+            # and the shared cash-bounded order plan, filled at the next open
+            # whatever the open looks like.
+            equity_t = book.equity(closes[t])
+            price_map = {
+                s: float(closes[t, j])
+                for j, s in enumerate(panel.tickers)
+                if np.isfinite(closes[t, j]) and closes[t, j] > 0
+            }
+            held_map = {
+                s: float(book.shares[j])
+                for j, s in enumerate(panel.tickers)
+                if book.shares[j] > 0
+            }
+            regime_cap = float(report.regime.states[t].exposure)
+            event_cap = float(event_exposure[t]) if event_exposure is not None else 1.0
+            daily = funded_execution.daily_decision(
+                report,
+                panel,
+                config,
+                t,
+                policy=allocation_policy,
+                index_eligible=index_eligible,
+                benchmark_prices=benchmark_prices,
+                desired=stable_desired,
+                held=held_map,
+                prices=price_map,
+                equity=equity_t,
+                regime_cap=regime_cap,
+                event_cap=event_cap,
+                excluded_symbols=excluded,
+            )
+            before = book.shares.copy()
+            cash_before = float(book.cash)
+            traded_before = float(book.traded)
+            entry = {
+                "decision_date": str(panel.dates[t]),
+                "fill_date": str(panel.dates[t + 1]),
+                "equity_date": str(panel.dates[t + 1]),
+                "excluded": sorted(excluded),
+                "policy": daily.policy,
+                "as_of": daily.as_of,
+                "reason": daily.reason,
+                "blocked": list(daily.blocked),
+                "composition": dict(stable_desired),
+                "desired": {},
+                "executable": {},
+                "cash_projected": None,
+                "cash_before": cash_before,
+                "cash_after": float(book.cash),
+                "notional_traded": 0.0,
+                "fees": 0.0,
+                "shares_before": {
+                    s: float(before[j])
+                    for j, s in enumerate(panel.tickers)
+                    if before[j] > 0
+                },
+                "shares_after": {},
+                "deltas": {},
+                "fills": {},
+                "missing": [],
+                "plan_blocked": [],
+                "binding": "",
+                "unavailable": [],
+            }
+            if daily.decision is not None:
+                plan = funded_execution.plan_funded(
+                    daily.decision,
+                    held_map,
+                    price_map,
+                    equity_t,
+                    book.cash,
+                    cost_bps=cost_bps,
+                    whole_shares=False,
+                    index_eligible=index_eligible,
+                )
+                order = book.funded_order(plan)
+                book.settle_split(
+                    order,
+                    opens[t + 1],
+                    opens[t + 1],
+                    t + 1,
+                    plan.reason,
+                    sell_at_close=False,
+                    recycle_sells=False,
+                )
+                entry["desired"] = dict(plan.desired)
+                entry["executable"] = dict(plan.executable)
+                entry["cash_projected"] = float(plan.cash)
+                entry["missing"] = list(plan.missing)
+                entry["plan_blocked"] = list(plan.blocked)
+                entry["binding"] = plan.binding
+                entry["reason"] = plan.reason
+                entry["notional_traded"] = float(book.traded - traded_before)
+                entry["fees"] = (book.traded - traded_before) * book.cost
+            entry["cash_after"] = float(book.cash)
+            entry["shares_after"] = {
+                s: float(book.shares[j])
+                for j, s in enumerate(panel.tickers)
+                if book.shares[j] > 0
+            }
+            # Deltas over the union of before and after holdings, so a full
+            # exit - held yesterday, gone today - is present in the trace and
+            # never silently zeroed.
+            entry["deltas"] = {
+                s: float(book.shares[panel.index(s)] - before[panel.index(s)])
+                for s in sorted(set(panel.tickers))
+                if abs(book.shares[panel.index(s)] - before[panel.index(s)]) > 1e-12
+            }
+            # Actual fills from the ledger's share changes at the opening
+            # price the book actually filled at - never from the proposed
+            # orders, which could have been scaled or skipped.
+            fill_price = opens[t + 1]
+            for symbol, delta in entry["deltas"].items():
+                column = panel.index(symbol)
+                price = float(fill_price[column])
+                if not np.isfinite(price) or price <= 0:
+                    continue
+                entry["fills"][symbol] = {
+                    "side": "buy" if delta > 0 else "sell",
+                    "qty": abs(delta),
+                    "fill_price": price,
+                    "notional": abs(delta) * price,
+                }
+            # A held position whose closing valuation is missing makes this
+            # session's NAV and return unavailable: shares and cash are
+            # retained, and the scorecard rejects the return rather than
+            # showing a fake loss or recovery from a dropped value.
+            unpriced = [
+                symbol
+                for j, symbol in enumerate(panel.tickers)
+                if book.shares[j] > 0
+                and not (np.isfinite(closes[t + 1, j]) and closes[t + 1, j] > 0)
+            ]
+            if unpriced:
+                entry["unavailable"] = unpriced
+                equity[t + 1] = float("nan")
+                returns[t + 1] = float("nan")
+                invested[t + 1] = float("nan")
+                top[t + 1] = float("nan")
+            else:
+                equity[t + 1] = book.equity(closes[t + 1])
+                returns[t + 1] = (
+                    equity[t + 1] / equity[t] - 1.0 if equity[t] > 0 else float("nan")
+                )
+                invested[t + 1] = book.invested(closes[t + 1])
+                top[t + 1] = book.top_weight(closes[t + 1])
+            funded_trace.append(entry)
+            continue
         scale = float(event_exposure[t]) if event_exposure is not None else 1.0
         # The promoted lifecycle defers a rebalance and restores only executed cuts.
         if event_lifecycle and (scale < 1 or event_baseline is not None):
@@ -692,6 +971,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         dip_adds,
         book.traded,
         top[start:],
+        funded_trace if funded_allocation else None,
     )
 
 
@@ -837,6 +1117,18 @@ class _Book:
             wanted[index] = current + (o.qty if o.side == "buy" else -o.qty)
         return np.maximum(wanted, 0.0)
 
+    # The share target of one shared funded plan: current shares moved by the
+    # plan's own continuous orders, for the same `_Book` to fill.
+    def funded_order(self, plan) -> np.ndarray:
+        """Return the share target the shared funded plan wants held."""
+        wanted = np.array(self.shares, dtype=float)
+        for o in plan.orders:
+            if o.symbol not in self.tickers:
+                continue
+            index = self.tickers.index(o.symbol)
+            wanted[index] = self.shares[index] + (o.qty if o.side == "buy" else -o.qty)
+        return np.maximum(wanted, 0.0)
+
     # Fill the planned order at `prices`, then write down what changed.
     def settle(self, order, prices, session: int, reason: str) -> None:
         """Fill `order` at `prices` and record the positions that changed."""
@@ -850,7 +1142,13 @@ class _Book:
 
     # Fill same-time sells first, then scale competing buys to cash after costs.
     # Missing prices preserve holdings; only executed quantities enter the ledger.
-    def _fill(self, order: np.ndarray, prices: np.ndarray) -> None:
+    # `recycle_sells` lets the same day's sale proceeds fund buys; the funded
+    # allocation path leaves it off so a buy is never paid for with money a
+    # sell has not delivered yet. The sale proceeds are still credited to the
+    # closing cash either way - only their use as a buy budget is conditional.
+    def _fill(
+        self, order: np.ndarray, prices: np.ndarray, recycle_sells: bool = True
+    ) -> None:
         tradable = (
             np.isfinite(prices) & (prices > 0) & np.isfinite(order) & (order >= 0)
         )
@@ -861,13 +1159,20 @@ class _Book:
         priced = np.where(tradable, prices, 0.0)
         sells = np.minimum(move, 0.0)
         buys = np.maximum(move, 0.0)
-        proceeds = -float((sells * priced).sum())
-        available = self.cash + proceeds * (1.0 - self.cost)
+        gross_proceeds = -float((sells * priced).sum())
+        net_proceeds = gross_proceeds * (1.0 - self.cost)
+        old_cash = float(self.cash)
+        # The cash this basket's buys may spend: the same session's sale
+        # proceeds only fund buys when recycling is on, and are earmarked
+        # rather than spendable otherwise.
+        buy_budget = old_cash + (net_proceeds if recycle_sells else 0.0)
         requested = float((buys * priced).sum())
         spend = requested * (1.0 + self.cost)
-        scale = min(1.0, max(0.0, available) / spend) if spend > 0 else 0.0
-        self.cash = max(0.0, available - spend * scale)
-        self.traded += proceeds + requested * scale
+        scale = min(1.0, max(0.0, buy_budget) / spend) if spend > 0 else 0.0
+        # Closing cash always receives the net sale proceeds; only the actual
+        # buy spend leaves it, so a no-recycle basket still credits the sale.
+        self.cash = max(0.0, old_cash + net_proceeds - spend * scale)
+        self.traded += gross_proceeds + requested * scale
         self.shares += sells + buys * scale
 
     # Fill the plan with buys paid at `buy_prices` and sells paid at
@@ -882,13 +1187,14 @@ class _Book:
         session: int,
         reason: str,
         sell_at_close: bool = True,
+        recycle_sells: bool = True,
     ) -> None:
         """Fill the plan, buys at `buy_prices` and sells at `sell_prices`."""
         before = self.shares > 0
         if sell_at_close:
-            self._fill_split(order, buy_prices, sell_prices)
+            self._fill_split(order, buy_prices, sell_prices, recycle_sells)
         else:
-            self._fill(order, buy_prices)
+            self._fill(order, buy_prices, recycle_sells)
         for column in np.flatnonzero((self.shares > 0) & ~before):
             self.opened[column] = session
             self.paid[column] = float(buy_prices[column])
@@ -897,10 +1203,14 @@ class _Book:
 
     # Pay opening buys from existing cash before crediting any closing sale.
     def _fill_split(
-        self, order: np.ndarray, buy_prices: np.ndarray, sell_prices: np.ndarray
+        self,
+        order: np.ndarray,
+        buy_prices: np.ndarray,
+        sell_prices: np.ndarray,
+        recycle_sells: bool = True,
     ) -> None:
-        self._fill(np.maximum(order, self.shares), buy_prices)
-        self._fill(np.minimum(order, self.shares), sell_prices)
+        self._fill(np.maximum(order, self.shares), buy_prices, recycle_sells)
+        self._fill(np.minimum(order, self.shares), sell_prices, recycle_sells)
 
     # One position leaving, with what it made between its two fills.
     def _log(self, column: int, session: int, prices, reason: str) -> None:
