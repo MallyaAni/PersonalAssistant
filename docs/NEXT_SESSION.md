@@ -1,5 +1,30 @@
 # Next session
 
+## 2026-09-22 — Research input freshness and exchange-calendar gates verified
+
+Source checkpoint `47015bfbd4c4e26a39e22dbac44ef6afaa6590c1` is pushed.
+Root-owned `intraday_inputs.py` reads the reviewed 2019–2028 calendars, counts
+early closes for outcome horizons, rejects unknown calendar coverage, and
+requires the preceding20 exchange sessions rather than any20 available rows.
+Archived eligibility uses actual publication plus the existing current/next-
+session freshness rule. A missing replacement grade stays unknown; stale older
+records cannot revive it. A daily record published before its session closed is
+not accepted as point-in-time final daily evidence.
+
+VERIFIED:54 input/adapter checks pass, including10 new input cases; Ruff/format
+and scoped strict mypy pass. Log `/tmp/codex-intraday-input-gates-20260922.log`.
+No candidate outcomes or deployment claims follow from these input tests.
+
+Two isolated OpenCode workers remain active: comparison_replay979209 and new
+comparison_cache1068445, both spark/deepseek-v4-flash. Replay owns only its new
+module/test. Cache owns only new intraday_cache.py/test: explicit partition and
+basis, raw observation preservation, actual recorded eligibility and source hashes.
+Read their exact task files; wait for COMPARISON_HANDOFF.md and process exit.
+Never import active drafts, restart active workers, or recopy integrated roles.
+Root owns the new input gates; no worker may replace them. Loader provenance,
+replay correctness and cross-provider scale compatibility remain review gates
+before historical scoring. Personal guidance still uses incumbent entry inputs.
+
 ## 2026-09-22 — Causal comparison adapter verified; outcome replay underway
 
 Checkpoint `425ef664e9a86a785340bcbe335d6ac8d5ebe0dc` is pushed with the reviewed
