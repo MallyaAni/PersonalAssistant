@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-09-22 — User requests zero costs and midpoint execution target
+
+Latest instruction supersedes cost-stress emphasis: "forget trading costs try to
+hit mid price". Midpoint is the desired execution target, not a claimed fill.
+Historical inputs contain daily OHLC/adjusted prices, not timestamped bid/ask
+history. Live quote reads are ephemeral. Therefore the new evaluation is explicitly
+**zero-cost next-open proxy**, not a verified midpoint backtest. No broker/order
+configuration was changed; no real trades or new data downloads.
+
+Ran fixed vol/vol_trend at0bps on sourcee71b906, same2016-01-04..2026-09-18,
+NAV1/next-open/zero cash yield, explicit researchSPY eligibility; no fitting or
+window/threshold changes. Both benchmarks also use0bps. CAGR/maxDD:
+vol23.2805%/23.8314%; vol_trend18.0976%/14.9875%; SPY15.0857%/33.7173%;
+QQQ20.0853%/35.1187%. Vol meets both full-window objectives and40.2294% of
+overlapping252-session windows; vol_trend still failsQQQ return (rolling29.4551%).
+Both trace checks clean. These remain reused survivor-biased history.
+
+Artifacts on Spark1 `/tmp/codex-mac-zero-cost-20260922/zero-cost.json` plus
+candidate arrays/traces, input/source/script hashes; script
+`/tmp/codex-trading-zero-cost-20260922.py`. Earlier10/25bps artifacts preserved,
+not relabeled. Future execution work should measure quote-midpoint limit fills
+and unfilled orders rather than assume that every midpoint attempt executes.
+
 ## 2026-09-22 — Experimental trading checkpoint published; no adoption
 
 Source checkpoint `e71b906d60709876c93f7fd177b64aad9ac8294e` is pushed on
