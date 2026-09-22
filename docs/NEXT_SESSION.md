@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-09-22 02:20 UTC — Combined backend assembled; 97/99 tests pass
+
+All six previous workers finished/exited. Root created isolated integration
+checkout `/home/animallya96/codex-worktrees/trading-integration-20260922`, branch
+codex/trading-integration-20260922, base2d89aa8. Copied OWNED simulator+paper+API
+source/tests and acceptance test only; no UI/evaluator source imported. No commit
+or deployment. Root tests with --runxfail: **97 passed,2 failed**, log
+/tmp/codex-integrated-backend-tests-20260922.log. Exact reproductions now PASS
+fees/post-fee NAV, index permission/no-add, canonical/populated API rows,
+future-context rejection and pending-resolved retry.
+
+Remaining test failures: ineligible heldSPY400/target200 sells400 (must sell200,
+not force liquidation); raw legacy _Book.equity missing-price assertion bypasses
+optional funded path's guards. Test the actual funded journey, retaining default
+2693-session invariance. New real paper->API roundtrip FAILED projected total
+0.999001: paper metadata still divides after-fee positions/cash by pre-fee NAV.
+
+CURRENT five bounded finish workers (all predecessor exits confirmed):
+simulator3713600, paper3713603, evaluation3713606, acceptance3713611, UI3713615.
+Same per-role checkouts, each CODEX_FINISH_TASK.md; logs
+/tmp/codex-opencode-finish-<role>-20260922.jsonl. role-current.tsv overrides and
+compact status helper updated. API is finished/idle; don't resume original PIDs.
+Simulator only fixes partial index reduction; PAPER immediate explicit company
+exit plus post-fee metadata roundtrip; EVAL deletes duplicate strategy ledger
+and calls integrated simulate.run; ACCEPTANCE removes truly resolved strictxfails
+and tests funded missing NAV; UI executes queued chart cleanup. Expected existing
+role handoffs revised (simulator PROJECTION_HANDOFF.md). No broad new work.
+
+EVAL/PAPER/ACCEPTANCE received updated shared simulator dependencies from combined
+tree; never import their seeded dependency copies as owned diffs. PAPER additionally
+received reviewed allocation_view.py for real producer-consumer test, not ownership.
+Paper projection addendum copied to CODEX_FINISH_TASK.md just after dispatch;
+verify it was consumed. All five PIDs verified alive. Root owns integration tree;
+do not let parallel workers write it. No strategy outcome claimed or deployed.
+Unrelated changes preserved; diagram impact NONE for coordination evidence.
+
 ## 2026-09-22 01:15 UTC — Narrow remaining correction; reduce supervision cost
 
 User reports57% credits consumed and insufficient results. Reduce repeated
