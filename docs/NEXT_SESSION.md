@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-09-22 — Causal entry research engine integrated; 80 checks pass
+
+Root checkpoint `1a2c2c1aa513667b7aa85f014d80acf94b365716` is pushed on
+`codex/trading-integration-20260922`. The entry correction worker exited and its
+reviewed owned files were integrated. Root now owns those files and additionally
+fixed missing-newest-candle readiness: an old prefix preserves its trigger/event
+but becomes unavailable when the next completed observation is missing. Never
+recopy the worker's source over this correction.
+
+VERIFIED: **80 tests pass**, including 39 entry cases, with Ruff/formatting and
+strict mypy clean. Log `/tmp/codex-entry-integrated-20260922.log`. Tests cover
+causal filtering, confirmation timestamps, immediate/later invalidation, gaps,
+OHLCV validity, evolving daily context, stable identity and current-bar freshness.
+UNVERIFIED: live wiring, performance versus momentum, actual midpoint fills and
+half-day support. The candidate stays isolated research code; no deployment/UI.
+
+Personal correction worker PID602840 remains active; wait for REVIEW_HANDOFF.md.
+Root independently found its draft applies the personal unknown-cash gate to the
+explicit-target paper path too. See `/tmp/test_personal_account_review_edges.py`
+and `/tmp/codex-personal-second-review-20260922.log`. Root will correct scope after
+the worker exits and validate the combined API/account/paper path. API wiring and
+shared-test updates are staged, not integrated; paths and ownership are recorded
+in root MAC_CONTINUATION.md. Check actual import paths before trusting a worker
+test run pointed outside its checkout.
+
+Cached intraday data exists on Spark: latest `bars_15m/asof=2026-09-20` has 530
+files and 19,871,542 rows, with raw timestamp bounds 2019-01-02..2026-09-18.
+SPY/QQQ are absent from that partition. Metadata inventory:
+`/tmp/codex-intraday-input-inventory-20260922.json`. These bounds are not proof of
+shared causal coverage or point-in-time eligibility. No outcomes inspected,
+strategy fitting, history rewrite or completed daily-baseline rerun.
+
 ## 2026-09-22 — OpenCode correcting rejected entry and account submissions
 
 All initial workers exited. Entry final still fails the 13 independent acceptance
