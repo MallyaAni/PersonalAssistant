@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-22 — Mac owns trading continuation; implementation before dashboard
+
+Windows is powered off. User transferred supervision to Mac task
+`01a0c73c-000d-7d13-bc6b-2b884f639dec`, requested efficiency, no dashboard work
+before the implementation is established, and six parallel OpenCode sessions
+overnight. Direct SSH `animallya96@172.16.8.3`/`.5` verified from Mac.
+Mac heartbeat `continue-trading-implementation-on-mac` is active hourly.
+Do not resume the old Windows supervisor or its old worker PIDs concurrently.
+
+Root continues in Spark1 `/home/animallya96/codex-worktrees/trading-integration-20260922`,
+branch `codex/trading-integration-20260922`, base `2d89aa8`. Source is UNCOMMITTED
+and NOT DEPLOYED. Read its `MAC_CONTINUATION.md` for exact ownership and next steps.
+Current six isolated worker PIDs/logs/paths: `/tmp/codex-trading-mac-20260922.json`.
+Compact status: `/tmp/opencode/fv-venv/bin/python /tmp/codex-trading-mac-status.py`.
+Workers write `MAC_HANDOFF.md`; integrate owned files only, never seeded dependencies.
+Roles: paper correctness, funded order sizing, simulator, read-only policy review,
+next-open benchmark controls, primary-paper HFT/ML research. No model/service changes,
+training, paid data, real orders or dashboard changes authorized by these tasks.
+
+VERIFIED: root integrated previous finish workers, corrected evaluator calendar,
+actual-exposure, ledger checks and false-exit alignment. Found risk orders were
+still sent to close/cancellable on a green open; fixed timing/persistence/dispatch
+and preserved legacy defaults. Existing `finished` exits now reach funded planning.
+**295 focused tests passed**, 5 existing numerical warnings; log
+`/tmp/codex-mac-integrated-tests-20260922.log`. Model/live deployment acceptance
+not implied. Root additionally owns paper.py, market_daily.py, market_balancer.py,
+evaluator/CLI and test_funded_execution_dispatch.py; do not overwrite these.
+
+Preliminary fixed 2016-01-04..2026-09-18 comparison, explicit research SPY eligibility,
+NAV1/next-open/10bps/zero cash yield: vol CAGR22.01%, DD24.59%; vol_trend CAGR16.78%,
+DD15.30%. Independent scorecard reproduces these. Vol meets both SPY/QQQ full-window
+objectives but only34.08% of overlapping252-session windows; not proof of dominance.
+Artifacts `/tmp/codex-mac-evaluation-preliminary-20260922`. Exposure-matched controls
+remain UNVERIFIED (old evaluator used same-close fills); controls worker is correcting
+them. No policy adoption or claim of a universally best strategy. Complete owned
+reviews, corrected controls and final evaluation before considering deployment.
+Diagram impact: NONE — execution/accounting corrections preserve architecture.
+
 ## 2026-09-22 02:20 UTC — Combined backend assembled; 97/99 tests pass
 
 All six previous workers finished/exited. Root created isolated integration
