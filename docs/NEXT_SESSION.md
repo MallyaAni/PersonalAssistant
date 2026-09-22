@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-09-22 — Cache reviewed; historical price-scale compatibility FAILED
+
+Verified source `bc9a900b5ef809f9a1a14906e5100979d6d20bf4` is pushed with the
+read-only cache adapter and root corrections.83 relevant tests pass, Ruff/format
+and scoped strict mypy pass. Logs `/tmp/codex-cache-integrated-20260922.log`
+and `/tmp/codex-verify-cache-adapter-20260922.log` include synthetic behavior and
+an actual AAPL/cache/11-record read with exact source hashes. Root reproduced6
+worker failures before correcting naive timestamps, invalid/conflicting archive
+dates, true bounds and hashing the bytes actually parsed. Cache is integrated
+and root-owned; never recopy worker source. No deployment or strategy score.
+
+Material new finding in audit commit `4f3b4ed`: across529 symbols/782,568 paired
+closing observations, median absolute scale difference0.0280% hides large
+corporate-action inconsistencies (AVGO roughly10x, WRB1.5x/2.25x and others).
+MSTR lacks the selected daily file. Historical scoring remains blocked on price
+reconciliation; adjustment=all source code is not proof of compatible cached
+bytes. Read the updated input-audit document and `/tmp/codex-intraday-scale-audit-
+20260922.json` (one continuous filename), with per-file hashes. No fitted ratios,
+future-completeness filtering, threshold changes or frozen-cache rewrites.
+
+Original replay worker exited but failed9 independent root acceptance cases:
+observation clock, duplicate/extended-hours proxy fills, partial eligibility
+fallback, mutable horizons, duplicate denominators, reversed missed opportunities,
+explicit label availability and relative price units. Correction worker1150197
+is active, review_round1, exact REPLAY_REVIEW_TASK.md. Wait for NEW
+REVIEW_HANDOFF.md, not its old COMPARISON_HANDOFF.md. Unchanged root acceptance:
+`/tmp/test_intraday_replay_review_edges.py`; log `/tmp/codex-replay-review-repro-
+20260922.log`. No replay source has been integrated.
+
+New comparison_basis1191134 is a bounded read-only OpenCode audit, owns only
+its new reconciliation report and COMPARISON_HANDOFF.md. Read its exact task.
+Both workers use spark/deepseek-v4-flash; never restart active work or import
+drafts. Manifest/MAC_CONTINUATION.md carry ownership. Next: independently review
+replay corrections and dated scale evidence, then wire tested input gates before
+any historical diagnostics. Live momentum superiority remains UNVERIFIED.
+
 ## 2026-09-22 — Research input freshness and exchange-calendar gates verified
 
 Source checkpoint `47015bfbd4c4e26a39e22dbac44ef6afaa6590c1` is pushed.
