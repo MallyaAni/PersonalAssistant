@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-09-22 00:25 UTC — Real-data default-path compatibility independently verified
+
+All current workers still active, same PIDs. API wrote initial handoff but stayed
+running and READ CODEX_API_REVIEW.md plus root reproducer; let its correction
+finish without a second writer. UI review session confirmed
+ses_f39a8e475ffemADG036QT1NqCh, PID3463055. Its queued CODEX_CHART_FOLLOWUP.md must
+be explicitly dispatched after current UI review finishes. PAPER/EVAL still
+working; their queued boundary-review consumption remains unverified.
+
+**VERIFIED real-data default invariance:** root ran changed simulate.run with
+the exact incumbent arguments from prepare-common-window.py on the trusted
+corrected report (no desk.run or new strategy scoring). All2693 dates match;
+returns and NAV equal frozen common-window-reference to absolute1e-12. Source
+hashes unchanged during check. Evidence remote
+/tmp/codex-trading-evaluation-inputs-20260921/root-default-simulator-check.json;
+external check-default-simulator.py. simulate SHA36ab2ad82f4831147b5aa9273935c217e109ed7ab5f063c8c92e3a9186a67ee1;
+funded_execution94819af333fdaea97c77a3c1d0bf8635a7e50a1512281b58a8baf39bf1e30ef7;
+paper20203bb838841621e0cac794911511ff0d4be9ccc8c4ff13d7ae795b7d1205f8.
+Expected rolling-window empty-slice warnings occurred; evaluated output matched.
+
+Root reran index/post-fee reproducer against new funded hash: index guard and
+held-SPY exit still pass; post-fee cash fraction STILL FAILS. This does not accept
+new allocation behavior. No new source integrated or deployed. Preserve pending
+review tasks; no repeated baseline run unless source/default behavior changes.
+Starting maine4ff2d00, pull up to date, unrelated evaluations preserved.
+Diagram impact NONE — independent verification and coordination evidence.
+
 ## User clarification — legacy breakout chart overlays
 
 User asks why charts still show breakouts and whether replacement removes them.
