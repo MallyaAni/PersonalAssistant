@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-09-22 — Portfolio guidance must avoid overtrading; paper is separate
+
+User clarification: "remember to avoid overtrading, this dashboard will be used
+by me to make buys in my portfolio. the paper trading is its own section in the
+dashboard". Treat this as a product and strategy requirement, not permission to
+execute trades or begin dashboard changes ahead of implementation validation.
+
+The main dashboard supports the user's discretionary decisions using their own
+holdings, cash and allocation; the paper account has separate positions, cash,
+orders and performance in its own section. Never turn paper fills or its rebalance
+clock into instructions for the user's actual portfolio. Shared signals do not
+make the accounts interchangeable. Account scoping must remain explicit.
+
+Avoid unnecessary turnover even with the requested zero-cost assumption and
+midpoint execution target. Prefer HOLD when the investment case has not materially
+changed; surface additions, trims or exits only with a clear reason. Evaluate
+trade count, turnover, holding duration, rapid reversals and recommendation
+stability alongside return/drawdown. Do not copy the experimental daily resizing
+into personal recommendations or choose arbitrary cooldown/band thresholds without
+validation. Earlier measured policies turned over roughly10–11timesNAV annually
+(two-way); that is a diagnostic concern, not an accepted personal trading cadence.
+This entry records the requirement; no new anti-churn logic or dashboard UI is
+claimed implemented by this documentation change. Paper remains experimental.
+
 ## 2026-09-22 — User requests zero costs and midpoint execution target
 
 Latest instruction supersedes cost-stress emphasis: "forget trading costs try to
