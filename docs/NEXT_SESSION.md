@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-22 — Experimental trading checkpoint published; no adoption
+
+Source checkpoint `e71b906d60709876c93f7fd177b64aad9ac8294e` is pushed on
+`codex/trading-integration-20260922`. All six OpenCode workers finished. Spark1
+checkout `/home/animallya96/codex-worktrees/trading-integration-20260922` has no
+tracked modifications; only its local `MAC_CONTINUATION.md` is untracked.
+Do not restart completed workers or repeat the fixed historical simulations.
+
+VERIFIED: **374 focused tests passed**,5 existing warnings; exact tested tree
+`245d9f126c8cff959ded113a4724c4fca6ddc6e8` retained through rebase. Broad relevant
+validation:874 passed,2 skipped,2 failed. FAILED: both learned-ranker score-coverage
+tests reproduce identically on untouchedbase2d89aa8 (34missing rows, first213).
+Five Ruff findings in market.py also reproduce on that base; all other changed
+Python files pass. Logs on Spark1: `/tmp/codex-mac-final-focused-20260922.log`,
+`/tmp/codex-mac-trading-broad-20260922.log`,
+`/tmp/codex-market-model-baseline-failures-20260922.log`.
+
+Paper now preserves exclusions across save/load and scheduled refresh, uses the
+same exclude-before-fallback order as simulation, and sizes from marked holdings
+plus cash rather than stale external NAV. Whole-share risk/cap cuts cannot round
+below an executable reduction. Next-open timing survives pending and dispatch.
+UNVERIFIED: full deployment gates, live behavior, untouched strategy edge.
+Nothing deployed/adopted; no orders, UI, model-service changes or real-data fitting.
+
+At10bps, vol CAGR22.01%/DD24.59% passes both full-window benchmarks but only34.08%
+of rolling windows. At predeclared25bps, CAGR20.13% barely exceedsQQQ20.06%, and
+rolling success drops to25.44%. Vol_trend failsQQQ return. Reused survivor-biased
+history does not justify adoption. Corrected primary-paper review specifies one
+prospective10-session hypothesis with true PIT membership/inputs and overlap
+purging; it authorizes no training or parameter sweep.
+
+On the source branch, see `docs/research/trading-funded-validation-2026-09-22.md`
+and `docs/research/trading-ml-path-2026-09-22.md`. Fixed artifacts remain under
+`/tmp/codex-mac-evaluation-reviewed-20260922/` and
+`/tmp/codex-mac-cost-stress-20260922/`. Next adoption decision requires genuinely
+untouched evidence and the normal gates; do not promote on the backtest aggregate.
+Diagram impact: NONE. Main receives this handoff only, not experimental source.
+
 ## 2026-09-22 — Mac owns trading continuation; implementation before dashboard
 
 Windows is powered off. User transferred supervision to Mac task
