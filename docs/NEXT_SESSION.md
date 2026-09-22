@@ -1,5 +1,19 @@
 # Next session
 
+## User clarification — legacy breakout chart overlays
+
+User asks why charts still show breakouts and whether replacement removes them.
+Source: TickerChart.tsx entryMarkers maps chart.entries to replayed price-only
+upper20-day-band dots; these are not funded BUY records. Legacy paper policy
+still uses graded breakouts. New allocation is not deployed or proven superior.
+Chart legend's 'only exit' downgrade claim cannot describe risk-allocation exits.
+Queued **CODEX_CHART_FOLLOWUP.md** in UI checkout (external chart-policy-followup.md)
+for explicit dispatch AFTER current UI review handoff: remove default legacy
+breakout dots/legend, only use actual dated/versioned decision or fill evidence
+for trade markers, otherwise omit them honestly; fix exit description and browser
+test no fabricated trades. Preserve historical decisions. No concurrent UI writer.
+This chart follow-up is part of remaining UI acceptance before deployment.
+
 ## 2026-09-21 23:45 UTC — UI review dispatched; index-permission fix reproduced
 
 UI initial worker finished PARALLEL_UI_HANDOFF.md and PID3264500 exited.
