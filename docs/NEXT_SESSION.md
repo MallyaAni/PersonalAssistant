@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-09-22 — Precise 15-minute entries are required
+
+User corrected the interpretation of avoiding overtrading: "i told you we need
+precise entries on the 15 min timeframe". The personal dashboard must provide
+precise entry setups/triggers on15-minute bars. Avoiding overtrading means
+rejecting weak/repeated signals and unnecessary position churn, NOT replacing
+15-minute timing with daily-only entries or imposing an arbitrary slow cadence.
+Portfolio selection/sizing and15-minute entry timing are separate decisions;
+paper execution remains a separate account/section.
+
+The fixed daily next-open vol/vol_trend evaluation does NOT validate15-minute
+entry quality. This work has not established that layer as complete. Inspect the
+existing intraday/entry implementation and validate causal15-minute triggers,
+invalidation, stale signals, repeat alerts and midpoint-target fill assumptions
+before claiming the user's dashboard workflow is ready. Do not invent thresholds
+or infer that15-minute precision requires frequent trades.
+
 ## 2026-09-22 — Portfolio guidance must avoid overtrading; paper is separate
 
 User clarification: "remember to avoid overtrading, this dashboard will be used
