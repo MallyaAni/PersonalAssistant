@@ -1,5 +1,60 @@
 # Next session
 
+## 2026-09-22 — OpenCode correcting rejected entry and account submissions
+
+All initial workers exited. Entry final still fails the 13 independent acceptance
+cases; personal source still needs action gating after cash sizing and protection
+for uncovered holdings. Neither source was integrated. Two bounded corrections
+are active: entry PID602839 and personal PID602840. Manifest
+`/tmp/codex-intraday-workers-20260922.json` now records `review_round=1`, updated
+logs and original process receipts. Read their `*_REVIEW_TASK.md` files and wait
+for **REVIEW_HANDOFF.md**, not the old handoff. Never restart an active worker.
+Personal worker rebased its own branch; import only reviewed owned file diffs,
+never that history or seeded dependencies. Root branch remains `f49db2a`.
+
+Root staged optional personal `available_cash` API wiring at
+`/tmp/codex-market-api-intraday-candidate.py` on Spark1, forwarding to `build(cash=)`.
+**6 HTTP validation/ownership checks pass**: invalid cash is rejected before quote
+collection and holdings remain unchanged. Log
+`/tmp/codex-personal-api-boundary-20260922.log`. Original API source restored after
+this isolated validation; full integration waits for corrected personal code.
+Root `test_personal_guidance_api.py` has 11 cases covering account isolation,
+known/unknown/invalid cash, stale evidence and ownership. Its price fixture now
+explicitly matches its expected personal weight. Current unchanged source has
+10 expected failures and 1 pass; no full behavior/deployment claim.
+
+Hourly continuation now recognizes correction-round ownership and final handoffs.
+No UI, orders, model changes, strategy fitting or repeated daily benchmarks.
+
+## 2026-09-22 — Quote boundary fix reviewed; entry and personal work still active
+
+Root integration checkpoint `f49db2a738cc2635f7462dd86643dbc287da6b0e` is pushed
+on `codex/trading-integration-20260922`. It preserves published branch history
+and merges current main handoffs. Only completed quote-worker owned files were
+integrated. VERIFIED: the 09:59-to-10:00 stale-cache regression fails before the
+fix, then **78 relevant checks pass**, including existing HTTP route checks;
+Ruff and formatting pass. Log: `/tmp/codex-intraday-quotes-reviewed-20260922.log`.
+UNVERIFIED: deployment and real-feed acceptance. No deployment or UI changes.
+
+Entry and personal OpenCode workers remain active; do not restart them. Root's
+independent review of the entry draft reproduced 13 failing boundary cases:
+future-data validation affecting an earlier prefix, setup-bar invalidation,
+trigger timestamps before close confirmation, invalid OHLCV, gaps/grid validity,
+daily context frozen after a trigger, and old-session readiness. Tests are at
+`/tmp/test_intraday_entry_review_edges.py`, log
+`/tmp/codex-intraday-entry-review-repro-20260922.log` on Spark1. These findings
+are against a draft, not a completed worker submission. Do not integrate until
+reviewed and corrected. Root also owns new `test_personal_guidance_api.py` in
+the integration checkout: **2 reproduced failures, 1 ownership check passed**.
+The HTTP route currently reports paper weight instead of personal weight and
+still says Buy on an expired quote. Log `/tmp/codex-personal-api-repro-20260922.log`.
+Coordinate final route wiring with the personal worker's eventual API contract.
+
+Read root `HFT_TRANSFER_ADDENDUM.md`: transfer ordered-path ideas to 15-minute
+entries, without inferring true order flow from OHLCV or claiming ML/edge already
+exists. Current entry candidate stays isolated and experimental; no training,
+threshold search, data purchases, live orders or repeated daily backtests.
+
 ## 2026-09-22 — OpenCode implementing the 15-minute entry layer
 
 User explicitly requested OpenCode implementation. Three isolated sessions launched
