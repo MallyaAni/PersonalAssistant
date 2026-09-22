@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-22 00:50 UTC — API canonical schema improved, populated-row crash found
+
+All six workers still active with unchanged PIDs; no replacement launched.
+API consumed review and corrected canonical bucket handling: root's original4
+reproductions now reject missing/legacy malformed inputs and preserve the valid
+bucket example. **FAILED new actual populated-row reproduction:** valid AAA/SPY/
+CASH detail raises KeyError('stock'). _rows_agree_with_buckets uses singular
+kind stock/index against plural bucket keys stocks/indexes. Root expanded
+check-parallel-api.py (remote /tmp/codex-check-parallel-api.py) and appended exact
+correction to active API's CODEX_API_REVIEW.md. Reading this addendum UNVERIFIED;
+verify actual populated HTTP payload after repair, not only empty-row examples.
+Original requirements also include version/boolean-weight validation.
+
+API additionally edits backend/api/v1/market.py to pass expected_account=user_id
+to decision_view.build. This is necessary scope extension within its API role,
+no competing writer in that file; root must review actual HTTP provenance path.
+No new source integrated/deployed. Simulator is writing tests; paper/evaluation
+still finishing initial tasks, UI/acceptance reviews continue. Do not repeat
+unchanged tests or baseline while waiting. Starting main4457f458, pull up to date,
+unrelated evaluations preserved. Diagram impact NONE, review evidence only.
+
 ## 2026-09-22 00:25 UTC — Real-data default-path compatibility independently verified
 
 All current workers still active, same PIDs. API wrote initial handoff but stayed
