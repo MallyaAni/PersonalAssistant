@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-09-22 — Comparison protocol fixed; two bounded OpenCode workers active
+
+Protocol checkpoint `b507f70` fixes the level mapping, comparator, eligibility,
+dedupe, execution proxy and outcome horizons before candidate historical scoring.
+Read `docs/research/intraday-comparison-protocol-2026-09-22.md` before proceeding.
+New workers: comparison_adapter PID796057 and comparison_evidence PID796070,
+baseaa73e5d, same spark/deepseek-v4-flash. Manifest and root MAC_CONTINUATION.md
+record ownership. Both use COMPARISON_HANDOFF.md; do not restart active workers.
+Original three workers are integrated and their files remain root-owned.
+
+Adapter implements a pure synthetic-tested comparison boundary; evidence audits
+dated eligibility, adjustments and calendar support without computing returns.
+Historical scoring waits for root review of both. Price-only or prior-night-grade
+diagnostics must not be called exact live momentum reconstruction. Declared20-day
+primary outcomes may be immature for the short saved-record archive; that is
+insufficient evidence, not permission to change the horizon. No new strategy has
+been proved superior, deployed or connected to the personal guidance route.
+
 ## 2026-09-22 — Personal account integration reviewed and pushed
 
 Verified source checkpoint `95ee6fada42b2e6b7f73d0d207286306632bbc1b` on
