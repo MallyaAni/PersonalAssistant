@@ -1,5 +1,39 @@
 # Intraday comparison input audit — 2026-09-22
 
+## 20:37 UTC continuation: full-cache scale compatibility FAILED
+
+Root independently audited529 symbols with selected daily files, comparing
+782,568 same-session last regular15-minute closes with daily adjusted closes.
+One intraday symbol lacks a daily file in the selected partition. This is a
+price-scale audit, not a strategy outcome run or an entry-selection filter.
+
+Median absolute cross-provider difference is0.0280%, but the99th percentile is
+9.8341%; the median is not evidence that every symbol/date is compatible.
+AVGO's median intraday/daily-adjusted ratio is9.9964 (largest10.0342), WRB's
+median1.4998 and upper percentile2.2523, and APTV's median0.8471. Other material
+discrepancies include BNY, FTV, WDC and corporate reorganizations that need
+independent provenance review. Dividend-unadjusted daily closes fit worse in
+aggregate; globally relabelling the cache raw would not fix these discrepancies.
+
+The inspected fetch code's adjustment=all declaration and two matching examples
+did not establish the actual scale of every cached history. Historical candidate
+scoring remains blocked on reconciliation. Do not fit per-name scale ratios,
+filter earlier entries using later closing-price disagreements, rescale frozen
+files, or claim source metadata proves corporate-action compatibility.
+
+Evidence: `/tmp/codex-intraday-scale-audit-20260922.json` contains per-file hashes,
+per-symbol distributions and largest-discrepancy dates; corresponding `.log` is
+the compact summary. Reproducible script:
+`/tmp/codex-audit-intraday-price-scale-20260922.py`. No strategy outcomes, thresholds,
+portfolio state, live orders or cached source modifications were involved.
+
+Broadcom's official announcement describes10-for-1 split-adjusted trading from
+2024-07-15. That supports a hypothesis for the AVGO factor, not proof that a
+blanket division is a correct transformation of every cache row:
+[Broadcom2024Q2 release](https://investors.broadcom.com/news-releases/news-release-details/broadcom-inc-announces-second-quarter-fiscal-year-2024-financial).
+Further reconciliation must be dated, mechanically justified and separately
+reviewed; unresolved histories stay unavailable for scoring.
+
 Reviewed by root against source and cached evidence at d8731ea. No candidate
 outcomes were scored. The original OpenCode report remains in its isolated
 worktree; this integrated report corrects its unsupported conclusions.
