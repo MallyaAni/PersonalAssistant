@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-22 01:15 UTC — Narrow remaining correction; reduce supervision cost
+
+User reports57% credits consumed and insufficient results. Reduce repeated
+supervision: hourly heartbeat, compact status only when all workers still active,
+no repeated code reads/tests/doc commits for unchanged state. Focus existing
+shared allocation, fixed comparison and accurate one-table/charts; no new research.
+
+Simulator initial worker finished DAILY_EXECUTION_HANDOFF.md; PID3317369 exited.
+Root independently ran funded-simulator/incumbent/allocation tests: **51 passed**.
+Fee projection remains known failing boundary. CURRENT simulator **PID3617220**,
+fresh narrow task, log `/tmp/codex-opencode-projection-only-20260922.jsonl`,
+simulator-current.tsv override. Own only funded_execution.py plus projection
+tests; exact cash84985/NAV99985 example supplied, no broad reread. Expected
+**PROJECTION_HANDOFF.md**. Add projected amount/NAV fields compatibly; missing
+valuation gives no invented projection. Other workers unchanged; do not restart.
+Use current role overrides, not original PIDs. No source integrated/deployed yet.
+
+All pending correction notes/chart follow-up below remain required. Default
+2693-session invariance already proved; do not rerun without material change.
+Diagram impact NONE, coordination/test evidence. Unrelated files preserved.
+
 ## 2026-09-22 00:50 UTC — API canonical schema improved, populated-row crash found
 
 All six workers still active with unchanged PIDs; no replacement launched.
