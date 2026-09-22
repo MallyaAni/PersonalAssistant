@@ -1,5 +1,30 @@
 # Next session
 
+## 2026-09-22 — Corrected replay verified; preparation wiring underway
+
+Checkpoint `4730d6cb4877c7e7318cff6c20d9c9e5a2d52bf5` is pushed with the reviewed
+replay and tests.124 relevant replay/cache/input/adapter tests PASS; unchanged
+root9-case acceptance also passes against integrated source. Ruff/format and
+scoped strict mypy pass. Log `/tmp/codex-replay-integrated-20260922.log`.
+Root additionally reproduced/fixed3 edges after worker correction: newer rejection
+with no grade publication resurrected stale eligibility, subsecond execution time
+passed the bar grid, and data_as_of before the entry close still consumed later
+entry bars. Log `/tmp/codex-replay-clock-repro-20260922.log` records that failure.
+Replay is now root-owned; never recopy its old worker source or restart it.
+
+Basis audit1191134 remains active, no final handoff yet. New bounded OpenCode
+comparison_preflight1246346 owns ONLY intraday_preflight.py/test: pure preparation
+of supplied cache objects with calendar/daily/history/freshness/provenance gates,
+retained unavailable opportunities and per-observation eligibility receipts.
+Exact COMPARISON_PREFLIGHT_TASK.md; no IO, CLI or real historical scoring.
+Both active workers use spark/deepseek-v4-flash and COMPARISON_HANDOFF.md.
+Inspect compact status; never import active drafts or seeded dependencies.
+
+Historical price-scale compatibility is still FAILED, so no historical candidate
+outcomes, live adoption, deployment or UI changes. Do not rerun the whole scale
+audit or daily baselines. Next review basis evidence and preparation handoff,
+then build the bounded diagnostic runner only after the input basis is resolved.
+
 ## 2026-09-22 — Cache reviewed; historical price-scale compatibility FAILED
 
 Verified source `bc9a900b5ef809f9a1a14906e5100979d6d20bf4` is pushed with the
