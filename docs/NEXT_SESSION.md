@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-09-22 — OpenCode implementing the 15-minute entry layer
+
+User explicitly requested OpenCode implementation. Three isolated sessions launched
+on Spark1 with spark/deepseek-v4-flash; no model-service changes. Manifest
+`/tmp/codex-intraday-workers-20260922.json`; source basee71b906. Read each worker's
+INTRADAY_TASK.md for ownership and INTRADAY_HANDOFF.md when finished. Never restart
+an active worker or copy seeded dependencies.
+
+- entry: new intraday_entry.py, test_intraday_entry_structure.py and research
+  contract only; causal completed15-minute sequence, evolving daily candle,
+  supplied setup/levels, explicit invalidation/ambiguity and stable signal identity.
+- quotes: live_quotes.py and its tests only; reproduce/fix cache extending across
+  a completed15-minute boundary while preserving causal completed-bar filtering.
+- personal: decision_view.py and new personal isolation tests only; personal
+  guidance must not borrow paper weights/cash/fills; stale entry evidence must
+  not imply fresh executable readiness. Root handles any necessary route wiring.
+
+Read-only running-container audit pinned image
+sha256:997055765439e8d37539430c7ed87bb3707c6a619615532fecee18b057b4da90.
+It found daily technical features recomputed on one aggregated partial-day OHLC
+row, not a preserved15-minute path; personal/paper action coupling; and freshness
+often advisory on BUY. These are implementation/scope findings, not proof the
+momentum strategy loses money. No new strategy has yet beaten live momentum.
+New entry logic stays experimental until compared on identical causal data and
+user's zero-cost convention, with turnover/repeated signals/missed fills measured.
+No dashboard changes, live orders, fitting, threshold sweeps or desk.run authorized.
+
 ## 2026-09-22 — Precise 15-minute entries are required
 
 User corrected the interpretation of avoiding overtrading: "i told you we need
