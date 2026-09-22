@@ -40,6 +40,17 @@ on the same outcomes. It does not establish an optimal pullback depth.
 Sessions with unhandled corporate-action scale changes must not be scored until
 the daily/raw intraday adjustment provenance resolves them.
 
+**Units clarification after input audit, before outcomes (2026-09-22):** cached
+Alpaca history was fetched with adjustment=all and matches adjusted daily prices
+in reviewed examples. The raw-input formulas above must not be applied directly
+to those bars. A caller must declare raw or adjusted price basis. In adjusted
+mode the levels stay m+2*s, m+2*s*ENTRY_BAND_Z and m; the incumbent appends the
+adjusted intraday close without multiplying by r. In raw mode the original
+conversion remains. Unknown/mixed basis blocks scoring. Require explicit output
+basis and scale-equivalence tests; no silent relabelling or cache rewrites.
+This corrects units without changing the band rule or choosing parameters from
+outcomes. Cross-provider adjustment compatibility is still an evidence gate.
+
 ## Incumbent comparator and common eligibility
 
 Reproduce the current price-entry component by calling the existing bollinger_z
@@ -54,6 +65,11 @@ available timing/grade evidence. Eligibility or gate inputs must carry when they
 became available. Unknown eligibility blocks a recommendation; an observation
 whose eligibility was learned later cannot be retroactively enabled. Do not use
 future full-session completeness or later bad prints to reject earlier prefixes.
+
+Use the saved record's actual written time, not its session label: the09-14
+record was written09-15 at10:18:21 New York and was unavailable at that morning's
+open. Outcome horizons count trading sessions after the actual entry session;
+an09-08 entry has a20-session exit on10-06, not a clock starting on09-04.
 
 A historical run with only prior-night grades is a comparison under fixed
 prior-night eligibility, not an exact reconstruction of live intraday reranking.
