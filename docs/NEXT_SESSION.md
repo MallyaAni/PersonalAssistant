@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-09-22 — User requests active completion and dashboard release ASAP
+
+User explicitly rejected waiting and asks to get the latest tested implementation
+onto the dashboard. Root confirmed deployed image997055... and marker a89bba40;
+our source changes are NOT live. No claim that new candidate is best/beat momentum.
+Do not stop at restating the data blocker. Two bounded OpenCode workers now run:
+
+- comparison_single_source PID1415486, tree comparison-single-source-20260922,
+  task COMPARISON_SINGLE_SOURCE_TASK.md, final SINGLE_SOURCE_HANDOFF.md. Owns ONLY
+  new intraday_single_source.py/test. Pure fixed diagnostic over supplied fresh
+  response pages, derive daily references from SAME IEX15m rows. Protocol181e408
+  docs/research/intraday-single-source-protocol-2026-09-22.md was committed before
+  outcomes. Fixed AVGO/WRB/WDC/APTV/SPY/QQQ, entry08-03..09-18, source06-29..09-18,
+  label as-of09-18close, unchanged20/5 horizons. Explicit price-component source
+  change, NOT exact live parity. Root acquired /tmp/codex-single-source-snapshot-
+  20260922.json (continuous filename); audit /tmp/codex-single-source-input-audit-
+  20260922.json: all15pages200 with hashes/pagination checked. Five symbols have
+  58 complete regular-session grids; WRB has21 incomplete dates, retained missing
+  rather than repaired. No real scores yet; never refetch unchanged snapshot.
+- dashboard_release PID1423440, tree dashboard-release-20260922, exact
+  DASHBOARD_RELEASE_TASK.md, final DASHBOARD_RELEASE_HANDOFF.md. Owns exclusively
+  DeskPanel.tsx, services/api.ts, e2e/desk.spec.ts, backend/api/v1/market.py and
+  test_personal_guidance_api.py. Minimal confirmed personal equity/cash wiring,
+  POST body (no cash URLs), stale-response rejection and fill/account invalidation.
+  Necessary to ship corrected personal funding: existing page never passes cash.
+  No design refresh/strategy change/paper borrowing. Root may not edit these
+  files concurrently. Worker must test its own frontend, not deployed5173.
+
+Both use spark/deepseek-v4-flash; inspect compact status and wait final+exit.
+Review owned diffs only, never history/seeded dependencies. Root handles guarded
+deployment after review: current main is ancestor of integration181e408, deploy
+clone /home/animallya96/deploy/anios only untracked data/secrets, no tracked edits.
+Use scripts/deploy.sh with gates, preserve model services and existing settings;
+no skip-gate. Script --activate writes paper recovery code hash, does not itself
+submit orders. Verify actual API + browser behavior after deployment; keep new
+entry candidate experimental until evidence supports adoption. No real orders,
+paid data, frozen-history rewrite, parameter mining or repeated daily baselines.
+User17%usage constraint remains: targeted supervision, do not stop necessary work.
+
 ## 2026-09-22 — Preparation integrated; remaining gate is data evidence
 
 Source checkpoint `f7703e2` integrates reviewed preparation and root-corrected
