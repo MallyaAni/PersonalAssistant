@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-09-22 — OpenCode correcting rejected entry and account submissions
+
+All initial workers exited. Entry final still fails the 13 independent acceptance
+cases; personal source still needs action gating after cash sizing and protection
+for uncovered holdings. Neither source was integrated. Two bounded corrections
+are active: entry PID602839 and personal PID602840. Manifest
+`/tmp/codex-intraday-workers-20260922.json` now records `review_round=1`, updated
+logs and original process receipts. Read their `*_REVIEW_TASK.md` files and wait
+for **REVIEW_HANDOFF.md**, not the old handoff. Never restart an active worker.
+Personal worker rebased its own branch; import only reviewed owned file diffs,
+never that history or seeded dependencies. Root branch remains `f49db2a`.
+
+Root staged optional personal `available_cash` API wiring at
+`/tmp/codex-market-api-intraday-candidate.py` on Spark1, forwarding to `build(cash=)`.
+**6 HTTP validation/ownership checks pass**: invalid cash is rejected before quote
+collection and holdings remain unchanged. Log
+`/tmp/codex-personal-api-boundary-20260922.log`. Original API source restored after
+this isolated validation; full integration waits for corrected personal code.
+Root `test_personal_guidance_api.py` has 11 cases covering account isolation,
+known/unknown/invalid cash, stale evidence and ownership. Its price fixture now
+explicitly matches its expected personal weight. Current unchanged source has
+10 expected failures and 1 pass; no full behavior/deployment claim.
+
+Hourly continuation now recognizes correction-round ownership and final handoffs.
+No UI, orders, model changes, strategy fitting or repeated daily benchmarks.
+
 ## 2026-09-22 — Quote boundary fix reviewed; entry and personal work still active
 
 Root integration checkpoint `f49db2a738cc2635f7462dd86643dbc287da6b0e` is pushed
