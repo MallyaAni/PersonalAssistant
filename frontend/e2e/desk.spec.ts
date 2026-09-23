@@ -818,7 +818,7 @@ test.beforeEach(async ({ page }) => {
     user_id: USER, session: '2026-09-08', rows: [],
     reason: 'No live quotes this candle; entries need a current price.',
   }}))
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -828,7 +828,7 @@ test.beforeEach(async ({ page }) => {
       is_admin: true,
     }),
   }))
-  await page.route('http://localhost:8000/api/v1/conversations/ani.mallya', route =>
+  await page.route('**/api/v1/conversations/ani.mallya', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -836,7 +836,7 @@ test.beforeEach(async ({ page }) => {
     }),
   )
   const record = deskRecord()
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -854,12 +854,12 @@ test.beforeEach(async ({ page }) => {
       curve: record.curve,
     }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/holdings`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/holdings`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({ holdings: [{ ticker: 'AAPL', shares: 60, entry_price: 91.25, entry_date: '2026-08-28' }] }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/live`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -881,7 +881,7 @@ test.beforeEach(async ({ page }) => {
   }))
   // The intraday re-read: nothing new on the candle, so the board is the
   // record's; the route must answer or the page logs a connection error.
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/intraday*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/intraday*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -893,7 +893,7 @@ test.beforeEach(async ({ page }) => {
       changed: [],
     }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/paper`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -909,7 +909,7 @@ test.beforeEach(async ({ page }) => {
   }))
   // The drill-down's live technical read: the model's plain words over the
   // analyst's live readings, with the deterministic lines as the fallback.
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live/read/*`, route => {
+  await page.route(`**/api/v1/market/${USER}/desk/live/read/*`, route => {
     const symbol = (route.request().url().split('/').pop() ?? '').toUpperCase()
     route.fulfill({
       status: 200,
@@ -929,12 +929,12 @@ test.beforeEach(async ({ page }) => {
   // The drill-down fetches the newest earnings release read on open. Most
   // fixtures name no read (the block hides); the AAPL-specific route
   // registered below overrides this one for the same-day earnings test.
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/earnings/*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/earnings/*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({ user_id: USER, symbol: '', read: null }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1011,7 +1011,7 @@ test.beforeEach(async ({ page }) => {
       ],
     }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/history/AAPL`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/history/AAPL`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1038,7 +1038,7 @@ test.beforeEach(async ({ page }) => {
   // The newest earnings release read for AAPL, as the release reader stored
   // it: a same-day 8-K shows its tone and numbers in the drill-down without
   // waiting for the next nightly grade.
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/earnings/AAPL`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/earnings/AAPL`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1062,7 +1062,7 @@ test.beforeEach(async ({ page }) => {
       },
     }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/history/MSFT`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/history/MSFT`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1086,7 +1086,7 @@ test.beforeEach(async ({ page }) => {
       },
     }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/trading/autopsy`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/trading/autopsy`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1137,7 +1137,7 @@ test('compact decision view keeps rankings above the fold', async ({ page }) => 
 
 test('separates dated inflation facts from research-only model judgement', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
     latest: deskRecord(), sessions: ['2026-09-08'],
     economics: {
       observed_at: new Date().toISOString(), collection_stale: false, model: 'deepseek-v4-flash',
@@ -1277,7 +1277,7 @@ test('names the fundamental data source and flags older fundamental-input curves
 // drawing a green up arrow beside +$0.
 test('a zero day P/L reads flat, not as an up move', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({
+  await page.route(`**/api/v1/market/${USER}/desk/paper`, route => route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({
     as_of: '2026-09-08T20:00:00Z', equity: 104200, cash: 12000, day_pl: 0, pl_pct: 0.042, day_pl_pct: 0,
   })}))
   await page.goto('/?deskDetails=1#desk')
@@ -1535,7 +1535,7 @@ test('drills into a covered name outside the book and sees its live horizons', a
 // instruction: no trade was instructed, so the row carries no "done" button
 // and the person's own shares stay visible.
 test('an uncovered holding is a review state, not a sell', async ({ page }) => {
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1602,7 +1602,7 @@ test(`records a confirmed ${action} fill and reads the position back after reloa
     }
     return route.fulfill({ json: { holdings: stored } })
   })
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1751,7 +1751,7 @@ test('records a discretionary buy from rankings and reloads its actual shares an
 
 // The method panel attributes the learner only when the saved decision identifies its input.
 test('explains analyst weights and identifies the recorded expectations model', async ({ page }) => {
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({json: {
     latest: {...deskRecord(), provenance: {rule: {inputs: ['expectations-gap']}}},
   }}))
   await page.goto('/?deskDetails=1#desk')
@@ -1774,7 +1774,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
   // A fake clock so one fifteen-minute candle can be advanced in a test.
   await page.clock.install({ time: new Date('2026-09-08T19:59:00Z') })
   let candle = 0
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live`, route => {
+  await page.route(`**/api/v1/market/${USER}/desk/live`, route => {
     const first = candle === 0
     route.fulfill({
       status: 200,
@@ -1792,7 +1792,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
     })
   })
   let refetchForNewCandle = 0
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live/read/*`, route => {
+  await page.route(`**/api/v1/market/${USER}/desk/live/read/*`, route => {
     // The read is served for the candle that is current when the request is
     // made, not for a count of requests: on open the effect may run once or
     // twice (the live state starts empty, so the bar arrives a moment later)
@@ -1856,7 +1856,7 @@ test('a new candle re-reads the analysis alongside the fresh price', async ({ pa
 // Old evidence stays visibly dated even when its explanation is newly generated.
 test('dates old candles separately from explanations and labels indicative grades', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/live/read/*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/live/read/*`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1914,7 +1914,7 @@ test('trading review shows the empty-document response', async ({page}) => {
 test('an intraday grade expires without requiring a page reload', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({
       session: '2026-09-08', rows: [],
       grade_valid_until: {MSFT: '2026-09-09T14:01:00Z'},
@@ -1934,7 +1934,7 @@ test('an intraday grade expires without requiring a page reload', async ({ page 
 // A later decision must not inherit either targets or grades from an older snapshot.
 test('a mismatched decision cannot display the previous intraday targets or grades', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/mine*`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({
       session: '2026-09-07', rows: [],
       grade_valid_until: {MSFT: new Date(Date.now() + 900000).toISOString()},
@@ -1954,7 +1954,7 @@ test('cash-limited performance is distinguished from legacy simulated borrowing'
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
   latest.curve!.backtest!.funding_model = 'cash-at-fill-v1'
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({latest, changes: null}),
   }))
   await page.goto('/?deskDetails=1#desk')
@@ -1969,7 +1969,7 @@ test('cash-limited performance is distinguished from legacy simulated borrowing'
 test('execution receipts distinguish decisions, fills and historical submissions', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({
       latest: {...latest, paper: {...latest.paper, settled: [
         {symbol: 'AAPL', side: 'buy', qty: 10, filled: 10, filled_price: 102, status: 'filled', decision_shortfall_bps: 200,
@@ -1979,7 +1979,7 @@ test('execution receipts distinguish decisions, fills and historical submissions
       ]}}, sessions: ['2026-09-08'],
     }),
   }))
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk/paper`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk/paper`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({reason: 'unreachable'}),
   }))
   await page.goto('/?deskView=research#desk')
@@ -2005,7 +2005,7 @@ test('execution receipts distinguish decisions, fills and historical submissions
 // A new policy must distinguish enabled automation from a historical execution receipt.
 test('FOMC policy explains activation without inventing an executed reduction', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({
       latest: deskRecord(), sessions: ['2026-09-08'],
       event_policy: {enabled: true, version: 'fomc-3-session-weakness/1', evaluation_since: '2026-06-18'},
@@ -2022,7 +2022,7 @@ test('FOMC policy explains activation without inventing an executed reduction', 
 // An active event must not expose ordinary rebalance targets as executable fill rows.
 test('FOMC reduction takes priority over regular target execution', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({
       latest: {...deskRecord(), event_risk: {
         session: '2026-09-11', enabled: true, factor: 0.5, calendar_known: true,
@@ -2052,7 +2052,7 @@ test('target rows are not hidden inside a vertically collapsed section', async (
 // A cash-limited event ending must expose its unbought shares as an outcome.
 test('cash-limited FOMC restoration never claims the remainder was filled', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({
       latest: {...deskRecord(), event_risk: {
         session: '2026-09-17', enabled: true, factor: 1, calendar_known: true,
@@ -2072,7 +2072,7 @@ test('cash-limited FOMC restoration never claims the remainder was filled', asyn
 // and what happens next, not render a blank board.
 test('an empty record becomes the getting-started guide', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route(`http://localhost:8000/api/v1/market/${USER}/desk`, route => route.fulfill({
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -2237,14 +2237,14 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
     changes: {since: '2026-09-04', upgrades: [], downgrades: [], orders: [], flags_raised: [], flags_cleared: []},
     sessions: [record.session],
   })
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({authentication_required: true, user_id: 'vjmallya', expires_at: '2026-09-09T00:00:00Z', is_admin: false, desk_access: true}),
   }))
-  await page.route('http://localhost:8000/api/v1/conversations/vjmallya', route => route.fulfill({
+  await page.route('**/api/v1/conversations/vjmallya', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({conversations: []}),
   }))
-  await page.route('http://localhost:8000/api/v1/market/vjmallya/desk', route => route.fulfill({
+  await page.route('**/api/v1/market/vjmallya/desk', route => route.fulfill({
     status: 200, contentType: 'application/json', body: deskBody,
   }))
   await page.goto('/')
@@ -2252,7 +2252,7 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
   await page.getByRole('button', {name: 'Desk', exact: true}).click()
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await page.evaluate(() => localStorage.removeItem('anios_conversation_id:vjmallya'))
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({authentication_required: true, user_id: 'a.guest', expires_at: '2026-09-09T00:00:00Z', is_admin: false}),
   }))

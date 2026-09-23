@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-09-23 05:40 UTC — Account release live and acceptance verified
+
+Deployed 0fab65c4 through scripts/deploy.sh: unit 4373 passed/31 skipped;
+sequential model gate 100 passed. Actual authenticated deployed browser/API
+probe PASS (94 rows, zero buys with unknown/zero cash, invalid cash 422,
+other-account 403, holdings unchanged, no browser errors). Backend hashes
+match source; model container IDs/start times unchanged; postdeploy cheap
+status is ok for 0fab65c4. Exact images and live evidence are retained in
+/tmp/codex-trading-release-proof-20260923.json. Its original FAIL is retained:
+fixture tests had development-only auth URLs and saw the login page. Root
+changed ONLY fixture URL origins to portable **/api/v1 paths, no assertions.
+Rerun against deployed 8080: all 7 passed in 7.2s, evidence
+/tmp/codex-dashboard-deployed-browser-originfix-20260923.log. No redeploy needed
+for test-only change; this supersedes the fixture failure, not the source SHA.
+
+Copy board and overview workers exited; research PID1862215 still active.
+No copy changes imported. Root review REJECTS overview's retained claim that
+all plans ignore personal holdings, same-session guaranteed sale reinvestment,
+and 'nothing on the board moves' outside normal hours. Rewrite these using
+personal decision_view behavior; remove unnecessary old 43%/24-point claims.
+Board tooltip corrections look appropriate; chart sell explanation still
+implies automatic reinvestment and needs correction. Never import either
+worker wholesale or claim wording audit complete. Research files remain owned.
+Next: finish narrow source-backed copy corrections, browser validation and
+guarded frontend release; preserve experimental entry status. Keep test cleanup
+84712fa separate from frontend deployment to avoid unnecessary model reruns.
+
+
+## 2026-09-23 — User requests targeted test cleanup; first pass verified separately
+
+User asks about redundant code, especially tests. Static scan of35 changed test
+files (15085 total lines) found7 exact structural helper-duplication groups of
+at least5 lines; not proof that whole test suites are redundant. Artifact:
+/tmp/codex-trading-test-duplication-audit-20260923.json. Preserve distinct failure
+cases and do not delete tests to get deployment green.
+
+Separate verified/pushed branch codex/trading-test-cleanup-20260923 at84712fa,
+tree /home/animallya96/codex-worktrees/trading-test-cleanup-20260923. It changes
+ONLY two simulator test modules and new funded_simulator_fixtures.py: net81
+lines removed, shared deterministic setup, no production or gate changes.
+31 tests pass before AND after. AST comparison proves all31 test functions,
+decorators and assertions unchanged;8 pickle comparisons establish identical
+default/custom-open/custom-grade fixtures. Ruff/format/diff checks pass.
+Evidence /tmp/codex-test-cleanup-before-20260923.log and -after-20260923.log;
+comparison script /tmp/verify-test-cleanup.py. Not merged into integration/main
+while the0fab65c deployment/proof watcher is active. After release verification,
+review/integrate this exact3-file checkpoint without overwriting current handoffs
+or any copy worker files. No new model cleanup worker was started; release stays
+the priority. Remaining duplication candidates require semantic review, not
+blanket deletion or a claim all tests are now clean.
+
+## 2026-09-23 — Sequential gate release0fab65c and read-only proof watcher active
+
+Main/integration now0fab65c (account source30afe7d plus optional gate concurrency
+and handoff). Guarded deploy is active with ANIOS_GATE_WORKERS=1, log
+/tmp/codex-trading-release-serial-20260923.log. Never restart it while active.
+Detached watcher launched through parent1926651: /tmp/watch-release-proof.py
+0fab65c, watch log /tmp/codex-trading-release-proof-watch-20260923.log. It waits
+for this exact successful deployed revision, then checks backend file hashes,
+real personal API/browser, seven fixture cases against the deployed bundle,
+unchanged model container identities and postdeploy status. It never deploys,
+retries, places orders or changes holdings; short-lived credentials remain in
+private temporary files and are deleted. Final summary will be
+/tmp/codex-trading-release-proof-20260923.json; browser/API detail in
+/tmp/codex-dashboard-live-20260923.json and deployed-browser log. A watchdog
+result must be independently read; script launch is not proof. It stops if
+the required gate fails. All three wording workers are still active at30afe7d.
+
 ## 2026-09-23 — Repeated parallel timeout; bounded gate concurrency
 
 Second full attempt again ended99pass1fail, same two-reminders wall-clock
