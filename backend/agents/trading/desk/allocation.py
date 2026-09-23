@@ -44,6 +44,16 @@ POLICIES = (POLICY_VOL, POLICY_VOL_TREND)
 SPY = "SPY"
 QQQ = "QQQ"
 
+# Which benchmark risk the volatility budget is measured against, and how it
+# is named in reasons. The default is the minimum of the two, which is in
+# practice SPY's risk; the alternatives are explicit parameters of `decide`,
+# never a new default, and show in the version string when chosen.
+BUDGET_MIN = "min"
+BUDGET_SPY = "spy"
+BUDGET_QQQ = "qqq"
+BUDGET_REFERENCES = (BUDGET_MIN, BUDGET_SPY, BUDGET_QQQ)
+_BUDGET_LABELS = {BUDGET_MIN: "SPY/QQQ", BUDGET_SPY: "SPY", BUDGET_QQQ: "QQQ"}
+
 # The trailing windows the risk and trend reads use, and the annualization.
 VOL_SHORT = 20
 VOL_LONG = 60
@@ -67,9 +77,13 @@ class VolatilityDiagnostics:
     portfolio_risk: float | None  # annualized, or None when unavailable
     spy_risk: float | None
     qqq_risk: float | None
-    budget: float | None  # min(SPY, QQQ) risk
+    budget: float | None  # the reference benchmark risk times the multiplier
     risk_scale: float | None  # min(1, budget / portfolio_risk)
     trend_ceiling: float | None  # 0, 0.5, 1, or None when not computable
+    # Which benchmark risk the budget referenced ("min", "spy" or "qqq") and
+    # the multiplier applied to it; the defaults are the module's own.
+    budget_reference: str = BUDGET_MIN
+    budget_multiplier: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -87,10 +101,63 @@ class AllocationDecision:
     binding: str  # one of the BINDING_* constants
 
 
-# The version string of the fixed policy being asked for.
-def _version(policy: str) -> str:
-    """Return the version identifier for `policy`."""
-    return f"portfolio-allocation/{policy}/1"
+# The version string of the fixed policy being asked for. A non-default
+# budget reference or multiplier is part of what was decided, so it is part
+# of the version: `portfolio-allocation/vol/1+qqq1.25`.
+def _version(
+    policy: str, budget_reference: str = BUDGET_MIN, budget_multiplier: float = 1.0
+) -> str:
+    """Return the version identifier for `policy` and its budget parameters."""
+    base = f"portfolio-allocation/{policy}/1"
+    if budget_reference == BUDGET_MIN and budget_multiplier == 1.0:
+        return base
+    return f"{base}+{budget_reference}{budget_multiplier:g}"
+
+
+# The plain-language name of the budget, for reasons: "SPY/QQQ" by default,
+# otherwise the reference and its multiplier, e.g. "QQQ x1.25".
+def _budget_label(budget_reference: str, budget_multiplier: float) -> str:
+    """Return the budget's label for reason strings."""
+    label = _BUDGET_LABELS[budget_reference]
+    if budget_multiplier == 1.0:
+        return label
+    return f"{label} x{budget_multiplier:g}"
+
+
+# Validate the explicit budget parameters before any calculation.
+def _validate_budget(budget_reference: str, budget_multiplier: float) -> None:
+    """Raise ValueError when the budget reference or multiplier is invalid."""
+    if budget_reference not in BUDGET_REFERENCES:
+        raise ValueError(f"budget_reference must be one of {BUDGET_REFERENCES}")
+    if (
+        isinstance(budget_multiplier, bool)
+        or not isinstance(budget_multiplier, (int, float, np.floating, np.integer))
+        or not np.isfinite(budget_multiplier)
+        or budget_multiplier <= 0.0
+    ):
+        raise ValueError("budget_multiplier must be a finite positive number")
+
+
+# The volatility budget from the two benchmark risks: the referenced risk
+# (the minimum by default) times the multiplier, or None when either risk is
+# unavailable - both benchmarks are required evidence whatever the reference,
+# so a missing history is never hidden by the choice of reference.
+def _budget(
+    spy_risk: float | None,
+    qqq_risk: float | None,
+    budget_reference: str,
+    budget_multiplier: float,
+) -> float | None:
+    """Return the volatility budget, or None when a benchmark risk is missing."""
+    if spy_risk is None or qqq_risk is None:
+        return None
+    if budget_reference == BUDGET_SPY:
+        base = spy_risk
+    elif budget_reference == BUDGET_QQQ:
+        base = qqq_risk
+    else:
+        base = min(spy_risk, qqq_risk)
+    return float(base) * float(budget_multiplier)
 
 
 # Validate the pure decision's inputs before any calculation.
@@ -301,10 +368,10 @@ def _binding(
 
 
 # The plain-language reason for a binding constraint.
-def _reason(binding: str, final_scalar: float) -> str:
+def _reason(binding: str, final_scalar: float, budget_label: str = "SPY/QQQ") -> str:
     """Return the reason string for a binding constraint."""
     if binding == BINDING_VOL:
-        return "portfolio volatility scaled down to the SPY/QQQ budget"
+        return f"portfolio volatility scaled down to the {budget_label} budget"
     if binding in (BINDING_REGIME, BINDING_EVENT, BINDING_TREND):
         if final_scalar < 1.0 - _CAP_TOL:
             return f"absolute {binding} scaled the candidate down"
@@ -324,6 +391,9 @@ def decide(  # noqa: C901 - explicit composition, evidence and known-risk fallba
     event_cap: float,
     policy: str = POLICY_VOL_TREND,
     index_eligible: bool = False,
+    *,
+    budget_reference: str = BUDGET_MIN,
+    budget_multiplier: float = 1.0,
 ) -> AllocationDecision:
     """Return the AllocationDecision for the close of session `t`.
 
@@ -341,8 +411,12 @@ def decide(  # noqa: C901 - explicit composition, evidence and known-risk fallba
     evidence the chosen policy needs is missing - volatility, or a complete
     200-session trend for `vol_trend` - the decision preserves actual holdings
     and cuts them only to a known absolute ceiling; a missing trend is never
-    imputed as bearish.
+    imputed as bearish. `budget_reference` names the benchmark risk the
+    volatility budget is measured against - "min" (the default, min(SPY, QQQ)),
+    "spy" or "qqq" - and `budget_multiplier` scales it; both are surfaced in
+    the diagnostics and reasons, and in the version when not the default.
     """
+    _validate_budget(budget_reference, budget_multiplier)
     spy_col, qqq_col = _validate(
         dates,
         prices,
@@ -417,11 +491,9 @@ def decide(  # noqa: C901 - explicit composition, evidence and known-risk fallba
 
     spy_risk = _risk(spy_series, t)
     qqq_risk = _risk(qqq_series, t)
-    budget = (
-        min(spy_risk, qqq_risk)
-        if spy_risk is not None and qqq_risk is not None
-        else None
-    )
+    budget = _budget(spy_risk, qqq_risk, budget_reference, budget_multiplier)
+    budget_label = _budget_label(budget_reference, budget_multiplier)
+    budget_default = budget_reference == BUDGET_MIN and budget_multiplier == 1.0
 
     # An empty candidate has zero portfolio risk, not missing risk: a requested
     # exit must not be blocked by a stock that lacks a return history.
@@ -463,11 +535,18 @@ def decide(  # noqa: C901 - explicit composition, evidence and known-risk fallba
             regime_cap,
             candidate_sum,
         )
-        reasons = [_reason(binding, final_scalar)]
+        reasons = [_reason(binding, final_scalar, budget_label)]
         if trend is None and policy == POLICY_VOL_TREND:
             reasons.append("trend ceiling unavailable; excluded from the minimum")
         diag = VolatilityDiagnostics(
-            portfolio_risk, spy_risk, qqq_risk, budget, risk_scale, trend
+            portfolio_risk,
+            spy_risk,
+            qqq_risk,
+            budget,
+            risk_scale,
+            trend,
+            budget_reference,
+            float(budget_multiplier),
         )
     else:
         # 4. No evidence sufficient for the chosen policy: start from the
@@ -504,11 +583,23 @@ def decide(  # noqa: C901 - explicit composition, evidence and known-risk fallba
                 ]
         cash = max(0.0, 1.0 - sum(desired_weights.values()))
         diag = VolatilityDiagnostics(
-            portfolio_risk, spy_risk, qqq_risk, budget, None, trend
+            portfolio_risk,
+            spy_risk,
+            qqq_risk,
+            budget,
+            None,
+            trend,
+            budget_reference,
+            float(budget_multiplier),
         )
+    # A non-default budget is part of what was decided, so it is always
+    # named, binding or not; the default is not, so today's reasons are
+    # reproduced exactly.
+    if not budget_default:
+        reasons.append(f"volatility budget reference: {budget_label}")
 
     return AllocationDecision(
-        version=_version(policy),
+        version=_version(policy, budget_reference, budget_multiplier),
         as_of=as_of,
         desired_weights=desired_weights,
         cash=cash,

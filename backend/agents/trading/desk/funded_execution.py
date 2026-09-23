@@ -289,12 +289,16 @@ def daily_decision(
     regime_cap: float,
     event_cap: float,
     excluded_symbols: Iterable[str] = (),
+    budget_reference: str = allocation.BUDGET_MIN,
+    budget_multiplier: float = 1.0,
 ) -> DailyDecision:
     """Return the DailyDecision for session `t` from the supplied composition.
 
     `desired` is the caller's stable unscaled stock composition - refreshed only
     on the caller's scheduled rebalance, never recomputed here - so a risk-only
     cut or a missing score on an ordinary day cannot lose the names to re-enter.
+    `budget_reference` and `budget_multiplier` are passed to `allocation.decide`
+    unchanged; their defaults are the decision's own.
     """
     benchmarks = validate_benchmarks(panel, benchmark_prices)
     _check_spy_context(panel, benchmarks, t)
@@ -331,6 +335,8 @@ def daily_decision(
         event_cap=event_cap,
         policy=policy,
         index_eligible=index_eligible,
+        budget_reference=budget_reference,
+        budget_multiplier=budget_multiplier,
     )
     return DailyDecision(
         policy=policy,

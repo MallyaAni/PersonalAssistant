@@ -91,6 +91,12 @@ class AllocationContext:
     desired_stock_weights: dict[str, float] | None = None
     cost_bps: float = 10.0
     excluded_symbols: frozenset[str] = frozenset()
+    # The volatility budget's benchmark reference ("min", "spy" or "qqq") and
+    # multiplier, passed to `allocation.decide` unchanged; the defaults are
+    # the decision's own, so a context that does not name them decides
+    # exactly as before.
+    budget_reference: str = allocation.BUDGET_MIN
+    budget_multiplier: float = 1.0
 
 
 # The excluded company symbols as an immutable set, whatever shape was given.
@@ -125,6 +131,10 @@ def _coerce(context) -> AllocationContext:
         desired_stock_weights=getattr(context, "desired_stock_weights", None),
         cost_bps=float(getattr(context, "cost_bps", 10.0)),
         excluded_symbols=_excluded(getattr(context, "excluded_symbols", ())),
+        budget_reference=str(
+            getattr(context, "budget_reference", allocation.BUDGET_MIN)
+        ),
+        budget_multiplier=float(getattr(context, "budget_multiplier", 1.0)),
     )
 
 
@@ -422,6 +432,8 @@ def _persisted_state(stable, context, plan_payload) -> dict:
         "index_eligible": bool(context.index_eligible),
         "cost_bps": float(context.cost_bps),
         "excluded_symbols": sorted(context.excluded_symbols),
+        "budget_reference": str(context.budget_reference),
+        "budget_multiplier": float(context.budget_multiplier),
         "plan": plan_payload,
     }
 
@@ -778,6 +790,8 @@ def plan_funded_paper(
             event_cap=context.event_cap,
             policy=context.policy,
             index_eligible=context.index_eligible,
+            budget_reference=context.budget_reference,
+            budget_multiplier=context.budget_multiplier,
         )
     except ValueError as exc:
         return _blocked(
