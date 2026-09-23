@@ -12,7 +12,11 @@ before Y's money is spent. It never sells more than is held, and it never
 lets a min-trade threshold suppress a risk cut that the decision's known
 ceiling requires. The paper account asks for whole shares and re-checks the
 cash, fee and name-cap bounds after rounding; the simulator asks for
-continuous shares and fills through the funded `_Book`.
+continuous shares and fills through the funded `_Book`. Whole shares round to
+the nearest share inside a half-share no-trade band on both sides
+(`whole_share_gap`): a sell is never rounded up past its target, because the
+share it oversold was bought back the next session and sold again the one
+after, indefinitely, against a constant target.
 
 `daily_decision` builds one day's `AllocationDecision` for the simulator from
 the desk's own panel plus the dated SPY/QQQ benchmark context passed in
@@ -390,24 +394,15 @@ def _plan_side_orders(
     return sells, buys
 
 
-# The continuous buy and sell quantities toward the decision's desired weights,
-# buys scaled to the cash actually on hand after fees. A prebuilt decision may
-# carry SPY from an index-eligible composition, but execution still respects
-# the current index eligibility: it is a ceiling on SPY, never a mandate to
-# exit, so an existing SPY holding is preserved up to the requested quantity
-# and only an increase is blocked.
-def _continuous_orders(
-    decision,
-    held,
-    priced,
-    equity,
-    cash,
-    cost,
-    min_trade,
-    missing,
-    index_eligible: bool,
-) -> list[planner.Order]:
-    """Return the shared continuous orders for one decision day."""
+# The continuous share target of every priced name the decision wants. A
+# prebuilt decision may carry SPY from an index-eligible composition, but
+# execution still respects the current index eligibility: it is a ceiling on
+# SPY, never a mandate to exit, so an existing SPY holding is preserved up to
+# the requested quantity and only an increase is blocked.
+def _wanted_shares(
+    decision, held, priced, equity, missing, index_eligible: bool
+) -> dict[str, float]:
+    """Return {symbol: continuous shares wanted} for the decision's names."""
     want: dict[str, float] = {}
     for symbol, weight in decision.desired_weights.items():
         if weight <= 0.0:
@@ -429,6 +424,23 @@ def _continuous_orders(
                 )
             wanted = min(wanted, held_qty)
         want[symbol] = wanted
+    return want
+
+
+# The continuous buy and sell quantities toward the wanted shares, buys scaled
+# to the cash actually on hand after fees.
+def _continuous_orders(
+    decision,
+    want,
+    held,
+    priced,
+    equity,
+    cash,
+    cost,
+    min_trade,
+    missing,
+) -> list[planner.Order]:
+    """Return the shared continuous orders for one decision day."""
     sells, buys = _plan_side_orders(held, want, priced, equity, min_trade, missing)
     buy_notional = sum(qty * priced[symbol] for symbol, qty in buys)
     spend = buy_notional * (1.0 + cost)
@@ -465,19 +477,62 @@ def _sell_reason(decision, symbol: str) -> str:
     return "rebalance toward desired weight"
 
 
-# The whole-share quantity one sell order submits, never more than the whole
-# shares held and never zero for a risk cut when a whole share is executable.
-def _round_sell_quantity(order, held_qty: float, risk_cut: bool) -> int:
-    """Return the rounded whole-share sell for `order`, capped at what is held."""
+# The no-trade band around a whole-share target: a gap of half a share or
+# less rounds to nothing, so a whole-share book sits within one rounding of
+# its fractional target and is never pushed through it. The hundredth of a
+# share of hysteresis absorbs what one fill's own fee drags the target by, so
+# a name that has just been rounded onto the band's edge is not rounded back
+# across it the next session by the fee alone.
+SHARE_BAND = 0.5
+_BAND_TOL = 1e-2
+
+
+# The whole shares a continuous gap of `gap` shares trades: nothing inside the
+# half-share band, otherwise the nearest whole share. Rounding to nearest on
+# both sides is what stops the ping-pong a rounded-up sell produced: it left
+# the name under target by more than the rounding, so the next session bought
+# the share back, and the one after sold it again.
+def whole_share_gap(gap: float) -> int:
+    """Return the nearest whole-share quantity for `gap`, zero inside the band."""
+    gap = abs(float(gap))
+    if gap <= SHARE_BAND + _BAND_TOL:
+        return 0
+    return int(math.floor(gap + 0.5))
+
+
+# The whole shares one sell order submits. Rounding a sell past the whole
+# shares actually held would create a short, so the rounded sell is capped at
+# the whole shares held. A full exit sells every whole share and reports the
+# fractional remainder whole shares cannot sell as blocked, never silently
+# left behind. A partial sell rounds to the nearest whole share and is no
+# trade inside the band: the position then sits within one rounding of its
+# target, which is where a whole-share book belongs, and is not a blocked leg.
+def _whole_share_sell(order, held_qty: float, exit_all: bool, blocked, missing) -> int:
+    """Return the whole shares to sell for `order`, zero when nothing can go."""
     max_sell = int(math.floor(held_qty + 1e-10))
-    rounded = int(round(order.qty))
-    if risk_cut:
-        rounded = max(1, math.ceil(order.qty - 1e-10))
-    return min(rounded, max_sell)
+    rounded = whole_share_gap(order.qty)
+    qty = min(rounded, max_sell)
+    if qty <= 0:
+        if rounded > 0 or exit_all:
+            blocked.append(
+                f"whole-share rounding leaves no sellable quantity for {order.symbol}"
+            )
+        else:
+            missing.append(f"{order.symbol}: sell inside the whole-share band")
+        return 0
+    unexecutable = order.qty - qty
+    if (exit_all and unexecutable > 1e-9) or unexecutable > SHARE_BAND + _BAND_TOL:
+        blocked.append(
+            f"whole-share eligibility leaves an unexecutable "
+            f"fractional residual in {order.symbol}"
+        )
+    return qty
 
 
 # Round a continuous basket to whole shares and re-check the bounds a broker
-# actually faces: the cash after fees and the name cap for stocks.
+# actually faces: the cash after fees and the name cap for stocks. `want` is
+# the continuous share target each order moved toward, so a full exit (target
+# zero) can be told from a gap that merely sits inside the band.
 def _whole_share_bound(
     orders,
     held,
@@ -489,43 +544,24 @@ def _whole_share_bound(
     entry_cap,
     blocked,
     missing,
-    risk_cut,
+    want,
 ) -> list[planner.Order]:
     """Return `orders` rounded to whole shares, bounds re-checked after."""
     buys: list[tuple[planner.Order, int]] = []
     sells: list[tuple[planner.Order, int]] = []
     for o in orders:
         if o.side == "sell":
-            # Rounding a fractional sell up past the whole shares actually
-            # held would create a short, so the rounded sell is capped at the
-            # whole shares held; the unexecutable fractional residual is
-            # reported as blocked rather than silently left behind. A risk cut
-            # is never rounded to zero: when a whole share is executable it is
-            # sold however small the fractional reduction, so the cut the
-            # decision's binding constraint requires actually happens.
-            # A company above its hard cap needs a whole-share reduction even
-            # when no portfolio-wide constraint binds (for example after fees).
-            over_company_cap = (
-                o.symbol != allocation.SPY
-                and held.get(o.symbol, 0.0) * priced[o.symbol]
-                > entry_cap * equity + 1e-9
+            qty = _whole_share_sell(
+                o,
+                held.get(o.symbol, 0.0),
+                want.get(o.symbol, 0.0) <= 1e-9,
+                blocked,
+                missing,
             )
-            qty = _round_sell_quantity(
-                o, held.get(o.symbol, 0.0), risk_cut or over_company_cap
-            )
-            if qty <= 0:
-                blocked.append(
-                    f"whole-share rounding leaves no sellable quantity for {o.symbol}"
-                )
-                continue
-            if o.qty > qty + 1e-9:
-                blocked.append(
-                    f"whole-share eligibility leaves an unexecutable "
-                    f"fractional residual in {o.symbol}"
-                )
-            sells.append((o, qty))
+            if qty > 0:
+                sells.append((o, qty))
         else:
-            qty = int(round(o.qty))
+            qty = whole_share_gap(o.qty)
             if qty <= 0:
                 missing.append(f"{o.symbol}: buy rounds to zero shares")
                 continue
@@ -616,8 +652,10 @@ def plan_funded(
             blocked=tuple(blocked),
             binding=decision.binding,
         )
+    want = _wanted_shares(decision, held, priced, equity, missing, index_eligible)
     orders = _continuous_orders(
         decision,
+        want,
         held,
         priced,
         equity,
@@ -625,7 +663,6 @@ def plan_funded(
         cost,
         min_trade,
         missing,
-        index_eligible,
     )
     if whole_shares:
         orders = _whole_share_bound(
@@ -639,7 +676,7 @@ def plan_funded(
             entry_cap,
             blocked,
             missing,
-            bool(decision.binding and decision.binding != allocation.BINDING_NONE),
+            want,
         )
     result = dict(held)
     for o in orders:
