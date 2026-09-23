@@ -21,8 +21,12 @@ retain their requested denominator with a reason. Label windows remain20 session
 primary and5 secondary; immature/missing outcomes remain explicit.
 
 Both methods use identical supplied inputs and the existing frozen mapping.
-The reviewed replay runs in price-component mode without inventing historical
-grades. It compares the incumbent entry formula and experimental entry sequence,
+Review correction before any real outcomes: price-component mode does not bypass
+the common eligibility gate, so an empty timeline prevents every entry. The
+diagnostic explicitly assumes grade A and rejecting_band=False at each session
+open for BOTH methods. These fixed controlled conditions are not historical
+grades or a reconstruction of actual eligibility. The result must label this
+assumption. It compares the incumbent entry formula and experimental entry sequence,
 NOT exact live momentum, historical portfolio performance or personal turnover.
 Changing the daily source from Yahoo to IEX regular-session closes is an explicit
 contract change confined to this diagnostic. Current live strategy is unchanged.

@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-09-23 — Single-source correction; dashboard validation still active
+
+Root independently reproduced two failed acceptance cases on completed single-
+source worker: run_diagnostic suppresses ALL events with empty eligibility, and
+hash-valid pages with disconnected request cursors are accepted. Evidence:
+/tmp/test_single_source_review_edges.py (immutable) and
+/tmp/codex-single-source-review-repro-20260923.log (2 failed). Not integrated.
+Root's original empty-timeline instruction caused the first defect. Protocol
+is corrected BEFORE any real outcomes: fixed assumed grade A/nonrejecting at
+each session open, identical for both methods, explicitly conditional diagnostic
+and NEVER historical grades or actual live eligibility. All other fixed inputs,
+dates/horizons/cohort/mapping unchanged. Correction worker1645036 review_round1,
+exact SINGLE_SOURCE_REVIEW_TASK.md, requires NEW SINGLE_SOURCE_REVIEW_HANDOFF.md
+plus exit; old final superseded. Only owns its new module/test. Dashboard1423440
+still active, ~2h, verifying browser tests/baseline in isolated checkout. Do not
+import drafts or touch its owned files. No deployment yet; live marker a89bba40.
+
+User asks active-trader labels and chart freshness, and wants release in2–3h.
+Root answered this is an aim, not guaranteed or proof of strategy superiority.
+Verified deployed StockBoard: Move is trade allocation (blank for Hold), Target
+is allocation under selected policy (default plan, optional research live sizing),
+not signal return/profit target. Existing charts fetch every60s, daily/weekly only,
+merge board snapshot; no15m candle chart currently. Quote freshness fix awaits
+release. Recommended clearer labels, but no new label/chart worker or UI edits
+dispatched. Finish active minimum release before expanding scope.
+
 ## 2026-09-22 — User requests active completion and dashboard release ASAP
 
 User explicitly rejected waiting and asks to get the latest tested implementation
