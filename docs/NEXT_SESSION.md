@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-09-23 06:43 UTC — Wording release verified live; test cleanup integrated
+
+Frontend release08e236ae is LIVE through scripts/deploy.sh, automatic frontend
+path (no skip flags), build/typecheck pass. Gateway image
+sha256:9b551c36346587559f13116d02bd9a2d89be65aa883e1d741d090d70be4035f5.
+13 focused browser cases pass on root5177 and deployed8080: account help,
+cash/holdings isolation and invalidation, chart rendering, benchmark missing
+data, forward missing outcomes, FOMC and execution panels. Logs
+/tmp/codex-copy-browser-20260923.log and
+/tmp/codex-copy-deployed-browser-20260923.log. Postdeploy08e236ae ok (cheap).
+Model container identities/start times unchanged. Existing actual authenticated
+API probe for unchanged backend0fab65c remains applicable; no orders written.
+
+All three copy workers exited and reviewed owned edits are integrated/root-owned.
+Root replaced misleading personal/paper explanations, allocation/profit confusion,
+guaranteed reinvestment and fixed-hours freshness claims; removed unqualified
+historical edge percentages and unrelated FOMC performance persuasion. Research
+timestamps and cost-limited sizing text corrected. No strategy/math changes.
+Browser review found old EveryGrade explanatory component is not mounted in the
+current page; updated mounted HowToUse and tested it, rather than claiming a
+source-only edit proves visible behavior. Test zero-cash request assertion now
+polls the asynchronous request; same required body/value, no weakened assertion.
+
+Test cleanup84712fa integrated as9d04628 AFTER frontend deployment;31tests pass
+in current tree (/tmp/codex-test-cleanup-integrated-20260923.log). Net81lines
+removed, assertions/test bodies unchanged, previous8fixture-equivalence checks.
+No runtime redeploy needed for this test-only commit. Do not repeatedly deploy
+to align a marker with test/docs changes or rerun unchanged model gates.
+
+Limits: focused13 cases do not prove every dynamic backend/model sentence is
+correct, nor all dashboard paths. Remaining bounded review: backend-origin
+displayed note/reason/basis strings and components outside worker groups
+(RecordStatus, RegimeBanner, WhatChanged, AccountSummary). No need to restart
+workers, score candidate again, or repeat previous audits. New15m entry remains
+experimental; six-name diagnostic has no paired entries and proves no advantage.
+
+
 ## 2026-09-23 05:40 UTC — Account release live and acceptance verified
 
 Deployed 0fab65c4 through scripts/deploy.sh: unit 4373 passed/31 skipped;
