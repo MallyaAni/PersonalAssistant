@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-09-23 — Four parallel OpenCode jobs; user has13% usage left
+
+User explicitly requested parallel validation and corrected the priority: prove
+the entry candidate before adopting it. Four isolated spark/deepseek-v4-flash
+jobs are active, no active job restarted. Existing diagnostic correction1645036
+and dashboard1423440 continue. New incumbent_parity1651779 owns ONLY new
+test_intraday_incumbent_parity.py and its research report, INCUMBENT_PARITY_TASK.md,
+PARITY_HANDOFF.md. New turnover_validation1651795 owns ONLY new
+test_intraday_turnover_acceptance.py and its research report, TURNOVER_VALIDATION_TASK.md,
+TURNOVER_HANDOFF.md. Both based18e3cda; exact paths/ownership in manifest.
+These independently verify real incumbent formula parity, missed-opportunity
+attribution, repeat signal identity and personal funded/no-paper-leak behavior.
+No real historical scores, production edits or provider calls in review jobs.
+Root reviews completed owned diffs only. Keep Codex supervision compact; no
+repeated unchanged polls/tests/research. Account plumbing may ship independently;
+new entry strategy adoption requires comparison evidence, not software tests.
+
 ## 2026-09-23 — Single-source correction; dashboard validation still active
 
 Root independently reproduced two failed acceptance cases on completed single-
