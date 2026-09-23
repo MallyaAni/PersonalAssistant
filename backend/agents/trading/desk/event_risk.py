@@ -62,7 +62,7 @@ def evaluation_slices(result) -> list[dict]:
                 "base_session": str(dates[start]),
                 "through": str(dates[end]),
                 "total_return": float(values[-1] / values[0] - 1),
-                "drawdown": float(np.max(1 - values / np.maximum.accumulate(values))),
+                "drawdown": float(np.min(values / np.maximum.accumulate(values) - 1)),
                 "sessions": end - start,
                 "completed_meetings": meetings,
                 "basis": "continuous simulation; costs included; not live returns",

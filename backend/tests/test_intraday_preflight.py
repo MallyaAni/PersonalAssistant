@@ -24,17 +24,19 @@ import pyarrow.parquet as pq
 
 from backend.market.intraday_cache import (
     PRICE_BASIS_ADJUSTED,
+    IntradayCache,
     load_daily,
     load_intraday,
     load_recorded_eligibility,
 )
 from backend.market.intraday_comparison import CANDIDATE, INCUMBENT, DailyRow
-from backend.market.intraday_entry import NEW_YORK, session_open_for
+from backend.market.intraday_entry import NEW_YORK, Bar, session_open_for
 from backend.market.intraday_inputs import ResearchCalendar, load_calendar
 from backend.market.intraday_preflight import (
     OBSERVATION_COUNT,
     READY,
     UNAVAILABLE,
+    _session_regular_bars,
     prepare_recorded_session,
     session_schedule_from_calendar,
 )
@@ -47,6 +49,18 @@ from backend.market.intraday_replay import (
 SESSION = date(2026, 9, 15)
 SESSION2 = date(2026, 9, 16)
 CALENDAR = load_calendar()
+
+
+# A real early close excludes after-close prints at the raw preparation boundary.
+def test_early_close_raw_filter_excludes_after_close_prints():
+    day = date(2026, 11, 27)
+    before = session_open_for(day) + timedelta(minutes=195)
+    after = session_open_for(day) + timedelta(minutes=210)
+    bars = tuple(
+        Bar(stamp, 100.0, 101.0, 99.0, 100.0, 10.0) for stamp in (before, after)
+    )
+    cache = IntradayCache("AAA", bars, None, None)
+    assert _session_regular_bars(cache, day) == bars[:1]
 
 
 # The UTC iso text of a New York regular-session bar start at ``slot`` on ``day``.

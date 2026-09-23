@@ -87,8 +87,13 @@ from datetime import date, datetime, timedelta
 from datetime import time as day_time
 from zoneinfo import ZoneInfo
 
+from backend.market import calendar
+
 NEW_YORK = ZoneInfo("America/New_York")
 SESSION_OPEN = day_time(9, 30)
+# The regular close. A session's actual close comes from the published
+# calendar (13:00 on an early-close day); this is the full-session clock
+# that callers compare a schedule against, not the close of any given date.
 SESSION_CLOSE = day_time(16, 0)
 BAR_MINUTES = 15
 CANDLE = timedelta(minutes=BAR_MINUTES)
@@ -202,27 +207,34 @@ def _valid_bar(bar: Bar) -> None:
 
 # The session's regular-window bars, ordered, deduplicated, and completed.
 def _completed_bars(
-    bars: list[Bar], session: date, as_of: datetime | None
+    bars: list[Bar],
+    session: date,
+    as_of: datetime | None,
+    close: day_time | None = None,
 ) -> list[Bar]:
     """Return the sorted, duplicate-checked, contiguous completed bars.
 
     Uncompleted bars (start + 15 min after ``as_of``) and bars whose start is
-    outside the regular session clock window (09:30-16:00) are dropped *first*,
-    before any validation, so a future bar cannot disturb an earlier decision
-    it was not yet available to influence. The surviving completed prefix is
-    then checked structurally (see ``_validate_completed``): duplicate starts
-    and corrupt bars raise, a completed bar on another date raises rather than
-    mix days, and the prefix must be contiguous on the 15-minute grid starting
-    at the 09:30 opening bar — a gap or missing opening bar could conceal an
+    outside the session's regular clock window (09:30 to its close: 16:00, or
+    13:00 on a published early close) are dropped *first*, before any
+    validation, so a future bar cannot disturb an earlier decision it was not
+    yet available to influence. The surviving completed prefix is then checked
+    structurally (see ``_validate_completed``): duplicate starts and corrupt
+    bars raise, a completed bar on another date raises rather than mix days,
+    and the prefix must be contiguous on the 15-minute grid starting at the
+    09:30 opening bar — a gap or missing opening bar could conceal an
     invalidation and is rejected rather than bridged. With ``as_of`` None every
     supplied in-window bar is treated as completed (a closed-session replay).
+    ``close`` overrides the published calendar for a caller that carries its
+    own session schedule.
     """
+    close = close or calendar.session_close(session)
     eligible: list[Bar] = []
     for bar in bars:
         start = _ny(bar.start)
         if as_of is not None and start + CANDLE > as_of:
             continue  # window not elapsed; cannot have influenced any decision
-        if not SESSION_OPEN <= start.time() < SESSION_CLOSE:
+        if not SESSION_OPEN <= start.time() < close:
             continue  # extended-hours bar; the regular session is the contract
         eligible.append(Bar(start, bar.open, bar.high, bar.low, bar.close, bar.volume))
     eligible.sort(key=lambda b: b.start)
@@ -623,10 +635,12 @@ def evaluate(
     )
 
 
-# The New York session's close on a given date.
+# The New York session's close on a given date, from the published calendar:
+# 16:00, or 13:00 on an early-close day, so the day after Thanksgiving is
+# reported closed after 13:00 rather than open until a 16:00 that never comes.
 def session_close_for(session: date) -> datetime:
-    """Return the session's 16:00 New York close on ``session``."""
-    return datetime.combine(session, SESSION_CLOSE, NEW_YORK)
+    """Return the session's scheduled New York close on ``session``."""
+    return datetime.combine(session, calendar.session_close(session), NEW_YORK)
 
 
 # A New York datetime for a session's opening, for callers that need it.

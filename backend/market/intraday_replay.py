@@ -43,10 +43,10 @@ from backend.market.intraday_entry import (
     BAR_MINUTES,
     CANDLE,
     NEW_YORK,
-    SESSION_CLOSE,
     SESSION_OPEN,
     Bar,
     _completed_bars,
+    session_close_for,
 )
 
 # Outcome horizons, exactly the frozen protocol: 20 sessions for the primary
@@ -140,6 +140,12 @@ class SessionSchedule:
         kind = self.kind(day)
         return kind in (SessionKind.FULL, SessionKind.EARLY_CLOSE)
 
+    # The supplied close time of a session day: the early close where the
+    # schedule names one, else the regular 16:00.
+    def session_close_time(self, day: date) -> day_time:
+        """Return the scheduled close time of ``day`` on this schedule."""
+        return self.early_closes[day] if day in self.early_closes else day_time(16, 0)
+
     # The New York start of the day's last regular bar, close-aware.
     def session_close_bar_start(self, day: date) -> datetime:
         """Return the New York start of the day's last regular bar.
@@ -147,10 +153,7 @@ class SessionSchedule:
         A full session's closing bar starts at 15:45 and an early close's at
         12:45, so the endpoint close is checked against the right clock.
         """
-        close_time = (
-            self.early_closes[day] if day in self.early_closes else day_time(16, 0)
-        )
-        return datetime.combine(day, close_time, NEW_YORK) - CANDLE
+        return datetime.combine(day, self.session_close_time(day), NEW_YORK) - CANDLE
 
 
 # One observed decision instant and the adapter's comparison at that instant.
@@ -501,7 +504,9 @@ def execution_proxy(bars: Sequence[Bar], event: EventRecord) -> ExecutionProxy:
             observation_time,
             "the observation time is not on the event's session date",
         )
-    if not (SESSION_OPEN <= start_ny.time() < SESSION_CLOSE):
+    if not (
+        start_ny.time() >= SESSION_OPEN and start_ny < session_close_for(event.session)
+    ):
         return ExecutionProxy(
             method,
             EXECUTION_UNKNOWN,
@@ -612,7 +617,11 @@ def _validated_complete(
     for an incomplete full day.
     """
     try:
-        completed = _completed_bars(list(bars), session, None)
+        # Bound the regular window by the schedule's own close, so an early
+        # close's afternoon bars do not displace its 12:45 closing bar.
+        completed = _completed_bars(
+            list(bars), session, None, close=schedule.session_close_time(session)
+        )
     except ValueError:
         return None
     if not completed or _ny(completed[-1].start) != schedule.session_close_bar_start(
@@ -634,11 +643,7 @@ def _endpoint_close(
 # The scheduled New York close datetime of a session, early closes included.
 def _session_close_datetime(schedule: SessionSchedule, day: date) -> datetime:
     """Return the scheduled close datetime (16:00, or the early-close time)."""
-    if day in schedule.early_closes:
-        close_time = schedule.early_closes[day]
-    else:
-        close_time = day_time(16, 0)
-    return datetime.combine(day, close_time, NEW_YORK)
+    return datetime.combine(day, schedule.session_close_time(day), NEW_YORK)
 
 
 # One horizon's label for a method's execution.

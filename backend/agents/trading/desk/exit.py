@@ -6,7 +6,11 @@ whether this one position has finished, which no ranking can answer. This
 module was built to ask the second question properly, and the rules in it
 are kept because the reasoning behind them is sound and the measurement
 that retired them is worth not repeating. **Nothing here trades.** The
-paper book passes no `finished` map (see `desk/paper.py`).
+`finished` map the paper book passes (`market_daily._downgraded`) carries
+the names whose grade fell below A - the rotation, which is the analysts'
+verdict, not a price rule - and nothing from this module; `evidence` is
+read live only for the band-reversal buy blocker (`market_daily._band_blocked`).
+See `desk/paper.py`.
 
 Why it was retired
 ------------------

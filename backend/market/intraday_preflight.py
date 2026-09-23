@@ -42,9 +42,9 @@ from backend.market.intraday_comparison import DailyRow, Eligibility
 from backend.market.intraday_entry import (
     CANDLE,
     NEW_YORK,
-    SESSION_CLOSE,
     SESSION_OPEN,
     Bar,
+    session_close_for,
 )
 from backend.market.intraday_inputs import (
     RecordedEligibility,
@@ -163,7 +163,7 @@ def _session_regular_bars(intraday: IntradayCache, session: date) -> tuple[Bar, 
     for bar in intraday.bars:
         start_ny = _ny(bar.start)
         if start_ny.date() == session and (
-            SESSION_OPEN <= start_ny.time() < SESSION_CLOSE
+            start_ny.time() >= SESSION_OPEN and start_ny < session_close_for(session)
         ):
             selected.append(bar)
     return tuple(selected)

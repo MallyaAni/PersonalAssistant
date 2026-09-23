@@ -5,15 +5,19 @@ The rules are the ones that measured best, and nothing else:
 * Every `REBALANCE_EVERY` sessions the paper book is brought to the desk's
   target weights (buys and sells at the next open, whole shares, moves
   smaller than `MIN_TRADE` of equity skipped).
-* Between rebalances the book is left alone except for the versioned FOMC
-  cycle in event_execution.py. It cuts held shares once and restores confirmed
-  reductions after the meeting, without restarting the rebalance clock. There
-  is no price stop, because every stop measured worse than none on every
-  name; no grade-based exit, because it cut winners; and no band exit,
-  because that cost 3.0% a year when it was finally measured inside these
-  rules rather than per trade. `plan` still accepts a `finished` map so a
-  trigger that does measure well can be given one, but none does yet. The
-  note at the top of `desk/exit.py` has the numbers.
+* Between rebalances three things trade, and nothing else. A held name
+  whose grade falls below A is rotated: sold, with the proceeds redeployed
+  into the names the desk still wants (`_rotation_orders`; the caller's
+  `finished` map names them, and `market_daily._downgraded` fills it). A
+  name graded A or better breaking out through its own 20-day band is
+  entered from cash (`_entry_orders`). And the buys a cash-bound plan could
+  not pay for are re-issued once on the next session (`_deferred_orders`).
+  The versioned FOMC cycle in event_execution.py cuts held shares once and
+  restores confirmed reductions after the meeting, without restarting the
+  rebalance clock. There is no price stop, because every stop measured
+  worse than none on every name, and no band exit, because that cost 3.0%
+  a year when it was finally measured inside these rules rather than per
+  trade. The note at the top of `desk/exit.py` has the numbers.
 * The plan for a session is made once. Running the day twice submits
   nothing the second time.
 
@@ -66,8 +70,9 @@ MIN_TRADE = 0.005
 # Mid-cycle entries, measured 2026-09-18 and corrected 2026-09-19. The
 # calendar decides WHAT the book holds; price decides WHEN each name is
 # entered. A name graded A or better trading above ENTRY_BAND_Z on its own
-# 20-day band takes ENTRY_ADD of equity funded from the other holdings,
-# capped at ENTRY_NAME_CAP.
+# 20-day band takes `entry_size(band)` of equity, paid from cash (see the
+# note on funding below - the other holdings are not trimmed), capped at
+# ENTRY_NAME_CAP.
 #
 # The upper tail only. The rule shipped on 2026-09-18 took both tails, on a
 # forward-return table that counted a ten-session window on every session and
@@ -153,12 +158,15 @@ MIN_TRADE = 0.005
 # 70 bps - 1.00 looks better at 10 bps and is second-worst by 70, because the
 # peak walks up the grid as trading gets dearer.
 ENTRY_BAND_Z = 1.10
-# The size at the trigger itself; `entry_size` scales it by how far through
-# the band the close is. A flat 3% is what this replaces.
+# The size at a band reading of ENTRY_SIZE_REF (1.25, the trigger the
+# sizing was measured at), not at the 1.10 trigger itself: `entry_size`
+# scales it by the square of the reading over ENTRY_SIZE_REF, so an entry
+# at the trigger takes 0.023 x (1.10 / 1.25)^2 = 1.78% of equity and a
+# stronger reading takes more. A flat 3% is what this replaces.
 ENTRY_ADD = 0.023
 ENTRY_NAME_CAP = 0.15
 ENTRY_MIN_GRADE = ("A", "A+")
-POLICY_VERSION = "cash-bounded-breakout-rotation/2"
+POLICY_VERSION = "cash-bounded-breakout-rotation/3"
 # The band reading the size curve is anchored to: the trigger the sizing was
 # measured at, kept as its own constant so the trigger can move without
 # reshaping the curve. `entry_size` explains why.
@@ -215,6 +223,14 @@ class PaperState:
     order_seq: int = 0
     event_cycle: dict = field(default_factory=dict)
     event_outcomes: list[dict] = field(default_factory=list)
+    # The buy shares the previous session's plan could not pay for, per
+    # symbol. Buys are bounded to the cash on hand and sells fill on the
+    # following close, so a rebalance or rotation whose buys outran the cash
+    # left the sale proceeds idle until the next entry or the next reset -
+    # about five CAGR points, measured. The remainder is re-issued once, on
+    # the next mid-cycle plan, and then cleared whether or not it filled.
+    # Absent in old state files, which load with nothing deferred.
+    deferred_buys: dict[str, float] = field(default_factory=dict)
     # The optional funded-allocation state, untouched on the incumbent path.
     # Holds the desk's stable stock composition (exposure 1) - kept separately
     # from the reduced executable target and the actual held shares, so a
@@ -301,19 +317,15 @@ def save_state(root: Path, state: PaperState) -> Path:
     return path
 
 
-# The plan for one session: the orders to submit for the next open and the
-# state after it. `held` is {symbol: shares}, `prices` {symbol: last close},
-# `targets` {symbol: weight} from the desk's book, `grades` {symbol:
-# letter} for every name graded today.
-# Mid-cycle entries: buy the tail names, funded pro rata from the rest.
+# The rotation: sell a name the desk has turned against and put the money
+# into the ones it still wants. The buys are the sale's value shared among
+# the other holdings in proportion to what each already holds, inside the
+# name cap, with a leg too small to clear MIN_TRADE dropped rather than
+# sent. (The mid-cycle ENTRIES are a different rule: `_entry_orders` pays
+# them from cash and trims nothing - the funding note above has the
+# measurement.)
 #
-# Gross is unchanged by construction. The buys are sized first, then the
-# same dollar value is raised by trimming every OTHER holding in proportion
-# to what it already holds, so the exposure the regime chose is untouched
-# and only the selection moves. A name at its cap is not added to, and a
-# trim too small to clear MIN_TRADE is dropped rather than sent.
-# Sell a name the desk has turned against and put the money into the ones it
-# still wants. NOT a sale to cash: measured, selling a downgrade to cash costs
+# NOT a sale to cash: measured, selling a downgrade to cash costs
 # 24 points of CAGR a year against holding, because the money stops working.
 # Redeployed it is the best rule the exit study found - at this reset it earned
 # the same return as holding with a 7.3 point shallower drawdown and a better
@@ -512,7 +524,89 @@ def _rebalance_orders(
     return orders
 
 
+# Pay a basket's buys from `budget`, scaling them down together when it is
+# short, and say how many shares of each name went unpaid. Sells pass
+# untouched: they fill on the following close and fund nothing tonight.
+def _fund_buys(
+    orders: list["PaperOrder"],
+    budget: float,
+    prices: dict[str, float],
+    whole_shares: bool = True,
+) -> tuple[list["PaperOrder"], dict[str, float]]:
+    """Return (the orders the cash pays for, {symbol: unpaid buy shares})."""
+    wanted = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    scale = min(1.0, max(0.0, budget) / wanted) if wanted else 1.0
+    funded: list[PaperOrder] = []
+    unpaid: dict[str, float] = {}
+    for order in orders:
+        qty = order.qty
+        if order.side == "buy":
+            qty = math.floor(qty * scale + 1e-10) if whole_shares else qty * scale
+            if order.qty - qty > 1e-12:
+                unpaid[order.symbol] = unpaid.get(order.symbol, 0.0) + (order.qty - qty)
+        if qty > 0:
+            funded.append(replace(order, qty=qty))
+    return funded, unpaid
+
+
+# Re-issue the buys the previous session's plan could not pay for, from the
+# cash its sells have since delivered. Buys only, never a trim; the same
+# gates as a mid-cycle entry (graded A or better, not rotating out, not
+# rejecting its band) and the same name cap; a remainder the book has
+# stopped wanting is simply dropped. Whatever this returns, the caller
+# clears the remainder: one retry, not twenty sessions of chasing.
+def _deferred_orders(
+    deferred: dict[str, float],
+    held: dict[str, float],
+    prices: dict[str, float],
+    equity: float,
+    grades: dict[str, str],
+    finished: dict[str, str],
+    blocked: set[str] | None,
+    session: str,
+    state: "PaperState",
+    whole_shares: bool = True,
+) -> list["PaperOrder"]:
+    """Return the buy orders that retry the previous session's unpaid shares."""
+    if equity <= 0 or not deferred:
+        return []
+    blocked = blocked or set()
+    orders: list[PaperOrder] = []
+    for symbol in sorted(deferred):
+        price = float(prices.get(symbol) or 0.0)
+        if (
+            price <= 0
+            or symbol in blocked
+            or symbol in finished
+            or grades.get(symbol) not in ENTRY_MIN_GRADE
+        ):
+            continue
+        room = max(0.0, ENTRY_NAME_CAP * equity - float(held.get(symbol, 0)) * price)
+        qty = min(float(deferred[symbol]), room / price)
+        if whole_shares:
+            qty = math.floor(qty + 1e-10)
+        # The book's own floor: a residual under MIN_TRADE of equity was not
+        # worth its cost at the rebalance and is not worth it now.
+        if qty <= 0 or qty * price < MIN_TRADE * equity:
+            continue
+        seq = state.order_seq
+        state.order_seq += 1
+        orders.append(
+            PaperOrder(
+                symbol,
+                "buy",
+                qty,
+                "deferred buy: the remainder cash could not pay for last session",
+                client_order_id=order_id(session, symbol, "buy", seq),
+            )
+        )
+        state.opened.setdefault(symbol, session)
+    return orders
+
+
 # Reserve name capacity jointly and fund opening buys only from existing cash.
+# `unfunded`, when a dict is given, receives the buy shares the cash could
+# not pay for, per symbol, so the caller can carry them to the next session.
 def midcycle_orders(
     session,
     state,
@@ -525,6 +619,7 @@ def midcycle_orders(
     blocked=None,
     cash=None,
     whole_shares=True,
+    unfunded=None,
 ):
     eligible = {
         s: b
@@ -550,20 +645,20 @@ def midcycle_orders(
             else equity - sum(q * prices.get(s, 0) for s, q in held.items())
         ),
     )
-    wanted = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
-    scale = min(1.0, budget / wanted) if wanted else 1.0
-    funded = []
-    for order in orders:
-        qty = order.qty
-        if order.side == "buy":
-            qty = math.floor(qty * scale + 1e-10) if whole_shares else qty * scale
-        if qty > 0:
-            funded.append(replace(order, qty=qty))
+    funded, unpaid = _fund_buys(orders, budget, prices, whole_shares)
+    if unfunded is not None:
+        for symbol, qty in unpaid.items():
+            unfunded[symbol] = unfunded.get(symbol, 0.0) + qty
     return funded
 
 
-# Plan this session's moves: rebalance to the targets, or the exits the
-# caller named.
+# Plan this session's moves: the orders to submit for the next open and the
+# state after it. On the reset, the rebalance to the targets; between
+# resets, the previous session's deferred buys, the rotation out of the
+# names the caller's `finished` map says the desk has turned against, and
+# the price entries. `held` is {symbol: shares}, `prices` {symbol: last
+# close}, `targets` {symbol: weight} from the desk's book, `grades`
+# {symbol: letter} for every name graded today.
 def plan(
     session: str,
     state: PaperState,
@@ -642,6 +737,11 @@ def plan(
     new.opened = {s: d for s, d in state.opened.items() if s in held}
     done = finished or {}
     orders: list[PaperOrder] = []
+    # The buy shares tonight's cash cannot pay for, carried to the next
+    # session's plan. Whatever the previous session left is consumed here
+    # (retried below, or superseded by a rebalance) and never chased again.
+    unfunded: dict[str, float] = {}
+    new.deferred_buys = {}
     rebalance = (
         force_rebalance
         or state.last_rebalance is None
@@ -671,31 +771,75 @@ def plan(
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
+        # First, the remainder of the previous session's buys, which the
+        # cash its sells delivered at the close can now pay for. It takes
+        # the cash before any other mid-cycle buy, is bounded by it, and its
+        # own shortfall is not carried forward again.
+        budget = max(
+            0.0,
+            (
+                cash
+                if cash is not None
+                else equity - sum(q * prices.get(s, 0) for s, q in held.items())
+            ),
+        )
+        retry, _unpaid = _fund_buys(
+            _deferred_orders(
+                state.deferred_buys,
+                held,
+                prices,
+                equity,
+                grades,
+                done,
+                entry_blocked,
+                session,
+                new,
+            ),
+            budget,
+            prices,
+        )
+        spent = sum(o.qty * prices[o.symbol] for o in retry)
+        reserved = dict(held)
+        for order in retry:
+            reserved[order.symbol] = reserved.get(order.symbol, 0) + order.qty
         # A name the desk has turned against is sold and the money follows the
         # names it still wants. The sale alone was what this used to do, and a
         # sale alone is the variant that loses 24 points of CAGR.
-        orders = midcycle_orders(
+        orders = retry + midcycle_orders(
             session,
             new,
             equity,
-            held,
+            reserved,
             prices,
             grades,
             done,
             entries or {},
             entry_blocked,
-            cash,
+            cash - spent if cash is not None else None,
+            unfunded=unfunded,
         )
-        what = "hold" if not orders else "entries" if entries else "exits"
+        what = (
+            "hold"
+            if not orders
+            else "entries"
+            if entries
+            else "exits"
+            if done
+            else "deferred buys"
+        )
     # Sells first, so the buys have the cash.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))
     if cash is not None:
-        orders = bound_orders(orders, held, prices, equity, cash)
+        orders = bound_orders(orders, held, prices, equity, cash, unfunded=unfunded)
+    new.deferred_buys = {s: q for s, q in unfunded.items() if q > 0}
     return orders, new, what
 
 
 # Keep the combined whole-share order basket within cash and decision-price caps.
-def bound_orders(orders, held, prices, equity, cash):
+# The cap is applied first, so the shares it removes are not a cash shortfall;
+# `unfunded`, when a dict is given, receives only the buy shares the cash
+# could not pay for, per symbol, for the next session to retry.
+def bound_orders(orders, held, prices, equity, cash, unfunded=None):
     if not math.isfinite(equity) or equity <= 0 or not math.isfinite(cash):
         raise ValueError("A finite account equity and cash balance are required")
     reserved = dict(held)
@@ -711,13 +855,11 @@ def bound_orders(orders, held, prices, equity, cash):
             reserved[order.symbol] = reserved.get(order.symbol, 0) + qty
         if qty > 0:
             capped.append(replace(order, qty=qty))
-    total = sum(o.qty * prices[o.symbol] for o in capped if o.side == "buy")
-    scale = min(1, max(0, cash) / total) if total else 1
-    return [
-        replace(o, qty=math.floor(o.qty * scale + 1e-10)) if o.side == "buy" else o
-        for o in capped
-        if o.side == "sell" or math.floor(o.qty * scale + 1e-10) > 0
-    ]
+    funded, unpaid = _fund_buys(capped, cash, prices)
+    if unfunded is not None:
+        for symbol, qty in unpaid.items():
+            unfunded[symbol] = unfunded.get(symbol, 0.0) + qty
+    return funded
 
 
 # What the broker says became of each order this desk wrote down.

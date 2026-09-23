@@ -41,6 +41,7 @@ read before the market could have.
 
 import csv
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 # The themes money rotates between. A member carries any subset of these.
@@ -78,6 +79,18 @@ STALE_AFTER_DAYS = 7
 
 # The committed constituent file, produced by `backend.cli.market_universe`.
 CONSTITUENTS_PATH = Path(__file__).parent / "data" / "constituents.csv"
+MEMBERSHIP_HISTORY_PATH = Path(__file__).parent / "data" / "membership_history.csv"
+
+
+# Historical research must load a dated membership archive explicitly and
+# never infer past membership from the live, present-day book.
+def as_of(
+    session: date, history_path: Path = MEMBERSHIP_HISTORY_PATH
+) -> frozenset[str]:
+    """Return sourced historical member tickers or fail when history is absent."""
+    from backend.market import membership
+
+    return membership.members_as_of(membership.load_history(history_path), session)
 
 
 @dataclass(frozen=True, slots=True)

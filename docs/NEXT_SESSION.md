@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-09-23 22:31 UTC — Trading candidate reviewed; learned policies remain shadow-only
+
+Isolated branch `codex/trading-evidence-20260923` combines Fables' imported
+review-fix branch and OpenCode's first-step patch. The first-step browser work
+passes all **76/76** desk Playwright cases against isolated Vite source
+(`trading-evidence-vite` on 5178; `/tmp/trading-evidence-browser-full-20260923.log`).
+The combined relevant backend acceptance passes **421** tests with 27 existing
+numerical missing-data warnings (`/tmp/trading-evidence-final-backend-20260923.log`).
+Scoped Ruff and frontend TypeScript pass. Early-close, drawdown-sign,
+FOMC-entry gate and policy-version fixes are in the candidate, not deployed.
+
+New research-only `learned_policy.py` has a ten-session next-open/open-at-t+11
+SPY-relative label, publication/membership checks, purged monthly boosting,
+purged 20-session logistic crash-risk fits, hysteresis, named shadow ranking,
+shared desk sizing and an opt-in simulator brake ceiling. Synthetic acceptance
+tests check future-prefix invariance, data availability, labels, caps and
+accounting parity. `membership.py` plus `universe.as_of` fail closed without a
+sourced dated history. These components are **VERIFIED as causal kernels on
+synthetic inputs**, **UNVERIFIED as a live or historical profitable strategy**.
+
+Only 14 daily-bar `asof=` snapshots exist (2026-09-05..2026-09-22); historical
+membership/delisted outcomes are absent. Existing older prices are adjusted
+retrospectively. Therefore the requested 2016–26 learned versus incumbent,
+SPY, QQQ and equal-weight results table is **UNVERIFIED** under common
+point-in-time inputs. No candidate superiority or adoption is claimed. See
+`docs/research/TRADING_LEARNED_REVIEW_2026-09-23.md`. The deployed tree remains
+`8ce637b4`; no orders or deployment occurred in this continuation.
+
+
 ## 2026-09-23 08:38 UTC — Final dashboard release VERIFIED; supervision complete
 
 Live8ce637b486175475aa934c8b27061a6dc2244686, marker8ce637b4, through

@@ -52,7 +52,11 @@ class DeskReport:
     opinions: dict[str, Opinion]
     regime: RegimeView
     graded: Graded
-    scores: np.ndarray  # (T, N) the graded score with the blended tie-break
+    # (T, N) the score that orders the names: the analysts' summed continuous
+    # conviction (`Graded.conviction`, via `as_scores`), which the grade
+    # itself is bucketed from. The grade plus a blended rank tie-break is
+    # only the fallback when no conviction was recorded.
+    scores: np.ndarray
     book: list[Sized]
     # Which inputs beyond the five analysts made this report (see
     # LIVE_INPUTS), and the same desk without them, so the record can carry

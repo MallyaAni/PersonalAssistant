@@ -24,6 +24,51 @@ def test_action_follows_target_and_holding():
     assert actions.action_for(0.0, 0.0) == "hold"
 
 
+# A held name with no target is sold only when the paper book would sell
+# it: on a grade below A, or when the plan itself wrote the exit. Still
+# graded A or better and with no order against it, nothing trades until
+# the reset, so the board says hold rather than sell.
+def test_a_held_a_name_with_no_target_is_a_hold_not_a_sell():
+    assert actions.action_for(0.0, 0.10, grade=grading.A) == "hold"
+    assert actions.action_for(0.0, 0.10, grade=grading.A_PLUS) == "hold"
+    assert actions.action_for(0.0, 0.10, grade=grading.B) == "sell"
+    assert actions.action_for(0.0, 0.10, grade=grading.C) == "sell"
+    # The plan's own sell order is an explicit exit whatever the grade.
+    assert actions.action_for(0.0, 0.10, grade=grading.A, exiting=True) == "sell"
+    # Without a grade the old reading stands.
+    assert actions.action_for(0.0, 0.10) == "sell"
+    # A held name that keeps a target is unaffected by the grade.
+    assert actions.action_for(0.08, 0.10, grade=grading.A) == "trim"
+
+
+# The board applies the same rule from the report's grades and the plan's
+# orders: N1 is an A the book still holds with no target and no order, so
+# it is a hold that leaves at the reset; give the plan a sell order for it
+# and it is a sell.
+def test_the_board_holds_an_a_name_the_book_has_not_sold():
+    report = _report()  # N0 is A+, N1 is A, N2 is B
+    holdings = {
+        "N1": actions.Holding(weight=0.10, entry_price=50.0),
+        "N2": actions.Holding(weight=0.08, entry_price=40.0),
+    }
+    rows = actions.build(report, {"N0": 0.15}, holdings, sessions_since_rebalance=5)
+    by = {r["ticker"]: r for r in rows}
+    assert by["N1"]["action"] == "hold"
+    assert by["N1"]["leaves_if"] == (
+        "the next rebalance, or the grade falls below A first"
+    )
+    assert by["N2"]["action"] == "sell"
+    assert [r["action"] for r in rows] == ["sell", "buy", "hold"]
+    planned = actions.build(
+        report,
+        {"N0": 0.15},
+        holdings,
+        sessions_since_rebalance=5,
+        reasons={"N1": "leaves the book"},
+    )
+    assert {r["ticker"]: r["action"] for r in planned}["N1"] == "sell"
+
+
 # The margin is the votes above the grade's own threshold.
 def test_grade_margin_is_measured_from_the_grades_threshold():
     assert actions.grade_margin(2.5, grading.A_PLUS, True) == 0.5
@@ -52,6 +97,9 @@ def test_board_orders_rows_and_carries_the_exit_plan():
         and by["N2"]["leaves_if"] == "already outside the book"
     )
     assert by["N0"]["action"] == "buy" and by["N0"]["delta_weight"] == 0.15
+    # The rotation sells a downgrade the session it happens, not at the
+    # next reset, and the row says so.
+    assert by["N0"]["leaves_if"] == "the grade falls below A"
     assert by["N1"]["action"] == "hold" and by["N1"]["entry_price"] == 50.0
     for r in rows:
         assert set(r["stances"]) == set(report.graded.stances)

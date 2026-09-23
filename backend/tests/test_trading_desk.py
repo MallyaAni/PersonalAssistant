@@ -155,7 +155,7 @@ def test_risk_sizes_by_grade_and_exposure():
     config = risk.SizingConfig(top_fraction=0.5, short_fraction=0.0, name_cap=0.5)
     sized = risk.size(scores, grades, panel, state, config)
     tickers = {s.position.ticker for s in sized}
-    assert tickers <= {"N0", "N1", "N2", "N3"}
+    assert tickers <= {"N0", "N1", "N2"}
     for s in sized:
         assert s.exposure == regime.HYPE_EXPOSURE
         assert s.weight == pytest.approx(
@@ -163,8 +163,48 @@ def test_risk_sizes_by_grade_and_exposure():
         )
     assert risk.gross(sized) < sum(abs(s.position.weight) for s in sized)
     # With half the names graded C, the top half of the candidates is still
-    # half of the whole universe: four names, not two.
-    assert len(sized) == 4
+    # half of the whole universe: four slots, not two. Only three names earn
+    # a position, though - the B name's multiplier is zero, so it is not
+    # given a slot it could never hold - and every one of them is held.
+    assert len(sized) == 3
+    assert all(s.weight > 0 for s in sized)
+
+
+# A B-graded name must not take a slot it will not be held in. The grade
+# multiplier gives B nothing, and the candidate cut used to exclude only
+# the C grade, so a B name scoring in the top decile took one of the
+# book's slots and then had its weight zeroed: fewer names held, and less
+# than the volatility-targeted gross. The slots go to names whose grade
+# earns a position, and the gross is the engine's whole amount.
+def test_b_graded_names_do_not_take_slots_the_book_will_not_hold():
+    rng = np.random.default_rng(4)
+    t, n = 200, 10
+    themes = {f"N{i}": (AI_COMPUTE,) for i in range(n)}
+    panel = _panel(rng.normal(scale=0.02, size=(t, n)), themes)
+    # The five B names outscore the five A names, so they would win the
+    # top half on score alone.
+    scores = np.r_[np.linspace(0.1, 0.5, 5), np.linspace(0.6, 1.0, 5), 0.0]
+    grades = np.array([2] * 5 + [1] * 5 + [0])
+    state = regime.RegimeState(0, 0, 0.5, 0, 0, 0, "ai", 0.1, 0, 1.0, 1.0, ())
+    config = risk.SizingConfig(
+        top_fraction=0.5, short_fraction=0.0, name_cap=0.5, theme_cap=1.0
+    )
+    positions, targets = risk.desk_targets(scores, grades, panel, state, config)
+    held = {panel.tickers[c] for c in np.flatnonzero(targets > 0)}
+    # Half of the ten-name universe is five slots, all of them A names.
+    assert held == {"N0", "N1", "N2", "N3", "N4"}
+    assert len(positions) == 5
+    assert {p.ticker for p in positions} == held
+    # And the gross is the engine's full volatility-targeted amount, not
+    # what is left after zeroing the names it should never have picked.
+    assert targets.sum() == pytest.approx(sum(p.weight for p in positions))
+    assert targets.sum() > 0.5
+    # Graded C instead of B, the same five names give the same book: a
+    # grade that earns no position is not a candidate, whichever it is.
+    _c_positions, as_c = risk.desk_targets(
+        scores, np.where(grades == 1, 0, grades), panel, state, config
+    )
+    np.testing.assert_allclose(targets, as_c)
 
 
 # The technical analyst reads location: in a rising theme the name at the

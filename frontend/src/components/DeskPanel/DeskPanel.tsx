@@ -239,10 +239,12 @@ const SummaryStrip = ({
   latest,
   paperLive,
   curve,
+  currentPolicyVersion,
 }: {
   latest: DeskRecord
   paperLive: DeskPaperLive | null
   curve: DeskCurve | undefined
+  currentPolicyVersion?: string
 }) => {
   const paper = latest.paper
   const worth = paperLive?.equity ?? paper?.equity
@@ -255,7 +257,7 @@ const SummaryStrip = ({
   const dayPl = paperLive?.day_pl
   const backtest = curve?.backtest
   const stats = backtest?.stats
-  const currentPolicy = backtest?.strategy_policy === 'cash-bounded-breakout-rotation/2'
+  const currentPolicy = backtest?.strategy_policy === (currentPolicyVersion ?? 'cash-bounded-breakout-rotation/3')
   // A curve whose simulation read the frozen EDGAR snapshot - or a record
   // written before the source was carried - is an older fundamental-input
   // simulation even when the execution policy version matches. The source is
@@ -1238,10 +1240,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <details open={detailsOpen} aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
         <summary className="cursor-pointer text-sm font-medium">Every grade in detail · diagnostic view</summary>
         <div className="mt-3 flex flex-col gap-3">
-
-
-
-
+      {latest && (
+        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity} userId={userId}
+          holdings={holdingsReady ? holdings : null} marking={marking !== null}
+          onRecordBuy={canWrite && holdingsReady ? recordBuy : undefined}
+          saveError={saveError} onOpenName={(t) => setOpenName(t)} />
+      )}
       {latest && (
         <details aria-label="Reading the current picks" className="px-1 text-xs text-[#6e6e73]">
           <summary className="cursor-pointer">Data & timing · bar prices and quote checks</summary>
@@ -1306,7 +1310,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">simulated funds · the desk's paper book, not your money</span>
           </summary>
           <div className="space-y-3 px-4 pb-4">
-            <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} />
+            <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} currentPolicyVersion={payload.current_policy} />
+            {paperLive && paperLive.reason === undefined && paperLive.equity !== undefined && <LivePositions paper={paperLive} equity={paperLive.equity} />}
             <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
               <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>
               <p>{paperLive?.orders ? `${paperLive.orders.length} open orders` : 'Open orders unavailable'}</p>
@@ -1987,11 +1992,13 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
           "Using $X account value" and "Recorded Y%", both of which described
           his holdings file; nothing in this column is computed from it. */}
       <div>Desk holds {allocationPercent(row.current_weight)} · wants {allocationPercent(row.target_weight)} at the next reset</div>
-      <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
-      <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
-      <div>{!marketOpenNow(now) && row.quote.reason && /market closed|invalid or empty|unavailable/i.test(row.quote.reason)
-        ? 'No usable quote after the close; sizes use the last completed bar'
-        : <>{row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</>}</div>
+      {row.quote ? <>
+        <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
+        <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
+        <div>{!marketOpenNow(now) && row.quote.reason && /market closed|invalid or empty|unavailable/i.test(row.quote.reason)
+          ? 'No usable quote after the close; sizes use the last completed bar'
+          : <>{row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</>}</div>
+      </> : <div>Quote unavailable for this record.</div>}
       {row.valid_until && <div>Expires {executionTime(row.valid_until)}</div>}
     </details>}
   </div>
@@ -2101,7 +2108,6 @@ const EveryGrade = ({
           Only eligible technical readings refresh this decision's intraday grades.</p>}
         <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
-        <p className="mt-2"><b>Buy</b> is a cash-funded addition based on an eligible entry, current evidence and position limits. <b>Sell</b> is a proposed reduction of your recorded holding; read the row reason and size. <b>Hold</b> proposes no transaction, including when evidence or funding is unavailable. These actions use your recorded positions and confirmed cash. Sale proceeds are not assumed available before execution. <b>Move %</b> is the proposed change as a share of account equity, not a return. <b>Target %</b> is a strategy allocation, not a profit target or an instruction to rebalance now. Blank Move % on Hold means no proposed trade. Quotes and sizes do not guarantee a fill; place trades at your broker and record only completed fills.</p>
       </details>
       <fieldset className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6e6e73]">
         <legend className="sr-only">Filter the table by plan</legend>

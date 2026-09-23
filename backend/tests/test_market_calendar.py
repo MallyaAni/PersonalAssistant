@@ -140,3 +140,16 @@ def test_calendar_boundaries_do_not_invent_decision_days():
     )
     assert np.isnan(distance[0])
     assert np.isnan(since[0])
+
+
+# The session close comes from the published early-close schedule: 13:00 on
+# the day after Thanksgiving and on a reviewed historical half day, 16:00 on
+# an ordinary session, and 16:00 rather than an error in an unreviewed year so
+# the live board keeps answering.
+def test_session_close_reads_the_published_early_closes():
+    from datetime import time
+
+    assert calendar.session_close(date(2026, 11, 27)) == time(13, 0)
+    assert calendar.session_close(date(2025, 11, 28)) == time(13, 0)
+    assert calendar.session_close(date(2026, 11, 30)) == time(16, 0)
+    assert calendar.session_close(date(2031, 11, 28)) == time(16, 0)

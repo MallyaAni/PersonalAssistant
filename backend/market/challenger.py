@@ -34,8 +34,6 @@ from dataclasses import replace
 
 import numpy as np
 
-from backend.agents.trading.desk import desk as trading_desk
-
 NAME = "expectations-gap"
 PLAIN = "plain-value"
 
@@ -90,21 +88,6 @@ def with_gap(opinions: dict, gap: np.ndarray) -> dict:
     evidence["expectations_gap"] = gap
     out["value"] = replace(value, scores=blended, evidence=evidence)
     return out
-
-
-# A report's valuation analyst blended with `gap`: the same grading and
-# sizing, one input changed. Kept for the studies that start from a plain
-# report; the live desk applies the same blend in `desk.run`.
-def report_with_gap(report, gap: np.ndarray):
-    """Return the DeskReport with the gap blended in, from `report`'s analysts."""
-    live = trading_desk.assemble(
-        report.panel,
-        report.sides,
-        with_gap(report.opinions, gap),
-        report.regime,
-        (trading_desk.EXPECTATIONS_GAP,),
-    )
-    return replace(live, alternate=report)
 
 
 # The challenger's block for the nightly record: its book and grades,

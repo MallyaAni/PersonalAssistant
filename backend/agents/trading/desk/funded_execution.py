@@ -8,11 +8,18 @@ so the two cannot drift apart again the way they did before `planner.plan`.
 `plan_funded` is the one order planner. It sizes buys from the cash actually
 on hand at the decision - never from the proceeds of sells filling the same
 day - so a plan that says "sell X and buy Y" waits until the next daily plan
-before Y's money is spent. It never sells more than is held, and it never
-lets a min-trade threshold suppress a risk cut that the decision's known
-ceiling requires. The paper account asks for whole shares and re-checks the
+before Y's money is spent. It never sells more than is held. One min-trade
+threshold applies to buys and sells alike, so the book is not left under
+target by trims too small to matter; it never suppresses a full exit or a
+genuine risk cut (`is_risk_cut`: a constraint binds *and* the held exposure
+exceeds the decision's ceiling), which the decision requires however small.
+The paper account asks for whole shares and re-checks the
 cash, fee and name-cap bounds after rounding; the simulator asks for
-continuous shares and fills through the funded `_Book`.
+continuous shares and fills through the funded `_Book`. Whole shares round to
+the nearest share inside a half-share no-trade band on both sides
+(`whole_share_gap`): a sell is never rounded up past its target, because the
+share it oversold was bought back the next session and sold again the one
+after, indefinitely, against a constant target.
 
 `daily_decision` builds one day's `AllocationDecision` for the simulator from
 the desk's own panel plus the dated SPY/QQQ benchmark context passed in
@@ -83,6 +90,9 @@ class FundedPlan:
     # basket at the reference prices, `None` when a held name blocks sizing.
     projected_cash_amount: float | None = None
     projected_equity: float | None = None
+    # Whether the decision genuinely cut the held exposure below its ceiling
+    # (see `is_risk_cut`), as opposed to merely reporting a binding constraint.
+    risk_cut: bool = False
 
 
 @dataclass(frozen=True)
@@ -279,12 +289,16 @@ def daily_decision(
     regime_cap: float,
     event_cap: float,
     excluded_symbols: Iterable[str] = (),
+    budget_reference: str = allocation.BUDGET_MIN,
+    budget_multiplier: float = 1.0,
 ) -> DailyDecision:
     """Return the DailyDecision for session `t` from the supplied composition.
 
     `desired` is the caller's stable unscaled stock composition - refreshed only
     on the caller's scheduled rebalance, never recomputed here - so a risk-only
     cut or a missing score on an ordinary day cannot lose the names to re-enter.
+    `budget_reference` and `budget_multiplier` are passed to `allocation.decide`
+    unchanged; their defaults are the decision's own.
     """
     benchmarks = validate_benchmarks(panel, benchmark_prices)
     _check_spy_context(panel, benchmarks, t)
@@ -321,6 +335,8 @@ def daily_decision(
         event_cap=event_cap,
         policy=policy,
         index_eligible=index_eligible,
+        budget_reference=budget_reference,
+        budget_multiplier=budget_multiplier,
     )
     return DailyDecision(
         policy=policy,
@@ -363,12 +379,35 @@ def _validate_desired(desired: dict[str, float]) -> None:
             )
 
 
-# Classify each name's share gap into sells and buys, noting the buys a
-# min-trade threshold suppresses. Risk cuts are never suppressed by a
-# min-trade threshold: a name the decision wants reduced is reduced, however
-# small.
+# Whether the decision is a genuine risk cut: a constraint binds *and* the
+# exposure actually held exceeds the decision's total equity ceiling by more
+# than the minimum trade. A binding constraint's name alone is not a cut - the
+# volatility budget binds every day it scales the composition, including the
+# days the book already sits at the scaled level and only drifts - and a
+# ceiling the holdings are already under reduces nothing. Whole-share rounding
+# leaves the book within fractions of a share of its ceiling, so an excess
+# smaller than the minimum trade is rounding and drift, never a cut.
+def is_risk_cut(decision, held, priced, equity, min_trade) -> bool:
+    """Return True when `decision` cuts the held exposure below its ceiling."""
+    binding = decision.binding
+    if not binding or binding == allocation.BINDING_NONE:
+        return False
+    held_exposure = (
+        sum(qty * priced[s] for s, qty in held.items() if s in priced) / equity
+    )
+    ceiling = sum(w for w in decision.desired_weights.values() if w > 0.0)
+    return held_exposure - ceiling > min_trade
+
+
+# Classify each name's share gap into sells and buys, noting the legs a
+# min-trade threshold suppresses. The threshold is the same on both sides:
+# a sell below it would leave the book under target and turning over for
+# nothing, exactly as a buy below it would. Two sells always go whatever their
+# size - a full exit (the name's target is zero) and a genuine risk cut (the
+# decision reduced the held exposure below its ceiling) - because either is
+# something the decision requires, not a drift the threshold exists to ignore.
 def _plan_side_orders(
-    held, want, priced, equity, min_trade, missing
+    held, want, priced, equity, min_trade, missing, risk_cut: bool
 ) -> tuple[list[tuple[str, float]], list[tuple[str, float]]]:
     """Return (sells, buys) from the gap between held and wanted shares."""
     sells: list[tuple[str, float]] = []
@@ -381,7 +420,12 @@ def _plan_side_orders(
         if abs(delta) < 1e-9:
             continue
         if delta < 0:
-            sells.append((symbol, min(-delta, held.get(symbol, 0.0))))
+            qty = min(-delta, held.get(symbol, 0.0))
+            exit_all = want.get(symbol, 0.0) <= 1e-9
+            if not (exit_all or risk_cut) and qty * price < min_trade * equity:
+                missing.append(f"{symbol}: sell below min trade")
+                continue
+            sells.append((symbol, qty))
         else:
             if delta * price < min_trade * equity:
                 missing.append(f"{symbol}: buy below min trade")
@@ -390,24 +434,15 @@ def _plan_side_orders(
     return sells, buys
 
 
-# The continuous buy and sell quantities toward the decision's desired weights,
-# buys scaled to the cash actually on hand after fees. A prebuilt decision may
-# carry SPY from an index-eligible composition, but execution still respects
-# the current index eligibility: it is a ceiling on SPY, never a mandate to
-# exit, so an existing SPY holding is preserved up to the requested quantity
-# and only an increase is blocked.
-def _continuous_orders(
-    decision,
-    held,
-    priced,
-    equity,
-    cash,
-    cost,
-    min_trade,
-    missing,
-    index_eligible: bool,
-) -> list[planner.Order]:
-    """Return the shared continuous orders for one decision day."""
+# The continuous share target of every priced name the decision wants. A
+# prebuilt decision may carry SPY from an index-eligible composition, but
+# execution still respects the current index eligibility: it is a ceiling on
+# SPY, never a mandate to exit, so an existing SPY holding is preserved up to
+# the requested quantity and only an increase is blocked.
+def _wanted_shares(
+    decision, held, priced, equity, missing, index_eligible: bool
+) -> dict[str, float]:
+    """Return {symbol: continuous shares wanted} for the decision's names."""
     want: dict[str, float] = {}
     for symbol, weight in decision.desired_weights.items():
         if weight <= 0.0:
@@ -429,7 +464,27 @@ def _continuous_orders(
                 )
             wanted = min(wanted, held_qty)
         want[symbol] = wanted
-    sells, buys = _plan_side_orders(held, want, priced, equity, min_trade, missing)
+    return want
+
+
+# The continuous buy and sell quantities toward the wanted shares, buys scaled
+# to the cash actually on hand after fees.
+def _continuous_orders(
+    decision,
+    want,
+    held,
+    priced,
+    equity,
+    cash,
+    cost,
+    min_trade,
+    missing,
+    risk_cut: bool,
+) -> list[planner.Order]:
+    """Return the shared continuous orders for one decision day."""
+    sells, buys = _plan_side_orders(
+        held, want, priced, equity, min_trade, missing, risk_cut
+    )
     buy_notional = sum(qty * priced[symbol] for symbol, qty in buys)
     spend = buy_notional * (1.0 + cost)
     scale = min(1.0, max(0.0, cash) / spend) if spend > 0 else 0.0
@@ -437,7 +492,11 @@ def _continuous_orders(
     for symbol, qty in sells:
         orders.append(
             planner.Order(
-                symbol, "sell", qty, priced[symbol], _sell_reason(decision, symbol)
+                symbol,
+                "sell",
+                qty,
+                priced[symbol],
+                _sell_reason(decision, symbol, want, risk_cut),
             )
         )
     for symbol, qty in buys:
@@ -456,28 +515,79 @@ def _continuous_orders(
     return orders
 
 
-# The plain-language reason a name is being sold.
-def _sell_reason(decision, symbol: str) -> str:
+# The plain-language reason a name is being sold, which is also the label
+# execution reads: only a sell that genuinely reduces the held exposure below
+# the decision's ceiling is a "risk reduction" - the paper path turns that
+# label into `priority`, which exempts the order from the green-open skip and
+# the closing-auction policy. A name the composition no longer wants at all
+# is a rotation out of it, and a sell toward a positive target on a day with
+# no genuine cut is a rebalance of drift; neither is a risk cut, whatever
+# constraint the decision happens to name that day.
+def _sell_reason(decision, symbol: str, want, risk_cut: bool) -> str:
     """Return the reason a sell of `symbol` was planned this day."""
-    binding = decision.binding
-    if binding and binding != allocation.BINDING_NONE:
-        return f"risk reduction ({binding})"
+    if want.get(symbol, 0.0) <= 1e-9:
+        return "rotation out of the composition"
+    if risk_cut:
+        return f"risk reduction ({decision.binding})"
     return "rebalance toward desired weight"
 
 
-# The whole-share quantity one sell order submits, never more than the whole
-# shares held and never zero for a risk cut when a whole share is executable.
-def _round_sell_quantity(order, held_qty: float, risk_cut: bool) -> int:
-    """Return the rounded whole-share sell for `order`, capped at what is held."""
+# The no-trade band around a whole-share target: a gap of half a share or
+# less rounds to nothing, so a whole-share book sits within one rounding of
+# its fractional target and is never pushed through it. The hundredth of a
+# share of hysteresis absorbs what one fill's own fee drags the target by, so
+# a name that has just been rounded onto the band's edge is not rounded back
+# across it the next session by the fee alone.
+SHARE_BAND = 0.5
+_BAND_TOL = 1e-2
+
+
+# The whole shares a continuous gap of `gap` shares trades: nothing inside the
+# half-share band, otherwise the nearest whole share. Rounding to nearest on
+# both sides is what stops the ping-pong a rounded-up sell produced: it left
+# the name under target by more than the rounding, so the next session bought
+# the share back, and the one after sold it again.
+def whole_share_gap(gap: float) -> int:
+    """Return the nearest whole-share quantity for `gap`, zero inside the band."""
+    gap = abs(float(gap))
+    if gap <= SHARE_BAND + _BAND_TOL:
+        return 0
+    return int(math.floor(gap + 0.5))
+
+
+# The whole shares one sell order submits. Rounding a sell past the whole
+# shares actually held would create a short, so the rounded sell is capped at
+# the whole shares held. A full exit sells every whole share and reports the
+# fractional remainder whole shares cannot sell as blocked, never silently
+# left behind. A partial sell rounds to the nearest whole share and is no
+# trade inside the band: the position then sits within one rounding of its
+# target, which is where a whole-share book belongs, and is not a blocked leg.
+def _whole_share_sell(order, held_qty: float, exit_all: bool, blocked, missing) -> int:
+    """Return the whole shares to sell for `order`, zero when nothing can go."""
     max_sell = int(math.floor(held_qty + 1e-10))
-    rounded = int(round(order.qty))
-    if risk_cut:
-        rounded = max(1, math.ceil(order.qty - 1e-10))
-    return min(rounded, max_sell)
+    rounded = whole_share_gap(order.qty)
+    qty = min(rounded, max_sell)
+    if qty <= 0:
+        if rounded > 0 or exit_all:
+            blocked.append(
+                f"whole-share rounding leaves no sellable quantity for {order.symbol}"
+            )
+        else:
+            missing.append(f"{order.symbol}: sell inside the whole-share band")
+        return 0
+    unexecutable = order.qty - qty
+    if (exit_all and unexecutable > 1e-9) or unexecutable > SHARE_BAND + _BAND_TOL:
+        blocked.append(
+            f"whole-share eligibility leaves an unexecutable "
+            f"fractional residual in {order.symbol}"
+        )
+    return qty
 
 
 # Round a continuous basket to whole shares and re-check the bounds a broker
-# actually faces: the cash after fees and the name cap for stocks.
+# actually faces: the cash after fees and the name cap for stocks. `want` is
+# the continuous share target each order moved toward, so a full exit (target
+# zero) can be told from a gap that merely sits inside the band.
 def _whole_share_bound(
     orders,
     held,
@@ -489,43 +599,24 @@ def _whole_share_bound(
     entry_cap,
     blocked,
     missing,
-    risk_cut,
+    want,
 ) -> list[planner.Order]:
     """Return `orders` rounded to whole shares, bounds re-checked after."""
     buys: list[tuple[planner.Order, int]] = []
     sells: list[tuple[planner.Order, int]] = []
     for o in orders:
         if o.side == "sell":
-            # Rounding a fractional sell up past the whole shares actually
-            # held would create a short, so the rounded sell is capped at the
-            # whole shares held; the unexecutable fractional residual is
-            # reported as blocked rather than silently left behind. A risk cut
-            # is never rounded to zero: when a whole share is executable it is
-            # sold however small the fractional reduction, so the cut the
-            # decision's binding constraint requires actually happens.
-            # A company above its hard cap needs a whole-share reduction even
-            # when no portfolio-wide constraint binds (for example after fees).
-            over_company_cap = (
-                o.symbol != allocation.SPY
-                and held.get(o.symbol, 0.0) * priced[o.symbol]
-                > entry_cap * equity + 1e-9
+            qty = _whole_share_sell(
+                o,
+                held.get(o.symbol, 0.0),
+                want.get(o.symbol, 0.0) <= 1e-9,
+                blocked,
+                missing,
             )
-            qty = _round_sell_quantity(
-                o, held.get(o.symbol, 0.0), risk_cut or over_company_cap
-            )
-            if qty <= 0:
-                blocked.append(
-                    f"whole-share rounding leaves no sellable quantity for {o.symbol}"
-                )
-                continue
-            if o.qty > qty + 1e-9:
-                blocked.append(
-                    f"whole-share eligibility leaves an unexecutable "
-                    f"fractional residual in {o.symbol}"
-                )
-            sells.append((o, qty))
+            if qty > 0:
+                sells.append((o, qty))
         else:
-            qty = int(round(o.qty))
+            qty = whole_share_gap(o.qty)
             if qty <= 0:
                 missing.append(f"{o.symbol}: buy rounds to zero shares")
                 continue
@@ -571,8 +662,9 @@ def plan_funded(
     """Return the FundedPlan that moves `held` toward `decision` within cash.
 
     Buys are sized from `cash` actually on hand after fees, never from the
-    proceeds of the same day's sells; sells never exceed what is held; and a
-    min-trade threshold never suppresses a risk cut. `whole_shares` rounds for
+    proceeds of the same day's sells; sells never exceed what is held; and the
+    one `min_trade` threshold applies to both sides but never suppresses a
+    full exit or a genuine risk cut. `whole_shares` rounds for
     the paper account and re-checks the fee, cash and name-cap bounds after
     rounding. The returned `executable` weights and `cash` fraction are
     projected against the post-fee NAV of the order basket at the reference
@@ -616,8 +708,11 @@ def plan_funded(
             blocked=tuple(blocked),
             binding=decision.binding,
         )
+    want = _wanted_shares(decision, held, priced, equity, missing, index_eligible)
+    risk_cut = is_risk_cut(decision, held, priced, equity, min_trade)
     orders = _continuous_orders(
         decision,
+        want,
         held,
         priced,
         equity,
@@ -625,7 +720,7 @@ def plan_funded(
         cost,
         min_trade,
         missing,
-        index_eligible,
+        risk_cut,
     )
     if whole_shares:
         orders = _whole_share_bound(
@@ -639,7 +734,7 @@ def plan_funded(
             entry_cap,
             blocked,
             missing,
-            bool(decision.binding and decision.binding != allocation.BINDING_NONE),
+            want,
         )
     result = dict(held)
     for o in orders:
@@ -692,4 +787,5 @@ def plan_funded(
         binding=decision.binding,
         projected_cash_amount=projected_cash,
         projected_equity=projected_equity,
+        risk_cut=risk_cut,
     )

@@ -18,9 +18,15 @@ from datetime import UTC, date, datetime, timedelta
 from datetime import time as day_time
 from zoneinfo import ZoneInfo
 
-from backend.market import alpaca
+from backend.market import alpaca, calendar
 
 CANDLE_SECONDS = 15 * 60
+CANDLE = timedelta(seconds=CANDLE_SECONDS)
+# How long a quote whose newest bar is behind the bar the clock says should
+# be complete is held before the feed is asked again. Long enough that a
+# late provider is not hot-polled by a page refreshing every few seconds,
+# short enough that the board is not one bar behind for a whole candle.
+RECHECK_SECONDS = 60
 
 
 @dataclass(frozen=True)
@@ -36,9 +42,9 @@ class Quote:
     as_of: str  # when this was fetched, ISO
 
 
-# In-process memory of the last fetch per symbol: when it happened (monotonic
-# and wall clock) and the quote, so a refresh inside the same candle answers
-# from memory.
+# In-process memory of the last fetch per symbol: when the feed was last
+# asked (monotonic), when that was on the wall clock, and the quote, so a
+# refresh that cannot learn anything new answers from memory.
 _cache: dict[str, tuple[float, datetime, Quote]] = {}
 
 
@@ -54,7 +60,7 @@ def quote_from_bars(
     """Return the Quote of the session's bars, oldest first, or None."""
     today = session or fetched_at.astimezone(NEW_YORK).date()
     opening = datetime.combine(today, day_time(9, 30), NEW_YORK)
-    closing = datetime.combine(today, day_time(16), NEW_YORK)
+    closing = datetime.combine(today, calendar.session_close(today), NEW_YORK)
     # Provider timestamps are UTC; ignore extended hours and other dates.
     bars = sorted(
         (
@@ -82,22 +88,46 @@ def quote_from_bars(
 NEW_YORK = ZoneInfo("America/New_York")
 
 
-# The cache must turn over at a bar boundary, not 900 wall-clock seconds
-# after some arbitrary fetch: a read at 09:59 shows the 09:30 bar, and at
-# 10:00 the 09:45 bar is complete, so keeping the memory because only a
-# minute of wall clock passed would leave the board on the old candle.
-def _candle_start(when: datetime) -> datetime:
-    """Start of the fifteen-minute New York candle containing ``when``."""
+# The bar the clock says should be complete by now: the memory is keyed on
+# it, not on wall-clock seconds since some arbitrary fetch. A read at 09:59
+# expects the 09:30 bar, and at 10:00 the 09:45 bar is complete, so a memory
+# holding 09:30 is behind from that moment whether a minute or fourteen have
+# passed. After the close (16:00, or 13:00 on an early close) the last bar
+# of the session is all there will be. Before 09:45 nothing is complete.
+def _expected_bar(when: datetime, session: date) -> datetime | None:
+    """Start of the newest bar that should be complete at ``when``, or None."""
+    opening = datetime.combine(session, day_time(9, 30), NEW_YORK)
+    closing = datetime.combine(session, calendar.session_close(session), NEW_YORK)
     ny = when.astimezone(NEW_YORK)
-    minutes = ny.hour * 60 + ny.minute - (9 * 60 + 30)
-    minutes -= minutes % 15
-    return datetime.combine(ny.date(), day_time(9, 30), NEW_YORK) + timedelta(
-        minutes=minutes
-    )
+    if ny < opening + CANDLE:
+        return None
+    completed = (ny - opening) // CANDLE
+    return min(opening + (completed - 1) * CANDLE, closing - CANDLE)
 
 
-# Quotes for the symbols on the given session, from memory when the
-# candle has not turned, else from the feed.
+# Whether a remembered quote can still answer for ``symbol`` now. It can when
+# it is the session's quote and already carries the bar the clock expects;
+# and, when the feed has not published that bar yet, for RECHECK_SECONDS
+# after the last ask, so a late provider is neither hot-polled nor left one
+# bar stale for a whole candle. This used to hold any quote for the length
+# of a candle: a fetch at 10:00:02, before the provider had the 09:45 bar,
+# pinned the 09:30 close to the board until 10:15.
+def _still_good(held, symbol_session: date, now_utc: datetime, tick: float) -> bool:
+    """Return whether the cached entry answers for this read."""
+    if not held:
+        return False
+    checked, _, quote = held
+    bar = _bar_time(datetime.fromisoformat(quote.bar))
+    if bar.astimezone(NEW_YORK).date() != symbol_session:
+        return False
+    expected = _expected_bar(now_utc, symbol_session)
+    if expected is None or bar >= expected:
+        return True
+    return tick - checked < RECHECK_SECONDS
+
+
+# Quotes for the symbols on the given session, from memory when it already
+# holds the bar the clock expects, else from the feed.
 def quotes(
     symbols: list[str],
     session: date | None = None,
@@ -116,15 +146,7 @@ def quotes(
     out: dict[str, Quote] = {}
     for symbol in symbols:
         held = _cache.get(symbol)
-        if (
-            held
-            and now() - held[0] < CANDLE_SECONDS
-            and _candle_start(held[1]) == _candle_start(now_utc)
-            and _bar_time(datetime.fromisoformat(held[2].bar))
-            .astimezone(NEW_YORK)
-            .date()
-            == today
-        ):
+        if _still_good(held, today, now_utc, now()):
             out[symbol] = held[2]
             continue
         try:

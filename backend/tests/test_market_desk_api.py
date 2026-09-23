@@ -108,6 +108,9 @@ async def test_forward_paper_summary_is_read_from_persisted_account(
     ) as client:
         response = await client.get("/api/v1/market/desk_user/desk")
         assert response.status_code == 200
+        from backend.agents.trading.desk import paper
+
+        assert response.json()["current_policy"] == paper.POLICY_VERSION
         assert response.json()["board_paper"]["cash"] == 100_000
         assert response.json()["board_paper"]["equity"] == 100_000
         assert (

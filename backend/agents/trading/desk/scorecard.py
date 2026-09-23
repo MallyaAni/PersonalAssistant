@@ -9,8 +9,6 @@ volatility, worst drawdown, turnover, the largest position, and the
 year-by-year total return beside SPY and QQQ. One table, read once.
 """
 
-from datetime import date
-
 import numpy as np
 
 from backend.agents.trading.desk.simulate import SimResult
@@ -185,8 +183,3 @@ def render(results: dict[str, SimResult], store=None, loss_limit: float = 0.25) 
         lines.append("")
         lines.extend(beats)
     return "\n".join(lines)
-
-
-def since_date(text: str) -> date:
-    """Parse an ISO date for a --since argument."""
-    return date.fromisoformat(text)

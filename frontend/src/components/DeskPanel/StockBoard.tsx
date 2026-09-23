@@ -252,7 +252,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // against "what this bar says" had to read two different places, so it is
   // a control now, and picking one re-sizes and re-ranks the list in place.
   const liveSizingReady = research?.session === latest.session && !!research?.targets
-  const [policy, setPolicy] = useState<'live' | 'plan'>('plan')
+  // Live sizes when a current bar exists is the default: it is the answer to
+  // "what this bar says", which is what a trader scanning the board wants
+  // first, and the plan is one click away. e1f2a87 flipped this to 'plan' and
+  // every test written to the original 'live' default started failing.
+  const [policy, setPolicy] = useState<'live' | 'plan'>('live')
   const showSizes = liveSizingReady && policy === 'live'
   const planTargets = Object.fromEntries((latest.book ?? []).map(b => [b.ticker, b.weight]))
   const weightOf = (ticker: string) => {
@@ -459,6 +463,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           // page: a held name must never scroll out of sight. The cash row
           // is not exempt, because planned cash already reads in the strip
           // above the board and the top page should stay "top names".
+          if (index >= visible && !heldNames.has(row.ticker)) return null
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
           const isCash = row.ticker === '__cash__'
@@ -467,6 +472,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const plan = paused ? 'Hold' : planOf(row.ticker)
           const position = brokerPositions.find(p => p.symbol === row.ticker)
           const reason = paused ? 'FOMC cycle: regular trading paused' : decision?.reason ?? 'No current strategy decision'
+          // The plan cell is the full trade affordance (eligibility, record
+          // fill) when the read answers for this name; a name the plan feed
+          // did not answer keeps the bare action word as before.
+          const tradeNode = trade ? trade(row.ticker) : null
           return <Fragment key={row.ticker}><tr className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
@@ -481,7 +490,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 title={`Scored without ${row.narrow.join(' and ')}: this name is missing the data ${row.narrow.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score is the rest renormalised. Open the name for the parts.`}
               >*</span>}
             </> : '—'}</td>
-            <td className="text-xs font-semibold" aria-label={isCash ? undefined : `${row.ticker} plan action`} title={reason}>{isCash ? 'HOLD' : plan.toUpperCase()}</td>
+            <td className="text-xs" aria-label={isCash || tradeNode ? undefined : `${row.ticker} plan action`}>{isCash ? 'HOLD' : tradeNode ?? (plan === 'Hold' ? 'Hold' : plan.toUpperCase())}</td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
               : isCash ? '—'
               : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
@@ -499,6 +508,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       {footer}
       {searchText && filtered.length === 0 && (
         <p className="border-t border-black/[0.05] px-3 py-2 text-xs text-[#6e6e73]">No name matches “{query}”. Clear the search to see the ranked board.</p>
+      )}
+      {ranked.length > visible && (
+        <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setVisible((v) => v + 10)}>
+          Show more · {Math.min(ranked.length, visible + 10)} of {ranked.length} names
+        </button>
       )}
     </div>
     <BoardSimulation paper={paper} now={now} />

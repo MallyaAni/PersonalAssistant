@@ -1,0 +1,67 @@
+# Trading desk continuation — 2026-09-23
+
+The current live rule remains `cash-bounded-breakout-rotation/2` in deployed
+source `8ce637b4`. The reviewed candidate branch includes Fables' rule
+corrections and OpenCode's browser/backend first step. Those changes have not
+been promoted to the live account. The learned rank and brake are named
+**shadow-only** policies; they submit no orders and change no personal or paper
+account.
+
+## Verified implementation boundaries
+
+- The full desk browser suite ran against the isolated candidate Vite source:
+  **76/76 passed**. Its first run was 75/76 solely because the first navigation
+  started before Vite listened; the full warm-server rerun was 76/76.
+- The relevant combined backend acceptance was **414 passed** before the new
+  shadow/membership modules. The shadow acceptance adds strict publication-time
+  checks, a next-open to open-at-t+11 SPY-relative label, training-label purge,
+  monthly refits, deterministic model hashes, a 20-session QQQ crash label,
+  L2 logistic risk model, and a 0.45/0.30 hysteresis state. Synthetic tests
+  include future-prefix invariance and the shared sizing/ledger path.
+- The fixed trend brake and an externally supplied learned ceiling share the
+  simulator's next-open accounting and FOMC minimum. The override is opt-in;
+  the default path is unchanged.
+- Historical research membership now fails closed when its dated source CSV is
+  absent. It never substitutes today's live constituents for an earlier date.
+
+## Adoption evidence gate
+
+The local bar archive has **14** `asof=` vintages, earliest **2026-09-05**
+and latest **2026-09-22**. It has no sourced historical membership file.
+Earlier OHLC rows inside those recent snapshots are retrospective, adjusted
+restatements. They cannot prove what a 2016–2026 decision saw on its day or
+recreate delisted names. The existing Fables proxy also uses a different cash
+convention and price-only selection. None of these sources supports an
+adoption-grade learned-policy comparison under the registered protocol.
+
+| Policy | CAGR | Max drawdown | Sharpe | Rolling QQQ win rate | Turnover | 10/25 bp cost sensitivity | 2016–20 / 2021–26 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Learned rank | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified |
+| Learned blend | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified |
+| Learned brake | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified |
+| Incumbent, SPY, QQQ, equal weight on a common point-in-time book | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified | Unverified |
+
+The prior retrospective controls may be shown as **survivor-selected
+diagnostics**, but filling this table with them would imply a like-for-like
+comparison that has not happened. No training metric, single backtest or
+prediction accuracy is an adoption signal. The incumbent remains recommended
+until a historically sourced common universe and archived input vintages can
+be evaluated, or sufficient prospective shadow outcomes mature under the
+predeclared accounting and comparison protocol.
+
+## Remaining work before adoption
+
+1. Assemble dated listing/index/theme membership with original announcement
+   dates, delisted outcomes, and reproducible sources. An after-the-fact
+   change log alone is not point-in-time membership evidence.
+2. Archive the daily feature values and adjusted-price/corporate-action basis
+   as they were known on each decision session. Connect the existing
+   filing-version and earnings-tone sources through those dated snapshots;
+   the pure learning kernel accepts them but no historical adapter can be
+   certified from the current store.
+3. Freeze one common eligible cohort and the registered 10-session/20-session
+   labels, run monthly/quarterly refits without overlapping labels, then run
+   the shared funded ledger against the incumbent, SPY, QQQ and equal weight
+   at 10 and 25 bp. Report missing labels and membership explicitly.
+4. Start a prospective shadow with timestamped features, forecasts, intended
+   weights and failures. Do not select a review date after observing returns.

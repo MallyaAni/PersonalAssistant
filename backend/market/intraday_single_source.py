@@ -613,7 +613,11 @@ def _daily_row(
     if kind not in (SessionKind.FULL, SessionKind.EARLY_CLOSE):
         return None
     try:
-        completed = _completed_bars(list(bars), day, None)
+        # The schedule's own close bounds the regular window, so an early
+        # close's afternoon bars are extended hours and not a 27th bar.
+        completed = _completed_bars(
+            list(bars), day, None, close=schedule.session_close_time(day)
+        )
     except ValueError:
         return None
     expected = (

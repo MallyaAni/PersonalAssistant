@@ -583,3 +583,215 @@ def test_an_entry_never_grows_the_gross():
         entries={"SNDK": 1.0},
     )
     assert orders == []
+
+
+# The deferred buy leg. Buys are bounded to the cash on hand and sells fill
+# on the following close, so a rebalance whose buys outrun the cash used to
+# leave the sale proceeds idle until the next entry or the next reset -
+# about five CAGR points, measured. The unpaid shares are written down
+# instead and re-issued once on the next session, from the cash the sells
+# have delivered by then.
+def test_a_cash_bound_rebalance_records_its_unpaid_shares_and_retries_once():
+    prices = {"OLD": 400.0, "SNDK": 100.0, "PANW": 100.0, "MU": 100.0, "AMD": 100.0}
+    targets = {"SNDK": 0.15, "PANW": 0.15, "MU": 0.15, "AMD": 0.15}
+    grades = {"OLD": "C", "SNDK": "A+", "PANW": "A", "MU": "A", "AMD": "A"}
+    # 100,000 of equity, 40,000 of it in OLD, and 60,000 of buys at 150
+    # shares each. With only 40,000 of cash on hand the buys are scaled to
+    # two thirds, and OLD's proceeds arrive at the close, too late.
+    orders, after, what = paper.plan(
+        "2026-09-04",
+        paper.PaperState(),
+        100_000.0,
+        {"OLD": 100.0},
+        prices,
+        targets,
+        grades,
+        cash=40_000.0,
+    )
+    assert what == "rebalance"
+    assert [(o.symbol, o.side, o.qty) for o in orders] == [
+        ("OLD", "sell", 100),
+        ("AMD", "buy", 100),
+        ("MU", "buy", 100),
+        ("PANW", "buy", 100),
+        ("SNDK", "buy", 100),
+    ]
+    # The 50 shares of each name the cash could not pay for are remembered.
+    assert after.deferred_buys == {"SNDK": 50, "PANW": 50, "MU": 50, "AMD": 50}
+
+    # The next session: OLD's sale has settled, the cash is there, and the
+    # remainder is issued before anything else - exactly the remainder, as
+    # buys, with nothing else on the tape.
+    held = {"SNDK": 100.0, "PANW": 100.0, "MU": 100.0, "AMD": 100.0}
+    retry, later, what2 = paper.plan(
+        "2026-09-05",
+        after,
+        100_000.0,
+        held,
+        prices,
+        targets,
+        grades,
+        cash=60_000.0,
+    )
+    assert what2 == "deferred buys"
+    assert sorted((o.symbol, o.side, o.qty) for o in retry) == [
+        ("AMD", "buy", 50),
+        ("MU", "buy", 50),
+        ("PANW", "buy", 50),
+        ("SNDK", "buy", 50),
+    ]
+    assert all("deferred" in o.reason for o in retry)
+    assert later.sessions_since_rebalance == 1
+    # One retry, then it is over: nothing is carried to a third session.
+    assert later.deferred_buys == {}
+    # A later hold session issues nothing.
+    quiet, _final, what3 = paper.plan(
+        "2026-09-08",
+        later,
+        100_000.0,
+        {s: 150.0 for s in held},
+        prices,
+        targets,
+        grades,
+        cash=40_000.0,
+    )
+    assert quiet == []
+    assert what3 == "hold"
+
+
+# The retry is bounded by the cash on hand and by the name cap, and its own
+# shortfall is not chased: whatever the second session cannot pay for is
+# dropped rather than carried to a third.
+def test_the_retry_is_bounded_by_cash_and_the_cap_and_never_chased():
+    prices = {"SNDK": 100.0, "PANW": 100.0}
+    grades = {"SNDK": "A+", "PANW": "A"}
+    state = paper.PaperState(
+        last_rebalance="2026-09-04",
+        sessions_since_rebalance=0,
+        deferred_buys={"SNDK": 50.0, "PANW": 50.0},
+    )
+    # SNDK already holds 140 shares against a cap of 150 (15% of 100,000 at
+    # 100), so its retry is 10; PANW has room for all 50; the cash pays for
+    # 30 shares in all, shared pro rata.
+    orders, after, what = paper.plan(
+        "2026-09-05",
+        state,
+        100_000.0,
+        {"SNDK": 140.0, "PANW": 100.0},
+        prices,
+        {"SNDK": 0.15, "PANW": 0.15},
+        grades,
+        cash=3_000.0,
+    )
+    assert what == "deferred buys"
+    assert sorted((o.symbol, o.side, o.qty) for o in orders) == [
+        ("PANW", "buy", 25),
+        ("SNDK", "buy", 5),
+    ]
+    assert sum(o.qty * prices[o.symbol] for o in orders) <= 3_000.0
+    assert after.deferred_buys == {}
+
+
+# A name the desk no longer wants gets no retry: the remainder is dropped
+# when the grade has fallen below A (the rotation sells it instead) or the
+# daily is rejecting its band, the same gates a mid-cycle entry passes.
+def test_a_downgraded_or_blocked_remainder_is_dropped():
+    prices = {"SNDK": 100.0, "PANW": 100.0, "MU": 100.0}
+    state = paper.PaperState(
+        last_rebalance="2026-09-04",
+        sessions_since_rebalance=0,
+        deferred_buys={"SNDK": 50.0, "PANW": 50.0, "MU": 50.0},
+    )
+    orders, after, _what = paper.plan(
+        "2026-09-05",
+        state,
+        100_000.0,
+        {"SNDK": 100.0, "PANW": 100.0, "MU": 100.0},
+        prices,
+        {"SNDK": 0.15, "PANW": 0.15},
+        {"SNDK": "A+", "PANW": "A", "MU": "B"},
+        finished={"MU": "graded B; the desk wants the money elsewhere"},
+        entry_blocked={"PANW"},
+        cash=60_000.0,
+    )
+    by_symbol = {(o.symbol, o.side): o.qty for o in orders}
+    # MU is rotated out, not bought; PANW's remainder waits for nothing;
+    # SNDK's is the only retry. MU's proceeds redeploy into SNDK too, so
+    # the SNDK buy is the retry plus the rotation's share, inside the cap.
+    assert ("MU", "sell") in by_symbol
+    assert ("MU", "buy") not in by_symbol
+    assert ("PANW", "buy") not in by_symbol
+    assert 50 <= by_symbol[("SNDK", "buy")] <= 150 - 100
+    assert after.deferred_buys == {}
+
+
+# The retry takes the cash first; a new entry on the same session gets what
+# is left, and ITS shortfall is what the next session carries.
+def test_the_retry_is_paid_before_a_new_entry_whose_shortfall_is_carried():
+    prices = {"SNDK": 100.0, "NEW": 100.0}
+    state = paper.PaperState(
+        last_rebalance="2026-09-04",
+        sessions_since_rebalance=0,
+        deferred_buys={"SNDK": 50.0},
+    )
+    orders, after, what = paper.plan(
+        "2026-09-05",
+        state,
+        100_000.0,
+        {"SNDK": 100.0},
+        prices,
+        {"SNDK": 0.15},
+        {"SNDK": "A+", "NEW": "A"},
+        entries={"NEW": 1.5},
+        cash=6_050.0,
+    )
+    assert what == "entries"
+    by_symbol = {o.symbol: o.qty for o in orders}
+    assert by_symbol["SNDK"] == 50
+    # entry_size(1.5) of 100,000 at 100 is 33 shares; 1,050 of cash is left
+    # after the retry, so 10 are bought and 23 are carried.
+    assert by_symbol["NEW"] == 10
+    assert after.deferred_buys == {"NEW": 23}
+
+
+# A rebalance supersedes whatever the previous session left unpaid: the
+# targets are re-planned from scratch and the old remainder is not added
+# on top of them.
+def test_a_rebalance_drops_the_previous_remainder():
+    state = paper.PaperState(
+        last_rebalance="2026-08-01",
+        sessions_since_rebalance=paper.REBALANCE_EVERY - 1,
+        deferred_buys={"SNDK": 50.0},
+    )
+    orders, after, what = paper.plan(
+        "2026-09-05",
+        state,
+        100_000.0,
+        {"SNDK": 100.0},
+        {"SNDK": 100.0},
+        {"SNDK": 0.10},
+        {"SNDK": "A+"},
+        cash=90_000.0,
+    )
+    assert what == "rebalance"
+    assert orders == []
+    assert after.deferred_buys == {}
+
+
+# A state file written before the deferred leg existed still loads, with
+# nothing deferred, and the remainder round-trips through the file.
+def test_state_files_without_deferred_buys_still_load(tmp_path):
+    from dataclasses import asdict
+
+    path = paper.state_path(tmp_path)
+    path.parent.mkdir(parents=True)
+    old = {k: v for k, v in asdict(paper.PaperState()).items() if k != "deferred_buys"}
+    old["last_rebalance"] = "2026-09-04"
+    path.write_text(json.dumps(old), encoding="utf-8")
+    loaded = paper.load_state(tmp_path)
+    assert loaded.last_rebalance == "2026-09-04"
+    assert loaded.deferred_buys == {}
+    loaded.deferred_buys = {"SNDK": 50.0}
+    paper.save_state(tmp_path, loaded)
+    assert paper.load_state(tmp_path).deferred_buys == {"SNDK": 50.0}
+    assert "deferred_buys" in json.loads(path.read_text(encoding="utf-8"))

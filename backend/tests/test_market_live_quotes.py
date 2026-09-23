@@ -6,7 +6,8 @@ memory without touching the feed; a name the feed has nothing for is
 left out rather than invented; and a feed error costs that name only.
 """
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
+from datetime import time as day_time
 from types import SimpleNamespace
 
 from backend.market import live_quotes
@@ -54,10 +55,14 @@ def test_unfinished_candles_are_excluded_until_the_interval_closes():
     assert (quote.last, quote.high, quote.low) == (44.5, 45.0, 43.5)
 
 
+# A quote holding the bar the clock expects answers from memory for the rest
+# of that candle; the feed is asked again once the next bar is due. A feed
+# error or an empty answer costs that name only.
 def test_memory_holds_for_a_candle_and_errors_cost_one_name():
     live_quotes.forget()
     calls: list[str] = []
     ticks = [0.0]
+    wall = [datetime(2026, 9, 8, 13, 45, tzinfo=UTC)]  # 09:45 New York
 
     def fetch(symbol, start, end, headers=None):
         calls.append(symbol)
@@ -71,16 +76,20 @@ def test_memory_holds_for_a_candle_and_errors_cost_one_name():
         "session": date(2026, 9, 8),
         "fetch": fetch,
         "now": lambda: ticks[0],
-        "clock": lambda: datetime(2026, 9, 8, 14, 0, tzinfo=UTC),
+        "clock": lambda: wall[0],
     }
     first = live_quotes.quotes(["AAA", "BAD", "NONE"], **kwargs)
     assert set(first) == {"AAA"}
     assert calls == ["AAA", "BAD", "NONE"]
-    ticks[0] = 600.0  # ten minutes on: the same candle
+    # Ten minutes on, 09:55: the 09:30 bar is still the newest complete one.
+    ticks[0] = 600.0
+    wall[0] = datetime(2026, 9, 8, 13, 55, tzinfo=UTC)
     again = live_quotes.quotes(["AAA"], **kwargs)
     assert again["AAA"] is first["AAA"]
     assert calls.count("AAA") == 1
-    ticks[0] = 1000.0  # the candle has turned
+    # At 10:01 the 09:45 bar is due and the memory is behind it.
+    ticks[0] = 960.0
+    wall[0] = datetime(2026, 9, 8, 14, 1, tzinfo=UTC)
     live_quotes.quotes(["AAA"], **kwargs)
     assert calls.count("AAA") == 2
     live_quotes.forget()
@@ -188,17 +197,20 @@ def test_reads_within_one_candle_answer_from_memory():
     live_quotes.forget()
 
 
-# A delayed feed that has not produced the next bar must not reset the
-# candle clock: the boundary turns the cache over once, and the unchanged
-# bar is then held for the rest of the candle rather than polled again.
-def test_a_delayed_feed_is_not_hot_polled():
+# A provider that has not published the bar the clock expects is neither
+# hot-polled nor trusted for a whole candle. A fetch at 10:00:02 gets the
+# 09:30 bar because the 09:45 bar is not out yet; that answer is held for a
+# minute, not fifteen, and once the provider publishes 09:45 the next check
+# returns it. Before this the 09:30 close sat on the board until 10:15.
+def test_a_late_bar_is_rechecked_within_the_candle_and_not_hot_polled():
     live_quotes.forget()
     calls: list[str] = []
+    published = [_bar("2026-09-08T13:30", 1.0, 2.0, 0.5, 1.5)]
 
-    # Simulate a provider whose newest completed bar has not arrived yet.
+    # Simulate a provider that publishes a completed bar a little late.
     def fetch(symbol, start, end, headers=None):
         calls.append(symbol)
-        return [_bar("2026-09-08T13:30", 1.0, 2.0, 0.5, 1.5)]
+        return list(published)
 
     wall = [datetime(2026, 9, 8, 13, 59, tzinfo=UTC)]  # 09:59 New York
     ticks = [0.0]
@@ -211,17 +223,78 @@ def test_a_delayed_feed_is_not_hot_polled():
     first = live_quotes.quotes(["AAA"], **kwargs)
     assert first["AAA"].bar.startswith("2026-09-08T13:30")
     assert calls.count("AAA") == 1
-    # The boundary turns the cache over even though the feed is late.
-    wall[0] = datetime(2026, 9, 8, 14, 0, tzinfo=UTC)  # 10:00 New York
-    ticks[0] = 60.0
+    # 10:00:02: the 09:45 bar is due but the provider has not published it.
+    wall[0] = datetime(2026, 9, 8, 14, 0, 2, tzinfo=UTC)
+    ticks[0] = 62.0
     at = live_quotes.quotes(["AAA"], **kwargs)
     assert calls.count("AAA") == 2
     assert at["AAA"].bar.startswith("2026-09-08T13:30")  # feed has not caught up
-    # Still the same candle: the unchanged bar answers from memory, once.
-    wall[0] = datetime(2026, 9, 8, 14, 10, tzinfo=UTC)
+    assert at["AAA"].last == 1.5
+    # 10:00:30: a page refreshing every few seconds answers from memory.
+    wall[0] = datetime(2026, 9, 8, 14, 0, 30, tzinfo=UTC)
     ticks[0] = 90.0
-    later = live_quotes.quotes(["AAA"], **kwargs)
-    assert later["AAA"] is at["AAA"]
+    soon = live_quotes.quotes(["AAA"], **kwargs)
+    assert soon["AAA"] is at["AAA"]
+    assert calls.count("AAA") == 2
+    # 10:03: the provider has published 09:45 and the re-check returns it.
+    published.append(_bar("2026-09-08T13:45", 1.5, 2.5, 1.4, 2.2))
+    wall[0] = datetime(2026, 9, 8, 14, 3, tzinfo=UTC)
+    ticks[0] = 240.0
+    caught_up = live_quotes.quotes(["AAA"], **kwargs)
+    assert calls.count("AAA") == 3
+    assert caught_up["AAA"].bar.startswith("2026-09-08T13:45")
+    assert caught_up["AAA"].last == 2.2
+    # With the expected bar in hand the rest of the candle answers from memory.
+    wall[0] = datetime(2026, 9, 8, 14, 14, tzinfo=UTC)
+    ticks[0] = 900.0
+    held = live_quotes.quotes(["AAA"], **kwargs)
+    assert held["AAA"] is caught_up["AAA"]
+    assert calls.count("AAA") == 3
+    live_quotes.forget()
+
+
+# The bar the clock expects stops at the session's close, which the
+# published calendar decides: on the day after Thanksgiving (a 13:00 close)
+# the 12:45 bar is the last there will be, so a memory holding it at 13:30
+# is current and the feed is left alone; on an ordinary day the same bars at
+# 13:30 are behind the expected 13:15 bar and are re-checked.
+def test_the_expected_bar_stops_at_the_published_close():
+    live_quotes.forget()
+    calls: list[str] = []
+
+    # A provider with the morning's fourteen bars, through 12:45 New York.
+    def fetch(symbol, start, end, headers=None):
+        calls.append(symbol)
+        opening = datetime.combine(start, day_time(9, 30), live_quotes.NEW_YORK)
+        return [
+            _bar(
+                (opening + timedelta(minutes=15 * s)).astimezone(UTC).isoformat(),
+                1.0,
+                2.0,
+                0.5,
+                1.5,
+            )
+            for s in range(14)
+        ]
+
+    ticks = [0.0]
+    wall = [datetime(2026, 11, 27, 18, 30, tzinfo=UTC)]  # 13:30 New York
+    kwargs = {"fetch": fetch, "now": lambda: ticks[0], "clock": lambda: wall[0]}
+    early = live_quotes.quotes(["AAA"], **kwargs)
+    assert early["AAA"].bar.startswith("2026-11-27T17:45")  # 12:45 New York
+    ticks[0] = 600.0
+    wall[0] = datetime(2026, 11, 27, 18, 40, tzinfo=UTC)
+    assert live_quotes.quotes(["AAA"], **kwargs)["AAA"] is early["AAA"]
+    assert calls.count("AAA") == 1
+    # An ordinary Friday at 13:30 expects the 13:15 bar; these are behind it.
+    live_quotes.forget()
+    calls.clear()
+    ticks[0] = 0.0
+    wall[0] = datetime(2026, 9, 11, 17, 30, tzinfo=UTC)  # 13:30 New York
+    live_quotes.quotes(["AAA"], **kwargs)
+    ticks[0] = 600.0
+    wall[0] = datetime(2026, 9, 11, 17, 40, tzinfo=UTC)
+    live_quotes.quotes(["AAA"], **kwargs)
     assert calls.count("AAA") == 2
     live_quotes.forget()
 

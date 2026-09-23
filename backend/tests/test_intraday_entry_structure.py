@@ -508,3 +508,42 @@ def test_historical_entry_after_close_is_not_actionable():
     assert later.state == HISTORICAL
     assert later.recommendation is False
     assert later.identity == result.identity
+
+
+# On a published early close (the day after Thanksgiving closes at 13:00)
+# the regular window ends at 13:00: afternoon bars are extended hours and
+# never enter the decision, and the session is over once 13:00 has passed,
+# not at a 16:00 that never comes. The close used to be hard-coded.
+def test_an_early_close_session_ends_at_one():
+    early = date(2026, 11, 27)
+    assert session_close_for(early) == datetime.combine(
+        early, day_time(13, 0), NEW_YORK
+    )
+
+    # A regular-session bar at `slot` on the early-close day.
+    def bar(slot, o, h, lo, c):
+        start = session_open_for(early) + timedelta(minutes=15 * slot)
+        return Bar(start=start, open=o, high=h, low=lo, close=c, volume=100.0)
+
+    bars = [bar(s, 100.0, 100.5, 99.5, 100.2) for s in range(14)]
+    # Afternoon prints the feed may still return: a would-be entry at 14:30
+    # on an extended-hours bar must not be read as a trigger.
+    afternoon = [bar(s, 100.2, 106.0, 100.0, 105.0) for s in range(14, 26)]
+    closed = evaluate("AAA", early, bars + afternoon, LEVELS, as_of=None)
+    assert closed.bar_count == 14
+    assert closed.session_close == 100.2
+    assert closed.session_high == 100.5
+    # At 12:50 the session is still on; at 13:05 it is over and a live read
+    # reports the day as closed with nothing having triggered.
+    before = datetime.combine(early, day_time(12, 50), NEW_YORK)
+    still_on = evaluate("AAA", early, bars + afternoon, LEVELS, as_of=before)
+    assert still_on.state == WAIT
+    assert "by session close" not in still_on.reason
+    at_one = datetime.combine(early, day_time(13, 5), NEW_YORK)
+    live = evaluate("AAA", early, bars + afternoon, LEVELS, as_of=at_one)
+    assert live.bar_count == 14
+    assert live.state == WAIT
+    assert "by session close" in live.reason
+    # And an ordinary session is still open at that hour.
+    ordinary = evaluate("AAA", SESSION, _reclaim_path(), LEVELS, as_of=_completed(3))
+    assert ordinary.state == ENTRY_READY

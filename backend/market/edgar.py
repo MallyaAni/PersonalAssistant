@@ -45,7 +45,6 @@ from backend.market.panel import Panel
 _TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 _SUBMISSIONS_URL = "https://data.sec.gov/submissions/{name}"
 _FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
-_INDEX_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{folder}/index.json"
 _USER_AGENT = "AniOS research ani96bob@gmail.com"
 _NEW_YORK = ZoneInfo("America/New_York")
 
@@ -544,13 +543,6 @@ def fetch_company(
         facts=facts,
         source_time=now or datetime.now(tz=UTC),
     )
-
-
-# The filing-index entries of one accession, so a later pass can find the
-# press release (its type is EX-99.1 in the index page; names are free).
-def filing_index_url(cik: int, accession: str) -> str:
-    """Return the index.json URL for a filing."""
-    return _INDEX_URL.format(cik=cik, folder=accession.replace("-", ""))
 
 
 # --- features -------------------------------------------------------------

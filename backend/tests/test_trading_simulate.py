@@ -409,6 +409,9 @@ def test_a_gap_before_the_fill_is_not_collected():
 
     grades = np.zeros((rows, NAMES), dtype=int)
     grades[:, 1:] = 1  # the rest of the book is only ever a B
+    # One A below N0, so the engine has the two candidates it needs to size
+    # anything at all; a B name is not a candidate, so it cannot pad the list.
+    grades[:, 1] = 2
     grades[decide_at:, 0] = 3  # N0 becomes the desk's best name here
     report = _report(close, grades=grades)
     report.panel = replace(report.panel, open=opens)
@@ -631,3 +634,61 @@ def test_the_exit_overrides_never_buy_into_the_gap():
     )
     assert any(tr.ticker == "N0" and tr.closed is None for tr in both.trades)
     assert both.equity[121] == pytest.approx(1.0, abs=0.01)
+
+
+# The deferred buy leg, under the live policy. Buys fill at the open from
+# the cash on hand and sells at the close, so a rebalance that swaps one
+# name for another used to leave the sale's proceeds idle for twenty
+# sessions: the new name could not be paid for until the next reset. With
+# the leg on, the unpaid remainder is retried on the next session from
+# the cash the sale delivered; with it off, the run is the old one.
+def test_the_deferred_leg_puts_a_rebalances_proceeds_back_to_work():
+    rows, names = 60, 9  # eight names and the benchmark
+    close = np.full((rows, names), 100.0)
+    grades = np.zeros((rows, names), dtype=int)
+    grades[:, 0] = 3
+    grades[:, 1:8] = 2
+    report = _report(close, grades=grades)
+
+    # Fully invested in seven names at a seventh each; at the t=20 reset N0
+    # leaves and N7 arrives at the same weight, so the whole of N7's buy is
+    # cash the book does not have until N0's sale settles at the close.
+    def allocator(_report, _panel, _config, t):
+        weights = np.zeros(names)
+        weights[0:7] = 1.0 / 7.0
+        if t >= 20:
+            weights[0] = 0.0
+            weights[7] = 1.0 / 7.0
+        return weights
+
+    common = {"use_exits": False, "rebalance": 20, "allocator": allocator}
+    off = simulate.run(
+        report, **common, **{**simulate.LIVE_POLICY, "deferred_buys": False}
+    )
+    on = simulate.run(report, **common, **simulate.LIVE_POLICY)
+    # Identical through the reset's own fill on t=21: the leg changes
+    # nothing until the session after.
+    np.testing.assert_allclose(on.invested[:22], off.invested[:22])
+    np.testing.assert_allclose(
+        np.nan_to_num(on.equity[:22]), np.nan_to_num(off.equity[:22])
+    )
+    # Off, N7's buy is never paid for until the t=40 reset: six sevenths
+    # invested and a seventh idle for the whole cycle.
+    assert np.allclose(off.invested[21:41], 6.0 / 7.0, atol=0.01)
+    # On, the retry fills at t=22's open and the book is whole again.
+    assert on.invested[21] == pytest.approx(6.0 / 7.0, abs=0.01)
+    assert np.allclose(on.invested[22:41], 1.0, atol=0.01)
+    assert on.invested.mean() > off.invested.mean() + 0.04
+    # Both end the cycle in the same place: the t=40 reset buys what the
+    # old book had left idle.
+    np.testing.assert_allclose(on.invested[41:], off.invested[41:], atol=0.01)
+    assert on.rebalances == off.rebalances == 3
+
+
+# The leg needs sells at the close: with sells at the open their proceeds
+# already pay for the same session's buys, so a remainder recorded from
+# the cash alone would be one the fill never left.
+def test_the_deferred_leg_requires_exit_at_close():
+    report = _report()
+    with pytest.raises(ValueError, match="exit_at_close"):
+        simulate.run(report, use_exits=False, deferred_buys=True)

@@ -29,7 +29,7 @@ header), plus the March 2020 unscheduled actions.
 """
 
 import json
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from functools import lru_cache
 from pathlib import Path
 
@@ -39,6 +39,11 @@ from backend.market.panel import Panel
 
 FOMC_PATH = Path(__file__).parent / "data" / "fomc_decisions.csv"
 HOLIDAYS_PATH = Path(__file__).parent / "data" / "nyse_holidays.json"
+EARLY_CLOSES_PATH = Path(__file__).parent / "data" / "nyse_early_closes.json"
+HISTORICAL_SESSIONS_PATH = (
+    Path(__file__).parent / "data" / "nyse_historical_sessions.json"
+)
+REGULAR_CLOSE = time(16, 0)
 CALENDAR_NAMES: tuple[str, ...] = (
     "sessions_to_fomc",
     "sessions_since_fomc",
@@ -84,6 +89,37 @@ def _published_sessions() -> tuple[set[int], np.busdaycalendar]:
     years = json.loads(HOLIDAYS_PATH.read_text(encoding="utf-8"))["years"]
     holidays = [day for days in years.values() for day in days]
     return {int(year) for year in years}, np.busdaycalendar(holidays=holidays)
+
+
+# The exchange's published early closes: the scheduled 13:00 sessions in
+# the current calendar file and the reviewed historical one, as {date: close}.
+@lru_cache(maxsize=1)
+def _published_early_closes() -> dict[date, time]:
+    current = json.loads(EARLY_CLOSES_PATH.read_text(encoding="utf-8"))
+    close = time.fromisoformat(current["close_time"])
+    out = {
+        date.fromisoformat(day): close
+        for days in current["years"].values()
+        for day in days
+    }
+    historical = json.loads(HISTORICAL_SESSIONS_PATH.read_text(encoding="utf-8"))
+    for year in historical["years"].values():
+        for day, at in (year.get("early_closes") or {}).items():
+            out[date.fromisoformat(day)] = time.fromisoformat(at)
+    return out
+
+
+# When the cash-equity session closes on a date: 13:00 on a published early
+# close (the day after Thanksgiving, Christmas Eve, the day before the
+# Fourth), 16:00 otherwise. Every live reader of fifteen-minute bars used to
+# hard-code 16:00, so on an early-close day the board filtered bars through
+# to a close that never came and kept calling the session open all
+# afternoon. A date outside the published years is a regular close: the
+# live board must keep answering in a year nobody has reviewed yet, and a
+# missed early close there is the smaller error.
+def session_close(day: date) -> time:
+    """Return the scheduled New York close on ``day``."""
+    return _published_early_closes().get(day, REGULAR_CLOSE)
 
 
 # Count sessions beyond the panel, or report missing exchange-calendar coverage.

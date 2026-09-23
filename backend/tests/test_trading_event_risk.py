@@ -141,5 +141,5 @@ def test_evaluation_eras_preserve_the_boundary_equity():
     assert after["total_return"] == pytest.approx(121 / 105 - 1)
     assert after["since"] == "2026-06-18"
     assert after["base_session"] == "2026-06-17"
-    assert after["drawdown"] == pytest.approx(0.1)
+    assert after["drawdown"] == pytest.approx(-0.1)
     assert after["completed_meetings"] == ["2026-07-29"]

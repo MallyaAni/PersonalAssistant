@@ -49,6 +49,7 @@ import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import funded_execution, grading, planner, risk
+from backend.agents.trading.desk import trend_brake as trend_brake_rule
 from backend.market.panel import Panel
 
 REBALANCE = 20
@@ -72,11 +73,14 @@ LIVE_POLICY: dict[str, bool] = {
     "exit_at_close": True,
     "green_day_skip": True,
     "live_midcycle": True,
+    "deferred_buys": True,
 }
 
 
-# Replay the paper planner's joint rotation and entry orders without share rounding.
-def _live_midcycle(book, report, t, bands, blocked):
+# The session's inputs to the shared paper planner, read from the book and
+# the report the way `market_daily` reads them from the account and the desk.
+def _paper_inputs(book, report, t, blocked):
+    """Return (prices, held, grades, finished, excluded) for session `t`."""
     from backend.agents.trading.desk import paper
 
     panel = report.panel
@@ -98,32 +102,118 @@ def _live_midcycle(book, report, t, bands, blocked):
     finished = {
         s: "grade rotation" for s in held if grades[s] not in paper.ENTRY_MIN_GRADE
     }
+    excluded = {
+        s for j, s in enumerate(panel.tickers) if blocked is not None and blocked[t, j]
+    }
+    return prices, held, grades, finished, excluded
+
+
+# Replay the paper planner's joint rotation and entry orders without share rounding.
+# `deferred`, when given, is the previous session's unpaid buy shares per
+# symbol, retried first from the cash on hand exactly as `paper.plan` does;
+# `unfunded`, when a dict is given, receives tonight's unpaid buy shares.
+def _live_midcycle(book, report, t, bands, blocked, deferred=None, unfunded=None):
+    from backend.agents.trading.desk import paper
+
+    panel = report.panel
+    prices, held, grades, finished, excluded = _paper_inputs(book, report, t, blocked)
     entries = {
         s: float(bands[t, j])
         for j, s in enumerate(panel.tickers)
         if s != panel.benchmark and np.isfinite(bands[t, j])
     }
-    excluded = {
-        s for j, s in enumerate(panel.tickers) if blocked is not None and blocked[t, j]
-    }
-    orders = paper.midcycle_orders(
-        str(panel.dates[t]),
+    equity = book.equity(panel.adj_close[t])
+    session = str(panel.dates[t])
+    retry, _unpaid = paper._fund_buys(
+        paper._deferred_orders(
+            deferred or {},
+            held,
+            prices,
+            equity,
+            grades,
+            finished,
+            excluded,
+            session,
+            paper.PaperState(),
+            whole_shares=False,
+        ),
+        book.cash,
+        prices,
+        whole_shares=False,
+    )
+    spent = sum(o.qty * prices[o.symbol] for o in retry)
+    reserved = dict(held)
+    for order in retry:
+        reserved[order.symbol] = reserved.get(order.symbol, 0.0) + order.qty
+    orders = retry + paper.midcycle_orders(
+        session,
         paper.PaperState(),
-        book.equity(panel.adj_close[t]),
-        held,
+        equity,
+        reserved,
         prices,
         grades,
         finished,
         entries,
         excluded,
-        book.cash,
+        book.cash - spent,
         whole_shares=False,
+        unfunded=unfunded,
     )
     wanted = book.shares.copy()
     for order in orders:
         wanted[panel.index(order.symbol)] += order.qty * (
             1 if order.side == "buy" else -1
         )
+    return wanted
+
+
+# The buy shares a basket asks for beyond the cash on hand, per symbol, the
+# way `paper.bound_orders` scales a rebalance's buys to the cash: sells fill
+# on the following close and pay for nothing tonight.
+def _unpaid_buys(book, order, prices) -> dict[str, float]:
+    """Return {symbol: buy shares the cash on hand cannot pay for}."""
+    priced = np.isfinite(prices) & (prices > 0)
+    buys = np.where(priced, np.maximum(order - book.shares, 0.0), 0.0)
+    requested = float((buys * np.where(priced, prices, 0.0)).sum())
+    if requested <= 0:
+        return {}
+    scale = min(1.0, max(0.0, book.cash) / requested)
+    return {
+        book.tickers[j]: float(buys[j] * (1.0 - scale))
+        for j in np.flatnonzero(buys > 0)
+        if buys[j] * (1.0 - scale) > 1e-12
+    }
+
+
+# The previous session's unpaid remainder, retried on a plain hold session
+# (no `live_midcycle`): the same gates and cap as the paper book, bounded
+# by the cash on hand, added to the shares the book already means to hold.
+def _deferred_leg(book, report, t, blocked, deferred, order) -> np.ndarray:
+    """Return `order` with the retried remainder's shares added."""
+    from backend.agents.trading.desk import paper
+
+    panel = report.panel
+    prices, held, grades, finished, excluded = _paper_inputs(book, report, t, blocked)
+    retry, _unpaid = paper._fund_buys(
+        paper._deferred_orders(
+            deferred,
+            held,
+            prices,
+            book.equity(panel.adj_close[t]),
+            grades,
+            finished,
+            excluded,
+            str(panel.dates[t]),
+            paper.PaperState(),
+            whole_shares=False,
+        ),
+        book.cash,
+        prices,
+        whole_shares=False,
+    )
+    wanted = np.array(order, dtype=float)
+    for o in retry:
+        wanted[panel.index(o.symbol)] += o.qty
     return wanted
 
 
@@ -156,6 +246,10 @@ class SimResult:
     # The optional funded-allocation trace: one entry per decision day, from
     # the real ledger, absent on the incumbent path.
     trace: list[dict] | None = None
+    # The trend brake's state per session, True while it held the book at
+    # `brake_scale`; all False when the brake was off, so a scorecard can
+    # read the shadow back without knowing whether it ran.
+    risk_off: np.ndarray | None = None
 
     # The usual four numbers, from the daily series.
     def stats(self) -> dict[str, float]:
@@ -453,15 +547,34 @@ def _event_path(path: np.ndarray | None, rows: int) -> np.ndarray | None:
 
 
 # Scale fresh targets absolutely and held targets relatively, avoiding repeated cuts.
-def _event_target(target, path, t, rebalanced, previous, reason):
+# `label` names the overlay that moved the ceiling in the trade's reason.
+def _event_target(target, path, t, rebalanced, previous, reason, label="FOMC"):
     if path is None:
         return target, previous, reason, False
     scale = float(path[t])
     target = target * (scale if rebalanced else scale / previous)
     changed = scale != previous
     if changed:
-        reason = "FOMC risk reduction" if scale < previous else "FOMC risk restoration"
+        reason = (
+            f"{label} risk reduction"
+            if scale < previous
+            else f"{label} risk restoration"
+        )
     return target, scale, reason, changed
+
+
+# The one exposure ceiling the incumbent loop applies: the FOMC path and the
+# trend brake's path composed as a per-session minimum, so whichever overlay
+# asks for less exposure on a session is the one that binds. Either alone
+# is passed through unchanged, so a run with one overlay is byte-identical
+# to what it was before the other existed.
+def _ceiling_path(event_exposure, brake_path):
+    """Return the per-session ceiling, or None when neither overlay is on."""
+    if brake_path is None:
+        return event_exposure
+    if event_exposure is None:
+        return brake_path
+    return np.minimum(event_exposure, brake_path)
 
 
 # Fill one event transition and retain only the shares that actually changed hands.
@@ -547,13 +660,25 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     event_exposure: np.ndarray | None = None,
     event_lifecycle: bool = False,
     live_midcycle: bool = False,
+    deferred_buys: bool = False,
     funded_allocation: bool = False,
     allocation_policy: str = "vol_trend",
     index_eligible: bool = False,
     benchmark_prices: dict | None = None,
     excluded_symbols_by_session: dict | None = None,
+    trend_brake: bool = False,
+    brake_scale: float = 0.5,
+    brake_path_override: np.ndarray | None = None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
+
+    The defaults here are NOT the live configuration. Bare, this runs the
+    exit analyst's between-rebalance exits (`use_exits=True`) and none of
+    the account's execution rules; the live paper book runs no exit overlay
+    and every flag in `LIVE_POLICY`. The published curve is the one
+    `market_daily.curve_block` draws - `use_exits=False`, the live reset
+    cadence, the FOMC lifecycle and `**LIVE_POLICY` - and a measurement
+    meant to describe the account has to be made the same way.
 
     `allocator(report, panel, config, t)` replaces the rule's targets on
     rebalance sessions when given; everything else - fills, costs, the
@@ -600,6 +725,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     are measured here so the change from the old all-at-the-open fills is
     visible.
 
+    `deferred_buys` is the paper book's deferred buy leg, and it needs
+    `exit_at_close`: with buys paid from the cash on hand at the open and
+    sells filled on the following close, a rebalance or rotation whose buys
+    outran the cash left the proceeds idle until the next entry or reset.
+    The unpaid remainder is retried once on the next session, under the
+    mid-cycle entry's own gates (graded A or better, not blocked, inside
+    the name cap, bounded by cash) and then dropped, exactly as
+    `paper.plan` does it. Off, the run is identical to what it was, so the
+    two can be compared.
+
     `funded_allocation` is the optional shared allocation path. When enabled,
     every session is a daily decision, but the stable unscaled stock
     composition is refreshed only on the scheduled rebalance clock (respecting
@@ -629,6 +764,28 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     later session and the next scheduled refresh (so a fresh selection cannot
     resurrect it), and a missing grade, a risk cut or text is never an exit.
     With `funded_allocation` False the incumbent path is unchanged.
+
+    `trend_brake` is the opt-in shadow overlay on the incumbent path: the
+    predeclared state machine in `trend_brake.risk_off_path` reads the QQQ
+    history in `benchmark_prices` (required, aligned to the panel's dates)
+    and, while it is risk_off, holds the book at `brake_scale` of what the
+    rules would otherwise hold, the rest in cash. The scale is an absolute
+    ceiling applied where the FOMC path already caps the target, and the
+    two compose as a per-session minimum. It trades only when the state
+    changes - a cut on entering risk_off, a restoration from cash on leaving
+    it, both next-open orders the way an FOMC change is - and at the normal
+    rebalances; between those the held weights already carry the scale, so
+    nothing is nudged daily. While risk_off, mid-cycle entries and deferred
+    buy retries are paused (rotation sells still go through), because the
+    cash the brake released is not a buy budget - the live FOMC cycle pauses
+    entries the same way. `funded_allocation` has its own trend ceiling
+    and refuses it. Off, the run is byte-identical to what it was, and the
+    result's `risk_off` is all False.
+
+    `brake_path_override` is an experimental, externally fitted exposure
+    ceiling on the same calendar. It is mutually exclusive with the fixed
+    trend brake and uses the identical fill, cash and FOMC composition path.
+    Supplying None leaves the incumbent behavior unchanged.
     """
     decide = allocator or _targets
     fired, blocked, trend_up, dips = _signals_for(
@@ -651,6 +808,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             incompatible.append("exit_at_close")
         if live_midcycle:
             incompatible.append("live_midcycle")
+        if deferred_buys:
+            incompatible.append("deferred_buys")
         if dip is not None:
             incompatible.append("dip")
         if exits is not None:
@@ -659,19 +818,59 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             incompatible.append(
                 "entry_gate/block_overbought/band_dip_buy/trend_gated_exit"
             )
+        if trend_brake or brake_path_override is not None:
+            # The shared allocation path carries its own trend ceiling; a
+            # second one on top would measure neither.
+            incompatible.append("trend_brake")
         if incompatible:
             raise ValueError(
                 "funded_allocation cannot be combined with: " + ", ".join(incompatible)
             )
         funded_execution.validate_benchmarks(panel, benchmark_prices)
         excluded_map = _excluded_by_session(excluded_symbols_by_session)
+    # The trend brake's per-session ceiling, decided at each close from the
+    # QQQ history up to that close; None when the brake is off so the
+    # incumbent loop sees exactly the FOMC path it always saw.
+    brake_path = None
+    risk_off = np.zeros(len(panel.dates), dtype=bool)
+    if trend_brake and brake_path_override is not None:
+        raise ValueError("choose the fixed trend brake or an explicit learned path")
+    if brake_path_override is not None:
+        brake_path = np.asarray(brake_path_override, dtype=float)
+        if (
+            brake_path.shape != (len(panel.dates),)
+            or not np.isfinite(brake_path).all()
+            or np.any((brake_path <= 0) | (brake_path > 1))
+        ):
+            raise ValueError("brake path must align with sessions and be in (0, 1]")
+        risk_off = brake_path < 1.0
+    if trend_brake:
+        if not (np.isfinite(brake_scale) and 0 < brake_scale <= 1):
+            raise ValueError("brake_scale must be a finite value in (0, 1]")
+        qqq = trend_brake_rule.aligned_qqq(panel.dates, benchmark_prices)
+        risk_off = trend_brake_rule.risk_off_path(qqq)
+        brake_path = np.where(risk_off, float(brake_scale), 1.0)
+    if deferred_buys and not exit_at_close:
+        # With sells filled at the open their proceeds already pay for the
+        # same session's buys, so there is no idle cash to defer and the
+        # remainder this would record would be one the fill never left.
+        raise ValueError("deferred_buys requires exit_at_close")
 
     live_bands = entry.bollinger_z(panel.adj_close) if live_midcycle else None
+    # The previous session's unpaid buy shares per symbol, when the deferred
+    # leg is on: written on a rebalance or a live mid-cycle plan, consumed by
+    # the very next plan (retried, or superseded by a rebalance), never kept.
+    pending_deferred: dict[str, float] = {}
     # A research overlay changes exposure only when its close-time scale changes.
     # Between rebalances the held weights already contain yesterday's scale;
     # applying the absolute scale again would halve the account every day.
     event_exposure = _event_path(event_exposure, len(panel.dates))
+    # The FOMC path and the brake's path as one minimum; the lifecycle
+    # below still reads the FOMC path alone, so the brake never defers a
+    # rebalance the way an event window does.
+    ceiling = _ceiling_path(event_exposure, brake_path)
     previous_scale = 1.0
+    previous_brake = 1.0
     event_baseline = None
     event_sold = None
     config = config or risk.BOOK_CONFIG
@@ -918,18 +1117,62 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         # fill at different prices (the paper account sells on the close
         # and never into a green open since 2026-09-11), so the fill is
         # split by side.
+        # The brake owns the reason when its own scale is what moved since
+        # the last session that reached this point; otherwise the FOMC path
+        # is the overlay that changed the ceiling.
+        label = "FOMC"
+        if brake_path is not None:
+            if float(brake_path[t]) != previous_brake:
+                label = "trend brake"
+            previous_brake = float(brake_path[t])
         target, previous_scale, reason, event_changed = _event_target(
             target,
-            event_exposure,
+            ceiling,
             t,
             rebalanced,
             previous_scale,
             reason,
+            label,
         )
         order = book.plan(target, closes[t])
+        # The deferred leg: last session's unpaid remainder is retried on a
+        # plain session and superseded by a rebalance; an event session
+        # leaves it waiting, as the live book does while the event cycle
+        # owns the plan.
+        carried: dict[str, float] = {}
+        # While the brake holds the book down, the cash it released is not
+        # a buy budget: a breakout entry or a deferred retry would put it
+        # straight back to work and undo the cut the brake just made. The
+        # live FOMC cycle pauses entries the same way (`event_execution.plan`
+        # owns the plan for the whole cycle). Sells still go through.
+        braked = brake_path is not None and float(brake_path[t]) < 1.0
+        event_paused = event_exposure is not None and float(event_exposure[t]) < 1.0
+        reduced = braked or event_paused
+        if deferred_buys and not event_changed and not reduced:
+            carried, pending_deferred = ({} if rebalanced else pending_deferred), {}
         if live_midcycle and not rebalanced and not event_changed:
-            order = _live_midcycle(book, report, t, live_bands, blocked)
+            unfunded: dict[str, float] = {}
+            order = _live_midcycle(
+                book,
+                report,
+                t,
+                live_bands,
+                blocked,
+                deferred=carried or None,
+                unfunded=unfunded if deferred_buys and not reduced else None,
+            )
+            if reduced:
+                order = np.minimum(order, book.shares)
+            else:
+                pending_deferred = unfunded
             reason = "shared paper rotation and entry policy"
+        elif carried:
+            order = _deferred_leg(book, report, t, blocked, carried, order)
+        if event_paused:
+            # Live FOMC execution owns the cycle and cannot add positions.
+            order = np.minimum(order, book.shares)
+        if deferred_buys and rebalanced and not event_changed and not reduced:
+            pending_deferred = _unpaid_buys(book, order, closes[t])
         buy_prices = opens[t + 1]
         sell_prices = opens[t + 1]
         if exit_at_close and not event_changed:
@@ -972,6 +1215,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         book.traded,
         top[start:],
         funded_trace if funded_allocation else None,
+        risk_off[start:],
     )
 
 
