@@ -401,6 +401,53 @@ def test_the_entry_carries_the_weight_to_put_on_now():
     assert decision_view.entry_action(row, 1.5, "A+", nearly)[1] == pytest.approx(0.01)
 
 
+# One entry increment per name per session. The board is re-read every candle
+# and used to size the same breakout again on each read; the nightly, which
+# runs once, adds to a name once. The three pieces of evidence that the
+# increment is spoken for each turn the Buy into a Hold that says why, and the
+# signal itself still reads as firing on a name none of them names.
+@pytest.mark.parametrize("evidence", ["issued", "filled", "pending"])
+def test_an_entry_already_taken_this_session_is_not_issued_again(evidence):
+    record, snapshot, quoted, now = setup()
+    held = []
+    extra = {}
+    if evidence == "issued":
+        extra["issued"] = {"S11": (now - timedelta(minutes=15)).isoformat()}
+    elif evidence == "filled":
+        # The person recorded today's fill: a holding dated this session.
+        held = [Holding("S11", 10, 100.0, "2026-09-14")]
+    else:
+        extra["pending"] = ["S11"]
+    rows = decision_view.build(
+        record,
+        held,
+        100000,
+        snapshot,
+        quoted,
+        now,
+        entries={"S11": 1.5, "S10": 1.5},
+        cash=100000,
+        **extra,
+    )["rows"]
+    assert rows["S11"]["action"] == "Hold"
+    assert rows["S11"]["move_weight"] == 0.0
+    assert "one entry per name per session" in rows["S11"]["reason"]
+    # The other firing name is untouched, and the plan did not fold S11 back in.
+    assert rows["S10"]["action"] == "Buy"
+    assert rows["S10"]["move_weight"] > 0
+
+
+# A fill from an earlier session is not this session's increment: the board
+# may size the name again when its signal fires on a later day.
+def test_a_fill_on_an_earlier_session_does_not_block_todays_entry():
+    record, snapshot, quoted, now = setup()
+    held = [Holding("S11", 10, 100.0, "2026-09-11")]
+    rows = decision_view.build(
+        record, held, 100000, snapshot, quoted, now, entries=FIRING, cash=100000
+    )["rows"]
+    assert rows["S11"]["action"] == "Buy"
+
+
 # A covered downgrade preserves the exit opinion without assuming a future buy.
 def test_a_covered_downgrade_has_an_exit_opinion():
     _, _, _, now = setup()

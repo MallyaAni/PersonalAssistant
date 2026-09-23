@@ -485,6 +485,30 @@ async def desk_intraday(user_id: UserId) -> dict[str, object]:
 class DeskMineInput(BaseModel):
     equity: float
     available_cash: float | None = None
+    # Tickers with a buy order already working at the person's broker. The
+    # board will not issue another entry for them; it has no broker of its
+    # own to ask, so this is the only channel that evidence arrives by.
+    pending_buys: list[str] | None = None
+
+    # Keep only ticker-shaped symbols, upper-cased, so a working order for
+    # "nvda" matches the board's "NVDA" row.
+    @field_validator("pending_buys")
+    @classmethod
+    def _pending_buys_are_tickers(cls, value):
+        """Normalise working-order tickers; refuse anything that is not one."""
+        if value is None:
+            return None
+        out: list[str] = []
+        for raw in value:
+            ticker = str(raw).strip().upper()
+            if (
+                not ticker
+                or len(ticker) > 8
+                or not ticker.replace(".", "").replace("-", "").isalnum()
+            ):
+                raise ValueError(f"bad ticker {raw!r} in pending buys")
+            out.append(ticker)
+        return out
 
     # Reject booleans before dollar amounts are coerced to floats.
     @field_validator("equity", mode="before")
@@ -531,6 +555,30 @@ class DeskMineInput(BaseModel):
         return self
 
 
+# The board's own memory of the entries it issued this account earlier in
+# the session, so a refresh does not size the same breakout again: the
+# names remembered for today are handed to `build`, and every Buy it issues
+# now is written back for the next read. The session is the New York date
+# of this read; a new session starts with nothing remembered.
+def _remembering_entries(user_id: str, now: datetime, build) -> dict:
+    """Run `build(issued)` and record the Buys it issued for this session."""
+    from backend.market import decision_view
+
+    session_date = now.astimezone(desk_freshness.NEW_YORK).date().isoformat()
+    issued = holdings.load_issued(_root(), user_id, session_date)
+    decisions = build(issued)
+    bought = [
+        symbol
+        for symbol, row in decisions["rows"].items()
+        if row["action"] == decision_view.Action.BUY and symbol not in issued
+    ]
+    if bought:
+        holdings.record_issued(
+            _root(), user_id, session_date, bought, now.isoformat(timespec="seconds")
+        )
+    return decisions
+
+
 # The board against the person's own holdings at the equity given: the
 # latest record's targets and levels, the live candle where the feed has
 # one, and the person's entry beside each name they hold. Optional personal
@@ -540,7 +588,10 @@ class DeskMineInput(BaseModel):
 # business logic; the account figures are validated before any evidence is
 # collected.
 async def _desk_mine_payload(
-    user_id: str, equity: float, available_cash: float | None
+    user_id: str,
+    equity: float,
+    available_cash: float | None,
+    pending_buys: list[str] | None = None,
 ) -> dict[str, object]:
     latest, _previous = deskrecord.latest_pair(_root())
     rows = holdings.load(_root())
@@ -583,19 +634,25 @@ async def _desk_mine_payload(
             print(
                 f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})"
             )
-    decisions = decision_view.build(
-        latest,
-        rows,
-        equity,
-        snap or {},
-        quoted,
+    decisions = _remembering_entries(
+        user_id,
         now,
-        None,
-        entries,
-        # The allocation preview belongs to the account viewing it: a plan
-        # naming another account is an explicit unavailable preview.
-        expected_account=user_id,
-        cash=available_cash,
+        lambda issued: decision_view.build(
+            latest,
+            rows,
+            equity,
+            snap or {},
+            quoted,
+            now,
+            None,
+            entries,
+            # The allocation preview belongs to the account viewing it: a plan
+            # naming another account is an explicit unavailable preview.
+            expected_account=user_id,
+            cash=available_cash,
+            issued=issued,
+            pending=pending_buys,
+        ),
     )
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)
@@ -697,7 +754,9 @@ async def desk_mine(
 async def desk_mine_post(user_id: UserId, inputs: DeskMineInput) -> dict[str, object]:
     """Return action rows computed against the saved holdings."""
     _operator_only(user_id)
-    return await _desk_mine_payload(user_id, inputs.equity, inputs.available_cash)
+    return await _desk_mine_payload(
+        user_id, inputs.equity, inputs.available_cash, inputs.pending_buys
+    )
 
 
 # Preview the entire buy budget without persisting cash or placing orders.

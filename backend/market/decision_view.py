@@ -601,6 +601,49 @@ def entry_action(row, band, grade_live, current=0.0):
     )
 
 
+# One entry increment per name per session, which is the nightly's rule by
+# construction (it runs once) and was nobody's rule on the personal board (it
+# is re-read every candle). Three pieces of evidence say the increment has
+# already been taken: the board issued it earlier this session (`issued`, the
+# API's memory of its own Buys), the person recorded a fill this session (a
+# holding whose entry date is today), or a buy order is already working
+# (`pending`, supplied with the account evidence). Each name maps to the
+# reason the row will show instead of another Buy.
+def _entries_taken(held, now, issued, pending, personal) -> dict[str, str]:
+    """Return {ticker: reason} for names whose entry was already taken this session."""
+    if not personal:
+        # Only the personal board is re-read within a session; the research
+        # path is one dated projection and keeps every signal it is given.
+        return {}
+    session_date = now.astimezone(desk_freshness.NEW_YORK).date().isoformat()
+    taken: dict[str, str] = {}
+    once = "one entry per name per session"
+    for ticker, at in (issued or {}).items():
+        when = desk_freshness.timestamp(at)
+        clock = (
+            f" at {when.astimezone(desk_freshness.NEW_YORK):%H:%M} ET" if when else ""
+        )
+        taken[ticker] = f"Entry already issued this session{clock}; {once}"
+    for holding in held:
+        if holding.entry_date == session_date:
+            taken[holding.ticker] = (
+                f"Bought this session per your recorded fill; {once}"
+            )
+    for ticker in pending or ():
+        taken[ticker] = f"A buy order is already working; {once}"
+    return taken
+
+
+# A breakout that would be a Buy is a Hold once its increment for the session
+# has been issued, filled or is working. The signal is still firing, and the
+# row says why it is not being sized again.
+def _unless_taken(entry, symbol, taken):
+    """Return `entry`, or a Hold carrying the reason when the name is taken."""
+    if entry is not None and entry[0] is Action.BUY and symbol in taken:
+        return (Action.HOLD, None, taken[symbol])
+    return entry
+
+
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
 def build(
     record,
@@ -614,6 +657,8 @@ def build(
     *,
     expected_account=None,
     cash=None,
+    issued=None,
+    pending=None,
 ):
     now = now or datetime.now(UTC)
     # A personal cash figure that cannot bound a plan is a caller error, not a
@@ -687,6 +732,11 @@ def build(
         np.datetime64(now.astimezone(desk_freshness.NEW_YORK).date()),
     )
     current_decision = offset in (0, 1)
+    # Names whose entry increment this session is already spoken for, and the
+    # signals the cash-bounded plan may still fund: a taken name is not a
+    # candidate, or the funded basket would fold the Buy straight back in.
+    taken = _entries_taken(held, now, issued, pending, targets is None)
+    open_entries = {s: b for s, b in (entries or {}).items() if s not in taken}
     # The person's universe: what the desk grades, plus anything the person
     # actually holds. A name the person holds but the desk does not cover gets
     # a row that says so, because the exit question is the person's own.
@@ -703,12 +753,16 @@ def build(
         # the supplied equity. The desk's book is a separate account and must
         # not shape what this person is told they currently hold.
         current = book.get(symbol, 0.0)
-        entry = entry_action(
-            row,
-            (entries or {}).get(symbol),
-            (readings.get(symbol) or {}).get("grade")
-            or (record.get("grades") or {}).get(symbol, {}).get("grade"),
-            current,
+        entry = _unless_taken(
+            entry_action(
+                row,
+                (entries or {}).get(symbol),
+                (readings.get(symbol) or {}).get("grade")
+                or (record.get("grades") or {}).get(symbol, {}).get("grade"),
+                current,
+            ),
+            symbol,
+            taken,
         )
         deadline = desk_freshness.timestamp(expiries.get(symbol))
         action, move, reason = action_for_row(
@@ -802,7 +856,7 @@ def build(
         }
     if targets is None:
         apply_personal_account_plan(
-            result, held, equity, cash, snapshot, entries, paused, now, record
+            result, held, equity, cash, snapshot, open_entries, paused, now, record
         )
     return {
         "version": VERSION,
