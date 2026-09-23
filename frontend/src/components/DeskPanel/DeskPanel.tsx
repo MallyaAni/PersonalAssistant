@@ -806,7 +806,19 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [gradeContext, setGradeContext] = useState<{session?: string | null; until: Record<string, string>}>({until: {}})
   const [now, setNow] = useState(Date.now)
   const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
-  const [equity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
+  // The confirmed personal account figures the board is computed against.
+  // Equity starts from the per-browser convenience value (legacy default
+  // $100,000) and becomes editable; cash is session-memory only - never
+  // localStorage and never a URL - and null means "unknown", which keeps
+  // buys gated rather than funding them from equity or the paper account.
+  const [equity, setEquity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
+  const [cash, setCash] = useState<number | null>(null)
+  const [cashStatus, setCashStatus] = useState('')
+  // A monotonic context generation. Every desk/mine request captures it before
+  // awaiting; when the response returns, if the generation has moved on the
+  // caller's cash/equity/user/holdings context changed meanwhile, so the old
+  // response is dropped instead of painting stale actions over the new one.
+  const accountGen = useRef(0)
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
   // Every grade in detail is a fold on the one page; the URL can open it.
@@ -827,6 +839,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     try {
       setHoldings(await putDeskHoldings(userId, next))
       setSaveError('')
+      // A recorded fill or a changed positions list is a new holdings
+      // context: confirmed cash no longer describes it, so it is cleared
+      // (with a reason) rather than silently funding later buys.
+      accountGen.current += 1
+      setCash(null)
+      setCashStatus('Available cash was reset because your positions changed. Confirm it again to fund new buys.')
+      setDecisions(undefined)
       return true
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'The positions were not saved.')
@@ -861,6 +880,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // and the Refresh button, so a manual refresh re-reads the live layer
   // too rather than only the evening payload.
   const poll = async () => {
+    // Capture the account context before any await: the live read below can
+    // take long enough that a later account change lands while it is in
+    // flight, and a gen captured then would let a request carrying the old
+    // cash closure past its own guard.
+    const gen = accountGen.current
     setNow(Date.now())
     try {
       setLive(await getDeskLive(userId))
@@ -868,12 +892,19 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       setLive((previous) => ({ ...previous, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
     }
     try {
-      const mine = await getDeskMine(userId, equity)
+      const mine = await getDeskMine(userId, equity, cash)
+      // A slow response from an earlier cash/equity/user/holdings context is
+      // dropped: the context changed while it was in flight, and applying it
+      // could repaint a stale funded BUY over the current one.
+      if (gen !== accountGen.current) return
       setRows(mine.rows)
       setDecisions(mine.decisions)
       setLiveGrades(mine.grades_live)
       setGradeContext({session: mine.session, until: mine.grade_valid_until ?? {}})
     } catch {
+      // On failure the actions stay unavailable; the previous BUY values are
+      // never restored, because they belong to an account context that may no
+      // longer hold.
       setLiveGrades({})
       setDecisions(undefined)
       setRows((previous) => previous.map((row) => ({
@@ -891,6 +922,24 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     } catch {
       setPaperLive({ reason: 'unreachable' })
     }
+  }
+
+  // Confirm the personal account figures the board should be computed
+  // against. The context changes the moment they are applied: any in-flight
+  // response from the previous context is invalidated, the previous decisions
+  // are cleared so no stale BUY from a higher-cash context lingers, and the
+  // polling effect re-runs on the new equity/cash. Cash is session-memory
+  // only; an unknown (null) cash keeps buys gated.
+  const applyAccount = (equityValue: number, cashValue: number | null) => {
+    accountGen.current += 1
+    setEquity(equityValue)
+    setCash(cashValue)
+    setDecisions(undefined)
+    setCashStatus(cashValue === null
+      ? 'Available cash unknown; buys stay unfunded until you confirm it.'
+      : cashValue === 0
+        ? 'Available cash confirmed at $0; no funded buys.'
+        : `Available cash confirmed at ${money(cashValue)}; buys can be funded up to this budget.`)
   }
 
   useEffect(() => {
@@ -929,7 +978,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       document.removeEventListener('visibilitychange', resume)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, equity, holdings, payload?.latest?.session])
+  }, [userId, equity, cash, holdings, payload?.latest?.session])
+
+  useEffect(() => {
+    // A different account is a different context: confirmed cash never
+    // follows the user across the switch, and an in-flight response from the
+    // previous account's context is invalidated.
+    accountGen.current += 1
+    setCash(null)
+    setCashStatus('')
+    setDecisions(undefined)
+  }, [userId])
 
   useEffect(() => {
     const deadlines = [...Object.values(gradeContext.until), payload?.intraday_research?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
@@ -947,15 +1006,18 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       if (busy || document.hidden) return
       busy = true
       try {
-        const mine = await getDeskMine(userId, equity)
-        if (!stopped) { setDecisions(mine.decisions); setNow(Date.now()) }
+        const gen = accountGen.current
+        const mine = await getDeskMine(userId, equity, cash)
+        // A response from an older cash/equity context must not repaint
+        // stale BUY actions after the account inputs changed.
+        if (!stopped && gen === accountGen.current) { setDecisions(mine.decisions); setNow(Date.now()) }
       } catch {
         if (!stopped) setDecisions(undefined)
       } finally { busy = false }
     }
     const timer = window.setInterval(() => void refresh(), 15_000)
     return () => { stopped = true; window.clearInterval(timer) }
-  }, [userId, equity, holdings, payload?.latest?.session])
+  }, [userId, equity, cash, holdings, payload?.latest?.session])
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
@@ -1060,6 +1122,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               )}
             </div>
           </div>
+          <AccountInputs equity={equity} cash={cash} cashStatus={cashStatus} onApply={applyAccount} />
           {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
             <p className="mb-2 text-xs text-[#9a6200]">
               Since the last plan: {intraday.changed.join(' · ')}
@@ -1704,6 +1767,78 @@ interface PositionsProps {
   holdings: DeskHolding[]
   error: string
   onSave: (rows: DeskHolding[]) => Promise<void>
+}
+
+interface AccountInputsProps {
+  equity: number
+  cash: number | null
+  cashStatus: string
+  onApply: (equity: number, cash: number | null) => void
+}
+
+// The personal account figures the board is computed against: small equity
+// and available-cash fields with an explicit Apply/confirm. Cash is
+// session-memory only (never localStorage, never a URL). An empty cash field
+// means unknown and keeps buys gated; an invalid figure is treated as unknown
+// too, never fabricated; zero is a valid known figure. Invalid equity is
+// refused so the board is never sized against a nonsense account.
+const AccountInputs = ({ equity, cash, cashStatus, onApply }: AccountInputsProps) => {
+  const [equityDraft, setEquityDraft] = useState(String(equity))
+  const [cashDraft, setCashDraft] = useState(cash === null ? '' : String(cash))
+  const [error, setError] = useState('')
+  useEffect(() => setEquityDraft(String(equity)), [equity])
+  useEffect(() => setCashDraft(cash === null ? '' : String(cash)), [cash])
+  // Validate the drafts before applying a new personal account context.
+  const apply = () => {
+    const equityValue = Number(equityDraft)
+    if (equityDraft.trim() === '' || !Number.isFinite(equityValue) || equityValue <= 0) {
+      setError('Enter a positive account equity to size the board.')
+      return
+    }
+    // An invalid cash figure (negative, non-finite, or beyond equity) still
+    // applies the account as "unknown" - buys stay gated - but the reason is
+    // left on the page so the person can see why their figure was not kept.
+    let cashError = ''
+    let cashValue: number | null = null
+    if (cashDraft.trim() !== '') {
+      const parsed = Number(cashDraft)
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        cashError = 'That cash figure is not a finite, nonnegative number. Available cash is now unknown and buys stay unfunded.'
+      } else if (parsed > equityValue) {
+        cashError = 'Available cash cannot exceed account equity. Available cash is now unknown and buys stay unfunded.'
+      } else {
+        cashValue = parsed
+      }
+    }
+    setError(cashError)
+    // An unknown cash result leaves the field empty so the page does not keep
+    // showing the figure that was just refused: clearing the draft here is
+    // what actually resets it, because applying null over an already-null cash
+    // bails out of the state update and never re-runs the sync effect below.
+    if (cashValue === null) setCashDraft('')
+    onApply(equityValue, cashValue)
+  }
+  const field = 'rounded-md border border-black/[0.12] px-2 py-1 w-28'
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#f5f5f7] p-3 text-sm">
+      <label className="flex items-center gap-1 text-[#6e6e73]">
+        Equity $
+        <input aria-label="Personal account equity" type="number" min="0" step="any"
+          value={equityDraft} onChange={(e) => setEquityDraft(e.target.value)} className={field} />
+      </label>
+      <label className="flex items-center gap-1 text-[#6e6e73]">
+        Cash $
+        <input aria-label="Personal available cash" type="number" min="0" step="any"
+          value={cashDraft} placeholder="unknown" onChange={(e) => setCashDraft(e.target.value)} className={field} />
+      </label>
+      <button type="button" onClick={apply} className="rounded-full bg-[#1d1d1f] px-3 py-1 text-white">
+        Apply
+      </button>
+      {error ? <p role="alert" className="text-xs text-[#b42318]">{error}</p> : cashStatus
+        ? <p className="text-xs text-[#6e6e73]" aria-label="Available cash status">{cashStatus}</p>
+        : <p className="text-xs text-[#6e6e73]">Cash unknown; buys stay unfunded until you confirm it.</p>}
+    </div>
+  )
 }
 
 // The person's positions: a row each, or pasted in bulk, then saved.

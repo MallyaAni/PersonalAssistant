@@ -185,7 +185,7 @@ test('current opportunity scores change rank and explain their inputs', async ({
   await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-09T14:00:00Z', quotes: {
     AAPL: {last: 100, bar: '2026-09-09T13:45:00Z'}, NVDA: {last: 100, bar: '2026-09-09T13:45:00Z'},
   }}}))
-  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+  await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, holdings: {}, equity: 100000,
     rows: {AAPL: {action: 'Wait', opportunity: reading(next ? 9 : 5)}, NVDA: {action: 'Wait', opportunity: reading(8)}},
   }}}))
@@ -362,7 +362,7 @@ test('before a candle-run allocation the board shows plan target weights', async
 test('opportunity stays readable after the close', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  await page.route(`**/market/${USER}/desk/mine?*`, route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+  await page.route(`**/market/${USER}/desk/mine*`, route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, holdings: {}, equity: 100000,
     rows: {AAPL: {action: 'Wait', opportunity: {version: 'analyst-opportunity/1', score: 6.2, status: 'indicative',
       price: null, bar: '20:00', valid_until: '2026-09-08T19:30:00Z', valuation_current: false,
@@ -482,7 +482,7 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
   const now = new Date('2026-09-09T14:00:00Z')
   await page.clock.install({time: now})
   const latest = deskRecord()
-  await page.route(`**/market/${USER}/desk/mine?*`, route => route.fulfill({json: {
+  await page.route(`**/market/${USER}/desk/mine*`, route => route.fulfill({json: {
     session: latest.session, rows: [], grades_live: {}, decisions: {
       session: latest.session, written: latest.written, equity: 100000, holdings: {AAPL: 60}, as_of: now.toISOString(),
       rows: {AAPL: {action: 'Buy eligible', reason: 'Scheduled addition; confirm cash and broker price', target_weight: .1, current_weight: 0, delta_weight: .1,
@@ -2120,7 +2120,7 @@ test('the ticker panel explains the grade move, keeps the last score and folds t
     expiry: '2026-09-18', through: '2026-10-16', fetched_at: '2026-09-16T12:45:00Z',
     put_wall: 95, call_wall: 110, put_wall_oi: 20000, call_wall_oi: 36000, net_gamma: 0, put_wall_distance: -.05, call_wall_distance: .1,
   }}}}}))
-  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+  await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, holdings: {}, equity: 100000,
     rows: {AAPL: {action: 'Wait', opportunity: {version: 'analyst-opportunity/1', score: null, last_score: 6.2, status: 'unavailable',
       price: null, bar: '2026-09-08T19:45:00Z', valid_until: '2026-09-08T20:00:00Z', valuation_current: false,
@@ -2301,7 +2301,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-08T20:00:00Z', quotes: {
     AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-08T19:45:00Z'},
   }}}))
-  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+  await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, holdings: {}, equity: 100000, rows: {},
   }}}))
   await page.goto('/#desk')
@@ -2387,7 +2387,7 @@ test('a name scored without the full analyst panel says so on the board and in t
       {analyst: 'technical', score: 1.0, weight: 1, basis: '2026-09-08', evidence: ['Weekly trend down']},
     ],
   })
-  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+  await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, holdings: {}, equity: 100000,
     rows: {
       AAPL: {action: 'Wait', opportunity: reading(3.4, ['value'])},
@@ -2433,7 +2433,7 @@ test('the board leads with the book and shows the allocation without a shares co
     AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-08T19:45:00Z'},
     NVDA: {symbol: 'NVDA', last: 200, bar: '2026-09-08T19:45:00Z'},
   }}}))
-  await page.route('**/desk/mine?*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
+  await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, holdings: {}, equity: 100000, rows: {},
   }}}))
   await page.goto('/?deskDetails=1#desk')
@@ -2451,4 +2451,224 @@ test('the board leads with the book and shows the allocation without a shares co
   expect(ranked).toContain('NVDA')
   expect(ranked.indexOf('NVDA')).toBeLessThan(ranked.indexOf('AAPL'))
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// The personal board answer, with the live grade kept current so the board
+// can rank the rows a test cares about. `decisions` is passed through because
+// a test answers differently for each confirmed cash figure.
+const mineAnswer = (decisions: object, rows: object[] = []) => ({
+  session: '2026-09-08',
+  grade_valid_until: Object.fromEntries(['AAPL', 'NVDA'].map((ticker) => [ticker, new Date(Date.now() + 15 * 60 * 1000).toISOString()])),
+  grades_live: {},
+  rows,
+  decisions,
+})
+const aaplRow = {
+  ticker: 'AAPL', action: 'add', in_book: true, grade: 'A', grade_live: 'A', score_live: 0.92,
+  technical_now: 0.9, technical_close: 0.8, rank: 1, score: 0.92, stances: { fundamental: 1 }, ranks: { fundamental: 0.9 },
+  why: 'The desk adds to its best name.', reason: 'F The business keeps growing\nT The trend holds', target_weight: 0.06,
+  current_weight: 0.04, delta_weight: 0.02, shares: 60, entry_price: 91.25, entry_date: '2026-08-28', last: 102,
+  pl_pct: 0.117, last_close: 102, high_20: 105, grade_margin: 0.3, leaves_if: 'drops below A', until_rebalance: 18,
+  rebalance_due: false,
+}
+// Answer a personal read with no funded order.
+const holdDecision = (reason: string) => ({ session: '2026-09-08', written: '2026-09-08T21:00:00Z', rows: { AAPL: { action: 'Hold', reason, move_weight: 0 } } })
+// Answer a personal read with a cash-bounded buy for browser acceptance.
+const buyDecision = (reason: string) => ({ session: '2026-09-08', written: '2026-09-08T21:00:00Z', rows: { AAPL: { action: 'Buy', reason, move_weight: 0.01 } } })
+
+// The desk opens with the personal cash unknown: the first confirmed request
+// carries only equity in the body (never in the URL), and nothing about the
+// account figure travels in the query string of any desk/mine request.
+test('opens with personal cash unknown and sends only equity in the desk/mine body', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const mineBodies: Array<Record<string, unknown>> = []
+  const mineUrls: string[] = []
+  await page.route('**/desk/mine*', route => {
+    mineUrls.push(route.request().url())
+    mineBodies.push(route.request().postDataJSON() ?? {})
+    return route.fulfill({ json: mineAnswer(holdDecision('No funded cash')) })
+  })
+  await page.goto('/#desk')
+  await expect(page.getByLabel('Personal account equity')).toHaveValue('100000')
+  await expect(page.getByLabel('Personal available cash')).toHaveValue('')
+  await expect(page.getByText('Cash unknown; buys stay unfunded until you confirm it.')).toBeVisible()
+  await expect.poll(() => mineBodies.length).toBeGreaterThan(0)
+  expect(mineBodies.every(body => Object.keys(body).sort().join(',') === 'equity' && typeof body.equity === 'number')).toBe(true)
+  expect(mineUrls.every(url => !url.includes('equity') && !url.includes('available_cash') && !url.includes('100000'))).toBe(true)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Confirmed cash funds buys when positive and keeps them gated at zero; the
+// figure travels in the request body, and each apply re-reads the guidance on
+// the latest account inputs.
+test('confirmed available cash funds buys in the body, and zero keeps them gated', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const mineBodies: Array<Record<string, unknown>> = []
+  await page.route('**/desk/mine*', route => {
+    const body = route.request().postDataJSON() ?? {}
+    mineBodies.push(body)
+    const cash = typeof body.available_cash === 'number' ? body.available_cash : null
+    return route.fulfill({ json: mineAnswer(cash !== null && cash > 0 ? buyDecision('Funded by confirmed cash') : holdDecision('No funded cash'), [aaplRow]) })
+  })
+  await page.goto('/#desk')
+  const board = page.getByRole('table', { name: 'Ranked stocks and cash' })
+  await page.getByLabel('Personal account equity').fill('200000')
+  await page.getByLabel('Personal available cash').fill('5000')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $5,000; buys can be funded up to this budget.')
+  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('BUY')
+  expect(mineBodies.some(b => b.equity === 200000 && b.available_cash === 5000)).toBe(true)
+  await page.getByLabel('Personal available cash').fill('0')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $0; no funded buys.')
+  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('HOLD')
+  expect(mineBodies.some(b => b.equity === 200000 && b.available_cash === 0)).toBe(true)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A nonsense equity is refused outright, and an invalid cash figure is
+// treated as unknown - never fabricated from equity - with the reason left on
+// the page so the person can see why their figure was not kept.
+test('rejects invalid equity, and invalid cash is unknown, never fabricated', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const mineBodies: Array<Record<string, unknown>> = []
+  await page.route('**/desk/mine*', route => {
+    const body = route.request().postDataJSON() ?? {}
+    mineBodies.push(body)
+    return route.fulfill({ json: mineAnswer(holdDecision('No funded cash'), [aaplRow]) })
+  })
+  await page.goto('/#desk')
+  await expect.poll(() => mineBodies.length).toBeGreaterThan(0)
+  await page.getByLabel('Personal account equity').fill('-5000')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByText('Enter a positive account equity to size the board.')).toBeVisible()
+  expect(mineBodies.every(b => b.equity !== -5000 && Number(b.equity) > 0)).toBe(true)
+  await page.getByLabel('Personal account equity').fill('200000')
+  await page.getByLabel('Personal available cash').fill('-100')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByText('That cash figure is not a finite, nonnegative number. Available cash is now unknown and buys stay unfunded.')).toBeVisible()
+  await expect(page.getByLabel('Personal available cash')).toHaveValue('')
+  await expect.poll(() => mineBodies.some(b => b.equity === 200000)).toBe(true)
+  expect(mineBodies[mineBodies.length - 1].equity).toBe(200000)
+  expect(mineBodies[mineBodies.length - 1].available_cash).toBeUndefined()
+  await page.getByLabel('Personal available cash').fill('999999')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByText('Available cash cannot exceed account equity. Available cash is now unknown and buys stay unfunded.')).toBeVisible()
+  expect(mineBodies[mineBodies.length - 1].available_cash).toBeUndefined()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Lowering confirmed cash invalidates any in-flight guidance from the old
+// higher-cash context: the slow response cannot repaint a stale BUY.
+test('a slow response from the previous higher-cash context cannot repaint a stale buy', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const answered: Array<{ cash: number | null; delayed: boolean }> = []
+  await page.route('**/desk/mine*', async route => {
+    const body = route.request().postDataJSON() ?? {}
+    const cash = typeof body.available_cash === 'number' ? body.available_cash : null
+    answered.push({ cash, delayed: cash === 100000 })
+    if (cash === 100000) await new Promise((r) => setTimeout(r, 2000))
+    const funded = cash === 100000
+    return route.fulfill({ json: mineAnswer(funded ? buyDecision('Funded by high cash') : holdDecision('No funded cash'), [aaplRow]) })
+  })
+  await page.goto('/#desk')
+  const board = page.getByRole('table', { name: 'Ranked stocks and cash' })
+  await page.getByLabel('Personal account equity').fill('200000')
+  await page.getByLabel('Personal available cash').fill('100000')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect.poll(() => answered.some(a => a.delayed)).toBe(true)
+  await page.getByLabel('Personal available cash').fill('5000')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('HOLD')
+  await page.waitForTimeout(2500)
+  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('HOLD')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A recorded holdings change is a new context: confirmed cash no longer
+// describes the positions, so it is cleared with a reason and the next
+// guidance goes out unfunded.
+test('a recorded holdings change invalidates confirmed cash with a reason', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let stored = [{ ticker: 'AAPL', shares: 60, entry_price: 91.25, entry_date: '2026-08-28' }]
+  let writes = 0
+  await page.route('**/desk/holdings', route => {
+    if (route.request().method() === 'PUT') { stored = route.request().postDataJSON(); writes += 1 }
+    return route.fulfill({ json: { holdings: stored } })
+  })
+  const mineBodies: Array<Record<string, unknown>> = []
+  await page.route('**/desk/mine*', route => {
+    const body = route.request().postDataJSON() ?? {}
+    mineBodies.push(body)
+    return route.fulfill({ json: mineAnswer(holdDecision('No funded cash'), [aaplRow]) })
+  })
+  await page.goto('/#desk')
+  await page.getByLabel('Personal account equity').fill('200000')
+  await page.getByLabel('Personal available cash').fill('5000')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $5,000')
+  const before = mineBodies.length
+  await page.getByRole('button', { name: 'edit my positions' }).click()
+  await page.getByPlaceholder(/paste one line per position/).fill('AAPL 65 91.25 2026-08-28')
+  await page.getByRole('button', { name: 'add pasted lines' }).click()
+  await page.getByRole('button', { name: 'save', exact: true }).click()
+  await expect(page.getByLabel('Available cash status')).toContainText('Available cash was reset because your positions changed. Confirm it again to fund new buys.')
+  await expect(page.getByLabel('Personal available cash')).toHaveValue('')
+  expect(writes).toBe(1)
+  expect(stored[0].shares).toBe(65)
+  await expect.poll(() => mineBodies.length).toBeGreaterThan(before)
+  expect(mineBodies[mineBodies.length - 1].available_cash).toBeUndefined()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Confirming personal cash never writes to the paper account: the paper and
+// holdings channels stay read-only while the personal figures travel only to
+// the desk/mine channel.
+test('confirming personal cash never writes to the paper account', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const paperRequests: string[] = []
+  page.on('request', request => {
+    if (request.url().includes('/desk/paper') || request.url().includes('/desk/holdings')) {
+      paperRequests.push(`${request.method()} ${request.url()}`)
+    }
+  })
+  const mineBodies: Array<Record<string, unknown>> = []
+  await page.route('**/desk/mine*', route => {
+    const body = route.request().postDataJSON() ?? {}
+    mineBodies.push(body)
+    return route.fulfill({ json: mineAnswer(holdDecision('No funded cash')) })
+  })
+  await page.goto('/#desk')
+  await page.getByLabel('Personal account equity').fill('200000')
+  await page.getByLabel('Personal available cash').fill('5000')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $5,000; buys can be funded up to this budget.')
+  await expect.poll(() => mineBodies.some(b => b.equity === 200000 && b.available_cash === 5000)).toBe(true)
+  expect(paperRequests.length).toBeGreaterThan(0)
+  expect(paperRequests.every(r => r.startsWith('GET '))).toBe(true)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Confirmed cash is session-memory only: a fresh load of the desk - what a
+// different account gets, since the app remounts on a user change - starts
+// unknown again, and the figures never appear in any URL.
+test('confirmed cash is session-memory and never leaks into a URL', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const mineUrls: string[] = []
+  await page.route('**/api/v1/conversations/**', route => route.fulfill({ json: { messages: [], conversations: [] } }))
+  await page.route('**/desk/mine*', route => {
+    mineUrls.push(route.request().url())
+    return route.fulfill({ json: mineAnswer(holdDecision('No funded cash')) })
+  })
+  await page.goto('/#desk')
+  await page.getByLabel('Personal account equity').fill('200000')
+  await page.getByLabel('Personal available cash').fill('5000')
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $5,000')
+  await page.reload()
+  await expect(page.getByLabel('Personal account equity')).toHaveValue('100000')
+  await expect(page.getByLabel('Personal available cash')).toHaveValue('')
+  await expect(page.getByText('Cash unknown; buys stay unfunded until you confirm it.')).toBeVisible()
+  expect(mineUrls.every(url => !url.includes('equity') && !url.includes('available_cash') && !url.includes('5000') && !url.includes('200000'))).toBe(true)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })

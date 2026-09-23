@@ -18,6 +18,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import Path as PathParam
+from pydantic import BaseModel, field_validator, model_validator
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
@@ -474,27 +475,73 @@ async def desk_intraday(user_id: UserId) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+# A person's confirmed account figures for the personal desk read. The body
+# is the only channel: account figures are never carried in a URL. `equity`
+# must be a finite positive number and `available_cash`, when given, a finite
+# nonnegative number no larger than equity. Booleans are refused because
+# Pydantic would otherwise coerce `true` to 1.0 and `false` to 0.0 and treat
+# them as dollars; empty/invalid cash means "unknown" and the caller keeps
+# buys gated.
+class DeskMineInput(BaseModel):
+    equity: float
+    available_cash: float | None = None
+
+    # Reject booleans before dollar amounts are coerced to floats.
+    @field_validator("equity", mode="before")
+    @classmethod
+    def _equity_reject_boolean(cls, value):
+        """Refuse a boolean where a dollar figure belongs."""
+        if isinstance(value, bool):
+            raise ValueError("Equity must be a number, not a boolean")
+        return value
+
+    # Preserve unknown cash while rejecting boolean dollar amounts.
+    @field_validator("available_cash", mode="before")
+    @classmethod
+    def _cash_reject_boolean(cls, value):
+        """Refuse a boolean where a dollar figure belongs."""
+        if value is not None and isinstance(value, bool):
+            raise ValueError("Available cash must be a number, not a boolean")
+        return value
+
+    # Require an equity value that can size the personal account.
+    @field_validator("equity")
+    @classmethod
+    def _equity_finite_positive(cls, value):
+        """Reject a nonfinite or nonpositive equity figure."""
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError("Equity must be finite and greater than zero")
+        return value
+
+    # Bound buys only with a finite nonnegative cash figure.
+    @field_validator("available_cash")
+    @classmethod
+    def _cash_finite_nonnegative(cls, value):
+        """Reject a nonfinite or negative cash figure; unknown stays None."""
+        if value is not None and (not math.isfinite(value) or value < 0):
+            raise ValueError("Available cash must be finite and nonnegative")
+        return value
+
+    # Reject contradictory cash and equity values for this account.
+    @model_validator(mode="after")
+    def _cash_within_equity(self):
+        """Reject a cash figure that exceeds the account equity."""
+        if self.available_cash is not None and self.available_cash > self.equity:
+            raise ValueError("Available cash cannot exceed account equity")
+        return self
+
+
 # The board against the person's own holdings at the equity given: the
 # latest record's targets and levels, the live candle where the feed has
 # one, and the person's entry beside each name they hold. Optional personal
 # cash bounds recommendations for this read without changing either account.
-@router.get("/desk/mine")
-async def desk_mine(
-    user_id: UserId,
-    equity: float = Query(..., gt=0),
-    available_cash: float | None = Query(None, ge=0),
+# The heavy read lives in one shared helper so GET (backward compatible) and
+# POST (the channel the page uses) answer identically without duplicating
+# business logic; the account figures are validated before any evidence is
+# collected.
+async def _desk_mine_payload(
+    user_id: str, equity: float, available_cash: float | None
 ) -> dict[str, object]:
-    """Return action rows computed against the saved holdings."""
-    _operator_only(user_id)
-    if not math.isfinite(equity):
-        raise HTTPException(status_code=422, detail="Equity must be finite")
-    if available_cash is not None and (
-        not math.isfinite(available_cash) or available_cash > equity
-    ):
-        raise HTTPException(
-            status_code=422,
-            detail="Available cash must be finite and no greater than equity",
-        )
     latest, _previous = deskrecord.latest_pair(_root())
     rows = holdings.load(_root())
     if latest is None:
@@ -533,7 +580,9 @@ async def desk_mine(
                 if read.get("band_z") is not None
             }
         except Exception as exc:  # noqa: BLE001 - the plan stands without it
-            print(f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})")
+            print(
+                f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})"
+            )
     decisions = decision_view.build(
         latest,
         rows,
@@ -616,6 +665,39 @@ async def desk_mine(
             {"as_of": as_of, "quotes": quotes}, set(technical) | set(value)
         ),
     }
+
+
+# The historical channel, kept so a caller that cannot send a body still gets
+# the personal board. Account figures arrive as query parameters here and are
+# validated exactly as the body is, before any evidence is collected.
+@router.get("/desk/mine")
+async def desk_mine(
+    user_id: UserId,
+    equity: float = Query(..., gt=0),
+    available_cash: float | None = Query(None, ge=0),
+) -> dict[str, object]:
+    """Return action rows computed against the saved holdings."""
+    _operator_only(user_id)
+    if not math.isfinite(equity):
+        raise HTTPException(status_code=422, detail="Equity must be finite")
+    if available_cash is not None and (
+        not math.isfinite(available_cash) or available_cash > equity
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="Available cash must be finite and no greater than equity",
+        )
+    return await _desk_mine_payload(user_id, equity, available_cash)
+
+
+# The channel the page uses: the confirmed personal account figures travel in
+# the request body, never in a URL, and are validated by the body model before
+# the shared read runs.
+@router.post("/desk/mine")
+async def desk_mine_post(user_id: UserId, inputs: DeskMineInput) -> dict[str, object]:
+    """Return action rows computed against the saved holdings."""
+    _operator_only(user_id)
+    return await _desk_mine_payload(user_id, inputs.equity, inputs.available_cash)
 
 
 # Preview the entire buy budget without persisting cash or placing orders.
@@ -787,14 +869,17 @@ async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:
 # position in the band. Names the desk does not want to hold at all are not
 # entries and are left out.
 @router.get("/desk/entries")
-async def desk_entries(
-    user_id: UserId, grades: str = "A+,A"
-) -> dict[str, object]:
+async def desk_entries(user_id: UserId, grades: str = "A+,A") -> dict[str, object]:
     """Return the graded names ranked by how good an entry they are now."""
     _operator_only(user_id)
     latest, _previous = deskrecord.latest_pair(_root())
     if latest is None:
-        return {"user_id": user_id, "session": None, "rows": [], "reason": "no decision on file"}
+        return {
+            "user_id": user_id,
+            "session": None,
+            "rows": [],
+            "reason": "no decision on file",
+        }
     wanted = {g.strip() for g in grades.split(",") if g.strip()}
     snap = _live_snapshot() or {}
     quoted = snap.get("quotes") or {}
@@ -830,7 +915,9 @@ async def desk_entries(
             live_technical.entry_now, MarketStore(_root()), found
         )
     except Exception as exc:  # noqa: BLE001 - the board stands without this
-        raise HTTPException(status_code=503, detail=f"entry read unavailable: {exc}") from exc
+        raise HTTPException(
+            status_code=503, detail=f"entry read unavailable: {exc}"
+        ) from exc
 
     # Breakout first, because that is the trigger the book now acts on. The
     # paper book's mid-cycle entry takes the upper tail only: the dip tail
@@ -875,7 +962,11 @@ async def desk_entries(
         # What each trigger was worth when it was measured, so the page can
         # say it rather than implying an entry is free money.
         "edges": {
-            "dip": {"horizon_sessions": 5, "excess": 0.012, "with_basket_falling": 0.021},
+            "dip": {
+                "horizon_sessions": 5,
+                "excess": 0.012,
+                "with_basket_falling": 0.021,
+            },
             "breakout": {"horizon_sessions": 20, "excess": 0.013},
         },
     }

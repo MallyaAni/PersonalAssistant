@@ -183,3 +183,183 @@ async def test_personal_http_rejects_another_account(personal_context):
         )
     assert response.status_code == 403
     assert holdings.holdings_path(root).read_bytes() == before_holdings
+
+
+# POST /desk/mine is the page's channel: the confirmed account figures travel
+# in the body, and it must answer identically to the backward-compatible GET.
+# The router's method-based authorization requires write scope for any POST,
+# so these requests carry a write-capable token rather than the read-only one
+# the GET-only tests use.
+def post_auth() -> dict[str, str]:
+    token = issue_user_token("desk_user", scopes=["memory:write"])
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"equity": 100000},
+        {"equity": 100000, "available_cash": 0},
+        {"equity": 100000, "available_cash": 1000},
+        {"equity": 250000, "available_cash": 50000},
+    ],
+)
+async def test_personal_http_post_matches_get(personal_context, body):
+    _, _, _, root, auth = personal_context
+    before_holdings = holdings.holdings_path(root).read_bytes()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=auth
+    ) as client:
+        get_response = await client.get(
+            "/api/v1/market/desk_user/desk/mine",
+            params={
+                "equity": body["equity"],
+                **(
+                    {"available_cash": body["available_cash"]}
+                    if body.get("available_cash") is not None
+                    else {}
+                ),
+            },
+        )
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=post_auth()
+    ) as client:
+        post_response = await client.post(
+            "/api/v1/market/desk_user/desk/mine", json=body
+        )
+    assert get_response.status_code == post_response.status_code == 200
+    assert post_response.json()["decisions"] == get_response.json()["decisions"]
+    assert post_response.json()["rows"] == get_response.json()["rows"]
+    assert holdings.holdings_path(root).read_bytes() == before_holdings
+
+
+# POST with no cash figure is the same unknown-cash state as the GET: no
+# fabricated funding, so a buy cannot claim cash it was never given.
+@pytest.mark.asyncio
+async def test_personal_http_post_unknown_cash_keeps_buys_gated(personal_context):
+    _, _, _, root, _ = personal_context
+    before_holdings = holdings.holdings_path(root).read_bytes()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=post_auth()
+    ) as client:
+        response = await client.post(
+            "/api/v1/market/desk_user/desk/mine", json={"equity": 100000}
+        )
+    assert response.status_code == 200
+    row = response.json()["decisions"]["rows"]["S11"]
+    assert row["strategy_action"] == "Buy"
+    assert row["action"] == "Hold"
+    assert not row["move_weight"]
+    assert row["executable"] is False
+    assert holdings.holdings_path(root).read_bytes() == before_holdings
+
+
+# A confirmed zero is a valid known cash figure (buys stay unfunded); a
+# confirmed positive figure funds buys up to that budget. Neither is persisted.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("cash", "expect_buy"), [(0, False), (1000, True)])
+async def test_personal_http_post_confirmed_cash_budget(
+    personal_context, cash, expect_buy
+):
+    record, _, _, root, _ = personal_context
+    before_record = deepcopy(record)
+    before_holdings = holdings.holdings_path(root).read_bytes()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=post_auth()
+    ) as client:
+        response = await client.post(
+            "/api/v1/market/desk_user/desk/mine",
+            json={"equity": 100000, "available_cash": cash},
+        )
+    assert response.status_code == 200, response.text
+    rows = response.json()["decisions"]["rows"]
+    assert rows["S11"]["action"] == ("Buy" if expect_buy else "Hold")
+    assert rows["S11"]["executable"] is expect_buy
+    assert record == before_record
+    assert holdings.holdings_path(root).read_bytes() == before_holdings
+
+
+# The body is validated before any evidence is collected: invalid figures
+# (including booleans, which Pydantic would otherwise coerce to 1.0/0.0) are
+# refused without touching holdings or crossing the quote boundary.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"equity": 0},
+        {"equity": -5},
+        {"equity": 0.0},
+        {"equity": True},
+        {"equity": 100000, "available_cash": -1},
+        {"equity": 100000, "available_cash": 100001},
+        {"equity": 100000, "available_cash": True},
+        {"equity": 100000, "available_cash": False},
+        {"equity": "not-a-number"},
+        {"equity": 100000, "available_cash": "not-a-number"},
+    ],
+)
+async def test_personal_http_post_rejects_invalid_body(
+    personal_context, monkeypatch, body
+):
+    _, _, _, root, _ = personal_context
+    before_holdings = holdings.holdings_path(root).read_bytes()
+
+    # Invalid request inputs must never cross the external quote boundary.
+    def unexpected_fetch(*args, **kwargs):
+        pytest.fail("Invalid body reached market evidence collection")
+
+    monkeypatch.setattr(execution_quotes, "fetch", unexpected_fetch)
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=post_auth()
+    ) as client:
+        response = await client.post("/api/v1/market/desk_user/desk/mine", json=body)
+    assert response.status_code == 422
+    assert holdings.holdings_path(root).read_bytes() == before_holdings
+
+
+# Nonfinite figures are rejected by the body model as invalid account inputs.
+# They travel as strings, the way a hostile or malformed client would send
+# them ("NaN"/"Infinity"), because a raw NaN float in the body makes
+# FastAPI's 422 error response itself unserializable - the same reason the
+# GET tests send these figures as query-string text.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"equity": "NaN"},
+        {"equity": "Infinity"},
+        {"equity": "-Infinity"},
+        {"equity": "1e999"},
+        {"equity": 100000, "available_cash": "NaN"},
+        {"equity": 100000, "available_cash": "Infinity"},
+        {"equity": 100000, "available_cash": "-Infinity"},
+    ],
+)
+async def test_personal_http_post_rejects_nonfinite_body(personal_context, body):
+    _, _, _, root, _ = personal_context
+    before_holdings = holdings.holdings_path(root).read_bytes()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=post_auth()
+    ) as client:
+        response = await client.post("/api/v1/market/desk_user/desk/mine", json=body)
+    assert response.status_code == 422
+    assert holdings.holdings_path(root).read_bytes() == before_holdings
+
+
+# The POST route keeps the same operator-only ownership boundary.
+@pytest.mark.asyncio
+async def test_personal_http_post_rejects_another_account(personal_context):
+    _, _, _, root, _ = personal_context
+    before_holdings = holdings.holdings_path(root).read_bytes()
+    token = issue_user_token("someone_else", scopes=["memory:write"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        response = await client.post(
+            "/api/v1/market/desk_user/desk/mine", json={"equity": 100000}
+        )
+    assert response.status_code == 403
+    assert holdings.holdings_path(root).read_bytes() == before_holdings

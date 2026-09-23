@@ -2426,9 +2426,21 @@ export const getDeskFundingPreview = async (userId: string, equity: number, avai
 };
 
 // Preserve the evidence deadlines so an open page can expire an intraday grade.
-export const getDeskMine = async (userId: string, equity: number): Promise<DeskMine> => {
+// The confirmed personal account figures travel in the request body, never in
+// the URL; `availableCash` is optional because an empty/unknown cash figure
+// must keep buys gated rather than be fabricated from equity or the paper
+// account. A null/undefined cash value is sent as no cash at all.
+export const getDeskMine = async (userId: string, equity: number, availableCash?: number | null): Promise<DeskMine> => {
   const response = await authenticatedFetch(
-    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/mine?equity=${encodeURIComponent(equity)}`,
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/mine`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        equity,
+        ...(availableCash === null || availableCash === undefined ? {} : { available_cash: availableCash }),
+      }),
+    },
   );
   if (!response.ok) return { rows: [], grades_live: {} };
   const data = (await response.json()) as Partial<DeskMine>;
