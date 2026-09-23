@@ -46,14 +46,16 @@ def test_company_cap_excess_inside_the_band_is_no_trade():
 
 
 # A company more than half a share above its cap is trimmed by the nearest
-# whole share even when no portfolio-wide constraint binds.
+# whole share even when no portfolio-wide constraint binds: 16 shares at 100
+# of a 10000 account against the 15-share cap, the share worth more than the
+# minimum trade.
 def test_company_cap_excess_past_the_band_is_trimmed():
     plan = plan_funded(
         _decision({"AAA": 0.15}),
-        held={"AAA": 151.0},
+        held={"AAA": 16.0},
         prices={"AAA": 100.0},
-        equity=100000.0,
-        cash=84900.0,
+        equity=10000.0,
+        cash=8400.0,
         whole_shares=True,
     )
     assert [(o.symbol, o.side, o.qty) for o in plan.orders] == [("AAA", "sell", 1)]
@@ -91,7 +93,10 @@ def _risk_cut(desired_weights: dict[str, float]) -> AllocationDecision:
 
 
 # ---------------------------------------------------------------------------
-# Whole-share sells round to nearest inside a half-share no-trade band.
+# Whole-share sells round to nearest inside a half-share no-trade band. These
+# cases switch the min-trade threshold off (`min_trade=0.0`) so only the
+# rounding is under test; the threshold has its own tests in
+# test_funded_execution_churn.
 # ---------------------------------------------------------------------------
 
 
@@ -108,6 +113,7 @@ def test_tiny_risk_cut_inside_the_band_is_no_trade():
         equity=10000.0,
         cash=9700.0,
         whole_shares=True,
+        min_trade=0.0,
     )
     assert plan.orders == ()
     assert plan.blocked == ()
@@ -134,6 +140,7 @@ def test_fractional_risk_cuts_round_to_the_nearest_whole_share(cut, expected):
         equity=100000.0,
         cash=0.0,
         whole_shares=True,
+        min_trade=0.0,
     )
     sells = [(o.symbol, o.qty) for o in plan.orders if o.side == "sell"]
     assert sells == ([("AAA", expected)] if expected else [])
@@ -165,6 +172,7 @@ def test_risk_cut_rounding_never_exceeds_held(
         equity=equity,
         cash=equity - held_qty * price,
         whole_shares=True,
+        min_trade=0.0,
     )
     sells = [(o.symbol, o.qty) for o in plan.orders if o.side == "sell"]
     assert sells == ([("AAA", expected_sell)] if expected_sell else [])
@@ -201,6 +209,7 @@ def test_rebalance_sell_inside_the_band_is_reported_not_blocked():
         equity=100000.0,
         cash=0.0,
         whole_shares=True,
+        min_trade=0.0,
     )
     assert not any(o.side == "sell" for o in plan.orders)
     assert plan.blocked == ()
@@ -357,6 +366,7 @@ def test_continuous_path_keeps_fractional_cuts_exact():
         equity=10000.0,
         cash=9700.0,
         whole_shares=False,
+        min_trade=0.0,
     )
     sells = [o for o in plan.orders if o.side == "sell"]
     assert [(o.symbol, o.qty) for o in sells] == [("AAA", pytest.approx(0.4))]

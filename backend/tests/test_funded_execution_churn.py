@@ -15,11 +15,13 @@ import numpy as np
 import pytest
 
 from backend.agents.trading.desk.allocation import (
+    BINDING_EVENT,
     BINDING_NONE,
     BINDING_VOL,
     AllocationDecision,
 )
 from backend.agents.trading.desk.funded_execution import plan_funded
+from backend.agents.trading.desk.planner import MIN_TRADE
 
 COST_BPS = 10.0
 COST = COST_BPS / 1e4
@@ -203,3 +205,150 @@ def test_a_full_exit_still_sells_every_whole_share_held():
     )
     assert [(o.symbol, o.side, o.qty) for o in plan.orders] == [("AAA", "sell", 3)]
     assert any("fractional residual" in b for b in plan.blocked)
+
+
+# ---------------------------------------------------------------------------
+# One min-trade threshold on both sides.
+# ---------------------------------------------------------------------------
+
+
+# A constant 10% target of a 100000 account with the holding drifted by a
+# notional inside the 0.5% minimum trade, on either side, is no order: the
+# sell side used to have no threshold at all, so the book was trimmed on every
+# small up-drift and sat below target while turning over.
+@pytest.mark.parametrize("drift", [0.0, 100.0, 300.0, 499.0, -100.0, -300.0, -499.0])
+def test_small_drift_on_either_side_is_no_order(drift):
+    equity = 100_000.0
+    held_qty = (10_000.0 + drift) / 100.0
+    plan = plan_funded(
+        _decision({"AAA": 0.1}),
+        held={"AAA": held_qty},
+        prices={"AAA": 100.0},
+        equity=equity,
+        cash=equity - held_qty * 100.0,
+        whole_shares=False,
+    )
+    assert plan.orders == ()
+    assert not plan.risk_cut
+    if drift > 0:
+        assert any("AAA: sell below min trade" in m for m in plan.missing)
+    elif drift < 0:
+        assert any("AAA: buy below min trade" in m for m in plan.missing)
+
+
+# Once the drift clears the threshold on either side the order is the exact
+# continuous gap - the threshold is the same number for a sell and a buy.
+@pytest.mark.parametrize(("drift", "side"), [(501.0, "sell"), (-501.0, "buy")])
+def test_drift_past_the_threshold_trades_on_either_side(drift, side):
+    equity = 100_000.0
+    held_qty = (10_000.0 + drift) / 100.0
+    plan = plan_funded(
+        _decision({"AAA": 0.1}),
+        held={"AAA": held_qty},
+        prices={"AAA": 100.0},
+        equity=equity,
+        cash=equity - held_qty * 100.0,
+        whole_shares=False,
+    )
+    assert [(o.symbol, o.side) for o in plan.orders] == [("AAA", side)]
+    assert plan.orders[0].qty == pytest.approx(abs(drift) / 100.0)
+    assert MIN_TRADE * equity == 500.0
+
+
+# Walking the continuous planner with a slowly drifting price against a
+# constant target: no order at all until the drift has carried the holding's
+# notional past the threshold, and then one trade that resets the gap.
+def test_slow_drift_trades_only_when_the_threshold_is_crossed():
+    held = {"AAA": 100.0}
+    cash = 90_000.0
+    traded_at = []
+    for t in range(1, 40):
+        price = 100.0 * (1.0 + 0.002 * t)
+        nav = cash + held["AAA"] * price
+        plan = plan_funded(
+            _decision({"AAA": 0.1}),
+            held,
+            {"AAA": price},
+            nav,
+            cash,
+            whole_shares=False,
+        )
+        if plan.orders:
+            traded_at.append(t)
+        held, cash = _fill(held, cash, plan.orders, {"AAA": price})
+    # The 10% holding gains 0.2% of its value a session against a 0.5%
+    # threshold of the account, so the first trim needs the position to be
+    # about 5% of the account over target: no trades for the first sessions.
+    assert traded_at
+    assert traded_at[0] > 5
+    assert all(b - a > 1 for a, b in zip(traded_at, traded_at[1:], strict=False))
+
+
+# A full exit executes whatever its size: a 300-dollar position the decision
+# no longer wants is sold, not held below the threshold forever.
+def test_a_full_exit_is_never_suppressed_by_the_threshold():
+    plan = plan_funded(
+        _decision({"BBB": 0.1}),
+        held={"AAA": 3.0, "BBB": 100.0},
+        prices={"AAA": 100.0, "BBB": 100.0},
+        equity=100_000.0,
+        cash=89_700.0,
+        whole_shares=False,
+    )
+    sells = [(o.symbol, o.qty) for o in plan.orders if o.side == "sell"]
+    assert sells == [("AAA", 3.0)]
+
+
+# A genuine risk cut - the event cap reduced the ceiling below what is held -
+# executes every name's small reduction regardless of the threshold: each
+# name sells 0.3% of the account, under the 0.5% threshold, but the cut as a
+# whole took the ceiling 0.6% below the held exposure.
+def test_a_genuine_risk_cut_is_never_suppressed_by_the_threshold():
+    equity = 100_000.0
+    plan = plan_funded(
+        _decision({"AAA": 0.147, "BBB": 0.147}, binding=BINDING_EVENT),
+        held={"AAA": 150.0, "BBB": 150.0},
+        prices={"AAA": 100.0, "BBB": 100.0},
+        equity=equity,
+        cash=70_000.0,
+        whole_shares=False,
+    )
+    assert plan.risk_cut
+    sells = {o.symbol: o.qty for o in plan.orders if o.side == "sell"}
+    assert sells == {"AAA": pytest.approx(3.0), "BBB": pytest.approx(3.0)}
+
+
+# A binding constraint's name alone is not a risk cut. The budget binds on a
+# day the book already sits at the scaled level and has only drifted, so the
+# small sell it wants is drift and stays under the threshold.
+def test_a_binding_name_without_a_reduction_is_not_a_risk_cut():
+    equity = 100_000.0
+    plan = plan_funded(
+        _decision({"AAA": 0.1, "BBB": 0.1}, binding=BINDING_VOL),
+        held={"AAA": 103.0, "BBB": 98.0},
+        prices={"AAA": 100.0, "BBB": 100.0},
+        equity=equity,
+        cash=79_900.0,
+        whole_shares=False,
+    )
+    assert not plan.risk_cut
+    assert plan.orders == ()
+    assert any("AAA: sell below min trade" in m for m in plan.missing)
+    assert any("BBB: buy below min trade" in m for m in plan.missing)
+
+
+# The same binding name with the held exposure genuinely above the ceiling is
+# a risk cut, and the same small sell then goes.
+def test_a_binding_name_with_a_reduction_is_a_risk_cut():
+    equity = 100_000.0
+    plan = plan_funded(
+        _decision({"AAA": 0.1, "BBB": 0.1}, binding=BINDING_VOL),
+        held={"AAA": 103.0, "BBB": 103.0},
+        prices={"AAA": 100.0, "BBB": 100.0},
+        equity=equity,
+        cash=79_400.0,
+        whole_shares=False,
+    )
+    assert plan.risk_cut
+    sells = {o.symbol: o.qty for o in plan.orders if o.side == "sell"}
+    assert sells == {"AAA": pytest.approx(3.0), "BBB": pytest.approx(3.0)}
