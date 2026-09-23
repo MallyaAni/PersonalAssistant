@@ -4,5 +4,11 @@
   "to": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
   "declared": "2026-09-16",
   "reason": "Revision 4353db1c changed levels_pit.point_in_time_levels (filed share counts on the price's split basis, for the value analyst) and this revision added the migration path to opportunity_shadow; trailing_levels, the shadow's only input from levels_pit, and the model, features, execution and calendar are unchanged. The ledger holds the first observation (sequence 1, 2026-09-15) and its pending fills."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "declared": "2026-09-23",
+  "reason": "Removed an unused EDGAR filing-index helper and added an early-close lookup to calendar. Neither changes the shadow model, its existing 2026-09-15..16 observations, price inputs, target construction or funded ledger. Future early-close handling may change calendar-sensitive reads, so the successor identity is explicit; archived transitions are not rewritten."
  }
 ]

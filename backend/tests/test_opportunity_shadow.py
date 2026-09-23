@@ -213,9 +213,8 @@ def test_a_declared_migration_continues_the_ledger(tmp_path):
         )
 
 
-# The production ledger's identity is declared to continue into exactly the
-# identity the current code computes, so the deployed nightly continues it;
-# any later change to a hashed file needs its own declaration.
+# The latest archived ledger identity must continue into exactly the current
+# source identity, without rewriting its observations or accepting strangers.
 def test_the_deployed_ledger_continues_into_the_current_identity():
-    deployed = "72162f008c6cdd54f04dffef3d40b4b48cb88610468bfc431b27392ab4b2cdd8"
+    deployed = "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f"
     assert shadow.migration(deployed, shadow.identity(shadow.BUNDLE)) is not None
