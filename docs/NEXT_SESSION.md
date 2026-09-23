@@ -1,5 +1,19 @@
 # Next session
 
+## 2026-09-23 — Turnover review integrated; only dashboard worker active
+
+Checkpoint175cbd5:11 owned turnover acceptance cases PASS, Ruff/format PASS.
+Log /tmp/codex-turnover-integrated-20260923.log. Root corrected the worker's
+fill fixture (it deducted two purchases but updated only one holding), and
+removed an unsupported three-session portfolio replay claim from the report.
+Source remains unchanged by this review. Read intraday-turnover-review report.
+Verified per-session signal dedupe and current-cash bounds do NOT establish low
+portfolio turnover: repeated later-session entries and after-fill additions have
+no separate holding-period/cadence constraint. Do not silently add/tune a cooldown
+or claim candidate superiority. Role is integrated/root-owned, never recopy.
+Only dashboard1423440 remains active; its browser stale-BUY case is still under
+correction. Wait final+exit and independently reproduce behavior before release.
+
 ## 2026-09-23 — First fixed diagnostic: insufficient adoption evidence
 
 Integrated source98bd6c10aae552b76cdd4ebaeed9a6787b2dd094:86 targeted checks PASS
