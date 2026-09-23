@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-09-23 — Claude review of the GPT trading integration; fixes on a branch (NOT DEPLOYED)
+
+Branch `claude/review-fixes-2026-09-23` (from `0fab65c4`). Full review in
+`docs/research/claude-review-2026-09-23/REVIEW.md`; the operator's green/red-day
+rotation idea measured in `day-rotation-2026-09-23.md` beside it (no causal
+daily signal; ~200 switches a year cost the whole return; the oracle is worth
+113% a year, which is why it is not available). Independent next-open backtest
+harness and Yahoo bars in the same folder.
+
+Verdict: no look-ahead in `535bda22..30afe7db`; `vol`/`vol_trend` not adoptable
+as built (SPY-level volatility budget halves CAGR, below QQQ on return); none of
+it was wired live. Equal weight of the whole 94-name book (38% a year since 2016)
+beats every selection and sizing rule tested: the universe is the "alpha".
+
+Fixed on the branch, each with tests (1,283 passed in the market/trading suites,
+9 skipped, on the 3.12 venv):
+- Personal board issues one entry per name per session and honours a pending buy
+  (`decision_view`, `holdings.entries_issued.json`, `/desk/mine pending_buys`).
+- Live 15-minute quotes refetch when the cached bar is behind the expected one.
+- Early-close sessions read from the calendar in intraday entry/replay/source.
+- Funded path: whole-share nearest rounding with a half-share no-trade band (zero
+  ping-pong over 250 sessions), one min-trade threshold on both sides, "risk
+  reduction"/priority only on a genuine cut, `vol_trend` trend ceiling with
+  hysteresis (0.97/1.02), explicit `budget_reference`/`budget_multiplier`.
+- Incumbent: deferred buy leg (unpaid rebalance/rotation buys retried next
+  session from cash; simulator parity under `LIVE_POLICY`), B-graded names no
+  longer take book slots, `actions.action_for` holds an A name with no target,
+  contradicting comments corrected.
+- Simulator: opt-in `trend_brake` overlay (QQQ 200-session, hysteresis, halve to
+  cash) exposed as `SimResult.risk_off` for a named shadow.
+
+Strategy-affecting changes (deferred buy leg, B-grade slots, thresholds) are
+NOT deployed and should run as named shadows on untouched sessions per
+`TRADING_ROADMAP.md` before adoption. UNVERIFIED: deployment, broker execution,
+the frontend does not yet send `pending_buys`.
+
 ## 2026-09-23 — Repeated parallel timeout; bounded gate concurrency
 
 Second full attempt again ended99pass1fail, same two-reminders wall-clock
