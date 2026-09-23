@@ -774,7 +774,10 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     changes - a cut on entering risk_off, a restoration from cash on leaving
     it, both next-open orders the way an FOMC change is - and at the normal
     rebalances; between those the held weights already carry the scale, so
-    nothing is nudged daily. `funded_allocation` has its own trend ceiling
+    nothing is nudged daily. While risk_off, mid-cycle entries and deferred
+    buy retries are paused (rotation sells still go through), because the
+    cash the brake released is not a buy budget - the live FOMC cycle pauses
+    entries the same way. `funded_allocation` has its own trend ceiling
     and refuses it. Off, the run is byte-identical to what it was, and the
     result's `risk_off` is all False.
     """
@@ -1120,7 +1123,13 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         # leaves it waiting, as the live book does while the event cycle
         # owns the plan.
         carried: dict[str, float] = {}
-        if deferred_buys and not event_changed:
+        # While the brake holds the book down, the cash it released is not
+        # a buy budget: a breakout entry or a deferred retry would put it
+        # straight back to work and undo the cut the brake just made. The
+        # live FOMC cycle pauses entries the same way (`event_execution.plan`
+        # owns the plan for the whole cycle). Sells still go through.
+        braked = brake_path is not None and float(brake_path[t]) < 1.0
+        if deferred_buys and not event_changed and not braked:
             carried, pending_deferred = ({} if rebalanced else pending_deferred), {}
         if live_midcycle and not rebalanced and not event_changed:
             unfunded: dict[str, float] = {}
@@ -1131,13 +1140,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 live_bands,
                 blocked,
                 deferred=carried or None,
-                unfunded=unfunded if deferred_buys else None,
+                unfunded=unfunded if deferred_buys and not braked else None,
             )
-            pending_deferred = unfunded
+            if braked:
+                order = np.minimum(order, book.shares)
+            else:
+                pending_deferred = unfunded
             reason = "shared paper rotation and entry policy"
         elif carried:
             order = _deferred_leg(book, report, t, blocked, carried, order)
-        if deferred_buys and rebalanced and not event_changed:
+        if deferred_buys and rebalanced and not event_changed and not braked:
             pending_deferred = _unpaid_buys(book, order, closes[t])
         buy_prices = opens[t + 1]
         sell_prices = opens[t + 1]

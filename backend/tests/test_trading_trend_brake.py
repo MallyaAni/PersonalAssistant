@@ -242,3 +242,48 @@ def test_the_brake_refuses_the_wrong_inputs():
             brake_scale=0.0,
             benchmark_prices=benchmarks,
         )
+
+
+# While the brake holds the book down, the mid-cycle policy's buys must not
+# spend the cash the cut released, while its sells still go through. The
+# shared policy is stubbed to ask for one buy and one sell every session, so
+# the test reads the brake's own gate rather than the band signal: off, the
+# buy is taken; on and inside the braked window, only the sell is; after the
+# brake lifts, the buy is taken again.
+def test_the_brake_pauses_mid_cycle_buys_but_not_sells(monkeypatch):
+    close = np.full((ROWS, NAMES), 100.0)
+    report = _report(close)
+    asked: list[int] = []
+
+    # A stand-in for the shared rotation-and-entry policy: sell a tenth of
+    # name 0 and buy 0.01 shares of name 2, every mid-cycle session.
+    def _policy(book, _report, t, *_args, **_kwargs):
+        asked.append(t)
+        wanted = book.shares.copy()
+        wanted[0] *= 0.9
+        wanted[2] += 0.01
+        return wanted
+
+    monkeypatch.setattr(simulate, "_live_midcycle", _policy)
+    common = {"use_exits": False, "rebalance": 20, "allocator": _allocation}
+    off = simulate.run(report, **common, **simulate.LIVE_POLICY)
+    on = simulate.run(
+        report,
+        **common,
+        **simulate.LIVE_POLICY,
+        trend_brake=True,
+        benchmark_prices=_benchmarks(report.panel),
+    )
+    assert asked  # the stub was consulted
+    # Off: name 2 is bought on ordinary sessions, so it appears as a trade.
+    assert any(tr.ticker == "N2" for tr in off.trades)
+    # On: inside the braked window no N2 position is opened, but name 0
+    # keeps being trimmed - the invested fraction falls between the cut and
+    # the restoration instead of being refilled from the released cash.
+    opened_n2 = [tr.opened for tr in on.trades if tr.ticker == "N2"]
+    window = {str(d) for d in report.panel.dates[ENTERS + 1 : LEAVES + 1]}
+    assert not (set(opened_n2) & window)
+    assert on.invested[LEAVES - 1] < on.invested[ENTERS + 2]
+    assert on.invested[LEAVES - 1] < 0.5 * off.invested[ENTERS + 2] + 1e-6
+    # After the brake lifts, the buy side of the policy resumes.
+    assert any(o > str(report.panel.dates[LEAVES]) for o in opened_n2)
