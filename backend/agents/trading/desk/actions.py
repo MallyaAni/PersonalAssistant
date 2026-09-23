@@ -76,9 +76,21 @@ def grade_margin(
 
 
 # The action a target and a holding imply.
-def action_for(target: float, held: float) -> str:
+#
+# A held name with no target is a sell only when the paper book would sell
+# it: on a grade below A (the rotation) or an explicit exit (`exiting`,
+# the plan's own sell order). A name still graded A or better with no
+# target is held until the reset - nothing trades on it mid-cycle - so the
+# board says hold rather than telling the operator to sell what the book
+# keeps. Without a grade the old reading stands, for callers that have
+# only the target and the holding.
+def action_for(
+    target: float, held: float, grade: str | None = None, exiting: bool = False
+) -> str:
     """Return buy, add, trim, sell or hold."""
     if target <= 0 and held > 0:
+        if grade in paper.ENTRY_MIN_GRADE and not exiting:
+            return "hold"
         return "sell"
     if target > 0 and held <= 0:
         return "buy"
@@ -130,8 +142,13 @@ def build(
         column = panel.index(ticker)
         target = float(targets.get(ticker, 0.0))
         holding = holdings.get(ticker, Holding(0.0))
-        action = action_for(target, holding.weight)
         grade = report.graded.letter(last, column)
+        # A held name with no target only trades when the plan wrote an
+        # order for it (a sell: the rotation or the reset), and `reasons`
+        # is that plan's orders by name.
+        action = action_for(
+            target, holding.weight, grade=grade, exiting=ticker in reasons
+        )
         votes = float(report.graded.votes[last, column])
         stances = {k: int(v[last, column]) for k, v in report.graded.stances.items()}
         bullish = stances.get("sentiment") == grading.BULLISH
@@ -164,6 +181,8 @@ def build(
                 "leaves_if": (
                     "the grade falls below A at a rebalance"
                     if target > 0
+                    else "the next rebalance, or the grade falls below A first"
+                    if action == "hold" and holding.weight > 0
                     else "already outside the book"
                 ),
                 "high_20": high,
