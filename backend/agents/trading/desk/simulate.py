@@ -72,11 +72,14 @@ LIVE_POLICY: dict[str, bool] = {
     "exit_at_close": True,
     "green_day_skip": True,
     "live_midcycle": True,
+    "deferred_buys": True,
 }
 
 
-# Replay the paper planner's joint rotation and entry orders without share rounding.
-def _live_midcycle(book, report, t, bands, blocked):
+# The session's inputs to the shared paper planner, read from the book and
+# the report the way `market_daily` reads them from the account and the desk.
+def _paper_inputs(book, report, t, blocked):
+    """Return (prices, held, grades, finished, excluded) for session `t`."""
     from backend.agents.trading.desk import paper
 
     panel = report.panel
@@ -98,32 +101,118 @@ def _live_midcycle(book, report, t, bands, blocked):
     finished = {
         s: "grade rotation" for s in held if grades[s] not in paper.ENTRY_MIN_GRADE
     }
+    excluded = {
+        s for j, s in enumerate(panel.tickers) if blocked is not None and blocked[t, j]
+    }
+    return prices, held, grades, finished, excluded
+
+
+# Replay the paper planner's joint rotation and entry orders without share rounding.
+# `deferred`, when given, is the previous session's unpaid buy shares per
+# symbol, retried first from the cash on hand exactly as `paper.plan` does;
+# `unfunded`, when a dict is given, receives tonight's unpaid buy shares.
+def _live_midcycle(book, report, t, bands, blocked, deferred=None, unfunded=None):
+    from backend.agents.trading.desk import paper
+
+    panel = report.panel
+    prices, held, grades, finished, excluded = _paper_inputs(book, report, t, blocked)
     entries = {
         s: float(bands[t, j])
         for j, s in enumerate(panel.tickers)
         if s != panel.benchmark and np.isfinite(bands[t, j])
     }
-    excluded = {
-        s for j, s in enumerate(panel.tickers) if blocked is not None and blocked[t, j]
-    }
-    orders = paper.midcycle_orders(
-        str(panel.dates[t]),
+    equity = book.equity(panel.adj_close[t])
+    session = str(panel.dates[t])
+    retry, _unpaid = paper._fund_buys(
+        paper._deferred_orders(
+            deferred or {},
+            held,
+            prices,
+            equity,
+            grades,
+            finished,
+            excluded,
+            session,
+            paper.PaperState(),
+            whole_shares=False,
+        ),
+        book.cash,
+        prices,
+        whole_shares=False,
+    )
+    spent = sum(o.qty * prices[o.symbol] for o in retry)
+    reserved = dict(held)
+    for order in retry:
+        reserved[order.symbol] = reserved.get(order.symbol, 0.0) + order.qty
+    orders = retry + paper.midcycle_orders(
+        session,
         paper.PaperState(),
-        book.equity(panel.adj_close[t]),
-        held,
+        equity,
+        reserved,
         prices,
         grades,
         finished,
         entries,
         excluded,
-        book.cash,
+        book.cash - spent,
         whole_shares=False,
+        unfunded=unfunded,
     )
     wanted = book.shares.copy()
     for order in orders:
         wanted[panel.index(order.symbol)] += order.qty * (
             1 if order.side == "buy" else -1
         )
+    return wanted
+
+
+# The buy shares a basket asks for beyond the cash on hand, per symbol, the
+# way `paper.bound_orders` scales a rebalance's buys to the cash: sells fill
+# on the following close and pay for nothing tonight.
+def _unpaid_buys(book, order, prices) -> dict[str, float]:
+    """Return {symbol: buy shares the cash on hand cannot pay for}."""
+    priced = np.isfinite(prices) & (prices > 0)
+    buys = np.where(priced, np.maximum(order - book.shares, 0.0), 0.0)
+    requested = float((buys * np.where(priced, prices, 0.0)).sum())
+    if requested <= 0:
+        return {}
+    scale = min(1.0, max(0.0, book.cash) / requested)
+    return {
+        book.tickers[j]: float(buys[j] * (1.0 - scale))
+        for j in np.flatnonzero(buys > 0)
+        if buys[j] * (1.0 - scale) > 1e-12
+    }
+
+
+# The previous session's unpaid remainder, retried on a plain hold session
+# (no `live_midcycle`): the same gates and cap as the paper book, bounded
+# by the cash on hand, added to the shares the book already means to hold.
+def _deferred_leg(book, report, t, blocked, deferred, order) -> np.ndarray:
+    """Return `order` with the retried remainder's shares added."""
+    from backend.agents.trading.desk import paper
+
+    panel = report.panel
+    prices, held, grades, finished, excluded = _paper_inputs(book, report, t, blocked)
+    retry, _unpaid = paper._fund_buys(
+        paper._deferred_orders(
+            deferred,
+            held,
+            prices,
+            book.equity(panel.adj_close[t]),
+            grades,
+            finished,
+            excluded,
+            str(panel.dates[t]),
+            paper.PaperState(),
+            whole_shares=False,
+        ),
+        book.cash,
+        prices,
+        whole_shares=False,
+    )
+    wanted = np.array(order, dtype=float)
+    for o in retry:
+        wanted[panel.index(o.symbol)] += o.qty
     return wanted
 
 
@@ -547,6 +636,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     event_exposure: np.ndarray | None = None,
     event_lifecycle: bool = False,
     live_midcycle: bool = False,
+    deferred_buys: bool = False,
     funded_allocation: bool = False,
     allocation_policy: str = "vol_trend",
     index_eligible: bool = False,
@@ -554,6 +644,14 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     excluded_symbols_by_session: dict | None = None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
+
+    The defaults here are NOT the live configuration. Bare, this runs the
+    exit analyst's between-rebalance exits (`use_exits=True`) and none of
+    the account's execution rules; the live paper book runs no exit overlay
+    and every flag in `LIVE_POLICY`. The published curve is the one
+    `market_daily.curve_block` draws - `use_exits=False`, the live reset
+    cadence, the FOMC lifecycle and `**LIVE_POLICY` - and a measurement
+    meant to describe the account has to be made the same way.
 
     `allocator(report, panel, config, t)` replaces the rule's targets on
     rebalance sessions when given; everything else - fills, costs, the
@@ -599,6 +697,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     rally. Both are the paper account's live behavior since 2026-09-11 and
     are measured here so the change from the old all-at-the-open fills is
     visible.
+
+    `deferred_buys` is the paper book's deferred buy leg, and it needs
+    `exit_at_close`: with buys paid from the cash on hand at the open and
+    sells filled on the following close, a rebalance or rotation whose buys
+    outran the cash left the proceeds idle until the next entry or reset.
+    The unpaid remainder is retried once on the next session, under the
+    mid-cycle entry's own gates (graded A or better, not blocked, inside
+    the name cap, bounded by cash) and then dropped, exactly as
+    `paper.plan` does it. Off, the run is identical to what it was, so the
+    two can be compared.
 
     `funded_allocation` is the optional shared allocation path. When enabled,
     every session is a daily decision, but the stable unscaled stock
@@ -651,6 +759,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             incompatible.append("exit_at_close")
         if live_midcycle:
             incompatible.append("live_midcycle")
+        if deferred_buys:
+            incompatible.append("deferred_buys")
         if dip is not None:
             incompatible.append("dip")
         if exits is not None:
@@ -665,8 +775,17 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             )
         funded_execution.validate_benchmarks(panel, benchmark_prices)
         excluded_map = _excluded_by_session(excluded_symbols_by_session)
+    if deferred_buys and not exit_at_close:
+        # With sells filled at the open their proceeds already pay for the
+        # same session's buys, so there is no idle cash to defer and the
+        # remainder this would record would be one the fill never left.
+        raise ValueError("deferred_buys requires exit_at_close")
 
     live_bands = entry.bollinger_z(panel.adj_close) if live_midcycle else None
+    # The previous session's unpaid buy shares per symbol, when the deferred
+    # leg is on: written on a rebalance or a live mid-cycle plan, consumed by
+    # the very next plan (retried, or superseded by a rebalance), never kept.
+    pending_deferred: dict[str, float] = {}
     # A research overlay changes exposure only when its close-time scale changes.
     # Between rebalances the held weights already contain yesterday's scale;
     # applying the absolute scale again would halve the account every day.
@@ -927,9 +1046,30 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             reason,
         )
         order = book.plan(target, closes[t])
+        # The deferred leg: last session's unpaid remainder is retried on a
+        # plain session and superseded by a rebalance; an event session
+        # leaves it waiting, as the live book does while the event cycle
+        # owns the plan.
+        carried: dict[str, float] = {}
+        if deferred_buys and not event_changed:
+            carried, pending_deferred = ({} if rebalanced else pending_deferred), {}
         if live_midcycle and not rebalanced and not event_changed:
-            order = _live_midcycle(book, report, t, live_bands, blocked)
+            unfunded: dict[str, float] = {}
+            order = _live_midcycle(
+                book,
+                report,
+                t,
+                live_bands,
+                blocked,
+                deferred=carried or None,
+                unfunded=unfunded if deferred_buys else None,
+            )
+            pending_deferred = unfunded
             reason = "shared paper rotation and entry policy"
+        elif carried:
+            order = _deferred_leg(book, report, t, blocked, carried, order)
+        if deferred_buys and rebalanced and not event_changed:
+            pending_deferred = _unpaid_buys(book, order, closes[t])
         buy_prices = opens[t + 1]
         sell_prices = opens[t + 1]
         if exit_at_close and not event_changed:
