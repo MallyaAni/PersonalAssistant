@@ -49,6 +49,7 @@ import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import funded_execution, grading, planner, risk
+from backend.agents.trading.desk import trend_brake as trend_brake_rule
 from backend.market.panel import Panel
 
 REBALANCE = 20
@@ -245,6 +246,10 @@ class SimResult:
     # The optional funded-allocation trace: one entry per decision day, from
     # the real ledger, absent on the incumbent path.
     trace: list[dict] | None = None
+    # The trend brake's state per session, True while it held the book at
+    # `brake_scale`; all False when the brake was off, so a scorecard can
+    # read the shadow back without knowing whether it ran.
+    risk_off: np.ndarray | None = None
 
     # The usual four numbers, from the daily series.
     def stats(self) -> dict[str, float]:
@@ -542,15 +547,34 @@ def _event_path(path: np.ndarray | None, rows: int) -> np.ndarray | None:
 
 
 # Scale fresh targets absolutely and held targets relatively, avoiding repeated cuts.
-def _event_target(target, path, t, rebalanced, previous, reason):
+# `label` names the overlay that moved the ceiling in the trade's reason.
+def _event_target(target, path, t, rebalanced, previous, reason, label="FOMC"):
     if path is None:
         return target, previous, reason, False
     scale = float(path[t])
     target = target * (scale if rebalanced else scale / previous)
     changed = scale != previous
     if changed:
-        reason = "FOMC risk reduction" if scale < previous else "FOMC risk restoration"
+        reason = (
+            f"{label} risk reduction"
+            if scale < previous
+            else f"{label} risk restoration"
+        )
     return target, scale, reason, changed
+
+
+# The one exposure ceiling the incumbent loop applies: the FOMC path and the
+# trend brake's path composed as a per-session minimum, so whichever overlay
+# asks for less exposure on a session is the one that binds. Either alone
+# is passed through unchanged, so a run with one overlay is byte-identical
+# to what it was before the other existed.
+def _ceiling_path(event_exposure, brake_path):
+    """Return the per-session ceiling, or None when neither overlay is on."""
+    if brake_path is None:
+        return event_exposure
+    if event_exposure is None:
+        return brake_path
+    return np.minimum(event_exposure, brake_path)
 
 
 # Fill one event transition and retain only the shares that actually changed hands.
@@ -642,6 +666,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     index_eligible: bool = False,
     benchmark_prices: dict | None = None,
     excluded_symbols_by_session: dict | None = None,
+    trend_brake: bool = False,
+    brake_scale: float = 0.5,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -737,6 +763,20 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     later session and the next scheduled refresh (so a fresh selection cannot
     resurrect it), and a missing grade, a risk cut or text is never an exit.
     With `funded_allocation` False the incumbent path is unchanged.
+
+    `trend_brake` is the opt-in shadow overlay on the incumbent path: the
+    predeclared state machine in `trend_brake.risk_off_path` reads the QQQ
+    history in `benchmark_prices` (required, aligned to the panel's dates)
+    and, while it is risk_off, holds the book at `brake_scale` of what the
+    rules would otherwise hold, the rest in cash. The scale is an absolute
+    ceiling applied where the FOMC path already caps the target, and the
+    two compose as a per-session minimum. It trades only when the state
+    changes - a cut on entering risk_off, a restoration from cash on leaving
+    it, both next-open orders the way an FOMC change is - and at the normal
+    rebalances; between those the held weights already carry the scale, so
+    nothing is nudged daily. `funded_allocation` has its own trend ceiling
+    and refuses it. Off, the run is byte-identical to what it was, and the
+    result's `risk_off` is all False.
     """
     decide = allocator or _targets
     fired, blocked, trend_up, dips = _signals_for(
@@ -769,12 +809,27 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             incompatible.append(
                 "entry_gate/block_overbought/band_dip_buy/trend_gated_exit"
             )
+        if trend_brake:
+            # The shared allocation path carries its own trend ceiling; a
+            # second one on top would measure neither.
+            incompatible.append("trend_brake")
         if incompatible:
             raise ValueError(
                 "funded_allocation cannot be combined with: " + ", ".join(incompatible)
             )
         funded_execution.validate_benchmarks(panel, benchmark_prices)
         excluded_map = _excluded_by_session(excluded_symbols_by_session)
+    # The trend brake's per-session ceiling, decided at each close from the
+    # QQQ history up to that close; None when the brake is off so the
+    # incumbent loop sees exactly the FOMC path it always saw.
+    brake_path = None
+    risk_off = np.zeros(len(panel.dates), dtype=bool)
+    if trend_brake:
+        if not (np.isfinite(brake_scale) and 0 < brake_scale <= 1):
+            raise ValueError("brake_scale must be a finite value in (0, 1]")
+        qqq = trend_brake_rule.aligned_qqq(panel.dates, benchmark_prices)
+        risk_off = trend_brake_rule.risk_off_path(qqq)
+        brake_path = np.where(risk_off, float(brake_scale), 1.0)
     if deferred_buys and not exit_at_close:
         # With sells filled at the open their proceeds already pay for the
         # same session's buys, so there is no idle cash to defer and the
@@ -790,7 +845,12 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     # Between rebalances the held weights already contain yesterday's scale;
     # applying the absolute scale again would halve the account every day.
     event_exposure = _event_path(event_exposure, len(panel.dates))
+    # The FOMC path and the brake's path as one minimum; the lifecycle
+    # below still reads the FOMC path alone, so the brake never defers a
+    # rebalance the way an event window does.
+    ceiling = _ceiling_path(event_exposure, brake_path)
     previous_scale = 1.0
+    previous_brake = 1.0
     event_baseline = None
     event_sold = None
     config = config or risk.BOOK_CONFIG
@@ -1037,13 +1097,22 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         # fill at different prices (the paper account sells on the close
         # and never into a green open since 2026-09-11), so the fill is
         # split by side.
+        # The brake owns the reason when its own scale is what moved since
+        # the last session that reached this point; otherwise the FOMC path
+        # is the overlay that changed the ceiling.
+        label = "FOMC"
+        if brake_path is not None:
+            if float(brake_path[t]) != previous_brake:
+                label = "trend brake"
+            previous_brake = float(brake_path[t])
         target, previous_scale, reason, event_changed = _event_target(
             target,
-            event_exposure,
+            ceiling,
             t,
             rebalanced,
             previous_scale,
             reason,
+            label,
         )
         order = book.plan(target, closes[t])
         # The deferred leg: last session's unpaid remainder is retried on a
@@ -1112,6 +1181,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         book.traded,
         top[start:],
         funded_trace if funded_allocation else None,
+        risk_off[start:],
     )
 
 
