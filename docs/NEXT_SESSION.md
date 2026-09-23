@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-09-23 07:42 UTC — Final bounded wording corrections gated for release
+
+Reviewed remaining RecordStatus, RegimeBanner, WhatChanged and account/header
+data bindings plus backend research note/basis/missing-evidence producers.
+Concrete fixes8ce637b: evening-record lateness no longer claims all quotes and
+account data are old; sizing multiplier no longer asserts actual cash holdings;
+target changes explicitly are recorded differences, not submitted orders.
+Typecheck and8focused browser cases PASS on5177, evidence
+/tmp/codex-final-copy-browser-20260923.log. No backend/strategy changes.
+Remaining limitation is accuracy of future data/provider/model explanations;
+this review cannot certify every dynamic sentence or strategy profitability.
+
+Guarded deploy active /tmp/codex-final-copy-release-20260923.log using
+ANIOS_GATE_WORKERS=1. Script chooses full gate because previous test cleanup
+is in diff; no gates weakened/skipped. Do NOT restart deployment. Current live
+08e236ae until successful marker changes. Deploy checkout only untracked data
+and secrets; preserve them. Read-only proof watcher2206012 is running
+/tmp/watch-final-copy-proof.py 8ce637b, expects actual API/browser plus8fixture
+cases, source hashes/models/postdeploy. Output
+/tmp/codex-final-copy-proof-20260923.json and watch log; not proof until PASS.
+Original launcher may invoke watcher again after deploy; it is read-only, but
+avoid further launches/repeated checks. Once exact release proof passes,
+persist completion and stop scheduled unchanged audits. All workers integrated;
+no new workers, data scoring, model work or strategy adoption authorized here.
+
+
 ## 2026-09-23 06:43 UTC — Wording release verified live; test cleanup integrated
 
 Frontend release08e236ae is LIVE through scripts/deploy.sh, automatic frontend
