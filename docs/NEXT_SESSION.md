@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-09-23 08:38 UTC — Final dashboard release VERIFIED; supervision complete
+
+Live8ce637b486175475aa934c8b27061a6dc2244686, marker8ce637b4, through
+scripts/deploy.sh without bypasses. Unit4373pass31skip, model100pass. Actual
+authenticated API/browser PASS:94personal rows, unknown/zero cash0buys,
+invalid cash422, cross-account403, holdings unchanged, no browser/required
+request errors. All8 final deployed-browser cases PASS3.7s. Postdeploy
+07:57:36Z8ce637b4 ok. Source hashes match; model container IDs/start times
+unchanged. Independently read logs, marker, status and current gateway image:
+sha256:efb497499bd44ef33ca97874f80bb9a4751fcc2e4db4c1a76d21b317875d9d65.
+Evidence /tmp/codex-final-copy-proof-20260923.json (PASS),
+/tmp/codex-final-copy-release-20260923.log and
+/tmp/codex-final-copy-deployed-browser-20260923.log.
+
+Bounded implementation/account/wording work and targeted test cleanup complete.
+Pause completion heartbeat; no recurring audits or redeploys for docs-only HEAD.
+All worker-owned files integrated/root-owned. No personal orders placed.
+Keep15m candidate experimental: no paired evidence supports replacing incumbent.
+Tests establish implemented behavior, not trading profitability or correctness
+of every future provider/model statement. No further work implied by this handoff.
+
+
 ## 2026-09-23 07:42 UTC — Final bounded wording corrections gated for release
 
 Reviewed remaining RecordStatus, RegimeBanner, WhatChanged and account/header
