@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-09-23 23:02 UTC — Recommendation readings and personal fill state reviewed
+
+Candidate checkpoint `f8494501afce133a246f87dd1ce89054475d8207` on
+`codex/trading-evidence-20260923` is **not deployed**. The ticker history now
+shows every saved recommendation reading instead of folding consecutive equal
+states. Each row retains its original grade, suggested allocation, entry state,
+policy identity and bar price. The later stock change is explicitly hindsight,
+not prediction accuracy, a fill or personal profit. The archive currently has
+138 saved intraday decisions dated 2026-09-14..2026-09-23; readings before the
+archive began cannot be reconstructed. The reader still returns its most recent
+200 valid rows and flags older records if that limit is exceeded.
+
+An earlier draft treated viewing a Buy as though a trade had occurred, writing
+an issued-entry file and returning Hold on refresh. That read-side write was
+removed. A repeat read retains Buy; only a recorded same-session fill or an
+explicitly supplied working buy order suppresses another Buy. `last_buy_date`
+records adds to an older holding without replacing its original entry date.
+The dashboard stamps it only after the user records a confirmed fill; it does
+not query Schwab or place an order.
+
+On the exact code checkpoint, **127 focused backend tests and Ruff passed**;
+the full desk browser suite passed **76/76** on the isolated candidate Vite
+source, including every saved timeline row and confirmed buy/add persistence.
+Candidate TypeScript check passed. A container-local
+`npm run build` on the safety checkout could not reach Vite bundling because
+its reused Node modules lacked the arm64 Rolldown optional binding; the
+guarded deployment build remains the required production acceptance path.
+No live strategy was switched, no real orders were placed, and the learned
+ranker/brake remain shadow-only. Full learned-policy backtest/live parity,
+dated fundamental/earnings-tone inputs and the requested 2016–26 comparison
+remain **UNVERIFIED** for the point-in-time reasons below.
+
 ## 2026-09-23 22:31 UTC — Trading candidate reviewed; learned policies remain shadow-only
 
 Isolated branch `codex/trading-evidence-20260923` combines Fables' imported
