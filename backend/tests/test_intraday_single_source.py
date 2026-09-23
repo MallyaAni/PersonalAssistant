@@ -771,3 +771,18 @@ def test_unexpected_symbol_in_page_payload_is_rejected():
     assert parsed.status == UNAVAILABLE
     assert "unexpected symbols" in parsed.reason
     assert "QQQ" in parsed.reason
+
+
+# The day after Thanksgiving on the published calendar: fourteen regular bars
+# make the day, and the afternoon's extended-hours bars the feed returns are
+# outside the 13:00 close rather than a reason to call the session incomplete.
+def test_published_early_close_day_row_ignores_afternoon_bars():
+    early = date(2026, 11, 27)
+    assert SCHEDULE.kind(early) is SessionKind.EARLY_CLOSE
+    rows = [_bar(early, s, 100.0, 100.2, 99.8, 100.0) for s in range(13)]
+    rows.append(_bar(early, 13, 100.0, 100.2, 99.8, 100.1))
+    afternoon = [_bar(early, s, 100.1, 106.0, 100.0, 105.0) for s in range(14, 26)]
+    assert _daily_row(early, rows + afternoon, SCHEDULE) == DailyRow(
+        early, 100.1, 100.1
+    )
+    assert _daily_row(early, rows[:-1] + afternoon, SCHEDULE) is None

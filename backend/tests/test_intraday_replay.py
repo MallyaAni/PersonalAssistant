@@ -851,3 +851,27 @@ def test_data_as_of_threads_through_session_outcome():
     # With the primary horizon the endpoint still lies past the as-of, so a
     # future bar cannot manufacture a mature 20-session label either.
     assert outcome.candidate.primary.status == ENDPOINT_IMMATURE
+
+
+# An early close's endpoint close is its 12:45 bar even when the feed also
+# returns the afternoon's extended-hours bars: the regular window is bounded
+# by the schedule's close, not by a hard-coded 16:00 that would have read the
+# 15:45 print as the closing bar and rejected the session as incomplete.
+def test_early_close_endpoint_close_ignores_afternoon_bars():
+    from backend.market.intraday_replay import _endpoint_close
+
+    schedule = _schedule()
+    morning = [_bar(EARLY_CLOSE_DAY, s, 100.0, 100.5, 99.5, 100.0) for s in range(13)]
+    closing = [_bar(EARLY_CLOSE_DAY, 13, 100.0, 101.0, 99.5, 101.0)]
+    afternoon = [
+        _bar(EARLY_CLOSE_DAY, s, 101.0, 106.0, 100.0, 105.0) for s in range(14, 26)
+    ]
+    assert _endpoint_close(
+        morning + closing + afternoon, EARLY_CLOSE_DAY, schedule
+    ) == (101.0)
+    # Without its closing bar the session is incomplete, afternoon or not.
+    assert _endpoint_close(morning + afternoon, EARLY_CLOSE_DAY, schedule) is None
+    # A full session still needs its 15:45 bar.
+    full = date(2026, 1, 16)
+    assert _endpoint_close(_full_day(full, 100.0)[:-1], full, schedule) is None
+    assert _endpoint_close(_full_day(full, 100.0), full, schedule) == 100.0
