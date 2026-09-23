@@ -331,7 +331,7 @@ def test_the_other_guards_are_untouched_on_a_single_venue_feed():
 # this the name the desk buys tonight read "Wait · not held", the opposite of
 # what to do about it.
 @pytest.mark.parametrize(
-    "weight,grade,band,expected",
+    ("weight", "grade", "band", "expected"),
     [
         (0.0, "A+", 1.50, "Buy"),
         (0.0, "A", 1.30, "Buy"),
@@ -402,20 +402,16 @@ def test_the_entry_carries_the_weight_to_put_on_now():
 
 
 # One entry increment per name per session. The board is re-read every candle
-# and used to size the same breakout again on each read; the nightly, which
-# runs once, adds to a name once. The three pieces of evidence that the
-# increment is spoken for each turn the Buy into a Hold that says why, and the
-# signal itself still reads as firing on a name none of them names.
-@pytest.mark.parametrize("evidence", ["issued", "filled", "pending"])
+# and used to size the same breakout again on each read. A displayed Buy
+# remains advice until a fill or working order proves the person acted.
+@pytest.mark.parametrize("evidence", ["filled", "pending"])
 def test_an_entry_already_taken_this_session_is_not_issued_again(evidence):
     record, snapshot, quoted, now = setup()
     held = []
     extra = {}
-    if evidence == "issued":
-        extra["issued"] = {"S11": (now - timedelta(minutes=15)).isoformat()}
-    elif evidence == "filled":
+    if evidence == "filled":
         # The person recorded today's fill: a holding dated this session.
-        held = [Holding("S11", 10, 100.0, "2026-09-14")]
+        held = [Holding("S11", 10, 100.0, "2026-09-11", "2026-09-14")]
     else:
         extra["pending"] = ["S11"]
     rows = decision_view.build(

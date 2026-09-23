@@ -185,10 +185,8 @@ async def test_personal_http_rejects_another_account(personal_context):
     assert holdings.holdings_path(root).read_bytes() == before_holdings
 
 
-# The board issues an entry increment once per name per session. The first
-# funded read says Buy and writes that down; the person records the fill;
-# the next read in the same session says Hold, not another Buy. This is the
-# defect the page showed: Buy on every fifteen-minute refresh.
+# A read alone does not execute a trade. The recommendation persists until
+# the person records a fill, which then suppresses another same-day Buy.
 @pytest.mark.asyncio
 async def test_a_second_refresh_after_a_recorded_fill_is_a_hold(personal_context):
     _, _, now, root, auth = personal_context
@@ -201,22 +199,24 @@ async def test_a_second_refresh_after_a_recorded_fill_is_a_hold(personal_context
         )
         assert first.status_code == 200, first.text
         assert first.json()["decisions"]["rows"]["S11"]["action"] == "Buy"
-        # The board remembered what it issued, for this account and session.
-        session = now.astimezone(desk_freshness.NEW_YORK).date().isoformat()
-        assert set(holdings.load_issued(root, "desk_user", session)) == {"S11"}
-        # The person records the fill against the recorded position.
-        holdings.save(root, [holdings.Holding("S11", 70, 100, "2026-09-11")])
         second = await client.get(
             "/api/v1/market/desk_user/desk/mine",
             params={"equity": 100000, "available_cash": 1000},
         )
-    assert second.status_code == 200, second.text
-    row = second.json()["decisions"]["rows"]["S11"]
+        assert second.status_code == 200, second.text
+        assert second.json()["decisions"]["rows"]["S11"]["action"] == "Buy"
+        # The person adds to an older holding and records the actual add date.
+        session = now.astimezone(desk_freshness.NEW_YORK).date().isoformat()
+        holdings.save(root, [holdings.Holding("S11", 70, 100, "2026-09-11", session)])
+        third = await client.get(
+            "/api/v1/market/desk_user/desk/mine",
+            params={"equity": 100000, "available_cash": 1000},
+        )
+    assert third.status_code == 200, third.text
+    row = third.json()["decisions"]["rows"]["S11"]
     assert row["action"] == "Hold"
     assert row["move_weight"] == 0.0
-    assert "already issued this session" in row["reason"]
-    # And the memory is not extended by a read that issued nothing.
-    assert set(holdings.load_issued(root, "desk_user", session)) == {"S11"}
+    assert "recorded fill" in row["reason"]
 
 
 # A buy order already working at the person's broker is that session's
@@ -236,8 +236,8 @@ async def test_a_pending_buy_order_suppresses_the_buy(personal_context):
     assert row["action"] == "Hold"
     assert row["move_weight"] == 0.0
     assert "already working" in row["reason"]
-    # Nothing was issued, so nothing was written down.
-    assert not holdings.issued_path(root).exists()
+    # Reading a recommendation never writes an execution record.
+    assert not (root / "desk" / "entries_issued.json").exists()
 
 
 # POST /desk/mine is the page's channel: the confirmed account figures travel
@@ -277,10 +277,7 @@ async def test_personal_http_post_matches_get(personal_context, body):
                 ),
             },
         )
-    # The two channels are compared from the same session state. A funded
-    # read issues an entry and remembers it, so without this the POST would
-    # rightly answer Hold for the name the GET just issued.
-    holdings.issued_path(root).unlink(missing_ok=True)
+    # GET and POST compare the same account evidence without a read-side write.
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test", headers=post_auth()
     ) as client:

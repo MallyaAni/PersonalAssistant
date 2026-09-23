@@ -40,6 +40,7 @@ class Holding:
     shares: float
     entry_price: float
     entry_date: str  # ISO date
+    last_buy_date: str | None = None  # latest confirmed add, if any
 
 
 # Where the holdings live: beside the desk records.
@@ -78,8 +79,24 @@ def parse(rows: list[dict]) -> list[Holding]:
             date.fromisoformat(when)
         except ValueError as exc:
             raise ValueError(f"{ticker}: entry date must be YYYY-MM-DD") from exc
+        last_buy = row.get("last_buy_date")
+        if last_buy is not None:
+            try:
+                last_buy_day = date.fromisoformat(str(last_buy))
+            except ValueError as exc:
+                raise ValueError(f"{ticker}: last buy date must be YYYY-MM-DD") from exc
+            if last_buy_day < date.fromisoformat(when):
+                raise ValueError(f"{ticker}: last buy date precedes entry date")
         seen.add(ticker)
-        out.append(Holding(ticker, shares, price, when))
+        out.append(
+            Holding(
+                ticker,
+                shares,
+                price,
+                when,
+                str(last_buy) if last_buy is not None else None,
+            )
+        )
     return out
 
 
@@ -98,64 +115,6 @@ def save(root: Path, holdings: list[Holding]) -> Path:
     path.write_text(
         json.dumps([asdict(h) for h in holdings], indent=2), encoding="utf-8"
     )
-    return path
-
-
-# The board's memory of the entries it has already issued this session, one
-# small file beside the holdings, keyed by the account that read the board.
-#
-# The nightly adds to a name at most once per session because it runs once.
-# The personal board is re-read every candle, and before this record existed
-# it re-sized the same breakout on every refresh: the person bought, recorded
-# the fill, and the next read said Buy again because the position was still
-# under its name cap. Only the current session is kept, so the file never
-# grows and a new session starts with nothing issued.
-ISSUED_FILE = "entries_issued.json"
-
-
-# Where the issued-entries record lives: beside the holdings.
-def issued_path(root: Path) -> Path:
-    """Return the issued-entries file's path under `root`."""
-    return root / "desk" / ISSUED_FILE
-
-
-# Read back which names the board has already issued an entry for, for this
-# account in this session. Another session's record, or an unreadable file,
-# is nothing issued.
-def load_issued(root: Path, account: str, session: str) -> dict[str, str]:
-    """Return {ticker: issued_at ISO} for `account` in `session`, else empty."""
-    path = issued_path(root)
-    if not path.exists():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
-    mine = (data or {}).get(account) or {}
-    if mine.get("session") != session:
-        return {}
-    return {str(t): str(at) for t, at in (mine.get("issued") or {}).items()}
-
-
-# Remember that the board issued an entry for `tickers` to `account` in
-# `session`, keeping the earlier time when a name was already recorded.
-def record_issued(
-    root: Path, account: str, session: str, tickers: list[str], at: str
-) -> Path:
-    """Write the issued entries for `account` in `session` and return the path."""
-    path = issued_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    data: dict = {}
-    if path.exists():
-        try:
-            data = json.loads(path.read_text(encoding="utf-8")) or {}
-        except (json.JSONDecodeError, OSError):
-            data = {}
-    issued = load_issued(root, account, session)
-    for ticker in tickers:
-        issued.setdefault(ticker, at)
-    data[account] = {"session": session, "issued": issued}
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     return path
 
 
@@ -422,7 +381,9 @@ def _live_grade(
                 stances[name] = (
                     BULLISH
                     if r_now >= 1.0 - STANCE_FRACTION
-                    else BEARISH if r_now <= STANCE_FRACTION else 0
+                    else BEARISH
+                    if r_now <= STANCE_FRACTION
+                    else 0
                 )
             moved += float(
                 conviction_from_ranks(r_now, SHARPNESS)

@@ -208,9 +208,9 @@ const afterTrade = (holdings: DeskHolding[], r: Pick<DeskMineRow, 'ticker' | 'ac
   if (mine) {
     const shares = mine.shares + qty
     const entry = (mine.shares * mine.entry_price + qty * price) / shares
-    return [...rest, { ...mine, shares, entry_price: entry }]
+    return [...rest, { ...mine, shares, entry_price: entry, last_buy_date: fillDate }]
   }
-  return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: fillDate }]
+  return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: fillDate, last_buy_date: fillDate }]
 }
 
 // Each analyst's rating as a 0-100 number with its mark, F T S V R.

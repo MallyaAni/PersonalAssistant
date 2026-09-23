@@ -557,30 +557,6 @@ class DeskMineInput(BaseModel):
         return self
 
 
-# The board's own memory of the entries it issued this account earlier in
-# the session, so a refresh does not size the same breakout again: the
-# names remembered for today are handed to `build`, and every Buy it issues
-# now is written back for the next read. The session is the New York date
-# of this read; a new session starts with nothing remembered.
-def _remembering_entries(user_id: str, now: datetime, build) -> dict:
-    """Run `build(issued)` and record the Buys it issued for this session."""
-    from backend.market import decision_view
-
-    session_date = now.astimezone(desk_freshness.NEW_YORK).date().isoformat()
-    issued = holdings.load_issued(_root(), user_id, session_date)
-    decisions = build(issued)
-    bought = [
-        symbol
-        for symbol, row in decisions["rows"].items()
-        if row["action"] == decision_view.Action.BUY and symbol not in issued
-    ]
-    if bought:
-        holdings.record_issued(
-            _root(), user_id, session_date, bought, now.isoformat(timespec="seconds")
-        )
-    return decisions
-
-
 # The board against the person's own holdings at the equity given: the
 # latest record's targets and levels, the live candle where the feed has
 # one, and the person's entry beside each name they hold. Optional personal
@@ -636,25 +612,20 @@ async def _desk_mine_payload(
             print(
                 f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})"
             )
-    decisions = _remembering_entries(
-        user_id,
+    decisions = decision_view.build(
+        latest,
+        rows,
+        equity,
+        snap or {},
+        quoted,
         now,
-        lambda issued: decision_view.build(
-            latest,
-            rows,
-            equity,
-            snap or {},
-            quoted,
-            now,
-            None,
-            entries,
-            # The allocation preview belongs to the account viewing it: a plan
-            # naming another account is an explicit unavailable preview.
-            expected_account=user_id,
-            cash=available_cash,
-            issued=issued,
-            pending=pending_buys,
-        ),
+        None,
+        entries,
+        # The allocation preview belongs to the account viewing it: a plan
+        # naming another account is an explicit unavailable preview.
+        expected_account=user_id,
+        cash=available_cash,
+        pending=pending_buys,
     )
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)

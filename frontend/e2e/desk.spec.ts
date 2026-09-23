@@ -290,7 +290,7 @@ test('ticker opens original recommendation timeline before detailed analysis', a
   await expect(timeline).toContainText('Hold · FOMC')
   await expect(timeline).toContainText('20.0%')
   await expect(timeline).toContainText('+10.0 pp')
-  await expect(timeline).toContainText('not strategy profit')
+  await expect(timeline).toContainText('not a prediction accuracy score, a fill, or your profit')
   await expect(timeline).toContainText('policy/1')
   await expect(timeline).toContainText('await validated daily data')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
@@ -520,7 +520,7 @@ test('single board records a confirmed buy and reads it back after reload', asyn
   await expect(form).not.toBeVisible()
   expect(writes).toBe(1)
   const today = new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
-  expect(stored).toContainEqual({ticker: 'MSFT', shares: 2.5, entry_price: 411.23, entry_date: today})
+  expect(stored).toContainEqual({ticker: 'MSFT', shares: 2.5, entry_price: 411.23, entry_date: today, last_buy_date: today})
   await page.reload()
   await expect(board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^MSFT/})})).toContainText('2.5 shares')
   expect(writes).toBe(1)
@@ -1723,6 +1723,10 @@ test(`records a confirmed ${action} fill and reads the position back after reloa
   const expectedShares = action === 'add' ? 66.5 : 53.5
   expect(stored[0].shares).toBe(expectedShares)
   expect(stored[0].entry_price).toBeCloseTo(action === 'add' ? (60 * 91.25 + 6.5 * 98.76) / 66.5 : 91.25, 6)
+  if (action === 'add') {
+    expect(stored[0].entry_date).toBe('2026-08-28')
+    expect(stored[0].last_buy_date).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  }
   // The shell's unrelated draft conversation is ephemeral; only the holdings persist here.
   await page.evaluate(() => localStorage.clear())
   await page.reload()
@@ -1799,7 +1803,7 @@ test('records a discretionary buy from rankings and reloads its actual shares an
   expect(writes).toBe(1)
   expect(stored).toEqual([
     {ticker: 'AAPL', shares: 5, entry_price: 100, entry_date: '2026-09-01'},
-    {ticker: 'MSFT', shares: 2.5, entry_price: 411.23, entry_date: '2026-09-10'},
+    {ticker: 'MSFT', shares: 2.5, entry_price: 411.23, entry_date: '2026-09-10', last_buy_date: '2026-09-10'},
   ])
   await page.evaluate(() => localStorage.clear())
   await page.reload()
@@ -2153,7 +2157,7 @@ test('an empty record becomes the getting-started guide', async ({ page }) => {
 })
 
 // Displaying a hypothetical stop must never turn its breach into a sell instruction.
-test('the ticker panel explains the grade move, keeps the last score and folds the log', async ({page}) => {
+test('the ticker panel explains the grade move and preserves every recorded recommendation', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
   // The same release re-read under a new prompt: named as a data revision.
@@ -2210,9 +2214,11 @@ test('the ticker panel explains the grade move, keeps the last score and folds t
   await expect(score).toContainText('Last reading at the Sep 8, 3:45 PM ET bar')
   await expect(score).not.toContainText('Not scored')
   const log = page.getByRole('table', {name: 'Recommendation timeline'})
-  await expect(log.locator('tbody tr')).toHaveCount(2)
-  await expect(log.locator('tbody tr').first()).toContainText('held through')
-  await expect(log.locator('tbody tr').first()).toContainText('2 readings')
+  await expect(log.locator('tbody tr')).toHaveCount(3)
+  await expect(log.locator('tbody tr').nth(0)).toContainText('2:45:10 PM')
+  await expect(log.locator('tbody tr').nth(1)).toContainText('2:30:10 PM')
+  await expect(log.locator('tbody tr').nth(2)).toContainText('2:15:10 PM')
+  await expect(page.getByRole('region', {name: 'Recorded recommendations'})).toContainText('not trades in your account')
   await expect(page.getByText(/Option walls \(expiries 09-18 to 10-16, open interest fetched/)).toBeVisible()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })

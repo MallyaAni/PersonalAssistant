@@ -2257,6 +2257,7 @@ export interface DeskHolding {
   shares: number;
   entry_price: number;
   entry_date: string;
+  last_buy_date?: string | null;
 }
 export interface DeskMineRow {
   grade_source?: 'intraday' | 'evening';

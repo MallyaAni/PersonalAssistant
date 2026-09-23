@@ -157,6 +157,8 @@ def test_shadow_targets_keep_the_shared_account_sizing_constraints():
         np.broadcast_to(report.panel.dates[0], rows).copy(),
         np.zeros(rows, dtype=int),
         ("synthetic",),
+        report.panel.dates.copy(),
+        report.panel.tickers,
     )
     for policy in (lp.POLICY_RANK, lp.POLICY_BLEND):
         targets = lp.policy_targets(report, forecasts, 250, policy=policy)
@@ -168,6 +170,18 @@ def test_shadow_targets_keep_the_shared_account_sizing_constraints():
     invalid = replace(forecasts, last_training_label_end=np.full(rows, 250))
     with pytest.raises(ValueError, match="purged"):
         lp.policy_targets(report, invalid, 250, policy=lp.POLICY_RANK)
+    wrong_order = replace(forecasts, tickers=tuple(reversed(report.panel.tickers)))
+    with pytest.raises(ValueError, match="align"):
+        lp.policy_targets(report, wrong_order, 250, policy=lp.POLICY_RANK)
+    shadow = simulate.run(
+        report,
+        use_exits=False,
+        allocator=lp.allocator_for(forecasts, lp.POLICY_RANK),
+    )
+    assert np.isfinite(shadow.equity).all()
+    assert shadow.invested[1] == 0
+    # The fill fee makes held weight slightly larger than the target cap.
+    assert np.nanmax(shadow.top_weight) <= 0.151
 
 
 # An externally learned ceiling must traverse exactly the fixed brake's

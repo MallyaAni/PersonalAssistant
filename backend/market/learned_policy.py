@@ -49,6 +49,8 @@ class Forecasts:
     fit_session: np.ndarray
     last_training_label_end: np.ndarray
     model_hash: tuple[str, ...]
+    dates: np.ndarray
+    tickers: tuple[str, ...]
 
 
 # Reject malformed or retrospectively published inputs before fitting.
@@ -213,7 +215,9 @@ def walk_forward_ranker(
         digest.update(np.ascontiguousarray(y[eligible][train_mask]).tobytes())
         digest.update(pickle.dumps(model, protocol=5))
         hashes.append(f"{dates[start]}:{digest.hexdigest()}")
-    return Forecasts(prediction, fit_dates, cutoffs, tuple(hashes))
+    return Forecasts(
+        prediction, fit_dates, cutoffs, tuple(hashes), dates.copy(), inputs.tickers
+    )
 
 
 # Mark a crash only when a later close is more than eight percent under the
@@ -300,7 +304,7 @@ def walk_forward_brake(
         digest.update(np.ascontiguousarray(labels[eligible][valid]).tobytes())
         digest.update(pickle.dumps(model, protocol=5))
         hashes.append(f"{calendar[start]}:{digest.hexdigest()}")
-    return Forecasts(prediction, fit_dates, cutoffs, tuple(hashes))
+    return Forecasts(prediction, fit_dates, cutoffs, tuple(hashes), calendar.copy(), ())
 
 
 # Hold the prior exposure between two predeclared probability thresholds.
@@ -323,7 +327,9 @@ def brake_scale_path(probability: np.ndarray) -> np.ndarray:
 
 # Feed the learned ranking into the existing grade, regime, volatility and
 # concentration engine without changing its eligibility or its caps.
-def policy_targets(report, forecasts: Forecasts, t: int, *, policy: str) -> np.ndarray:
+def policy_targets(
+    report, forecasts: Forecasts, t: int, *, policy: str, config=None
+) -> np.ndarray:
     """Return shadow target weights through the same desk risk function."""
     from dataclasses import replace
 
@@ -332,8 +338,11 @@ def policy_targets(report, forecasts: Forecasts, t: int, *, policy: str) -> np.n
     if policy not in (POLICY_RANK, POLICY_BLEND):
         raise ValueError("unknown learned shadow policy")
     panel = report.panel
-    if forecasts.values.shape != report.scores.shape or len(panel.dates) != len(
-        forecasts.fit_session
+    if (
+        forecasts.values.shape != report.scores.shape
+        or len(panel.dates) != len(forecasts.fit_session)
+        or forecasts.tickers != panel.tickers
+        or not np.array_equal(forecasts.dates, panel.dates)
     ):
         raise ValueError("forecasts must align with the desk report")
     if t < 0 or t >= len(panel.dates):
@@ -365,7 +374,7 @@ def policy_targets(report, forecasts: Forecasts, t: int, *, policy: str) -> np.n
         report.graded.grades[t],
         window,
         report.regime.states[t],
-        risk.BOOK_CONFIG,
+        config or risk.BOOK_CONFIG,
     )
     target[panel.index(panel.benchmark)] = 0.0
     return target
@@ -385,3 +394,27 @@ def _vector_ranks(values: np.ndarray) -> np.ndarray:
         out[order[left:right]] = ((left + right - 1) / 2) / (len(values) - 1)
         left = right
     return out
+
+
+# Offer the same target function to the simulator's standard allocator hook;
+# pre-fit sessions remain in cash rather than receiving a hindsight ranking.
+def allocator_for(forecasts: Forecasts, policy: str):
+    """Return a shadow allocator compatible with `simulate.run`."""
+    if policy not in (POLICY_RANK, POLICY_BLEND):
+        raise ValueError("unknown learned shadow policy")
+
+    # Size one session using only its already-fitted out-of-sample forecast.
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        """Return the shared desk target or cash before the first fit."""
+        if panel.tickers != forecasts.tickers or not np.array_equal(
+            panel.dates, forecasts.dates
+        ):
+            raise ValueError("forecast and simulator calendars must align")
+        if (
+            np.isnat(forecasts.fit_session[t])
+            or forecasts.last_training_label_end[t] >= t
+        ):
+            return np.zeros(len(panel.tickers))
+        return policy_targets(report, forecasts, t, policy=policy, config=config)
+
+    return allocate
