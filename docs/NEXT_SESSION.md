@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-09-23 23:43 UTC — Desk correction and complete recommendation log LIVE
+
+Source `42c5a74618a7ad7d29e288fd4c2e73d1f2d0b523` is deployed through
+`scripts/deploy.sh`; marker `42c5a746`, gateway image
+`sha256:1e8b3d7c03258a01f2398430294b0efc95241d7b882c1ab6df29e9e1cb256c61`,
+backend image `sha256:1b01602a25f5e5e53cc820cc922858cee1f81cbe4fb035495a345bd5fdab4aa2`.
+Required full unit gate **4480 passed, 31 skipped**, live-model gate **100 passed**
+under `ANIOS_GATE_WORKERS=1`; postdeploy status
+`2026-09-23T23:42:12Z 42c5a746 ok (cheap)`. The first guarded attempt stopped
+before restart on missing `scikit-learn` and a changed, frozen shadow-ledger
+identity. Commit `4ab453a` installed the fitter and declared the exact
+continuation from the ledger's actual current identity; no archived record
+was rewritten. The successful retry used all required gates.
+
+Actual deployed API/browser acceptance in
+`/tmp/trading-release-proof-20260923.json` is **PASS**. Backend source hashes
+match the running container. Personal account API/browser checked unknown and
+zero cash, invalid/cross-account inputs and unchanged holdings, with no page
+errors. AAPL history returned **138** archived readings (2026-09-14..23); the
+live ticker view rendered all **138** rows and distinguished recommendations,
+subsequent stock changes and personal fills. Three relevant browser fixtures
+also passed against the deployed 8080 bundle. A first live check caught an
+invalid `en-US@posix` locale in the chart library's time-axis formatter;
+`42c5a74` pins its chart locale. The regression browser test failed before
+that fix and passed after, and deployed browser errors are now empty. Model
+container identities/start times did not change. No real orders were sent.
+
+The new learned rank/brake are still **shadow-only** and lack a historical
+point-in-time input adapter, sourced 2016–26 membership and mature comparison
+results. Do not present them as better than the incumbent or adopt them.
+The shared `/home/animallya96/anios` checkout remains at `9e4fab9` with
+pre-existing uncommitted OpenCode/other-session changes; this task never
+edited or staged that checkout. Main and the deploy checkout carry the live
+release. Do not reset or clean the shared checkout.
+
 ## 2026-09-23 23:02 UTC — Recommendation readings and personal fill state reviewed
 
 Candidate checkpoint `f8494501afce133a246f87dd1ce89054475d8207` on
