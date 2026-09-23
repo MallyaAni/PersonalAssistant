@@ -409,6 +409,9 @@ def test_a_gap_before_the_fill_is_not_collected():
 
     grades = np.zeros((rows, NAMES), dtype=int)
     grades[:, 1:] = 1  # the rest of the book is only ever a B
+    # One A below N0, so the engine has the two candidates it needs to size
+    # anything at all; a B name is not a candidate, so it cannot pad the list.
+    grades[:, 1] = 2
     grades[decide_at:, 0] = 3  # N0 becomes the desk's best name here
     report = _report(close, grades=grades)
     report.panel = replace(report.panel, open=opens)

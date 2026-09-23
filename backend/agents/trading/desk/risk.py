@@ -126,6 +126,18 @@ class Sized:
 # 65 observations. Anything trained here is fitting one price path.
 
 
+# Which names today's grades let the book hold at all: those whose grade
+# multiplier is above zero. Read from `SIZE_MULTIPLIER` rather than a
+# threshold, so the candidate set and the sizing can never disagree again.
+def _holdable(graded_today: np.ndarray) -> np.ndarray:
+    """Return a boolean mask of the names whose grade earns a position."""
+    ordinal = np.asarray(graded_today, dtype=float)
+    known = np.isfinite(ordinal)
+    clipped = np.clip(np.where(known, ordinal, 0), 0, len(GRADES) - 1).astype(int)
+    multiplier = np.array([SIZE_MULTIPLIER[GRADES[3 - k]] for k in range(len(GRADES))])
+    return known & (multiplier[clipped] > 0)
+
+
 # The desk's target weight for every name, in one place.
 #
 # The paper book and the backtest used to compute this separately and in a
@@ -151,11 +163,16 @@ def desk_targets(
     held: np.ndarray | None = None,
 ) -> tuple[list[Position], np.ndarray]:
     """Return (the engine's positions, the final target weight per column)."""
-    # A C-grade name is not a candidate at all, so it cannot take a slot.
-    # The engine's top fraction counts the names it can see, so the
-    # fraction is rescaled to keep the book the size it would be over the
-    # whole universe (a tenth of 90 names, not a tenth of the graded ones).
-    candidates = np.where(graded_today > 0, scores_today, np.nan)
+    # A name whose grade earns no position (SIZE_MULTIPLIER of zero: a C,
+    # and a B since the ladder was flattened) is not a candidate at all, so
+    # it cannot take a slot. This used to exclude only the C grade, and a
+    # B name in the top decile then took a slot the multiplier zeroed: the
+    # book held fewer names than the slice, at less than its
+    # volatility-targeted gross. The engine's top fraction counts the names
+    # it can see, so the fraction is rescaled to keep the book the size it
+    # would be over the whole universe (a tenth of 90 names, not a tenth
+    # of the holdable ones).
+    candidates = np.where(_holdable(graded_today), scores_today, np.nan)
     total = max(int(np.isfinite(scores_today).sum()) - 1, 1)
     graded = max(int(np.isfinite(candidates).sum()), 1)
     scaled = replace(
