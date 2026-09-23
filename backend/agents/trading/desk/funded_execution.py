@@ -486,7 +486,11 @@ def _continuous_orders(
     for symbol, qty in sells:
         orders.append(
             planner.Order(
-                symbol, "sell", qty, priced[symbol], _sell_reason(decision, symbol)
+                symbol,
+                "sell",
+                qty,
+                priced[symbol],
+                _sell_reason(decision, symbol, want, risk_cut),
             )
         )
     for symbol, qty in buys:
@@ -505,12 +509,20 @@ def _continuous_orders(
     return orders
 
 
-# The plain-language reason a name is being sold.
-def _sell_reason(decision, symbol: str) -> str:
+# The plain-language reason a name is being sold, which is also the label
+# execution reads: only a sell that genuinely reduces the held exposure below
+# the decision's ceiling is a "risk reduction" - the paper path turns that
+# label into `priority`, which exempts the order from the green-open skip and
+# the closing-auction policy. A name the composition no longer wants at all
+# is a rotation out of it, and a sell toward a positive target on a day with
+# no genuine cut is a rebalance of drift; neither is a risk cut, whatever
+# constraint the decision happens to name that day.
+def _sell_reason(decision, symbol: str, want, risk_cut: bool) -> str:
     """Return the reason a sell of `symbol` was planned this day."""
-    binding = decision.binding
-    if binding and binding != allocation.BINDING_NONE:
-        return f"risk reduction ({binding})"
+    if want.get(symbol, 0.0) <= 1e-9:
+        return "rotation out of the composition"
+    if risk_cut:
+        return f"risk reduction ({decision.binding})"
     return "rebalance toward desired weight"
 
 

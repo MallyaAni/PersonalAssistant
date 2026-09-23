@@ -352,3 +352,124 @@ def test_a_binding_name_with_a_reduction_is_a_risk_cut():
     assert plan.risk_cut
     sells = {o.symbol: o.qty for o in plan.orders if o.side == "sell"}
     assert sells == {"AAA": pytest.approx(3.0), "BBB": pytest.approx(3.0)}
+
+
+# ---------------------------------------------------------------------------
+# Only a genuine reduction is labelled a risk reduction.
+# ---------------------------------------------------------------------------
+
+
+# On a day the volatility budget binds but the book already sits at the
+# scaled level, a drift trim past the threshold is a rebalance, not a risk
+# reduction: the label used to follow the binding name, which handed every
+# drift trim the risk priority that exempts it from the green-open skip.
+def test_a_drift_trim_on_a_binding_day_is_a_rebalance():
+    equity = 100_000.0
+    plan = plan_funded(
+        _decision({"AAA": 0.1, "BBB": 0.1}, binding=BINDING_VOL),
+        held={"AAA": 106.0, "BBB": 94.0},
+        prices={"AAA": 100.0, "BBB": 100.0},
+        equity=equity,
+        cash=80_000.0,
+        whole_shares=False,
+    )
+    assert not plan.risk_cut
+    reasons = {(o.symbol, o.side): o.reason for o in plan.orders}
+    assert reasons[("AAA", "sell")] == "rebalance toward desired weight"
+    assert reasons[("BBB", "buy")] == "funded allocation toward target"
+
+
+# A name the composition no longer wants is a rotation out of it, on a
+# binding day and on a quiet one alike.
+@pytest.mark.parametrize("binding", [BINDING_NONE, BINDING_VOL])
+def test_a_departure_is_a_rotation(binding):
+    plan = plan_funded(
+        _decision({"BBB": 0.1}, binding=binding),
+        held={"AAA": 100.0, "BBB": 100.0},
+        prices={"AAA": 100.0, "BBB": 100.0},
+        equity=100_000.0,
+        cash=80_000.0,
+        whole_shares=False,
+    )
+    reasons = {(o.symbol, o.side): o.reason for o in plan.orders}
+    assert reasons == {("AAA", "sell"): "rotation out of the composition"}
+
+
+# On a genuine cut the retained names' sells carry the risk label with the
+# binding constraint; a departure on the same day is still a rotation.
+def test_a_genuine_cut_labels_retained_sells_only():
+    plan = plan_funded(
+        _decision({"AAA": 0.08, "BBB": 0.08}, binding=BINDING_VOL),
+        held={"AAA": 100.0, "BBB": 100.0, "CCC": 50.0},
+        prices={"AAA": 100.0, "BBB": 100.0, "CCC": 100.0},
+        equity=100_000.0,
+        cash=75_000.0,
+        whole_shares=False,
+    )
+    assert plan.risk_cut
+    reasons = {o.symbol: o.reason for o in plan.orders if o.side == "sell"}
+    assert reasons == {
+        "AAA": "risk reduction (volatility budget)",
+        "BBB": "risk reduction (volatility budget)",
+        "CCC": "rotation out of the composition",
+    }
+
+
+# Through the paper boundary the label decides the priority metadata: an
+# event-cap day on which the book merely drifted plans a trim with no
+# priority, and a genuine event-cap cut plans sells that carry it. Read back
+# from the real `paper.plan` orders and the persisted allocation_state rows.
+def test_paper_priority_follows_the_genuine_cut_not_the_binding_name():
+    from backend.agents.trading.desk import paper
+    from backend.tests.test_paper_funded_allocation import _context
+
+    # An event cap of 0.29 against a 0.30 selection scales it to 0.145 each
+    # (the event cap binds); the book holds 0.156 + 0.134 = 0.29, exactly the
+    # ceiling, so the day is drift, not a cut.
+    orders, state, what = paper.plan(
+        "2026-09-04",
+        paper.PaperState(),
+        100_000.0,
+        {"AAA": 156.0, "BBB": 134.0},
+        {"AAA": 100.0, "BBB": 100.0, "SPY": 100.0},
+        {},
+        {},
+        cash=71_000.0,
+        allocation_context=_context(
+            index_eligible=False,
+            desired={"AAA": 0.15, "BBB": 0.15},
+            event_cap=0.29,
+        ),
+    )
+    assert what == "allocation-rebalance"
+    sells = [o for o in orders if o.side == "sell"]
+    assert [o.symbol for o in sells] == ["AAA"]
+    assert sells[0].priority is None
+    assert sells[0].reason == "rebalance toward desired weight"
+    rows = state.allocation_state["plan"]["rows"]
+    assert rows["AAA"]["action"] == "SELL"
+    assert rows["AAA"]["reason"] == "rebalance toward desired weight"
+
+    # The same book against an event cap of 0.2 is a genuine cut: both sells
+    # carry the binding constraint as their priority.
+    orders, state, _what = paper.plan(
+        "2026-09-04",
+        paper.PaperState(),
+        100_000.0,
+        {"AAA": 156.0, "BBB": 134.0},
+        {"AAA": 100.0, "BBB": 100.0, "SPY": 100.0},
+        {},
+        {},
+        cash=71_000.0,
+        allocation_context=_context(
+            index_eligible=False,
+            desired={"AAA": 0.15, "BBB": 0.15},
+            event_cap=0.2,
+        ),
+    )
+    sells = {o.symbol: o for o in orders if o.side == "sell"}
+    assert set(sells) == {"AAA", "BBB"}
+    assert all(o.priority == "event cap" for o in sells.values())
+    assert all(o.reason == "risk reduction (event cap)" for o in sells.values())
+    rows = state.allocation_state["plan"]["rows"]
+    assert rows["BBB"]["reason"] == "risk reduction (event cap)"
