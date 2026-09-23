@@ -403,9 +403,9 @@ const RegimeBanner = ({ regime, session }: { regime: DeskRecord['regime']; sessi
       </ul>
       {exposure < 1 && (
         <p className="mt-2 text-sm text-[#7a5200]">
-          The current target-size multiplier is {Math.round(exposure * 100)}%, from these flags and not from the
-          FOMC policy below, which is separate and is only in force when it says so. The rest of the
-          account stays uninvested until the flags clear. Actual positions may differ until orders fill.
+          These flags set the strategy target-size multiplier to {Math.round(exposure * 100)}%.
+          The FOMC policy is separate. This is not your invested percentage or a claim about available cash;
+          actual holdings depend on recorded fills.
         </p>
       )}
       </details>
@@ -441,7 +441,7 @@ const WhatChanged = ({ changes }: { changes: NonNullable<DeskPayload['changes']>
           ))}
           {changes.orders.length > 0 && (
             <li>
-              Changes in target weights at the next weight reset:{' '}
+              Changes between recorded strategy target weights, not submitted orders:{' '}
               {changes.orders.map((o) => `${o.action} ${o.ticker}`).join(', ')}
             </li>
           )}
@@ -476,7 +476,7 @@ function RecordStatus({status, prose, session}: {status?: DeskPayload['record_st
   // than a generic "have not been written yet".
   if (prose?.state === 'absent') lines.push(`Model-written briefs and reads for ${session ?? 'this decision'}: ${prose.status ?? 'have not been written yet'}. The decision and its deterministic reads stand.`)
   if (status?.record.status === 'late') lines.push(status.record.session
-    ? `No decision record for ${status.expected} yet. Everything below is the ${status.record.session} decision.`
+    ? `No decision record for ${status.expected} yet. The evening record is the ${status.record.session} decision; quotes and account data have separate timestamps.`
     : `No decision record for ${status.expected} yet.`)
   if (status?.ml_forward.status === 'late') lines.push(`The frozen ML paper accounts have not observed ${status.expected}.`)
   if (lines.length === 0) return null

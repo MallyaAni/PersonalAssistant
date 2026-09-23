@@ -14,6 +14,8 @@ test('account wording distinguishes allocation from profit and paper from person
   await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))
   await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', {name: 'How to use this page', exact: true}).click()
+  await page.locator('summary', {hasText: 'Market risk'}).click()
+  await expect(page.getByText('This is not your invested percentage or a claim about available cash;', {exact: false})).toBeVisible()
   await expect(page.getByText('fills are simulated broker fills.', {exact: false})).toBeVisible()
   await expect(page.getByText('refreshing the page does not guarantee a newer market observation.', {exact: false})).toBeVisible()
   await expect(page.getByText('These actions use your recorded positions and confirmed cash.', {exact: false})).toBeVisible()
@@ -138,6 +140,8 @@ test('a late record or observation is named at the top of the page', async ({pag
   const status = page.getByRole('status', {name: 'Record status'})
   await expect(status).toContainText('No decision record for 2026-09-14 yet')
   await expect(status).toContainText('2026-09-11 decision')
+  await expect(status).toContainText('quotes and account data have separate timestamps')
+  await expect(status).not.toContainText('Everything below')
   await expect(status).toContainText('have not observed 2026-09-14')
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest: deskRecord(), record_status: {expected: '2026-09-14', due_at: '2026-09-15T07:00-04:00',
