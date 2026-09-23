@@ -97,6 +97,9 @@ def test_board_orders_rows_and_carries_the_exit_plan():
         and by["N2"]["leaves_if"] == "already outside the book"
     )
     assert by["N0"]["action"] == "buy" and by["N0"]["delta_weight"] == 0.15
+    # The rotation sells a downgrade the session it happens, not at the
+    # next reset, and the row says so.
+    assert by["N0"]["leaves_if"] == "the grade falls below A"
     assert by["N1"]["action"] == "hold" and by["N1"]["entry_price"] == 50.0
     for r in rows:
         assert set(r["stances"]) == set(report.graded.stances)

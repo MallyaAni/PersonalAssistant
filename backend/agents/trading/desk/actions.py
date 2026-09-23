@@ -8,9 +8,11 @@ one row and nothing that is not measured.
 
 Sizes are weights of equity, so the same row scales to any account. The
 entry is the next open - the execution study found every later schedule
-pays. The exit is the desk's own: a name leaves at a rebalance when it
-no longer earns its grade, so the row carries how far its votes sit
-above the line and how many sessions remain on the rebalance clock.
+pays. The exit is the desk's own: a name leaves the session its grade
+falls below A (the mid-cycle rotation in `paper._rotation_orders`, which
+sells it and redeploys the proceeds), or at the rebalance when it no
+longer earns a target, so the row carries how far its votes sit above
+the line and how many sessions remain on the rebalance clock.
 Stop levels are given as risk controls, not signals, and the view shows
 them only when asked. The book's history says a trailing stop trades the
 mean for the tail (a 12% stop after a sharp rise cut the worst tenth
@@ -178,8 +180,10 @@ def build(
                     stances.get("fundamental") == grading.BULLISH
                     and stances.get("technical") == grading.BULLISH,
                 ),
+                # The rotation sells a downgrade the session it happens, not
+                # at the next reset.
                 "leaves_if": (
-                    "the grade falls below A at a rebalance"
+                    "the grade falls below A"
                     if target > 0
                     else "the next rebalance, or the grade falls below A first"
                     if action == "hold" and holding.weight > 0

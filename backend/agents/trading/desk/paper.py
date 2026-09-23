@@ -5,15 +5,19 @@ The rules are the ones that measured best, and nothing else:
 * Every `REBALANCE_EVERY` sessions the paper book is brought to the desk's
   target weights (buys and sells at the next open, whole shares, moves
   smaller than `MIN_TRADE` of equity skipped).
-* Between rebalances the book is left alone except for the versioned FOMC
-  cycle in event_execution.py. It cuts held shares once and restores confirmed
-  reductions after the meeting, without restarting the rebalance clock. There
-  is no price stop, because every stop measured worse than none on every
-  name; no grade-based exit, because it cut winners; and no band exit,
-  because that cost 3.0% a year when it was finally measured inside these
-  rules rather than per trade. `plan` still accepts a `finished` map so a
-  trigger that does measure well can be given one, but none does yet. The
-  note at the top of `desk/exit.py` has the numbers.
+* Between rebalances three things trade, and nothing else. A held name
+  whose grade falls below A is rotated: sold, with the proceeds redeployed
+  into the names the desk still wants (`_rotation_orders`; the caller's
+  `finished` map names them, and `market_daily._downgraded` fills it). A
+  name graded A or better breaking out through its own 20-day band is
+  entered from cash (`_entry_orders`). And the buys a cash-bound plan could
+  not pay for are re-issued once on the next session (`_deferred_orders`).
+  The versioned FOMC cycle in event_execution.py cuts held shares once and
+  restores confirmed reductions after the meeting, without restarting the
+  rebalance clock. There is no price stop, because every stop measured
+  worse than none on every name, and no band exit, because that cost 3.0%
+  a year when it was finally measured inside these rules rather than per
+  trade. The note at the top of `desk/exit.py` has the numbers.
 * The plan for a session is made once. Running the day twice submits
   nothing the second time.
 
@@ -66,8 +70,9 @@ MIN_TRADE = 0.005
 # Mid-cycle entries, measured 2026-09-18 and corrected 2026-09-19. The
 # calendar decides WHAT the book holds; price decides WHEN each name is
 # entered. A name graded A or better trading above ENTRY_BAND_Z on its own
-# 20-day band takes ENTRY_ADD of equity funded from the other holdings,
-# capped at ENTRY_NAME_CAP.
+# 20-day band takes `entry_size(band)` of equity, paid from cash (see the
+# note on funding below - the other holdings are not trimmed), capped at
+# ENTRY_NAME_CAP.
 #
 # The upper tail only. The rule shipped on 2026-09-18 took both tails, on a
 # forward-return table that counted a ten-session window on every session and
@@ -153,8 +158,11 @@ MIN_TRADE = 0.005
 # 70 bps - 1.00 looks better at 10 bps and is second-worst by 70, because the
 # peak walks up the grid as trading gets dearer.
 ENTRY_BAND_Z = 1.10
-# The size at the trigger itself; `entry_size` scales it by how far through
-# the band the close is. A flat 3% is what this replaces.
+# The size at a band reading of ENTRY_SIZE_REF (1.25, the trigger the
+# sizing was measured at), not at the 1.10 trigger itself: `entry_size`
+# scales it by the square of the reading over ENTRY_SIZE_REF, so an entry
+# at the trigger takes 0.023 x (1.10 / 1.25)^2 = 1.78% of equity and a
+# stronger reading takes more. A flat 3% is what this replaces.
 ENTRY_ADD = 0.023
 ENTRY_NAME_CAP = 0.15
 ENTRY_MIN_GRADE = ("A", "A+")
@@ -309,19 +317,15 @@ def save_state(root: Path, state: PaperState) -> Path:
     return path
 
 
-# The plan for one session: the orders to submit for the next open and the
-# state after it. `held` is {symbol: shares}, `prices` {symbol: last close},
-# `targets` {symbol: weight} from the desk's book, `grades` {symbol:
-# letter} for every name graded today.
-# Mid-cycle entries: buy the tail names, funded pro rata from the rest.
+# The rotation: sell a name the desk has turned against and put the money
+# into the ones it still wants. The buys are the sale's value shared among
+# the other holdings in proportion to what each already holds, inside the
+# name cap, with a leg too small to clear MIN_TRADE dropped rather than
+# sent. (The mid-cycle ENTRIES are a different rule: `_entry_orders` pays
+# them from cash and trims nothing - the funding note above has the
+# measurement.)
 #
-# Gross is unchanged by construction. The buys are sized first, then the
-# same dollar value is raised by trimming every OTHER holding in proportion
-# to what it already holds, so the exposure the regime chose is untouched
-# and only the selection moves. A name at its cap is not added to, and a
-# trim too small to clear MIN_TRADE is dropped rather than sent.
-# Sell a name the desk has turned against and put the money into the ones it
-# still wants. NOT a sale to cash: measured, selling a downgrade to cash costs
+# NOT a sale to cash: measured, selling a downgrade to cash costs
 # 24 points of CAGR a year against holding, because the money stops working.
 # Redeployed it is the best rule the exit study found - at this reset it earned
 # the same return as holding with a 7.3 point shallower drawdown and a better
@@ -648,8 +652,13 @@ def midcycle_orders(
     return funded
 
 
-# Plan this session's moves: rebalance to the targets, or the exits the
-# caller named.
+# Plan this session's moves: the orders to submit for the next open and the
+# state after it. On the reset, the rebalance to the targets; between
+# resets, the previous session's deferred buys, the rotation out of the
+# names the caller's `finished` map says the desk has turned against, and
+# the price entries. `held` is {symbol: shares}, `prices` {symbol: last
+# close}, `targets` {symbol: weight} from the desk's book, `grades`
+# {symbol: letter} for every name graded today.
 def plan(
     session: str,
     state: PaperState,

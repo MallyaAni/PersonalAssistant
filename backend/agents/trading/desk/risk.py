@@ -3,9 +3,12 @@
 It reuses the measured sizing engine (inverse volatility with a floor,
 name and theme caps, a book-level volatility target on the book's own
 trailing returns) and adds two multipliers on top: each name's grade
-(A+ full, A three quarters, B half, C nothing) and the regime's exposure
-(three quarters in a hype phase). Both are applied after the sizing engine
-so the caps still hold.
+(`grading.SIZE_MULTIPLIER`: A+ and A a full position, B and C nothing -
+the grade selects, it does not size; the note there has the sweep that
+flattened the old 1 / 3/4 / 1/2 ladder) and the regime's exposure (three
+quarters in a hype phase). Both are applied after the sizing engine so
+the caps still hold, and a grade the multiplier zeroes is not a
+candidate for a slot in the first place.
 """
 
 from dataclasses import dataclass, replace
