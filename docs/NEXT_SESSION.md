@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-09-23 — First fixed diagnostic: insufficient adoption evidence
+
+Integrated source98bd6c10aae552b76cdd4ebaeed9a6787b2dd094:86 targeted checks PASS
+(17 source +26 parity +41 replay +2 unchanged root cases), Ruff/format/scoped
+strict mypy PASS. Root independently reviewed completed source/parity ownedfiles.
+Those roles are now root-owned; never recopy old drafts. Original source handoffs
+are superseded. Log /tmp/codex-single-source-integrated-20260923.log.
+
+Ran fixed snapshot ONCE: /tmp/codex-single-source-diagnostic-20260923.json plus.log.
+204 requested,170 ready,34 unavailable (WRB). Candidate1entry, incumbent5, BOTH0,
+neither164. Six proxies have complete20/5 labels; no paired entry-price estimate.
+Insufficient evidence to promote candidate; unequal conditional return means are
+not superiority. Read docs/research/intraday-single-source-results-2026-09-23.md.
+No retuning/refetch/repeated unchanged run. Source image/inputs/calendars hashed
+in artifact. Formula parity is verified, exact live grades/portfolio proof is not.
+
+Dashboard1423440 remains active (~3h), working on browser stale-BUY failure;
+do not import active source. Turnover1651795 remains active (~1h), no final yet.
+Never restart active workers. Latest live marker remainsa89bba40; no deployment.
+Continue minimal tested account release when ready; new entry strategy remains
+experimental. User13%remaining: compact reviews, no new unrelated work.
+
 ## 2026-09-23 — Four parallel OpenCode jobs; user has13% usage left
 
 User explicitly requested parallel validation and corrected the priority: prove
