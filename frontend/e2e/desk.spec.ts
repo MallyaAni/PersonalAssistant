@@ -2336,6 +2336,11 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
 // the desk actually scores from, daily and weekly, and nothing else.
 test('the ticker chart draws the desk’s own timeframes and mirrors its readings in text', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
+  // Some browser environments expose a POSIX locale tag that Intl rejects;
+  // the chart must format its axis without throwing in that environment.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'language', {value: 'en-US@posix', configurable: true})
+  })
   const latest = deskRecord()
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
   await page.route('**/desk/history/AAPL', route => route.fulfill({json: {

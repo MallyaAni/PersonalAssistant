@@ -281,7 +281,9 @@ export const TickerChart = ({
         rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
         timeScale: { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4 },
         crosshair: { mode: CrosshairMode.Normal },
-        localization: { priceFormatter: (v: number) => `$${v.toFixed(2)}` },
+        // The chart library otherwise trusts navigator.language, which can
+        // be a POSIX tag that Intl rejects when it draws the time axis.
+        localization: { locale: 'en-US', priceFormatter: (v: number) => `$${v.toFixed(2)}` },
       })
     } catch {
       setDrawFailed(true)
