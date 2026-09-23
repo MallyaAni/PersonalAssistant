@@ -10,7 +10,9 @@ separate milestone.
 Two fixed, predeclared policies are implemented:
 
 * `vol` — a benchmark-relative volatility budget with residual SPY.
-* `vol_trend` — the same budget plus a broad trend ceiling.
+* `vol_trend` — the same budget plus a broad trend ceiling, read with
+  hysteresis bands (`TREND_BELOW`/`TREND_ABOVE`) so a close merely crossing
+  the 200-session mean does not flip the ceiling.
 
 The incumbent default (no optional policy) is untouched by this module.
 
@@ -197,18 +199,65 @@ def _risk(series: np.ndarray, t: int) -> float | None:
     return float(max(short, long) * np.sqrt(ANNUAL))
 
 
+# The hysteresis bands of the trend read, as fractions of the 200-session
+# mean: a benchmark counts as below trend only once its close is more than 3%
+# under the mean, and as above again only once it is more than 2% over it.
+# Between the bands the most recent decided state holds. A single close
+# crossing the mean used to flip the ceiling 1 -> 0.5 -> 0 and back.
+TREND_BELOW = -0.03
+TREND_ABOVE = 0.02
+
+
+# Whether one benchmark is above its 200-session price trend at t, with the
+# hysteresis bands applied causally: the state is decided by the most recent
+# session at or before t whose close sits outside the bands, scanning back
+# only through the contiguous run of complete 200-session windows that ends
+# at t (a gap in the history is not carried across). Only rows through t are
+# read, so appending future rows cannot change an earlier read. When no
+# session in that run has ever left the bands there is no decided state to
+# hold, and the plain comparison of the close to its mean at t decides.
+def _above_trend(series: np.ndarray, t: int) -> bool | None:
+    """Return True/False for above/below trend at t, None when unusable."""
+    if not _price_window_complete(series, t, TREND_WINDOW):
+        return None
+    prefix = np.asarray(series[: t + 1], dtype=float)
+    usable = np.isfinite(prefix) & (prefix > 0.0)
+    # Rolling 200-session means and window completeness from cumulative sums,
+    # so the causal scan is one pass over the prefix rather than one window
+    # mean per session scanned.
+    values = np.where(usable, prefix, 0.0)
+    csum = np.concatenate([[0.0], np.cumsum(values)])
+    bad = np.concatenate([[0], np.cumsum(~usable)])
+    idx = np.arange(TREND_WINDOW - 1, t + 1)
+    means = (csum[idx + 1] - csum[idx + 1 - TREND_WINDOW]) / TREND_WINDOW
+    complete = (bad[idx + 1] - bad[idx + 1 - TREND_WINDOW]) == 0
+    ratio = np.full(t + 1, np.nan)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        ratio[idx] = np.where(complete, prefix[idx] / means - 1.0, np.nan)
+    incomplete = np.flatnonzero(~complete)
+    run_start = int(idx[incomplete[-1]]) + 1 if len(incomplete) else int(idx[0])
+    decided = np.zeros(t + 1, dtype=int)
+    decided[ratio > TREND_ABOVE] = 1
+    decided[ratio < TREND_BELOW] = -1
+    states = np.flatnonzero(decided[run_start : t + 1])
+    if len(states):
+        return bool(decided[run_start + int(states[-1])] > 0)
+    return bool(prefix[t] > float(means[-1]))
+
+
 # The broad trend ceiling: the fraction of SPY/QQQ above their trailing
-# 200-session adjusted-close PRICE mean, on price levels, never on returns.
+# 200-session adjusted-close PRICE mean, on price levels, never on returns,
+# each read with the hysteresis bands of `_above_trend`.
 def _trend_ceiling(
     spy_prices: np.ndarray, qqq_prices: np.ndarray, t: int
 ) -> float | None:
     """Return (above_SPY + above_QQQ) / 2 on price levels, or None when unusable."""
     above = 0
     for series in (spy_prices, qqq_prices):
-        if not _price_window_complete(series, t, TREND_WINDOW):
+        state = _above_trend(series, t)
+        if state is None:
             return None
-        window = series[t - TREND_WINDOW + 1 : t + 1]
-        above += int(series[t] > float(window.mean()))
+        above += int(state)
     return float(above) / 2.0
 
 
