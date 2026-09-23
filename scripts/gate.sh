@@ -140,7 +140,16 @@ ignores=(
 # chat-continuation tests already race a live worker for a queued run,
 # and adding workers of our own to that is a way to make a green suite
 # flaky.
-parallel=(-n 5 --dist loadfile)
+# Bound competing suites when other jobs share the local inference server.
+# On 2026-09-23, two five-worker gates timed out the two-reminders trajectory
+# while its unchanged isolated check passed. A one-worker run preserves every
+# case and assertion while separating suite contention from model behavior.
+gate_workers="${ANIOS_GATE_WORKERS:-5}"
+if [[ ! "$gate_workers" =~ ^[1-9][0-9]*$ ]]; then
+    echo "ANIOS_GATE_WORKERS must be a positive integer" >&2
+    exit 2
+fi
+parallel=(-n "$gate_workers" --dist loadfile)
 database=()
 if $unit; then
     ignores+=(--ignore=/app/backend/tests/functional)

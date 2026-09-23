@@ -1,5 +1,77 @@
 # Next session
 
+## 2026-09-23 — Repeated parallel timeout; bounded gate concurrency
+
+Second full attempt again ended99pass1fail, same two-reminders wall-clock
+assertion, in881.63s; see /tmp/codex-trading-release-retry-20260923.log. The
+isolated unchanged test passed102.30s. Live is still a89bba40. Root added
+ANIOS_GATE_WORKERS (default5, positive integers only) to scripts/gate.sh so a
+guarded release can run the required model suites with one worker. No assertion,
+case, skip list, model setting or timeout changed. Bash syntax, diff check and
+invalid0 rejection pass. This is an evidence-backed contention test, not proof
+that production model latency under concurrency is fixed. Next deployment uses
+ANIOS_GATE_WORKERS=1; do not restart while active. All copy workers remain active.
+
+## 2026-09-23 — Isolated timeout passed; one guarded retry active
+
+The unchanged two-reminders case passed in102.30s under scripts/gate.sh.
+Log /tmp/codex-trading-release-timeout-check-20260923.log. A single guarded
+deploy retry is now active at source30afe7d, preserving all required gates:
+/tmp/codex-trading-release-retry-20260923.log. Do not erase the first failure,
+restart the active retry, or treat the isolated pass as full release proof.
+
+## 2026-09-23 — First guarded release stopped on model-test wall clock
+
+Deployment30afe7d did NOT reach restart. Unit gate4373pass31skip; model gate
+99pass1fail in853s. Only failure is
+test_trajectory_evaluation_behaviour.py::test_two_reminders_are_both_written:
+stopped='the wall clock ran out', not one of the allowed completion stops.
+See /tmp/codex-trading-release-20260923.log. This code/prompt was unchanged by
+the trading release; concurrent local-model load is a hypothesis, not proven.
+An isolated unchanged case is running via scripts/gate.sh, log
+/tmp/codex-trading-release-timeout-check-20260923.log. No gate/assertion/config
+was weakened, no model service changed. Live marker remains a89bba40. Read the
+isolated result before any guarded retry; do not blindly restart active work.
+Prepared postdeploy read-only API/browser check /tmp/verify-live-dashboard.mjs
+requires a short-lived local bearer token in runner-local auth JSON; do not
+print credentials. It has not run against a newly deployed artifact yet.
+
+## 2026-09-23 — Whole trading-dashboard wording audit authorized
+
+User now requires every word to be correct, useful and nonredundant. Three
+isolated OpenCode workers use spark/deepseek-v4-flash at source30afe7d:
+copy_board1862162 (StockBoard/TickerChart/RecommendationTimeline/OpportunityCard),
+copy_overview1862178 (DeskPanel/EconomicContext/FomcGate), and
+copy_research1862215 (EntriesNow/ExecutionQuality/ForwardEvidence/FundingPreview/
+StrategyBench). Exact trees/logs/owned files are in the worker manifest. Each
+must read DASHBOARD_COPY_TASK.md and COPY_OWNERSHIP.json, write COPY_HANDOFF.md,
+then exit. Review only completed owned diffs; never import drafts or dependencies.
+No logic/redesign/strategy adoption. Check visible labels, tooltips, formulas,
+account origins, timestamps, chart meanings and evidence claims; cut repetition.
+Root continues the account release in parallel, then reviews/deploys wording
+corrections and exercises actual rendering. Required full unit gate passed
+4373 tests with31 skips; real routing gate is still running. Do not restart it.
+
+## 2026-09-23 — Personal dashboard release in progress
+
+Checkpoint 30afe7d integrates only the five owned dashboard files, independently
+reviewed after worker exit. Root corrected formatting and comments. VERIFIED:
+63 personal API/isolation/account checks; frontend typecheck; all 7 account-input
+browser cases against the integration tree on port 5177; Ruff and diff checks.
+Logs: /tmp/codex-dashboard-root-api-20260923.log and
+/tmp/codex-dashboard-root-browser-20260923.log. Initial browser harness attempt
+used a glibc image for musl dependencies and failed startup; corrected to the
+existing frontend image, then all seven tests passed. No source workaround.
+Worker reported 35 pre-existing failures in the broader browser suite; do not
+call that suite green. Main fast-forwarded to 30afe7d without history rewrites.
+Guarded scripts/deploy.sh is active from the real deploy checkout; log
+/tmp/codex-trading-release-20260923.log. Deployment/runtime acceptance is still
+UNVERIFIED until its gates and actual deployed browser/API checks finish.
+Model containers captured in /tmp/codex-models-before-release-20260923.txt.
+The incumbent entry rule remains in production guidance; no new strategy adopted.
+User uses the board for real decisions and explicitly prioritizes this release.
+All OpenCode workers have exited; never recopy their superseded sources.
+
 ## 2026-09-23 — Turnover review integrated; only dashboard worker active
 
 Checkpoint175cbd5:11 owned turnover acceptance cases PASS, Ruff/format PASS.
