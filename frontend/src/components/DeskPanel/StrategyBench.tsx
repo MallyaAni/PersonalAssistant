@@ -6,7 +6,7 @@ import type { StrategyBench as Bench, StrategyBenchRow } from '../../services/ap
 // came from: the same rule that doubles the desk over the whole sample makes
 // most of it in one two-year window and loses more than the desk in a crash.
 //
-// Evidence, never an instruction. Only the rule marked as shipping trades.
+// Evidence, never an instruction. Only the adopted strategy trades.
 
 const pct = (v: number | null | undefined, digits = 1) =>
   v == null ? '—' : `${v >= 0 ? '' : '−'}${Math.abs(v * 100).toFixed(digits)}%`
@@ -106,8 +106,7 @@ export const StrategyBench = ({ bench }: { bench?: Bench | null }) => {
         </p>
       )}
       <p className="mt-2">
-        Only the rule marked as shipping is traded. The others are measured alternatives and place no
-        orders anywhere.
+        Historical research comparisons, not personal account returns. This panel places no orders.
       </p>
     </details>
   )

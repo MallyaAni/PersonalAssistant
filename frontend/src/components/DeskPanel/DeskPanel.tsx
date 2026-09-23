@@ -687,76 +687,71 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-2xl'}`}>
     <p className="font-medium">Reading this page</p>
     <p className="mt-1 text-[#6e6e73]">
-      Every night after the close the desk re-grades about ninety AI and software names and writes one
-      decision. The board is that decision. Nothing here is an order, and nothing here trades your own
-      account.
+      The board combines the published evening decision with available intraday readings.
+      Personal guidance uses your recorded positions and confirmed cash. Nothing here submits
+      an order to your brokerage account.
     </p>
     <dl className="mt-3 space-y-2">
       <div>
         <dt className="font-medium">Grade</dt>
         <dd className="text-[#6e6e73]">
           A+ down to C, from five analysts voting: business fundamentals, price trend, earnings-release
-          tone, price against value, and which group is leading. A vote only changes after an analyst has
-          held its new view for three sessions, so a grade follows the evidence by about that much. One
-          bearish core analyst caps a name at B whatever the others say.
+          tone, price against value, and which group is leading. Evening votes use persistence rules;
+          intraday readings can update price-sensitive inputs. One bearish core analyst caps a name at B.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Opportunity</dt>
         <dd className="text-[#6e6e73]">
-          The same five analysts on a nought-to-ten scale at the latest completed bar. It is their combined
-          conviction, not a forecast of a return, and unlike the grade it is continuous: it moves with price
-          while the grade waits for its three sessions. That is why a name can hold an A while its
-          opportunity slides.
+          Combined analyst evidence on a zero-to-ten scale, not a return forecast.
+          Check the reading timestamp and any missing analyst inputs.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Plan</dt>
         <dd className="text-[#6e6e73]">
-          BUY adds a funded position; SELL reduces or closes one; HOLD makes no trade.
-          The Move % column is the change in account weight. Target % is the next reset allocation.
-          Between resets, A/A+ band breakouts can add from available cash and downgrades can rotate out.
-          The account-wide planner enforces the 15% entry cap. Decisions use dated evidence, and
-          opening buys cannot spend proceeds from sales due at the later close.
+          BUY proposes a cash-funded addition; SELL proposes a reduction; HOLD proposes no trade.
+          These actions use your recorded positions and confirmed cash.
+          Move % is a change in account allocation, not a return since the signal.
+          Target % is a strategy weight, not a profit target or an immediate rebalance instruction.
+          Blank Move % on Hold means no proposed trade. Entry limits and evidence checks still apply.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Selling</dt>
         <dd className="text-[#6e6e73]">
-          A downgrade below A can close a holding between resets. At a reset, a SELL can also be a trim
-          toward the new target. Sale proceeds become available only after execution. Historical
+          A covered holding downgraded below A can receive a sell recommendation.
+          Sale proceeds are not assumed available before execution. Historical
           comparisons use today's stock universe and do not establish future profitability.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Size %</dt>
         <dd className="text-[#6e6e73]">
-          Share of the whole account, not an order quantity. &ldquo;Not in the book&rdquo; means the name is
-          graded but was not picked: sizing ranks on the continuous score and then divides by volatility, with
-          the grade acting as a multiplier on top, so a high grade in a violent name can lose to a middling
-          grade in a steady one. A+ names with no size are normal.
+          Strategy allocation as a share of the account, not an order quantity or profit target.
+          A grade alone does not guarantee an allocation; selection and sizing also apply.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Prices</dt>
         <dd className="text-[#6e6e73]">
           Fifteen-minute IEX bars while the market is open, and the last completed bar once it closes. They are
-          bar prices, not executable bid and ask, and the board says which bar it is using. Outside
-          09:00 to 16:45 New York on a weekday nothing on the board moves.
+          bar prices, not executable bid and ask. Check the displayed bar timestamp before acting;
+          refreshing the page does not guarantee a newer market observation.
         </dd>
       </div>
       <div>
         <dt className="font-medium">What is real</dt>
         <dd className="text-[#6e6e73]">
           One paper account at the broker, shown as the practice account. It places real paper orders and its
-          fills are real fills. Everything under Research is simulation, including the ML comparison, and none
-          of it places an order anywhere. Your own brokerage account is never touched: after you trade it
+          fills are simulated broker fills. Research comparisons do not submit personal orders.
+          Your own brokerage account is never touched: after you trade it
           yourself, use Record to tell this page what filled.
         </dd>
       </div>
     </dl>
     <p className="mt-3 text-xs text-[#6e6e73]">
-      Click any column heading to sort by it, click a name for its full history, or click the arrow beside a
+      Click a sortable column heading to sort, click a name for its history, or click the arrow beside a
       row to see why the desk grades it that way without leaving the board.
     </p>
     {onClose && (
@@ -1328,7 +1323,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {research && <>
       <section aria-label="What the research accounts are" className="rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs text-[#6e6e73]">
-        <p><span className="font-medium text-[#1d1d1f]">Three simulated accounts, none real money.</span> The <span className="font-medium text-[#1d1d1f]">practice account</span> is the desk itself at the paper broker: its orders, fills and equity are the ones this page plans against. The <span className="font-medium text-[#1d1d1f]">board simulation</span> replays the 15-minute board's sizes as research. The <span className="font-medium text-[#1d1d1f]">ML paper comparison</span> runs frozen models beside SPY and cash and never trades.</p>
+        <p><span className="font-medium text-[#1d1d1f]">Simulated accounts, separate from your portfolio.</span> The practice account shows paper-broker orders and fills. The board simulation and frozen ML comparison are research. Personal guidance uses your recorded positions and confirmed cash.</p>
       </section>
       {latest && <details className="rounded-xl border border-black/[0.08] px-3 py-2 text-xs">
         <summary className="cursor-pointer font-medium">Inflation · {payload.economics?.assessment?.status === 'model_assessment' && !payload.economics.collection_stale && Date.now() - Date.parse(payload.economics.observed_at) < 36 * 3600000 ? payload.economics.assessment.pressure : 'unavailable'} · research</summary>
@@ -2106,7 +2101,7 @@ const EveryGrade = ({
           Only eligible technical readings refresh this decision's intraday grades.</p>}
         <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
-        <p className="mt-2">Plan is one of three things. <b>Buy</b> when a name graded A or A+ pushes through the upper edge of its own 20-day band, which the desk buys that session and funds by trimming the rest, so gross exposure does not move. The band replaced a distance from the 21-day average, which only fired after a name had already run 43% and so confirmed moves instead of finding them. <b>Sell</b> when the desk holds the name and no longer grades it A or better. A sell is a rotation, not an exit: the money goes into the names the desk still wants that same session. Selling the same signal to cash measured 24 points a year worse than simply holding. <b>Hold</b> otherwise — the hover says which kind, whether the desk is holding a position, waiting for an entry that has not fired, or blocked because the price evidence is stale. Every plan here describes the desk's own book and is the same whatever you have recorded in your positions; the distance between a position and its target weight is not an instruction, because the desk only trades toward those weights at a reset. The percentage means a different thing for each: beside <b>Buy</b> it is how much to <i>add</i> — a fixed 3% of the account, trimmed to whatever room is left under the 15% name cap, because scaling that increment by the conviction score was measured and made returns worse. Beside <b>Sell</b> it is the size of the position being <i>closed in full</i>: a rotation is never a trim, so a Sell at 7.8% means exit the whole holding, which happens to be 7.8% of the desk's book. Quoted prices and sizes do not guarantee a fill, and recording a fill is yours to do at your broker.</p>
+        <p className="mt-2"><b>Buy</b> is a cash-funded addition based on an eligible entry, current evidence and position limits. <b>Sell</b> is a proposed reduction of your recorded holding; read the row reason and size. <b>Hold</b> proposes no transaction, including when evidence or funding is unavailable. These actions use your recorded positions and confirmed cash. Sale proceeds are not assumed available before execution. <b>Move %</b> is the proposed change as a share of account equity, not a return. <b>Target %</b> is a strategy allocation, not a profit target or an instruction to rebalance now. Blank Move % on Hold means no proposed trade. Quotes and sizes do not guarantee a fill; place trades at your broker and record only completed fills.</p>
       </details>
       <fieldset className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6e6e73]">
         <legend className="sr-only">Filter the table by plan</legend>

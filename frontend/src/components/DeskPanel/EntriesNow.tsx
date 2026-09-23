@@ -12,10 +12,13 @@ import { getDeskEntries, type DeskEntries, type DeskEntryRow } from '../../servi
 // measured setups is present and what that setup was worth when it was
 // measured, so a trader can decide. Nothing here places an order.
 
+// The bar's own timestamp, dated so an old candle cannot read as today's.
 const marketTime = (stamp?: string | null) =>
   stamp
     ? new Date(stamp).toLocaleString('en-US', {
         timeZone: 'America/New_York',
+        month: 'short',
+        day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
       })
@@ -32,11 +35,11 @@ const headline = (row: DeskEntryRow): string => {
 const detail = (row: DeskEntryRow): string => {
   if (row.trigger === 'dip') {
     return row.with_the_basket_falling
-      ? 'Below its lower band with the AI group falling too. Strongest reading measured: about +2.1% over 5 sessions.'
-      : 'Stretched below its 21-day average or its lower band. About +1.2% over 5 sessions.'
+      ? 'Dip condition with the AI group falling too. Research signal, not a funded buy.'
+      : 'Stretched below its 21-day average or its lower band. Research signal, not a funded buy.'
   }
   if (row.trigger === 'breakout') {
-    return 'Top of its 60-session range with the daily and weekly trends agreeing. About +1.3% over 20 sessions.'
+    return 'Top of its 60-session range with the daily and weekly trends agreeing. Research signal, not a funded buy.'
   }
   return 'Neither trigger is firing at this bar.'
 }
@@ -106,13 +109,11 @@ export const EntriesNow = ({ userId, onOpen }: { userId: string; onOpen?: (ticke
           the names, not a paragraph; the paragraph matters once, and then
           only when they want to check what the number rests on. */}
       <details className="mb-2 text-[11px] text-[#6e6e73]">
-        <summary className="cursor-pointer text-[#0071e3]">Edge</summary>
+        <summary className="cursor-pointer text-[#0071e3]">Research setups</summary>
         <p className="mt-1">
-          The grade says what to hold. This says whether now is a moment to begin, among the names
-          already graded A+ or A. Two setups were measured on this book: a dip pays about 1.2% over
-          five sessions, and 2.1% when the AI group is falling with it; a breakout pays about 1.3%
-          over twenty. Those are averages with plenty of losers inside them, not a promise. Nothing
-          here places an order.
+          Dip and range-breakout observations for names graded A+ or A. These research setups
+          are separate from the personal plan and do not establish a profitable entry.
+          Nothing here places an order.
         </p>
       </details>
 

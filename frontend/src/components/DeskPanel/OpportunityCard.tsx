@@ -30,7 +30,7 @@ export const OpportunityCard = ({reading, now}: {reading?: DeskOpportunity; now:
         That is not the same as {reading!.missing.length === 1 ? 'a neutral vote' : 'neutral votes'}: a name can rank high here on a
         narrow read. Compare it against names with the full panel carefully.
       </p>}
-      <p className="mt-3 text-[11px] text-[#6e6e73]">A high score does not override Wait, FOMC restrictions or position limits.</p>
+      <p className="mt-3 text-[11px] text-[#6e6e73]">A high score does not override the plan, FOMC restrictions or position limits.</p>
     </>}
   </section>
 }

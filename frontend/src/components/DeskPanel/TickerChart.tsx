@@ -435,8 +435,8 @@ export const TickerChart = ({
             marks a session the price closed through the upper edge of its 20-day band, which is
             price-only evidence; grade, cash and position caps determine the actual plan.{' '}
             <span className="font-medium text-[#b42318]">{'↓'} sell</span>{' '}
-            marks a session the grade fell out of A, the desk's only exit: it sells and puts the
-            money into the names it still wants. Paler arrows are grade changes that are not
+            marks a session the grade fell below A. It is not a confirmed sale or reinvestment.
+            Paler arrows are grade changes that are not
             trades. A signal shown here is the rule replayed over these prices, not a record of
             an order.
           </p>

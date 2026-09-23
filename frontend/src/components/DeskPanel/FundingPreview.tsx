@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getDeskFundingPreview, type DeskFundingPreview, type DeskPayload } from '../../services/api'
 
+// Format an ISO timestamp as a short date and time in the account's trading
+// zone (America/New_York), so an expiry or reference-bar time reads as a time
+// rather than a serialized timestamp.
+const etTime = (iso: string) =>
+  new Date(iso).toLocaleString('en-US', {
+    timeZone: 'America/New_York',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+
 // How many shares the desk's targets come to, in this account.
 //
 // This used to refuse to say anything until a cash figure was typed in. It
@@ -84,7 +97,7 @@ export const FundingPreview = ({ userId, equity, research, paused = false }: { u
     </p>
     <details className="my-2 text-xs text-[#6e6e73]"><summary className="cursor-pointer">Sizing details</summary>
       <p className="mt-1">Target shares come from the account equity and the target percentage, so they do not depend on free cash. A cash limit only reduces how much of the target you reach today. Whole shares, before fees; cash is never saved. Re-read after any fill.</p>
-      {mode === 'intraday_research' && <p className="mt-1">Current technical grades; evening growth-model valuation retained. Building inflation plus negative daily and weekly benchmark trends tightens the exposure ceiling without compounding cuts. Experimental; scheduled policy unchanged.</p>}
+      {mode === 'intraday_research' && <p className="mt-1">Current technical grades; {research?.valuation ?? 'evening valuation retained'}. Building inflation plus negative daily and weekly benchmark trends tightens the exposure ceiling without compounding cuts. Experimental; scheduled policy unchanged.</p>}
     </details>
     {mode === 'intraday_research' && !liveReady && <p className="my-2 text-xs text-amber-800">{research?.reason ?? 'Waiting for a complete fresh research allocation.'}</p>}
 
@@ -104,8 +117,8 @@ export const FundingPreview = ({ userId, equity, research, paused = false }: { u
 
     {error && <p role="alert" className="mt-2 text-xs text-[#b42318]">{error}</p>}
     {preview && <div className="mt-3 overflow-x-auto">
-      {preview.mode === 'intraday_research' && <p className="mb-2 text-xs">Live allocation · valid until {preview.valid_until}. Exposure multiplier {((preview.macro?.exposure ?? 0) * 100).toFixed(0)}%{preview.macro?.defensive ? ' · defensive macro condition active' : ' · no additional macro reduction'}.</p>}
-      <p className="text-xs">{preview.mode === 'intraday_research' ? 'Evening context from' : 'Targets from'} {preview.session}. Buying the whole target costs ${preview.estimated_cost.toFixed(2)}.{limiting ? ` Cash left $${preview.unallocated_cash.toFixed(2)}.` : ''}{preview.cash_limited ? ' Additions reduced together to fit the cash limit.' : ''}</p>
+      {preview.mode === 'intraday_research' && <p className="mb-2 text-xs">Live allocation · valid until {preview.valid_until ? etTime(preview.valid_until) : 'unavailable'}. Target sizing {((preview.macro?.exposure ?? 0) * 100).toFixed(0)}%{preview.macro?.defensive ? ' · defensive macro condition active' : ' · no additional macro reduction'}.</p>}
+      <p className="text-xs">{preview.mode === 'intraday_research' ? 'Evening context from' : 'Targets from'} {preview.session}. {preview.cash_limited ? 'The additions sized to the cash limit cost' : 'Buying the whole target costs'} ${preview.estimated_cost.toFixed(2)}.{limiting ? ` Cash left $${preview.unallocated_cash.toFixed(2)}.` : ''}{preview.cash_limited ? ' Additions reduced together to fit the cash limit.' : ''}</p>
       {preview.rows.length ? <table className="mt-2 w-full text-left text-xs">
         {/* With nothing recorded, "held" is zero on every row and the target
             and the amount still to buy are the same number printed twice.
@@ -117,13 +130,18 @@ export const FundingPreview = ({ userId, equity, research, paused = false }: { u
           {anyHeld && <th>Target total</th>}
           <th>{anyHeld ? (limiting ? 'Buy now' : 'Still to buy') : (limiting ? 'Buy now' : 'Shares')}</th>
         </tr></thead>
-        <tbody>{preview.rows.map(row => <tr key={row.ticker}>
-          <td className="py-2">{row.ticker}</td><td>${row.reference_price.toFixed(2)}<div className="text-[#6e6e73]">{preview.price_times[row.ticker] ? `Bar starts ${preview.price_times[row.ticker]}` : 'Reference time unavailable'}</div></td>
-          {anyHeld && <td>{row.held_shares}</td>}
-          {anyHeld && <td>{row.target_total_shares}</td>}
-          <td>{row.additional_shares}</td>
-        </tr>)}</tbody>
-      </table> : <p className="mt-2 text-xs">{paused ? 'No additions while the FOMC cycle is open; the plan resumes when it closes.' : 'No eligible additions under the current targets.'}</p>}
+        <tbody>{preview.rows.map(row => {
+          // The bar time is looked up once so a nullable value is narrowed to
+          // a real time before it is formatted.
+          const barAt = preview.price_times[row.ticker]
+          return <tr key={row.ticker}>
+            <td className="py-2">{row.ticker}</td><td>${row.reference_price.toFixed(2)}<div className="text-[#6e6e73]">{barAt ? `Bar starts ${etTime(barAt)}` : 'Reference time unavailable'}</div></td>
+            {anyHeld && <td>{row.held_shares}</td>}
+            {anyHeld && <td>{row.target_total_shares}</td>}
+            <td>{row.additional_shares}</td>
+          </tr>
+        })}</tbody>
+      </table> : <p className="mt-2 text-xs">{paused ? 'No additions while the FOMC policy pauses the plan; sizing resumes when it lifts.' : 'No eligible additions under the current targets.'}</p>}
       {!!preview.reductions?.length && <div className="mt-3 text-xs">
         <p>Target reductions · no sale proceeds included in this budget</p>
         {preview.reductions.map(row => <p key={row.ticker} className="mt-1">{row.ticker}: {row.held_shares} held → {row.target_total_shares} target shares · reduction {row.reduction_shares}</p>)}

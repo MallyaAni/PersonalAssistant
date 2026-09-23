@@ -447,8 +447,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 disagree on purpose - target 0.8%, sell the 1.9% held - and
                 two bare percentages side by side read as a contradiction. */}
             <SortHead column="weight" sort={sort} onSort={setSort} title="The weight the desk wants in this name at the next weight reset, as a share of the account. Not the move in the Plan column, which is what it is trading today.">Target %</SortHead>
-            <th>Move %</th>
-            <th>Desk position</th>
+            <th title="Proposed change to this name's allocation in the account, not a return since the signal">Move %</th>
+            <th title="The practice account's position, not your own">Desk position</th>
             <th>Your position</th>
             <th>Reason</th>
 

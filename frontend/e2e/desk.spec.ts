@@ -8,6 +8,26 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Expanded guidance separates personal allocations from returns and paper accounts.
+test('account wording distinguishes allocation from profit and paper from personal', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))
+  await page.goto('/?deskDetails=1#desk')
+  await page.getByRole('button', {name: 'How to use this page', exact: true}).click()
+  await expect(page.getByText('fills are simulated broker fills.', {exact: false})).toBeVisible()
+  await expect(page.getByText('refreshing the page does not guarantee a newer market observation.', {exact: false})).toBeVisible()
+  await expect(page.getByText('These actions use your recorded positions and confirmed cash.', {exact: false})).toBeVisible()
+  await expect(page.getByText('Blank Move % on Hold means no proposed trade.', {exact: false})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Move %', exact: true})).toHaveAttribute('title', /allocation.*not a return/)
+  await expect(page.getByRole('columnheader', {name: 'Desk position', exact: true})).toHaveAttribute('title', /practice account/)
+  await expect(page.locator('body')).not.toContainText('same whatever you have recorded')
+  await expect(page.locator('body')).not.toContainText('24 points a year')
+  await page.getByRole('button', {name: 'Research', exact: true}).click()
+  await expect(page.getByLabel('What the research accounts are')).toContainText('Personal guidance uses your recorded positions and confirmed cash')
+  await page.screenshot({path: 'test-results/trading-copy-research.png', fullPage: true})
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Missing index evidence remains visible, and old saved accounting is labelled honestly.
 test('benchmark comparison explains unavailable indexes and legacy accounting', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -2181,7 +2201,7 @@ test('details splits into plan and research and the simple page carries only dec
   await expect(page.locator('summary', { hasText: 'Practice account' })).toBeVisible()
   await page.getByRole('button', {name: 'Research', exact: true}).click()
   await expect(page.getByRole('button', {name: 'Show practice account details', exact: true})).toBeVisible()
-  await expect(page.getByLabel('What the research accounts are')).toContainText('Three simulated accounts')
+  await expect(page.getByLabel('What the research accounts are')).toContainText('Simulated accounts, separate from your portfolio')
   await expect(page.getByText('Stock rankings')).toHaveCount(0)
   await page.getByRole('button', {name: 'Back to the desk', exact: true}).click()
   await expect(page.getByText('Stock rankings')).toBeVisible()
@@ -2522,7 +2542,7 @@ test('confirmed available cash funds buys in the body, and zero keeps them gated
   await page.getByRole('button', { name: 'Apply', exact: true }).click()
   await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $0; no funded buys.')
   await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('HOLD')
-  expect(mineBodies.some(b => b.equity === 200000 && b.available_cash === 0)).toBe(true)
+  await expect.poll(() => mineBodies.some(b => b.equity === 200000 && b.available_cash === 0)).toBe(true)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 

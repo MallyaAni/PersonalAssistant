@@ -19,7 +19,7 @@ export const FomcGate = ({gate}: {gate?: DeskFomcGate | null}) => (
       <p className="mt-1">{gate.verdict.rule}</p>
       <div className="mt-2 overflow-x-auto">
         <table className="w-full text-left [&_td]:pr-3 [&_th]:pr-3" aria-label="FOMC meetings">
-          <thead><tr><th>Decision</th><th>Status</th><th>Window</th><th>Effect</th><th>After {gate.cost_bp} bp</th><th>Drawdown, live</th><th>Drawdown, without</th></tr></thead>
+          <thead><tr><th>Decision</th><th>Status</th><th>Window</th><th>Effect</th><th>After {gate.cost_bp} bp</th><th>Drawdown, paper</th><th>Drawdown, without overlay</th></tr></thead>
           <tbody>{gate.meetings.map(row => <tr key={row.decision_date}>
             <td>{row.decision_date}</td>
             <td>{row.status}</td>
@@ -31,19 +31,7 @@ export const FomcGate = ({gate}: {gate?: DeskFomcGate | null}) => (
           </tr>)}</tbody>
         </table>
       </div>
-      <p className="mt-3">{gate.basis}. The effect is live equity minus the no-overlay equity at the window's end; an open cycle is marked to the last recorded session. Written {gate.written}.</p>
-      {/* The gate decides this policy on its own meetings, which is right.
-          But two studies on this book already tested the same shape of
-          evidence and both came back against it, and a reader judging the
-          gate's running total should know that before it reports. */}
-      <p className="mt-2 rounded bg-[#fff8e6] p-2">
-        <b className="text-[#1d1d1f]">Prior from related work:</b> cutting exposure on weakness has not paid on
-        this book. Six risk-off conditions tested against the forward 20-session return all preceded
-        <i> above</i>-average returns, the strongest being a benchmark 5% off its high at +4.77% against a
-        +2.71% baseline. Separately, 21 exit triggers were screened and not one was followed by a fall.
-        That is 27 tests pointing one way. None of them is this policy, which is why the gate still
-        decides it, but the gate is not starting from neutral.
-      </p>
+      <p className="mt-3">{gate.basis}. Effect compares paper-account equity with the no-overlay counterfactual at the window's end; an open cycle uses the last recorded session. Written {gate.written}.</p>
     </>}
   </details>
 )

@@ -44,7 +44,7 @@ export const ExecutionQuality = ({quality}: {quality?: DeskExecutionQuality | nu
           <tbody>{quality.worst.map(row => <tr key={`${row.session}-${row.symbol}-${row.side}`}><td>{row.session}</td><td>{row.symbol}</td><td>{row.side}</td><td>{row.kind}</td><td>{bp(row.slippage_bps)}</td><td>{bp(row.bps)}</td><td>{dollars(row.dollars)}</td></tr>)}</tbody>
         </table>
       </div>}
-      <p className="mt-3">Written {quality.written}. A rising cumulative line is the desk paying more to reach its positions; it does not say whether the positions were right. Ranked by slippage, since a name that gapped overnight is not an execution failure.</p>
+      <p className="mt-3">Written {new Date(quality.written).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} ET. A rising cumulative line is the desk paying more to reach its positions; it does not say whether the positions were right. Ranked by slippage, since a name that gapped overnight is not an execution failure.</p>
     </>}
   </details>
 )
