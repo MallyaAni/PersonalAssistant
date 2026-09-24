@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-09-24 00:24 UTC — Prospective learned inputs LIVE; first nightly pending
+
+Source `37f523ab2dafd82295d63a1e2d5da7580238dd77` is deployed by the
+required `scripts/deploy.sh`. The full backend gate passed and its serial
+real-model gate passed **100/100**; postdeploy status is
+`2026-09-24T00:24:44Z 37f523ab ok (cheap)`. The running backend's
+`backend/market/learned_inputs.py` SHA-256 exactly matches the deploy source
+(`2a815358...10072f0`). Model containers were not changed. The deploy
+checkout's untracked `data` and `secrets` links were preserved.
+
+The ordinary current `market_daily` writer now appends a separate immutable
+feature observation after saving the desk record. It records actual capture
+time, source record hash, code revision, bar completeness/provenance, price
+momentum/volatility/raw range, market breadth/regime, dated filing ratios and
+scored earnings tone; missing values remain null. Historical and forced runs
+do not fabricate an observation, and an earlier capture cannot be overwritten.
+**58 focused tests passed**, scoped Ruff passed, and a read-only build using
+the actual 2026-09-23 desk record serialized successfully: 95 names, 95
+complete current bars, 89 known tone records, 82 available earnings-yield
+features. This proves the real source schema, not learner profitability.
+
+The 2026-09-23 19:30 nightly finished before the 20:24 local deploy. Thus
+`data/market/learned_inputs/` correctly has no file yet; verify the next
+ordinary trading-session nightly creates `asof=DATE.json` and that its hash,
+capture time, complete-bar counts and source partitions are valid. Do not
+force/replay today or rewrite the existing desk record to seed it.
+The learned rank/brake remain **shadow-only**. A 2016–26 comparison against
+the incumbent, SPY, QQQ and equal weight is still **UNVERIFIED** without
+dated historical membership, delisted outcomes and compatible price vintages.
+Do not switch the live recommendation policy based on a survivor-selected
+or restated-price diagnostic.
+
 ## 2026-09-23 23:43 UTC — Desk correction and complete recommendation log LIVE
 
 Source `42c5a74618a7ad7d29e288fd4c2e73d1f2d0b523` is deployed through
