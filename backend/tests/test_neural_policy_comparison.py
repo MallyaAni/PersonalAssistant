@@ -46,8 +46,9 @@ def assert_trades_equal(actual, expected):
 
 
 # Same scores reproduce the live ledger, including event cuts and restores.
+@pytest.mark.parametrize("policy", study.POLICIES)
 @pytest.mark.parametrize("cost_bps", [0, 10, 25])
-def test_same_scores_reproduce_real_live_account_exactly(cost_bps):
+def test_same_scores_reproduce_real_live_account_exactly(cost_bps, policy):
     report = _report()
     events = np.ones(len(report.panel.dates))
     events[95:110] = 0.5
@@ -58,6 +59,7 @@ def test_same_scores_reproduce_real_live_account_exactly(cost_bps):
         since=date(2024, 1, 1),
         event_exposure=events,
         cost_bps=cost_bps,
+        policy=policy,
     )
     oracle = simulate.run(
         report,
@@ -90,6 +92,41 @@ def test_same_scores_reproduce_real_live_account_exactly(cost_bps):
         assert actual.traded == oracle.traded
     np.testing.assert_array_equal(report.scores, before)
     assert result["adoption_eligible"] is False
+
+
+# Blend both rankings equally and preserve every gap in incumbent evidence.
+def test_blend_uses_equal_cross_sectional_ranks_and_incumbent_coverage():
+    report = _report()
+    evidence = evidence_for(report)
+    report.scores[100] = np.arange(report.scores.shape[1], dtype=float)
+    evidence.values[100] = report.scores[100][::-1]
+    report.scores[100, 0] = np.nan
+    actual = study.candidate_scores(report, evidence, study.POLICY_BLEND)
+    common = np.isfinite(report.scores) & np.isfinite(evidence.values)
+    expected = study.baselines.rank_blend(
+        np.where(common, report.scores, np.nan),
+        np.where(common, evidence.values, np.nan),
+    )
+    np.testing.assert_array_equal(actual, expected)
+    assert np.isnan(actual[100, 0])
+    assert np.isfinite(actual[100, 1:]).all()
+
+
+# An unregistered candidate cannot reach the shared account simulator.
+def test_unknown_comparison_policy_is_rejected_before_account_runs(monkeypatch):
+    report = _report()
+    calls = []
+    monkeypatch.setattr(simulate, "run", lambda *args, **kwargs: calls.append(1))
+    with pytest.raises(ValueError, match="unknown neural comparison policy"):
+        study.compare(
+            report,
+            evidence_for(report),
+            since=date(2024, 1, 1),
+            event_exposure=np.ones(len(report.panel.dates)),
+            cost_bps=10,
+            policy="selected-after-seeing-results",
+        )
+    assert calls == []
 
 
 # Reject future features or fitting outcomes before either account runs.

@@ -11,8 +11,12 @@ from types import SimpleNamespace
 import numpy as np
 
 from backend.agents.trading.desk import paper, simulate
+from backend.market import baselines
 
-POLICY = "neural-ranking-live-rules/1-research"
+POLICY_NEURAL = "neural-ranking-live-rules/1-research"
+POLICY_BLEND = "incumbent-neural-rank-blend/1-research"
+POLICY = POLICY_NEURAL
+POLICIES = (POLICY_NEURAL, POLICY_BLEND)
 
 
 @dataclass(frozen=True)
@@ -100,12 +104,37 @@ def _validate_model_dates(evidence, dates, active):
         )
 
 
+# Build the selected candidate score without widening the incumbent's coverage.
+def candidate_scores(report, evidence: ForecastEvidence, policy: str) -> np.ndarray:
+    """Return neural-only or equal-rank-blend scores for the research adapter."""
+    if policy not in POLICIES:
+        raise ValueError("unknown neural comparison policy")
+    incumbent = np.asarray(report.scores, dtype=float)
+    neural = np.asarray(evidence.values, dtype=float)
+    if neural.shape != incumbent.shape:
+        raise ValueError("candidate scores must match the incumbent score grid")
+    if policy == POLICY_BLEND:
+        common = np.isfinite(incumbent) & np.isfinite(neural)
+        scores = baselines.rank_blend(
+            np.where(common, incumbent, np.nan),
+            np.where(common, neural, np.nan),
+        )
+    else:
+        scores = neural.copy()
+    return np.where(np.isfinite(incumbent), scores, np.nan)
+
+
 # Replace only the ranking values while retaining the actual risk-sizing implementation.
-def _allocator_for(evidence: ForecastEvidence):
+def _allocator_for(evidence: ForecastEvidence, policy: str = POLICY):
+    scores = None
+
     # Let the simulator decide on its current row with its usual trailing price window.
     def allocate(report, panel, config, t):
+        nonlocal scores
+        if scores is None:
+            scores = candidate_scores(report, evidence, policy)
         ranking = SimpleNamespace(
-            scores=np.where(np.isfinite(report.scores), evidence.values, np.nan),
+            scores=scores,
             graded=report.graded,
             regime=report.regime,
         )
@@ -122,8 +151,11 @@ def compare(
     since: date,
     event_exposure: np.ndarray,
     cost_bps: float,
+    policy: str = POLICY,
 ):
     validate(report, evidence, since)
+    if policy not in POLICIES:
+        raise ValueError("unknown neural comparison policy")
     events = np.asarray(event_exposure, dtype=float)
     if events.shape != (len(report.panel.dates),):
         raise ValueError("one shared event exposure is required for every session")
@@ -141,13 +173,18 @@ def compare(
         **simulate.LIVE_POLICY,
     )
     incumbent = simulate.run(report, **options)
-    candidate = simulate.run(report, allocator=_allocator_for(evidence), **options)
+    candidate = simulate.run(
+        report, allocator=_allocator_for(evidence, policy), **options
+    )
     return {
-        "policy": POLICY,
+        "policy": policy,
         "adoption_eligible": False,
         "evidence_basis": evidence.evidence_basis,
         "comparison": (
-            "ranking substitution with unchanged live grades and account rules"
+            "equal cross-sectional rank blend with unchanged live grades and "
+            "account rules"
+            if policy == POLICY_BLEND
+            else "ranking substitution with unchanged live grades and account rules"
         ),
         "model_sha256": evidence.model_sha256,
         "input_sha256": evidence.input_sha256,

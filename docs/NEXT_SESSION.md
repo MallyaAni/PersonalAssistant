@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-09-24 — Fixed incumbent/neural blend protocol, research only
+
+The next challenger is frozen as
+`incumbent-neural-rank-blend/1-research`: equal cross-sectional percentile
+ranks from the incumbent and the separately named price-only neural model,
+using only the incumbent's existing evidence coverage and all of the unchanged
+live risk/account rules. It is an attribution test, not a claim of superiority.
+No historical rerun, scoring, strategy promotion, recommendation, paper-account
+write, or deployment occurred. The completed losing neural and HGB studies must
+not be retuned.
+
+The protocol and current 2026 literature review are in
+`docs/research/top-tier-strategy-protocol-2026-09-24.md`. A forward run must
+freeze the exact price-only model/input hashes before its first decision and
+retain 252 completed sessions before review. It must compare the blend with the
+unchanged incumbent, SPY, QQQ, and equal weight at 10 and 25 bp. The primary
+hurdle is higher net total return than all three incumbent/index comparators;
+drawdown, turnover, exposure, fees, concentration, and rolling consistency stay
+visible diagnostics. A model-specific trust gate remains deferred until genuine
+forward forecast-error history exists.
+
+VERIFIED locally against the exact research code: **33 passed** across the
+baseline/rank-blend, market-challenger and neural-policy comparison suites;
+scoped Ruff and `git diff --check` are clean. Diagram impact: NONE — this adds
+one policy option inside the existing research adapter and no component, store,
+dependency, ownership boundary or data flow. NOT DEPLOYED.
+
 ## 2026-09-24 — Desk semantic consistency implementation, not deployed
 
 Working tree changes on `main` at starting HEAD
