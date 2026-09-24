@@ -1,11 +1,89 @@
 # Next session
 
+## 2026-09-24 — Single stock list verified and pushed; research continues
+
+Objective: remove the duplicate **Every grade in detail · diagnostic view**
+universe while preserving unique diagnostics, source clocks, search/sort/filter
+controls, owner-only confirmed-fill recording and legacy detail links. This
+follow-up began on `main` after history/cohort checkpoint
+`16cb39426a6e253ec8dc7290e40a45e38718186f`. Only the task's three frontend files
+were pending; the earlier staged history/cohort tree was committed separately.
+
+Implementation checkpoint: `e65eb334b67e945cb838f271f99b946755bf619e`, pushed to
+`spark main` and verified against the remote branch. No deployment occurred.
+
+VERIFIED: **106/106** Desk Playwright tests in **1.1 minutes** against the
+checkout mounted into Playwright 1.61.1 with its own Vite server; production
+TypeScript/Vite build; targeted compact/mobile acceptance; clean diff. Tests
+exercise one stock list, row diagnostics, quote/research expiry, explicit zero
+targets, role restrictions, and persisted confirmed shares/entry price after
+reload. They use deterministic API fixtures, not the production account.
+Desktop board top stays **323.5 px** against the unchanged **<340 px** bound;
+the compact fixture's visible words fall from **464 to 359**. Phone commentary
+and the complete fill form have viewport ratios of **1**, form fields fit the
+board and horizontal scroll stays **0**. Root inspected both phone screenshots
+and independently checked these final source hashes:
+
+- DeskPanel.tsx: `6a5164ec4b1224d9109a5a26032db20f2149a9289cfe5e93b0a2d4cc81903441`.
+- StockBoard.tsx: `c908dea96645da7b0e99c924a745e688a8de38c8ceafc57a3475f65caafe41a0`.
+- desk.spec.ts: `7da70c869a93828ccfba720c6928976d46062164a7936db0c74dce6f2bec0b11`.
+
+Reproduced failures before correction: the redundant diagnostic list remained
+present, expanded phone content extended outside its board, and the old height
+cap clipped commentary (viewport ratio **0.65076**, required **1**). The final
+tree removes the table, bounds expansion width and lets small screens scroll
+naturally. The compact Desk guide retains explanations without another universe
+list. Grade source stays explicit; ranking copy describes the actual
+allocation-first order. Recorded reasoning is no longer sliced before display.
+
+UNVERIFIED: deployed browser acceptance and full deployment gates. Existing Vite
+CSS/chunk warnings remain. No backend, model prompt, trading policy, holdings or
+orders changed in this follow-up. Deploy only through `scripts/deploy.sh` when
+the operator is ready; a browser refresh does not rebuild the gateway.
+Diagram impact: NONE — existing Desk/StockBoard boundary. CHANGELOG records the
+functional evidence. The prior history/cohort checkpoint's migration and backend
+proof are below, not replaced by the frontend test count.
+
+Goal remains active. Next atomic research work is the independently replayable
+all-account journal, before the zero-safe exposure adapter or nested fits. The
+read-only code review identified these concrete boundaries:
+
+- Instrument actual `_Book._fill` batches, with decision/phase context through
+  `settle`, `settle_split` and `learned_research.replay`. Preserve arithmetic and
+  default outputs. `SimTrade` is not a fill journal: it misses partial fills,
+  costs and cash. Instrument SPY/QQQ `constant_exposure` in place with the same
+  schema rather than replacing its ledger with the incumbent implementation.
+- Independently replay initial cash, submitted/adjusted orders, actual fills,
+  fees, all held close marks and the explicit terminal open state; validate price
+  references against immutable hashed arrays, not only prices copied into events.
+  Use session/phase timestamps, never invented historical observed timestamps.
+- The current ledger has one cash balance, not actual T+1/T+2/T+3 settlement.
+  `recycle_sells=False` bounds buys to pre-batch cash, then credits net sales at
+  the batch end. Preserve and name each batch's recycling convention. A real
+  settlement model is a separate versioned change.
+- Zero exposure also encounters `planner.target_shares`' minimum-trade rule:
+  small positions can survive a zero target. Record desired zero versus actual
+  residual honestly; the later adapter must explicitly liquidate and restore
+  stable unscaled composition. Do not merely permit a zero brake override.
+
+No new journal or strategy implementation has begun, and no completed losing
+study was rerun or retuned. `/3` remains incumbent; source-complete historical
+quality/cohorts and genuine independent validation remain outstanding.
+
 ## 2026-09-24 — Personal receipts and sourced cohorts; next: one stock list and risk allocation
 
 Started clean on `main` at `8953aee30eb7f324e5c350b7ce6c46eeb7bed109`;
 `git pull --rebase origin main` was already current and the pre-checkpoint fetch
 confirmed zero divergence. All current edits belong to this task. No deployment
 occurred; the user deploys from Spark through `scripts/deploy.sh`.
+
+Implementation checkpoint: `16cb39426a6e253ec8dc7290e40a45e38718186f`, pushed to
+`spark main`. The staged
+frontend hashes matched the browser-tested source before the separate
+single-list work began. The migration verification was repeated after the
+encrypted-only receipt reader landed and again built all **47 tables** at
+`20260924_0021`. Both disposable local test databases have been removed; no
+production database was touched.
 
 VERIFIED: **82** planner/API/personal-history tests, with **5** actual
 HTTP/Postgres receipt journeys and **4** pure projection guards; **103/103** Desk
@@ -81,8 +159,8 @@ Latest user steering and next substantive work:
    validation remain outstanding; these cannot be manufactured by fold geometry.
 
 Goal remains active. No holdings/orders, live policy, inference model or deployed
-service changed. No new strategy was promoted. Commit SHA will be recorded after
-the checkpoint is created and verified; do not confuse a push with deployment.
+service changed. No new strategy was promoted. Do not confuse the checkpoint
+push with deployment.
 
 ## 2026-09-24 — Chronological diagnostics verified at e972117; broader work continues
 
