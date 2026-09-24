@@ -68,6 +68,14 @@ allocation. Scoped Ruff lint/format and diff checks pass.
 A separate 90-case helper probe exercised the actual helper source at buffer
 sizes 1, 2, 7, 127 and 65,536; all byte/hash and buffer-bound checks passed.
 
+Published implementation checkpoint:
+`5040fdf0eebc28a432975a5ea1f2b4f9cbe54222`, pushed to Spark, then to GitHub
+from Spark. The exact clean tree repeated the same **1,096 passed, one
+deselected, five existing warnings in 36.76 seconds**. The command, tree ID,
+source hashes and final JUnit are retained at
+`/private/tmp/anios-archive-committed.p0nzs4/`; JUnit SHA256
+`aa166b8372c939cae0aeebf3cc5ea886aa7702b000263fd74615a85934950fb7`.
+
 ## Full-size controlled experiment
 
 The fixture reconstructs a previously completed **synthetic** archive. It adds
@@ -132,8 +140,20 @@ It must not be overwritten or given a fabricated completion manifest.
 
 The fresh archive-buffering retention directory is
 `/home/animallya96/anios/data/market/research/archive-buffering-20260924.uw4mdckq/`.
-Its transfer/readback status is recorded in `../NEXT_SESSION.md`; allocation of
-a directory alone is not proof that its evidence was retained successfully.
+The main payload now passes remote readback: **5,491 files / 2,378,027,323 bytes**,
+zero missing, changed or unexpected files. The 52 duplicate symlink aliases
+were explicitly excluded; all unique evidence and source files were retained.
+All 4,451 files in the earlier historical archive also match before/after.
+Retention receipt `retention/retention-readback.json` SHA256:
+`04bea694267ea8a9cf060af168e08f22b4d0ca8f04ce5f20e4893ea3488983ca`.
+
+The exact-commit supplement at `committed-5040fdf-n3zunsqw/` also passes complete
+readback: **2,275 payload files / 67,134,707 bytes**. Its separate retention
+receipt SHA256 is
+`dee86f187aaf0991a6ee72e08f3f263491048333a4a18e289208166154fe4e53`.
+Both verifications preserve the original main payload and the earlier market
+archive. No transfer remains running. See the [handoff](../NEXT_SESSION.md) for
+the separately retained dashboard diagnosis and subsequent work.
 
 Full deployment gates and deployed behavior remain UNVERIFIED. This task adds
 no model prompt, API, UI, datastore or trading-policy change. Diagram impact:

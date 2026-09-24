@@ -6,7 +6,14 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
-## 2026-09-24 — Archive buffering acceptance complete; publication pending
+## 2026-09-24 — Archive buffering verified and published
+
+Verified implementation checkpoint:
+`5040fdf0eebc28a432975a5ea1f2b4f9cbe54222`, pushed to `spark main`, then to
+GitHub **from Spark**, divergence **0/0**. The exact clean committed tree
+repeated **1,096 passed, one deliberately deselected, five existing warnings
+in 36.76 seconds**. Final JUnit and command/source receipt:
+`/private/tmp/anios-archive-committed.p0nzs4/`. No deployment occurred.
 
 Started clean on `main` at `ebc33159e6546dab066dcbe7f45d84218daee093`;
 the initial pull was current. The continuation fetch also shows 0/0 divergence.
@@ -32,18 +39,41 @@ their interrupted producer still has no final manifest. No market rerun,
 retuning, new strategy, holdings/order change or deployment.
 Diagram impact: NONE — internal archive buffering, unchanged data flow.
 
-Next: finish fresh Spark evidence retention and readback, commit this scoped
-checkpoint, push `spark main`, then GitHub **from Spark**. No live deployment.
+Main evidence retention is VERIFIED at
+`/home/animallya96/anios/data/market/research/archive-buffering-20260924.uw4mdckq/`:
+**5,491 payload files / 2,378,027,323 bytes**, zero missing, changed or unexpected
+files on remote readback. All **4,451 files** in the prior historical archive
+also match before/after. Retention receipt
+`retention/retention-readback.json` SHA256
+`04bea694267ea8a9cf060af168e08f22b4d0ca8f04ce5f20e4893ea3488983ca`.
+The 52 duplicate symlink aliases are explicitly excluded; no source or unique
+evidence file was dropped. Exact-commit acceptance is separately VERIFIED
+under `committed-5040fdf-n3zunsqw/`: **2,275 payload files / 67,134,707 bytes**,
+zero readback differences. Its `retention/retention-readback.json` SHA256 is
+`dee86f187aaf0991a6ee72e08f3f263491048333a4a18e289208166154fe4e53`.
+
 The user also surfaced an AAOI semantics problem: the fundamental score is
 growth/margins, sentiment is dated earnings-release tone, and the composite
 A+ is not fair value or entry timing. Source inspection and live API reads
 show September23 A+ versus September24 15:30 ET intraday B. The detail panel
-can place the evening "Own" summary beside a current grade/price without an
-evening date label; its automated browser reproduction is next. Price/book
-is cited under Value but does not drive the active score. Correct the
+places the evening "Own" summary beside a current grade/price without an
+evening date label. An isolated automated browser now reproduces it: one
+diagnostic journey passed and the intended dated-summary assertion failed,
+with zero page/console/network or forbidden-write errors. Exact read-only
+frontend source, fixture and screenshots are retained under
+`/private/tmp/anios-aaoi-browser.eVPCSe/`; this is not a current public-site or
+real-quote assertion. Separate Spark baseline:
+`/home/animallya96/anios/data/market/research/aaoi-dashboard-baseline-20260924.6swqy87a/`,
+**27 payload files / 4,470,945 bytes**, zero readback differences; receipt SHA256
+`45d3c067fe8d3ed0153b5d9af9e1090c4561fc12704d5e8e7719fd7cf05ea8ae`.
+A presentation-only correction is now in progress in
+DeskPanel plus focused browser tests, separate from this archive checkpoint.
+Price/book is cited under Value but does not drive the active score. Correct the
 presentation and attribution without silently changing votes or rewriting
-historical records. Then continue the historical causality and quality/
-membership audit; do not tune another model grid on the rejected study.
+historical records. A parallel read-only audit is tracing the live
+expectations-gap input's actual historical availability. Then continue financial
+quality and historical membership audits; do not tune another model grid on the
+rejected study.
 Overall goal remains active.
 
 ## 2026-09-24 — Frozen history executed; archive OOM; saved-account recovery
