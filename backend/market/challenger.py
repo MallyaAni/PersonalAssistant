@@ -1,4 +1,14 @@
-"""The shadow desk: the rule with one input changed, run beside it, never traded.
+"""Growth-gap augmentation and the live/shadow desk record boundary.
+
+Current availability boundary: an explicit `asof` bounds every underlying
+partition read. None means latest, even when a newer extraction ends at an old
+bar date. This is not complete historical causality: label publication,
+within-vintage revisions, membership and yearly learner cohorts remain separate
+validation gaps. Per-session ranking does not remedy those input limitations.
+This loader correction does not rerun or repair earlier study outputs.
+
+Historical design and promotion record
+--------------------------------------
 
 The rule is frozen. A change that looks better in the history is
 development evidence until it has a forward record of its own, so a
@@ -31,6 +41,7 @@ prices each strategy by name across the swap.
 
 import warnings
 from dataclasses import replace
+from datetime import date
 
 import numpy as np
 
@@ -45,16 +56,17 @@ def strategy(report) -> str:
     return "+".join(inputs) if inputs else PLAIN
 
 
-# The gap on the book's panel for every session, from the study's
-# pipeline on the universe.
-def expectations_gap(store, book) -> np.ndarray:
-    """Return (T, N) expected growth less price-implied growth on the book."""
+# Compute the gap on the book while preserving the caller's extraction cutoff.
+def expectations_gap(store, book, asof: date | None = None) -> np.ndarray:
+    """Return (T, N) model growth minus the relative-P/S proxy on the book."""
     from backend.cli import market_expectations as mx
 
-    panel, sector = mx._universe_panel(store, False)
+    panel, sector = mx._universe_panel(store, False, asof=asof)
     udates = [d.astype("datetime64[D]").astype(object) for d in panel.dates]
-    records, quarters, reactions = mx._records(store, panel, udates)
-    fund, fidx, tone, tidx, _beta, mom, ratios = mx._features(store, panel, records)
+    records, quarters, reactions = mx._records(store, panel, udates, asof=asof)
+    fund, fidx, tone, tidx, _beta, mom, ratios = mx._features(
+        store, panel, records, asof=asof
+    )
     feats, implied = mx._block(panel, sector, fund, fidx, tone, tidx, mom, ratios)
     x, y, meta = mx._dataset(panel, udates, quarters, reactions, feats)
     if len(y) < 500:

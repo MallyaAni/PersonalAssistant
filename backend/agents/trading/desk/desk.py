@@ -148,14 +148,18 @@ FUNDAMENTALS_CORRECTED = "corrected"
 FUNDAMENTALS_LEGACY = "legacy"
 
 
-# Run the whole desk as of a date.
+# Build the desk using the caller's partition cutoff across all analyst inputs.
 def run(
     store: MarketStore,
     asof: date | None = None,
     inputs: tuple[str, ...] = LIVE_INPUTS,
     fundamentals: str = FUNDAMENTALS_CORRECTED,
 ) -> DeskReport:
-    """Return the DeskReport for the book as of `asof` (latest if None).
+    """Return the desk using partitions on/before `asof` (latest if None).
+
+    This bounds extraction vintages, not row-level publication eligibility or
+    historical universe membership. Never infer the cutoff from the last bar:
+    a newer extraction can still end at an older session.
 
     `inputs` names what the live rule carries beyond the analysts; pass
     `()` for the plain rule. When the gap cannot be computed the desk
@@ -202,7 +206,7 @@ def run(
     from backend.market import challenger
 
     try:
-        gap = challenger.expectations_gap(store, panel)
+        gap = challenger.expectations_gap(store, panel, asof=asof)
     except Exception as exc:  # noqa: BLE001 - the plain rule stands in, and says so
         print(f"expectations gap: not computed ({type(exc).__name__}: {exc})")
         return plain

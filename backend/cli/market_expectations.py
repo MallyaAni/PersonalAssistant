@@ -4,6 +4,18 @@
     python -m backend.cli.market_expectations --overlay
     python -m backend.cli.market_expectations --leg --book-since 2018-06-01
 
+Availability boundary
+---------------------
+The helpers accept an optional extraction-partition cutoff, propagated by the
+desk through prices, records, tone and valuation. None retains latest-data
+behavior. This does not bound rows inside a vintage or establish historical
+membership, publication-safe labels or yearly training eligibility. The older
+study description/results below are historical development evidence, not
+qualified performance or proof that those unresolved boundaries are correct.
+The gap was subsequently promoted on 2026-09-10; that operational decision is
+not validation of the historical claims. This cutoff fix does not rerun or
+repair the saved study.
+
 The claim
 ---------
 The sentiment analyst reads the release after it lands. A review named
@@ -172,25 +184,28 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _universe_panel(store, book_only: bool):
+# Read universe prices at the requested extraction cutoff, keeping current membership.
+def _universe_panel(store, book_only: bool, asof: date | None = None):
     universe = build_universe()
     members = tickers_with_role(universe, MEMBER, FOCUS)
     if book_only:
         members = [t for t in members if t in book_sides(universe)]
     themes = {t: g for t, g in theme_map(universe).items() if t in members}
     sector = {m.ticker: (m.sector or "other") for m in universe if m.ticker in members}
-    return build_panel(store, tuple(sorted(members)), MARKET_BENCHMARK, themes), sector
+    return (
+        build_panel(store, tuple(sorted(members)), MARKET_BENCHMARK, themes, asof=asof),
+        sector,
+    )
 
 
-# The company records and, per name, its revenue quarters as
-# (end, value, filed) and the reaction sessions of its releases.
-def _records(store, panel, dates):
+# Load records, quarters and reactions from each kind's latest eligible partition.
+def _records(store, panel, dates, asof: date | None = None):
     records, quarters, reactions = {}, {}, {}
     for ticker in panel.tickers:
         if ticker == panel.benchmark:
             continue
-        events = store.read_frame("edgar_events", ticker)
-        facts = store.read_frame("edgar_facts", ticker)
+        events = store.read_frame("edgar_events", ticker, asof)
+        facts = store.read_frame("edgar_facts", ticker, asof)
         if events is None or facts is None:
             continue
         meta = facts[1]
@@ -236,8 +251,8 @@ def _fit_predict(x_train, y_train, x_test, names):
     return booster.predict(np.nan_to_num(x_test, nan=0.0)), booster
 
 
-# Every input the rows and the carried expectation read.
-def _features(store, panel, records):
+# Derive features without letting tone, valuation filings or splits lose the cutoff.
+def _features(store, panel, records, asof: date | None = None):
     # Imported at the use-site, as lightgbm is: the model module pulls torch,
     # which the test image does not carry, and the pure parts of this study
     # (momentum, the learner) must not require it.
@@ -245,11 +260,11 @@ def _features(store, panel, records):
 
     fund = edgar.edgar_features(panel, records)
     fidx = {n: i for i, n in enumerate(edgar.FEATURE_NAMES)}
-    tone = load_tone_features(store, panel)
+    tone = load_tone_features(store, panel, asof)
     tidx = {n: i for i, n in enumerate(language.FEATURE_NAMES)}
     beta = panel.rolling_beta(120)
     mom = {k: _momentum(panel, beta, k) for k in (20, 60, 120)}
-    levels = point_in_time_levels(store, panel)
+    levels = point_in_time_levels(store, panel, asof)
     ratios = valuation.multiples(
         panel,
         levels["revenue"],

@@ -6,6 +6,44 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Expectations partition-cutoff repair acceptance
+
+Started clean on `main` at `a9a40d352c34c66c08da1ed423da48d0879375e8`;
+pull current. User reconfirmed incremental publication to Spark, then GitHub
+from Spark. Publish each verified atomic checkpoint; do not wait for the entire
+research goal. Deployment remains separate and gated through `scripts/deploy.sh`
+on Spark. No deployment is performed in this task.
+
+The explicit `asof` now reaches the gap's universe prices, EDGAR records, tone,
+valuation re-reads and split histories. None remains latest, not the last bar
+date. Existing positional callers and stricter `ResearchStore` cutoffs remain
+compatible. Plain bypass, exception/NaN fallback and real augmentation/alternate
+identity are preserved. No scoring, fit, cohort, policy, holding/order or market
+data change. Relevant docstrings qualify older historical claims.
+
+VERIFIED: **128 passed / 1 model-fit test deliberately deselected**, 28 new cases;
+separate final cutoff **9/9**, features **11/11**, dispatch **8/8**. Failed
+pre-edit baselines remain: **6/9 cutoff**, **10/11 feature**, **6/8 dispatch**.
+Three failures prove actual numeric tone/filing/split input drift, not just absent
+API arguments. Actual Parquet reads and deterministic features run with zero
+fits; the pure tone loader is compiled from its exact source AST because Torch
+is absent, so full-model-module integration remains UNVERIFIED. Scoped lint/
+format and diff checks pass. Exact-commit combined acceptance/publication is next.
+
+Evidence roots and detailed limits:
+[expectations-cutoff-2026-09-24.md](research/expectations-cutoff-2026-09-24.md).
+Root `/private/tmp/anios-cutoff-acceptance.ZR7RLg/`; agents retain original failures
+and exact numeric acceptance separately. Diagram impact: NONE — existing data
+flow, propagated argument. No UI or prompt changed; no browser/model-runtime or
+deployed-system claim follows from these tests.
+
+Still open: publication-safe targets/training cohorts, future-calendar/global-500
+dependence, within-vintage revisions, current membership/sectors, legacy financial
+missingness, immutable S provenance and broader financial quality. This fix does
+not impose a row-date cap or repair the frozen study; keep its artifacts/results
+unchanged. Next atomic task is label-publication/cohort noninterference without
+fitting another model. Overall trading goal remains active.
+
 ## 2026-09-24 — Analyst meaning and attribution verified and published
 
 Verified implementation checkpoint:

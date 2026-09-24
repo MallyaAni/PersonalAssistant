@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-24 — Carry the requested partition cutoff through the growth gap
+
+- The desk now forwards its original optional `asof` through gap prices, EDGAR
+  records, tone and valuation's independent filing/split reads. Latest/None,
+  positional helper callers, stricter ResearchStore bounds and plain fallbacks
+  remain unchanged. No score formula, model fit, policy, holding or order changes.
+- VERIFIED: **128 tests passed / 1 model-fit case deliberately deselected**;
+  28 new cases include real Parquet future-append noninterference and unchanged
+  bypass/fallback/alternate behavior. Pre-edit numeric failures are preserved;
+  final subsets pass **9 cutoff / 11 feature / 8 dispatch**. Scoped lint/format
+  pass. The exact pure tone loader is source-bound without a Torch import;
+  complete model integration and economic results are not established.
+- Partition vintage is not row-level availability. Label/cohort timing,
+  within-vintage revisions, membership, financial quality and prediction/return
+  impact remain unverified. The frozen study is not rerun or repaired. No
+  deployment. [Acceptance and limits](research/expectations-cutoff-2026-09-24.md).
+- Diagram impact: NONE — same readers, corrected argument propagation.
+
 ## 2026-09-24 — Precise analyst meanings, evidence dates and attribution
 
 - Labels now distinguish growth/margins, earnings-release tone and relative
