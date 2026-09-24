@@ -129,6 +129,23 @@ deploy used to; `--skip-post` skips them.
 
 ## Research-account journal validation
 
+The nested chronological runner's acceptance fits actual NumPy regressions and
+executes all inner candidates and continuous outer accounts on synthetic data:
+
+```bash
+python -m pytest -c /dev/null \
+  backend/tests/test_nested_ridge.py \
+  backend/tests/test_nested_allocation.py \
+  backend/tests/test_nested_allocation_boundaries.py -q
+```
+
+This checks training-only transforms, actual label/publication purging, funded
+selection, continuity and future non-interference, not historical strategy
+performance. The [runner contract](research/nested-allocation-runner-2026-09-24.md)
+separates normalized-input, used-input, model-state and audit-receipt hashes.
+Its caller must preserve full source/fit/account evidence and add the unchanged
+incumbent and funded benchmark study before claiming a strategy comparison.
+
 The separate stock/index/cash research adapter consumes explicit dated
 `AllocationInstruction` rows; it does not forecast or create broker orders.
 Its [contract](research/allocation-adapter-2026-09-24.md) defines composition,

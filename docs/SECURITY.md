@@ -361,6 +361,13 @@ credentials in either identifiers or payloads. Dates and hashes are declarations
 and integrity evidence, not authentication of source availability. This adds no
 live route, broker access, model call, collector or automatic retention process.
 
+The nested regression/allocation runner returns normalized feature/label arrays,
+training receipts, coefficients, predictions, candidate scores and every inner
+and outer account journal in memory. The same research-only restrictions apply:
+these are unencrypted, unscoped data with no new retention or storage service.
+Its hashes describe integrity scopes, not signed source provenance. The code
+does not access the database, private holdings, a model server or a broker.
+
 ### Personal decision receipts (2026-09-24; deployment pending)
 
 The primary desk owner's browser can request `record_history: true` on

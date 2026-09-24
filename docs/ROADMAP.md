@@ -227,6 +227,10 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   qualifying a new policy. The separate zero-safe stock/SPY/QQQ/cash adapter now
   implements explicit dated allocation instructions and preserved stock
   composition; its synthetic execution checks do not establish prediction skill.
+  The nested runner now implements actual inner ridge fits, funded penalty/margin
+  selection and continuous outer stock/index/cash accounts, with dated training
+  evidence. Historical input/label assembly and the complete comparator study
+  remain outstanding; this does not promote a new strategy.
   The operator's target is ex-ante risk-on
   selection of volatile quality names with cash/index alternatives ahead of
   forecast deterioration, measured by net wealth against `/3`, SPY and QQQ.

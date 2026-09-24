@@ -190,7 +190,12 @@ research replay and SPY/QQQ controls, with independent accounting reconstruction
 and enabled/disabled parity. It has not rerun the completed studies or supplied
 real historical settlement. The [zero-safe stock/index/cash adapter](
 allocation-adapter-2026-09-24.md) now executes explicit dated instructions without
-changing `/3`, preserving composition through zero exposure. A frozen nested
-instruction-producing runner and predeclared execution sensitivities remain next.
+changing `/3`, preserving composition through zero exposure. A complete frozen
+source/label experiment and predeclared execution sensitivities remain next.
+The [nested runner](nested-allocation-runner-2026-09-24.md) now performs actual
+inner regression fits, funded selection and continuous outer replay on supplied
+dated inputs. This is separate machinery acceptance, not a rerun of this frozen
+rank-blend study or a completed quality-stock timing experiment. Source/label
+assembly, full comparators and execution sensitivities remain required.
 These improvements do not require retuning completed losing candidates or
 waiting without engineering progress.

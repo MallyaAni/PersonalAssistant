@@ -646,6 +646,16 @@ cadence or predict the next day's color. Its journal can be independently
 reconciled, while source availability and strategy quality remain unverified.
 See the [instruction and execution contract](research/allocation-adapter-2026-09-24.md).
 
+`nested_ridge` fits separate stock/SPY/QQQ regressions using only features known
+at their original decision and labels whose endpoint and publication predate
+the fit. `nested_allocation` fits every inner chronological block, chooses a
+penalty/margin on earlier funded 10/25-bp accounts, then carries one outer
+instruction path and account through subsequent refits. Model state, audit
+receipts, predictions, normalized inputs and every account journal have explicit
+hash scopes. This is research machinery, not a deployed model: source and label
+derivation and the complete `/3`/index benchmark study remain unverified. See
+the [nested runner contract](research/nested-allocation-runner-2026-09-24.md).
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in

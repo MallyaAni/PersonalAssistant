@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-09-24 — Actual nested fits and funded allocation selection
+
+- Added separate `nested_ridge` and `nested_allocation` research modules. Each
+  inner fit uses only original-decision feature availability and labels whose
+  actual endpoint and publication precede fitting. Per-target imputation,
+  scaling, missingness indicators and ridge coefficients are fitted separately;
+  no probability calibration is claimed for return regression.
+- Each candidate is selected on earlier continuous funded accounts at 10/25 bp.
+  The selected outer path carries intent, units, cash, basket cadence and funding
+  retries through refits. Every inner/outer account is independently reconciled.
+  A no-gate adapter control stays separate from the unchanged `/3` incumbent.
+- Evidence includes exact training rows/cells/dates, transforms, coefficients,
+  all candidates and predictions, normalized input arrays, instruction paths
+  and account journals. Hashes distinguish used inputs, fitted model state,
+  complete audit receipts and full normalized input identity.
+- VERIFIED: **674 passed, 1 deliberately deselected**, with five existing
+  empty-slice fixture warnings. New coverage: **99** ridge, **45** nested-runner,
+  **4** numeric-boundary tests. Real fits are independently reconstructed with
+  augmented least squares; actual churn costs select a non-first candidate;
+  future perturbations cannot alter earlier fits, selections or account states.
+  Scoped lint/format pass. A retained synthetic journey fits **14** real models,
+  archives **20** accounts and passes all **20** standalone verifier invocations,
+  independently reconciling **388** marks. All **150** final-demonstration file
+  hashes and **30** exercised source hashes match. See the
+  [contract and evidence](research/nested-allocation-runner-2026-09-24.md).
+- Diagram impact: UPDATED — market-data. All **32** diagram checks and the
+  actual documentation browser journey pass; only the changed diagram and
+  generated page retain rendering changes. No dashboard UI change is included.
+- This is machinery acceptance, not market-performance evidence. Historical
+  feature/label assembly and exact `/3`/SPY/QQQ/equal-weight comparisons remain
+  UNVERIFIED. No completed study was retuned, no prompt or dashboard changed,
+  no order or holdings mutation occurred, and no live deployment was performed.
+
 ## 2026-09-24 — Zero-safe research stock/index/cash execution
 
 - Added the separate `stock-index-cash-adapter/1-research` execution path for

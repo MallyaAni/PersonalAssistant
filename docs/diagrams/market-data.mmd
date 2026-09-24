@@ -28,6 +28,10 @@ flowchart TB
     Research --> Forward[Frozen NumPy neural inference<br/>independent prospective accounts]
     Panel --> Forward
 
+    Panel -. caller assembly required .-> Nested[Nested chronological ridge<br/>caller-declared dated observations and baskets<br/>past-only fits + inner funded selection]
+    Research -. supplied research evidence .-> Nested
+    Nested --> Outer[Continuous outer instructions<br/>stock / SPY / QQQ / cash<br/>research machinery, no market-study result]
+    Outer --> Accounts
     Panel --> Accounts[Research accounts<br/>desk · fixed-model · stock/index/cash adapter<br/>SPY and QQQ funded controls]
     Accounts -. optional observation .-> Journal[Cash and fill journal<br/>decisions, phase changes, actual fills<br/>fees, every close mark, terminal holdings]
     Journal --> Research
@@ -55,7 +59,7 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class CLI,Report,CohortCLI,Manifest interface;
-    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book,Cohort,Readiness,Accounts,Journal,Audit application;
+    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book,Cohort,Readiness,Accounts,Journal,Audit,Nested,Outer application;
     class Store,Evidence data;
     class Yahoo,Edgar,Primary external;
     class Model,Reader,Pilot model;
