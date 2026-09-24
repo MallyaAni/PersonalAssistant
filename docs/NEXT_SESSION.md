@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-09-24 — Research-history and account-evidence checkpoint c73861b
+
+Started on `main` at `ea755e7336a9d85cdad420eadfcdcb587a9bca9d`, with four
+inherited frontend edits from this task. Fetched origin and confirmed zero
+divergence; preserved Spark's unrelated untracked `scratch/`. Implementation
+checkpoint: `c73861b0ee63affb58587d7e713b33bf70a62cce`. NOT DEPLOYED.
+
+VERIFIED on the exact frontend source: **88/88 Desk Playwright cases** in
+56.3 seconds, with the checkout mounted into Playwright 1.61.1 and its own
+Vite server; TypeScript/Vite production build passed. The existing CSS
+`hover:bg-black` and chunk-size warnings remain. `git diff --check` is clean.
+Five additional failing acceptance paths were reproduced and corrected:
+wrong paper snapshot date, fabricated snapshot when missing, omitted zero
+strategy target, same-session obsolete actionable count, and concealed archive
+read failure. One new action-count test initially checked loading state; it was
+corrected to observe a valid Buy before refreshing a changed record, and then
+reproduced the actual defect. Two legacy assertions were updated for the
+corrected paper-reset wording; confirmed fill persistence still passes.
+
+History now says Recorded research readings and describes bounded coverage.
+Paper snapshot dates use the paper record itself; absent evidence remains
+unavailable. Research freshness controls the sizing source. Covered zero
+targets, recorded personal positions, planning-equity assumptions, paper reset
+timing and FOMC target exposure are explicit. Duplicate expanded sizing is gone.
+No backend policy, holdings, order, model or deployed service was changed.
+Diagram impact: NONE — internal UI behavior within existing components.
+
+UNVERIFIED: this checkpoint on the deployed UI, and alignment of historical
+personal AAOI/ORCL guidance with archived research. The current history has no
+personal decision receipts or their account context; it cannot prove what the
+operator saw. Do not backfill that claim from current decisions. A later receipt
+design must distinguish server-generated advice from browser-accepted advice,
+since superseded responses are discarded and expiry changes eligibility.
+
+Broader goal remains active. Chronological research diagnostics are being
+implemented separately in the backend, with no model refit or adoption. Finish
+hash-checked application to the preserved study, report all regimes and excluded
+intervals, and retain the examined-survivor/source-vintage limitations. Genuine
+nested chronological training/selection evidence remains outstanding. Ship any
+approved deployment only through `scripts/deploy.sh` and its gates.
+
 ## 2026-09-24 — Desk semantics merged to main and deployed as 26b3cb1
 
 Codex's Desk implementation (3b45ed0 "Clarify Desk market status and trading
