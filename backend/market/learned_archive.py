@@ -124,7 +124,8 @@ def realize_label(
         return Label(None, None, None, "immature")
     entry, exit_session = calendar[decision + 1], calendar[end]
     available = [
-        day for day in (_vintages if _vintages is not None else store.asofs())
+        day
+        for day in (_vintages if _vintages is not None else store.asofs())
         if day >= exit_session
     ]
     if not available or available[0] > data_as_of.astimezone(NEW_YORK).date():
@@ -202,7 +203,8 @@ def realize_brake_label(
     if decision < 0 or end >= len(calendar):
         return Label(None, None, None, "immature")
     available = [
-        day for day in (_vintages if _vintages is not None else store.asofs())
+        day
+        for day in (_vintages if _vintages is not None else store.asofs())
         if day >= calendar[end]
     ]
     if not available or available[0] > data_as_of.astimezone(NEW_YORK).date():
@@ -273,8 +275,10 @@ def _brake_features(snapshot: dict) -> np.ndarray:
 
 # Verify that the supplied calendar has not omitted exchange sessions.
 def _calendar(store: MarketStore, days: tuple[date, ...], as_of: datetime) -> None:
-    if as_of.tzinfo is None or len(days) < 2 or any(
-        left >= right for left, right in zip(days, days[1:], strict=False)
+    if (
+        as_of.tzinfo is None
+        or len(days) < 2
+        or any(left >= right for left, right in zip(days, days[1:], strict=False))
     ):
         raise ValueError("an aware as-of and ordered exchange calendar are required")
     market = store.read("SPY", as_of.astimezone(NEW_YORK).date())
@@ -422,6 +426,9 @@ def load(
         published,
         members,
         member_when,
+        rank_features=tuple(
+            not name.startswith(("market_", "regime_")) for name in FEATURE_COLUMNS
+        ),
     )
     learned_policy.validate(inputs)
     return ArchiveData(

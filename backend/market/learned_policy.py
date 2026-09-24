@@ -39,6 +39,10 @@ class HistoricalInputs:
     membership: np.ndarray
     membership_recorded_on: np.ndarray
     spy: str = "SPY"
+    # Reconstructed research uses assumed session availability, never a claim
+    # that the old input was archived then. Its forecasts cannot size live targets.
+    evidence_basis: str = "recorded"
+    rank_features: tuple[bool, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -51,12 +55,15 @@ class Forecasts:
     model_hash: tuple[str, ...]
     dates: np.ndarray
     tickers: tuple[str, ...]
+    evidence_basis: str = "recorded"
 
 
 # Reject malformed or retrospectively published inputs before fitting.
 def validate(inputs: HistoricalInputs) -> tuple[np.ndarray, int]:  # noqa: C901
     """Return the session dates and SPY column after strict causal checks."""
     dates = np.asarray(inputs.dates, dtype="datetime64[D]")
+    if inputs.evidence_basis not in ("recorded", "retrospective-price"):
+        raise ValueError("unknown learning evidence basis")
     if dates.ndim != 1 or len(dates) < 2 or np.isnat(dates).any():
         raise ValueError("dates must be a nonempty exchange-session calendar")
     if np.any(dates[1:] <= dates[:-1]):
@@ -74,6 +81,11 @@ def validate(inputs: HistoricalInputs) -> tuple[np.ndarray, int]:  # noqa: C901
         raise ValueError("opens and membership must align with dates and tickers")
     if features.ndim != 3 or features.shape[:2] != shape or features.shape[2] == 0:
         raise ValueError("features must be a nonempty (session, ticker, feature) cube")
+    if inputs.rank_features is not None and (
+        len(inputs.rank_features) != features.shape[2]
+        or any(type(flag) is not bool for flag in inputs.rank_features)
+    ):
+        raise ValueError("rank-feature mask must contain one boolean per feature")
     if np.isinf(features).any() or np.isinf(opens).any():
         raise ValueError("infinite input is not a missing observation")
     if np.any(np.isfinite(opens) & (opens <= 0)):
@@ -132,6 +144,9 @@ def cross_sectional_ranks(inputs: HistoricalInputs) -> np.ndarray:
             valid = (inputs.membership[t] == 1) & np.isfinite(raw[t, :, k])
             valid[inputs.tickers.index(inputs.spy)] = False
             values = raw[t, valid, k]
+            if inputs.rank_features is not None and not inputs.rank_features[k]:
+                out[t, valid, k] = values
+                continue
             if len(values) < 2:
                 continue
             order = np.argsort(values, kind="stable")
@@ -172,9 +187,7 @@ def _ranker_outcomes(inputs, dates, observed_labels, labels_recorded_on):
         label_when = np.asarray(labels_recorded_on, dtype="datetime64[D]")
         if y.shape != inputs.membership.shape or label_when.shape != y.shape:
             raise ValueError("observed labels and publication dates must align")
-        if np.isinf(y).any() or np.any(
-            np.isfinite(y) & np.isnat(label_when)
-        ):
+        if np.isinf(y).any() or np.any(np.isfinite(y) & np.isnat(label_when)):
             raise ValueError("observed label has no valid publication date")
         for t in range(len(dates)):
             finite = np.isfinite(y[t])
@@ -201,9 +214,7 @@ def walk_forward_ranker(
     from sklearn.ensemble import HistGradientBoostingRegressor
 
     x = cross_sectional_ranks(inputs)
-    y, label_when = _ranker_outcomes(
-        inputs, dates, observed_labels, labels_recorded_on
-    )
+    y, label_when = _ranker_outcomes(inputs, dates, observed_labels, labels_recorded_on)
     prediction = np.full(y.shape, np.nan)
     fit_dates = np.full(len(dates), np.datetime64("NaT", "D"))
     cutoffs = np.full(len(dates), -1, dtype=int)
@@ -250,7 +261,8 @@ def walk_forward_ranker(
         if valid.any():
             block[valid] = model.predict(x[start:end][valid][:, columns])
         fit_dates[start:end] = dates[start]
-        cutoffs[start:end] = int(eligible[-1] + RANKER_LABEL_END)
+        used = eligible[train_mask.any(axis=1)]
+        cutoffs[start:end] = int(used[-1] + RANKER_LABEL_END)
         digest = sha256()
         digest.update(np.ascontiguousarray(columns).tobytes())
         digest.update(np.ascontiguousarray(train_x[:, columns]).tobytes())
@@ -258,7 +270,13 @@ def walk_forward_ranker(
         digest.update(pickle.dumps(model, protocol=5))
         hashes.append(f"{dates[start]}:{digest.hexdigest()}")
     return Forecasts(
-        prediction, fit_dates, cutoffs, tuple(hashes), dates.copy(), inputs.tickers
+        prediction,
+        fit_dates,
+        cutoffs,
+        tuple(hashes),
+        dates.copy(),
+        inputs.tickers,
+        inputs.evidence_basis,
     )
 
 
@@ -293,9 +311,7 @@ def _brake_outcomes(calendar, qqq_close, observed_labels, labels_recorded_on):
         label_when = np.asarray(labels_recorded_on, dtype="datetime64[D]")
         if labels.shape != calendar.shape or label_when.shape != calendar.shape:
             raise ValueError("brake labels and publication dates must align")
-        if np.isinf(labels).any() or np.any(
-            np.isfinite(labels) & np.isnat(label_when)
-        ):
+        if np.isinf(labels).any() or np.any(np.isfinite(labels) & np.isnat(label_when)):
             raise ValueError("brake label has no valid publication date")
         for t in np.flatnonzero(np.isfinite(labels)):
             if (
@@ -324,9 +340,13 @@ def walk_forward_brake(
     first_training_sessions: int = BRAKE_MIN_SESSIONS,
     observed_labels: np.ndarray | None = None,
     labels_recorded_on: np.ndarray | None = None,
+    evidence_basis: str = "recorded",
 ) -> Forecasts:
     """Return out-of-sample crash probabilities with a 20-session purge."""
     from sklearn.linear_model import LogisticRegression
+
+    if evidence_basis not in ("recorded", "retrospective-price"):
+        raise ValueError("unknown learning evidence basis")
 
     calendar = np.asarray(dates, dtype="datetime64[D]")
     x = np.asarray(market_features, dtype=float)
@@ -392,7 +412,7 @@ def walk_forward_brake(
                 )
             )[:, 1]
         fit_dates[start:end] = calendar[start]
-        cutoffs[start:end] = int(eligible[-1] + BRAKE_HORIZON)
+        cutoffs[start:end] = int(eligible[valid][-1] + BRAKE_HORIZON)
         digest = sha256()
         digest.update(np.ascontiguousarray(columns).tobytes())
         digest.update(np.ascontiguousarray(medians).tobytes())
@@ -400,7 +420,15 @@ def walk_forward_brake(
         digest.update(np.ascontiguousarray(labels[eligible][valid]).tobytes())
         digest.update(pickle.dumps(model, protocol=5))
         hashes.append(f"{calendar[start]}:{digest.hexdigest()}")
-    return Forecasts(prediction, fit_dates, cutoffs, tuple(hashes), calendar.copy(), ())
+    return Forecasts(
+        prediction,
+        fit_dates,
+        cutoffs,
+        tuple(hashes),
+        calendar.copy(),
+        (),
+        evidence_basis,
+    )
 
 
 # Hold the prior exposure between two predeclared probability thresholds.
@@ -431,6 +459,8 @@ def policy_targets(
 
     from backend.agents.trading.desk import risk
 
+    if forecasts.evidence_basis != "recorded":
+        raise ValueError("retrospective forecasts cannot enter the desk target adapter")
     if policy not in (POLICY_RANK, POLICY_BLEND):
         raise ValueError("unknown learned shadow policy")
     panel = report.panel
