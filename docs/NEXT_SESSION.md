@@ -2,6 +2,33 @@
 
 ## 2026-09-24 — Actual neural price study complete; results dashboard release next
 
+Release `879abc5` is pushed to main and its single guarded deployment is ACTIVE
+in `/tmp/codex-neural-results-release-20260924.log`. Full backend gate passed:
+4621 passed, 26 skipped, 1 known xfail; serial real-model gate is still running.
+Do not restart it. The single read-only proof watcher PID190359 runs
+`/tmp/verify-neural-release.py 879abc5` after the exact marker and postcheck agree.
+Read `/tmp/codex-neural-results-release-proof-20260924.json` and
+`/tmp/codex-neural-results-watch-20260924.json` before declaring live completion.
+The verifier compares all 30 displayed cost/year/account rows to the actual API,
+checks source/artifact hashes and unchanged model IDs. No orders or holdings writes.
+
+User clarified the primary objective: maximize total portfolio gain and beat
+BOTH SPY and QQQ. Drawdown and turnover are diagnostic checks on its quality.
+The completed candidate fails the primary objective versus the incumbent.
+New saved-curve regime decomposition also loses to incumbent in all three
+observed regimes; the fourth has zero observations, explicitly unassessed.
+Details and provenance are added to the research report, without refitting.
+
+Additional bounded HGB reuse check is complete: do NOT score old HGB forecasts
+as if they used the pinned report's inputs. Different source vintages change
+features across the window, and 1,361 forecast cells are missing during warmup
+or for the benchmark. No estimators were saved for rerunning inference.
+Receipts: `/tmp/hgb-reuse-audit-20260924.json` and
+`/tmp/hgb-feature-reuse-check-20260924.json`. A later separately declared refit
+on verified inputs is needed; do not fill missing predictions, calibrate ratios
+or alter the incumbent's opportunity set to manufacture compatibility.
+All delegated tasks are finished. No active OpenCode or research training job.
+
 User is sleeping and explicitly requests continued work and concrete results
 on the dashboard. The fixed run is COMPLETE, not merely prepared. Protocol
 `5e19336` preceded outcomes; exact training/evaluation source `1ad7e59`.

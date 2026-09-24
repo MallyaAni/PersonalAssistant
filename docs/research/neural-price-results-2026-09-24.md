@@ -36,10 +36,45 @@ Overlapping windows are not independent trials.
 
 Execution: both rule accounts keep the live buy/sell timing, FOMC handling
 and funding rules. Only scheduled ranking changes; midcycle rules stay.
-Equal weight rebalances every21 sessions without grade/FOMC overlays.
+Equal weight rebalances every 21 sessions without grade/FOMC overlays.
 SPY/QQQ use funded constant-exposure next-open accounts. Midpoint fills
 are not demonstrated. No live strategy or frozen journal was changed.
 
 The JSON artifact contains both costs, continuous calendar-year slices,
 rolling comparisons and exact model/input/curve fingerprints. Persistent
 run directory: `/home/animallya96/anios/data/market/research/neural-price-rule-20260924`. Original files are unchanged.
+
+## Independent verification and regime decomposition
+
+Independent verification reproduced every displayed metric and rolling count,
+verified 191 source hashes and training-only normalization, and found no artifact
+change. Receipt: `/tmp/neural-study-artifact-review-20260924.json`. The raw trade
+and cash journals were not saved: turnover's denominator was independently
+verified, but raw funding was not replayed independently. In particular, the
+candidate's turnover intensity is higher; its absolute cumulative traded
+notional is lower because its account grew less.
+
+The existing fixed regime definitions were reused on these saved curves: each
+return interval uses only the preceding SPY close versus its trailing 200-day
+mean, and trailing 20-day volatility versus its trailing 252-observation median.
+No refitting, new threshold choice, account restart or switching policy.
+
+| Regime | Intervals | Observed months | Episodes | Candidate minus incumbent log growth, 10 bp | At 25 bp |
+|---|---:|---:|---:|---:|---:|
+| Above 200-day mean, high volatility | 177 | 15 | 14 | −0.14877 | −0.15078 |
+| Above 200-day mean, low volatility | 197 | 17 | 11 | −0.18650 | −0.19308 |
+| Below 200-day mean, high volatility | 54 | 5 | 3 | −0.04360 | −0.04156 |
+| Below 200-day mean, low volatility | 0 | 0 | 0 | Unassessed | Unassessed |
+
+Contributions reconcile across all 428 return intervals. The candidate trails
+the incumbent in every observed regime, although it exceeds SPY and QQQ in
+each. These are descriptive decompositions of previously examined outcomes;
+the months and episodes are not independent confidence bounds. There is no
+evidence here supporting a regime switch into this candidate. Full results and
+reproduction script are preserved as `regimes.json` and `regime_replay.py` beside
+the original run; the original model, inputs and curves remain unchanged.
+
+The user's primary objective is total portfolio gain and outperformance of both
+SPY and QQQ. Drawdown and turnover remain diagnostic checks on how that gain is
+achieved. This candidate does not improve that primary objective; nothing in
+this report establishes that the incumbent is universally optimal.
