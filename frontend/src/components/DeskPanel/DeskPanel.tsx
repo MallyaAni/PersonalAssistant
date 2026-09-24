@@ -6,6 +6,7 @@ import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
 import { BoardSimulation, MlComparison, PLAN_ACTIONS, StockBoard, type BoardEvent, type PlanAction } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
+import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { TickerChart } from './TickerChart'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
@@ -836,6 +837,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // A later request in the same account context supersedes an earlier one;
   // generation alone cannot distinguish overlapping poll and quote refreshes.
   const mineRequestSeq = useRef(0)
+  const acceptedMineRequest = useRef(0)
+  const [historyContext, setHistoryContext] = useState<PersonalHistoryContext | null>(null)
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
   // Every grade in detail is a fold on the one page; the URL can open it.
@@ -845,6 +848,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // slower clock: the gate, execution quality, forward evidence, the ML
   // shadow, the practice account. Mixing them made one long scroll.
   const [research, setResearch] = useState(() => new URLSearchParams(window.location.search).get('deskView') === 'research')
+  const historyCapture = useRef(false)
+  historyCapture.current = canWrite && !research
   const [editing, setEditing] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [openName, setOpenName] = useState<string | null>(null)
@@ -898,10 +903,16 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const gen = accountGen.current
     const request = ++mineRequestSeq.current
     try {
-      const mine = await getDeskMine(userId, equity, cash)
+      const recordHistory = historyCapture.current && !document.hidden
+      const mine = await getDeskMine(userId, equity, cash, recordHistory)
       if (!active() || gen !== accountGen.current || request !== mineRequestSeq.current) return
+      acceptedMineRequest.current = request
       setRows(mine.rows)
       setDecisions(mine.decisions)
+      setHistoryContext(recordHistory ? {
+        userId, generation: gen, request, decisions: mine.decisions,
+        receipt: mine.history_receipt ?? {status: 'unavailable', reason: 'The server returned no decision receipt.'},
+      } : null)
       setLiveGrades(mine.grades_live)
       setGradeContext({session: mine.session, until: mine.grade_valid_until ?? {}})
       if (mine.market_status) setLive((previous) => ({...previous, market_status: mine.market_status}))
@@ -914,6 +925,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       // never restored, because they may belong to stale account evidence.
       setLiveGrades({})
       setDecisions(undefined)
+      setHistoryContext(null)
       setRows((previous) => previous.map((row) => ({
         ...row, grade_live: row.grade, grade_source: 'evening', stances_live: row.stances, ranks_live: row.ranks,
         score_live: null, grade_margin_live: null, technical_now: null, technical_close: null, value_now: null, value_close: null,
@@ -1225,6 +1237,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <RefreshCw size={14} /> Refresh
         </button>
       </header>
+
+      {canWrite && <PersonalDecisionHistory key={userId} userId={userId} context={historyContext} decisions={decisions}
+        session={latest?.session} written={latest?.written} active={!research && !!latest}
+        displayPaused={eventPaused}
+        isCurrent={context => context.userId === userId && context.generation === accountGen.current && context.request === acceptedMineRequest.current} />}
 
       {autopsy && <AutopsyView userId={userId} onClose={() => setAutopsy(false)} />}
 

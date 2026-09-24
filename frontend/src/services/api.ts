@@ -2399,6 +2399,7 @@ export interface DeskLiveGrade {
 }
 
 export interface DeskMine {
+  history_receipt?: DeskHistoryReceipt;
   decisions?: DeskDecisions;
   session?: string | null;
   market_status?: DeskMarketStatus;
@@ -2407,6 +2408,80 @@ export interface DeskMine {
   // Every graded name with a live read this candle, not only the board's.
   grades_live: Record<string, DeskLiveGrade>;
 }
+
+export type DeskHistoryReceipt =
+  | { status: 'generated'; id: string; generated_at: string; acknowledge_before: string }
+  | { status: 'unavailable'; reason: string }
+  | { status: 'not_requested' };
+
+export interface DeskPersonalReceipt {
+  id: string;
+  generated_at: string;
+  acknowledged_at: string | null;
+  acknowledge_before: string;
+  payload: {
+    schema_version: string;
+    policy_version: string;
+    decision_version: string;
+    decision_policy: string;
+    session: string;
+    written: string | null;
+    record_sha256: string;
+    code_fingerprint: Record<string, string>;
+    event_state: unknown;
+    rows: Record<string, {
+      action: 'Buy' | 'Sell' | 'Hold';
+      move_weight: number | null;
+      strategy_action: 'Buy' | 'Sell' | 'Hold';
+      strategy_move_weight: number | null;
+      target_weight: number | null;
+      current_weight: number | null;
+      delta_weight: number | null;
+      executable: boolean;
+      blocker: string | null;
+      reason: string;
+      valid_until: string | null;
+      quote: { feed: string | null; at: string | null; bid?: number | null; ask?: number | null; reason?: string | null; valid_until?: string | null };
+      grade: string | null;
+      band_z: number | null;
+      bar: { at: string | null; price: number | null };
+    }>;
+  };
+}
+
+export interface DeskPersonalHistory {
+  items: DeskPersonalReceipt[];
+  next_cursor: string | null;
+  retention: { acknowledged_days: number; unacknowledged_hours: number };
+  limitations: string[];
+}
+
+// Parse an owner-only history response without hiding failed reads or writes.
+const deskHistoryResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(typeof body.detail === 'string' ? body.detail : `Personal history request failed (HTTP ${response.status}).`);
+  }
+  return await response.json() as T;
+};
+
+// Acknowledge the exact server receipt after the dashboard has accepted its context.
+export const acknowledgeDeskHistory = async (userId: string, id: string, session: string, written: string): Promise<{ id: string; status: 'acknowledged'; acknowledged_at: string }> =>
+  deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history/${encodeURIComponent(id)}/acknowledge`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({session, written}),
+  }));
+
+// Fetch one bounded page of the owner's generated and acknowledged decision receipts.
+export const getDeskPersonalHistory = async (userId: string, before?: string): Promise<DeskPersonalHistory> =>
+  deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history?limit=20${before ? `&before=${encodeURIComponent(before)}` : ''}`));
+
+// Export one stored receipt through the same owner check as its history listing.
+export const exportDeskPersonalReceipt = async (userId: string, id: string): Promise<DeskPersonalReceipt> =>
+  deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history/${encodeURIComponent(id)}`));
+
+// Delete only the one receipt the owner selected; holdings and orders are separate.
+export const deleteDeskPersonalReceipt = async (userId: string, id: string): Promise<unknown> =>
+  deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history/${encodeURIComponent(id)}`, {method: 'DELETE'}));
 
 export interface DeskOpportunity {
   version: string; score: number | null; status: string; price: number | null;
@@ -2481,7 +2556,7 @@ export const getDeskFundingPreview = async (userId: string, equity: number, avai
 // the URL; `availableCash` is optional because an empty/unknown cash figure
 // must keep buys gated rather than be fabricated from equity or the paper
 // account. A null/undefined cash value is sent as no cash at all.
-export const getDeskMine = async (userId: string, equity: number, availableCash?: number | null): Promise<DeskMine> => {
+export const getDeskMine = async (userId: string, equity: number, availableCash?: number | null, recordHistory = false): Promise<DeskMine> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/mine`,
     {
@@ -2489,6 +2564,7 @@ export const getDeskMine = async (userId: string, equity: number, availableCash?
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         equity,
+        record_history: recordHistory,
         ...(availableCash === null || availableCash === undefined ? {} : { available_cash: availableCash }),
       }),
     },
@@ -2502,7 +2578,7 @@ export const getDeskMine = async (userId: string, equity: number, availableCash?
     throw new Error(detail)
   }
   const data = (await response.json()) as Partial<DeskMine>;
-  return { session: data.session, market_status: data.market_status, decisions: data.decisions, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
+  return { session: data.session, market_status: data.market_status, decisions: data.decisions, history_receipt: data.history_receipt, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
 };
 
 // The balancer's persisted intraday plan (recomputed every fifteen minutes),

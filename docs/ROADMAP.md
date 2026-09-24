@@ -220,6 +220,15 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 
 ## Milestone 5: tools and specialized agents — IN PROGRESS
 
+- Trading research remains `IN PROGRESS`: source-complete historical cohorts,
+  replayable funded journals and nested chronological selection are required
+  before qualifying a new policy. The operator's target is ex-ante risk-on
+  selection of volatile quality names with cash/index alternatives ahead of
+  forecast deterioration, measured by net wealth against `/3`, SPY and QQQ.
+  Indexes are risky assets, not guaranteed red-day protection. The frozen
+  rank-blend experiment remains separate and unpromoted; see the
+  [strategy protocol](research/top-tier-strategy-protocol-2026-09-24.md).
+
 - `VERIFIED`: stdio and streamable-HTTP MCP client connections with locally assigned server trust;
 - `VERIFIED`: a dedicated local FastMCP sidecar exposes existing diagram,
   image-generation, image-followup, artifact-status, presentation-create,

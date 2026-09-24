@@ -612,6 +612,18 @@ decides:* every grade, every size, every trade rule, and every number.
 *Folder:* `agents/trading/` and `agents/trading/desk/`, driving
 `backend/market/`. *Prompts:* `prompts/trading/` — three.
 
+Personal advice history is separate from both research readings and paper fills.
+The primary operator can request a minimized encrypted receipt while computing
+the personal board. The API stores the generated decision and its evidence;
+after React accepts and commits the current response, the browser acknowledges
+that receipt. Generation and acknowledgement timestamps stay distinct. A receipt
+is neither a current recommendation nor proof of a trade or a person reading it.
+The dedicated owner-scoped `personal_decision_receipts` table has bounded reads,
+individual JSON export/deletion and explicit 24-hour/90-day lifecycle rules
+([security boundary](SECURITY.md#personal-decision-receipts-2026-09-24-deployment-pending)).
+It does not archive cash, equity or quantities and cannot reconstruct earlier
+advice that was never saved. This implementation is not yet deployed.
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in

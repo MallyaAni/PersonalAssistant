@@ -1,5 +1,89 @@
 # Next session
 
+## 2026-09-24 — Personal receipts and sourced cohorts; next: one stock list and risk allocation
+
+Started clean on `main` at `8953aee30eb7f324e5c350b7ce6c46eeb7bed109`;
+`git pull --rebase origin main` was already current and the pre-checkpoint fetch
+confirmed zero divergence. All current edits belong to this task. No deployment
+occurred; the user deploys from Spark through `scripts/deploy.sh`.
+
+VERIFIED: **82** planner/API/personal-history tests, with **5** actual
+HTTP/Postgres receipt journeys and **4** pure projection guards; **103/103** Desk
+Playwright tests plus **17/17** targeted repeat and production build; **41**
+cohort/membership/CLI tests; complete migration replay to `20260924_0021`, **47
+tables**, using the repository's `verify-migrations.sh` in a disposable local
+Compose project with tmpfs Postgres (never the live database); **32** diagram
+synchronization checks and the published architecture page. Existing Vite
+CSS/chunk warnings remain. The host renderer required a container-only Chromium
+wrapper; no system/browser security setting was changed. Only the two affected
+SVGs retain regeneration changes. Diagram impact: UPDATED — agent-trading-desk,
+market-data.
+
+Personal advice history is implemented in `backend/market/personal_history.py`,
+`backend/models/personal_decision.py`, the market API and new Desk history UI.
+Only the primary desk owner can capture/read/export/delete/acknowledge. Capture
+is explicit on POST; generated payloads are minimized and encrypted, and
+acknowledgements are separately timed, idempotent, revision-bound and expire with
+executable evidence. Reads do not mutate receipts. Unacknowledged rows expire
+after 24 hours; acknowledged rows after 90 days; physical owner-scoped cleanup
+runs on capture. The tests read storage back, inspect ciphertext and exclusions,
+exercise concurrent acknowledgements, ownership, corruption, retention and
+untouched holdings/paper files. Reproduced and fixed plaintext replacement
+acceptance and a delayed list response resurrecting a deleted receipt. No past
+AAOI advice is backfilled or inferred. Live deployed history remains UNVERIFIED.
+
+The historical importer now copies and reads back actual SEC source bytes, not
+just a caller's hash assertions. It is deliberately a retrospective three-name
+demonstration: AAPL continuing, SNOW later included, TWTR removed. All **2,160**
+rows over **720** XNYS sessions remain; all **8,640** feature cells are unavailable.
+Publication dates, conservative availability bounds, ingestion times, identity,
+membership and unfunded terminal entitlement stay distinct. This is not a
+training-ready or unbiased universe. Archive and exact hashes:
+
+- Spark: `/home/animallya96/anios/data/market/research/historical-cohort-20260924/`.
+- Local: `/tmp/anios-historical-cohort-final.ekJucf/archive/`.
+- All **14 files / 16,926,539 bytes** match after copy; the 10 original SEC bodies
+  total **14,920,321 bytes**.
+- Readiness SHA256: `ca90d58d6eeb8c48e18cf9901e05228e2e21caca73bcae634052b01cca7bf66c`.
+- Archive manifest: `419be2dcc3afc71df2de0decc1179491706e031f7038c2c97936cbf7403aaa74`.
+- Domain code: `516164bda2aa6fb60d4dba63f7634615ad061c753dd582e0d6f0215a59d66b5e`.
+- CLI code: `82499d7471ebb2979fd0818bb6ca36f599eda72296d4589013dc1dbee1d15df2`.
+
+Latest user steering and next substantive work:
+
+1. Remove the redundant **Every grade in detail · diagnostic view** stock list.
+   Root inspected the actual render. `StockBoard` already lists the same universe;
+   preserve the lower view's useful vote changes, archived commentary, bar timing
+   and owner-only confirmed-fill form inside existing upper-row expansion. Keep
+   one compact ranking/data-timing guide, including legacy `deskDetails=1` links.
+   `dashboard_review` has an exact consolidation plan and is waiting for the
+   current history checkpoint before editing overlapping frontend files. Repeat
+   the full browser path; the 103 count above does not prove the follow-up.
+2. The operator clarified the strategy objective: own high-upside volatile quality
+   names during favorable conditions and switch ahead of deteriorating conditions
+   to cash or indexes. The updated strategy protocol treats this as forecast-driven
+   stock/exposure allocation, not hindsight day-color switching. Indexes are not
+   safe on broad red days. Keep `/3` fixed and the losing studies frozen.
+3. Read-only audit found `learned_policy.walk_forward_brake` predicts a **20-session
+   >8% QQQ drawdown**, not the next day, and only scales to 0.5. The simulator
+   rejects zero and divides by previous exposure when restoring targets. A new
+   isolated zero-safe research adapter with stable desired composition and an
+   independently replayable cash/fill journal is required. Do not just allow zero.
+   The current funded allocator only supports SPY as an index; do not silently
+   narrow the operator's desired stock/index/cash design for compatibility.
+4. Then freeze a bounded nested experiment before results: after-close decisions,
+   earliest next-open fills, matured/purged forward labels, training-only
+   preprocessing/calibration and inner-only gate selection. Include an identical
+   no-gate adapter control as well as exact `/3`, funded SPY and QQQ at 10/25 bp.
+   Preserve all fits, candidate scores, fees, turnover, missing data and continuous
+   account state. Any already-examined history stays labelled examined research.
+   Source-complete quality features, historical cohorts and genuine independent
+   validation remain outstanding; these cannot be manufactured by fold geometry.
+
+Goal remains active. No holdings/orders, live policy, inference model or deployed
+service changed. No new strategy was promoted. Commit SHA will be recorded after
+the checkpoint is created and verified; do not confuse a push with deployment.
+
 ## 2026-09-24 — Chronological diagnostics verified at e972117; broader work continues
 
 Implementation checkpoint: `e9721173f5976da40246d8f8268c5cce360bd84d` on `main`.

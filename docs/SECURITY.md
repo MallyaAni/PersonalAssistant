@@ -332,6 +332,45 @@ The following controls are requirements for future milestones, not current featu
 
 ## Trading quote and forward evidence boundary (2026-09-14)
 
+### Personal decision receipts (2026-09-24; deployment pending)
+
+The primary desk owner's browser can request `record_history: true` on
+`POST /market/{user_id}/desk/mine`. Ordinary POST reads and GET do not record
+advice. A named desk viewer, including a secondary administrator, cannot capture,
+read, acknowledge, export or delete the primary owner's personal history. The
+path owner, token scope and `MARKET_DESK_USER` checks all apply. Responses are
+private/no-store.
+
+`personal_decision_receipts` is a dedicated PostgreSQL table. Its payload uses
+an encrypted-only `EncryptedText` subtype/AES-256-GCM; writes refuse when
+encryption is disabled and reads reject even valid-looking plaintext replacements.
+Only the API writes it, using the existing backend `ENCRYPTION_KEY` allowlist.
+It retains an allowlisted generated decision: policy/source-file fingerprints,
+effective record hash and event state, decision grade/band/bar evidence, dated
+bid/ask evidence, intent, action, allocation weights, reason, blocker and expiry.
+It excludes raw equity, cash, share quantities, pending-order inputs, allocation
+preview metadata, credentials and request bodies. Weights still reveal private
+portfolio information and are encrypted. Owner IDs and lifecycle timestamps are
+unencrypted indexes. No payload reaches a model, public research archive, or
+task-change/undo store. Full monetary-input replay is deliberately not possible.
+
+Generated payloads have no update API. A separate idempotent acknowledgement
+records when the server received the browser's report that it loaded an accepted
+current response. The first acknowledgement requires matching session/revision,
+the current server record and an unexpired window: at most 60 seconds, shortened
+by every generated executable Buy/Sell's evidence expiry. This is not proof the
+person read every row or placed a trade. Later changes do not rewrite history.
+
+Unacknowledged receipts expire after 24 hours; acknowledged receipts expire 90
+days after acknowledgement. Expired rows are excluded from reads immediately and
+physically pruned for that owner on the next successful capture; no background
+cleanup schedule is implied. Bounded keyset pages include generated-only rows
+with no acknowledgement. The owner can export or delete an individual receipt;
+schema-driven account deletion also discovers this table by `user_id`. Backups
+retain deleted/expired ciphertext under the existing backup policy. Recording,
+decryption, corruption and acknowledgement failures remain visible; they never
+fall back to fabricated history or alter holdings/paper journals/orders.
+
 The existing operator-only desk preview fetches public bid/ask evidence and the
 broker session clock with existing credentials. It sends no orders and returns
 no provider error bodies or credentials. Quote requests time out and missing

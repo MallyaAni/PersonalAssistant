@@ -1,5 +1,45 @@
 # Fixed next-strategy protocol — September 24, 2026
 
+## Operator objective clarified after the rank-blend freeze
+
+The operator's target is to own the strongest volatile, fundamentally sound
+stocks when upside conditions are favorable, and move ahead of deteriorating
+conditions into cash or an index. This is an **ex-ante allocation problem**, not
+a hindsight switch between days subsequently labelled green and red. It now
+sets the priority for a separate research-only challenger; it does not revise
+the frozen rank-blend candidate or authorize retuning the completed studies.
+
+The next implementation should separate stock selection from exposure selection:
+
+- Select names for expected net upside, subject to sourced point-in-time quality
+  and liquidity evidence. High volatility alone is not evidence of quality or
+  positive expected return. Unknown quality evidence stays unknown.
+- Forecast downside risk and expected portfolio outcomes from information
+  available at the decision, then compare stocks, SPY, QQQ and cash after
+  switching costs. Indexes retain equity risk and are not substitutes for cash
+  during a broad selloff. No forecast is treated as knowledge of tomorrow's color.
+- Define the tradable decision/fill/return interval before fitting. A signal
+  calculated after the close cannot receive that close's fill or avoid a gap
+  that occurs before its next permitted execution. Cash yield must be sourced
+  and dated, or explicitly modelled as zero; it must not be silently assumed.
+- Fit preprocessing, risk forecasts, probability calibration and allocation
+  thresholds only within each outer fold's training data, using inner
+  chronological selection and purging actual forward-label endpoints. Retain
+  immutable input, fit, selection, decision and funded-account receipts. Future
+  perturbations must not change earlier fits, selections or actions.
+- Compare the complete allocation policy with stock selection alone, the fixed
+  `/3` incumbent, funded SPY and funded QQQ at both 10 and 25 bp on identical
+  calendars. Measure missed rallies and false defensive switches as well as
+  losses avoided. The primary result remains long-term net wealth, not binary
+  red/green prediction accuracy; drawdown, turnover, exposure, concentration and
+  regime/rolling consistency remain visible.
+
+This challenger is not yet implemented or qualified. The sourced-cohort importer
+is the next historical-input boundary, not evidence that the full book has
+point-in-time history. Nested analysis of already examined data remains examined
+research, not a retroactively untouched holdout. No portfolio, order, deployed
+policy or frozen experiment changes as a consequence of this clarification.
+
 ## Decision
 
 The strongest strategy supported today remains the adopted
@@ -8,7 +48,7 @@ has actually compared, not a universal optimum. The completed price-only neural
 candidate and the gradient-boosted ranker both lose to their fixed momentum/rule
 comparators. Neither may be retuned, relabelled, or promoted.
 
-The next challenger is
+The separately frozen rank-blend challenger is
 `incumbent-neural-rank-blend/1-research`: an equal blend of the incumbent and
 price-only neural cross-sectional percentile ranks. It is research only. It does
 not change recommendations, the personal position view, the paper broker, or the

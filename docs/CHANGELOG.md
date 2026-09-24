@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-09-24 — Private personal advice receipts and sourced historical cohorts
+
+- Added owner-only, encrypted-only personal decision receipts, separate from
+  research readings and paper fills. Generation and dashboard acknowledgement
+  are distinct; expiry, stale revisions, unavailable recording and corrupted
+  storage fail visibly. Cash, equity and share quantities are excluded.
+  Individual export/deletion and 24-hour/90-day lifecycle rules are explicit.
+- The browser acknowledges only committed current live-Desk responses. Secondary
+  admins no longer inherit primary desk-write permission. A reproduced delayed
+  list response could resurrect a deleted receipt in the UI; request invalidation
+  now prevents it. A reproduced plaintext substitution could bypass the legacy
+  encryption reader; this new-only table now requires sealed values on read/write.
+- Added an offline historical-cohort importer and a real SEC-source demonstration:
+  10 files, 720 sessions, 2,160 retained security/session rows and 8,640 explicitly
+  unavailable feature cells. Cash merger entitlement is not funded settlement.
+  The archive is preserved on Spark; no historical-backtest/adoption readiness
+  is claimed. Full evidence is in the historical-cohort research report.
+- VERIFIED: 82 related planner/API/personal-history tests, including isolated
+  PostgreSQL persistence; 103 Desk browser tests and production build; 41
+  cohort/membership/CLI tests; all migrations from empty schema through
+  `20260924_0021` (47 tables) in disposable local Postgres; 32 diagram checks.
+  No model prompt/router changed. Full deployment gates and deployed UI remain
+  UNVERIFIED; no deployment, holdings or order change occurred.
+- Recorded the clarified research objective: volatile quality stock selection
+  when expected upside favors it, with ex-ante cash/index exposure selection.
+  Indexes remain risky and net wealth after costs—not day-color accuracy—is the
+  objective. The zero-safe exposure adapter and nested fitting remain unbuilt.
+- Diagram impact: UPDATED — agent-trading-desk, market-data; the published
+  architecture page is synchronized. The duplicate diagnostic stock-list removal
+  is a separate follow-up, not part of this verified browser count.
+
 ## 2026-09-24 — Hash-checked chronological account diagnostics
 
 - Added a pure chronological scorecard and read-only CLI for preserved study

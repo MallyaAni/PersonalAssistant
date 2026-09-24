@@ -1214,6 +1214,20 @@ Tests must prove behavior at the lowest useful layer and must collectively cover
 
 ### Frontend tests
 
+The Desk's personal-history acceptance has two complementary layers:
+`frontend/e2e/desk.spec.ts` exercises React acceptance, expiry, history wording
+and owner visibility; `backend/tests/test_personal_history_http.py` walks the real
+planner/API and PostgreSQL receipt lifecycle with controlled market providers.
+The latter requires `ANIOS_HISTORY_DATABASE_TESTS=1` and a disposable
+`POSTGRES_DB` whose name begins `test_history_`. Its fixture refuses a live
+database and creates only the isolated auth/receipt tables. It asserts decrypted
+read-back, sealed raw storage, no raw account inputs, concurrent acknowledgement,
+access restrictions, corruption failures, retention and untouched account files.
+A skipped isolated-database run is not persistence verification. Use
+`scripts/verify-migrations.sh` for the complete migration path before deployment;
+never test schema rollback against `anios_db`. Deployment remains exclusively
+through `scripts/deploy.sh` and the live post-deploy acceptance path.
+
 - Component tests should cover rendering, input, loading, success, empty, streaming, and failure states.
 - Browser end-to-end tests must open the application, perform the real interaction, observe required network traffic, assert rendered results, and fail on page exceptions or blocking console errors.
 - When persistence is part of the goal, browser tests must reload or navigate and confirm that expected state is restored.

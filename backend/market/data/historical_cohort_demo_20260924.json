@@ -1,0 +1,249 @@
+{
+  "schema": "historical-cohort/1",
+  "cohort": {
+    "id": "sec-three-security-demonstration/2026-09-24",
+    "rule": "Retrospectively choose three US common-share identities to exercise evidence handling, not performance selection. Begin AAPL and TWTR cohort membership on 2020-01-02 using their 2019 SEC 10-K listing statements. Add SNOW on 2020-09-17, the first XNYS session after the conservative availability bound of its 2020-09-16 final prospectus. End TWTR membership effective 2022-10-28 under the later-filed merger 8-K; that removal is not known to replay until 2022-11-01. Retain all three names on every requested session, even when evidence is unavailable.",
+    "selected_at": "2026-09-24T16:57:51Z",
+    "basis": "retrospective_demonstration",
+    "limitations": [
+      "This is a deliberately selected three-security demonstration, not an independently held-out cohort, index constituent history, exhaustive event history, or survivorship-free historical universe.",
+      "Membership entry dates are dates under this declared demonstration rule; SNOW's cohort entry is not a claim about its first trading day.",
+      "Each SEC accession index Filing Date supplies day-level publication evidence. Availability is conservatively bounded at the next midnight in America/New_York. No precise public timestamp or time-zone conversion is asserted.",
+      "Documents and indexes were acquired in September 2026. Their archived bytes, source URLs and quoted passages support review but do not independently authenticate their original public availability.",
+      "AAPL's 2019 and 2022 filings corroborate continued listing at those dates. The intervening absence of other events has not been exhaustively researched; rows follow the supplied interval only.",
+      "TWTR's merger cash amount is an ordinary-share entitlement subject to the cited filing's exceptions, not funded account cash. Settlement date, broker-specific treatment and ledger evidence are unavailable.",
+      "The late-filed TWTR removal is not backdated into earlier decision knowledge. Rows can retain a prior-known membership after actual suspension; this is not trading permission.",
+      "No historical open, adjusted-close, volume, grade or other feature records are supplied. Price adjustment vintages and historical learned inputs remain unavailable.",
+      "No strategy is run, no benchmark return is estimated, and no live or paper account is changed."
+    ]
+  },
+  "sources": [
+    {
+      "source_id": "aapl-2019",
+      "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019319000119/a10-k20199282019.htm",
+      "file": "aapl-2019.html",
+      "sha256": "45fb2f01a2153f1b8594cfdea7d7b7c1c4b2dfbc896c9551b34be4a70fce903e",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2019-10-31",
+      "ingested_at": "2026-09-24T16:54:41Z",
+      "publication_evidence": {
+        "source_id": "aapl-2019-index",
+        "quote": "Filing Date 2019-10-31"
+      }
+    },
+    {
+      "source_id": "aapl-2019-index",
+      "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019319000119/0000320193-19-000119-index.html",
+      "file": "aapl-2019-index.html",
+      "sha256": "f1b2c2faa2b7f56e92bcafec25b63a2cbd1954cd7ae9b40c4bca461e39ea81aa",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2019-10-31",
+      "ingested_at": "2026-09-24T16:54:20Z",
+      "publication_evidence": {
+        "source_id": "aapl-2019-index",
+        "quote": "Filing Date 2019-10-31"
+      }
+    },
+    {
+      "source_id": "aapl-2022",
+      "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019322000108/aapl-20220924.htm",
+      "file": "aapl-2022.html",
+      "sha256": "b5c2077a6ffe58517193af91df6726aeb222b87803e4b8fbc86cece399ecb900",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2022-10-28",
+      "ingested_at": "2026-09-24T16:54:41Z",
+      "publication_evidence": {
+        "source_id": "aapl-2022-index",
+        "quote": "Filing Date 2022-10-28"
+      }
+    },
+    {
+      "source_id": "aapl-2022-index",
+      "url": "https://www.sec.gov/Archives/edgar/data/320193/000032019322000108/0000320193-22-000108-index.html",
+      "file": "aapl-2022-index.html",
+      "sha256": "87b0b3266302357ca64b8ae33723ad0966c5800177b1b132e8b50cb9f7c554c6",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2022-10-28",
+      "ingested_at": "2026-09-24T16:54:20Z",
+      "publication_evidence": {
+        "source_id": "aapl-2022-index",
+        "quote": "Filing Date 2022-10-28"
+      }
+    },
+    {
+      "source_id": "twtr-2019",
+      "url": "https://www.sec.gov/Archives/edgar/data/1418091/000156459019003523/twtr-10k_20181231.htm",
+      "file": "twtr-2019.html",
+      "sha256": "e2db81fe1ee8247a682b1a8678b90ccd12061f6f3036e3ac59559cf6d7e04921",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2019-02-21",
+      "ingested_at": "2026-09-24T16:54:41Z",
+      "publication_evidence": {
+        "source_id": "twtr-2019-index",
+        "quote": "Filing Date 2019-02-21"
+      }
+    },
+    {
+      "source_id": "twtr-2019-index",
+      "url": "https://www.sec.gov/Archives/edgar/data/1418091/000156459019003523/0001564590-19-003523-index.html",
+      "file": "twtr-2019-index.html",
+      "sha256": "63339eb1cad73c5f1428fc895c6929a3fd58276f17fe1b97c3fa0f24ddee5731",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2019-02-21",
+      "ingested_at": "2026-09-24T16:54:20Z",
+      "publication_evidence": {
+        "source_id": "twtr-2019-index",
+        "quote": "Filing Date 2019-02-21"
+      }
+    },
+    {
+      "source_id": "snow-2020",
+      "url": "https://www.sec.gov/Archives/edgar/data/1640147/000162828020013667/snowflake424b4.htm",
+      "file": "snow-2020-complete.html",
+      "sha256": "e3d48b8a0982edb6e6de4516122644ce27033e812ab9b9a3991100c0724ae556",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2020-09-16",
+      "ingested_at": "2026-09-24T16:55:21Z",
+      "publication_evidence": {
+        "source_id": "snow-2020-index",
+        "quote": "Filing Date 2020-09-16"
+      }
+    },
+    {
+      "source_id": "snow-2020-index",
+      "url": "https://www.sec.gov/Archives/edgar/data/1640147/000162828020013667/0001628280-20-013667-index.html",
+      "file": "snow-2020-index.html",
+      "sha256": "17630273d39efd6a516668e1e65d423f7e8af89d29ce5f0020ebae5647438c7f",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2020-09-16",
+      "ingested_at": "2026-09-24T16:54:20Z",
+      "publication_evidence": {
+        "source_id": "snow-2020-index",
+        "quote": "Filing Date 2020-09-16"
+      }
+    },
+    {
+      "source_id": "twtr-2022",
+      "url": "https://www.sec.gov/Archives/edgar/data/1418091/000119312522272772/d411753d8k.htm",
+      "file": "twtr-2022.html",
+      "sha256": "72a060d759c42ec65de6c5d97bdf42c44236280ee50487f5545cc475bb698a61",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2022-10-31",
+      "ingested_at": "2026-09-24T16:54:46Z",
+      "publication_evidence": {
+        "source_id": "twtr-2022-index",
+        "quote": "Filing Date 2022-10-31"
+      }
+    },
+    {
+      "source_id": "twtr-2022-index",
+      "url": "https://www.sec.gov/Archives/edgar/data/1418091/000119312522272772/0001193125-22-272772-index.html",
+      "file": "twtr-2022-index.html",
+      "sha256": "ee9cb75386c8f1e00de82e7ef813c5f4d40566f40ac9f9ac2f72a5bb7d54209e",
+      "media_type": "text/html",
+      "publication_precision": "day_conservative",
+      "published_on": "2022-10-31",
+      "ingested_at": "2026-09-24T16:54:20Z",
+      "publication_evidence": {
+        "source_id": "twtr-2022-index",
+        "quote": "Filing Date 2022-10-31"
+      }
+    }
+  ],
+  "securities": [
+    {
+      "security_id": "sec:0000320193:common",
+      "identifier_scheme": "sec_cik_and_share_class",
+      "issuer_id": "0000320193",
+      "share_class": "Common Stock, $0.00001 par value per share",
+      "ticker": "AAPL",
+      "identity_evidence": {
+        "source_id": "aapl-2019",
+        "quote": "Common Stock, $0.00001 par value per share AAPL The Nasdaq Stock Market LLC"
+      }
+    },
+    {
+      "security_id": "sec:0001418091:common",
+      "identifier_scheme": "sec_cik_and_share_class",
+      "issuer_id": "0001418091",
+      "share_class": "common stock",
+      "ticker": "TWTR",
+      "identity_evidence": {
+        "source_id": "twtr-2019",
+        "quote": "Our common stock has been listed on the New York Stock Exchange under the symbol “TWTR” since November 7, 2013. Prior to that date, there was no public trading market for our common stock."
+      }
+    },
+    {
+      "security_id": "sec:0001640147:class-a",
+      "identifier_scheme": "sec_cik_and_share_class",
+      "issuer_id": "0001640147",
+      "share_class": "Class A common stock",
+      "ticker": "SNOW",
+      "identity_evidence": {
+        "source_id": "snow-2020",
+        "quote": "Our Class A common stock has been approved for listing on the New York Stock Exchange under the symbol “SNOW.”"
+      }
+    }
+  ],
+  "memberships": [
+    {
+      "security_id": "sec:0000320193:common",
+      "entered": "2020-01-02",
+      "entry_evidence": {
+        "source_id": "aapl-2019",
+        "quote": "Common Stock, $0.00001 par value per share AAPL The Nasdaq Stock Market LLC"
+      },
+      "exited": null,
+      "exit_evidence": null
+    },
+    {
+      "security_id": "sec:0001418091:common",
+      "entered": "2020-01-02",
+      "entry_evidence": {
+        "source_id": "twtr-2019",
+        "quote": "Our common stock has been listed on the New York Stock Exchange under the symbol “TWTR” since November 7, 2013. Prior to that date, there was no public trading market for our common stock."
+      },
+      "exited": "2022-10-28",
+      "exit_evidence": {
+        "source_id": "twtr-2022",
+        "quote": "As a result, trading of Twitter’s common stock on the NYSE was suspended prior to the opening of the NYSE on October 28, 2022."
+      }
+    },
+    {
+      "security_id": "sec:0001640147:class-a",
+      "entered": "2020-09-17",
+      "entry_evidence": {
+        "source_id": "snow-2020",
+        "quote": "Our Class A common stock has been approved for listing on the New York Stock Exchange under the symbol “SNOW.”"
+      },
+      "exited": null,
+      "exit_evidence": null
+    }
+  ],
+  "terminal_outcomes": [
+    {
+      "security_id": "sec:0001418091:common",
+      "effective_on": "2022-10-27",
+      "kind": "cash_merger",
+      "cash_per_share": 54.2,
+      "currency": "USD",
+      "successor_security_id": null,
+      "shares_per_share": null,
+      "settlement_on": null,
+      "evidence": {
+        "source_id": "twtr-2022",
+        "quote": "each issued and outstanding share of Twitter’s common stock (subject to certain exceptions set forth in the Merger Agreement) was canceled and converted into the right to receive $54.20 in cash, without interest"
+      }
+    }
+  ],
+  "features": []
+}

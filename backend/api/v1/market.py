@@ -10,19 +10,21 @@ import asyncio
 import json
 import math
 import re
+import uuid
 from collections import OrderedDict
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi import Path as PathParam
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, StrictBool, field_validator, model_validator
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
+    DbDependency,
     DependencyAgentMemoryManager,
     get_structured_llm_client,
 )
@@ -524,6 +526,8 @@ class DeskMineInput(BaseModel):
     # board will not issue another entry for them; it has no broker of its
     # own to ask, so this is the only channel that evidence arrives by.
     pending_buys: list[str] | None = None
+    # Explicit capture is owner-only; ordinary reads remain nonmutating.
+    record_history: StrictBool = False
 
     # Keep only ticker-shaped symbols, upper-cased, so a working order for
     # "nvda" matches the board's "NVDA" row.
@@ -597,12 +601,15 @@ class DeskMineInput(BaseModel):
 # The heavy read lives in one shared helper so GET (backward compatible) and
 # POST (the channel the page uses) answer identically without duplicating
 # business logic; the account figures are validated before any evidence is
-# collected.
+# collected. An optional private sink freezes only generated output and its
+# evidence for owner-requested history before later provider reads change.
 async def _desk_mine_payload(
     user_id: str,
     equity: float,
     available_cash: float | None,
     pending_buys: list[str] | None = None,
+    *,
+    history_context: dict | None = None,
 ) -> dict[str, object]:
     now = datetime.now(UTC)
     market_status = exchange_calendar.exchange_status(now)
@@ -666,6 +673,16 @@ async def _desk_mine_payload(
         cash=available_cash,
         pending=pending_buys,
     )
+    if history_context is not None:
+        from backend.market import personal_history
+
+        try:
+            history_context["payload"] = personal_history.project(
+                decisions, latest, snap or {}, entries
+            )
+            history_context["generated_at"] = decisions["as_of"]
+        except Exception:  # noqa: BLE001 - recording must not hide guidance
+            history_context["unavailable"] = True
     if snap is not None and snap.get("quotes"):
         technical, value = desk_freshness.grade_inputs(snap, latest)
         return {
@@ -761,16 +778,158 @@ async def desk_mine(
     return await _desk_mine_payload(user_id, equity, available_cash)
 
 
-# The channel the page uses: the confirmed personal account figures travel in
-# the request body, never in a URL, and are validated by the body model before
-# the shared read runs.
+# Compute the personal board from body-only account inputs and optionally save
+# an encrypted, minimized receipt for the primary owner. Capture failure is
+# visible but never hides current advice or writes holdings or trades.
 @router.post("/desk/mine")
-async def desk_mine_post(user_id: UserId, inputs: DeskMineInput) -> dict[str, object]:
+async def desk_mine_post(
+    user_id: UserId, inputs: DeskMineInput, db: DbDependency, response: Response
+) -> dict[str, object]:
     """Return action rows computed against the saved holdings."""
     _operator_only(user_id)
-    return await _desk_mine_payload(
-        user_id, inputs.equity, inputs.available_cash, inputs.pending_buys
+    response.headers["Cache-Control"] = "private, no-store"
+    if not inputs.record_history:
+        return await _desk_mine_payload(
+            user_id, inputs.equity, inputs.available_cash, inputs.pending_buys
+        )
+    _desk_writer_only(user_id)
+    context: dict = {}
+    result = await _desk_mine_payload(
+        user_id,
+        inputs.equity,
+        inputs.available_cash,
+        inputs.pending_buys,
+        history_context=context,
     )
+    from backend.market.personal_history import PersonalHistoryRepository
+
+    receipt = {
+        "status": "unavailable",
+        "reason": "Personal history recording unavailable",
+    }
+    if "payload" in context:
+        try:
+            receipt = await PersonalHistoryRepository(db).capture(
+                user_id, context["payload"], context["generated_at"]
+            )
+        except Exception:  # noqa: BLE001 - return no database errors or account inputs
+            await db.rollback()
+    elif result.get("session") is None:
+        receipt = {
+            "status": "not_requested",
+            "reason": "No decision is available to record",
+        }
+    return {**result, "history_receipt": receipt}
+
+
+class PersonalHistoryAcknowledgement(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session: str
+    written: str | None
+
+
+# Keep private history reads and writes restricted to the primary account.
+def _personal_history_owner(user_id: str, response: Response) -> None:
+    _operator_only(user_id)
+    _desk_writer_only(user_id)
+    response.headers["Cache-Control"] = "private, no-store"
+
+
+# Page original advice, never recalculated readings or reconstructed past actions.
+@router.get("/desk/personal-history")
+async def personal_history_list(
+    user_id: UserId,
+    db: DbDependency,
+    response: Response,
+    limit: int = Query(20, ge=1, le=50),
+    before: uuid.UUID | None = None,
+) -> dict:
+    from backend.market.personal_history import (
+        HistoryConflict,
+        PersonalHistoryRepository,
+    )
+
+    _personal_history_owner(user_id, response)
+    try:
+        return await PersonalHistoryRepository(db).list(user_id, limit, before)
+    except HistoryConflict as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(503, "Personal decision history unavailable") from exc
+
+
+# Record a timely current browser acknowledgement without altering generated advice.
+@router.post("/desk/personal-history/{receipt_id}/acknowledge")
+async def personal_history_acknowledge(
+    user_id: UserId,
+    receipt_id: uuid.UUID,
+    inputs: PersonalHistoryAcknowledgement,
+    db: DbDependency,
+    response: Response,
+) -> dict:
+    from backend.market.personal_history import (
+        HistoryConflict,
+        PersonalHistoryRepository,
+    )
+
+    _personal_history_owner(user_id, response)
+    latest, _ = deskrecord.latest_pair(_root())
+    try:
+        result = await PersonalHistoryRepository(db).acknowledge(
+            user_id, receipt_id, inputs.session, inputs.written, latest
+        )
+    except HistoryConflict as exc:
+        await db.rollback()
+        raise HTTPException(409, str(exc)) from exc
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(
+            503, "Personal history acknowledgement unavailable"
+        ) from exc
+    if result is None:
+        raise HTTPException(404, "Personal decision receipt unavailable")
+    return result
+
+
+# Export the saved advice as owned JSON, without fetching new prices or account state.
+@router.get("/desk/personal-history/{receipt_id}")
+async def personal_history_export(
+    user_id: UserId,
+    receipt_id: uuid.UUID,
+    db: DbDependency,
+    response: Response,
+) -> dict:
+    from backend.market.personal_history import PersonalHistoryRepository
+
+    _personal_history_owner(user_id, response)
+    try:
+        result = await PersonalHistoryRepository(db).export(user_id, receipt_id)
+    except Exception as exc:
+        raise HTTPException(503, "Personal decision history unavailable") from exc
+    if result is None:
+        raise HTTPException(404, "Personal decision receipt unavailable")
+    return result
+
+
+# Delete only the owner's selected history receipt; holdings and trades are untouched.
+@router.delete("/desk/personal-history/{receipt_id}")
+async def personal_history_delete(
+    user_id: UserId,
+    receipt_id: uuid.UUID,
+    db: DbDependency,
+    response: Response,
+) -> dict:
+    from backend.market.personal_history import PersonalHistoryRepository
+
+    _personal_history_owner(user_id, response)
+    try:
+        removed = await PersonalHistoryRepository(db).remove(user_id, receipt_id)
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(503, "Personal decision deletion unavailable") from exc
+    if not removed:
+        raise HTTPException(404, "Personal decision receipt unavailable")
+    return {"deleted": True, "id": str(receipt_id)}
 
 
 # Preview the entire buy budget without persisting cash or placing orders.

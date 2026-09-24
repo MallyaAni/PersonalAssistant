@@ -30,6 +30,7 @@ from backend.models.memory import (
     SemanticMemory,
     UserProfile,
 )
+from backend.models.personal_decision import PersonalDecisionReceipt
 from backend.models.presentation import (
     Presentation,
     PresentationJob,
@@ -43,6 +44,7 @@ from backend.models.scheduled_task import (
 from backend.models.tool_memory import ToolDescriptor, ToolPreference, ToolUsageOutcome
 
 _MODELS = (
+    PersonalDecisionReceipt,
     Conversation,
     UserAccount,
     UserSession,

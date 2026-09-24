@@ -12,10 +12,12 @@ flowchart TB
     Broker --> Journal
     Grades --> Records[(Dated desk records<br/>and completed 15-minute observations)]
     Plan --> Records
-    Records --> View[Dashboard<br/>dated plan actions and manual position recording]
+    Records --> View[Desk API and dashboard<br/>dated advice and manual position recording]
     Journal --> View
     Quotes[Read-only bid/ask and session clock<br/>SIP preferred; IEX identified] --> View
     Holdings[(Saved personal positions)] --> View
+    View -->|Owner-only generated advice<br/>separate load acknowledgement| PersonalHistory[(Encrypted personal decision receipts<br/>dated, expiring; never trade executions)]
+    PersonalHistory -->|Owned history, export and deletion| View
     Records --> Research[(Immutable research decisions<br/>entry states and candidate allocations)]
     Quotes --> Research
     Research --> Evidence[Forward evaluation<br/>grade outcomes and funded target trackers]
@@ -36,7 +38,7 @@ flowchart TB
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
-    class Store,Journal,Records,Holdings,Research data;
+    class Store,Journal,Records,Holdings,Research,PersonalHistory data;
     class Providers,Broker,Quotes external;
     class Models model;
     class View interface;

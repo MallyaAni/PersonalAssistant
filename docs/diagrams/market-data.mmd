@@ -28,10 +28,17 @@ flowchart TB
     Research --> Forward[Frozen NumPy neural inference<br/>independent prospective accounts]
     Panel --> Forward
 
+    Primary[(Historical primary documents<br/>issuer filings + SEC accession indexes)] --> Cohort[Offline reviewed-cohort importer<br/>stable issuer + share-class identities<br/>publication bounds separate from effective dates]
+    Manifest[Declared cohort + local source manifest<br/>URLs, SHA256, quoted passages, ingestion times<br/>no inferred feature values] --> Cohort
+    Cohort --> Evidence[(Fresh immutable research archive<br/>original bytes + original manifest<br/>hash-addressed source copies)]
+    Evidence --> Readiness[Read-back readiness report<br/>all names on every XNYS session<br/>membership, feature and settlement gaps]
+    Readiness -.-> Limits[Integrity is not historical completeness<br/>cash entitlement is not funded cash<br/>no backtest readiness or automatic promotion]
+    CohortCLI[CLI: market_historical_cohort<br/>offline import + readiness only] -.-> Cohort
+
     CLI[CLI: market_snapshot · market_edgar<br/>market_tone · market_sweep · market_book] -.-> Refresh
     CLI -.-> Report
 
-    Rule[Reproducibility is a pinned as-of date.<br/>No partition is ever rewritten;<br/>label endpoints are purged]
+    Rule[A pinned as-of snapshot is reproducible,<br/>not proof of historical availability.<br/>Partitions stay immutable; label endpoints are purged]
     Rule -.-> Store
     Rule -.-> Windows
 
@@ -41,10 +48,10 @@ flowchart TB
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class CLI,Report interface;
-    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book application;
-    class Store data;
-    class Yahoo,Edgar external;
+    class CLI,Report,CohortCLI,Manifest interface;
+    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book,Cohort,Readiness application;
+    class Store,Evidence data;
+    class Yahoo,Edgar,Primary external;
     class Model,Reader,Pilot model;
     class Research data;
-    class Rule,Drop warning;
+    class Rule,Drop,Limits warning;
