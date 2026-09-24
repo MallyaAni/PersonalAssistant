@@ -124,3 +124,32 @@ test('strategy details start collapsed while active trading restrictions remain 
   await expect(page.getByLabel('FOMC exposure policy')).toContainText('reduction pending')
   expect(errors).toEqual([])
 })
+
+// Missing exchange observations stay visible without drawing a valid band or changing the action.
+test('ticker panels disclose chart gaps and retain the board decision', async ({page}) => {
+  const {errors} = await setup(page, true, true)
+  await page.route('**/desk/history/MSFT', route => route.fulfill({json: {rows: [], ticker: 'MSFT', recommendations: {observations: []}}}))
+  await page.route('**/desk/chart/MSFT*', route => {
+    const weekly = new URL(route.request().url()).searchParams.get('timeframe') === 'weekly'
+    const dates = weekly ? ['2026-09-18', '2026-09-24'] : ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24']
+    return route.fulfill({json: {
+      ticker: 'MSFT', timeframe: weekly ? 'weekly' : 'daily', timeframes: ['daily', 'weekly'], adjusted: true,
+      basis: 'adjusted prices', last_bar_complete: !weekly, sessions: dates.length,
+      data_status: 'incomplete', data_reason: 'Missing exchange sessions; affected indicators unavailable.', missing_sessions: ['2026-09-22'],
+      bars: dates.map((date, i) => ({date, open: i === 1 ? null : 99, high: i === 1 ? null : 101, low: i === 1 ? null : 98, close: i === 1 ? null : 100, volume: i === 1 ? null : 1000})),
+      overlays: {band_upper: dates.map(() => null), band_lower: dates.map(() => null)}, levels: {}, entries: [],
+    }})
+  })
+  await page.getByRole('button', {name: 'MSFT', exact: true}).click()
+  await expect(page.getByLabel('MSFT decision reason', {exact: true})).toContainText('Entry data unavailable')
+  const chart = page.getByLabel('MSFT price chart', {exact: true})
+  await expect(chart.getByLabel('Chart data quality')).toContainText('Chart data incomplete · 1 missing session')
+  await chart.getByLabel('Chart data quality').locator('summary').click()
+  await expect(chart.getByLabel('Chart data quality')).toContainText('2026-09-22')
+  await expect(chart).not.toContainText('Band upper')
+  await expect(chart).not.toContainText('could not be drawn')
+  await chart.getByRole('button', {name: 'W', exact: true}).click()
+  await expect(chart).toContainText('incomplete candle')
+  await expect(chart).not.toContainText('Weekly overlays include the forming week')
+  expect(errors).toEqual([])
+})

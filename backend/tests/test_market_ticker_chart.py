@@ -215,7 +215,7 @@ def test_the_live_candle_moves_the_averages_not_just_the_bar():
     flat = ticker_chart.build(store, "AAA", 30)
     jumped = ticker_chart.build(
         store, "AAA", 30,
-        live_bar={"session": "2025-03-25", "last": 150.0, "open": 150.0, "high": 151.0, "low": 149.0},
+        live_bar={"session": "2025-03-24", "last": 150.0, "open": 150.0, "high": 151.0, "low": 149.0},
     )
     assert jumped.close[-1] == 150.0
     # The 9-day average must have moved with it, not stayed at the close.
@@ -258,10 +258,10 @@ def test_the_chart_marks_where_the_entry_fired():
 def test_quote_metadata_and_lines_share_one_snapshot(timeframe):
     store = _store([100.0] * 320)
     built = ticker_chart.payload(store, "AAA", 30, timeframe, {
-        "session": "2026-09-24", "bar": "2026-09-24T14:00:00+00:00",
+        "session": "2025-03-24", "bar": "2025-03-24T14:00:00+00:00",
         "last": 150.0, "open": 100.0, "high": 151.0, "low": 99.0,
     })
-    assert built["quote_bar"] == "2026-09-24T14:00:00+00:00"
+    assert built["quote_bar"] == "2025-03-24T14:00:00+00:00"
     assert built["bars"][-1]["close"] == 150.0
     assert built["overlays"]["ema9"][-1] == pytest.approx(110.0)
     assert built["last_bar_complete"] is False
@@ -290,6 +290,7 @@ def test_ignored_old_quote_has_no_snapshot_timestamp():
 def test_chart_completion_uses_actual_regular_or_early_close(
     session, bar, complete, timeframe
 ):
-    built = ticker_chart.payload(_store([100.0] * 320), "AAA", 30, timeframe,
+    history_length = int(np.busday_count("2024-01-01", session))
+    built = ticker_chart.payload(_store([100.0] * history_length), "AAA", 30, timeframe,
         {"session": session, "bar": bar, "last": 110.0})
     assert built["last_bar_complete"] is complete

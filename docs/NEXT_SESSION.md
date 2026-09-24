@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-09-24 — All-ticker chart audit stopped a premature release
+
+`bc85669` is pushed on Spark/GitHub main but its deployment was deliberately stopped
+before activation (exit 143). Live remains `21adf2a`. The isolated unit gate was
+allowed to finish: **5,849 passed, 31 skipped, 1 xfailed**. No model gate, restart,
+migration or activation followed. Keep `/tmp/codex-simplified-desk-deploy-20260924.log`.
+
+The user requested validity checks for clicked stocks/charts. Audit of all **94
+covered tickers, 188 daily/weekly payloads** found correct dates, displayed OHLC,
+adjustment bases and current quote alignment, but Q's chart compressed its missing
+September 22 session and produced a finite band while the entry engine correctly
+reported unavailable. Original audit: `/tmp/codex-all-ticker-chart-audit-20260924.json`.
+
+Corrected charts retain missing exchange sessions as null observations, suppress
+affected indicator windows, mark incomplete weekly candles, and report scoped
+calendar/data availability. Frontend uses whitespace points instead of connecting
+lines over nulls, displays a concise quality warning and exposes missing dates on
+expansion. The stock panel reads the board's decision even when a legacy allocation
+row is absent, and shows its reason. No trading threshold or policy changed.
+
+VERIFIED: **61 chart/API/entry-parity tests passed**. Nine new cases cover daily and
+weekly gaps, holidays, future-prefix invariance, complete-window recovery and
+calendar coverage. Seven old failures were invalid fixtures inserting a quote one
+day/year beyond history while expecting an uninterrupted average; dates were made
+contiguous and numerical assertions retained. TypeScript and **3 affected browser
+cases passed**, including chart-gap rendering and matching modal/board decisions.
+Logs: `/tmp/codex-chart-gap-root-backend.log`, `/tmp/codex-chart-gap-browser-corrected.log`.
+
+After-audit VERIFIED on root chart SHA256
+`2a46fb98eebb6d79eb4cf8e95e4dc31699476d9581492414b0a83d3f180e3c19`:
+188 payloads, zero exceptions/OHLC/basis/order/length errors, 186 complete and Q's
+two explicitly incomplete. All 93 available daily bands agree with entry reads;
+Q's band and incomplete weekly candle are null. No current calendar coverage gaps.
+Evidence: `/tmp/codex-all-ticker-chart-audit-20260924-after.json`.
+
+Pending: guarded release retry and deployed browser/artifact proof. Do not reuse
+the prior unit pass as proof of the revised tree; the deployment script must run
+its gates normally. Retry log: `/tmp/codex-simplified-desk-deploy-20260924-final.log`.
+
 ## 2026-09-24 — Concise personal desk and data-integrity corrections
 
 Objective: a concise Stock / Action / Size / Reason board, explicit unavailable

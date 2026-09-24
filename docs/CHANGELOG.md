@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-24 — Chart gap integrity
+
+- An all-ticker audit found Q's chart silently compressed a missing session while
+  entry guidance rejected it. Charts now retain null exchange observations, suppress
+  dependent indicators and identify incomplete weekly candles. The frontend shows
+  a concise data warning and preserves visual gaps.
+- Stock dialogs retain the board decision independently of legacy allocation rows
+  and display a short reason. Quote-blocker wording is concise.
+- **61 chart/API/parity checks and 3 browser cases passed**; TypeScript passed.
+  The earlier release attempt stopped before activation; final deployment pending.
+
 ## 2026-09-24 — Personal decision clarity and causal data corrections
 
 - Personal buys respect the trade minimum after cash scaling. An optional explicit

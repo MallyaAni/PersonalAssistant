@@ -2027,9 +2027,9 @@ const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
 const actOnIt = (reason?: string | null): string | null => {
   if (!reason) return null
   if (/unverified/i.test(reason)) return 'Only one venue is quoting here, so the spread is unknown; check your broker before crossing'
-  if (/spread exceeds/i.test(reason)) return 'Spread is wide right now; work a limit rather than crossing it'
+  if (/spread exceeds/i.test(reason)) return 'Spread exceeds the execution limit'
   if (/market closed/i.test(reason)) return 'Market closed; no executable quote until the open'
-  if (/invalid or empty|unavailable/i.test(reason)) return 'No usable quote this moment; the size stands, the price does not'
+  if (/invalid or empty|unavailable/i.test(reason)) return 'Quote unavailable; execution blocked'
   if (/refresh price evidence/i.test(reason)) return 'Price evidence has expired; reload for a current quote'
   return reason
 }
@@ -2112,6 +2112,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   return <div className="min-w-24" aria-label={`${ticker} strategy intent`} title={actOnIt(blocker ?? reason) ?? blocker ?? reason}>
     <div className="font-medium">{action.toUpperCase()}</div>
     {executionStatus}
+    {terse && !blocked && <p aria-label={`${ticker} decision reason`} className="text-xs font-normal text-[#6e6e73]">{action === 'Hold' && row.entry_status === 'unavailable' ? row.entry_reason ?? 'Entry data unavailable' : reason}</p>}
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Recorded allocation & execution quote</summary>
       <div>Recorded personal allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)} at the next reset</div>
       {row.quote ? <>
@@ -2692,7 +2693,7 @@ const NameDetail = ({
             stances={(row ? row.stances_live ?? row.stances : liveGrades[ticker]?.stances_live ?? latest.grades?.[ticker]?.stances) ?? {}} session={latest.session} />
           {currentStances && <VoteChanges evening={latest.grades?.[ticker]?.stances ?? {}} current={currentStances} />}
           <div className="mt-2 text-xs text-[#6e6e73]">
-            {row ? <DecisionCell terse ticker={ticker} decisions={decisions} latest={latest} now={now} /> : 'Not on the board'}
+            <DecisionCell terse ticker={ticker} decisions={decisions} latest={latest} now={now} />
           </div>
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}

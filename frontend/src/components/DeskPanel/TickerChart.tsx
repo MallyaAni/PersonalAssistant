@@ -244,15 +244,14 @@ export const TickerChart = ({
     try {
       candles.setData(
         ordered(
-          merged.bars
-            .filter((b) => b.open !== null && b.high !== null && b.low !== null && b.close !== null)
-            .map((b) => ({
+          merged.bars.map((b) =>
+            b.open !== null && b.high !== null && b.low !== null && b.close !== null ? {
               time: stamp(b.date),
               open: b.open as number,
               high: b.high as number,
               low: b.low as number,
               close: b.close as number,
-            })),
+            } : { time: stamp(b.date) }),
         ),
       )
     } catch {
@@ -281,9 +280,9 @@ export const TickerChart = ({
       })
       series.setData(
         ordered(
-          merged.bars
-            .map((b, i) => ({ time: stamp(b.date), value: values[i] }))
-            .filter((p): p is { time: UTCTimestamp; value: number } => p.value !== null),
+          merged.bars.map((b, i) => values[i] !== null && Number.isFinite(values[i])
+            ? { time: stamp(b.date), value: values[i] as number }
+            : { time: stamp(b.date) }),
         ),
       )
       drawn.push(series)
@@ -359,6 +358,15 @@ export const TickerChart = ({
 
       {data && (
         <>
+          {data.data_status && data.data_status !== 'complete' && (
+            <details aria-label="Chart data quality" className="mb-2 text-xs text-[#9a6700]">
+              <summary className="cursor-pointer">Chart data {data.data_status}
+                {Boolean(data.missing_sessions?.length) && ` · ${data.missing_sessions!.length} missing session${data.missing_sessions!.length === 1 ? '' : 's'}`}
+              </summary>
+              {data.data_reason && <p>{data.data_reason}</p>}
+              {Boolean(data.missing_sessions?.length) && <p>{data.missing_sessions!.join(', ')}</p>}
+            </details>
+          )}
           <div
             ref={holder}
             className={`w-full ${drawFailed ? 'hidden' : tall ? 'h-[52vh] min-h-80' : 'h-72'}`}
@@ -375,10 +383,10 @@ export const TickerChart = ({
                   timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric',
                   hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
                 }).format(new Date(data.quote_bar!))}.`
-              : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? ' (forming candle)' : ''}.`}{' '}
+              : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
             {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} shown, {data.basis}.
             {' '}Daily and weekly indicator views; observations can update during a session.
-            {timeframe === 'weekly' && data.last_bar_complete === false &&
+            {timeframe === 'weekly' && data.last_bar_complete === false && summary?.last.close !== null &&
               ' Weekly overlays include the forming week and can differ from the weekly inputs of a saved grade.'}
           </p>
           {/* A mark nobody can read is decoration. Both of the desk's rules are

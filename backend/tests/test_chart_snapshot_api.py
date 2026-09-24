@@ -19,7 +19,7 @@ async def test_chart_http_preserves_coherent_quote_snapshot(monkeypatch, timefra
     monkeypatch.setattr(market, "MarketStore", lambda root: _store([100.0] * 320))
     monkeypatch.setattr(market, "_live_snapshot", lambda: {"quotes": {"AAA": {
         "last": 150.0, "open": 100.0, "high": 151.0, "low": 99.0,
-        "bar": "2026-09-24T14:00:00+00:00",
+        "bar": "2025-03-24T14:00:00+00:00",
     }}})
     auth = {"Authorization": f"Bearer {issue_user_token('chart_user')}"}
     async with AsyncClient(
@@ -31,7 +31,7 @@ async def test_chart_http_preserves_coherent_quote_snapshot(monkeypatch, timefra
         )
     assert response.status_code == 200, response.text
     chart = response.json()
-    assert chart["quote_bar"] == "2026-09-24T14:00:00+00:00"
+    assert chart["quote_bar"] == "2025-03-24T14:00:00+00:00"
     assert chart["bars"][-1]["close"] == 150.0
     assert chart["overlays"]["ema9"][-1] == pytest.approx(110.0)
     assert chart["last_bar_complete"] is False

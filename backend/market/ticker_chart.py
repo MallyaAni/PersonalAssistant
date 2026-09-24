@@ -38,8 +38,10 @@ first have used it, not the day it formed.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from functools import lru_cache
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -83,6 +85,75 @@ class Chart:
     entries: tuple[str, ...] = ()
     # Start of the completed 15-minute observation used for bars AND lines.
     quote_bar: str | None = None
+    data_status: str = "complete"
+    data_reason: str | None = None
+    missing_sessions: tuple[str, ...] = ()
+
+
+# Use only reviewed exchange holidays, with calendar coverage kept explicit.
+@lru_cache(maxsize=1)
+def _chart_calendar():
+    historical = json.loads(calendar.HISTORICAL_SESSIONS_PATH.read_text())["years"]
+    current = json.loads(calendar.HOLIDAYS_PATH.read_text())["years"]
+    years = {int(year) for year in historical} | {int(year) for year in current}
+    closures = [
+        day for record in historical.values() for day in record["full_closures"]
+    ]
+    closures.extend(day for days in current.values() for day in days)
+    return years, np.busdaycalendar(holidays=closures)
+
+
+# Insert actual missing exchange sessions rather than compressing indicator time.
+def _with_session_gaps(dates, arrays):
+    years, sessions = _chart_calendar()
+    candidates = np.arange(dates[0], dates[-1] + np.timedelta64(1, "D"))
+    covered = np.array([int(str(day)[:4]) in years for day in candidates])
+    expected = candidates[covered & np.is_busday(candidates, busdaycal=sessions)]
+    grid = np.union1d(dates, expected)
+    indices = np.searchsorted(grid, dates)
+    aligned = []
+    for array in arrays:
+        values = np.full((len(grid), 1), np.nan)
+        values[indices] = array
+        aligned.append(values)
+    return grid, aligned
+
+
+# Scope data warnings to the drawn interval and its indicator warm-up requirements.
+def _chart_data_status(all_dates, missing, drawn_dates, timeframe):
+    lookback = YEAR_SESSIONS if timeframe == DAILY else WEEKLY_EMA_SPANS[-1] * 5
+    first = max(0, int(np.searchsorted(all_dates, drawn_dates[0])) - lookback)
+    scope = all_dates[first:]
+    relevant = tuple(str(day) for day in scope[missing[first:]])
+    years, _ = _chart_calendar()
+    unknown = sorted({int(str(day)[:4]) for day in scope} - years)
+    if unknown:
+        return (
+            "unavailable",
+            "Exchange calendar coverage unavailable for "
+            + ", ".join(map(str, unknown)),
+            relevant,
+        )
+    if relevant:
+        return (
+            "incomplete",
+            f"Missing daily observations for {len(relevant)} exchange sessions",
+            relevant,
+        )
+    return "complete", None, ()
+
+
+# A holiday-shortened week closes on its final scheduled exchange session.
+def _closed_week(day):
+    years, sessions = _chart_calendar()
+    if int(str(day)[:4]) not in years:
+        return False
+    remaining = [
+        day + np.timedelta64(offset, "D")
+        for offset in range(1, 7)
+        if (int(day.astype(int)) + 3 + offset) // 7 == (int(day.astype(int)) + 3) // 7
+    ]
+    return not any(np.is_busday(other, busdaycal=sessions) for other in remaining)
 
 
 # NaN and numpy scalars are not JSON, and a chart library wants a gap rather
@@ -132,14 +203,43 @@ def _weekly_bars(
     starts = np.concatenate([[0], ends[:-1] + 1]) if len(ends) else np.array([], int)
     keep = [i for i, (a, b) in enumerate(zip(starts, ends)) if b >= a]
     starts, ends = starts[keep], ends[keep]
+    complete = np.array(
+        [
+            all(
+                np.isfinite(values[a : b + 1]).all()
+                for values in (open_, high, low, close)
+            )
+            for a, b in zip(starts, ends, strict=True)
+        ]
+    ).reshape(-1, 1)
     with np.errstate(all="ignore"):
         return (
             dates[ends],
-            np.array([open_[a, 0] for a in starts]).reshape(-1, 1),
-            np.array([np.nanmax(high[a : b + 1, 0]) for a, b in zip(starts, ends)]).reshape(-1, 1),
-            np.array([np.nanmin(low[a : b + 1, 0]) for a, b in zip(starts, ends)]).reshape(-1, 1),
-            close[ends],
-            np.array([np.nansum(volume[a : b + 1, 0]) for a, b in zip(starts, ends)]).reshape(-1, 1),
+            np.where(
+                complete, np.array([open_[a, 0] for a in starts]).reshape(-1, 1), np.nan
+            ),
+            np.where(
+                complete,
+                np.array(
+                    [np.nanmax(high[a : b + 1, 0]) for a, b in zip(starts, ends)]
+                ).reshape(-1, 1),
+                np.nan,
+            ),
+            np.where(
+                complete,
+                np.array(
+                    [np.nanmin(low[a : b + 1, 0]) for a, b in zip(starts, ends)]
+                ).reshape(-1, 1),
+                np.nan,
+            ),
+            np.where(complete, close[ends], np.nan),
+            np.where(
+                complete,
+                np.array(
+                    [np.nansum(volume[a : b + 1, 0]) for a, b in zip(starts, ends)]
+                ).reshape(-1, 1),
+                np.nan,
+            ),
         )
 
 
@@ -151,7 +251,10 @@ def _rolling(values: np.ndarray, length: int, highest: bool) -> np.ndarray:
     pick = np.nanmax if highest else np.nanmin
     for t in range(length - 1, values.shape[0]):
         with np.errstate(all="ignore"):
-            out[t] = pick(values[t - length + 1 : t + 1], axis=0)
+            window = values[t - length + 1 : t + 1]
+            out[t] = np.where(
+                np.isfinite(window).all(axis=0), pick(window, axis=0), np.nan
+            )
     return out
 
 
@@ -199,7 +302,11 @@ def build(
         ).reshape(-1, 1)
 
     open_, high, low = column("open"), column("high"), column("low")
-    close, adj_close, volume = column("close"), column("adjusted_close"), column("volume")
+    close, adj_close, volume = (
+        column("close"),
+        column("adjusted_close"),
+        column("volume"),
+    )
     dates = np.array([np.datetime64(b.session_date, "D") for b in bars])
 
     # Today's session, from the same quote the board reads, appended before
@@ -240,6 +347,14 @@ def build(
                 # Completion follows the included candle, never the request's clock.
                 quote_bar, live_complete = _quote_observation(live_bar, stamp)
 
+    dates, aligned = _with_session_gaps(
+        dates, (open_, high, low, close, adj_close, volume)
+    )
+    open_, high, low, close, adj_close, volume = aligned
+    missing = ~np.isfinite(np.column_stack((open_, high, low, close, adj_close))).all(
+        axis=1
+    )
+
     # The same adjustment levels.py applies, so the candles sit on the line
     # the averages are computed from.
     with np.errstate(all="ignore"):
@@ -250,6 +365,11 @@ def build(
     # Swing levels are found on daily bars whatever the drawn timeframe,
     # because that is where the desk finds them.
     swing_low, swing_high = levels.swing_points(high, low)
+    swing_complete = np.isfinite(
+        sma(np.where(missing[:, None], np.nan, 1.0), 2 * levels.SWING + 1)
+    )
+    swing_low = np.where(swing_complete, swing_low, np.nan)
+    swing_high = np.where(swing_complete, swing_high, np.nan)
 
     overlays: dict[str, np.ndarray] = {}
     level_lines: dict[str, np.ndarray] = {}
@@ -286,6 +406,10 @@ def build(
             overlays[f"ema{span}"] = ema(adj_close, span)
         overlays["sma200"] = sma(adj_close, 200)
         lower, middle, upper = bands.edges(adj_close)
+        complete_band = np.isfinite(sma(adj_close, bands.WINDOW))
+        lower, middle, upper = (
+            np.where(complete_band, values, np.nan) for values in (lower, middle, upper)
+        )
         overlays["band_lower"] = lower
         overlays["band_middle"] = middle
         overlays["band_upper"] = upper
@@ -318,6 +442,9 @@ def build(
     # present on the first drawn bar rather than a third of the way across.
     keep_n = max(1, min(len(dates), sessions))
     cut = slice(len(dates) - keep_n, len(dates))
+    data_status, data_reason, missing_sessions = _chart_data_status(
+        all_dates, missing, dates[cut], timeframe
+    )
     return Chart(
         ticker=ticker.upper(),
         timeframe=timeframe,
@@ -328,15 +455,13 @@ def build(
         # production while every test passed.
         last_bar_complete=bool(
             live_complete
-            and (
-                timeframe == DAILY
-                or (
-                    len(_week_ends(all_dates))
-                    and _week_ends(all_dates)[-1] == len(all_dates) - 1
-                )
-            )
+            and np.isfinite(adj_close[-1, 0])
+            and (timeframe == DAILY or (_closed_week(all_dates[-1])))
         ),
         quote_bar=quote_bar,
+        data_status=data_status,
+        data_reason=data_reason,
+        missing_sessions=missing_sessions,
         dates=tuple(str(d) for d in dates[cut]),
         open=_clean(open_[cut, 0]),
         high=_clean(high[cut, 0]),
@@ -345,7 +470,9 @@ def build(
         volume=_clean(volume[cut, 0]),
         entries=tuple(
             str(d)
-            for d, hit in zip(dates[cut], (entry_fired[cut] if entry_fired is not None else []))
+            for d, hit in zip(
+                dates[cut], (entry_fired[cut] if entry_fired is not None else [])
+            )
             if hit
         ),
         overlays={k: _clean(v[cut, 0]) for k, v in overlays.items()},
@@ -371,6 +498,9 @@ def payload(
         "timeframe": chart.timeframe,
         "last_bar_complete": chart.last_bar_complete,
         "quote_bar": chart.quote_bar,
+        "data_status": chart.data_status,
+        "data_reason": chart.data_reason,
+        "missing_sessions": list(chart.missing_sessions),
         "timeframes": list(TIMEFRAMES),
         "adjusted": True,
         "basis": "adjusted for splits and dividends, the basis the desk grades on",
@@ -378,7 +508,12 @@ def payload(
         "bars": [
             {"date": d, "open": o, "high": h, "low": lo, "close": c, "volume": v}
             for d, o, h, lo, c, v in zip(
-                chart.dates, chart.open, chart.high, chart.low, chart.close, chart.volume
+                chart.dates,
+                chart.open,
+                chart.high,
+                chart.low,
+                chart.close,
+                chart.volume,
             )
         ],
         "entries": list(chart.entries),

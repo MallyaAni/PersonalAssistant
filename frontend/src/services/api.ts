@@ -2801,6 +2801,9 @@ export interface DeskChart {
   timeframe: 'daily' | 'weekly';
   timeframes: string[];
   adjusted: boolean;
+  data_status?: 'complete' | 'incomplete' | 'unavailable';
+  data_reason?: string | null;
+  missing_sessions?: string[];
   // The bars and overlays share this source observation; never merge an independent quote.
   quote_bar?: string | null;
   // False when the newest session or week has not reached its close.
