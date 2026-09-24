@@ -599,7 +599,8 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
     },
   }}))
   await page.goto('/?deskDetails=1#desk')
-  const cell = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings'})}).getByLabel('AAPL strategy intent')
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  const cell = page.getByRole('region', {name: 'AAPL decision details', exact: true}).getByLabel('AAPL strategy intent')
   await expect(cell).toContainText('BUY')
   await cell.getByText('Recorded allocation & execution quote').click()
   await expect(cell).toContainText('SIP')
@@ -768,7 +769,10 @@ test(`research percentages ${displayed} expire independently of account sizing`,
   await expect(page.getByLabel('Available cash to allocate ($)')).not.toBeVisible()
   await page.clock.fastForward(31_000)
   await expect(rankings).not.toContainText(displayed)
-  await expect(rankings).not.toContainText('0.0%')
+  await expect(rankings.getByRole('columnheader', {name: 'Research %', exact: true})).toHaveCount(0)
+  await expect(rankings.getByRole('columnheader', {name: 'Target %', exact: true})).toBeVisible()
+  await expect(rankings.getByLabel('AAPL size', {exact: true})).toHaveText('6.0%')
+  await expect(rankings.getByLabel('NVDA size', {exact: true})).toHaveText('0.0%')
 })
 }
 
@@ -1484,6 +1488,38 @@ test('a zero day P/L reads flat, not as an up move', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// The main stock list owns diagnostics, including on legacy detail links, without a second list.
+test('one stock list preserves per-stock diagnostics and legacy detail links', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
+    as_of: '2026-09-09T14:00:00Z', data_at: '2026-09-09T13:45:00Z',
+    quotes: {AAPL: {last: 102, bar: '2026-09-09T13:45:00Z'}},
+  }}))
+  await page.goto('/?deskDetails=1#desk')
+  await expect(page.getByLabel('Every grade in detail', {exact: true})).toHaveCount(0)
+  await expect(page.getByRole('heading', {name: 'Stock rankings', exact: true})).toHaveCount(1)
+  await expect(page.getByRole('button', {name: 'AAPL', exact: true})).toHaveCount(1)
+  await expect(page.getByRole('region', {name: 'Desk guide', exact: true})).toBeVisible()
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  const aapl = page.getByRole('region', {name: 'AAPL decision details', exact: true})
+  await expect(aapl).toContainText('Evening analysis · 2026-09-08')
+  await expect(aapl).toContainText('F90+')
+  await expect(aapl).toContainText('$102.00')
+  await expect(aapl).toContainText('Sep 9, 09:45 AM ET')
+  await aapl.getByText('Archived model commentary · unverified', {exact: true}).click()
+  await expect(aapl).toContainText('a steady AI leader')
+  await expect(aapl.getByRole('button', {name: 'Record buy', exact: true})).toBeVisible()
+  await aapl.getByRole('button', {name: 'Open the full panel'}).click()
+  await expect(page.getByRole('dialog', {name: 'AAPL history'})).toBeVisible()
+  await page.getByRole('dialog', {name: 'AAPL history'}).getByRole('button', {name: 'Close', exact: true}).click()
+  await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
+  const msft = page.getByRole('region', {name: 'MSFT decision details', exact: true})
+  await expect(msft).toContainText('Since evening: T no view → for')
+  await expect(msft).toContainText('T85+')
+  await page.screenshot({path: 'test-results/desk-consolidated-desktop.png', fullPage: true})
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // The page used to show the buys twice - once in a standalone "Best buys
 // right now" list with its own Buy button and once as the board's buy rows -
 // and the broker's live positions twice - once in its own section and once
@@ -1511,19 +1547,36 @@ test('shows each thing once, not twice', async ({ page }) => {
   await expect(page.getByText('Stock rankings')).toBeVisible()
   // Ordered by grade, best first: AAPL (A), then NVDA (B) and MSFT (lifted
   // to B by its live read), and MSFT shows the live grade, not the close's.
-  const everyGrade = page.locator('section', { has: page.getByRole('heading', { name: 'Stock rankings' }) })
-  await expect(everyGrade.locator('tbody tr td:first-child')).toHaveText(['AAPL', 'NVDA', 'MSFT'])
-  await expect(everyGrade.locator('tbody tr').last().locator('td').nth(2).locator('span')).toHaveText('B')
-  await expect(everyGrade.locator('tbody tr').last()).toContainText('intraday')
-  await expect(everyGrade.locator('tbody tr').last()).toContainText('Since evening: T no view → for')
-  await expect(everyGrade.getByRole('columnheader', {name: 'Analysis · 2026-09-08 close'})).toBeVisible()
-  await expect(everyGrade).not.toContainText('no change in comparable analyst votes')
-  await expect(everyGrade).toContainText('not probability of profit')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.locator('tbody tr td:nth-child(2) button')).toHaveText(['AAPL', 'NVDA', 'MSFT'])
+  await expect(board.getByLabel('MSFT grade', {exact: true})).toContainText('B')
+  await expect(board.getByLabel('MSFT grade', {exact: true}).locator('span')).toHaveAttribute('title', 'Intraday grade')
+  await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
+  const diagnostic = page.getByRole('region', {name: 'MSFT decision details', exact: true})
+  await expect(diagnostic).toContainText('Since evening: T no view → for')
+  await expect(diagnostic.getByRole('heading', {name: 'Evening analysis · 2026-09-08'})).toBeVisible()
+  await expect(diagnostic).not.toContainText('no change in comparable analyst votes')
+  await expect(page.getByRole('region', {name: 'Desk guide', exact: true})).toContainText('not probability of profit')
   await page.getByRole('button', {name: 'Research', exact: true}).click()
   await page.getByRole('button', {name: 'Show practice account details', exact: true}).click()
   await expect(page.getByRole('heading', { name: /^Practice account/ })).toBeVisible()
   await expect(page.getByText('Gain so far')).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// The freshness fraction counts only graded stocks, not unrelated live feed entries.
+test('stock list freshness coverage excludes ungraded live entries', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
+  await page.route('**/desk/mine*', route => route.fulfill({json: {
+    session: '2026-09-08', rows: [],
+    grade_valid_until: {MSFT: '2026-09-09T14:15:00Z', SPY: '2026-09-09T14:15:00Z'},
+    grades_live: {MSFT: {grade_live: 'B', score_live: .5}, SPY: {grade_live: 'A', score_live: .8}},
+  }}))
+  await page.goto('/#desk')
+  await expect(page.getByLabel('Intraday grade coverage')).toContainText('1/3 fresh intraday grades')
+  await expect(page.getByLabel('Intraday grade coverage')).toContainText('other grades: 2026-09-08 close')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
 // Clicking a name must open its own history: what the desk said each
@@ -1923,14 +1976,16 @@ test('records a discretionary buy from rankings and reloads its actual shares an
   await expect(page.getByRole('heading', {name: 'Plan status'})).toBeVisible()
   const rankings = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings', exact: true})})
   const row = rankings.getByRole('row').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
-  await row.getByRole('button', {name: 'Record buy', exact: true}).click()
-  const form = row.getByRole('form', {name: 'Record MSFT buy'})
+  await row.getByRole('button', {name: 'details for MSFT', exact: true}).click()
+  const detail = page.getByRole('region', {name: 'MSFT decision details', exact: true})
+  await detail.getByRole('button', {name: 'Record buy', exact: true}).click()
+  const form = detail.getByRole('form', {name: 'Record MSFT buy'})
   await expect(form.getByLabel('Filled shares')).toHaveValue('')
   await expect(form.getByLabel('Average fill price')).toHaveValue('')
   expect(writes).toBe(0)
-  await row.getByRole('button', {name: 'Cancel buy record'}).click()
+  await detail.getByRole('button', {name: 'Cancel buy record'}).click()
   expect(writes).toBe(0)
-  await row.getByRole('button', {name: 'Record buy', exact: true}).click()
+  await detail.getByRole('button', {name: 'Record buy', exact: true}).click()
   await form.getByLabel('Filled shares').fill('2.5')
   await form.getByLabel('Average fill price').fill('411.23')
   await form.getByLabel('Fill date').fill('2026-09-10')
@@ -1943,7 +1998,8 @@ test('records a discretionary buy from rankings and reloads its actual shares an
   ])
   await page.evaluate(() => localStorage.clear())
   await page.reload()
-  await expect(row).toContainText('2.5 shares recorded')
+  await expect(row.getByLabel('MSFT recorded personal position', {exact: true})).toContainText('2.5 shares')
+  await expect(row.getByLabel('MSFT recorded personal position', {exact: true})).toContainText('Entry $411.23')
   expect(writes).toBe(1)
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
@@ -2395,7 +2451,7 @@ test('details splits into plan and research and the simple page carries only dec
 
 
 // The page must work on a phone: at 400px nothing scrolls sideways on
-// the board, with every grade in detail open, on the research page, or
+// the board, with its stock diagnostics or guide open, on the research page, or
 // with a name panel open. Tables may scroll inside their own box.
 const noSidewaysScroll = async (page: Page, where: string) => {
   const widths = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth,
@@ -2417,6 +2473,7 @@ test('the desk fits a phone without sideways scrolling', async ({page}) => {
   await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
   await expect(page.getByText('Open the full panel')).toBeVisible()
   await noSidewaysScroll(page, 'row open')
+  await page.screenshot({path: 'test-results/desk-consolidated-mobile.png', fullPage: true})
   await page.goto('/?deskDetails=1#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await noSidewaysScroll(page, 'details open')
@@ -2429,6 +2486,44 @@ test('the desk fits a phone without sideways scrolling', async ({page}) => {
   await expect(page.getByRole('button', {name: 'Show practice account details', exact: true})).toBeVisible()
   await page.evaluate(() => document.querySelectorAll('details').forEach(d => { d.open = true }))
   await noSidewaysScroll(page, 'research')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Expanded evidence and its confirmation form must fit the phone's board viewport, not its wide table.
+test('stock diagnostics and confirmed buy fit the mobile viewport without horizontal panning', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.setViewportSize({width: 400, height: 800})
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  const detail = page.getByRole('region', {name: 'AAPL decision details', exact: true})
+  await detail.getByText('Archived model commentary · unverified', {exact: true}).click()
+  const bounds = await detail.evaluate(element => {
+    const board = element.closest('[aria-label="Stocks and cash"]')!.getBoundingClientRect()
+    const box = element.getBoundingClientRect()
+    return {left: box.left, right: box.right, boardLeft: board.left, boardRight: board.right, width: window.innerWidth}
+  })
+  expect(bounds.left).toBeGreaterThanOrEqual(bounds.boardLeft)
+  expect(bounds.right).toBeLessThanOrEqual(bounds.boardRight)
+  expect(bounds.right).toBeLessThanOrEqual(bounds.width)
+  const commentary = detail.locator('details').filter({has: page.locator('summary', {hasText: 'Archived model commentary · unverified'})})
+  await commentary.scrollIntoViewIfNeeded()
+  await expect(commentary).toBeInViewport({ratio: 1})
+  await detail.getByRole('button', {name: 'Record buy', exact: true}).click()
+  const form = detail.getByRole('form', {name: 'Record AAPL buy'})
+  await form.getByLabel('Filled shares').fill('1')
+  await form.getByLabel('Average fill price').fill('100')
+  for (const field of ['Filled shares', 'Average fill price', 'Fill date']) {
+    const box = await form.getByLabel(field).boundingBox()
+    expect(box!.x).toBeGreaterThanOrEqual(bounds.boardLeft)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(bounds.boardRight)
+  }
+  const scroller = page.getByRole('table', {name: 'Ranked stocks and cash'}).locator('xpath=ancestor::div[contains(@class,"overflow-auto")]')
+  expect(await scroller.evaluate(element => element.scrollLeft)).toBe(0)
+  await form.scrollIntoViewIfNeeded()
+  await expect(form).toBeInViewport({ratio: 1})
+  await page.screenshot({path: 'test-results/desk-consolidated-mobile-form.png', fullPage: true})
+  await commentary.scrollIntoViewIfNeeded()
+  await page.screenshot({path: 'test-results/desk-consolidated-mobile-evidence.png', fullPage: true})
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -3204,6 +3299,8 @@ test('personal history capture and controls require desk_write even for an admin
   await expect.poll(() => bodies.length).toBeGreaterThan(0)
   expect(bodies.every(body => body.record_history === false)).toBe(true)
   await expect(page.getByRole('button', {name: 'Personal decision history', exact: true})).toHaveCount(0)
+  await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
+  await expect(page.getByRole('region', {name: 'MSFT decision details', exact: true}).getByRole('button', {name: 'Record buy', exact: true})).toHaveCount(0)
   expect(historyCalls).toEqual([])
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })

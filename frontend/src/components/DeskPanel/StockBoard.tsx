@@ -266,6 +266,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     return Number.isFinite(weight) && (weight as number) >= 0 ? (weight as number) * exposure : null
   }
   const graded = Object.keys(latest.grades)
+  const freshGradeCount = graded.filter(ticker => grades[ticker] !== undefined).length
   const sizedNames = !hidden ? graded.filter(ticker => weightOf(ticker) !== null) : []
   const fullCoverage = showSizes && sizedNames.length === graded.length && graded.length > 0
   const gross = fullCoverage ? Object.values(research!.targets ?? {}).reduce((sum, weight) => sum + weight, 0) * exposure : null
@@ -398,10 +399,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   if (!searchText && !sort) ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
   const bar = showSizes && !marketClosed ? research!.bar : live.data_at
   const time = bar ? new Date(bar).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : null
-  return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white">
+  return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white [container-type:inline-size]">
     <div className="shrink-0 border-b border-black/[0.06] px-3 py-2 text-xs text-[#6e6e73]">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <p>{fomcLine ?? sizingLine}</p>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
+          <p>{fomcLine ?? sizingLine}</p>
+        </div>
         {/* Switching the policy re-sizes and re-ranks the list in place, so
             "what the rebalance will do" and "what this bar says" are the
             same list read two ways rather than two screens. */}
@@ -423,6 +427,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       </div>
       {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
       <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · updates every 15 minutes while the market is open{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
+      <p aria-label="Intraday grade coverage" className="mt-0.5">{freshGradeCount}/{graded.length} fresh intraday grades{freshGradeCount < graded.length ? ` · other grades: ${latest.session} close` : ''}. Grades are not entry signals.</p>
       {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
     </div>
     {toolbar}
@@ -498,7 +503,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
-            <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} grade`}>{isCash ? '' : <span title={grades[row.ticker] ? 'Intraday grade' : `Grade at the ${latest.session} close`} className={grades[row.ticker] ? 'font-medium text-[#1d1d1f]' : ''}>{row.grade}{grades[row.ticker] ? ' ·' : ''}</span>}</td>
+            <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} grade`}>{isCash ? '' : <><span title={grades[row.ticker] ? 'Intraday grade' : `Grade at the ${latest.session} close`} className={grades[row.ticker] ? 'font-medium text-[#1d1d1f]' : ''}>{row.grade}</span><div className="text-[10px] text-[#6e6e73]">{grades[row.ticker] ? 'intraday' : 'close'}</div></>}</td>
             <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? <>
               {row.opportunity.toFixed(1)}/10
               {!!row.narrow.length && <span
@@ -517,7 +522,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="max-w-72 whitespace-normal py-2 text-xs text-[#6e6e73]">{isCash ? 'Unallocated strategy weight' : reason}</td>
 
           </tr>
-          {open && expand && <tr><td colSpan={10} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2">{expand(row.ticker)}</td></tr>}
+          {/* Details follow the visible board width, not the horizontally scrollable table. */}
+          {open && expand && <tr><td colSpan={10} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">{expand(row.ticker)}</div></td></tr>}
           </Fragment>
         })}</tbody>
       </table>

@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-24 — One stock list with readable in-row diagnostics
+
+- Removed the redundant **Every grade in detail** stock table. The existing
+  StockBoard owns stock search, sorting, intent filters and row expansion;
+  analyst ratings/vote changes, dated evening reasoning, bar evidence, archived
+  commentary and owner-only confirmed-buy recording remain available there.
+  A compact Desk guide preserves ranking/sizing explanations and legacy
+  `deskDetails=1` links without rendering another list.
+- Ranking guidance now describes the actual allocation-first default. Closing
+  versus intraday grades remain explicit, freshness counts exclude ungraded
+  feed entries, and recorded reasoning is rendered without removing characters.
+- Reproduced and fixed phone diagnostics extending outside the board and
+  commentary being clipped into an approximately 80-pixel scrolling window.
+  Expanded content fits the board width; small screens use page scrolling while
+  wider screens retain the compact capped board.
+- VERIFIED: **106/106** Desk Playwright tests on the final mounted checkout,
+  production TypeScript/Vite build, targeted compact/mobile checks and clean
+  diff. Tests preserve quote/research expiry, explicit zero targets, owner-only
+  controls and confirmed shares/entry price after reload. Commentary and fill
+  form are fully in the phone viewport; root also inspected the screenshots.
+  Desktop board top remains 323.5 px against the unchanged <340 px acceptance.
+  Existing Vite CSS/chunk warnings remain. No backend or trading-policy change.
+- Deployed UI and deployment gates remain UNVERIFIED; this is a source
+  checkpoint, not a deployment. Diagram impact: NONE — consolidation within the
+  existing Desk/StockBoard component boundary.
+
 ## 2026-09-24 — Private personal advice receipts and sourced historical cohorts
 
 - Added owner-only, encrypted-only personal decision receipts, separate from

@@ -228,13 +228,11 @@ const ratings = (ranks: Record<string, number> | undefined, stances: Record<stri
     .map(([k, letter]) => `${letter}${Math.round((ranks?.[k] ?? 0) * 100)}${STANCE_MARK[stances[k] ?? 0]}`)
     .join(' ')
 
-// A reason is one line per analyst: its mark, its name, its triggers.
+// Preserve each recorded reasoning line without rewriting or truncating its text.
 const ReasonLines = ({ text }: { text: string }) => (
   <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">
-    {text.split('\n').map((line, i) => (
-      <li key={i} className="whitespace-nowrap">
-        <span className="font-mono">{line.slice(0, 1)}</span> {line.slice(2)}
-      </li>
+    {text.split('\n').filter(Boolean).map((line, i) => (
+      <li key={i}>{line}</li>
     ))}
   </ul>
 )
@@ -841,7 +839,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [historyContext, setHistoryContext] = useState<PersonalHistoryContext | null>(null)
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
-  // Every grade in detail is a fold on the one page; the URL can open it.
+  // Legacy detail links open the guide; stocks remain in the single main list.
   const detailsOpen = new URLSearchParams(window.location.search).get('deskDetails') === '1'
   // Details is two views. Plan is what the desk will do and why: rankings,
   // the plan rows, FOMC, changes, execution. Research is measurement on a
@@ -1104,21 +1102,32 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} eventLive={eventLive} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0} countdown={countdown} rebalanceDue={rebalanceDue}
     holdings={holdingsReady ? holdings.length : null} eligible={eligibleNow} /> : null
-  // What a board row shows when opened in place.
+  // Keep a stock's diagnostics and confirmed-fill controls in its existing board expansion.
   const expandRow = (ticker: string) => {
     const g = latest?.grades?.[ticker]
     if (!latest || !g) return null
-    const lines = (g.reason ?? '').split('\n').filter(Boolean)
     const r = rows.find(row => row.ticker === ticker)
-    return <div className="grid gap-2 text-xs sm:grid-cols-[1fr_auto]">
-      <div>
+    const fresh = liveGrades[ticker]
+    const ranks = fresh?.ranks_live ?? r?.ranks_live ?? g.ranks
+    const stances = fresh?.stances_live ?? r?.stances_live ?? g.stances ?? {}
+    const quote = live.quotes[ticker]
+    return <section aria-label={`${ticker} decision details`} className="grid gap-3 whitespace-normal text-xs sm:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="min-w-0">
+        <h4 className="font-medium text-[#6e6e73]">Evening analysis · {latest.session}</h4>
         <p className="font-medium text-[#1d1d1f]">{g.headline}</p>
-        <p className="mt-0.5 font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{g.ranks ? ratings(r?.ranks_live ?? g.ranks, r?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}</p>
-        <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">{lines.map(line => <li key={line}>{line}</li>)}</ul>
+        {g.reason && <ReasonLines text={g.reason} />}
+        <p className="mt-2 text-[#6e6e73]">Analyst ratings · intraday where available; otherwise {latest.session} close</p>
+        <p className="font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{ranks ? ratings(ranks, stances) : triggers(stances)}</p>
+        {fresh?.stances_live && <VoteChanges evening={g.stances ?? {}} current={fresh.stances_live} />}
+        <p className="mt-2 text-[#6e6e73]">{quote ? <>Bar price {priceMoney(quote.last)} · interval start {marketTime(quote.bar)}{now - Date.parse(quote.bar) >= 30 * 60 * 1000 ? ' · last known bar' : ''}</> : 'Bar price unavailable'}. A bar price is not an executable quote.</p>
         <div className="mt-2 text-[#6e6e73]"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
+        {(latest.briefs?.[ticker] || g.read) && <ArchivedCommentary brief={latest.briefs?.[ticker]} read={g.read} written={latest.written} />}
       </div>
-      <button type="button" className="self-start text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
-    </div>
+      <div className="flex flex-col items-start gap-2">
+        <button type="button" className="text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
+        {canWrite && holdingsReady && <ConfirmedBuy ticker={ticker} disabled={marking !== null} onSave={recordBuy} error={saveError} />}
+      </div>
+    </section>
   }
   // The account's controls sit above the list: the plan is a column of it.
   const planToolbar = latest ? <div className="shrink-0 border-b border-black/[0.06] px-3 py-2">
@@ -1250,11 +1259,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
       {!research && <>
-      {/* The entry read sits above the board. It was inside `EveryGrade`,
-          behind ?deskDetails=1 - a parameter nothing on the site writes, so
-          nobody could reach it - while its own comment calls it the one thing
-          on the page that is a signal rather than a ranking. */}
-      {latest && <div className="flex max-h-[75vh] flex-col">
+      {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
+      {latest && <div className="flex flex-col sm:max-h-[75vh]">
       {mineError && <p role="alert" className="border-b border-black/[0.06] bg-red-50 px-3 py-2 text-xs text-[#b42318]">Personal guidance unavailable: {mineError} No trade is shown as executable.</p>}
       {/* The one table on the page is StockBoard below; the fundamental data
           source label sits immediately above it so a corrected decision is
@@ -1272,31 +1278,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       planAction={(ticker) => planFor(ticker, decisions, latest, now).action}
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
       </div>}
-      {/* Openable from the page, not only from a URL parameter a reader would
-          have to be told about. The parameter still opens it, so a link that
-          carries it keeps working. */}
-      <details open={detailsOpen} aria-label="Every grade in detail" className="rounded-2xl border border-black/[0.08] bg-white p-3">
-        <summary className="cursor-pointer text-sm font-medium">Every grade in detail · diagnostic view</summary>
-        <div className="mt-3 flex flex-col gap-3">
-      {latest && (
-        <EveryGrade latest={latest} rows={rows} liveGrades={liveGrades} quotes={live.quotes} research={payload.intraday_research} event={boardEvent} now={now} decisions={decisions} equity={equity} userId={userId}
-          holdings={holdingsReady ? holdings : null} marking={marking !== null}
-          onRecordBuy={canWrite && holdingsReady ? recordBuy : undefined}
-          saveError={saveError} onOpenName={(t) => setOpenName(t)} />
-      )}
-      {latest && (
-        <details aria-label="Reading the current picks" className="px-1 text-xs text-[#6e6e73]">
-          <summary className="cursor-pointer">Data & timing · bar prices and quote checks</summary>
-          <p className="mt-1">A+ is the highest grade under the current voting rules, not a probability of profit.
-            Intraday grades update technical and price-sensitive value inputs; other votes and target weights use the evening decision.
-            Prices, available cash and execution conditions can change before an order fills.</p>
-          <p className="mt-2 text-xs text-[#6e6e73]">Intraday calculations are scheduled every 15 minutes on weekdays during market hours.
-            This page checks for updates every minute. A scheduled run may be late or missing; expired intraday grades revert to the evening decision.
-            Bar times identify the start of the 15-minute interval, not a current executable price.</p>
-        </details>
-      )}
-        </div>
-      </details>
+      {latest && <DeskGuide latest={latest} open={detailsOpen} />}
 
 
       {/* Amber only when the gate is actually doing something. It is a
@@ -2050,98 +2032,17 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   </div>
 }
 
-// Every name the desk follows, best first, with the analysts' marks and
-// the reason behind the grade on request.
-const EveryGrade = ({
-  latest,
-  rows,
-  liveGrades,
-  quotes,
-  holdings,
-  marking,
-  onRecordBuy,
-  saveError,
-  onOpenName,
-  research,
-  event,
-  now,
-  decisions,
-  equity,
-  userId,
-}: {
-  latest: NonNullable<DeskPayload['latest']>
-  rows: DeskMineRow[]
-  liveGrades: Record<string, DeskLiveGrade>
-  quotes: DeskLive['quotes']
-  holdings: DeskHolding[] | null
-  marking: boolean
-  onRecordBuy?: (ticker: string, price: number, qty: number, fillDate: string) => Promise<boolean>
-  saveError: string
-  onOpenName: (ticker: string) => void
-  research: DeskPayload['intraday_research']
-  event: BoardEvent | null
-  now: number
-  decisions?: DeskDecisions
-  equity: number
-  userId: string
-}) => {
-  // Research sizes at the exposure the desk holds during an FOMC cycle, and
-  // hidden while that exposure is unknown, the same as the board.
-  const sizesHidden = event !== null && (event.calendarUnknown || event.exposure === null)
-  const sizeExposure = event?.exposure ?? 1
-  const [openBrief, setOpenBrief] = useState<string | null>(null)
-  const [showAll, setShowAll] = useState(false)
-  // Which plans to list. All three on is the whole book, which is the view
-  // this table has always shown; turning two off is how a reader gets to the
-  // handful of names the desk is actually trading without reading ninety-odd
-  // rows to find them.
-  const [shown, setShown] = useState<Record<PlanAction, boolean>>({Buy: true, Sell: true, Hold: true})
-  // Every name is re-graded at the candle: the live grades cover the whole
-  // book, the board's rows cover what it carries, and the evening record
-  // fills in for a name the candle has not read. Ordered by grade first and
-  // the score within it, so the list reads as the desk ranks.
-  const liveScore = new Map<string, number>()
-  const liveGrade = new Map<string, string>()
-  for (const r of rows) {
-    if (r.score_live != null) liveScore.set(r.ticker, r.score_live)
-    if (r.grade_live) liveGrade.set(r.ticker, r.grade_live)
-  }
-  for (const [ticker, g] of Object.entries(liveGrades)) {
-    liveScore.set(ticker, g.score_live)
-    liveGrade.set(ticker, g.grade_live)
-  }
-  const gradeOf = (ticker: string, g: { grade: string }) => liveGrade.get(ticker) ?? g.grade
-  const scoreOf = (ticker: string, g: { score: number }) => liveScore.get(ticker) ?? g.score
-  const grades = Object.entries(latest.grades).sort(
-    (a, b) =>
-      (GRADE_ORDER[gradeOf(b[0], b[1])] ?? -1) - (GRADE_ORDER[gradeOf(a[0], a[1])] ?? -1) ||
-      scoreOf(b[0], b[1]) - scoreOf(a[0], a[1]) ||
-      a[0].localeCompare(b[0]),
-  )
-  // The plan each row will show, read once so the filter and the cells cannot
-  // disagree, and counted so a box that would empty the table says so before
-  // it is ticked.
-  const plans = new Map(grades.map(([ticker]) => [ticker, planFor(ticker, decisions, latest, now).action]))
-  const counts = PLAN_ACTIONS.reduce(
-    (out, action) => ({...out, [action]: [...plans.values()].filter(a => a === action).length}),
-    {} as Record<PlanAction, number>,
-  )
-  const listed = grades.filter(([ticker]) => shown[plans.get(ticker) ?? 'Hold'])
-  const briefs = latest.briefs ?? {}
-  const barTimes = [...new Set(Object.values(quotes).map(quote => quote.bar).filter(Boolean))]
-  const commonBar = barTimes.length === 1 ? marketTime(barTimes[0]) : null
+// Explain the single board's ranking, sizing and evidence clocks without repeating its stocks.
+const DeskGuide = ({latest, open}: {latest: DeskRecord; open: boolean}) => {
   return (
-    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-      {/* The entry read moved above the board in the Plan view, where it is
-          reachable. It said "the entry read first" while sitting inside a
-          diagnostic table behind a URL parameter nothing writes. */}
-      <h3 className="mb-1 text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
-      <p className="mb-2 text-xs text-[#6e6e73]">{Object.keys(liveGrades).length}/{grades.length} fresh{commonBar ? ` · bars ${commonBar}` : ''}{Object.keys(liveGrades).length < grades.length ? ` · other grades: ${latest.session} close` : ''} · grades are not entry signals.</p>
-      <details className="mb-3 text-xs text-[#6e6e73]">
+    <section aria-label="Desk guide" className="rounded-xl border border-black/[0.08] bg-white p-3 text-xs text-[#6e6e73]">
+      <details open={open}>
+        <summary className="cursor-pointer font-medium">Desk guide · ranking and timing</summary>
+      <details className="mt-3">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
-        <p className="mt-2">{TRIGGER_LEGEND} Ratings show relative rank, not probability of profit. Grade first; conviction breaks ties. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
+        <p className="mt-2">{TRIGGER_LEGEND} Ratings show relative rank, not probability of profit. The default stock order puts positive displayed allocations first, largest to smallest, then grade, opportunity and conviction. Column headings can change the order. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
         <p className="mt-2">Current voting rules: fundamentals, technicals, release sentiment and valuation each carry one vote;
-          rotation carries half a vote. A bearish core analyst caps the grade at B. Weighted conviction breaks ties within a grade.
+          rotation carries half a vote. A bearish core analyst caps the grade at B.
           Position sizes also depend on volatility, grade multipliers, concentration limits and market exposure.</p>
         <p className="mt-2">{latest.provenance?.rule?.inputs?.includes('expectations-gap')
           ? 'This evening decision includes the LightGBM expectations gap: estimated revenue growth minus price-implied growth, blended with relative valuation.'
@@ -2155,108 +2056,16 @@ const EveryGrade = ({
         <p className="mt-2">Research target is an experimental percentage of total portfolio value, recalculated from completed 15-minute bars. A dash means sizing is unavailable or paused; 0% is an explicit zero target. These targets do not submit orders or confirm an entry.
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
       </details>
-      <fieldset className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6e6e73]">
-        <legend className="sr-only">Filter the table by strategy intent</legend>
-        <span className="font-medium text-[#1d1d1f]">Show</span>
-        {PLAN_ACTIONS.map(action => (
-          <label key={action} className="flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
-              className="cursor-pointer accent-[#0071e3]"
-              checked={shown[action]}
-              aria-label={`Show ${action} rows`}
-              onChange={event => setShown({...shown, [action]: event.target.checked})}
-            />
-            <span className="text-[#1d1d1f]">{action}</span>
-            <span className="tabular-nums">({counts[action]})</span>
-          </label>
-        ))}
-        {listed.length === 0 && <span>No names match; tick a box to list some.</span>}
-      </fieldset>
-      <div className="overflow-x-auto">
-      <table className="w-full text-sm [&_td]:pr-3 [&_th]:pr-3">
-        <thead className="text-left text-[#6e6e73]">
-          <tr>
-            <th className="py-1">Name</th>
-            <th>Strategy intent</th>
-            <th>Grade</th>
-            <th>Bar price</th>
-            <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
-            <th>Analysis · {latest.session} close</th>
-            <th title="Experimental allocation from the displayed completed bar; not an order">Research target</th>
-            <th>Recorded personal position</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(showAll ? listed : listed.slice(0, 10)).map(([ticker, g]) => {
-            const current = liveGrade.get(ticker) ?? g.grade
-            const quote = quotes[ticker]
-            return (
-              <tr key={ticker} className="border-t border-black/[0.05] align-top">
-                <td className="py-1">
-                  <button
-                    type="button"
-                    onClick={() => onOpenName(ticker)}
-                    className="font-medium text-[#1d1d1f] hover:text-[#0071e3] hover:underline"
-                    title="Open the name's history"
-                  >
-                    {ticker}
-                  </button>
-                </td>
-                <td className="text-xs"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></td>
-                <td>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[current] ?? ''}`}>{current}</span>
-                  <div className="text-xs text-[#6e6e73]">{liveGrades[ticker] ? 'intraday' : 'close'}</div>
-                </td>
-                <td className="text-xs text-[#6e6e73]">
-                  {quote ? <><span className="font-medium text-[#1d1d1f]">{priceMoney(quote.last)}</span>
-                    {!commonBar && <div title="IEX 15-minute interval start">{marketTime(quote.bar)}</div>}
-                    {Date.now() - Date.parse(quote.bar) >= 30 * 60 * 1000 && <div className="text-amber-800">last known bar</div>}
-                  </> : 'No bar price available'}
-                </td>
-                <td className="whitespace-nowrap font-mono text-xs">
-                  {g.ranks ? ratings(liveGrades[ticker]?.ranks_live ?? g.ranks, liveGrades[ticker]?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}
-                </td>
-                <td className="text-xs">
-                  {liveGrades[ticker]?.stances_live && (
-                    <VoteChanges evening={g.stances ?? {}} current={liveGrades[ticker].stances_live!} />
-                  )}
-                  {briefs[ticker] || g.headline ? (
-                    <button
-                      type="button"
-                      onClick={() => setOpenBrief(openBrief === ticker ? null : ticker)}
-                      className="text-left text-[#0071e3] hover:underline"
-                    >
-                      {openBrief === ticker ? 'Hide thesis' : g.headline || 'View evidence'}
-                    </button>
-                  ) : (
-                    <span className="text-[#6e6e73]">—</span>
-                  )}
-                  {openBrief === ticker && (
-                    <div className="mt-1 space-y-1 text-[#1d1d1f]">
-                      {g.reason && <ReasonLines text={g.reason} />}
-                      {briefs[ticker] && <ArchivedCommentary brief={briefs[ticker]} written={latest.written} />}
-                    </div>
-                  )}
-                </td>
-                <td className="min-w-40 text-xs">
-                  {research?.status === 'available' && !sizesHidden && research.session === latest.session && research.bar === quote?.bar && Date.parse(research.valid_until ?? '') > now && Number.isFinite(research.targets?.[ticker])
-                    ? allocationPercent(research.targets![ticker] * sizeExposure)
-                    : '—'}
-                </td>
-                <td className="min-w-40 text-xs">
-                  <div>{holdings === null ? 'Positions unavailable' : `${(holdings.find(h => h.ticker === ticker)?.shares ?? 0).toLocaleString()} shares recorded`}</div>
-                  {onRecordBuy && <ConfirmedBuy ticker={ticker} disabled={marking} onSave={onRecordBuy} error={saveError} />}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-      </div>
-      {listed.length > 10 && <button type="button" className="mt-3 text-sm text-[#0071e3]" onClick={() => setShowAll(!showAll)}>
-        {showAll ? 'Show top 10 grades' : `Show all ${listed.length} grades`}
-      </button>}
+      <details aria-label="Reading the current picks" className="mt-3">
+        <summary className="cursor-pointer">Data & timing · bar prices and quote checks</summary>
+        <p className="mt-1">A+ is the highest grade under the current voting rules, not a probability of profit.
+          Intraday grades update technical and eligible price-sensitive value inputs; other votes and strategy target weights use the evening decision.
+          Prices, available cash and execution conditions can change before an order fills.</p>
+        <p className="mt-2">Intraday calculations are scheduled every 15 minutes on weekdays during market hours.
+          This page checks for updates every minute. A scheduled run may be late or missing; expired intraday grades revert to the evening decision.
+          Bar times identify the start of the 15-minute interval, not a current executable price.</p>
+      </details>
+      </details>
     </section>
   )
 }
@@ -2265,7 +2074,7 @@ const EveryGrade = ({
 const ArchivedCommentary = ({brief, read, written}: {brief?: DeskBrief; read?: string | null; written: string}) => (
   <details className="mt-2 rounded border border-black/[0.08] p-2 text-xs">
     <summary className="cursor-pointer text-[#0071e3]">Archived model commentary · unverified</summary>
-    <p className="my-2 text-[#6e6e73]">Published {marketTime(written)}. This saved interpretation can contain errors,
+    <p className="my-2 text-[#6e6e73]">Record written {marketTime(written)}. This saved interpretation can contain errors,
       including claims about sizing or grade changes. It does not calculate the displayed grade or allocation.</p>
     {read && <p className="mb-2 whitespace-pre-line">{read}</p>}
     {brief && <div className="space-y-1">
