@@ -28,6 +28,8 @@ forecast is negative. It is NOT the original positive-only neural shadow policy.
 Supplied daily provenance and SHA256 strings are assertions, not an input audit.
 Outputs explicitly say adoption_eligible=False and reconstructed research.
 
+Verified research checkpoint: `20d842a`, pushed to GitHub main; production
+remains the verified chart artifact `d6369276` because these modules are inert.
 VERIFIED: combined exact-source acceptance **89 passed, 1 known xfail**, scoped
 Ruff clean; `/tmp/neural-research-checkpoint-20260924.log`. The two independent
 comparison cases and three independent input cases passed after correction.
