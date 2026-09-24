@@ -901,6 +901,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
 
     equity[start] = book.equity(closes[start])
     top = np.full(rows, np.nan)
+    top[start] = book.top_weight(closes[start])
     dip_adds = 0
     next_rebalance = start
     funded_trace: list[dict] = []

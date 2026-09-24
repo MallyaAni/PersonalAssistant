@@ -128,6 +128,13 @@ def test_the_rebalance_clock(every):
     assert result.rebalances == expected
 
 
+# The concentration trace starts at zero because the funded account starts in cash.
+def test_the_concentration_trace_has_a_real_initial_mark():
+    result = simulate.run(_report(), use_exits=False, rebalance=20)
+    assert result.top_weight[0] == 0
+    assert np.isfinite(result.top_weight).all()
+
+
 # The entry gate mirrors the paper planner: a rebalance may not buy or add
 # to a name whose dip or breakout trigger did not fire. On a flat panel no
 # trigger ever fires, so the gated book never buys and holds only cash,
@@ -180,7 +187,6 @@ def test_the_entry_gate_only_ever_holds_buys_back():
     # name's held weight still moves with the price between the decision
     # close and the fill open, so the comparison is not exact to the penny.
     assert np.all(gu[fills] <= uu[fills] + 0.005)
-
 
 
 # A better grade earns a bigger position: A+ is a full one, A three

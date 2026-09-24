@@ -81,13 +81,37 @@ protocol. Retain every missing forecast and failed observation. Review after 252
 completed exchange sessions; do not stop or select a date from interim results.
 
 Run candidate and incumbent through the identical funded account at 10 and 25
-basis points per traded dollar. On identical dates report total return, CAGR,
-maximum drawdown, zero-risk-free Sharpe, bought-plus-sold turnover divided by
-mean NAV, exposure, fees, concentration, and rolling 63/252-session wins. Keep
-SPY, QQQ, and equal weight as controls.
+basis points per traded dollar. Compare the candidate, unchanged incumbent,
+SPY, QQQ, and equal weight on exactly the same sessions and costs; do not inner
+join away a missing observation or substitute an uncharged index price series.
+Total return is the primary objective. Also report CAGR, maximum drawdown,
+zero-risk-free Sharpe, bought-plus-sold turnover divided by mean NAV, exposure,
+fees, concentration, and rolling 63/252-session wins against the incumbent, SPY,
+and QQQ.
+
+Decompose all one-session net account returns with the already-fixed causal
+regimes. For the return ending on session `t`, use information available only
+through the preceding account session `t-1`: compare that point-in-time SPY
+adjusted close with the arithmetic mean of the 200 adjusted closes ending at
+`t-1`, assigning equality to above; compare the population standard deviation of
+the 20 close-to-close log returns ending at `t-1` with the median of 252 such
+volatility observations ending at `t-1`, assigning only a strictly higher value
+to high volatility and equality to low. Report all four above/below-trend ×
+high/low-volatility combinations. Insufficient or invalid history remains an
+explicit `unknown_or_unavailable` bucket, so every return interval reconciles
+and none is dropped. Report log-growth contributions, mean daily excess,
+observed months and contiguous episodes without treating those periods as
+independent trials. Do not annualize stitched regime segments. These are
+attribution tables, not permission to switch strategies by regime.
 
 The primary hurdle is higher net total return than the unchanged incumbent,
 SPY, and QQQ at both costs. Drawdown, turnover, and rolling consistency diagnose
 whether that result is usable; they cannot be hidden by a higher return. Passing
 supports an adoption review, never automatic promotion. Until then the adopted
 strategy and all dashboard labels remain unchanged.
+
+`backend.market.neural_study_metrics` enforces the fixed comparison set and
+provides the fail-closed full-sample and regime scorecards. Any forward runner
+must feed it actual funded-account curves plus point-in-time SPY adjusted closes
+with enough pre-evaluation warm-up; it must not derive regimes from the SPY
+account NAV or from candidate outcomes.

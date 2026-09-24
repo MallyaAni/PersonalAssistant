@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-09-24 — Fixed benchmark and causal-regime acceptance gate
+
+The forward `incumbent-neural-rank-blend/1-research` review now has an enforced
+comparison boundary in `backend.market.neural_study_metrics`. Every scorecard
+requires candidate, unchanged incumbent, SPY, QQQ, and equal-weight funded
+account curves on identical sessions and at the same declared 10 or 25 bp cost.
+Net total return is the primary objective, with an explicit strict-pass result
+against incumbent, SPY, and QQQ; CAGR and rolling 63/252-session wins remain
+reported alongside drawdown, turnover, Sharpe, and the separately retained
+exposure/fee/concentration diagnostics.
+
+The reusable regime scorecard labels each return from point-in-time SPY adjusted
+closes available before that interval: prior close versus its trailing
+200-session mean, and trailing 20-session log-return volatility versus its
+trailing 252-observation median. Equality follows the frozen replay (trend
+above, volatility low). It reports all four trend/volatility combinations plus
+an explicit unknown/unavailable bucket. Missing evidence, noncontiguous
+sessions, and warm-up shortfalls cannot be dropped or backfilled. Regime tables
+attribute one-session net log growth without restarting accounts or annualizing
+stitched segments; they do not implement or authorize a regime-switching policy.
+The 252-session forward hold, frozen model/input hashes, research-only status,
+and no-retuning rule are unchanged. Diagram impact: NONE. NOT DEPLOYED.
+
+VERIFIED locally: **85 passed** across the scorecard, simulator, rank-blend,
+challenger and baseline harness suites; the scorecard's own **24 tests** cover
+all four regimes, prior-information invariance, fixed equality behavior, missing
+evidence, calendar/cost alignment, SPY/QQQ/incumbent rolling comparisons,
+compounded growth, fees, exposure, and concentration. Scoped Ruff and format
+checks pass with an isolated current Ruff because the repository's pre-existing
+Ruff table is rejected as duplicate TOML by current Ruff; `git diff --check` is
+clean. The optional historical-study module was not part of this count because
+host Torch is unavailable. No historical strategy was rerun and no policy was
+promoted.
+
 ## 2026-09-24 — Fixed incumbent/neural blend protocol, research only
 
 The next challenger is frozen as
