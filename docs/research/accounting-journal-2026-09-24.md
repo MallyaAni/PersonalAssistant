@@ -48,11 +48,21 @@ bad chronology and failed/unclosed recordings cannot pass.
 
 Comparisons allow `1e-10` relative and `1e-12` absolute rounding. A reproduced
 fully invested, zero-cost ETF path made a dimensionless buy-scale ratio unstable
-on sub-ULP cash. The verifier allows this scale-only discrepancy only when both
-observed and independently reconstructed requested buy spend are at most
-`1e-12 * max(1, NAV)`. Cash/units/fee checks remain, and the report exposes the
-count plus maximum reconciliation residuals. Material scale alteration and
-accumulated ledger drift have regression tests; there is no ledger reanchoring.
+on sub-ULP cash. The first real nested market attempt exposed the same conditioning
+with a larger requested buy: a3.10e-16 cash difference became a2.02e-9 scale
+difference on a1.534e-7 fee-inclusive request. Requiring the entire request to
+be negligible falsely rejected this otherwise reconciled account.
+
+For a scale disagreement outside the existing scalar tolerance, the reported
+scale must now agree with its recorded
+funding budget and fee-inclusive requested quantities. Both the scale-induced
+monetary discrepancy and the difference in executed spending must be at most
+`1e-12 * max(1, NAV)`. This does not change either global tolerance or the
+independent ledger's cash/units/fee checks and never reanchors its state.
+`currency_scale_checks` reports the count, maximum request, currency discrepancy
+and bound; `small_notional_scale_checks` remains the subset where the whole
+request was negligible. A scale inconsistent with its own funding formula or
+with a material monetary effect is refused.
 
 ## What successful replay does not prove
 

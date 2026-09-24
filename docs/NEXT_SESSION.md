@@ -8,6 +8,32 @@ research changes.
 
 ## 2026-09-24 — Market assembly and matched study verified; frozen run next
 
+Implementation checkpoint `22eb5c8b0d239700a76bdd98d48d14cf120bbb0f` is pushed
+to `spark main` and to GitHub **from Spark**, divergence0/0. The exact committed
+source repeated **1,033 passed,1 deselected,5 existing warnings in23.41s**;
+proof `acceptance-committed.xml`/`pytest-03/` below. No deployment.
+
+The first real CLI attempt subsequently **FAILED**, before a valid study result,
+at an independent buy-scale check. Command/status/logs and exact script remain
+in `market-run-01/` under the acceptance folder. It ran8.13s at the checkpoint
+above with unchanged protocol and single-threaded CPU BLAS. A passive observer
+reproduced and captured the first invalid account in `account-failure-01/`:
+`inner:1260:candidate-1:10`, event293,2019-01-24 SPY top-up. Snapshot SHA256
+`3035f4b3f468bc3e688c13528c890cb02e3188b4502d2e82aa4fcb8b23d518df`.
+Observed/replayed cash differed3.0986e-16, amplified to a2.0197e-9 scale gap
+on a1.5342e-7 requested spend. The original scale guard bounded total request,
+not discrepancy, and falsely refused ordinary floating-point conditioning.
+
+A targeted verifier correction now requires agreement with
+the recorded funding formula and bounds both monetary discrepancy calculations
+by the existing1e-12*max(1,NAV). All ledger checks/carry and global tolerances stay
+unchanged. The **unchanged captured account now passes379 marks**, including an
+actual standalone CLI. Correction acceptance: **1,063 passed,1 deselected,5
+existing warnings in26.90s**, including30 new negative/numerical cases; scoped
+lint/format pass. Proof `acceptance-scale-02.xml`/`pytest-scale-02/`. No strategy,
+label, model setting, execution calculation or cost was tuned. The prepared
+external run script now targets fresh `market-run-02/`, which has not run.
+
 Started clean on `main` at `6aadd062052fd13d5f90ae2aff2dd3421b79eb94`;
 `git pull --rebase origin main` was current. Prepublication Spark/GitHub check
 showed0/0 divergence and only Spark's pre-existing untracked `scratch/`.

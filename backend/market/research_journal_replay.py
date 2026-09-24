@@ -4,8 +4,9 @@ This module deliberately imports no producer, planner, or execution implementati
 Successful replay proves internal integrity and accounting under the declared batch
 funding model, not point-in-time availability, security identity, settlement, or
 economic readiness. Comparisons allow only 1e-10 relative / 1e-12 absolute rounding.
-Ill-conditioned buy scales are checked in currency when both independently and
-observationally requested spend are at most 1e-12 times max(1, account NAV).
+Ill-conditioned buy scales must match their recorded funding formula, and both
+their scale-induced and executed-spend discrepancies must be at most 1e-12
+times max(1, account NAV).
 The independently carried account is never reset to observed cash or quantities.
 """
 
@@ -286,6 +287,12 @@ def _result() -> dict:
             "max_requested_spend": 0.0,
             "max_bound": 0.0,
         },
+        "currency_scale_checks": {
+            "count": 0,
+            "max_requested_spend": 0.0,
+            "max_currency_difference": 0.0,
+            "max_bound": 0.0,
+        },
         "pending_semantics_verified": False,
     }
 
@@ -357,7 +364,7 @@ class _Replay:
         self.compare(cash, self.cash, f"{label} cash", "cash")
         self.compare(positions, self.positions, f"{label} positions", "units")
 
-    # Avoid unstable dimensionless ratios only for documented negligible buy spend.
+    # Bound unstable scale ratios by monetary effect without resetting carried balances.
     def check_scale(
         self, event: dict, expected: float, requested: float, source: list, rate: float
     ) -> None:
@@ -372,18 +379,35 @@ class _Replay:
             )
             if target is not None and target >= 0 and price is not None and price > 0
         )
+        observed_scale = (
+            min(1.0, max(0.0, event["buy_budget"]) / observed) if observed else 0.0
+        )
+        _equal(actual, observed_scale, "scale versus recorded funding formula")
         account = abs(self.cash) + math.fsum(
             abs(held * price)
             for held, price in zip(self.positions, source, strict=True)
             if price is not None and price > 0
         )
         bound = ABS_TOL * max(1.0, account)
-        spend = max(observed, requested * (1 + rate))
-        _require(spend <= bound, "common buy scale: materially sized mismatch")
-        measured = self.result["small_notional_scale_checks"]
+        replayed_spend = requested * (1 + rate)
+        spend = max(observed, replayed_spend)
+        difference = max(
+            abs(actual - expected) * spend,
+            abs(actual * observed - expected * replayed_spend),
+        )
+        _require(difference <= bound, "common buy scale: materially sized mismatch")
+        measured = self.result["currency_scale_checks"]
         measured["count"] += 1
         measured["max_requested_spend"] = max(measured["max_requested_spend"], spend)
+        measured["max_currency_difference"] = max(
+            measured["max_currency_difference"], difference
+        )
         measured["max_bound"] = max(measured["max_bound"], bound)
+        if spend <= bound:
+            small = self.result["small_notional_scale_checks"]
+            small["count"] += 1
+            small["max_requested_spend"] = max(small["max_requested_spend"], spend)
+            small["max_bound"] = max(small["max_bound"], bound)
 
     # Bind execution or an adjustment to an earlier close-time decision and phase.
     def binding(self, event: dict) -> tuple:

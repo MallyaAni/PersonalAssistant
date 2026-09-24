@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-24 — Monetary conditioning for independent journal scale checks
+
+- Fixed a verifier false positive found by the first real nested study attempt.
+  A3.10e-16 cash difference amplified into a2.02e-9 dimensionless scale gap on
+  a1.534e-7 requested buy. The unchanged379-mark captured account and a separate
+  798-event80-digit Decimal reconstruction demonstrate ordinary rounding.
+- A scalar disagreement must match its recorded funding formula; both its
+  scale-induced and executed-spend differences must fit the existing monetary
+  bound. Global tolerances, independently carried state, producer fills, fees,
+  costs, forecasts and strategy parameters are unchanged. New diagnostic fields
+  report the currency check; the previous tiny-request counter remains a subset.
+- VERIFIED: **1,063 passed,1 deliberately deselected,5 existing warnings**;
+  30 new cases include complete multi-batch accounting and forged scale/money/
+  unit failures. Scoped lint/format pass. The unchanged captured account passes
+  the actual standalone journal CLI. No successful market study was retuned.
+  Diagram impact: NONE — internal numerical validation, no changed data flow.
+  No deployment or live-policy change.
+
 ## 2026-09-24 — Pinned market inputs and six-account nested study
 
 - Added offline source authentication, 22-feature price-only gate assembly and

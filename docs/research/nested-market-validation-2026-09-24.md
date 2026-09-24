@@ -85,3 +85,45 @@ stdout/stderr and exit status even on failure. Independently verify every saved
 account and archive hash before interpreting full, rolling, actual-fold and
 causal-regime scorecards. No market outcome is asserted by this implementation
 checkpoint, and no result can automatically promote the strategy.
+
+## First historical attempt: failed accounting acceptance, no performance result
+
+Implementation checkpoint `22eb5c8b0d239700a76bdd98d48d14cf120bbb0f` was
+published to Spark and then GitHub from Spark. The exact committed code repeated
+**1,033 passed,1 deselected,5 existing warnings in23.41s**. Its first frozen
+historical CLI attempt ran8.13s and exited2 at an independent common-buy-scale
+check. `market-run-01/` preserves command, source revision, script, stdout,
+stderr and status. No completed historical result was produced or retuned.
+
+A passive observer captured the unchanged failing account under
+`account-failure-01/`, snapshot SHA256
+`3035f4b3f468bc3e688c13528c890cb02e3188b4502d2e82aa4fcb8b23d518df`.
+At event293,2019-01-24, an independently carried cash difference3.0986e-16
+was amplified by a1.5342e-7 request into a2.0197e-9 scale difference. The
+original verifier compared total requested money with its negligible-money
+threshold and refused the account, even though the discrepancy's monetary
+effect was3.10e-16. No different funding behavior was found.
+
+An independent80-digit Decimal reconstruction covers all798 saved events:
+maximum cash difference6.69e-16, units7.83e-18 and NAV8.32e-16. The valid
+proof is `decimal-reconstruction-proof-02.json`; the first observer draft had
+an initialization typo, is explicitly disclaimed in `DECIMAL-PROOF-NOTE.md`,
+and remains preserved rather than counted as proof.
+
+The targeted verifier correction checks the recorded funding formula and both
+monetary discrepancy calculations under the existing NAV-relative bound. It
+does not change producer trades, account carry or global tolerances. The
+unchanged captured journal now passes379 marks through the actual standalone
+CLI: `corrected-verifier-cli.json` and `corrected-verifier-receipt.json`.
+Maximum replay residuals: cash1.28e-15, units1.70e-17, NAV1.55e-15. No market
+refit was needed for that accounting proof. Complete historical study performance
+remains unverified until a subsequent frozen attempt succeeds.
+
+Correction acceptance: **1,063 passed,1 deliberately deselected,5 existing
+warnings in26.90s**, including30 new scale cases and the entire previous study
+acceptance. Scoped lint/format pass. Source SHA256
+`319461ccb83585f76e4c6910d10fbad787717a6998a5fcbe22bdf44eff69cc21`;
+new test SHA256
+`5da367a8f61fe5a703f8151a755def3c3b9b90eadcce858d41d8f7b753fa38e8`.
+Proof `acceptance-scale-02.xml`/`pytest-scale-02/`. Diagram impact: NONE — this
+correction is internal numerical validation, with the same account/data flows.
