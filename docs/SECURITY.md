@@ -353,6 +353,14 @@ replaced. The verification CLI reads local files and never rewrites them or send
 them to a model. Successful reconciliation proves declared research accounting,
 not real settlement, historical availability or suitability for live adoption.
 
+The research-only allocation adapter also retains complete instruction paths,
+caller-declared information dates and evidence identifiers in its results and
+journal metadata. Its demonstration stores an `instructions.json` sidecar.
+These have the same unencrypted research-only boundary: no private holdings or
+credentials in either identifiers or payloads. Dates and hashes are declarations
+and integrity evidence, not authentication of source availability. This adds no
+live route, broker access, model call, collector or automatic retention process.
+
 ### Personal decision receipts (2026-09-24; deployment pending)
 
 The primary desk owner's browser can request `record_history: true` on

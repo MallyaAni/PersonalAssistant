@@ -129,6 +129,18 @@ deploy used to; `--skip-post` skips them.
 
 ## Research-account journal validation
 
+The separate stock/index/cash research adapter consumes explicit dated
+`AllocationInstruction` rows; it does not forecast or create broker orders.
+Its [contract](research/allocation-adapter-2026-09-24.md) defines composition,
+cadence, costs, cash funding and timing. Run its execution and input-boundary
+acceptance against the current checkout:
+
+```bash
+python -m pytest -c /dev/null \
+  backend/tests/test_allocation_replay.py \
+  backend/tests/test_allocation_replay_validation.py -q
+```
+
 The optional journal records research accounts only. It does not read private
 holdings or execute orders. Verify an existing archive without rewriting it:
 

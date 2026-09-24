@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-09-24 — Zero-safe research stock/index/cash execution
+
+- Added the separate `stock-index-cash-adapter/1-research` execution path for
+  dated stock-composition and exposure instructions. It preserves unscaled
+  stock weights through cash periods, supports both SPY and QQQ, leaves unused
+  capacity in cash and checks actual combined target exposure without
+  renormalizing the stock book. No predictor or live policy is introduced.
+- Close-sized ending-unit targets fill no earlier than the next adjusted open
+  through the existing cash ledger. Explicit zeros fully exit tiny positions;
+  same-batch sales cannot fund buys. Funding follow-ups replan at the new close
+  and are superseded by new instructions. No implicit daily rebalance or
+  terminal liquidation is invented.
+- Receipts distinguish earliest permitted execution from actual fills; holds
+  have no submitted units. Full instruction hashes, consumed rows and stock
+  composition source sessions remain in the journal. Information dates are
+  declarations, never claims of proven point-in-time availability.
+- Reproduced and fixed complex-price coercion and unordered-symbol acceptance
+  in the new adapter. Real numeric source types, ordered symbol identity,
+  exact calendars, source-copy isolation, funding/valuation failures and invalid
+  ledger states are covered by explicit regression tests.
+- VERIFIED: **526 passed, 1 cached-study rerun deliberately deselected**, with
+  five existing fixture warnings; **234** new adapter cases; scoped lint/format;
+  **8** real archive/CLI journeys independently reconstruct **72** synthetic
+  marks at 10/25 bp. Artifacts are preserved on Spark with matching hashes.
+  All **32** diagram checks and documentation browser acceptance pass.
+- UNVERIFIED: profitable forecasts, historical quality/cohort completeness,
+  real settlement, full deployment gates and deployed behavior. No studies
+  were rerun or retuned, no holdings/orders changed and `/3` remains incumbent.
+  Next: a frozen nested chronological runner with independent accounting for
+  every matched account. Diagram impact: UPDATED — market-data.
+
 ## 2026-09-24 — Optional independently replayable research accounts
 
 - Added an observation-only journal to the desk simulator, fixed research

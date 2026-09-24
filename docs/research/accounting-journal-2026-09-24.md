@@ -116,9 +116,9 @@ that baseline revision:
 ## Next boundary
 
 The journal removes an accounting-audit gap, not a strategy-validation gap.
-Next is an isolated stock/SPY/QQQ/cash adapter that explicitly liquidates to
-zero and preserves unscaled stock composition for restoration. Only then freeze
-bounded nested chronological experiments and execution sensitivities. Keep an
+The [isolated stock/SPY/QQQ/cash adapter](allocation-adapter-2026-09-24.md) now
+explicitly liquidates to zero and preserves unscaled composition for restoration.
+Next freeze bounded nested chronological experiments and execution sensitivities. Keep an
 identical no-gate adapter control and exact `/3` alongside funded SPY/QQQ at
 10/25 bp. Already examined history stays exploratory; historical quality/cohort
 inputs and genuinely independent validation remain outstanding.

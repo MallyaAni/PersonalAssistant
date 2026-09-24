@@ -636,6 +636,16 @@ or historical availability. Pending declarations are preserved, not independentl
 regenerated from strategy policy. See the [accounting contract and evidence](
 research/accounting-journal-2026-09-24.md) and [market-data flow](diagrams/market-data.svg).
 
+`allocation_replay` is a separate research account, not a modification of `/3`.
+It consumes dated stock-composition updates and absolute stock-scale/SPY/QQQ
+instructions, preserves unscaled composition through cash periods, and sends
+close-sized ending-unit targets to the same generic cash-bounded fill ledger.
+Explicit zero targets fully liquidate, including tiny positions. Rebalances and
+funding follow-ups are declared; the adapter does not infer a daily trading
+cadence or predict the next day's color. Its journal can be independently
+reconciled, while source availability and strategy quality remain unverified.
+See the [instruction and execution contract](research/allocation-adapter-2026-09-24.md).
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in

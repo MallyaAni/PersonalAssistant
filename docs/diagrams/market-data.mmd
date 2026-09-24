@@ -28,7 +28,7 @@ flowchart TB
     Research --> Forward[Frozen NumPy neural inference<br/>independent prospective accounts]
     Panel --> Forward
 
-    Panel --> Accounts[Research accounts<br/>desk simulator · fixed-model replay<br/>SPY and QQQ funded controls]
+    Panel --> Accounts[Research accounts<br/>desk · fixed-model · stock/index/cash adapter<br/>SPY and QQQ funded controls]
     Accounts -. optional observation .-> Journal[Cash and fill journal<br/>decisions, phase changes, actual fills<br/>fees, every close mark, terminal holdings]
     Journal --> Research
     Research --> Audit[Independent replay + verification CLI<br/>retained JSON source hashes<br/>cash, units, fees and NAV reconciled]

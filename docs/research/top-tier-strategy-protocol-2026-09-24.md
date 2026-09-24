@@ -188,6 +188,9 @@ outputs, with future-input perturbation checks. The [research-only cash/fill
 journal](accounting-journal-2026-09-24.md) now observes the desk simulator, fixed
 research replay and SPY/QQQ controls, with independent accounting reconstruction
 and enabled/disabled parity. It has not rerun the completed studies or supplied
-real historical settlement. A zero-safe stock/index/cash adapter and predeclared
-execution sensitivities remain next. These improvements do not require retuning
-the completed losing candidates or waiting without engineering progress.
+real historical settlement. The [zero-safe stock/index/cash adapter](
+allocation-adapter-2026-09-24.md) now executes explicit dated instructions without
+changing `/3`, preserving composition through zero exposure. A frozen nested
+instruction-producing runner and predeclared execution sensitivities remain next.
+These improvements do not require retuning completed losing candidates or
+waiting without engineering progress.

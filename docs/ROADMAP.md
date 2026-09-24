@@ -223,8 +223,10 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 - Trading research remains `IN PROGRESS`: the optional account journal and
   independent replay are verified on synthetic accounting paths (292 tests;
   five archive/CLI journeys), not qualified market performance. Source-complete
-  historical cohorts, a zero-safe stock/index/cash adapter and nested
-  chronological selection remain required before qualifying a new policy.
+  historical cohorts and nested chronological selection remain required before
+  qualifying a new policy. The separate zero-safe stock/SPY/QQQ/cash adapter now
+  implements explicit dated allocation instructions and preserved stock
+  composition; its synthetic execution checks do not establish prediction skill.
   The operator's target is ex-ante risk-on
   selection of volatile quality names with cash/index alternatives ahead of
   forecast deterioration, measured by net wealth against `/3`, SPY and QQQ.

@@ -6,6 +6,85 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Zero-safe stock/SPY/QQQ/cash adapter verified; nested runner next
+
+Prior goal turn was progress: journal checkpoint `fe74e82` and handoff `8f124d6`
+were verified and synchronized. This turn started clean on `main` at
+`8f124d6c3cf5fb5f6c676bd4b4a1fb65b5b7c2d1`; `git pull --rebase origin main`
+was current. Pre-checkpoint Spark/GitHub fetch again showed zero divergence;
+Spark's unrelated untracked `scratch/` was untouched. No live deployment.
+
+Atomic objective: safely execute externally supplied stock/SPY/QQQ/cash
+instructions with a stable unscaled stock composition, complete zero exits,
+close-time sizing, next-open funding and independently replayable accounting.
+Implemented in the separate `backend/market/allocation_replay.py`; no incumbent
+planner, simulator arithmetic, dashboard, broker or model prompt changed.
+The first failing boundaries were verified in the old paths: zero rejected,
+relative restoration divides by prior scale, and tiny zero-target holdings can
+survive both planners. The new adapter reuses only `_Book._fill`, with explicit
+ending-unit targets and no suppression threshold.
+
+VERIFIED: **526 passed, 1 deliberately deselected, 5 existing warnings in
+4.13 seconds**. The new suites contribute **234** cases: 76 behavior, 158
+validation. All successful main paths independently replay their journal;
+recording enabled/disabled outputs match. Future instruction/price perturbations
+preserve earlier decisions and states. Eight actual archive/CLI journeys
+(switching, no-gate, SPY, QQQ at 10/25 bp) reconcile **72** closing marks.
+Prices and instructions are synthetic, not a new market-performance result.
+Scoped lint/format pass. Full deployment gates remain UNVERIFIED.
+
+New adapter source SHA256:
+`c8dfcf93de108f1fbed615a0609470a60590e89dceb4f798237b6483f9841f15`.
+Behavior tests: `83255f02a872acc08a1f229df28fde6e9278401bca903d8da63d6f6266514a79`.
+Validation tests: `cfba49c3a81b04599e263d0eb2aeba80cf41ce5fac45f20ba52bd9c1b9b6b54a`.
+Runtime image and complete semantics are in
+`research/allocation-adapter-2026-09-24.md`. Final demonstration:
+`/private/tmp/anios-allocation-verified.1fg7Mp/`, retained on Spark at
+`/home/animallya96/anios/data/market/research/allocation-adapter-20260924.3sVFrv/`.
+All **30 files / 135,475 bytes** match after readback. No overwrite. Largest
+residuals: cash/NAV 4.44e-16, units 3.47e-18.
+
+Two additional new-adapter defects were reproduced and corrected before freeze:
+complex prices discarded imaginary components, and an unordered ticker set
+silently changed column identities. Real numeric source arrays and ordered
+symbol sequences are now required. Nonfinite/negative cash, units or traded
+notional are refused. A stock scale is a multiplier, so base 0.2 at scale 1 plus
+SPY 0.8 is valid; actual composed exposure, not scale+indexes, is bounded by one.
+
+Receipts use `earliest_execution_session`, never claim it is an actual fill, and
+hold-only rows have `submitted_units: null`. The full instruction path/hash and
+the consumed row/composition session are retained; information dates and source
+IDs remain unverified declarations. The journal CLI reconciles accounting, not
+instruction-sidecar hashes, causal model fitting or policy/retry semantics.
+There is no real settlement, market-impact/volume or cash-yield model. `/3`
+remains incumbent; no holdings/orders, completed studies or model fits changed.
+
+Diagram impact: UPDATED — market-data. All **32** diagram checks and the
+published-page check pass. Automated browser acceptance verified the adapter
+label, containment, source links and zoom with no page/console/request errors;
+root inspected screenshots. Evidence:
+`/private/tmp/anios-allocation-diagram.zjzsQP/`. This verifies documentation,
+not a newly deployed dashboard. Unchanged-source SVG generation diffs were
+normalized away; only market-data.svg and architecture.html changed.
+
+Next substantive task: freeze and implement the nested chronological runner.
+It must retain outer/inner boundaries, actual training row and matured-label
+availability sets, train-only transforms/calibration, inner-only model/gate
+selection and frozen fit/output hashes. Feed a single continuous instruction
+path to this adapter rather than resetting capital at fold boundaries; attach
+and independently verify every account journal. Retain exact `/3`, a no-gate
+adapter control, funded SPY/QQQ and equal weight at both 10/25 bp on the same
+calendar. Do not use `harness.evaluate_scores` for portfolio accounting: it
+filters by available future outcomes and is not a delayed funded ledger.
+
+Read-only data audit: no local `data/market` tree. The preserved study copy at
+`/private/tmp/anios-chronological-artifacts.p1zCAB/` has reconstructed 95-name
+features and labels but only SPY's parquet, not the full execution-price set.
+Remote input availability must be inspected before a new run. The SEC cohort
+still has zero complete-feature rows; it is not training-ready. Already examined
+history remains examined research; neither fold geometry nor a successful
+synthetic account makes it untouched validation. Goal remains active.
+
 ## 2026-09-24 — Research account journal verified locally; deployment not requested
 
 Verified implementation checkpoint:
