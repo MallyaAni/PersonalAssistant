@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-09-24 01:14 UTC — Causal learned shadow bridge LIVE, rule unchanged
+
+Commit `5072dd6456e825e1fde74322ff7cd16007fb7d1d` passed the guarded
+`scripts/deploy.sh` path and is running. Full backend gate: **4498 passed,
+25 skipped**; serial real-model gate: **100 passed**; postdeploy marker:
+`2026-09-24T01:14:25Z 5072dd64 ok (cheap)`. Deployed and running backend
+SHA-256 matches for `learned_inputs.py` (`9647c118...e29`) and
+`learned_archive.py` (`6dc6cff7...e3a63`). The `ds4-head` and embedding
+containers kept their prior start times; no model service was changed.
+
+The ordinary nightly now records the real desk's grade, score, side, target
+weight and rule receipt along with its previously captured features. Its
+20-session high-low range is adjusted bar by bar using the capture-vintage
+adjusted-close/raw-close ratio, so a split is not a false volatility shock.
+The new read-only archive bridge retains missing sessions, uses one first
+mature price vintage for stock and SPY adjusted-open labels, and feeds
+publication-dated outcomes to monthly purged rank and quarterly purged crash
+fits. Targeted Ruff and **67 focused tests** passed, including split,
+missing-vintage, late-capture, label-maturity and insufficient-history cases.
+It places no orders and does not change personal or paper recommendations.
+
+Read-only acceptance in the **running backend image** on the real store found
+16 September sessions, 15 stored bar vintages, **0 learned-input captures,
+0 rank scores, 0 brake scores**. This is expected because the 2026-09-23
+nightly completed before the prospective capture release. The next ordinary
+nightly must be checked for a single immutable `asof=DATE.json`, its source
+record hash, captured time and complete bars. Do not force a historical run
+to fabricate one. The host `~/research-venv` lacks scikit-learn and cannot
+run the fitter; the deployed backend image does include it, as the actual
+acceptance check proved. Nightly capture does not require scikit-learn.
+
+The current live rule remains recommended. There is no valid 2016–26
+learned-versus-incumbent/SPY/QQQ/equal-weight table, no scored prospective
+cohort and no adoption claim. The separate OpenCode `fc703b0` rank files
+remain unmerged in the shared development checkout; its four reproduced
+price-basis/purge/brake blockers and differing target are documented in
+`docs/research/TRADING_LEARNED_REVIEW_2026-09-23.md`. Preserve that checkout's
+user work and do not import it as a learner.
+
 ## 2026-09-24 00:24 UTC — Prospective learned inputs LIVE; first nightly pending
 
 Source `37f523ab2dafd82295d63a1e2d5da7580238dd77` is deployed by the
