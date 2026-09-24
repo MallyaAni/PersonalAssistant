@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-24 — Bounded nested-study archive buffering
+
+- Canonical JSON writes/hashes and file receipts now stream in at most 64 KiB
+  buffers. Exclusive creation, short-write/failed-close handling, source and
+  evidence mutation guards, array verification and manifest-last publication
+  remain enforced. Packing and all economic behavior are unchanged; total
+  memory is not claimed constant.
+- VERIFIED: **1,096 passed, one deliberate deselection, five existing warnings**;
+  33 new serialization cases, independent 90-case helper parity probe, scoped
+  lint/format. The same 1,131,163,836-byte synthetic evidence document OOMs on
+  the old writer under 3 GiB and completes on the new writer at 846 MiB process
+  peak RSS / 1.89 GiB cgroup peak. All 218 manifest entries, 146 arrays,
+  80 journal files and 20 standalone ledger checks / 544 marks reconcile.
+- No historical study rerun or retuning, strategy promotion, holdings/order
+  mutation or deployment. All 634 original market-result files are unchanged;
+  that failed producer's original final manifest remains absent. See the
+  [scope, limitations and exact evidence](research/archive-buffering-2026-09-24.md).
+- Diagram impact: NONE — internal archive buffering, unchanged data flow.
+
 ## 2026-09-24 — Recovered chronological study rejects the new allocation gate
 
 - The frozen real-history retry at `e749c0af` was OOM-killed during archival

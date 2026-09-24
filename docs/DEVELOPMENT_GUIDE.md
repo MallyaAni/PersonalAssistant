@@ -153,13 +153,22 @@ all funded comparator ledgers, archive readback and standalone journal verificat
 python -m pytest -c /dev/null \
   backend/tests/test_nested_market_sources.py \
   backend/tests/test_nested_market_inputs.py \
-  backend/tests/test_nested_market_study.py -q
+  backend/tests/test_nested_market_study.py \
+  backend/tests/test_nested_market_serialization.py -q
 ```
 
 An older test image can lack pandas, PyArrow or exchange-calendars. Use an isolated
 research dependency environment and record its versions; a dependency skip is
 not source validation. Mount the exact checkout being tested. These tests need
 no live model or database and do not qualify a strategy for deployment.
+
+For archive-buffering changes, also compare exact canonical bytes/hashes and
+exercise a controlled full-size synthetic archive under a fixed memory limit.
+Do not rerun the historical experiment merely to test serialization. The
+[2026-09-24 acceptance](research/archive-buffering-2026-09-24.md) retains the
+old OOM and new successful manifest/readback/CLI checks. JSON output and file
+readback buffers are bounded; packed trees, arrays and single escaped strings
+are not. Different source versions must keep their different provenance hashes.
 
 The nested chronological runner's acceptance fits actual NumPy regressions and
 executes all inner candidates and continuous outer accounts on synthetic data:

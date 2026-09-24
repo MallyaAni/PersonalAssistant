@@ -7,6 +7,7 @@ not fetch data, trade, promote a policy, or make examined history untouched.
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import platform
 import subprocess
@@ -14,6 +15,7 @@ import sys
 from collections.abc import Mapping
 from dataclasses import asdict, fields, is_dataclass, replace
 from importlib.metadata import PackageNotFoundError, version
+from itertools import chain
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
@@ -26,7 +28,7 @@ from backend.market import nested_allocation as nested
 from backend.market import neural_study_metrics as metrics
 from backend.market.allocation_controls import adjusted_open, constant_exposure
 from backend.market.allocation_replay import AllocationInstruction, replay
-from backend.market.research_journal import ResearchJournal, _encode, _new_directory
+from backend.market.research_journal import ResearchJournal, _new_directory
 from backend.market.research_journal_replay import verify_archive, verify_snapshot
 
 if TYPE_CHECKING:
@@ -43,6 +45,7 @@ ACCOUNT_NAMES = (
     "QQQ",
     "equal_weight",
 )
+_BUFFER_BYTES = 64 * 1024
 
 
 # Bind the declared protocol and inclusive producer/source code before any fits.
@@ -223,7 +226,7 @@ def _verified_account(snapshot, expected_dates, expected_nav, expected_traded=No
         "curve": curve,
         "journal": snapshot,
         "verification": proof,
-        "journal_sha256": hashlib.sha256(_encode(snapshot)).hexdigest(),
+        "journal_sha256": _json_digest(snapshot),
     }
 
 
@@ -541,17 +544,57 @@ def _pack(value, arrays, journal_paths):  # noqa: C901 - explicit serialization 
     raise ValueError(f"Unsupported study evidence type: {type(value).__name__}")
 
 
-# Bind complete metadata, arrays and actual journals, excluding only this receipt.
+# Yield the legacy canonical JSON bytes without buffering the whole document.
+def _json_chunks(value):
+    encoder = json.JSONEncoder(
+        sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False
+    )
+    buffer = bytearray()
+    # The encoder can still allocate an escaped scalar; only document buffering
+    # is bounded here. Packing container trees and arrays is a separate cost.
+    for fragment in chain(encoder.iterencode(value), ("\n",)):
+        offset = 0
+        while offset < len(fragment):
+            stop = offset + _BUFFER_BYTES - len(buffer)
+            buffer.extend(fragment[offset:stop].encode("ascii"))
+            offset = stop
+            if len(buffer) == _BUFFER_BYTES:
+                yield bytes(buffer)
+                buffer.clear()
+    if buffer:
+        yield bytes(buffer)
+
+
+# Hash exactly the previous sorted, ASCII-escaped JSON representation and final LF.
+def _json_digest(value):
+    digest = hashlib.sha256()
+    for chunk in _json_chunks(value):
+        digest.update(chunk)
+    return digest.hexdigest()
+
+
+# Count and hash the bytes actually read using a bounded file buffer.
+def _file_receipt(path):
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("rb") as stream:
+        while chunk := stream.read(_BUFFER_BYTES):
+            digest.update(chunk)
+            size += len(chunk)
+    return {"bytes": size, "sha256": digest.hexdigest()}
+
+
+# Bind complete metadata, arrays and actual journals without a full encoded buffer.
 def _evidence_digest(evidence):
     content = {
         key: value for key, value in evidence.items() if key != "evidence_sha256"
     }
     snapshots = {
-        id(snapshot): "sha256:" + hashlib.sha256(_encode(snapshot)).hexdigest()
+        id(snapshot): "sha256:" + _json_digest(snapshot)
         for _, snapshot in _journals(evidence)
     }
     packed = _pack(content, {}, snapshots)
-    return hashlib.sha256(_encode(packed)).hexdigest()
+    return _json_digest(packed)
 
 
 # Write exclusive files and retain their hashes for complete readback verification.
@@ -564,7 +607,23 @@ def _write(path, body, root, manifest):
     }
 
 
-# Archive complete fits, source arrays and every verified journal without overwriting.
+# Write canonical JSON exclusively and register its receipt only after a complete close.
+def _write_json(path, value, root, manifest):
+    digest = hashlib.sha256()
+    size = 0
+    with path.open("xb") as stream:
+        for chunk in _json_chunks(value):
+            written = stream.write(chunk)
+            if written != len(chunk):
+                raise OSError("Incomplete study JSON write")
+            digest.update(chunk)
+            size += written
+    receipt = {"bytes": size, "sha256": digest.hexdigest()}
+    manifest[str(path.relative_to(root))] = receipt
+    return receipt
+
+
+# Archive verified evidence with bounded JSON/file buffers and no destination overwrite.
 def archive(evidence, destination):  # noqa: C901 - ordered evidence safety boundaries
     path = check_destination(destination)
     if evidence.get("evidence_sha256") != _evidence_digest(evidence):
@@ -597,18 +656,18 @@ def archive(evidence, destination):  # noqa: C901 - ordered evidence safety boun
         folder = path / "journals" / name
         folder.mkdir()
         for field in ("prices", "events", "manifest"):
-            _write(folder / f"{field}.json", _encode(snapshot[field]), path, manifest)
+            _write_json(folder / f"{field}.json", snapshot[field], path, manifest)
         if verify_archive(folder) != proofs[name]:
             raise ValueError(f"Archived journal {name} does not reproduce its proof")
-        _write(folder / "verification.json", _encode(proofs[name]), path, manifest)
+        _write_json(folder / "verification.json", proofs[name], path, manifest)
         journal_paths[id(snapshot)] = str(folder.relative_to(path))
+    del proofs
     arrays = {}
     packed = _pack(evidence, arrays, journal_paths)
-    _write(path / "evidence.json", _encode(packed), path, manifest)
-    _write(path / "summary.json", _encode(evidence["summary"]), path, manifest)
-    _write(
-        path / "source-hashes.json", _encode(evidence["source_hashes"]), path, manifest
-    )
+    _write_json(path / "evidence.json", packed, path, manifest)
+    del packed
+    _write_json(path / "summary.json", evidence["summary"], path, manifest)
+    _write_json(path / "source-hashes.json", evidence["source_hashes"], path, manifest)
     with (path / "arrays.npz").open("xb") as stream:
         np.savez_compressed(stream, **arrays)
     with np.load(path / "arrays.npz", allow_pickle=False) as saved:
@@ -617,21 +676,14 @@ def archive(evidence, destination):  # noqa: C901 - ordered evidence safety boun
             for key, values in arrays.items()
         ):
             raise ValueError("Archived arrays differ from the exercised arrays")
-    body = (path / "arrays.npz").read_bytes()
-    manifest["arrays.npz"] = {
-        "bytes": len(body),
-        "sha256": hashlib.sha256(body).hexdigest(),
-    }
+    del arrays
+    manifest["arrays.npz"] = _file_receipt(path / "arrays.npz")
     if evidence["source_hashes"] != _source_hashes():
         raise ValueError("Exercised source changed during evidence archival")
     if evidence["evidence_sha256"] != _evidence_digest(evidence):
         raise ValueError("Study evidence changed during archival")
     for name, entry in manifest.items():
-        body = (path / name).read_bytes()
-        if (
-            len(body) != entry["bytes"]
-            or hashlib.sha256(body).hexdigest() != entry["sha256"]
-        ):
+        if _file_receipt(path / name) != entry:
             raise ValueError(f"Archive readback mismatch: {name}")
     receipt = {
         "schema": POLICY,
@@ -643,8 +695,8 @@ def archive(evidence, destination):  # noqa: C901 - ordered evidence safety boun
         "scope": "All other files; excludes this manifest itself",
         "adoption_eligible": False,
     }
-    with (path / "manifest.json").open("xb") as stream:
-        stream.write(_encode(receipt))
-    if (path / "manifest.json").read_bytes() != _encode(receipt):
+    # Its own write receipt stays outside the manifest's declared file set.
+    written = _write_json(path / "manifest.json", receipt, path, {})
+    if _file_receipt(path / "manifest.json") != written:
         raise ValueError("Archive manifest readback mismatch")
     return path / "manifest.json"

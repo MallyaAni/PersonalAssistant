@@ -6,6 +6,46 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Archive buffering acceptance complete; publication pending
+
+Started clean on `main` at `ebc33159e6546dab066dcbe7f45d84218daee093`;
+the initial pull was current. The continuation fetch also shows 0/0 divergence.
+Only the archive module, its new serialization tests and associated documentation
+are in this checkpoint. Source SHA256
+`6417dbd925f6ea9970911d5f49a0fbd1005273e6fdfe38b7268b7f9c609c1a5c`.
+
+VERIFIED: **1,096 passed, one deliberately deselected, five existing warnings**;
+33 new serialization cases, independent 90-case byte/hash probe and scoped
+lint/format. Same-size **1,131,163,836-byte synthetic metadata pressure** under
+3 GiB: old writer OOM/exit137 after full evidence write but before final manifest;
+new writer exit0/no OOM, **846 MiB process RSS / 1.89 GiB cgroup peak**.
+All **218 manifest entries, 146 arrays, 80 journal files and 20 actual ledger
+CLI checks / 544 marks** pass. This bounds document/file buffering, not packed
+trees, copied arrays or individual escaped strings.
+
+Full experiment, fixture-age diagnostic caveat and hashes:
+`research/archive-buffering-2026-09-24.md`. Local roots:
+`/private/tmp/anios-archive-buffering.5HrHog/` and
+`/private/tmp/anios-nested-market-acceptance.teTufe/archive-memory-acceptance.doHMXX/`.
+The original 634 historical result files were independently rehashed unchanged;
+their interrupted producer still has no final manifest. No market rerun,
+retuning, new strategy, holdings/order change or deployment.
+Diagram impact: NONE — internal archive buffering, unchanged data flow.
+
+Next: finish fresh Spark evidence retention and readback, commit this scoped
+checkpoint, push `spark main`, then GitHub **from Spark**. No live deployment.
+The user also surfaced an AAOI semantics problem: the fundamental score is
+growth/margins, sentiment is dated earnings-release tone, and the composite
+A+ is not fair value or entry timing. Source inspection and live API reads
+show September23 A+ versus September24 15:30 ET intraday B. The detail panel
+can place the evening "Own" summary beside a current grade/price without an
+evening date label; its automated browser reproduction is next. Price/book
+is cited under Value but does not drive the active score. Correct the
+presentation and attribution without silently changing votes or rewriting
+historical records. Then continue the historical causality and quality/
+membership audit; do not tune another model grid on the rejected study.
+Overall goal remains active.
+
 ## 2026-09-24 — Frozen history executed; archive OOM; saved-account recovery
 
 Evidence publication checkpoint:
