@@ -740,11 +740,13 @@ def build(
         # the supplied equity. The desk's book is a separate account and must
         # not shape what this person is told they currently hold.
         current = book.get(symbol, 0.0)
+        # Intent and the funded plan must use the same refreshed grade.
+        # A stale Buy opinion can otherwise suppress a current downgrade exit.
         entry = _unless_taken(
             entry_action(
                 row,
                 (entries or {}).get(symbol),
-                (readings.get(symbol) or {}).get("grade")
+                (readings.get(symbol) or {}).get("grade_live")
                 or (record.get("grades") or {}).get(symbol, {}).get("grade"),
                 current,
             ),

@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-09-24 — Live grade inconsistency reproduced and corrected
+
+Further account-path review found `build` read `grade` from `live_grades`,
+whose actual key is `grade_live`. Intent silently fell back to the nightly
+grade while the funded planner used the current grade. A current downgrade
+could therefore be suppressed by a stale Buy opinion; an upgrade could disagree
+with its displayed intent. Six causal upgrade/downgrade cases failed before
+the one-key fix; all pass afterward. 112 decision/personal/API cases pass,
+including two authenticated POST grade-transition checks with unchanged saved
+holdings. Scoped Ruff passed. Logs `/tmp/personal-live-grade-before.log` and
+`/tmp/personal-live-grade-after.log`. This is not proven to explain AAOI.
+
+Read-only AAOI reconstruction at $106 using the preceding session's archived
+prices gives band 0.08867 on Sep22 and 0.12304 on Sep23, both below the actual
+1.1 Buy threshold even with assumed A+. This is a conditional source replay,
+not a historical personal-screen receipt. `/tmp/aaoi-price-rule-20260924.json`.
+
+Broader regime work also advanced without refits/replays: fixed saved HGB-study
+curves were decomposed by four causal SPY trend/volatility regimes (prior-day
+200-session mean; 20-session volatility vs its trailing252 median). Tests prove
+same-day/future/prefix invariance, complete counts and exact log-growth
+reconciliation. 1882 intervals, no missing regimes. At10bp learned rank's mean
+daily log excess versus momentum120 is negative in all four bins (-2.13,-2.92,
+-18.74,-15.92bp). The last bin has only37 intervals/five months. This is an
+exploratory decomposition of previously examined survivor-cohort outcomes, NOT
+neural or exact live-strategy evidence; no regime selector is promoted.
+Protocol, script, tests, source hashes and full table persist under
+`data/market/research/regime-diagnostic-20260924/`. No frozen history changed.
+
 ## 2026-09-24 — Preserve Dip setup separately from trade permission
 
 User correctly identified the mismatch between research Dip states and personal
