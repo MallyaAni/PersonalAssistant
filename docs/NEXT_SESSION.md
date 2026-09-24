@@ -1,5 +1,93 @@
 # Next session
 
+## 2026-09-24 — Corrected neural inputs and matched-rule adapter
+
+User asks whether other approaches could outperform neural/momentum: yes,
+neither is established best. Do not choose an architecture before measurement
+or expand into an outcome-driven search. Continue the neural comparison; the
+chart release below is complete and does not need another deploy.
+
+New research-only `neural_price_basis.py` reconciles original pre-split share
+facts to an explicitly supplied source vintage, preserves versioned filing
+availability, handles reviewed early closes, and masks unsupported currency,
+ADR/share units or ambiguous historical facts filed after a split. It validates
+all consumed close, adjusted-close and volume arrays against supplied history.
+Independent tests found and fixed incomplete adjusted-price/volume provenance
+and possible double adjustment of restated share counts. Missing evidence stays
+missing; no numeric ratio calibration. Frozen neural inputs/model/journal remain
+unchanged. The known frozen-path defect remains a strict xfail, not hidden.
+
+New `neural_policy_comparison.py` substitutes only scheduled ranking through
+the unchanged live simulator/risk/account rules, same event path and costs.
+It preserves incumbent score coverage and rejects future or missing predictions,
+immature training/selection labels and silently truncated subday timestamps.
+Independent review reproduced and fixed a 0% -> 15% eligibility expansion and
+23:00 timestamps being truncated to dates. This is a ranking hybrid: midcycle
+entries retain the incumbent rules, including purchases whose neural return
+forecast is negative. It is NOT the original positive-only neural shadow policy.
+Supplied daily provenance and SHA256 strings are assertions, not an input audit.
+Outputs explicitly say adoption_eligible=False and reconstructed research.
+
+VERIFIED: combined exact-source acceptance **89 passed, 1 known xfail**, scoped
+Ruff clean; `/tmp/neural-research-checkpoint-20260924.log`. The two independent
+comparison cases and three independent input cases passed after correction.
+Same-score parity reproduces the live simulator at 0/10/25 bp; event tests
+actually change a funded account, and future-score mutations change later
+results while preserving an already-invested earlier prefix. No historical
+scoring, fitting, production policy change or deployment in this checkpoint.
+
+UNVERIFIED / NEXT: bind actual cached source bytes and fundamental currency/ADR
+unit evidence to the corrected path before a separately named corrected-input
+retraining study. Inspected AAPL versioned-frame metadata contains CIK, fetch
+time and parser version, but no unit evidence: do not set the verification flag
+from that alone. Reuse fixed cached data; retain missingness and original frozen
+model identity. Freeze cohort/cutoffs/execution/benchmarks before results. Report
+the ranking hybrid separately from the full neural-policy comparison, current
+survivor-cohort reconstruction separately from archived live decisions, and
+2025+ as already examined rather than an untouched holdout. No superiority or
+replacement decision has been established. Root owns all four new files; both
+independent review agents returned ownership. No active OpenCode work required.
+
+## 2026-09-24 — Chart consistency release LIVE and verified
+
+`d6369276fec135edf7d1d8a7403354d817950b60` is LIVE through the single guarded
+`scripts/deploy.sh` release. Full backend gate: **4554 passed, 25 skipped**;
+real-model gate: **100 passed in 764.02 seconds**. Exact postcheck:
+`2026-09-24T03:52:09Z d6369276 ok (cheap)`. Running chart and market API
+hashes match the deploy tree. Gateway image:
+`sha256:912796e0497eec3f8596aa175672bc2602a8e3d8d32a9882b7b40c98e08a7b94`.
+
+VERIFIED: all **190 authenticated daily/weekly chart API payloads across 95
+quoted tickers** return aligned arrays and the new quote timestamp contract.
+Actual deployed browser workflows for **AAOI, AVGO and AAPL** render daily and
+weekly canvases and close prices matching those API snapshots, with no page,
+console or required-network failures. The changed stale-quote/concurrent-response
+fixture also passes against deployed port8080 (1 test). Model container IDs and
+start times match the original baseline. No holdings or orders were written.
+
+Two harness failures are retained, not hidden: a blanket `networkidle` wait timed
+out despite successful AAOI content assertions, so readiness now asserts the
+specific daily/weekly chart state; WRB had no ranked-board row because the actual
+94-name `latest.grades` omits it (search rendered zero matches). WRB's chart API
+was tested; its board workflow was not. AAPL was confirmed in both actual grades
+and rendered search before replacing WRB as the third browser case. This is not
+a guarantee that every provider value or every ticker's rendered chart is correct.
+
+Evidence: `/tmp/codex-chart-release-proof-20260924.json` (PASS),
+`/tmp/codex-chart-release-20260924.log`,
+`/tmp/codex-chart-deployed-fixture-20260924.log`,
+`/tmp/codex-chart-release-proof-networkidle-20260924.json`,
+`/tmp/codex-chart-release-proof-wrb-locator-20260924.json`, and
+`/tmp/check-wrb-board.json`. No production changes or redeploy were used to fix
+the verifier. Main's later tests/docs-only commits do not require marker alignment.
+
+The preceding `aa15c03057c8b27a26c5ac09da161dde492963d0` evidence-capture release
+also passed runtime hashes, actual API/AAOI browser and unchanged-model proof:
+`/tmp/codex-entry-evidence-release-proof-20260924.json` (PASS), 4541 backend
+passes/25 skips and 100 model-gate passes. Its first ordinary completed-session
+receipt remains **UNVERIFIED** until market collection runs. Momentum/breakout
+remains the live strategy; neural remains experimental and was not promoted.
+
 ## 2026-09-24 — Parallel chart consistency correction, release pending
 
 User asked whether all tickers/charts are consistent and whether neural is live,

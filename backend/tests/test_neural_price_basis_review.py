@@ -28,7 +28,7 @@ def test_future_price_vintage_does_not_change_historical_yield(tmp_path):
     # split changes the provider's historical close units. The same dated filing
     # correctly reports ten original shares; future fetches do not rewrite it.
     old = Panel(dates, ('ABC', 'SPY'), original, original, original,
-                original, adjusted, volume, {}, 'SPY')
+                original, original, volume, {}, 'SPY')
     normalized = Panel(dates, ('ABC', 'SPY'), adjusted, adjusted, adjusted,
                        adjusted, adjusted, volume, {}, 'SPY')
     ends = [date(2023, 3, 31), date(2023, 6, 30),
