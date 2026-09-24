@@ -36,6 +36,84 @@ Before release, run the required full gate, deploy only through
 deployed revision. Do not promote a research policy as part of this UI
 correction.
 
+## 2026-09-24 — Actual neural price study and deployed results VERIFIED
+
+Release `879abc56ca4d7b3827bf4b8244991d0d02bf0c00` is LIVE through guarded
+`scripts/deploy.sh`. Full backend gate: 4621 passed, 26 skipped, 1 known xfail;
+serial real-model gate: 100 passed in 802.94s. Postdeploy marker is ok.
+Log: `/tmp/codex-neural-results-release-20260924.log`.
+Independent read-only proof PASS:
+`/tmp/codex-neural-results-release-proof-20260924.json`. All 30 displayed
+cost/year/account rows match the actual authenticated API, with no browser
+exceptions or failed API requests. Exact backend source/artifact hashes match.
+Gateway image: `sha256:af80b2d26b3e7ff7f5a4c169f5901f196117d44b190f12b61cf2d97424996c59`.
+Model container IDs/start times are unchanged. Root inspected the browser proof
+and rendered screenshot. No orders or holdings writes. Watcher finished verified.
+Main after this release adds documentation only; DO NOT redeploy to align markers.
+
+User clarified the primary objective: maximize total portfolio gain and beat
+BOTH SPY and QQQ. Drawdown and turnover are diagnostic checks on its quality.
+The completed candidate fails the primary objective versus the incumbent.
+New saved-curve regime decomposition also loses to incumbent in all three
+observed regimes; the fourth has zero observations, explicitly unassessed.
+Details and provenance are added to the research report, without refitting.
+
+Additional bounded HGB reuse check is complete: do NOT score old HGB forecasts
+as if they used the pinned report's inputs. Different source vintages change
+features across the window, and 1,361 forecast cells are missing during warmup
+or for the benchmark. No estimators were saved for rerunning inference.
+Receipts: `/tmp/hgb-reuse-audit-20260924.json` and
+`/tmp/hgb-feature-reuse-check-20260924.json`. A later separately declared refit
+on verified inputs is needed; do not fill missing predictions, calibrate ratios
+or alter the incumbent's opportunity set to manufacture compatibility.
+All delegated tasks are finished. No active OpenCode or research training job.
+
+User is sleeping and explicitly requests continued work and concrete results
+on the dashboard. The fixed run is COMPLETE, not merely prepared. Protocol
+`5e19336` preceded outcomes; exact training/evaluation source `1ad7e59`.
+Artifacts: `/home/animallya96/anios/data/market/research/neural-price-rule-20260924`.
+Preserved inputs, model, forecasts, source manifest, 10/25-bp curves and results.
+Do not refit, rescore, change windows or rerun this completed study.
+
+Result: price-only neural ranking loses to the unchanged live-rule reconstruction
+at both costs. At10bp total returns are242.2% versus399.9%, drawdowns−37.1% versus
+−31.7%, annual bought-plus-sold notional/meanNAV20.80 versus16.36. Those large
+returns reflect an examined current-survivor reconstruction, NOT achievable
+returns or personal-account history. Candidate wins0/177 overlapping252-session
+windows against incumbent. It is NOT the separate frozen nightly neural model.
+No adoption. Both costs, SPY/QQQ/equal weight, calendar-year slices and rolling
+win rates are in the preserved JSON. All financial inputs are missing explicitly.
+
+Independent artifact verification PASS:
+`/tmp/neural-study-artifact-review-20260924.json`. Verified191 source hashes,
+14 consumed source files at1ad7e59,22685 training examples, last label2023-12-27,
+training-only normalization,429 common NAV marks/428 return intervals, all
+full/year metrics and rolling counts. Raw trade/cash traces were not saved, so
+independent turnover verification covers its denominator, not raw ledger replay.
+The fixed simulator/account path has separate parity tests.
+
+Root reviewed a minimal Research-only dashboard card, API read-only payload and
+static curated artifact. No recommendations/action/policy changes. Frontend80
+browser cases and TypeScript pass against exact source5178;34 API/desk cases
+pass, including actual authenticated response and unchanged paper/neural files.
+Final narrow wording follow-up: 3 browser cases and 46 API/desk/metrics cases
+passed. The actual8080 deployment and browser evidence above completes this
+bounded research-results release. Live policy remains
+`cash-bounded-breakout-rotation/3`; candidate is research-only, not adopted.
+
+Completed delegated work includes read-only saved-curve regime decomposition using
+the already-fixed prior-close200MA/20vol/252median definitions. No retraining or
+selector; regimes.json and reproduction script are preserved in the run folder.
+Both frontend ownership and all prior module ownership returned to root.
+Shared `/home/animallya96/anios` remains deliberately preserved at localfc703b0,
+one local-only commit plus newer incoming main, with AGENTS.md/scratch changes.
+Root worktree and GitHubmain carry reviewed work; do not silently mergefc703b0.
+The bounded actual-results task is complete; pause its hourly heartbeat as
+authorized to avoid repeated completed work. This does not establish universal
+best performance, validate the frozen nightly neural model, or finish the broader
+learned ranker/brake request. A first ordinary archived price-opinion receipt
+remains unverified; do not manufacture one or manually run the nightly process.
+
 ## 2026-09-24 — Corrected neural inputs and matched-rule adapter
 
 User asks whether other approaches could outperform neural/momentum: yes,

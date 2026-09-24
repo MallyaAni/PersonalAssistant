@@ -1,0 +1,1557 @@
+{
+  "policy": "neural-price-only-live-ranking/1",
+  "adoption_eligible": false,
+  "tables": {
+    "10": {
+      "first_session": "2025-01-02",
+      "last_session": "2026-09-18",
+      "cost_bps": 10.0,
+      "cash_yield": 0.0,
+      "annualization_sessions": 252,
+      "rolling_windows_overlap": true,
+      "rolling_tie_tolerance": {
+        "relative": 1e-12,
+        "absolute": 1e-12
+      },
+      "turnover_definition": "Bought-plus-sold notional divided by starting NAV; annual figure uses mean observed NAV and elapsed session-years. Neither is the sum of individual trade notional divided by contemporaneous NAV.",
+      "provenance": "Supplied account curves; costs and execution are caller-attested",
+      "rows": {
+        "incumbent": {
+          "return_intervals": 428,
+          "total_return": 3.9988356945201566,
+          "cagr": 1.5791911844455013,
+          "max_drawdown": -0.3174687482403633,
+          "sharpe_zero_risk_free": 2.2648881573533703,
+          "traded_notional_per_starting_nav": 66.80588423267382,
+          "annual_traded_notional_over_mean_nav": 16.36140624059901,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8879781420765027,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8961748633879781,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.0,
+                "ties": 366
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 177
+              }
+            }
+          }
+        },
+        "candidate": {
+          "return_intervals": 428,
+          "total_return": 2.4223710299212806,
+          "cagr": 1.0634968071490754,
+          "max_drawdown": -0.370613439486129,
+          "sharpe_zero_risk_free": 1.8419005795078256,
+          "traded_notional_per_starting_nav": 62.88205822112844,
+          "annual_traded_notional_over_mean_nav": 20.799673132743013,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8661202185792349,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8852459016393442,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.08743169398907104,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        },
+        "equal_weight": {
+          "return_intervals": 428,
+          "total_return": 1.3470952437512493,
+          "cagr": 0.6525817157385956,
+          "max_drawdown": -0.3350774372400672,
+          "sharpe_zero_risk_free": 1.6146066207179657,
+          "traded_notional_per_starting_nav": 2.4978116496354,
+          "annual_traded_notional_over_mean_nav": 0.9503641243193531,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8306010928961749,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.855191256830601,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.09016393442622951,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        },
+        "SPY": {
+          "return_intervals": 428,
+          "total_return": 0.3173047850274804,
+          "cagr": 0.17616834212681867,
+          "max_drawdown": -0.1875522626062267,
+          "sharpe_zero_risk_free": 1.0314233250871656,
+          "traded_notional_per_starting_nav": null,
+          "annual_traded_notional_over_mean_nav": null,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.0,
+                "ties": 366
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 177
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.4016393442622951,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.02824858757062147,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.11202185792349727,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        },
+        "QQQ": {
+          "return_intervals": 428,
+          "total_return": 0.4144250838590293,
+          "cagr": 0.22647647572442683,
+          "max_drawdown": -0.22768308447040142,
+          "sharpe_zero_risk_free": 1.0215479945223451,
+          "traded_notional_per_starting_nav": null,
+          "annual_traded_notional_over_mean_nav": null,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.5983606557377049,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.9717514124293786,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.0,
+                "ties": 366
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 177
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.10382513661202186,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        }
+      },
+      "calendar_years": {
+        "2025": {
+          "first_session": "2025-01-02",
+          "last_session": "2025-12-31",
+          "cost_bps": 10.0,
+          "cash_yield": 0.0,
+          "annualization_sessions": 252,
+          "rolling_windows_overlap": true,
+          "rolling_tie_tolerance": {
+            "relative": 1e-12,
+            "absolute": 1e-12
+          },
+          "turnover_definition": "Bought-plus-sold notional divided by starting NAV; annual figure uses mean observed NAV and elapsed session-years. Neither is the sum of individual trade notional divided by contemporaneous NAV.",
+          "provenance": "Supplied account curves; costs and execution are caller-attested",
+          "rows": {
+            "incumbent": {
+              "return_intervals": 249,
+              "total_return": 1.2005763598712895,
+              "cagr": 1.2215873215095363,
+              "max_drawdown": -0.3174687482403633,
+              "sharpe_zero_risk_free": 2.2528826781672664,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8556149732620321,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8502673796791443,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 187
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "candidate": {
+              "return_intervals": 249,
+              "total_return": 0.5693414078847201,
+              "cagr": 0.5778854641099945,
+              "max_drawdown": -0.370613439486129,
+              "sharpe_zero_risk_free": 1.344925966487299,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8235294117647058,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "equal_weight": {
+              "return_intervals": 249,
+              "total_return": 0.5298883815748279,
+              "cagr": 0.53774584667616,
+              "max_drawdown": -0.3350774372400672,
+              "sharpe_zero_risk_free": 1.3683634255838657,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.1657754010695187,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "SPY": {
+              "return_intervals": 249,
+              "total_return": 0.1731123123784759,
+              "cagr": 0.17537110443833895,
+              "max_drawdown": -0.1875522626062267,
+              "sharpe_zero_risk_free": 0.9250788549245785,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 187
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.21390374331550802,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.1443850267379679,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "QQQ": {
+              "return_intervals": 249,
+              "total_return": 0.20153659851876693,
+              "cagr": 0.20419741514103573,
+              "max_drawdown": -0.22768308447040142,
+              "sharpe_zero_risk_free": 0.9036132529609344,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.786096256684492,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 187
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.1497326203208556,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "2026": {
+          "first_session": "2025-12-31",
+          "last_session": "2026-09-18",
+          "cost_bps": 10.0,
+          "cash_yield": 0.0,
+          "annualization_sessions": 252,
+          "rolling_windows_overlap": true,
+          "rolling_tie_tolerance": {
+            "relative": 1e-12,
+            "absolute": 1e-12
+          },
+          "turnover_definition": "Bought-plus-sold notional divided by starting NAV; annual figure uses mean observed NAV and elapsed session-years. Neither is the sum of individual trade notional divided by contemporaneous NAV.",
+          "provenance": "Supplied account curves; costs and execution are caller-attested",
+          "rows": {
+            "incumbent": {
+              "return_intervals": 179,
+              "total_return": 1.271602924432277,
+              "cagr": 2.1743319783675354,
+              "max_drawdown": -0.2668091284060714,
+              "sharpe_zero_risk_free": 2.3472303997383777,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8803418803418803,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.9145299145299145,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.0,
+                    "ties": 117
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "candidate": {
+              "return_intervals": 179,
+              "total_return": 1.1807689599767954,
+              "cagr": 1.9971043463065452,
+              "max_drawdown": -0.23642094795935686,
+              "sharpe_zero_risk_free": 2.4114235347128026,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8803418803418803,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.9230769230769231,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.27350427350427353,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "equal_weight": {
+              "return_intervals": 179,
+              "total_return": 0.5341611009132639,
+              "cagr": 0.8267246660976564,
+              "max_drawdown": -0.2030358338482361,
+              "sharpe_zero_risk_free": 1.990724406336972,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8034188034188035,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8376068376068376,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.017094017094017096,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "SPY": {
+              "return_intervals": 179,
+              "total_return": 0.12291446533082184,
+              "cagr": 0.1772782481296748,
+              "max_drawdown": -0.08884968175523733,
+              "sharpe_zero_risk_free": 1.2974397698829658,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.0,
+                    "ties": 117
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.39316239316239315,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.11965811965811966,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "QQQ": {
+              "return_intervals": 179,
+              "total_return": 0.17718019209960612,
+              "cagr": 0.25815515981992404,
+              "max_drawdown": -0.11723568428777864,
+              "sharpe_zero_risk_free": 1.210488427746668,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.6068376068376068,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.0,
+                    "ties": 117
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.08547008547008547,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "25": {
+      "first_session": "2025-01-02",
+      "last_session": "2026-09-18",
+      "cost_bps": 25.0,
+      "cash_yield": 0.0,
+      "annualization_sessions": 252,
+      "rolling_windows_overlap": true,
+      "rolling_tie_tolerance": {
+        "relative": 1e-12,
+        "absolute": 1e-12
+      },
+      "turnover_definition": "Bought-plus-sold notional divided by starting NAV; annual figure uses mean observed NAV and elapsed session-years. Neither is the sum of individual trade notional divided by contemporaneous NAV.",
+      "provenance": "Supplied account curves; costs and execution are caller-attested",
+      "rows": {
+        "incumbent": {
+          "return_intervals": 428,
+          "total_return": 3.8044991682962976,
+          "cagr": 1.5196732287995292,
+          "max_drawdown": -0.3215420252116724,
+          "sharpe_zero_risk_free": 2.2135566319959112,
+          "traded_notional_per_starting_nav": 64.98650043401628,
+          "annual_traded_notional_over_mean_nav": 16.334913210501966,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8770491803278688,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8907103825136612,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.0,
+                "ties": 366
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 177
+              }
+            }
+          }
+        },
+        "candidate": {
+          "return_intervals": 428,
+          "total_return": 2.2678354630732436,
+          "cagr": 1.0081155770080221,
+          "max_drawdown": -0.3741821403697194,
+          "sharpe_zero_risk_free": 1.7795837949040703,
+          "traded_notional_per_starting_nav": 61.122979853097064,
+          "annual_traded_notional_over_mean_nav": 20.775761175745128,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.860655737704918,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8770491803278688,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.07377049180327869,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        },
+        "equal_weight": {
+          "return_intervals": 428,
+          "total_return": 1.3408236196719163,
+          "cagr": 0.64998031142219,
+          "max_drawdown": -0.3351076401127565,
+          "sharpe_zero_risk_free": 1.6100315606898554,
+          "traded_notional_per_starting_nav": 2.4931734861773602,
+          "annual_traded_notional_over_mean_nav": 0.9506135684132078,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.8306010928961749,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.855191256830601,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 1.0,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.10655737704918032,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        },
+        "SPY": {
+          "return_intervals": 428,
+          "total_return": 0.31533375542394815,
+          "cagr": 0.17513184807039964,
+          "max_drawdown": -0.18755226260622693,
+          "sharpe_zero_risk_free": 1.026409091484824,
+          "traded_notional_per_starting_nav": null,
+          "annual_traded_notional_over_mean_nav": null,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.0,
+                "ties": 366
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 177
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.4016393442622951,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.02824858757062147,
+                "ties": 0
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.12295081967213115,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        },
+        "QQQ": {
+          "return_intervals": 428,
+          "total_return": 0.41230873710013793,
+          "cagr": 0.22539564780898785,
+          "max_drawdown": -0.22768308447040142,
+          "sharpe_zero_risk_free": 1.0177197860216065,
+          "traded_notional_per_starting_nav": null,
+          "annual_traded_notional_over_mean_nav": null,
+          "rolling_win_rate": {
+            "SPY": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.5983606557377049,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.9717514124293786,
+                "ties": 0
+              }
+            },
+            "QQQ": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.0,
+                "ties": 366
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 177
+              }
+            },
+            "incumbent": {
+              "63": {
+                "windows": 366,
+                "win_rate": 0.1092896174863388,
+                "ties": 0
+              },
+              "252": {
+                "windows": 177,
+                "win_rate": 0.0,
+                "ties": 0
+              }
+            }
+          }
+        }
+      },
+      "calendar_years": {
+        "2025": {
+          "first_session": "2025-01-02",
+          "last_session": "2025-12-31",
+          "cost_bps": 25.0,
+          "cash_yield": 0.0,
+          "annualization_sessions": 252,
+          "rolling_windows_overlap": true,
+          "rolling_tie_tolerance": {
+            "relative": 1e-12,
+            "absolute": 1e-12
+          },
+          "turnover_definition": "Bought-plus-sold notional divided by starting NAV; annual figure uses mean observed NAV and elapsed session-years. Neither is the sum of individual trade notional divided by contemporaneous NAV.",
+          "provenance": "Supplied account curves; costs and execution are caller-attested",
+          "rows": {
+            "incumbent": {
+              "return_intervals": 249,
+              "total_return": 1.1485170557885236,
+              "cagr": 1.1684053892985256,
+              "max_drawdown": -0.3215420252116724,
+              "sharpe_zero_risk_free": 2.188338334817832,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.839572192513369,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8449197860962567,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 187
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "candidate": {
+              "return_intervals": 249,
+              "total_return": 0.5326200848016669,
+              "cagr": 0.5405246908514908,
+              "max_drawdown": -0.3741821403697194,
+              "sharpe_zero_risk_free": 1.2833621636955803,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "equal_weight": {
+              "return_intervals": 249,
+              "total_return": 0.526727295939114,
+              "cagr": 0.5345302848683096,
+              "max_drawdown": -0.3351076401127565,
+              "sharpe_zero_risk_free": 1.3628067060326503,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.8181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.18181818181818182,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "SPY": {
+              "return_intervals": 249,
+              "total_return": 0.17135703211057796,
+              "cagr": 0.17359127180769302,
+              "max_drawdown": -0.18755226260622693,
+              "sharpe_zero_risk_free": 0.917447643311367,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 187
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.21390374331550802,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.16042780748663102,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "QQQ": {
+              "return_intervals": 249,
+              "total_return": 0.19973878814691814,
+              "cagr": 0.20237393160880102,
+              "max_drawdown": -0.22768308447040142,
+              "sharpe_zero_risk_free": 0.8973268781708758,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.786096256684492,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.0,
+                    "ties": 187
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 187,
+                    "win_rate": 0.15508021390374332,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "2026": {
+          "first_session": "2025-12-31",
+          "last_session": "2026-09-18",
+          "cost_bps": 25.0,
+          "cash_yield": 0.0,
+          "annualization_sessions": 252,
+          "rolling_windows_overlap": true,
+          "rolling_tie_tolerance": {
+            "relative": 1e-12,
+            "absolute": 1e-12
+          },
+          "turnover_definition": "Bought-plus-sold notional divided by starting NAV; annual figure uses mean observed NAV and elapsed session-years. Neither is the sum of individual trade notional divided by contemporaneous NAV.",
+          "provenance": "Supplied account curves; costs and execution are caller-attested",
+          "rows": {
+            "incumbent": {
+              "return_intervals": 179,
+              "total_return": 1.236193171169873,
+              "cagr": 2.1048929846748607,
+              "max_drawdown": -0.26854983104524877,
+              "sharpe_zero_risk_free": 2.3068267585270363,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8717948717948718,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.905982905982906,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.0,
+                    "ties": 117
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "candidate": {
+              "return_intervals": 179,
+              "total_return": 1.1321888545497738,
+              "cagr": 1.9035396249597152,
+              "max_drawdown": -0.2381835289339368,
+              "sharpe_zero_risk_free": 2.347467373065791,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8717948717948718,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.905982905982906,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.23076923076923078,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "equal_weight": {
+              "return_intervals": 179,
+              "total_return": 0.5332296906580416,
+              "cagr": 0.8251635439782382,
+              "max_drawdown": -0.20326276216607386,
+              "sharpe_zero_risk_free": 1.9873228610858886,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8034188034188035,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.8376068376068376,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.042735042735042736,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "SPY": {
+              "return_intervals": 179,
+              "total_return": 0.12291446533082206,
+              "cagr": 0.17727824812967516,
+              "max_drawdown": -0.08884968175523733,
+              "sharpe_zero_risk_free": 1.297439769882977,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.0,
+                    "ties": 117
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.39316239316239315,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.1282051282051282,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            },
+            "QQQ": {
+              "return_intervals": 179,
+              "total_return": 0.17718019209960634,
+              "cagr": 0.2581551598199243,
+              "max_drawdown": -0.11723568428777864,
+              "sharpe_zero_risk_free": 1.210488427746667,
+              "traded_notional_per_starting_nav": null,
+              "annual_traded_notional_over_mean_nav": null,
+              "rolling_win_rate": {
+                "SPY": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.6068376068376068,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "QQQ": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.0,
+                    "ties": 117
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                },
+                "incumbent": {
+                  "63": {
+                    "windows": 117,
+                    "win_rate": 0.09401709401709402,
+                    "ties": 0
+                  },
+                  "252": {
+                    "windows": 0,
+                    "win_rate": null,
+                    "ties": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "last_batch_training_losses": [
+    150.4761962890625,
+    138.61065673828125,
+    138.6234130859375,
+    122.19292449951172,
+    222.17453002929688,
+    190.66290283203125,
+    170.9936981201172,
+    143.3501434326172,
+    138.46484375,
+    184.23545837402344
+  ],
+  "benchmark_hashes": {
+    "/home/animallya96/anios/data/market/bars/asof=2026-09-18/SPY.parquet": "8d0b96a74e97f07751d5fe0eb149ddf378e7c750d19986fc8a33cb4deafe429a",
+    "/home/animallya96/anios/data/market/bars/asof=2026-09-18/QQQ.parquet": "e496f36ebe70fd5ddbe25115cc44883b3c690b2fa71438436468725f37d55cd3"
+  },
+  "limitations": [
+    "Price-only retrain, not frozen nightly neural",
+    "Examined 2025+ period",
+    "Current survivor cohort and reconstructed grades",
+    "No actual midpoint fills"
+  ],
+  "provenance": {
+    "training_source_revision": "1ad7e5996f57a46589a8f7585a030f7067c1e09c",
+    "report_sha256": "d6f8fe0cbf74e7318352b8e9c02910cae00164a2a4900be6a8e24a9960401c26",
+    "model_sha256": "e5594c599935a442496d837a87ff9b1f72fb9561d6342311a48b67ca52602593",
+    "input_sha256": "4f59e275eda5ee94438799639170272b4993250a4385fc6e5ebb7aefa3ee0ee8",
+    "forecast_sha256": "30cc73d2a9aaf8af429f724180f7bfac45e31173d81b24176d34ff5e29d88a26",
+    "original_result_sha256": "f94de318e2eabb96ae42179f75b7e2ced41c26266796cb88cffe8f54e75f1181",
+    "manifest_sha256": "3e7f398610919674c4f798c4b359811aeac7a2d73d1c91dbf2f0e8446d0db8f6",
+    "protocol_sha256": "8e3e76eb3472e9e902296a03d295640127ab8f02438a744ce4bcefb969732376",
+    "training_examples": 22685,
+    "last_training_label": "2023-12-27",
+    "financial_values_present": false,
+    "exchange_calendar_version": "4.13.2",
+    "torch": "2.14.0+cpu",
+    "curves_sha256": {
+      "10": "ba5625245cb66348612fdcf256cda28b20a3f8fd28ed4a29f13ba809ad795c7c",
+      "25": "27e68bebec662200cae9d0a47f2c2a65fd123d51e5a9e624c3a3e50eb74dd969"
+    }
+  }
+}
