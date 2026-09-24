@@ -30,10 +30,11 @@ the actionable count, dynamic research-vs-strategy allocation labels, and the
 lacked backend extras; the passing run used isolated `/tmp` dependencies and
 did not modify the repository environment.
 
-NOT DEPLOYED. No commit or push was made. Before release, create an authorized
-commit, run the required full gate, deploy only through `scripts/deploy.sh`, and
-exercise the real Desk workflow against that exact deployed revision. Do not
-promote a research policy as part of this UI correction.
+Implementation checkpoint `3b45ed0` was pushed to `spark/main`. NOT DEPLOYED.
+Before release, run the required full gate, deploy only through
+`scripts/deploy.sh`, and exercise the real Desk workflow against that exact
+deployed revision. Do not promote a research policy as part of this UI
+correction.
 
 ## 2026-09-24 — Corrected neural inputs and matched-rule adapter
 
