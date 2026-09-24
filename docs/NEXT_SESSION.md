@@ -8,6 +8,14 @@ research changes.
 
 ## 2026-09-24 — Zero-safe stock/SPY/QQQ/cash adapter verified; nested runner next
 
+Verified implementation checkpoint:
+`dd1a871bc3d925153b15daaf0fa50d86fd6563a6`, pushed to `spark main`, then to
+GitHub by `git push origin main` **on Spark**. Both remote main branches match;
+Spark/GitHub divergence is **0/0**. The local worktree was clean after commit;
+only Spark's pre-existing untracked `scratch/` remains there. No deployment.
+The exact implementation source passed the 526-test acceptance and eight
+archive/CLI journeys recorded below; its source hashes match the retained proof.
+
 Prior goal turn was progress: journal checkpoint `fe74e82` and handoff `8f124d6`
 were verified and synchronized. This turn started clean on `main` at
 `8f124d6c3cf5fb5f6c676bd4b4a1fb65b5b7c2d1`; `git pull --rebase origin main`
