@@ -54,8 +54,19 @@ def _record_file(root: Path, session: str) -> tuple[Path, dict]:
     record = {
         "session": session,
         "written": f"{session}T22:00:00+00:00",
-        "provenance": {"code_revision": "test-revision"},
-        "grades": {"AAA": {"ranks": {"fundamental": 0.75}}},
+        "provenance": {
+            "code_revision": "test-revision",
+            "rule": {"name": "incumbent/fixture", "inputs": ["price"]},
+        },
+        "grades": {
+            "AAA": {
+                "grade": "A",
+                "score": 0.83,
+                "side": "research",
+                "ranks": {"fundamental": 0.75},
+            }
+        },
+        "book": [{"ticker": "AAA", "weight": 0.08}],
         "regime": {"exposure": 0.5, "flags": []},
     }
     path = root / "desk.json"
@@ -64,7 +75,7 @@ def _record_file(root: Path, session: str) -> tuple[Path, dict]:
 
 
 # Future releases cannot enter tonight's features; prior releases retain
-# their score changes and source evidence, and raw range uses raw OHLC.
+# their score changes and source evidence, with range on an adjusted basis.
 def test_capture_freezes_only_known_inputs_with_explicit_missingness(tmp_path):
     panel = _panel()
     session = str(panel.dates[-1])
@@ -85,21 +96,43 @@ def test_capture_freezes_only_known_inputs_with_explicit_missingness(tmp_path):
     assert snapshot["record_sha256"]
     assert snapshot["session"] == session
     assert snapshot["benchmark"] == "SPY"
+    assert snapshot["incumbent_rule"]["name"] == "incumbent/fixture"
     assert stock["tone"]["accession"] == "latest"
     assert stock["tone_features"]["tone_guidance"] == pytest.approx(0.6)
     assert stock["tone_features"]["tone_guidance_change"] == pytest.approx(0.4)
     assert stock["fundamental_features"]["earnings_yield"] is None
     assert stock["desk_fundamental_rank"] == pytest.approx(0.75)
+    assert stock["desk_grade"] == "A"
+    assert stock["recorded_book_weight"] == pytest.approx(0.08)
     last = len(panel.dates) - 1
     expected_range = (
         panel.high[last - 19 : last + 1, 0].max()
         - panel.low[last - 19 : last + 1, 0].min()
     ) / panel.close[last, 0]
-    assert stock["price_features"]["range20_raw"] == pytest.approx(expected_range)
+    assert stock["price_features"]["range20_adjusted"] == pytest.approx(expected_range)
     assert stock["price"]["adj_close"] == pytest.approx(panel.close[last, 0] / 2)
     assert stock["current_bar_present"] is True
     assert stock["current_bar_complete"] is False  # no certified source partition
     assert "historical index membership not established" in snapshot["membership_basis"]
+
+
+# A split inside the lookback cannot masquerade as an extreme price range.
+def test_adjusted_range_ignores_pure_split():
+    panel = _panel()
+    close = panel.close.copy()
+    high = panel.high.copy()
+    low = panel.low.copy()
+    adjusted = panel.adj_close.copy()
+    close[-19:, 0] /= 10
+    high[-19:, 0] /= 10
+    low[-19:, 0] /= 10
+    adjusted[:, 0] /= 10
+    from dataclasses import replace
+
+    split = replace(panel, close=close, high=high, low=low, adj_close=adjusted)
+    original = learned_inputs._adjusted_range20(panel, len(panel.dates) - 1, 0)
+    observed = learned_inputs._adjusted_range20(split, len(panel.dates) - 1, 0)
+    assert observed == pytest.approx(original)
 
 
 # A second capture of the same record is a no-op; changed source bytes may

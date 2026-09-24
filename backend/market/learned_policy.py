@@ -158,20 +158,52 @@ def eligible_training_sessions(fit_session: int, horizon_end: int) -> np.ndarray
     return np.arange(max(0, fit_session - horizon_end), dtype=int)
 
 
+# Validate later-observed outcomes independently from decision-time features.
+def _ranker_outcomes(inputs, dates, observed_labels, labels_recorded_on):
+    if observed_labels is None:
+        if labels_recorded_on is not None:
+            raise ValueError("label dates require observed labels")
+        y = relative_open_labels(inputs)
+        label_when = np.broadcast_to(dates[:, None], y.shape)
+    else:
+        if labels_recorded_on is None:
+            raise ValueError("observed labels require publication dates")
+        y = np.asarray(observed_labels, dtype=float)
+        label_when = np.asarray(labels_recorded_on, dtype="datetime64[D]")
+        if y.shape != inputs.membership.shape or label_when.shape != y.shape:
+            raise ValueError("observed labels and publication dates must align")
+        if np.isinf(y).any() or np.any(
+            np.isfinite(y) & np.isnat(label_when)
+        ):
+            raise ValueError("observed label has no valid publication date")
+        for t in range(len(dates)):
+            finite = np.isfinite(y[t])
+            if finite.any() and (
+                t + RANKER_LABEL_END >= len(dates)
+                or np.any(label_when[t, finite] < dates[t + RANKER_LABEL_END])
+            ):
+                raise ValueError("observed label predates its exit session")
+    return y, label_when
+
+
 # Freeze the fit before each calendar month and score only later sessions.
 def walk_forward_ranker(
     inputs: HistoricalInputs,
     *,
     first_training_sessions: int = RANKER_MIN_SESSIONS,
+    observed_labels: np.ndarray | None = None,
+    labels_recorded_on: np.ndarray | None = None,
 ) -> Forecasts:
-    """Fit one deterministic pooled booster per month on matured labels."""
+    """Fit monthly only on labels published before the scoring month."""
     dates, spy = validate(inputs)
     if first_training_sessions < 2:
         raise ValueError("training history is too short")
     from sklearn.ensemble import HistGradientBoostingRegressor
 
     x = cross_sectional_ranks(inputs)
-    y = relative_open_labels(inputs)
+    y, label_when = _ranker_outcomes(
+        inputs, dates, observed_labels, labels_recorded_on
+    )
     prediction = np.full(y.shape, np.nan)
     fit_dates = np.full(len(dates), np.datetime64("NaT", "D"))
     cutoffs = np.full(len(dates), -1, dtype=int)
@@ -187,9 +219,18 @@ def walk_forward_ranker(
             else len(dates)
         )
         eligible = eligible_training_sessions(int(start), RANKER_LABEL_END)
-        train_mask = np.isfinite(y[eligible]) & np.isfinite(x[eligible]).all(axis=2)
+        train_mask = (
+            np.isfinite(y[eligible])
+            & (label_when[eligible] < dates[start])
+            & (inputs.membership[eligible] == 1)
+            & np.isfinite(x[eligible]).any(axis=2)
+        )
         train_mask[:, spy] = False
         if np.count_nonzero(train_mask.any(axis=1)) < first_training_sessions:
+            continue
+        train_x = x[eligible][train_mask]
+        columns = np.isfinite(train_x).any(axis=0)
+        if not columns.any():
             continue
         model = HistGradientBoostingRegressor(
             max_iter=200,
@@ -200,18 +241,19 @@ def walk_forward_ranker(
             early_stopping=False,
             random_state=0,
         )
-        model.fit(x[eligible][train_mask], y[eligible][train_mask])
-        valid = (inputs.membership[start:end] == 1) & np.isfinite(x[start:end]).all(
-            axis=2
-        )
+        model.fit(train_x[:, columns], y[eligible][train_mask])
+        valid = (inputs.membership[start:end] == 1) & np.isfinite(
+            x[start:end][:, :, columns]
+        ).any(axis=2)
         valid[:, spy] = False
         block = prediction[start:end]
         if valid.any():
-            block[valid] = model.predict(x[start:end][valid])
+            block[valid] = model.predict(x[start:end][valid][:, columns])
         fit_dates[start:end] = dates[start]
         cutoffs[start:end] = int(eligible[-1] + RANKER_LABEL_END)
         digest = sha256()
-        digest.update(np.ascontiguousarray(x[eligible][train_mask]).tobytes())
+        digest.update(np.ascontiguousarray(columns).tobytes())
+        digest.update(np.ascontiguousarray(train_x[:, columns]).tobytes())
         digest.update(np.ascontiguousarray(y[eligible][train_mask]).tobytes())
         digest.update(pickle.dumps(model, protocol=5))
         hashes.append(f"{dates[start]}:{digest.hexdigest()}")
@@ -237,6 +279,40 @@ def future_drawdown_labels(qqq_close: np.ndarray) -> np.ndarray:
     return labels
 
 
+# Validate a crash outcome separately from the market's decision features.
+def _brake_outcomes(calendar, qqq_close, observed_labels, labels_recorded_on):
+    if observed_labels is None:
+        if labels_recorded_on is not None:
+            raise ValueError("brake label dates require observed labels")
+        labels = future_drawdown_labels(qqq_close)
+        label_when = calendar
+    else:
+        if labels_recorded_on is None:
+            raise ValueError("observed brake labels require publication dates")
+        labels = np.asarray(observed_labels, dtype=float)
+        label_when = np.asarray(labels_recorded_on, dtype="datetime64[D]")
+        if labels.shape != calendar.shape or label_when.shape != calendar.shape:
+            raise ValueError("brake labels and publication dates must align")
+        if np.isinf(labels).any() or np.any(
+            np.isfinite(labels) & np.isnat(label_when)
+        ):
+            raise ValueError("brake label has no valid publication date")
+        for t in np.flatnonzero(np.isfinite(labels)):
+            if (
+                t + BRAKE_HORIZON >= len(calendar)
+                or label_when[t] < calendar[t + BRAKE_HORIZON]
+            ):
+                raise ValueError("brake label predates its outcome session")
+    return labels, label_when
+
+
+# Impute from a fit's own past rows and retain missingness as model evidence.
+def _brake_matrix(block, medians, mean, scale):
+    missing = ~np.isfinite(block)
+    filled = np.where(missing, medians, block)
+    return np.concatenate(((filled - mean) / scale, missing.astype(float)), axis=1)
+
+
 # Refit the same market-only risk model on matured observations every quarter.
 def walk_forward_brake(
     market_features: np.ndarray,
@@ -246,6 +322,8 @@ def walk_forward_brake(
     qqq_recorded_on: np.ndarray,
     *,
     first_training_sessions: int = BRAKE_MIN_SESSIONS,
+    observed_labels: np.ndarray | None = None,
+    labels_recorded_on: np.ndarray | None = None,
 ) -> Forecasts:
     """Return out-of-sample crash probabilities with a 20-session purge."""
     from sklearn.linear_model import LogisticRegression
@@ -272,7 +350,9 @@ def walk_forward_brake(
         & (np.isnat(close_published) | (close_published > calendar))
     ):
         raise ValueError("QQQ close was not recorded by its session")
-    labels = future_drawdown_labels(qqq_close)
+    labels, label_when = _brake_outcomes(
+        calendar, qqq_close, observed_labels, labels_recorded_on
+    )
     prediction = np.full(len(calendar), np.nan)
     fit_dates = np.full(len(calendar), np.datetime64("NaT", "D"))
     cutoffs = np.full(len(calendar), -1, dtype=int)
@@ -280,27 +360,43 @@ def walk_forward_brake(
     for start in range(first_training_sessions, len(calendar), BRAKE_REFIT_SESSIONS):
         end = min(start + BRAKE_REFIT_SESSIONS, len(calendar))
         eligible = eligible_training_sessions(start, BRAKE_HORIZON)
-        valid = np.isfinite(labels[eligible]) & np.isfinite(x[eligible]).all(axis=1)
+        valid = (
+            np.isfinite(labels[eligible])
+            & (label_when[eligible] < calendar[start])
+            & np.isfinite(x[eligible]).any(axis=1)
+        )
         if (
             valid.sum() < first_training_sessions
             or len(np.unique(labels[eligible][valid])) < 2
         ):
             continue
         train_x = x[eligible][valid]
-        mean, scale = train_x.mean(axis=0), train_x.std(axis=0)
+        columns = np.isfinite(train_x).any(axis=0)
+        if not columns.any():
+            continue
+        selected = train_x[:, columns]
+        medians = np.nanmedian(selected, axis=0)
+        filled = np.where(np.isfinite(selected), selected, medians)
+        mean, scale = filled.mean(axis=0), filled.std(axis=0)
         scale[scale == 0] = 1
         model = LogisticRegression(C=1.0, max_iter=300, random_state=0)
-        model.fit((train_x - mean) / scale, labels[eligible][valid])
-        score_valid = np.isfinite(x[start:end]).all(axis=1)
+        model.fit(
+            _brake_matrix(selected, medians, mean, scale), labels[eligible][valid]
+        )
+        score_valid = np.isfinite(x[start:end][:, columns]).any(axis=1)
         score_block = prediction[start:end]
         if score_valid.any():
             score_block[score_valid] = model.predict_proba(
-                (x[start:end][score_valid] - mean) / scale
+                _brake_matrix(
+                    x[start:end][score_valid][:, columns], medians, mean, scale
+                )
             )[:, 1]
         fit_dates[start:end] = calendar[start]
         cutoffs[start:end] = int(eligible[-1] + BRAKE_HORIZON)
         digest = sha256()
-        digest.update(np.ascontiguousarray(train_x).tobytes())
+        digest.update(np.ascontiguousarray(columns).tobytes())
+        digest.update(np.ascontiguousarray(medians).tobytes())
+        digest.update(np.ascontiguousarray(filled).tobytes())
         digest.update(np.ascontiguousarray(labels[eligible][valid]).tobytes())
         digest.update(pickle.dumps(model, protocol=5))
         hashes.append(f"{calendar[start]}:{digest.hexdigest()}")

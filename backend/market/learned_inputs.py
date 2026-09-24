@@ -37,21 +37,25 @@ def _named(names: tuple[str, ...], values: np.ndarray) -> dict[str, float | None
     return {name: _number(value) for name, value in zip(names, values, strict=True)}
 
 
-# Measure the last twenty sessions' raw high-to-low span on one price basis.
-def _raw_range20(panel, last: int, column: int) -> float | None:
+# Measure the last twenty sessions' range on one split-adjusted price basis.
+def _adjusted_range20(panel, last: int, column: int) -> float | None:
     if last < 19:
         return None
     highs = panel.high[last - 19 : last + 1, column]
     lows = panel.low[last - 19 : last + 1, column]
-    close = _number(panel.close[last, column])
+    closes = panel.close[last - 19 : last + 1, column]
+    adjusted = panel.adj_close[last - 19 : last + 1, column]
     if (
-        close is None
-        or close <= 0
+        not np.isfinite(closes).all()
+        or not np.isfinite(adjusted).all()
+        or np.any(closes <= 0)
+        or np.any(adjusted <= 0)
         or not np.isfinite(highs).all()
         or not np.isfinite(lows).all()
     ):
         return None
-    return _number((np.max(highs) - np.min(lows)) / close)
+    ratio = adjusted / closes
+    return _number((np.max(highs * ratio) - np.min(lows * ratio)) / adjusted[-1])
 
 
 # Select only releases whose reaction session had begun by this observation.
@@ -97,6 +101,10 @@ def build(
     bar_sources = dict(
         zip(panel.tickers, store.describe(panel.tickers, session), strict=True)
     )
+    book_weights = {
+        row["ticker"]: _number(row.get("weight"))
+        for row in record.get("book", ())
+    }
     rows = {}
     for column, ticker in enumerate(panel.tickers):
         tone = known_tone[ticker][-1] if known_tone[ticker] else None
@@ -120,6 +128,10 @@ def build(
                 "model": tone.model,
             }
         rows[ticker] = {
+            "desk_grade": grade.get("grade"),
+            "desk_score": _number(grade.get("score")),
+            "desk_side": grade.get("side"),
+            "recorded_book_weight": book_weights.get(ticker),
             "current_bar_present": current_bar,
             "current_bar_complete": bool(
                 current_bar
@@ -142,7 +154,7 @@ def build(
             "price_features": _named(
                 growth_pilot.FEATURE_NAMES,
                 fundamental_values[last, column, :price_count],
-            ) | {"range20_raw": _raw_range20(panel, last, column)},
+            ) | {"range20_adjusted": _adjusted_range20(panel, last, column)},
             "fundamental_features": _named(
                 tuple(fundamental_names[price_count:]),
                 fundamental_values[last, column, price_count:],
@@ -167,6 +179,7 @@ def build(
         "record_written_at": record_written.isoformat(),
         "record_sha256": record_sha256,
         "code_revision": (record.get("provenance") or {}).get("code_revision"),
+        "incumbent_rule": ((record.get("provenance") or {}).get("rule") or {}),
         "price_basis": (
             "daily raw OHLC and retrospectively adjusted close, "
             "each frozen at capture"

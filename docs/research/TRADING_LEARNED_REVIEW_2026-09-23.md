@@ -87,6 +87,31 @@ cannot be compared blindly with a new vintage. There is still no sourced
 historical membership or 2016–26 point-in-time training set, so the table
 above stays unverified and the learned policies remain shadow-only.
 
+## Frozen archive-to-model bridge, pending release
+
+`backend.market.learned_archive` now reads only nightly observations actually
+captured on their decision session. It keeps missing sessions, grades and
+features explicit. A stock outcome is its next-session adjusted open to the
+open eleven exchange sessions after the decision, less SPY's log return on
+the same endpoints. Both adjusted opens are computed from one first mature
+bar partition using each bar's own adjusted-close/raw-close ratio. The
+20-session QQQ crash label likewise reads one mature partition. A missing
+name or endpoint in that first partition stays missing; a later partition
+cannot rescue it. Labels retain their actual source publication date, and
+monthly rank/quarterly brake fits accept them only after publication and the
+fixed label-overlap purge. Missing feature columns are handled inside each
+past-only fit. `fit_shadow` produces no forecast before its registered
+training minimum rather than substituting a hindsight fit.
+
+The prospective 20-session high-low range is adjusted bar by bar with the
+same capture-vintage `adjusted_close / close` ratio. A synthetic pure-split
+test now confirms that the range does not become a false price shock. There
+were no `learned_inputs` observations before this correction, so no saved
+feature was rewritten. A source bar vintage may still be restated after
+capture, and absent delisted-name endpoints remain missing. These controls
+make future shadow evaluation causal; they do not create an adoption-grade
+2016–26 history or evidence that the learned policy beats the live rule.
+
 ## Independent review of the separate OpenCode groundwork
 
 The shared development checkout has local commit `fc703b0` adding

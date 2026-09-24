@@ -90,6 +90,52 @@ def test_monthly_fits_are_purged_and_future_rows_cannot_change_old_scores():
     assert result.model_hash[0] == extended.model_hash[0]
 
 
+# Archived labels can arrive after their outcome session; a monthly fit must
+# wait for actual publication, even when the return itself is already known.
+def test_observed_labels_require_maturity_and_publication_before_fit():
+    inputs = _inputs(170)
+    labels = lp.relative_open_labels(inputs)
+    published = np.full(labels.shape, np.datetime64("NaT", "D"))
+    for t in range(len(inputs.dates) - lp.RANKER_LABEL_END):
+        published[t, np.isfinite(labels[t])] = inputs.dates[
+            t + lp.RANKER_LABEL_END
+        ]
+    normal = lp.walk_forward_ranker(
+        inputs,
+        first_training_sessions=45,
+        observed_labels=labels,
+        labels_recorded_on=published,
+    )
+    assert np.isfinite(normal.values[:, 1]).any()
+    partly_missing = inputs.features.copy()
+    partly_missing[:, :, 0] = np.nan
+    with_missing = lp.walk_forward_ranker(
+        replace(inputs, features=partly_missing),
+        first_training_sessions=45,
+        observed_labels=labels,
+        labels_recorded_on=published,
+    )
+    assert np.isfinite(with_missing.values[:, 1]).any()
+    delayed = published.copy()
+    delayed[np.isfinite(labels)] = inputs.dates[-1]
+    no_early_fit = lp.walk_forward_ranker(
+        inputs,
+        first_training_sessions=45,
+        observed_labels=labels,
+        labels_recorded_on=delayed,
+    )
+    assert np.isnan(no_early_fit.values).all()
+    premature = published.copy()
+    premature[0, 1] = inputs.dates[5]
+    with pytest.raises(ValueError, match="predates its exit"):
+        lp.walk_forward_ranker(
+            inputs,
+            first_training_sessions=45,
+            observed_labels=labels,
+            labels_recorded_on=premature,
+        )
+
+
 # Missing or ambiguous cross-sectional inputs cannot acquire a ranked value.
 def test_cross_sectional_ranks_preserve_missing_and_ties():
     inputs = _inputs(20)
@@ -145,6 +191,73 @@ def test_brake_walk_forward_purges_twenty_sessions():
     with pytest.raises(ValueError, match="QQQ close was not recorded"):
         lp.walk_forward_brake(
             features, published, inputs.dates, qqq, late, first_training_sessions=40
+        )
+
+
+# A fixed-horizon crash label is trainable only after its observed publication.
+def test_brake_respects_external_label_availability():
+    inputs = _inputs(170)
+    t = np.arange(170)
+    qqq = 100 + 2 * np.sin(t / 8)
+    qqq[50:60] -= 15
+    qqq[110:120] -= 15
+    features = np.column_stack((qqq, np.sin(t / 9)))
+    published = np.broadcast_to(inputs.dates[:, None], features.shape).copy()
+    labels = lp.future_drawdown_labels(qqq)
+    label_when = np.full(170, np.datetime64("NaT", "D"))
+    for row in np.flatnonzero(np.isfinite(labels)):
+        label_when[row] = inputs.dates[row + lp.BRAKE_HORIZON]
+    qqq_missing = np.full(170, np.nan)
+    unavailable = np.full(170, np.datetime64("NaT", "D"))
+    normal = lp.walk_forward_brake(
+        features,
+        published,
+        inputs.dates,
+        qqq_missing,
+        unavailable,
+        first_training_sessions=40,
+        observed_labels=labels,
+        labels_recorded_on=label_when,
+    )
+    assert np.isfinite(normal.values).any()
+    partly_missing = features.copy()
+    partly_missing[:, 0] = np.nan
+    with_missing = lp.walk_forward_brake(
+        partly_missing,
+        published,
+        inputs.dates,
+        qqq_missing,
+        unavailable,
+        first_training_sessions=40,
+        observed_labels=labels,
+        labels_recorded_on=label_when,
+    )
+    assert np.isfinite(with_missing.values).any()
+    delayed = label_when.copy()
+    delayed[np.isfinite(labels)] = inputs.dates[-1]
+    no_early_fit = lp.walk_forward_brake(
+        features,
+        published,
+        inputs.dates,
+        qqq_missing,
+        unavailable,
+        first_training_sessions=40,
+        observed_labels=labels,
+        labels_recorded_on=delayed,
+    )
+    assert np.isnan(no_early_fit.values).all()
+    premature = label_when.copy()
+    premature[0] = inputs.dates[10]
+    with pytest.raises(ValueError, match="predates its outcome"):
+        lp.walk_forward_brake(
+            features,
+            published,
+            inputs.dates,
+            qqq_missing,
+            unavailable,
+            first_training_sessions=40,
+            observed_labels=labels,
+            labels_recorded_on=premature,
         )
 
 
