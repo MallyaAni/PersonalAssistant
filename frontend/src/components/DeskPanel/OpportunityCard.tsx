@@ -1,4 +1,5 @@
 import type { DeskOpportunity } from '../../services/api'
+import { EVENING_VOTE_CONTEXT, analystLabel } from './analystLabels'
 
 // Explain every contribution without presenting analyst conviction as a return forecast.
 export const OpportunityCard = ({reading, now}: {reading?: DeskOpportunity; now: number}) => {
@@ -15,16 +16,16 @@ export const OpportunityCard = ({reading, now}: {reading?: DeskOpportunity; now:
     <p className="mt-1 text-xs text-[#6e6e73]">{current ? `Indicative at ${reading!.price!.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}`
       : last !== null ? `Last reading${barTime ? ` at the ${barTime} ET bar` : ''} · refreshes with the next candle`
       : 'Fresh, complete analyst evidence is required.'}</p>
-    <p className="mt-1 text-[11px] text-[#6e6e73]">Continuous analyst conviction, not the grade: the grade is votes that flip only after three sessions, so the two can move apart.</p>
+    <p className="mt-1 text-[11px] text-[#6e6e73]">Continuous analyst conviction, not the combined grade. {EVENING_VOTE_CONTEXT}</p>
     {shown && <>
       <p className="mt-1 text-[11px] text-[#6e6e73]">Analyst evidence index · not a return forecast{!reading!.valuation_current ? ' · valuation is nightly' : ''}</p>
       <div className="mt-3 space-y-2">{[...reading!.parts].sort((a, b) => b.weight * (b.score - 5) - a.weight * (a.score - 5)).map(part => <div key={part.analyst} className="text-xs">
-        <div className="flex justify-between gap-2"><span className="capitalize">{part.analyst}</span><span>{part.score.toFixed(1)}/10 · {total > 0 ? `${(part.weight / total * 100).toFixed(0)}% weight` : 'no weight'}</span></div>
+        <div className="flex justify-between gap-2"><span>{analystLabel(part.analyst)}</span><span>{part.score.toFixed(1)}/10 · {total > 0 ? `${(part.weight / total * 100).toFixed(0)}% weight` : 'no weight'}</span></div>
         <p className="text-[11px] text-[#6e6e73]">{part.score > 5 ? 'Raises score' : part.score < 5 ? 'Lowers score' : 'Neutral'} · {part.basis === 'intraday' ? 'current bar' : `${part.basis} close`}{part.source === 'recorded_vote' ? ' · recorded vote' : ''}</p>
         {part.evidence[0] && <p className="mt-0.5 text-[11px] text-[#6e6e73]">{part.basis === 'intraday' ? 'Prior-close context: ' : ''}{part.evidence[0]}</p>}
       </div>)}</div>
       {!!reading!.missing?.length && <p className="mt-3 rounded bg-[#fff8e6] p-2 text-[11px] text-[#6e6e73]">
-        <span className="font-medium text-[#1d1d1f]">{reading!.missing.map(a => a[0].toUpperCase() + a.slice(1)).join(' and ')} did not vote.</span>{' '}
+        <span className="font-medium text-[#1d1d1f]">{reading!.missing.map(analystLabel).join(' and ')} had no usable percentile or fallback vote for this score.</span>{' '}
         This name is missing the data {reading!.missing.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score above is the
         remaining {reading!.parts.length} renormalised to full weight, and the weights below are shares of what is left.
         That is not the same as {reading!.missing.length === 1 ? 'a neutral vote' : 'neutral votes'}: a name can rank high here on a

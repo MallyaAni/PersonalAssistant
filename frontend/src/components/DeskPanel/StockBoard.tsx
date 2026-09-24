@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord, DeskPaperLive } from '../../services/api'
+import { analystLabel } from './analystLabels'
 
 // The three things the desk can be doing about a name. Declared here because
 // this is the board that lists them and DeskPanel already imports from it; the
@@ -452,7 +453,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           <tr>
             <th className="py-2">#</th>
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
-            <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current. A+ is a grade, not a Buy signal or a probability of profit.`}>Grade</SortHead>
+            <SortHead column="grade" sort={sort} onSort={setSort} title={`Combined analyst grade, A+ down to C, from the ${latest.session} close or a current intraday update. Not an individual analyst percentile, intrinsic fair value, Buy signal or probability of profit.`}>Grade</SortHead>
             <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10, not a return forecast. A star marks a name scored without the full panel.">Opportunity</SortHead>
             {planAction
               ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />
@@ -508,7 +509,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               {row.opportunity.toFixed(1)}/10
               {!!row.narrow.length && <span
                 className="ml-0.5 cursor-help font-medium text-[#9a6700]"
-                title={`Scored without ${row.narrow.join(' and ')}: this name is missing the data ${row.narrow.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score is the rest renormalised. Open the name for the parts.`}
+                title={`Scored without ${row.narrow.map(analystLabel).join(' and ')}: this name is missing the data ${row.narrow.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score is the rest renormalised. Open the name for the parts.`}
               >*</span>}
             </> : '—'}</td>
             <td className="text-xs" aria-label={isCash || tradeNode ? undefined : `${row.ticker} strategy intent`}>{isCash ? 'HOLD' : tradeNode ?? (plan === 'Hold' ? 'Hold' : plan.toUpperCase())}</td>

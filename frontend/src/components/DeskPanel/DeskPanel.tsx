@@ -11,6 +11,7 @@ import { TickerChart } from './TickerChart'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
+import { ANALYST_MEANINGS, EVENING_VOTE_CONTEXT, analystLabel } from './analystLabels'
 import {
   getDesk,
   getDeskEarnings,
@@ -121,7 +122,7 @@ const TRIGGER_ORDER: [string, string][] = [
   ['rotation', 'R'],
 ]
 const TRIGGER_LEGEND =
-  'The analysts: F business fundamentals, T price trend, S earnings-release tone, V price vs value, R which group leads. + for, · neutral or unavailable, − against.'
+  `${ANALYST_MEANINGS} + for, · neutral or unavailable, − against.`
 
 // The desk's warnings in plain words. A flag not listed shows as written.
 const FLAG_WORDS: Record<string, string> = {
@@ -223,11 +224,62 @@ const afterTrade = (holdings: DeskHolding[], r: Pick<DeskMineRow, 'ticker' | 'ac
   return [...rest, { ticker: r.ticker, shares: qty, entry_price: price, entry_date: fillDate, last_buy_date: fillDate }]
 }
 
-// Each analyst's rating as a 0-100 number with its mark, F T S V R.
+// Show each valid percentile beside its separate vote; missing or invalid parts remain unknown.
 const ratings = (ranks: Record<string, number> | undefined, stances: Record<string, number>) =>
-  TRIGGER_ORDER.filter(([k]) => ranks && k in ranks)
-    .map(([k, letter]) => `${letter}${Math.round((ranks?.[k] ?? 0) * 100)}${STANCE_MARK[stances[k] ?? 0]}`)
+  TRIGGER_ORDER.filter(([k]) => (ranks && k in ranks) || k in stances)
+    .map(([k, letter]) => {
+      const rank = ranks?.[k]
+      const number = typeof rank === 'number' && Number.isFinite(rank) && rank >= 0 && rank <= 1 ? Math.round(rank * 100) : ''
+      return `${letter}${number}${k in stances ? STANCE_MARK[stances[k]] ?? '?' : '?'}`
+    })
     .join(' ')
+
+// Explain the percentile/vote shorthand without presenting the parts as individual letter grades.
+const AnalystRatings = ({ranks, stances, session}: {ranks?: Record<string, number>; stances: Record<string, number>; session: string}) => (
+  <div className="mt-2 text-xs text-[#6e6e73]">
+    <p>Analyst percentiles and votes · intraday where available; otherwise {session} close</p>
+    <p className="font-mono text-[11px]" title={TRIGGER_LEGEND}>{ratings(ranks, stances) || 'Analyst parts not recorded.'}</p>
+    <p className="mt-1 text-[11px]">Numbers are rounded percentiles (0–100); signs are votes, not individual letter grades or probabilities of profit. No number means no valid percentile is available. ? means the vote is missing or invalid.</p>
+    <p className="mt-1 text-[11px]">{EVENING_VOTE_CONTEXT}</p>
+  </div>
+)
+
+const FUNDAMENTAL_PERIOD_LABELS: [string, string][] = [
+  ['revenue_yoy', 'Revenue growth, year over year'],
+  ['revenue_qoq', 'Revenue growth, quarter over quarter'],
+  ['revenue_acceleration', 'Revenue growth acceleration'],
+  ['gross_margin', 'Gross margin'],
+  ['net_margin', 'Net margin'],
+  ['capex_to_revenue', 'Capital expenditure / revenue'],
+  ['ocf_to_revenue', 'Operating cash flow / revenue'],
+]
+
+// Keep only actual ISO calendar dates, without normalizing invalid dates into a different quarter.
+const recordedFiscalDate = (value: string | undefined): string | null => {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const parsed = new Date(`${value}T00:00:00Z`)
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null
+}
+
+// Scope stored fiscal metadata to this decision and expose the absence of a grade-linked release.
+const RecordedAnalystDates = ({fundamental, ticker}: {fundamental: DeskRecord['fundamental']; ticker: string}) => {
+  const dates = fundamental?.dates?.[ticker]
+  const periods = FUNDAMENTAL_PERIOD_LABELS.map(([key, label]) => ({key, label, date: recordedFiscalDate(dates?.[key])}))
+  const hasDates = periods.some(period => period.date !== null)
+  return <section aria-label="Recorded analyst evidence dates" className="mt-2 text-xs text-[#6e6e73]">
+    <details>
+      <summary className="cursor-pointer text-[#0071e3]">Evidence dates for this decision</summary>
+      <p className="mt-2">F reference fiscal period ends, not filing or release dates. Metrics can refer to different periods; these dates do not date S or V.</p>
+      <p className="mt-1">These dates describe recorded evidence, not necessarily the readings that established a persisted vote.</p>
+      <p className="mt-1">F fiscal-date metadata source: {fundamental?.source || 'not recorded'}.</p>
+      {hasDates ? <table aria-label="Fundamental fiscal period ends" className="mt-2 w-full text-left">
+        <thead><tr><th className="font-medium">Metric</th><th className="font-medium">Fiscal period end</th></tr></thead>
+        <tbody>{periods.map(period => <tr key={period.key}><td className="pr-3 py-0.5">{period.label}</td><td className="whitespace-nowrap">{period.date ?? 'Unavailable'}</td></tr>)}</tbody>
+      </table> : <p className="mt-1">F fiscal period dates are unavailable for this name. Missing or invalid dates do not establish that the analyst had no financial evidence.</p>}
+      <p className="mt-2">No source-release link is recorded for the S vote. Dates in the separately loaded earnings read do not identify the release used for this grade.</p>
+    </details>
+  </section>
+}
 
 // Preserve each recorded reasoning line without rewriting or truncating its text.
 const ReasonLines = ({ text }: { text: string }) => (
@@ -238,14 +290,17 @@ const ReasonLines = ({ text }: { text: string }) => (
   </ul>
 )
 
-// Date the recorded grade and reasons while preserving the original headline as archived wording.
-const EveningAnalysis = ({grade, session, written}: {grade: DeskGrade; session: string; written: string}) => (
+// Date the stored grade and its own metadata while preserving the original headline and reasons.
+const EveningAnalysis = ({grade, session, written, fundamental, ticker}: {grade: DeskGrade; session: string; written: string; fundamental: DeskRecord['fundamental']; ticker: string}) => (
   <section aria-label="Evening analysis">
     <h4 className="font-medium text-[#6e6e73]">Evening analysis · {session}</h4>
     <p className="font-medium text-[#1d1d1f]">Recorded grade {grade.grade}</p>
     <p className="font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{triggers(grade.stances ?? {}) || 'Analyst votes not recorded.'}</p>
-    <p className="text-xs text-[#6e6e73]">Not a current trade instruction.</p>
+    <p className="text-xs text-[#6e6e73]">Combined analyst grade. Not a current trade instruction.</p>
+    <p className="mt-1 text-[11px] text-[#6e6e73]">{ANALYST_MEANINGS}</p>
+    <p className="mt-1 text-[11px] text-[#6e6e73]">Stored readings are not a causal breakdown of the votes. {EVENING_VOTE_CONTEXT}</p>
     {grade.reason && <ReasonLines text={grade.reason} />}
+    <RecordedAnalystDates fundamental={fundamental} ticker={ticker} />
     {grade.headline && <details className="mt-2 text-xs">
       <summary className="cursor-pointer text-[#0071e3]">Original recorded wording</summary>
       <p className="mt-1 text-[#6e6e73]">Written {marketTime(written)}. Preserved unchanged; this historical wording is not a current trade instruction.</p>
@@ -726,8 +781,8 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">Grade</dt>
         <dd className="text-[#6e6e73]">
-          A+ down to C, from five analysts voting: business fundamentals, price trend, earnings-release
-          tone, price against value, and which group is leading. Evening votes use persistence rules;
+          A+ down to C is the combined grade from analyst votes: growth &amp; margins, price trend, earnings-release
+          tone, relative valuation (not intrinsic fair value), and which group is leading. Evening votes use persistence rules;
           intraday readings can update price-sensitive inputs. One bearish core analyst caps a name at B.
         </dd>
       </div>
@@ -1135,13 +1190,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <section aria-label="Latest available grade" className="mb-3">
           <h4 className="font-medium text-[#6e6e73]">Latest available grade</h4>
           <p className="font-medium text-[#1d1d1f]"><span aria-label="Latest grade value">{fresh?.grade_live ?? r?.grade_live ?? g.grade}</span> · {intradayGrade ? 'intraday grade' : `at the ${latest.session} close`}</p>
-          <p className="mt-2 text-[#6e6e73]">Analyst ratings · intraday where available; otherwise {latest.session} close</p>
-          <p className="font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{ranks ? ratings(ranks, stances) : triggers(stances)}</p>
+          <AnalystRatings ranks={ranks} stances={stances} session={latest.session} />
           {currentStances && <VoteChanges evening={g.stances ?? {}} current={currentStances} />}
           <p className="mt-2 text-[#6e6e73]">{quote ? <>Bar price {priceMoney(quote.last)} · interval start {marketTime(quote.bar)}{now - Date.parse(quote.bar) >= 30 * 60 * 1000 ? ' · last known bar' : ''}</> : 'Bar price unavailable'}. A bar price is not an executable quote.</p>
           <div className="mt-2 text-[#6e6e73]"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
         </section>
-        <EveningAnalysis grade={g} session={latest.session} written={latest.written} />
+        <EveningAnalysis grade={g} session={latest.session} written={latest.written} fundamental={latest.fundamental} ticker={ticker} />
         {(latest.briefs?.[ticker] || g.read) && <ArchivedCommentary brief={latest.briefs?.[ticker]} read={g.read} written={latest.written} />}
       </div>
       <div className="flex flex-col items-start gap-2">
@@ -2061,16 +2115,18 @@ const DeskGuide = ({latest, open}: {latest: DeskRecord; open: boolean}) => {
         <summary className="cursor-pointer font-medium">Desk guide · ranking and timing</summary>
       <details className="mt-3">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
-        <p className="mt-2">{TRIGGER_LEGEND} Ratings show relative rank, not probability of profit. The default stock order puts positive displayed allocations first, largest to smallest, then grade, opportunity and conviction. Column headings can change the order. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
-        <p className="mt-2">Current voting rules: fundamentals, technicals, release sentiment and valuation each carry one vote;
+        <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. The default stock order puts positive displayed allocations first, largest to smallest, then grade, opportunity and conviction. Column headings can change the order. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
+        <p className="mt-2">Current voting rules: growth &amp; margins, price trend, earnings-release tone and relative valuation each carry one vote;
           rotation carries half a vote. A bearish core analyst caps the grade at B.
           Position sizes also depend on volatility, grade multipliers, concentration limits and market exposure.</p>
         <p className="mt-2">{latest.provenance?.rule?.inputs?.includes('expectations-gap')
-          ? 'This evening decision includes the LightGBM expectations gap: estimated revenue growth minus price-implied growth, blended with relative valuation.'
+          ? 'This evening decision includes the LightGBM expectations gap: model-estimated revenue growth minus a relative-P/S valuation proxy, blended with relative valuation.'
           : latest.provenance?.rule?.inputs
             ? 'This evening decision does not include the LightGBM expectations gap.'
             : 'This record does not identify whether the LightGBM expectations gap was used.'}
           {' '}This is not a forecast of a future share price. Intraday updates do not retrain the learner or refresh company filings.</p>
+        {latest.provenance?.rule?.inputs?.includes('expectations-gap') && <p className="mt-2">
+          The proxy uses quarterly revenue × 4, not trailing-twelve-month revenue. It is a transformation of relative price/sales, not a measured market growth expectation or intrinsic fair value.</p>}
         {latest.provenance?.rule?.inputs?.includes('expectations-gap') && <p className="mt-2">
           Valuation stays at the evening reading: the intraday reader does not yet reproduce the growth-model blend.
           Only eligible technical readings refresh this decision's intraday grades.</p>}
@@ -2442,14 +2498,7 @@ const EarningsPanel = ({ userId, ticker }: { userId: string; ticker: string }) =
   )
 }
 
-// One name's drill-down: what the desk said about it over time, what came
-// next, and how it did under the desk's own rule versus holding it or the
-// benchmark. Read from the file the nightly run wrote.
-// The question a person opens the panel with, answered first: when the
-// grade last moved, which analyst moved it, on what readings, and the
-// rule that made the vote wait. ORCL went B to A+ on a sentiment vote
-// that had held the top of the book for three sessions since its Sep 11
-// release read, and nothing on the panel said so.
+// Show recorded grade and vote changes without inventing a cause or treating current readings as prior inputs.
 const GradeMove = ({changes, session, reads, revision}: {
   changes: {date: string; from: string; to: string; moved: string[]; said?: boolean}[]
   session: string
@@ -2459,18 +2508,15 @@ const GradeMove = ({changes, session, reads, revision}: {
   const latest = changes[0]
   // A re-read of the same release is named even when the grade did not
   // move: the vote it feeds may move on the next sessions.
-  const revised = revision ? `Data revision: the ${revision.reaction_date} release was re-read${revision.prompt_version[1] ? ` under ${revision.prompt_version[1]}` : ''}${Object.keys(revision.fields).length ? `: ${Object.entries(revision.fields).map(([field, [from, to]]) => `${field.replace('_', ' ')} ${from ?? '—'} → ${to ?? '—'}`).join(' · ')}` : ''}. A vote can move on a re-read without a new release.` : null
+  const revised = revision ? `Recorded re-read marker: market reaction on or after ${revision.reaction_date}${revision.prompt_version[1] ? `; reader ${revision.prompt_version[1]}` : ''}${Object.keys(revision.fields).length ? `: ${Object.entries(revision.fields).map(([field, [from, to]]) => `${field.replace('_', ' ')} ${from ?? '—'} → ${to ?? '—'}`).join(' · ')}` : ''}. This is not the publication date or re-read time. A vote can move on a re-read without a new release.` : null
   if (!latest) return revised ? <section aria-label="Why the grade moved" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3 text-sm"><p className="text-[11px] text-[#9a6200]">{revised}</p></section> : null
   const tonight = latest.date === session
   const moved = latest.moved.map((text) => {
     const analyst = text.split(' ')[0]
     const readings = tonight ? (reads?.[analyst] ?? []).slice(0, 2) : []
-    return {text, readings}
+    return {text: `${analystLabel(analyst)}${text.slice(analyst.length)}`, readings}
   })
   const flipped = latest.moved.some((text) => / (for|against)$/.test(text))
-  // The technical vote is price; the note that price was no input belongs
-  // only to a move by the other analysts.
-  const priceMoved = latest.moved.some((text) => text.startsWith('technical'))
   return (
     <section aria-label="Why the grade moved" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
       <p>
@@ -2485,9 +2531,10 @@ const GradeMove = ({changes, session, reads, revision}: {
           {moved.map((m) => <li key={m.text}>· {m.text.replace(/^(\w)/, (c) => c.toUpperCase())}{m.readings.length > 0 ? `: ${m.readings.join('; ')}` : ''}</li>)}
         </ul>
       ) : (
-        <p className="mt-1 text-xs text-[#6e6e73]">No analyst vote changed; the score crossed a grade line.</p>
+        <p className="mt-1 text-xs text-[#6e6e73]">No analyst vote change is recorded in this comparison; cause not recorded.</p>
       )}
-      {flipped && <p className="mt-1 text-[11px] text-[#6e6e73]">A vote flips only after the analyst has held its new view for three sessions, so the move follows the evidence by that much.{priceMoved ? ' The technical vote is price: trend, averages and levels.' : ' Price was not an input.'}</p>}
+      {moved.length > 0 && <p className="mt-1 text-[11px] text-[#6e6e73]">Recorded vote changes do not establish what caused a price move.</p>}
+      {flipped && <p className="mt-1 text-[11px] text-[#6e6e73]">{EVENING_VOTE_CONTEXT}</p>}
       {revised && <p className="mt-1 text-[11px] text-[#9a6200]">{revised}</p>}
     </section>
   )
@@ -2630,6 +2677,8 @@ const NameDetail = ({
             </span>
           </div>
         )}
+          <AnalystRatings ranks={row ? row.ranks_live ?? row.ranks : liveGrades[ticker]?.ranks_live ?? latest.grades?.[ticker]?.ranks}
+            stances={(row ? row.stances_live ?? row.stances : liveGrades[ticker]?.stances_live ?? latest.grades?.[ticker]?.stances) ?? {}} session={latest.session} />
           {currentStances && <VoteChanges evening={latest.grades?.[ticker]?.stances ?? {}} current={currentStances} />}
           <div className="mt-2 text-xs text-[#6e6e73]">
             {row ? <DecisionCell terse ticker={ticker} decisions={decisions} latest={latest} now={now} /> : 'Not on the board'}
@@ -2642,11 +2691,11 @@ const NameDetail = ({
         </section>
         {/* Recorded reasons retain their original scope even when a newer grade or price is available. */}
         {latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
-          <EveningAnalysis grade={latest.grades[ticker]} session={latest.session} written={latest.written} />
+          <EveningAnalysis grade={latest.grades[ticker]} session={latest.session} written={latest.written} fundamental={latest.fundamental} ticker={ticker} />
         </section>}
         <details aria-label="All the evidence" className="mb-3">
           <summary className="cursor-pointer text-xs text-[#0071e3]">All the evidence</summary>
-        {/* The readings the grade came from, before anything derived from them. */}
+        {/* Recorded descriptive readings, not a causal breakdown of the persisted votes. */}
         {gradeReads && (
           <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
             <h4 className="text-sm font-semibold text-[#1d1d1f]">Evening analysis · {latest.session}</h4>
@@ -2654,10 +2703,10 @@ const NameDetail = ({
                 read as five arguments rather than one list. */}
             {Object.entries(gradeReads ?? {}).map(([analyst, lines]) => {
               const vote = latest.grades?.[ticker]?.stances?.[analyst]
-              const mark = vote === 1 ? '+ for' : vote === -1 ? '− against' : '· neutral'
+              const mark = vote === 1 ? '+ for' : vote === -1 ? '− against' : vote === 0 ? '· neutral or unavailable' : 'vote missing or invalid'
               return (
                 <div key={analyst} className="mt-2">
-                  <p className="text-xs font-semibold capitalize text-[#1d1d1f]">{analyst} <span className="font-normal text-[#6e6e73]">{mark}</span></p>
+                  <p className="text-xs font-semibold text-[#1d1d1f]">{analystLabel(analyst)} <span className="font-normal text-[#6e6e73]">{mark}</span></p>
                   <ul className="mt-0.5 space-y-0.5 text-sm text-[#1d1d1f]">
                     {lines.map((line) => (
                       <li key={`${analyst}-${line}`}>· {line}</li>

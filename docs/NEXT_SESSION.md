@@ -6,6 +6,47 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Analyst meaning and attribution acceptance
+
+Started clean on `main` at `f1e717a9d5abdcb370c35856970a365e7c26a349`;
+initial pull current, final precommit fetch confirms Mac/Spark/GitHub 0/0.
+Only coordinated backend explanations, frontend presentation/tests and this
+task's documentation changed. Spark's untracked `scratch/` remains untouched.
+No deployment, prompt, fit, strategy, holding/order or persisted-history change.
+
+VERIFIED: F means growth/margins; S means earnings-release tone; V is relative
+valuation, not intrinsic fair value. A+ is a combined grade, not each analyst's
+grade or entry advice. The UI exposes each saved F fiscal reference date, labels
+unknown/invalid parts, and explicitly says the S vote lacks a source-release
+link. Recorded readings may differ from those that established a persisted
+evening vote. Original historical prose remains unchanged. Backend F/S/Value
+descriptions prioritize scored evidence, label analyst-specific context, include
+the active gap proxy and refuse unsupported peer-position claims.
+
+Validation: **136 backend cases / 22 existing warnings**, independent **15 edge
+and 810 technical-equivalence checks**, intermediate **127/127 browser cases**,
+final focused **12/12**, zero focused error/write diagnostics. Scoped lint/format,
+intermediate TypeScript/build and diff checks pass. Exact-commit full browser/
+build/backend repeat and publication are the next checkpoint step. Failed
+baselines are retained; public UI remains UNVERIFIED. Diagram impact: NONE.
+
+Evidence: `/private/tmp/anios-analyst-meaning.7EGfTl/`,
+`/private/tmp/anios-analyst-semantics.TaBMw4/`,
+`/private/tmp/anios-explanation-review.gve8arKC/`.
+[Full scope, source hashes and limits](research/desk-analyst-meaning-2026-09-24.md).
+
+Separate actual-loader reproduction is VERIFIED at the starting SHA:
+**17 assertions pass; both fixed-asof input invariants FAIL**. Appending a
+2025-01-02 partition changes a synthetic historical gap close from 11 to 91
+despite fixed `asof=2024-06-28`; all four gap reads receive `asof=None`.
+Evidence `/private/tmp/anios-asof-boundary.rm8CgF/` verifies 21 payload files /
+182,315 bytes. No fit occurs. Real affected securities, predictions and return
+inflation remain UNVERIFIED. Next atomic work is historical-input causality;
+then immutable S provenance and broader financial-quality qualification.
+The technical explanation registry's falling-regime band/support mismatch is
+still open. Keep the completed rejected historical study frozen; no retuning.
+Overall goal remains active.
+
 ## 2026-09-24 — Dated dashboard evidence verified and published
 
 Verified implementation checkpoint:

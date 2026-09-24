@@ -16,16 +16,16 @@ instruction is right - a brief that invents a number is worse than no
 brief - but the column names are not English and a list of nine of them
 is not a sentence.
 
-Nothing here calls a model. Every name gets a reason built from the same
-stances and evidence the grade was built from, so it is free, instant,
-identical every time it is asked, and incapable of inventing anything.
-The model's brief stays what it is: a longer, better-written piece for
-the names actually held.
+Nothing here calls a model or changes a score. It describes recorded votes
+and current evidence, not a causal decomposition: a persisted evening vote
+can predate the readings shown, and cross-sectional correlation is only a
+selection heuristic. The model's separate brief remains archived commentary.
 
-The rule for numbers is the same one the brief prompt uses. A figure is
-never rescaled or converted, only named in words and quoted as it stands,
-because a reader who checks it against the evidence must find the same
-number.
+For growth, release tone and Value, scored readings take precedence over
+context, and unscored context is labelled for that analyst. Relative placement
+requires a peer comparison. Distance and state formatting use their existing
+declared units. The technical evidence registry is legacy and has not received
+the same scored/context audit; its behavior is deliberately unchanged here.
 """
 
 from __future__ import annotations
@@ -43,6 +43,7 @@ from backend.market.levels import (
 # What each of the desk's measurements is called in English. A name absent
 # here is written as-is rather than guessed at, so a new measurement shows
 # up looking wrong instead of being described wrongly.
+GROWTH_GAP_LABEL = "model-estimated revenue growth minus a relative-P/S valuation proxy"
 LABELS: dict[str, str] = {
     # fundamental
     "revenue_yoy": "revenue growth over the year",
@@ -51,6 +52,7 @@ LABELS: dict[str, str] = {
     "revenue_acceleration": "revenue acceleration",
     "eps_change_yoy": "earnings growth over the year",
     "net_margin": "net margin",
+    "ocf_to_revenue": "operating cash flow against revenue",
     "capex_to_revenue": "capital spending against revenue",
     "share_issuance": "share issuance",
     "asset_growth": "asset growth",
@@ -95,6 +97,7 @@ LABELS: dict[str, str] = {
     "price_sales_growth": "price against sales, adjusted for growth",
     "cheap_vs_side": "discount to its side of the book",
     "market_cap": "its size",
+    "expectations_gap": GROWTH_GAP_LABEL,
 }
 
 # The release reader's fields, as the thing the release spoke about. A
@@ -152,6 +155,7 @@ SHORT: dict[str, str] = {
     "revenue_acceleration": "revenue acceleration",
     "eps_change_yoy": "earnings growth",
     "net_margin": "net margin",
+    "ocf_to_revenue": "operating cash flow/revenue",
     "capex_to_revenue": "capex/revenue",
     "share_issuance": "share issuance",
     "asset_growth": "asset growth",
@@ -163,7 +167,7 @@ SHORT: dict[str, str] = {
     "price_book": "price/book",
     "price_sales_growth": "growth-adjusted price/sales",
     "cheap_vs_side": "discount to peers",
-    "expectations_gap": "cheapness vs expected growth",
+    "expectations_gap": GROWTH_GAP_LABEL,
     "residual_momentum_120": "6-month momentum vs the market",
 }
 # Where a reading sits in the book, from its percentile. Said as a place
@@ -176,10 +180,12 @@ PLACE_WORDS = (
     (1.01, "top of book"),
 )
 MARK = {1: "+", 0: "\u00b7", -1: "\u2212"}
-# What each analyst actually scores. The rest of its evidence is context:
-# it may be cited when nothing scored stands out, but a reader must not be
-# told an unscored reading decided a stance. The technical and value sets
-# are the legs of those analysts' blends (see their modules).
+# Score-related evidence for the recorded analysts. Growth and tone mirror
+# their scored fields; Value names P/S, its group-relative description (not a
+# second independent leg), and the optional growth-gap augmentation. Size is
+# omitted from prose, but still affects Value's peer grouping. The legacy
+# technical registry needs its own regime-dependent audit before it can govern
+# context labels; it retains the previous selection behavior for now.
 SCORED_BY_ANALYST: dict[str, tuple[str, ...]] = {
     "fundamental": (
         "revenue_yoy",
@@ -200,8 +206,9 @@ SCORED_BY_ANALYST: dict[str, tuple[str, ...]] = {
         "tone_guidance_change",
         "tone_pricing",
     ),
-    "value": ("price_sales", "cheap_vs_side"),
+    "value": ("price_sales", "cheap_vs_side", "expectations_gap"),
 }
+SCORE_CONTEXT_ANALYSTS = frozenset({"fundamental", "sentiment", "value"})
 
 # What the desk does at each grade, in the operator's own words.
 ACTION: dict[str, str] = {
@@ -276,10 +283,10 @@ def spreads(report) -> dict[tuple[str, str], tuple[float, float, int]]:
     return out
 
 
-# Which way a measurement argues, from its rank correlation with the
-# analyst's own score across the book: the sign when it is clear, else 0.
+# Use observed rank association to order illustrative readings, not to infer
+# that changing a measurement would cause the score or persisted vote to move.
 def _lean(values: np.ndarray, scores: np.ndarray) -> int:
-    """Return +1, -1 or 0 for the direction `values` pushes `scores`."""
+    """Return the sign of the observed rank correlation beyond a small threshold."""
     a = np.argsort(np.argsort(values)).astype(float)
     b = np.argsort(np.argsort(scores)).astype(float)
     if a.std() == 0 or b.std() == 0:
@@ -292,8 +299,8 @@ def _lean(values: np.ndarray, scores: np.ndarray) -> int:
     return 0
 
 
-# One analyst's view of one name, as one line: its mark, its name, and
-# the readings that argue its way, fewest words that carry the fact.
+# Describe a recorded vote with selected readings, explicitly labelling any
+# nontechnical context fallback as unscored by that analyst, not by the desk.
 def _clause(
     analyst: str,
     stance: int,
@@ -308,15 +315,15 @@ def _clause(
     if not strongest:
         return head
     parts = [_figure(analyst, k, v, scale) for k, v in strongest]
+    if analyst in SCORE_CONTEXT_ANALYSTS and not any(
+        measure in SCORED_BY_ANALYST[analyst] for measure, _value in strongest
+    ):
+        return f"{head}: context (not scored by this analyst): {'; '.join(parts)}"
     return f"{head}: {'; '.join(parts)}"
 
 
-# One reading, in words a person can read: a release's tone as upbeat,
-# silent or downbeat; a state as the state it is in; a distance as where
-# it sits against the book; anything else by where it falls among the
-# book's readings. No figure is quoted. "capital spending against revenue
-# at +2.99" told a reader nothing about whether that was a lot; "among the
-# highest in the book" is the same fact as the desk used it.
+# Describe tone, states and distances in their units, and other nontechnical
+# readings by peer position only when a comparison distribution is available.
 def _figure(analyst: str, measure: str, value: float, scale: dict | None) -> str:
     entry = (scale or {}).get((analyst, measure))
     middle = float(entry[0]) if entry and np.isfinite(entry[0]) else None
@@ -352,7 +359,16 @@ def _figure(analyst: str, measure: str, value: float, scale: dict | None) -> str
         return f"nearest support {abs(value) * 100:.1f}% below the price"
     if measure == "resistance_distance":
         return f"nearest resistance {abs(value) * 100:.1f}% above the price"
-    return _placed_words(measure, value, _place(value, book))
+    return _compared_reading(analyst, measure, value, book)
+
+
+# Withhold a nontechnical relative-rank claim when the peer distribution is absent.
+def _compared_reading(analyst: str, measure: str, value: float, book) -> str:
+    place = _place(value, book)
+    if analyst in SCORE_CONTEXT_ANALYSTS and place is None:
+        label = SHORT.get(measure, LABELS.get(measure, measure))
+        return f"{label} recorded; peer comparison unavailable"
+    return _placed_words(measure, value, place)
 
 
 # A log distance as "12.3% above" or "4.0% below".
@@ -424,9 +440,8 @@ def _place(value: float, book) -> float | None:
     return below + 0.5 * equal
 
 
-# The measurements that set this name apart from the book, largest first;
-# with a stance, the ones that argue its way come first, and the rest are
-# used only when none do.
+# Select notable readings without allowing correlated nontechnical context to
+# displace available score-related evidence; preserve legacy technical ranking.
 def _notable(
     analyst: str, cited: dict, scale: dict | None, stance: int = 0
 ) -> list[tuple[str, float]]:
@@ -469,17 +484,32 @@ def _notable(
             # Tone-style readings with no scale lean their own way.
             argues = stance != 0 and direction * stance > 0
             ranked.append((score, measure, float(value), argues))
+    return _selected_readings(analyst, ranked, stance)
+
+
+# Prefer score-related evidence for audited analysts before directional heuristics.
+def _selected_readings(
+    analyst: str,
+    ranked: list[tuple[float, str, float, bool]],
+    stance: int,
+) -> list[tuple[str, float]]:
+    scored = SCORED_BY_ANALYST.get(analyst, ())
+    if analyst in SCORE_CONTEXT_ANALYSTS and any(r[1] in scored for r in ranked):
+        ranked = [r for r in ranked if r[1] in scored]
     if stance != 0 and any(r[3] for r in ranked):
         ranked = [r for r in ranked if r[3]]
-    scored = SCORED_BY_ANALYST.get(analyst)
-    if scored and any(r[1] in scored for r in ranked):
+    if (
+        analyst not in SCORE_CONTEXT_ANALYSTS
+        and scored
+        and any(r[1] in scored for r in ranked)
+    ):
         ranked = [r for r in ranked if r[1] in scored]
     ranked.sort(key=lambda r: -r[0])
     return [(measure, value) for _score, measure, value, _argues in ranked[:CITE]]
 
 
-# The whole reason for one name: the grade, what it means to do, and the
-# analysts that decided it, strongest opinion first.
+# Describe recorded votes with selected readings, not a current instruction or
+# proof that today's measurements caused an earlier persisted stance.
 def reason(view: dict, scale: dict | None = None) -> str:
     """Return a plain-English reason for one name's grade."""
     stances = view.get("stances") or {}
@@ -530,10 +560,8 @@ def _level_words(side: str, kind: float, level: float, distance: float) -> str |
     return f"nearest resistance is {pct:.1f}% above the price — {what}"
 
 
-# Every reading the desk used for one name, in plain words, with nothing
-# omitted. The reason lines above show the two most unusual readings per
-# analyst, which is a sentence; this is the whole evidence, for the person
-# who wants to see every trigger behind the recommendation.
+# Expand the available descriptive evidence, preserving level formatting and
+# marking unscored growth/tone/Value context for that analyst; omit metadata.
 def reads(view: dict, scale: dict | None = None) -> dict[str, list[str]]:
     """Return {analyst: [plain-word reading, ...]} for a name, all of them."""
     out: dict[str, list[str]] = {}
@@ -571,7 +599,13 @@ def reads(view: dict, scale: dict | None = None) -> dict[str, list[str]]:
                 # twice in one list.
                 continue
             else:
-                lines.append(_figure(analyst, measure, float(value), scale))
+                line = _figure(analyst, measure, float(value), scale)
+                if (
+                    analyst in SCORE_CONTEXT_ANALYSTS
+                    and measure not in SCORED_BY_ANALYST[analyst]
+                ):
+                    line = f"Context (not scored by this analyst): {line}"
+                lines.append(line)
         out[analyst] = lines
     return out
 

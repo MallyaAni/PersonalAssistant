@@ -1888,6 +1888,10 @@ export interface DeskRecord {
   prose_status?: string;
   prose_written?: string;
   provenance?: {rule?: {name?: string; inputs?: string[]}; code_revision?: string; model?: string | null; data?: {fundamentals?: string}};
+  // Metadata saved with the evening grade, not the separately fetched earnings read.
+  // Each date is a metric's reference fiscal period end, never a filing/release time.
+  // Older records omit this block; missing metrics may have an empty date string.
+  fundamental?: {source: string; dates: Record<string, Record<string, string>>};
   event_risk?: {
     outcome?: {session: string; status: string; unrestored: Record<string, number>} | null;
     execution_pending?: boolean;

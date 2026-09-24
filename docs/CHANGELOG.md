@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-24 — Precise analyst meanings, evidence dates and attribution
+
+- Labels now distinguish growth/margins, earnings-release tone and relative
+  valuation from comprehensive quality, live sentiment and intrinsic fair value.
+  Combined grades, percentiles and votes are distinct. The saved evening record's
+  metric-level fiscal dates are shown without borrowing a later earnings date;
+  missing S source linkage and persisted-vote/current-reading limits are explicit.
+- F/S/Value descriptions prefer score-related evidence, label context as not
+  scored by that analyst, name the active growth-gap proxy accurately, and withhold
+  unsupported peer placement. Archived wording and all numeric decisions stay
+  unchanged. Grade-move prose no longer invents price independence or a cause.
+- VERIFIED: **136 backend cases**, independent **15 edge / 810 technical-parity
+  assertions**, intermediate **127/127 browser cases**, final focused **12/12**;
+  all focused diagnostics empty. Failed baselines are retained. Exact-commit
+  browser/build acceptance is recorded in the subsequent checkpoint receipt.
+- A separate synthetic actual-loader probe reproduces the dropped historical
+  cutoff: **17 reproduction assertions pass; two historical-input invariants
+  fail**. No model fit or market rerun; prediction/return impact is unverified.
+  [Meaning, evidence and remaining limits](research/desk-analyst-meaning-2026-09-24.md).
+- No strategy, holding/order, prompt or deployment change. Diagram impact: NONE.
+
 ## 2026-09-24 — Separate latest grades from recorded evening analysis
 
 - Both stock details surfaces now separate the latest accepted grade and
