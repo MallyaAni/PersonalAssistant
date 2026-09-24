@@ -32,7 +32,7 @@ checks pass with an isolated current Ruff because the repository's pre-existing
 Ruff table is rejected as duplicate TOML by current Ruff; `git diff --check` is
 clean. The optional historical-study module was not part of this count because
 host Torch is unavailable. No historical strategy was rerun and no policy was
-promoted.
+promoted. Verified implementation checkpoint: `d87a5f9`.
 
 ## 2026-09-24 — Fixed incumbent/neural blend protocol, research only
 
