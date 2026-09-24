@@ -6,6 +6,35 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Authorized deployment: calendar dependency gate repair
+
+The operator explicitly authorized deploying the published dashboard fixes.
+Started clean on Mac `main` at `0670fb6ed3e8dcfd6f0606396f8d6fdb0af1eceb`;
+Spark and GitHub match. Spark's only untracked entry is unrelated `scratch/`.
+Do not touch it. Live deploy marker remains `26b3cb1`.
+
+VERIFIED preflight: `scripts/verify-migrations.sh` built 47 tables through
+`20260924_0021` in a throwaway database without changing `anios_db`. Current
+`gate.sh` migrates its isolated `anios_gate` first, so the older live pre-gate
+migration trap does not apply. Production remains at `20260912_0020`.
+
+FAILED deployment of `0670fb6`: frontend build passed, but unit collection
+stopped on missing `exchange_calendars`. Eight optional modules skipped, four
+warnings, one collection error in 7.20s. The script stopped before live backup,
+migration or restart; both running image IDs and the deploy marker stayed
+unchanged. Preserve `/home/animallya96/anios/data/deploy-0670fb6.kDmGfg/deploy.log`.
+
+Targeted repair: the Docker test stage and `dev` extra now include the same
+calendar range as the research extra; runtime requirements stay unchanged.
+The actual rebuilt local test image resolves exchange-calendars 4.13.2, pandas
+3.0.6 and NumPy 2.5.3. Without an injected dependency directory, **151 tests
+passed in 5.14s** and **5,778 tests collected in 6.81s** (four existing warnings).
+Evidence: `/private/tmp/anios-deploy-dependency.eIVBvx/`. This proves the
+packaging boundary, not the complete deployment. Full Spark unit/routing gates,
+live migration, full post-deploy checks and browser acceptance are still
+UNVERIFIED; retry through `scripts/deploy.sh`, without skip flags. No strategy,
+holdings or order change. Diagram impact: NONE — test packaging only.
+
 ## 2026-09-24 — Expectations partition-cutoff repair acceptance
 
 Started clean on `main` at `a9a40d352c34c66c08da1ed423da48d0879375e8`;

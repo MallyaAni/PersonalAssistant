@@ -62,8 +62,13 @@ FROM base AS test
 # pytest-xdist runs the routing gate's five suites at once. See the
 # distribution note in scripts/gate.sh for why it is by file and not by
 # test.
+# The unit gate collects the market chronology tests, which import the
+# exchange calendar even though production serving does not need it.
+# Keep this range aligned with pyproject.toml's research extra; do not
+# install the training stack just to validate saved research artifacts.
 RUN pip install --no-cache-dir "pytest>=8.0.0" "pytest-asyncio>=0.23.0" \
-    "pytest-xdist>=3.5.0" "ruff>=0.4.0"
+    "pytest-xdist>=3.5.0" "ruff>=0.4.0" \
+    "exchange-calendars>=4.13.2,<5.0.0"
 
 # `runtime` is LAST on purpose. BuildKit's default target is the final stage and
 # it does not build stages that target does not depend on, so every `build: .`

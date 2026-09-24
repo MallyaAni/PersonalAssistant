@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-24 — Include the research calendar in the unit-test environment
+
+- An authorized dashboard deployment stopped before live migration/restart:
+  the unit gate could not collect chronological tests without
+  `exchange_calendars`. Keep that failed deployment log; no gate was bypassed.
+- Add the existing research calendar range to the Docker test stage and `dev`
+  extra, without installing the training stack or changing runtime requirements.
+  Rebuilt-image acceptance without injected dependencies: **151 passed**;
+  **5,778 tests collected**, resolved calendar version **4.13.2**. Full deployment
+  gates and live UI acceptance remain pending. Diagram impact: NONE.
+
 ## 2026-09-24 — Carry the requested partition cutoff through the growth gap
 
 - The desk now forwards its original optional `asof` through gap prices, EDGAR

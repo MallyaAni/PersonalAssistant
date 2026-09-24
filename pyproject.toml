@@ -42,6 +42,7 @@ dependencies = [
 [project.optional-dependencies]
 research = [
     # Isolated market training and artifact replay; not part of the backend image.
+    # The Docker test stage also needs this calendar for the unit gate.
     "exchange-calendars>=4.13.2,<5.0.0",
     "torch>=2.5.0",
     "scikit-learn>=1.5.0",
@@ -49,6 +50,8 @@ research = [
     "threadpoolctl>=3.5.0",
 ]
 dev = [
+    # Unconditionally imported by the chronological diagnostics unit tests.
+    "exchange-calendars>=4.13.2,<5.0.0",
     "black>=24.0.0",
     "mypy>=1.8.0",
     "pytest>=8.0.0",
