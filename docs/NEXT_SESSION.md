@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-09-24 02:10 UTC — Integrity release LIVE; September 23 reconstructed
+
+Guarded release `eec2d6dd32eda1f4a9cff32015e046f478a33a3b` is LIVE:
+4509 backend tests passed / 25 skipped, 100 real-model cases passed,
+postdeploy `2026-09-24T02:10:36Z eec2d6dd ok (cheap)`. Running snapshot,
+store and learned-policy source hashes match the release exactly. The
+read-only acceptance in the running image reproduces ACN's missing-date
+rejection with two supplied responses, no network request, unchanged source
+bytes and unchanged original neural ledger. Model container IDs AND start
+times are unchanged. Proof: `/tmp/codex-trading-data-runtime-proof-20260924.json`;
+release log: `/tmp/codex-trading-data-release-20260924.log`.
+
+User asked to use that day's archived data. Reconstructed September 23 marks
+for the already-held frozen neural accounts, without a new prediction or
+ledger append. Both prices use the September 23 adjusted series where
+available; missing September 22 anchors use that day's stored source close
+only when the overlapping close agrees exactly and neither vintage reports
+an intervening split/dividend. Refuse incompatible bases; no fitted ratio.
+Manual dollar-weighted accounting agrees with the frozen transition engine.
+At 10 bp cumulative: neural +14.94%, valuation +10.49%, momentum20 +0.98%,
+SPY +1.72%. All source and ledger hashes unchanged. This is five return
+intervals/one basket; reconstructed time is distinct from source times.
+Script/result: `/tmp/reconstruct-neural-mark-20260923.py` and
+`/tmp/reconstructed-neural-mark-20260923.json` (also retained in the research
+artifact directory). This reconstruction is not a fabricated nightly row.
+
+Latest user scope: compare market regimes, like cross-validation across
+regimes. Use chronological, purged walk-forward folds and causal regime
+labels, not shuffled K-fold or ex-post switching to the best regime winner.
+Do not refit the already-evaluated HGB study or claim neural universal
+superiority. Existing neural archive is frozen. A regime comparison may
+reuse its exported network with the archived September 14 inputs; that is
+a retrospective reconstruction and must be labelled as such.
+
 ## 2026-09-24 — Conditional learned study complete; neural audited; snapshot guard
 
 The user authorized retrospective testing and asked whether the strong nightly
