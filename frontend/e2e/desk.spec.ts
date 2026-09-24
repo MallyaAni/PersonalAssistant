@@ -8,6 +8,27 @@ import { expect, test, type Page } from '@playwright/test'
 
 const USER = 'ani.mallya'
 
+// Unsupported historical returns stay hidden while the original record remains archived.
+test('withholds an unvalidated simulation and explains missing held marks', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const failed: string[] = []
+  page.on('requestfailed', request => { if (request.url().includes('/market/')) failed.push(request.url()) })
+  await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+    latest: deskRecord(),
+    curve: {backtest: null, backtest_unavailable_reason: 'Historical simulation withheld: this saved curve predates the check for missing prices on held stocks. Its returns need revalidation.'},
+  }}))
+  await page.goto('/?deskDetails=1#desk')
+  await page.locator('summary', {hasText: 'Practice account'}).click()
+  await expect(page.getByText('Historical simulation withheld:', {exact: false})).toBeVisible()
+  await expect(page.getByText('CAGR', {exact: true})).toHaveCount(0)
+  await expect(page.getByRole('img', {name: "The desk's track record against SPY and QQQ"})).toHaveCount(0)
+  await expect(page.getByLabel('The desk at a glance')).not.toContainText('vs SPY')
+  await expect(page.getByLabel('The desk at a glance')).toContainText('Practice account')
+  expect(failed).toEqual([])
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // Expanded guidance separates personal allocations from returns and paper accounts.
 test('account wording distinguishes allocation from profit and paper from personal', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)

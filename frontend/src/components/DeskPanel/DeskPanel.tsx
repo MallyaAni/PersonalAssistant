@@ -641,7 +641,7 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
         <h3 className="text-sm font-semibold text-[#1d1d1f]">The desk’s track record</h3>
         <p className="mt-1 text-sm text-[#6e6e73]">
-          The evening run has not written a curve yet; check back after the next close.
+          {curve?.backtest_unavailable_reason ?? 'The evening run has not written a curve yet; check back after the next close.'}
         </p>
       </section>
     )

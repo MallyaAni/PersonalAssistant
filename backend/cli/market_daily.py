@@ -1274,6 +1274,7 @@ def curve_block(report, store) -> dict | None:
     return {
         "label": "historical simulation with cash-limited fills; not a live record",
         "funding_model": simulate.FUNDING_MODEL,
+        "valuation_model": simulate.VALUATION_MODEL,
         "strategy_policy": paper_rules.POLICY_VERSION,
         # The data source the simulation's analysts read, kept separate from
         # the execution policy above, so the curve is never presented as

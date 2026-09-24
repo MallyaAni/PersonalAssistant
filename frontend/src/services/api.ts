@@ -1932,8 +1932,10 @@ export interface DeskRecord {
 // the same sessions; `paper` is the live paper account's equity history.
 // Absent on records written before the feature existed.
 export interface DeskCurve {
+  backtest_unavailable_reason?: string;
   backtest?: {
     funding_model?: string;
+    valuation_model?: string;
     strategy_policy?: string;
     // Which data source the simulation's analysts read; empty before the
     // corrected fundamental source was carried into the record.

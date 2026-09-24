@@ -889,7 +889,14 @@ async def test_the_desk_returns_the_track_record_curve(tmp_path, monkeypatch):
         {"SNDK": "A+"},
         [("SNDK", 0.08)],
         [],
-        curve={"backtest": {"dates": ["2026-09-03"], "rules": [0.0]}, "paper": None},
+        curve={
+            "backtest": {
+                "dates": ["2026-09-03"],
+                "rules": [0.0],
+                "valuation_model": "complete-held-marks-v1",
+            },
+            "paper": None,
+        },
     )
     token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
     async with AsyncClient(

@@ -182,8 +182,23 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "changes": deskrecord.changes(latest, previous).to_dict(),
         "sessions": deskrecord.sessions(_root()),
         # The track-record curve the record carries; absent on older records.
-        "curve": (latest or {}).get("curve") or {},
+        "curve": _curve_for_display((latest or {}).get("curve")),
     }
+
+
+# Withhold unvalidated historical NAV while preserving the immutable source record.
+def _curve_for_display(curve):
+    from backend.agents.trading.desk import simulate
+
+    visible = dict(curve or {})
+    backtest = visible.get("backtest")
+    if backtest and backtest.get("valuation_model") != simulate.VALUATION_MODEL:
+        visible["backtest"] = None
+        visible["backtest_unavailable_reason"] = (
+            "Historical simulation withheld: this saved curve predates the check "
+            "for missing prices on held stocks. Its returns need revalidation."
+        )
+    return visible
 
 
 # One earlier session's record, as it was written.

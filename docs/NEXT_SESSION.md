@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-09-24 — Live-policy missing valuation reproduced; release pending
+
+The full incumbent LIVE_POLICY path silently omitted held positions with absent
+marks: a flat-price synthetic 15% holding produced a false -15.00% loss and
++17.65% rebound. Eight immutable cases failed before the fix. The simulator
+now rejects unavailable held marks (NaN/infinite/nonpositive); missing unheld
+names remain acceptable and real price losses remain measured. Funded research
+retains its existing explicit unavailable-NAV handling. No entry rule changed.
+New curves declare `complete-held-marks-v1`; the latest desk response withholds
+older backtest metrics with an explanation, preserving original record bytes
+and paper curves. Evidence: 144 relevant simulator/funding/event/parity checks,
+74 API/daily/valuation checks, scoped Ruff, TypeScript, and 3 browser acceptance
+cases against this checkout on 5178. Browser log
+`/tmp/held-marks-browser-20260924.log`. Not deployed at this handoff.
+
+User reports AAOI personal fill yesterday at $106, prompted by Buy or A+;
+believes paper entered near $97. Read-only source audit finds initial archived
+paper fill September 11 at $107.997097, September 22 add $107.51375, September
+23 add $106.70. September 17 position increased but the saved record lacks its
+individual fill, so do not claim a complete execution audit or infer its price.
+The separate board-paper archive contains no AAOI fills. Personal displayed
+decision at the user's entry time is not established. Research Dip observations
+around $97 are real, but they are not funded personal Buy decisions: Dip is a
+negative stretch/lower-band rule; personal entry uses upper-band breakout plus
+grade, freshness, event, cash and position gates. Grade A+ is not an entry
+signal. Preserve this distinction without dismissing the reported loss or
+changing rules to fit this one trade. No holdings or orders were modified.
+
+Continue the requested thorough actual-live-policy and chronological/regime
+evaluation alongside this bounded incident review. Do not conflate momentum20
+research, frozen neural, research Dip states and the actual live account rule.
+No new regime study has run yet; the already completed HGB study stays fixed.
+
 ## 2026-09-24 02:10 UTC — Integrity release LIVE; September 23 reconstructed
 
 Guarded release `eec2d6dd32eda1f4a9cff32015e046f478a33a3b` is LIVE:

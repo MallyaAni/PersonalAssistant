@@ -60,6 +60,7 @@ COST_BPS = 10.0
 MIN_TRADE = 0.005
 START_EQUITY = 1.0
 FUNDING_MODEL = "cash-at-fill-v1"
+VALUATION_MODEL = "complete-held-marks-v1"
 
 # The one versioned execution policy the live paper account runs, used
 # wherever a backtest is published so the measured curve and the live book
@@ -883,7 +884,15 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     opens = adjusted_open(panel)
     closes = panel.adj_close
 
-    book = _Book(names, START_EQUITY, cost_bps, panel, report, stamps)
+    book = _Book(
+        names,
+        START_EQUITY,
+        cost_bps,
+        panel,
+        report,
+        stamps,
+        require_complete_marks=not funded_allocation,
+    )
     returns = np.full(rows, np.nan)
     invested = np.zeros(rows)
     equity = np.full(rows, np.nan)
@@ -1225,11 +1234,23 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
 class _Book:
     """Shares and cash, and a readable record of what changed them."""
 
-    def __init__(self, names, equity, cost_bps, panel, report, stamps) -> None:
+    # Initialize cash and positions; funded research has its own unavailable-NAV trace.
+    def __init__(
+        self,
+        names,
+        equity,
+        cost_bps,
+        panel,
+        report,
+        stamps,
+        *,
+        require_complete_marks=True,
+    ) -> None:
         self.shares = np.zeros(names)
         self.cash = float(equity)
         self.traded = 0.0
         self.cost = cost_bps / 1e4
+        self.require_complete_marks = require_complete_marks
         self.panel = panel
         self.report = report
         self.stamps = stamps
@@ -1245,7 +1266,6 @@ class _Book:
         self.paid: dict[int, float] = {}
         self.trades: list[SimTrade] = []
 
-    # The account's value at a set of prices, ignoring unpriced holdings.
     # The largest position's share of the account at `prices`.
     def top_weight(self, prices: np.ndarray) -> float:
         """Return the biggest single weight, 0 when nothing is held."""
@@ -1255,8 +1275,13 @@ class _Book:
             return 0.0
         return float((self.shares[priced] * prices[priced]).max() / total)
 
+    # Refuse incomplete held valuations instead of fabricating a loss and rebound.
     def equity(self, prices: np.ndarray) -> float:
-        """Return cash plus the value of every priced holding."""
+        """Return account NAV, or fail when a required held mark is unavailable."""
+        missing = (self.shares > 0) & (~np.isfinite(prices) | (prices <= 0))
+        if self.require_complete_marks and missing.any():
+            symbols = ", ".join(self.tickers[j] for j in np.flatnonzero(missing))
+            raise ValueError(f"held valuation unavailable: {symbols}")
         priced = (self.shares > 0) & np.isfinite(prices)
         return float(self.cash + (self.shares[priced] * prices[priced]).sum())
 
