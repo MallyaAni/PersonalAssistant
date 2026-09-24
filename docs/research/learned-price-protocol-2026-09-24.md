@@ -57,3 +57,19 @@ Momentum is a named price-only control, not a claimed live-strategy backtest.
 No outcome can promote this study to live automatically. A weak conditional
 result stops this candidate; a useful one justifies a separately declared
 forward comparison or a sourced historical universe study.
+
+## Data-failure amendment, before valid-prefix stock outcomes
+
+The first full-window run failed all six stock paths at 2026-09-22: 52
+previously observed names have no bar that day in the 2026-09-23 Yahoo
+snapshot. All 96 names have bars on 2026-09-21 and 2026-09-23; older stored
+2026-09-22 history proves at least ACN's bar existed then. The original
+failed results remain intact; no stock-strategy metrics were emitted.
+
+Report the mechanically complete prefix: stop immediately before the first
+missing OHLC field after a symbol's first observed bar, on the common scoring
+calendar. This rule selects 2026-09-21 without inspecting stock returns.
+Use saved inputs and forecasts unchanged; no refit, new data, dropped name
+or changed parameter. Apply the same cutoff to both benchmarks. Label the
+full requested interval FAILED and the shorter holdout partial. Keep the
+original fit/inputs hashes and the standalone evaluation script with results.
