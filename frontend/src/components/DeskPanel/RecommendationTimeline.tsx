@@ -12,16 +12,16 @@ const recorded = (value: string) => new Date(value).toLocaleString('en-US', {
 export const RecommendationTimeline = ({history}: {history?: DeskRecommendationHistory}) => (
   <section aria-label="Recorded recommendations" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3">
     <h4 className="text-sm font-semibold">Recorded recommendations</h4>
-    <p className="mt-1 text-xs text-[#6e6e73]">Every saved desk reading · newest first · Eastern time. These are recommendations, not trades in your account.</p>
+    <p className="mt-1 text-xs text-[#6e6e73]">Every saved desk reading · newest first · Eastern time. These are research readings, not trades in your account. Dip is a pullback setup, not a Buy instruction. Personal Buy follows a separate breakout rule with account checks. A+ is a grade, not entry timing.</p>
     {!history?.observations.length ? <p className="mt-2 text-xs text-[#6e6e73]">No recorded recommendations available yet.</p> : <>
       <div className="mt-2 max-h-96 overflow-auto">
         <table className="w-full text-left text-xs tabular-nums [&_td]:px-1 [&_th]:px-1" aria-label="Recommendation timeline">
-          <thead className="sticky top-0 bg-white text-[#6e6e73]"><tr><th>Recorded</th><th>Grade</th><th>Suggested allocation</th><th>Entry state</th><th>Price at bar</th><th>Stock since read</th></tr></thead>
+          <thead className="sticky top-0 bg-white text-[#6e6e73]"><tr><th>Recorded</th><th>Grade</th><th>Research allocation</th><th>Price setup</th><th>Price at bar</th><th>Stock since read</th></tr></thead>
           <tbody>{history.observations.map(row => <tr key={row.id} className="border-t border-black/[0.05] align-top">
             <td className="py-2"><span className="whitespace-nowrap">{recorded(row.recorded_at)}</span><div className="text-[9px] text-[#6e6e73]">{row.version} · {row.policy_sha256?.slice(0, 8) ?? 'unidentified'}</div></td>
             <td className="py-2">{row.grade}{row.opportunity_score !== null && row.opportunity_score !== undefined && <div className="text-[10px] text-[#6e6e73]">{row.opportunity_score.toFixed(1)}/10</div>}</td>
             <td className="py-2">{row.allocation === null ? '—' : size(row.allocation)}{row.allocation_change !== null && Math.abs(row.allocation_change) > .00001 && <div className="text-[10px] text-[#6e6e73]">{row.allocation_change > 0 ? '+' : '−'}{Math.abs(row.allocation_change) < .001 ? '<0.1' : (Math.abs(row.allocation_change) * 100).toFixed(1)} pp</div>}</td>
-            <td className="py-2">{row.event_paused ? 'Hold · FOMC' : row.entry_state ?? 'Not recorded'}</td>
+            <td className="py-2">{row.entry_state ?? 'Not recorded'}{row.event_paused && <div className="text-[10px] text-[#6e6e73]">Entries paused · FOMC</div>}</td>
             <td className="py-2">{row.price.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</td>
             <td className="py-2">{row.stock_total_return === null ? '—' : `${(row.stock_total_return * 100).toFixed(2)}%`}</td>
           </tr>)}</tbody>

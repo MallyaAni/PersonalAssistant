@@ -439,7 +439,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           <tr>
             <th className="py-2">#</th>
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
-            <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current`}>Grade</SortHead>
+            <SortHead column="grade" sort={sort} onSort={setSort} title={`A+ down to C from the ${latest.session} close, or the intraday grade where one is current. A+ is a grade, not a Buy signal or a probability of profit.`}>Grade</SortHead>
             <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10, not a return forecast. A star marks a name scored without the full panel.">Opportunity</SortHead>
             {planAction
               ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />

@@ -293,7 +293,7 @@ test('ticker opens original recommendation timeline before detailed analysis', a
       older_records_not_shown: false, observations: [
         {id: 'new', recorded_at: '2026-09-14T18:30:24Z', bar: '2026-09-14T18:15:00Z',
           grade: 'A+', allocation: null, allocation_change: null, event_paused: true,
-          price: 110, stock_total_return: null, version: 'policy/2', policy_sha256: 'abcdefgh'},
+          entry_state: 'dip', price: 110, stock_total_return: null, version: 'policy/2', policy_sha256: 'abcdefgh'},
         {id: 'old', recorded_at: '2026-09-11T18:30:24Z', bar: '2026-09-11T18:15:00Z',
           grade: 'A', allocation: .2, allocation_change: .1, event_paused: false,
           entry_state: 'dip', price: 100, stock_total_return: null, version: 'policy/1', policy_sha256: '12345678'},
@@ -308,7 +308,12 @@ test('ticker opens original recommendation timeline before detailed analysis', a
   await expect(fold).toHaveAttribute('open', '')
   const timeline = page.getByRole('region', {name: 'Recorded recommendations'})
   await expect(timeline.getByRole('table')).toBeVisible()
-  await expect(timeline).toContainText('Hold · FOMC')
+  const pausedReading = timeline.locator('tbody tr').first()
+  await expect(pausedReading).toContainText('dip')
+  await expect(pausedReading).toContainText('Entries paused · FOMC')
+  await expect(timeline).toContainText('Dip is a pullback setup, not a Buy instruction.')
+  await expect(timeline).toContainText('Personal Buy follows a separate breakout rule with account checks.')
+  await expect(timeline).toContainText('A+ is a grade, not entry timing.')
   await expect(timeline).toContainText('20.0%')
   await expect(timeline).toContainText('+10.0 pp')
   await expect(timeline).toContainText('not a prediction accuracy score, a fill, or your profit')

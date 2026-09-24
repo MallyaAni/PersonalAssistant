@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-24 — Preserve Dip setup separately from trade permission
+
+User correctly identified the mismatch between research Dip states and personal
+breakout Buy actions, and asked to retain focus on the broader evaluation too.
+The recommendation timeline now names research allocation and price setup,
+explains that Dip is not a Buy instruction and A+ is not entry timing, and
+retains the original setup during FOMC pauses rather than replacing it with
+Hold. A browser regression reproduced the hidden Dip before the change and
+passes afterward; all 77 desk browser cases pass on the exact checkout at
+5178, along with TypeScript. Logs `/tmp/setup-mismatch-browser-before.log`,
+`/tmp/setup-mismatch-browser-after.log`,
+`/tmp/setup-mismatch-desk-suite-20260924.log`. No strategy rule changed.
+
+Missing-valuation release `020ae42` is in its guarded serial deployment:
+`/tmp/codex-held-marks-release-20260924.log` (4521 backend tests / 25 skips
+already passed; real-model gate running at this handoff). Do not restart it.
+After successful completion, ship this separate frontend-only clarification
+through scripts/deploy.sh. Prepared read-only actual API/AAOI browser probe
+`/tmp/verify-setup-release.mjs` takes temporary auth on stdin and never writes
+holdings/orders; verify final source and model starts before reporting live.
+
 ## 2026-09-24 — Live-policy missing valuation reproduced; release pending
 
 The full incumbent LIVE_POLICY path silently omitted held positions with absent
