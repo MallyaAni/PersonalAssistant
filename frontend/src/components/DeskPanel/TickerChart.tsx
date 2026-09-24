@@ -378,7 +378,7 @@ export const TickerChart = ({
             </p>
           )}
           <p className="mt-1 text-[11px] text-[#6e6e73]">
-            {merged.live
+            {merged.live && summary?.last.close !== null
               ? `Candle includes the 15-minute bar starting ${new Intl.DateTimeFormat('en-US', {
                   timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric',
                   hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
@@ -403,7 +403,7 @@ export const TickerChart = ({
           {summary && (
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">
               <div className="flex justify-between gap-2">
-                <dt className="text-[#6e6e73]">{merged.live ? 'Quote-bar close' : 'Latest stored close'}</dt>
+                <dt className="text-[#6e6e73]">{merged.live && summary.last.close !== null ? 'Quote-bar close' : 'Latest stored close'}</dt>
                 <dd className="tabular-nums font-medium">
                   {summary.last.close === null ? '—' : `$${summary.last.close.toFixed(2)}`}
                 </dd>

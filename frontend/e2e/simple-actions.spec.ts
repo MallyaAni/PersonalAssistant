@@ -33,7 +33,7 @@ async function setup(page: Page, open = true, missingEntry = false, paused = fal
       json = {session, rows: [], grades_live: {}, decisions: {session, written, equity: 100000, holdings: {}, rows: {
         AAPL: {action: open ? 'Buy' : 'Hold', strategy_action: 'Buy', executable: open, blocker: open ? null : 'Market closed', reason: 'Support holds within the entry zone', move_weight: open ? .02 : 0, strategy_move_weight: .02, target_weight: .05, current_weight: 0, valid_until: open ? until : null, risk_plan: {status: 'available', basis: 'Same completed bar', entry: 100, reference_support: 95, reference_resistance: 110, risk_pct: 5, reward_pct: 10, reward_risk_ratio: 2, risk_budget_pct: body.risk_budget_pct ?? null, max_add_weight: .1, reason: 'Support and resistance bound the entry scenario'}},
         NVDA: {action: 'Sell', strategy_action: 'Sell', executable: true, reason: 'Exit condition confirmed', move_weight: -.01, strategy_move_weight: -.01, valid_until: until},
-        MSFT: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'Price is above the entry zone', entry_status: missingEntry ? 'unavailable' : 'available', entry_reason: missingEntry ? 'Entry data unavailable · Missing 20-session reference' : null, move_weight: 0, valid_until: until},
+        MSFT: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'Price is above the entry zone', blocker: 'Market closed', entry_status: missingEntry ? 'unavailable' : 'available', entry_reason: missingEntry ? 'Entry data unavailable · Missing 20-session reference' : null, move_weight: 0, valid_until: until},
       }}}
     } else if (path.endsWith('/personal-history')) json = {receipts: [], has_more: false}
     else if (path.endsWith('/entries')) json = {session, rows: []}
@@ -134,7 +134,7 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
     const dates = weekly ? ['2026-09-18', '2026-09-24'] : ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24']
     return route.fulfill({json: {
       ticker: 'MSFT', timeframe: weekly ? 'weekly' : 'daily', timeframes: ['daily', 'weekly'], adjusted: true,
-      basis: 'adjusted prices', last_bar_complete: !weekly, sessions: dates.length,
+      basis: 'adjusted prices', last_bar_complete: !weekly, sessions: dates.length, quote_bar: at,
       data_status: 'incomplete', data_reason: 'Missing exchange sessions; affected indicators unavailable.', missing_sessions: ['2026-09-22'],
       bars: dates.map((date, i) => ({date, open: i === 1 ? null : 99, high: i === 1 ? null : 101, low: i === 1 ? null : 98, close: i === 1 ? null : 100, volume: i === 1 ? null : 1000})),
       overlays: {band_upper: dates.map(() => null), band_lower: dates.map(() => null)}, levels: {}, entries: [],

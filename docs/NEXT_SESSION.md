@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-09-24 — Live verification and final chart labels
+
+Release `0639acf` is LIVE through the normal deployment script: **5,858 unit
+passed, 31 skipped, 1 xfailed; 100/100 real-model gate passed; post-deploy cheap
+checks passed**. Exact changed backend hashes and gateway assets match; model
+IDs/start times unchanged. Evidence: `/tmp/codex-simplified-desk-artifact-proof-20260924.json`.
+Six browser cases passed against the deployed bundle. An authenticated read-only
+POST (record_history=false, no holdings writes) returned 94 decisions in 1.4s;
+AAOI/NTAP entry evidence available, Q unavailable for the missing September 22
+close. `/tmp/codex-simplified-desk-api-proof-20260924.json`.
+
+User's logged-in public browser showed the expected build `index-6afOEyo8.js`,
+collapsed details, unset risk/cash, AAOI daily/weekly charts and Q's unavailable
+entry reason in both table and panel. No console errors. Initial cold personal
+guidance load was slow; a refresh subsequently loaded/acknowledged its receipt.
+Actual live rendering exposed two remaining frontend labels: a null weekly
+candle with quote_bar used the live-candle caption, and the table preferred a
+blocker over the panel's full decision reason. The real shapes reproduced **two
+browser failures**. Corrected caption/close label and reason precedence; exact
+root TypeScript and **7/7 affected browser cases pass**. Logs:
+`/tmp/codex-final-chart-caption-before.log`, `/tmp/codex-final-chart-caption-after.log`.
+
+Pending: frontend-only follow-up through scripts/deploy.sh, deployed seven-case
+check and final logged-in Q/AAOI verification. Do not repeat backend/model gates
+when the deploy script selects its normal frontend-only path. No strategy change,
+threshold tuning, history rewrites, orders or account edits. The 188-chart source
+audit proves data/rule consistency, not predictive accuracy or trading returns.
+
 ## 2026-09-24 — All-ticker chart audit stopped a premature release
 
 `bc85669` is pushed on Spark/GitHub main but its deployment was deliberately stopped

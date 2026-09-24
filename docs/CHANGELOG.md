@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-24 — Match stock reasons and incomplete weekly captions
+
+The stock table now shows the same full decision reason as its detail panel.
+An incomplete weekly candle retains its missing-data caption even when the
+response includes a live quote timestamp. Both defects were reproduced in a
+browser with the actual response shape; TypeScript and seven affected browser
+cases passed after correction. No strategy or execution rule changed.
+
 ## 2026-09-24 — Chart gap integrity
 
 - An all-ticker audit found Q's chart silently compressed a missing session while

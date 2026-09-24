@@ -485,7 +485,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const reason = paused ? 'FOMC cycle: regular trading paused'
             : !(row.ticker in latest.grades) ? 'Outside current coverage; review manually'
             : plan === 'Hold' && decision?.entry_status === 'unavailable' ? decision.entry_reason || 'Entry data unavailable'
-            : decision?.blocker || decision?.reason || 'No current strategy decision'
+            : decision?.reason || decision?.blocker || 'No current strategy decision'
           // The plan cell is the full trade affordance (eligibility, record
           // fill) when the read answers for this name; a name the plan feed
           // did not answer keeps the bare action word as before.
