@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-24 — Recovered chronological study rejects the new allocation gate
+
+- The frozen real-history retry at `e749c0af` was OOM-killed during archival
+  after writing all accounts and model records. The missing final root manifest
+  remains missing; this is a **FAILED producer completion**, not a successful
+  CLI. The saved bytes and failure are retained without a strategy rerun.
+- VERIFIED recovered evidence: **124/124 standalone accounting checks / 62,668
+  marks**, **634 files / 1,688,236,289 bytes** unchanged, **14 chronological
+  folds**, **46 unique fit receipts / 138 target fits**, **68,556 independently
+  reconstructed forecasts with zero difference**, and **728/728 independent
+  financial-metric comparisons**. The original whole-evidence digest remains
+  UNVERIFIED. The bounded observer used 794 MiB peak RSS, not another model fit.
+- The new gate **fails** the frozen wealth hurdle at both costs. Candidate
+  CAGR is **23.32% / 20.50%** at 10/25 bp, versus **36.29% / 34.65%** for the
+  identical no-gate adapter and **59.23% / 56.40%** for reconstructed `/3`.
+  Candidate drawdown is worse than no-gate; it beats `/3` in only **1/14**
+  carried folds and **0/1,433** overlapping 252-session windows at either cost.
+  No retuning, promotion, holding/order change or deployment follows this result.
+- Historical membership, financial quality, precomputed-report causality,
+  vendor accuracy and live expectations remain unverified. The full
+  [six-account, rolling and regime result](research/nested-market-validation-2026-09-24.md)
+  preserves those qualifications and the archival failure. This checkpoint
+  changes documentation only; archive-buffering remediation is next work.
+- Diagram impact: NONE — evidence and results documentation, no changed flow.
+
 ## 2026-09-24 — Monetary conditioning for independent journal scale checks
 
 - Fixed a verifier false positive found by the first real nested study attempt.

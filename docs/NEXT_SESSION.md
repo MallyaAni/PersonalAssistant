@@ -6,6 +6,83 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Frozen history executed; archive OOM; saved-account recovery
+
+Started clean on `main` at `e749c0af98aa104a04d0b12992e427265f7469e2`.
+We did not interrupt or modify the frozen study; after its OOM termination,
+`git pull --rebase origin main` confirmed source was current. No production
+code, economic parameter, holding, order or live service changed in this task.
+The operator workflow above remains mandatory; no live deployment is authorized.
+
+**FAILED:** `market-run-02` ran for 557.66 seconds on the exact clean checkpoint
+above, then its child exited `-9`. Docker recorded an `oom` event for container
+`89a5985692dc`; the last observed memory use was 7.127 GiB of 7.652 GiB.
+All 124 journals and their proofs, source copies, protocol, `evidence.json`,
+`summary.json` and `arrays.npz` had been written, but the final root manifest
+was not. The precise Python statement at the kill is UNVERIFIED. Do not call
+this a successfully completed CLI or manufacture its original manifest.
+
+**VERIFIED:** a new external observer inventoried all **634 saved files /
+1,688,236,289 bytes**, then ran all **124 standalone journal CLI checks**.
+Every proof equals the saved verification, reconciling **62,668 closing marks**;
+the complete file inventory remained unchanged. No strategy was rerun. These
+checks prove saved accounting, not the original whole-study completion digest.
+Bounded-memory recovery also verifies **874 arrays, 191 source files, 288 price
+comparisons, 14 outer folds, 46 unique fit receipts / 138 target fits, 234,186
+training-row checks across those fits and 68,556 forecast values**. Forecast
+reconstruction error is zero; maximum relative normal-equation residual is
+1.26e-14. Peak RSS was
+794 MiB under a 3-GiB limit. An independent scorecard check passes **728/728
+comparisons** and eight synthetic checks, maximum residual 3.55e-15.
+
+**FAILED economic hurdle:** the new gate loses to `/3` and to its matched
+stock-only adapter at both costs. From 2020-01-06 through 2026-09-18, candidate
+CAGR is **23.32% / 20.50%** at 10/25 bp, versus **36.29% / 34.65%** without
+the gate and **59.23% / 56.40%** for reconstructed `/3`. Funded QQQ is
+**20.47% / 20.45%**, SPY **15.27% / 15.24%**. Candidate closing drawdown
+**−35.47% / −36.50%** is worse than no-gate **−32.57% / −33.59%**.
+It beats `/3` in only **1/14** carried folds and **0/1,433** overlapping
+252-session windows at either cost. No promotion or outcome-driven retuning.
+These are recovered exploratory outputs, not audited point-in-time quality
+returns or reliable live expectations. Full six-account/rolling/regime results:
+`research/nested-market-validation-2026-09-24.md`.
+
+Evidence: `/private/tmp/anios-nested-market-acceptance.teTufe/market-run-02/`.
+`completion.json` and `oom-observation.json` preserve failure;
+`interrupted-files-inventory.json` SHA256
+`cc25cd0fa6c304aac227ab4c16a92f4058b00b6c6c1796a064975271eff40204` and
+`interrupted-journal-proof.json` SHA256
+`5e3fbb34472714e8d8f0aef243600fbc503bcaba6c94b69c648444ffa372163e` are
+observer receipts outside the immutable `study/`, not replacement manifests.
+
+Spark retention root:
+`/home/animallya96/anios/data/market/research/nested-market-20260924.xEBPm7/`.
+All **193 original source files / 192,833,769 bytes** match readback. An old
+interrupted rsync left an extra partial; its 78,643,200 bytes were preserved
+under `transport-evidence-4k18k383/` before stopping only the two confirmed stale
+transfer processes. Rsync removed its own temporary; no original was removed.
+All originals match before/after. The separate static acceptance/failed-run/
+diagram copy passes **4,199 files / 1,786,630,468 bytes**, zero mismatches;
+`static-retention-01/retention-readback.json` SHA256
+`7dc92deef299c4d27588021b1761b32b72a8640f9d5965096606696c545ba190`.
+The supplemental recovery proofs/scripts/parser distribution pass **42 files /
+1,065,977 bytes**, with all **4,392 prior files** rehashed unchanged before/after;
+`supplemental-retention-01/retention-readback.json` SHA256
+`fd415384fd5cc57a9e66766555bedd739dacd5c38f8336b0a8c6e09717a75294`.
+Fifteen volatile parser bytecode files are explicitly omitted; source, native
+libraries and licenses are retained. The failed study's root manifest stays absent.
+
+Next: publish this evidence-only handoff, then implement bounded JSON/file
+buffering in archive validation,
+with canonical-byte equivalence and memory acceptance; its internal packed
+trees must not be mislabeled globally constant-memory. Do not refit or retune
+this completed set of saved market outcomes. Then audit the reconstructed
+incumbent's historical input availability and sourced quality/membership
+coverage before treating its large backtest return as investable evidence.
+Historical quality, membership, vendor accuracy and adoption remain UNVERIFIED.
+Goal remains active.
+Diagram impact: NONE — evidence/recovery documentation; no changed data flow.
+
 ## 2026-09-24 — Market assembly and matched study verified; frozen run next
 
 Implementation checkpoint `22eb5c8b0d239700a76bdd98d48d14cf120bbb0f` is pushed
