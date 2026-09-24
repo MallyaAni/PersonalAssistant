@@ -46,7 +46,8 @@ vote. For Q2 ended June 30, revenue was $191.922m versus $102.952m a year earlie
 and $151.144m in Q1: **+86.42% YoY / +26.98% QoQ**. GAAP gross margin was
 **27.7%**, versus **30.3%** a year earlier; GAAP net loss was **$22.8m**, versus
 **$9.1m**. These are comparable three-month GAAP measures, not evidence of fair
-value. First-half operating cash outflow is a separate six-month measure:
+value. The [Q2 Form 10-Q](https://www.sec.gov/Archives/edgar/data/1158114/000143774926026278/aaoi20260630_10q.htm)
+reports first-half operating cash outflow as a separate six-month measure:
 $73.781m versus $116.389m a year earlier, an improvement despite remaining
 negative. Strong revenue growth and upbeat management guidance can coexist with
 losses and cash consumption. This is not an assessment of a current executable
@@ -142,6 +143,50 @@ AAOI quote. Existing CSS/chunk build warnings remain.
 Final precommit receipt `ACCEPTANCE.md` SHA256:
 `9901fa75de70ddcf70d84aa29927485305e85362a6ae8ad181e6f2f28fd70851`.
 
+
+## Exact-commit acceptance and publication
+
+VERIFIED implementation checkpoint:
+`f361d6389490d152fab56484af4f17e448d73a33`, tree
+`1be23a8527ece80c368a63aaebd65d2541e85085`. The exact clean committed source
+repeated **127/127 browser tests in 88.424284s**, no failures/skips/flaky results;
+all 21 six-field browser diagnostic records are empty. TypeScript and production
+build pass (3,638 modules, Vite build 1.22s), with the existing warnings.
+All eight monitored frontend hashes agree before/after. Root and implementing
+agent inspected the exact desktop/mobile screenshots. A fresh isolated Vite
+runtime exercised the real checkout, not the deployment clone; the built bundle
+is not deployed. The image remains the pinned Playwright 1.63.0 image.
+
+Separate exact-commit backend acceptance repeats **136/136 in 2.03s**, with
+22 existing fixture warnings; scoped Ruff/Black and diff checks pass. HEAD, tree,
+clean state and both source hashes agree before/after. Network remained disabled.
+
+Receipt roots and SHA256:
+
+- `/private/tmp/anios-analyst-commit.pdhR2L/ACCEPTANCE.md`:
+  `5d2569a1b38b3eff983b99b42102dc71a6d439f20d1f0a32e0d0cd71934a45ea`.
+- `/private/tmp/anios-analyst-committed.1NKN7v/ACCEPTANCE.md`:
+  `466347b15f540df4ac4d486cf8ad765cc09aa8dbcbb02c578d78dc12c944cc02`.
+
+Published to `spark main`, then to GitHub **from Spark**, with divergence 0/0.
+No deployment, model fit, trading/account write or completed-study rerun.
+
+VERIFIED fresh evidence retention at
+`/home/animallya96/anios/data/market/research/analyst-semantics-20260924.wowffj_5/`:
+**788 payload files / 44,337,810 bytes**, zero missing, changed, unexpected or
+transferred symlink files. Original and exact-commit evidence are separate roots.
+Initial local preparation refused 63 pytest `*current` symlink aliases without
+following them or contacting Spark. Each exact alias was then explicitly
+approved for exclusion only after its mapped non-symlink directory and complete
+regular-file subtree were verified retained (57 files). The mappings and proof
+are embedded in the request, plan and receipt; no unique evidence was omitted.
+The transport's offline guards pass **19/19**. Earlier UI evidence (44 + 369
+files) and all local source artifacts remain unchanged.
+
+Readback receipt `retention/retention-readback.json` SHA256:
+`700487f831d896218f28b10a622ddd247aa3af4e3c49abde623cc3df546e1e4c`.
+Local driver, failed preparation evidence, frozen plan and receipts:
+`/private/tmp/anios-analyst-retention.mOZHUm/`.
 
 ## Historical-input defect reproduced independently
 

@@ -13,8 +13,11 @@
   unchanged. Grade-move prose no longer invents price independence or a cause.
 - VERIFIED: **136 backend cases**, independent **15 edge / 810 technical-parity
   assertions**, intermediate **127/127 browser cases**, final focused **12/12**;
-  all focused diagnostics empty. Failed baselines are retained. Exact-commit
-  browser/build acceptance is recorded in the subsequent checkpoint receipt.
+  all focused diagnostics empty. Failed baselines are retained. Exact checkpoint
+  `f361d638` repeats **127/127 browser / 136/136 backend**, with TypeScript/build
+  and lint/format passing. Published through Spark; no deployment. Separate
+  retained proof verifies **788 files / 44,337,810 bytes**, with 63 explicitly
+  validated duplicate pytest aliases excluded and no unique evidence omitted.
 - A separate synthetic actual-loader probe reproduces the dropped historical
   cutoff: **17 reproduction assertions pass; two historical-input invariants
   fail**. No model fit or market rerun; prediction/return impact is unverified.

@@ -6,7 +6,30 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
-## 2026-09-24 — Analyst meaning and attribution acceptance
+## 2026-09-24 — Analyst meaning and attribution verified and published
+
+Verified implementation checkpoint:
+`f361d6389490d152fab56484af4f17e448d73a33`, tree
+`1be23a8527ece80c368a63aaebd65d2541e85085`. The exact clean committed tree
+passed **127/127 browser cases in 88.424s** and **136/136 backend cases in
+2.03s** (22 existing fixture warnings). All 21 browser timing/meaning diagnostics
+are empty; TypeScript, production build, lint/format and diff checks pass.
+Root inspected exact-commit desktop/mobile screenshots. Published Mac →
+`spark main` → GitHub **from Spark**, divergence 0/0. No deployment.
+
+Exact-commit receipts:
+`/private/tmp/anios-analyst-commit.pdhR2L/ACCEPTANCE.md` (SHA256
+`5d2569a1b38b3eff983b99b42102dc71a6d439f20d1f0a32e0d0cd71934a45ea`),
+`/private/tmp/anios-analyst-committed.1NKN7v/ACCEPTANCE.md` (SHA256
+`466347b15f540df4ac4d486cf8ad765cc09aa8dbcbb02c578d78dc12c944cc02`).
+VERIFIED retention:
+`/home/animallya96/anios/data/market/research/analyst-semantics-20260924.wowffj_5/`,
+**788 payload files / 44,337,810 bytes**, zero readback differences. All 63
+excluded pytest aliases map to retained non-symlink directory contents; their
+exact mappings and validation are retained. Prior evidence (44 + 369 files)
+is unchanged. Readback receipt SHA256:
+`700487f831d896218f28b10a622ddd247aa3af4e3c49abde623cc3df546e1e4c`.
+Local retention driver/receipts: `/private/tmp/anios-analyst-retention.mOZHUm/`.
 
 Started clean on `main` at `f1e717a9d5abdcb370c35856970a365e7c26a349`;
 initial pull current, final precommit fetch confirms Mac/Spark/GitHub 0/0.
@@ -26,8 +49,8 @@ the active gap proxy and refuse unsupported peer-position claims.
 Validation: **136 backend cases / 22 existing warnings**, independent **15 edge
 and 810 technical-equivalence checks**, intermediate **127/127 browser cases**,
 final focused **12/12**, zero focused error/write diagnostics. Scoped lint/format,
-intermediate TypeScript/build and diff checks pass. Exact-commit full browser/
-build/backend repeat and publication are the next checkpoint step. Failed
+intermediate TypeScript/build and diff checks pass. The exact-commit repeat and
+publication above supersede that intermediate acceptance. Failed
 baselines are retained; public UI remains UNVERIFIED. Diagram impact: NONE.
 
 Evidence: `/private/tmp/anios-analyst-meaning.7EGfTl/`,
@@ -45,6 +68,11 @@ inflation remain UNVERIFIED. Next atomic work is historical-input causality;
 then immutable S provenance and broader financial-quality qualification.
 The technical explanation registry's falling-regime band/support mismatch is
 still open. Keep the completed rejected historical study frozen; no retuning.
+Cutoff remediation should forward the explicit partition `asof` through
+`desk.run`, `challenger.expectations_gap` and the universe/records/features
+loaders. Preserve `None` as latest, not the last bar date. Extend actual-loader
+future-append fixtures through tone/filings/splits with zero model fits; this
+does not fix publication eligibility, membership or within-vintage revisions.
 Overall goal remains active.
 
 ## 2026-09-24 — Dated dashboard evidence verified and published
