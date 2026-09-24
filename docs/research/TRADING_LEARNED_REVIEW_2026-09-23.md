@@ -86,3 +86,30 @@ basis across daily vintages; an old adjusted close restated by a later split
 cannot be compared blindly with a new vintage. There is still no sourced
 historical membership or 2016–26 point-in-time training set, so the table
 above stays unverified and the learned policies remain shadow-only.
+
+## Independent review of the separate OpenCode groundwork
+
+The shared development checkout has local commit `fc703b0` adding
+`rank_features.py`, `rank_ranker.py` and `rank_brake.py`. Its 60 owned tests
+pass, but the commit remains outside remote `main` and the guarded deploy.
+Do not import it as a valid learned policy yet:
+
+- `rank_features._atr` divides a true range from raw high/low by adjusted
+  close. On a flat adjusted-price series of 10 with raw high/low 101/99,
+  the result is **9.1**, a price-basis error rather than volatility.
+- `forward_labels` divides later raw close by earlier raw open. A pure 10:1
+  split with no adjusted-price change produces **−0.9**. Reading both raw
+  prices from one later snapshot does not mechanically adjust a corporate
+  action between the entry and exit. The label is also the stock's own
+  next-open to D+10-close return, not the registered next-open to D+11-open
+  return relative to SPY.
+- `Ranker.walk_forward_rank` receives arbitrary train/test arrays and does
+  not accept dates or enforce a ten-session label-end purge. Its output is
+  out-of-sample only if the caller independently supplies valid folds.
+- `AdaptiveBrake` applies fixed numerical thresholds; it does not learn
+  market drawdown risk in a walk-forward fit. The new feature contract also
+  omits the dated fundamentals and earnings-tone inputs captured above.
+
+These are counterexamples to the claimed backtest/live parity, not evidence
+that gradient boosting cannot work. Keep the incumbent as the live rule and
+repair the input/label/fold contract before attempting an adoption table.

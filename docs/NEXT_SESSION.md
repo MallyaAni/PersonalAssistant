@@ -42,6 +42,15 @@ The shared checkout's OpenCode commit, modified AGENTS.md and scratch files
 were not changed, staged, reset or pushed. Do not deploy during an active
 nightly process because its code checkout must remain stable until the record
 is written.
+Independent read-only review of that separate `fc703b0` ranker commit found
+four adoption blockers despite its 60 owned tests passing: raw high/low mixed
+with adjusted close makes ATR **9.1** on a flat split-adjusted series; a pure
+10:1 split yields **−0.9** from its raw forward-return label; its fold helper
+does not enforce chronological or label-end purging; and its brake is fixed
+thresholds rather than a trained adaptive model. Its label also differs from
+the registered SPY-relative next-open/open-at-t+11 target. See
+`docs/research/TRADING_LEARNED_REVIEW_2026-09-23.md`. Keep it out of `main`
+until those contracts and real point-in-time data are reviewed.
 The learned rank/brake remain **shadow-only**. A 2016–26 comparison against
 the incumbent, SPY, QQQ and equal weight is still **UNVERIFIED** without
 dated historical membership, delisted outcomes and compatible price vintages.
