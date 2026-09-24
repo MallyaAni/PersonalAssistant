@@ -28,14 +28,22 @@ flowchart TB
     Research --> Forward[Frozen NumPy neural inference<br/>independent prospective accounts]
     Panel --> Forward
 
-    Panel -. caller assembly required .-> Nested[Nested chronological ridge<br/>caller-declared dated observations and baskets<br/>past-only fits + inner funded selection]
-    Research -. supplied research evidence .-> Nested
-    Nested --> Outer[Continuous outer instructions<br/>stock / SPY / QQQ / cash<br/>research machinery, no market-study result]
-    Outer --> Accounts
+    Store -. pinned partitions .-> Pinned[Authenticated study inputs<br/>unchanged report + verified source hashes<br/>separate QQQ panel, complete XNYS grid]
+    Research -. pinned original report .-> Pinned
+    Pinned --> Assembly[Price-only gate assembly<br/>22 price / basket features<br/>gross open-to-open proxy labels<br/>unchanged baskets, source-global cadence]
+    Assembly --> Nested[Nested chronological ridge<br/>dated observations and fixed basket proxies<br/>past-only fits + inner funded selection]
+    Nested --> Outer[Continuous outer instructions<br/>stock / SPY / QQQ / cash<br/>research only, no live policy change]
+    Outer --> Study[Matched six-account study<br/>candidate + no-gate + unchanged /3<br/>funded SPY / QQQ + equal weight<br/>10 / 25 bp, one shared calendar]
+    Assembly --> Study
+    Study --> Journal
     Panel --> Accounts[Research accounts<br/>desk · fixed-model · stock/index/cash adapter<br/>SPY and QQQ funded controls]
     Accounts -. optional observation .-> Journal[Cash and fill journal<br/>decisions, phase changes, actual fills<br/>fees, every close mark, terminal holdings]
     Journal --> Research
     Research --> Audit[Independent replay + verification CLI<br/>retained JSON source hashes<br/>cash, units, fees and NAV reconciled]
+    Audit -. verified study account marks .-> Scorecards[Strict research scorecards<br/>full + rolling + actual folds + causal regimes<br/>exploratory, no automatic adoption]
+    Scorecards --> Research
+    StudyCLI[CLI: market_nested_study<br/>fresh archive + readback verification<br/>never overwrites a prior study] -.-> Pinned
+    StudyCLI -.-> Study
     Audit -.-> Limits
 
     Primary[(Historical primary documents<br/>issuer filings + SEC accession indexes)] --> Cohort[Offline reviewed-cohort importer<br/>stable issuer + share-class identities<br/>publication bounds separate from effective dates]
@@ -58,8 +66,8 @@ flowchart TB
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class CLI,Report,CohortCLI,Manifest interface;
-    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book,Cohort,Readiness,Accounts,Journal,Audit,Nested,Outer application;
+    class CLI,Report,CohortCLI,Manifest,StudyCLI interface;
+    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book,Cohort,Readiness,Accounts,Journal,Audit,Pinned,Assembly,Nested,Outer,Study,Scorecards application;
     class Store,Evidence data;
     class Yahoo,Edgar,Primary external;
     class Model,Reader,Pilot model;

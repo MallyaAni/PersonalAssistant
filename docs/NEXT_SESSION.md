@@ -6,6 +6,57 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Market assembly and matched study verified; frozen run next
+
+Started clean on `main` at `6aadd062052fd13d5f90ae2aff2dd3421b79eb94`;
+`git pull --rebase origin main` was current. Prepublication Spark/GitHub check
+showed0/0 divergence and only Spark's pre-existing untracked `scratch/`.
+No deployment, holding/order change, dashboard or incumbent-policy change.
+
+Implemented `nested_market_sources`, `nested_market_inputs`,
+`nested_market_study` and the fixed-protocol `market_nested_study` CLI.
+VERIFIED: **1,033 passed,1 deliberately deselected,5 existing warnings** in
+24.86s, scoped lint/format and40 actual standalone synthetic journal CLI checks.
+Source126/input186/study47 new tests. New receipt/binding guards reject report,
+source and conclusion drift, including the reproduced grade mismatch (.15 basket
+versus0 changed incumbent). The consumed FOMC CSV and holiday JSON are retained.
+No algorithm or protocol parameter was changed after outcomes; **no real-market
+fit has run at this checkpoint**.
+
+Actual input assembly:191 source hashes,570 price-field comparisons and2,945
+XNYS dates pass; original95-column report preserved, separate96-column execution
+panel,22 gate features,2,939 raw/2,739 eligible-after-warmup labels per target.
+First outer session2020-01-06. Q/TYL terminal OHLC-envelope anomalies remain
+explicitly flagged and unrepaired; fetches were after the verified final close.
+Historical report causality, membership, quality completeness and adoption remain
+unverified. The gate is price-only, not a financially qualified stock selector.
+
+Protocol: `research/nested-market-study-2026-09-24.md`, SHA256
+`11898d28ad41c8e625a54a56f604b7daac508a91bc85dc6ba1a3ac4cfffec483`.
+Exact source hashes, runtime and acceptance:
+`research/nested-market-validation-2026-09-24.md`.
+Evidence: `/private/tmp/anios-nested-market-acceptance.teTufe/`;
+final JUnit `acceptance-02.xml`, synthetic archives under `pytest-02/`.
+Source-loader proof SHA256
+`6de5cd2501506361545b67f7c94e0936c3f64b087cd0a73b1c4fff0734b64515`.
+Pinned local inputs: `/private/tmp/anios-nested-market-inputs.nsm4Sm/`.
+Optional research dependencies: `/private/tmp/anios-nested-calendar.MeavxY/`,
+mounted `/deps` with `PYTHONPATH=/deps:/app` in the existing local test image.
+
+Diagram impact: UPDATED — market-data. All32 diagram/page checks,19 browser
+labels,7 node-containment checks, SVG/source links and100/125/300% zoom pass,
+zero page/console/request failures;31 unrelated SVGs preserved. Root inspected
+the research branch. Evidence `/private/tmp/anios-market-study-diagram.i2IPJH/`.
+Deployment gates and deployed acceptance remain UNVERIFIED.
+
+Next: publish the verified checkpoint to Spark and GitHub **from Spark**, then
+run the frozen real-history CLI once. The prepared external attempt logger
+`/private/tmp/anios-nested-market-acceptance.teTufe/run-frozen-study.py` retains
+stdout/stderr/status in fresh `market-run-01/` even on failure. It has not run.
+Reconcile every real account and archive hash before reading outcomes; retain
+losers without retuning. Archive local evidence and the trusted report on Spark.
+No live deployment is authorized or underway. Overall goal remains active.
+
 ## 2026-09-24 — Nested fitting/selection machinery verified; source study next
 
 Verified implementation checkpoint:

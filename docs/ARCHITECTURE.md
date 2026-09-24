@@ -652,9 +652,26 @@ the fit. `nested_allocation` fits every inner chronological block, chooses a
 penalty/margin on earlier funded 10/25-bp accounts, then carries one outer
 instruction path and account through subsequent refits. Model state, audit
 receipts, predictions, normalized inputs and every account journal have explicit
-hash scopes. This is research machinery, not a deployed model: source and label
-derivation and the complete `/3`/index benchmark study remain unverified. See
-the [nested runner contract](research/nested-allocation-runner-2026-09-24.md).
+hash scopes. `nested_market_sources` authenticates the pinned September18 report
+before unpickling, reconciles its original95 columns with191 source files and
+checks the XNYS calendar; QQQ is added only to a separate96-column panel.
+`nested_market_inputs` constructs22 price-only gate features and five-session
+gross adjusted-open proxy labels over the unchanged reconstructed desk baskets.
+Report grades, scores, regime state, sides, themes and assembly source are bound
+before derivation and rechecked before/after the comparison. This does not
+establish historical financial quality or availability.
+
+`nested_market_study` composes actual nested fits with unchanged `/3`, a matched
+stock-only adapter, funded SPY/QQQ and equal weight at10/25bp. Every metric uses
+independently reconciled journal marks on exactly matching dates; actual-fold
+tables retain carried holdings and interval traded dollars. Its offline CLI
+writes a fresh, non-overwriting archive of sources (including consumed market
+calendar files), arrays, fits, all candidate accounts and scorecards. A complete
+evidence digest refuses changed summaries or arrays before archival. It has no
+live route, broker, private holdings or
+automatic promotion. The [frozen study protocol](research/nested-market-study-2026-09-24.md)
+and [nested runner contract](research/nested-allocation-runner-2026-09-24.md)
+separate implementation proof from any exploratory economic result.
 
 ### Adding one
 

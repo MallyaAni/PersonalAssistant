@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-24 — Pinned market inputs and six-account nested study
+
+- Added offline source authentication, 22-feature price-only gate assembly and
+  five-session cash-preserving adjusted-open proxy labels. The original desk
+  report remains unchanged; a separate execution panel adds QQQ. Report/config/
+  source binding prevents candidate/incumbent drift after assembly.
+- Added a fixed-protocol CLI and six-account comparison: candidate, matched
+  stock-only adapter, unchanged `/3`, funded SPY/QQQ and equal weight at10/25bp.
+  Strict full/rolling/regime and actual-fit fold tables use independently
+  reconstructed account marks. Fresh archives retain all candidates, fits,
+  sources (including consumed calendar files), arrays and journals; a complete
+  evidence digest rejects altered conclusions before publication.
+- VERIFIED: **1,033 tests passed,1 deliberately deselected,5 existing warnings**;
+  scoped lint/format;40 standalone synthetic journal CLI checks across two
+  fixtures; actual source validation191 hashes/570 field comparisons/2,945 XNYS
+  sessions. Two terminal vendor OHLC anomalies are preserved and flagged.
+  All32 diagram checks and documentation browser acceptance pass.
+- No market-performance, historical-quality, adoption or deployment claim.
+  [Frozen protocol](research/nested-market-study-2026-09-24.md) and
+  [implementation evidence](research/nested-market-validation-2026-09-24.md).
+
 ## 2026-09-24 — Actual nested fits and funded allocation selection
 
 - Added separate `nested_ridge` and `nested_allocation` research modules. Each

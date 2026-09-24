@@ -229,8 +229,12 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   composition; its synthetic execution checks do not establish prediction skill.
   The nested runner now implements actual inner ridge fits, funded penalty/margin
   selection and continuous outer stock/index/cash accounts, with dated training
-  evidence. Historical input/label assembly and the complete comparator study
-  remain outstanding; this does not promote a new strategy.
+  evidence. A pinned historical source/label builder and six-account comparator
+  runner are now implemented under a
+  [frozen price-only protocol](research/nested-market-study-2026-09-24.md).
+  Historical input availability, complete financial-quality features and
+  independent economic qualification remain outstanding; this does not promote
+  a new strategy.
   The operator's target is ex-ante risk-on
   selection of volatile quality names with cash/index alternatives ahead of
   forecast deterioration, measured by net wealth against `/3`, SPY and QQQ.

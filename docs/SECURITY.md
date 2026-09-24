@@ -368,6 +368,18 @@ these are unencrypted, unscoped data with no new retention or storage service.
 Its hashes describe integrity scopes, not signed source provenance. The code
 does not access the database, private holdings, a model server or a broker.
 
+The companion offline market study accepts only one hash-pinned trusted report
+pickle and authenticates its complete bytes before deserialization. Manifest
+source identifiers map only to the frozen bars/actions partitions under a
+caller-selected local store; hashes are checked before parsing those bytes.
+Its new-directory archive also retains public source metadata, exercised Python
+source, the frozen protocol, feature/label arrays, coefficients and all journals.
+These remain unencrypted research artifacts outside Git and the public frontend,
+with no owner filtering or automatic retention. Hashes authenticate agreement
+with the declared snapshot, not the vendor's price accuracy or the availability
+of that data on a historical decision date. No model server or live trading
+service is used.
+
 ### Personal decision receipts (2026-09-24; deployment pending)
 
 The primary desk owner's browser can request `record_history: true` on

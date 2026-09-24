@@ -129,6 +129,38 @@ deploy used to; `--skip-post` skips them.
 
 ## Research-account journal validation
 
+The pinned price-only market study runs offline with the research dependencies
+(including `exchange-calendars`) and PyArrow. Keep the original95-column report
+and the matching September18 partitions separate from newer market vintages:
+
+```bash
+python -m backend.cli.market_nested_study \
+  --report /absolute/path/corrected-exposure-report.pickle \
+  --store-root /absolute/path/market \
+  --manifest /absolute/path/manifest.json \
+  --output /absolute/path/new-study-directory
+```
+
+The destination must not exist. The CLI enforces the pinned source hashes and
+the default frozen geometry; it cannot override a source checksum or tune the
+experiment from command-line flags. Do not rerun a completed study to choose a
+favorable result. See the
+[frozen feature/label/comparator protocol](research/nested-market-study-2026-09-24.md).
+Before a market run, exercise source rejection, actual source-to-feature assembly,
+all funded comparator ledgers, archive readback and standalone journal verification:
+
+```bash
+python -m pytest -c /dev/null \
+  backend/tests/test_nested_market_sources.py \
+  backend/tests/test_nested_market_inputs.py \
+  backend/tests/test_nested_market_study.py -q
+```
+
+An older test image can lack pandas, PyArrow or exchange-calendars. Use an isolated
+research dependency environment and record its versions; a dependency skip is
+not source validation. Mount the exact checkout being tested. These tests need
+no live model or database and do not qualify a strategy for deployment.
+
 The nested chronological runner's acceptance fits actual NumPy regressions and
 executes all inner candidates and continuous outer accounts on synthetic data:
 
