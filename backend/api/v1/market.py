@@ -1045,6 +1045,7 @@ async def desk_chart(
     live_bar = None
     if quote.get("last") is not None and quote.get("bar"):
         live_bar = {
+            "bar": quote["bar"],
             "session": datetime.fromisoformat(str(quote["bar"]))
             .astimezone(desk_freshness.NEW_YORK)
             .date()

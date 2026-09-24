@@ -2362,6 +2362,8 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
 // the desk actually scores from, daily and weekly, and nothing else.
 test('the ticker chart draws the desk’s own timeframes and mirrors its readings in text', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
+  // A retained quote must disclose its original time rather than claim to be live today.
+  await page.clock.install({time: new Date('2026-09-24T14:00:00Z')})
   // Some browser environments expose a POSIX locale tag that Intl rejects;
   // the chart must format its axis without throwing in that environment.
   await page.addInitScript(() => {
@@ -2375,6 +2377,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
       {date: '2026-09-02', grade: 'C', votes: -1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
       {date: '2026-09-04', grade: 'B', votes: 1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
       {date: '2026-09-08', grade: 'A', votes: 3.2, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: false},
+      {date: '2026-09-09', grade: 'B', votes: 1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: false},
     ],
     recommendations: {status: 'available', outcomes: {status: 'awaiting_daily_validation'}, invalid_archives: 0, older_records_not_shown: false, observations: []},
   }}))
@@ -2383,23 +2386,36 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   for (let cursor = new Date(Date.UTC(2026, 6, 6)); days.length < 30; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
     if (cursor.getUTCDay() !== 0 && cursor.getUTCDay() !== 6) days.push(cursor.toISOString().slice(0, 10))
   }
+  days[days.length - 1] = '2026-09-08'
   const at = (base: number) => days.map((_, i) => Number((base + i * 0.5).toFixed(2)))
+  let includeQuoteTime = true
+  let lastClose = 115
+  let delayNextChart = false
+  let releaseChart: (() => void) | undefined
+  // Keep candle and overlay snapshots together while simulating independently polled quotes.
   const chartBody = (timeframe: string) => ({
     user_id: USER, ticker: 'AAPL', timeframe, timeframes: ['daily', 'weekly'], adjusted: true,
+    quote_bar: includeQuoteTime ? '2026-09-08T19:45:00Z' : null,
+    last_bar_complete: timeframe === 'daily',
     basis: 'adjusted for splits and dividends, the basis the desk grades on',
     sessions: days.length,
-    bars: days.map((date, i) => ({date, open: 100 + i * 0.5, high: 101 + i * 0.5, low: 99 + i * 0.5, close: 100.5 + i * 0.5, volume: 1000})),
+    bars: days.map((date, i) => ({date, open: 100 + i * 0.5, high: Math.max(101 + i * 0.5, i === days.length - 1 ? lastClose : 0), low: 99 + i * 0.5, close: i === days.length - 1 ? lastClose : 100.5 + i * 0.5, volume: 1000})),
     overlays: timeframe === 'weekly'
       ? {ema9: at(99), ema21: at(98)}
       : {ema9: at(100), ema21: at(99), ema50: at(97), ema200: at(94), sma200: at(93), band_lower: at(96), band_middle: at(100), band_upper: at(104)},
     levels: {swing_low: at(95), swing_high: at(110), high_52w: at(120), low_52w: at(80), range60_high: at(115), range60_low: at(90)},
   })
-  await page.route('**/desk/chart/AAPL*', route => {
+  await page.route('**/desk/chart/AAPL*', async route => {
     const timeframe = new URL(route.request().url()).searchParams.get('timeframe') ?? 'daily'
-    return route.fulfill({json: chartBody(timeframe)})
+    const payload = chartBody(timeframe)
+    if (delayNextChart) {
+      delayNextChart = false
+      await new Promise<void>(resolve => { releaseChart = resolve })
+    }
+    return route.fulfill({json: payload})
   })
   await page.route('**/desk/live', route => route.fulfill({json: {as_of: '2026-09-08T20:00:00Z', quotes: {
-    AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-08T19:45:00Z'},
+    AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-08T19:30:00Z'},
   }}}))
   await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, holdings: {}, equity: 100000, rows: {},
@@ -2425,22 +2441,29 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   const frames = chart.getByRole('group', {name: 'Chart timeframe'})
   await expect(frames.getByRole('button')).toHaveCount(2)
   await expect(frames.getByRole('button', {name: 'D'})).toHaveAttribute('aria-pressed', 'true')
-  await expect(chart).toContainText('The desk reads daily and weekly only')
+  await expect(chart).toContainText('Daily and weekly indicator views')
 
   // The daily readings are mirrored in text, with distance from price.
   await expect(chart).toContainText('EMA 21')
   await expect(chart).toContainText('EMA 200')
   await expect(chart).toContainText('Band upper')
   await expect(chart).toContainText('52-week high')
-  await expect(chart).toContainText('The newest bar is today, still moving')
-  await expect(chart).toContainText('Price now')
+  await expect(chart).toContainText('15-minute bar starting Sep 8, 2026, 3:45 PM EDT')
+  await expect(chart).toContainText('Quote-bar close')
+  // An older board quote cannot overwrite the newer chart snapshot or its distances.
+  await expect(chart.locator('dl > div').filter({has: page.locator('dt', {hasText: 'Quote-bar close'})})).toContainText('$115.00')
+  await expect(chart.locator('dl > div').filter({has: page.locator('dt', {hasText: 'EMA 21'})})).toContainText('$113.50 +1.3%')
+  await expect(chart).not.toContainText('today, still moving')
+  await expect(chart).not.toContainText('Price now')
   await expect(chart).not.toContainText('Last close')
 
   // Both grade changes are named, and the published one is distinguished.
-  await expect(chart).toContainText('2 grade changes marked')
+  await expect(chart).toContainText('3 grade changes marked')
   await expect(chart).toContainText('C→B')
   await expect(chart).toContainText('B→A')
-  await expect(chart).toContainText('published that night')
+  await expect(chart).toContainText('below A · A→B')
+  await expect(chart).not.toContainText('sell ·')
+  await expect(chart).toContainText('recorded grade')
 
   // Weekly re-reads and swaps to the lines the weekly legs are built from.
   await frames.getByRole('button', {name: 'W'}).click()
@@ -2448,7 +2471,29 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('Weekly EMA 21')
   await expect(chart).not.toContainText('EMA 200')
   await expect(chart).toContainText('weeks shown,')
-  await expect(chart).toContainText('The newest week is today, still moving')
+  await expect(chart).toContainText('15-minute bar starting Sep 8, 2026, 3:45 PM EDT')
+  await expect(chart).toContainText('Weekly overlays include the forming week')
+
+  // Missing provenance stays explicitly stored; an unfinished week is not called completed.
+  includeQuoteTime = false
+  await page.clock.fastForward('01:01')
+  await expect(chart).toContainText('Newest stored week: 2026-09-08 (forming candle)')
+  await expect(chart).toContainText('Latest stored close')
+  await expect(chart).not.toContainText('Quote-bar close')
+
+  // A delayed poll cannot roll back the complete snapshot from a later poll.
+  delayNextChart = true
+  await page.clock.fastForward('01:01')
+  await expect.poll(() => Boolean(releaseChart)).toBe(true)
+  lastClose = 120
+  await page.clock.fastForward('01:01')
+  const storedClose = chart.locator('dl > div').filter({has: page.locator('dt', {hasText: 'Latest stored close'})})
+  await expect(storedClose).toContainText('$120.00')
+  const delayedResponse = page.waitForResponse(response => response.url().includes('/desk/chart/AAPL'))
+  releaseChart!()
+  await (await delayedResponse).finished()
+  await page.clock.runFor(50)
+  await expect(storedClose).toContainText('$120.00')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 

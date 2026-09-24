@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-09-24 — Parallel chart consistency correction, release pending
+
+User asked whether all tickers/charts are consistent and whether neural is live,
+then authorized parallel work. The existing momentum/breakout rule remains live;
+neural is a separate experimental paper comparison. No policy was promoted.
+
+Reproduced chart disagreement: the browser independently overwrote an API candle
+with its board quote while leaving API indicator lines unchanged. The chart now
+uses one API candle/indicator snapshot, exposes its actual quote-bar timestamp,
+refreshes when the board observation changes, and rejects older HTTP responses.
+Retained quotes no longer say "Price now" or "today". Grade declines say "below A",
+not "sell"; recorded versus replayed grades and provisional weekly lines are explicit.
+Backend daily/weekly completeness follows the included bar and exchange close,
+including early closes. Forming-week swing series now have the same length as bars.
+
+VERIFIED: seven new backend cases and the browser acceptance failed before fixes;
+26 chart/backend checks (including authenticated actual ASGI routes), TypeScript,
+and all 77 desk browser cases pass against exact worktree source at port5178.
+Cached cross-ticker audit: 95 names x daily/weekly =190 payloads, zero missing,
+array-length or quote-source timestamp failures after correction. This is not an
+external audit of every provider price or every rendered ticker. The hypothetical
+AAOI $106 race fixture is not an actual past UI receipt. Existing chart modules
+have pre-existing lint debt; scoped market API/new HTTP test Ruff passes.
+Evidence: /tmp/chart-contract-before-20260924.log,
+/tmp/chart-contract-after-20260924.log,
+/tmp/chart-consistency-desk-suite-20260924.log,
+/tmp/chart-consistency-audit-after.json (original audit retained).
+
+The preceding aa15c03 entry-evidence release is already running through full gates:
+/tmp/codex-entry-evidence-release-20260924.log. NEVER restart it. Read-only verifier
+/tmp/verify-entry-release-20260924.py must run after the exact postcheck marker;
+proof /tmp/codex-entry-evidence-release-proof-20260924.json. It does not validate a
+future ordinary research receipt while the market is closed. Chart changes are
+not live until their subsequent guarded deployment and actual browser proof.
+
 ## 2026-09-24 03:09 UTC — Grade and dashboard fixes LIVE and verified
 
 `facbdeed1bd07cb14c3d00abcb7c78739c2da20f` is LIVE: 4529 backend tests,

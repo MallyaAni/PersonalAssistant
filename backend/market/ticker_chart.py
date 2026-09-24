@@ -39,10 +39,12 @@ first have used it, not the day it formed.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import numpy as np
 
-from backend.market import bands, levels
+from backend.market import bands, calendar, levels
 from backend.market.store import MarketStore
 from backend.market.technical import ema, sma
 
@@ -67,9 +69,7 @@ class Chart:
 
     ticker: str
     timeframe: str
-    # False when the newest bar is a week still forming. Daily bars are
-    # always complete here: today's session arrives from the live quote in
-    # the browser, not from the store.
+    # False when the newest session or week has not reached its close.
     last_bar_complete: bool
     dates: tuple[str, ...]
     open: tuple[float | None, ...]
@@ -81,6 +81,8 @@ class Chart:
     levels: dict[str, tuple[float | None, ...]]
     # The sessions the desk's price trigger fired on, within the drawn range.
     entries: tuple[str, ...] = ()
+    # Start of the completed 15-minute observation used for bars AND lines.
+    quote_bar: str | None = None
 
 
 # NaN and numpy scalars are not JSON, and a chart library wants a gap rather
@@ -153,6 +155,25 @@ def _rolling(values: np.ndarray, length: int, highest: bool) -> np.ndarray:
     return out
 
 
+# Identify the included observation and whether it reaches the exchange close.
+def _quote_observation(
+    live_bar: dict, session: np.datetime64
+) -> tuple[str | None, bool]:
+    try:
+        observed = datetime.fromisoformat(str(live_bar.get("bar", "")))
+    except ValueError:
+        return None, False
+    if observed.tzinfo is None:
+        return None, False
+    local = observed.astimezone(ZoneInfo("America/New_York"))
+    if local.date().isoformat() != str(session):
+        return None, False
+    closing = datetime.combine(
+        local.date(), calendar.session_close(local.date()), local.tzinfo
+    )
+    return observed.isoformat(), local + timedelta(minutes=15) >= closing
+
+
 # Build one name's chart straight from the store, without assembling the
 # whole 93-name panel: a single drill-down should not pay for the book.
 def build(
@@ -190,6 +211,8 @@ def build(
     #
     # No adjustment factor applies to a bar that has not closed, so the raw
     # and adjusted prices are the same for it.
+    quote_bar = None
+    live_complete = True
     if live_bar:
         session = live_bar.get("session")
         last = live_bar.get("last")
@@ -213,6 +236,9 @@ def build(
             elif stamp == dates[-1]:
                 open_[-1, 0], high[-1, 0], low[-1, 0] = fields[0], fields[1], fields[2]
                 close[-1, 0] = adj_close[-1, 0] = price
+            if stamp == dates[-1]:
+                # Completion follows the included candle, never the request's clock.
+                quote_bar, live_complete = _quote_observation(live_bar, stamp)
 
     # The same adjustment levels.py applies, so the candles sit on the line
     # the averages are computed from.
@@ -233,7 +259,8 @@ def build(
         )
         # Forward-fill the daily swing levels onto the week they close in,
         # so a weekly chart still shows the levels the desk is grading by.
-        ends = _week_ends(dates)
+        # Include the forming week just as the candle roll-up does.
+        ends = np.searchsorted(dates, w_dates)
         keep = [i for i in range(len(ends))]
         for name, series in (("swing_low", swing_low), ("swing_high", swing_high)):
             level_lines[name] = np.array(
@@ -300,12 +327,16 @@ def build(
         # hid it, so only the weekly timeframe returned a 500 in
         # production while every test passed.
         last_bar_complete=bool(
-            timeframe == DAILY
-            or (
-                len(_week_ends(all_dates))
-                and _week_ends(all_dates)[-1] == len(all_dates) - 1
+            live_complete
+            and (
+                timeframe == DAILY
+                or (
+                    len(_week_ends(all_dates))
+                    and _week_ends(all_dates)[-1] == len(all_dates) - 1
+                )
             )
         ),
+        quote_bar=quote_bar,
         dates=tuple(str(d) for d in dates[cut]),
         open=_clean(open_[cut, 0]),
         high=_clean(high[cut, 0]),
@@ -339,6 +370,7 @@ def payload(
         "ticker": chart.ticker,
         "timeframe": chart.timeframe,
         "last_bar_complete": chart.last_bar_complete,
+        "quote_bar": chart.quote_bar,
         "timeframes": list(TIMEFRAMES),
         "adjusted": True,
         "basis": "adjusted for splits and dividends, the basis the desk grades on",

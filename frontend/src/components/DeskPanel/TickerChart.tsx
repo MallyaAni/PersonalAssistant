@@ -14,9 +14,8 @@ import { getDeskChart, type DeskChart, type DeskChartBar } from '../../services/
 import type { DeskHistory } from '../../services/api'
 
 // The picture behind the grade. The board says what the desk concluded; this
-// says what it was looking at when it concluded it, on the same adjusted
-// basis the analysts score from, with the grade changes marked on the bars
-// where they happened.
+// shows adjusted price indicators beside recorded and replayed grade changes.
+// Forming-week overlays may differ from the weekly inputs of a saved grade.
 //
 // Only daily and weekly exist here because they are the only two timeframes
 // the desk reads: the 9/21/50/200 EMAs and the 20-session band are daily,
@@ -99,72 +98,6 @@ const ordered = <T extends { time: UTCTimestamp }>(points: T[]): T[] => {
   return [...byTime.values()].sort((a, b) => (a.time as number) - (b.time as number))
 }
 
-// The New York session a timestamp belongs to. A bar stamped after
-// midnight UTC is still the previous trading day in New York, so the
-// session cannot be read off the ISO string.
-const sessionOf = (stamp: string): string => {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(stamp))
-  return parts
-}
-
-// Fold the live quote into the drawn bars so the newest candle is the one
-// moving right now rather than the last completed session. On the daily
-// chart today is a new bar; on the weekly chart today extends the week
-// still forming. Without this the chart is correct but always behind, and
-// a trader reading it during the session is looking at yesterday.
-const withLiveBar = (
-  bars: DeskChartBar[],
-  timeframe: Timeframe,
-  lastBarComplete: boolean,
-  quote?: LiveQuote,
-): { bars: DeskChartBar[]; live: boolean } => {
-  if (!quote || !Number.isFinite(quote.last) || !quote.bar || !bars.length) {
-    return { bars, live: false }
-  }
-  const session = sessionOf(quote.bar)
-  const newest = bars[bars.length - 1]
-  if (session < newest.date) return { bars, live: false }
-  const high = Math.max(quote.high ?? quote.last, quote.last)
-  const low = Math.min(quote.low ?? quote.last, quote.last)
-  // Daily: today is its own bar. Weekly: today belongs to the forming week
-  // when there is one, and opens a new week when the last one closed.
-  const extend =
-    timeframe === 'weekly' ? !lastBarComplete || session <= newest.date : session === newest.date
-  if (extend) {
-    const merged: DeskChartBar = {
-      ...newest,
-      high: Math.max(newest.high ?? high, high),
-      low: Math.min(newest.low ?? low, low),
-      close: quote.last,
-      date: timeframe === 'weekly' ? newest.date : session,
-    }
-    return { bars: [...bars.slice(0, -1), merged], live: true }
-  }
-  return {
-    bars: [
-      ...bars,
-      {
-        date: session,
-        open: quote.open ?? newest.close ?? quote.last,
-        high,
-        low,
-        close: quote.last,
-        volume: null,
-      },
-    ],
-    live: true,
-  }
-}
-
-// Grade changes from the replayed history, as one marker per session where
-// the letter differs from the session before it. A row the desk actually
-// published is marked more strongly than one that is today's rules replayed
-// over old prices, because only the first is something the desk said.
 // Where price met the desk's entry condition, so the rule can be checked
 // against the chart rather than against a table. The grade half is not
 // included - these mark a band breakout, and the grade arrows beside them say
@@ -180,6 +113,7 @@ const entryMarkers = (chart: DeskChart | undefined) =>
     size: 1,
   }))
 
+// Mark grade changes, with stronger arrows only for recorded desk grades.
 const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
   const rows = (history?.rows ?? []).filter((r) => r.date >= since && r.grade)
   const out: {
@@ -191,31 +125,28 @@ const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
     size: number
   }[] = []
   const rank: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
+  // Identify the grade boundary used by the exit rule, without assuming a holding.
   const wanted = (grade: string) => grade === 'A' || grade === 'A+'
   for (let i = 1; i < rows.length; i += 1) {
     const before = rows[i - 1].grade
     const now = rows[i].grade
     if (!before || !now || before === now) continue
     const up = (rank[now] ?? -1) > (rank[before] ?? -1)
-    // Crossing OUT of A is not grade drift, it is the desk's only exit: the
-    // rotation that sells the name and puts the money into the ones it still
-    // wants. The chart drew every grade change the same way, so the one
-    // change that is a trade looked like the four that are not, and the
-    // entry circles had no counterpart. B to C is drift - the desk was
-    // already out - and so is anything on the way back up.
-    const sold = wanted(before) && !wanted(now)
+    // Crossing below A can inform an exit, but history does not prove a trade.
+    const belowA = wanted(before) && !wanted(now)
     out.push({
       time: stamp(rows[i].date),
       position: up ? 'belowBar' : 'aboveBar',
-      color: sold ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
+      color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
-      text: sold ? `sell · ${before}→${now}` : `${before}→${now}`,
-      size: sold ? 2 : rows[i].said ? 2 : 1,
+      text: belowA ? `below A · ${before}→${now}` : `${before}→${now}`,
+      size: rows[i].said ? 2 : 1,
     })
   }
   return out
 }
 
+// Render price indicators and their evidence without implying account execution.
 export const TickerChart = ({
   userId,
   ticker,
@@ -238,13 +169,23 @@ export const TickerChart = ({
   const chartRef = useRef<IChartApi | null>(null)
 
   useEffect(() => {
-    let live = true
     setData(null)
     setError(null)
+  }, [userId, ticker, timeframe])
+
+  useEffect(() => {
+    let live = true
+    let request = 0
+    // Only the newest request may publish its coherent candle/indicator snapshot.
     const read = (first: boolean) => {
+      const sequence = ++request
       getDeskChart(userId, ticker, timeframe)
-        .then((payload) => live && setData(payload))
-        .catch((e: Error) => live && first && setError(e.message))
+        .then((payload) => {
+          if (!live || sequence !== request) return
+          setData(payload)
+          setError(null)
+        })
+        .catch((e: Error) => live && sequence === request && first && setError(e.message))
     }
     read(true)
     // The averages, bands and levels are computed on the server against the
@@ -255,16 +196,16 @@ export const TickerChart = ({
       live = false
       window.clearInterval(timer)
     }
-  }, [userId, ticker, timeframe])
+  }, [userId, ticker, timeframe, quote?.bar, quote?.last])
 
-  // One merged series, so the picture and the readings below it can never
-  // disagree about what the newest bar is.
+  // Candles and indicators share the endpoint's snapshot. The independently
+  // polled board quote triggers refresh but must never replace just the candle.
   const merged = useMemo(
-    () =>
-      data
-        ? withLiveBar(data.bars, timeframe, data.last_bar_complete !== false, quote)
-        : { bars: [] as DeskChartBar[], live: false },
-    [data, timeframe, quote],
+    () => ({
+      bars: data?.bars ?? [] as DeskChartBar[],
+      live: Boolean(data?.quote_bar && Number.isFinite(Date.parse(data.quote_bar))),
+    }),
+    [data],
   )
 
   useEffect(() => {
@@ -383,7 +324,7 @@ export const TickerChart = ({
     <section className="mb-4" aria-label={`${ticker} price chart`}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-xs font-medium text-[#1d1d1f]">
-          Price against the averages the desk scores on, with every grade change marked
+          Price, indicators and grade history
         </h4>
         <div className="flex gap-1" role="group" aria-label="Chart timeframe">
           {(['daily', 'weekly'] as Timeframe[]).map((frame) => (
@@ -425,28 +366,31 @@ export const TickerChart = ({
           )}
           <p className="mt-1 text-[11px] text-[#6e6e73]">
             {merged.live
-              ? `The newest ${timeframe === 'weekly' ? 'week' : 'bar'} is today, still moving, from the latest 15-minute quote.`
-              : `The newest bar is the last completed ${timeframe === 'weekly' ? 'week' : 'session'}; the market is closed or no quote has arrived.`}{' '}
-            {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} shown, {data.basis}. The desk
-            reads daily and weekly only, so those are the timeframes offered here.
+              ? `Candle includes the 15-minute bar starting ${new Intl.DateTimeFormat('en-US', {
+                  timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric',
+                  hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+                }).format(new Date(data.quote_bar!))}.`
+              : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? ' (forming candle)' : ''}.`}{' '}
+            {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} shown, {data.basis}.
+            {' '}Daily and weekly indicator views; observations can update during a session.
+            {timeframe === 'weekly' && data.last_bar_complete === false &&
+              ' Weekly overlays include the forming week and can differ from the weekly inputs of a saved grade.'}
           </p>
           {/* A mark nobody can read is decoration. Both of the desk's rules are
               on the price now, so the legend has to name both. */}
           <p className="mt-1 text-[11px] text-[#6e6e73]">
             <span className="font-medium text-[#0b5cad]">{'●'} breakout</span>{' '}
-            marks a session the price closed through the upper edge of its 20-day band, which is
-            price-only evidence; grade, cash and position caps determine the actual plan.{' '}
-            <span className="font-medium text-[#b42318]">{'↓'} sell</span>{' '}
-            marks a session the grade fell below A. It is not a confirmed sale or reinvestment.
-            Paler arrows are grade changes that are not
-            trades. A signal shown here is the rule replayed over these prices, not a record of
-            an order.
+            marks the incumbent band-breakout price condition, not a Buy instruction.
+            Grade, event pauses, cash and position caps also affect the personal plan.{' '}
+            <span className="font-medium text-[#b42318]">{'↓'} below A</span>{' '}
+            marks a grade crossing below A. Bolder arrows show recorded grades; paler arrows
+            show historical grade replays. These markers are not account orders or fills.
           </p>
 
           {summary && (
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">
               <div className="flex justify-between gap-2">
-                <dt className="text-[#6e6e73]">{merged.live ? 'Price now' : 'Last close'}</dt>
+                <dt className="text-[#6e6e73]">{merged.live ? 'Quote-bar close' : 'Latest stored close'}</dt>
                 <dd className="tabular-nums font-medium">
                   {summary.last.close === null ? '—' : `$${summary.last.close.toFixed(2)}`}
                 </dd>
@@ -472,7 +416,7 @@ export const TickerChart = ({
               : `${changes.length} grade change${changes.length === 1 ? '' : 's'} marked: ${changes
                   .slice(-6)
                   .map((c) => c.text)
-                  .join(', ')}${changes.length > 6 ? ' (most recent six)' : ''}. A bolder arrow is a grade the desk published that night.`}
+                  .join(', ')}${changes.length > 6 ? ' (most recent six)' : ''}.`}
           </p>
         </>
       )}

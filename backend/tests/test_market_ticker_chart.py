@@ -184,6 +184,7 @@ def test_the_forming_week_is_drawn_and_flagged():
     if not weekly.last_bar_complete:
         # A forming bar still carries a real range and its own close.
         assert weekly.low[-1] <= weekly.close[-1] <= weekly.high[-1]
+    assert all(len(line) == len(weekly.dates) for line in weekly.levels.values())
     built = ticker_chart.payload(_store(closes), "AAA", 6, "weekly")
     assert "last_bar_complete" in built
     assert ticker_chart.payload(_store(closes), "AAA", 6)["last_bar_complete"] is True
@@ -250,3 +251,45 @@ def test_the_chart_marks_where_the_entry_fired():
     flat = ticker_chart.build(_store([100.0] * 300), "AAA", sessions=60)
     assert flat is not None
     assert flat.entries == ()
+
+
+# Source timestamps identify the candle used for both the close and its indicators.
+@pytest.mark.parametrize("timeframe", ticker_chart.TIMEFRAMES)
+def test_quote_metadata_and_lines_share_one_snapshot(timeframe):
+    store = _store([100.0] * 320)
+    built = ticker_chart.payload(store, "AAA", 30, timeframe, {
+        "session": "2026-09-24", "bar": "2026-09-24T14:00:00+00:00",
+        "last": 150.0, "open": 100.0, "high": 151.0, "low": 99.0,
+    })
+    assert built["quote_bar"] == "2026-09-24T14:00:00+00:00"
+    assert built["bars"][-1]["close"] == 150.0
+    assert built["overlays"]["ema9"][-1] == pytest.approx(110.0)
+    assert built["last_bar_complete"] is False
+
+
+# Retained quotes older than stored prices cannot claim ownership of the chart.
+def test_ignored_old_quote_has_no_snapshot_timestamp():
+    store = _store([100.0] * 320)
+    built = ticker_chart.payload(store, "AAA", 30, live_bar={
+        "session": "2024-01-02", "bar": "2024-01-02T15:00:00+00:00",
+        "last": 150.0,
+    })
+    assert built["quote_bar"] is None
+    assert built["bars"][-1]["close"] == 100.0
+    assert built["overlays"]["ema9"][-1] == pytest.approx(100.0)
+
+
+# A completed 15-minute candle does not make the whole session or Friday complete.
+@pytest.mark.parametrize(("session", "bar", "complete"), [
+    ("2026-09-25", "2026-09-25T19:30:00+00:00", False),
+    ("2026-09-25", "2026-09-25T19:45:00+00:00", True),
+    ("2026-11-27", "2026-11-27T17:30:00+00:00", False),
+    ("2026-11-27", "2026-11-27T17:45:00+00:00", True),
+])
+@pytest.mark.parametrize("timeframe", ticker_chart.TIMEFRAMES)
+def test_chart_completion_uses_actual_regular_or_early_close(
+    session, bar, complete, timeframe
+):
+    built = ticker_chart.payload(_store([100.0] * 320), "AAA", 30, timeframe,
+        {"session": session, "bar": bar, "last": 110.0})
+    assert built["last_bar_complete"] is complete

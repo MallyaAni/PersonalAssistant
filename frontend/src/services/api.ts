@@ -2651,8 +2651,9 @@ export interface DeskChart {
   timeframe: 'daily' | 'weekly';
   timeframes: string[];
   adjusted: boolean;
-  // False when the newest bar is a week still forming. Daily bars are
-  // always complete: today arrives from the live quote in the browser.
+  // The bars and overlays share this source observation; never merge an independent quote.
+  quote_bar?: string | null;
+  // False when the newest session or week has not reached its close.
   last_bar_complete: boolean;
   // Sessions the desk's price trigger fired on: the name was through the
   // upper edge of its own band. The grade half of the entry is not applied
