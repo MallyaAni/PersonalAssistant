@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-09-24 — Chronological diagnostics verified at e972117; broader work continues
+
+Implementation checkpoint: `e9721173f5976da40246d8f8268c5cce360bd84d` on `main`.
+It adds the pure chronological scorecard, a hash-checked read-only CLI, tests,
+and `docs/research/chronological-stability-2026-09-24.md`. It follows dashboard
+checkpoint `c73861b` (88/88 browser tests), already pushed with handoff `f43f6d2`.
+No deployment occurred. Use `scripts/deploy.sh` only when deployment is requested.
+
+VERIFIED: 76 related backend tests plus 14 CLI tests; root independently reran
+43 metrics tests. Root also recomputed all 40 account/block returns and drawdowns
+directly from preserved NAV arrays and checked exact code hashes. Scoped Ruff,
+format and diff checks pass. The command was exercised against read-only copies
+of the actual completed study with exchange-calendars 4.13.2. All nine original
+run artifacts and SPY parquet remained unchanged.
+
+Fixed shape 126 reference / 63 evaluation / 21 label-horizon / 5 embargo was
+chosen before block results. Four blocks cover 252 of 428 intervals; 152 prefix
+and 24 tail remain explicit. Incumbent beats SPY and QQQ in 4/4 at both costs;
+neural beats incumbent only in block four. The evaluated regime counts are
+113 above/high, 127 above/low, 12 below/high, zero below/low. This is post-hoc
+stability on examined survivor/reconstructed accounts. Independent-validation
+and adoption flags remain false, and historical input availability is UNVERIFIED.
+No policy, model, holdings, order, or deployed service was changed.
+
+Full report preserved on Spark, separate from the completed study:
+`/home/animallya96/anios/data/market/research/chronological-stability-20260924.zcXplA/chronological.json`.
+Local copy: `/tmp/anios-chronological-output.dJ9xb5/chronological.json`.
+Both SHA256: `819e4bd49f0a5355ff48d6303a5f3bf5add84db43413f8478fcf0476ae1b6ccd`.
+Source/input hashes and limitations are inside. Do not rerun the completed
+model, retune the block shape, or present this diagnostic as independent K-fold.
+Diagram impact: NONE — calculation within existing research components.
+
+Next substantive tasks (goal still active):
+
+- Build an audited historical-input readiness manifest/validator before a
+  genuinely nested runner: bind bytes, availability, membership/delisting and
+  outcome coverage. Existing membership validation is not wired into
+  `desk.book_panel`, which still builds today's cohort. Read-only Spark inventory
+  found no membership histories and zero learned-input captures; price and
+  related partitions span only September 2026 vintages. Zero captures is not
+  a reproduced writer failure: the last September 23 nightly record predates
+  deployment of capture. Do not manufacture historical captures or invoke an
+  account-changing nightly run to make the directory nonempty.
+- Add a research-only cash/fill journal for all accounts, including ETFs, so
+  costs, turnover and NAV can be independently replayed in future studies.
+- Implement faithful personal-decision history separately from research:
+  generated immutable receipt plus acknowledgement of the accepted dashboard
+  response. Retain a narrowly allowlisted encrypted output, not raw cash/equity
+  or holdings quantities. Only the primary operator may populate personal
+  history. Label acknowledgements as loaded into dashboard, not proof the user
+  read every row; preserve generation, acknowledgement and expiry separately.
+  This needs a dedicated owner-scoped store, migration, security/retention
+  documentation, existing trading-desk diagram update, and HTTP/database/browser
+  proofs. Do not reuse task-change/undo records or public research archives.
+  Prior AAOI advice cannot be recovered from evidence never recorded.
+
 ## 2026-09-24 — Research-history and account-evidence checkpoint c73861b
 
 Started on `main` at `ea755e7336a9d85cdad420eadfcdcb587a9bca9d`, with four
