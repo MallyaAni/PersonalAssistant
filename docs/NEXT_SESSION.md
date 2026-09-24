@@ -26,6 +26,22 @@ The 2026-09-23 19:30 nightly finished before the 20:24 local deploy. Thus
 ordinary trading-session nightly creates `asof=DATE.json` and that its hash,
 capture time, complete-bar counts and source partitions are valid. Do not
 force/replay today or rewrite the existing desk record to seed it.
+The host's two cron launchers originally ran from the shared development
+checkout, whose OpenCode commit `fc703b0` is ahead of remote `main` while it
+is behind the docs checkpoint. To keep scheduled personal guidance on the
+tested source, `/home/animallya96/desk_daily.sh` and `desk_intraday.sh` now
+run from `/home/animallya96/deploy/anios` without an unmanaged `git pull`.
+The deploy checkout's `data` link resolves to the same persistent store;
+both Alpaca key values match the shared `.env`, and the host research venv
+imports both CLI modules from the deploy checkout. No launcher was executed
+to avoid a second record, balance write or paper trade. Shell syntax passed;
+the next scheduled run still needs actual acceptance. Preserved original
+scripts as `*.pre-verified-checkout-20260923`; installed script SHA-256s are
+`e6a884f4...43b45c43` (daily) and `d99134b3...deb8497fe` (intraday).
+The shared checkout's OpenCode commit, modified AGENTS.md and scratch files
+were not changed, staged, reset or pushed. Do not deploy during an active
+nightly process because its code checkout must remain stable until the record
+is written.
 The learned rank/brake remain **shadow-only**. A 2016–26 comparison against
 the incumbent, SPY, QQQ and equal weight is still **UNVERIFIED** without
 dated historical membership, delisted outcomes and compatible price vintages.
