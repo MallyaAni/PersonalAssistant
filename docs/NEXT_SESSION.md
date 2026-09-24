@@ -8,6 +8,14 @@ research changes.
 
 ## 2026-09-24 — Frozen history executed; archive OOM; saved-account recovery
 
+Evidence publication checkpoint:
+`4ed8e57949a15e56fe6952ec1becd26a0af648bc`, pushed to `spark main` and to
+GitHub **from Spark**, with Spark/GitHub divergence **0/0**. All 80 reported
+table values, fold/window counts and cited proof hashes match the independently
+checked saved results; documentation diff checks pass. This is a verified
+evidence/report checkpoint, not successful completion of the OOM-killed
+producer or qualification of the strategy. No deployment occurred.
+
 Started clean on `main` at `e749c0af98aa104a04d0b12992e427265f7469e2`.
 We did not interrupt or modify the frozen study; after its OOM termination,
 `git pull --rebase origin main` confirmed source was current. No production
@@ -72,8 +80,7 @@ The supplemental recovery proofs/scripts/parser distribution pass **42 files /
 Fifteen volatile parser bytecode files are explicitly omitted; source, native
 libraries and licenses are retained. The failed study's root manifest stays absent.
 
-Next: publish this evidence-only handoff, then implement bounded JSON/file
-buffering in archive validation,
+Next: implement bounded JSON/file buffering in archive validation,
 with canonical-byte equivalence and memory acceptance; its internal packed
 trees must not be mislabeled globally constant-memory. Do not refit or retune
 this completed set of saved market outcomes. Then audit the reconstructed
