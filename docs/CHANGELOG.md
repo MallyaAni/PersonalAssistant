@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-24 — Dashboard build live on Spark; acceptance in progress
+
+- Authorized deployment `21adf2a` passed **5,754 unit tests** (31 skipped,
+  1 xfailed, 203 warnings) and **100 real-model tests**. Backup/mirrors completed,
+  production migrated to `20260924_0021`, and backend/gateway switched at
+  21:25:17 UTC through `scripts/deploy.sh`; no gate was bypassed.
+- Independent verification matches **1,290 selected source files** with zero
+  differences and hashes all **104 gateway assets**. The public HTML/entry
+  JS/CSS match the running image. Compiled labels are corrected; this alone
+  does not establish browser behavior. Live receipt schema and enabled cipher
+  are checked without reading owner payloads or exposing keys.
+- **5/5 isolated receipt HTTP/persistence tests** passed in 2.19s against the
+  rebuilt image and its migrations; the disposable database was removed.
+  Full journey/search postchecks are still running and public browser acceptance
+  remains UNVERIFIED. Follow the active process and evidence path in
+  [NEXT_SESSION.md](NEXT_SESSION.md); do not start another deployment.
+- No new strategy fit/promotion, manual holding change or order was performed.
+  Diagram impact: NONE — deployment and evidence record only.
+
 ## 2026-09-24 — Include the research calendar in the unit-test environment
 
 - An authorized dashboard deployment stopped before live migration/restart:
@@ -8,8 +27,9 @@
 - Add the existing research calendar range to the Docker test stage and `dev`
   extra, without installing the training stack or changing runtime requirements.
   Rebuilt-image acceptance without injected dependencies: **151 passed**;
-  **5,778 tests collected**, resolved calendar version **4.13.2**. Full deployment
-  gates and live UI acceptance remain pending. Diagram impact: NONE.
+  **5,778 tests collected**, resolved calendar version **4.13.2**. The published
+  repair `21adf2a` passed deployment gates and is now live; full postchecks and
+  live UI acceptance remain pending as recorded above. Diagram impact: NONE.
 
 ## 2026-09-24 — Carry the requested partition cutoff through the growth gap
 
@@ -27,6 +47,11 @@
   within-vintage revisions, membership, financial quality and prediction/return
   impact remain unverified. The frozen study is not rerun or repaired. No
   deployment. [Acceptance and limits](research/expectations-cutoff-2026-09-24.md).
+- Exact checkpoint `0670fb6` repeated **128 passed / 1 deliberate fit-test
+  deselection / 60 synthetic warnings / 4.18s**, zero skips, and was published
+  through Spark. Retention verifies **1,292 files / 4,243,461 bytes**, zero
+  differences, with 138 duplicate pytest aliases explicitly excluded and their
+  complete real targets retained. Later deployment is recorded separately above.
 - Diagram impact: NONE — same readers, corrected argument propagation.
 
 ## 2026-09-24 — Precise analyst meanings, evidence dates and attribution

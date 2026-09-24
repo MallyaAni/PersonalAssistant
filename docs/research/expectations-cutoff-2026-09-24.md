@@ -102,6 +102,24 @@ task; that line is deliberately unchanged. Diff checks pass. No UI behavior,
 model prompt, API schema, permission or persistence mechanism changed.
 Diagram impact: NONE — same data flow, propagated existing argument.
 
+## Exact checkpoint and publication
+
+Verified code checkpoint `0670fb6ed3e8dcfd6f0606396f8d6fdb0af1eceb`, tree
+`b1a146fa981b89b3d7a7d5f8aaf8e0af503ef549`, passed the complete fourteen-module
+acceptance on its exact clean source: **128 passed / 1 deliberate fit-test
+deselection / 60 synthetic warnings / 4.18s**, zero skips. Compatible xunit1
+output retains the numerical properties. No source changes occurred during the
+run; scoped lint/format/diff checks passed. The fit exclusion and pure-loader
+integration limits above remain unchanged.
+
+The checkpoint was published Mac -> `spark main` -> GitHub **from Spark**,
+with 0/0 divergence and unrelated `scratch/` preserved. Exact receipt:
+`/private/tmp/anios-cutoff-committed.tqAVMR/ACCEPTANCE.md`; JUnit SHA256
+`66056fe49bfd75d1e09727f183a90db6f8e0786182e391571187183e20196bad`.
+This repair's acceptance performed no deployment. The later authorized
+dashboard deployment at `21adf2a` includes this source; its independent
+deployment acceptance and remaining limits are recorded in `NEXT_SESSION.md`.
+
 ## Retained local evidence
 
 - `/private/tmp/anios-cutoff-acceptance.ZR7RLg/`: existing and combined regression.
@@ -117,6 +135,25 @@ Diagram impact: NONE — same data flow, propagated existing argument.
 All runs use isolated synthetic storage, the actual read-only checkout and an
 offline image, not production data or a stale deployed source. The root image is
 `sha256:63056fccae989b0ef65bb198bc913da58c87648169a50c1e2422b9b3c267d8ca`.
+
+## Retained Spark evidence
+
+At `/home/animallya96/anios/data/market/research/expectations-cutoff-20260924.n0hn7f3e`,
+readback verified the exact **1,292-file / 4,243,461-byte** payload with zero
+missing, unexpected or mismatched files. The originals remain unchanged.
+Exactly **138 duplicate pytest symlink aliases** were excluded (5 baseline,
+39 committed, 8 dispatch, 16 feature, 5 final and 65 regression); each alias's
+complete non-symlink target subtree is retained and recorded. No unique evidence
+was discarded. The prior 44-file AAOI, 369-file timing and 825-file analyst
+evidence roots remain unchanged, and `scratch/` was not accessed.
+
+Readback receipt:
+`/private/tmp/anios-cutoff-retention.0hauqj/attempt-jp94vl0c/retention-readback.json`,
+SHA256 `5c48a0eb9cc5d9d45ee934eabcf7f2230ca3b642866a5c713818b25f969799be`.
+Allowlist SHA256:
+`e4364225ab55bdad911676b046dd0d65f98dd9d3deb76bead47d82db26402096`.
+This is evidence retention, not a market-study rerun or proof of whole causal
+availability. The failed study's missing root manifest remains missing.
 
 ## Still unverified and next work
 

@@ -6,17 +6,79 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Dashboard deployment live; full acceptance still running
+
+The authorized Spark deployment is now serving code checkpoint
+`21adf2a5af2e9ddbf550636c72f2796989a43c54`, tree
+`dd6fc7bf16af49f5e94ad1c95145c1ba39eb2229`. Backend and gateway restarted at
+21:25:17 UTC. This documentation update started on clean Mac `main` at that
+SHA; `git pull --rebase origin main` was current. Spark's tracked tree was
+clean and unrelated `scratch/` remains untouched.
+
+**Do not launch another deployment.** The original process, tool session
+`73048`, is still running `scripts/deploy.sh --no-pull --run-post --wait-post`
+from `/home/animallya96/anios`. The full journey sweep was confirmed live at
+21:28:38 UTC. Log and independent verification evidence:
+`/home/animallya96/anios/data/deploy-21adf2a.onygtZ/`. A detailed
+`DEPLOYMENT_STATUS.md` is retained there and locally at
+`/private/tmp/anios-deploy-verification-prep.LAOa3P/`.
+
+VERIFIED so far:
+
+- Unit gate: **5,754 passed / 31 skipped / 1 xfailed / 203 warnings / 222.61s**.
+- Real-model gate: **100 passed / 489.84s**; no skipped cases or failures.
+- Before migration, the script saved a 46-table dump
+  `data/backups/anios_db-20260924-172201.sql.gz` and completed its base/WAL
+  backup and mirrors. Production then migrated to `20260924_0021`.
+- Running backend image
+  `sha256:3c6436e5425259c6e303cfda215a14c28dec4f3c3563d10329806bc8249524ec`;
+  gateway image
+  `sha256:a2e2284cae64004511f08abd4a99554fff38550b4db464cc5ed3e5692a0d3744`.
+  All **1,290 selected tracked source files** in the backend match the target
+  Git archive, with zero missing/mismatched files and no source-overriding
+  mounts. This is not a claim that the entire image contains only tracked files.
+- All **104 static assets** are hashed. Public HTML, `index-X0dyE8-K.js` and
+  `index-BPERLoci.css` match the gateway bytes. All five new labels are in the
+  scripts and `Recorded recommendations` is absent. This proves artifact
+  identity and compiled wording, not browser behavior.
+- Live schema has all seven receipt columns with expected nullability and
+  three indexes including the PK; the deployed field cipher is enabled.
+- The rebuilt test image also matches all 1,290 selected files. Actual image
+  migrations and **5 persistence/HTTP tests passed in 2.19s**, zero errors,
+  failures or skips, in a fresh `test_history_*` database. The exact disposable
+  database was removed and absence checked; production accounts were not used.
+  Evidence: `history-acceptance.jtYKO8/`, JUnit SHA256
+  `afd6e3412e2854cca1e8ef73ce7823635055e79e40809378322c85b184e0a10f`.
+
+UNVERIFIED: full journey/search postchecks and public desktop/mobile browser
+acceptance. The deploy marker is written before postchecks and is not their
+verdict. Match terminal `data/.post-deploy-status` to this attempt's SHA and
+timestamp, preserve failures and report any flaky retries. Buffered output is
+not evidence that the running process stopped. Only after full postchecks pass,
+run the reviewed public browser harness at
+`/private/tmp/anios-public-desk-harness.Kxkes4/run.py` with `--ssh-target spark
+--reviewed --postchecks-passed --deployed-sha 21adf2a5af2e9ddbf550636c72f2796989a43c54`.
+Its nonrecording preview and paused clock verify scoped presentation, not
+unmodified live refresh/capture or actual-owner persistence.
+
+The script completed its execution-code activation marker; no manual orders,
+holdings changes, recovery run, daily refresh or new research fit was performed.
+The frozen rejected strategy remains unpromoted. Final postcheck/browser results
+must replace this in-progress status before calling deployment acceptance complete.
+Publish documentation through Spark; a later docs SHA is not the deployed code
+SHA. Diagram impact: NONE — deployment/evidence record only.
+
 ## 2026-09-24 — Authorized deployment: calendar dependency gate repair
 
 The operator explicitly authorized deploying the published dashboard fixes.
 Started clean on Mac `main` at `0670fb6ed3e8dcfd6f0606396f8d6fdb0af1eceb`;
 Spark and GitHub match. Spark's only untracked entry is unrelated `scratch/`.
-Do not touch it. Live deploy marker remains `26b3cb1`.
+Do not touch it. At this first attempt, the live deploy marker was `26b3cb1`.
 
 VERIFIED preflight: `scripts/verify-migrations.sh` built 47 tables through
 `20260924_0021` in a throwaway database without changing `anios_db`. Current
 `gate.sh` migrates its isolated `anios_gate` first, so the older live pre-gate
-migration trap does not apply. Production remains at `20260912_0020`.
+migration trap does not apply. Production was then at `20260912_0020`.
 
 FAILED deployment of `0670fb6`: frontend build passed, but unit collection
 stopped on missing `exchange_calendars`. Eight optional modules skipped, four
@@ -30,10 +92,11 @@ The actual rebuilt local test image resolves exchange-calendars 4.13.2, pandas
 3.0.6 and NumPy 2.5.3. Without an injected dependency directory, **151 tests
 passed in 5.14s** and **5,778 tests collected in 6.81s** (four existing warnings).
 Evidence: `/private/tmp/anios-deploy-dependency.eIVBvx/`. This proves the
-packaging boundary, not the complete deployment. Full Spark unit/routing gates,
-live migration, full post-deploy checks and browser acceptance are still
-UNVERIFIED; retry through `scripts/deploy.sh`, without skip flags. No strategy,
-holdings or order change. Diagram impact: NONE — test packaging only.
+packaging boundary, not the complete deployment. The repair was published as
+`21adf2a5af2e9ddbf550636c72f2796989a43c54` and retried through
+`scripts/deploy.sh`, without skip flags; see the live in-progress record above.
+Do not start another retry. No strategy, holdings or order change.
+Diagram impact: NONE — test packaging only.
 
 ## 2026-09-24 — Expectations partition-cutoff repair acceptance
 
@@ -57,7 +120,18 @@ Three failures prove actual numeric tone/filing/split input drift, not just abse
 API arguments. Actual Parquet reads and deterministic features run with zero
 fits; the pure tone loader is compiled from its exact source AST because Torch
 is absent, so full-model-module integration remains UNVERIFIED. Scoped lint/
-format and diff checks pass. Exact-commit combined acceptance/publication is next.
+format and diff checks pass. Exact checkpoint
+`0670fb6ed3e8dcfd6f0606396f8d6fdb0af1eceb`, tree
+`b1a146fa981b89b3d7a7d5f8aaf8e0af503ef549`, repeated **128 passed / 1 deliberate
+fit-test deselection / 60 synthetic warnings / 4.18s**, zero skips. Its clean
+source was published Mac -> Spark -> GitHub from Spark, divergence 0/0.
+
+VERIFIED retention: **1,292 files / 4,243,461 bytes**, zero readback differences,
+at `/home/animallya96/anios/data/market/research/expectations-cutoff-20260924.n0hn7f3e`.
+Exactly **138 duplicate pytest symlink aliases** were excluded; every real
+target subtree is retained. Prior 44/369/825-file evidence roots are unchanged;
+`scratch/` was not accessed. Retention receipt SHA256:
+`5c48a0eb9cc5d9d45ee934eabcf7f2230ca3b642866a5c713818b25f969799be`.
 
 Evidence roots and detailed limits:
 [expectations-cutoff-2026-09-24.md](research/expectations-cutoff-2026-09-24.md).
