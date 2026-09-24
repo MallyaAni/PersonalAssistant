@@ -6,6 +6,127 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Nested fitting/selection machinery verified; source study next
+
+Verified implementation checkpoint:
+`a560018eb61c0a6f19281509c9638d730bc0de9d`, pushed to `spark main`, then to
+GitHub by `git push origin main` **on Spark**. Spark/GitHub divergence is **0/0**.
+The exact committed implementation repeated the applicable suite: **674 passed,
+1 deliberately deselected, 5 existing warnings in 5.29 seconds**. The worktree
+was clean after that implementation commit; this handoff is the follow-up.
+Spark retains only its unrelated untracked `scratch/`. No deployment occurred.
+
+Started clean on `main` at `1f361d91aa8c229007d4eed9860f8f59591f893d`;
+`git pull --rebase origin main` was current. User reconfirmed that live deployment
+and GitHub publishing run from Spark. No live model, database, holdings, order,
+dashboard or adopted `/3` policy was changed. No completed losing study was
+retuned or rerun. New fits were on synthetic data only.
+
+Atomic objective achieved: actual inner chronological model fits and funded
+selection, followed by one continuous outer stock/SPY/QQQ/cash account. New
+`backend/market/nested_ridge.py` owns immutable dated `RegressionInputs`, fits
+three separate real NumPy ridge regressions, and retains exact training rows,
+known/missing masks, values/dates, transforms and coefficients. Features are
+masked at their original decision; both actual label endpoint and publication
+must precede fitting. Each target owns its own transform. Model-state hashes
+exclude dropped-row classifications; complete receipt hashes preserve them.
+
+`nested_allocation.run(panel, regression, stock_weights, protocol=...)` performs
+every inner fit and every candidate/cost account. Defaults: first outer1260,
+outer126, three inner126 blocks, min504 rows per target, penalties1/100 and
+switch margins0/.005. At outer startS, inner decisions `[S−379,S−1)` end at
+markS−1; the selected outer model then refits atS. Selection maximizes the
+worst 10/25-bp terminal log wealth, stable declared-order ties. Forecasts are
+comparable gross log-wealth proxies, not red/green probabilities; calibration
+is none. The margin alone governs switching; actual costs belong to accounts.
+Intended mode carries across refits; account cash/units/funding state never
+reset. Global stock composition cadence is source-row `%20==0`; an update can
+also rebalance a defensive index sleeve. The stock-only no-gate adapter control
+is not a substitute for the exact incumbent.
+
+VERIFIED: **99** ridge, **45** runner and **4** numeric-boundary cases in the
+combined **674** suite; scoped lint/format. Real coefficients independently
+reconstructed with augmented least squares; actual churn costs select a
+non-first candidate; next outer prices cannot alter earlier selection. Tests
+cover delayed evidence, non-interference, margin/intent continuity, funding
+retries through folds, ragged unused prices and fail-closed arithmetic.
+Reproduced extended-precision overflow/duplicate-grid bugs were fixed before
+freeze. No strategy-level economic improvement is claimed.
+
+Final retained synthetic journey:
+`/private/tmp/anios-nested-demo.ISEibY/run-03/`. **71 artificial daily rows,
+14 distinct real fits, 2 outer folds, 16 inner + 4 outer accounts**; all **20**
+standalone journal CLI checks passed and **388** close marks reconciled.
+All **150** final-demonstration files (2,025,660 bytes) and **30** exercised
+source hashes match. The initial script failure (`kind` instead of the actual
+event `type` field) remains preserved; it was not a product failure.
+Full history + JUnit retained on Spark:
+`/home/animallya96/anios/data/market/research/nested-allocation-20260924.HdOl1e/`.
+All **317 files / 5,202,735 bytes** matched readback before the separate eight
+diagram evidence files were added; those eight also matched. No overwrites.
+Exact source/image hashes, APIs and limitations are in
+`research/nested-allocation-runner-2026-09-24.md`.
+
+Diagram impact: UPDATED — market-data. All **32** diagrams/page checks and
+the actual documentation browser journey pass (new labels, node containment,
+SVG/source links, zoom/reset, no page/console/request failures). Root inspected
+the focused branch. Only the changed diagram and published page retain render
+changes; 31 unrelated SVGs remain byte-identical. Evidence:
+`/private/tmp/anios-nested-diagram.Cv0T8U/`, selected files under the Spark
+archive's `diagram/`. Isolated pinned Mermaid11.16.0/Playwright1.61.1 were
+needed because host node_modules had drifted; no dependency files changed.
+Full deployment gates and deployed acceptance remain UNVERIFIED.
+
+Next substantive task: **freeze and implement the market source/label assembly
+and full comparator study**, not another synthetic-account adapter. The runner
+returns normalized source arrays, receipts and journals in memory, but has no
+general archive writer/CLI yet. Its `label_derivation_verified`,
+`benchmark_study_complete`, historical-availability and adoption flags remain
+false. Before a market-outcome run, freeze features, economically comparable
+labels and source fingerprints, archive all outputs without overwriting, and
+include exact `/3`, no-gate adapter, funded SPY/QQQ and equal weight at both
+costs on one calendar. Apply the existing strict wealth/rolling/causal-regime
+scorecards; never use `harness.evaluate_scores` for funded accounting. Do not
+equate the adapter's cadence with the separately implemented daily funded index
+controls. Already examined history remains exploratory, not a new untouched test.
+
+Read-only source inventory, verified this turn on Spark:
+
+- Trusted original report:
+  `/tmp/codex-trading-evaluation-inputs-20260921/corrected-exposure-report.pickle`,
+  SHA256 `d6f8fe0cbf74e7318352b8e9c02910cae00164a2a4900be6a8e24a9960401c26`.
+  Verify before unpickling. **2945 sessions ×95 symbols**, 2015-01-02 through
+  2026-09-18, 94 stocks+SPY, no QQQ. Keep this incumbent report unchanged.
+- Same-vintage QQQ:
+  `/home/animallya96/anios/data/market/bars/asof=2026-09-18/QQQ.parquet`, SHA256
+  `e496f36ebe70fd5ddbe25115cc44883b3c690b2fa71438436468725f37d55cd3`.
+  Build a separate96-column execution panel and map stock compositions; do not
+  append a column to mismatched95-column grades/scores. **191/191** Sep18 source
+  and benchmark hashes match. Adjusted open is derived open*adjusted_close/close.
+- 64 names cover the full grid;32 start later. No duplicate/interior missing
+  or invalid stored price rows per asset. All-name intersection starts only
+  2025-10-27 (225 sessions): preserve individual ragged eligibility.
+- Sep23 learned-price arrays are a different vintage with52 missing Sep22 rows;
+  their declared complete prefix is Sep21. Do not mix them with the Sep18 report.
+  Neural archives have features/labels, not full execution prices.
+- Historical membership manifest and prospective `learned_inputs` are absent;
+  all10 preserved financial feature channels have zero finite values. The
+  SEC cohort has2160 rows/720 sessions/zero complete-feature rows. Raw SEC facts
+  exist, but sampled versioned acceptance timestamps were blank. Nothing here
+  qualifies historical quality or survivorship freedom. No source copy/download
+  or real-data fit occurred this turn.
+- The incumbent `event_risk.live_path` intentionally applies its FOMC reduction
+  only from2026-06-18; earlier history is current-rule stress testing. Preserve
+  this policy-era boundary instead of silently extending the current rule.
+- Spark research Python: `/home/animallya96/research-venv/bin/python`; NumPy2.5.2,
+  pandas3.0.6, PyArrow25, sklearn1.9.1; exchange_calendars absent. Local test
+  container includes the checkout dependencies. No inference/GPU service change
+  was made. Spark lacks `rg`; use a read-only fallback there.
+
+Goal remains active: implemented validation machinery is progress, not proof of
+the best strategy. Historical quality/cohort completeness and independent
+economic validation remain outstanding.
+
 ## 2026-09-24 — Zero-safe stock/SPY/QQQ/cash adapter verified; nested runner next
 
 Verified implementation checkpoint:
