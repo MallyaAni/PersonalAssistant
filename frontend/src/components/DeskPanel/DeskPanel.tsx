@@ -27,6 +27,7 @@ import {
   type DeskDecisions,
   type DeskBrief,
   type DeskEarnings,
+  type DeskGrade,
   type DeskHolding,
   type DeskHistory,
   type DeskHistoryRow,
@@ -235,6 +236,22 @@ const ReasonLines = ({ text }: { text: string }) => (
       <li key={i}>{line}</li>
     ))}
   </ul>
+)
+
+// Date the recorded grade and reasons while preserving the original headline as archived wording.
+const EveningAnalysis = ({grade, session, written}: {grade: DeskGrade; session: string; written: string}) => (
+  <section aria-label="Evening analysis">
+    <h4 className="font-medium text-[#6e6e73]">Evening analysis · {session}</h4>
+    <p className="font-medium text-[#1d1d1f]">Recorded grade {grade.grade}</p>
+    <p className="font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{triggers(grade.stances ?? {}) || 'Analyst votes not recorded.'}</p>
+    <p className="text-xs text-[#6e6e73]">Not a current trade instruction.</p>
+    {grade.reason && <ReasonLines text={grade.reason} />}
+    {grade.headline && <details className="mt-2 text-xs">
+      <summary className="cursor-pointer text-[#0071e3]">Original recorded wording</summary>
+      <p className="mt-1 text-[#6e6e73]">Written {marketTime(written)}. Preserved unchanged; this historical wording is not a current trade instruction.</p>
+      <p className="mt-1 whitespace-pre-wrap text-[#1d1d1f]">{grade.headline}</p>
+    </details>}
+  </section>
 )
 
 // One number to read at a glance: the paper account's worth, its return
@@ -1110,17 +1127,21 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const fresh = liveGrades[ticker]
     const ranks = fresh?.ranks_live ?? r?.ranks_live ?? g.ranks
     const stances = fresh?.stances_live ?? r?.stances_live ?? g.stances ?? {}
+    const intradayGrade = Boolean(fresh) || r?.grade_source === 'intraday'
+    const currentStances = fresh?.stances_live ?? (r?.grade_source === 'intraday' ? r.stances_live : undefined)
     const quote = live.quotes[ticker]
     return <section aria-label={`${ticker} decision details`} className="grid gap-3 whitespace-normal text-xs sm:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0">
-        <h4 className="font-medium text-[#6e6e73]">Evening analysis · {latest.session}</h4>
-        <p className="font-medium text-[#1d1d1f]">{g.headline}</p>
-        {g.reason && <ReasonLines text={g.reason} />}
-        <p className="mt-2 text-[#6e6e73]">Analyst ratings · intraday where available; otherwise {latest.session} close</p>
-        <p className="font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{ranks ? ratings(ranks, stances) : triggers(stances)}</p>
-        {fresh?.stances_live && <VoteChanges evening={g.stances ?? {}} current={fresh.stances_live} />}
-        <p className="mt-2 text-[#6e6e73]">{quote ? <>Bar price {priceMoney(quote.last)} · interval start {marketTime(quote.bar)}{now - Date.parse(quote.bar) >= 30 * 60 * 1000 ? ' · last known bar' : ''}</> : 'Bar price unavailable'}. A bar price is not an executable quote.</p>
-        <div className="mt-2 text-[#6e6e73]"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
+        <section aria-label="Latest available grade" className="mb-3">
+          <h4 className="font-medium text-[#6e6e73]">Latest available grade</h4>
+          <p className="font-medium text-[#1d1d1f]"><span aria-label="Latest grade value">{fresh?.grade_live ?? r?.grade_live ?? g.grade}</span> · {intradayGrade ? 'intraday grade' : `at the ${latest.session} close`}</p>
+          <p className="mt-2 text-[#6e6e73]">Analyst ratings · intraday where available; otherwise {latest.session} close</p>
+          <p className="font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{ranks ? ratings(ranks, stances) : triggers(stances)}</p>
+          {currentStances && <VoteChanges evening={g.stances ?? {}} current={currentStances} />}
+          <p className="mt-2 text-[#6e6e73]">{quote ? <>Bar price {priceMoney(quote.last)} · interval start {marketTime(quote.bar)}{now - Date.parse(quote.bar) >= 30 * 60 * 1000 ? ' · last known bar' : ''}</> : 'Bar price unavailable'}. A bar price is not an executable quote.</p>
+          <div className="mt-2 text-[#6e6e73]"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
+        </section>
+        <EveningAnalysis grade={g} session={latest.session} written={latest.written} />
         {(latest.briefs?.[ticker] || g.read) && <ArchivedCommentary brief={latest.briefs?.[ticker]} read={g.read} written={latest.written} />}
       </div>
       <div className="flex flex-col items-start gap-2">
@@ -2502,6 +2523,7 @@ const TodayLine = ({exchange, event, boardEvent, eventLive, orders, countdown, r
   </section>
 }
 
+// Separate the latest accepted grade and personal decision from the dated evening evidence and history.
 const NameDetail = ({
   userId,
   ticker,
@@ -2546,6 +2568,9 @@ const NameDetail = ({
   const walls = (live.technical_detail?.[ticker] as {walls?: DeskWalls} | undefined)?.walls
   const gradeRead = latest.grades?.[ticker]?.read ?? null
   const gradeReads = latest.grades?.[ticker]?.reads
+  const currentStances = row
+    ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
+    : liveGrades[ticker]?.stances_live
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []
   // The sessions where the grade actually moved, newest first, each with
@@ -2584,11 +2609,13 @@ const NameDetail = ({
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
+        <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+        <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade_live] ?? ''}`}>
-              {row.grade_live}
-              <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `intraday · ${row.grade} at the close` : `at the ${latest.session} close`}</span>
+              <span aria-label="Latest grade value">{row.grade_live}</span>
+              <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `intraday · ${row.grade} at the ${latest.session} close` : `at the ${latest.session} close`}</span>
             </span>
           </div>
         )}
@@ -2598,19 +2625,12 @@ const NameDetail = ({
                 name outside the board's rows would otherwise show the
                 evening grade while the list beside it shows the candle's. */}
             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[(liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade) as keyof typeof GRADE_STYLE] ?? ''}`}>
-              {liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade}
+              <span aria-label="Latest grade value">{liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade}</span>
               <span className="ml-1 font-normal">{liveGrades[ticker] ? 'intraday grade' : `at the ${latest.session} close`}</span>
-            </span>
-            <span className="text-xs text-[#6e6e73]">
-              {latest.grades[ticker].headline ?? 'graded but not in the book'}
             </span>
           </div>
         )}
-        {/* Four lines a reader needs: the call, the reasons, the plan, the
-            price. Everything else waits behind one fold. */}
-        {latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
-          <p className="font-medium text-[#1d1d1f]">{latest.grades[ticker].headline}</p>
-          <ul className="mt-1 space-y-0.5 text-xs text-[#1d1d1f]">{(latest.grades[ticker].reason ?? '').split('\n').filter(Boolean).map(line => <li key={line}>{line}</li>)}</ul>
+          {currentStances && <VoteChanges evening={latest.grades?.[ticker]?.stances ?? {}} current={currentStances} />}
           <div className="mt-2 text-xs text-[#6e6e73]">
             {row ? <DecisionCell terse ticker={ticker} decisions={decisions} latest={latest} now={now} /> : 'Not on the board'}
           </div>
@@ -2619,6 +2639,10 @@ const NameDetail = ({
             {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
             {walls && (walls.put_wall != null || walls.call_wall != null) ? ` · option walls ${walls.put_wall != null ? priceMoney(walls.put_wall) : '—'} / ${walls.call_wall != null ? priceMoney(walls.call_wall) : '—'}` : ''}
           </p>
+        </section>
+        {/* Recorded reasons retain their original scope even when a newer grade or price is available. */}
+        {latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+          <EveningAnalysis grade={latest.grades[ticker]} session={latest.session} written={latest.written} />
         </section>}
         <details aria-label="All the evidence" className="mb-3">
           <summary className="cursor-pointer text-xs text-[#0071e3]">All the evidence</summary>

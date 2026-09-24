@@ -1417,7 +1417,11 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // The analyst conviction line lives with the rest of the reasoning in the
   // row's expanded details, not in the collapsed plan cell.
   await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
-  await expect(page.getByText('growing earnings, steady trend', { exact: false }).first()).toBeVisible()
+  const recorded = page.getByRole('region', {name: 'AAPL decision details', exact: true}).getByRole('region', {name: 'Evening analysis', exact: true})
+  await expect(recorded).toContainText('Recorded grade A')
+  await expect(recorded.getByText('growing earnings, steady trend', {exact: true})).not.toBeVisible()
+  await recorded.getByText('Original recorded wording', {exact: true}).click()
+  await expect(recorded.getByText('growing earnings, steady trend', {exact: true})).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -1671,7 +1675,7 @@ test('drills into a name’s own history', async ({ page }) => {
   await expect(dialog.getByText('Position changes')).toBeVisible()
   // Recorded evidence leads; unverified historical model claims require opening their archive.
   await dialog.getByText('All the evidence', {exact: true}).click()
-  await expect(dialog.getByRole('heading', {name: 'Evening analysis · 2026-09-08'})).toBeVisible()
+  await expect(dialog.getByRole('group', {name: 'All the evidence'}).getByRole('heading', {name: 'Evening analysis · 2026-09-08'})).toBeVisible()
   await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).not.toBeVisible()
   await dialog.getByText('Archived model commentary · unverified', {exact: true}).click()
   await expect(dialog.getByText('growing earnings with the trend intact', { exact: false })).toBeVisible()
@@ -1763,8 +1767,12 @@ test('drills into a covered name outside the book and sees its live horizons', a
 
   const dialog = page.getByRole('dialog', { name: 'MSFT history' })
   await expect(dialog).toBeVisible()
-  // The evening grade chip renders even though the name is not a board row.
-  await expect(dialog.getByText('expensive and the trend is quiet').first()).toBeVisible()
+  // The evening grade is explicit; original prose remains accessible as archived wording.
+  const recorded = dialog.getByRole('region', {name: 'Evening analysis', exact: true})
+  await expect(recorded).toContainText('Recorded grade C')
+  await expect(recorded.getByText('expensive and the trend is quiet', {exact: true})).not.toBeVisible()
+  await recorded.getByText('Original recorded wording', {exact: true}).click()
+  await expect(recorded.getByText('expensive and the trend is quiet', {exact: true})).toBeVisible()
   // The drill-down shows the same live grade as the list: MSFT is B at the
   // candle even though the evening record says C.
   await expect(dialog.getByText('Bintraday grade', { exact: true })).toBeVisible()
@@ -2434,7 +2442,10 @@ test('details splits into plan and research and the simple page carries only dec
   // A row opens in place with the name's reasons and plan.
   await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
   await expect(page.getByText('Open the full panel')).toBeVisible()
-  await expect(page.getByText('growing earnings, steady trend').first()).toBeVisible()
+  const recorded = page.getByRole('region', {name: 'AAPL decision details', exact: true}).getByRole('region', {name: 'Evening analysis', exact: true})
+  await expect(recorded).toContainText('Recorded grade A')
+  await recorded.getByText('Original recorded wording', {exact: true}).click()
+  await expect(recorded.getByText('growing earnings, steady trend', {exact: true})).toBeVisible()
   await page.goto('/?deskDetails=1#desk')
   await expect(page.getByText('Stock rankings')).toBeVisible()
   await expect(page.getByRole('heading', {name: /^What changed/})).toBeVisible()

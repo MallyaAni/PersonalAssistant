@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-24 — Separate latest grades from recorded evening analysis
+
+- Both stock details surfaces now separate the latest accepted grade and
+  decision from dated evening evidence. The recorded grade/votes replace the
+  prominent historical `Own` headline; exact original wording remains available
+  in a closed, explicitly historical archive. Existing expiry and actions stay
+  unchanged; no scores, prompts, API or persistence changed.
+- VERIFIED: **115/115 Desk browser cases**, final focused **9/9**, zero focused
+  browser/network/write errors; TypeScript and production build pass. Desktop
+  and 390px mobile evidence was visually reviewed. Initial reproduction and
+  failed runs are preserved. Existing CSS/chunk build warnings remain.
+- No deployment or trading change. Live UI, fair value, financial-source accuracy
+  and writable-account persistence are not established by these intercepted
+  browser fixtures. Analyst naming/dates and value attribution remain follow-up
+  work. [Acceptance and limits](research/desk-evidence-timing-2026-09-24.md).
+- Diagram impact: NONE — presentation separation, unchanged data flow.
+
 ## 2026-09-24 — Bounded nested-study archive buffering
 
 - Canonical JSON writes/hashes and file receipts now stream in at most 64 KiB

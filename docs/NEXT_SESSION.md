@@ -6,6 +6,49 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
+## 2026-09-24 — Dated dashboard evidence; exact-commit verification next
+
+The presentation-only AAOI mixed-time correction is implemented. Started on
+`main` at `7d801c1af051cb8ca6bebb868b8d6183a09b7094`; the only dirty files on
+resumption were the coordinated DeskPanel and two browser-test files. A fresh
+fetch confirmed 0/0 divergence. Spark still has unrelated untracked `scratch/`;
+preserve it. No deployment or holding/order change occurred.
+
+VERIFIED: original undated evening `Own`/intraday B mismatch reproduced in an
+isolated browser; desired behavior failed before the production edit. Both
+details surfaces now have separate latest-grade and dated evening regions,
+structured recorded grade/votes and a closed archive preserving the exact raw
+headline. Expiry continues through existing guards. **115/115 browser cases**
+pass, plus a final focused **9/9** repeat; all nine focused diagnostic records
+have zero browser/network/write errors. TypeScript/build/diff checks pass.
+Root inspected desktop and 390px mobile screenshots. Existing CSS/chunk warnings
+remain. No score, prompt, API, permissions, persistence or action logic changed.
+
+Evidence and commands: `/private/tmp/anios-aaoi-browser.eVPCSe/`, especially
+`UI_CHANGE_ACCEPTANCE.md`. Full [acceptance and limitations](
+research/desk-evidence-timing-2026-09-24.md). Exact-commit repeat and separate
+Spark retention are next; do not call a commit a verified checkpoint until
+that repeat finishes. Public/deployed UI and writable-account persistence remain
+UNVERIFIED. Diagram impact: NONE — presentation only, unchanged data flow.
+
+Next semantic tasks: name fundamentals as growth/margins and sentiment as
+earnings-release tone, show their actual evidence dates, and separate scored
+value legs from context. Price/book is cited but not scored; expectations-gap
+is active but missing from `plainly.SCORED_BY_ANALYST`. Do not rewrite history
+or change votes as a side effect of explanatory corrections.
+
+The parallel read-only expectations-gap audit found source-contract failures:
+the desk drops historical `asof` at the challenger call; yearly eligibility
+does not enforce label publication; future calendar length and the global
+500-label threshold can change earlier cohorts; release-session conventions
+can put a release into its claimed pre-report features; newest tag/tone
+reconstructions lack immutable decision-time identity; this learner bypasses
+corrected fundamental missingness; membership/sectors are current, not dated.
+Actual affected rows, return inflation and AAOI/ORCL causation remain UNVERIFIED.
+Preserve these findings and add bounded future-append/noninterference fixtures
+before changing the learner. Do not refit or retune the completed study.
+Overall goal remains active.
+
 ## 2026-09-24 — Archive buffering verified and published
 
 Verified implementation checkpoint:
