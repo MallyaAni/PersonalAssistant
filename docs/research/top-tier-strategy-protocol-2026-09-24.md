@@ -115,3 +115,36 @@ provides the fail-closed full-sample and regime scorecards. Any forward runner
 must feed it actual funded-account curves plus point-in-time SPY adjusted closes
 with enough pre-evaluation warm-up; it must not derive regimes from the SPY
 account NAV or from candidate outcomes.
+
+## Source recheck and implementation follow-through
+
+The six cited primary papers were rechecked on September 24. Their qualitative
+use above is supported; their reported effects do not establish superiority for
+this desk. Two qualifications matter for further implementation:
+
+- Sanderink's v1 reports different cap-policy Sharpe figures in the abstract/
+  Table 7 and introduction/conclusion. Its efficacy gate also has a 20-session
+  maturity lag and omits terminal delisting returns. Do not import an effect
+  size without reconciling those figures or treat reconstructed errors as
+  genuinely forward evidence.
+- Fernandes–Desell v2, revised September 21, uses eight quarterly steps on
+  one 2022–2023 test and 50 stocks active throughout the study. Nonoverlapping
+  blocks alone do not establish independent trials; multiple seeds share the
+  same market history.
+
+Additional 2026 support for measuring executable portfolio outcomes comes from
+Jensen, Kelly, Malamud and Pedersen, *Machine Learning and the Implementable
+Efficient Frontier*, [Review of Financial Studies](https://doi.org/10.1093/rfs/hhag022).
+[Publisher-deposited metadata](https://api.crossref.org/works/10.1093/rfs/hhag022)
+confirms online publication March 15, 2026 and the abstract's trading-cost-aware
+portfolio objective. Publisher full text returned HTTP 403; detailed empirical
+claims remain unverified here.
+
+The [chronological diagnostic](chronological-stability-2026-09-24.md) now applies
+fixed separated ranges to the preserved accounts. It explicitly remains post-hoc.
+The next substantive validation work is a runner carrying immutable outer-fold
+input/universe vintages, inner-selection ranges, matured training labels and
+outputs, with future-input perturbation checks. A research-only cash/fill journal
+for every account, including SPY/QQQ, is also needed for independent accounting
+replay and predeclared execution sensitivities. Neither improvement requires
+retuning the completed losing candidates or waiting without engineering progress.

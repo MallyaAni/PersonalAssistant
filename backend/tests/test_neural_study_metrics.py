@@ -1,5 +1,6 @@
 """Scorecards retain every account mark and compare the same net-return intervals."""
 
+import json
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -10,6 +11,7 @@ from backend.market.neural_study_metrics import (
     REGIME_NAMES,
     Curve,
     RegimeEvidence,
+    chronological_fold_scorecard,
     from_simulation,
     regime_labels,
     regime_scorecard,
@@ -334,3 +336,331 @@ def test_regime_scorecard_rejects_noncontiguous_or_missing_spy_evidence():
     shortened = RegimeEvidence(evidence.dates[:-1], evidence.spy_adjusted_closes[:-1])
     with pytest.raises(ValueError, match="contain every account session"):
         regime_scorecard(_table(candidate), cost_bps=10, evidence=shortened)
+
+
+# Supply distinct matched accounts and costs with a causal warm-up for fold tests.
+def _fold_inputs(intervals=21):
+    evidence = _regime_evidence(above=True, high_volatility=True)
+    dates = evidence.dates[-intervals - 1 :]
+    daily_rates = {
+        "candidate": 0.003,
+        "incumbent": 0.002,
+        "SPY": 0.001,
+        "QQQ": 0.004,
+        "equal_weight": 0.0,
+    }
+    tables = {
+        cost: {
+            name: Curve(
+                dates,
+                100 * (1 + rate - (cost - 10) / 100000) ** np.arange(len(dates)),
+                cost,
+                traded_notional=200,
+                invested_fraction=np.linspace(0.2, 0.8, len(dates)),
+                largest_position_fraction=np.linspace(0.02, 0.1, len(dates)),
+            )
+            for name, rate in daily_rates.items()
+        }
+        for cost in (10, 25)
+    }
+    return tables, evidence
+
+
+# Run one declared fold geometry without selecting it from any observed outcome.
+def _fold_report(tables, evidence, **parameters):
+    options = {"train_size": 5, "test_size": 4, "horizon": 2, "embargo": 1}
+    options.update(parameters)
+    return chronological_fold_scorecard(tables, evidence=evidence, **options)
+
+
+# Purge geometry must leave nonoverlapping returns and retain every boundary mark.
+def test_chronological_folds_keep_purge_and_each_boundary_return():
+    tables, evidence = _fold_inputs()
+    result = _fold_report(tables, evidence)
+    dates = tables[10]["incumbent"].dates
+    ranges = []
+    for number, fold in enumerate(result["folds"]):
+        first = 8 + number * 4
+        last = first + 4
+        reference = fold["reference_history"]
+        assert reference["start_index"] == number * 4
+        assert reference["stop_index_exclusive"] == first - 3
+        assert reference["last_hypothetical_label_session"] == str(dates[first - 2])
+        assert reference["used_to_fit"] is False
+        assert fold["purge_and_embargo"] == {
+            "start_index": first - 3,
+            "stop_index_exclusive": first,
+            "decision_sessions": 3,
+        }
+        evaluation = fold["evaluation"]
+        assert evaluation["starting_nav_session"] == str(dates[first])
+        assert evaluation["first_return_session"] == str(dates[first + 1])
+        assert evaluation["last_return_session"] == str(dates[last])
+        ranges.extend(
+            range(evaluation["start_index"], evaluation["stop_index_exclusive"])
+        )
+        for cost in (10, 25):
+            card = fold["cost_levels"][str(cost)]["performance"]
+            assert card["first_session"] == str(dates[first])
+            assert card["last_session"] == str(dates[last])
+            curve = tables[cost]["incumbent"]
+            row = card["rows"]["incumbent"]
+            assert row["return_intervals"] == 4
+            assert row["total_return"] == pytest.approx(
+                curve.equity[last] / curve.equity[first] - 1
+            )
+    assert ranges == list(range(8, 20))
+    assert len(ranges) == len(set(ranges))
+    assert result["coverage"]["complete_folds"] == 3
+
+
+# Both cost tables retain actual outcomes and each comparator's separate verdict.
+def test_fold_accounts_compare_spy_qqq_and_unchanged_incumbent_locally():
+    tables, evidence = _fold_inputs()
+    fold = _fold_report(tables, evidence)["folds"][0]
+    for cost in (10, 25):
+        block = fold["cost_levels"][str(cost)]
+        comparisons = block["comparisons"]
+        assert comparisons["candidate"]["incumbent"]["strict_win"] is True
+        assert comparisons["candidate"]["SPY"]["strict_win"] is True
+        assert comparisons["candidate"]["QQQ"]["strict_win"] is False
+        assert comparisons["incumbent"]["SPY"]["strict_win"] is True
+        assert comparisons["incumbent"]["QQQ"]["strict_win"] is False
+        assert "incumbent" not in comparisons["incumbent"]
+        assert block["performance"]["primary_objective"]["passes"] is False
+        assert block["performance"]["cost_bps"] == cost
+    first = fold["cost_levels"]["10"]["performance"]["rows"]["candidate"]
+    stressed = fold["cost_levels"]["25"]["performance"]["rows"]["candidate"]
+    assert stressed["total_return"] < first["total_return"]
+
+
+# Retained aggregate trading evidence cannot be divided among folds without a ledger.
+def test_fold_turnover_is_unavailable_and_exposure_uses_only_fold_marks():
+    tables, evidence = _fold_inputs()
+    result = _fold_report(tables, evidence)
+    assert result["full_sample"]["10"]["rows"]["candidate"][
+        "fees_paid_per_starting_nav"
+    ] == pytest.approx(0.002)
+    for fold in result["folds"]:
+        start = fold["evaluation"]["start_index"]
+        stop = fold["evaluation"]["stop_index_exclusive"] + 1
+        row = fold["cost_levels"]["10"]["performance"]["rows"]["candidate"]
+        for name in (
+            "traded_notional_per_starting_nav",
+            "annual_traded_notional_over_mean_nav",
+            "fees_paid_per_starting_nav",
+        ):
+            assert row[name] is None
+        source = tables[10]["candidate"]
+        assert row["mean_invested_fraction"] == pytest.approx(
+            np.mean(source.invested_fraction[start:stop])
+        )
+        assert row["maximum_largest_position_fraction"] == pytest.approx(
+            np.max(source.largest_position_fraction[start:stop])
+        )
+
+
+# An earlier peak and earlier returns cannot leak into local drawdowns or rolling wins.
+def test_fold_drawdown_and_rolling_metrics_use_local_history_only():
+    tables, evidence = _fold_inputs()
+    for cost in (10, 25):
+        curve = tables[cost]["candidate"]
+        values = np.full(len(curve.equity), 100.0)
+        values[2] = 200
+        values[8:13] = [100, 110, 99, 108, 109]
+        tables[cost]["candidate"] = replace(curve, equity=values)
+    result = _fold_report(tables, evidence)
+    row = result["folds"][0]["cost_levels"]["10"]["performance"]["rows"]["candidate"]
+    assert row["max_drawdown"] == pytest.approx(-0.1)
+    assert row["total_return"] == pytest.approx(0.09)
+    for comparator in ("incumbent", "SPY", "QQQ"):
+        assert row["rolling_win_rate"][comparator]["63"]["windows"] == 0
+    assert result["full_sample"]["10"]["rows"]["candidate"][
+        "max_drawdown"
+    ] == pytest.approx(-0.505)
+
+
+# Prefix, complete folds, and incomplete tail must reconcile every causal regime.
+def test_fold_regimes_reconcile_unscored_intervals_and_zero_observation_regimes():
+    tables, evidence = _fold_inputs()
+    result = _fold_report(tables, evidence)
+    coverage = result["coverage"]
+    partitions = coverage["partitions"]
+    assert coverage["return_intervals"] == 21
+    assert coverage["all_intervals_accounted_for"] is True
+    assert [part["return_intervals"] for part in partitions.values()] == [8, 12, 1]
+    labels = regime_labels(tables[10]["candidate"].dates, evidence)
+    for name in REGIME_NAMES:
+        assert sum(part["regime_intervals"][name] for part in partitions.values()) == (
+            np.sum(labels == name)
+        )
+    for fold in result["folds"]:
+        card = fold["cost_levels"]["10"]["regimes"]
+        assert card["regime_intervals_reconcile"] is True
+        assert card["regime_order"] == list(REGIME_NAMES)
+        assert (
+            sum(regime["return_intervals"] for regime in card["regimes"].values()) == 4
+        )
+        empty = card["regimes"]["below_200_mean_low_volatility"]
+        assert empty["return_intervals"] == 0
+        assert empty["candidate_beats_all_primary_comparators"] is None
+        assert empty["rows"]["incumbent"]["log_growth_contribution"] is None
+        for account, row in fold["cost_levels"]["10"]["performance"]["rows"].items():
+            contribution = sum(
+                regime["rows"][account]["log_growth_contribution"] or 0.0
+                for regime in card["regimes"].values()
+            )
+            assert contribution == pytest.approx(np.log1p(row["total_return"]))
+
+
+# A short series reports zero complete folds and never implies an assessed result.
+def test_insufficient_history_preserves_full_sample_and_reports_no_folds():
+    tables, evidence = _fold_inputs(intervals=7)
+    result = _fold_report(tables, evidence)
+    assert result["status"] == "insufficient_complete_folds"
+    assert result["folds"] == []
+    assert result["coverage"]["partitions"]["reference_prefix"]["return_intervals"] == 7
+    assert result["coverage"]["all_intervals_accounted_for"] is True
+    assert result["independent_validation"] is False
+    assert result["adoption_eligible"] is False
+    assert result["refit_performed"] is False
+
+
+# A high-scoring fold still cannot turn an examined study into new validation.
+def test_successful_diagnostic_cannot_claim_independent_validation_or_adoption():
+    tables, evidence = _fold_inputs()
+    for cost in (10, 25):
+        tables[cost]["QQQ"] = tables[cost]["SPY"]
+    result = _fold_report(tables, evidence)
+    assert all(
+        fold["cost_levels"]["10"]["performance"]["primary_objective"]["passes"]
+        for fold in result["folds"]
+    )
+    assert result["analysis"] == "post_hoc_chronological_stability"
+    assert result["independent_validation"] is False
+    assert result["adoption_eligible"] is False
+    assert result["refit_performed"] is False
+
+
+# Equal local account growth is a visible tie and never passes the strict objective.
+def test_fold_ties_are_distinct_from_wins_and_report_is_serializable():
+    tables, evidence = _fold_inputs()
+    for cost in (10, 25):
+        tables[cost]["candidate"] = tables[cost]["incumbent"]
+    result = _fold_report(tables, evidence, train_size=np.int64(5))
+    for fold in result["folds"]:
+        for cost in ("10", "25"):
+            block = fold["cost_levels"][cost]
+            assert block["comparisons"]["candidate"]["incumbent"] == {
+                "net_total_return_difference": 0.0,
+                "strict_win": False,
+                "tie": True,
+            }
+            assert block["performance"]["primary_objective"]["passes"] is False
+    assert json.loads(json.dumps(result, allow_nan=False)) == result
+
+
+# Missing cost levels, mismatched grids, and unequal account sets invalidate comparison.
+def test_fold_scorecard_requires_complete_matched_cost_tables():
+    tables, evidence = _fold_inputs()
+    with pytest.raises(ValueError, match="Both 10 and 25"):
+        _fold_report({10: tables[10]}, evidence)
+    shifted = {
+        name: replace(curve, dates=curve.dates + np.timedelta64(1, "D"))
+        for name, curve in tables[25].items()
+    }
+    with pytest.raises(ValueError, match="across both cost levels"):
+        _fold_report({10: tables[10], 25: shifted}, evidence)
+    tables[25]["additional_control"] = tables[25]["SPY"]
+    with pytest.raises(ValueError, match="same accounts"):
+        _fold_report(tables, evidence)
+
+
+# Missing marks, wrong costs, and omitted sessions remain fatal within each cost table.
+@pytest.mark.parametrize(
+    ("defect", "message"),
+    [
+        ("mark", "account marks"),
+        ("cost", "execution costs differ"),
+        ("session", "account dates differ"),
+        ("benchmark", "missing required accounts"),
+    ],
+)
+def test_fold_scorecard_retains_existing_fail_closed_account_checks(defect, message):
+    tables, evidence = _fold_inputs()
+    curve = tables[25]["QQQ"]
+    if defect == "mark":
+        equity = curve.equity.copy()
+        equity[10] = np.nan
+        tables[25]["QQQ"] = replace(curve, equity=equity)
+    elif defect == "cost":
+        tables[25]["QQQ"] = replace(curve, cost_bps=0)
+    elif defect == "session":
+        tables[25]["QQQ"] = replace(curve, dates=curve.dates + np.timedelta64(1, "D"))
+    else:
+        del tables[25]["QQQ"]
+    with pytest.raises(ValueError, match=message):
+        _fold_report(tables, evidence)
+
+
+# Shared missing account sessions must not masquerade as valid one-session observations.
+def test_fold_scorecard_rejects_shared_gaps_and_keeps_unknown_warmup():
+    tables, evidence = _fold_inputs()
+    shortened = {
+        cost: {
+            name: replace(
+                curve,
+                dates=curve.dates[::2],
+                equity=curve.equity[::2],
+                invested_fraction=curve.invested_fraction[::2],
+                largest_position_fraction=curve.largest_position_fraction[::2],
+            )
+            for name, curve in curves.items()
+        }
+        for cost, curves in tables.items()
+    }
+    with pytest.raises(ValueError, match="contiguous"):
+        _fold_report(shortened, evidence)
+    evidence = replace(
+        evidence,
+        dates=evidence.dates[-22:],
+        spy_adjusted_closes=evidence.spy_adjusted_closes[-22:],
+    )
+    result = _fold_report(tables, evidence)
+    for fold in result["folds"]:
+        assert fold["evaluation"]["regime_intervals"]["unknown_or_unavailable"] == 4
+
+
+# Later prices and account outcomes cannot alter an earlier completed diagnostic fold.
+def test_earlier_folds_are_invariant_to_future_evidence_and_outcomes():
+    tables, evidence = _fold_inputs()
+    baseline = _fold_report(tables, evidence)
+    modified = {}
+    for cost, curves in tables.items():
+        modified[cost] = {}
+        for name, curve in curves.items():
+            equity = curve.equity.copy()
+            equity[13:] *= np.linspace(0.8, 1.2, len(equity[13:]))
+            modified[cost][name] = replace(curve, equity=equity)
+    closes = evidence.spy_adjusted_closes.copy()
+    first_ending = tables[10]["candidate"].dates[12]
+    start = int(np.searchsorted(evidence.dates, first_ending))
+    closes[start:] *= np.linspace(0.5, 2, len(closes[start:]))
+    changed = _fold_report(modified, replace(evidence, spy_adjusted_closes=closes))
+    assert changed["folds"][0] == baseline["folds"][0]
+
+
+# Session geometry cannot accept booleans, fractions, or negative lengths.
+@pytest.mark.parametrize(
+    ("parameter", "value", "message"),
+    [
+        ("train_size", True, "must be an integer"),
+        ("test_size", 2.5, "must be an integer"),
+        ("horizon", 0, "sizes and horizon"),
+        ("embargo", -1, "sizes and horizon"),
+    ],
+)
+def test_fold_geometry_requires_valid_session_counts(parameter, value, message):
+    tables, evidence = _fold_inputs()
+    with pytest.raises(ValueError, match=message):
+        _fold_report(tables, evidence, **{parameter: value})

@@ -9,8 +9,11 @@ exchange-calendar completeness and input/execution provenance.
 import math
 from collections.abc import Mapping
 from dataclasses import dataclass
+from numbers import Integral
 
 import numpy as np
+
+from backend.market.harness import walk_forward_folds
 
 SESSIONS_PER_YEAR = 252
 ROLLING_WINDOWS = (63, 252)
@@ -502,4 +505,191 @@ def regime_scorecard(
             "regime-switching account."
         ),
         "regimes": regimes,
+    }
+
+
+# Keep starting NAV and interval diagnostics without inventing local trading totals.
+def _fold_curve(curve: Curve, intervals: range) -> Curve:
+    marks = slice(intervals.start, intervals.stop + 1)
+    return Curve(
+        dates=curve.dates[marks],
+        equity=curve.equity[marks],
+        cost_bps=curve.cost_bps,
+        traded_notional=None,
+        invested_fraction=(
+            None if curve.invested_fraction is None else curve.invested_fraction[marks]
+        ),
+        largest_position_fraction=(
+            None
+            if curve.largest_position_fraction is None
+            else curve.largest_position_fraction[marks]
+        ),
+    )
+
+
+# Describe every selected or excluded return interval on the original account grid.
+def _interval_coverage(dates, labels, start: int, stop: int) -> dict:
+    return {
+        "start_index": start,
+        "stop_index_exclusive": stop,
+        "return_intervals": stop - start,
+        "starting_nav_session": None if start == stop else str(dates[start]),
+        "first_return_session": None if start == stop else str(dates[start + 1]),
+        "last_return_session": None if start == stop else str(dates[stop]),
+        "regime_intervals": {
+            name: int(np.sum(labels[start:stop] == name)) for name in REGIME_NAMES
+        },
+    }
+
+
+# Compare local fold returns with each fixed benchmark, retaining ties separately.
+def _fold_comparisons(rows) -> dict:
+    comparisons = {}
+    for account, row in rows.items():
+        comparisons[account] = {}
+        for benchmark in PRIMARY_COMPARATORS:
+            if benchmark == account:
+                continue
+            margin = row["total_return"] - rows[benchmark]["total_return"]
+            comparisons[account][benchmark] = {
+                "net_total_return_difference": float(margin),
+                "strict_win": bool(margin > 0),
+                "tie": bool(margin == 0),
+            }
+    return comparisons
+
+
+# Report chronological stability of examined accounts without calling it new validation.
+def chronological_fold_scorecard(
+    curves_by_cost: Mapping[float, Mapping[str, Curve]],
+    *,
+    evidence: RegimeEvidence,
+    train_size: int,
+    test_size: int,
+    horizon: int,
+    embargo: int = 0,
+) -> dict:
+    """Slice preserved accounts into purged chronological diagnostic blocks.
+
+    The harness ranges index return intervals: interval i starts at mark i and
+    ends at mark i+1. Each fold therefore retains test_size+1 marks. Reference
+    history and purge ranges describe hypothetical fitting geometry only; this
+    function never fits, selects, resets an account, or creates untouched data.
+    """
+    for name, value in (
+        ("train_size", train_size),
+        ("test_size", test_size),
+        ("horizon", horizon),
+        ("embargo", embargo),
+    ):
+        if isinstance(value, bool) or not isinstance(value, Integral):
+            raise ValueError(f"{name} must be an integer number of sessions")
+    train_size, test_size, horizon, embargo = map(
+        int, (train_size, test_size, horizon, embargo)
+    )
+    if set(curves_by_cost) != {10, 25}:
+        raise ValueError("Both 10 and 25 basis-point account tables are required")
+    dates, _ = _checked_curves(curves_by_cost[10], 10)
+    stressed_dates, _ = _checked_curves(curves_by_cost[25], 25)
+    if not np.array_equal(dates, stressed_dates):
+        raise ValueError("Account dates must match across both cost levels")
+    if set(curves_by_cost[10]) != set(curves_by_cost[25]):
+        raise ValueError("The same accounts are required at both cost levels")
+    labels = regime_labels(dates, evidence)
+    n_intervals = len(dates) - 1
+    ranges = walk_forward_folds(n_intervals, train_size, test_size, horizon, embargo)
+    first_test = min(train_size + horizon + embargo, n_intervals)
+    evaluated_stop = first_test + len(ranges) * test_size
+    partitions = {
+        "reference_prefix": _interval_coverage(dates, labels, 0, first_test),
+        "evaluated_folds": _interval_coverage(
+            dates, labels, first_test, evaluated_stop
+        ),
+        "incomplete_tail": _interval_coverage(
+            dates, labels, evaluated_stop, n_intervals
+        ),
+    }
+    folds = []
+    for number, (train, test) in enumerate(ranges, start=1):
+        costs = {}
+        for cost in (10, 25):
+            sliced = {
+                name: _fold_curve(curve, test)
+                for name, curve in curves_by_cost[cost].items()
+            }
+            performance = scorecard(sliced, cost_bps=cost)
+            costs[str(cost)] = {
+                "performance": performance,
+                "comparisons": _fold_comparisons(performance["rows"]),
+                "regimes": regime_scorecard(sliced, cost_bps=cost, evidence=evidence),
+            }
+        folds.append(
+            {
+                "fold": number,
+                "reference_history": {
+                    "start_index": train.start,
+                    "stop_index_exclusive": train.stop,
+                    "decision_sessions": len(train),
+                    "first_decision_session": str(dates[train.start]),
+                    "last_decision_session": str(dates[train.stop - 1]),
+                    "last_hypothetical_label_session": str(
+                        dates[train.stop - 1 + horizon]
+                    ),
+                    "used_to_fit": False,
+                },
+                "purge_and_embargo": {
+                    "start_index": train.stop,
+                    "stop_index_exclusive": test.start,
+                    "decision_sessions": test.start - train.stop,
+                },
+                "evaluation": _interval_coverage(dates, labels, test.start, test.stop),
+                "cost_levels": costs,
+            }
+        )
+    return {
+        "analysis": "post_hoc_chronological_stability",
+        "independent_validation": False,
+        "adoption_eligible": False,
+        "refit_performed": False,
+        "status": "available" if folds else "insufficient_complete_folds",
+        "parameters": {
+            "train_size": int(train_size),
+            "test_size": int(test_size),
+            "horizon": int(horizon),
+            "embargo": int(embargo),
+        },
+        "coverage": {
+            "return_intervals": n_intervals,
+            "complete_folds": len(folds),
+            "partitions": partitions,
+            "all_intervals_accounted_for": sum(
+                part["return_intervals"] for part in partitions.values()
+            )
+            == n_intervals,
+        },
+        "full_sample": {
+            str(cost): scorecard(curves_by_cost[cost], cost_bps=cost)
+            for cost in (10, 25)
+        },
+        "folds": folds,
+        "interpretation": (
+            "Already-examined accounts sliced after outcomes were known. Test "
+            "returns do not overlap, but the blocks are not independent trials "
+            "or untouched out-of-sample evidence. Reference and purge geometry "
+            "does not verify actual training, selection, or input availability. "
+            "Existing survivorship, reconstruction, and source-vintage limitations "
+            "remain. Exchange-session completeness and execution/cost provenance "
+            "remain caller-attested."
+        ),
+        "account_continuity": (
+            "Folds retain the continuous account's existing positions and net "
+            "starting NAV. No fresh capital, entry trade, exit trade, or additional "
+            "cost is simulated at a boundary. Fold drawdowns and rolling windows "
+            "use only marks within that fold."
+        ),
+        "fold_trading_evidence": (
+            "Fold turnover and fees are unavailable: a full-sample traded-notional "
+            "total cannot be assigned to individual folds. Net NAV already includes "
+            "the declared trading costs; none are subtracted again."
+        ),
     }

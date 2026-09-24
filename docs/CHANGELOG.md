@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-24 — Hash-checked chronological account diagnostics
+
+- Added a pure chronological scorecard and read-only CLI for preserved study
+  accounts. Both 10/25 bp tables must contain the same sessions and fixed five
+  accounts; causal regime evidence, purge geometry, local metrics and all
+  excluded intervals remain explicit. Independent-validation/adoption flags
+  are always false for these examined-data diagnostics.
+- Applied one predeclared 126/63/21/5 shape to the existing study, without refits
+  or account simulation: four 63-interval blocks; incumbent beats SPY and QQQ
+  in all four at both costs. Only 12 evaluated intervals are below trend and
+  zero are below trend/low volatility. Full limitations and numbers are in
+  `docs/research/chronological-stability-2026-09-24.md`.
+- VERIFIED: 76 related tests and 14 CLI tests, scoped Ruff/format, unchanged
+  original artifact hashes, and independent direct recomputation of all 40
+  account/block returns and drawdowns. Root also reran 43 metrics tests.
+  Report preserved separately on Spark; no live policy, holdings or orders
+  changed. Historical point-in-time availability and genuine nested validation
+  remain UNVERIFIED. Diagram impact: NONE — existing research calculations.
+
 ## 2026-09-24 — Research history and live-account evidence stay distinct
 
 - Renamed the history to Recorded research readings and described its bounded
