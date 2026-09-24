@@ -65,3 +65,24 @@ predeclared accounting and comparison protocol.
    at 10 and 25 bp. Report missing labels and membership explicitly.
 4. Start a prospective shadow with timestamped features, forecasts, intended
    weights and failures. Do not select a review date after observing returns.
+
+## Prospective input capture added after this review
+
+`backend.market.learned_inputs` now freezes each ordinary current nightly
+record's price, range, momentum, volatility, breadth, regime, as-of filing
+ratios, analyst fundamental rank and release-tone scores under
+`data/market/learned_inputs/asof=DATE.json`. Each row names its bar, filing and
+tone source partition; the snapshot records the desk record's byte hash,
+source revision, actual capture timestamp, raw/adjusted price basis, and
+whether the current bar is complete. Missing data is JSON null. The writer
+refuses to overwrite a prior capture and skips historical or forced desk runs.
+It does not fit a model, make a recommendation, or place an order.
+
+A read-only build against the actual 2026-09-23 saved desk record produced 95
+rows: 95 complete current bars, 89 known tone records and 82 available
+earnings-yield features. This validates the adapter's real schema, not a
+historical forecast. Future labels still need a mechanically reconciled price
+basis across daily vintages; an old adjusted close restated by a later split
+cannot be compared blindly with a new vintage. There is still no sourced
+historical membership or 2016–26 point-in-time training set, so the table
+above stays unverified and the learned policies remain shadow-only.

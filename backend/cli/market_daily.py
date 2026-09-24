@@ -1576,6 +1576,16 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         print("the existing record is kept; nothing was changed")
         return
     print(f"\nrecord written: {path}")
+    # Archive only an ordinary current decision; historical/forced runs must
+    # never fabricate an original observation or revise an earlier capture.
+    if current and not args.force:
+        from backend.market import learned_inputs
+
+        try:
+            captured = learned_inputs.capture(path, core, panel, store)
+            print(f"learned inputs: {captured}")
+        except Exception as exc:  # noqa: BLE001 - keep the desk record usable
+            print(f"learned inputs: not captured ({type(exc).__name__}: {exc})")
     # The cheap work that belongs with the record lands before the prose,
     # so a drill-down never shows tonight's grades over yesterday's history
     # and a kill during the prose wait loses nothing but prose.
