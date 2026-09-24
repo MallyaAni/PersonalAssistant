@@ -1,0 +1,1032 @@
+{
+  "original_source": "8f36135fd7c2b0f890dd730d2268685a5708786e",
+  "script_sha256": "eb340ba8d327b2a3c405e87f713f5788971193f1d88f47c0cf97e093a8699540",
+  "frozen_inputs_sha256": "b47ded93df37c43a1dbc5b5e2737b4d802282609558ac25d737bbc0abf4181df",
+  "frozen_forecasts_sha256": "abd5be178b9b3c38f4817ed18d976bf7df7a1570411f5a975f718d67446810d2",
+  "requested_window_status": "FAILED: missing source bars, original report retained",
+  "actual_first": "2019-03-26",
+  "actual_last": "2026-09-21",
+  "data_failure_session": "2026-09-22",
+  "missing_symbols": [
+    "ACN",
+    "ADI",
+    "ADSK",
+    "ANET",
+    "ASML",
+    "CDNS",
+    "CEG",
+    "CIEN",
+    "CORZ",
+    "CRM",
+    "CRWD",
+    "DDOG",
+    "ETN",
+    "FFIV",
+    "FICO",
+    "FN",
+    "FSLR",
+    "FTNT",
+    "GEN",
+    "GEV",
+    "GLXY",
+    "HUT",
+    "IBM",
+    "INTU",
+    "KLAC",
+    "MCHP",
+    "MDB",
+    "MOD",
+    "MPWR",
+    "MSI",
+    "NET",
+    "NTAP",
+    "NXPI",
+    "ON",
+    "PANW",
+    "POWL",
+    "PTC",
+    "Q",
+    "SIMO",
+    "SNOW",
+    "SNPS",
+    "STX",
+    "SWKS",
+    "TEAM",
+    "TER",
+    "TLN",
+    "TRMB",
+    "TXN",
+    "TYL",
+    "VRT",
+    "WDAY",
+    "ZS"
+  ],
+  "adoption_eligible": false,
+  "models_refitted": false,
+  "policies": {
+    "momentum120@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 52.818140885241945,
+        "cagr": 0.7051851259180411,
+        "max_drawdown": -0.4656232201789915,
+        "sharpe": 1.3523633978954248,
+        "turnover_per_year": 9.327448581384424,
+        "mean_cash": 0.02381969782129189
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.8718426119451934,
+        "cagr": 0.4239479632100691,
+        "max_drawdown": -0.377749452720306,
+        "sharpe": 1.1210099838494312,
+        "turnover_per_year": 10.27520605863929,
+        "mean_cash": 0.024471737489904024
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 27.751424153826086,
+        "cagr": 0.8036605845053075,
+        "max_drawdown": -0.4656232201789915,
+        "sharpe": 1.4172876756358725,
+        "turnover_per_year": 9.032223778364962,
+        "mean_cash": 0.023616134217432493
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.28834524627395464,
+        "cagr": 5.197724501600493,
+        "max_drawdown": -0.13620375176781685,
+        "sharpe": 3.548563245663883,
+        "turnover_per_year": 7.606099549160052,
+        "mean_cash": 0.015093484635533483
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8258736971183324
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.8221949724095647
+        }
+      }
+    },
+    "learned_rank@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 18.37090812935993,
+        "cagr": 0.4871320015456919,
+        "max_drawdown": -0.5790312068678879,
+        "sharpe": 1.1001469854517814,
+        "turnover_per_year": 19.48209969091516,
+        "mean_cash": 0.04322359043887685
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.8193622338538142,
+        "cagr": 0.4013015928779695,
+        "max_drawdown": -0.49129797691420896,
+        "sharpe": 1.1278335625490759,
+        "turnover_per_year": 19.78188672677258,
+        "mean_cash": 0.04388463171191578
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 9.647087077501897,
+        "cagr": 0.5149271582241084,
+        "max_drawdown": -0.5790312068678879,
+        "sharpe": 1.1033464419075116,
+        "turnover_per_year": 19.388716551522638,
+        "mean_cash": 0.04301721657802568
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.06020841811707234,
+        "cagr": 0.5234106495299582,
+        "max_drawdown": -0.2140796646642109,
+        "sharpe": 0.9832600842706125,
+        "turnover_per_year": 25.677961987174772,
+        "mean_cash": 0.05999273464607402
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.7516860821581851
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.7351318209687309
+        }
+      }
+    },
+    "momentum120_learned_brake@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 49.08061267098582,
+        "cagr": 0.6888300367048243,
+        "max_drawdown": -0.4461467566325529,
+        "sharpe": 1.378905290751807,
+        "turnover_per_year": 9.496211568190216,
+        "mean_cash": 0.09235376327391305
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.7058724448069347,
+        "cagr": 0.35133123633439944,
+        "max_drawdown": -0.377749452720306,
+        "sharpe": 1.0056496483880408,
+        "turnover_per_year": 10.992617759872424,
+        "mean_cash": 0.07142344252661237
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 28.357771047561407,
+        "cagr": 0.8102830787742032,
+        "max_drawdown": -0.4461467566325529,
+        "sharpe": 1.4777040900692844,
+        "turnover_per_year": 9.030083646460634,
+        "mean_cash": 0.0988881073120947
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.1732251659799129,
+        "cagr": 2.1589726436539967,
+        "max_drawdown": -0.1338982513617747,
+        "sharpe": 2.7805742174726142,
+        "turnover_per_year": 11.083996570585724,
+        "mean_cash": 0.14883427628264848
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8454935622317596
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.8038013488657265
+        }
+      }
+    },
+    "learned_rank_learned_brake@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 17.44173148975401,
+        "cagr": 0.4773758019523564,
+        "max_drawdown": -0.5307786075683112,
+        "sharpe": 1.1160775806871908,
+        "turnover_per_year": 18.88422927703843,
+        "mean_cash": 0.10994248778320471
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.7728169973662065,
+        "cagr": 0.3809767397354056,
+        "max_drawdown": -0.49129797691420896,
+        "sharpe": 1.1031805866243851,
+        "turnover_per_year": 19.93857222146877,
+        "mean_cash": 0.08924815039077716
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 9.402501508701716,
+        "cagr": 0.508757071973849,
+        "max_drawdown": -0.5307786075683112,
+        "sharpe": 1.127299665848737,
+        "turnover_per_year": 18.555803286682774,
+        "mean_cash": 0.11640315896913335
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": -0.01562920436743065,
+        "cagr": -0.10722342214525249,
+        "max_drawdown": -0.21554692091852,
+        "sharpe": 0.08978539686165803,
+        "turnover_per_year": 29.354550942592095,
+        "mean_cash": 0.18482014376939704
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.7516860821581851
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.7001839362354384
+        }
+      }
+    },
+    "momentum120_fixed_brake@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 37.573418156789835,
+        "cagr": 0.6308129391066357,
+        "max_drawdown": -0.4466747348776977,
+        "sharpe": 1.3165363223112097,
+        "turnover_per_year": 8.856807557105745,
+        "mean_cash": 0.1074441052405945
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.794544249162688,
+        "cagr": 0.39049296082250873,
+        "max_drawdown": -0.3204388328004384,
+        "sharpe": 1.1352279673711714,
+        "turnover_per_year": 10.506559113921004,
+        "mean_cash": 0.04763884433942029
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 20.494826987290903,
+        "cagr": 0.7138422331256562,
+        "max_drawdown": -0.4466747348776977,
+        "sharpe": 1.3705499365676403,
+        "turnover_per_year": 8.342912821289426,
+        "mean_cash": 0.12611501596096109
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.28834382791798796,
+        "cagr": 5.197675375050936,
+        "max_drawdown": -0.1362230702375723,
+        "sharpe": 3.548368245986605,
+        "turnover_per_year": 7.603046120093807,
+        "mean_cash": 0.015083742336571948
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8179031269160024
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.7884733292458614
+        }
+      }
+    },
+    "equal@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 11.009307798304928,
+        "cagr": 0.3949144452426705,
+        "max_drawdown": -0.38613356293757883,
+        "sharpe": 1.273764110092654,
+        "turnover_per_year": 0.5030280728994287,
+        "mean_cash": 0.05526938031558998
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.9236531065226634,
+        "cagr": 0.4460351289951987,
+        "max_drawdown": -0.3506901464559583,
+        "sharpe": 1.33944966834548,
+        "turnover_per_year": 0.8100917149270697,
+        "mean_cash": 0.02268120213650002
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 5.242969565346339,
+        "cagr": 0.37936263616120103,
+        "max_drawdown": -0.38613356293757883,
+        "sharpe": 1.252624270925977,
+        "turnover_per_year": 0.40737828336189874,
+        "mean_cash": 0.06544325057637905
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.09879340022660643,
+        "cagr": 0.9705865033884493,
+        "max_drawdown": -0.06924585310844866,
+        "sharpe": 2.609147227054397,
+        "turnover_per_year": 0.3478181385174023,
+        "mean_cash": 0.08304097084700399
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8209687308399755
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.8301655426118946
+        }
+      }
+    },
+    "SPY@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 2.066897991681962,
+        "cagr": 0.16190091083939606,
+        "max_drawdown": -0.33717270361192986,
+        "sharpe": 0.8707651500273618,
+        "turnover_per_year": 0.13376633992999562,
+        "mean_cash": 0.0005310674455655868
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.3730793086826665,
+        "cagr": 0.19571330687836475,
+        "max_drawdown": -0.33717270361192986,
+        "sharpe": 0.8122595254343384,
+        "turnover_per_year": 0.5631951940676774,
+        "mean_cash": 0.002232142857142857
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 1.2335912953377375,
+        "cagr": 0.15156499841760374,
+        "max_drawdown": -0.24496376908509876,
+        "sharpe": 0.9295705322705605,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.03800476090511107,
+        "cagr": 0.3080829568579555,
+        "max_drawdown": -0.030634575025345834,
+        "sharpe": 2.543404028033863,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.0
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.30226854690374005
+        }
+      }
+    },
+    "QQQ@10bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 3.322989138951975,
+        "cagr": 0.21655448597346694,
+        "max_drawdown": -0.3511872767702523,
+        "sharpe": 0.9351669483168179,
+        "turnover_per_year": 0.13376633992999565,
+        "mean_cash": 0.0005310674455655868
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.7690787352194584,
+        "cagr": 0.3793343162988072,
+        "max_drawdown": -0.2855937464513516,
+        "sharpe": 1.2679042426926592,
+        "turnover_per_year": 0.5631951940676775,
+        "mean_cash": 0.002232142857142857
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 1.4436386311634108,
+        "cagr": 0.16988475007460457,
+        "max_drawdown": -0.3511872767702523,
+        "sharpe": 0.8111110826374941,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.07885663741491666,
+        "cagr": 0.7271852170779538,
+        "max_drawdown": -0.03760577545016364,
+        "sharpe": 3.2165751841104946,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.69773145309626
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.0
+        }
+      }
+    },
+    "momentum120@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 47.48153932280405,
+        "cagr": 0.6815076952390229,
+        "max_drawdown": -0.47017779590498066,
+        "sharpe": 1.3228642779657394,
+        "turnover_per_year": 9.322761257068704,
+        "mean_cash": 0.023590868312902507
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.8246209879428612,
+        "cagr": 0.4035835884920933,
+        "max_drawdown": -0.37825111660760213,
+        "sharpe": 1.0833755033110537,
+        "turnover_per_year": 10.272728725721487,
+        "mean_cash": 0.024530360125026518
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 25.570745181147874,
+        "cagr": 0.7788494440646174,
+        "max_drawdown": -0.47017779590498066,
+        "sharpe": 1.3894577217945638,
+        "turnover_per_year": 9.026848045578953,
+        "mean_cash": 0.02329756355204427
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.286337058847667,
+        "cagr": 5.128503352289257,
+        "max_drawdown": -0.13707244833174692,
+        "sharpe": 3.528320499746816,
+        "turnover_per_year": 7.592260585501796,
+        "mean_cash": 0.0150532309163315
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8209687308399755
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.8013488657265482
+        }
+      }
+    },
+    "learned_rank@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 14.561077269012396,
+        "cagr": 0.44415642599604066,
+        "max_drawdown": -0.5857946186640001,
+        "sharpe": 1.0354519087377132,
+        "turnover_per_year": 19.470987353544263,
+        "mean_cash": 0.0430519348477299
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.7260282451804336,
+        "cagr": 0.3603095322486174,
+        "max_drawdown": -0.492428229722613,
+        "sharpe": 1.0444574296581908,
+        "turnover_per_year": 19.77283403976616,
+        "mean_cash": 0.043747369101213636
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 8.01554033803525,
+        "cagr": 0.4713157032891322,
+        "max_drawdown": -0.5857946186640001,
+        "sharpe": 1.0424196763095368,
+        "turnover_per_year": 19.376962636651452,
+        "mean_cash": 0.04283482366615449
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.05467199447961235,
+        "cagr": 0.46705157120439456,
+        "max_drawdown": -0.21626910862349835,
+        "sharpe": 0.9234199778632952,
+        "turnover_per_year": 25.665586817425012,
+        "mean_cash": 0.05970863443655442
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.7357449417535254
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.7001839362354384
+        }
+      }
+    },
+    "momentum120_learned_brake@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 44.11391659762575,
+        "cagr": 0.6653762086135449,
+        "max_drawdown": -0.4475461754689123,
+        "sharpe": 1.3480622147489358,
+        "turnover_per_year": 9.489888999524357,
+        "mean_cash": 0.0921406567907371
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.6584927141265116,
+        "cagr": 0.3300420363424805,
+        "max_drawdown": -0.37825111660760213,
+        "sharpe": 0.9625449625140591,
+        "turnover_per_year": 10.982094512416126,
+        "mean_cash": 0.07134835683885513
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 26.201757483382238,
+        "cagr": 0.7861964546126456,
+        "max_drawdown": -0.4475461754689123,
+        "sharpe": 1.4495417289949883,
+        "turnover_per_year": 9.025069581919743,
+        "mean_cash": 0.0986319114098612
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.17056863005039458,
+        "cagr": 2.1078320815108165,
+        "max_drawdown": -0.1347143177777258,
+        "sharpe": 2.7469965331564516,
+        "turnover_per_year": 11.068163079844405,
+        "mean_cash": 0.14875502427503298
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8307786633966892
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.7841814837522992
+        }
+      }
+    },
+    "learned_rank_learned_brake@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 13.934008685211865,
+        "cagr": 0.43622454552152323,
+        "max_drawdown": -0.5388660569443022,
+        "sharpe": 1.050953640392263,
+        "turnover_per_year": 18.876630774547777,
+        "mean_cash": 0.1097771107323708
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.6812718898002255,
+        "cagr": 0.34031009384821576,
+        "max_drawdown": -0.492428229722613,
+        "sharpe": 1.017495546717952,
+        "turnover_per_year": 19.92912623678567,
+        "mean_cash": 0.08910686517532078
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 7.88256609523542,
+        "cagr": 0.4674814003105283,
+        "max_drawdown": -0.5388660569443022,
+        "sharpe": 1.0665872849403797,
+        "turnover_per_year": 18.548780271676463,
+        "mean_cash": 0.1162302605648157
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": -0.02149335602867619,
+        "cagr": -0.1448167075946627,
+        "max_drawdown": -0.2176260864423859,
+        "sharpe": 0.01410243538951762,
+        "turnover_per_year": 29.324474118549546,
+        "mean_cash": 0.1847285989068022
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.7277743715511956
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.6652360515021459
+        }
+      }
+    },
+    "momentum120_fixed_brake@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 33.90704027145391,
+        "cagr": 0.6091488465970061,
+        "max_drawdown": -0.4503409457449199,
+        "sharpe": 1.2866116262347154,
+        "turnover_per_year": 8.853167361235785,
+        "mean_cash": 0.10731160758886958
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.7466139159966283,
+        "cagr": 0.36943222485396654,
+        "max_drawdown": -0.3216237182313755,
+        "sharpe": 1.0912504228532838,
+        "turnover_per_year": 10.502212763532405,
+        "mean_cash": 0.04783191076930902
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 18.9855502992118,
+        "cagr": 0.6920704418491248,
+        "max_drawdown": -0.4503409457449199,
+        "sharpe": 1.3434939086717825,
+        "turnover_per_year": 8.339492591321784,
+        "mean_cash": 0.12588087879107385
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.28636008244101196,
+        "cagr": 5.129293174506145,
+        "max_drawdown": -0.13706946092051797,
+        "sharpe": 3.528552337834121,
+        "turnover_per_year": 7.592034160710393,
+        "mean_cash": 0.01505278593001422
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8087063151440834
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.7682403433476395
+        }
+      }
+    },
+    "equal@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 11.013580548127095,
+        "cagr": 0.3949808885250039,
+        "max_drawdown": -0.3878391168461671,
+        "sharpe": 1.273813189043329,
+        "turnover_per_year": 0.5043016297173232,
+        "mean_cash": 0.05435805617936028
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.9196232144293819,
+        "cagr": 0.4443265418960385,
+        "max_drawdown": -0.3507543668633655,
+        "sharpe": 1.3354594958110046,
+        "turnover_per_year": 0.8091540088901286,
+        "mean_cash": 0.022585793556220486
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 5.258301346755798,
+        "cagr": 0.3799569136789107,
+        "max_drawdown": -0.3878391168461671,
+        "sharpe": 1.2540245732411544,
+        "turnover_per_year": 0.40934064470670023,
+        "mean_cash": 0.06427720158365757
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.10072742147000624,
+        "cagr": 0.9956963262262111,
+        "max_drawdown": -0.06885157063044689,
+        "sharpe": 2.6488550939563362,
+        "turnover_per_year": 0.4228173321851538,
+        "mean_cash": 0.0778439098374908
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.8203556100551809
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.8240343347639485
+        }
+      }
+    },
+    "SPY@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 2.0623091168814405,
+        "cagr": 0.1616679738458784,
+        "max_drawdown": -0.33717270361192986,
+        "sharpe": 0.8697042242846896,
+        "turnover_per_year": 0.13356619079294327,
+        "mean_cash": 0.0005310674455655868
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.37102482592653274,
+        "cagr": 0.19470435889881088,
+        "max_drawdown": -0.33717270361192986,
+        "sharpe": 0.8089977837881817,
+        "turnover_per_year": 0.5623525079917656,
+        "mean_cash": 0.002232142857142857
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 1.2335912953377375,
+        "cagr": 0.15156499841760374,
+        "max_drawdown": -0.24496376908509887,
+        "sharpe": 0.9295705322705609,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.038004760905110846,
+        "cagr": 0.3080829568579535,
+        "max_drawdown": -0.03063457502534561,
+        "sharpe": 2.543404028033847,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.0
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.30226854690374005
+        }
+      }
+    },
+    "QQQ@25bp": {
+      "full": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2026-09-21",
+        "transitions": 1882,
+        "total_return": 3.3165208260258616,
+        "cagr": 0.2163105920735917,
+        "max_drawdown": -0.3511872767702522,
+        "sharpe": 0.9343083749303976,
+        "turnover_per_year": 0.13356619079294327,
+        "mean_cash": 0.0005310674455655868
+      },
+      "2016-2020": {
+        "available": true,
+        "first": "2019-03-26",
+        "last": "2020-12-31",
+        "transitions": 447,
+        "total_return": 0.7664317346181324,
+        "cagr": 0.37817042812966717,
+        "max_drawdown": -0.2855937464513517,
+        "sharpe": 1.2648426961979782,
+        "turnover_per_year": 0.5623525079917656,
+        "mean_cash": 0.002232142857142857
+      },
+      "2021-2026": {
+        "available": true,
+        "first": "2021-01-04",
+        "last": "2026-09-21",
+        "transitions": 1435,
+        "total_return": 1.4436386311634104,
+        "cagr": 0.16988475007460457,
+        "max_drawdown": -0.3511872767702522,
+        "sharpe": 0.8111110826374961,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "holdout": {
+        "available": true,
+        "first": "2026-08-03",
+        "last": "2026-09-21",
+        "transitions": 35,
+        "total_return": 0.07885663741491666,
+        "cagr": 0.7271852170779538,
+        "max_drawdown": -0.03760577545016386,
+        "sharpe": 3.2165751841104857,
+        "turnover_per_year": 0.0,
+        "mean_cash": 0.0
+      },
+      "rolling": {
+        "SPY": {
+          "windows": 1631,
+          "win_fraction": 0.69773145309626
+        },
+        "QQQ": {
+          "windows": 1631,
+          "win_fraction": 0.0
+        }
+      }
+    }
+  },
+  "full_live_incumbent": {
+    "available": false,
+    "reason": "historical grades, tone and entry states unavailable"
+  }
+}

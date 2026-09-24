@@ -1,5 +1,54 @@
 # Next session
 
+## 2026-09-24 — Conditional learned study complete; neural audited; snapshot guard
+
+The user authorized retrospective testing and asked whether the strong nightly
+neural result could improve live recommendations through a combination. See
+`docs/research/learned-price-results-2026-09-24.md` and its JSON table.
+Do not rerun, refit or tune this study. Source `8f36135` fit once on the fixed
+current-cohort single-vintage inputs. Full requested scoring FAILED because
+52 names lack September 22 bars in the September 23 snapshot. Amendment
+`1753a6e`, declared before stock metrics, permits only the mechanical complete
+prefix through September 21, with identical saved forecasts and controls.
+Artifacts: `/home/animallya96/anios/data/market/research/learned-price-20260924`.
+
+The new HGB ranker does not earn adoption. At 10 bp its conditional CAGR is
+48.7%, drawdown -57.9%, turnover 19.48/year versus momentum120 70.5%, -46.6%,
+9.33/year; final withheld interval returns 6.0% versus 28.8% (QQQ 7.9%).
+These survivor-selected price diagnostics are NOT historical live performance.
+The common window begins in 2019 due to minimum training history; the full
+live incumbent, dated fundamentals/tone and historical membership remain
+unavailable. No new live policy is selected. Common regime features now
+retain their numeric values instead of being ranked to a constant across
+stocks; retrospective forecasts are structurally rejected by live sizing.
+
+The separate frozen neural ledger was independently replayed read-only:
+six input hashes and inference arrays exact, all ten accounts exact across
+six observations. September 15 decision, September 16 close fill, latest
+September 22 mark: neural +15.84%, valuation +12.01%, momentum20 -0.20%,
+SPY +2.46% at 10 bp. Only one basket/four return intervals; no matured
+20-session comparison or regime-selector evidence. Original ledger unchanged.
+Audit `/tmp/audit-neural-20260924.json` and reproducible script beside it.
+September 23 nightly stopped on the frozen identity guard; the continuation
+was already fixed in the prior deployed release. Do not fabricate a missed
+observation or change the frozen model to chase these returns. A future fixed
+50/50 blend is a control to test before any learned selector, not implemented
+or approved live by this audit.
+
+Snapshot refresh now checks all previously retained date columns within the
+requested range, retries one response that drops a known date, then rejects
+it without writing. Existing bad partitions remain immutable. Real ACN
+September 23 bytes reproduced the missing September 22 failure with zero
+network requests and unchanged source hash. Scoped Ruff passed; 66 focused
+learned/store/nightly tests plus 9 frozen neural tests passed. Production
+deployment and next ordinary nightly behavior still require verification.
+Do not run `desk_daily.sh` manually: it includes paper-account writes.
+
+All code is in the isolated `codex/trading-evidence-20260923` checkout;
+preserve OpenCode's unmerged shared checkout and its unrelated edits. Ship
+only through guarded `scripts/deploy.sh`, no model/settings changes. At this
+handoff the running release is still `5072dd64`; no new deployment claimed.
+
 ## 2026-09-24 01:14 UTC — Causal learned shadow bridge LIVE, rule unchanged
 
 Commit `5072dd6456e825e1fde74322ff7cd16007fb7d1d` passed the guarded

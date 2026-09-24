@@ -223,6 +223,26 @@ class MarketStore:
                 return candidate
         return None
 
+    # Preserve dates observed in any retained vintage, even if a newer fetch lost one.
+    def observed_sessions(
+        self, ticker: str, start: date, end: date, asof: date
+    ) -> frozenset[date]:
+        """Read only date columns from prior snapshots in the requested range."""
+        import pyarrow.parquet as pq
+
+        sessions: set[date] = set()
+        for vintage in self.asofs():
+            if vintage > asof:
+                break
+            path = self._path(_BARS, vintage, ticker)
+            if not path.exists():
+                continue
+            table = pq.ParquetFile(path).read(columns=["session_date"])
+            sessions.update(
+                day for day in table.column(0).to_pylist() if start <= day <= end
+            )
+        return frozenset(sessions)
+
     # Read one ticker as it was on or before an as-of date. Returns None when
     # no partition up to that date holds it.
     def read(self, ticker: str, asof: date | None = None) -> TickerHistory | None:

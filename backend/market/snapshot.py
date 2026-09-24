@@ -100,6 +100,23 @@ def daily_returns(bars: Sequence[DailyBar]) -> list[tuple[date, float]]:
     return returns
 
 
+# Retry one incomplete response; never store a snapshot that loses known sessions.
+def _fetch_preserving_sessions(store, ticker, start, asof, fetcher):
+    known = store.observed_sessions(ticker, start, asof, asof - timedelta(days=1))
+    missing = frozenset()
+    for _attempt in range(2):
+        history = fetcher(ticker, start, asof)
+        present = {bar.session_date for bar in history.bars}
+        missing = known - present
+        if not missing:
+            return history
+    first = min(missing)
+    raise MarketDataUnavailableError(
+        f"{ticker} history omits {len(missing)} previously observed sessions "
+        f"(first {first}); incomplete response repeated, snapshot not stored"
+    )
+
+
 # Fetch every requested ticker into the `asof` partition, capturing failures.
 #
 # Tickers the partition already holds are skipped, so a rerun is idempotent
@@ -133,7 +150,9 @@ def refresh(
             )
         else:
             try:
-                history = fetcher(ticker, start, asof)
+                history = _fetch_preserving_sessions(
+                    store, ticker, start, asof, fetcher
+                )
             except MarketDataUnavailableError as exc:
                 result = RefreshResult(
                     ticker=ticker, bars_stored=0, skipped=False, error=str(exc)
