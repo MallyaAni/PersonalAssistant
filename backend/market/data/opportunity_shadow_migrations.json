@@ -9,6 +9,12 @@
   "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
   "to": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
   "declared": "2026-09-23",
-  "reason": "Removed an unused EDGAR filing-index helper and added an early-close lookup to calendar. Neither changes the shadow model, its existing 2026-09-15..16 observations, price inputs, target construction or funded ledger. Future early-close handling may change calendar-sensitive reads, so the successor identity is explicit; archived transitions are not rewritten."
- }
+   "reason": "Removed an unused EDGAR filing-index helper and added an early-close lookup to calendar. Neither changes the shadow model, its existing 2026-09-15..16 observations, price inputs, target construction or funded ledger. Future early-close handling may change calendar-sensitive reads, so the successor identity is explicit; archived transitions are not rewritten."
+  },
+  {
+   "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+   "to": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+   "declared": "2026-09-24",
+   "reason": "Revision 3b45ed0 (Desk market status clarification) added exchange_status, REGULAR_OPEN and NEW_YORK to calendar.py and did not touch _future_session_offset, the shadow's only calendar read, or the model, features, execution, price inputs, target construction or funded ledger. The archived 19f933ff ledger (sequence 6, 2026-09-22) continues unchanged; its successor identity is the current code's."
+  }
 ]
