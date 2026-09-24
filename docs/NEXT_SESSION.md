@@ -27,9 +27,12 @@ Read-only acceptance in the **running backend image** on the real store found
 nightly completed before the prospective capture release. The next ordinary
 nightly must be checked for a single immutable `asof=DATE.json`, its source
 record hash, captured time and complete bars. Do not force a historical run
-to fabricate one. The host `~/research-venv` lacks scikit-learn and cannot
-run the fitter; the deployed backend image does include it, as the actual
-acceptance check proved. Nightly capture does not require scikit-learn.
+to fabricate one. The host `~/research-venv` initially lacked scikit-learn;
+with user authorization, installed the repository-pinned `scikit-learn==1.9.1`
+plus its missing dependencies without changing NumPy or SciPy. The same
+read-only archive/fit check now runs in both the host venv and deployed
+backend, yielding **0 captures and 0 forecasts** in each. Nightly capture
+does not invoke the fitter.
 
 The current live rule remains recommended. There is no valid 2016–26
 learned-versus-incumbent/SPY/QQQ/equal-weight table, no scored prospective
