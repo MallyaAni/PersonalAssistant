@@ -1,5 +1,18 @@
 # Next session
 
+## 2026-09-24 — Desk semantics merged to main and deployed as 26b3cb1
+
+Codex's Desk implementation (3b45ed0 "Clarify Desk market status and trading
+intent", 1940045 handoff) was merged into main alongside the neural research
+(merge 5af6513, freeze d300760) and deployed through `scripts/deploy.sh`.
+Unit gate 4645 passed / 26 skipped / 1 xfailed; routing gate passed; cheap
+post-deploy checks ok. One gate failure was fixed by declaring the shadow
+ledger successor `19f933ff -> dc1d5fa6` in
+`backend/market/data/opportunity_shadow_migrations.json`: Codex's
+calendar.py change (exchange_status) is hashed into the shadow identity but
+does not touch `_future_session_offset`, the shadow's only calendar read; the
+live ledger (sequence 6, 2026-09-22) continues unchanged.
+
 ## 2026-09-24 — Fixed benchmark and causal-regime acceptance gate
 
 The forward `incumbent-neural-rank-blend/1-research` review now has an enforced
