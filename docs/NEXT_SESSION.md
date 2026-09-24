@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-24 — Completed live desk and clicked-chart verification
+
+**VERIFIED live release: `c53b8a13b8e4e9a6750ba53ddd6e03743fce9f76`**, committed on
+Spark main and pushed to origin/main. Normal `scripts/deploy.sh` frontend-only
+path completed with exit 0 and `c53b8a1 ok (cheap)`. Its preceding backend release
+`0639acf` passed the full 5,858-test unit gate (31 skips, 1 xfail) and 100/100 live
+model gate. No checks weakened or bypassed. Final source TypeScript and **7/7
+affected browser tests passed against the deployed 8080 bundle**.
+
+Final artifact proof: `/tmp/codex-final-chart-label-artifact-proof-20260924.json`.
+All changed backend hashes still match, gateway bytes match, models' IDs/start
+times unchanged. Public logged-in browser serves `index-Bv4Hmt3m.js`. Logs:
+`/tmp/codex-final-chart-label-release-20260924.log`,
+`/tmp/codex-final-chart-label-deployed-browser-20260924.log`.
+
+Documented manual acceptance on deep-matter.com: concise action/size/reason board,
+collapsed strategy details, optional unset risk/cash; AAOI daily/weekly charts and
+signal toggle; Q daily/weekly missing-data disclosure; final Q weekly caption
+`Newest stored week: 2026-09-24 (incomplete candle)` with unavailable close; AAOI
+table and detail both `Entry criteria not met (invalid or empty quote)`. No browser
+console errors/warnings. Final reload loaded personal guidance normally; initial
+cold request after backend restart had been slower. No account inputs, positions
+or trades edited. The existing UI's decision-history acknowledgement operated
+normally. Browser left on unfiltered live desk, modal closed.
+
+All 94 covered tickers/188 daily-weekly source payloads were audited, not manually
+clicked. The 93 available daily entry bands match their charts; Q remains missing
+September 22 and is explicitly unavailable. The current cached 93 complete entry
+reads are below the unchanged 1.10 breakout threshold. Read-only deployed API
+returned 94 decisions, zero-size Holds for checked AAOI/Q/NTAP. This is rule/data
+consistency evidence, **not predictive accuracy, profitability or superiority**.
+Historical grade replays and price-only breakout markers are not orders/fills.
+Incumbent policy unchanged; neural/15-minute challengers remain unqualified.
+
+No release work remains for this bounded task. Do not redeploy for this docs-only
+handoff. Keep the broader research limitations and older unrelated search-harness
+failure separate; this task did not rerun or resolve that full search harness.
+
 ## 2026-09-24 — Live verification and final chart labels
 
 Release `0639acf` is LIVE through the normal deployment script: **5,858 unit
