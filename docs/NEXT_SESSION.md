@@ -6,7 +6,15 @@ through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
 the Mac. A reminder of this workflow does not authorize deploying unfinished
 research changes.
 
-## 2026-09-24 — Dated dashboard evidence; exact-commit verification next
+## 2026-09-24 — Dated dashboard evidence verified and published
+
+Verified implementation checkpoint:
+`654e02f35a8316ea9d6789d568886982c2173590`, tree
+`760152d2753189f0b25c35fe30f7d265d6c41805`. The exact clean committed source
+repeated **115/115 browser cases in 80.882 seconds**, no skips/flaky/unexpected
+results, and all nine timing diagnostic records remain empty. Explicit
+TypeScript/build/diff checks passed. It is pushed to `spark main`, then to
+GitHub **from Spark**, divergence 0/0. No deployment occurred.
 
 The presentation-only AAOI mixed-time correction is implemented. Started on
 `main` at `7d801c1af051cb8ca6bebb868b8d6183a09b7094`; the only dirty files on
@@ -25,11 +33,18 @@ Root inspected desktop and 390px mobile screenshots. Existing CSS/chunk warnings
 remain. No score, prompt, API, permissions, persistence or action logic changed.
 
 Evidence and commands: `/private/tmp/anios-aaoi-browser.eVPCSe/`, especially
-`UI_CHANGE_ACCEPTANCE.md`. Full [acceptance and limitations](
-research/desk-evidence-timing-2026-09-24.md). Exact-commit repeat and separate
-Spark retention are next; do not call a commit a verified checkpoint until
-that repeat finishes. Public/deployed UI and writable-account persistence remain
-UNVERIFIED. Diagram impact: NONE — presentation only, unchanged data flow.
+`COMMIT_654e02f3_ACCEPTANCE.md` (SHA256
+`769e54bd168ffb72a7c829b45b18bc73a46e16974a38ee4ac2c59279de93abf3`).
+Full [acceptance and limitations](research/desk-evidence-timing-2026-09-24.md).
+Separate Spark retention is VERIFIED at
+`/home/animallya96/anios/data/market/research/desk-evidence-timing-20260924.23g6gtpu/`:
+**348 payload files / 29,173,792 bytes**, exact file set and hashes; all 44 files
+of the original retained browser baseline remain unchanged. Readback receipt
+`retention/retention-readback.json` SHA256
+`af9ec721bcbe21ecec4104e7cc7bc93b2bd0c28b99758d0c047c85c0bbab12cb`.
+Local retention driver/receipts: `/private/tmp/anios-ui-retention.X3UwhZ/`.
+Public/deployed UI and writable-account persistence remain UNVERIFIED.
+Diagram impact: NONE — presentation only, unchanged data flow.
 
 Next semantic tasks: name fundamentals as growth/margins and sentiment as
 earnings-release tone, show their actual evidence dates, and separate scored

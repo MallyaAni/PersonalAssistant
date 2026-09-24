@@ -71,6 +71,30 @@ Final frontend SHA256:
 - `desk-evidence-timing.spec.ts`: `190012efc8d82ca6aae96378e0e8ddf2f6a7ff31ace33a2b6492164d17bed48d`
 - `desk.spec.ts`: `c4154ee962da5cdb0cfe41a798c35a21550ea67efdd38a2df01b2781f67583bb`
 
+## Exact-commit checkpoint and retained proof
+
+Commit `654e02f35a8316ea9d6789d568886982c2173590`, tree
+`760152d2753189f0b25c35fe30f7d265d6c41805`, repeated **115/115** browser cases
+in **80.882274 seconds**, zero skipped/flaky/unexpected results. All nine timing
+diagnostic records have six empty error/write arrays. TypeScript, fresh
+production build and diff checks pass; HEAD, tree, clean worktree and source
+hashes agree before/after. Only the isolated local Vite server was restarted.
+The exact-commit receipt is `COMMIT_654e02f3_ACCEPTANCE.md` under the local
+evidence root, SHA256
+`769e54bd168ffb72a7c829b45b18bc73a46e16974a38ee4ac2c59279de93abf3`.
+
+The verified code checkpoint is published to Spark and to GitHub **from Spark**,
+with local/origin divergence 0/0. No deployment occurred.
+Separate evidence retention at
+`/home/animallya96/anios/data/market/research/desk-evidence-timing-20260924.23g6gtpu/`
+verifies **348 payload files / 29,173,792 bytes**, including the exact frontend
+source archive, all final/failed browser evidence and transport tools. There are
+zero missing, changed or unexpected payload files. All 44 files in the earlier
+retained browser baseline are unchanged. The new
+`retention/retention-readback.json` SHA256 is
+`af9ec721bcbe21ecec4104e7cc7bc93b2bd0c28b99758d0c047c85c0bbab12cb`.
+Local retention proof: `/private/tmp/anios-ui-retention.X3UwhZ/`.
+
 ## UNVERIFIED and next work
 
 Public/deployed behavior remains UNVERIFIED; no deployment occurred. Fixtures

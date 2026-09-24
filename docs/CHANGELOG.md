@@ -11,6 +11,9 @@
   browser/network/write errors; TypeScript and production build pass. Desktop
   and 390px mobile evidence was visually reviewed. Initial reproduction and
   failed runs are preserved. Existing CSS/chunk build warnings remain.
+- Exact committed checkpoint `654e02f3` repeats **115/115 in 80.882 seconds**,
+  with TypeScript/build passing and unchanged source. Published via Spark;
+  separate retained proof verifies 348 files / 29,173,792 bytes.
 - No deployment or trading change. Live UI, fair value, financial-source accuracy
   and writable-account persistence are not established by these intercepted
   browser fixtures. Analyst naming/dates and value attribution remain follow-up
