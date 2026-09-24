@@ -8,12 +8,12 @@ const recorded = (value: string) => new Date(value).toLocaleString('en-US', {
   timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit',
 })
 
-// Show every saved desk reading so an unchanged recommendation remains visible at its actual time.
+// Show the available archived research readings and any gaps in the archive.
 export const RecommendationTimeline = ({history}: {history?: DeskRecommendationHistory}) => (
-  <section aria-label="Recorded recommendations" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3">
-    <h4 className="text-sm font-semibold">Recorded recommendations</h4>
-    <p className="mt-1 text-xs text-[#6e6e73]">Every saved desk reading · newest first · Eastern time. These are research readings, not trades in your account. Dip is a pullback setup, not a Buy instruction. Personal Buy follows a separate breakout rule with account checks. A+ is a grade, not entry timing.</p>
-    {!history?.observations.length ? <p className="mt-2 text-xs text-[#6e6e73]">No recorded recommendations available yet.</p> : <>
+  <section aria-label="Recorded research readings" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3">
+    <h4 className="text-sm font-semibold">Recorded research readings</h4>
+    <p className="mt-1 text-xs text-[#6e6e73]">Recent archived intraday research readings · newest first · Eastern time. Personal Buy/Sell decisions and account trades are not recorded in this history. Dip is a pullback setup, not a Buy instruction. Personal Buy follows a separate breakout rule with account checks. A+ is a grade, not entry timing.</p>
+    {!history?.observations.length ? <p className="mt-2 text-xs text-[#6e6e73]">{history && history.invalid_archives > 0 ? 'No readable archived research readings are available.' : 'No recorded research readings available yet.'}</p> : <>
       <div className="mt-2 max-h-96 overflow-auto">
         <table className="w-full text-left text-xs tabular-nums [&_td]:px-1 [&_th]:px-1" aria-label="Recommendation timeline">
           <thead className="sticky top-0 bg-white text-[#6e6e73]"><tr><th>Recorded</th><th>Grade</th><th>Research allocation</th><th>Price setup</th><th>Price at bar</th><th>Stock since read</th></tr></thead>
@@ -28,7 +28,7 @@ export const RecommendationTimeline = ({history}: {history?: DeskRecommendationH
         </table>
       </div>
       <p className="mt-2 text-[11px] text-[#6e6e73]">{history.outcomes?.mark_at ? `Stock changes run from each recorded bar to the latest validated mark at ${recorded(history.outcomes.mark_at)} ET. ` : 'Later stock changes await validated daily data. '}They include recorded splits and dividends. They are hindsight price changes, not a prediction accuracy score, a fill, or your profit. Paused allocations are withheld.</p>
-      {(history.invalid_archives > 0 || history.older_records_not_shown) && <p className="mt-1 text-[11px] text-[#6e6e73]">{history.invalid_archives > 0 ? 'Some archive records could not be read. ' : ''}{history.older_records_not_shown ? 'Showing recent observations; older records remain in the archive.' : ''}</p>}
     </>}
+    {history && (history.invalid_archives > 0 || history.older_records_not_shown) && <p className="mt-1 text-[11px] text-[#6e6e73]">{history.invalid_archives > 0 ? 'Some archive records could not be read. ' : ''}{history.older_records_not_shown ? 'Only recent archives are searched; older records remain stored.' : ''}</p>}
   </section>
 )

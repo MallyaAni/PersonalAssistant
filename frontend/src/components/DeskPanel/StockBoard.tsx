@@ -231,26 +231,33 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const paused = event !== null
   const hidden = paused && (event.calendarUnknown || event.exposure === null)
   const exposure = paused && event.exposure !== null ? event.exposure : 1
-  // Sizes are the 15-minute model allocations and stay on the board once
-  // collected for this decision: through the close and through a gap in the
-  // candle run, so the column never blanks between sessions. Before the
-  // candle run has produced an allocation for the current decision (a new
-  // nightly record, overnight, pre- or post-market) the board shows the
-  // adopted plan's target weights instead, so the column always reads.
+  // Sizes are 15-minute research allocations. They are current only while the
+  // backend says the collection succeeded for this decision and its evidence
+  // deadline has not passed. A failed collection may deliberately preserve an
+  // older target for audit; it must not be relabelled as this bar's output.
   const marketClosed = live.market_status?.open !== true
   // Which sizing policy the board is showing. It used to be inferred: live
   // sizes when a current bar existed, plan targets otherwise, with no way to
   // ask for the other one. A trader comparing "what the rebalance will do"
   // against "what this bar says" had to read two different places, so it is
   // a control now, and picking one re-sizes and re-ranks the list in place.
-  const liveSizingReady = research?.session === latest.session && !!research?.targets
+  const researchDeadline = Date.parse(research?.valid_until ?? '')
+  const liveSizingReady = research?.status === 'available'
+    && research.session === latest.session
+    && !!research.targets
+    && Number.isFinite(researchDeadline)
+    && researchDeadline > now
   // Live sizes when a current bar exists is the default: it is the answer to
   // "what this bar says", which is what a trader scanning the board wants
   // first, and the plan is one click away. e1f2a87 flipped this to 'plan' and
   // every test written to the original 'live' default started failing.
   const [policy, setPolicy] = useState<'live' | 'plan'>('live')
   const showSizes = liveSizingReady && policy === 'live'
-  const planTargets = Object.fromEntries((latest.book ?? []).map(b => [b.ticker, b.weight]))
+  // The adopted book omits covered names with zero weight; match the account planner.
+  const planTargets = Array.isArray(latest.book) ? {
+    ...Object.fromEntries(Object.keys(latest.grades).map(ticker => [ticker, 0])),
+    ...Object.fromEntries(latest.book.map(b => [b.ticker, b.weight])),
+  } : {}
   const weightOf = (ticker: string) => {
     if (hidden) return null
     const weights = showSizes ? (research!.targets ?? {}) : planTargets
@@ -270,7 +277,14 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     : 'FOMC · restoration queued for the next open'
   // The policy toggle beside this already names which sizing is showing, so
   // the line says what is true of it rather than repeating the label.
-  const sizingLine = !showSizes ? 'Target weights'
+  const sizingLine = !showSizes
+    ? research?.status && research.status !== 'available'
+      ? `Strategy reset targets · current-bar research unavailable${research.reason ? `: ${research.reason}` : ''}`
+      : research?.status === 'available' && research.session !== latest.session
+        ? `Strategy reset targets · research allocation belongs to ${research.session ?? 'another decision'}, not this decision`
+        : research?.status === 'available' && Number.isFinite(researchDeadline) && researchDeadline <= now
+          ? 'Strategy reset targets · research allocation expired; refresh for a current bar'
+          : 'Strategy reset targets'
     : sized ? 'Sizes for this bar'
     : sizedNames.length > 0 ? `Sized on this bar for ${sizedNames.length} of ${graded.length} names`
     : marketClosed ? 'Sizes return with the first completed bar after the open'
@@ -289,7 +303,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // one scored on the full five, and the board has to say so rather than
   // printing a number that looks like everyone else's.
   const narrow = (ticker: string): string[] => decisions?.rows[ticker]?.opportunity?.missing ?? []
-  const brokerPositions = broker && !broker.reason ? broker.positions ?? [] : latest.paper?.positions ?? []
+  const brokerCurrent = broker !== null && broker !== undefined && broker.reason === undefined
+  const paperAvailable = brokerCurrent ? Array.isArray(broker.positions) : Array.isArray(latest.paper?.positions)
+  const brokerPositions = brokerCurrent ? broker.positions ?? [] : latest.paper?.positions ?? []
   const otherNames = [...new Set([...extraNames, ...Object.keys(decisions?.rows ?? {}),
     ...Object.keys(planTargets), ...(holdings ?? []).map(h => h.ticker), ...brokerPositions.map(p => p.symbol)])]
   const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
@@ -446,8 +462,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               ? 'Experimental research allocation from the displayed completed bar, as a share of the account; not an order or the adopted strategy target.'
               : 'Adopted strategy target at the next weight reset, as a share of the account; not the intended change shown under Move %.'}>{showSizes ? 'Research %' : 'Target %'}</SortHead>
             <th title="The strategy's intended change in your account allocation. A blocked move is not executable now, and this is not a return.">Move %</th>
-            <th title="Position in the separate paper brokerage account; never your personal position">Paper position</th>
-            <th>Your position</th>
+            <th aria-label="Paper position" title="Position in the separate paper brokerage account; never your personal position">
+              Paper position
+              <div className="font-normal">{brokerCurrent ? 'broker snapshot'
+                : latest.paper ? `saved snapshot · ${latest.paper.session}`
+                  : broker == null ? 'loading' : 'unavailable'}</div>
+            </th>
+            <th>Recorded personal position</th>
             <th>Reason</th>
 
           </tr>
@@ -491,8 +512,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
               : <span className="cursor-help text-[#6e6e73]" title="Graded but unsized. Sizing ranks on the continuous score; the grade is a multiplier on top.">—</span>}</td>
             <td className="text-xs" aria-label={`${row.ticker} move`}>{isCash || plan === 'Hold' || strategyMove === undefined ? '—' : `${strategyMove > 0 ? '+' : ''}${percentage(strategyMove)}`}</td>
-            <td className="text-xs" aria-label={`${row.ticker} paper position`}>{isCash ? '—' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : '—'}</td>
-            <td className="text-xs" aria-label={`${row.ticker} your position`}>{isCash ? '—' : holdings === null ? 'Unavailable' : held ? <>{held.shares.toLocaleString()} shares<div>Entry {held.entry_price.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>{quote && Number.isFinite(quote.last) && <div>P/L {((quote.last - held.entry_price) * held.shares).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>}</> : '—'}</td>
+            <td className="text-xs" aria-label={`${row.ticker} paper position`}>{isCash ? '—' : !paperAvailable ? 'Unavailable' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : '—'}</td>
+            <td className="text-xs" aria-label={`${row.ticker} recorded personal position`}>{isCash ? '—' : holdings === null ? 'Unavailable' : held ? <>{held.shares.toLocaleString()} shares<div>Entry {held.entry_price.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>{quote && Number.isFinite(quote.last) && <div>P/L {((quote.last - held.entry_price) * held.shares).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>}</> : '—'}</td>
             <td className="max-w-72 whitespace-normal py-2 text-xs text-[#6e6e73]">{isCash ? 'Unallocated strategy weight' : reason}</td>
 
           </tr>

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-24 — Research history and live-account evidence stay distinct
+
+- Renamed the history to Recorded research readings and described its bounded
+  archive coverage. It explicitly does not contain historical personal Buy/Sell
+  decisions. Unreadable archives remain visible even when no rows can be shown.
+- Failed, expired, or mismatched intraday research falls back to labelled
+  adopted-strategy targets. Covered names omitted from that book show their
+  explicit zero target; uncovered positions retain unavailable targets.
+- Paper positions identify the broker snapshot or actual saved paper session.
+  Missing broker and saved evidence reads unavailable, never an empty account
+  or an invented nightly snapshot. Unknown broker returns no longer read as zero.
+- The Today action count matches both session and record revision, and funded
+  entries remain visible when recorded personal holdings are empty. Paper reset
+  timing and FOMC targets no longer imply personal execution timing or fills.
+- Recorded personal positions and browser-only planning equity are named
+  explicitly. Removed duplicate expanded research sizing and unused frontend code.
+- VERIFIED locally: all **88 Desk browser tests** and TypeScript/Vite production
+  build pass on the final source. Five newly reproduced failure boundaries pass
+  after correction. Existing Vite CSS/chunk warnings remain. Deployment and live
+  browser acceptance of this checkpoint are UNVERIFIED; no account writes or
+  policy changes were performed. Diagram impact: NONE — existing UI contracts.
+
 ## 2026-09-24 — Exact Desk status, intent, and account wording
 
 - The Desk now reads one backend-authored XNYS schedule state, including full

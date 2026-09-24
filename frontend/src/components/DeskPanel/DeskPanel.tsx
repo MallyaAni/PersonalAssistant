@@ -7,7 +7,6 @@ import { ExecutionQuality } from './ExecutionQuality'
 import { BoardSimulation, MlComparison, PLAN_ACTIONS, StockBoard, type BoardEvent, type PlanAction } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { TickerChart } from './TickerChart'
-import { EntriesNow } from './EntriesNow'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -142,14 +141,6 @@ const readStored = (key: string): string | null => {
     return null
   }
 }
-const writeStored = (key: string, value: string) => {
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    // a private window; the value lives for the page only
-  }
-}
-
 const pct = (value: number) => `${(value * 100).toFixed(1)}%`
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
 const money = (value: number) =>
@@ -264,14 +255,15 @@ const SummaryStrip = ({
   currentPolicyVersion?: string
 }) => {
   const paper = latest.paper
-  const worth = paperLive?.equity ?? paper?.equity
+  const brokerCurrent = paperLive !== null && paperLive.reason === undefined
+  const worth = brokerCurrent ? paperLive.equity : paper?.equity
   // The lifetime move from the paper book's starting equity, live when the
   // broker is reachable, and today's move; both as percentages so they read
   // beside the dollar figure. The record's own pl_pct is the fallback when
   // the broker is away.
-  const since = paperLive?.pl_pct ?? paper?.pl_pct
-  const dayPct = paperLive?.day_pl_pct
-  const dayPl = paperLive?.day_pl
+  const since = brokerCurrent ? paperLive.pl_pct : paper?.pl_pct
+  const dayPct = brokerCurrent ? paperLive.day_pl_pct : undefined
+  const dayPl = brokerCurrent ? paperLive.day_pl : undefined
   const backtest = curve?.backtest
   const stats = backtest?.stats
   const currentPolicy = backtest?.strategy_policy === (currentPolicyVersion ?? 'cash-bounded-breakout-rotation/3')
@@ -305,7 +297,7 @@ const SummaryStrip = ({
         worth !== undefined ? (
           <>
             {money(worth)}
-            {since !== undefined && (
+            {typeof since === 'number' && Number.isFinite(since) && (
               <span className="ml-2 text-xs font-normal" title="since the paper book started">
                 <Trend value={since * 100} />
               </span>
@@ -314,15 +306,19 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note: 'simulated funds, no real-money orders \u00b7 the move since it started',
+      note: brokerCurrent
+        ? `live broker snapshot${paperLive?.as_of ? ` fetched ${marketTime(paperLive.as_of)}` : ''} · simulated funds, no real-money orders`
+        : paper
+          ? `saved paper snapshot · ${paper.session} · broker refresh ${paperLive === null ? 'pending' : 'unavailable'}`
+          : `paper account ${paperLive === null ? 'loading' : 'unavailable'} · no saved snapshot`,
     },
     {
       label: 'Broker day P/L',
       value:
-        dayPl !== undefined ? (
+        typeof dayPl === 'number' && Number.isFinite(dayPl) ? (
           <>
             <TrendUsd value={dayPl} />
-            {dayPct !== undefined && (
+            {typeof dayPct === 'number' && Number.isFinite(dayPct) && (
               <span className="ml-2 text-xs font-normal text-[#6e6e73]" title="change from the broker's prior closing equity">
                 (<Trend value={dayPct * 100} />)
               </span>
@@ -1082,7 +1078,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // Count only decisions the backend marks executable while XNYS is open;
   // blocked strategy intent remains visible in the board but never inflates
   // the number described as actionable now.
-  const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused && exchange.open
+  const eligibleNow = decisions && decisions.session === latest?.session && decisions.written === latest?.written && !eventPaused && exchange.open
     ? Object.values(decisions.rows).filter(row => {
       const intent = row.strategy_action ?? row.action
       const deadline = row.valid_until ? Date.parse(row.valid_until) : Number.NaN
@@ -1102,17 +1098,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     if (!latest || !g) return null
     const lines = (g.reason ?? '').split('\n').filter(Boolean)
     const r = rows.find(row => row.ticker === ticker)
-    const research = payload.intraday_research
-    const target = research?.status === 'available' && research.session === latest.session && Date.parse(research.valid_until ?? '') > now
-      && Number.isFinite(research.targets?.[ticker]) ? allocationPercent(research.targets![ticker]) : null
-    const held = holdingsReady ? holdings.find(h => h.ticker === ticker)?.shares ?? 0 : null
     return <div className="grid gap-2 text-xs sm:grid-cols-[1fr_auto]">
       <div>
         <p className="font-medium text-[#1d1d1f]">{g.headline}</p>
         <p className="mt-0.5 font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{g.ranks ? ratings(r?.ranks_live ?? g.ranks, r?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}</p>
         <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">{lines.map(line => <li key={line}>{line}</li>)}</ul>
         <div className="mt-2 text-[#6e6e73]"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
-        <p className="mt-1 text-[#6e6e73]">Research target {target ?? '—'} · {held === null ? 'positions unavailable' : `${held.toLocaleString()} shares recorded`}</p>
       </div>
       <button type="button" className="self-start text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
     </div>
@@ -1122,9 +1113,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
               {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
-                : rebalanceDue ? `Weight reset due: these trades go in at the next open.${countdown !== null ? ` Next reset in ${countdown} session${countdown === 1 ? '' : 's'}.` : ''}`
-                : countdown !== null ? `Weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
-                : 'No weight reset scheduled.'}
+                : rebalanceDue ? 'Paper weight reset due at the next open; personal signals use their own execution checks.'
+                : countdown !== null ? `Paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
+                : 'No paper weight reset scheduled.'}
               {live.as_of && (
                 <span className="ml-2 font-normal text-[#6e6e73]">
                   {exchange.open
@@ -1598,7 +1589,8 @@ const PracticeAccount = ({
         <span className="ml-2 text-xs font-normal text-[#6e6e73]">
           {fromBroker && live.as_of
             ? `broker snapshot fetched ${marketTime(live.as_of)}`
-            : `as of the last evening record${live?.reason ? ` (broker: ${live.reason})` : ''}`}
+            : fromBroker ? 'broker snapshot · fetch time unavailable'
+              : `saved paper snapshot · ${record?.session ?? 'session unavailable'} · broker refresh ${live === null ? 'pending' : 'unavailable'}`}
         </span>
       </h3>
       <p className="mb-2 text-xs text-[#6e6e73]">
@@ -1759,7 +1751,7 @@ const TradeCell = ({ r, quote, equity, marking, scheduleLabel, onDone, eligibili
 
       {r.shares > 0 && r.entry_price !== null && (
         <div className="text-[#6e6e73]">
-          you hold {r.shares} at {priceMoney(r.entry_price)}
+          recorded position: {r.shares} shares at {priceMoney(r.entry_price)}
           {r.pl_pct !== null && r.last !== null && (
             <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}>
               {' '}<TrendUsd value={r.shares * (r.last - r.entry_price)} /><span className="ml-1">(<Trend value={r.pl_pct * 100} />)</span>
@@ -1853,7 +1845,7 @@ const AccountInputs = ({ equity, cash, cashStatus, onApply }: AccountInputsProps
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#f5f5f7] p-3 text-sm">
       <label className="flex items-center gap-1 text-[#6e6e73]">
-        Equity $
+        Planning equity $
         <input aria-label="Personal account equity" type="number" min="0" step="any"
           value={equityDraft} onChange={(e) => setEquityDraft(e.target.value)} className={field} />
       </label>
@@ -1868,6 +1860,7 @@ const AccountInputs = ({ equity, cash, cashStatus, onApply }: AccountInputsProps
       {error ? <p role="alert" className="text-xs text-[#b42318]">{error}</p> : cashStatus
         ? <p className="text-xs text-[#6e6e73]" aria-label="Available cash status">{cashStatus}</p>
         : <p className="text-xs text-[#6e6e73]">Cash unknown; buys stay unfunded until you confirm it.</p>}
+      <p className="w-full text-[11px] text-[#6e6e73]">Planning equity is a browser input for sizing, not a broker-verified balance. The initial $100,000 is only a placeholder until you replace it.</p>
     </div>
   )
 }
@@ -2028,8 +2021,8 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   return <div className="min-w-24" aria-label={`${ticker} strategy intent`} title={actOnIt(blocker ?? reason) ?? blocker ?? reason}>
     <div className="font-medium">{action.toUpperCase()}</div>
     {executionStatus}
-    {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Your allocation & execution quote</summary>
-      <div>Your recorded allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)} at the next reset</div>
+    {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Recorded allocation & execution quote</summary>
+      <div>Recorded personal allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)} at the next reset</div>
       {row.quote ? <>
         <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
         <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
@@ -2174,7 +2167,7 @@ const EveryGrade = ({
             <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
             <th>Analysis · {latest.session} close</th>
             <th title="Experimental allocation from the displayed completed bar; not an order">Research target</th>
-            <th>Your position</th>
+            <th>Recorded personal position</th>
           </tr>
         </thead>
         <tbody>
@@ -2668,16 +2661,15 @@ const TodayLine = ({exchange, event, boardEvent, eventLive, orders, countdown, r
   eligible: number
 }) => {
   const parts: string[] = [exchange.label]
-  if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`the desk is at ${boardEvent.exposure === 0.5 ? 'half' : `${Math.round(boardEvent.exposure * 100)}%`} exposure through the ${event?.decision_date ?? 'FOMC'} decision`)
-  else if (boardEvent) parts.push(orders > 0
-    ? exchange.open
-      ? `${orders} FOMC restoration${orders === 1 ? ' is' : 's are'} being placed now`
-      : `${orders} FOMC restoration${orders === 1 ? ' fills' : 's fill'} at the open`
-    : 'an FOMC cycle is closing')
-  if (!boardEvent) parts.push(rebalanceDue ? 'a weight reset is due at the next open' : countdown !== null ? `weights reset in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no weight reset scheduled')
+  if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`paper FOMC target exposure ${Math.round(boardEvent.exposure * 100)}% through the ${event?.decision_date ?? 'FOMC'} decision`)
+  else if (boardEvent) parts.push(boardEvent.exposure === null
+    ? 'paper FOMC target exposure unavailable'
+    : orders > 0 ? `${orders} pending paper order${orders === 1 ? '' : 's'} during FOMC recovery`
+      : 'paper FOMC cycle active')
+  if (!boardEvent) parts.push(rebalanceDue ? 'a paper weight reset is due at the next open' : countdown !== null ? `paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no paper weight reset scheduled')
   let action: string
-  if (holdings !== null && holdings === 0) action = 'No personal positions recorded yet. Add yours under Positions to compare with the desk.'
-  else if (eligible > 0) action = `${eligible} name${eligible === 1 ? '' : 's'} to act on now.`
+  if (eligible > 0) action = `${eligible} name${eligible === 1 ? '' : 's'} to act on now.`
+  else if (holdings !== null && holdings === 0) action = 'No personal positions recorded yet. Add yours under Positions to compare with the desk.'
   else action = exchange.open ? 'Nothing to act on right now.' : exchange.known ? 'Nothing for you to do until the next regular session opens.' : 'Nothing is executable until XNYS status refreshes.'
   return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
     <span className="font-medium">{parts.join(' · ')}.</span> <span className="text-[#6e6e73]">{action}</span>
