@@ -8,6 +8,14 @@ research changes.
 
 ## 2026-09-24 — Research account journal verified locally; deployment not requested
 
+Verified implementation checkpoint:
+`fe74e8265881528f355bd3f3c4df7e4e73d66622`, pushed to `spark main`, then to
+GitHub by `git push origin main` **on Spark**. Both remote main branches match;
+Spark/GitHub divergence is **0/0**. Local working tree was clean after commit;
+Spark retains only its pre-existing untracked `scratch/`. No deployment occurred.
+The final applicable suite repeated on the exact checkpoint source:
+**292 passed, 1 deliberately deselected, 5 existing warnings in 3.86 seconds**.
+
 Started clean on `main` at `128a5d51e41af23dd23f22fd9cfcb993ce19ed8b`;
 `git pull --rebase origin main` was current. The user reconfirmed Spark-only
 deployment and GitHub publishing. Spark was eight commits ahead of GitHub and
