@@ -13,6 +13,7 @@ from backend.agents.trading.desk.desk import book_panel
 from backend.market import (
     desk_freshness,
     economics,
+    entry_evidence,
     execution_quotes,
     live_technical,
     opportunity,
@@ -74,11 +75,13 @@ def build(
             result["valid_until"]
         ):
             raise ValueError("Inputs expired during collection")
+    result["entry_evidence"] = entry_evidence.capture(panel, record, result)
     result["input_sha256"] = hashlib.sha256(
         json.dumps(
             {
                 "record": record,
                 "snapshot": snapshot,
+                "entry_evidence": result["entry_evidence"],
                 "execution_quotes": result.get("execution_quotes"),
             },
             sort_keys=True,
@@ -92,10 +95,17 @@ def build(
                 "agents/trading/desk/intraday_candidate.py",
                 "agents/trading/desk/portfolio_candidate.py",
                 "agents/trading/desk/entry.py",
+                "agents/trading/desk/paper.py",
                 "agents/trading/desk/risk.py",
                 "agents/trading/desk/grading.py",
                 "market/sizing.py",
                 "market/holdings.py",
+                "market/decision_view.py",
+                "market/entry_evidence.py",
+                "market/calendar.py",
+                "market/data/nyse_holidays.json",
+                "market/data/nyse_early_closes.json",
+                "market/data/nyse_historical_sessions.json",
                 "market/desk_freshness.py",
                 "market/opportunity.py",
                 "market/intraday_research.py",

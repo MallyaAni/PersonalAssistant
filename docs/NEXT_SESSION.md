@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-09-24 03:09 UTC — Grade and dashboard fixes LIVE and verified
+
+`facbdeed1bd07cb14c3d00abcb7c78739c2da20f` is LIVE: 4529 backend tests,
+25 skips; 100 real-model gate cases; exact postdeploy status
+`2026-09-24T03:09:42Z facbdeed ok (cheap)`. Running decision_view, market API
+and simulator hashes match the deploy tree. Read-only actual HTTP and browser
+acceptance verifies that old backtest metrics are withheld and actual AAOI
+history preserves setups with correct grade/Buy distinctions; zero browser
+errors or failed required requests. Model IDs AND start times unchanged.
+Proof `/tmp/codex-grade-release-proof-20260924.json` PASS. The first proof read
+the postcheck marker a second too soon because the cheap check detaches even
+with --wait-post; a verification-only retry passed without redeploying.
+The older active-release instructions below are superseded. No worker remains
+active for facbdee. No new strategy was promoted.
+
+New bounded work: `entry_evidence.py` captures matched, unfunded Dip versus
+incumbent entry opinions at collection time. Existing archive lacks numeric
+band inputs, so cannot reconstruct historical personal Buy receipts honestly.
+New records preserve those exact20 prices, band/stretch/current grade and
+common blockers, without altering signals, orders or account state. The
+incumbent opinion calls actual production entry_action with current grade and
+flat-position assumption. Builder stores evidence in immutable records and
+includes it plus dependency/calendar files in source/input fingerprints.
+39 focused capture/builder/archive/forward/history tests pass with Ruff;
+tests include actual builder integration and legacy archive non-backfill.
+Protocol `docs/research/entry-evidence-protocol-2026-09-24.md`.
+This extension is not yet deployed at this handoff. Ordinary future collection
+and 5/20-session outcome maturity remain to be observed. No comparisons or
+profitability claims were manufactured from absent receipts.
+
+## Active guarded release — do not launch another deployment
+
+Source `facbdeed1bd07cb14c3d00abcb7c78739c2da20f` is pushed to main and
+contains the grade fix plus the timeline clarification. One authorized
+follow-through process `/tmp/finish-grade-release-20260924.py` is running.
+It waits for the existing 020ae42 deployment to pass, then requires main to
+equal facbdee exactly, runs scripts/deploy.sh with all gates and serial model
+tests, verifies running source hashes, actual API and AAOI browser behavior,
+deployed fixture cases, and unchanged model IDs/start times. Read
+`/tmp/codex-grade-release-proof-20260924.json` and
+`/tmp/finish-grade-release-20260924.log`; final deploy log is
+`/tmp/codex-grade-release-20260924.log`. It aborts on failure, never retries or
+skips gates. Do not advance main before it has pulled facbdee. No live completion
+claim until its PASS is independently checked. The previous "frontend-only"
+release plan below is superseded by this combined reviewed successor.
+
 ## 2026-09-24 — Live grade inconsistency reproduced and corrected
 
 Further account-path review found `build` read `grade` from `live_grades`,
