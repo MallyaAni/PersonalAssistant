@@ -129,6 +129,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         execution_quality,
         fomc_gate,
         forward_evidence,
+        neural_study,
         opportunity_shadow,
         record_status,
         reversal,
@@ -150,6 +151,7 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "intraday_research": research,
         "board_paper": board_paper.summary(_root()),
         "ml_forward": opportunity_shadow.summary(_root()),
+        "neural_study": neural_study.summary(),
         # Whether the last completed session has its record and its ML
         # observation, so the page can say when it is showing an old decision.
         "record_status": record_status.describe(_root()),

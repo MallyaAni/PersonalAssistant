@@ -2092,6 +2092,32 @@ export interface DeskOrder {
 
 export type DeskStanding = 'current' | 'pending' | 'late';
 
+export interface NeuralStudyRow {
+  total_return: number | null;
+  cagr: number | null;
+  max_drawdown: number | null;
+  sharpe_zero_risk_free: number | null;
+  annual_traded_notional_over_mean_nav: number | null;
+  rolling_win_rate?: Record<string, Record<string, { windows: number; win_rate: number | null; ties: number }>>;
+}
+
+export interface NeuralStudyScorecard {
+  first_session: string;
+  last_session: string;
+  cost_bps: number;
+  rows: Partial<Record<'candidate' | 'incumbent' | 'equal_weight' | 'SPY' | 'QQQ', NeuralStudyRow>>;
+  calendar_years?: Record<string, NeuralStudyScorecard>;
+}
+
+export interface NeuralStudyEvidence {
+  policy: string;
+  title: string;
+  status: string;
+  decision: string;
+  limitations: string[];
+  tables: Partial<Record<'10' | '25', NeuralStudyScorecard>>;
+}
+
 export interface DeskPayload {
   // The backend's active rule version, used to label archived curves honestly.
   current_policy?: string;
@@ -2102,6 +2128,8 @@ export interface DeskPayload {
   fomc_gate?: DeskFomcGate | null;
   // Candidate rules and the indices, split by regime. Evidence, not policy.
   strategy_bench?: StrategyBench | null;
+  // A separate research ranking test, never an adopted policy or account instruction.
+  neural_study?: NeuralStudyEvidence | null;
   // Every paper fill against its decision price, as a series.
   execution_quality?: DeskExecutionQuality | null;
   board_paper?: {version: string; started_at: string; as_of: string; initial_capital: number; cash: number; equity: number; sequence: number; status: string} | null;

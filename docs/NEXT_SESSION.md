@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-09-24 — Actual neural price study complete; results dashboard release next
+
+User is sleeping and explicitly requests continued work and concrete results
+on the dashboard. The fixed run is COMPLETE, not merely prepared. Protocol
+`5e19336` preceded outcomes; exact training/evaluation source `1ad7e59`.
+Artifacts: `/home/animallya96/anios/data/market/research/neural-price-rule-20260924`.
+Preserved inputs, model, forecasts, source manifest, 10/25-bp curves and results.
+Do not refit, rescore, change windows or rerun this completed study.
+
+Result: price-only neural ranking loses to the unchanged live-rule reconstruction
+at both costs. At10bp total returns are242.2% versus399.9%, drawdowns−37.1% versus
+−31.7%, annual bought-plus-sold notional/meanNAV20.80 versus16.36. Those large
+returns reflect an examined current-survivor reconstruction, NOT achievable
+returns or personal-account history. Candidate wins0/177 overlapping252-session
+windows against incumbent. It is NOT the separate frozen nightly neural model.
+No adoption. Both costs, SPY/QQQ/equal weight, calendar-year slices and rolling
+win rates are in the preserved JSON. All financial inputs are missing explicitly.
+
+Independent artifact verification PASS:
+`/tmp/neural-study-artifact-review-20260924.json`. Verified191 source hashes,
+14 consumed source files at1ad7e59,22685 training examples, last label2023-12-27,
+training-only normalization,429 common NAV marks/428 return intervals, all
+full/year metrics and rolling counts. Raw trade/cash traces were not saved, so
+independent turnover verification covers its denominator, not raw ledger replay.
+The fixed simulator/account path has separate parity tests.
+
+Root reviewed a minimal Research-only dashboard card, API read-only payload and
+static curated artifact. No recommendations/action/policy changes. Frontend80
+browser cases and TypeScript pass against exact source5178;34 API/desk cases
+pass, including actual authenticated response and unchanged paper/neural files.
+Final narrow wording follow-up rechecks are running. Next: commit reviewed
+files, push main, deploy ONLY scripts/deploy.sh with serial model gate, then
+verify actual8080 API/browser and unchanged model IDs. Planned deploy log
+`/tmp/codex-neural-results-release-20260924.log`; do not restart if active.
+Runtime remainsd6369276 until exact deployment proof says otherwise.
+
+Only active delegated work is read-only saved-curve regime decomposition using
+the already-fixed prior-close200MA/20vol/252median definitions. No retraining or
+selector; it may add new regimes.json and reproduction script in the run folder.
+Both frontend ownership and all prior module ownership returned to root.
+Shared `/home/animallya96/anios` remains deliberately preserved at localfc703b0,
+one local-only commit plus newer incoming main, with AGENTS.md/scratch changes.
+Root worktree and GitHubmain carry reviewed work; do not silently mergefc703b0.
+Hourly existing heartbeat updated to this actual-results task; no duplicate job.
+
 ## 2026-09-24 — Corrected neural inputs and matched-rule adapter
 
 User asks whether other approaches could outperform neural/momentum: yes,
