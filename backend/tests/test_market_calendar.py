@@ -3,6 +3,7 @@
 from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
+import pytest
 
 from backend.market import calendar
 from backend.market.panel import panel_from_histories
@@ -153,3 +154,65 @@ def test_session_close_reads_the_published_early_closes():
     assert calendar.session_close(date(2025, 11, 28)) == time(13, 0)
     assert calendar.session_close(date(2026, 11, 30)) == time(16, 0)
     assert calendar.session_close(date(2031, 11, 28)) == time(16, 0)
+
+
+# The dashboard reads one authoritative exchange clock: a reviewed ordinary
+# session is open between the published New York open and close.
+def test_exchange_status_reports_an_ordinary_open_session():
+    status = calendar.exchange_status(datetime(2026, 9, 24, 14, 0, tzinfo=UTC))
+
+    assert status == {
+        "exchange": "XNYS",
+        "as_of": "2026-09-24T14:00:00+00:00",
+        "session": "2026-09-24",
+        "calendar_known": True,
+        "is_session": True,
+        "open": True,
+        "phase": "open",
+        "opens_at": "2026-09-24T09:30:00-04:00",
+        "closes_at": "2026-09-24T16:00:00-04:00",
+    }
+
+
+# A weekday is not assumed to be tradable when the published exchange
+# calendar identifies it as a full-session holiday.
+def test_exchange_status_reports_thanksgiving_closed():
+    status = calendar.exchange_status(datetime(2026, 11, 26, 15, 0, tzinfo=UTC))
+
+    assert status["calendar_known"] is True
+    assert status["is_session"] is False
+    assert status["open"] is False
+    assert status["phase"] == "closed"
+    assert status["opens_at"] is None
+    assert status["closes_at"] is None
+
+
+# The day after Thanksgiving stops being open at its published 13:00 close,
+# even though an ordinary weekday clock would still call 14:00 open.
+def test_exchange_status_honours_the_day_after_thanksgiving_early_close():
+    status = calendar.exchange_status(datetime(2026, 11, 27, 19, 0, tzinfo=UTC))
+
+    assert status["is_session"] is True
+    assert status["open"] is False
+    assert status["phase"] == "post-market"
+    assert status["closes_at"] == "2026-11-27T13:00:00-05:00"
+
+
+# A year outside the reviewed calendar cannot silently inherit weekday
+# assumptions; execution fails closed until its exchange calendar is added.
+def test_exchange_status_fails_closed_outside_reviewed_years():
+    status = calendar.exchange_status(datetime(2031, 9, 24, 14, 0, tzinfo=UTC))
+
+    assert status["calendar_known"] is False
+    assert status["is_session"] is False
+    assert status["open"] is False
+    assert status["phase"] == "unknown"
+    assert status["opens_at"] is None
+    assert status["closes_at"] is None
+
+
+# An exchange decision needs an absolute instant; accepting a naive datetime
+# would make the server's local timezone silently change market state.
+def test_exchange_status_rejects_a_naive_clock():
+    with pytest.raises(ValueError, match="timezone-aware"):
+        calendar.exchange_status(datetime(2026, 9, 24, 10, 0))

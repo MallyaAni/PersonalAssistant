@@ -2211,8 +2211,20 @@ export interface DeskQuote {
   bar: string;
   as_of: string;
 }
+export interface DeskMarketStatus {
+  exchange: 'XNYS';
+  as_of: string;
+  session: string;
+  calendar_known: boolean;
+  is_session: boolean;
+  open: boolean;
+  phase: 'unknown' | 'closed' | 'pre-market' | 'open' | 'post-market';
+  opens_at: string | null;
+  closes_at: string | null;
+}
 export interface DeskLive {
   as_of: string | null;
+  market_status?: DeskMarketStatus;
   data_at?: string | null;
   decision_session?: string | null;
   stale_symbols?: string[];
@@ -2361,6 +2373,7 @@ export interface DeskLiveGrade {
 export interface DeskMine {
   decisions?: DeskDecisions;
   session?: string | null;
+  market_status?: DeskMarketStatus;
   grade_valid_until?: Record<string, string>;
   rows: DeskMineRow[];
   // Every graded name with a live read this candle, not only the board's.
@@ -2383,9 +2396,14 @@ export interface DeskDecisions {
   holdings: Record<string, number>;
   rows: Record<string, {
     opportunity?: DeskOpportunity;
-    // Three actions, and the shares to trade now at the live midpoint.
+    // The executable action stays backward compatible while the strategy
+    // fields preserve intent when evidence or account funding blocks it.
     action: 'Buy' | 'Sell' | 'Hold';
     move_weight: number;
+    strategy_action?: 'Buy' | 'Sell' | 'Hold';
+    strategy_move_weight?: number;
+    blocker?: string | null;
+    executable?: boolean;
     reason: string;
     target_weight: number;
     current_weight: number;
@@ -2447,9 +2465,16 @@ export const getDeskMine = async (userId: string, equity: number, availableCash?
       }),
     },
   );
-  if (!response.ok) return { rows: [], grades_live: {} };
+  if (!response.ok) {
+    let detail = 'Personal guidance is unavailable. No trade is executable until it refreshes.'
+    try {
+      const body = await response.json()
+      if (body && typeof body.detail === 'string' && body.detail) detail = body.detail
+    } catch { /* keep the fail-closed fallback */ }
+    throw new Error(detail)
+  }
   const data = (await response.json()) as Partial<DeskMine>;
-  return { session: data.session, decisions: data.decisions, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
+  return { session: data.session, market_status: data.market_status, decisions: data.decisions, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
 };
 
 // The balancer's persisted intraday plan (recomputed every fifteen minutes),

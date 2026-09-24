@@ -40,6 +40,7 @@ from backend.market import (
     live_technical,
     ticker_chart,
 )
+from backend.market import calendar as exchange_calendar
 from backend.market.store import MarketStore
 
 router = APIRouter(
@@ -210,16 +211,28 @@ def _curve_for_display(curve):
 async def desk_live(user_id: UserId) -> dict[str, object]:
     """Return the candle's live quotes and technical read for the board."""
     _operator_only(user_id)
+    now = datetime.now(UTC)
+    market_status = exchange_calendar.exchange_status(now)
     snap = _live_snapshot()
     if snap is not None and snap.get("quotes"):
-        return {"user_id": user_id, **desk_freshness.describe(snap)}
+        return {
+            "user_id": user_id,
+            **desk_freshness.describe(snap),
+            "market_status": market_status,
+        }
     latest, _previous = deskrecord.latest_pair(_root())
     rows = (latest or {}).get("actions") or []
     symbols = [str(r.get("ticker")) for r in rows if r.get("ticker")]
     try:
         headers = alpaca.credentials()
     except alpaca.AlpacaUnavailableError:
-        return {"user_id": user_id, "as_of": None, "quotes": {}, "reason": "no keys"}
+        return {
+            "user_id": user_id,
+            "as_of": None,
+            "quotes": {},
+            "reason": "no keys",
+            "market_status": market_status,
+        }
     found = live_quotes.quotes(symbols, headers=headers)
     # The technical and value analysts re-read at the live price, one run
     # per candle; a failure here leaves the quotes standing.
@@ -238,19 +251,22 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
             )
         except Exception as exc:  # noqa: BLE001 - the quotes must still reach the page
             technical = {"reason": str(exc)}  # type: ignore[dict-item]
-    return desk_freshness.describe(
-        {
-            "technical": technical,
-            "value": value,
-            "technical_detail": technical_detail,
-            "user_id": user_id,
-            "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
-            "age_seconds": 0.0,
-            "stale": False,
-            "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
-            "decision_session": (latest or {}).get("session"),
-        }
-    )
+    return {
+        **desk_freshness.describe(
+            {
+                "technical": technical,
+                "value": value,
+                "technical_detail": technical_detail,
+                "user_id": user_id,
+                "as_of": now.isoformat(timespec="seconds"),
+                "age_seconds": 0.0,
+                "stale": False,
+                "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
+                "decision_session": (latest or {}).get("session"),
+            }
+        ),
+        "market_status": market_status,
+    }
 
 
 # The live read is model-written prose, cached per candle so the drill-down
@@ -586,10 +602,17 @@ async def _desk_mine_payload(
     available_cash: float | None,
     pending_buys: list[str] | None = None,
 ) -> dict[str, object]:
+    now = datetime.now(UTC)
+    market_status = exchange_calendar.exchange_status(now)
     latest, _previous = deskrecord.latest_pair(_root())
     rows = holdings.load(_root())
     if latest is None:
-        return {"user_id": user_id, "session": None, "rows": []}
+        return {
+            "user_id": user_id,
+            "session": None,
+            "rows": [],
+            "market_status": market_status,
+        }
     from backend.market import event_status
 
     latest = event_status.for_planning(latest, _root())
@@ -599,7 +622,6 @@ async def _desk_mine_payload(
     quoted = await asyncio.to_thread(
         execution_quotes.fetch, list(latest.get("grades") or {})
     )
-    now = datetime.now(UTC)
     # Experimental allocations remain on the research surface; never substitute
     # them for the adopted strategy's targets in the decision endpoint.
     # Each name's position on its own 20-day band at the live price, which is
@@ -661,6 +683,7 @@ async def _desk_mine_payload(
             ),
             "grades_live": holdings.live_grades(latest, technical, value),
             "decisions": decisions,
+            "market_status": market_status,
         }
     symbols = sorted(
         {h.ticker for h in rows}
@@ -688,7 +711,7 @@ async def _desk_mine_payload(
                 value = {}
     except alpaca.AlpacaUnavailableError:
         pass
-    as_of = datetime.now(UTC).isoformat(timespec="seconds")
+    as_of = now.isoformat(timespec="seconds")
     technical, value = desk_freshness.grade_inputs(
         {
             "as_of": as_of,
@@ -706,6 +729,7 @@ async def _desk_mine_payload(
         "rows": holdings.board(latest, rows, equity, quotes, technical, value),
         "grades_live": holdings.live_grades(latest, technical, value),
         "decisions": decisions,
+        "market_status": market_status,
         "grade_valid_until": desk_freshness.grade_expiries(
             {"as_of": as_of, "quotes": quotes}, set(technical) | set(value)
         ),

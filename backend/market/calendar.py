@@ -29,9 +29,10 @@ header), plus the March 2020 unscheduled actions.
 """
 
 import json
-from datetime import date, time, timedelta
+from datetime import date, datetime, time, timedelta
 from functools import lru_cache
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 
@@ -44,6 +45,8 @@ HISTORICAL_SESSIONS_PATH = (
     Path(__file__).parent / "data" / "nyse_historical_sessions.json"
 )
 REGULAR_CLOSE = time(16, 0)
+REGULAR_OPEN = time(9, 30)
+NEW_YORK = ZoneInfo("America/New_York")
 CALENDAR_NAMES: tuple[str, ...] = (
     "sessions_to_fomc",
     "sessions_since_fomc",
@@ -120,6 +123,52 @@ def _published_early_closes() -> dict[date, time]:
 def session_close(day: date) -> time:
     """Return the scheduled New York close on ``day``."""
     return _published_early_closes().get(day, REGULAR_CLOSE)
+
+
+# Describe the scheduled XNYS session from the reviewed holiday and early-close
+# files so every consumer shares one fail-closed schedule clock.
+def exchange_status(now: datetime) -> dict[str, object]:
+    """Return the reviewed XNYS schedule state for a timezone-aware instant."""
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("exchange status requires a timezone-aware datetime")
+    local = now.astimezone(NEW_YORK)
+    day = local.date()
+    years, sessions = _published_sessions()
+    known = day.year in years
+    status: dict[str, object] = {
+        "exchange": "XNYS",
+        "as_of": now.isoformat(),
+        "session": day.isoformat(),
+        "calendar_known": known,
+        "is_session": False,
+        "open": False,
+        "phase": "unknown" if not known else "closed",
+        "opens_at": None,
+        "closes_at": None,
+    }
+    if not known:
+        return status
+    is_session = bool(np.is_busday(np.datetime64(day), busdaycal=sessions))
+    status["is_session"] = is_session
+    if not is_session:
+        return status
+    opens = datetime.combine(day, REGULAR_OPEN, NEW_YORK)
+    closes = datetime.combine(day, session_close(day), NEW_YORK)
+    if local < opens:
+        phase = "pre-market"
+    elif local < closes:
+        phase = "open"
+    else:
+        phase = "post-market"
+    status.update(
+        {
+            "open": phase == "open",
+            "phase": phase,
+            "opens_at": opens.isoformat(),
+            "closes_at": closes.isoformat(),
+        }
+    )
+    return status
 
 
 # Count sessions beyond the panel, or report missing exchange-calendar coverage.

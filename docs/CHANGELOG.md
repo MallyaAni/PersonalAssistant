@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-24 — Exact Desk status, intent, and account wording
+
+- The Desk now reads one backend-authored XNYS schedule state, including full
+  holidays, pre-session time, ordinary closes, scheduled early closes, and an
+  explicit unknown state outside reviewed calendar years. Copy calls this a
+  schedule rather than claiming direct knowledge of exchange operations.
+- Strategy intent remains visible when current evidence, funding, or quote
+  timing makes it non-executable. The row says `Blocked now` and names the
+  blocker; expired rows cannot remain in the “act on now” count.
+- Personal recorded allocation, adopted-strategy target, current-bar research
+  allocation, intended allocation change, and paper-broker position now have
+  distinct labels. Research allocation no longer changes whether a strategy
+  Buy or Sell is described as executable.
+- Personal-guidance refreshes apply atomically and in request order. A failed
+  `/desk/mine` request clears executable guidance and renders an explicit alert
+  rather than silently resembling a valid Hold response.
+- Local acceptance: 46 calendar/Desk API tests, scoped Ruff, TypeScript/Vite
+  production build, and all 81 Desk browser tests passed. The Vite build retains
+  its pre-existing CSS pseudo-class and large-chunk warnings. Not deployed.
+- The research dependency set now declares the XNYS calendar package already
+  used by the fixed neural price-study CLI. No live strategy or paper-account
+  policy changed. Diagram impact: NONE.
+
 ## 2026-09-21 — Strict SPY and QQQ comparison accounting
 
 - Both benchmarks load independently from stored adjusted prices, on the

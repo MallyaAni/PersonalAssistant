@@ -33,14 +33,6 @@ const ChangeMark = ({ last, close }: { last: number; close: number | null | unde
   return <span className={`ml-1 ${cls}`} title="vs the last close">{mark} {sign}{change.toFixed(1)}%</span>
 }
 
-// Whether the exchange is open at `now`, on New York time.
-export const marketOpenAt = (now: number) => {
-  const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false}).formatToParts(new Date(now))
-  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
-  const minutes = Number(get('hour')) * 60 + Number(get('minute'))
-  return !['Sat', 'Sun'].includes(get('weekday')) && minutes >= 9 * 60 + 30 && minutes < 16 * 60
-}
-
 // Keep the confirmed fill date on the exchange's calendar.
 const today = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date())
 
@@ -139,18 +131,18 @@ const PlanHead = ({sort, onSort, plans, shown, onShown}: {
         type="button"
         aria-haspopup="true"
         aria-expanded={open}
-        aria-label={filtered ? 'Filter the plan column (filtered)' : 'Filter the plan column'}
-        title="Show only certain plans"
+        aria-label={filtered ? 'Filter strategy intent (filtered)' : 'Filter strategy intent'}
+        title="Show only selected strategy intents; a blocked intent is not an executable order"
         className={`flex items-center gap-1 rounded font-normal hover:text-[#0071e3] ${filtered ? 'text-[#0071e3]' : ''}`}
         onClick={() => setOpen(!open)}
       >
-        Plan
+        Strategy intent
         <span aria-hidden="true" className={filtered ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{'▾'}</span>
       </button>
       <button
         type="button"
-        title="Sort the board by plan"
-        aria-label="Sort by plan"
+        title="Sort the board by strategy intent"
+        aria-label="Sort by strategy intent"
         className="rounded px-0.5 leading-none hover:text-[#0071e3]"
         onClick={() => onSort(
           !active ? {column: 'plan', descending: DESCENDING_FIRST.plan}
@@ -189,7 +181,7 @@ const PlanHead = ({sort, onSort, plans, shown, onShown}: {
 }
 
 // Present stocks and cash together, with details deferred until a person asks.
-export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, broker, event, now, action, onOpen, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
+export const StockBoard = ({latest, live, grades, research, paper, ml, coverage, decisions, holdings, broker, event, now, onOpen, holdingsError, expand, toolbar, trade, footer, closes, planAction, extraNames = []}: {
   latest: DeskRecord; live: DeskLive; grades: Record<string, DeskLiveGrade>;
   research: DeskPayload['intraday_research']; holdings: DeskHolding[] | null;
   broker?: DeskPaperLive | null;
@@ -197,7 +189,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   ml?: DeskPayload['ml_forward'];
   decisions?: DeskDecisions;
   coverage?: DeskPayload['coverage'];
-  event: BoardEvent | null; now: number; action: (ticker: string, allocation: number | null) => ReactNode;
+  event: BoardEvent | null; now: number;
   onOpen: (ticker: string) => void;
   holdingsError?: string;
   // What a row shows when opened in place: the plan for that name, its
@@ -245,7 +237,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // candle run has produced an allocation for the current decision (a new
   // nightly record, overnight, pre- or post-market) the board shows the
   // adopted plan's target weights instead, so the column always reads.
-  const marketClosed = !marketOpenAt(now)
+  const marketClosed = live.market_status?.open !== true
   // Which sizing policy the board is showing. It used to be inferred: live
   // sizes when a current bar existed, plan targets otherwise, with no way to
   // ask for the other one. A trader comparing "what the rebalance will do"
@@ -443,16 +435,18 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10, not a return forecast. A star marks a name scored without the full panel.">Opportunity</SortHead>
             {planAction
               ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />
-              : <SortHead column="plan" sort={sort} onSort={setSort} title="The desk's plan for this name">Plan</SortHead>}
+              : <SortHead column="plan" sort={sort} onSort={setSort} title="The adopted strategy's intent for this name; intent is not an order">Strategy intent</SortHead>}
             {/* "Size %" sat beside the Plan column, which also prints a
                 percentage, and the two are different quantities: this is the
                 weight the desk WANTS at the next reset, while Plan prints the
                 move it is making now. On a name being rotated out they
                 disagree on purpose - target 0.8%, sell the 1.9% held - and
                 two bare percentages side by side read as a contradiction. */}
-            <SortHead column="weight" sort={sort} onSort={setSort} title="The weight the desk wants in this name at the next weight reset, as a share of the account. Not the move in the Plan column, which is what it is trading today.">Target %</SortHead>
-            <th title="Proposed change to this name's allocation in the account, not a return since the signal">Move %</th>
-            <th title="The practice account's position, not your own">Desk position</th>
+            <SortHead column="weight" sort={sort} onSort={setSort} title={showSizes
+              ? 'Experimental research allocation from the displayed completed bar, as a share of the account; not an order or the adopted strategy target.'
+              : 'Adopted strategy target at the next weight reset, as a share of the account; not the intended change shown under Move %.'}>{showSizes ? 'Research %' : 'Target %'}</SortHead>
+            <th title="The strategy's intended change in your account allocation. A blocked move is not executable now, and this is not a return.">Move %</th>
+            <th title="Position in the separate paper brokerage account; never your personal position">Paper position</th>
             <th>Your position</th>
             <th>Reason</th>
 
@@ -469,6 +463,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const isCash = row.ticker === '__cash__'
           const open = opened === row.ticker
           const decision = decisions?.session === latest.session && decisions.written === latest.written ? decisions.rows[row.ticker] : undefined
+          const strategyMove = decision?.strategy_move_weight ?? decision?.move_weight
           const plan = paused ? 'Hold' : planOf(row.ticker)
           const position = brokerPositions.find(p => p.symbol === row.ticker)
           const reason = paused ? 'FOMC cycle: regular trading paused' : decision?.reason ?? 'No current strategy decision'
@@ -490,13 +485,13 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 title={`Scored without ${row.narrow.join(' and ')}: this name is missing the data ${row.narrow.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score is the rest renormalised. Open the name for the parts.`}
               >*</span>}
             </> : '—'}</td>
-            <td className="text-xs" aria-label={isCash || tradeNode ? undefined : `${row.ticker} plan action`}>{isCash ? 'HOLD' : tradeNode ?? (plan === 'Hold' ? 'Hold' : plan.toUpperCase())}</td>
+            <td className="text-xs" aria-label={isCash || tradeNode ? undefined : `${row.ticker} strategy intent`}>{isCash ? 'HOLD' : tradeNode ?? (plan === 'Hold' ? 'Hold' : plan.toUpperCase())}</td>
             <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
               : isCash ? '—'
               : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
               : <span className="cursor-help text-[#6e6e73]" title="Graded but unsized. Sizing ranks on the continuous score; the grade is a multiplier on top.">—</span>}</td>
-            <td className="text-xs" aria-label={`${row.ticker} move`}>{isCash || plan === 'Hold' || !decision ? '—' : `${decision.move_weight > 0 ? '+' : ''}${percentage(decision.move_weight)}`}</td>
-            <td className="text-xs" aria-label={`${row.ticker} desk position`}>{isCash ? '—' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : '—'}</td>
+            <td className="text-xs" aria-label={`${row.ticker} move`}>{isCash || plan === 'Hold' || strategyMove === undefined ? '—' : `${strategyMove > 0 ? '+' : ''}${percentage(strategyMove)}`}</td>
+            <td className="text-xs" aria-label={`${row.ticker} paper position`}>{isCash ? '—' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : '—'}</td>
             <td className="text-xs" aria-label={`${row.ticker} your position`}>{isCash ? '—' : holdings === null ? 'Unavailable' : held ? <>{held.shares.toLocaleString()} shares<div>Entry {held.entry_price.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>{quote && Number.isFinite(quote.last) && <div>P/L {((quote.last - held.entry_price) * held.shares).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>}</> : '—'}</td>
             <td className="max-w-72 whitespace-normal py-2 text-xs text-[#6e6e73]">{isCash ? 'Unallocated strategy weight' : reason}</td>
 

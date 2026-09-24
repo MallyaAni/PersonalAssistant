@@ -39,10 +39,12 @@ test('account wording distinguishes allocation from profit and paper from person
   await expect(page.getByText('This is not your invested percentage or a claim about available cash;', {exact: false})).toBeVisible()
   await expect(page.getByText('fills are simulated broker fills.', {exact: false})).toBeVisible()
   await expect(page.getByText('refreshing the page does not guarantee a newer market observation.', {exact: false})).toBeVisible()
-  await expect(page.getByText('These actions use your recorded positions and confirmed cash.', {exact: false})).toBeVisible()
-  await expect(page.getByText('Blank Move % on Hold means no proposed trade.', {exact: false})).toBeVisible()
+  await expect(page.getByText(/BUY is the strategy's intent to add/)).toBeVisible()
+  await expect(page.getByText(/“Blocked now” means the intent is visible but is not executable/)).toBeVisible()
+  await expect(page.getByText('Blank Move % on Hold means no intended trade.', {exact: false})).toBeVisible()
+  await expect(page.getByText('Allocation %', {exact: true})).toBeVisible()
   await expect(page.getByRole('columnheader', {name: 'Move %', exact: true})).toHaveAttribute('title', /allocation.*not a return/)
-  await expect(page.getByRole('columnheader', {name: 'Desk position', exact: true})).toHaveAttribute('title', /practice account/)
+  await expect(page.getByRole('columnheader', {name: 'Paper position', exact: true})).toHaveAttribute('title', /separate paper brokerage account/)
   await expect(page.locator('body')).not.toContainText('same whatever you have recorded')
   await expect(page.locator('body')).not.toContainText('24 points a year')
   await page.getByRole('button', {name: 'Research', exact: true}).click()
@@ -89,8 +91,8 @@ test('single-table strategy plan keeps actions, holdings and reasons consistent'
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest}}))
   await page.route('**/desk/mine*', route => route.fulfill({json: {rows: [], grades_live: {}, decisions: {
     session: latest.session, written: latest.written, rows: {
-      AAPL: {action: 'Buy', reason: 'Funded breakout entry', move_weight: .01},
-      NVDA: {action: 'Sell', reason: 'Grade rotation', move_weight: -.02},
+      AAPL: {action: 'Buy', reason: 'Funded breakout entry', move_weight: .01, executable: true, valid_until: new Date(Date.now() + 15 * 60 * 1000).toISOString()},
+      NVDA: {action: 'Sell', reason: 'Grade rotation', move_weight: -.02, executable: true, valid_until: new Date(Date.now() + 15 * 60 * 1000).toISOString()},
       MSFT: {action: 'uncovered', reason: 'Legacy invalid action', move_weight: 0},
     },
   }}}))
@@ -101,20 +103,20 @@ test('single-table strategy plan keeps actions, holdings and reasons consistent'
   // reveal the whole universe before asserting the actions below the fold.
   const reveal = page.getByRole('button', {name: /Show more/})
   while (await reveal.isVisible().catch(() => false)) { await reveal.click() }
-  await expect(board.getByLabel('AAPL plan action', {exact: true})).toHaveText('BUY')
-  await expect(board.getByLabel('NVDA plan action', {exact: true})).toHaveText('SELL')
-  await expect(board.getByLabel('MSFT plan action', {exact: true})).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('BUY')
+  await expect(board.getByLabel('NVDA strategy intent', {exact: true})).toHaveText('SELL')
+  await expect(board.getByLabel('MSFT strategy intent', {exact: true})).toHaveText('Hold')
   await expect(board.getByRole('button', {name: 'TEST17', exact: true})).toHaveCount(1)
   await expect(board.getByLabel('AAPL move', {exact: true})).toHaveText('+1.0%')
   await expect(board.getByLabel('AAPL your position', {exact: true})).toContainText('60 shares')
-  await expect(board.getByLabel('AAPL desk position', {exact: true})).toContainText('60 shares')
+  await expect(board.getByLabel('AAPL paper position', {exact: true})).toContainText('60 shares')
   await expect(board).toContainText('Funded breakout entry')
-  await page.getByRole('button', {name: 'Filter the plan column', exact: true}).click()
+  await page.getByRole('button', {name: 'Filter strategy intent', exact: true}).click()
   await page.getByRole('checkbox', {name: /Hold/}).uncheck()
   await page.getByRole('checkbox', {name: /Sell/}).uncheck()
-  await page.getByRole('button', {name: 'Filter the plan column (filtered)'}).click()
-  await expect(board.getByLabel('AAPL plan action', {exact: true})).toHaveText('BUY')
-  await expect(board.getByLabel('NVDA plan action', {exact: true})).toHaveCount(0)
+  await page.getByRole('button', {name: 'Filter strategy intent (filtered)'}).click()
+  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('BUY')
+  await expect(board.getByLabel('NVDA strategy intent', {exact: true})).toHaveCount(0)
   await page.reload()
   // Reload returns the board to the first page; reveal the whole universe
   // again before the below-the-fold assertion that follows.
@@ -341,6 +343,7 @@ test('single board ranks cash and updates allocations with the next candle', asy
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toHaveCount(1)
+  await expect(board.getByRole('button', {name: 'Research %', exact: true})).toHaveAttribute('title', /Experimental research allocation.*not an order/)
   await expect(board.locator('tbody tr')).toHaveCount(4)
   await expect(board.locator('tbody tr').first()).toContainText('USD')
   await expect(board.locator('tbody tr').first()).toContainText('75.0%')
@@ -372,6 +375,11 @@ test('one stale quote no longer disables sizes for the rest of the board', async
   const latest = deskRecord()
   await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
     as_of: '2026-09-09T14:00:00Z',
+    market_status: {
+      exchange: 'XNYS', as_of: '2026-09-09T14:00:00Z', session: '2026-09-09',
+      calendar_known: true, is_session: true, open: true, phase: 'open',
+      opens_at: '2026-09-09T09:30:00-04:00', closes_at: '2026-09-09T16:00:00-04:00',
+    },
     quotes: {
       AAPL: {symbol: 'AAPL', last: 100, bar: '2026-09-09T13:45:00Z'},
       // NVDA has not advanced to the research bar, so only its size is stale.
@@ -559,21 +567,30 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
   await page.clock.install({time: now})
   const latest = deskRecord()
   await page.route(`**/market/${USER}/desk/mine*`, route => route.fulfill({json: {
-    session: latest.session, rows: [], grades_live: {}, decisions: {
+    session: latest.session,
+    market_status: {
+      exchange: 'XNYS', as_of: now.toISOString(), session: '2026-09-09',
+      calendar_known: true, is_session: true, open: true, phase: 'open',
+      opens_at: '2026-09-09T09:30:00-04:00', closes_at: '2026-09-09T16:00:00-04:00',
+    },
+    rows: [], grades_live: {}, decisions: {
       session: latest.session, written: latest.written, equity: 100000, holdings: {AAPL: 60}, as_of: now.toISOString(),
-      rows: {AAPL: {action: 'Buy', reason: 'Scheduled addition; confirm cash and broker price', target_weight: .1, current_weight: 0, delta_weight: .1,
+      rows: {AAPL: {action: 'Buy', executable: true, reason: 'Scheduled addition; confirm cash and broker price', target_weight: .1, current_weight: 0, delta_weight: .1,
         valid_until: '2026-09-09T14:00:30Z', quote: {feed: 'sip', bid: 199.99, ask: 200.01, at: now.toISOString(), eligible: true, valid_until: '2026-09-09T14:00:30Z', reason: 'Quote checks passed'}}},
     },
   }}))
   await page.goto('/?deskDetails=1#desk')
-  const cell = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings'})}).getByLabel('AAPL plan action')
+  const cell = page.locator('section', {has: page.getByRole('heading', {name: 'Stock rankings'})}).getByLabel('AAPL strategy intent')
   await expect(cell).toContainText('BUY')
-  await cell.getByText('Position & quote').click()
+  await cell.getByText('Your allocation & execution quote').click()
   await expect(cell).toContainText('SIP')
-  await expect(cell).toContainText('wants 10.0% at the next reset')
+  await expect(cell).toContainText('strategy target 10.0% at the next reset')
   await expect(cell).toContainText('10:00:30 AM')
+  await expect(page.getByLabel('Today')).toContainText('1 name to act on now')
   await page.clock.fastForward(31_000)
   await expect(cell).toContainText('expired')
+  await expect(cell).toContainText('Blocked now')
+  await expect(page.getByLabel('Today')).toContainText('Nothing to act on right now')
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -937,6 +954,11 @@ test.beforeEach(async ({ page }) => {
     contentType: 'application/json',
     body: JSON.stringify({
       as_of: '2026-09-08T20:00:00Z',
+      market_status: {
+        exchange: 'XNYS', as_of: '2026-09-08T20:00:00Z', session: '2026-09-08',
+        calendar_known: true, is_session: true, open: false, phase: 'post-market',
+        opens_at: '2026-09-08T09:30:00-04:00', closes_at: '2026-09-08T16:00:00-04:00',
+      },
       quotes: {
         AAPL: { symbol: 'AAPL', last: 102, open: 101, high: 103, low: 100.5, bar: '20:00', as_of: '2026-09-08T20:00:00Z' },
         NVDA: { symbol: 'NVDA', last: 130, open: 128, high: 132, low: 127, bar: '20:00', as_of: '2026-09-08T20:00:00Z' },
@@ -1294,7 +1316,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   // for the next rebalance" rather than teaching a daily trading cadence.
   await expect(page.getByRole('heading', {name: 'Plan status'})).toBeVisible()
   await expect(page.getByLabel('Reading the current picks')).toContainText('not a probability of profit')
-  await expect(page.getByRole('columnheader', {name: 'Filter the plan column'})).toBeVisible()
+  await expect(page.getByRole('columnheader', {name: 'Filter strategy intent'})).toBeVisible()
   await expect(page.getByRole('columnheader', {name: 'broker mark', exact: true})).toBeVisible()
   await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Weights reset in 18 sessions')
   // No trade is scheduled before the rebalance, so no row carries a "done"
@@ -1664,7 +1686,7 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
   await expect(page.getByText('100 shares held')).toBeVisible()
   // The desk has no view on a name it does not cover, so the signal is
   // Hold and never a sell.
-  await expect(page.getByLabel('AAPL plan action').first()).toContainText('Hold')
+  await expect(page.getByLabel('AAPL strategy intent').first()).toContainText('Hold')
   await expect(page.getByRole('button', { name: 'record fill', exact: true })).not.toBeVisible()
   // A fresh book with no rebalance clock: the next session is the first
   // decision, so the board shows the next scheduled trades.
@@ -1955,7 +1977,7 @@ test('dates old candles separately from explanations and labels indicative grade
     }),
   }))
   await page.goto('/?deskDetails=1#desk')
-  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText(/Market closed; prices are|not updating/)
+  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText(/XNYS regular session closed.*prices are from|not updating/)
   await expect(page.getByText('intraday', {exact: true})).toBeVisible()
   await page.getByRole('button', { name: 'MSFT', exact: true }).last().click()
   const dialog = page.getByRole('dialog', { name: 'MSFT history' })
@@ -2261,7 +2283,7 @@ test('details splits into plan and research and the simple page carries only dec
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   // The first line says what the desk is doing and whether there is anything to do.
   const today = page.getByLabel('Today')
-  await expect(today).toContainText(/Market (open|closed)/)
+  await expect(today).toContainText(/XNYS (regular session scheduled open|regular session closed|closed by schedule)|Before XNYS regular session/)
   await expect(today).toContainText(/weights reset|weight reset/)
   await expect(page.getByLabel('ML forward comparison')).toHaveCount(0)
   await expect(page.getByLabel('Board simulation')).toHaveCount(0)
@@ -2603,6 +2625,11 @@ test('the board leads with the book and shows the allocation without a shares co
 // a test answers differently for each confirmed cash figure.
 const mineAnswer = (decisions: object, rows: object[] = []) => ({
   session: '2026-09-08',
+  market_status: {
+    exchange: 'XNYS', as_of: '2026-09-08T15:00:00Z', session: '2026-09-08',
+    calendar_known: true, is_session: true, open: true, phase: 'open',
+    opens_at: '2026-09-08T09:30:00-04:00', closes_at: '2026-09-08T16:00:00-04:00',
+  },
   grade_valid_until: Object.fromEntries(['AAPL', 'NVDA'].map((ticker) => [ticker, new Date(Date.now() + 15 * 60 * 1000).toISOString()])),
   grades_live: {},
   rows,
@@ -2619,7 +2646,94 @@ const aaplRow = {
 // Answer a personal read with no funded order.
 const holdDecision = (reason: string) => ({ session: '2026-09-08', written: '2026-09-08T21:00:00Z', rows: { AAPL: { action: 'Hold', reason, move_weight: 0 } } })
 // Answer a personal read with a cash-bounded buy for browser acceptance.
-const buyDecision = (reason: string) => ({ session: '2026-09-08', written: '2026-09-08T21:00:00Z', rows: { AAPL: { action: 'Buy', reason, move_weight: 0.01 } } })
+const buyDecision = (reason: string) => ({ session: '2026-09-08', written: '2026-09-08T21:00:00Z', rows: { AAPL: { action: 'Buy', reason, move_weight: 0.01, executable: true, valid_until: new Date(Date.now() + 15 * 60 * 1000).toISOString() } } })
+
+// A blocked execution keeps the strategy's Buy visible, names the blocker,
+// and shows the intended move without presenting it as executable.
+test('blocked execution preserves strategy intent and names the blocker', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/desk/mine*', route => route.fulfill({ json: mineAnswer({
+    session: '2026-09-08', written: '2026-09-08T21:00:00Z', rows: {
+      AAPL: {
+        action: 'Hold', move_weight: 0, strategy_action: 'Buy', strategy_move_weight: 0.02,
+        executable: false, blocker: 'available cash is unknown', reason: 'Wants up to 2.0% of the account',
+      },
+    },
+  }, [aaplRow]) }))
+
+  await page.goto('/#desk')
+  const board = page.getByRole('table', { name: 'Ranked stocks and cash' })
+  await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toContainText('BUY')
+  await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toContainText('Blocked now')
+  await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toContainText('available cash is unknown')
+  await expect(board.getByLabel('AAPL move', { exact: true })).toHaveText('+2.0%')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A failed personal-guidance request is an explicit fail-closed state, not an
+// empty board that looks like a legitimate Hold recommendation.
+test('personal guidance API failure is visible and fails closed', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/desk/mine*', route => route.fulfill({
+    status: 503,
+    contentType: 'application/json',
+    body: JSON.stringify({ detail: 'Personal guidance feed is temporarily unavailable.' }),
+  }))
+
+  await page.goto('/#desk')
+  await expect(page.getByRole('alert')).toContainText('Personal guidance feed is temporarily unavailable.')
+  await expect(page.getByRole('table', { name: 'Ranked stocks and cash' }).getByText('BUY', { exact: true })).toHaveCount(0)
+  expect(errors.pageErrors).toEqual([])
+  expect(errors.consoleErrors.length).toBeGreaterThan(0)
+  expect(errors.consoleErrors.every((message) => message.includes('503'))).toBe(true)
+})
+
+// Two same-account refreshes may overlap; the response requested last owns
+// every personal-guidance field even when the older response arrives later.
+test('slower earlier same-account response cannot overwrite newer guidance', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let requests = 0
+  await page.route('**/desk/mine*', async route => {
+    requests += 1
+    const request = requests
+    if (request === 1) await new Promise((resolve) => setTimeout(resolve, 1500))
+    return route.fulfill({ json: mineAnswer(
+      request === 1 ? holdDecision('Older response') : buyDecision('Newer response'),
+      [aaplRow],
+    ) })
+  })
+
+  await page.goto('/#desk')
+  await expect.poll(() => requests).toBeGreaterThanOrEqual(2)
+  const action = page.getByRole('table', { name: 'Ranked stocks and cash' }).getByLabel('AAPL strategy intent', { exact: true })
+  await expect(action).toHaveText('BUY')
+  await page.waitForTimeout(1800)
+  await expect(action).toHaveText('BUY')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Backend-authored exchange status honours the 13:00 holiday close; a local
+// weekday clock would incorrectly call 14:00 on this date open.
+test('day-after-Thanksgiving early close is shown as closed at 14:00 ET', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.clock.setFixedTime(new Date('2026-11-27T19:00:00Z'))
+  const marketStatus = {
+    exchange: 'XNYS', as_of: '2026-11-27T19:00:00Z', session: '2026-11-27',
+    calendar_known: true, is_session: true, open: false, phase: 'post-market',
+    opens_at: '2026-11-27T09:30:00-05:00', closes_at: '2026-11-27T13:00:00-05:00',
+  }
+  await page.route('**/desk/live', route => route.fulfill({ json: {
+    as_of: '2026-11-27T18:00:00Z', data_at: '2026-11-27T18:00:00Z', quotes: {}, market_status: marketStatus,
+  } }))
+  await page.route('**/desk/mine*', route => route.fulfill({ json: {
+    ...mineAnswer(holdDecision('No funded cash'), [aaplRow]), market_status: marketStatus,
+  } }))
+
+  await page.goto('/#desk')
+  await expect(page.getByLabel('Today')).toContainText('XNYS regular session closed · scheduled close 1:00 PM ET')
+  await expect(page.getByRole('heading', { name: 'Plan status' })).toContainText('XNYS regular session closed · scheduled close 1:00 PM ET')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
 
 // The desk opens with the personal cash unknown: the first confirmed request
 // carries only equity in the body (never in the URL), and nothing about the
@@ -2662,12 +2776,12 @@ test('confirmed available cash funds buys in the body, and zero keeps them gated
   await page.getByLabel('Personal available cash').fill('5000')
   await page.getByRole('button', { name: 'Apply', exact: true }).click()
   await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $5,000; buys can be funded up to this budget.')
-  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('BUY')
+  await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toHaveText('BUY')
   expect(mineBodies.some(b => b.equity === 200000 && b.available_cash === 5000)).toBe(true)
   await page.getByLabel('Personal available cash').fill('0')
   await page.getByRole('button', { name: 'Apply', exact: true }).click()
   await expect(page.getByLabel('Available cash status')).toContainText('Available cash confirmed at $0; no funded buys.')
-  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toHaveText('Hold')
   await expect.poll(() => mineBodies.some(b => b.equity === 200000 && b.available_cash === 0)).toBe(true)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -2725,9 +2839,9 @@ test('a slow response from the previous higher-cash context cannot repaint a sta
   await expect.poll(() => answered.some(a => a.delayed)).toBe(true)
   await page.getByLabel('Personal available cash').fill('5000')
   await page.getByRole('button', { name: 'Apply', exact: true }).click()
-  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toHaveText('Hold')
   await page.waitForTimeout(2500)
-  await expect(board.getByLabel('AAPL plan action', { exact: true })).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toHaveText('Hold')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 

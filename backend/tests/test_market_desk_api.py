@@ -14,6 +14,57 @@ from backend.core.auth import issue_user_token
 from backend.main import app
 
 
+# Both live desk responses carry the reviewed holiday and early-close schedule
+# even when no nightly desk record or market-data credentials exist yet.
+@pytest.mark.asyncio
+async def test_personal_desk_includes_reviewed_exchange_schedule(tmp_path, monkeypatch):
+    from backend.api.v1 import market
+
+    now = datetime(2026, 11, 27, 19, 0, tzinfo=UTC)
+
+    class Clock(datetime):
+        # Freeze this request after the day-after-Thanksgiving early close.
+        @classmethod
+        def now(cls, tz=None):
+            return now if tz is not None else now.replace(tzinfo=None)
+
+    monkeypatch.setattr(market, "datetime", Clock)
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+
+    # Keep the live endpoint on its deterministic no-credentials branch.
+    def no_credentials():
+        raise market.alpaca.AlpacaUnavailableError("no test credentials")
+
+    monkeypatch.setattr(market.alpaca, "credentials", no_credentials)
+    token = issue_user_token("desk_user", scopes=["memory:read", "memory:write"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Bearer {token}"},
+    ) as client:
+        response = await client.post(
+            "/api/v1/market/desk_user/desk/mine", json={"equity": 100000}
+        )
+        live_response = await client.get("/api/v1/market/desk_user/desk/live")
+
+    assert response.status_code == 200, response.text
+    assert response.json()["market_status"] == {
+        "exchange": "XNYS",
+        "as_of": "2026-11-27T19:00:00+00:00",
+        "session": "2026-11-27",
+        "calendar_known": True,
+        "is_session": True,
+        "open": False,
+        "phase": "post-market",
+        "opens_at": "2026-11-27T09:30:00-05:00",
+        "closes_at": "2026-11-27T13:00:00-05:00",
+    }
+    assert live_response.status_code == 200, live_response.text
+    assert live_response.json()["market_status"] == response.json()["market_status"]
+
+
 # Research allocations stay separate from the adopted plan over HTTP.
 # Funded live-grade previews must work and leave personal holdings unchanged.
 @pytest.mark.parametrize("funded", [False, True])

@@ -69,6 +69,22 @@ const marketTime = (value: string | null | undefined) => {
   })} ET`
 }
 
+// Turn the backend-authored XNYS phase and schedule into one precise label;
+// this never infers holidays or trading hours in the browser.
+const exchangeState = (status: DeskLive['market_status']) => {
+  if (!status || status.phase === 'unknown') return {open: false, known: false, label: 'XNYS schedule unavailable · execution status unknown'}
+  // Format only the reviewed schedule timestamps supplied by the backend.
+  const time = (value: string | null) => value && !Number.isNaN(Date.parse(value))
+    ? `${new Date(value).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit'})} ET`
+    : null
+  const opens = time(status.opens_at)
+  const closes = time(status.closes_at)
+  if (status.open) return {open: true, known: true, label: `XNYS regular session scheduled open${closes ? ` · scheduled close ${closes}` : ''}`}
+  if (!status.is_session) return {open: false, known: true, label: 'XNYS closed by schedule · no regular session today'}
+  if (status.phase === 'pre-market') return {open: false, known: true, label: `Before XNYS regular session${opens ? ` · scheduled open ${opens}` : ''}`}
+  return {open: false, known: true, label: `XNYS regular session closed${closes ? ` · scheduled close ${closes}` : ''}`}
+}
+
 // Keep seconds visible when comparing decision, broker submission and completion times.
 const executionTime = (value: string | undefined) => {
   if (!value || Number.isNaN(Date.parse(value))) return 'not recorded'
@@ -710,13 +726,14 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         </dd>
       </div>
       <div>
-        <dt className="font-medium">Plan</dt>
+        <dt className="font-medium">Strategy intent</dt>
         <dd className="text-[#6e6e73]">
-          BUY proposes a cash-funded addition; SELL proposes a reduction; HOLD proposes no trade.
-          These actions use your recorded positions and confirmed cash.
-          Move % is a change in account allocation, not a return since the signal.
+          BUY is the strategy&apos;s intent to add; SELL is its intent to reduce; HOLD means it proposes no trade.
+          “Blocked now” means the intent is visible but is not executable with the current market evidence,
+          allocation, recorded positions, or confirmed cash.
+          Move % is the strategy&apos;s intended change in your account allocation, not a return since the signal.
           Target % is a strategy weight, not a profit target or an immediate rebalance instruction.
-          Blank Move % on Hold means no proposed trade. Entry limits and evidence checks still apply.
+          Blank Move % on Hold means no intended trade. Nothing here submits an order.
         </dd>
       </div>
       <div>
@@ -728,10 +745,12 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         </dd>
       </div>
       <div>
-        <dt className="font-medium">Size %</dt>
+        <dt className="font-medium">Allocation %</dt>
         <dd className="text-[#6e6e73]">
-          Strategy allocation as a share of the account, not an order quantity or profit target.
-          A grade alone does not guarantee an allocation; selection and sizing also apply.
+          Research % is the experimental allocation calculated from the displayed completed bar.
+          Target % is the adopted strategy&apos;s allocation for its next weight reset. Neither is your
+          current position, an order quantity, or a profit target. A grade alone does not guarantee
+          an allocation; selection and sizing also apply.
         </dd>
       </div>
       <div>
@@ -772,7 +791,7 @@ const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasReco
       {!hasRecord ? (
         <p>No evening decision is available yet. Check after the next trading session.</p>
       ) : (
-        <p>No personal positions recorded. Desk positions are shown separately.</p>
+        <p>No personal positions recorded. The separate paper-brokerage positions are shown separately.</p>
       )}
       {hasRecord && (
         <button type="button" onClick={onEnterPositions} className="mt-2 rounded-full bg-[#1d1d1f] px-3 py-1.5 text-sm text-white">
@@ -801,6 +820,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [decisions, setDecisions] = useState<DeskDecisions | undefined>()
   const [storedGrades, setLiveGrades] = useState<Record<string, DeskLiveGrade>>({})
   const [gradeContext, setGradeContext] = useState<{session?: string | null; until: Record<string, string>}>({until: {}})
+  const [mineError, setMineError] = useState('')
   const [now, setNow] = useState(Date.now)
   const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
   // The confirmed personal account figures the board is computed against.
@@ -816,6 +836,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // caller's cash/equity/user/holdings context changed meanwhile, so the old
   // response is dropped instead of painting stale actions over the new one.
   const accountGen = useRef(0)
+  // A later request in the same account context supersedes an earlier one;
+  // generation alone cannot distinguish overlapping poll and quote refreshes.
+  const mineRequestSeq = useRef(0)
   const [help, setHelp] = useState(false)
   const [details, setDetails] = useState(false)
   // Every grade in detail is a fold on the one page; the URL can open it.
@@ -872,36 +895,26 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     }
   }
 
-  // The board, the candle, and the practice account together; the practice
-  // account's day P/L feeds the summary strip. Shared by the polling loop
-  // and the Refresh button, so a manual refresh re-reads the live layer
-  // too rather than only the evening payload.
-  const poll = async () => {
-    // Capture the account context before any await: the live read below can
-    // take long enough that a later account change lands while it is in
-    // flight, and a gen captured then would let a request carrying the old
-    // cash closure past its own guard.
+  // Apply every field from one personal-guidance response atomically, and
+  // ignore any response or error superseded by a newer request or context.
+  const refreshMine = async (active: () => boolean = () => true) => {
     const gen = accountGen.current
-    setNow(Date.now())
-    try {
-      setLive(await getDeskLive(userId))
-    } catch {
-      setLive((previous) => ({ ...previous, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
-    }
+    const request = ++mineRequestSeq.current
     try {
       const mine = await getDeskMine(userId, equity, cash)
-      // A slow response from an earlier cash/equity/user/holdings context is
-      // dropped: the context changed while it was in flight, and applying it
-      // could repaint a stale funded BUY over the current one.
-      if (gen !== accountGen.current) return
+      if (!active() || gen !== accountGen.current || request !== mineRequestSeq.current) return
       setRows(mine.rows)
       setDecisions(mine.decisions)
       setLiveGrades(mine.grades_live)
       setGradeContext({session: mine.session, until: mine.grade_valid_until ?? {}})
-    } catch {
+      if (mine.market_status) setLive((previous) => ({...previous, market_status: mine.market_status}))
+      setMineError('')
+      setNow(Date.now())
+    } catch (err) {
+      if (!active() || gen !== accountGen.current || request !== mineRequestSeq.current) return
+      setMineError(err instanceof Error ? err.message : 'Personal guidance is unavailable. No trade is executable until it refreshes.')
       // On failure the actions stay unavailable; the previous BUY values are
-      // never restored, because they belong to an account context that may no
-      // longer hold.
+      // never restored, because they may belong to stale account evidence.
       setLiveGrades({})
       setDecisions(undefined)
       setRows((previous) => previous.map((row) => ({
@@ -909,6 +922,20 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         score_live: null, grade_margin_live: null, technical_now: null, technical_close: null, value_now: null, value_close: null,
       })))
     }
+  }
+
+  // The board, the candle, and the practice account together; the practice
+  // account's day P/L feeds the summary strip. Shared by the polling loop
+  // and the Refresh button, so a manual refresh re-reads the live layer
+  // too rather than only the evening payload.
+  const poll = async () => {
+    setNow(Date.now())
+    try {
+      setLive(await getDeskLive(userId))
+    } catch {
+      setLive((previous) => ({ ...previous, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
+    }
+    await refreshMine()
     try {
       setIntraday(await getDeskIntraday(userId))
     } catch {
@@ -1003,13 +1030,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       if (busy || document.hidden) return
       busy = true
       try {
-        const gen = accountGen.current
-        const mine = await getDeskMine(userId, equity, cash)
-        // A response from an older cash/equity context must not repaint
-        // stale BUY actions after the account inputs changed.
-        if (!stopped && gen === accountGen.current) { setDecisions(mine.decisions); setNow(Date.now()) }
+        await refreshMine(() => !stopped)
       } catch {
-        if (!stopped) setDecisions(undefined)
+        // refreshMine exposes and fails closed on request errors.
       } finally { busy = false }
     }
     const timer = window.setInterval(() => void refresh(), 15_000)
@@ -1051,17 +1074,23 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // policy still in force. A stale observation is not a pause, and the
   // nightly record's frozen execution_pending flag never is.
   const eventPaused = eventLive?.planning_paused === true
+  const exchange = exchangeState(live.market_status)
   // The board keeps its sizes during a cycle, at the exposure the desk holds.
   // The exposure is unknown when the calendar is missing or when an active
   // cycle's current policy status has not been read.
-  // How many names the desk is actually trading. The quote deadline used to
-  // gate this count, so with the market shut - when `valid_until` is null on
-  // every row - it read zero while the desk had three sells standing. The
-  // count is about the desk's plan, not about whether a quote can be crossed
-  // this second.
-  const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused
-    ? Object.values(decisions.rows).filter(row => row.action === 'Buy' || row.action === 'Sell').length : 0
-  const todayLine = latest ? <TodayLine now={now} event={event} boardEvent={eventPaused ? {
+  // Count only decisions the backend marks executable while XNYS is open;
+  // blocked strategy intent remains visible in the board but never inflates
+  // the number described as actionable now.
+  const eligibleNow = decisions && decisions.session === latest?.session && !eventPaused && exchange.open
+    ? Object.values(decisions.rows).filter(row => {
+      const intent = row.strategy_action ?? row.action
+      const deadline = row.valid_until ? Date.parse(row.valid_until) : Number.NaN
+      return (intent === 'Buy' || intent === 'Sell')
+        && row.executable !== false
+        && Number.isFinite(deadline)
+        && deadline > now
+    }).length : 0
+  const todayLine = latest ? <TodayLine exchange={exchange} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} eventLive={eventLive} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0} countdown={countdown} rebalanceDue={rebalanceDue}
@@ -1081,7 +1110,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <p className="font-medium text-[#1d1d1f]">{g.headline}</p>
         <p className="mt-0.5 font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{g.ranks ? ratings(r?.ranks_live ?? g.ranks, r?.stances_live ?? g.stances ?? {}) : triggers(g.stances ?? {})}</p>
         <ul className="mt-1 space-y-0.5 text-[#1d1d1f]">{lines.map(line => <li key={line}>{line}</li>)}</ul>
-        <div className="mt-2 text-[#6e6e73]"><DecisionCell allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
+        <div className="mt-2 text-[#6e6e73]"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
         <p className="mt-1 text-[#6e6e73]">Research target {target ?? '—'} · {held === null ? 'positions unavailable' : `${held.toLocaleString()} shares recorded`}</p>
       </div>
       <button type="button" className="self-start text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
@@ -1097,10 +1126,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
                 : 'No weight reset scheduled.'}
               {live.as_of && (
                 <span className="ml-2 font-normal text-[#6e6e73]">
-                  {marketOpenNow(now)
+                  {exchange.open
                     ? `Prices from the ${marketTime(live.data_at)} bar.`
-                    : `Market closed; prices are the ${marketTime(live.data_at)} bar.`}
-                  {marketOpenNow(now) && (live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
+                    : `${exchange.label}; prices are from the ${marketTime(live.data_at)} bar.`}
+                  {exchange.open && (live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
                     <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
                       not updating
                     </span>
@@ -1153,7 +1182,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       } : undefined}
       eligibility={eventPaused
         ? <span>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle' : 'No new buys during the FOMC cycle'}</span>
-        : <DecisionCell compact allocationAllowed ticker={ticker} decisions={decisions} latest={latest} now={now} />} />
+        : <DecisionCell compact ticker={ticker} decisions={decisions} latest={latest} now={now} />} />
   }
   const boardEvent: BoardEvent | null = eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
@@ -1217,6 +1246,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           nobody could reach it - while its own comment calls it the one thing
           on the page that is a signal rather than a ranking. */}
       {latest && <div className="flex max-h-[75vh] flex-col">
+      {mineError && <p role="alert" className="border-b border-black/[0.06] bg-red-50 px-3 py-2 text-xs text-[#b42318]">Personal guidance unavailable: {mineError} No trade is shown as executable.</p>}
       {/* The one table on the page is StockBoard below; the fundamental data
           source label sits immediately above it so a corrected decision is
           never read as measured under the frozen legacy snapshot. */}
@@ -1230,7 +1260,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} broker={paperLive} event={boardEvent} now={now}
       holdingsError={holdingsError}
-      action={(ticker, allocation) => <DecisionCell compact allocationAllowed={allocation !== null && allocation > 0} ticker={ticker} decisions={decisions} latest={latest} now={now} />}
       planAction={(ticker) => planFor(ticker, decisions, latest, now).action}
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
       </div>}
@@ -1949,55 +1978,60 @@ const planFor = (
   decisions: DeskDecisions | undefined,
   latest: DeskRecord,
   now: number,
-  allocationAllowed = true,
-): {row?: DeskDecisions['rows'][string]; action: PlanAction; reason: string} => {
+): {row?: DeskDecisions['rows'][string]; action: PlanAction; reason: string; blocked: boolean; blocker: string | null} => {
   const current = decisions && decisions.session === latest.session && decisions.written === latest.written
   const row = current ? decisions.rows[ticker] : undefined
   // No readable decision, so there is nothing to do: Hold, and say why on
   // hover. "Wait" was a fourth action pretending the page knew something.
-  if (!row) return {action: 'Hold', reason: 'No current decision for this account. Refresh to re-read it.'}
-  // A Buy still stands down where the caller says no allocation can be put on
-  // - that is a statement about this surface, not about the market being shut.
-  if (!PLAN_ACTIONS.includes(row.action as PlanAction)) return {action: 'Hold', reason: 'Unrecognized decision; refresh before acting.'}
+  if (!row) return {action: 'Hold', reason: 'No current decision for this account. Refresh to re-read it.', blocked: false, blocker: null}
+  const intent = row.strategy_action ?? row.action
+  if (!PLAN_ACTIONS.includes(intent as PlanAction)) return {action: 'Hold', reason: 'Unrecognized decision; refresh before acting.', blocked: false, blocker: null}
+  const deadline = row.valid_until ? Date.parse(row.valid_until) : Number.NaN
+  const deadlineMissing = !Number.isFinite(deadline)
+  const expired = !deadlineMissing && deadline <= now
+  const blocked = intent !== 'Hold' && (row.executable === false || deadlineMissing || expired)
+  const blocker = !blocked ? null
+    : row.executable === false ? row.blocker ?? 'execution evidence is unavailable'
+    : deadlineMissing ? 'current price evidence is unavailable'
+    : 'price evidence has expired'
   return {
     row,
-    action: row.action as PlanAction,
+    action: intent as PlanAction,
     reason: row.reason,
+    blocked,
+    blocker,
   }
 }
 
-const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = false, allocationAllowed = true}: {
+const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = false}: {
   ticker: string; decisions?: DeskDecisions; latest: DeskRecord; now: number
-  compact?: boolean; terse?: boolean; allocationAllowed?: boolean
+  compact?: boolean; terse?: boolean
 }) => {
-  const {row, action, reason} = planFor(ticker, decisions, latest, now, allocationAllowed)
-  if (!row) return <span title={reason} className="text-[#6e6e73]" aria-label={`${ticker} plan action`}>Hold</span>
-  const expired = !row.valid_until || !Number.isFinite(Date.parse(row.valid_until)) || Date.parse(row.valid_until) <= now
+  const {row, action, reason, blocked, blocker} = planFor(ticker, decisions, latest, now)
+  if (!row) return <span title={reason} className="text-[#6e6e73]" aria-label={`${ticker} strategy intent`}>Hold</span>
+  const expired = !!row.valid_until && Number.isFinite(Date.parse(row.valid_until)) && Date.parse(row.valid_until) <= now
+  const executionStatus = blocked ? <span className="block font-normal text-[#b42318]">Blocked now{blocker ? ` · ${blocker}` : ''}</span> : null
   if (compact) {
     // Inside a trade row the badge above already carries the action, so this
     // line adds only the count when there is something to trade.
-    if (action === 'Hold') return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>Hold</span>
+    if (action === 'Hold') return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} strategy intent`}>Hold</span>
     // "Sell 1.9%" beside a Target column reading 0.8% reads as a
     // contradiction. A sell is always the whole position, so it says so, and
     // a buy carries a + because it is an addition rather than a level.
-    return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} plan action`}>{action.toUpperCase()}</span>
+    return <span title={actOnIt(blocker ?? reason) ?? blocker ?? reason} aria-label={`${ticker} strategy intent`}>{action.toUpperCase()}{executionStatus}</span>
   }
   // A Plan column is a signal, not a sentence. The allocation has its own
   // column and the reasoning is a hover: a trader scanning ninety-four rows
   // reads the word, and asks why only for the one row he stops on.
-  return <div className="min-w-24" aria-label={`${ticker} plan action`} title={actOnIt(reason) ?? reason}>
+  return <div className="min-w-24" aria-label={`${ticker} strategy intent`} title={actOnIt(blocker ?? reason) ?? blocker ?? reason}>
     <div className="font-medium">{action.toUpperCase()}</div>
-    {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Desk position & quote</summary>
-      {/* The desk's own book, not the reader's. These two lines used to read
-          "Using $X account value" and "Recorded Y%", both of which described
-          his holdings file; nothing in this column is computed from it. */}
-      <div>Desk holds {allocationPercent(row.current_weight)} · wants {allocationPercent(row.target_weight)} at the next reset</div>
+    {executionStatus}
+    {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Your allocation & execution quote</summary>
+      <div>Your recorded allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)} at the next reset</div>
       {row.quote ? <>
         <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
         <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>
-        <div>{!marketOpenNow(now) && row.quote.reason && /market closed|invalid or empty|unavailable/i.test(row.quote.reason)
-          ? 'No usable quote after the close; sizes use the last completed bar'
-          : <>{row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</>}</div>
+        <div>{actOnIt(row.quote.reason) ?? row.quote.reason}{row.quote.spread_bps !== undefined && ` · ${row.quote.spread_bps.toFixed(1)} bp spread`}</div>
       </> : <div>Quote unavailable for this record.</div>}
       {row.valid_until && <div>Expires {executionTime(row.valid_until)}</div>}
     </details>}
@@ -2110,7 +2144,7 @@ const EveryGrade = ({
           Record buy saves a purchase you already executed, including discretionary purchases outside the desk schedule.</p>
       </details>
       <fieldset className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6e6e73]">
-        <legend className="sr-only">Filter the table by plan</legend>
+        <legend className="sr-only">Filter the table by strategy intent</legend>
         <span className="font-medium text-[#1d1d1f]">Show</span>
         {PLAN_ACTIONS.map(action => (
           <label key={action} className="flex cursor-pointer items-center gap-1.5">
@@ -2132,7 +2166,7 @@ const EveryGrade = ({
         <thead className="text-left text-[#6e6e73]">
           <tr>
             <th className="py-1">Name</th>
-            <th>Plan action</th>
+            <th>Strategy intent</th>
             <th>Grade</th>
             <th>Bar price</th>
             <th title="each analyst's rating, 0 to 100, its rank across the book; + for, − against">Analysts</th>
@@ -2617,20 +2651,11 @@ const GradeMove = ({changes, session, reads, revision}: {
   )
 }
 
-// Whether the exchange is open right now, on New York time.
-const marketOpenNow = (now: number) => {
-  const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false}).formatToParts(new Date(now))
-  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
-  const weekday = get('weekday')
-  const minutes = Number(get('hour')) * 60 + Number(get('minute'))
-  return !['Sat', 'Sun'].includes(weekday) && minutes >= 9 * 60 + 30 && minutes < 16 * 60
-}
-
 // One line, first on the page: what the desk is doing and whether there is
 // anything for the person to do. After the close the board is ninety rows
 // of "Wait", and the one sentence that matters was missing.
-const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebalanceDue, holdings, eligible}: {
-  now: number
+const TodayLine = ({exchange, event, boardEvent, eventLive, orders, countdown, rebalanceDue, holdings, eligible}: {
+  exchange: ReturnType<typeof exchangeState>
   event?: {decision_date: string | null} | null
   boardEvent: BoardEvent | null
   eventLive?: {status?: string; pending_orders?: number}
@@ -2640,11 +2665,10 @@ const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebala
   holdings: number | null
   eligible: number
 }) => {
-  const open = marketOpenNow(now)
-  const parts: string[] = [open ? 'Market open' : 'Market closed']
+  const parts: string[] = [exchange.label]
   if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`the desk is at ${boardEvent.exposure === 0.5 ? 'half' : `${Math.round(boardEvent.exposure * 100)}%`} exposure through the ${event?.decision_date ?? 'FOMC'} decision`)
   else if (boardEvent) parts.push(orders > 0
-    ? open
+    ? exchange.open
       ? `${orders} FOMC restoration${orders === 1 ? ' is' : 's are'} being placed now`
       : `${orders} FOMC restoration${orders === 1 ? ' fills' : 's fill'} at the open`
     : 'an FOMC cycle is closing')
@@ -2652,7 +2676,7 @@ const TodayLine = ({now, event, boardEvent, eventLive, orders, countdown, rebala
   let action: string
   if (holdings !== null && holdings === 0) action = 'No personal positions recorded yet. Add yours under Positions to compare with the desk.'
   else if (eligible > 0) action = `${eligible} name${eligible === 1 ? '' : 's'} to act on now.`
-  else action = open ? 'Nothing to act on right now.' : 'Nothing for you to do until the open.'
+  else action = exchange.open ? 'Nothing to act on right now.' : exchange.known ? 'Nothing for you to do until the next regular session opens.' : 'Nothing is executable until XNYS status refreshes.'
   return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
     <span className="font-medium">{parts.join(' · ')}.</span> <span className="text-[#6e6e73]">{action}</span>
   </section>
@@ -2768,7 +2792,7 @@ const NameDetail = ({
           <p className="font-medium text-[#1d1d1f]">{latest.grades[ticker].headline}</p>
           <ul className="mt-1 space-y-0.5 text-xs text-[#1d1d1f]">{(latest.grades[ticker].reason ?? '').split('\n').filter(Boolean).map(line => <li key={line}>{line}</li>)}</ul>
           <div className="mt-2 text-xs text-[#6e6e73]">
-            {row ? <DecisionCell terse allocationAllowed={false} ticker={ticker} decisions={decisions} latest={latest} now={now} /> : 'Not on the board'}
+            {row ? <DecisionCell terse ticker={ticker} decisions={decisions} latest={latest} now={now} /> : 'Not on the board'}
           </div>
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}

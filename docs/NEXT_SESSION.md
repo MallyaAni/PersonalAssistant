@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-09-24 — Desk semantic consistency implementation, not deployed
+
+Working tree changes on `main` at starting HEAD
+`1ad7e5996f57a46589a8f7585a030f7067c1e09c` make the Desk's live status and
+labels match their actual sources. XNYS state comes from the backend's reviewed
+2026–2028 holiday and early-close files and fails closed outside that coverage;
+the UI explicitly calls it scheduled state, not observed exchange operations.
+Both `/desk/live` and `/desk/mine` carry the same contract.
+
+Personal strategy intent is distinct from executability: blocked Buy/Sell
+intent and its intended allocation change remain visible, while the blocker is
+named and expired evidence is removed from the actionable-now count. Personal
+allocation, adopted strategy target, current-bar research allocation, and paper
+broker position no longer share ambiguous `Plan`, `Size`, or `Desk position`
+labels. Research allocation does not gate a strategy Sell. Overlapping personal
+guidance requests are sequenced; errors clear executable fields and show an
+alert. The paper account remains a separate surface. The live policy remains
+`cash-bounded-breakout-rotation/3`; learned/neural work remains research-only.
+
+VERIFIED locally against the shared checkout: **46 passed** in
+`test_market_calendar.py` + `test_market_desk_api.py`; scoped Ruff lint and
+format clean; frontend TypeScript/Vite production build passed; **81/81 Desk
+browser tests passed** with no test failure. New browser proofs cover a blocked
+Buy, visible 503 fail-closed state, stale-response ordering, deadline expiry in
+the actionable count, dynamic research-vs-strategy allocation labels, and the
+2026 day-after-Thanksgiving 13:00 close. Vite emitted the pre-existing
+`hover:bg-black` minifier warning and chunk-size warnings. Host Python initially
+lacked backend extras; the passing run used isolated `/tmp` dependencies and
+did not modify the repository environment.
+
+NOT DEPLOYED. No commit or push was made. Before release, create an authorized
+commit, run the required full gate, deploy only through `scripts/deploy.sh`, and
+exercise the real Desk workflow against that exact deployed revision. Do not
+promote a research policy as part of this UI correction.
+
 ## 2026-09-24 — Corrected neural inputs and matched-rule adapter
 
 User asks whether other approaches could outperform neural/momentum: yes,
