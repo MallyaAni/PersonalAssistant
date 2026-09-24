@@ -34,9 +34,13 @@ Diagram impact: NONE — calculation within existing research components.
 
 Next substantive tasks (goal still active):
 
-- Build an audited historical-input readiness manifest/validator before a
-  genuinely nested runner: bind bytes, availability, membership/delisting and
-  outcome coverage. Existing membership validation is not wired into
+- Build a sourced historical cohort/evidence importer with a readiness report
+  before a genuinely nested runner: retain publication and ingestion times,
+  bytes, stable security IDs, availability, membership and terminal outcomes.
+  Exercise a real small cohort containing a continuing listing, a later entrant
+  and a removed/delisted security; retain missing names explicitly rather than
+  letting panel construction drop them. A validator alone is not the end state.
+  Existing membership validation is not wired into
   `desk.book_panel`, which still builds today's cohort. Read-only Spark inventory
   found no membership histories and zero learned-input captures; price and
   related partitions span only September 2026 vintages. Zero captures is not
