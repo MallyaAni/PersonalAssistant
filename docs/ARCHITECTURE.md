@@ -624,6 +624,18 @@ individual JSON export/deletion and explicit 24-hour/90-day lifecycle rules
 It does not archive cash, equity or quantities and cannot reconstruct earlier
 advice that was never saved. This implementation is not yet deployed.
 
+Research accounting is a separate, optional observer, not personal history or
+broker execution. The desk simulator, fixed learned-research replay and funded
+SPY/QQQ controls can attach `ResearchJournal` to retain prices, decisions, actual
+fills, fees, closing valuations and terminal open state. A standalone replayer
+imports no producer ledger and independently reconciles the saved account;
+`market_verify_journal` exposes that read-only check. Recording leaves existing
+results unchanged. The JSON is research-only and unencrypted; adjusted units,
+batch funding and source hashes do not prove broker shares, actual settlement
+or historical availability. Pending declarations are preserved, not independently
+regenerated from strategy policy. See the [accounting contract and evidence](
+research/accounting-journal-2026-09-24.md) and [market-data flow](diagrams/market-data.svg).
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in

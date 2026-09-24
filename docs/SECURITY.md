@@ -332,6 +332,27 @@ The following controls are requirements for future milestones, not current featu
 
 ## Trading quote and forward evidence boundary (2026-09-14)
 
+### Research-account JSON journals (2026-09-24)
+
+`ResearchJournal` is an explicitly attached observer of research ledgers; there
+is no live collector, HTTP route or broker call. Its JSON archives contain
+synthetic research cash/units, public or synthetic prices, decisions and
+caller-supplied provenance. They are **unencrypted**, with no owner filtering,
+automatic retention, redaction or secret scanning. Never pass private holdings,
+real account identifiers, credentials or personal decision receipts to it.
+These artifacts stay outside the public static frontend and Git; filesystem
+access and existing research-backup policy govern them. Operator removal is the
+retention mechanism and removes the associated accounting evidence.
+
+The writer refuses existing destinations, parent traversal and symlink
+components, writes the manifest last and verifies readback. These are accidental
+overwrite protections, not protection against a hostile process racing filesystem
+changes. Hashes detect byte changes relative to the manifest; they are not signed
+provenance and cannot prove authenticity if the archive and manifest are both
+replaced. The verification CLI reads local files and never rewrites them or sends
+them to a model. Successful reconciliation proves declared research accounting,
+not real settlement, historical availability or suitability for live adoption.
+
 ### Personal decision receipts (2026-09-24; deployment pending)
 
 The primary desk owner's browser can request `record_history: true` on

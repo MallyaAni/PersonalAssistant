@@ -1,5 +1,75 @@
 # Next session
 
+Standing operator workflow (reconfirmed 2026-09-24): push completed code from
+the working checkout to `spark main`; perform live deployment **on Spark**
+through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from
+the Mac. A reminder of this workflow does not authorize deploying unfinished
+research changes.
+
+## 2026-09-24 — Research account journal verified locally; deployment not requested
+
+Started clean on `main` at `128a5d51e41af23dd23f22fd9cfcb993ce19ed8b`;
+`git pull --rebase origin main` was current. The user reconfirmed Spark-only
+deployment and GitHub publishing. Spark was eight commits ahead of GitHub and
+zero behind; `git push origin main` **on Spark** synchronized GitHub to that SHA
+with zero divergence. The unrelated untracked Spark `scratch/` was untouched.
+
+Atomic objective: observe existing research execution without changing it and
+independently reconstruct every account. Implemented `ResearchJournal`, the
+independent replayer and read-only `market_verify_journal` CLI; attached optional
+observation to `simulate.run`, `_Book`, `learned_research.replay` and funded
+`constant_exposure` controls. No default recording, broker/API/model integration,
+holdings mutation, study rerun or strategy retuning. `/3` stays incumbent.
+
+VERIFIED: final combined **292 passed, 1 deselected** (only the completed
+cached-study reproduction), with five existing All-NaN/empty-slice fixture
+warnings; scoped lint/format; five actual fresh archive/CLI journeys, all exits
+0 and all **32 close marks** independently reconstructed. Runtime was the exact
+checkout mounted read-only, not stale baked source. Source/image hashes,
+artifact paths, numerical tolerance and complete semantics are in
+`research/accounting-journal-2026-09-24.md`. Largest demonstration residuals:
+cash 2.60e-16, units 1.74e-18, NAV 4.44e-16. Prices are synthetic; none of those
+numbers is performance evidence. Host Ruff was unavailable; the image passed.
+The demonstration and runner are preserved on Spark at
+`/home/animallya96/anios/data/market/research/accounting-journal-20260924.0fgNNN/`;
+all **16 files / 54,258 bytes** match local readback hashes and sizes. No existing
+archive was overwritten.
+
+The recorder never executes. Its archive freezes full price arrays and preserves
+actual pending state without liquidating. The replayer never resets its ledger
+to reported balances. Holds are observations, not trades; `complete` is recording
+status, not an accounting verdict; missing held valuations remain explicit and
+fail independent verification. Pending policy semantics, historical availability,
+security identity, actual settlement and adoption readiness remain unverified.
+The JSON is research-only and unencrypted, never a store for personal holdings.
+
+Reproduced and resolved one numerical boundary: fully invested zero-cost ETF
+rounding makes sub-ULP buy-scale ratios unstable. Only the scale comparison may
+use a currency-level exception when both reconstructed and reported requested
+spend are <= 1e-12 * max(1, NAV). Cash/unit/fee checks stay strict; material
+tampering and accumulated drift have tests. No producer arithmetic changed.
+
+UNVERIFIED: full deployment gates and deployed acceptance, real-data journal
+studies and strategy improvement. No deployment occurred. Diagram impact:
+UPDATED — market-data. All **32** diagram fingerprint/syntax checks and the
+generated architecture page check passed. An automated browser exercised the
+actual SVG and page, verified new labels/source links and 125%/100% zoom, with
+zero page/console/network errors. Root inspected the rendered branch and page;
+no clipping or overlap. Screenshots and browser evidence are retained at
+`/tmp/anios-journal-diagram.h96L70/`. Only the changed source's SVG and published
+architecture page retain generation diffs; unrelated SVG bytes were preserved.
+
+Next atomic work: a research-only zero-safe stock/SPY/QQQ/cash adapter with
+explicit full liquidation and stable unscaled stock composition for restoration.
+The existing simulator rejects zero exposure, divides by prior exposure and can
+retain tiny positions via `planner.target_shares`; do not loosen a validation
+check and call that cash switching. Then freeze bounded nested chronological
+selection, inner-only preprocessing/calibration/threshold choice and matured
+purged labels, with future-input perturbation tests and every account journaled.
+Keep exact `/3`, an identical no-gate adapter control and funded SPY/QQQ at
+10/25 bp. Already examined history remains examined; the three-name historical
+cohort demonstration is not training-ready. Goal remains active.
+
 ## 2026-09-24 — Single stock list verified and pushed; research continues
 
 Objective: remove the duplicate **Every grade in detail · diagnostic view**

@@ -28,6 +28,12 @@ flowchart TB
     Research --> Forward[Frozen NumPy neural inference<br/>independent prospective accounts]
     Panel --> Forward
 
+    Panel --> Accounts[Research accounts<br/>desk simulator · fixed-model replay<br/>SPY and QQQ funded controls]
+    Accounts -. optional observation .-> Journal[Cash and fill journal<br/>decisions, phase changes, actual fills<br/>fees, every close mark, terminal holdings]
+    Journal --> Research
+    Research --> Audit[Independent replay + verification CLI<br/>retained JSON source hashes<br/>cash, units, fees and NAV reconciled]
+    Audit -.-> Limits
+
     Primary[(Historical primary documents<br/>issuer filings + SEC accession indexes)] --> Cohort[Offline reviewed-cohort importer<br/>stable issuer + share-class identities<br/>publication bounds separate from effective dates]
     Manifest[Declared cohort + local source manifest<br/>URLs, SHA256, quoted passages, ingestion times<br/>no inferred feature values] --> Cohort
     Cohort --> Evidence[(Fresh immutable research archive<br/>original bytes + original manifest<br/>hash-addressed source copies)]
@@ -49,7 +55,7 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class CLI,Report,CohortCLI,Manifest interface;
-    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book,Cohort,Readiness application;
+    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book,Cohort,Readiness,Accounts,Journal,Audit application;
     class Store,Evidence data;
     class Yahoo,Edgar,Primary external;
     class Model,Reader,Pilot model;

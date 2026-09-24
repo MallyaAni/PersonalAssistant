@@ -592,6 +592,7 @@ def _settle_event(book, baseline, sold, scale, prices, t):
         restore = np.minimum(sold, np.maximum(0, baseline - before))
         order = before + restore
         reason = "FOMC risk restoration"
+    book.observe_decision(t - 1, order, reason=reason, metadata={"event_scale": scale})
     book.settle(order, prices, t, reason)
     sold += before - book.shares
     remaining = np.minimum(sold, np.maximum(0, baseline - book.shares))
@@ -638,7 +639,7 @@ def _excluded_by_session(raw) -> dict[str, frozenset[str]]:
     return out
 
 
-# Walk the desk's rules, optionally applying the selected event execution lifecycle.
+# Walk the unchanged desk rules and optionally observe their complete cash/fill journal.
 def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     report,
     since: date | None = None,
@@ -670,6 +671,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     trend_brake: bool = False,
     brake_scale: float = 0.5,
     brake_path_override: np.ndarray | None = None,
+    journal=None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -689,6 +691,12 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     the exit analyst's own reading, so a candidate exit rule is measured
     inside the same book; `grace` is how many sessions a position is left
     alone after it opens before any exit may fire.
+
+    `journal` is an optional research observer bound to these exact source
+    arrays, dates and costs. It records decisions, phase-specific adjustments,
+    actual fills and every closing account mark, without changing execution.
+    It never places orders or archives automatically. Its adjusted units and
+    batch cash rules are not real broker shares or a settlement model.
 
     `entry_gate` mirrors the live paper planner's rule: on a rebalance, no
     name may be bought or added to unless its entry trigger (a dip or a
@@ -883,6 +891,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     stamps = [str(d) for d in panel.dates]
     opens = adjusted_open(panel)
     closes = panel.adj_close
+    if journal is not None:
+        journal.assert_inputs(panel.dates, panel.tickers, opens, closes, cost_bps)
 
     book = _Book(
         names,
@@ -892,6 +902,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         report,
         stamps,
         require_complete_marks=not funded_allocation,
+        journal=journal,
     )
     returns = np.full(rows, np.nan)
     invested = np.zeros(rows)
@@ -900,6 +911,9 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     stable_desired: dict[str, float] = {}
 
     equity[start] = book.equity(closes[start])
+    if journal is not None:
+        journal.open_account(start, book.cash, book.shares)
+        book.observe_mark(start, equity[start])
     top = np.full(rows, np.nan)
     top[start] = book.top_weight(closes[start])
     dip_adds = 0
@@ -1010,6 +1024,13 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                     index_eligible=index_eligible,
                 )
                 order = book.funded_order(plan)
+                book.observe_decision(
+                    t,
+                    order,
+                    desired_weights=[plan.desired.get(s, 0.0) for s in panel.tickers],
+                    reason=plan.reason,
+                    metadata={"scheduled": bool(rebalanced), "funded_allocation": True},
+                )
                 book.settle_split(
                     order,
                     opens[t + 1],
@@ -1028,6 +1049,13 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 entry["reason"] = plan.reason
                 entry["notional_traded"] = float(book.traded - traded_before)
                 entry["fees"] = (book.traded - traded_before) * book.cost
+            else:
+                book.observe_decision(
+                    t,
+                    book.shares,
+                    reason=daily.reason,
+                    metadata={"funded_allocation": True, "no_order": True},
+                )
             entry["cash_after"] = float(book.cash)
             entry["shares_after"] = {
                 s: float(book.shares[j])
@@ -1081,6 +1109,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 invested[t + 1] = book.invested(closes[t + 1])
                 top[t + 1] = book.top_weight(closes[t + 1])
             funded_trace.append(entry)
+            book.observe_mark(t + 1, equity[t + 1])
             continue
         scale = float(event_exposure[t]) if event_exposure is not None else 1.0
         # The promoted lifecycle defers a rebalance and restores only executed cuts.
@@ -1092,6 +1121,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             returns[t + 1] = equity[t + 1] / equity[t] - 1 if equity[t] > 0 else np.nan
             invested[t + 1] = book.invested(closes[t + 1])
             top[t + 1] = book.top_weight(closes[t + 1])
+            book.observe_mark(t + 1, equity[t + 1])
             continue
         # Decided on t's close, filled at t+1's open.
         rebalanced = t >= next_rebalance
@@ -1187,6 +1217,23 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         sell_prices = opens[t + 1]
         if exit_at_close and not event_changed:
             sell_prices = closes[t + 1]
+        book.observe_decision(
+            t,
+            order,
+            desired_weights=(
+                None
+                if live_midcycle and not rebalanced and not event_changed
+                else target
+            ),
+            reason=reason,
+            metadata={
+                "scheduled": bool(rebalanced),
+                "event_changed": bool(event_changed),
+                "braked": bool(braked),
+                "sell_at_close": bool(exit_at_close and not event_changed),
+                "deferred_units": dict(pending_deferred),
+            },
+        )
         # Event-risk changes are explicitly next-open orders, including a green open.
         # Restoring a deferred cut's theoretical size would add unintended risk.
         if green_day_skip and not event_changed:
@@ -1199,6 +1246,10 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             )
             skip = (order < book.shares) & up_at_open
             order = np.where(skip, book.shares, order)
+            if skip.any():
+                book.observe_adjustment(
+                    t + 1, "open", order, "green-open sell suppression"
+                )
         book.settle_split(
             order,
             buy_prices,
@@ -1213,7 +1264,24 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         )
         invested[t + 1] = book.invested(closes[t + 1])
         top[t + 1] = book.top_weight(closes[t + 1])
+        book.observe_mark(t + 1, equity[t + 1])
     book.finish(rows - 1)
+    if journal is not None:
+        pending = {}
+        if pending_deferred or event_baseline is not None:
+            pending = {
+                "decision_id": None,
+                "submitted_units": None,
+                "deferred_units": dict(pending_deferred),
+                "event_state": None
+                if event_baseline is None
+                else {
+                    "baseline_units": event_baseline.tolist(),
+                    "sold_units": event_sold.tolist(),
+                },
+                "retry": False,
+            }
+        journal.finish(rows - 1, book.cash, book.shares, book.traded, pending)
     return SimResult(
         panel.dates[start:],
         returns[start:],
@@ -1246,11 +1314,14 @@ class _Book:
         stamps,
         *,
         require_complete_marks=True,
+        journal=None,
     ) -> None:
         self.shares = np.zeros(names)
         self.cash = float(equity)
         self.traded = 0.0
         self.cost = cost_bps / 1e4
+        self.journal = journal
+        self.journal_decision = None
         self.require_complete_marks = require_complete_marks
         self.panel = panel
         self.report = report
@@ -1266,6 +1337,40 @@ class _Book:
         self.opened: dict[int, int] = {}
         self.paid: dict[int, float] = {}
         self.trades: list[SimTrade] = []
+
+    # Observe submitted close-time intent without taking part in sizing or execution.
+    def observe_decision(
+        self,
+        session,
+        submitted_units,
+        desired_weights=None,
+        reason="unspecified",
+        metadata=None,
+    ) -> None:
+        if self.journal is not None:
+            self.journal_decision = self.journal.decision(
+                session,
+                submitted_units,
+                desired_weights,
+                reason,
+                metadata,
+            )
+
+    # Preserve phase-specific order changes while retaining the original decision.
+    def observe_adjustment(self, session, phase, submitted_units, reason) -> None:
+        if self.journal is not None:
+            self.journal.adjustment(
+                self.journal_decision,
+                session,
+                phase,
+                submitted_units,
+                reason,
+            )
+
+    # Observe every closing account state, including sessions without a fill.
+    def observe_mark(self, session, nav) -> None:
+        if self.journal is not None:
+            self.journal.mark(session, self.cash, self.shares, nav, self.traded)
 
     # The largest position's share of the account at `prices`.
     def top_weight(self, prices: np.ndarray) -> float:
@@ -1403,7 +1508,7 @@ class _Book:
     def settle(self, order, prices, session: int, reason: str) -> None:
         """Fill `order` at `prices` and record the positions that changed."""
         before = self.shares > 0
-        self._fill(order, prices)
+        self._fill(order, prices, session=session)
         for column in np.flatnonzero((self.shares > 0) & ~before):
             self.opened[column] = session
             self.paid[column] = float(prices[column])
@@ -1417,21 +1522,43 @@ class _Book:
     # sell has not delivered yet. The sale proceeds are still credited to the
     # closing cash either way - only their use as a buy budget is conditional.
     def _fill(
-        self, order: np.ndarray, prices: np.ndarray, recycle_sells: bool = True
+        self,
+        order: np.ndarray,
+        prices: np.ndarray,
+        recycle_sells: bool = True,
+        *,
+        session=None,
+        phase="open",
     ) -> None:
+        before = self.shares.copy() if self.journal is not None else None
+        old_cash = float(self.cash)
         tradable = (
             np.isfinite(prices) & (prices > 0) & np.isfinite(order) & (order >= 0)
         )
         wanted = np.where(tradable, order, self.shares)
         move = wanted - self.shares
         if not move.any():
+            if self.journal is not None:
+                self.journal.fill_batch(
+                    self.journal_decision,
+                    session,
+                    phase,
+                    order,
+                    prices,
+                    before,
+                    old_cash,
+                    self.shares,
+                    self.cash,
+                    old_cash,
+                    0.0,
+                    recycle_sells,
+                )
             return
         priced = np.where(tradable, prices, 0.0)
         sells = np.minimum(move, 0.0)
         buys = np.maximum(move, 0.0)
         gross_proceeds = -float((sells * priced).sum())
         net_proceeds = gross_proceeds * (1.0 - self.cost)
-        old_cash = float(self.cash)
         # The cash this basket's buys may spend: the same session's sale
         # proceeds only fund buys when recycling is on, and are earmarked
         # rather than spendable otherwise.
@@ -1444,6 +1571,21 @@ class _Book:
         self.cash = max(0.0, old_cash + net_proceeds - spend * scale)
         self.traded += gross_proceeds + requested * scale
         self.shares += sells + buys * scale
+        if self.journal is not None:
+            self.journal.fill_batch(
+                self.journal_decision,
+                session,
+                phase,
+                order,
+                prices,
+                before,
+                old_cash,
+                self.shares,
+                self.cash,
+                buy_budget,
+                scale,
+                recycle_sells,
+            )
 
     # Fill the plan with buys paid at `buy_prices` and sells paid at
     # `sell_prices` - the paper account buys at the open and sells on the
@@ -1462,9 +1604,11 @@ class _Book:
         """Fill the plan, buys at `buy_prices` and sells at `sell_prices`."""
         before = self.shares > 0
         if sell_at_close:
-            self._fill_split(order, buy_prices, sell_prices, recycle_sells)
+            self._fill_split(
+                order, buy_prices, sell_prices, recycle_sells, session=session
+            )
         else:
-            self._fill(order, buy_prices, recycle_sells)
+            self._fill(order, buy_prices, recycle_sells, session=session)
         for column in np.flatnonzero((self.shares > 0) & ~before):
             self.opened[column] = session
             self.paid[column] = float(buy_prices[column])
@@ -1478,9 +1622,19 @@ class _Book:
         buy_prices: np.ndarray,
         sell_prices: np.ndarray,
         recycle_sells: bool = True,
+        *,
+        session=None,
     ) -> None:
-        self._fill(np.maximum(order, self.shares), buy_prices, recycle_sells)
-        self._fill(np.minimum(order, self.shares), sell_prices, recycle_sells)
+        buy_order = np.maximum(order, self.shares)
+        self.observe_adjustment(session, "open", buy_order, "scheduled opening buy leg")
+        self._fill(buy_order, buy_prices, recycle_sells, session=session, phase="open")
+        sell_order = np.minimum(order, self.shares)
+        self.observe_adjustment(
+            session, "close", sell_order, "scheduled closing sell leg"
+        )
+        self._fill(
+            sell_order, sell_prices, recycle_sells, session=session, phase="close"
+        )
 
     # One position leaving, with what it made between its two fills.
     def _log(self, column: int, session: int, prices, reason: str) -> None:

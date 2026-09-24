@@ -127,6 +127,45 @@ the full log beside it, so the next session can read what happened without
 finding and grepping a log. `--wait-post` blocks on the checks the way the
 deploy used to; `--skip-post` skips them.
 
+## Research-account journal validation
+
+The optional journal records research accounts only. It does not read private
+holdings or execute orders. Verify an existing archive without rewriting it:
+
+```bash
+python -m backend.cli.market_verify_journal --archive /absolute/path/to/archive
+```
+
+Exit 0 means independent accounting passed; exit 1 means a reported validation
+failure; exit 2 means the archive could not be loaded or the CLI input was invalid.
+Inspect the report, including its always-false historical-availability,
+settlement, pending-policy and adoption claims. Never infer performance from a
+synthetic fixture or real settlement from the single-balance funding convention.
+See the [journal contract](research/accounting-journal-2026-09-24.md).
+
+From the repository root, run the relevant regression/integration acceptance:
+
+```bash
+python -m pytest -c /dev/null \
+  backend/tests/test_research_journal.py \
+  backend/tests/test_research_journal_replay.py \
+  backend/tests/test_market_verify_journal_cli.py \
+  backend/tests/test_research_journal_integration.py \
+  backend/tests/test_trading_simulate.py \
+  backend/tests/test_learned_research.py \
+  backend/tests/test_allocation_acceptance.py \
+  backend/tests/test_funded_simulator.py \
+  backend/tests/test_funded_simulator_edges.py \
+  backend/tests/test_strategy_parity.py \
+  backend/tests/test_allocation_controls.py \
+  -q -k 'not reproduces_cached'
+```
+
+The cached-study deselection avoids rerunning a completed research result; it
+does not exempt journal parity or independent-account reconstruction. If using
+the test image, mount the current checkout read-only at `/app` and run there.
+No model runtime or production database is needed for this acceptance path.
+
 ## Search routing evaluation
 
 Routing quality is measured against a committed labelled set rather than

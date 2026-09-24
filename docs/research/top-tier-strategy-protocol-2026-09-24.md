@@ -184,7 +184,10 @@ The [chronological diagnostic](chronological-stability-2026-09-24.md) now applie
 fixed separated ranges to the preserved accounts. It explicitly remains post-hoc.
 The next substantive validation work is a runner carrying immutable outer-fold
 input/universe vintages, inner-selection ranges, matured training labels and
-outputs, with future-input perturbation checks. A research-only cash/fill journal
-for every account, including SPY/QQQ, is also needed for independent accounting
-replay and predeclared execution sensitivities. Neither improvement requires
-retuning the completed losing candidates or waiting without engineering progress.
+outputs, with future-input perturbation checks. The [research-only cash/fill
+journal](accounting-journal-2026-09-24.md) now observes the desk simulator, fixed
+research replay and SPY/QQQ controls, with independent accounting reconstruction
+and enabled/disabled parity. It has not rerun the completed studies or supplied
+real historical settlement. A zero-safe stock/index/cash adapter and predeclared
+execution sensitivities remain next. These improvements do not require retuning
+the completed losing candidates or waiting without engineering progress.

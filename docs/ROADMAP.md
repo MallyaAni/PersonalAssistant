@@ -220,9 +220,12 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 
 ## Milestone 5: tools and specialized agents — IN PROGRESS
 
-- Trading research remains `IN PROGRESS`: source-complete historical cohorts,
-  replayable funded journals and nested chronological selection are required
-  before qualifying a new policy. The operator's target is ex-ante risk-on
+- Trading research remains `IN PROGRESS`: the optional account journal and
+  independent replay are verified on synthetic accounting paths (292 tests;
+  five archive/CLI journeys), not qualified market performance. Source-complete
+  historical cohorts, a zero-safe stock/index/cash adapter and nested
+  chronological selection remain required before qualifying a new policy.
+  The operator's target is ex-ante risk-on
   selection of volatile quality names with cash/index alternatives ahead of
   forecast deterioration, measured by net wealth against `/3`, SPY and QQQ.
   Indexes are risky assets, not guaranteed red-day protection. The frozen

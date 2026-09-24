@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-24 — Optional independently replayable research accounts
+
+- Added an observation-only journal to the desk simulator, fixed research
+  replay and funded SPY/QQQ controls. It preserves close-time intent, phase
+  adjustments, actual fills, fees, all closing marks and terminal holdings,
+  without changing existing return values or trading arithmetic.
+- Added fresh-path, hash-checked JSON archives and a read-only verification CLI.
+  The independent replayer imports no producer ledger and carries its own cash
+  and units throughout; missing marks/prices, altered cash/fills and invalid
+  chronology fail. Pending declarations are retained, not policy-verified.
+- Reproduced a sub-ULP, zero-cost cash edge in the dimensionless buy scale.
+  The numerical exception is bounded in independently computed currency, not
+  a relaxed material fill tolerance; all residuals and exception counts remain
+  visible. Drift/tampering regressions prove the ledger is never reanchored.
+- VERIFIED: **292 tests passed**, one cached-study rerun deliberately deselected;
+  five actual archive/CLI journeys reconstruct **32** synthetic closing marks;
+  scoped lint/format pass. Enabled/disabled parity includes FOMC lifecycle,
+  split fills, green-open suppression, costs and unavailable held valuations.
+  Five existing synthetic-fixture numerical warnings remain. Evidence and exact
+  source hashes: `docs/research/accounting-journal-2026-09-24.md`.
+- No performance/adoption claim: adjusted units are not broker shares, batch
+  cash is not real settlement, and hashes do not prove historical availability.
+  No completed study was rerun or retuned; `/3`, holdings and orders are unchanged.
+  Deployment gates/deployed behavior remain UNVERIFIED; no live deployment.
+  Diagram impact: UPDATED — market-data; all **32** diagram checks and published
+  page check pass, with clean browser interaction/visual acceptance.
+
 ## 2026-09-24 — One stock list with readable in-row diagnostics
 
 - Removed the redundant **Every grade in detail** stock table. The existing

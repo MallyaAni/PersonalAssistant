@@ -188,19 +188,26 @@ def exposure(panel, brake, first, policy):
     return scale
 
 
-# Execute fixed close-sized orders through the existing cash-funded ledger.
-def replay(data, rank, brake, first, policy, cost_bps):
+# Execute unchanged close-sized orders, optionally observing a replayable account journal.
+def replay(data, rank, brake, first, policy, cost_bps, *, journal=None):
     if policy not in POLICIES or first >= len(data.panel.dates) - 1:
         raise ValueError("valid policy and executable interval required")
     panel = data.panel
     rows, names = panel.close.shape
     opens = simulate.adjusted_open(panel)
     scale = exposure(panel, brake, first, policy)
-    book = simulate._Book(names, 1.0, cost_bps, panel, None, None)
+    if journal is not None:
+        journal.assert_inputs(
+            panel.dates, panel.tickers, opens, panel.adj_close, cost_bps
+        )
+    book = simulate._Book(names, 1.0, cost_bps, panel, None, None, journal=journal)
     nav = np.full(rows - first, np.nan)
     turnover = np.zeros_like(nav)
     cash = np.ones_like(nav)
     nav[0] = 1.0
+    if journal is not None:
+        journal.open_account(first, book.cash, book.shares)
+        book.observe_mark(first, nav[0])
     base = np.zeros(names)
     retry = False
     decisions = []
@@ -221,6 +228,25 @@ def replay(data, rank, brake, first, policy, cost_bps):
             target = base * scale[t]
             require_prices(panel.adj_close[t], target > 0, f"decision {panel.dates[t]}")
             order = book.plan(target, panel.adj_close[t])
+            book.observe_decision(
+                t,
+                order,
+                target,
+                "scheduled allocation or exposure/funding follow-up",
+                {
+                    "scheduled": bool(scheduled),
+                    "brake_change": bool(changed),
+                    "deferred": bool(followup),
+                    "scale": float(scale[t]),
+                },
+            )
+        else:
+            book.observe_decision(
+                t,
+                book.shares,
+                reason="held between scheduled decisions",
+                metadata={"no_order": True},
+            )
         selected = book.shares > 0
         if order is not None:
             selected |= np.abs(order - book.shares) > 1e-12
@@ -229,7 +255,7 @@ def replay(data, rank, brake, first, policy, cost_bps):
         before_traded = book.traded
         if order is not None:
             had_sales = np.any(order < book.shares - 1e-12)
-            book._fill(order, opens[t + 1], recycle_sells=False)
+            book._fill(order, opens[t + 1], recycle_sells=False, session=t + 1)
             retry = bool(had_sales and not followup)
             decisions.append(
                 {
@@ -250,6 +276,20 @@ def replay(data, rank, brake, first, policy, cost_bps):
         cash[index] = book.cash / nav[index]
         if book.cash < -1e-10 or not np.isfinite(nav[index]) or nav[index] <= 0:
             raise ValueError("invalid funded account state")
+        book.observe_mark(t + 1, nav[index])
+    if journal is not None:
+        pending = (
+            {}
+            if not retry
+            else {
+                "decision_id": None,
+                "submitted_units": None,
+                "deferred_units": {},
+                "event_state": None,
+                "retry": True,
+            }
+        )
+        journal.finish(rows - 1, book.cash, book.shares, book.traded, pending)
     return {
         "dates": panel.dates[first:],
         "nav": nav,

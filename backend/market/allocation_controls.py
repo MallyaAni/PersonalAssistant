@@ -94,9 +94,16 @@ def adjusted_open(open_prices, close_prices, adjusted_close) -> np.ndarray:
     return open_prices * factor
 
 
-# Walk one funded constant-`fraction` account over the whole series.
-def constant_exposure(
-    closes, opens, fraction, cost_bps: float = COST_BPS
+# Walk one funded constant-`fraction` account, optionally recording its actual fills.
+def constant_exposure(  # noqa: C901 - keep journal observations around unchanged arithmetic
+    closes,
+    opens,
+    fraction,
+    cost_bps: float = COST_BPS,
+    *,
+    journal=None,
+    sessions=None,
+    symbol: str | None = None,
 ) -> np.ndarray:
     """Return the NAV series of a funded constant-`fraction` account.
 
@@ -108,6 +115,10 @@ def constant_exposure(
     bounded by the cash actually on hand (no same-session sale proceeds) and
     sells never exceed what is held; idle cash earns nothing. The result is a
     (T,) NAV array starting at 1, aligned to `closes`.
+
+    An optional research journal observes the same arithmetic without changing
+    the returned array. Journaling requires the actual source `sessions` and
+    `symbol`; no historical timestamps or asset identity are inferred.
     """
     fraction = float(fraction)
     if not 0.0 <= fraction <= 1.0:
@@ -122,10 +133,20 @@ def constant_exposure(
         raise ValueError("closes and opens must cover the same sessions")
     if len(closes) < 2:
         raise ValueError("constant_exposure needs at least two sessions")
+    if journal is not None:
+        if sessions is None or symbol is None:
+            raise ValueError("journal requires explicit source sessions and symbol")
+        journal.assert_inputs(
+            sessions, (symbol,), opens[:, None], closes[:, None], cost_bps
+        )
     shares = 0.0
     cash = START_EQUITY
     nav = np.full(len(closes), np.nan)
     nav[0] = cash
+    if journal is not None:
+        traded = 0.0
+        journal.open_account(0, cash, [shares])
+        journal.mark(0, cash, [shares], nav[0], traded)
     for t in range(len(closes) - 1):
         # The decision is made at t's close, from the value the close gives
         # the account; the fill is at t+1's open.
@@ -134,6 +155,14 @@ def constant_exposure(
         target_shares = fraction * current / price
         delta = target_shares - shares
         fill = float(opens[t + 1])
+        if journal is not None:
+            before_shares, before_cash = shares, cash
+            decision_id = journal.decision(
+                t,
+                [target_shares],
+                desired_weights=[fraction],
+                reason="constant_exposure",
+            )
         if delta > 0:
             spend = delta * fill * (1.0 + cost)
             scale = min(1.0, max(0.0, cash) / spend) if spend > 0 else 0.0
@@ -145,6 +174,25 @@ def constant_exposure(
             cash += sold * fill * (1.0 - cost)
             shares -= sold
         nav[t + 1] = shares * float(closes[t + 1]) + cash
+        if journal is not None:
+            traded += abs(shares - before_shares) * fill
+            journal.fill_batch(
+                decision_id,
+                t + 1,
+                "open",
+                [target_shares],
+                [fill],
+                [before_shares],
+                before_cash,
+                [shares],
+                cash,
+                max(0.0, before_cash),
+                scale if delta > 0 else 0.0,
+                False,
+            )
+            journal.mark(t + 1, cash, [shares], nav[t + 1], traded)
+    if journal is not None:
+        journal.finish(len(closes) - 1, cash, [shares], traded, pending={})
     return nav
 
 
