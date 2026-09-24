@@ -151,8 +151,17 @@ def _gap(store, book, dates) -> np.ndarray:
     feats, implied = mx._block(panel, sector, fund, fidx, tone, tidx, mom, ratios)
     x, y, meta = mx._dataset(panel, udates, quarters, reactions, feats)
     meta_year = np.array([m[2] for m in meta])
-    years = sorted(set(meta_year))
-    expected = mx._carried(udates, x, y, meta_year, years, feats, 3)
+    years = sorted({d.year for d in udates})
+    expected = mx._carried(
+        udates,
+        x,
+        y,
+        meta_year,
+        years,
+        feats,
+        3,
+        available_dates=[m[3] for m in meta],
+    )
     with np.errstate(all="ignore"):
         gap = expected - implied
     return mx._onto_book(gap, panel, book, udates)

@@ -2,8 +2,10 @@
 
 Current availability boundary: an explicit `asof` bounds every underlying
 partition read. None means latest, even when a newer extraction ends at an old
-bar date. This is not complete historical causality: label publication,
-within-vintage revisions, membership and yearly learner cohorts remain separate
+bar date. Each year's fit requires 500 labels published before that year and
+three publication years. First-report labels retain their filing dates; later
+amendments cannot replace them. This is not complete historical causality:
+within-vintage feature revisions and historical membership remain separate
 validation gaps. Per-session ranking does not remedy those input limitations.
 This loader correction does not rerun or repair earlier study outputs.
 
@@ -69,11 +71,18 @@ def expectations_gap(store, book, asof: date | None = None) -> np.ndarray:
     )
     feats, implied = mx._block(panel, sector, fund, fidx, tone, tidx, mom, ratios)
     x, y, meta = mx._dataset(panel, udates, quarters, reactions, feats)
-    if len(y) < 500:
-        return np.full(book.adj_close.shape, np.nan)
     meta_year = np.array([m[2] for m in meta])
-    years = sorted(set(meta_year)) + [udates[-1].year]
-    expected = mx._carried(udates, x, y, meta_year, sorted(set(years)), feats, 3)
+    years = sorted({d.year for d in udates})
+    expected = mx._carried(
+        udates,
+        x,
+        y,
+        meta_year,
+        years,
+        feats,
+        3,
+        available_dates=[m[3] for m in meta],
+    )
     with np.errstate(all="ignore"):
         gap = expected - implied
     return mx._onto_book(gap, panel, book, udates)

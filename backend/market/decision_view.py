@@ -13,9 +13,10 @@ from backend.market import (
     execution_quotes,
     holdings,
     opportunity,
+    personal_risk,
 )
 
-VERSION = "desk-decision-view/1"
+VERSION = "desk-decision-view/2"
 
 
 # Project one account-wide paper plan so all displayed moves share caps and cash.
@@ -192,7 +193,17 @@ def apply_personal_account_plan(
         and result.get(s, {}).get("executable")
     }
     orders = _personal_midcycle_orders(
-        equity, shares, prices, finished, eligible_entries, cash
+        equity,
+        shares,
+        prices,
+        finished,
+        eligible_entries,
+        cash,
+        max_add_weights={
+            symbol: row["risk_plan"]["max_add_weight"]
+            for symbol, row in result.items()
+            if (row.get("risk_plan") or {}).get("risk_budget_pct") is not None
+        },
     )
     _fold_personal_orders(result, orders, prices, equity, shares)
     _enforce_personal_readiness(result)
@@ -226,13 +237,10 @@ def _not_executable_reason(strategy_action, strategy_move_weight, blocker):
     """Return the reason an actionable Hold cannot be executed right now."""
     why = blocker or "evidence unusable"
     if strategy_action is Action.BUY:
-        return (
-            f"Wants up to {strategy_move_weight:.1%} of the account "
-            f"(not executable: {why})"
-        )
+        return f"Buy not executable: {why}"
     if strategy_action is Action.SELL:
-        return f"Wants to close the position (not executable: {why})"
-    return f"Held (not executable: {why})"
+        return f"Exit not executable: {why}"
+    return f"Not executable: {why}"
 
 
 # Size the person's own mid-cycle basket. A covered downgrade is an explicit
@@ -244,7 +252,9 @@ def _not_executable_reason(strategy_action, strategy_move_weight, blocker):
 # was already filtered for fresh evidence before this runs, so nothing here can
 # fund a stale read, and the buys share one account-wide cash bound rather than
 # each sizing alone.
-def _personal_midcycle_orders(equity, shares, prices, finished, entries, cash):
+def _personal_midcycle_orders(
+    equity, shares, prices, finished, entries, cash, *, max_add_weights=None
+):
     """Return the person's mid-cycle orders: covered exits and cash-bounded entries."""
     from backend.agents.trading.desk import paper
 
@@ -262,6 +272,8 @@ def _personal_midcycle_orders(equity, shares, prices, finished, entries, cash):
         band = float(entries[symbol] or 0.0)
         current = shares.get(symbol, 0.0) * price / equity
         want = min(paper.entry_size(band), paper.ENTRY_NAME_CAP - current)
+        if max_add_weights is not None and symbol in max_add_weights:
+            want = min(want, max_add_weights[symbol])
         if want < paper.MIN_TRADE:
             continue
         buys.append((symbol, want * equity / price, want * equity))
@@ -270,7 +282,9 @@ def _personal_midcycle_orders(equity, shares, prices, finished, entries, cash):
         scale = min(1.0, max(0.0, cash) / total) if total else 1.0
         for symbol, qty, _ in buys:
             scaled = qty * scale
-            if scaled <= 0:
+            # Cash is shared before this final floor, so small residual balances
+            # cannot create an actionable buy below the policy's minimum.
+            if scaled <= 0 or scaled * prices[symbol] < paper.MIN_TRADE * equity:
                 continue
             orders.append(
                 paper.PaperOrder(
@@ -394,7 +408,7 @@ def _execution_readiness(paused, current_decision, quote, deadline, now):
             message
             for blocked, message in (
                 (paused, "FOMC hold"),
-                (not current_decision, "last night's decision is stale"),
+                (not current_decision, "decision data is stale"),
                 (not quote.get("eligible"), str(quote.get("reason") or "").lower()),
                 (not deadline or deadline <= now, "no current price reading"),
             )
@@ -451,7 +465,7 @@ def action_for_row(
         (
             message
             for blocked, message in (
-                (not current_decision, "last night's decision is stale"),
+                (not current_decision, "decision data is stale"),
                 (not quote["eligible"], str(quote["reason"]).lower()),
                 (not deadline or deadline <= now, "no current price reading"),
             )
@@ -484,7 +498,7 @@ def action_for_row(
             return (
                 action,
                 size or 0.0,
-                f"Wants up to {size:.1%} of the account (not executable: {blocker})",
+                f"Buy not executable: {blocker}",
             )
         return said(action, size or 0.0, why)
     # Preserve the incumbent covered-downgrade exit opinion. A personal sale
@@ -498,7 +512,7 @@ def action_for_row(
             # to ADD - the same-looking number means two different things, and
             # a row that does not say which invites selling 7.8% of an account
             # instead of closing a 7.8% holding.
-            f"Sell all of it: graded {row['grade_live']}",
+            f"Exit position: grade {row['grade_live']}",
         )
 
     # Everything else is a Hold, and the reason says which kind.
@@ -517,17 +531,17 @@ def action_for_row(
     # that nothing is due. That is what the column owes a reader who records no
     # positions of his own: the board still shows him the strategy's book.
     if current > 0:
-        return said(Action.HOLD, 0.0, f"Held at {current:.1%}; the thesis is intact")
+        return said(Action.HOLD, 0.0, f"Maintain position ({current:.1%} of account)")
     if target > 0:
         return said(
             Action.HOLD,
             0.0,
-            f"Wanted at {target:.0%} at the next reset; no entry signal today",
+            f"No entry signal; reset target {target:.0%}",
         )
     return said(
         Action.HOLD,
         0.0,
-        f"Graded {row['grade_live']}; the desk wants no position today",
+        "Entry criteria not met",
     )
 
 
@@ -571,7 +585,7 @@ def entry_action(row, band, grade_live, current=0.0):
         return (
             Action.HOLD,
             None,
-            "Breaking out, but the daily is rejecting its upper band",
+            "Entry blocked: daily upper band rejection",
         )
     above = f"{band:.1f} on its 20-day band"
     # Apply the shared cap to the actual account supplied by the caller.
@@ -597,7 +611,7 @@ def entry_action(row, band, grade_live, current=0.0):
     return (
         Action.BUY,
         size,
-        f"Add up to {size:.1%} of the account: {above}, subject to available cash",
+        f"Breakout: {above}",
     )
 
 
@@ -632,6 +646,79 @@ def _unless_taken(entry, symbol, taken):
     return entry
 
 
+# Preserve entry-data failures separately from a valid observation without a signal.
+def _entry_evidence(symbol, entries, readings):
+    reading = (readings or {}).get(symbol) or {}
+    available = (
+        reading.get("band_z") is not None
+        if readings is not None
+        else (entries or {}).get(symbol) is not None
+    )
+    status = reading.get("entry_status") or (
+        "available" if available else "unavailable"
+    )
+    return {
+        "entry_status": status,
+        "entry_reason": reading.get("entry_reason")
+        or (
+            "Entry data unavailable: no current reading"
+            if status == "unavailable"
+            else None
+        ),
+        "missing_sessions": reading.get("missing_sessions") or [],
+    }
+
+
+# Apply an explicit personal risk budget without altering the underlying signal.
+def _apply_risk_budget(
+    row, symbol, snapshot, current, fresh, deadline, now, budget, *, personal
+):
+    if not personal:
+        return
+    detail = ((snapshot.get("technical_detail") or {}).get(symbol) or {}).get(
+        "short"
+    ) or {}
+    bar = (snapshot.get("quotes") or {}).get(symbol) or {}
+    plan = personal_risk.build(
+        entry_price=bar.get("last"),
+        support_distance=detail.get("support_distance"),
+        resistance_distance=detail.get("resistance_distance"),
+        current_weight=current,
+        policy_max_add_weight=max(0.0, row["strategy_move_weight"] or 0.0),
+        observed_at=desk_freshness.timestamp(snapshot.get("as_of")),
+        valid_until=desk_freshness.timestamp(deadline),
+        now=now,
+        fresh=fresh,
+        risk_budget_pct=budget,
+    )
+    row["risk_plan"] = plan
+    if (
+        budget is not None
+        and row["strategy_action"] is Action.BUY
+        and (plan["status"] != "available" or plan["max_add_weight"] <= 0)
+    ):
+        row.update(
+            action=Action.HOLD,
+            move_weight=0.0,
+            executable=False,
+            blocker=row["blocker"] or plan["reason"],
+            reason=_not_executable_reason(
+                row["strategy_action"], row["strategy_move_weight"], plan["reason"]
+            ),
+        )
+
+
+# Show missing entry evidence without overriding a valid exit or event pause.
+def _apply_entry_reason(row, readings, paused):
+    if (
+        readings is not None
+        and row["entry_status"] == "unavailable"
+        and row["strategy_action"] is Action.HOLD
+        and not paused
+    ):
+        row["reason"] = row["entry_reason"]
+
+
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
 def build(
     record,
@@ -646,6 +733,8 @@ def build(
     expected_account=None,
     cash=None,
     pending=None,
+    risk_budget_pct=None,
+    entry_readings=None,
 ):
     now = now or datetime.now(UTC)
     # A personal cash figure that cannot bound a plan is a caller error, not a
@@ -842,7 +931,20 @@ def build(
             "quote": quote,
             "session": record["session"],
             "executable": executable,
+            **_entry_evidence(symbol, entries, entry_readings),
         }
+        _apply_entry_reason(result[symbol], entry_readings, paused)
+        _apply_risk_budget(
+            result[symbol],
+            symbol,
+            snapshot,
+            current,
+            symbol in technical,
+            expiries.get(symbol),
+            now,
+            risk_budget_pct,
+            personal=targets is None,
+        )
     if targets is None:
         apply_personal_account_plan(
             result, held, equity, cash, snapshot, open_entries, paused, now, record

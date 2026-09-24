@@ -1,5 +1,76 @@
 # Next session
 
+## 2026-09-24 — Concise personal desk and data-integrity corrections
+
+Objective: a concise Stock / Action / Size / Reason board, explicit unavailable
+entry evidence, funded sizes respecting minimum trades and an optional explicit
+per-position risk budget. Keep research and paper activity separate. User requested
+professional wording, less visible explanation, and logged-in browser inspection.
+No personal account inputs or holdings were changed during inspection.
+
+Started on `codex/trading-evidence-20260923` at clean `d6c0d92` after pulling
+origin/main. Worktree: `/home/animallya96/codex-worktrees/trading-evidence-20260923`.
+Shared Spark main had only unrelated `scratch/`, which remains untouched.
+
+VERIFIED source checks before release:
+- Cash scaling previously produced personal buys below the existing minimum;
+  reproduced two failures, then fixed the final funded-size floor.
+- Optional risk budget uses same-snapshot price distances, subtracts existing
+  position exposure, caps the actual funded addition and preserves Buy intent
+  separately from execution. No default risk tolerance is chosen. Reference
+  support/resistance are scenarios, not forecasts, automated stops or fill proof.
+- Personal account/risk/history acceptance: 135 passed, including authenticated
+  HTTP, malformed-budget 422 responses, retained missing-data reasons, no holding
+  writes, cash floor and independent risk counterexamples.
+- Source entry reads retain missing daily data instead of silently becoming an
+  ordinary Hold. Initial runtime diagnostic: 95 histories, 43 available band
+  readings, 52 missing September 22 closes in the September 23 snapshot. None of
+  the 43 available readings crossed the adopted entry threshold at that time.
+- Expectations training uses publication dates, first-filed values, year-specific
+  minimum data and known outcomes. Removed future-dependent tail/global eligibility.
+  Targeted expectations/challenger/interactions: 24 passed, 1 optional fit skipped;
+  earlier independent publication acceptance also passed. No research fit rerun.
+- Daily-gap repair requires dated same-provider records, exact raw overlap and
+  action lists, identity prices around the gap, unique retained dates, today's
+  complete 20-session grid, and an immutable source/hash receipt before publication.
+  Independent review caught duplicate-date and omitted-adjustment defects; both
+  fixed. Unchanged independent cases plus snapshot/store/integrity: 36 passed.
+  Historical partitions and frozen studies are never rewritten.
+- New modules and changed decision logic pass Ruff. Pre-existing lint remains in
+  the API payload function (C901) and history module (long strings/exception name).
+
+The live incumbent remains `cash-bounded-breakout-rotation/3`. These corrections
+do not validate neural superiority, historical membership, all fundamental vintages,
+or a new learned allocator. The prior full-deploy search postcheck failed its
+event-format assertion and its retry has no completed receipt; no process remained
+active at this inspection. Preserve that failure separately from this desk release.
+
+Final integrated acceptance: **289 backend checks passed, 1 optional fit skipped**;
+**111 browser cases passed** against the exact root frontend on 5178; TypeScript
+and production build passed. A final concise Today-status wording change then
+passed TypeScript and all **6 affected browser cases**. Evidence:
+`/tmp/codex-simplified-desk-root-{backend,browser}.log` and
+`/tmp/codex-simplified-desk-final-copy.log`. Substantive old browser assertions were
+retained, with explicit expansion of moved diagnostics. Chart signal annotations
+are off initially and tested through show/hide. Mobile action, size and reason
+are visible without horizontal panning.
+
+Daily repair completed: **51/52 new partitions**, matched receipts and readback
+hashes; **16,808 old/research files unchanged**. Q remains unavailable because its
+original September 22 opening price is below its reported low. Entry coverage is
+now **94/95** (93 covered stocks plus SPY). All 93 covered valid readings remain
+below the existing 1.10 entry threshold; no Buy opportunity was invented. Runtime
+caches await deployment/new bars. Evidence: `/tmp/codex-recovered-entry-policy-counts-20260924.json`.
+
+Pending at this checkpoint: guarded deployment and deployed artifact/API/browser
+checks, plus the requested all-ticker chart consistency audit. Source changes are
+not live yet. Do not confuse a passing chart/rule check with predictive accuracy.
+Daily repair attempt evidence is under `/tmp/codex-daily-gap-reviewed-recovery-20260924.*`;
+read its final result rather than repeating the fetch. Earlier strict refresh stored
+zero of 52; its evidence remains `/tmp/codex-daily-gap-recovery-20260924.*`.
+No orders, paid data, model-service changes or strategy promotion. Diagram impact:
+NONE — existing personal decision, snapshot and presentation paths only.
+
 Standing operator workflow (reconfirmed 2026-09-24): push completed code from
 the working checkout to `spark main`; perform live deployment **on Spark**
 through `scripts/deploy.sh`; push to **GitHub from Spark**, not directly from

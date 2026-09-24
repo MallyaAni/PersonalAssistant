@@ -54,7 +54,8 @@ export const BoardSimulation = ({paper, now}: {paper?: DeskPayload['board_paper'
 // The frozen ML shadow against the desk, research only.
 export const MlComparison = ({ml}: {ml?: DeskPayload['ml_forward']}) => {
   return !ml ? null : <details aria-label="ML forward comparison" className="shrink-0 border-t px-3 py-2 text-xs">
-      <summary className="cursor-pointer">ML paper comparison · {ml.session ?? 'awaiting first close'}</summary>
+      <summary className="cursor-pointer">ML paper comparison · {ml.session ?? 'awaiting first close'} · input validation incomplete</summary>
+      <p className="my-2 text-[#9a6700]">Input validation incomplete: known financial/share-unit issues. These frozen accounts do not establish superiority over the live strategy.</p>
       <p className="my-2 text-[#6e6e73]">Separate simulated accounts starting at $100,000 each. Frozen model; no real orders. Updated nightly. Costs of 10 or 30 basis points per traded dollar are included. This research portfolio does not follow the live desk’s FOMC policy.</p>
       <p>{ml.status}</p>
       {ml.observed_at && <p>Last observed {new Date(ml.observed_at).toLocaleString('en-US', {timeZone: 'America/New_York'})} ET</p>}
@@ -137,7 +138,7 @@ const PlanHead = ({sort, onSort, plans, shown, onShown}: {
         className={`flex items-center gap-1 rounded font-normal hover:text-[#0071e3] ${filtered ? 'text-[#0071e3]' : ''}`}
         onClick={() => setOpen(!open)}
       >
-        Strategy intent
+        Action
         <span aria-hidden="true" className={filtered ? 'text-[#0071e3]' : 'text-[#c7c7cc]'}>{'▾'}</span>
       </button>
       <button
@@ -405,11 +406,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
-          <p>{fomcLine ?? sizingLine}</p>
+          {fomcLine && <p>{fomcLine}</p>}
         </div>
-        {/* Switching the policy re-sizes and re-ranks the list in place, so
-            "what the rebalance will do" and "what this bar says" are the
-            same list read two ways rather than two screens. */}
+      </div>
+      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · updates every 15 minutes while the market is open{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
+      <details className="mt-1"><summary className="cursor-pointer">Data & sizing details</summary>
         {liveSizingReady && !hidden && (
           <div className="flex shrink-0 gap-1" role="group" aria-label="Sizing policy">
             {([['live', 'Research · this bar'], ['plan', 'Strategy · reset targets']] as const).map(([value, label]) => (
@@ -425,18 +426,18 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             ))}
           </div>
         )}
-      </div>
-      {fomcLine && !hidden && <p className="mt-0.5">{sizingLine}</p>}
-      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · updates every 15 minutes while the market is open{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
-      <p aria-label="Intraday grade coverage" className="mt-0.5">{freshGradeCount}/{graded.length} fresh intraday grades{freshGradeCount < graded.length ? ` · other grades: ${latest.session} close` : ''}. Grades are not entry signals.</p>
-      {coverage && <p className="mt-0.5" title="The tracked universe spans sectors. Only names with a desk grade are ranked here; broader grading is not yet validated.">{coverage.graded} graded · {coverage.tracked} tracked</p>}
+        <p>{sizingLine}</p>
+        <p aria-label="Intraday grade coverage">{freshGradeCount}/{graded.length} fresh intraday grades{freshGradeCount < graded.length ? ` · other grades: ${latest.session} close` : ''}. Grades are not entry signals.</p>
+        {coverage && <p>{coverage.graded} graded · {coverage.tracked} tracked</p>}
+        <p>Action is the strategy recommendation. Blocked recommendations have no trade size. Size is a change in your account allocation, not a profit target.</p>
+      </details>
     </div>
     {toolbar}
     <div className="min-h-0 flex-1 overflow-auto">
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
-            <th colSpan={10} className="py-2 pr-3 font-normal">
+            <th colSpan={5} className="py-2 pr-3 font-normal">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="search"
@@ -453,29 +454,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           <tr>
             <th className="py-2">#</th>
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
-            <SortHead column="grade" sort={sort} onSort={setSort} title={`Combined analyst grade, A+ down to C, from the ${latest.session} close or a current intraday update. Not an individual analyst percentile, intrinsic fair value, Buy signal or probability of profit.`}>Grade</SortHead>
-            <SortHead column="opportunity" sort={sort} onSort={setSort} className="hidden sm:table-cell" title="The analysts' combined conviction at this bar, 0 to 10, not a return forecast. A star marks a name scored without the full panel.">Opportunity</SortHead>
             {planAction
               ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />
-              : <SortHead column="plan" sort={sort} onSort={setSort} title="The adopted strategy's intent for this name; intent is not an order">Strategy intent</SortHead>}
-            {/* "Size %" sat beside the Plan column, which also prints a
-                percentage, and the two are different quantities: this is the
-                weight the desk WANTS at the next reset, while Plan prints the
-                move it is making now. On a name being rotated out they
-                disagree on purpose - target 0.8%, sell the 1.9% held - and
-                two bare percentages side by side read as a contradiction. */}
-            <SortHead column="weight" sort={sort} onSort={setSort} title={showSizes
-              ? 'Experimental research allocation from the displayed completed bar, as a share of the account; not an order or the adopted strategy target.'
-              : 'Adopted strategy target at the next weight reset, as a share of the account; not the intended change shown under Move %.'}>{showSizes ? 'Research %' : 'Target %'}</SortHead>
-            <th title="The strategy's intended change in your account allocation. A blocked move is not executable now, and this is not a return.">Move %</th>
-            <th aria-label="Paper position" title="Position in the separate paper brokerage account; never your personal position">
-              Paper position
-              <div className="font-normal">{brokerCurrent ? 'broker snapshot'
-                : latest.paper ? `saved snapshot · ${latest.paper.session}`
-                  : broker == null ? 'loading' : 'unavailable'}</div>
-            </th>
-            <th>Recorded personal position</th>
-            <th>Reason</th>
+              : <SortHead column="plan" sort={sort} onSort={setSort} title="The adopted strategy's recommendation; a blocked recommendation is not executable">Action</SortHead>}
+            <th title="Executable change as a percentage of your account. A dash means no currently available trade size; not a profit target.">Size</th>
+            <th className="hidden sm:table-cell">Reason</th>
 
           </tr>
         </thead>
@@ -491,9 +474,18 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const open = opened === row.ticker
           const decision = decisions?.session === latest.session && decisions.written === latest.written ? decisions.rows[row.ticker] : undefined
           const strategyMove = decision?.strategy_move_weight ?? decision?.move_weight
+          const deadline = Date.parse(decision?.valid_until ?? '')
+          const canSize = !paused && !marketClosed && decision?.executable === true
+            && decision.action !== 'Hold' && deadline > now && Number.isFinite(decision.move_weight)
           const plan = paused ? 'Hold' : planOf(row.ticker)
+          const readiness = plan === 'Hold' ? null : marketClosed ? 'Market closed'
+            : decision?.executable === false ? 'Blocked now'
+            : !Number.isFinite(deadline) || deadline <= now ? 'Price check needed' : null
           const position = brokerPositions.find(p => p.symbol === row.ticker)
-          const reason = paused ? 'FOMC cycle: regular trading paused' : decision?.reason ?? 'No current strategy decision'
+          const reason = paused ? 'FOMC cycle: regular trading paused'
+            : !(row.ticker in latest.grades) ? 'Outside current coverage; review manually'
+            : plan === 'Hold' && decision?.entry_status === 'unavailable' ? decision.entry_reason || 'Entry data unavailable'
+            : decision?.blocker || decision?.reason || 'No current strategy decision'
           // The plan cell is the full trade affordance (eligibility, record
           // fill) when the read answers for this name; a name the plan feed
           // did not answer keeps the bare action word as before.
@@ -503,28 +495,38 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
+              {!isCash && <div aria-label={`${row.ticker} mobile reason`} className="mt-1 max-w-40 whitespace-normal text-[11px] text-[#6e6e73] sm:hidden">{reason}</div>}
             </td>
-            <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} grade`}>{isCash ? '' : <><span title={grades[row.ticker] ? 'Intraday grade' : `Grade at the ${latest.session} close`} className={grades[row.ticker] ? 'font-medium text-[#1d1d1f]' : ''}>{row.grade}</span><div className="text-[10px] text-[#6e6e73]">{grades[row.ticker] ? 'intraday' : 'close'}</div></>}</td>
-            <td className="hidden text-xs tabular-nums sm:table-cell" aria-label={isCash ? undefined : `${row.ticker} opportunity`}>{isCash ? '' : row.opportunity !== null ? <>
-              {row.opportunity.toFixed(1)}/10
-              {!!row.narrow.length && <span
-                className="ml-0.5 cursor-help font-medium text-[#9a6700]"
-                title={`Scored without ${row.narrow.map(analystLabel).join(' and ')}: this name is missing the data ${row.narrow.length === 1 ? 'that analyst needs' : 'those analysts need'}, so the score is the rest renormalised. Open the name for the parts.`}
-              >*</span>}
-            </> : '—'}</td>
-            <td className="text-xs" aria-label={isCash || tradeNode ? undefined : `${row.ticker} strategy intent`}>{isCash ? 'HOLD' : tradeNode ?? (plan === 'Hold' ? 'Hold' : plan.toUpperCase())}</td>
-            <td className="text-xs" aria-label={isCash ? undefined : `${row.ticker} size`}>{row.weight !== null ? percentage(row.weight)
-              : isCash ? '—'
-              : hidden ? <span title="The FOMC cycle's exposure is not current, so no size is shown">—</span>
-              : <span className="cursor-help text-[#6e6e73]" title="Graded but unsized. Sizing ranks on the continuous score; the grade is a multiplier on top.">—</span>}</td>
-            <td className="text-xs" aria-label={`${row.ticker} move`}>{isCash || plan === 'Hold' || strategyMove === undefined ? '—' : `${strategyMove > 0 ? '+' : ''}${percentage(strategyMove)}`}</td>
-            <td className="text-xs" aria-label={`${row.ticker} paper position`}>{isCash ? '—' : !paperAvailable ? 'Unavailable' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : '—'}</td>
-            <td className="text-xs" aria-label={`${row.ticker} recorded personal position`}>{isCash ? '—' : holdings === null ? 'Unavailable' : held ? <>{held.shares.toLocaleString()} shares<div>Entry {held.entry_price.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>{quote && Number.isFinite(quote.last) && <div>P/L {((quote.last - held.entry_price) * held.shares).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>}</> : '—'}</td>
-            <td className="max-w-72 whitespace-normal py-2 text-xs text-[#6e6e73]">{isCash ? 'Unallocated strategy weight' : reason}</td>
+            <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{isCash ? 'HOLD' : plan === 'Hold' ? 'Hold' : plan.toUpperCase()}</span>
+              {readiness && <div className="text-[11px] text-[#9a6700]">{readiness}</div>}</td>
+            <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : '—'}</td>
+            <td className="hidden max-w-72 whitespace-normal py-2 text-xs text-[#6e6e73] sm:table-cell">{isCash ? 'Unallocated strategy weight' : reason}</td>
 
           </tr>
           {/* Details follow the visible board width, not the horizontally scrollable table. */}
-          {open && expand && <tr><td colSpan={10} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">{expand(row.ticker)}</div></td></tr>}
+          {open && expand && <tr><td colSpan={5} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">
+            <dl aria-label={`${row.ticker} allocation and evidence`} className="mb-3 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
+              <div><dt className="text-[#6e6e73]">Combined grade · not an entry signal</dt><dd aria-label={`${row.ticker} grade`}>{row.grade || 'Unavailable'} · {grades[row.ticker] ? 'intraday' : `${latest.session} close`}</dd></div>
+              <div><dt className="text-[#6e6e73]">Analyst conviction · not a return forecast</dt><dd aria-label={`${row.ticker} opportunity`}>{row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : 'Unavailable'}{row.narrow.length > 0 && ` · missing ${row.narrow.map(analystLabel).join(', ')}`}</dd></div>
+              <div><dt className="text-[#6e6e73]">{showSizes ? 'Experimental research allocation' : 'Strategy target at reset'}</dt><dd aria-label={`${row.ticker} target allocation`}>{row.weight !== null ? percentage(row.weight) : 'Unavailable'}</dd></div>
+              <div><dt className="text-[#6e6e73]">Intended allocation change · before readiness checks</dt><dd aria-label={`${row.ticker} move`}>{plan === 'Hold' || strategyMove === undefined ? '—' : `${strategyMove > 0 ? '+' : ''}${percentage(strategyMove)}`}</dd></div>
+              <div><dt className="text-[#6e6e73]">Recorded personal position</dt><dd aria-label={`${row.ticker} recorded personal position`}>{holdings === null ? 'Unavailable' : held ? <>{held.shares.toLocaleString()} shares · entry ${held.entry_price.toFixed(2)}{quote && Number.isFinite(quote.last) && <div>P/L {((quote.last - held.entry_price) * held.shares).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>}</> : 'None recorded'}</dd></div>
+              <div><dt className="text-[#6e6e73]">Separate paper position · {brokerCurrent ? 'broker snapshot' : latest.paper ? `saved ${latest.paper.session}` : broker == null ? 'loading' : 'unavailable'}</dt><dd aria-label={`${row.ticker} paper position`}>{!paperAvailable ? 'Unavailable' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : 'None'}</dd></div>
+            </dl>
+            {decision?.risk_plan && <div aria-label={`${row.ticker} risk and reward`} className="mb-3 rounded border border-black/[0.08] p-2 text-xs">
+              <p className="font-medium">Risk / reward scenario</p>
+              <p>{decision.risk_plan.reason}</p>
+              {decision.risk_plan.entry !== null && <p>Entry reference ${decision.risk_plan.entry.toFixed(2)}
+                {decision.risk_plan.reference_support !== null && ` · support $${decision.risk_plan.reference_support.toFixed(2)}`}
+                {decision.risk_plan.reference_resistance !== null && ` · resistance $${decision.risk_plan.reference_resistance.toFixed(2)}`}</p>}
+              {decision.risk_plan.reward_risk_ratio !== null && <p>Potential reward / risk {decision.risk_plan.reward_risk_ratio.toFixed(2)}:1</p>}
+              {decision.risk_plan.risk_budget_pct !== null && <p>Risk budget {decision.risk_plan.risk_budget_pct}% of account
+                {decision.risk_plan.max_add_weight !== null && ` · allocation cap ${percentage(decision.risk_plan.max_add_weight)}`}</p>}
+              <p className="text-[#6e6e73]">Reference levels are scenarios, not forecasts or guaranteed stops. Gaps can exceed the risk budget. {decision.risk_plan.basis}</p>
+            </div>}
+            {expand(row.ticker)}
+            {tradeNode && <details className="mt-2 text-xs"><summary className="cursor-pointer">Confirmed fill controls</summary>{tradeNode}</details>}
+          </div></td></tr>}
           </Fragment>
         })}</tbody>
       </table>

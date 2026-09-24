@@ -488,7 +488,9 @@ def _short_lines(s: dict) -> list[str]:
         short.append(
             "daily trend up"
             if dt > 0
-            else "daily trend down" if dt < 0 else "daily trend flat"
+            else "daily trend down"
+            if dt < 0
+            else "daily trend flat"
         )
     stack = s.get("stack_order")
     if stack is not None and np.isfinite(stack):
@@ -520,7 +522,9 @@ def _medium_lines(m: dict) -> list[str]:
         medium.append(
             "weekly trend up"
             if wt > 0
-            else "weekly trend down" if wt < 0 else "weekly trend flat"
+            else "weekly trend down"
+            if wt < 0
+            else "weekly trend flat"
         )
     ws = m.get("weekly_stack")
     if ws is not None and np.isfinite(ws):
@@ -644,6 +648,21 @@ def _candle_line(candle: dict) -> str:
 # Dips pay inside a week and decay to nothing by twenty sessions; breakouts
 # pay over the month. They are different trades and the horizon is part of
 # the reading, so it is returned rather than left for the reader to recall.
+# Retain unavailable entry evidence as an explicit row instead of a neutral signal.
+def _unavailable_entry(reason: str, missing_sessions: list[str] | None = None) -> dict:
+    return {
+        "trigger": None,
+        "with_the_basket_falling": False,
+        "band_z": None,
+        "stretch_21": None,
+        "horizon_sessions": None,
+        "entry_status": "unavailable",
+        "entry_reason": reason,
+        "missing_sessions": missing_sessions or [],
+    }
+
+
+# Describe the existing entry rule and distinguish a missing reading from no signal.
 def entry_now(store, quotes: dict, today: date | None = None) -> dict:
     """Return {symbol: {...}} entry triggers at the live price."""
     from backend.agents.trading.desk import entry as entry_analyst
@@ -652,26 +671,49 @@ def entry_now(store, quotes: dict, today: date | None = None) -> dict:
     today = today or datetime.now(NEW_YORK).date()
     read = _live_read(store, quotes, today)
     panel = read["panel"]
+    if not len(panel.dates):
+        return {
+            symbol: _unavailable_entry("Entry data unavailable: no daily history")
+            for symbol in quotes
+        }
     location = levels.level_features(panel)
     triggers = entry_analyst.entries(panel, location)
     ai_trend = read.get("ai_trend")
     last = panel.dates.shape[0] - 1
     falling = bool(
-        ai_trend is not None
-        and np.isfinite(ai_trend[last])
-        and ai_trend[last] < 0
+        ai_trend is not None and np.isfinite(ai_trend[last]) and ai_trend[last] < 0
     )
     out: dict[str, dict] = {}
     for symbol in quotes:
         if symbol not in panel.tickers:
+            out[symbol] = _unavailable_entry("Entry data unavailable: no daily history")
             continue
         j = panel.index(symbol)
         kind = triggers.kind(last, j)
         z = float(triggers.bollinger_z[last, j])
         stretch = float(triggers.stretch_21[last, j])
-        if not np.isfinite(z) and not np.isfinite(stretch):
+        if not np.isfinite(z):
+            dates = panel.dates[-20:]
+            closes = panel.adj_close[-20:, j]
+            missing = [
+                str(day)
+                for day, value in zip(dates, closes, strict=True)
+                if not np.isfinite(value)
+            ]
+            if missing:
+                reason = "Entry data unavailable: missing daily close for " + ", ".join(
+                    missing
+                )
+            elif len(closes) < 20:
+                reason = "Entry data unavailable: fewer than 20 daily observations"
+            else:
+                reason = "Entry data unavailable: the 20-day band is undefined"
+            out[symbol] = _unavailable_entry(reason, missing)
             continue
         out[symbol] = {
+            "entry_status": "available",
+            "entry_reason": None,
+            "missing_sessions": [],
             "trigger": kind,
             # Where the 5-session dip edge was measured strongest.
             "with_the_basket_falling": falling and kind == entry_analyst.DIP,

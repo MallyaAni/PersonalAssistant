@@ -161,6 +161,7 @@ export const TickerChart = ({
   tall?: boolean
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
+  const [showSignals, setShowSignals] = useState(false)
   const [data, setData] = useState<DeskChart | null>(null)
   const [error, setError] = useState<string | null>(null)
   // The picture failed to draw but the readings below it are still good.
@@ -289,7 +290,7 @@ export const TickerChart = ({
     }
 
     const markers = ordered([...gradeMarkers(history, merged.bars[0].date), ...entryMarkers(data)])
-    if (markers.length) createSeriesMarkers(candles, markers)
+    if (showSignals && markers.length) createSeriesMarkers(candles, markers)
     chart.timeScale().fitContent()
     setDrawFailed(false)
 
@@ -298,7 +299,7 @@ export const TickerChart = ({
       chartRef.current = null
       drawn.length = 0
     }
-  }, [data, merged, timeframe, history])
+  }, [data, merged, timeframe, history, showSignals])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
@@ -327,6 +328,10 @@ export const TickerChart = ({
           Price, indicators and grade history
         </h4>
         <div className="flex gap-1" role="group" aria-label="Chart timeframe">
+          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+            <input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />
+            Show signal history
+          </label>
           {(['daily', 'weekly'] as Timeframe[]).map((frame) => (
             <button
               key={frame}
@@ -378,14 +383,14 @@ export const TickerChart = ({
           </p>
           {/* A mark nobody can read is decoration. Both of the desk's rules are
               on the price now, so the legend has to name both. */}
-          <p className="mt-1 text-[11px] text-[#6e6e73]">
+          {showSignals && <p className="mt-1 text-[11px] text-[#6e6e73]">
             <span className="font-medium text-[#0b5cad]">{'●'} breakout</span>{' '}
             marks the incumbent band-breakout price condition, not a Buy instruction.
             Grade, event pauses, cash and position caps also affect the personal plan.{' '}
             <span className="font-medium text-[#b42318]">{'↓'} below A</span>{' '}
             marks a grade crossing below A. Bolder arrows show recorded grades; paler arrows
             show historical grade replays. These markers are not account orders or fills.
-          </p>
+          </p>}
 
           {summary && (
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">
@@ -410,14 +415,14 @@ export const TickerChart = ({
             </dl>
           )}
 
-          <p className="mt-2 text-[11px] text-[#6e6e73]">
+          {showSignals && <p className="mt-2 text-[11px] text-[#6e6e73]">
             {changes.length === 0
               ? `No grade change in the drawn window.`
               : `${changes.length} grade change${changes.length === 1 ? '' : 's'} marked: ${changes
                   .slice(-6)
                   .map((c) => c.text)
                   .join(', ')}${changes.length > 6 ? ' (most recent six)' : ''}.`}
-          </p>
+          </p>}
         </>
       )}
     </section>

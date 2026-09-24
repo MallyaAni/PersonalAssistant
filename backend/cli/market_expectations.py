@@ -8,8 +8,10 @@ Availability boundary
 ---------------------
 The helpers accept an optional extraction-partition cutoff, propagated by the
 desk through prices, records, tone and valuation. None retains latest-data
-behavior. This does not bound rows inside a vintage or establish historical
-membership, publication-safe labels or yearly training eligibility. The older
+behavior. Training now retains the first filed label and bounds each annual
+fit by its publication date, with the minimum sample count applied per fit.
+This does not establish historical membership or prove every feature's
+within-vintage availability. The older
 study description/results below are historical development evidence, not
 qualified performance or proof that those unresolved boundaries are correct.
 The gap was subsequently promoted on 2026-09-10; that operational decision is
@@ -307,8 +309,22 @@ def _block(panel, sector, fund, fidx, tone, tidx, mom, ratios):
     return feats, implied
 
 
-# One row per report: the features at the close before it, the growth
-# it reported, and (column, reaction session, year).
+# Retain one first-report value per quarter; conflicting same-day values are unknown.
+def _first_reports(quarters):
+    first = {}
+    ambiguous = set()
+    dated = [q for q in quarters if type(q[0]) is date and type(q[2]) is date]
+    for end, value, filed in sorted(dated, key=lambda q: (q[0], q[2])):
+        if not np.isfinite(value) or filed < end:
+            continue
+        if end not in first:
+            first[end] = (value, filed)
+        elif first[end][1] == filed and first[end][0] != value:
+            ambiguous.add(end)
+    return {end: value for end, value in first.items() if end not in ambiguous}
+
+
+# Preserve first-reported labels and their publication dates independently of returns.
 def _dataset(panel, dates, quarters, reactions, feats):
     rows_n = panel.adj_close.shape[0]
     date_arr = np.array(dates)
@@ -316,44 +332,79 @@ def _dataset(panel, dates, quarters, reactions, feats):
     for j, ticker in enumerate(panel.tickers):
         if ticker not in quarters:
             continue
-        qs = quarters[ticker]
-        by_end = {e: v for e, v, _f in qs}
+        by_end = _first_reports(quarters[ticker])
         ends = sorted(by_end)
-        rs = np.array(reactions[ticker], dtype=int)
-        for e, v, _filed in qs:
-            prior = [p for p in ends if 350 <= (e - p).days <= 380]
-            if not prior or by_end[prior[-1]] <= 0:
+        rs = np.array(reactions.get(ticker, []), dtype=int)
+        for e in ends:
+            v, filed = by_end[e]
+            prior = [
+                p for p in ends if 350 <= (e - p).days <= 380 and by_end[p][1] <= filed
+            ]
+            if not prior or by_end[prior[-1]][0] <= 0:
                 continue
-            g = float(np.clip(v / by_end[prior[-1]] - 1.0, -0.9, 5.0))
+            g = float(np.clip(v / by_end[prior[-1]][0] - 1.0, -0.9, 5.0))
             lo = np.searchsorted(date_arr, e)
             cand = rs[(rs > lo) & (rs <= min(rows_n - 1, lo + 70))]
             if len(cand) == 0:
                 continue
             r = int(cand[0])
             days = (dates[r] - e).days
-            if days < 10 or days > 100 or r < 131 or r + 21 >= rows_n:
+            if days < 10 or days > 100 or r < 131:
                 continue
             row = feats[r - 1, j]
             if not np.isfinite(row[0]):
                 continue
             x.append(row)
             y.append(g)
-            meta.append((j, r, dates[r].year))
-    return np.array(x, dtype=float), np.array(y, dtype=float), meta
+            # Facts retain a filing day, not an acceptance timestamp. Annual
+            # cutoffs exclude the fit day itself; no earlier intraday claim is made.
+            meta.append((j, r, dates[r].year, max(filed, dates[r])))
+    return (
+        np.asarray(x, dtype=float).reshape(-1, feats.shape[-1]),
+        np.asarray(y, dtype=float),
+        meta,
+    )
 
 
-# The walk-forward expectation for every row: each year's learner trained
-# on the reports of the years before it, asked on `x_score`.
-def _expected(x, y, meta_year, years, min_train_years, x_score=None, ok=None):
+# Select only published labels and apply coverage requirements at this fit date.
+def _training_mask(y, available_dates, year, min_train_years, min_train_rows=500):
+    if available_dates is None or len(available_dates) != len(y):
+        raise ValueError("training requires one publication date per label")
+    if any(type(d) is not date for d in available_dates):
+        raise ValueError("publication dates must be explicit calendar dates")
+    available = np.asarray(available_dates, dtype="datetime64[D]")
+    train = (available < np.datetime64(date(int(year), 1, 1))) & np.isfinite(y)
+    years = {available_dates[i].year for i in np.flatnonzero(train)}
+    if train.sum() < min_train_rows or len(years) < min_train_years:
+        train[:] = False
+    return train
+
+
+# Fit before each scoring year using only labels already published at its start.
+def _expected(
+    x,
+    y,
+    meta_year,
+    years,
+    min_train_years,
+    x_score=None,
+    ok=None,
+    *,
+    available_dates=None,
+    score_dates=None,
+):
     x_score = x if x_score is None else x_score
     ok = np.ones(len(y), dtype=bool) if ok is None else ok
     expected = np.full(len(y), np.nan)
     model = None
-    for yr in years:
-        train = meta_year < yr
-        if len(set(meta_year[train])) < min_train_years:
+    if score_dates is None or len(score_dates) != len(y):
+        raise ValueError("expectations require one actual scoring date per row")
+    score_year = np.array([d.year for d in score_dates])
+    for yr in sorted(set(score_year)):
+        train = _training_mask(y, available_dates, yr, min_train_years)
+        if not train.any():
             continue
-        test = (meta_year == yr) & ok
+        test = (score_year == yr) & ok
         if not test.any():
             continue
         expected[test], model = _fit_predict(x[train], y[train], x_score[test], NAMES)
@@ -404,16 +455,28 @@ def _fifths(values, mask, meta, meta_year, years, shape, offset):
             if len(pool) < 25:
                 continue
             cuts = np.quantile(pool, [0.2, 0.4, 0.6, 0.8])
-            j, r, _yy = meta[i]
+            j, r, _yy = meta[i][:3]
+            if not 0 <= r + offset < shape[0]:
+                continue
             out[r + offset, j, int(np.searchsorted(cuts, values[i], side="right"))] = (
                 True
             )
     return out
 
 
+# Measure surprise returns only when the filed result was already available.
 def _after(panel, expected, naive, y, meta, meta_year, years):
     label20 = panel.forward_residual(20)
-    scored = np.isfinite(expected)
+    # A filing-day-only label cannot support a surprise trade before the next day.
+    available = np.array(
+        [
+            r + 1 < len(panel.dates)
+            and np.datetime64(published) < panel.dates[r + 1].astype("datetime64[D]")
+            for _j, r, _year, published in meta
+        ],
+        dtype=bool,
+    )
+    scored = np.isfinite(expected) & available
     shape = panel.adj_close.shape
     fm = _fifths(y - expected, scored, meta, meta_year, years, shape, 1)
     fn = _fifths(
@@ -444,19 +507,29 @@ def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
     implied_col = NAMES.index("ps_implied_growth")
     x_before = x.copy()
     ok = np.zeros(len(y), dtype=bool)
-    for i, (j, r, _yy) in enumerate(meta):
+    for i, (j, r, _yy, _published) in enumerate(meta):
         t = r - 1 - BEFORE
         if t < 130:
             continue
         x_before[i] = feats[t, j]
         ok[i] = np.isfinite(feats[t, j, implied_col])
-    expected, _m = _expected(x, y, meta_year, years, args.min_train_years, x_before, ok)
+    expected, _m = _expected(
+        x,
+        y,
+        meta_year,
+        years,
+        args.min_train_years,
+        x_before,
+        ok,
+        available_dates=[m[3] for m in meta],
+        score_dates=[dates[max(0, m[1] - 1 - BEFORE)] for m in meta],
+    )
     gap = expected - x_before[:, implied_col]
     into = np.full((rows_n, cols), np.nan)
     through = np.full((rows_n, cols), np.nan)
     adj = panel.adj_close
     bench = adj[:, panel.index(panel.benchmark)]
-    for i, (j, r, _yy) in enumerate(meta):
+    for i, (j, r, _yy, _published) in enumerate(meta):
         t = r - 1 - BEFORE
         if t < 130 or not np.isfinite(gap[i]):
             continue
@@ -464,9 +537,10 @@ def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
             into[t, j] = np.log(adj[r - 1, j] / adj[t, j]) - beta[t, j] * np.log(
                 bench[r - 1] / bench[t]
             )
-            through[t, j] = np.log(adj[r + 1, j] / adj[t, j]) - beta[t, j] * np.log(
-                bench[r + 1] / bench[t]
-            )
+            if r + 1 < rows_n:
+                through[t, j] = np.log(adj[r + 1, j] / adj[t, j]) - beta[t, j] * np.log(
+                    bench[r + 1] / bench[t]
+                )
     fg = _fifths(
         gap, np.isfinite(gap), meta, meta_year, years, (rows_n, cols), -1 - BEFORE
     )
@@ -509,7 +583,7 @@ def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
 # read: the review's "cheap, improving, favourable expectations".
 def _by_tape(meta, mom, cheap, anyg, into, through, shape) -> None:
     improving = np.zeros(shape, dtype=bool)
-    for j, r, _yy in meta:
+    for j, r, _yy, _published in meta:
         t = r - 1 - BEFORE
         if t >= 130 and np.isfinite(mom[20][t, j]) and mom[20][t, j] > 0:
             improving[t, j] = True
@@ -595,15 +669,16 @@ def _with_value(report, scores):
     )
 
 
-# The expectation on every session: the year's learner, trained on the
-# reports of the years before it, asked on every session's features.
-def _carried(dates, x, y, meta_year, years, feats, min_train_years):
+# Carry annual fits forward only after each fit meets publication and sample gates.
+def _carried(
+    dates, x, y, meta_year, years, feats, min_train_years, *, available_dates=None
+):
     rows_n, cols, width = feats.shape
     expected = np.full((rows_n, cols), np.nan)
     yrs = np.array([d.year for d in dates])
     for yr in years:
-        train = meta_year < yr
-        if len(set(meta_year[train])) < min_train_years:
+        train = _training_mask(y, available_dates, yr, min_train_years)
+        if not train.any():
             continue
         rows = np.flatnonzero(yrs == yr)
         if not len(rows):
@@ -621,13 +696,35 @@ def _carried(dates, x, y, meta_year, years, feats, min_train_years):
 
 # The expectation carried every session as a valuation leg, and the book
 # with the valuation analyst blended with it and replaced by it, by year.
-def _leg(store, panel, dates, x, y, meta_year, years, feats, implied, args) -> None:
+def _leg(
+    store,
+    panel,
+    dates,
+    x,
+    y,
+    meta_year,
+    years,
+    feats,
+    implied,
+    args,
+    *,
+    available_dates,
+) -> None:
     from backend.agents.trading.desk import desk as trading_desk
     from backend.agents.trading.desk import simulate
     from backend.market import baselines
     from backend.market.harness import evaluate_scores
 
-    expected = _carried(dates, x, y, meta_year, years, feats, args.min_train_years)
+    expected = _carried(
+        dates,
+        x,
+        y,
+        meta_year,
+        years,
+        feats,
+        args.min_train_years,
+        available_dates=available_dates,
+    )
     report = trading_desk.run(store)
     book = report.panel
     with np.errstate(all="ignore"):
@@ -693,6 +790,9 @@ def main() -> None:
     x, y, meta = _dataset(panel, dates, quarters, reactions, feats)
     meta_year = np.array([m[2] for m in meta])
     years = sorted(set(meta_year))
+    if not len(y):
+        print("no eligible published report labels")
+        return
     print(
         f"{len(y)} report rows on {len({m[0] for m in meta})} names, "
         f"{meta_year.min()}-{meta_year.max()}"
@@ -700,7 +800,15 @@ def main() -> None:
     if len(y) < 500:
         print("too few rows")
         return
-    expected, model = _expected(x, y, meta_year, years, args.min_train_years)
+    expected, model = _expected(
+        x,
+        y,
+        meta_year,
+        years,
+        args.min_train_years,
+        available_dates=[m[3] for m in meta],
+        score_dates=[dates[m[1] - 1] for m in meta],
+    )
     naive = x[:, NAMES.index("revenue_yoy")]
     _accuracy(expected, naive, y, meta_year, years, model)
     _after(panel, expected, naive, y, meta, meta_year, years)
@@ -708,7 +816,19 @@ def main() -> None:
     if args.overlay:
         _overlay(store, panel, dates, cheap, args.book_since)
     if args.leg:
-        _leg(store, panel, dates, x, y, meta_year, years, feats, implied, args)
+        _leg(
+            store,
+            panel,
+            dates,
+            x,
+            y,
+            meta_year,
+            years,
+            feats,
+            implied,
+            args,
+            available_dates=[m[3] for m in meta],
+        )
 
 
 if __name__ == "__main__":

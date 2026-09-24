@@ -10,11 +10,16 @@ silently old. `daily_returns` computes the log return from adjusted close,
 which is what makes a split incapable of manufacturing a return.
 """
 
+import hashlib
+import json
 import math
+import os
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, date, datetime, timedelta
+
+import numpy as np
 
 from backend.market.store import MarketStore
 from backend.market.universe import STALE_AFTER_DAYS
@@ -110,11 +115,259 @@ def _fetch_preserving_sessions(store, ticker, start, asof, fetcher):
         missing = known - present
         if not missing:
             return history
+    try:
+        return _reconcile_missing_sessions(store, ticker, asof, history, missing)
+    except (MarketDataUnavailableError, OSError, ValueError) as exc:
+        reason = str(exc)
     first = min(missing)
     raise MarketDataUnavailableError(
         f"{ticker} history omits {len(missing)} previously observed sessions "
-        f"(first {first}); incomplete response repeated, snapshot not stored"
+        f"(first {first}); incomplete response repeated, snapshot not stored: {reason}"
     )
+
+
+# Fingerprint a parsed source or reconstructed output without fitting price ratios.
+def _history_hash(history):
+    payload = json.dumps(asdict(history), sort_keys=True, default=str, allow_nan=False)
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
+# Validate a provider's explicit action list before treating no events as evidence.
+def _action_signature(history):
+    if not isinstance(history.actions, tuple):
+        raise MarketDataUnavailableError("action evidence is unavailable")
+    rows = []
+    for action in history.actions:
+        if (
+            type(action.action_date) is not date
+            or action.kind not in ("split", "dividend")
+            or not isinstance(action.value, (int, float))
+            or not math.isfinite(action.value)
+            or action.value <= 0
+        ):
+            raise MarketDataUnavailableError("action evidence is invalid")
+        rows.append((action.action_date, action.kind, action.value))
+    return sorted(rows)
+
+
+# Reject malformed bars before they can satisfy an exchange-session coverage check.
+def _valid_daily_bar(bar):
+    values = (bar.open, bar.high, bar.low, bar.close, bar.adjusted_close)
+    return (
+        all(
+            value is not None and math.isfinite(value) and value > 0 for value in values
+        )
+        and bar.low <= min(bar.open, bar.close) <= max(bar.open, bar.close) <= bar.high
+        and bar.volume is not None
+        and math.isfinite(bar.volume)
+        and bar.volume >= 0
+    )
+
+
+# Require today's completed exchange session before publishing a recovered vintage.
+def _repair_sessions(history, asof):
+    from backend.market import calendar
+
+    stamp = history.source_time
+    if (
+        not isinstance(stamp, datetime)
+        or stamp.tzinfo is None
+        or stamp.utcoffset() is None
+    ):
+        raise MarketDataUnavailableError("fresh source time is undated")
+    status = calendar.exchange_status(stamp)
+    if status["session"] != asof.isoformat() or status["phase"] != "post-market":
+        raise MarketDataUnavailableError(
+            "repair requires today's completed exchange session"
+        )
+    years, holidays = calendar._published_sessions()
+    days = []
+    day = asof
+    while len(days) < 20:
+        if day.year not in years:
+            raise MarketDataUnavailableError(
+                "exchange calendar coverage is unavailable"
+            )
+        if np.is_busday(np.datetime64(day), busdaycal=holidays):
+            days.append(day)
+        day -= timedelta(days=1)
+    if (
+        history.complete_through != asof
+        or not history.bars
+        or history.bars[-1].session_date != asof
+    ):
+        raise MarketDataUnavailableError("fresh history does not include today's close")
+    return frozenset(days)
+
+
+# Preserve a content-addressed prepared receipt before publishing its matching bars.
+def _write_reconciliation_receipt(store, asof, ticker, receipt):
+    folder = store.root / "bar_reconciliations" / f"asof={asof}"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{ticker}-{receipt['output_history_sha256']}.json"
+    content = json.dumps(
+        receipt, sort_keys=True, indent=2, default=str, allow_nan=False
+    )
+    try:
+        with path.open("x") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except FileExistsError:
+        if path.read_text() != content:
+            raise MarketDataUnavailableError(
+                "reconciliation receipt conflicts"
+            ) from None
+
+
+# Require identity prices around the gap even when an events block omits an action.
+def _check_gap_identity(fresh_rows, missing):
+    first_missing = min(missing)
+    preceding = [day for day in fresh_rows if day < first_missing]
+    if not preceding:
+        raise MarketDataUnavailableError(
+            "no fresh observation precedes the missing gap"
+        )
+    boundary = max(preceding)
+    for day, bar in fresh_rows.items():
+        if day >= boundary and (
+            not _valid_daily_bar(bar) or bar.adjusted_close != bar.close
+        ):
+            raise MarketDataUnavailableError(
+                "fresh gap-neighborhood basis is not identity"
+            )
+
+
+# Check fresh provider identity, action evidence and the gap's adjustment basis.
+def _fresh_repair_evidence(ticker, asof, fresh, missing):
+    if fresh.ticker != ticker or fresh.source != "yahoo":
+        raise MarketDataUnavailableError("same-provider source identity is unavailable")
+    required = _repair_sessions(fresh, asof)
+    fresh_rows = {bar.session_date: bar for bar in fresh.bars}
+    if len(fresh_rows) != len(fresh.bars) or sorted(fresh_rows) != [
+        bar.session_date for bar in fresh.bars
+    ]:
+        raise MarketDataUnavailableError(
+            "fresh history has duplicate or unordered sessions"
+        )
+    _check_gap_identity(fresh_rows, missing)
+    actions = _action_signature(fresh)
+    if any(day >= min(missing) for day, _kind, _value in actions):
+        raise MarketDataUnavailableError(
+            "an action intersects the missing-session basis"
+        )
+    return required, fresh_rows, actions
+
+
+# Require the retained source to agree without inferring a scale from price ratios.
+def _check_retained_evidence(old, fresh, old_rows, fresh_rows, action_path, actions):
+    if len(old_rows) != len(old.bars) or sorted(old_rows) != [
+        bar.session_date for bar in old.bars
+    ]:
+        raise MarketDataUnavailableError(
+            "retained history has duplicate or unordered sessions"
+        )
+    if (
+        not action_path.exists()
+        or old.source != fresh.source
+        or old.ticker != fresh.ticker
+    ):
+        raise MarketDataUnavailableError(
+            "retained provider/action evidence is unavailable"
+        )
+    if (
+        not isinstance(old.source_time, datetime)
+        or old.source_time.tzinfo is None
+        or old.source_time.utcoffset() is None
+        or not old.source_time <= fresh.source_time
+    ):
+        raise MarketDataUnavailableError("retained source time is invalid")
+    if _action_signature(old) != actions:
+        raise MarketDataUnavailableError("provider action lists disagree")
+    common = set(old_rows) & set(fresh_rows)
+    if not common:
+        raise MarketDataUnavailableError(
+            "provider vintages have no comparable observations"
+        )
+    raw_fields = ("open", "high", "low", "close", "volume")
+    for day in common:
+        if any(
+            getattr(old_rows[day], field) != getattr(fresh_rows[day], field)
+            for field in raw_fields
+        ):
+            raise MarketDataUnavailableError("overlapping raw observations changed")
+
+
+# Find original identity-basis observations and keep their source fingerprints.
+def _retained_repair_rows(store, ticker, asof, fresh, missing, fresh_rows, actions):
+    sources = []
+    insertions = {}
+    for vintage in reversed(store.asofs()):
+        if vintage >= asof or not store.has(vintage, ticker):
+            continue
+        old = store.read(ticker, vintage)
+        old_rows = {bar.session_date: bar for bar in old.bars}
+        candidates = (missing - set(insertions)) & set(old_rows)
+        if not candidates:
+            continue
+        action_path = store._path("actions", vintage, ticker)
+        _check_retained_evidence(old, fresh, old_rows, fresh_rows, action_path, actions)
+        for day in candidates:
+            bar = old_rows[day]
+            if not _valid_daily_bar(bar) or bar.adjusted_close != bar.close:
+                raise MarketDataUnavailableError(
+                    "retained missing bar has unsupported price basis"
+                )
+            insertions[day] = bar
+        sources.append(
+            {
+                "vintage": vintage.isoformat(),
+                "source_time": old.source_time.isoformat(),
+                "bars_sha256": hashlib.sha256(
+                    store._path("bars", vintage, ticker).read_bytes()
+                ).hexdigest(),
+                "actions_sha256": hashlib.sha256(action_path.read_bytes()).hexdigest(),
+                "sessions": sorted(day.isoformat() for day in candidates),
+            }
+        )
+        if set(insertions) == missing:
+            break
+    if set(insertions) != missing:
+        raise MarketDataUnavailableError(
+            "retained observations do not cover every missing session"
+        )
+    return insertions, sources
+
+
+# Restore only an observed unadjusted bar when both dated provider vintages agree.
+def _reconcile_missing_sessions(store, ticker, asof, fresh, missing):
+    required, fresh_rows, actions = _fresh_repair_evidence(ticker, asof, fresh, missing)
+    insertions, sources = _retained_repair_rows(
+        store, ticker, asof, fresh, missing, fresh_rows, actions
+    )
+    combined = {**fresh_rows, **insertions}
+    if not required <= set(combined) or any(
+        not _valid_daily_bar(combined[day]) for day in required
+    ):
+        raise MarketDataUnavailableError(
+            "recovered recent exchange grid is incomplete or invalid"
+        )
+    recovered = replace(fresh, bars=tuple(combined[day] for day in sorted(combined)))
+    receipt = {
+        "version": "same-provider-identity-bar-reconciliation/1",
+        "state": "prepared; verify output history hash before treating as published",
+        "ticker": ticker,
+        "asof": asof.isoformat(),
+        "provider": fresh.source,
+        "fresh_source_time": fresh.source_time.isoformat(),
+        "fresh_parsed_history_sha256": _history_hash(fresh),
+        "output_history_sha256": _history_hash(recovered),
+        "retained_sources": sources,
+        "restored_rows": [asdict(insertions[day]) for day in sorted(insertions)],
+        "basis": "Identity basis; exact raw overlap/actions; no intervening action",
+    }
+    _write_reconciliation_receipt(store, asof, ticker, receipt)
+    return recovered
 
 
 # Fetch every requested ticker into the `asof` partition, capturing failures.

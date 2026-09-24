@@ -465,7 +465,9 @@ def test_a_name_at_the_top_of_its_range_in_an_agreed_trend_is_a_breakout(monkeyp
 # basket is falling*, so that condition is reported rather than left for
 # the reader to remember.
 def test_a_dip_while_the_basket_falls_is_marked(monkeypatch):
-    path = np.concatenate([np.linspace(100.0, 200.0, 290), np.linspace(200.0, 150.0, 10)])
+    path = np.concatenate(
+        [np.linspace(100.0, 200.0, 290), np.linspace(200.0, 150.0, 10)]
+    )
     panel = _long_panel({"AAA": path})
     rows = panel.dates.shape[0]
     calm = _entry_read(monkeypatch, panel, ai_trend=np.full(rows, 0.1))
@@ -483,3 +485,57 @@ def test_a_name_with_no_trigger_still_reports_where_it_sits(monkeypatch):
     assert out["AAA"]["trigger"] is None
     assert out["AAA"]["horizon_sessions"] is None
     assert out["AAA"]["band_z"] is not None
+
+
+# A lost historical close must not masquerade as a neutral entry opinion.
+def test_entry_read_retains_missing_daily_close_reason(monkeypatch):
+    panel = _long_panel({"AAA": np.linspace(100.0, 200.0, 300)})
+    panel.adj_close[-3, 0] = np.nan
+    row = _entry_read(monkeypatch, panel)["AAA"]
+    assert row["entry_status"] == "unavailable"
+    assert row["missing_sessions"] == [str(panel.dates[-3])]
+    assert str(panel.dates[-3]) in row["entry_reason"]
+    assert row["trigger"] is None
+    assert row["band_z"] is None
+    assert row["horizon_sessions"] is None
+
+
+# A genuine complete no-trigger reading remains distinct from unavailable data.
+def test_complete_entry_read_has_explicit_available_status(monkeypatch):
+    row = _entry_read(
+        monkeypatch, _long_panel({"AAA": np.linspace(100.0, 200.0, 300)})
+    )["AAA"]
+    assert row["entry_status"] == "available"
+    assert row["entry_reason"] is None
+    assert row["missing_sessions"] == []
+    assert row["band_z"] is not None
+
+
+# Insufficient observations are not expanded into an invented twenty-day window.
+def test_short_history_is_explicitly_unavailable(monkeypatch):
+    row = _entry_read(monkeypatch, _long_panel({"AAA": np.linspace(100.0, 110.0, 10)}))[
+        "AAA"
+    ]
+    assert row["entry_status"] == "unavailable"
+    assert "fewer than 20" in row["entry_reason"]
+    assert row["band_z"] is None
+
+
+# A constant price has no standardized band and must not create infinite strength.
+def test_zero_width_band_is_explicitly_unavailable(monkeypatch):
+    row = _entry_read(monkeypatch, _long_panel({"AAA": np.full(300, 100.0)}))["AAA"]
+    assert row["entry_status"] == "unavailable"
+    assert "undefined" in row["entry_reason"]
+    assert row["band_z"] is None
+
+
+# A quoted name absent from cached history still gets an explanatory row.
+def test_quoted_name_without_history_is_retained(monkeypatch):
+    panel = _long_panel({"AAA": np.linspace(100.0, 200.0, 300)})
+    monkeypatch.setattr(live_technical, "_live_read", lambda *args: {"panel": panel})
+    row = live_technical.entry_now(
+        None, {"MISSING": SimpleNamespace(last=10, bar="x")}, date(2026, 9, 18)
+    )["MISSING"]
+    assert row["entry_status"] == "unavailable"
+    assert "no daily history" in row["entry_reason"]
+    assert row["trigger"] is None

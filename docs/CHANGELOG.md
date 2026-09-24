@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-24 — Personal decision clarity and causal data corrections
+
+- Personal buys respect the trade minimum after cash scaling. An optional explicit
+  per-position risk budget limits funded size using dated support references and
+  existing exposure; missing reward or risk evidence cannot fabricate a size.
+- Missing entry data remains explicit through the API and private decision history.
+  The main board is being reduced to action, executable size and reason, with
+  diagnostics collapsed and chart signal history optional. Integrated frontend
+  passed 111 browser cases plus six affected final wording checks, TypeScript and
+  production build. Deployed release proof remains pending.
+- Quarterly expectations training is gated by actual publication and annual fit
+  availability instead of future record tails or a global training-size switch.
+- Same-provider daily gap recovery requires mechanical price/action agreement and
+  immutable provenance receipts; rejected reconciliations leave the partition absent.
+- Targeted acceptance: 135 personal account/risk/history checks; 36 snapshot/store
+  checks including independent counterexamples; 24 expectations checks plus one
+  optional fit skip. No adoption or profitability claim; frozen studies unchanged.
+- Final combined backend selection: 289 passed, one optional fit skipped. Reviewed
+  source recovery restored 51 histories while preserving 16,808 old/research files.
+  Q remains unavailable due to malformed source OHLC. Existing entry rules are unchanged.
+
 ## 2026-09-24 — Dashboard build live on Spark; acceptance in progress
 
 - Authorized deployment `21adf2a` passed **5,754 unit tests** (31 skipped,

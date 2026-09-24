@@ -799,9 +799,9 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
           BUY is the strategy&apos;s intent to add; SELL is its intent to reduce; HOLD means it proposes no trade.
           “Blocked now” means the intent is visible but is not executable with the current market evidence,
           allocation, recorded positions, or confirmed cash.
-          Move % is the strategy&apos;s intended change in your account allocation, not a return since the signal.
-          Target % is a strategy weight, not a profit target or an immediate rebalance instruction.
-          Blank Move % on Hold means no intended trade. Nothing here submits an order.
+          Size is the currently executable change in your account allocation, not a return since the signal.
+          A dash means no trade size is available now. Open a row for the intended change and strategy target.
+          Nothing here submits an order.
         </dd>
       </div>
       <div>
@@ -815,8 +815,8 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">Allocation %</dt>
         <dd className="text-[#6e6e73]">
-          Research % is the experimental allocation calculated from the displayed completed bar.
-          Target % is the adopted strategy&apos;s allocation for its next weight reset. Neither is your
+          Row details include the experimental allocation calculated from the displayed completed bar
+          and the adopted strategy&apos;s allocation for its next weight reset. Neither is your
           current position, an order quantity, or a profit target. A grade alone does not guarantee
           an allocation; selection and sizing also apply.
         </dd>
@@ -898,6 +898,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // buys gated rather than funding them from equity or the paper account.
   const [equity, setEquity] = useState<number>(() => Number(readStored(EQUITY_KEY)) || 100000)
   const [cash, setCash] = useState<number | null>(null)
+  const [riskBudgetPct, setRiskBudgetPct] = useState<number | null>(null)
   const [cashStatus, setCashStatus] = useState('')
   // A monotonic context generation. Every desk/mine request captures it before
   // awaiting; when the response returns, if the generation has moved on the
@@ -974,7 +975,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const request = ++mineRequestSeq.current
     try {
       const recordHistory = historyCapture.current && !document.hidden
-      const mine = await getDeskMine(userId, equity, cash, recordHistory)
+      const mine = await getDeskMine(userId, equity, cash, recordHistory, riskBudgetPct)
       if (!active() || gen !== accountGen.current || request !== mineRequestSeq.current) return
       acceptedMineRequest.current = request
       setRows(mine.rows)
@@ -1033,10 +1034,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // are cleared so no stale BUY from a higher-cash context lingers, and the
   // polling effect re-runs on the new equity/cash. Cash is session-memory
   // only; an unknown (null) cash keeps buys gated.
-  const applyAccount = (equityValue: number, cashValue: number | null) => {
+  const applyAccount = (equityValue: number, cashValue: number | null, riskValue: number | null) => {
     accountGen.current += 1
     setEquity(equityValue)
     setCash(cashValue)
+    setRiskBudgetPct(riskValue)
     setDecisions(undefined)
     setCashStatus(cashValue === null
       ? 'Available cash unknown; buys stay unfunded until you confirm it.'
@@ -1081,7 +1083,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       document.removeEventListener('visibilitychange', resume)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, equity, cash, holdings, payload?.latest?.session])
+  }, [userId, equity, cash, riskBudgetPct, holdings, payload?.latest?.session])
 
   useEffect(() => {
     // A different account is a different context: confirmed cash never
@@ -1089,6 +1091,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     // previous account's context is invalidated.
     accountGen.current += 1
     setCash(null)
+    setRiskBudgetPct(null)
     setCashStatus('')
     setDecisions(undefined)
   }, [userId])
@@ -1116,7 +1119,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     }
     const timer = window.setInterval(() => void refresh(), 15_000)
     return () => { stopped = true; window.clearInterval(timer) }
-  }, [userId, equity, cash, holdings, payload?.latest?.session])
+  }, [userId, equity, cash, riskBudgetPct, holdings, payload?.latest?.session])
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
@@ -1172,7 +1175,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const todayLine = latest ? <TodayLine exchange={exchange} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
-  } : null} eventLive={eventLive} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0} countdown={countdown} rebalanceDue={rebalanceDue}
+  } : null} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0}
     holdings={holdingsReady ? holdings.length : null} eligible={eligibleNow} /> : null
   // Keep a stock's diagnostics and confirmed-fill controls in its existing board expansion.
   const expandRow = (ticker: string) => {
@@ -1207,36 +1210,18 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // The account's controls sit above the list: the plan is a column of it.
   const planToolbar = latest ? <div className="shrink-0 border-b border-black/[0.06] px-3 py-2">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-            <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
-              {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
-                : rebalanceDue ? 'Paper weight reset due at the next open; personal signals use their own execution checks.'
-                : countdown !== null ? `Paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
-                : 'No paper weight reset scheduled.'}
-              {live.as_of && (
-                <span className="ml-2 font-normal text-[#6e6e73]">
-                  {exchange.open
-                    ? `Prices from the ${marketTime(live.data_at)} bar.`
-                    : `${exchange.label}; prices are from the ${marketTime(live.data_at)} bar.`}
-                  {exchange.open && (live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
-                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
-                      not updating
-                    </span>
-                  )}
-                </span>
-              )}
-              {live.reason && <span className="ml-2 font-normal text-amber-800">{live.reason}</span>}
-            </h3>
+            {live.reason && <p className="text-xs text-amber-800">{live.reason}</p>}
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#6e6e73]">
               {canWrite && holdingsReady ? (
                 <button type="button" onClick={() => setEditing(!editing)} className="text-[#0071e3] hover:underline">
-                  {editing ? 'done' : holdings.length > 0 ? 'edit my positions' : 'enter my positions'}
+                  {editing ? 'Done' : holdings.length > 0 ? 'Edit positions' : 'Add positions'}
                 </button>
               ) : (
                 <span className="text-[#6e6e73]">read-only: the operator's book</span>
               )}
             </div>
           </div>
-          <AccountInputs equity={equity} cash={cash} cashStatus={cashStatus} onApply={applyAccount} />
+          <AccountInputs equity={equity} cash={cash} riskBudgetPct={riskBudgetPct} cashStatus={cashStatus} onApply={applyAccount} />
           {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
             <p className="mb-2 text-xs text-[#9a6200]">
               Since the last plan: {intraday.changed.join(' · ')}
@@ -1252,9 +1237,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               }}
             />
           )}
-          {canWrite && holdingsReady && holdings.length === 0 && !editing && (
-            <GettingStarted hasRecord hasPositions={false} onEnterPositions={() => setEditing(true)} />
-          )}
+
   </div> : null
   // The plan for a name on the board: the trade against the recorded position.
   const tradeCell = (ticker: string) => {
@@ -1337,9 +1320,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
       {mineError && <p role="alert" className="border-b border-black/[0.06] bg-red-50 px-3 py-2 text-xs text-[#b42318]">Personal guidance unavailable: {mineError} No trade is shown as executable.</p>}
-      {/* The one table on the page is StockBoard below; the fundamental data
-          source label sits immediately above it so a corrected decision is
-          never read as measured under the frozen legacy snapshot. */}
+
+      <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
+      holdings={holdingsReady ? holdings : null} broker={paperLive} event={boardEvent} now={now}
+      holdingsError={holdingsError}
+      planAction={(ticker) => planFor(ticker, decisions, latest, now).action}
+      expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
+      </div>}
+      {latest && <details aria-label="Strategy details" className="rounded-xl border border-black/[0.08] bg-white p-3 text-xs"><summary className="cursor-pointer font-medium">Strategy details</summary>
       <p aria-label="Fundamental data source" className="border-b border-black/[0.06] px-3 py-1.5 text-[11px] text-[#6e6e73]">
         {latest.provenance?.data?.fundamentals === 'fundamentals-features/1'
           ? 'Fundamentals: stored point-in-time filing versions.'
@@ -1347,13 +1335,26 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             ? 'Fundamentals: frozen EDGAR snapshot (legacy).'
             : 'Fundamentals: data source not tagged.'}
       </p>
-      <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
-      holdings={holdingsReady ? holdings : null} broker={paperLive} event={boardEvent} now={now}
-      holdingsError={holdingsError}
-      planAction={(ticker) => planFor(ticker, decisions, latest, now).action}
-      expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
-      </div>}
-      {latest && <DeskGuide latest={latest} open={detailsOpen} />}
+            <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
+              {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
+                : rebalanceDue ? 'Paper weight reset due at the next open; personal signals use their own execution checks.'
+                : countdown !== null ? `Paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
+                : 'No paper weight reset scheduled.'}
+              {live.as_of && (
+                <span className="ml-2 font-normal text-[#6e6e73]">
+                  {exchange.open
+                    ? `Prices from the ${marketTime(live.data_at)} bar.`
+                    : `${exchange.label}; prices are from the ${marketTime(live.data_at)} bar.`}
+                  {exchange.open && (live.stale || Date.now() - Date.parse(live.as_of) > CANDLE_MS) && (
+                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-800">
+                      not updating
+                    </span>
+                  )}
+                </span>
+              )}
+              {live.reason && <span className="ml-2 font-normal text-amber-800">{live.reason}</span>}
+            </h3>
+{latest && <DeskGuide latest={latest} open={detailsOpen} />}
 
 
       {/* Amber only when the gate is actually doing something. It is a
@@ -1396,6 +1397,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <span title="Cash implied by the plan's target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
         <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Weights apply at the reset'}</span>
       </section>}
+      </details>}
 
 
       {latest && (
@@ -1869,8 +1871,9 @@ interface PositionsProps {
 interface AccountInputsProps {
   equity: number
   cash: number | null
+  riskBudgetPct: number | null
   cashStatus: string
-  onApply: (equity: number, cash: number | null) => void
+  onApply: (equity: number, cash: number | null, riskBudgetPct: number | null) => void
 }
 
 // The personal account figures the board is computed against: small equity
@@ -1878,18 +1881,26 @@ interface AccountInputsProps {
 // session-memory only (never localStorage, never a URL). An empty cash field
 // means unknown and keeps buys gated; an invalid figure is treated as unknown
 // too, never fabricated; zero is a valid known figure. Invalid equity is
-// refused so the board is never sized against a nonsense account.
-const AccountInputs = ({ equity, cash, cashStatus, onApply }: AccountInputsProps) => {
+// refused so the board is never sized against a nonsense account. A risk
+// budget is optional, explicitly confirmed, and kept only for this session.
+const AccountInputs = ({ equity, cash, riskBudgetPct, cashStatus, onApply }: AccountInputsProps) => {
   const [equityDraft, setEquityDraft] = useState(String(equity))
   const [cashDraft, setCashDraft] = useState(cash === null ? '' : String(cash))
+  const [riskDraft, setRiskDraft] = useState(riskBudgetPct === null ? '' : String(riskBudgetPct))
   const [error, setError] = useState('')
   useEffect(() => setEquityDraft(String(equity)), [equity])
   useEffect(() => setCashDraft(cash === null ? '' : String(cash)), [cash])
+  useEffect(() => setRiskDraft(riskBudgetPct === null ? '' : String(riskBudgetPct)), [riskBudgetPct])
   // Validate the drafts before applying a new personal account context.
   const apply = () => {
     const equityValue = Number(equityDraft)
     if (equityDraft.trim() === '' || !Number.isFinite(equityValue) || equityValue <= 0) {
       setError('Enter a positive account equity to size the board.')
+      return
+    }
+    const riskValue = riskDraft.trim() === '' ? null : Number(riskDraft)
+    if (riskValue !== null && (!Number.isFinite(riskValue) || riskValue <= 0 || riskValue > 100)) {
+      setError('Risk per position must be greater than 0 and no more than 100%, or blank to leave it unset.')
       return
     }
     // An invalid cash figure (negative, non-finite, or beyond equity) still
@@ -1913,7 +1924,7 @@ const AccountInputs = ({ equity, cash, cashStatus, onApply }: AccountInputsProps
     // what actually resets it, because applying null over an already-null cash
     // bails out of the state update and never re-runs the sync effect below.
     if (cashValue === null) setCashDraft('')
-    onApply(equityValue, cashValue)
+    onApply(equityValue, cashValue, riskValue)
   }
   const field = 'rounded-md border border-black/[0.12] px-2 py-1 w-28'
   return (
@@ -1927,6 +1938,11 @@ const AccountInputs = ({ equity, cash, cashStatus, onApply }: AccountInputsProps
         Cash $
         <input aria-label="Personal available cash" type="number" min="0" step="any"
           value={cashDraft} placeholder="unknown" onChange={(e) => setCashDraft(e.target.value)} className={field} />
+      </label>
+      <label className="flex items-center gap-1 text-[#6e6e73]" title="Optional percentage of account equity at risk at the support reference, including the existing holding. It is not a guaranteed maximum loss.">
+        Risk per position %
+        <input aria-label="Risk per position (%)" type="number" min="0" max="100" step="any"
+          value={riskDraft} placeholder="optional" onChange={(e) => setRiskDraft(e.target.value)} className={field} />
       </label>
       <button type="button" onClick={apply} className="rounded-full bg-[#1d1d1f] px-3 py-1 text-white">
         Apply
@@ -2072,6 +2088,7 @@ const planFor = (
   }
 }
 
+// Show the recommendation and separately identify whether it can currently be acted on.
 const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = false}: {
   ticker: string; decisions?: DeskDecisions; latest: DeskRecord; now: number
   compact?: boolean; terse?: boolean
@@ -2540,17 +2557,12 @@ const GradeMove = ({changes, session, reads, revision}: {
   )
 }
 
-// One line, first on the page: what the desk is doing and whether there is
-// anything for the person to do. After the close the board is ninety rows
-// of "Wait", and the one sentence that matters was missing.
-const TodayLine = ({exchange, event, boardEvent, eventLive, orders, countdown, rebalanceDue, holdings, eligible}: {
+// Summarize exchange status, active restrictions and executable personal signals.
+const TodayLine = ({exchange, event, boardEvent, orders, holdings, eligible}: {
   exchange: ReturnType<typeof exchangeState>
   event?: {decision_date: string | null} | null
   boardEvent: BoardEvent | null
-  eventLive?: {status?: string; pending_orders?: number}
   orders: number
-  countdown: number | null
-  rebalanceDue: boolean
   holdings: number | null
   eligible: number
 }) => {
@@ -2560,11 +2572,10 @@ const TodayLine = ({exchange, event, boardEvent, eventLive, orders, countdown, r
     ? 'paper FOMC target exposure unavailable'
     : orders > 0 ? `${orders} pending paper order${orders === 1 ? '' : 's'} during FOMC recovery`
       : 'paper FOMC cycle active')
-  if (!boardEvent) parts.push(rebalanceDue ? 'a paper weight reset is due at the next open' : countdown !== null ? `paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}` : 'no paper weight reset scheduled')
   let action: string
-  if (eligible > 0) action = `${eligible} name${eligible === 1 ? '' : 's'} to act on now.`
-  else if (holdings !== null && holdings === 0) action = 'No personal positions recorded yet. Add yours under Positions to compare with the desk.'
-  else action = exchange.open ? 'Nothing to act on right now.' : exchange.known ? 'Nothing for you to do until the next regular session opens.' : 'Nothing is executable until XNYS status refreshes.'
+  if (eligible > 0) action = `${eligible} executable signal${eligible === 1 ? '' : 's'}.`
+  else if (holdings !== null && holdings === 0) action = 'Personal positions not recorded.'
+  else action = exchange.known ? 'No executable signals.' : 'Exchange status unavailable.'
   return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
     <span className="font-medium">{parts.join(' · ')}.</span> <span className="text-[#6e6e73]">{action}</span>
   </section>

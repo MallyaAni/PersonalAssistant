@@ -522,12 +522,29 @@ async def desk_intraday(user_id: UserId) -> dict[str, object]:
 class DeskMineInput(BaseModel):
     equity: float
     available_cash: float | None = None
+    risk_budget_pct: float | None = None
     # Tickers with a buy order already working at the person's broker. The
     # board will not issue another entry for them; it has no broker of its
     # own to ask, so this is the only channel that evidence arrives by.
     pending_buys: list[str] | None = None
     # Explicit capture is owner-only; ordinary reads remain nonmutating.
     record_history: StrictBool = False
+
+    # Require an explicit personal risk budget rather than choosing one for the user.
+    @field_validator("risk_budget_pct", mode="before")
+    @classmethod
+    def _risk_budget_valid(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            raise ValueError("Risk budget must be a percentage, not a boolean")
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Risk budget must be a numeric percentage") from exc
+        if not math.isfinite(parsed) or not 0 < parsed <= 100:
+            raise ValueError("Risk budget must be greater than zero and at most 100%")
+        return parsed
 
     # Keep only ticker-shaped symbols, upper-cased, so a working order for
     # "nvda" matches the board's "NVDA" row.
@@ -610,6 +627,7 @@ async def _desk_mine_payload(
     pending_buys: list[str] | None = None,
     *,
     history_context: dict | None = None,
+    risk_budget_pct: float | None = None,
 ) -> dict[str, object]:
     now = datetime.now(UTC)
     market_status = exchange_calendar.exchange_status(now)
@@ -637,6 +655,7 @@ async def _desk_mine_payload(
     # the book's entry trigger. A failure here costs the entry line and
     # nothing else: the plan still renders from the record.
     entries: dict[str, float] = {}
+    reads: dict[str, dict] = {}
     if snap and snap.get("quotes"):
 
         class _Quote:
@@ -672,6 +691,8 @@ async def _desk_mine_payload(
         expected_account=user_id,
         cash=available_cash,
         pending=pending_buys,
+        risk_budget_pct=risk_budget_pct,
+        entry_readings=reads,
     )
     if history_context is not None:
         from backend.market import personal_history
@@ -790,7 +811,11 @@ async def desk_mine_post(
     response.headers["Cache-Control"] = "private, no-store"
     if not inputs.record_history:
         return await _desk_mine_payload(
-            user_id, inputs.equity, inputs.available_cash, inputs.pending_buys
+            user_id,
+            inputs.equity,
+            inputs.available_cash,
+            inputs.pending_buys,
+            risk_budget_pct=inputs.risk_budget_pct,
         )
     _desk_writer_only(user_id)
     context: dict = {}
@@ -800,6 +825,7 @@ async def desk_mine_post(
         inputs.available_cash,
         inputs.pending_buys,
         history_context=context,
+        risk_budget_pct=inputs.risk_budget_pct,
     )
     from backend.market.personal_history import PersonalHistoryRepository
 

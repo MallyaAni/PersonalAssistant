@@ -32,6 +32,10 @@ ROW_FIELDS = (
     "blocker",
     "reason",
     "valid_until",
+    "entry_status",
+    "entry_reason",
+    "missing_sessions",
+    "risk_plan",
 )
 QUOTE_FIELDS = (
     "feed",
@@ -95,6 +99,7 @@ def source_fingerprint() -> dict[str, str]:
         "backend/api/v1/market.py",
         "backend/market/personal_history.py",
         "backend/market/decision_view.py",
+        "backend/market/personal_risk.py",
         "backend/market/holdings.py",
         "backend/market/desk_freshness.py",
         "backend/market/execution_quotes.py",

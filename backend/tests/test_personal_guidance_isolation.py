@@ -34,6 +34,28 @@ from backend.market.holdings import Holding
 from backend.tests.test_decision_view import setup
 
 
+# A cash reduction must not turn a permitted-sized entry into a tiny live buy.
+@pytest.mark.parametrize("cash", [10.0, 499.99])
+def test_cash_scaled_entry_below_minimum_remains_hold(cash):
+    record, snapshot, quoted, now = setup()
+    row = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entries={"S11": 1.5}, cash=cash
+    )["rows"]["S11"]
+    assert row["strategy_action"] == decision_view.Action.BUY
+    assert row["action"] == decision_view.Action.HOLD
+    assert row["move_weight"] == 0
+
+
+# The exact minimum remains fundable so rounding does not impose a new threshold.
+def test_cash_scaled_entry_at_minimum_is_funded():
+    record, snapshot, quoted, now = setup()
+    row = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entries={"S11": 1.5}, cash=500
+    )["rows"]["S11"]
+    assert row["action"] == decision_view.Action.BUY
+    assert row["move_weight"] == pytest.approx(0.005)
+
+
 # Build the personal board for a fixed account and return the row projection
 # the tests actually care about, so a changed reason or weight fails here
 # rather than hiding inside an ignored dict.

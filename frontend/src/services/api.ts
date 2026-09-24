@@ -2503,6 +2503,22 @@ export interface DeskDecisions {
   holdings: Record<string, number>;
   rows: Record<string, {
     opportunity?: DeskOpportunity;
+    entry_status?: 'available' | 'unavailable';
+    entry_reason?: string | null;
+    missing_sessions?: string[];
+    risk_plan?: {
+      status: 'available' | 'unavailable' | 'budget_required';
+      basis: string;
+      entry: number | null;
+      reference_support: number | null;
+      reference_resistance: number | null;
+      risk_pct: number | null;
+      reward_pct: number | null;
+      reward_risk_ratio: number | null;
+      risk_budget_pct: number | null;
+      max_add_weight: number | null;
+      reason: string;
+    };
     // The executable action stays backward compatible while the strategy
     // fields preserve intent when evidence or account funding blocks it.
     action: 'Buy' | 'Sell' | 'Hold';
@@ -2560,7 +2576,7 @@ export const getDeskFundingPreview = async (userId: string, equity: number, avai
 // the URL; `availableCash` is optional because an empty/unknown cash figure
 // must keep buys gated rather than be fabricated from equity or the paper
 // account. A null/undefined cash value is sent as no cash at all.
-export const getDeskMine = async (userId: string, equity: number, availableCash?: number | null, recordHistory = false): Promise<DeskMine> => {
+export const getDeskMine = async (userId: string, equity: number, availableCash?: number | null, recordHistory = false, riskBudgetPct?: number | null): Promise<DeskMine> => {
   const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/mine`,
     {
@@ -2569,6 +2585,7 @@ export const getDeskMine = async (userId: string, equity: number, availableCash?
       body: JSON.stringify({
         equity,
         record_history: recordHistory,
+        ...(riskBudgetPct == null ? {} : { risk_budget_pct: riskBudgetPct }),
         ...(availableCash === null || availableCash === undefined ? {} : { available_cash: availableCash }),
       }),
     },
