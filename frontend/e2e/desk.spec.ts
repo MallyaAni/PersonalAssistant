@@ -2955,28 +2955,66 @@ test('personal guidance API failure is visible and fails closed', async ({ page 
   expect(errors.consoleErrors.every((message) => message.includes('503'))).toBe(true)
 })
 
-// Two same-account refreshes may overlap; the response requested last owns
-// every personal-guidance field even when the older response arrives later.
-test('slower earlier same-account response cannot overwrite newer guidance', async ({ page }) => {
+// A manual poll and the independent quote timer may overlap in one account;
+// the mine sequence must reject the older answer even while its poll stays current.
+test('slower earlier same-account response cannot overwrite newer guidance', async ({ page }, testInfo) => {
   const errors = observeBlockingBrowserErrors(page)
-  let requests = 0
+  await page.clock.install({time: new Date('2026-09-08T14:59:59Z')})
+  await page.clock.pauseAt(new Date('2026-09-08T15:00:00Z'))
+  const requests: {number: number; body: Record<string, unknown>; held: boolean}[] = []
+  const completions: number[] = []
+  let liveRequests = 0
+  let racing = false
+  let holdNext = false
+  let releaseOlder!: () => void
+  const olderGate = new Promise<void>(resolve => {releaseOlder = resolve})
+  page.on('request', request => {if (new URL(request.url()).pathname.endsWith('/desk/live')) liveRequests += 1})
+  // Capture the real outgoing inputs and hold only the explicitly requested older response.
   await page.route('**/desk/mine*', async route => {
-    requests += 1
-    const request = requests
-    if (request === 1) await new Promise((resolve) => setTimeout(resolve, 1500))
-    return route.fulfill({ json: mineAnswer(
-      request === 1 ? holdDecision('Older response') : buyDecision('Newer response'),
-      [aaplRow],
-    ) })
+    const request = {number: requests.length + 1, body: route.request().postDataJSON() ?? {}, held: holdNext}
+    requests.push(request)
+    holdNext = false
+    const decision = request.held ? holdDecision('Older response')
+      : racing ? buyDecision('Newer response') : holdDecision('Startup response')
+    if (request.held) await olderGate
+    await route.fulfill({json: mineAnswer(decision, [aaplRow])})
+    completions.push(request.number)
   })
 
-  await page.goto('/#desk')
-  await expect.poll(() => requests).toBeGreaterThanOrEqual(2)
-  const action = page.getByRole('table', { name: 'Ranked stocks and cash' }).getByLabel('AAPL strategy intent', { exact: true })
-  await expect(action).toHaveText('BUY')
-  await page.waitForTimeout(1800)
-  await expect(action).toHaveText('BUY')
-  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+  try {
+    await page.goto('/#desk')
+    const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+    const action = board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})
+      .getByLabel('AAPL strategy intent', {exact: true})
+    await expect(action).toHaveText('Hold')
+    await page.waitForLoadState('networkidle')
+    const before = requests.length
+    racing = true
+    holdNext = true
+    await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+    await expect.poll(() => requests.length).toBe(before + 1)
+    expect(requests[before].held).toBe(true)
+    const liveBeforeTimer = liveRequests
+    // Only the fifteen-second mine timer fires, leaving the held manual poll's sequence current.
+    await page.clock.fastForward(15_000)
+    await expect.poll(() => requests.length).toBe(before + 2)
+    expect(liveRequests, 'The newer mine read is not another poll').toBe(liveBeforeTimer)
+    expect(requests[before + 1].body, 'Both overlapping requests use identical account inputs').toEqual(requests[before].body)
+    await expect(action).toHaveText('BUY')
+    await stockDetails(page, 'AAPL')
+    await expect(board.getByLabel('AAPL decision reason', {exact: true})).toHaveText('Newer response')
+    const olderResponse = page.waitForResponse(response => response.url().includes('/desk/mine'))
+    releaseOlder()
+    await (await olderResponse).finished()
+    await page.clock.runFor(100)
+    await expect.poll(() => completions.slice(-2)).toEqual([before + 2, before + 1])
+    await expect(action).toHaveText('BUY')
+    await expect(board.getByLabel('AAPL decision reason', {exact: true})).toHaveText('Newer response')
+  } finally {
+    releaseOlder()
+    await testInfo.attach('same-account-overlap-evidence', {body: JSON.stringify({requests, completions, liveRequests, errors}, null, 2), contentType: 'application/json'})
+    expect.soft(errors).toEqual({consoleErrors: [], pageErrors: []})
+  }
 })
 
 // Backend-authored exchange status honours the 13:00 holiday close; a local

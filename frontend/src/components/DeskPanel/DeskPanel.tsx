@@ -908,6 +908,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // A later request in the same account context supersedes an earlier one;
   // generation alone cannot distinguish overlapping poll and quote refreshes.
   const mineRequestSeq = useRef(0)
+  // A whole-board poll owns its context before it waits for market data.
+  const pollRequestSeq = useRef(0)
   const acceptedMineRequest = useRef(0)
   const [historyContext, setHistoryContext] = useState<PersonalHistoryContext | null>(null)
   const [help, setHelp] = useState(false)
@@ -971,6 +973,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // Apply every field from one personal-guidance response atomically, and
   // ignore any response or error superseded by a newer request or context.
   const refreshMine = async (active: () => boolean = () => true) => {
+    if (!active()) return
     const gen = accountGen.current
     const request = ++mineRequestSeq.current
     try {
@@ -1004,28 +1007,40 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     }
   }
 
-  // The board, the candle, and the practice account together; the practice
-  // account's day P/L feeds the summary strip. Shared by the polling loop
-  // and the Refresh button, so a manual refresh re-reads the live layer
-  // too rather than only the evening payload.
-  const poll = async () => {
+  // Refresh the board only while its starting account and poll remain current,
+  // including manual refreshes and every later step after the market-data wait.
+  const poll = async (active: () => boolean = () => true) => {
+    if (!active()) return
+    const gen = accountGen.current
+    const request = ++pollRequestSeq.current
+    // An obsolete poll must neither publish data nor start another private guidance capture.
+    const current = () => active() && gen === accountGen.current && request === pollRequestSeq.current
     setNow(Date.now())
     try {
-      setLive(await getDeskLive(userId))
+      const nextLive = await getDeskLive(userId)
+      if (!current()) return
+      setLive(nextLive)
       setNow(Date.now())
     } catch {
+      if (!current()) return
       setLive((previous) => ({ ...previous, extended_hours: undefined, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
     }
-    await refreshMine()
+    await refreshMine(current)
+    if (!current()) return
     try {
-      setIntraday(await getDeskIntraday(userId))
+      const nextIntraday = await getDeskIntraday(userId)
+      if (!current()) return
+      setIntraday(nextIntraday)
     } catch {
       // the persisted plan is a convenience; the live board stands
     }
+    if (!current()) return
     try {
-      setPaperLive(await getDeskPaper(userId))
+      const nextPaper = await getDeskPaper(userId)
+      if (!current()) return
+      setPaperLive(nextPaper)
     } catch {
-      setPaperLive({ reason: 'unreachable' })
+      if (current()) setPaperLive({ reason: 'unreachable' })
     }
   }
 
@@ -1074,12 +1089,16 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   }, [userId])
 
   useEffect(() => {
-    void poll()
-    const timer = window.setInterval(() => void poll(), POLL_MS)
+    let active = true
+    void poll(() => active)
+    const timer = window.setInterval(() => void poll(() => active), POLL_MS)
     // Recheck immediately when a background tab returns to the foreground.
-    const resume = () => { if (!document.hidden) void poll() }
+    const resume = () => { if (!document.hidden) void poll(() => active) }
     document.addEventListener('visibilitychange', resume)
     return () => {
+      active = false
+      // Manual refreshes share this lifetime too, even though they have no effect-local callback.
+      pollRequestSeq.current += 1
       window.clearInterval(timer)
       document.removeEventListener('visibilitychange', resume)
     }
