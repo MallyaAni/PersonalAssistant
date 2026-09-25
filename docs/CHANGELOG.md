@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-25 — Refresh saved chart advice without losing history or zoom
+
+Verified source checkpoint `e01540fbe97a3b4950f1ed7fc198a56e827e5745`, not
+deployed. An open ticker chart now reads each newly accepted stored personal
+receipt, independent of acknowledgement, without losing older pages or allowing
+out-of-scope responses to land. It retains only the ticker's chart fields and
+updates markers in place, preserving the actual canvas and zoom. Saved history
+has explicit coverage limits, read-failure retry and reload; the expanded guide
+now describes the actual grade/action/executable-size ordering.
+
+Final production build, source/test TypeScript and **166 browser cases passed**,
+zero skips/flaky. Eleven new cases cover receipt/page races, dedupe, generated-only
+advice, failures, scope changes and actual canvas/zoom. All 21 previously failing
+analyst/timing fixtures were reconciled with the existing UI without removing
+their semantic checks. Original freshness and canvas-reset failures are retained;
+the external original-input replay passes 2/2 with only its obsolete completeness
+wording expectation updated. No real account writes, strategy changes or deploy.
+Separate existing diagram synchronization failure and build warnings are recorded
+in `NEXT_SESSION.md`, not relabelled passing.
+
+The read-only historical-universe audit found broader price coverage but no
+complete historical opportunity set in the inspected archives. Its coverage,
+hashes and remaining source/access decision are in
+`research/historical-universe-coverage-2026-09-25.md`. No new backtest or fit, and
+no claim of superiority against SPY/QQQ.
+
 ## 2026-09-25 — Keep saved chart markers on their actual candle
 
 Source checkpoint `5dd45250dee3a0e2445a105cffcf2eb2b1822b9f`, not deployed.

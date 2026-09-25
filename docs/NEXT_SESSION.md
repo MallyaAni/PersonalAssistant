@@ -1,5 +1,99 @@
 # Next session
 
+## 2026-09-25 — Open-chart receipts refresh in place; source only
+
+**VERIFIED bounded dashboard checkpoint:**
+`e01540fbe97a3b4950f1ed7fc198a56e827e5745`, based on clean `main` at
+`9d9fb6372c13e4bc5b75c16b3d1e9cc234394dcd`. Re-fetched Spark and GitHub before
+committing; neither had newer changes. Preserve Spark's unrelated `scratch/`.
+Publish Mac → Spark → GitHub from Spark. No deployment was started; last verified
+deployed source remains `68edfc0`. The broader trading-system goal is incomplete.
+
+The accepted current personal receipt ID now reaches the open chart. The chart
+reads that exact owner-scoped stored receipt independently of acknowledgement,
+merges by ID in generation order, preserves older pages/cursors, and rejects
+completions after scope teardown/reload. Initial/older pages cannot erase an
+exact receipt arriving first. Only this ticker's ID/time/action/grade are kept
+in chart state, not full owner-wide payloads. An absent-ticker receipt still
+breaks an action run. Markers update in place, preserving the actual canvas and
+user zoom on receipt-only changes. Original candle eligibility is unchanged.
+
+History no longer claims `All available snapshots loaded.` It describes the last
+page and warns that other sessions, deletions and expiry may differ from the
+loaded cache. Explicit reload rereads stored history; failed exact reads have
+their own retry and do not erase existing evidence. The expanded guide now
+matches the sorter: grade, Buy/Sell/Hold, executable size, score, ticker. No
+duplicate stock board, new strategy, account mutation or broker order was added.
+
+**FAILED baselines preserved:**
+
+- Open-chart freshness: one control passed, one regression failed. The live
+  panel accepted/acknowledged the new Sell, but the open chart retained seven
+  snapshots/three action rows rather than eight/four; actual canvas omitted it.
+  API-neutral baseline: `/private/tmp/anios-open-chart-receipt-neutral.1EfNcGIt/`.
+- First freshness candidate passed table/canvas acceptance but rebuilt the
+  actual chart on each receipt, resetting zoom without a price refetch. The
+  stable-frame test failed both canvas identity checks and horizontal candle
+  geometry (zoomed width 27 reverted to 25):
+  `/private/tmp/anios-receipt-canvas-stable-baseline.OipkE5/`.
+- Guide wording assertion failed against the unchanged old allocation-first
+  artifact: `/private/tmp/anios-guide-ranking-baseline.k1pqBo/`.
+
+**VERIFIED final acceptance:** TypeScript, strict checking of all four changed
+browser modules, and production build passed. Final eight-module browser run:
+**166 passed, zero failed/skipped/flaky**, 67.281 seconds. Includes all 15 prior
+chart cases, 11 new receipt/race/canvas cases and all 21 formerly failing
+analyst/timing cases. Source/test/lockfile hashes match before/after the run.
+Evidence: `/private/tmp/anios-chart-live-markers.4JK3kW1j/` (`build.log`,
+`browser.log`, `results.json`, `test-typecheck.log`, `source.before.sha256`).
+Entry `index-DCZOMwNq.js`, SHA-256
+`2103d423e4e99a774958c65d2a125eef74c344cd01990f76cc82b936bc692a4e`.
+The focused 11-case run also passes independently; one intentional HTTP 503 and
+its console diagnostic are asserted, with no unexpected errors/writes:
+`/private/tmp/anios-recorded-refresh-final.3YqOu8/`.
+
+Original external freshness inputs also pass **2/2** on the final artifact at
+`/private/tmp/anios-chart-live-marker-replay.96rjJLCL/`. Its sole expectation
+revision replaces the obsolete positive completeness sentence with the new
+coverage limits; table, count, acknowledgement, identity, canvas and network
+assertions remain intact. The intermediate unchanged replay failed only that
+obsolete sentence and is preserved at
+`/private/tmp/anios-open-chart-neutral-replay.tjHtV9nd/`.
+
+The two old fixture modules now explicitly answer optional session prices,
+locate the visible displayed grade and open the existing guide disclosure.
+Their meaning assertions remain. Diagnostic `expect.soft` checks retain all six
+error categories without masking an earlier assertion; four deliberate helper
+rejection probes prove this: `/private/tmp/anios-dashboard-fixture-reconcile.PJTTIc/`.
+
+All browser/build work used the read-only checkout, network-disabled cached image
+`sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`,
+compiled preview on same-container loopback, and mocked APIs. No real personal
+receipt, holding, order, model or live service was changed by validation.
+**FAILED separate check:** diagram synchronization stops at stale
+`anios-system.svg` under installed Mermaid CLI 11.17.0; its source, SVG, config,
+renderer and lockfile are unchanged from starting HEAD. Existing CSS pseudo-class
+and bundle-size warnings remain. Do not report all repository gates as green.
+Diagram impact: NONE — internal chart/cache correction using existing ownership
+and API relationships; no architecture boundary changed.
+
+**UNVERIFIED / next bounded work:** deployed UI and live persistence; long-open
+cache load (minimal rows still grow with loaded history); and a separate
+source-derived `poll()` race. An old-context `/live` await can finish before its
+closure calls `refreshMine()`, which captures the newer generation while still
+holding old account inputs. Reproduce this with the delayed `/live` boundary
+before changing it; the new rejected-`/mine` test does not prove this path safe.
+
+Research audit: prices exist for all 94 current book names and SPY/QQQ across the
+declared coverage, but the inspected archives cannot supply historical membership,
+classifications or exited-security outcomes. See
+[historical opportunity-set coverage](research/historical-universe-coverage-2026-09-25.md)
+for the 537-stock cache, exact pins, missing evidence and source/access decision.
+Asked whether the user already has historical-data access; no purchase or new
+eligibility rule is authorized by that question. Today's discretionary overlay
+must not be silently backdated. No fitting, frozen-study rerun, pin update or
+strategy-performance improvement claim. Continue the goal; do not deploy automatically.
+
 ## 2026-09-25 — Chart markers no longer substitute another candle; not deployed
 
 Source checkpoint `5dd45250dee3a0e2445a105cffcf2eb2b1822b9f`, based on clean
