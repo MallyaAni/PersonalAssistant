@@ -5,7 +5,7 @@ positive beta-adjusted (revenue growth, sequential growth, gross margin,
 acceleration); the balance-sheet instants (share issuance, asset growth,
 book-to-market) measured nothing on this universe and are cited, not scored.
 
-Two data sources feed this analyst. `opine` reads the frozen EDGAR feature
+Versioned calculation paths feed this analyst. `opine` reads the frozen EDGAR feature
 block (`edgar.edgar_features`), which replaces any missing ratio with a zero
 and then treats that fabricated zero as a valid leg whenever revenue is
 known: a real correctness defect, kept only for explicit side-by-side
@@ -15,7 +15,11 @@ as-of filing versions, where a missing ratio stays NaN and a genuine zero
 stays a valid zero. Version 2 also requires margins to match retained full
 intervals without hiding ambiguity at the latest common end. Growth and the
 scoring blend are unchanged; legacy currency and annual-partition limitations
-remain. The desk runs the corrected path; `opine` remains for comparisons.
+remain. The research default retains that /2 path. The explicitly selected
+`opine_current` /3 path additionally withholds features behind the newest
+reported revenue period in the supplied data and resets held votes when their
+scored inputs become ineligible. It does not supply newer financial definitions
+or qualify erased units, historical availability, or investment performance.
 """
 
 import numpy as np
@@ -53,6 +57,7 @@ CITED_CORRECTED = (
 # source it was not measured with. These identify data; paper.POLICY_VERSION
 # identifies execution, while report.inputs names analyst augmentations.
 CORRECTED_SOURCE = "fundamentals-features/2"
+CURRENT_SOURCE = "fundamentals-features/3"
 LEGACY_SOURCE = "edgar-frozen"
 
 
@@ -96,7 +101,8 @@ def opine_corrected(features) -> Opinion:
     Only the finite scored legs are ranked, and a name needs at least two
     real legs to earn a score, exactly as the frozen rule requires. A name
     with no versions, or with fewer than two computable legs, gets no
-    score (its stance is neutral) rather than a fabricated one. The cited
+    score rather than a fabricated one. Its raw stance is neutral, but this
+    retained /2 path can persist a previous vote until confirmation. The cited
     values are the corrected ones, each with its reference fiscal period
     end carried in `meta` so a consumer can see which quarter a figure
     actually refers to. The mean is the sum of the finite ranks divided by
@@ -118,6 +124,123 @@ def opine_corrected(features) -> Opinion:
         "period_ends": {n: features.feature_period(n) for n in CITED_CORRECTED},
     }
     return Opinion(NAME, scores, evidence, meta=meta)
+
+
+# Validate the named feature/date contract before labelling an opinion period-checked.
+def _validate_eligibility(features):
+    from backend.market.fundamental_features import FEATURE_NAMES
+
+    eligibility = features.eligibility
+    if eligibility is None:
+        raise ValueError("current fundamentals require reporting-period eligibility")
+    shape = features.values.shape
+    if (
+        len(shape) != 3
+        or len(features.names) != len(FEATURE_NAMES)
+        or set(features.names) != set(FEATURE_NAMES)
+        or shape[-1] != len(features.names)
+        or features.available.shape != shape[:2]
+        or features.staleness.shape != shape[:2]
+        or features.period_ends.shape != shape
+        or eligibility.input_period_ends.shape != shape
+        or eligibility.reasons.shape != shape
+        or eligibility.target_period_ends.shape != shape[:2]
+        or any(
+            values.dtype != np.dtype("datetime64[D]")
+            for values in (
+                features.period_ends,
+                eligibility.input_period_ends,
+                eligibility.target_period_ends,
+            )
+        )
+    ):
+        raise ValueError("fundamental eligibility has invalid names, shapes or dates")
+    reasons = eligibility.reasons
+    accepted = reasons == "accepted"
+    target = eligibility.target_period_ends[..., None]
+    original = eligibility.input_period_ends
+    if (
+        not np.isin(
+            reasons,
+            (
+                "accepted",
+                "older_revenue_period",
+                "period_mismatch",
+                "not_computable",
+                "no_revenue_period",
+            ),
+        ).all()
+        or not np.array_equal(accepted, np.isfinite(features.values))
+        or np.isinf(features.values).any()
+        or np.any(accepted & ((original != target) | (features.period_ends != target)))
+        or np.any(~accepted & ~np.isnat(features.period_ends))
+        or np.any((reasons == "no_revenue_period") != np.isnat(target))
+        or np.any((reasons == "older_revenue_period") & ~(original < target))
+        or np.any((reasons == "period_mismatch") & (original == target))
+        or np.any((reasons == "not_computable") & ~np.isnat(original))
+    ):
+        raise ValueError(
+            "fundamental eligibility contradicts feature values or periods"
+        )
+    return eligibility
+
+
+# Score period-checked inputs and restart confirmation whenever a scored leg is lost.
+def opine_current(features) -> Opinion:
+    """Return the explicitly versioned period-checked opinion and reset evidence."""
+    eligibility = _validate_eligibility(features)
+    opinion = opine_corrected(features)
+    admitted = np.stack([np.isfinite(features.feature(n)) for n in SCORED], axis=0)
+    resets = ~np.isfinite(opinion.scores)
+    # A finite remaining score is not permission to retain a vote that relied
+    # on a newly rejected leg. Losing cited-only inputs does not reset a vote.
+    resets[1:] |= np.any(admitted[:, :-1] & ~admitted[:, 1:], axis=0)
+    return Opinion(
+        NAME,
+        opinion.scores,
+        opinion.evidence,
+        meta={
+            **opinion.meta,
+            "source": CURRENT_SOURCE,
+            "eligibility": eligibility,
+            "eligibility_names": tuple(features.names),
+        },
+        stance_resets=resets,
+    )
+
+
+# Convert a fiscal end without inventing a date where the calculation has none.
+def _period_string(value) -> str:
+    end = np.datetime64(value, "D")
+    return "" if np.isnat(end) else str(end)
+
+
+# Retain accepted and rejected inputs even for a name without a score.
+def cited_eligibility(opinion: Opinion, t: int, column: int) -> dict:
+    """Return JSON-safe reporting-period decisions, not full financial qualification."""
+    eligibility = opinion.meta.get("eligibility")
+    names = opinion.meta.get("eligibility_names")
+    if (
+        opinion.meta.get("source") != CURRENT_SOURCE
+        or eligibility is None
+        or not names
+        or opinion.stance_resets is None
+    ):
+        raise ValueError("current fundamental source lacks eligibility evidence")
+    return {
+        "revenue_period_end": _period_string(eligibility.target_period_ends[t, column]),
+        "score_available": bool(np.isfinite(opinion.scores[t, column])),
+        "vote_reset": bool(opinion.stance_resets[t, column]),
+        "features": {
+            name: {
+                "status": str(eligibility.reasons[t, column, names.index(name)]),
+                "input_period_end": _period_string(
+                    eligibility.input_period_ends[t, column, names.index(name)]
+                ),
+            }
+            for name in CITED_CORRECTED
+        },
+    }
 
 
 # One name's cited fiscal period ends at one session, as plain date strings.

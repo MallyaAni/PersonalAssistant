@@ -99,6 +99,25 @@ Internal refactors, bug fixes, styling, tests, and field-level implementation de
 
 ## How to verify a change
 
+### Fundamental reporting-period policy
+
+`market_daily` explicitly selects `fundamentals="current"` (source `/3`). The
+generic `desk.run` and `market_desk` defaults stay on `/2`; use
+`python -m backend.cli.market_desk --fundamentals current` for an explicit
+read-only comparison. Do not relabel existing research results or rewrite saved
+records as `/3`.
+
+Run `test_fundamental_period_eligibility.py`, `test_opinion_persistence_resets.py`,
+`test_fundamental_current_path.py` and `test_fundamental_current_review.py` with
+the existing fundamental/desk/daily suites. They cover valid-period exclusion,
+lost-leg and lost-peer vote recovery, real desk assembly, source identities and
+actual temporary record persistence. Browser acceptance includes
+`fundamental-period-eligibility.spec.ts`, `fundamental-source-versions.spec.ts`
+and the existing desk/chart suites, from a fresh build of the same checkout.
+Retain a failed funding/source cross-combination rather than deleting its claim.
+This proves the stated safeguard, not source completeness or strategy quality;
+see the [contract and limits](research/fundamental-period-eligibility-2026-09-25.md).
+
 ### Browser-independent desk display quotes
 
 `backend.main:app` starts `SessionPriceCollector` through the normal FastAPI

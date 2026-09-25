@@ -36,13 +36,21 @@ currency compatibility. Existing YTD/annual derivation arithmetic is unchanged,
 including its known annual-partition limitation; the retained intervals are not
 independently audited economic quarters. Historical source authenticity and
 investment quality are not established by this calculation.
+
+`features` retains that calculation unchanged. The opt-in `current_features`
+adds only a reporting-end safeguard: a finite metric must reference the latest
+valid, decision-available reported revenue end across recognized candidate tags.
+Reported quarter, YTD and annual spans establish that end without proving a
+quarter can be derived. An older or mismatched metric is withheld, never replaced
+with another tag's amount. The safeguard does not authenticate erased units,
+economic concept equivalence, annual partitions or historical source bytes.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import numpy as np
 
@@ -83,6 +91,24 @@ _QUARTER_DAYS = 91
 
 
 @dataclass(frozen=True, slots=True)
+class PeriodEligibility:
+    """The reporting-end decision for every unmodified input feature.
+
+    `target_period_ends` is (T, N), NaT where no valid reported revenue end is
+    known. `input_period_ends` preserves the original (T, N, K) feature dates,
+    including dates withheld from the returned features. `reasons` has that
+    same feature shape and contains only `accepted`, `older_revenue_period`,
+    `period_mismatch`, `not_computable` or `no_revenue_period`. Acceptance means
+    the fiscal end passed this safeguard, not that the financial value is
+    economically qualified, current by age, or suitable for an investment.
+    """
+
+    target_period_ends: np.ndarray
+    input_period_ends: np.ndarray
+    reasons: np.ndarray
+
+
+@dataclass(frozen=True, slots=True)
 class FundamentalFeatures:
     """The (T, N, K) feature tensor plus its non-economic companions.
 
@@ -104,6 +130,8 @@ class FundamentalFeatures:
     available: np.ndarray
     staleness: np.ndarray
     period_ends: np.ndarray
+    # The original adapter leaves this absent; only the opt-in safeguard fills it.
+    eligibility: PeriodEligibility | None = None
 
     # One named feature's column.
     def feature(self, name: str) -> np.ndarray:
@@ -322,3 +350,110 @@ def features(
         available[:, column] = per.available
         staleness[:, column] = per.staleness
     return FundamentalFeatures(values, FEATURE_NAMES, available, staleness, period_ends)
+
+
+# Admit a reported revenue date only when its own source dates are consistent.
+def _reported_revenue_available(
+    version: fa.Version, recognized: set[str]
+) -> date | None:
+    if version.name != "revenue" or version.tag not in recognized:
+        return None
+    if (
+        type(version.start) is not date
+        or type(version.end) is not date
+        or type(version.filed) is not date
+        or fa.span_kind(version.start, version.end) is None
+        or not np.isfinite(version.value)
+        or version.end > version.filed
+    ):
+        return None
+    accepted = version.accepted
+    if accepted is not None:
+        if (
+            not isinstance(accepted, datetime)
+            or accepted.tzinfo is None
+            or accepted.utcoffset() is None
+        ):
+            return None
+        try:
+            if accepted.astimezone(fa.NEW_YORK).date() < version.end:
+                return None
+        except (OverflowError, ValueError):
+            return None
+    # Filing and acceptance dates are distinct: an after-hours acceptance
+    # can precede its assigned filing date. Neither may precede the period.
+    try:
+        return version.available
+    except (OverflowError, ValueError):
+        return None
+
+
+# Track valid reported revenue ends without deriving quarters or substituting amounts.
+def _reported_revenue_period_ends(
+    versions: Sequence[fa.Version], dates: np.ndarray
+) -> np.ndarray:
+    ends = np.full(len(dates), np.datetime64("NaT", "D"))
+    recognized = set(fa._tag_order("revenue"))
+    reported: list[tuple[date, date]] = []
+    for version in versions:
+        available = _reported_revenue_available(version, recognized)
+        if available is not None:
+            reported.append((available, version.end))
+    reported.sort()
+    pointer = 0
+    latest = None
+    for row, session in enumerate(dates.astype("datetime64[D]").astype(object)):
+        while pointer < len(reported) and reported[pointer][0] <= session:
+            end = reported[pointer][1]
+            if end <= session:
+                latest = end if latest is None else max(latest, end)
+            pointer += 1
+        if latest is not None:
+            ends[row] = np.datetime64(latest, "D")
+    return ends
+
+
+# Withhold features outside the reported revenue frontier, retaining rejection evidence.
+def current_features(
+    panel: Panel,
+    versions_by_ticker: Mapping[str, Sequence[fa.Version]],
+    ytd_names: frozenset = fa.ALL_YTD_NAMES,
+) -> FundamentalFeatures:
+    """Apply a fiscal-end safeguard to the unchanged legacy feature calculation.
+
+    No alternate tag value or currency conversion enters a metric. Missing
+    watermark evidence cannot establish freshness: all such cells carry
+    `no_revenue_period`. A computable metric at an older end is refused as
+    `older_revenue_period`; any other unequal or unknown reference end is
+    `period_mismatch`. With a known target, an originally missing feature stays
+    `not_computable`. No absolute-age threshold is imposed.
+    """
+    original = features(panel, versions_by_ticker, ytd_names)
+    targets = np.full(original.available.shape, np.datetime64("NaT", "D"))
+    for column, ticker in enumerate(panel.tickers):
+        found = versions_by_ticker.get(ticker)
+        if found:
+            targets[:, column] = _reported_revenue_period_ends(found, panel.dates)
+    target_known = np.broadcast_to(~np.isnat(targets[..., None]), original.values.shape)
+    finite = np.isfinite(original.values)
+    same_end = original.period_ends == targets[..., None]
+    accepted = finite & target_known & same_end
+    reasons = np.full(original.values.shape, "not_computable", dtype="U20")
+    reasons[finite & target_known] = "period_mismatch"
+    reasons[finite & target_known & (original.period_ends < targets[..., None])] = (
+        "older_revenue_period"
+    )
+    reasons[accepted] = "accepted"
+    reasons[~target_known] = "no_revenue_period"
+    values = original.values.copy()
+    periods = original.period_ends.copy()
+    values[~accepted] = np.nan
+    periods[~accepted] = np.datetime64("NaT", "D")
+    return FundamentalFeatures(
+        values,
+        original.names,
+        original.available,
+        original.staleness,
+        periods,
+        PeriodEligibility(targets, original.period_ends.copy(), reasons),
+    )

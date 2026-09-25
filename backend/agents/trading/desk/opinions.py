@@ -52,19 +52,26 @@ class Opinion:
     # period ends, so a record can say what a corrected figure actually
     # refers to. Deliberately optional: most analysts carry nothing here.
     meta: dict[str, object] = field(default_factory=dict)
+    # Optional (T, N) Boolean mask: discard a held stance and restart its
+    # confirmation when that analyst's input validity changes. None keeps
+    # legacy persistence, including its handling of temporarily missing scores.
+    stance_resets: np.ndarray | None = None
 
     # Ranks in [0, 1] across the names with a score on each session.
     def ranks(self) -> np.ndarray:
         """Return (T, N) percentile ranks of the scores per session."""
         return percentile_rank(self.scores)
 
-    # Bullish, neutral or bearish per name and session; neutral where the
-    # analyst has no score.
+    # Persist rank stances per name, honoring explicit input-validity resets.
     def stances(
         self, fraction: float = STANCE_FRACTION, persistence: int = PERSISTENCE
     ) -> np.ndarray:
         """Return (T, N) stances in {-1, 0, 1}, persisted."""
-        return persist(stances_from_ranks(self.ranks(), fraction), persistence)
+        return persist(
+            stances_from_ranks(self.ranks(), fraction),
+            persistence,
+            resets=self.stance_resets,
+        )
 
     # How strongly this analyst likes each name, on a continuous scale
     # rather than in three buckets. NaN where it has no view.
@@ -82,17 +89,43 @@ class Opinion:
         }
 
 
-# A raw stance becomes the held stance only once it has repeated for
-# `sessions` consecutive sessions; until then the previous stance holds.
-def persist(raw: np.ndarray, sessions: int) -> np.ndarray:
-    """Return (T, N) persisted stances."""
+# Confirm repeated raw stances, optionally clearing held votes and runs per ticker.
+def persist(
+    raw: np.ndarray, sessions: int, *, resets: np.ndarray | None = None
+) -> np.ndarray:
+    """Return (T, N) persisted stances, with optional explicit validity resets.
+
+    A reset requires a plain Boolean ndarray matching the raw panel exactly;
+    malformed masks are rejected without coercion, even for empty/immediate
+    paths. It clears the held stance to neutral and counts the current raw
+    stance as confirmation one. With three required confirmations, reset day
+    and the next matching day remain neutral; the third matching day confirms.
+    Repeated resets cannot build a run. Callers must reset every unscored row.
+
+    Without resets, the first raw row is held immediately as before. An
+    explicit first-row reset requires confirmation instead. With sessions <= 1,
+    the current raw stance already satisfies confirmation, even on reset days.
+    """
+    if resets is not None and (
+        type(resets) is not np.ndarray
+        or resets.dtype != np.dtype(bool)
+        or resets.ndim != 2
+        or resets.shape != raw.shape
+    ):
+        raise ValueError("resets must be a Boolean ndarray matching raw's (T, N) shape")
     if sessions <= 1 or raw.shape[0] == 0:
         return raw
     held = raw.copy()
     run = np.ones(raw.shape[1], dtype=int)
+    if resets is not None:
+        held[0] = np.where(resets[0], NEUTRAL, held[0])
     for t in range(1, raw.shape[0]):
         run = np.where(raw[t] == raw[t - 1], run + 1, 1)
-        held[t] = np.where(run >= sessions, raw[t], held[t - 1])
+        previous = held[t - 1]
+        if resets is not None:
+            run = np.where(resets[t], 1, run)
+            previous = np.where(resets[t], NEUTRAL, previous)
+        held[t] = np.where(run >= sessions, raw[t], previous)
     return held
 
 

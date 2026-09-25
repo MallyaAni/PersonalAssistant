@@ -220,6 +220,13 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 
 ## Milestone 5: tools and specialized agents — IN PROGRESS
 
+- Fundamental-input accuracy remains `IN PROGRESS`: the connected `/3`
+  reporting-period safeguard excludes obsolete inputs before ranking, resets
+  affected votes and records reasons for unscored names. It preserves `/2`
+  research defaults and does not complete the unit-preserving current-concept
+  migration. The retained 94-source comparison removes 178 older-period inputs;
+  it is not proof of better returns. [Policy and remaining boundary](
+  research/fundamental-period-eligibility-2026-09-25.md).
 - Desk pricing remains `IN PROGRESS`: browser-independent collection of existing
   display quotes and original-time expiry are verified with isolated startup,
   HTTP, storage and browser tests, not yet deployed. The single approved SIP

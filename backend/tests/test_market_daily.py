@@ -502,9 +502,9 @@ def test_a_same_session_rerun_submits_no_trade(tmp_path, monkeypatch, capsys):
     assert "refusing to re-run the day" in capsys.readouterr().out
     # The record on file is untouched, and no pending state was written.
     assert (Path(tmp_path) / "desk" / "asof=2026-09-03" / "desk.json").exists()
-    # The nightly asks the desk for the corrected fundamental source by
-    # default, and the guard runs before any trade is considered.
-    assert seen_fundamentals == ["corrected"]
+    # The nightly explicitly requests the reporting-period policy while
+    # retaining the same-session guard before any trade is considered.
+    assert seen_fundamentals == ["current"]
 
 
 # A new day's tone refresh starts from the scores already stored, so only

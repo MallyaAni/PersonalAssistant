@@ -726,13 +726,22 @@ latest-compatible-period ratio. Decision-facing exclusions use only eligible
 evidence. This remains an unwired research calculation, not a live feature
 migration; see the [period contract](research/fundamental-period-sources-2026-09-25.md).
 
-The current `fundamental_features` consumer separately retains stored start/end
+The `fundamental_features` consumer separately retains stored start/end
 dates for margin matching. Its `fundamentals-features/2` source withholds a margin
 when the latest shared end has unequal starts or competing intervals; the legacy
 quarter-end projection and revenue-growth calculations remain unchanged. This
 does not recover missing currency dimensions or validate legacy annual-quarter
 coverage. Earlier `/1` records keep their original identity. See the
 [connected correction](research/live-margin-period-checks-2026-09-25.md).
+
+New nightly records explicitly select `fundamentals-features/3`: a reporting-end
+safeguard excludes older scored/cited inputs before ranking and resets the held
+fundamental vote when scored legs become ineligible. Original ends and rejection
+reasons survive for every book name, including unscored names, in the existing
+record/UI path. The generic desk and comparison CLI defaults remain `/2`, so
+older research callers do not silently change. This is not the unit-preserving
+source migration, a current-data completeness claim or investment qualification.
+See the [policy and evidence](research/fundamental-period-eligibility-2026-09-25.md).
 
 ### Adding one
 

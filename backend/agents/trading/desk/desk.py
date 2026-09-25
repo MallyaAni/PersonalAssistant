@@ -63,8 +63,8 @@ class DeskReport:
     # the shadow track beside the live one without a second run.
     inputs: tuple[str, ...] = ()
     alternate: "DeskReport | None" = None
-    # Which data source the fundamental analyst read: `fundamental.CORRECTED_SOURCE`
-    # or `fundamental.LEGACY_SOURCE`. This names the data, so a grade or a
+    # Which versioned data calculation the fundamental analyst read.
+    # This names the input path, so a grade or a
     # recorded curve is never presented as measured under a source it was not.
     # Separate from `inputs`, which names analyst augmentations such as the gap.
     fundamentals_source: str = ""
@@ -141,11 +141,13 @@ EXPECTATIONS_GAP = "expectations-gap"
 LIVE_INPUTS: tuple[str, ...] = (EXPECTATIONS_GAP,)
 
 # The fundamental analyst's data source, passed to `run`. Corrected is the
-# desk's default: the as-of filing versions, where a missing ratio stays
+# research default: the as-of filing versions, where a missing ratio stays
 # missing instead of reading as a fabricated zero. Legacy is the frozen
 # EDGAR feature block, kept for explicit read-only side-by-side comparison.
 FUNDAMENTALS_CORRECTED = "corrected"
 FUNDAMENTALS_LEGACY = "legacy"
+# Nightly records explicitly opt into period eligibility and vote resets.
+FUNDAMENTALS_CURRENT = "current"
 
 
 # Build the desk using the caller's partition cutoff across all analyst inputs.
@@ -168,6 +170,7 @@ def run(
 
     `fundamentals` names which data source the fundamental analyst reads:
     the corrected as-of filing versions by default (`FUNDAMENTALS_CORRECTED`),
+    the reporting-period safeguard (`FUNDAMENTALS_CURRENT`) by explicit choice,
     or the frozen EDGAR feature block (`FUNDAMENTALS_LEGACY`) for an
     explicit read-only side-by-side comparison. Any other value is refused
     before assembly, so corrected data can never be labelled legacy and a
@@ -178,10 +181,15 @@ def run(
     session raises `FundamentalSourceError` before assembly so no bogus
     desk is written.
     """
-    if fundamentals not in (FUNDAMENTALS_CORRECTED, FUNDAMENTALS_LEGACY):
+    if fundamentals not in (
+        FUNDAMENTALS_CORRECTED,
+        FUNDAMENTALS_LEGACY,
+        FUNDAMENTALS_CURRENT,
+    ):
         raise ValueError(
             f"unknown fundamental data source {fundamentals!r}; expected "
-            f"{FUNDAMENTALS_CORRECTED!r} or {FUNDAMENTALS_LEGACY!r}"
+            f"{FUNDAMENTALS_CORRECTED!r}, {FUNDAMENTALS_CURRENT!r} or "
+            f"{FUNDAMENTALS_LEGACY!r}"
         )
     # The loaders live next to the torch models; importing them here keeps
     # the desk importable where torch is absent (the gate container). The
@@ -229,6 +237,8 @@ def _fundamental_source_id(mode: str) -> str:
     """Return the source identifier for a fundamental run mode."""
     if mode == FUNDAMENTALS_CORRECTED:
         return fundamental.CORRECTED_SOURCE
+    if mode == FUNDAMENTALS_CURRENT:
+        return fundamental.CURRENT_SOURCE
     if mode == FUNDAMENTALS_LEGACY:
         return fundamental.LEGACY_SOURCE
     raise ValueError(f"unknown fundamental data source {mode!r}")
@@ -237,7 +247,8 @@ def _fundamental_source_id(mode: str) -> str:
 # The fundamental analyst's opinion for a run mode, raising on total absence
 # of the corrected source so a desk is never assembled without its input.
 def _fundamental_opinion(store, panel, asof, mode: str) -> Opinion:
-    """Return the fundamental Opinion for `mode` ("corrected" or "legacy")."""
+    """Return the opinion for an explicit, source-tagged fundamental policy."""
+    _fundamental_source_id(mode)
     if mode == FUNDAMENTALS_LEGACY:
         from backend.market.model import load_edgar_features
 
@@ -266,7 +277,11 @@ def _fundamental_opinion(store, panel, asof, mode: str) -> Opinion:
             "refusing to assemble a desk with a fabricated fundamental view"
         )
     try:
-        features = ff.features(panel, usable)
+        features = (
+            ff.current_features(panel, usable)
+            if mode == FUNDAMENTALS_CURRENT
+            else ff.features(panel, usable)
+        )
     except Exception as exc:  # noqa: BLE001 - a clear data error, not a bogus desk
         raise fundamental.FundamentalSourceError(
             "fundamental filing versions could not be turned into features: "
@@ -282,7 +297,11 @@ def _fundamental_opinion(store, panel, asof, mode: str) -> Opinion:
             "at the decision session; refusing to assemble a desk with a "
             "fabricated fundamental view"
         )
-    return fundamental.opine_corrected(features)
+    return (
+        fundamental.opine_current(features)
+        if mode == FUNDAMENTALS_CURRENT
+        else fundamental.opine_corrected(features)
+    )
 
 
 # Grade, score and size a set of opinions into a report.

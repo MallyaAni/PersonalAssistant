@@ -908,27 +908,39 @@ def _strategy_name(report) -> str:
 
 
 # The fundamental analyst's block for the record: the data source it read
-# and each name's cited fiscal period ends on the last session. A name with
-# no fundamental opinion on the last session is omitted; a record whose
-# report carries no fundamental analyst gets an empty dates map.
+# and fiscal ends, with /3 eligibility retained even for unscored names.
+# Older calculation versions retain their original finite-score-only contract.
 def _fundamental_block(report) -> dict:
-    """Return {"source": ..., "dates": {ticker: {feature: end}}} for the record."""
+    """Serialize source-bound fiscal evidence without losing rejected names."""
     from backend.agents.trading.desk import fundamental
 
     opinion = report.opinions.get(fundamental.NAME)
     panel = report.panel
     last = len(panel.dates) - 1
+    source = getattr(report, "fundamentals_source", "") or ""
+    opinion_source = opinion.meta.get("source") if opinion is not None else None
+    current = source == fundamental.CURRENT_SOURCE
+    if (
+        current or opinion_source == fundamental.CURRENT_SOURCE
+    ) and source != opinion_source:
+        raise ValueError("record fundamental source does not match its opinion")
     dates = {}
+    eligibility = {}
     if opinion is not None:
         for column, ticker in enumerate(panel.tickers):
             if ticker == panel.benchmark:
                 continue
-            if not np.isfinite(opinion.scores[last, column]):
+            if not current and not np.isfinite(opinion.scores[last, column]):
                 continue
             dates[ticker] = fundamental.cited_dates(opinion, last, column)
+            if current:
+                eligibility[ticker] = fundamental.cited_eligibility(
+                    opinion, last, column
+                )
     return {
-        "source": getattr(report, "fundamentals_source", "") or "",
+        "source": source,
         "dates": dates,
+        **({"eligibility": eligibility} if current else {}),
     }
 
 
@@ -1483,6 +1495,7 @@ def _ml_forward_receipt(row: dict | None, session: str | None = None) -> dict | 
     }
 
 
+# Run the nightly writer with explicitly versioned inputs and existing execution guards.
 def _run(args, store: MarketStore) -> None:  # noqa: C901
     asof = args.asof or datetime.now(tz=UTC).date()
     current = args.asof is None
@@ -1504,10 +1517,11 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         )
     else:
         observed["row"] = observe_ml_forward(Path(store.root), current)
-    # The record always reads the corrected as-of filing versions. The legacy
-    # frozen block is only for the read-only comparison CLI (`market_desk`),
-    # never for this writer: this run writes a record and can paper-trade.
-    report = trading_desk.run(store, args.asof)
+    # Opt this writer into the reporting-period safeguard explicitly; the
+    # generic desk.run default stays pinned for pre-existing research callers.
+    report = trading_desk.run(
+        store, args.asof, fundamentals=trading_desk.FUNDAMENTALS_CURRENT
+    )
     panel = report.panel
     print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
     _print_regime(report.regime.today())

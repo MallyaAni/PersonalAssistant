@@ -1398,7 +1398,7 @@ test('separates dated inflation facts from research-only model judgement', async
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
-// Confirm cash explicitly and discard the preview whenever the budget changes.
+// Render recorded account results without inventing an execution policy for an untagged curve.
 test('renders the desk at a glance with the track record', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
@@ -1420,8 +1420,8 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(glance.getByText('Broker day P/L', { exact: true })).toBeVisible()
   await expect(glance.getByText(/\+\$31[23]/)).toBeVisible()
   await expect(glance.getByText(/\+0\.3%/)).toBeVisible()
-  await expect(glance.getByText('Older policy simulation', { exact: true })).toBeVisible()
-  await expect(glance.getByText('Predates the shared strategy rules; awaiting a new nightly simulation.', { exact: false })).toBeVisible()
+  await expect(glance.getByText('Policy not recorded', { exact: true })).toBeVisible()
+  await expect(glance.getByText('Strategy policy was not recorded; current execution-policy alignment is unverified.', { exact: false })).toBeVisible()
   await expect(glance.getByText('vs SPY', { exact: false })).toBeVisible()
   await expect(glance.getByText('6% invested')).toBeVisible()  // 6,120 of 104,200 live
 
@@ -1469,17 +1469,17 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Current margin-date inputs are named in strategy details and the summary without relabelling legacy curves.
+// Reporting-period inputs are named in strategy details and the summary without relabelling legacy curves.
 test('names the fundamental data source and flags older fundamental-input curves', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  latest.provenance = { data: { fundamentals: 'fundamentals-features/2' } }
+  latest.provenance = { data: { fundamentals: 'fundamentals-features/3' } }
   latest.curve = {
     ...latest.curve!,
     backtest: {
       ...latest.curve!.backtest,
       strategy_policy: 'cash-bounded-breakout-rotation/3',
-      fundamentals_source: 'fundamentals-features/2',
+      fundamentals_source: 'fundamentals-features/3',
     },
   }
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
@@ -1490,13 +1490,13 @@ test('names the fundamental data source and flags older fundamental-input curves
   const board = page.getByLabel('Ranked stocks and cash')
   await expect(board).toBeVisible()
   await strategyDetails(page)
-  await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('stored filing versions; margin period dates checked')
+  await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('stored filing versions; reporting-period safeguard applied')
 
   // The same source wording in the at-a-glance summary, and a curve whose
   // policy and fundamentals are both current: the current-policy simulation.
   await page.locator('summary', { hasText: 'Practice account' }).click()
   const glance = page.getByLabel('The desk at a glance')
-  await expect(glance).toContainText('stored filing versions; margin period dates checked')
+  await expect(glance).toContainText('stored filing versions; reporting-period safeguard applied')
   await expect(glance.getByText('Current policy simulation', { exact: true })).toBeVisible()
 
   // Same execution policy version, a record whose analyst read the frozen

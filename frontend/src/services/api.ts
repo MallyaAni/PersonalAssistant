@@ -1891,7 +1891,16 @@ export interface DeskRecord {
   // Metadata saved with the evening grade, not the separately fetched earnings read.
   // Each date is a metric's reference fiscal period end, never a filing/release time.
   // Older records omit this block; missing metrics may have an empty date string.
-  fundamental?: {source: string; dates: Record<string, Record<string, string>>};
+  fundamental?: {
+    source: string;
+    dates: Record<string, Record<string, string>>;
+    eligibility?: Record<string, {
+      revenue_period_end: string;
+      score_available: boolean;
+      vote_reset: boolean;
+      features: Record<string, {status: string; input_period_end: string}>;
+    }>;
+  };
   event_risk?: {
     outcome?: {session: string; status: string; unrestored: Record<string, number>} | null;
     execution_pending?: boolean;

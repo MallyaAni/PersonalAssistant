@@ -257,24 +257,75 @@ const FUNDAMENTAL_PERIOD_LABELS: [string, string][] = [
 ]
 
 // Keep only actual ISO calendar dates, without normalizing invalid dates into a different quarter.
-const recordedFiscalDate = (value: string | undefined): string | null => {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+const recordedFiscalDate = (value: unknown): string | null => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
   const parsed = new Date(`${value}T00:00:00Z`)
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null
 }
 
-// Scope stored fiscal metadata to this decision and expose the absence of a grade-linked release.
+const PERIOD_CHECK_REASONS: Record<string, string> = {
+  accepted: 'Passed reporting-period check',
+  older_revenue_period: 'Excluded: input predates the latest reported revenue period.',
+  period_mismatch: 'Excluded: input period does not match the reported revenue period.',
+  not_computable: 'Unavailable: this metric could not be calculated.',
+  no_revenue_period: 'Unavailable: no eligible reported revenue period was recorded.',
+}
+
+// Admit only complete, internally consistent /3 evidence without coercing dates or flags.
+const recordedPeriodEligibility = (fundamental: DeskRecord['fundamental'], ticker: string) => {
+  if (fundamental?.source !== 'fundamentals-features/3') return null
+  const eligibility = fundamental.eligibility?.[ticker]
+  if (!eligibility || typeof eligibility !== 'object' || Array.isArray(eligibility)
+    || typeof eligibility.score_available !== 'boolean' || typeof eligibility.vote_reset !== 'boolean'
+    || !eligibility.features || typeof eligibility.features !== 'object' || Array.isArray(eligibility.features)) return null
+  const target = recordedFiscalDate(eligibility.revenue_period_end)
+  if (eligibility.revenue_period_end !== '' && !target) return null
+  for (const [name] of FUNDAMENTAL_PERIOD_LABELS) {
+    const item = eligibility.features[name]
+    if (!item || typeof item !== 'object' || Array.isArray(item)
+      || typeof item.status !== 'string' || !Object.prototype.hasOwnProperty.call(PERIOD_CHECK_REASONS, item.status)) return null
+    const input = recordedFiscalDate(item.input_period_end)
+    if (item.input_period_end !== '' && !input) return null
+    if (item.status === 'no_revenue_period' ? target !== null : target === null) return null
+    if (item.status === 'accepted' && (!input || input !== target || recordedFiscalDate(fundamental.dates?.[ticker]?.[name]) !== input)) return null
+    if (item.status === 'older_revenue_period' && (!input || !target || input >= target)) return null
+    if (item.status === 'period_mismatch' && input === target) return null
+  }
+  if (!eligibility.score_available && !eligibility.vote_reset) return null
+  if (eligibility.score_available && ['revenue_yoy', 'revenue_qoq', 'revenue_acceleration', 'gross_margin']
+    .filter(name => eligibility.features[name].status === 'accepted').length < 2) return null
+  return eligibility
+}
+
+// Explain recorded /3 exclusions while preserving older fiscal-date and persisted-vote context.
 const RecordedAnalystDates = ({fundamental, ticker}: {fundamental: DeskRecord['fundamental']; ticker: string}) => {
   const dates = fundamental?.dates?.[ticker]
   const periods = FUNDAMENTAL_PERIOD_LABELS.map(([key, label]) => ({key, label, date: recordedFiscalDate(dates?.[key])}))
   const hasDates = periods.some(period => period.date !== null)
+  const periodCheck = fundamental?.source === 'fundamentals-features/3'
+  const eligibility = recordedPeriodEligibility(fundamental, ticker)
   return <section aria-label="Recorded analyst evidence dates" className="mt-2 text-xs text-[#6e6e73]">
     <details>
       <summary className="cursor-pointer text-[#0071e3]">Evidence dates for this decision</summary>
       <p className="mt-2">F reference fiscal period ends, not filing or release dates. Metrics can refer to different periods; these dates do not date S or V.</p>
       <p className="mt-1">These dates describe recorded evidence, not necessarily the readings that established a persisted vote.</p>
       <p className="mt-1">F fiscal-date metadata source: {fundamental?.source || 'not recorded'}.</p>
-      {hasDates ? <table aria-label="Fundamental fiscal period ends" className="mt-2 w-full text-left">
+      {periodCheck && !eligibility && <p className="mt-2">Reporting-period check details are unavailable for this name. No pass, exclusion, score or vote status is inferred from missing or invalid metadata.</p>}
+      {eligibility ? <>
+        <p className="mt-2">Inputs are checked against the latest decision-available reported revenue period in the stored data. This check does not establish data freshness, financial completeness or fair value.</p>
+        <p className="mt-1">Revenue growth over the year and quarter, growth acceleration and gross margin are scored features. Other metrics are context only. Passing this check does not prove that a value was used in the score or a persisted vote.</p>
+        <p className="mt-1">{eligibility.score_available ? 'A fundamental score was available.' : 'Not enough eligible ranked inputs for a fundamental score; the fundamental vote is neutral.'}</p>
+        {eligibility.vote_reset && <p className="mt-1">The fundamental vote is neutral; any previously held vote was cleared. A new vote requires confirmation.</p>}
+        <table aria-label="Fundamental reporting-period checks" className="mt-2 w-full table-fixed text-left">
+          <thead><tr><th className="w-1/3 pr-2 font-medium">Metric</th><th className="font-medium">Recorded evidence</th></tr></thead>
+          <tbody>{FUNDAMENTAL_PERIOD_LABELS.map(([key, label]) => <tr key={key} className="align-top">
+            <td className="py-1 pr-2">{label}</td>
+            <td className="py-1"><div>Input period end: {recordedFiscalDate(eligibility.features[key].input_period_end) ?? 'Unavailable'}</div>
+              <div>Revenue reference end: {recordedFiscalDate(eligibility.revenue_period_end) ?? 'Unavailable'}</div>
+              <div>{PERIOD_CHECK_REASONS[eligibility.features[key].status]}</div></td>
+          </tr>)}</tbody>
+        </table>
+      </> : hasDates ? <table aria-label="Fundamental fiscal period ends" className="mt-2 w-full text-left">
         <thead><tr><th className="font-medium">Metric</th><th className="font-medium">Fiscal period end</th></tr></thead>
         <tbody>{periods.map(period => <tr key={period.key}><td className="pr-3 py-0.5">{period.label}</td><td className="whitespace-nowrap">{period.date ?? 'Unavailable'}</td></tr>)}</tbody>
       </table> : <p className="mt-1">F fiscal period dates are unavailable for this name. Missing or invalid dates do not establish that the analyst had no financial evidence.</p>}
@@ -315,10 +366,14 @@ const EveningAnalysis = ({grade, session, written, fundamental, ticker}: {grade:
 const describeFundamentalSource = (source?: string) => {
   const title = `Recorded fundamental source: ${source || 'not recorded'}.`
   switch (source) {
-    case 'fundamentals-features/2':
+    case 'fundamentals-features/3':
       return {title, current: true, known: true,
-        notice: 'Fundamentals: stored filing versions; margin period dates checked.',
+        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied.',
         simulationNote: ''}
+    case 'fundamentals-features/2':
+      return {title, current: false, known: true,
+        notice: 'Fundamentals: stored filing versions; margin period dates checked (previous calculation).',
+        simulationNote: 'Checks margin period dates, but does not exclude inputs from older reporting periods. Not measured with the reporting-period safeguard.'}
     case 'fundamentals-features/1':
       return {title, current: false, known: true,
         notice: 'Fundamentals: stored filing versions (earlier margin calculation).',
@@ -334,6 +389,30 @@ const describeFundamentalSource = (source?: string) => {
           ? 'The recorded fundamental source is not recognized; its inputs cannot be verified.'
           : 'The simulation did not record its fundamental data source; its inputs cannot be verified.'}
   }
+}
+
+// Describe funding only from recognized metadata; absent tags do not prove legacy borrowing.
+const describeSimulationFunding = (source: unknown) => {
+  if (source === 'cash-at-fill-v1') return {
+    summary: 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns.',
+    assumptions: 'Simulation assumptions: buys fit cash after costs; closing sales cannot fund earlier buys. Fractional fills and immediate use of completed sale proceeds are modeled; settlement delays, bid/ask spreads, market impact and broker rejections are not. Historical inputs and the selected universe can bias results.',
+  }
+  const summary = source === undefined || source === null || source === ''
+    ? 'Funding model was not recorded; cash-only funding is unverified.'
+    : 'Recorded funding model is not recognized; cash-only funding is unverified.'
+  return {summary, assumptions: `${summary} These results do not establish the performance of a cash-only account or the current FOMC policy.`}
+}
+
+// Distinguish known earlier execution from missing or unrecognized policy tags.
+const describeSimulationPolicy = (source: unknown, current: string) => {
+  if (typeof source === 'string' && source !== '' && source === current) return {current: true, label: '', note: ''}
+  if (current === 'cash-bounded-breakout-rotation/3' && source === 'cash-bounded-breakout-rotation/2') return {
+    current: false, label: 'Older policy simulation',
+    note: 'Uses an earlier recorded strategy policy; not measured with the current execution policy.',
+  }
+  return source === undefined || source === null || source === ''
+    ? {current: false, label: 'Policy not recorded', note: 'Strategy policy was not recorded; current execution-policy alignment is unverified.'}
+    : {current: false, label: 'Unrecognized policy simulation', note: 'Recorded strategy policy is not recognized; current execution-policy alignment is unverified.'}
 }
 
 // One number to read at a glance: the paper account's worth, its return
@@ -363,17 +442,19 @@ const SummaryStrip = ({
   const dayPct = brokerCurrent ? paperLive.day_pl_pct : undefined
   const dayPl = brokerCurrent ? paperLive.day_pl : undefined
   const backtest = curve?.backtest
-  const stats = backtest?.stats
-  const currentPolicy = backtest?.strategy_policy === (currentPolicyVersion ?? 'cash-bounded-breakout-rotation/3')
+  const simulationPolicy = describeSimulationPolicy(backtest?.strategy_policy, currentPolicyVersion ?? 'cash-bounded-breakout-rotation/3')
   // A historical curve keeps its own source, independently of today's record or execution policy.
   const simulationFundamentals = describeFundamentalSource(backtest?.fundamentals_source)
-  const curveLabel = currentPolicy
+  const curveLabel = simulationPolicy.current
     ? simulationFundamentals.current
       ? 'Current policy simulation'
       : simulationFundamentals.known
         ? 'Current policy, older fundamental inputs'
         : 'Current policy, fundamental inputs unverified'
-    : 'Older policy simulation'
+    : simulationPolicy.label
+  // Policy alignment, funding limits and fundamental provenance are independent recorded properties.
+  const simulationNote = [simulationPolicy.note, describeSimulationFunding(backtest?.funding_model).summary,
+    simulationFundamentals.simulationNote].filter(Boolean).join(' ')
   const last = (arr?: number[]) => (arr && arr.length ? arr[arr.length - 1] : null)
   const rulesTotal = last(backtest?.rules)
   const spyTotal = last(backtest?.spy)
@@ -446,13 +527,7 @@ const SummaryStrip = ({
                 </span>
               </>
             ),
-            note: !currentPolicy ? 'Predates the shared strategy rules; awaiting a new nightly simulation.' : !simulationFundamentals.current
-              ? simulationFundamentals.simulationNote
-              : backtest?.funding_model === 'cash-at-fill-v1'
-                ? 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns'
-                : stats && stats.drawdown !== null
-                  ? `legacy simulation permits borrowing without financing costs · worst drawdown ${(stats.drawdown * 100).toFixed(0)}%`
-                  : 'legacy simulation permits borrowing without financing costs; not evidence for current cash-only returns',
+            note: simulationNote,
           },
         ]
       : []),
@@ -763,9 +838,7 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
           {backtest.label} · as of {shortDate(backtest.asof)} · the practice account is the only live sample
         </p>
       </div>
-      <p className="mb-3 text-xs text-amber-800">{backtest.funding_model === 'cash-at-fill-v1'
-        ? 'Simulation assumptions: buys fit cash after costs; closing sales cannot fund earlier buys. Fractional fills and immediate use of completed sale proceeds are modeled; settlement delays, bid/ask spreads, market impact and broker rejections are not. Historical inputs and the selected universe can bias results.'
-        : 'Legacy simulation under review: borrowing was permitted without financing costs. These results do not establish the performance of a cash-only account or the current FOMC policy.'}</p>
+      <p aria-label="Simulation funding assumptions" className="mb-3 text-xs text-amber-800">{describeSimulationFunding(backtest.funding_model).assumptions}</p>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {cells.map((c) => (
           <div key={c.label} className="rounded-xl bg-[#f5f5f7] px-3 py-2">

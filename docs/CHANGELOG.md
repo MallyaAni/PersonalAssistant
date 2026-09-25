@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-09-25 — Exclude obsolete financial periods and preserve independent dashboard warnings
+
+New nightly records explicitly select fundamental calculation `/3`. It excludes
+features behind the latest decision-available reported revenue end before
+ranking, clears affected held votes and requires fresh confirmation. Original
+input ends and reasons remain available for every name, including names without
+a score. Existing `/2` research defaults and saved record bytes are preserved.
+
+The dashboard shows period exclusions in both evening-evidence views. Simulation
+funding, execution policy and fundamental source are independent: one warning
+cannot hide another, and missing or unknown tags cannot establish cash funding,
+borrowing or policy age. No historical result is upgraded by today's source tag.
+
+Root backend: 495 passes, one optional missing-Torch skip, four retained strict
+known-defect xfails. Independent review: 258 passes. The retained 94-source
+comparison excludes 178 older-period inputs across 33 names, leaving all accepted
+scalars unchanged; finite fundamental scores decrease from 89 to 64. Real
+temporary record save/reload checks preserve rejected names and old bytes.
+Final root browser acceptance: 277 passes, zero skips/flakes and 96 clean
+diagnostic records. TypeScript/build and scoped lint pass. Exact artifact and
+publication SHA are in the current handoff. All initial failures are retained;
+no correctness assertion was relaxed.
+
+This is a connected suppression safeguard, not completion of the unit-preserving
+current-definition migration, a valuation model or proof of higher returns.
+Deployment and all-hours feed coverage remain unverified. See the
+[policy, evidence and limits](research/fundamental-period-eligibility-2026-09-25.md).
+
 ## 2026-09-25 — Accept canonical SEC text issuer IDs without changing facts
 
 The isolated unit-preserving source parser now accepts an integer CIK or its

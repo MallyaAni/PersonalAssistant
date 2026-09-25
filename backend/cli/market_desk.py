@@ -24,10 +24,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--asof", type=date.fromisoformat, default=None)
     parser.add_argument(
         "--fundamentals",
-        choices=("corrected", "legacy"),
+        choices=("corrected", "current", "legacy"),
         default="corrected",
         help="which data source the fundamental analyst reads: the corrected "
-        "as-of filing versions (default) or the frozen EDGAR feature block, "
+        "as-of filing versions /2 (default), the reporting-period safeguard /3 "
+        "(current), or the frozen EDGAR feature block, "
         "for a read-only side-by-side comparison",
     )
     parser.add_argument(
