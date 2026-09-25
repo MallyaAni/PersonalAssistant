@@ -1,5 +1,101 @@
 # Continuous price evidence — September 25, 2026
 
+## Availability correction — source only, not continuous-coverage proof
+
+The new reader no longer uses regular/closed/unknown calendar labels to skip
+provider lookup. It selects SIP/IEX or BOATS/indicative overnight by New York
+wall time, validates each symbol, and tries the fallback only for unresolved
+names. A fresh primary wins; otherwise a fresh fallback wins; otherwise the
+newest valid stale observation retains its source/time but no current price.
+Each row records the expected schedule at its original quote timestamp. A
+phase boundary does not reset its age or silently relabel it.
+
+Raw responses have a ten-second per-feed/batch cache. Each read revalidates
+timestamps. Both feeds back off after denial (300 seconds), throttling
+(30 seconds) or other failure (10 seconds). Feed-generation guards protect
+cache/backoff publication against older overlapping completions; only metadata
+is locked, never a provider call. Two default curl timeouts are now two seconds
+each. This verifies configured bounds, **not a measured end-to-end latency SLA**.
+No change was made to execution quotes, regular bars, signal inputs or accounts.
+
+The board/chart no longer suppress fresh observations on a regular-session
+flag. They distinguish source, indicative midpoint, stale observation and
+explicit regular-bar fallback, and date observations from earlier New York
+days. Polling is described as checking quotes every minute, not guaranteed new
+prices. Unknown schedules cannot establish a previous-session observation.
+XNYS pre/post labels include the overnight period, so they cannot override the
+independent, finer-grained quote schedule. Only a newer, nonfuture explicit
+regular open has an exact compatible meaning for the retained legacy transition.
+
+### Reproduced failures and acceptance
+
+- Frozen original backend plus the initial final 52-case module: **7 passed,
+  45 failed**. Missing fallback, schedule suppression and overflow failures
+  are preserved at `/private/tmp/anios-session-availability-baseline.AFH7dp/`.
+- The corrected first candidate still failed all **six overlap cases** with
+  the expanded 58-case module. Older errors erased newer success or imposed
+  backoff; older successes overwrote newer prices. The guarded candidate passes
+  all six, including identical monotonic start times. `OVERLAP-RECEIPT.md`
+  preserves both source revisions and exact commands; SHA-256
+  `8d9735275bb7f9ba7c31b1b023297519a9f4334448d4e2288da2b9f69c178541`.
+- Final backend regression: **205 passed**, no failures/skips, 3.29 seconds,
+  with 60 existing all-NaN warnings from entry-session gap fixtures. This includes
+  58 new behavior cases, 24 updated original cases, seven ASGI API cases and
+  existing calendar/freshness/execution/desk regression tests. The separate
+  89-case agent run is a subset, not another 89 distinct tests.
+- Original browser acceptance: **1 control passed, 15 failed**. Three later
+  review cases separately reproduced false previous-session wording for an
+  unknown schedule and newer XNYS pre/post timestamps during overnight.
+  The corrected artifact passes **40 focused cases**, no failures/skips/flaky,
+  in 40.0 seconds. The same final artifact passes **171 broader cases** in
+  77.134 seconds: **211 distinct browser cases across two runs**, no failures,
+  skips or flaky cases. Source/test manifests stayed fixed through both runs.
+
+The actual rendered dashboard, chart opening, timers, source/time text, regular
+candles and unchanged action/size semantics are exercised by browser tests.
+API/provider inputs are intercepted fixtures; no actual provider, model, order,
+holding or receipt mutation occurred. ASGI tests prove authorized in-process
+routing, not a deployed HTTP server. Browser servers run Vite preview on an
+isolated loopback port from the explicit compiled candidate, not the deploy tree.
+
+Final candidate artifact:
+`/private/tmp/anios-session-availability-taxonomy-final.KDA32A7R/dist/`,
+`index-CI7b1eYH.js`, SHA-256
+`0b0a8fc5edc431a31fb4c24f52e7b9b5d2a5e0c85318b9d7aab8ffb3fea7e021`.
+Root source manifests, backend results and broad browser evidence:
+`/private/tmp/anios-session-availability-final.hzzWpSif/`.
+Backend runtime is immutable image `63056fccae98`; browser runtime is
+`eff16c30e6f3`, both network-disabled with source mounted read-only.
+
+Ruff/format checks, production TypeScript/build and affected browser-module
+strict typing pass. Earlier calibration failures are retained: Vite needed its
+own writable temporary directory under a read-only source mount; a test compared
+equivalent timestamps as strings; an intermediate build caught a removed local
+binding before browser acceptance. These are not claimed as passing runs.
+Existing CSS/bundle warnings remain. Full repository/deploy gates were not run;
+previously documented unrelated gate failures were not fixed by this task.
+
+### Remaining user requirement
+
+**UNVERIFIED:** real all-hours/all-symbol continuity, deployed UI, new entitlement
+and actual market-wide price accuracy. The reader still runs on demand from the
+mounted desk's one-minute timer; it is **not an always-running server collector**.
+Browser suspension/closure and real feed gaps are separate limits. The previous
+four-call provider allowance was not repeated. No deployment was started.
+
+The [existing-source qualification](extended-hours-source-options-2026-09-25.md)
+documents delayed SIP history as a no-new-paid-subscription lead, with explicit
+timestamp, delay and license limits. It is not wired or tested with this account.
+No source purchase, model fit or historical strategy rerun occurred.
+Diagram impact: NONE — existing endpoints/providers/ownership relationships;
+internal availability, cache and display corrections only.
+
+## Earlier independent-refresh checkpoint and live probe
+
+The sections below retain the evidence and remaining-work assessment from before
+the availability correction above; their implementation gaps are historical,
+not a description of the current corrected source.
+
 ## Requirement and current boundary
 
 The user requires overnight, premarket and postmarket price updates without

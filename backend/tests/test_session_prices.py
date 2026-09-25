@@ -49,7 +49,7 @@ def quote(now, **overrides):
     return {"bp": 100, "ap": 102, "bs": 10, "as": 20, "t": now.isoformat(), **overrides}
 
 
-# Invalid or old-session data never yields a current price.
+# Invalid, future or expired data never yields a current price.
 @pytest.mark.parametrize(
     ("overrides", "status"),
     [
@@ -58,27 +58,26 @@ def quote(now, **overrides):
         ({"bs": 0}, "unavailable"),
         ({"ap": float("nan")}, "unavailable"),
         ({"t": "2026-09-25T04:00:00Z"}, "unavailable"),
-        ({"t": "2026-09-24T20:00:00Z"}, "unavailable"),
+        ({"t": "2026-09-24T20:00:00Z"}, "stale"),
         ({"t": "2026-09-25T02:58:59Z"}, "stale"),
     ],
 )
 def test_invalid_quotes(overrides, status):
     now = instant("2026-09-25T03:00:00+00:00")
-    _, start, end = prices.session_window(now)
-    row = prices.describe(quote(now, **overrides), "overnight", now, start, end)
+    row = prices.describe(quote(now, **overrides), "overnight", now)
     assert row["status"] == status
     assert row["price"] is None
     json.dumps(row, allow_nan=False)
 
 
-# A fresh quote expires exactly when its session ends.
-def test_midpoint_has_source_and_session_bounded_expiry():
+# Keep the original phase and full age deadline across a schedule boundary.
+def test_midpoint_has_source_and_age_bounded_expiry():
     now = instant("2026-09-25T03:59:40-04:00")
-    _, start, end = prices.session_window(now)
-    row = prices.describe(quote(now), "overnight", now, start, end)
+    row = prices.describe(quote(now), "overnight", now)
     assert row["price"] == 101
     assert row["indicative"] is True
-    assert row["valid_until"] == end.isoformat()
+    assert instant(row["valid_until"]) == now + timedelta(seconds=60)
+    assert row["session"] == "overnight"
     assert row["status"] == "fresh"
     assert "eligible" not in row
 
@@ -117,13 +116,20 @@ def test_fetch_fallback_cache_expiry_and_failure(monkeypatch):
     assert "feed=overnight" in calls[-1]
 
 
-# Inactive sessions do not request quotes or alter regular bars.
+# Every expected schedule still probes display feeds without changing signal scope.
 @pytest.mark.parametrize(
     "stamp", ["2026-09-24T12:00:00-04:00", "2026-09-26T12:00:00-04:00"]
 )
-def test_inactive_session_makes_no_request(stamp):
-    # Any unexpected external read makes the boundary test fail.
-    def forbidden(*args):
-        pytest.fail("unexpected quote request")
+def test_regular_and_weekend_schedules_still_request_quotes(stamp):
+    calls = []
+    now = instant(stamp)
 
-    assert prices.fetch(["AAOI"], instant(stamp), forbidden)["quotes"] == {}
+    # Return a dated synthetic observation and track the existing provider boundary.
+    def request(url, headers):
+        calls.append(url)
+        return 200, json.dumps({"quotes": {"AAOI": quote(now)}}).encode()
+
+    result = prices.fetch(["AAOI"], now, request)
+    assert len(calls) == 1
+    assert result["quotes"]["AAOI"]["price"] == 101
+    assert result["signal_scope"] == "regular-session"

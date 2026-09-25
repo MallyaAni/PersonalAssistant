@@ -1,37 +1,68 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
-import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord, DeskPaperLive } from '../../services/api'
+import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord, DeskPaperLive, DeskSessionPrices } from '../../services/api'
 import { analystLabel } from './analystLabels'
 
-// Reject expired or malformed display quotes without changing any regular-session signal input.
+// Accept only the documented schedule vocabulary; a schedule is never proof of venue availability.
+const quoteSchedule = (value: unknown): DeskSessionPrices['session'] | null =>
+  typeof value === 'string' && ['pre-market', 'post-market', 'overnight', 'regular', 'closed', 'unknown'].includes(value)
+    ? value as DeskSessionPrices['session'] : null
+
+// Validate dated quote evidence independently of regular-session scheduling and execution policy.
 const sessionPrice = (live: DeskLive, ticker: string, now: number) => {
   const envelope = live.extended_hours
-  if (live.market_status?.open === true || live.market_status?.phase === 'open' || envelope?.session === 'regular') return null
-  if (!envelope && live.market_status?.open !== false) return null
   const quote = envelope?.quotes[ticker]
   const observed = Date.parse(quote?.at ?? '')
   const captured = Date.parse(envelope?.as_of ?? '')
   const until = Date.parse(quote?.valid_until ?? '')
-  const valid = quote?.status === 'fresh' && typeof quote.price === 'number' && Number.isFinite(quote.price) && quote.price > 0
-    && typeof quote.feed === 'string' && quote.feed.trim().length > 0
+  const dated = typeof quote?.feed === 'string' && quote.feed.trim().length > 0
     && Number.isFinite(observed) && observed <= captured && captured <= now
+    && envelope?.signal_scope === 'regular-session'
+  const priced = typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0
+  const valid = dated && priced && quote?.status === 'fresh'
     && now - captured < 60_000 && now - observed < 60_000
-    && Number.isFinite(until) && until > now && envelope?.signal_scope === 'regular-session'
-  const state = valid ? 'fresh' : quote?.status === 'stale' || quote?.status === 'fresh' && (until <= now || now - observed >= 60_000 || now - captured >= 60_000) ? 'stale' : 'unavailable'
-  return {quote, state, session: envelope?.session ?? live.market_status?.phase ?? 'unknown'}
+    && Number.isFinite(until) && until > now
+  const state = valid ? 'fresh' : dated && (quote?.status === 'stale' || priced && quote?.status === 'fresh'
+    && (until <= now || now - observed >= 60_000 || now - captured >= 60_000)) ? 'stale' : 'unavailable'
+  const envelopeSchedule = quoteSchedule(envelope?.session)
+  const regularSchedule = live.market_status?.phase === 'open' ? 'regular' : quoteSchedule(live.market_status?.phase)
+  const regularAt = Date.parse(live.market_status?.as_of ?? '')
+  // XNYS pre/post phases include overnight; only its explicit open maps exactly to this finer schedule.
+  const currentSchedule = regularSchedule === 'regular' && Number.isFinite(regularAt) && regularAt > captured && regularAt <= now
+    ? 'regular' : envelopeSchedule ?? regularSchedule ?? 'unknown'
+  // Legacy extension envelopes carried their observation phase; a legacy regular envelope did not.
+  const observationSchedule = quoteSchedule(quote?.session)
+    ?? (envelopeSchedule && ['pre-market', 'post-market', 'overnight'].includes(envelopeSchedule) ? envelopeSchedule : null)
+  const namedSession = observationSchedule && !['closed', 'unknown'].includes(observationSchedule) ? observationSchedule : null
+  return {quote, state, observed, session: namedSession, currentSchedule,
+    previousSession: namedSession !== null && currentSchedule !== 'unknown' && namedSession !== currentSchedule,
+    unrecordedSession: observationSchedule === null}
+}
+
+// Include the New York date when a time alone could be mistaken for today's observation.
+const quoteTime = (observed: number, now: number): string | null => {
+  if (!Number.isFinite(observed)) return null
+  const observation = new Date(observed)
+  const current = new Date(now)
+  const sameDay = observation.toLocaleDateString('en-CA', {timeZone: 'America/New_York'})
+    === current.toLocaleDateString('en-CA', {timeZone: 'America/New_York'})
+  const sameYear = observation.toLocaleDateString('en-US', {timeZone: 'America/New_York', year: 'numeric'})
+    === current.toLocaleDateString('en-US', {timeZone: 'America/New_York', year: 'numeric'})
+  return observation.toLocaleString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', second: '2-digit',
+    ...(!sameDay ? {month: 'short', day: 'numeric', ...(!sameYear ? {year: 'numeric'} : {})} as const : {})})
 }
 
 // Render a separate session midpoint while preserving the regular bar and its signal scope.
-export const SessionPrice = ({live, ticker, now, compact = false}: {live: DeskLive; ticker: string; now: number; compact?: boolean}) => {
-  const reading = sessionPrice(live, ticker, now)
-  if (!reading) return null
-  const {quote, state, session} = reading
+export const SessionPrice = ({live, ticker, now, compact = false, close}: {live: DeskLive; ticker: string; now: number; compact?: boolean; close?: number | null}) => {
+  const {quote, state, observed, session, currentSchedule, previousSession, unrecordedSession} = sessionPrice(live, ticker, now)
   const regular = live.quotes[ticker]
-  const at = quote?.at && Number.isFinite(Date.parse(quote.at)) ? new Date(quote.at).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', second: '2-digit'}) : null
-  const source = session === 'overnight' || quote?.indicative ? `Indicative${quote?.feed && quote.feed !== session ? ` · ${quote.feed.toUpperCase()}` : ''}` : quote?.feed?.toUpperCase() ?? 'Source unavailable'
+  const at = quoteTime(observed, now)
+  const source = `${quote?.indicative ? 'Indicative · ' : ''}${quote?.feed?.toUpperCase() || 'Source unavailable'}`
   const regularText = regular && Number.isFinite(regular.last) ? `Regular-session bar $${regular.last.toFixed(2)} · ${regular.bar}` : 'Regular-session bar unavailable'
-  return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill.`}>
-    {state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session} · {source} · {at} ET</span></>
-      : <span className="text-[#9a6700]">{session} quote {state}{state === 'stale' && at ? ` · ${at} ET` : ''}</span>}
+  const qualification = previousSession ? ' · previous-session observation' : unrecordedSession ? ' · session unrecorded' : ''
+  return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability.`}>
+    {state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
+      : <><span className="text-[#9a6700]">{state === 'stale' ? `${session ? `${session} quote` : 'Quote'} stale · ${source}${at ? ` · ${at} ET` : ''}${qualification}` : 'No fresh quote from available feeds'}</span>
+        {compact && <div>{regular && Number.isFinite(regular.last) ? <>Regular bar ${regular.last.toFixed(2)}<ChangeMark last={regular.last} close={close} /></> : 'Regular bar unavailable'}</div>}</>}
     {!compact && <p className="text-[11px] text-[#6e6e73]">Signal: regular session{quote?.status === 'unavailable' && quote.reason ? ` · ${quote.reason}` : ''}</p>}
   </div>
 }
@@ -450,7 +481,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           {fomcLine && <p>{fomcLine}</p>}
         </div>
       </div>
-      <p className="mt-0.5" title="Fundamental analysis is nightly; prices and technical grades use completed intraday bars.">{time ? `Bar ${time} ET` : 'No current bar'} · updates every 15 minutes while the market is open{live.stale && !marketClosed ? ' · market data stale' : ''}</p>
+      <p className="mt-0.5" title="Fundamental analysis is nightly. Regular-session signals use completed 15-minute bars; independent session quotes are display-only and polling does not guarantee a new quote.">{time ? `Regular-session bar ${time} ET` : 'Regular-session bar unavailable'} · completed 15-minute bars; session quotes checked every minute{live.stale ? ' · regular bar stale' : ''}</p>
       <details className="mt-1"><summary className="cursor-pointer">Data & sizing details</summary>
         {liveSizingReady && !hidden && (
           <div className="flex shrink-0 gap-1" role="group" aria-label="Sizing policy">
@@ -511,7 +542,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           if (index >= visible && !heldNames.has(row.ticker)) return null
           const held = holdings?.find(position => position.ticker === row.ticker)
           const quote = live.quotes[row.ticker]
-          const sessionReading = sessionPrice(live, row.ticker, now)
           const isCash = row.ticker === '__cash__'
           const open = opened === row.ticker
           const decision = decisions?.session === latest.session && decisions.written === latest.written ? decisions.rows[row.ticker] : undefined
@@ -536,7 +566,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
-              <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{sessionReading ? <SessionPrice live={live} ticker={row.ticker} now={now} compact /> : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}</>}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
+              <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} />{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs" aria-label={`${row.ticker} displayed grade`} title={isCash ? undefined : grades[row.ticker] ? 'Current intraday grade' : `Recorded grade at the ${latest.session} close`}>
               {!isCash && <><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#1e7a3a]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span>
@@ -551,7 +581,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           {open && expand && <tr><td colSpan={5} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">
             <p aria-label={`${row.ticker} decision reason`} className="mb-2 text-xs">{reason}</p>
             <dl aria-label={`${row.ticker} allocation and evidence`} className="mb-3 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
-              {sessionReading && <div><dt className="text-[#6e6e73]">Regular-session signal price</dt><dd>{quote && Number.isFinite(quote.last) ? `$${quote.last.toFixed(2)} · ${quote.bar}` : 'Unavailable'}</dd></div>}
+              <div><dt className="text-[#6e6e73]">Regular-session signal price</dt><dd>{quote && Number.isFinite(quote.last) ? `$${quote.last.toFixed(2)} · ${quote.bar}` : 'Unavailable'}</dd></div>
               <div><dt className="text-[#6e6e73]">Combined grade · not an entry signal</dt><dd aria-label={`${row.ticker} grade`}>{row.grade || 'Unavailable'} · {grades[row.ticker] ? 'intraday' : `${latest.session} close`}</dd></div>
               <div><dt className="text-[#6e6e73]">Analyst conviction · not a return forecast</dt><dd aria-label={`${row.ticker} opportunity`}>{row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : 'Unavailable'}{row.narrow.length > 0 && ` · missing ${row.narrow.map(analystLabel).join(', ')}`}</dd></div>
               <div><dt className="text-[#6e6e73]">{showSizes ? 'Experimental research allocation' : 'Strategy target at reset'}</dt><dd aria-label={`${row.ticker} target allocation`}>{row.weight !== null ? percentage(row.weight) : 'Unavailable'}</dd></div>

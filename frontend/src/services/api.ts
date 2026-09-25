@@ -2641,6 +2641,7 @@ export interface DeskSessionPrices {
   as_of: string;
   signal_scope: 'regular-session';
   quotes: Record<string, {price: number | null; bid?: number; ask?: number; at: string | null;
+    session?: DeskSessionPrices['session'];
     feed: string | null; indicative: boolean; status: 'fresh' | 'stale' | 'unavailable';
     reason: string; valid_until: string | null}>;
 }

@@ -5,13 +5,27 @@ import math
 import time
 from datetime import UTC, datetime, timedelta
 from datetime import time as day_time
+from itertools import count
+from threading import Lock
 from urllib.parse import urlencode
 
-from backend.market import alpaca, calendar, desk_freshness, execution_quotes
+from backend.market import alpaca, calendar, desk_freshness
 
 MAX_AGE_SECONDS = 60
+CACHE_SECONDS = 10
 _cache = {}
 _denied_until = {}
+_attempts = {}
+_sequence = count()
+_state_lock = Lock()
+
+
+# Keep two sequential display reads within the browser's five-second request budget.
+def transport(url, headers):
+    from curl_cffi import requests
+
+    response = requests.get(url, headers=headers, timeout=2)
+    return response.status_code, response.content
 
 
 # Assign the overnight trade date using the published exchange calendar and local DST.
@@ -50,16 +64,21 @@ def session_window(now):
     )
 
 
-# Keep invalid, old, future, and previous-session prices out of the current-price field.
-def describe(raw, feed, now, start, end):
-    stamp = desk_freshness.timestamp(raw.get("t"))
+# Date observations independently of the schedule and reject expired prices.
+def describe(raw, feed, now):
+    try:
+        stamp = desk_freshness.timestamp(raw.get("t"))
+        observation_session = session_window(stamp)[0] if stamp else "unknown"
+    except (ValueError, OverflowError):
+        stamp, observation_session = None, "unknown"
     result = {
         "price": None,
         "at": stamp.isoformat() if stamp else None,
         "feed": feed,
+        "session": observation_session,
         "indicative": feed == "overnight",
         "status": "unavailable",
-        "reason": "Quote unavailable",
+        "reason": "No fresh quote from available feeds",
         "valid_until": None,
     }
     try:
@@ -71,15 +90,9 @@ def describe(raw, feed, now, start, end):
             return {**result, "reason": "Invalid or empty quote"}
     except (KeyError, TypeError, ValueError, OverflowError):
         return result
-    if (
-        stamp is None
-        or stamp > now
-        or start is None
-        or end is None
-        or not start <= stamp < end
-    ):
-        return {**result, "reason": "No quote from this session"}
-    deadline = min(stamp + timedelta(seconds=MAX_AGE_SECONDS), end)
+    if stamp is None or stamp > now:
+        return {**result, "reason": "Missing or future quote timestamp"}
+    deadline = stamp + timedelta(seconds=MAX_AGE_SECONDS)
     result["valid_until"] = deadline.isoformat()
     if now >= deadline:
         return {**result, "status": "stale", "reason": "Quote expired"}
@@ -93,42 +106,66 @@ def describe(raw, feed, now, start, end):
     }
 
 
-# Request an entitled feed without retaining prices after a provider failure.
-def _request_quotes(symbols, preferred, fallback, tick, request):
+# Read one feed with a short raw cache and feed-wide backoff for provider failures.
+def _request_quotes(symbols, feed, tick, request):
+    key = (feed, symbols)
+    # Only metadata is locked; separate requests never wait on a provider here.
+    with _state_lock:
+        if tick < _denied_until.get(feed, 0):
+            return {}
+        cached = _cache.get(key)
+        if cached and 0 <= tick - cached[0] < CACHE_SECONDS:
+            return cached[1]
+        attempt = next(_sequence)
+        _attempts[feed] = attempt
+    quotes = {}
+    backoff = 0
     try:
         headers = alpaca.credentials()
-        feeds = (
-            [preferred, fallback]
-            if tick >= _denied_until.get(preferred, 0)
-            else [fallback]
+        status, body = request(
+            "https://data.alpaca.markets/v2/stocks/quotes/latest?"
+            + urlencode({"symbols": ",".join(symbols), "feed": feed}),
+            headers,
         )
-        for candidate in feeds:
-            status, body = request(
-                "https://data.alpaca.markets/v2/stocks/quotes/latest?"
-                + urlencode({"symbols": ",".join(symbols), "feed": candidate}),
-                headers,
-            )
-            if status == 403:
-                _denied_until[candidate] = tick + 300
-                continue
-            if status != 200:
-                break
-            payload = json.loads(body).get("quotes")
-            return (candidate, payload) if isinstance(payload, dict) else (None, {})
+        if status == 200:
+            payload = json.loads(body)
+            raw = payload.get("quotes") if isinstance(payload, dict) else None
+            if isinstance(raw, dict):
+                quotes = raw
+        else:
+            backoff = {403: 300, 429: 30}.get(status, 10)
     except Exception:
-        pass  # Only quote reads; failures must not expose credentials or old prices.
-    return None, {}
+        backoff = 10
+    # An obsolete completion cannot erase newer evidence or impose older backoff.
+    with _state_lock:
+        if _attempts.get(feed) == attempt:
+            _denied_until[feed] = tick + backoff
+            if len(_cache) >= 8:
+                _cache.clear()
+            # Current failures replace old success rather than revive its price.
+            _cache[key] = (tick, quotes)
+    return quotes
+
+
+# Prefer fresh primary evidence, fresh fallback, then the newest valid stale quote.
+def _select(primary, fallback):
+    if primary["status"] == "fresh":
+        return primary
+    if fallback["status"] == "fresh":
+        return fallback
+    stale = [row for row in (primary, fallback) if row["status"] == "stale"]
+    if stale:
+        return max(stale, key=lambda row: desk_freshness.timestamp(row["at"]))
+    return primary if primary["at"] else fallback
 
 
 # Fetch a bounded display batch without purchasing data or sending orders.
-def fetch(
-    symbols, now=None, request=execution_quotes.transport, monotonic=time.monotonic
-):
+def fetch(symbols, now=None, request=transport, monotonic=time.monotonic):
     supplied_now = now is not None
     now = now or datetime.now(UTC)
     if now.tzinfo is None or now.utcoffset() is None:
         raise ValueError("session prices require a dated instant")
-    phase, start, end = session_window(now)
+    phase, _, _ = session_window(now)
     result = {
         "session": phase,
         "as_of": now.isoformat(),
@@ -136,37 +173,44 @@ def fetch(
         "quotes": {},
     }
     symbols = tuple(sorted(set(symbols)))
-    if phase in ("regular", "closed", "unknown") or not symbols:
+    if not symbols:
         return result
+    wall = now.astimezone(calendar.NEW_YORK).time().replace(tzinfo=None)
     preferred, fallback = (
-        ("boats", "overnight") if phase == "overnight" else ("sip", "iex")
+        ("boats", "overnight")
+        if wall >= day_time(20) or wall < day_time(4)
+        else ("sip", "iex")
     )
-    key = (symbols, phase, start.isoformat())
-    tick = monotonic()
-    cached = _cache.get(key)
-    # Revalidate timestamps on every cache read, including exact session boundaries.
-    if cached and 0 <= tick - cached[0] < 10:
-        _, feed, quotes = cached
-    else:
-        feed, quotes = _request_quotes(symbols, preferred, fallback, tick, request)
-        if len(_cache) >= 8:
-            _cache.clear()
-        _cache[key] = (tick, feed, quotes)
+    primary = _request_quotes(symbols, preferred, monotonic(), request)
     if not supplied_now:
         now = datetime.now(UTC)
-        current_phase, current_start, current_end = session_window(now)
-        result["as_of"] = now.isoformat()
-        if current_phase != phase or current_start != start:
-            return {**result, "session": current_phase, "quotes": {}}
-        end = current_end
-    result["quotes"] = {
+    first = {
         symbol: describe(
-            quotes.get(symbol) if isinstance(quotes.get(symbol), dict) else {},
-            feed,
+            primary.get(symbol) if isinstance(primary.get(symbol), dict) else {},
+            preferred,
             now,
-            start,
-            end,
         )
         for symbol in symbols
     }
+    unresolved = tuple(
+        symbol for symbol in symbols if first[symbol]["status"] != "fresh"
+    )
+    secondary = (
+        _request_quotes(unresolved, fallback, monotonic(), request)
+        if unresolved
+        else {}
+    )
+    if not supplied_now:
+        now = datetime.now(UTC)
+    result["session"] = session_window(now)[0]
+    result["as_of"] = now.isoformat()
+    # Revalidate at completion without changing original observation times.
+    for symbol in symbols:
+        candidates = [
+            describe(
+                raw.get(symbol) if isinstance(raw.get(symbol), dict) else {}, feed, now
+            )
+            for raw, feed in ((primary, preferred), (secondary, fallback))
+        ]
+        result["quotes"][symbol] = _select(*candidates)
     return result

@@ -259,7 +259,7 @@ test('current-context network failure retains disclosed fallback and continues c
   expect(requests.filter(entry => entry.path === `${DESK}/intraday`)).toHaveLength(1)
   expect(requests.filter(entry => entry.path === `${DESK}/paper`)).toHaveLength(1)
   await expectCurrentBoard(page, OLD_ACCOUNT, 110, LIVE_FAILURE)
-  await expect(page.getByRole('region', {name: 'Stocks and cash', exact: true})).toContainText('market data stale')
+  await expect(page.getByRole('region', {name: 'Stocks and cash', exact: true})).toContainText('regular bar stale')
 })
 
 for (const abort of [false, true]) {
