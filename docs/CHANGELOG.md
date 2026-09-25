@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-25 — Preserve the legacy allocation gradient defect as a regression
+
+Added an exact-source, real-Torch regression for the older allocation
+policy-gradient objective. Its detached current softmax weights cancel the
+intended gradient. The dated research qualification preserves earlier numbers
+but rejects interpreting this objective as functioning REINFORCE evidence.
+`/3`, the separate search/RL objectives and all production code remain unchanged.
+
+Root and agent runs each give 23 passes / 8 strict expected failures; a separate
+`--runxfail` run exposes exactly those 8 numerical failures, with 23 passes and
+no missing-runtime skips. Extraction-drift controls and independent Gaussian
+reference derivatives pass. Ruff/format checks pass. No training, optimizer
+step, historical replay, provider/model-server/account call or deployment.
+See the [qualification and exact evidence](research/legacy-allocation-gradient-2026-09-25.md).
+
 ## 2026-09-25 — Align new options collection batches with New York dates
 
 The options CLI now selects its default batch date in New York, matching the

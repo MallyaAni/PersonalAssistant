@@ -45,6 +45,14 @@ differ from this requested account objective. They are baselines to reproduce,
 not grounds to dismiss growth-oriented learning. Do not silently replace their
 reward and reuse the old result headings as if those experiments had been rerun.
 
+**September 25 qualification:** the current legacy `market_allocation_rl`
+policy-gradient loss has a confirmed cancelling gradient. Its original results
+are preserved, but a run using that objective is not evidence of functioning
+REINFORCE learning. Original saved-run/source attribution remains unverified;
+the separate cross-entropy and later RL objectives are not invalidated by this
+finding. See the [exact-source diagnosis and permanent regression](
+legacy-allocation-gradient-2026-09-25.md). No corrected learner or rerun is implied.
+
 Research allocation and USD exposure using the existing analyst inputs, holdings,
 cash, elapsed holding time, market regime, event state and execution availability.
 Use bounded allocation changes; keep action gates outside the learner. Optimize
