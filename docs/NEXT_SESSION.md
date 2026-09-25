@@ -1,5 +1,100 @@
 # Next session
 
+## 2026-09-25 — Dated OI provenance and legacy withholding verified
+
+**VERIFIED scoped source checkpoint:**
+`51ab002743c8837038a328f4f12fc504e796c517`, from clean main at
+`979cdb738821b0c269d384c588a7f13dbee71fdc`. Initial pull current; Mac remotes
+and Spark's GitHub origin re-fetched before publication. All ten code/test
+hashes match the accepted sources; unrelated remote `scratch/` is preserved.
+Published Mac → `git push spark main` → GitHub from Spark; Spark/GitHub HEADs
+match the checkpoint. No deployment, service
+restart, provider/model/account request, fit, historical replay, holding/order
+change, strategy promotion or laptop access/settings change.
+
+New successful option calculations retain `raw-option-oi-levels/1` metadata:
+actual raw reference, raw-panel row date, original cached source bar when known,
+expiry-selection date and method. Same-bar quote changes cannot rebase that
+cached reference. An older actual source bar stays separately dated; a rejected
+quote acquires no bar. Selection date is not a computation timestamp and panel
+row date is not proof of quote freshness.
+
+The pure `options_evidence` projection in `desk_freshness.describe` supplies
+`recorded` / `unverified` / `unavailable` / `absent` display states. Legacy or
+inconsistent calculations withhold numerical levels. Collection age is separate,
+dated at assessment time; invalid/naive/missing/future clocks remain explicit.
+OI effective time stays null and freshness unknown in all states. No age TTL or
+provider refresh is invented. Historical expiry selection is not rerun on read.
+Saved snapshots remain untouched; the projection is outside the technical
+explanation's cache signature. Both existing frontend locations share one
+disclosure with neutral distances, precise method scope, dated references,
+historical warnings, explicit missing states, year and a single ET suffix.
+These are OI concentrations, not gamma exposure or buy/sell signals.
+
+**VERIFIED acceptance:** 235 relevant backend tests passed, zero skips,
+16 existing empty-slice warnings, 3.03s; 54 downstream tests passed, zero skips,
+six existing warnings, 1.25s. The task's 186-case matrix passes without warnings.
+Real synthetic Parquet/cache/producer/balancer/board persistence and authenticated
+ASGI reads preserve every task-owned file, technical inputs and grades while
+advancing only read-time ages. Missing bearer returns 401; wrong owner 403.
+Only the unrelated search-metering DB lookup is stubbed at auth. No listening
+HTTP/lifespan, actual account database or deployed acceptance claimed.
+
+**VERIFIED UI:** 152 browser tests passed, zero skips/flaky/unexpected results,
+67.847s; 46 strict six-category diagnostic records are empty. Focused 17 cases
+cover both locations, clock advance, refresh/reload, historical and unavailable
+states, older bars, zero distance and method meaning. TypeScript/build, scoped
+Ruff/format, independent review and all 33 unchanged diagram/page checks pass.
+Root read the changes and visually reviewed both historical screenshots.
+
+**FAILED original behavior:** 13 initial browser semantic cases; final backend
+original overlay 160 failed / 26 passed, including 80 absent-helper failures
+and explicit missing metadata/projection assertions, not 160 arithmetic bugs.
+Independent review found one genuine candidate boundary error: 3.92 × 1.25
+accepts 4.90 but the ratio slightly exceeds 1.25. One of eight permanent tests
+failed before correction; all pass with matching price-space inequalities.
+Independent pure review passes 149 checks. All originals and the mistaken
+baseline overlay that initially exercised candidate code remain labelled.
+
+Evidence: [contract](research/options-oi-provenance-2026-09-25.md);
+root `/private/tmp/anios-options-provenance.0HcrH4/ROOT_RECEIPT.md`, SHA256
+`380893990c7e8b48c0f66608a7a62179ba372b52050eab5ab5f74ccb413a084c`.
+Backend receipt SHA256
+`3a2fd936e3c7f6b2556add5ceeaec2aef21072a6af6047199312fbda027500b7`;
+root-wide JUnit `3b51dd3a7789659d58bf09afc2052f2d5c3e898a5e56d163bff01b567ba05074`.
+Frontend `/private/tmp/anios-options-provenance-ui.XsDaDF/RECEIPT.md`, SHA256
+`7ad6d04e3ec0c8c3b1e09ca8d920fcf96d1bb21b035bb9025419115e29af89fb`;
+asset `index-BoqubrLW.js`, SHA256
+`8cb5034ec179fd3b0ea6a0a1e88438586362a15f4f21fa82522f27cf78d44c2a`.
+Independent `/private/tmp/anios-options-provenance-review.sB31jz/RECEIPT.md`,
+SHA256 `3176c1ea1cc40618cb824d73af00c0bbd46ca63f9e77dc484e6f474f3b730b0e`.
+Only the agent-owned temporary frontend container was removed; evidence,
+source snapshots, bundles and pre-existing containers remain retained.
+**Diagram impact: NONE — internal provenance and read-time field rendering.**
+
+**Next atomic investigation:** collector default UTC partition date versus
+New York diagnostic-read date. A read-only agent is reproducing whether a new
+collection between UTC midnight and New York midnight is hidden in a tomorrow
+partition, with real synthetic storage and a fixed clock; no fix or migration
+authorized by that diagnostic assignment. Inspect its result before acting.
+The unused gamma proxy's expired-contract/positioning assumptions remain separate.
+No current AAOI/Barchart levels or OI effective time have been verified.
+
+The full goal remains **active/incomplete**. Existing LightGBM expectations,
+deterministic `/3`, and unpromoted neural/RL pilots are unchanged. Allocation
+gate losses remain 10/14 matched folds at 10 bp and 11/14 at 25 bp. Original
+producer OOM/missing manifest remains FAILED. No new research fit, historical
+strategy rerun or qualified top-tier edge; do not rerun completed observers for
+activity. The prior 2026 review and frozen-study constraints still apply.
+
+Release-readiness target remains 20:34 UTC / 16:34 ET; last clock 19:00:31 UTC.
+Collector activation and acceptable drawdown remain unanswered. **Do not restart
+the pending backend**, whose defaults enable recurring 15-second quote reads.
+Authenticated market-data probe allowances are exhausted; all-hours real-time
+coverage is unproved. Deploy only from Spark through `scripts/deploy.sh
+--wait-post`, preserving data/secrets symlinks, identifying exact artifacts and
+completing full gates, browser/provider acceptance and postcheck verdict.
+
 ## 2026-09-25 — Raw options price/isolation verified; 2026 intraday research recorded
 
 **VERIFIED scoped source checkpoint:**
