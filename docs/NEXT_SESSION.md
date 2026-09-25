@@ -1,5 +1,84 @@
 # Next session
 
+## 2026-09-25 — New York options batch date verified and published
+
+**VERIFIED scoped source checkpoint:**
+`fc396e6f67c852b9f812d0774c8282f0df751a66`, from clean main at
+`a10c38fac2d10653e2f1a6e51fef05d14b8357a7`. First completed the previous
+handoff's pending Mac → Spark → GitHub publication, then pulled current main.
+Mac remotes and Spark's GitHub origin were re-fetched before this checkpoint.
+Published via `git push spark main`, then `git push origin main` on Spark;
+Spark HEAD/GitHub origin match. Unrelated Spark `scratch/` remains untouched.
+No deployment, service restart, provider/model/account call, fit, historical
+strategy replay, holding/order change or laptop access/settings change.
+
+`market_options.main` now selects New York's calendar date once per invocation
+unless `--asof` supplies one. It is a batch date, not a previous trading-session
+date or each file's collection instant. The selected date still governs storage,
+180-day chain retention and printed expiry selection. `source_time` remains UTC;
+explicit past/future dates, immutable same-date skips, old UTC-labelled partitions,
+the bounded diagnostic reader and unbounded query-only `--walls` lookup remain
+unchanged. A long batch can cross midnight. This fixes first-collection visibility
+under the default date, not intraday refresh or cached-dashboard refresh.
+
+**VERIFIED acceptance:** the exact 32-case CLI/Parquet matrix passes with zero
+errors/skips/warnings in 1.414s. Root's wider 267 cases pass, zero skips, with
+16 existing neighboring empty-slice warnings in 2.56s. Tests invoke real parsing,
+CLI main/refresh, chain/book filtering, immutable Parquet and the bounded reader;
+only clock, tiny universe, transport and sleep are synthetic. Midnight, both
+DST transitions, month/year, explicit dates, legacy files, byte preservation,
+expiry endpoints and query-only no-fetch/no-write behavior are covered.
+Source/test hashes stayed fixed through final comparisons and publication.
+Independent source/32-case review, scoped Ruff/format and all 33 unchanged
+diagram/page checks pass. Initial absent-browser-path harness failure is retained;
+the actual cached ARM browser was used without an installation or setting change.
+
+**FAILED original:** same final matrix has 13 failures / 19 passes, 1.397s:
+eight date/visibility cases, two unwanted same-NY-date refetches, one retention
+endpoint and two printed-expiry cases. Original source, XML and actual synthetic
+Parquet remain separately retained. These are observations of one wrong default.
+
+Evidence: [collection-date contract](research/options-collection-date-2026-09-25.md).
+Root `/private/tmp/anios-options-ny-date-root.urxLB8/ROOT_RECEIPT.md`, SHA256
+`1871996de530f8675c4f38a4dd69f5e2d258f7957e70a17f1e75a1104b11cb9d`;
+wide JUnit `33ae14e7549dc2da762250eff9465b5fabe2603a60f5db8a3ff916549898a041`.
+Agent `/private/tmp/anios-options-ny-date-fix.QV6WnI/RECEIPT.md`, SHA256
+`cb598d1a4dd6fb8d1688bb37b24e5e0b02b845257732613b48b99f7901a81764`.
+Collector SHA256 `aa022757dff162f5a7cc6886ee5af6a61559423375962f7bc974eda136187cfa`;
+test SHA256 `dae8b178084594ddd5ccc1e62e1410721e7c0177eda2d322133a486fceafc7e2`.
+**UNVERIFIED:** deployed scheduler/provider prevalence, OI effective time,
+current AAOI/Barchart agreement, new browser behavior and economic edge. No
+frontend code changed or new UI acceptance was claimed.
+**Diagram impact: NONE — internal default calendar correction.**
+
+The user's 15-minute/HFT question received a separate read-only current-source
+review. Some quote checks, causal prefix features, repeat-entry guards and
+execution attribution exist; they do not qualify a profitable 15-minute engine.
+`backend/agents/trading/desk/paper.py` uses 20-session resets, not mandatory
+20-session holds. The funded `intraday_evaluation` tracks archived targets but
+omits the complete scheduled exits. Wide IEX quotes may remain eligible with an
+unverified spread; execution checks are regular-clock-gated, not proved all-hours.
+The prior 2026 microstructure review remains authoritative about the checked
+papers. Keep cadence distinct from holding duration and stock selection; no
+new fit, horizon search, historical strategy replay or experiment was launched.
+Matching intraday valuation grids matters for drawdown; daily-close marks alone
+miss intraday losses. SPY/QQQ are equity exposure, not assured red-day protection.
+
+The wider goal stays **active/incomplete**. Next safe options source audit is
+the unused gamma proxy's expiry/positioning assumptions and whether its validity
+checks suppress otherwise valid OI diagnostics; reproduce before any edit.
+Research still needs qualified inputs/execution, not repeated fits on examined
+history. Allocation gate losses remain 10/14 matched folds at 10 bp and 11/14
+at 25 bp; original producer OOM/missing manifest remains FAILED. Existing ML,
+deterministic `/3`, unpromoted DL/RL pilots and all frozen-study boundaries stay.
+
+Release-readiness target remains 20:34 UTC / 16:34 ET; latest clock 19:09:56 UTC.
+Acceptable drawdown and recurring quote-collector activation remain unanswered.
+Authenticated data-probe allowances are exhausted. **Do not restart the pending
+backend**, whose default enables 15-second provider reads. Deployment remains
+Spark-only through `scripts/deploy.sh --wait-post`, preserving data/secrets
+symlinks, exact artifact identity and full gates/browser/provider/postcheck proof.
+
 ## 2026-09-25 — Dated OI provenance and legacy withholding verified
 
 **VERIFIED scoped source checkpoint:**
