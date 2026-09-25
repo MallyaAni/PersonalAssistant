@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-25 — Validate the live entry's exchange-session window
+
+Source checkpoint `4cadc135a805c784f5e2f7a3166d9789595aeecb`, not deployed.
+Entry evidence now fails closed when its trailing 20 observations do not match
+the reviewed exchange calendar, including a trading day absent from every
+ticker. Missing dates remain explicit and no numerical trigger survives the
+failure. Calendar data is shared with the chart without changing historical
+panel construction or strategy thresholds. Existing synthetic test calendars
+were corrected without changing their prices or numerical assertions.
+
+The defect failed 8 of 13 initial regression cases. Final focused acceptance:
+150 passed, zero skips, 99 synthetic-data warnings; an independent replay of the
+original failing fixture also passed. Changed guard/calendar/test lint passes;
+seven pre-existing chart lint findings remain. No frontend, holdings, orders,
+data repair, model fitting or frozen-study rerun. Evidence and the separately
+reproduced earnings-feature timing failure are recorded in `NEXT_SESSION.md`;
+this checkpoint does not establish strategy superiority or deployed UI accuracy.
+
 ## 2026-09-25 — Concise stock board
 
 Five main columns; decision explanations move to expanded rows. Short missing-

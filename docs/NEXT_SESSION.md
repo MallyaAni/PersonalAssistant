@@ -1,5 +1,68 @@
 # Next session
 
+## 2026-09-25 — Overnight changes pulled; entry-calendar source checkpoint
+
+Latest user asked to pull the overnight Spark dashboard work here and resume the
+trading-system goal. Pulled clean Mac `main` to
+`4f97e00a32ee16c7153e911aaf74378e4f842822`; Spark and its GitHub `origin/main`
+matched. Preserved Spark's unrelated untracked `scratch/`. The concise frontend
+is unchanged. No deployment was started; deployed code remains `68edfc0` below.
+
+**VERIFIED offline source checkpoint:**
+`4cadc135a805c784f5e2f7a3166d9789595aeecb`. The live entry reader now requires its
+last 20 observations to match the exact reviewed exchange-session window ending
+today. Shared missing sessions, non-session rows, unsupported calendar coverage
+and a wrong endpoint return unavailable evidence with no numerical trigger.
+Chart and entry use the same reviewed calendar files. Global historical panel
+construction, live-row assembly, prices, thresholds and research pins are
+unchanged. Two older synthetic fixtures now use real exchange dates; their
+numerical price arrays and assertions were retained.
+
+Acceptance on the mounted checkout, network-disabled/read-only Docker image
+`sha256:63056fccae989b0ef65bb198bc913da58c87648169a50c1e2422b9b3c267d8ca`:
+
+- Initial 13-case regression: **8 failed, 5 passed**, preserving the defect.
+  `/private/tmp/anios-entry-gap-regressions.ST5Asp/` on the Mac.
+- Final seven-module suite: **150 passed, zero skips, 99 synthetic-data warnings**
+  in 2.37 seconds. Includes 15 new actual-path cases and existing chart, entry,
+  calendar, incumbent-parity and decision tests. Exact source hashes stayed
+  unchanged during execution. `/private/tmp/anios-entry-calendar-fix.CJikfS/`.
+- The original immutable AAOI/SPY synthetic fixture was separately replayed:
+  both entry rows are unavailable for `2026-09-22`; the chart remains incomplete
+  with a null band. Original input bytes and failed evidence were preserved.
+  `/private/tmp/anios-common-gap-acceptance.XAuqysVv/`; original failure at
+  `/private/tmp/anios-common-session-gap.G2WVF2/`.
+- Ruff passes for the guard/calendar and affected tests. **FAILED existing
+  whole-file chart lint:** six B905 and one C901 also occur at baseline `4f97e00`;
+  no new chart diagnostic. Do not describe all-file lint as passing.
+
+**FAILED, separate next task — earnings feature timing:** actual event mapping,
+EDGAR features and expectations `_dataset` reproduce an 11:00 ET release being
+assigned a 16:00 feature row after publication. Revenue 120→180 changes the
+feature from 0.1823215634→0.5877866745 while its target changes 0.2→0.8; pre-open
+control stays 0.2006706893. **3 passed, 1 failed, no skips**, four dataset calls,
+no fitting or network. Evidence/limits:
+`/private/tmp/anios-release-timing-retry.jEYxLPAO/RECEIPT.md`. Preserve the failure.
+Next atomic correction: retain associated release timestamps, separate the
+pre-release feature cutoff from the reaction/return session, and conservatively
+bound date-only filing availability. Add after-close/early-close controls;
+after-close behavior was not runtime-tested by this probe. Do not globally
+change event mapping or rerun the frozen rejected strategy to seek a better score.
+
+**UNVERIFIED:** deployed/browser behavior of this new guard, quote timestamp
+freshness beyond existing upstream gates, longer-window indicator completeness,
+raw/adjusted live chart parity, and any strategy-performance improvement. No
+orders, holdings, market-data repairs, model changes or historical study reruns.
+The pulled expectations repair separately passed 51 offline tests with two
+model-fitting cases intentionally deselected, not a model/performance evaluation.
+
+Remaining dashboard findings are source-only until reproduced: saved markers on
+null candles may render on an earlier candle; an open chart does not invalidate
+its saved-recommendation fetch; the expanded guide still describes allocation-
+first sorting. Preserve the concise layout and do not restore the duplicate board.
+Publish Mac → `git push spark main` → GitHub from Spark. Any later deployment
+must use `scripts/deploy.sh` and its acceptance; this is not a live-release receipt.
+
 ## 2026-09-25 — Completion: concise board and grade history LIVE
 
 Live source68edfc0757175c40a14a73e68a5a9c05eecaa5be, pushed to GitHub/main and
