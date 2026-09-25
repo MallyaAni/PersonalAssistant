@@ -2,6 +2,15 @@
 
 ## 2026-09-25 — Options collection contract accepted
 
+**VERIFIED scoped source checkpoint:**
+`c7daee471a1fd471b2e094de0f36c5c01524b24a`, published Mac → `git push spark main`
+→ GitHub from Spark. Mac HEAD/origin/main/spark/main and Spark HEAD/GitHub
+origin match; a clean `git pull --rebase origin main` reports up to date.
+Root receipt: `/private/tmp/anios-options-root.PeCclR/ROOT_RECEIPT.md`, SHA256
+`dae3108fcdd4467b349c20bc91907bbc37dfc332a1f999041cdfc69e41c6e4b4`.
+Latest clock 20:23:03 UTC / 16:23:03 ET. This is a published, offline-verified
+checkpoint, not deployment acceptance. No restart occurred.
+
 Starting checkpoint `8b577f9efe4d5bbefb465aa8fb0944acbb6de355` on main;
 Mac origin/spark and Spark HEAD/GitHub origin were fetched and match it.
 Spark `scratch/` is untouched. Root's only initial local changes are the
