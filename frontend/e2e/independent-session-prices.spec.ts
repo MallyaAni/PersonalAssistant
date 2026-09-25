@@ -218,7 +218,7 @@ async function expectPrice(page: Page, state: Scenario, price = state.price, tim
     await expect.soft(reading).toContainText(`$${price.toFixed(2)}`)
     await expect.soft(reading).toContainText(`${state.session} · ${state.session === 'overnight' ? 'Indicative · OVERNIGHT' : 'IEX'} · ${time} ET`)
     await expect.soft(reading).not.toContainText('stale')
-    await expect.soft(reading).toHaveAttribute('title', `Regular-session bar $100.00 · ${REGULAR_BAR}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${state.stamp}. Expected schedule: ${state.session}; not proof of venue availability.`)
+    await expect.soft(reading).toHaveAttribute('title', `Regular-session bar $100.00 · ${REGULAR_BAR}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${state.stamp}. Expected schedule: ${state.session}; not proof of venue availability. Display snapshot only; execution checks are separate.`)
   }
   await expect.soft(chart.getByLabel('AAPL session price')).toContainText('Signal: regular session')
   await expect.soft(chart.locator('dl')).toContainText('$100.00')
@@ -284,7 +284,7 @@ for (const outcome of ['network failure', 'invalid envelope', 'invalid JSON', 'H
     await settle(page, state)
     for (const reading of [page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price'),
       page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price')]) {
-      await expect.soft(reading).toContainText('No fresh quote from available feeds')
+      await expect.soft(reading).toContainText('Display midpoint unavailable')
       await expect.soft(reading).not.toContainText('$102.00')
       await expect.soft(reading).not.toContainText('stale')
       await expect.soft(reading).toHaveAttribute('title', /Regular-session bar \$100\.00/)
@@ -306,7 +306,7 @@ test('optional failure removes the old midpoint before a held regular response c
   await settle(page, state, true)
   expect(pending.completed).toBe(false)
   for (const surface of [page.getByRole('table', {name: 'Ranked stocks and cash'}), page.getByRole('region', {name: 'AAPL price chart'})]) {
-    await expect.soft(surface.getByLabel('AAPL session price')).toContainText('No fresh quote from available feeds')
+    await expect.soft(surface.getByLabel('AAPL session price')).toContainText('Display midpoint unavailable')
     await expect.soft(surface.getByLabel('AAPL session price')).not.toContainText('$102.00')
   }
   gate.release()

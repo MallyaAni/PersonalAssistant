@@ -167,14 +167,14 @@ async function expectFresh(page: Page, observed = OBSERVED, price = '$102.00', t
     await expect(reading).toContainText(`${price}`)
     await expect(reading).toContainText(`post-market · IEX · ${time} ET`)
     await expect(reading).not.toContainText('stale')
-    await expect(reading).toHaveAttribute('title', `Regular-session bar $100.00 · ${BAR}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${observed}. Expected schedule: post-market; not proof of venue availability.`)
+    await expect(reading).toHaveAttribute('title', `Regular-session bar $100.00 · ${BAR}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${observed}. Expected schedule: post-market; not proof of venue availability. Display snapshot only; execution checks are separate.`)
   }
   await expect(page.getByLabel('AAPL session price', {exact: true})).toHaveCount(2)
   await expectBoundary(page)
 }
 
 // Require absent current midpoints on board and chart while keeping the regular bar explicitly labelled.
-async function expectAbsent(page: Page, text = 'No fresh quote from available feeds') {
+async function expectAbsent(page: Page, text = 'Display midpoint unavailable') {
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
     await expect(reading).toContainText(text)
     await expect(reading).not.toContainText('$102.00')

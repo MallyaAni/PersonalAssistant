@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-25 — Separate display-price absence from execution evidence
+
+Both session-price displays now say “Display midpoint unavailable” when their
+own snapshot is unusable. Wording explicitly separates execution checks and
+attributes specific recorded reasons; the generic old reason no longer claims
+all feeds lack a fresh quote. Quote validation, deadlines, actions and sizing
+are unchanged.
+
+Five old-bundle failures are retained. Final focused 17, price 64 and combined 269
+browser cases pass; the combined run has zero skips/flaky results and 72 clean
+diagnostic records. Root independently passes 33 cases, with 26 clean records,
+and rebuilds byte-identical assets. Producer fixtures, TypeScript/build,
+independent review and 33 unchanged diagram/page checks pass. Existing build
+warnings and the intermediate exact-tooltip assertion failure remain recorded.
+No deployment or live-market/performance claim. See the
+[display-snapshot contract](research/display-snapshot-wording-2026-09-25.md).
+
 ## 2026-09-25 — Correct phone evidence test scroll placement
 
 The phone acceptance test now centers the measured union of its two grade

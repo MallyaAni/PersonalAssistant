@@ -9,7 +9,7 @@ const CLOCK = 'Regular-session execution is blocked; the session is closed or it
 type CaseName = keyof typeof evidence.cases
 
 // Render actual backend-produced rows; only unrelated APIs and optional display midpoints are synthetic.
-async function install(page: Page, frontendURL: string, name: CaseName, legacy = false) {
+async function install(page: Page, frontendURL: string, name: CaseName, legacy = false, displaySnapshot?: object) {
   const source = structuredClone(evidence.cases[name])
   if (legacy) delete (source.row.quote as {spread_verified?: boolean}).spread_verified
   const original = JSON.stringify(source)
@@ -54,7 +54,7 @@ async function install(page: Page, frontendURL: string, name: CaseName, legacy =
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest, sessions: [latest.session]}
     else if (url.pathname === `${base}/live`) json = live
-    else if (url.pathname === `${base}/session-prices`) json = {session: closed ? 'overnight' : 'regular', as_of: now, signal_scope: 'regular-session', quotes: {S11: closed ? {price: 100, at: now, feed: 'boats', indicative: false, session: 'overnight', status: 'fresh', reason: 'Synthetic dated overnight midpoint.', valid_until: '2026-09-14T01:02:00Z'} : {price: null, at: null, feed: null, indicative: false, status: 'unavailable', reason: 'No optional quote in fixture.', valid_until: null}}}
+    else if (url.pathname === `${base}/session-prices`) json = displaySnapshot ?? {session: closed ? 'overnight' : 'regular', as_of: now, signal_scope: 'regular-session', quotes: {S11: closed ? {price: 100, at: now, feed: 'boats', indicative: false, session: 'overnight', status: 'fresh', reason: 'Synthetic dated overnight midpoint.', valid_until: '2026-09-14T01:02:00Z'} : {price: null, at: null, feed: null, indicative: false, status: 'unavailable', reason: 'No optional quote in fixture.', valid_until: null}}}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
     else if (url.pathname === `${base}/mine`) json = mine
     else if (url.pathname === `${base}/intraday`) json = {session: latest.session, as_of: now, equity: 100000, rows: [], changed: [], top_buys: []}
@@ -222,3 +222,55 @@ test('execution quote expiration still withholds size with an unverified spread'
     await finish(testInfo, fixture)
   }
 })
+
+for (const failure of ['generic unavailable', 'missing envelope', 'missing quote', 'malformed quote', 'specific recorded reason'] as const) {
+  // Display-snapshot failure is independent of a real eligible execution quote on both UI surfaces.
+  test(`display snapshot ${failure} does not deny separate IEX execution evidence`, async ({page, baseURL}, testInfo) => {
+    const at = evidence.cases.wide_iex.now
+    const rawQuote = {price: null, at: null, feed: 'iex', indicative: false, session: 'unknown', status: 'unavailable',
+      reason: failure === 'specific recorded reason' ? 'Missing or future quote timestamp' : 'No fresh quote from available feeds', valid_until: null}
+    const displaySnapshot = failure === 'missing envelope' ? {} : {session: 'regular', as_of: at, signal_scope: 'regular-session',
+      quotes: failure === 'missing quote' ? {} : {S11: failure === 'malformed quote'
+        ? {...rawQuote, price: -1, at, status: 'fresh', valid_until: '2026-09-14T14:02:00Z'} : rawQuote}}
+    const originalDisplay = JSON.stringify(displaySnapshot)
+    const fixture = await install(page, baseURL!, 'wide_iex', false, displaySnapshot)
+    try {
+      await page.goto('/#desk')
+      const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+      await expect(board.getByLabel('S11 strategy intent', {exact: true})).toHaveText('BUY')
+      await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3% of account')
+      await page.getByRole('button', {name: 'S11', exact: true}).click()
+      const panel = page.getByRole('dialog', {name: 'S11 history'})
+      const readings = [board.getByLabel('S11 session price', {exact: true}), panel.getByLabel('S11 session price', {exact: true})]
+      await testInfo.attach('display-and-execution-before-assertions', {body: JSON.stringify({displaySnapshot, execution: fixture.source.row.quote,
+        readings: await Promise.all(readings.map(reading => reading.innerText()))}, null, 2), contentType: 'application/json'})
+      for (const reading of readings) {
+        await expect(reading).toContainText('Display midpoint unavailable')
+        await expect(reading).not.toContainText('No fresh quote from available feeds')
+        await expect(reading).toHaveAttribute('title', /Display snapshot only; execution checks are separate/)
+        await expect(reading).toHaveAttribute('title', /Midpoint is not a trade or guaranteed fill/)
+      }
+      await expect(readings[0]).toContainText('Regular bar $108.96')
+      await expect(readings[1]).toContainText('Display snapshot; execution checks are separate')
+      if (failure === 'generic unavailable') await expect(readings[1]).toContainText('No usable midpoint in this display snapshot')
+      if (failure === 'specific recorded reason') await expect(readings[1]).toContainText('Recorded display-snapshot reason: Missing or future quote timestamp')
+      await expect(panel.getByLabel('S11 strategy intent', {exact: true})).toContainText('BUY')
+      await expect(panel.getByLabel('S11 spread verification', {exact: true})).toHaveText('IEX spread unverified')
+      if (failure === 'generic unavailable') await panel.screenshot({path: testInfo.outputPath('display-unavailable-execution-eligible-panel.png')})
+      await panel.getByRole('button', {name: 'Close', exact: true}).click()
+      if (failure === 'generic unavailable') await board.screenshot({path: testInfo.outputPath('display-unavailable-execution-eligible-board.png')})
+      await page.reload()
+      await expect(board.getByLabel('S11 session price', {exact: true})).toContainText('Display midpoint unavailable')
+      await expect(board.getByLabel('S11 strategy intent', {exact: true})).toHaveText('BUY')
+      await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3% of account')
+      await page.getByRole('button', {name: 'details for S11', exact: true}).click()
+      const detail = page.getByRole('region', {name: 'S11 decision details', exact: true})
+      await detail.getByText('Recorded allocation & execution quote', {exact: true}).click()
+      await expect(detail).toContainText('IEX · $95.00 bid / $105.00 ask')
+      await expect(detail).toContainText('Sep 14, 2026, 10:01:00 AM ET')
+      expect(JSON.stringify(displaySnapshot)).toBe(originalDisplay)
+    } finally {
+      await finish(testInfo, fixture)
+    }
+  })
+}

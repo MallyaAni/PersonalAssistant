@@ -1,6 +1,58 @@
 # Next session
 
-## 2026-09-25 — Phone acceptance correction verified; display wording pending
+## 2026-09-25 — Display snapshot wording and combined UI acceptance verified
+
+**VERIFIED candidate:** `SessionPrice` now limits absence to its display
+snapshot, explicitly separates execution checks and attributes specific
+recorded reasons. The exact old generic reason is replaced only in rendering.
+No validators, source fallback, timestamps, scheduling, API/backend/collector,
+grades, actions or sizes change. Five desired-behavior failures on the old
+bundle are retained. A wider-run exact-tooltip expectation was corrected by
+appending the new qualification, with full equality and all other checks intact.
+
+Final focused 17 / price 64 / combined 269 browser cases pass. Combined run:
+188.077 s, zero skipped/flaky/unexpected results and 72 clean six-category
+diagnostic records. Root independently passes 33 cases in 28.432 s with 26 clean
+records and no skips/flakes/errors; screenshots inspected. Root TypeScript and
+fresh build pass, with every output file byte-identical to the accepted bundle.
+Eight actual-producer synthetic fixtures match. Independent review accepts
+wording and both tests. All 33 unchanged diagrams/page checks and diff checks pass.
+Existing CSS/large-chunk warnings remain. The old five product failures and
+intermediate 52-pass/12-tooltip-assertion failures are retained, not hidden.
+
+See [display-snapshot contract](research/display-snapshot-wording-2026-09-25.md)
+for source/bundle/receipt hashes and exact limits. Root receipt:
+`/private/tmp/anios-display-root.4tLv17/ROOT_RECEIPT.md`, SHA256
+`0db5f60102cc0597979200dbb66983ac2a6392971b2811eb79b908ebecf2fa01`.
+Accepted asset `index-DytNPHqD.js`, SHA256
+`8d078ca40efe634b83eece063b23a07237ece4f09c44609e7926ad45b7a07119`.
+**Diagram impact: NONE — snapshot-local wording and test-only scroll alignment.**
+
+The phone correction below is already published as
+`39daae1c47b0b3b77c0ec53d21c8f75bfaa7bcb8`, Mac → Spark → GitHub from Spark,
+with all refs verified equal. This display checkpoint starts from that source
+and includes only its six reviewed frontend files plus documentation. No
+deployment, restart, provider/model/account request, fit, historical strategy
+replay, holding/order operation or laptop access/settings change occurred.
+
+The full goal stays **active/incomplete**. Existing 2026 microstructure review
+remains the evidence for the user's HFT/15-minute question, not proof of an
+optimal cadence. Decision frequency is separate from holding duration. `/3`
+allocation-gate losses remain 10/14 matched folds at 10 bp and 11/14 at 25 bp;
+the original producer OOM/missing manifest stays FAILED. No new fit or horizon
+search is authorized. Full-policy fills/instructions/common intraday marks
+for funded SPY/QQQ comparisons remain a research gap.
+
+Before any release, resolve recurring 15-second quote-collector activation;
+authenticated market-data probe allowances are exhausted. **Do not restart
+the pending backend.** Deployment remains Spark-only through `scripts/deploy.sh
+--wait-post` with full gates/postchecks and exact artifact identity. Preserve
+remote scratch/ and deploy data/secrets symlinks. Release-readiness target is
+20:34 UTC / 16:34 ET. Acceptable drawdown remains unanswered; a concise preference
+question was presented while the final regression ran. Do not relaunch completed
+observers or build another scaffold just to report activity.
+
+## 2026-09-25 — Phone acceptance correction verified and published
 
 Starting branch `main`, HEAD `a5de878f62c54d2d6713d783c4312b012272c0bf`.
 Mac remotes and Spark's GitHub origin were fetched and match that SHA; remote
@@ -18,13 +70,8 @@ hashes, receipts, original failure and retained unsuccessful alignment attempt.
 This is not a production layout fix, deployment or provider-data check.
 **Diagram impact: NONE — test-only native scroll alignment.**
 
-The separate `SessionPrice` wording change remains in progress with
-`options_frontend_contract`. Five old-bundle desired-behavior failures are
-retained; candidate focused 17/17 passes. An old exact tooltip assertion was
-found in the wider price suite and updated only by appending the approved
-qualification. Wait for final combined broad run and independent review before
-staging its six owned files. Root owns integration/publication; the full goal
-remains active with the deployment, research and data constraints below.
+The separate `SessionPrice` change has now passed its combined acceptance;
+its final evidence and publication status are in the newer entry above.
 
 ## 2026-09-25 — Execution wording, OI isolation and legacy-RL evidence published
 

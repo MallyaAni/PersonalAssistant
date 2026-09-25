@@ -207,14 +207,14 @@ test('legacy regular envelope leaves the quote session unrecorded', async ({page
 
 for (const failure of ['missing', 'invalid envelope', 'future timestamp', 'missing feed', 'invalid price'] as const) {
   // Missing or invalid evidence is unavailable rather than proof that trading venues are closed.
-  test(`${failure} reports no fresh feed quote and labels the regular-bar fallback`, async ({page, scenario: state}) => {
+  test(`${failure} reports an unavailable display midpoint and labels the regular-bar fallback`, async ({page, scenario: state}) => {
     if (failure === 'missing') state.quote = null
     else if (failure === 'invalid envelope') state.malformedEnvelope = true
     else if (failure === 'future timestamp') state.quote!.at = '2026-09-24T22:00:01Z'
     else if (failure === 'missing feed') state.quote!.feed = null
     else state.quote!.price = -1
     await openDesk(page, state)
-    await expectReading(page, 'No fresh quote from available feeds', false)
+    await expectReading(page, 'Display midpoint unavailable', false)
     const reading = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')
     await expect(reading).toContainText('Regular bar $100.00')
     await expect(reading).not.toContainText('market closed')
