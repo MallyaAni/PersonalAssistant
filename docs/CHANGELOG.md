@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-25 — Link frozen allocation decisions to actual fills and outcomes
+
+Verified source checkpoint `b5cd784a203fe1293b25dc29d77edf38b78b4490`, pushed
+through Spark to GitHub, not deployed. A pure observer freshly verifies retained
+journals and reports every interval's effective target, actual fill/fee/residual,
+ordered ticker vectors, before/after closing exposure and matched net returns.
+Unknown intent and comparator ties remain visible. Disjoint descriptive cells
+reconcile full account log growth, without granting next-open cash sales credit
+for avoiding preceding gaps. The nested study includes this full-sample table;
+no fitting, strategy, execution, holdings, model or live dashboard behavior changed.
+
+Acceptance: **1,178 passed**, one intentionally deselected historical reproduction,
+five existing warnings; actual frozen observer checked12 journals/36 unchanged
+files and74,096 independent Decimal values (max residual4.56e-15). Scoped lint,
+format and all33 unchanged diagram/page checks pass. The original producer's
+OOM/missing root manifest remains a failure, not a reconstructed success.
+Full deployment gates were not run; no laptop access/settings changes were needed.
+
+The separate frozen-forecast audit finds negative squared-error skill against
+pre-fit training-mean baselines for all three targets. Updated public-source
+research distinguishes paid SIP/actual BOATS from free indicative overnight
+data and a conditional future SIP expansion. No data request, subscription or
+promotion was made. The source-coverage and point-in-time-data limits remain
+explicit in [the evidence](research/allocation-decision-attribution-2026-09-25.md)
+and current handoff.
+
 ## 2026-09-25 — Collect display quotes without an open dashboard
 
 Verified scoped source checkpoint

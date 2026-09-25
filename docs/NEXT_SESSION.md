@@ -1,5 +1,77 @@
 # Next session
 
+## 2026-09-25 — Frozen decision/fill attribution verified and published
+
+**VERIFIED scoped source checkpoint:**
+`b5cd784a203fe1293b25dc29d77edf38b78b4490`, based on clean `main` at
+`e3869a240d1ba9dc731d02bf9228ee160c61caa4`. The initial pull was current;
+Mac/Spark/GitHub were re-fetched before publication. All four changed Python
+hashes stayed unchanged across acceptance and the commit. Pushed Mac → Spark →
+GitHub from Spark; preserved Spark's unrelated `scratch/`. **No deployment.**
+No laptop system settings or extra computer-access permissions were needed.
+
+`allocation_attribution.attribution(snapshots, cost_bps=...)` freshly verifies
+candidate, no-gate adapter, SPY, QQQ and optional control journals. It requires
+exact reconstructed mark dates/costs and links every prior-close effective
+target to actual fill batches, ordered ticker vectors, before/after close
+exposure and matched net account returns. Stock/SPY/QQQ/cash/mixed/unknown and
+positive/negative/tie comparator cells remain exhaustive. Initial/terminal state
+and pending declarations stay separate. A next-open sale cannot receive credit
+for avoiding the preceding gap. Account role names remain caller-attested;
+accounting verification alone does not prove a control's policy construction.
+The study includes the report only in full-sample `decision_outcomes`; fitting,
+protocol, source prices, account rules and all live behavior are unchanged.
+
+**VERIFIED acceptance:** **1,178 passed**, one deliberately deselected completed
+historical reproduction, five existing empty-slice warnings, **41.14s**. Includes
+38 direct attribution cases plus real synthetic study/archive/standalone
+verifier acceptance and all journal/producer/allocation/nested/source/metric
+regressions. Ruff check/format pass; all 33 unchanged canonical diagrams and
+published-page checks pass under locked Mermaid11.16.0. No UI or model prompt
+changed; full routing/deployment and production browser/model gates were not run.
+
+The actual observer also checked **12 frozen outer journals**, **1,684 intervals
+per cost**, **36 original files unchanged**, and **74,096 independent 50-digit
+Decimal comparisons**, maximum residual **4.56e-15**. It did not refit or simulate
+a strategy. Original producer completion remains **FAILED** (OOM) and its root
+manifest is still absent. Among348 cash-target intervals, QQQ rose185/fell163;
+SPY rose187/fell159/tied2 at either cost. These are descriptive outcomes, not
+independent timing trials or a count of wrong decisions.
+
+**Gate-failure investigation:** a separate saved-forecast audit verifies63 input
+hashes, 5 arithmetic self-tests and672 comparisons across48 metric sets
+(max4.44e-16). Versus the strictly pre-fit training-label mean, squared-error
+skill is −6.46% stock, −14.89% SPY, −15.35% QQQ. There are1,679 observed
+overlapping five-session gross labels; five final unavailable labels are excluded
+from forecast diagnostics only. Actual account intervals remain complete. This
+supports keeping the gate rejected, not retuning it or adopting a new model.
+
+Evidence: [contract, results and research](research/allocation-decision-attribution-2026-09-25.md),
+`/private/tmp/anios-allocation-attribution.oq0PQQnA/RECEIPT.md` and
+`/private/tmp/anios-gate-failure-audit.tlH2PrUu/RECEIPT.md`.
+JUnit SHA256 `247f8460913c19a88e8cbf21313411e07f98b90396e1b73063d495b0d629efdf`;
+frozen observer proof `cf172e306b01bca07aeeeefb8bce1ac30bf4b44820f14bccd948f97a38bf2148`.
+**Diagram impact: NONE — internal research reporting in the existing account flow.**
+
+**UNVERIFIED / next scope:** full real-time pre/post/overnight coverage remains
+unproved. Public primary docs identify Algo Trader Plus ($99/month advertised)
+as an existing-provider route for SIP and actual BOATS; plan/key mapping is
+unknown and no purchase is approved. Free overnight quotes remain indicative.
+The UTP ~23-hour expansion is a conditional December6 plan, not current coverage.
+See [updated source qualification](research/extended-hours-source-options-2026-09-25.md).
+All authenticated data-probe allowances remain exhausted. Await provider/plan
+information; any new probe or recurring charge needs separate scope. Do not
+silently replace the real-time requirement with delayed bars.
+
+The overall goal remains active/incomplete. Do not rerun archive buffering,
+collector implementation, `/3` gain attribution or these decision/fill aggregates.
+The next research measurement boundary is a missingness-aware chronological
+forecast-diagnostics contract: bind retained forecasts to fit cutoffs, actual
+label horizons and training-only baselines, including zero variance/denominators,
+without a new grid or post-hoc threshold. Historical universe, PIT quality and
+terminal-payout evidence remain the more fundamental limits on strategy claims.
+Deploy only when explicitly requested, from Spark through `scripts/deploy.sh`.
+
 ## 2026-09-25 — Browser-independent display collection; no laptop permissions needed
 
 **VERIFIED scoped source checkpoint:**
