@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-09-25 — Regime research fingerprint acceptance
+
+Starting `main` / `HEAD` is `07c1f97958a046b64679109be71692ae5c86d1c0`;
+Mac origin/spark and Spark HEAD/GitHub origin were fetched and match it.
+Spark's unrelated `scratch/` remains untouched. Only the two fingerprint
+files and scoped documentation belong to this checkpoint; the options
+collection agent's work is separate and must not be staged with it.
+
+**VERIFIED synthetic acceptance:** the builder appends regime source after
+all 17 prior digest inputs. Four original intended failures are retained;
+agent's expanded 76 tests and root's independent 39 tests pass, zero skips.
+Fresh source-backed processes change actual allocations and policy hashes
+under the same inputs. Real publish/report/Parquet paths keep the first
+same-candle archive byte-identical and separate later observations into two
+groups in both corporate-action modes. Independent source review accepts.
+Production cap, all non-fingerprint outputs and strategy behavior are unchanged.
+See [contract, hashes and limits](research/intraday-policy-fingerprint-2026-09-25.md).
+
+**UNVERIFIED:** complete dependency closure/runtime attestation, any actual
+historical policy mixture, deployment and performance. Legacy archives/groups
+are not repaired or relabelled. This is not a full `/3` replay. The prior
+10/14 and 11/14 matched allocation-gate fold losses at 10/25 bp and producer
+OOM/missing manifest remain unchanged. No fit or historical strategy rerun.
+**Diagram impact: NONE — internal selected-digest dependency.**
+
+Options collection remains in progress with `/root/options_frontend_contract`,
+owning `backend/market/options.py`, `backend/cli/market_options.py` and its new
+collection-contract tests. Keep valid OI independently of optional inputs in
+the same immutable partition, while failing closed on required corruption.
+Legacy APIs/output must remain compatible. Do not publish incomplete work.
+
+Goal remains active/incomplete. No deployment/restart: recurring 15-second
+quote collection is awaiting approval and authenticated probe allowances are
+exhausted. No model/provider/account calls or laptop access changes. Continue
+Mac → Spark → GitHub publication and Spark-only gated deployment when authorized.
+Release-readiness target: 20:34 UTC / 16:34 ET. Drawdown preference remains
+unanswered; do not repeat the pending question.
+
 ## 2026-09-25 — Display snapshot wording and combined UI acceptance published
 
 **VERIFIED source checkpoint:**

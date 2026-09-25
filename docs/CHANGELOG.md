@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-25 — Separate research identities when regime source changes
+
+The intraday research fingerprint now includes its directly consumed regime
+source, preserving all 17 prior ordered inputs. A source-backed cap change
+previously altered targets without changing policy identity, pooling distinct
+implementations in forward reports. Trading calculations, the production cap
+and same-candle first-write behavior remain unchanged.
+
+Four original failures are retained. Agent's expanded 76 tests and root's
+independent 39 tests pass, with no skips and existing empty-slice warnings.
+Real synthetic publisher/report/Parquet paths preserve archive bytes and
+separate later policy groups. Independent review and scoped lint/format pass.
+This proves one dependency, not complete source/runtime attestation; legacy
+groups remain unchanged. No deployment or performance claim. See the
+[fingerprint contract](research/intraday-policy-fingerprint-2026-09-25.md).
+
 ## 2026-09-25 — Separate display-price absence from execution evidence
 
 Both session-price displays now say “Display midpoint unavailable” when their
