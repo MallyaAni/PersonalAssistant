@@ -2,6 +2,9 @@
 
 ## 2026-09-25 — Preserve source units without changing live fundamental loaders
 
+Verified scoped source checkpoint `8f3f41680f1d0af7f764f73829367fa4b0691994`,
+published Mac → Spark → GitHub from Spark; not deployed.
+
 Added an isolated, hash/issuer-bound company-facts parser and explicit USD/share
 projection. It retains recognized units, vintages, original row positions and
 exclusions, and restores frames by re-extracting original bytes. Existing live

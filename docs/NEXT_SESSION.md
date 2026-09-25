@@ -1,5 +1,105 @@
 # Next session
 
+## 2026-09-25 — Unit-preserving fundamental source verified; ML/DL/RL status clarified
+
+**VERIFIED scoped source checkpoint:**
+`8f3f41680f1d0af7f764f73829367fa4b0691994`, from clean main at
+`00f3102bac9d507d00bbe09c99479e0e76f7d34e`. Initial pull current; Mac remotes
+and GitHub from Spark re-fetched before publication. Both Python hashes stayed
+unchanged through acceptance and commit. Published Mac → Spark → GitHub from
+Spark, preserving remote `scratch/`. No deployment, laptop settings/permissions,
+authenticated market-data request, holdings, orders or strategy promotion.
+
+`fundamental_unit_sources` is isolated and unwired: original bytes/hash/CIK,
+recognized units and filing vintages, explicit USD/shares/USD-per-share
+projection, separate frame schema and original-byte re-extraction on readback.
+Malformed/unsupported observations remain explicit exclusions. Two reproduced
+legacy defects remain **FAILED** and strict xfails: future alternate-unit rows
+erase earlier USD trailing revenue, and old stored versions lose units. The
+existing loader ignores metadata; changing its VERSION alone is not isolation.
+Do not relabel unitless caches or wire the helper into a live consumer without
+raw-source reimport, coverage measurement and a separately scoped rollout.
+
+**VERIFIED acceptance:** 189 passed, one existing missing-Torch skip, three
+strict legacy xfails, 24 existing empty-slice warnings, 6.41s. The third xfail
+is the known frozen price/share-basis defect. Synthetic mixed-unit Parquet
+write/readback, scoped Ruff/format and all 33 unchanged diagram/page checks pass.
+Independent review has no outstanding findings after accepted-before-period,
+malformed instant-period, Boolean-coercion and date-overflow regressions. No
+production UI/model/routing/deployment gate was run for this internal helper;
+the skipped optional model path remains UNVERIFIED.
+
+Actual acceptance used one previously downloaded public SEC ASML response:
+HTTP 200 at 16:48:09 UTC, 1,837,771 bytes. Final offline run retained 647 rows
+and checked 5,176 original-pointer fields/positions. It preserved 487 EUR,
+102 EUR/share and 58 share rows; USD projection kept 58 shares and excluded
+589 unsupported monetary/EPS rows. JSON persistence/readback and EUR→USD tamper
+rejection pass; original bytes and source unchanged. This establishes neither
+dated FX nor share-class/ADR/split compatibility, historical source availability,
+investment quality or a full-universe migration.
+
+Evidence: [contract](research/fundamental-unit-sources-2026-09-25.md),
+`/private/tmp/anios-fundamental-units-final.t7P1uR/RECEIPT.md`
+(SHA256 `dfe6b4b5a34156b0d79691c2e5b3cc8ce1965999900f2f6c7ded323f942b9e08`).
+JUnit `11b60af134ec811da31158fb19dc151d2d9c91b23a3d88a441dfe59f8a0efc4b`;
+actual proof `4fb1d24d5f5986367936c9cad7c60adac7ea1edc4a225d6c942720d98e47ea56`.
+Initial failures/raw source remain under
+`/private/tmp/anios-fundamental-units.pkKxBnJd/`.
+**Diagram impact: NONE — isolated internal input representation.**
+
+**Primary membership qualification:** two bounded events do not qualify the
+community history. The 2019 HRS June 1 removal contradicts the June 24 S&P
+release still naming it as a constituent; exact corrected transition unverified.
+The August 13, 2026 release announces RDDT for AVB before August 18 open;
+EQR→VMRK is announced continued membership, not proof of unchanged security
+identity or exact ticker-transition date. Issuer completion checks failed
+403/404/timeouts; no restrictions bypassed. No source adapter or pin changed.
+Receipt `/private/tmp/anios-sp500-event-evidence.hJprR3/RECEIPT.md`, SHA256
+`f4c67b97a43528fbe8f740ad69fb9e4422c9637f326bd90b8e4cfa912be932f9`.
+
+**User asks whether research uses ML, DL and RL:** source audit confirms all
+three, but distinguish roles. Existing default desk `LIVE_INPUTS` includes
+expectations-gap; its helper fits 300-round LightGBM revenue-growth regressors.
+`market_daily` generates the report and `/desk` reads saved records; dashboard
+opening does not fit a model. Default wiring is unchanged from recorded deployed
+68edfc0, but newer source tightens publication eligibility; no runtime fit was
+observed today. `/3` allocation remains deterministic. Research has supervised
+MLPs, an intraday GRU and genuine sampled policy-gradient allocation with a
+learned value baseline and costed net-log-wealth reward, not live exploration.
+The tested boosted ranker, price-only neural ranker and ridge allocation gate
+remain rejected. The older RL pilot was seed-sensitive and lost to its simple
+momentum controls; it lacked QQQ and a matched `/3`. Retrospective survivor-
+selected/examined data cannot qualify a top-tier strategy. The apparent early
+nightly neural gains are not long-term independent evidence.
+
+**Fresh read-only Spark preflight, 16:44–16:47 UTC:** shared checkout then
+00f3102 plus scratch; deploy clone 879abc56ca4d7b3827bf4b8244991d0d02bf0c00
+with expected data/secrets symlinks. Runtime backend main/settings/session-price
+hashes match 68edfc0757175c40a14a73e68a5a9c05eecaa5be, not the deploy clone.
+Last postcheck 04:07:19 UTC was 68edfc0 ok (cheap); no supported deploy/postcheck
+process observed. Backend image
+001e64f3720e2f8fdb8690edb90a074064dc6f744e0c29d20058974472c82b48;
+gateway image 81990757ae30e3f52301cc2d5b3b2b474945c1bb2d14c00f7b1a9ff2bf276846.
+Gateway nginx revision label is not AniOS provenance. Runtime lacks collector
+files and both collector settings; current defaults would activate recurring
+reads at 15 seconds after restart. Existing key/secret presence checked without
+values or entitlement requests. No provider/API/model calls during preflight.
+
+**Next:** goal remains active/incomplete. Continue source qualification and
+release preparation, not another grid on already examined biased history.
+Do not rerun completed forecast/account observers or relabel original producer
+OOM/missing-manifest as success. The unit helper is complete only in its bounded
+scope; a useful next check is coverage of already retained raw source snapshots
+and which existing fundamental inputs have compatible dimensions/publication
+evidence, without new authenticated data calls or changing grades.
+The approximate release-readiness target remains 20:34 UTC / 16:34 ET. The
+async collector-activation question remains unanswered: resolve before backend
+restart. Full real-time pre/post/overnight coverage remains unproved and all
+authenticated probe allowances are exhausted. Deploy only when explicitly
+directed, from Spark with `scripts/deploy.sh --wait-post`, no gate bypasses;
+pending service changes trigger full search/journey postchecks. Verify actual
+built artifacts and dashboard behavior, not just a marker or health response.
+
 ## 2026-09-25 — Saved-forecast diagnostics verified; prepare the later Spark release
 
 **VERIFIED scoped source checkpoint:**
