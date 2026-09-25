@@ -1,5 +1,93 @@
 # Next session
 
+## 2026-09-25 — Connected reporting-period safeguard and independent dashboard warnings
+
+Starting `main`, HEAD `0bf6fbe6358b4a264dd9ec9562b1bac2fcbf0f44`; current
+modifications were the coordinated task, with Spark's unrelated untracked
+`scratch/` preserved. Fresh Mac/Spark/GitHub fetches matched the starting HEAD.
+The clean post-commit `git pull --rebase origin main` was up to date.
+
+**VERIFIED scoped checkpoint:** `2d874a9ebaf9cbfae70af4b7efcc3e1f483475fd`.
+Published Mac → `git push spark main` → GitHub from Spark; Spark HEAD and its
+GitHub origin match that SHA. This handoff is a subsequent documentation commit.
+New nightly records explicitly choose `fundamentals-features/3`: only features
+at the latest eligible reported revenue end survive ranking. Lost scored inputs
+or an unavailable score clear the fundamental vote and its confirmation history.
+All names, including unscored names, retain original dates and rejection reasons.
+Generic desk/research defaults stay on `/2`; prior saved records are unchanged.
+This is not execution-policy `/3`, whose namespace and calculations are separate.
+
+Root backend: **495 passed**, one optional missing-Torch skip, four strict
+existing known-defect xfails, 32 existing short-panel/numerical warnings.
+Independent review: 258 passes, no failures/skips. No-reset differential:
+45,927 identical comparisons. Actual synthetic store → desk → grades → saved
+records → reload proves vote recovery and preservation of earlier record bytes.
+Final backend/data hashes still match the accepted pre-frontend results.
+
+The unchanged 94-source SEC packet yields 602 → 424 finite feature cells:
+178 older-period inputs excluded across 33 names. Fundamental scores are finite
+for 89 → 64 names; 63 other scores rerank, one remains equal. Every accepted
+scalar is identical, all original `/2` scalars match the earlier diagnostic,
+and every name survives the real record-block JSON roundtrip. This is one
+current-source session, not full combined-grade or strategy-performance evidence.
+AAPL, ORCL and AMZN lose obsolete-input F scores; AAOI's six June values stay
+unchanged, while March capex is excluded (context-only). See the
+[policy, evidence and limits](research/fundamental-period-eligibility-2026-09-25.md).
+
+**VERIFIED local browser acceptance:** 277 passed, zero failures/skips/flakes,
+157.966 seconds; all 96 attached browser-diagnostic records are clean. The 46-case
+independent frontend matrix also passed. Source, funding and execution-policy
+descriptions are independent: an older-source warning no longer hides cash
+limits, unknown funding does not imply borrowing, and unknown policy does not
+imply an older policy. Both recorded-evidence views retain exclusion reasons.
+TypeScript/build, scoped Ruff/diff checks and all 33 unchanged diagram/page checks
+pass. Existing CSS/chunk warnings remain. Phone summary/table and expired-quote
+chart captures were inspected; the long element capture's upper context is
+obscured by its scroll position, so it is not a full-dialog clipping claim.
+
+The original 264-pass/one-failure broad run is retained, as are strengthened
+source/funding failures and the review corrections. A subsequent 277-pass bundle
+had two joined explanations without a full stop; root reproduced that with one
+new assertion, corrected only the separator, rebuilt and reran all 277 cases.
+No safety assertion was relaxed. Final asset `index-CEbO63Ge.js`, SHA256
+`235271f9b36bf9d2c6d57675ff7ea9edf07a499bd492210564e68341f5cb629e`.
+Root receipt `/private/tmp/anios-current-accepted.vhELbN/ROOT_RECEIPT.md`, SHA256
+`9e93a20c70fe0c06ed6f316b5a9a667eb5621b9a3b3be629df48c871f5355877`.
+Final browser JSON SHA256
+`9c9e295d0aa72f18d4a2036a1bd969b30a7a02b7c4a31e92a4c34b528d46804e`.
+Backend JUnit `/private/tmp/anios-current-path-root.H5cS5W/final-backend.xml`,
+SHA256 `3bd0f2b99618c668d2f30f3dd340a1aa742a01709ada37fdeb9f7d49c2bb3ba4`.
+
+**FAILED / UNVERIFIED:** unit-preserving current-definition migration, legacy
+currency/annual-partition defects, historical availability, fair value and
+investment superiority remain open. The retained SEC packet lacks exact
+acceptance timestamps. No provider/model call, strategy fit or historical rerun,
+account/order/holding action, laptop setting change, restart or deployment.
+
+**Newest user priority / next atomic task:** the exact `quote stale`, `snapshot`,
+`replay` and `below A` complaint was already fixed in `5516bc8`; those committed
+paths remain unchanged and their browser cases pass again. Do not reimplement
+them or recheck an old public asset just to report activity. Independent review
+found additional chart issues worth fixing next: an unexplained percentage is
+price distance from an indicator, not a return; EMA/band periods and quote-bar
+labels need plain explanations; the "52-week" extrema use 252 trading sessions;
+and a mixed-source grade transition currently labels both endpoints from only
+the destination's provenance. Proposed wording/tests are in the completed
+`chronological_validation` agent's final message. No code for those findings is
+written yet. Preserve marker geometry, recorded actions and original history;
+test both mixed directions, D/W toggles and phone rendering. Do not claim the
+whole dashboard is now precise. After that bounded UI task, connect qualified
+current concepts and unit-preserving financial inputs; suppression is not the
+final data solution. Do not repeat the completed 94-source inventory.
+
+Deployment stays held on the existing unanswered 15-second quote-collector
+decision. Do not ask repeatedly or deploy the read-only endpoint with collection
+disabled as an equivalent release. Use Spark-only `scripts/deploy.sh --wait-post`
+with all applicable gates and actual artifact/browser proof when cleared. All
+scoped agents have finished; the overall trading goal remains active/incomplete.
+Diagram impact: NONE — internal calculation/reset logic and existing record/UI
+fields, without new components, dependencies, stores or trust boundaries.
+
 ## 2026-09-25 — Full current-source qualification and strict CIK compatibility
 
 Starting `main`, HEAD `c42ace690ac960750acaa5c70e12981a9ea8d673`; the only
