@@ -181,6 +181,14 @@ deploy used to; `--skip-post` skips them.
 
 ## Research-account journal validation
 
+For the expectations CLI's isolated reporting-scale correction, run
+`python -m pytest -c /dev/null backend/tests/test_expectations_baseline_scale.py backend/tests/test_market_expectations.py backend/tests/test_expectations_publication.py backend/tests/test_expectations_release_timing.py backend/tests/test_expectations_feature_cutoff.py backend/tests/test_expectations_clock_boundaries.py backend/tests/test_expectations_dispatch.py backend/tests/test_expectations_cutoff.py -q`.
+The new tests replace model fitting and other studies with explicit synthetic
+boundaries, exercise main's actual baseline/accuracy path, and retain source
+unit/clipping checks. They do not rerun historical metrics or qualify model
+quality; a missing-LightGBM skip is not a model-fit pass. See the
+[reporting-scale contract](research/expectations-baseline-scale-2026-09-25.md).
+
 For the isolated unit-preserving fundamental source, run
 `python -m pytest -c /dev/null backend/tests/test_fundamental_period_sources.py backend/tests/test_fundamental_unit_sources.py backend/tests/test_fundamentals_asof.py backend/tests/test_fundamental_features.py -q`.
 Retain the original company-facts bytes and declared hash/CIK; a frame's unit

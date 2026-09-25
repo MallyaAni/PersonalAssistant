@@ -19,6 +19,12 @@ historical membership, the first public press-release time, correct quarter-to-
 release association, or all remaining within-vintage source assumptions. The older
 study description/results below are historical development evidence, not
 qualified performance or proof that those unresolved boundaries are correct.
+The old naive comparator also used log growth against simple-growth targets.
+Its accuracy and surprise diagnostics do not establish superiority over a
+correctly scaled last-growth baseline. The reporting baseline now inverts log
+growth and applies the target's clipping; no historical results were recomputed.
+Upstream zero-filled missing growth still lacks a validity mask, so this
+numerical correction does not qualify baseline observation coverage.
 The gap was subsequently promoted on 2026-09-10; that operational decision is
 not validation of the historical claims. This cutoff fix does not rerun or
 repair the saved study.
@@ -75,9 +81,10 @@ as in the other studies.
 Results, 2026-09-08
 -------------------
 13,515 report rows on 515 names, 2015 to 2026, scored out of sample
-from 2018. The learner beats the naive expectation: correlation with
-the actual +0.628 against +0.531, better in eight years of nine, and
-it leans almost entirely on last growth (66% of the gain), then
+from 2018. The uncorrected study reported learner correlation with
+the actual +0.628 against +0.531 for the mixed-scale naive comparator,
+better in eight years of nine; this is not a valid baseline comparison.
+It leaned almost entirely on last growth (66% of the gain), then
 acceleration, margin and the price-implied growth.
 
 After the report there is no drift on this universe: the top fifth of
@@ -950,7 +957,9 @@ def main() -> None:
         available_dates=[m[3] for m in meta],
         score_dates=[dates[m[4]] for m in meta],
     )
-    naive = x[:, NAMES.index("revenue_yoy")]
+    # Compare like units without changing log-growth model inputs. This cannot
+    # recover growth observations already zero-filled by the upstream producer.
+    naive = np.clip(np.expm1(x[:, NAMES.index("revenue_yoy")]), -0.9, 5.0)
     _accuracy(expected, naive, y, meta_year, years, model)
     _after(panel, expected, naive, y, meta, meta_year, years)
     cheap = _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args)

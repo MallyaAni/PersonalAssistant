@@ -1,6 +1,23 @@
 # Changelog
 
+## 2026-09-25 — Correct earnings research's naive growth benchmark
+
+The naive reporting baseline now converts the log-growth feature to ordinary
+growth and applies the same clipping as its target, in a separate array.
+Model inputs, forecasts, live grades, allocations and saved studies are unchanged.
+Old accuracy/surprise comparisons are explicitly qualified; they were not rerun.
+Upstream zero-filled missing growth still lacks an observation-validity mask.
+
+Four scale failures reproduced before the correction. Eight targeted tests
+pass; the wider relevant suite has 88 passes and one existing missing-LightGBM
+skip. Independent review and scoped lint/format pass. This is synthetic CLI
+and numerical proof, not a fitted model or historical performance result.
+See the [contract and evidence](research/expectations-baseline-scale-2026-09-25.md).
+
 ## 2026-09-25 — Bind research financial ratios to complete source periods
+
+Verified scoped source checkpoint `6702db7eb37bd096fe91f1983e1ece7b6c90fd19`,
+published Mac → Spark → GitHub from Spark; not deployed.
 
 Added an isolated ratio evaluator with declared concepts, literal units and
 annual/quarterly horizons. Exact fiscal intervals and signed original source
@@ -2792,6 +2809,13 @@ history) and what it holds exactly (release acceptance times, filing
 dates).
 
 ## 2026-09-08 - An earnings-expectations model, and the gap to the price as a challenger
+
+Qualification added 2026-09-25: the historical naive accuracy/surprise reports
+compared log growth with simple-growth targets. They do not establish an edge
+over a correctly scaled last-growth baseline. The reporting scale is corrected
+in current source; no saved historical metrics have been recomputed, and
+upstream missing-growth coverage remains unqualified. The description below
+records the original study, not current validation or adoption status.
 
 `backend/cli/market_expectations.py` builds the expectation the review
 asked for: a walk-forward learner on what was known the day before each
