@@ -94,6 +94,21 @@ def _published_sessions() -> tuple[set[int], np.busdaycalendar]:
     return {int(year) for year in years}, np.busdaycalendar(holidays=holidays)
 
 
+# Share the reviewed historical and current session calendar without guessing years.
+@lru_cache(maxsize=1)
+def reviewed_sessions() -> tuple[set[int], np.busdaycalendar]:
+    historical = json.loads(HISTORICAL_SESSIONS_PATH.read_text(encoding="utf-8"))[
+        "years"
+    ]
+    current = json.loads(HOLIDAYS_PATH.read_text(encoding="utf-8"))["years"]
+    years = {int(year) for year in historical} | {int(year) for year in current}
+    closures = [
+        day for record in historical.values() for day in record["full_closures"]
+    ]
+    closures.extend(day for days in current.values() for day in days)
+    return years, np.busdaycalendar(holidays=closures)
+
+
 # The exchange's published early closes: the scheduled 13:00 sessions in
 # the current calendar file and the reviewed historical one, as {date: close}.
 @lru_cache(maxsize=1)

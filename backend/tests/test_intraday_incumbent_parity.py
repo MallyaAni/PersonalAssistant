@@ -29,7 +29,7 @@ import pytest
 
 from backend.agents.trading.desk import paper
 from backend.agents.trading.desk.entry import bollinger_z
-from backend.market import live_technical
+from backend.market import calendar, live_technical
 from backend.market.decision_view import Action, entry_action
 from backend.market.intraday_comparison import (
     ENTRY_READY,
@@ -52,7 +52,14 @@ from backend.market.panel import Panel
 SESSION = date(2026, 1, 6)
 # The 20 prior sessions, deliberately supplied in reverse order so every helper
 # must sort before using them, exactly as the comparison and the store do.
-_PRIOR_DATES = [date(2025, 12, 31) - timedelta(days=i) for i in range(30)]
+_, _EXCHANGE_SESSIONS = calendar.reviewed_sessions()
+_PRIOR_DATES = (
+    np.busday_offset(
+        np.datetime64(SESSION), -np.arange(1, 31), busdaycal=_EXCHANGE_SESSIONS
+    )
+    .astype(object)
+    .tolist()
+)
 
 
 # The standard 20-prior daily history: adjusted closes 100..119 rising in time,

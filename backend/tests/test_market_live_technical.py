@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 from backend.agents.trading.desk.opinions import Opinion
-from backend.market import live_technical
+from backend.market import calendar, live_technical
 from backend.market.live_technical import with_live_row
 from backend.market.panel import Panel
 
@@ -408,13 +408,14 @@ def test_the_short_read_sees_the_nine_day_ema_turn(monkeypatch):
 # was called by nothing but the backtest, so the board could say a name was
 # A+ without ever saying whether now was a time to buy it. These tests pin
 # the wiring and the classification, not the thresholds, which belong to
-# the analyst.
+# the analyst. Keep those prices on real sessions ending at the evaluation date.
 def _long_panel(paths: dict[str, np.ndarray]) -> Panel:
     names = tuple(paths) + ("SPY",)
     rows = len(next(iter(paths.values())))
     close = np.column_stack([*paths.values(), np.full(rows, 400.0)])
-    dates = np.array(
-        [np.datetime64("2025-01-01", "D") + np.timedelta64(i, "D") for i in range(rows)]
+    _, sessions = calendar.reviewed_sessions()
+    dates = np.busday_offset(
+        np.datetime64("2026-09-18"), np.arange(1 - rows, 1), busdaycal=sessions
     )
     return Panel(
         dates=dates,
@@ -430,6 +431,7 @@ def _long_panel(paths: dict[str, np.ndarray]) -> Panel:
     )
 
 
+# Read the supplied numerical fixture at its declared current exchange session.
 def _entry_read(monkeypatch, panel, ai_trend=None):
     trend = ai_trend if ai_trend is not None else np.zeros(panel.dates.shape[0])
     monkeypatch.setattr(

@@ -38,10 +38,8 @@ first have used it, not the day it formed.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from functools import lru_cache
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -91,16 +89,8 @@ class Chart:
 
 
 # Use only reviewed exchange holidays, with calendar coverage kept explicit.
-@lru_cache(maxsize=1)
 def _chart_calendar():
-    historical = json.loads(calendar.HISTORICAL_SESSIONS_PATH.read_text())["years"]
-    current = json.loads(calendar.HOLIDAYS_PATH.read_text())["years"]
-    years = {int(year) for year in historical} | {int(year) for year in current}
-    closures = [
-        day for record in historical.values() for day in record["full_closures"]
-    ]
-    closures.extend(day for days in current.values() for day in days)
-    return years, np.busdaycalendar(holidays=closures)
+    return calendar.reviewed_sessions()
 
 
 # Insert actual missing exchange sessions rather than compressing indicator time.

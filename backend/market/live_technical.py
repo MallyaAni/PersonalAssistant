@@ -31,7 +31,7 @@ import numpy as np
 from backend.agents.trading.desk import regime
 from backend.agents.trading.desk import technical as technical_analyst
 from backend.agents.trading.desk.desk import book_panel, tightening_for
-from backend.market import baselines, options
+from backend.market import baselines, calendar, options
 from backend.market import technical as daily_technical
 from backend.market.panel import Panel
 
@@ -662,7 +662,56 @@ def _unavailable_entry(reason: str, missing_sessions: list[str] | None = None) -
     }
 
 
-# Describe the existing entry rule and distinguish a missing reading from no signal.
+# Reject a compressed or unreviewed entry window without changing historical panels.
+def _entry_calendar_status(panel: Panel, today: date) -> tuple[str | None, list[str]]:
+    years, sessions = calendar.reviewed_sessions()
+    day = np.datetime64(today, "D")
+    if today.year not in years:
+        return (
+            "Entry data unavailable: exchange calendar coverage unavailable for "
+            f"{today.year}",
+            [],
+        )
+    if not np.is_busday(day, busdaycal=sessions):
+        return f"Entry data unavailable: {today} is not an exchange session", []
+    expected = np.busday_offset(day, np.arange(-19, 1), busdaycal=sessions)
+    unknown = sorted({value.astype(object).year for value in expected} - years)
+    if unknown:
+        return (
+            "Entry data unavailable: exchange calendar coverage unavailable for "
+            + ", ".join(map(str, unknown)),
+            [],
+        )
+    dates = panel.dates[-20:]
+    if dates[-1] != day:
+        return (
+            "Entry data unavailable: daily window does not end at the current session",
+            [],
+        )
+    if len(dates) < 20:
+        return "Entry data unavailable: fewer than 20 daily observations", []
+    unexpected = dates[~np.is_busday(dates, busdaycal=sessions)]
+    if len(unexpected):
+        return (
+            "Entry data unavailable: daily observations include non-session dates "
+            + ", ".join(map(str, unexpected)),
+            [],
+        )
+    missing = [str(value) for value in np.setdiff1d(expected, dates)]
+    if missing:
+        return "Entry data unavailable: missing daily close for " + ", ".join(
+            missing
+        ), missing
+    if not np.array_equal(dates, expected):
+        return (
+            "Entry data unavailable: daily observations are not in "
+            "exchange-session order",
+            [],
+        )
+    return None, []
+
+
+# Read the entry rule only when its twenty observations match actual exchange sessions.
 def entry_now(store, quotes: dict, today: date | None = None) -> dict:
     """Return {symbol: {...}} entry triggers at the live price."""
     from backend.agents.trading.desk import entry as entry_analyst
@@ -674,6 +723,14 @@ def entry_now(store, quotes: dict, today: date | None = None) -> dict:
     if not len(panel.dates):
         return {
             symbol: _unavailable_entry("Entry data unavailable: no daily history")
+            for symbol in quotes
+        }
+    calendar_reason, missing_sessions = _entry_calendar_status(panel, today)
+    if calendar_reason is not None:
+        return {
+            symbol: _unavailable_entry(calendar_reason, missing_sessions)
+            if symbol in panel.tickers
+            else _unavailable_entry("Entry data unavailable: no daily history")
             for symbol in quotes
         }
     location = levels.level_features(panel)
