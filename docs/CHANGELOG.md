@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-09-25 — Separate observed quote availability from expected schedules
+
+Verified scoped source checkpoint
+`fa729bad490154578698e2294b775398c4b39dfa`, not deployed. Existing display feeds
+are checked regardless of regular/closed/unknown calendar labels. Per-symbol
+fallback handles empty, partial, stale, malformed and failed responses; original
+quote time/source determines freshness. Feed-generation guards prevent older
+overlapping completions from corrupting cache/backoff state. Network reads stay
+bounded and separate from execution inputs.
+
+Board/chart wording now distinguishes source, indicative midpoint, stale dated
+observation and regular-bar fallback. Calendar flags cannot hide fresh quotes;
+unknown schedules and XNYS's broader pre/post vocabulary cannot falsely label
+current overnight evidence as a previous session. Polling is a quote check, not
+a promise of new prices. No strategy, candle, account or execution change.
+
+Final verification: **205 backend tests and 211 distinct browser tests passed**,
+zero failures/skips/flaky; build/typechecks and changed Python lint/format pass.
+Original availability, overflow, overlap and schedule-wording failures are
+preserved with exact artifacts in the linked session handoff/evidence. Existing
+warnings and unrelated repository gate issues remain disclosed. No deployment,
+live provider calls or real account mutations were performed by this change.
+
+Always-on server collection and continuous actual feed coverage remain unverified.
+Primary-source research identifies delayed historical SIP as a potential existing-
+provider option, not a real-time substitute or tested entitlement. No purchase,
+new historical study or strategy-performance improvement is claimed.
+
 ## 2026-09-25 — Update session prices independently of regular data
 
 Verified source checkpoint `5e49870110f4a208e575410c08504f8b4d617c36`, not

@@ -1,5 +1,74 @@
 # Next session
 
+## 2026-09-25 — Quote availability is not gated by regular-session closure
+
+**VERIFIED scoped source checkpoint:**
+`fa729bad490154578698e2294b775398c4b39dfa`, based on clean `main` at
+`a9a63c02a9879e7086311509d6fc45deb1548583`. The starting pull was current;
+Spark and GitHub were re-fetched before publishing. Publish Mac → Spark → GitHub
+from Spark; preserve Spark's unrelated `scratch/`. No deployment was started.
+The overall trading goal and the user's **at-all-times pricing** requirement
+remain incomplete.
+
+The display reader now probes existing feeds during regular/closed/unknown
+schedule windows too. Per-symbol validation permits fallback after partial,
+empty, stale, malformed or failed primary responses. Fresh primary wins; stale
+data retains source/time without a current price. Sixty-second freshness follows
+the original timestamp, not a calendar phase boundary. Optional per-row session
+records the schedule at that timestamp. Both feeds have bounded backoff and a
+short raw cache, revalidated on read. Request-generation guards prevent older
+completions from overwriting newer cache evidence or imposing obsolete backoff;
+network calls are not serialized. Display timeout arguments are two seconds per
+feed, not proof of an end-to-end SLA.
+
+Board/chart quote visibility is independent of regular-session flags. Labels
+distinguish indicative/source/time, stale data and regular-bar fallback; earlier
+New York days include a date. The header says quote checks run every minute,
+not that new prices are guaranteed. Unknown schedules cannot imply a prior
+session. XNYS pre/post taxonomy includes overnight and cannot override the finer
+quote envelope; only a newer nonfuture explicit regular open maps exactly for
+legacy-boundary wording. No candle, execution, strategy or account rule changed.
+
+**FAILED baselines retained:** original 52-case backend acceptance was 7 passed /
+45 failed; the first corrected candidate then failed six deterministic overlap
+cases. Original browser acceptance was one control passed / 15 failed. Three
+later browser cases separately reproduced false prior-session claims for unknown
+schedule and newer XNYS pre/post timestamps during overnight.
+
+**VERIFIED final acceptance:** **205 backend cases passed** (3.29s, 60 existing
+all-NaN warnings); **171 broader + 40 focused browser cases passed**, **211
+distinct cases across two runs**, zero failed/skipped/flaky (77.134s and 40.0s).
+Ruff/format, production TypeScript/build and affected browser-module strict
+typing pass. Source/test hashes stayed fixed through tests and the source commit.
+All providers/accounts were synthetic fixtures; seven API cases exercise actual
+ASGI routing and selection, not a deployed HTTP server. Browser preview serves
+the explicitly built candidate on isolated loopback, not the Spark deploy clone.
+
+Artifact: `/private/tmp/anios-session-availability-taxonomy-final.KDA32A7R/dist/`,
+`index-CI7b1eYH.js`, SHA-256
+`0b0a8fc5edc431a31fb4c24f52e7b9b5d2a5e0c85318b9d7aab8ffb3fea7e021`.
+Root manifests/results: `/private/tmp/anios-session-availability-final.hzzWpSif/`.
+Detailed baseline/review receipts, source hashes and prior calibration failures:
+[continuous-price evidence](research/continuous-price-evidence-2026-09-25.md).
+Full repository/deploy gates were not run; previously documented stale diagram,
+whole-file test typing issues and build warnings were not fixed by this task.
+Diagram impact: NONE — existing feed/endpoint/ownership relationships, internal
+reader/cache/rendering corrections only.
+
+**UNVERIFIED / next atomic task:** prove a viable dated source for the actual
+pre/post gaps and define always-on collection. This endpoint is still read on
+demand by the mounted desk timer; browser suspension/closure is not server-side
+collection. IEX/indicative overnight do not establish fresh 04:00–08:00 or
+17:00–20:00 coverage. No new live calls were made; the prior four-call probe
+allowance remains exhausted. A new bounded historical SIP sample requires a
+fresh allowance. Public docs now identify delayed SIP history as a credible
+no-new-paid-subscription lead, but it is neither tested with this account nor
+wired. Delayed observations cannot be labelled real-time. Yahoo/Cboe were not
+qualified as automated replacements; see
+[source options and use limits](research/extended-hours-source-options-2026-09-25.md).
+No paid access, new collector/archive, fit, historical rerun or strategy promotion.
+Deploy only on explicit direction, from Spark through `scripts/deploy.sh`.
+
 ## 2026-09-25 — Independent session-price updates; coverage still incomplete
 
 **VERIFIED source checkpoint:** `5e49870110f4a208e575410c08504f8b4d617c36`,

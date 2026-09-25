@@ -2,6 +2,9 @@
 
 ## Availability correction — source only, not continuous-coverage proof
 
+Verified scoped source checkpoint:
+`fa729bad490154578698e2294b775398c4b39dfa`. No deployment.
+
 The new reader no longer uses regular/closed/unknown calendar labels to skip
 provider lookup. It selects SIP/IEX or BOATS/indicative overnight by New York
 wall time, validates each symbol, and tries the fallback only for unresolved
