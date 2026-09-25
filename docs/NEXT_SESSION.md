@@ -92,8 +92,17 @@ race. Response distinguishes liquidity/spread/adverse-selection filters, pressur
 features, signal expiry and volatility risk control from HFT infrastructure.
 15/30/60-minute versus daily cadence is a proposed comparison, not an established
 optimum or implemented strategy. Monitoring and decisions are separate; all-hours
-data coverage needs independent qualification. A read-only feasibility audit is
-in progress; no new fits/backtests/provider calls authorized by that audit.
+data coverage needs independent qualification. Completed read-only source audit:
+`/3` plans once per session with20-session resets and defined breakout/downgrade/
+retry/FOMC actions between them, not a general price stop. The balancer uses
+completed15-minute bars; actual scheduler cadence is unverified. Retained IEX
+adjusted OHLCV lacks trade aggressors, depth, cancellations or queue events.
+The15-second display collector replaces latest.json rather than archiving quotes;
+latest bid/ask/size snapshots do not provide historical order-flow evidence.
+Cost-aware timing, volatility/liquidity filters and multiscale signals are
+feasible research hypotheses; event-level order-flow models need missing data.
+No qualified funded comparison establishes an optimal intraday horizon. No
+new fits/backtests/provider calls occurred for this audit.
 An asynchronous question asks the user's unacceptable peak-to-trough drawdown;
 no answer or guaranteed drawdown limit has been assumed.
 
