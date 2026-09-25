@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import type { DeskForwardEvidence } from '../src/services/api'
 
 // Deterministic browser acceptance for the trading desk page. The desk is the
 // operator's own page, so the session is mocked as an operator and every desk
@@ -645,24 +646,256 @@ test('plan action expires and preserves its quoted source', async ({page}) => {
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
-// Empty forward outcomes never display zero returns or invented confidence.
-test('forward evidence distinguishes unobserved outcomes from zero performance', async ({page}) => {
+// Preserve distinct saved-signal, usable-outcome and simulated-account quantities.
+function forwardEvidenceRecord(): DeskForwardEvidence {
+  return {status: 'collecting_forward_evidence', versions: [{
+    version: 'candidate/2', decision_count: 41, pending_daily_validation: 3, corporate_actions_through: '2026-09-08',
+    outcomes: [{
+      signal_count: 82, decision_days: 21, cost_bps_per_side: 10, missing_or_immature: {'5': 12, '20': 21},
+      grades: [
+        {grade: 'A', horizon_sessions: 5, observations: 42, nonoverlapping_cohorts: 20, mean_excess_return: .0312, approximate_95_interval: [-.0105, .0729]},
+        {grade: 'B', horizon_sessions: 5, observations: 20, nonoverlapping_cohorts: 4, mean_excess_return: -.021, approximate_95_interval: null},
+        {grade: 'C', horizon_sessions: 20, observations: 1, nonoverlapping_cohorts: 1, mean_excess_return: 0, approximate_95_interval: null},
+        {grade: 'A+', horizon_sessions: 20, observations: 0, nonoverlapping_cohorts: 0, mean_excess_return: null, approximate_95_interval: null},
+      ],
+      entry_states: [{state: 'wait', horizon_sessions: 5, observations: 12, nonoverlapping_cohorts: 3, mean_excess_return: -.008}],
+    }, {
+      signal_count: 82, decision_days: 21, cost_bps_per_side: 25, missing_or_immature: {'20': 21}, grades: [],
+    }],
+    portfolios: [{
+      cost_bps: 10, fill_intervals: 40, status: 'observations_available', arms: {
+        baseline_targets: {return: .05, drawdown: -.08, traded_dollars: 120000},
+        technical_targets: {return: -.02, drawdown: -.10, traded_dollars: 230000},
+        targets: {return: 0, drawdown: 0, traded_dollars: 0},
+        correlation_targets: {return: .0123, drawdown: -.0456, traded_dollars: 45000},
+      },
+    }, {
+      cost_bps: 25, fill_intervals: 2, status: 'observations_available', arms: {
+        baseline_targets: {return: 0, drawdown: 0, traded_dollars: 0},
+      },
+    }],
+  }]}
+}
+
+// Open the real research disclosure with a fixture while allowing the old heading in baseline runs.
+async function openForwardEvidence(page: Page, evidence?: DeskForwardEvidence) {
   const latest = deskRecord()
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
-    latest, sessions: [latest.session], forward_evidence: {status: 'collecting_forward_evidence', versions: [{
-      version: 'candidate/2', decision_count: 10, pending_daily_validation: 10, corporate_actions_through: '2026-09-08',
-      outcomes: [{signal_count: 0, decision_days: 0, cost_bps_per_side: 10, missing_or_immature: {'5': 12}, grades: []}],
-      portfolios: [{cost_bps: 10, fill_intervals: 0, status: 'insufficient_forward_data', arms: {}}],
-    }]},
+    latest, sessions: [latest.session], forward_evidence: evidence,
   }}))
   await page.goto('/?deskView=research#desk')
-  await page.getByText('Forward evidence · research', {exact: true}).click()
-  const evidence = page.locator('details', {has: page.getByText('Forward evidence · research', {exact: true})})
-  await expect(evidence).toContainText('10 decisions awaiting validation')
-  await expect(evidence).toContainText('No matured 5/20-session grade outcomes yet')
-  await expect(evidence).toContainText('12 at 5 sessions')
+  const summary = page.getByText(/^(Forward evidence|Results from saved signals) · research$/)
+  const panel = page.locator('details', {has: summary})
+  if (await panel.getAttribute('open') === null) await summary.click()
+  await expect(panel).toHaveAttribute('open', '')
+  return panel
+}
+
+// Allow the non-recording board preview while rejecting other market mutations and failed responses.
+function observeForwardEvidenceRequests(page: Page) {
+  const evidence = {failedResponses: [] as string[], marketWrites: [] as string[], deskReads: 0, readOnlyPreviews: 0}
+  page.on('response', response => {
+    if (response.status() >= 400) evidence.failedResponses.push(`${response.status()} ${response.url()}`)
+  })
+  page.on('request', request => {
+    if (!request.url().includes('/market/')) return
+    let nonRecordingPreview = false
+    if (request.method() === 'POST' && new URL(request.url()).pathname === `/api/v1/market/${USER}/desk/mine`) {
+      try {
+        nonRecordingPreview = request.postDataJSON()?.record_history === false
+      } catch {
+        // An unreadable body cannot qualify for the read-only exception.
+      }
+    }
+    if (nonRecordingPreview) evidence.readOnlyPreviews += 1
+    else if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method())) evidence.marketWrites.push(`${request.method()} ${request.url()}`)
+    if (request.url().endsWith(`/market/${USER}/desk`)) evidence.deskReads += 1
+  })
+  return evidence
+}
+
+// Missing outcomes remain unavailable even when their decision date is old.
+test('forward evidence distinguishes unusable outcomes from zero performance', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const evidence = await openForwardEvidence(page, {status: 'collecting_forward_evidence', versions: [{
+    version: 'candidate/2', decision_count: 10, pending_daily_validation: 0, corporate_actions_through: '2026-09-08',
+    outcomes: [{signal_count: 12, decision_days: 1, cost_bps_per_side: 10, missing_or_immature: {'5': 12}, grades: []}],
+    portfolios: [{cost_bps: 10, fill_intervals: 0, status: 'insufficient_forward_data', arms: {}}],
+  }]})
+  await expect(evidence).toContainText('No usable 5-/20-session outcomes')
+  await expect(evidence).toContainText('Missing prices, unfinished horizons or no valid entry')
+  await expect(evidence).toContainText('Missing or unusable outcomes: 12 at 5 sessions')
+  await expect(evidence).toContainText('Insufficient eligible rebalance checks for an account comparison')
+  await expect(evidence).not.toContainText('No matured')
   await expect(evidence).not.toContainText('0.00%')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
+
+// File metadata cannot be rendered as independent daily-price or corporate-action validation.
+test('forward evidence describes reported coverage rather than validation', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const evidence = await openForwardEvidence(page, forwardEvidenceRecord())
+  await expect(evidence).toContainText('Reported daily-data coverage through 2026-09-08 · 3 newer decisions not evaluated')
+  await expect(evidence).toContainText('Prices and corporate-action adjustments have not been independently verified')
+  await expect(evidence).toContainText('reported coverage is only file metadata')
+  await expect(evidence).not.toContainText('Daily validation through')
+  await expect(evidence).not.toContainText('awaiting validation')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Tracker names identify the saved stock book and both updated grade inputs, not passive indexes.
+test('forward evidence names the saved book and updated grade comparisons precisely', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const evidence = await openForwardEvidence(page, forwardEvidenceRecord())
+  await expect(evidence.getByRole('cell', {name: 'Saved stock targets', exact: true})).toHaveCount(2)
+  await expect(evidence.getByRole('cell', {name: 'Updated grades', exact: true})).toBeVisible()
+  await expect(evidence.getByRole('cell', {name: 'Updated grades + economic cap', exact: true})).toBeVisible()
+  await expect(evidence.getByRole('cell', {name: 'Updated grades + economic + correlation caps', exact: true})).toBeVisible()
+  const method = evidence.getByLabel('How saved-signal results are calculated', {exact: true})
+  await method.locator('summary').click()
+  await expect(method).toHaveAttribute('open', '')
+  await expect(method.getByText('Updated grades use new technical readings and compatible valuation inputs, while retaining other analyst inputs.', {exact: false})).toBeVisible()
+  await expect(evidence).toContainText('No passive SPY/QQQ account comparison is shown here')
+  await expect(evidence).toContainText('subtract SPY')
+  await expect(evidence.getByRole('cell', {name: 'Technical targets', exact: true})).toHaveCount(0)
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Saved-price account drops and eligible checks cannot claim continuous drawdown or actual trades.
+test('forward evidence limits sampled losses and explains account units', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const evidence = await openForwardEvidence(page, forwardEvidenceRecord())
+  await expect(evidence.getByRole('columnheader', {name: 'Largest drop at observed prices', exact: true})).toHaveCount(2)
+  await expect(evidence.getByRole('columnheader', {name: 'Simulated return after costs', exact: true})).toHaveCount(2)
+  await expect(evidence.getByRole('columnheader', {name: 'Trading / starting balance', exact: true})).toHaveCount(2)
+  await expect(evidence).toContainText('Drops are from prior peaks at saved prices; losses between observations can be missed')
+  await expect(evidence).toContainText('40 eligible rebalance checks')
+  await expect(evidence).toContainText('2 eligible rebalance checks')
+  await expect(evidence).toContainText('A check can produce no trade')
+  await expect(evidence).toContainText('Trading is buys plus sells, excluding fees, divided by the $100,000 starting balance')
+  await expect(evidence).toContainText('Account return is the cumulative change from a $100,000 starting balance; it includes unpaid dividends, is not annualized and assumes no final sale')
+  await expect(evidence.getByRole('columnheader', {name: 'Drawdown', exact: true})).toHaveCount(0)
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// First-daily signal counts differ from usable stock outcomes and the spaced dates used for means.
+test('forward evidence distinguishes tracked signals usable outcomes and spaced days', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const evidence = await openForwardEvidence(page, forwardEvidenceRecord())
+  await expect(evidence).toContainText('82 saved stock signals')
+  await expect(evidence).toContainText('stock signals come from the first saved decision each day')
+  await expect(evidence).toContainText('Signal counts include wait signals and signals without usable outcomes')
+  await expect(evidence.getByRole('columnheader', {name: 'Usable outcomes', exact: true})).toHaveCount(2)
+  await expect(evidence.getByRole('columnheader', {name: 'Spaced signal days', exact: true})).toBeVisible()
+  await expect(evidence).toContainText('The mean first averages usable stock returns within each day, then gives equal weight to selected days')
+  await expect(evidence).toContainText('Selected dates are at least 5 or 20 trading sessions apart, matching the return period')
+  await expect(evidence).toContainText('Spacing does not establish independence')
+  await expect(evidence).toContainText('Approximate 95% intervals require 20 spaced signal days')
+  await expect(evidence).not.toContainText('stock observations tracked')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Copy changes preserve every displayed result, missing value, cost case, version and safety limit.
+test('forward evidence preserves result values costs histories and limitations', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const record = forwardEvidenceRecord()
+  record.versions!.push({version: 'candidate/1', decision_count: 2, outcomes: [], portfolios: []})
+  const evidence = await openForwardEvidence(page, record)
+  await expect(evidence).toContainText('candidate/2 · 41 recorded decisions · 21 decision days')
+  await expect(evidence).toContainText('candidate/1 · 2 recorded decisions · 0 decision days')
+  await expect(evidence).toContainText('10 bp per side')
+  await expect(evidence).toContainText('25 bp per side')
+  await expect(evidence).toContainText('12 at 5 sessions · 21 at 20 sessions')
+  const grades = evidence.getByRole('table').first()
+  await expect(grades.getByRole('row').filter({has: page.getByRole('cell', {name: 'A', exact: true})}).getByRole('cell')).toHaveText(['A', '5', '42', '20', '3.12%', '-1.05% to 7.29%'])
+  await expect(grades.getByRole('row').filter({has: page.getByRole('cell', {name: 'B', exact: true})}).getByRole('cell')).toHaveText(['B', '5', '20', '4', '-2.10%', 'Insufficient evidence'])
+  await expect(grades.getByRole('row').filter({has: page.getByRole('cell', {name: 'C', exact: true})}).getByRole('cell')).toHaveText(['C', '20', '1', '1', '0.00%', 'Insufficient evidence'])
+  await expect(grades.getByRole('row').filter({has: page.getByRole('cell', {name: 'A+', exact: true})}).getByRole('cell')).toHaveText(['A+', '20', '0', '0', '—', 'Insufficient evidence'])
+  await expect(evidence.getByRole('table').nth(1).getByRole('row').last().getByRole('cell')).toHaveText(['wait', '5', '12', '-0.80%'])
+  await expect(evidence.getByRole('table').nth(2).getByRole('row').nth(1).getByRole('cell')).toHaveText(['Saved stock targets', '5.00%', '-8.00%', '1.20×'])
+  await expect(evidence.getByRole('table').nth(2).getByRole('row').nth(2).getByRole('cell')).toHaveText(['Updated grades', '-2.00%', '-10.00%', '2.30×'])
+  await expect(evidence.getByRole('table').nth(2).getByRole('row').nth(3).getByRole('cell')).toHaveText(['Updated grades + economic cap', '0.00%', '0.00%', '0.00×'])
+  await expect(evidence.getByRole('table').nth(2).getByRole('row').nth(4).getByRole('cell')).toHaveText(['Updated grades + economic + correlation caps', '1.23%', '-4.56%', '0.45×'])
+  await expect(evidence.getByRole('table').nth(3).getByRole('row').last().getByRole('cell')).toHaveText(['Saved stock targets', '0.00%', '0.00%', '0.00×'])
+  await expect(evidence).toContainText('Research does not change orders')
+  await expect(evidence).toContainText('They are not profit probabilities')
+  await expect(evidence).toContainText('First daily signal only')
+  await expect(evidence).toContainText('No interval means insufficient evidence for that estimate')
+  await expect(evidence).toContainText('separate from the complete scheduled strategy and actual paper fills')
+  await expect(evidence).toContainText('Costs are assumptions')
+  await expect(evidence).toContainText('modeled fills use later observed prices')
+  await expect(evidence).toContainText('Grade outcomes deduct an additive round-trip cost allowance; account costs apply to each dollar bought or sold')
+  await expect(evidence).toContainText('Recorded splits adjust shares')
+  await expect(evidence).toContainText('dividends accrue as receivables and cannot fund buys because pay dates are unavailable')
+  await expect(evidence).toContainText('Other corporate actions are not modeled')
+  await expect(evidence).toContainText('Candidates require separate validation before changing the adopted strategy')
+  await expect(evidence).toContainText('do not establish optimal entry, exit or FOMC re-entry timing')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// Missing report data remains unavailable without invented performance numbers.
+test('forward evidence preserves absent report state', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const missing = await openForwardEvidence(page)
+  await expect(missing).toContainText('Collecting forward records; performance unavailable')
+  await expect(missing.getByRole('table')).toHaveCount(0)
+  await expect(missing).not.toContainText('0.00%')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+// An explicit unavailable reason is preserved without a fabricated coverage date.
+test('forward evidence preserves unavailable report state', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const unavailable = await openForwardEvidence(page, {status: 'unavailable', reason: 'Saved prices unavailable; no performance report.'})
+  await expect(unavailable).toContainText('Saved prices unavailable; no performance report')
+  await expect(unavailable.getByRole('table')).toHaveCount(0)
+  await expect(unavailable).not.toContainText('Reported daily-data coverage through')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
+for (const viewport of [{width: 1365, height: 900}, {width: 390, height: 844}]) {
+  // The expanded read-only disclosure stays usable on desktop and phone through a reload.
+  test(`forward evidence research workflow stays readable at ${viewport.width}px`, async ({page}, testInfo) => {
+    await page.setViewportSize(viewport)
+    const errors = observeBlockingBrowserErrors(page)
+    const requests = observeForwardEvidenceRequests(page)
+    const evidence = await openForwardEvidence(page, forwardEvidenceRecord())
+    const summary = evidence.locator(':scope > summary')
+    await expect(summary).toHaveText('Results from saved signals · research')
+    await expect(evidence.getByText('Reported daily-data coverage through', {exact: false})).toBeVisible()
+    await expect(evidence.getByRole('cell', {name: 'Updated grades + economic + correlation caps', exact: true})).toBeVisible()
+    await expect(evidence).toContainText('not been independently verified')
+    const bounds = await evidence.boundingBox()
+    expect(bounds).not.toBeNull()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width)
+    const pageWidth = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth}))
+    expect(pageWidth.scroll).toBeLessThanOrEqual(pageWidth.client)
+    const method = evidence.getByLabel('How saved-signal results are calculated', {exact: true})
+    await expect(method).not.toHaveAttribute('open', '')
+    await method.locator('summary').click()
+    await expect(method).toHaveAttribute('open', '')
+    await expect(method.getByText('Drops are from prior peaks at saved prices', {exact: false})).toBeVisible()
+    await method.locator('summary').click()
+    await expect(method).not.toHaveAttribute('open', '')
+    await summary.click()
+    await expect(evidence).not.toHaveAttribute('open', '')
+    await summary.click()
+    await expect(evidence).toHaveAttribute('open', '')
+    await page.reload()
+    await page.getByText('Results from saved signals · research', {exact: true}).click()
+    await expect(evidence.getByRole('cell', {name: 'Updated grades', exact: true})).toBeVisible()
+    await expect(evidence).toContainText('candidate/2 · 41 recorded decisions · 21 decision days')
+    await testInfo.attach('expanded-research', {body: await evidence.screenshot(), contentType: 'image/png'})
+    await testInfo.attach('browser-diagnostics', {body: JSON.stringify({...errors, failedResponses: requests.failedResponses, marketWrites: requests.marketWrites}), contentType: 'application/json'})
+    await testInfo.attach('layout-and-reads', {body: JSON.stringify({bounds, pageWidth, deskReads: requests.deskReads, readOnlyPreviews: requests.readOnlyPreviews}), contentType: 'application/json'})
+    expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+    expect(requests.failedResponses).toEqual([])
+    expect(requests.marketWrites).toEqual([])
+    expect(requests.deskReads).toBeGreaterThanOrEqual(2)
+    expect(requests.readOnlyPreviews).toBeGreaterThanOrEqual(2)
+  })
+}
 
 // The FOMC overlay's gate: the counterfactual priced beside the live book
 // per meeting, and the pre-registered standing, never an action.

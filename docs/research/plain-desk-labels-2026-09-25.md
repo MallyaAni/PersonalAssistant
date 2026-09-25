@@ -124,3 +124,39 @@ This does not resolve crowded weekly markers, qualify market-data coverage or
 establish strategy performance. There is no provider/model request, account
 change or deployment in this scope. Diagram impact: NONE — text rendering and
 display-only handling of nonfinite ratios within existing UI paths.
+
+## Follow-on saved-signal results
+
+`ForwardEvidence` now says **Results from saved signals**, distinguishes reported
+daily-file coverage from validation, and names unusable outcomes without assuming
+they merely need more time. Saved signal counts are not trades or completed
+outcomes. Updated-grade comparisons no longer claim to be technical-only.
+Account columns explicitly describe simulated returns, drops at observed prices,
+and gross trading relative to the starting balance. Expandable methodology
+explains date weighting, costs, the $100,000 denominator, prior-peak losses,
+unpaid dividends and the absence of passive SPY/QQQ accounts in this panel.
+One visible warning retains the unverified price/action basis. Calculations,
+every numerical mapping, archives, API contracts and accounts are unchanged.
+
+**VERIFIED locally:** 184 browser cases, zero failures/skips/flakes, 84.280 seconds;
+all 50 attached diagnostic records are clean. Ten focused cases cover wording,
+unchanged values and desktop/phone disclosure/reload workflows. Seventy-four
+existing backend tests pass with 22 existing all-NaN warnings. TypeScript, build
+and all 33 diagram/page checks pass. Final asset `index-ZcOdBGAb.js`, SHA256
+`38e9fe50ac6c9c4433a24f1f8dea11f8ae38a5200a58c38bf4f5a6649f469c96`.
+
+Retained baseline: eight intended wording failures plus a test-helper toggle
+error. The split absent/unavailable controls pass the old bundle. An intermediate
+182-pass/two-failure run mistakenly counted non-recording POST previews as writes;
+the original trace proves `record_history=false`. Correcting only that request
+audit preserves the prohibition on actual writes; the full final rerun passes.
+Evidence: `/private/tmp/anios-forward-meaning.s0adVc/ROOT_RECEIPT.md` and
+`verified.json`. Desktop/phone captures were inspected; the tall phone element
+capture is scroll-occluded, while the controls were exercised by browser tests.
+
+The previously reported quote/chart phrases were already replaced in commits
+`5516bc8` and `f9dd2e1`; this turn also reconfirmed their browser paths. Their
+presence on the user's dashboard is not a new source defect established here.
+**UNVERIFIED:** deployed artifact, fresh all-hours data and investment performance.
+No deployment occurred; the existing collector decision still holds release.
+Diagram impact: NONE — wording and disclosure placement only.

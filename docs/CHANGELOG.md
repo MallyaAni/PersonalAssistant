@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-25 — Clarify saved-signal research results
+
+The research panel distinguishes saved signals, usable outcomes and simulated
+accounts. Coverage is no longer called validation; account returns, sampled
+peak losses and trading units are explicit. Detailed methodology is expandable.
+No numerical mapping, calculation, history, API or account changed.
+
+Local acceptance: 184 browser cases, 74 backend tests, TypeScript/build and all
+33 diagram/page checks pass. The ten focused browser cases include desktop and
+phone workflows. [Evidence and retained test-harness failures](research/plain-desk-labels-2026-09-25.md#follow-on-saved-signal-results).
+Deployment and fresh all-hours quote coverage remain unverified; no deployment
+or provider request occurred. Diagram impact: NONE — wording/disclosure only.
+
 ## 2026-09-25 — Trace financial disagreements before changing admissibility
 
 The saved qualified record now has a completed source-level audit: sixteen
