@@ -1,5 +1,79 @@
 # Next session
 
+## 2026-09-25 — Full current-source qualification and strict CIK compatibility
+
+Starting `main`, HEAD `c42ace690ac960750acaa5c70e12981a9ea8d673`; the only
+initial edit was the root-owned microstructure research supplement. Fresh Mac
+and Spark/GitHub fetches matched that predecessor. The later clean
+`git pull --rebase origin main` was up to date. Spark's untracked `scratch/`
+was preserved throughout.
+
+**VERIFIED scoped checkpoint:** `8b2183b5eb190995a94657cc218598878c7313b3`.
+The isolated unit-source parser admits an integer CIK or its exact ten-digit
+ASCII representation, still requiring the expected issuer and original-byte
+hash. No financial extraction, schema, unit, live input or stored source changed.
+Independent original-response comparison: 94/94 parse/project/frame and JSON
+serialization/restoration pass; the original 82 have exactly identical typed
+outputs and availability. Newly admitted 12 add 4,832 retained/projected rows.
+Totals: 174,828 retained, 173,688 projected, 181 schema exclusions and 1,140
+unsupported-unit exclusions. No later whole-source refusal; original raw CIK
+types and bytes are unchanged. This is not deployed storage-persistence proof.
+
+Root: 318 tests pass, one optional missing-Torch skip, four strict known-defect
+xfails, 24 existing warnings, 2.70 seconds. Agent: 241 passes / four strict
+xfails / no skips. The original 25 intended failures and earlier fixture-order
+corrections are retained. Root source/document review, Ruff/format and all 33
+unchanged diagram/page checks pass. No UI/model behavior changed.
+Root receipt `/private/tmp/anios-cik-root.EPWw1D/ROOT_RECEIPT.md`, SHA256
+`cd86f971abf6452d8589e03b3c4cb7246202e49d1dbd1cce74ddec4d39a9f2d4`;
+root JUnit SHA256
+`74b14b8325e5f6fb9a96720695f75f2eeb5688611a95343ac59eee080d149983`.
+Independent receipt `/private/tmp/anios-cik-differential.GuNzdH/RECEIPT.md`,
+SHA256 `35a2fb8228ab962395e771cb519cf0d7fcbb7381430bdf159d9982e9dbce3d71`.
+See [source qualification and limits](research/current-sec-qualification-2026-09-25.md).
+
+**New evidence changes the next action:** a current-source diagnostic found
+96/337 finite margins reference periods at least 365 days old. Longest-history
+tag selection causes materially old revenue inputs: ORCL 44 old quarterly
+periods beat 37 current-candidate periods; AAPL 40 beat 35; AMZN 40 beat 38.
+The detailed trace fixes tags/units/periods and original observation paths.
+Do not solve this by choosing the newest tag indiscriminately: AMZN's newer
+capex definition includes intangibles, ORCL has a same-accession annual/quarter
+duration ambiguity, and current GrossProfit is absent for ORCL/AMZN. Full raw
+trace: `/private/tmp/anios-current-tag-trace.ABw9iXdy/RECEIPT.md`, SHA256
+`54689273d9c3533eaa7d07062b48d3446a252fceacd100f1c17160e8b5dbe1af`.
+Next connected work must define comparable revenue concepts and target-period
+versus older-shared-period semantics, keep rejected-name reasons/lineage, and
+exercise the actual desk consumer. Do not repeat the completed source inventory
+or build another disconnected helper to report progress. Legacy learned inputs,
+stored records and examined strategy history must keep their original identities.
+
+**Separate research documentation checkpoint:**
+`b85b2822765269f5a168dda1a1c6990664041fa5` records the verified next-open entry
+timing and requirement for a matched unconditional-delay control and a wider
+challenger dataset. No new price acquisition, fit or performance result.
+Both commits were published Mac → Spark → GitHub from Spark; Spark HEAD and its
+GitHub origin match `b85b282`. This handoff is a subsequent documentation commit.
+
+**FAILED / UNVERIFIED:** the parser is still separate from the live loader.
+Currency/annual-coverage defects, current concept comparability, source-period
+economic truth, historical publication and trading superiority are not fixed.
+All 175,009 recognized raw rows lack exact acceptance times. The retained
+94-source packet is current September 25 evidence, not recovered historical
+bytes or a durable ingestion service. No provider/model calls, orders, holdings
+changes, laptop setting changes, service restart or deployment this turn.
+
+The preceding goal turn was progress: a fresh public-asset hash check confirmed
+the gateway still serves old `index-Bjg8Yelb.js`, SHA256
+`587491756c394027f3b478c7c409f8c8ecab01b875a22e32568e26283ee9c667`, matching
+the actual gateway file and lacking the already-tested plain-language labels.
+Do not reimplement those completed fixes. Deployment stays held on the existing
+quote-collector decision; do not ask repeatedly or deploy the read-only endpoint
+with collection disabled as an equivalent release. Use Spark-only
+`scripts/deploy.sh --wait-post` with all applicable gates and artifact/browser
+proof when cleared. All scoped agents have finished. Overall goal remains
+active/incomplete. Diagram impact: NONE — source compatibility and research notes.
+
 ## 2026-09-25 — Connected margin period-date correction accepted
 
 Starting clean `main`, HEAD `d0707b8733d22a1346e5f836310c5df0da178941`;
