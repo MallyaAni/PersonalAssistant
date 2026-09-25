@@ -288,6 +288,20 @@ does not exempt journal parity or independent-account reconstruction. If using
 the test image, mount the current checkout read-only at `/app` and run there.
 No model runtime or production database is needed for this acceptance path.
 
+For descriptive decision/fill attribution, run
+`python -m pytest -c /dev/null backend/tests/test_allocation_attribution.py backend/tests/test_nested_market_study.py -q`.
+`backend.market.allocation_attribution.attribution(snapshots, cost_bps=10)`
+accepts original journal snapshots, not caller-supplied verification flags or
+curves. It freshly verifies candidate, no-gate adapter, SPY, QQQ and any additional
+accounts, requiring exactly matching reconstructed mark dates and costs. The
+study includes it under each full-sample `decision_outcomes` field; it does not
+change the frozen fitting protocol. Apply the helper to retained snapshots to
+inspect a completed study, rather than refitting it to obtain this new report.
+Keep the derived report outside the original archive and retain input/output
+hashes. Full close-to-close returns include gaps before next-open execution;
+intent/sign partitions are descriptive, not counterfactual loss avoidance or
+independent validation. See the [attribution evidence](research/allocation-decision-attribution-2026-09-25.md).
+
 ## Search routing evaluation
 
 Routing quality is measured against a committed labelled set rather than

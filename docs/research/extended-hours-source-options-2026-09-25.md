@@ -23,7 +23,8 @@ field merely because they were just downloaded.
   require an explicit end at least 15 minutes old. Latest SIP endpoints require
   a subscription, so the earlier latest-feed denial does not settle historical
   access. The older historical overview uses broader, less specific wording;
-  this remains a lead to test, not a guaranteed entitlement.
+  the one completed-day sample below now establishes that query's access, not
+  continuing entitlement or current delayed publication.
 - [Historical bars](https://docs.alpaca.markets/us/reference/stockbars.md)
   support dated one-minute intervals. The FAQ includes eligible extended-hours
   `T` trades in minute bars, but the timestamp is the **interval start**, not the
@@ -90,6 +91,47 @@ Sanitized result: `result.json` in that directory, SHA-256
 `67784f94279f51bdac2b1b20a4425932bdd9439b1ef37e688f27d9100b8ae11b`.
 
 ## Remaining evidence, not an implemented delayed feed
+
+### Public plan qualification, September 25
+
+The current [Trading API plan table](https://docs.alpaca.markets/us/docs/about-market-data-api.md)
+(updated July 16) advertises **Algo Trader Plus at $99/month**, including
+real-time consolidated SIP. The [24/5 guide](https://docs.alpaca.markets/us/docs/245-trading-for-trading-api.md)
+(updated July 7) explicitly includes actual latest `boats` quotes under the
+same named plan. This is a documented route using the existing provider, not a
+verified subscription or purchase recommendation. A latest-feed 403 does not
+identify the user's plan or exclude paid access under another account/key.
+Confirm existing provider/plan names before considering additional cost; never
+ask the user to send credentials. No purchase or recurring charge is authorized.
+
+Actual BOATS quotes are from one ATS, not a national overnight consolidated
+best price. Free `overnight` quotes are **indicative** and its latest trades
+are documented as 15-minute delayed. Overnight trading being enabled does not
+establish actual BOATS data entitlement. The guide's historical-BOATS wording
+is internally inconsistent about a subscription; that separate access remains
+unverified.
+
+[UTP's current schedule](https://www.utpplan.com/DOC/UTP%20SIP%20Transmission%20Schedule%20-%20March%202024.pdf)
+lists Tape C quote/trade transmission from 04:00–20:00 ET on normal days and
+04:00–17:00 on early closes. Its [August 2026 ETH FAQ](https://www.utpplan.com/DOC/Nasdaq%20UTP%20SIP%20Extended%20Trading%20Hours%20FAQ%20Finalized%20Version%201.2.pdf)
+targets approximately 23-hour sessions from December 6, conditional on readiness
+and approval, with no pre-launch. That future plan is not today's overnight
+SIP capability. BOATS normally runs 20:00–04:00 Sunday–Thursday nights, subject
+to holidays; neither feed guarantees a fresh two-sided quote for every stock
+at every moment. Halts, illiquidity, stale observations and failures must retain
+explicit unavailable states rather than invented prices.
+
+**Remaining choice:** establish the existing plan/key entitlement, or obtain an
+explicit decision on new recurring cost or acceptance of a visibly delayed gap
+display. Delayed data would not meet the current real-time requirement. Any
+subsequent entitlement/freshness probe needs its own new bounded allowance;
+public documentation does not authorize one. Private-use agreements and any
+redistribution/non-display rights require separate confirmation.
+
+Eighteen captured primary documents and their hashes are retained in
+`/private/tmp/anios-realtime-feed-qualification.1nMJCo/RECEIPT.md`, SHA-256
+`08e98c05f315635caa2c724748f45e6530ccd0de73ffd78749e6cb7e7c246184`.
+This review made no authenticated/provider-data requests or settings changes.
 
 A further observation within each gap would need fresh authorization and must
 distinguish delayed publication from current availability. Both earlier live

@@ -26,6 +26,7 @@ from backend.agents.trading.desk import event_risk, paper, risk, simulate
 from backend.market import calendar
 from backend.market import nested_allocation as nested
 from backend.market import neural_study_metrics as metrics
+from backend.market.allocation_attribution import attribution
 from backend.market.allocation_controls import adjusted_open, constant_exposure
 from backend.market.allocation_replay import AllocationInstruction, replay
 from backend.market.research_journal import ResearchJournal, _new_directory
@@ -322,7 +323,7 @@ def _fold_curve(account, first, stop):
     )
 
 
-# Retain strict whole-period, rolling and causal-regime tables plus actual fit folds.
+# Retain matched scorecards, actual fit folds and descriptive decision/fill outcomes.
 def _scorecards(accounts, fitted, panel, first):
     evidence = metrics.RegimeEvidence(
         panel.dates, panel.adj_close[:, panel.tickers.index("SPY")]
@@ -336,6 +337,13 @@ def _scorecards(accounts, fitted, panel, first):
             "performance": metrics.scorecard(curves, cost_bps=cost),
             "regimes": metrics.regime_scorecard(
                 curves, cost_bps=cost, evidence=evidence
+            ),
+            "decision_outcomes": attribution(
+                {
+                    name: account["journal"]
+                    for name, account in accounts[str(cost)].items()
+                },
+                cost_bps=cost,
             ),
         }
     folds = []

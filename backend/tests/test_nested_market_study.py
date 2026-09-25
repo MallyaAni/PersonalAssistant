@@ -99,6 +99,28 @@ def completed():
     return study.run(report, inputs, protocol=protocol), report, inputs, protocol
 
 
+# Full-sample attribution is derived from all six actual journals, without refits.
+def test_full_sample_retains_decision_execution_outcomes(completed):
+    evidence, _, _, _ = completed
+    for cost in (10, 25):
+        table = evidence["summary"]["full_sample"][str(cost)]["decision_outcomes"]
+        from backend.market.allocation_attribution import attribution
+
+        expected = attribution(
+            {
+                name: account["journal"]
+                for name, account in evidence["accounts"][str(cost)].items()
+            },
+            cost_bps=cost,
+        )
+        assert table == expected
+        assert table["reconciliation"]["ok"] is True
+        assert table["return_intervals"] == len(table["intervals"])
+        assert set(table["accounts"]) == set(study.ACCOUNT_NAMES)
+        assert table["adoption_eligible"] is False
+        assert table["independent_validation"] is False
+
+
 # All six accounts have a real independently reconstructed ledger at both costs.
 def test_complete_study_uses_matched_verified_accounts(completed):
     evidence, report, inputs, protocol = completed

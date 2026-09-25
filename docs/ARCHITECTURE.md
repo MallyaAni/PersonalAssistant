@@ -690,6 +690,15 @@ automatic promotion. The [frozen study protocol](research/nested-market-study-20
 and [nested runner contract](research/nested-allocation-runner-2026-09-24.md)
 separate implementation proof from any exploratory economic result.
 
+Full-sample `decision_outcomes` tables additionally use `allocation_attribution`
+to reverify each supplied journal and link prior-close effective targets, actual
+fill batches and before/after closing exposures to matched net account returns.
+Cash, stock, SPY, QQQ, mixed and unknown intent remain separate; comparator
+positive/negative/tie cells exhaust the original intervals. These are retrospective
+log-growth contributions, not losses avoided or a new strategy. Closing exposure
+does not establish what was held before the opening gap. The helper can inspect
+existing snapshots without a fit, strategy replay, network call or archive rewrite.
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in
