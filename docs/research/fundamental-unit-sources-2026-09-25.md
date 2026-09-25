@@ -97,6 +97,37 @@ Evidence: `/private/tmp/anios-fundamental-units-final.t7P1uR/RECEIPT.md`.
 Initial evidence and reproduced failures remain under
 `/private/tmp/anios-fundamental-units.pkKxBnJd/`.
 
+## Retained-source coverage
+
+A September 25 read-only inventory enumerated 3,738 public target-name files
+and hashed/read 563 selected financial/event frames, all unchanged. The fixed
+95-symbol source list contains 94 stocks plus SPY. At the September 18 cutoff,
+legacy facts cover 94 stocks and versions 93 (GLW missing); latest September 24
+versions cover all 94. All selected financial frames lack units and original-
+response hashes. Versions have zero acceptance timestamps. The 5,611 retained
+earnings-event clocks match **zero** of 4,511 issuer-specific version accessions
+at the old cutoff, or 4,583 at the latest one; nearby 8-K clocks cannot fill that
+gap. These counts qualify stored coverage, not the exact inputs of the earlier
+report, whose manifest pins bars/actions but not financial frames.
+
+No raw company-facts payload was found in the bounded Spark directories inspected.
+The later ASML sample covers one of the 94 names, not its original September 18
+bytes. Two retained AAPL 10-K body/index pairs preserve additional unit/clock
+evidence, and a SNOW prospectus index preserves another clock label; neither is
+a full periodic-filing archive. Those displayed index clocks were not normalized
+to exact zoned timestamps or joined into cached fact rows.
+
+**FAILED for full raw-backed historical reimport:** the original extraction
+discards raw bytes and units before persistence. A loader cannot recover them
+from a renamed schema. This is no payload found within the inspected scope,
+not proof no copy exists anywhere. No cache was relabelled or regenerated.
+Receipt: `/private/tmp/anios-fundamental-inventory.sdMpO7/RECEIPT.md`, SHA256
+`90f0e87a44c782a5400c7916505eb5f5f58b8b86445142d44ccc4eabfab42271`.
+
+The separate [period-compatible ratio helper](fundamental-period-sources-2026-09-25.md)
+now retains full intervals and units, including explicitly declared annual
+EUR/EUR ratios, without changing this module's USD projection or a live loader.
+
 ## Limits and rollout requirements
 
 This source boundary does not establish publication authenticity, exhaustive

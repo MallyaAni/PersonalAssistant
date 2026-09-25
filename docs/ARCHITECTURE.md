@@ -716,6 +716,13 @@ unitless `fundamentals_asof` loader used by the desk, learned inputs and shadow
 paths; its source hashes do not establish historical publication or share-class
 compatibility. See the [source contract](research/fundamental-unit-sources-2026-09-25.md).
 
+`fundamental_period_sources` consumes that source only under explicit concept,
+unit and quarterly/annual declarations. It retains full fiscal intervals and
+signed source lineage, with exact-coverage quarterly derivation and a dated
+latest-compatible-period ratio. Decision-facing exclusions use only eligible
+evidence. This remains an unwired research calculation, not a live feature
+migration; see the [period contract](research/fundamental-period-sources-2026-09-25.md).
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in

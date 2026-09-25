@@ -1,6 +1,29 @@
 # Changelog
 
+## 2026-09-25 — Bind research financial ratios to complete source periods
+
+Added an isolated ratio evaluator with declared concepts, literal units and
+annual/quarterly horizons. Exact fiscal intervals and signed original source
+terms survive derivation and matching; ambiguity, missingness and nonfinite
+arithmetic remain explicit. Future facts cannot change earlier diagnostic
+reasons. This does not migrate legacy features or change live grades/strategy.
+
+Final acceptance: **252 passed**, one existing dependency skip, six strict
+legacy xfails and 24 existing warnings. A separate raw-source Decimal oracle
+checks 32 ASML annual cases (28 available), with 140 scalar/392 source-field
+comparisons; all 32 quarterly cases correctly remain unavailable. No new data
+request, fit or historical strategy run. Ruff/format, independent review and
+all 33 unchanged diagram/page checks pass.
+
+The retained-source inventory found no unit/raw-response evidence in selected
+financial caches and no exact accession joins to earnings-event clocks. Full
+historical reimport remains unqualified. See the
+[ratio contract and evidence](research/fundamental-period-sources-2026-09-25.md).
+
 ## 2026-09-25 — Correct intraday vote confirmation and expired-reading wording
+
+Verified scoped source checkpoint `23f7a3b8c012f1c348312c122e7db89748baeaa9`,
+published Mac → Spark → GitHub from Spark; not deployed.
 
 Computed intraday votes use the same three-session confirmation as evening
 votes, with the live bar representing today; the shared explanation no longer
