@@ -7,6 +7,7 @@ python -m backend.cli.market_desk --brief SNDK    # one name's evidence
 
 import argparse
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 
@@ -24,12 +25,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--asof", type=date.fromisoformat, default=None)
     parser.add_argument(
         "--fundamentals",
-        choices=("corrected", "current", "legacy"),
+        choices=("corrected", "current", "qualified", "legacy"),
         default="corrected",
         help="which data source the fundamental analyst reads: the corrected "
         "as-of filing versions /2 (default), the reporting-period safeguard /3 "
-        "(current), or the frozen EDGAR feature block, "
+        "(current), original-byte USD customer-revenue research (qualified), "
+        "or the frozen EDGAR feature block, "
         "for a read-only side-by-side comparison",
+    )
+    parser.add_argument(
+        "--research-record-root",
+        type=Path,
+        default=None,
+        help="save an immutable qualified research record in this separate "
+        "directory; never writes orders or the paper account",
     )
     parser.add_argument(
         "--calibrate",
@@ -259,17 +268,67 @@ def _print_book_backtest(report, since) -> None:
         )
 
 
-# Run the desk and print everything asked for.
+# Refuse unsupported research uses before loading data or writing a record.
+def _validate_research_arguments(parser, args) -> None:
+    if args.fundamentals == "qualified" and (
+        args.backtest or args.book_backtest or args.calibrate or args.history
+    ):
+        parser.error(
+            "qualified current-source research has no authenticated historical "
+            "archive; performance commands are not enabled"
+        )
+    if args.research_record_root is not None and args.fundamentals != "qualified":
+        parser.error(
+            "--research-record-root requires the explicit qualified research mode"
+        )
+    _validate_research_destination(parser, args)
+
+
+# Keep both the research directory and its dated record outside the input store.
+def _validate_research_destination(parser, args, session=None) -> None:
+    if args.research_record_root is None:
+        return
+    from backend.cli.market_daily import DESK_KIND, record_path
+
+    root = args.research_record_root
+    targets = (
+        (root, root / DESK_KIND) if session is None else (record_path(root, session),)
+    )
+    operational = Path(args.data_dir).resolve()
+    if any(target.resolve().is_relative_to(operational) for target in targets):
+        parser.error(
+            "research record root must be separate from the operational market store"
+        )
+
+
+# Run the desk and print only the requested, permitted research or standard views.
 def main() -> None:
     """Entry point."""
-    args = build_parser().parse_args()
+    parser = build_parser()
+    args = parser.parse_args()
+    _validate_research_arguments(parser, args)
+    options = {"inputs": ()} if args.fundamentals == "qualified" else {}
     report = trading_desk.run(
-        MarketStore(args.data_dir), args.asof, fundamentals=args.fundamentals
+        MarketStore(args.data_dir), args.asof, fundamentals=args.fundamentals, **options
     )
     panel = report.panel
     print(f"desk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
     if report.fundamentals_source:
         print(f"fundamental data: {report.fundamentals_source}")
+    if args.fundamentals == "qualified":
+        print(
+            "FUNDAMENTAL RESEARCH ONLY: USD customer revenue excluding assessed tax, "
+            "without learned augmentations. Other analyst inputs are unchanged; "
+            "these checks do not establish accounting comparability, historical "
+            "availability, valuation or trading superiority."
+        )
+    if args.research_record_root is not None:
+        from backend.cli.market_daily import record, save
+
+        data = record(report)
+        _validate_research_destination(parser, args, data["session"])
+        path = save(args.research_record_root, data)
+        print(f"research record: {path}")
     _print_regime(report.regime.today())
     _print_grades(report, args.top)
     _print_book(report)

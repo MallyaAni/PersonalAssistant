@@ -148,6 +148,8 @@ FUNDAMENTALS_CORRECTED = "corrected"
 FUNDAMENTALS_LEGACY = "legacy"
 # Nightly records explicitly opt into period eligibility and vote resets.
 FUNDAMENTALS_CURRENT = "current"
+# Research only: original-byte archives and one declared customer-revenue profile.
+FUNDAMENTALS_QUALIFIED = "qualified"
 
 
 # Build the desk using the caller's partition cutoff across all analyst inputs.
@@ -171,6 +173,8 @@ def run(
     `fundamentals` names which data source the fundamental analyst reads:
     the corrected as-of filing versions by default (`FUNDAMENTALS_CORRECTED`),
     the reporting-period safeguard (`FUNDAMENTALS_CURRENT`) by explicit choice,
+    or original-byte customer-revenue research (`FUNDAMENTALS_QUALIFIED`,
+    requiring explicit `inputs=()` without learned augmentations),
     or the frozen EDGAR feature block (`FUNDAMENTALS_LEGACY`) for an
     explicit read-only side-by-side comparison. Any other value is refused
     before assembly, so corrected data can never be labelled legacy and a
@@ -185,11 +189,18 @@ def run(
         FUNDAMENTALS_CORRECTED,
         FUNDAMENTALS_LEGACY,
         FUNDAMENTALS_CURRENT,
+        FUNDAMENTALS_QUALIFIED,
     ):
         raise ValueError(
             f"unknown fundamental data source {fundamentals!r}; expected "
-            f"{FUNDAMENTALS_CORRECTED!r}, {FUNDAMENTALS_CURRENT!r} or "
+            f"{FUNDAMENTALS_CORRECTED!r}, {FUNDAMENTALS_CURRENT!r}, "
+            f"{FUNDAMENTALS_QUALIFIED!r} or "
             f"{FUNDAMENTALS_LEGACY!r}"
+        )
+    if fundamentals == FUNDAMENTALS_QUALIFIED and inputs:
+        raise ValueError(
+            "qualified source research requires explicit inputs=(); learned "
+            "augmentations are not qualified for this profile"
         )
     # The loaders live next to the torch models; importing them here keeps
     # the desk importable where torch is absent (the gate container). The
@@ -239,6 +250,8 @@ def _fundamental_source_id(mode: str) -> str:
         return fundamental.CORRECTED_SOURCE
     if mode == FUNDAMENTALS_CURRENT:
         return fundamental.CURRENT_SOURCE
+    if mode == FUNDAMENTALS_QUALIFIED:
+        return fundamental.QUALIFIED_SOURCE
     if mode == FUNDAMENTALS_LEGACY:
         return fundamental.LEGACY_SOURCE
     raise ValueError(f"unknown fundamental data source {mode!r}")
@@ -249,6 +262,8 @@ def _fundamental_source_id(mode: str) -> str:
 def _fundamental_opinion(store, panel, asof, mode: str) -> Opinion:
     """Return the opinion for an explicit, source-tagged fundamental policy."""
     _fundamental_source_id(mode)
+    if mode == FUNDAMENTALS_QUALIFIED:
+        return _qualified_fundamental_opinion(store, panel, asof)
     if mode == FUNDAMENTALS_LEGACY:
         from backend.market.model import load_edgar_features
 
@@ -301,6 +316,65 @@ def _fundamental_opinion(store, panel, asof, mode: str) -> Opinion:
         fundamental.opine_current(features)
         if mode == FUNDAMENTALS_CURRENT
         else fundamental.opine_corrected(features)
+    )
+
+
+# Read only original-byte archives for the explicitly declared research profile.
+def _qualified_fundamental_opinion(store, panel, asof) -> Opinion:
+    from backend.market import fundamental_source_store as archive
+    from backend.market import qualified_fundamentals
+
+    try:
+        archives = {
+            ticker: found
+            for ticker in panel.tickers
+            if ticker != panel.benchmark
+            and (found := archive.load(store, ticker, asof)) is not None
+        }
+        if not archives:
+            raise ValueError("no original-byte fundamental archives for any book name")
+        result = qualified_fundamentals.features(
+            panel, {ticker: found.source for ticker, found in archives.items()}
+        )
+        if result.tickers != tuple(panel.tickers) or result.decision_dates != tuple(
+            str(day) for day in panel.dates.astype("datetime64[D]")
+        ):
+            raise ValueError("qualified observations do not match the requested panel")
+        for row in result.observations:
+            for ticker, observation in zip(panel.tickers, row, strict=True):
+                found = archives.get(ticker)
+                expected_hash = found.source.sha256 if found else None
+                expected_cik = found.source.cik if found else None
+                if (
+                    observation.get("source_sha256") != expected_hash
+                    or observation.get("cik") != expected_cik
+                    or (found is not None and type(observation.get("cik")) is not int)
+                ):
+                    raise ValueError(
+                        "qualified observations do not match loaded source archives"
+                    )
+        if not result.features.available[-1, :].any():
+            raise ValueError("no decision-eligible facts in the original-byte archives")
+        opinion = fundamental.opine_qualified(result)
+    except Exception as exc:  # noqa: BLE001 - never relabel or fall back to erased units
+        raise fundamental.FundamentalSourceError(
+            "qualified fundamental archives could not produce the research opinion: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+    return replace(
+        opinion,
+        meta={
+            **opinion.meta,
+            "source_archives": {
+                ticker: {
+                    "asof": found.asof.isoformat(),
+                    "captured_at": found.captured_at.isoformat(),
+                    "source_sha256": found.source.sha256,
+                    "cik": found.source.cik,
+                }
+                for ticker, found in archives.items()
+            },
+        },
     )
 
 
@@ -585,9 +659,7 @@ def book_backtest(report: DeskReport, since: date | None = None) -> list[BookSta
     # the book of exposure instead.
     gated = simulate.run(report, since=since, use_exits=False, block_overbought=True)
     out.append(
-        _book_stat(
-            "the desk's rules, buys blocked at the upper band", gated.returns
-        )
+        _book_stat("the desk's rules, buys blocked at the upper band", gated.returns)
     )
     variants = (
         ("desk book (default config)", risk.BOOK_CONFIG),

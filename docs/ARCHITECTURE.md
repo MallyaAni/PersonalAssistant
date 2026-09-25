@@ -710,7 +710,7 @@ relative spreads require matching endpoints. This is descriptive gross-proxy
 forecast error, not funded P&L, probability calibration or strategy adoption.
 See the [saved-forecast contract](research/chronological-forecast-diagnostics-2026-09-25.md).
 
-`fundamental_unit_sources` is a separate, unwired research input representation.
+`fundamental_unit_sources` is a separate research input representation.
 It checks original company-facts bytes against a declared hash/CIK, retains
 recognized observations across all units and filing vintages, and projects only
 explicit USD, shares and USD/share dimensions. Restoring its separate frame
@@ -723,8 +723,22 @@ compatibility. See the [source contract](research/fundamental-unit-sources-2026-
 unit and quarterly/annual declarations. It retains full fiscal intervals and
 signed source lineage, with exact-coverage quarterly derivation and a dated
 latest-compatible-period ratio. Decision-facing exclusions use only eligible
-evidence. This remains an unwired research calculation, not a live feature
-migration; see the [period contract](research/fundamental-period-sources-2026-09-25.md).
+evidence. It supplies period machinery to the explicit qualified research path
+below, not a live feature migration; see the
+[period contract](research/fundamental-period-sources-2026-09-25.md).
+
+The explicit `qualified` desk mode connects original-byte archives in the
+existing market store to declared-concept features, the fundamental opinion,
+grades and separate research records. `fundamentals-qualified/1` uses only USD
+customer revenue excluding assessed tax, complete quarterly intervals and the
+declared numerator concepts; it never stitches alternative revenue tags or
+borrows an older period to fill a current gap. Source/period disagreement stays
+unavailable with both derivation paths retained. Hashes, issuer, ticker and
+decision-date anchors remain attached through record serialization. The local
+importer acquires nothing, and legacy unitless partitions remain untouched.
+This mode requires empty learned augmentations; other analysts' inputs are
+unchanged. It is not the nightly default or a historical-performance migration.
+See the [qualified contract](research/qualified-customer-revenue-2026-09-25.md).
 
 The `fundamental_features` consumer separately retains stored start/end
 dates for margin matching. Its `fundamentals-features/2` source withholds a margin

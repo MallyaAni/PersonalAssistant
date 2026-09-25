@@ -101,6 +101,25 @@ Internal refactors, bug fixes, styling, tests, and field-level implementation de
 
 ### Fundamental reporting-period policy
 
+For the explicit original-byte research mode, use
+`python -m backend.cli.market_fundamental_sources --help` for the required local
+file and declared-provenance arguments. It makes no provider request. Then use
+`python -m backend.cli.market_desk --fundamentals qualified --data-dir <store> --asof <date>`
+with the normal cached desk inputs. `--research-record-root <separate-root>`
+saves public research evidence only; serialize writers to that destination.
+The mode refuses historical performance flags and learned augmentations, and
+does not qualify the other analysts. Do not use a current source snapshot to
+claim historical availability.
+
+Run `test_fundamental_source_store.py`, `test_fundamental_source_store_review.py`,
+`test_qualified_fundamentals.py`, `test_qualified_desk_path.py`,
+`test_qualified_desk_review.py` and `test_qualified_fundamental_cli.py` alongside
+the existing unit-source, period, current-feature, desk and daily-record tests.
+Acceptance includes original-byte readback, competing archive writers, actual
+opinion/grade/save/reload, rejected names, source/date alignment and unsafe CLI
+refusal. There is no new UI or model prompt in this mode. See the
+[contract, comparison and limits](research/qualified-customer-revenue-2026-09-25.md).
+
 `market_daily` explicitly selects `fundamentals="current"` (source `/3`). The
 generic `desk.run` and `market_desk` defaults stay on `/2`; use
 `python -m backend.cli.market_desk --fundamentals current` for an explicit

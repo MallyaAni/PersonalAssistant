@@ -410,6 +410,26 @@ historical publication. The caller owns any persistence and retention; raw
 evidence stays outside Git and the public frontend, without private identifiers
 or credentials. Existing unitless partitions are not migrated by this helper.
 
+The explicit research importer now persists those public original bytes in the
+existing market store's `edgar_facts_unit_archives` kind. It accepts one already
+acquired local file, bounded to 16 MiB, and requires declared hash, issuer, symbol,
+archive date and aware capture time. It has no network call, account access or
+model request. Hash/CIK checks and original-byte re-extraction verify consistency,
+not signed provenance or authentic historical acquisition. Cooperating POSIX
+archive writers lock before the existing first-write operation; this is not
+protection from a hostile process replacing files or locks.
+
+The qualified desk mode may explicitly save public research evidence through
+the existing record writer into a separate local root. These archives and
+records are unencrypted, have no owner filtering or automatic retention, and
+must stay outside the public frontend and Git. Do not pass private account data
+or credentials. Research-root checks prevent known resolved destinations inside
+the input market store, not hostile filesystem races. Record overwrite refusal
+is the existing sequential-rerun check, not an exclusive concurrent-create
+guarantee. Run one record writer per research destination; archive-writer locking
+does not extend to desk JSON records. There is no new HTTP route, scheduled job
+or change to the nightly source policy.
+
 ### Personal decision receipts (2026-09-24; deployment pending)
 
 The primary desk owner's browser can request `record_history: true` on

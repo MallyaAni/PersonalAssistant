@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-09-25 — Connect source-qualified fundamentals to research records
+
+An explicit `qualified` mode now reads original-byte archives through a declared
+USD customer-revenue profile into the actual fundamental opinion, desk grades
+and separate saved research records. Complete periods, signed derivations,
+accepted/rejected inputs, source hashes and issuer/date identity remain attached.
+Disputed or missing inputs stay unavailable; missing archives never fall back to
+unitless data. Cooperating archive imports preserve the first response.
+
+Existing `/2`, nightly `/3`, other analysts, learned inputs and recorded history
+are unchanged. The CLI supplies no learned augmentations and refuses historical
+performance flags, operational-root aliases and dated-record symlinks into the
+input store. JSON record overwrite refusal remains sequential, not a guarantee
+against concurrent writers; source-archive locking is separate.
+
+Final root acceptance: **671 passed**, one optional missing-Torch skip, four
+retained strict legacy-defect xfails, 72 known numerical/short-panel warnings.
+Independent review retained and corrected 16 integration failures and two
+additional destination-alias failures. Configured Ruff/format, final source hash
+checks and all 33 unchanged diagram/page checks pass. No UI or prompt changed.
+
+All 94 retained source bodies pass actual archive write/readback and strict
+record-block JSON roundtrip. Finite features change 424 → 430: 139 gained,
+133 withheld, 24 jointly finite values changed. Twenty names gain a fundamental
+score and twenty lose one; 64 have scores in each mode. AAOI's six inputs are
+unchanged; ORCL's unresolved quarter disagreement still withholds its score.
+This one-date comparison is not a backtest, full combined-grade comparison,
+valuation result or evidence of higher returns. Exact evidence and publication
+SHA are in the handoff. No acquisition, fit, order, holding change or deployment.
+See the [contract and limits](research/qualified-customer-revenue-2026-09-25.md).
+
 ## 2026-09-25 — Explain chart indicator distances and each grade's origin
 
 Chart percentages now say **Price distance**, with the indicator denominator

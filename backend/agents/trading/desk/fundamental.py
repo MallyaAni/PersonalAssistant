@@ -20,7 +20,13 @@ remain. The research default retains that /2 path. The explicitly selected
 reported revenue period in the supplied data and resets held votes when their
 scored inputs become ineligible. It does not supply newer financial definitions
 or qualify erased units, historical availability, or investment performance.
+
+`opine_qualified` is a separate research-only USD customer-revenue profile. It
+retains full source/unit/interval evidence and does not replace either current
+path or the valuation analyst's inputs.
 """
+
+from copy import deepcopy
 
 import numpy as np
 
@@ -58,6 +64,7 @@ CITED_CORRECTED = (
 # identifies execution, while report.inputs names analyst augmentations.
 CORRECTED_SOURCE = "fundamentals-features/2"
 CURRENT_SOURCE = "fundamentals-features/3"
+QUALIFIED_SOURCE = "fundamentals-qualified/1"
 LEGACY_SOURCE = "edgar-frozen"
 
 
@@ -209,6 +216,105 @@ def opine_current(features) -> Opinion:
     )
 
 
+# Validate qualified numerical readings against their explicit per-cell source evidence.
+def opine_qualified(result) -> Opinion:
+    from backend.market.qualified_fundamentals import (
+        PROFILE_ID,
+        REVENUE_TAG,
+        SELECTION_POLICY,
+        QualifiedFeatures,
+    )
+
+    if not isinstance(result, QualifiedFeatures) or result.profile_id != PROFILE_ID:
+        raise ValueError("qualified features require the declared source profile")
+    features = result.features
+    _validate_eligibility(features)
+    rows = result.observations
+    if (
+        len(rows) != features.values.shape[0]
+        or len(result.decision_dates) != len(rows)
+        or len(result.tickers) != features.values.shape[1]
+        or any(len(row) != len(result.tickers) for row in rows)
+    ):
+        raise ValueError("qualified evidence must align with every feature cell")
+    for t, row in enumerate(rows):
+        for column, observation in enumerate(row):
+            if (
+                observation.get("profile_id") != PROFILE_ID
+                or observation.get("ticker") != result.tickers[column]
+                or observation.get("decision") != result.decision_dates[t]
+                or observation.get("unit") != "USD"
+                or observation.get("revenue_tag") != REVENUE_TAG
+                or observation.get("period_kind") != "quarter"
+                or observation.get("selection_policy") != SELECTION_POLICY
+                or observation.get("revenue_period_end")
+                != (
+                    _period_string(features.eligibility.target_period_ends[t, column])
+                    or None
+                )
+                or observation.get("historical_authenticity_verified") is not False
+                or set(observation.get("features", {})) != set(features.names)
+            ):
+                raise ValueError(
+                    "qualified evidence has an invalid profile or feature set"
+                )
+            for k, name in enumerate(features.names):
+                cell = observation["features"][name]
+                value = features.values[t, column, k]
+                if np.isfinite(value):
+                    period = cell.get("period") or {}
+                    if (
+                        cell.get("status") != "accepted"
+                        or type(cell.get("value")) not in (int, float)
+                        or cell["value"] != value
+                        or period.get("end") != str(features.period_ends[t, column, k])
+                        or period.get("unit") != "USD"
+                        or not observation.get("source_sha256")
+                        or not cell.get("inputs")
+                    ):
+                        raise ValueError(
+                            "qualified evidence contradicts an accepted value"
+                        )
+                elif cell.get("value") is not None or cell.get("status") == "accepted":
+                    raise ValueError("qualified evidence invents an unavailable value")
+    opinion = opine_current(features)
+    return Opinion(
+        NAME,
+        opinion.scores,
+        opinion.evidence,
+        meta={
+            **opinion.meta,
+            "source": QUALIFIED_SOURCE,
+            "qualification": deepcopy(rows),
+        },
+        stance_resets=opinion.stance_resets,
+    )
+
+
+# Return independently owned source evidence alongside archive and vote provenance.
+def cited_qualification(opinion: Opinion, t: int, column: int) -> dict:
+    if (
+        opinion.meta.get("source") != QUALIFIED_SOURCE
+        or "qualification" not in opinion.meta
+    ):
+        raise ValueError("qualified fundamental source lacks its evidence")
+    row = deepcopy(opinion.meta["qualification"][t][column])
+    archive = (opinion.meta.get("source_archives") or {}).get(row["ticker"])
+    if row.get("source_sha256") is not None and archive is None:
+        raise ValueError("qualified source evidence requires its persisted archive")
+    if archive is not None and (
+        archive.get("source_sha256") != row["source_sha256"]
+        or archive.get("cik") != row["cik"]
+    ):
+        raise ValueError("qualified evidence does not match its source archive")
+    return {
+        **row,
+        "archive": deepcopy(archive),
+        "score_available": bool(np.isfinite(opinion.scores[t, column])),
+        "vote_reset": bool(opinion.stance_resets[t, column]),
+    }
+
+
 # Convert a fiscal end without inventing a date where the calculation has none.
 def _period_string(value) -> str:
     end = np.datetime64(value, "D")
@@ -221,7 +327,7 @@ def cited_eligibility(opinion: Opinion, t: int, column: int) -> dict:
     eligibility = opinion.meta.get("eligibility")
     names = opinion.meta.get("eligibility_names")
     if (
-        opinion.meta.get("source") != CURRENT_SOURCE
+        opinion.meta.get("source") not in (CURRENT_SOURCE, QUALIFIED_SOURCE)
         or eligibility is None
         or not names
         or opinion.stance_resets is None

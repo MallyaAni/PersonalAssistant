@@ -908,7 +908,7 @@ def _strategy_name(report) -> str:
 
 
 # The fundamental analyst's block for the record: the data source it read
-# and fiscal ends, with /3 eligibility retained even for unscored names.
+# and fiscal ends, with checked-source evidence retained even for unscored names.
 # Older calculation versions retain their original finite-score-only contract.
 def _fundamental_block(report) -> dict:
     """Serialize source-bound fiscal evidence without losing rejected names."""
@@ -919,13 +919,14 @@ def _fundamental_block(report) -> dict:
     last = len(panel.dates) - 1
     source = getattr(report, "fundamentals_source", "") or ""
     opinion_source = opinion.meta.get("source") if opinion is not None else None
-    current = source == fundamental.CURRENT_SOURCE
-    if (
-        current or opinion_source == fundamental.CURRENT_SOURCE
-    ) and source != opinion_source:
+    checked_sources = (fundamental.CURRENT_SOURCE, fundamental.QUALIFIED_SOURCE)
+    current = source in checked_sources
+    qualified = source == fundamental.QUALIFIED_SOURCE
+    if (current or opinion_source in checked_sources) and source != opinion_source:
         raise ValueError("record fundamental source does not match its opinion")
     dates = {}
     eligibility = {}
+    qualification = {}
     if opinion is not None:
         for column, ticker in enumerate(panel.tickers):
             if ticker == panel.benchmark:
@@ -937,10 +938,22 @@ def _fundamental_block(report) -> dict:
                 eligibility[ticker] = fundamental.cited_eligibility(
                     opinion, last, column
                 )
+            if qualified:
+                row = fundamental.cited_qualification(opinion, last, column)
+                if row.get("ticker") != ticker or row.get("decision") != str(
+                    np.datetime64(panel.dates[last], "D")
+                ):
+                    raise ValueError(
+                        "qualified record evidence does not match its panel"
+                    )
+                qualification[ticker] = row
     return {
         "source": source,
         "dates": dates,
         **({"eligibility": eligibility} if current else {}),
+        **(
+            {"qualification": qualification, "research_only": True} if qualified else {}
+        ),
     }
 
 

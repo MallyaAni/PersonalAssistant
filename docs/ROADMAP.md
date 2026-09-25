@@ -220,6 +220,17 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 
 ## Milestone 5: tools and specialized agents — IN PROGRESS
 
+- Fundamental-source research now has an explicit connected
+  `fundamentals-qualified/1` path: original-byte archives, one USD
+  customer-revenue concept, full quarterly derivations and source-labelled
+  research records. Other analysts and nightly `/3` remain unchanged.
+  The retained 94-source comparison admits 139 previously unavailable inputs
+  and withholds 133 previously finite ones; 20 names gain an F score and 20
+  lose one. This is a different explicit contract, not a blanket coverage
+  improvement or evidence of higher returns. Source disagreements and authentic
+  historical coverage remain open. [Contract and evidence](
+  research/qualified-customer-revenue-2026-09-25.md).
+
 - Fundamental-input accuracy remains `IN PROGRESS`: the connected `/3`
   reporting-period safeguard excludes obsolete inputs before ranking, resets
   affected votes and records reasons for unscored names. It preserves `/2`
