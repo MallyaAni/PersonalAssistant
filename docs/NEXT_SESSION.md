@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-09-25 — Personal-history jargon removed; deployment still held
+
+Started clean main at `8e576c97064cbe21d98677a0f641d01272434381`; initial pull
+was up to date. **Verified scoped checkpoint:**
+`26e4f1452ad691a8338aa52eca6193032889c002`, published Mac → Spark → GitHub
+from Spark. Spark HEAD and GitHub main matched. Its unrelated untracked
+`scratch/` was preserved. This is a subsequent documentation-only handoff.
+
+**VERIFIED:** the original quote/chart phrases were already fixed, but a new
+read-only parallel review found visible `snapshot` labels in
+`PersonalDecisionHistory`. Those now distinguish saved guidance, browser
+confirmation and saved records. As-of timestamps do not claim save times.
+Expiry text covers invalid confirmation deadlines as well as trading evidence;
+failed confirmation responses do not claim lost guidance. Only that component,
+three browser-test files and documentation changed. Backend, calculations,
+records, API payloads, confirmation guards, accounts and strategy are unchanged.
+Independent semantic review and text-excluding syntax comparison pass.
+
+Final exact-bundle acceptance: **198 browser tests passed**, zero failures,
+skips or flakes, 99.710802 seconds; all **42** attached browser-diagnostic
+records clean. Desktop/phone filtering, disclosure, dated values and reload,
+waiting/pending/success, invalid/expired deadlines, failures, history operations,
+chart refresh and original quote/chart regressions pass. TypeScript/build and
+all **33** unchanged diagram/page checks pass. Post-commit hashes of all four
+code/test files match the tested tree. Screenshots were inspected; the existing
+wide history table still scrolls horizontally on a phone. Intercepted APIs do
+not verify real persistence or a deployed account workflow.
+
+Asset `index-9EMfMvhN.js`, SHA256
+`83158a886be9f9ad5f7d3b1da8bb3b20294913f3c484fbbfdadd6dca2c056969`.
+Receipt `/private/tmp/anios-personal-wording.9zACGE/ROOT_RECEIPT.md`, SHA256
+`82a9a3f3515cad5e3a4f3d3509ce66df06fc293d073f4d2b2fe5cae3dd795887`.
+`verified.json` SHA256
+`c6da2e5ce0c43f86af8ae0b7603eeb85d6d2ec684c65f660cb1fe8861e528be5`.
+The [wording report](research/plain-desk-labels-2026-09-25.md#follow-on-personal-history-labels)
+retains four original-bundle failures, the 197-pass/one-old-expectation failure,
+and the temporary syntax-checker metadata error. No product assertion was
+weakened to pass. The final complete rerun passes.
+
+**UNVERIFIED:** deployment, fresh all-hours quotes and trading superiority.
+Fresh Spark inspection still found gateway asset `index-Bjg8Yelb.js`, SHA256
+`587491756c394027f3b478c7c409f8c8ecab01b875a22e32568e26283ee9c667`.
+Publication is not live delivery. No deployment/restart occurred; the existing
+collector decision still holds release. Do not repeat the question or silently
+deploy its read-only quote endpoint with collection disabled. Once cleared,
+use Spark-only `scripts/deploy.sh --wait-post`, required gates, actual served
+artifact and browser acceptance.
+
+This turn made substantive scoped UI progress; it is not another consecutive
+research-data impasse turn. No new data, provider/model request, fit, strategy
+rerun, account action or laptop-setting change occurred. The existing historical
+provider question remains unanswered; source qualification remains the next
+research boundary. Do not restart completed studies or failed acquisition
+packets. Scoped agents are finished; overall goal remains active/incomplete.
+Diagram impact: NONE — text only; system/frontend/desk relationships unchanged.
+
 ## 2026-09-25 — Saved-signal wording verified; live delivery still pending
 
 Started clean `main` at `cdcb753197504c1915d937cd13aa60ba706ab48f`; the
