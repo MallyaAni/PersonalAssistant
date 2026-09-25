@@ -1,5 +1,116 @@
 # Next session
 
+## 2026-09-25 — Paired research reporting published; options boundaries reproduced
+
+**VERIFIED scoped source checkpoint:**
+`cdd89b7a09a6c5efac86f3b54f44304c8ed770f8`, from main at
+`cf5a248560e9d937bcdc35ee1bc79b71ecc081ae`. Initial pull current; Mac/Spark
+and Spark/GitHub re-fetched before publication. Published Mac →
+`git push spark main` → GitHub from Spark, preserving unrelated Spark
+`scratch/`. The five code/test hashes remained unchanged through acceptance
+and commit. No deployment, restart, provider request, fit, historical strategy
+rerun, account/holding/order operation, promotion or laptop access/settings change.
+
+Reporting now retains a separate legacy-growth computability witness at the
+actual strict feature-session/ticker indices and masks only a new naive
+baseline array. Accuracy uses common finite rows and labels wider learner
+coverage separately. Surprise fifths share eligible events; each contrast
+compares common finite session-mean support after causal bucketing. Counts and
+beta-adjusted log-return residual units are explicit. Shared features, targets,
+model/live dispatch and optional study inputs remain unchanged. This is not
+qualified financial units, fiscal periods or historical availability.
+
+**VERIFIED acceptance:** 132 relevant tests passed, one existing missing-
+LightGBM skip, 32 existing empty-slice warnings, 6.24 seconds. Actual synthetic
+source → dataset → main reporting runs without fitting; real causal fifths
+and separate real spread/HAC acceptance cover twelve common dates and 23/12
+selected observations. The model-fitting skip is not a pass. Independent
+100-digit Decimal oracle: 164 cases, zero failures/warnings, maximum relative
+MAE error `2.30e-16`, absolute correlation error `2.22e-16`. Scoped Ruff/format,
+independent review and all 33 unchanged diagram/page checks pass. No browser,
+real-model, full deployment gates or historical economic acceptance claimed.
+
+Original reporting failures and test-harness mistakes remain retained, including
+the sector-map mismatch and correction of the old noncontributing-date count
+35 → 33. Independent review found two additional candidate metric defects;
+three permanent regressions failed before the fix and ten numeric tests passed
+after it. Anchored correlation retains adjacent-float variation; fallback MAE
+arithmetic keeps representable averages without inventing oversized results.
+
+Evidence: [coverage contract](research/expectations-baseline-coverage-2026-09-25.md),
+`/private/tmp/anios-expectations-reporting.PVDMlm/RECEIPT.md`, SHA256
+`fb24ad71494e66db12de979f072b5fddf5658e5fb301bc182cf10e8b2fae0dd6`;
+final JUnit `776144e552d565087cde48337bc453f0cfa639fa7171008465d4883ed9b450e8`.
+Independent receipts:
+`/private/tmp/anios-paired-returns.DVTimg/RECEIPT.md` (SHA256
+`9b3e6b9ef17baf93be3a15761bda51c31b7c6d8ae2ffdce1d9976d4a5d6601ac`),
+`/private/tmp/anios-expectations-decimal.Pz2CLv/RECEIPT.md` (SHA256
+`1a8b9127c0723f3a9633c666cc734f46334260bd31a99b3289ed42eb2829401f`).
+**Diagram impact: NONE — internal research-reporting evidence/comparability.**
+
+**Options question, diagnosis only:** user linked AAOI's September 25 Barchart
+gamma-exposure page. One public unauthenticated attempt returned HTTP202 with
+zero bytes; no bypass/retry. No current Barchart levels verified. Source shows
+our walls are OI concentrations, not gamma walls: expiries 1–60 calendar days,
+same-day expiry excluded, ±25% raw-strike range intended, at least500 contracts.
+They are not direct grading, `/3`, sizing or execution inputs. They are saved
+as research context, without a found trained-feature consumer.
+
+Offline exact-source reproduction at cf5a248 found three real defects:
+
+- Raw $100 / adjusted $98 produces −3.061%/+7.143% wall distances instead of
+  −5%/+5%; an adjustment to$50 even selects$45/$55 instead of$95/$105.
+  First failing boundary: `technical_detail` passes adjusted close to raw strikes.
+- A September1 chain remains accepted September25 without a stale/unavailable
+  status. Collection time survives; it is not the provider's OI effective time.
+- One malformed expiry in AAA's real stored options frame causes the actual
+  balancer to persist empty technical evidence for AAA and healthy BBB, reverting
+  both to evening grades. Valid/absent-options controls preserve intraday evidence.
+
+Evidence: three passing controls/four strict xfails; explicit `--runxfail`
+replay retains four failures/three passes. No warnings or ordinary skips.
+Initial missing synthetic SECRET_KEY collection error retained separately.
+Real Parquet readback, options/technical calculations, balancer and JSON
+persistence ran with external/unrelated account boundaries injected. Receipt:
+`/private/tmp/anios-options-boundaries.iii6CK/RECEIPT.md`, SHA256
+`8aa26501543b6363029009e2e08f993becb29f3f9e6cac7a161e2bad16b07e36`.
+No options fixes implemented. Source-only additional findings: unused net_gamma
+includes expired contracts and assumes calls-positive/puts-negative/100 shares;
+its units are delta shares per1% move, not dollar GEX. UI omits OI/scope caveats
+and duplicates ET. Deployed prevalence, schedule and AAOI chain remain unverified.
+
+**Next atomic implementation:** correct raw option price basis and isolate
+optional chain read/parse failures per symbol, with persisted healthy-symbol
+acceptance. Define options freshness/cached-read semantics separately; collection
+age alone cannot establish current OI. Keep options out of trading features until
+source correctness and incremental chronological regime validation qualify them.
+Retain the temporary reproduction as permanent regressions when implementing.
+
+**Latest research direction:** user asks about transferring HFT ideas to roughly
+15-minute decisions for strong returns with tolerable drawdown, not a latency
+race. Response distinguishes liquidity/spread/adverse-selection filters, pressure
+features, signal expiry and volatility risk control from HFT infrastructure.
+15/30/60-minute versus daily cadence is a proposed comparison, not an established
+optimum or implemented strategy. Monitoring and decisions are separate; all-hours
+data coverage needs independent qualification. A read-only feasibility audit is
+in progress; no new fits/backtests/provider calls authorized by that audit.
+An asynchronous question asks the user's unacceptable peak-to-trough drawdown;
+no answer or guaranteed drawdown limit has been assumed.
+
+The wider goal stays active/incomplete: existing LightGBM expectations,
+deterministic `/3`, unpromoted DL/RL pilots. The allocation gate loses its matched
+baseline in10/14 folds at10bp and11/14 at25bp. Original producer OOM/missing root
+manifest remains FAILED. No top-tier edge or fresh paper-derived alpha verified.
+Do not rerun completed historical observers merely for activity.
+
+Approximate release-readiness target remains20:34UTC/16:34ET; last clock
+18:17:18UTC. Collector activation remains unanswered: **do not restart the
+pending backend**, whose defaults enable recurring15-second quote reads. All
+authenticated market-data probe allowances remain exhausted. All-hours real-time
+coverage is unproved. Deploy only from Spark via `scripts/deploy.sh --wait-post`,
+preserving deploy data/secrets symlinks, identifying the exact artifact and
+completing full gates, browser/provider acceptance and postcheck verdict.
+
 ## 2026-09-25 — History meaning corrected and published; missing-growth boundary reproduced
 
 **VERIFIED scoped source checkpoint:**
