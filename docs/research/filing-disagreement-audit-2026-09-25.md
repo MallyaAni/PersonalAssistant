@@ -115,6 +115,11 @@ or the correct current reporting basis.
 
 ## Next evidence and implementation boundary
 
+Follow-on [original-filing evidence](orcl-primary-filing-evidence-2026-09-25.md)
+now establishes the declared precision and consolidated scope of ORCL's quarter
+and half-year inputs. The preceding-quarter primary is still missing and APLD's
+request failed; the refusals and the remaining requirements below are unchanged.
+
 Before changing admissibility, recover the original inline-XBRL or instance
 facts for the exact implicated accessions, preserving raw bytes and hashes,
 fact IDs/contexts, entity/consolidation dimensions, units, scale/sign/transforms,
