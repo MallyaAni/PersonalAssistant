@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-25 — Compare earnings forecasts on observed common cohorts
+
+Research-only reporting now distinguishes genuine zero growth from unsupported
+legacy growth using a separate source-computability witness. Learner/naive
+accuracy uses common finite rows, with wider learner coverage labelled
+separately; surprise contrasts use the same contributing outcome dates after
+causal bucketing. Undefined statistics remain unavailable, and residual outcomes
+are explicitly log-return diagnostics, not net trades. Shared features, targets,
+fits, live grades/allocations and optional study inputs are unchanged.
+
+Final relevant suite: **132 passed**, one existing missing-LightGBM skip and
+32 existing warnings. Original reporting and three new numerical failures were
+reproduced and retained. Independent 100-digit Decimal checks pass 164 cases;
+source review, scoped Ruff/format and all 33 diagram/page checks pass. Proof uses
+offline synthetic source-to-CLI and real spread arithmetic, not fitted-model,
+historical-performance or deployed acceptance. No providers, accounts or orders
+were touched; no historical study rerun or strategy promotion. See the
+[coverage contract and evidence](research/expectations-baseline-coverage-2026-09-25.md).
+
 ## 2026-09-25 — Correct stock-history percentages and unknown vote meaning
 
 Historical adjusted-close log returns are now displayed as ordinary percentage

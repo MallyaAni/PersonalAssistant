@@ -23,8 +23,10 @@ The old naive comparator also used log growth against simple-growth targets.
 Its accuracy and surprise diagnostics do not establish superiority over a
 correctly scaled last-growth baseline. The reporting baseline now inverts log
 growth and applies the target's clipping; no historical results were recomputed.
-Upstream zero-filled missing growth still lacks a validity mask, so this
-numerical correction does not qualify baseline observation coverage.
+Reporting now excludes baseline rows without positive source operands and a
+finite legacy log calculation, and compares common event/session cohorts.
+Shared model features still zero-fill missing growth. This reporting witness
+does not qualify financial units, source vintages or historical performance.
 The gap was subsequently promoted on 2026-09-10; that operational decision is
 not validation of the historical claims. This cutoff fix does not rerun or
 repair the saved study.
@@ -128,6 +130,7 @@ and let the forward record decide, which the review asked for.
 """
 
 import argparse
+from collections import Counter
 from dataclasses import dataclass, replace
 from datetime import date, datetime, time
 from pathlib import Path
@@ -135,8 +138,8 @@ from pathlib import Path
 import numpy as np
 
 from backend.cli.market_earnings import reaction_sessions
-from backend.cli.market_snapback import _spread
-from backend.market import calendar, edgar, language, valuation
+from backend.cli.market_snapback import _session_means, _spread
+from backend.market import calendar, edgar, expectations_reporting, language, valuation
 from backend.market.levels_pit import point_in_time_levels
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
@@ -543,22 +546,42 @@ def _expected(
     return expected, model
 
 
+# Format selected-cohort accuracy with explicit unavailable numerical metrics.
+def _accuracy_line(name, prediction, target):
+    count, mae, corr = expectations_reporting.forecast_metrics(prediction, target)
+    error = f"{mae:.3f}" if mae is not None else "unavailable"
+    correlation = f"{corr:+.3f}" if corr is not None else "unavailable"
+    return f"  {name:22} MAE {error}  corr {correlation}  n {count} rows"
+
+
+# Compare common finite rows and label the learner's wider coverage separately.
 def _accuracy(expected, naive, y, meta_year, years, model):
-    scored = np.isfinite(expected)
-    print(f"\naccuracy out of sample on {int(scored.sum())} rows:")
+    paired = expectations_reporting.common_forecast_mask(expected, naive, y)
+    learner = np.isfinite(expected) & np.isfinite(y)
+    print(f"\naccuracy out of sample: paired on {int(paired.sum())} rows of {len(y)}")
+    print(
+        f"  excluded from paired comparison: {int((~paired).sum())}; "
+        f"nonfinite learner {int((~np.isfinite(expected)).sum())}, "
+        f"baseline {int((~np.isfinite(naive)).sum())}, "
+        f"target {int((~np.isfinite(y)).sum())} (reasons may overlap)"
+    )
     for name, pred in (("naive (last growth)", naive), ("learner", expected)):
-        ok = scored & np.isfinite(pred)
-        err = np.abs(pred[ok] - y[ok]).mean()
-        corr = np.corrcoef(pred[ok], y[ok])[0, 1]
-        print(f"  {name:22} MAE {err:.3f}  corr {corr:+.3f}")
-    print("  by year (corr, learner | naive):")
+        print(_accuracy_line(name, pred[paired], y[paired]))
+    print(_accuracy_line("learner (all scorable pairs)", expected[learner], y[learner]))
+    print("  paired by year (corr, learner | naive; at least 30 common rows):")
     for yr in years:
-        ok = scored & (meta_year == yr) & np.isfinite(naive)
+        ok = paired & (meta_year == yr)
         if ok.sum() < 30:
             continue
-        c1 = np.corrcoef(expected[ok], y[ok])[0, 1]
-        c2 = np.corrcoef(naive[ok], y[ok])[0, 1]
-        print(f"    {yr}: {c1:+.3f} | {c2:+.3f}  n {int(ok.sum())}")
+        correlations = [
+            expectations_reporting.forecast_metrics(pred[ok], y[ok])[2]
+            for pred in (expected, naive)
+        ]
+        values = " | ".join(
+            f"{corr:+.3f}" if corr is not None else "unavailable"
+            for corr in correlations
+        )
+        print(f"    {yr}: {values}  n {int(ok.sum())}")
     if model is not None:
         gains = model.feature_importance(importance_type="gain")
         total = float(sum(gains)) or 1.0
@@ -597,7 +620,20 @@ def _fifths(values, mask, meta, meta_year, years, shape, offset, *, positions=No
     return out
 
 
-# Measure surprise returns only when the filed result was already available.
+# Compare each pair of bucket contrasts on the same finite outcome sessions.
+def _paired_spread(label, a, b, c, d, lag):
+    common = np.logical_and.reduce(
+        [np.isfinite(_session_means(label, mask)) for mask in (a, b, c, d)]
+    )
+    support = common[:, None]
+    return (
+        _spread(label, a & support, b & support, lag),
+        _spread(label, c & support, d & support, lag),
+        int(common.sum()),
+    )
+
+
+# Bucket common available events causally, then pair each contrast's outcome dates.
 def _after(panel, expected, naive, y, meta, meta_year, years):
     label20 = panel.forward_residual(20)
     # A filing-day-only label cannot support a surprise trade before the next day.
@@ -609,27 +645,49 @@ def _after(panel, expected, naive, y, meta, meta_year, years):
         ],
         dtype=bool,
     )
-    scored = np.isfinite(expected) & available
+    scored = expectations_reporting.common_forecast_mask(expected, naive, y) & available
     shape = panel.adj_close.shape
     fm = _fifths(y - expected, scored, meta, meta_year, years, shape, 1)
-    fn = _fifths(
-        y - naive, scored & np.isfinite(naive), meta, meta_year, years, shape, 1
-    )
+    fn = _fifths(y - naive, scored, meta, meta_year, years, shape, 1)
     anyf, anyn = fm.any(axis=2), fn.any(axis=2)
-    print("\nafter the report: residual over twenty sessions from the close after it")
+    print(
+        "\nafter the report: beta-adjusted log-return residual over twenty "
+        "sessions from the close after it (not a net trade return)"
+    )
+    print(
+        f"  paired eligible events: {int(scored.sum())} of {len(y)}; "
+        f"excluded {int((~scored).sum())}"
+    )
+    print(
+        "  Common outcome sessions are selected after causal bucketing, "
+        "separately per contrast."
+    )
+    print(
+        "  n counts selected finite observations, not independent trades; "
+        "n=0 and statistics unavailable with fewer than 10 common sessions."
+    )
     print(f"{'fifth of the surprise':40} {'learner':>22} {'naive':>22}")
     for q, label in enumerate(("most negative", "2nd", "3rd", "4th", "most positive")):
-        m1, t1, n1 = _spread(label20, fm[:, :, q], anyf & ~fm[:, :, q], 20)
-        m2, t2, n2 = _spread(label20, fn[:, :, q], anyn & ~fn[:, :, q], 20)
+        a, b, sessions = _paired_spread(
+            label20,
+            fm[:, :, q],
+            anyf & ~fm[:, :, q],
+            fn[:, :, q],
+            anyn & ~fn[:, :, q],
+            20,
+        )
+        m1, t1, n1 = a
+        m2, t2, n2 = b
         print(
             f"{label:40} {m1:+8.2%} (t {t1:5.1f}) {n1:5d}  "
-            f"{m2:+8.2%} (t {t2:5.1f}) {n2:5d}"
+            f"{m2:+8.2%} (t {t2:5.1f}) {n2:5d}  common sessions {sessions}"
         )
-    a = _spread(label20, fm[:, :, 4], fm[:, :, 0], 20)
-    b = _spread(label20, fn[:, :, 4], fn[:, :, 0], 20)
+    a, b, sessions = _paired_spread(
+        label20, fm[:, :, 4], fm[:, :, 0], fn[:, :, 4], fn[:, :, 0], 20
+    )
     print(
         f"{'top fifth less bottom fifth':40} {a[0]:+8.2%} (t {a[1]:5.1f})"
-        f"        {b[0]:+8.2%} (t {b[1]:5.1f})"
+        f"        {b[0]:+8.2%} (t {b[1]:5.1f})  common sessions {sessions}"
     )
 
 
@@ -957,9 +1015,25 @@ def main() -> None:
         available_dates=[m[3] for m in meta],
         score_dates=[dates[m[4]] for m in meta],
     )
-    # Compare like units without changing log-growth model inputs. This cannot
-    # recover growth observations already zero-filled by the upstream producer.
+    # Preserve model-feature precision/clipping while withholding unsupported baselines.
+    evidence = expectations_reporting.growth_evidence(panel, records, meta)
     naive = np.clip(np.expm1(x[:, NAMES.index("revenue_yoy")]), -0.9, 5.0)
+    naive[~evidence.usable] = np.nan
+    print(
+        "\nlast-growth baseline: positive-revenue legacy-source "
+        "log-feature computability"
+    )
+    print(
+        "  This does not establish source units, fiscal-period accuracy "
+        "or historical availability."
+    )
+    print(
+        "  "
+        + ", ".join(
+            f"{reason}={count}"
+            for reason, count in sorted(Counter(evidence.reason).items())
+        )
+    )
     _accuracy(expected, naive, y, meta_year, years, model)
     _after(panel, expected, naive, y, meta, meta_year, years)
     cheap = _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args)

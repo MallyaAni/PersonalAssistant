@@ -75,6 +75,11 @@ The test's expected vector is synthetic, not a forecast-quality result.
 
 ## Still unresolved
 
+The later [reporting-coverage correction](expectations-baseline-coverage-2026-09-25.md)
+adds a separate legacy-source computability witness and common comparison
+cohorts without changing shared model features. It addresses reporting coverage,
+not the unresolved financial-source qualification described below.
+
 EDGAR zero-fills missing/nonfinite growth before the expectations feature
 block. Neither `x == 0` nor its current-revenue presence flag can establish
 whether the prior-year denominator existed. Preserving an injected NaN at
