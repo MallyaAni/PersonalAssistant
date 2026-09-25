@@ -116,4 +116,42 @@ Evidence: `/private/tmp/anios-2026-microstructure.pOTlBB/RECEIPT.md`, SHA256
 Primary HTML/PDF artifacts and their hashes are retained there. Independent
 read-only review confirmed the quoted values and frozen-study boundaries.
 
+## Execution and acquisition boundaries clarified after journal inspection
+
+At source `c42ace690ac960750acaa5c70e12981a9ea8d673`, the ordinary `/3`
+simulation constructs quantity using the decision close, assigns buys
+`opens[t + 1]`, and settles that order before recording the next closing NAV
+(`agents/trading/desk/simulate.py`). Therefore a signal from the completed
+09:30–09:45 ET regular-session bar cannot veto a buy already filled at 09:30.
+An entry challenger using that bar must explicitly defer the initial order.
+Its permissible fill must follow actual bar availability plus declared latency;
+15-minute OHLCV alone does not prove an executable quote or broker fill there.
+
+Include an **unconditional-delay control** with the same entry clock, costs,
+missing-fill rules and opportunity set. This separates the value of the range/
+volume condition from the effect of waiting. The conditional and unconditional
+accounts must each propagate their own cash, remaining order intent, holdings,
+reset and event state. Deleting fills from the incumbent journal is not an
+equivalent account simulation: one skipped buy can change later funding and
+eligible actions. This does not prescribe a new threshold or launch a test.
+
+The six independently verified frozen daily journals now define an exact
+baseline-revaluation request: 77 symbols, 19,316 symbol/session cells and 426
+sparse holding ranges, January 7, 2020–September 18, 2026. The first common
+closing mark, January 6, is cash-only. Full regular-session 15-minute acquisition
+is 500,440 bars including 12 early-close sessions. The saved scope is
+`/private/tmp/anios-intraday-request-scope.9kVcT9/required-scope.json`, SHA256
+`7f55f84e3bf97e54ad0087302754948c90571384be052ea643903f7cf28a1afc`.
+
+That is **not a sufficient challenger dataset**. A condition using historical
+same-clock activity additionally needs its causal warm-up, every considered
+opportunity (including unfilled/skipped buys), and prices for holdings the new
+account would carry outside the incumbent's ranges. Register this larger scope
+before observing challenger outcomes. The existing packet still requires feed/
+instrument identity, bar-clock definitions, documented compatible adjustment
+basis and reconciliation to every original closing NAV. No such price delivery
+was acquired or qualified in this inspection. No fit, strategy rerun or new
+performance result was produced; the original producer OOM/missing root manifest
+and biased historical-universe limits remain unchanged.
+
 **Diagram impact: NONE — research assessment only; no architecture change.**
