@@ -1,5 +1,85 @@
 # Next session
 
+## 2026-09-25 — Financial disagreements classified; no arithmetic change justified
+
+Starting clean `main`, HEAD `a1c2a08557fe28fc923d94498b7b0d25fbf93b75`;
+`git pull --rebase origin main` was up to date. The previous goal turn was
+progress: source-qualified research reached the actual consumer and records.
+This turn completed new source evidence that changes the next action, without
+rerunning the completed company-facts inventory or strategy history.
+
+**Published research checkpoint:** `67aca0b5c2f636ffb0e73968e6b1053adb731b6c`,
+Mac → Spark → GitHub from Spark. Fresh upstream fetches matched the predecessor;
+Spark's unrelated `scratch/` is preserved. Backend, frontend, source archives,
+scores and accounts are unchanged. This is a subsequent handoff commit, not a
+new calculation or deployed strategy checkpoint.
+
+**VERIFIED:** sixteen distinct issuer/concept/full-quarter disagreements across
+twelve issuers, appearing in 35 feature cells. Twenty-nine have a top-level
+dispute status; six preserve nested disputes under a missing-quarter reason.
+All 47 disputed source pointers and twenty dependent-quarter pointers match the
+original rows/hashes. Exact Decimal and independent integer arithmetic agree
+with every saved amount; all sixteen alternative paths are interval-correct
+YTD subtraction. Five annual-derived quarters genuinely depend on disputed
+terms with net coefficient -1; cancellation does not explain their refusal.
+
+Twelve residuals are one observed $1,000/$1,000,000 increment, not proven rounding.
+APLD's comparative quarter mixes a revised half-year with unchanged other periods,
+creating $53.56m disagreement. APLD current +$35.12m and BE -$79k/+$158k remain
+unexplained. ORCL's $1m discrepancy persists with its original preceding-quarter
+value; the later accession is not the cause. No arbitrary epsilon, older-value
+fallback or restored score is justified. This disagreement-only audit does not
+qualify the 430 accepted feature cells.
+
+Independent real-feature-path characterization: **8/8 pass**, with original,
+identical-repeat, partial-revision and coherent-revision cases for annual and
+YTD construction. Root independently repeats all eight, zero failures/skips,
+0.11s, on the pinned network-disabled Python image with read-only source.
+These tests characterize existing selection, not a proposed admission policy.
+All 33 unchanged diagram/page checks and final diff checks pass. No new browser
+or model behavior exists to validate in this documentation-only change.
+
+The official XBRL index led to Calculations 1.1 with February 2024 errata.
+Sections 5.1–5.2.4 establish declared-precision intervals and selected rounding
+mode, not a blanket relative tolerance. They do not automatically validate
+cross-period subtraction or mixed accounting bases. Five public specification
+pages were retrieved; the initial guessed URL returned 404. No new financial
+provider request occurred. See the [audit and source link](
+research/filing-disagreement-audit-2026-09-25.md).
+
+Evidence:
+
+- Root `/private/tmp/anios-filing-disagreement-root.WlJyYg/ROOT_RECEIPT.md`,
+  SHA256 `42e17e0c8d1d1bdd68d2ae8a82a113701772d5c754318b9dadca23949c4c95dd`.
+- Root `vintage-characterization.xml`, SHA256
+  `84c0787a5d3733cb157a4e160fee0cf65272767e68dde672436fbbd7c73fbe06`.
+- Full comparisons `/private/tmp/anios-disagreement-classification.1dH6Do/comparisons.json`,
+  SHA256 `ad68a509f06f60b0e6c31f25796fba0ff1172539357596d0f6e67f39e48f0b10`.
+- Independent mechanism receipt `/private/tmp/anios-vintage-review.ofASnl/RECEIPT.md`,
+  SHA256 `b6837aca4ca7961c5b1f28afe4169133b9df7cdd8e91a97ab139896e3b00312b`.
+- Retained standard `calculation-1.1.html` under root evidence, SHA256
+  `2897f41dcc39eb0b1593175e43bdd275aff30eee77ff445638d1a9c86abee4f9`.
+
+**Next atomic task:** a bounded original-filing precision/context investigation,
+starting with ORCL's small discrepancy and APLD's mixed-version case. Resolve
+exact implicated accessions from the retained pointers; preserve original
+inline-XBRL/instance bytes, fact IDs, contexts, unit/scale/sign/transforms,
+precision and filing/revision evidence. Do not build a disconnected tolerance
+helper or pick the value that merely balances. A versioned, connected
+comparison/admission contract comes only after that evidence. Public source
+research must not change credentials, entitlements, services or laptop settings.
+
+**FAILED / UNVERIFIED:** initial spec URL failed and was corrected through the
+official index; no diagnostic assertions failed. True rounding cause, accounting
+basis, historical authenticity, full coverage, fair value and returns remain
+unverified. No fit, historical strategy rerun, order/holding action or deployment.
+Deployment still awaits the existing 15-second collector decision; do not repeat
+the question or deploy collection disabled as equivalent. Spark-only
+`scripts/deploy.sh --wait-post` and actual gated artifact/browser proof remain
+required when cleared. Scoped agents are finished; the overall goal stays active.
+Diagram impact: NONE — research evidence only, with no implementation relationship
+change.
+
 ## 2026-09-25 — Source-qualified research reaches the actual desk and records
 
 Starting clean `main`, HEAD `9b21c84604517faafdbc6df396ef3bd16c01e0f6`;
