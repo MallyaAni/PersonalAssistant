@@ -1,5 +1,75 @@
 # Next session
 
+## 2026-09-25 — Oracle primary precision observed; source comparison remains incomplete
+
+Starting clean `main`, HEAD `e44ddd6663b085df2b710f23cb8d06b5eb4405e5`;
+`git pull --rebase origin main` was up to date. This goal turn made progress:
+two disputed ORCL inputs now have original-filing precision/context evidence.
+It did not repeat the completed company-facts inventory or strategy backtests.
+
+**Published research checkpoint:** `7876afa366a30df2ef8e03da5db37e985102a71e`,
+Mac → Spark → GitHub from Spark. Fresh upstream fetches matched the predecessor.
+Spark's unrelated untracked `scratch/` remains untouched. Only the research
+report and its cross-link changed; this is a subsequent handoff commit.
+
+**VERIFIED:** original ORCL FY2026 Q2 primary, retrieved from the SEC index's
+actual primary-document link. Quarter $16.058bn and half $30.983bn are the same
+consolidated Total revenues row, with complete unsegmented CIK/period contexts,
+USD, declared `scale=6`, `decimals=-6` and the original transformation QName.
+Each repeats identically in the geographic table. Note 1 explicitly says its
+revenue reclassifications did not affect total revenue, operating income or net
+income. The report records exact fact IDs, original byte ranges and source rows.
+
+Root and independent agent each pass **11 inspector tests**, no failures/skips.
+Root independently checks all **117** retained element byte ranges/parsed
+identities, the two source-row matches, actual common statement row and units.
+The existing HTTP-error stop is exercised offline: it prevents another request
+or evidence write. All **33** unchanged diagram/page synchronization checks pass.
+The report passes independent disclosure/claim review. These are research
+checks, not new application startup/browser/model acceptance or a numeric policy.
+
+**FAILED / UNVERIFIED:** acquisition ended after four requests, statuses
+200/200/200/503: Q2 index, Q2 primary, later-Q1 index, APLD original index.
+One primary filing, not three, was acquired. The 503 is only File Unavailable
+HTML and supplies no APLD accounting evidence. No retries/redirects/mirrors or
+access workaround occurred. Total retained bytes 3,799,931. ORCL's Q1 primary,
+complete three-operand precision/basis, discrepancy cause, APLD revisions,
+historical authenticity and investment performance remain unverified. Initial
+test/diagram commands lacked writable container temp, host npm or the expected
+browser path; all resolved using existing containers/browser, without source,
+test-assertion, package, laptop-setting or service changes.
+
+Evidence root `/private/tmp/anios-filing-primary.NIogyK/`:
+
+- `ROOT_RECEIPT.md`: `9a208f46171cb6fe56ea42b5ba536707821afa862af1055354f08a138953ece8`.
+- `requests.jsonl`: `3509f0dc04fd06dde7b847f4598ce1f75b82ac5d93ec03372c2a14ace3bc097c`.
+- `root-verification.json`: `a68d3adefe88628a4a034b1e4c5f4e3b76384ed33fc8893012aee47b626282ea`.
+- `root-inspector-tests.xml`: `0d919d926a8b2790bcee601ab1679bf011f84aecaae43d603cf037726182f902`.
+
+Original primary/source hashes, independent inspector receipt and reproduction
+are in the [research report](research/orcl-primary-filing-evidence-2026-09-25.md).
+Temporary evidence is not a durable ingestion service. The acquisition ledger
+refuses continuation after its error. Do not overwrite it or reacquire sources
+to rerun offline tests. No production tolerance, score, archive or history changed.
+
+**Next source task:** complete the missing exact primary-filing evidence only
+when source availability changes or a separately verified public issuer source
+is identified. Do not loop on the failed SEC endpoint or repeat the completed
+audit as activity. ORCL's declared precision is now known for two inputs, not
+all three; APLD still needs its actual revision disclosures. No disconnected
+tolerance helper or restored grade is justified. Other scoped goal work may
+proceed independently of this unavailable source.
+
+No fits, historical strategy reruns, orders/holdings changes or deployment.
+The dashboard wording fixes remain published and locally browser-tested, not
+deployed. Deployment still awaits the existing 15-second collector decision;
+do not repeat the question or deploy collection disabled as equivalent. When
+cleared, use Spark-only `scripts/deploy.sh --wait-post` with required gates and
+actual artifact/browser proof. Scoped agents are finished; overall goal stays
+active/incomplete.
+Diagram impact: NONE — research evidence only; implementation relationships
+are unchanged.
+
 ## 2026-09-25 — Financial disagreements classified; no arithmetic change justified
 
 Starting clean `main`, HEAD `a1c2a08557fe28fc923d94498b7b0d25fbf93b75`;
