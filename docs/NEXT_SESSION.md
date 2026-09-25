@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-09-25 — Connected margin period-date correction accepted
+
+Starting clean `main`, HEAD `d0707b8733d22a1346e5f836310c5df0da178941`;
+`git pull --rebase origin main` was up to date. Spark/GitHub were fetched before
+publication and still matched that source; remote `scratch/` is untouched.
+
+**VERIFIED scoped checkpoint:** `ca506e481afb295411142fceaac8b90d0a4d5e8c`.
+Current desk margins retain start/end intervals and reject unequal or ambiguous
+spans at the latest shared end, without older fallback. Growth/tag selection and
+legacy quarter projections are unchanged. New opinions use fundamental source
+`/2`; frontend labels preserve earlier `/1`, frozen legacy, unknown and absent
+sources. Saved records/backtests are not relabelled or rewritten. Published
+Mac → Spark → GitHub from Spark; Spark HEAD/GitHub origin match the checkpoint.
+
+Root final backend: 238 passed / one missing-Torch skip / four strict known
+xfails / 24 existing warnings, 2.51 s. Exact-predecessor differential includes
+2,048 quarter projections and synthetic growth/tag/vintage comparisons. Root
+fresh-bundle browser: 214 passed, zero failures/skips/flakes, 125.825 s; all 62
+diagnostic records clean. Agent browser: 151 passed. Desktop/phone screenshots,
+independent source review, TypeScript/build, scoped lint/format and all 33
+diagram/page checks pass. Original failures and test/environment corrections
+are retained. [Contract and limits](research/live-margin-period-checks-2026-09-25.md).
+Root receipt `/private/tmp/anios-margin-root.fahEwK/ROOT_RECEIPT.md`, SHA256
+`7f20a1bd72bb3c56dff1a13b41b7a2a8f3fcf1b849002f25a31ef26ce6aa0366`;
+accepted backend XML SHA256
+`c7ed902113a74bc93c9f6fbca41c0b29416077c342ebf711227d48cf8a87eaf0`.
+Asset `index-Du7iSXGx.js`, SHA256
+`500c3d5731efe05ea4512fb3e1349a995c6d56a405d1d77927b1258242395233`.
+
+**FAILED / UNVERIFIED:** unitless currency/lineage and gapped annual-quarter
+derivation remain known strict failures. The optional Torch path is skipped.
+Source authenticity, AAOI fair value, trading superiority and deployment are
+not established. No provider/model call, fit, historical strategy rerun,
+account/order action or laptop setting change. No deployment/restart: the
+existing pending 15-second quote-collector decision is unchanged. Do not deploy
+the new read-only quote endpoint with collection disabled as if that preserved
+old on-demand refresh behavior. Spark-only `scripts/deploy.sh --wait-post` with
+all gates/postchecks and exact artifact/browser proof remains required.
+Diagram impact: NONE — internal feature checks and existing source labels.
+
+**Research data scope, not a new outcome:** an independent read-only extraction
+reverified all six frozen `/3`/SPY/QQQ journals at 10/25 bp and 21 pinned inputs.
+2020-01-06–2026-09-18 has 1,685 common closing marks; intraday acquisition starts
+January 7 because the first mark is cash-only. Deduplicated scope: 77 symbols,
+19,316 symbol/session cells, 426 sparse held-date ranges, 500,440 regular-session
+15-minute bars (12 early closes). There are 481,124 interior price cells and
+18,901 existing closing anchors. None is independently qualified against the
+frozen adjusted-unit basis; missing SPY/QQQ account for 3,368 required cells.
+Exact request `/private/tmp/anios-intraday-request-scope.9kVcT9/required-scope.json`,
+SHA256 `7f55f84e3bf97e54ad0087302754948c90571384be052ea643903f7cf28a1afc`.
+No new fetch or policy rerun. Require documented basis conversion/source identity
+before valuation; never fit price ratios or drop missing names. Original producer
+OOM/missing study-root manifest remains FAILED. Do not repeat the cache audit or
+build another disconnected helper to report progress. All assigned agents are
+finished; the overall trading goal remains active/incomplete.
+
 ## 2026-09-25 — Plain-language dashboard labels; research execution-state export
 
 Starting branch `main`, clean HEAD `504b83ff608fad27dc7787c15ba274a9f9ed7827`;
