@@ -1,5 +1,79 @@
 # Next session
 
+## 2026-09-25 — Chart meaning and grade-source checkpoint accepted
+
+Starting clean `main`, HEAD `cf9d7ca18feb2aad8dc1cb32bee322ba05f19a55`;
+`git pull --rebase origin main` was up to date. Fresh Mac/Spark/GitHub fetches
+before publication matched that predecessor; Spark's unrelated untracked
+`scratch/` remains untouched. No unrelated changes were staged.
+
+**VERIFIED scoped checkpoint:** `f9dd2e10349f9047f821b4797457b140ff51ad9e`.
+Published Mac → `git push spark main` → GitHub from Spark. The committed chart
+hash matches the accepted source exactly. This is a subsequent handoff commit.
+Chart readings now name trading-session/weekly EMA spans, upper/lower Bollinger
+bands and the actual 252-session high/low window. Percentages explicitly state
+indicator-relative price distance, rounding and not-a-return meaning. Nonfinite
+ratios display unavailable. Dated bar/fallback labels and forming-week caveats
+remain explicit. Mixed grade transitions name each endpoint's source; missing
+or malformed flags prove neither Saved nor Recalculated. Calculations, marker
+placement rules, original histories and account behavior are unchanged.
+
+**VERIFIED local browser acceptance:** 328 passed, zero failures/skips/flakes,
+181.575 seconds; independently decoded all 140 browser-diagnostic records and
+found every category clean. Includes eight independent denominator/negative
+band/overflow/signed-rounding/old-price cases, source combinations and D/W/phone
+workflows, plus saved-history, session-price and dashboard regressions. Agent's
+focused 56-case suite passes. Three root and five agent fail-before cases remain
+retained, including actual `+Infinity%` rendering. No assertion was relaxed.
+
+Independent backend/source review: 45 existing tests pass, zero skips, 2.256 s,
+seven existing NaN warnings. Separate scalar calculations verify EMA recurrence,
+population deviation, 252nd/253rd window boundaries, adjusted highs/lows and
+forming-week/interval-start semantics. Backend is unchanged. AST differential
+preserves 14 existing helpers/constants, 12 effects/memos, marker properties and
+all non-label line fields. TypeScript/fresh build, diff review and all 33 unchanged
+diagram/page checks pass. Existing CSS/chunk warnings remain. Final desktop/phone
+captures inspected; the tall element captures have scroll-occluded context and
+are not complete-dialog viewport-fit evidence.
+
+Final asset `index-DVSPpamk.js`, SHA256
+`f75ce3b9f1e22b2d6d06a390935a0f9d53d4d42fcda3b1e496599921af435e36`.
+Root receipt `/private/tmp/anios-chart-meaning-root.sYANmh/ROOT_RECEIPT.md`,
+SHA256 `d42ede4dd9e6528c1af7daa9e7dc72f109bc389bc7b841e45278ea43f5e024c9`.
+Final browser JSON SHA256
+`578672bdc7b4244ded4d1c229636bba7b19443852d1e01db9ee6efce4cfd0bea`.
+Source and supporting receipt hashes/reproduction are in that root receipt.
+See the [meanings and limits](research/plain-desk-labels-2026-09-25.md).
+
+**FAILED / UNVERIFIED:** old labels failed the retained baseline; no remaining
+failure in the scoped final acceptance. Deployed workflow, provider authenticity,
+all-hours feed coverage, crowded weekly markers, whole-dashboard precision and
+strategy superiority are not established. Chart endpoints read stored data
+without wall-clock freshness filtering; never call an old dated bar a fresh
+quote. No provider/model call, fit, historical rerun, account/order/holding action,
+laptop setting change, restart or deployment occurred.
+
+The user's exact `quote stale`, `snapshot`, `replay` and `below A` complaint was
+already fixed in `5516bc8`; those tests pass in this final bundle. This turn
+finishes the follow-on chart meaning task, not a second implementation of those
+labels. Do not recheck the same old public asset just to report activity.
+
+**Next atomic task:** return to connecting qualified current concepts and
+unit-preserving financial inputs. Fundamental `/3` suppresses obsolete inputs;
+it is not the final current-definition migration. Preserve legacy learned inputs,
+saved records and examined strategy history. Do not repeat the completed
+94-source inventory or rerun the examined SPY/QQQ history to report activity.
+Intraday comparison still lacks qualified compatible adjusted-price inputs;
+no new performance advantage was established here.
+
+Deployment remains held for the existing unanswered 15-second quote-collector
+decision. Do not ask repeatedly or deploy its read-only endpoint with collection
+disabled as an equivalent release. When cleared, use Spark-only
+`scripts/deploy.sh --wait-post`, applicable gates and actual artifact/browser
+proof. All scoped agents are finished. Overall trading goal remains active and
+incomplete. Diagram impact: NONE — rendering, provenance labels and finite display
+handling within existing UI paths, with no architectural relationship change.
+
 ## 2026-09-25 — Connected reporting-period safeguard and independent dashboard warnings
 
 Starting `main`, HEAD `0bf6fbe6358b4a264dd9ec9562b1bac2fcbf0f44`; current
