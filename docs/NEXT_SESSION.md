@@ -1,5 +1,114 @@
 # Next session
 
+## 2026-09-25 — Baseline-scale correction verified; prior checkpoints published
+
+**VERIFIED scoped source checkpoint:**
+`375ba5f50be6e3b68ecbaf3637783aa41f2c409f`, from clean main at
+`6702db7eb37bd096fe91f1983e1ece7b6c90fd19`. Initial pull current; both Mac
+remotes and Spark's GitHub origin re-fetched before publication. Published
+Mac → Spark → GitHub from Spark, preserving unrelated remote `scratch/`.
+No deployment, laptop settings/access changes, provider requests, model fits,
+historical strategy reruns, holdings, orders or promotion.
+
+`market_expectations.main` now converts its naive reporting baseline from log
+growth to simple growth, then clips to the target's `[-0.9, 5.0]`, in a new
+array. Only `_accuracy`/`_after` consume it; model features, target, forecasts,
+before-study/live-gap inputs and allocation logic are unchanged. Module and
+historical CHANGELOG explicitly qualify the old mixed-scale comparison; no
+historical metrics were recomputed. Upstream zero-filled missing growth still
+lacks a validity mask and is **UNVERIFIED**, not repaired by this conversion.
+
+**VERIFIED acceptance:** four product failures/four passes before correction,
+eight targeted passes after it; final wider suite **88 passed, one existing
+missing-LightGBM skip, 32 existing empty-slice warnings, 4.15s**. The first
+baseline also found two test-harness positional-index mistakes; corrected
+harness reproduced the four scale failures before production changed. All
+original XMLs retained. Final legacy JUnit preserves `record_property` fields;
+the earlier xunit2 run had20 additional compatibility warnings. The skipped
+model-fitting test is not a pass. Scoped Ruff/format, independent review and
+all33 unchanged diagram/page checks pass. Test source/model arrays and original
+target are retained; actual main/accuracy and real synthetic source-to-dataset
+paths run without fitting. `_after` is stubbed, with real `_fifths` exercised
+separately, so this is not full after-report-return or P&L proof. No real-model,
+UI or full deployment gates were run for this reporting-only correction.
+
+Evidence: [contract](research/expectations-baseline-scale-2026-09-25.md),
+`/private/tmp/anios-expectations-baseline-fix.N0ONQd/RECEIPT.md`
+(SHA256 `f6943ad06f37ee2c21eb681f1c9076f4b74e46b3411356c6bac17b191d2c1f27`).
+Module/test SHA256:
+`3ab50ebf655061e9c067ba9a1d785b4d712915fbbffd00334c0361fb09da382a` /
+`7dcc71d4078d4e02c38a22e6695e0cdf087bedd8fe0211a33be67af9fbe90ae1`.
+Final JUnit `0affe092d4ff68fc155f3a5f47f16cb9617592a1f39486568100180ba3bfe2a6`.
+**Diagram impact: NONE — local research-reporting conversion.**
+
+**Also complete and published, not yet recorded in this handoff:**
+
+- `23f7a3b8c012f1c348312c122e7db89748baeaa9`: correct computed intraday-vote
+  confirmation wording and expired `intraday reading` provenance. Both browser
+  failures reproduced;22 final browser tests, TypeScript/build and33 diagram
+  checks pass. No calculation changed. Receipt
+  `/private/tmp/anios-intraday-wording.updDSi/RECEIPT.md`, SHA256
+  `8f51c17396169a91571fffc47254d00eaf347e690643b753b5435d76f1cdf91a`.
+- `6702db7eb37bd096fe91f1983e1ece7b6c90fd19`: isolated full-period financial
+  ratio evaluator; no live loader/feature migration.252 passed, one existing
+  missing-Torch skip, six strict legacy xfails,24 existing warnings,6.77s.
+  A separate50-digit Decimal oracle checks32 annual ASML cases (28 available),
+  140 scalar/392 source fields; all32 quarterly cases remain unavailable.
+  Prior actual raw source retained; no new request. Receipt
+  `/private/tmp/anios-fundamental-periods.AtH5U2/RECEIPT.md`, SHA256
+  `961c92898ad28179cc42de4a3255502e55ba00797feb017caac5e74957abcb5b`.
+  Original legacy period/unit/share-basis failures remain strict xfails, not
+  fixed live inputs. Independent review has no outstanding blocking findings.
+  This turn completed the previously missing Spark → GitHub publication.
+
+**Retained-source inventory:**563 selected files parsed/hashed in the bounded
+Spark public-financial scope, all unchanged. September18 versions cover93/94
+stocks (missingGLW), September24 covers94/94. Selected caches have no units,
+original-response hashes or acceptance timestamps.5,611 retained earnings8-K
+clocks have no exact accession matches to the4,511/4,583 financial accessions.
+No raw companyfacts found in that bounded scope; this is not proof of absence
+everywhere. Local ASML raw sample covers1/94 at a later vintage. The frozen
+report manifest pins190 bars/actions, not financial snapshots. AAPL index
+acceptance strings are zone-less and unjoined; acceptance date need not equal
+filed date. Full raw-backed historical reimport remains **FAILED within the
+inspected scope**. Do not relabel caches or change live loaders. Receipt
+`/private/tmp/anios-fundamental-inventory.sdMpO7/RECEIPT.md`, SHA256
+`90f0e87a44c782a5400c7916505eb5f5f58b8b86445142d44ccc4eabfab42271`.
+
+**User asks again about ML/DL/RL:** two read-only parallel audits confirm the
+prior status. Existing source enables LightGBM expectations-gap inputs; no new
+runtime fit observed. `/3` allocation is deterministic. DL includes supervised
+MLPs and a GRU; real sequential RL exists in the later growth pilot and intraday
+PPO. Growth RL chooses predefined cash/momentum/equal baskets, without SPY/QQQ
+actions or learned individual quality weights; intraday PPO is a different,
+forced-flat intraday objective. Neither is promoted. Do not cite the older
+`market_allocation_rl.py` as valid REINFORCE evidence: read-only algebra suggests
+its detached-softmax weighting cancels the policy gradient; not runtime-tested
+or fixed. Tested boosted/neural/gate challengers remain rejected; the14-fold
+gate loses to its matched adapter in10/14 folds at10bp and11/14 at25bp.
+Forecast skill versus training means remains negative. Original producer
+OOM/missing root manifest remains **FAILED**; completed observers must not be
+rerun to manufacture progress. Attractive retrospective `/3` returns do not
+qualify an independently validated top-tier strategy.
+
+Six2026 primary preprints remain documented as rechecked September24, alongside
+Jensen et al.'s2026 RFS paper metadata/abstract. No paper-derived alpha has been
+independently replicated/qualified here. Exact arXiv submission days were not
+freshly verified; no new literature requests in this turn. The reviewed methods
+informed temporal, accounting, cost and validation contracts, not promotion.
+
+**Next:** goal remains active/incomplete. A separately scoped missing-growth
+provenance contract or raw-source qualification is more useful than another
+fit on examined biased data; do not alter live model inputs implicitly.
+The approximate release-readiness target remains20:34UTC /16:34ET. Collector
+activation question still unanswered: do not restart the pending backend,
+whose defaults would activate15-second recurring reads. Authenticated quote/
+history probe allowances remain exhausted. All-hours real-time coverage is
+unproved. Deploy only from Spark through `scripts/deploy.sh --wait-post` with
+the applicable gates/postchecks and exact-artifact/browser acceptance. No
+deployment was launched in this turn; prior runtime provenance is in the next
+entry, not a fresh check. Preserve deployment `data`/`secrets` symlinks.
+
 ## 2026-09-25 — Unit-preserving fundamental source verified; ML/DL/RL status clarified
 
 **VERIFIED scoped source checkpoint:**

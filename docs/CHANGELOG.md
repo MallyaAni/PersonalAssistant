@@ -2,6 +2,9 @@
 
 ## 2026-09-25 — Correct earnings research's naive growth benchmark
 
+Verified scoped source checkpoint `375ba5f50be6e3b68ecbaf3637783aa41f2c409f`,
+published Mac → Spark → GitHub from Spark; not deployed.
+
 The naive reporting baseline now converts the log-growth feature to ordinary
 growth and applies the same clipping as its target, in a separate array.
 Model inputs, forecasts, live grades, allocations and saved studies are unchanged.
