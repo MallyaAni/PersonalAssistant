@@ -19,8 +19,9 @@ on it.
 """
 
 import json
+import math
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -67,6 +68,30 @@ class OIRow:
     kind: str
     strike: float
     open_interest: int
+
+
+# A retained OI observation with independently nullable optional feed values.
+@dataclass(frozen=True)
+class CollectionRow(OIRow):
+    """Required OI fields never depend on availability of these diagnostics."""
+
+    volume: int | None
+    implied_volatility: float | None
+    gamma: float | None
+
+
+# Admission metadata describes received eligible rows, not provider completeness.
+@dataclass(frozen=True)
+class CollectedChain:
+    """A collection eligible for storage even without its underlying reference."""
+
+    price: float | None
+    rows: list[CollectionRow]
+    metadata: dict[str, str]
+
+
+class CollectionError(ValueError):
+    """A fixed, non-provider diagnostic for rejecting an entire collection."""
 
 
 # OI concentration levels without a gamma estimate or fabricated default.
@@ -141,6 +166,176 @@ def parse_chain(
         except (TypeError, ValueError):
             continue
     return (float(price) if price is not None else None), rows
+
+
+# Admit integer counts exactly, without bools, truncation or Arrow int64 overflow.
+def _nonnegative_integer(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        raise ValueError("invalid count")
+    if isinstance(value, float) and (
+        not math.isfinite(value) or not value.is_integer()
+    ):
+        raise ValueError("invalid count")
+    count = int(value)
+    if not 0 <= count <= (1 << 63) - 1:
+        raise ValueError("invalid count")
+    return count
+
+
+# Admit finite numeric observations without imposing a new sign convention.
+def _finite_number(value: Any) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        raise ValueError("invalid number")
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError("invalid number")
+    return number
+
+
+# Keep absent or malformed optional values distinct from reported numeric zero.
+def _optional_value(value: Any, parser) -> tuple[Any, str]:
+    if value is None:
+        return None, "missing"
+    try:
+        return parser(value), "available"
+    except (TypeError, ValueError, OverflowError):
+        return None, "invalid"
+
+
+# Require a finite positive underlying reference without fabricating a price.
+def reference_price(value: Any) -> float | None:
+    try:
+        price = _finite_number(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return price if price > 0 else None
+
+
+# Retain every eligible required row or reject the chain, isolating optional defects.
+def parse_collection(
+    payload: Any, today: date, max_days: int = MAX_DAYS
+) -> CollectedChain:
+    if not isinstance(payload, dict) or not isinstance(payload.get("data"), dict):
+        raise CollectionError("invalid_chain_shape")
+    data = payload["data"]
+    contracts = data.get("options")
+    if not isinstance(contracts, list):
+        raise CollectionError("invalid_chain_shape")
+    counts = {
+        f"{field}_{state}": 0
+        for field in ("volume", "implied_volatility", "gamma")
+        for state in ("available", "missing", "invalid")
+    }
+    rows = []
+    for row in contracts:
+        if not isinstance(row, dict):
+            raise CollectionError("invalid_required_contract")
+        symbol = row.get("option")
+        parsed = (
+            parse_symbol(symbol)
+            if isinstance(symbol, str) and _SYMBOL.fullmatch(symbol)
+            else None
+        )
+        if parsed is None:
+            raise CollectionError("invalid_required_symbol")
+        expiry, kind, strike = parsed
+        if (expiry - today).days > max_days or expiry < today:
+            continue
+        if strike <= 0:
+            raise CollectionError("invalid_required_strike")
+        try:
+            open_interest = _nonnegative_integer(row.get("open_interest"))
+        except (TypeError, ValueError, OverflowError):
+            raise CollectionError("invalid_required_open_interest") from None
+        volume, volume_state = _optional_value(row.get("volume"), _nonnegative_integer)
+        iv, iv_state = _optional_value(row.get("iv"), _finite_number)
+        gamma, gamma_state = _optional_value(row.get("gamma"), _finite_number)
+        counts[f"volume_{volume_state}"] += 1
+        counts[f"implied_volatility_{iv_state}"] += 1
+        counts[f"gamma_{gamma_state}"] += 1
+        rows.append(
+            CollectionRow(expiry, kind, strike, open_interest, volume, iv, gamma)
+        )
+    price = reference_price(data.get("current_price"))
+    price_status = (
+        "available"
+        if price is not None
+        else "missing"
+        if data.get("current_price") is None
+        else "invalid"
+    )
+    metadata = {
+        "collection_schema": "options-collection-v1",
+        "required_rows": str(len(rows)),
+        "price_status": price_status,
+        **{key: str(value) for key, value in counts.items()},
+    }
+    return CollectedChain(price, rows, metadata)
+
+
+# Fetch once through the collection contract without changing the legacy full API.
+def fetch_collection(ticker: str, transport, today: date) -> CollectedChain | None:
+    status, _headers, body = transport(CHAIN_URL.format(ticker=ticker))
+    if status != 200:
+        return None
+    try:
+        payload = json.loads(body)
+    except (TypeError, ValueError):
+        raise CollectionError("invalid_chain_payload") from None
+    return parse_collection(payload, today)
+
+
+# Store aligned nullable diagnostics alongside their admitted required observations.
+def collection_frame(rows: list[CollectionRow]) -> dict[str, list]:
+    return {
+        "expiry": [r.expiry.isoformat() for r in rows],
+        "kind": [r.kind for r in rows],
+        "strike": [r.strike for r in rows],
+        "open_interest": [r.open_interest for r in rows],
+        "volume": [r.volume for r in rows],
+        "implied_volatility": [r.implied_volatility for r in rows],
+        "gamma": [r.gamma for r in rows],
+    }
+
+
+# Decode the required stored OI contract without consulting optional diagnostics.
+def oi_rows_from_frame(columns: Mapping[str, list]) -> list[OIRow]:
+    required = [columns[name] for name in ("expiry", "kind", "strike", "open_interest")]
+    if (
+        any(not isinstance(values, list) for values in required)
+        or len({len(values) for values in required}) != 1
+    ):
+        raise ValueError("invalid required columns")
+    rows = []
+    for expiry, kind, strike, oi in zip(*required, strict=True):
+        strike = reference_price(strike)
+        if kind not in ("put", "call") or strike is None:
+            raise ValueError("invalid required row")
+        rows.append(
+            OIRow(
+                date.fromisoformat(str(expiry)), kind, strike, _nonnegative_integer(oi)
+            )
+        )
+    return rows
+
+
+# Preserve legacy all-row gamma arithmetic only when every required input is known.
+def gamma_from_frame(
+    columns: Mapping[str, list], rows: Sequence[OIRow], price: float
+) -> float | None:
+    values = columns.get("gamma")
+    if not isinstance(values, list) or len(values) != len(rows):
+        return None
+    net = 0.0
+    try:
+        for row, value in zip(rows, values, strict=True):
+            gamma = _finite_number(value)
+            # Keep multiplication and accumulation order identical to legacy walls.
+            shares = gamma * row.open_interest * 100 * price * 0.01
+            net += shares if row.kind == "call" else -shares
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return net if math.isfinite(net) else None
 
 
 # The frame stored per ticker per session.

@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-09-25 — Options collection contract accepted
+
+Starting checkpoint `8b577f9efe4d5bbefb465aa8fb0944acbb6de355` on main;
+Mac origin/spark and Spark HEAD/GitHub origin were fetched and match it.
+Spark `scratch/` is untouched. Root's only initial local changes are the
+options agent's two production files and new collection-contract test.
+
+**VERIFIED offline acceptance:** options collection admits required OI separately
+from nullable diagnostics and underlying price, within the same immutable path.
+Invalid required eligible rows reject the received chain. The query CLI withholds
+unavailable levels/gamma without fetching or writing. Eleven legacy definitions,
+valid output and exact gamma order remain unchanged. Same-date files are retained,
+not repaired or relabelled. Agent 518 tests and root independent 538 tests pass,
+zero skips, 16 existing warnings. Root includes four fingerprint regressions and
+16 independent synthetic differential cases. Final source review/lint/format and
+all 33 unchanged diagram/page checks pass.
+
+The [collection contract](research/options-collection-contract-2026-09-25.md)
+contains source/JUnit hashes, original 69-failure and expanded 99-failure stages,
+the separate corrected newline-symbol failure, review-found test gaps and all
+limits. Root's initial standalone harness setup error is retained, followed by
+16 passes and the final combined run. No provider/model/account call, fit,
+historical strategy rerun, order/holding operation or laptop access change.
+**Diagram impact: NONE — existing collection/reader boundaries, field-level fix.**
+
+**UNVERIFIED:** deployment, provider coverage/effective OI time, old missing-row
+recovery, external decoder compatibility, UI change or investment improvement.
+Do not treat call/put OI concentration levels as known dealer positions or
+validated dip-buy instructions. All three scoped agents completed; no unfinished
+implementation remains assigned to them after this checkpoint.
+
+The overall research goal remains active/incomplete. `/3` superiority is not
+established: existing allocation-gate losses remain 10/14 matched folds at 10 bp
+and 11/14 at 25 bp; producer OOM/missing manifest stays FAILED. Full-policy state,
+phase/fill/mark evidence for funded intraday `/3` versus SPY/QQQ remains missing.
+Do not rerun examined history or launch another scaffold to report activity.
+Drawdown preference is still unanswered. Recurring 15-second quote collection
+still needs approval; authenticated probes are exhausted. **No deployment or
+restart.** Publish Mac → Spark → GitHub from Spark; deployment remains Spark-only
+through `scripts/deploy.sh --wait-post` with full gates when authorized. Target
+release-readiness time remains 20:34 UTC / 16:34 ET.
+
 ## 2026-09-25 — Regime research fingerprint acceptance
 
 **VERIFIED scoped source checkpoint:**

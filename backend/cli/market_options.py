@@ -5,8 +5,10 @@
     python -m backend.cli.market_options --walls-book       # every book name
 
 `--refresh` stores one immutable frame per name per selected date under
-`data/market/options/asof=DATE/`, every listed contract within 180
-days with its open interest, implied volatility and gamma. The default date is
+`data/market/options/asof=DATE/`, every received eligible contract within 180
+days with its required open interest and independently nullable volume, implied
+volatility and gamma. Unavailable diagnostics or underlying prices do not discard
+OI; malformed required eligible contracts reject the collection. The default date is
 the New York calendar date selected once for this CLI run; `--asof` overrides it.
 Data comes from Cboe's
 free delayed feed. That is the history nobody else keeps; the walls
@@ -33,6 +35,7 @@ BACKOFF_SECONDS = 8.0
 NEW_YORK = ZoneInfo("America/New_York")
 
 
+# Define collection and query-only flags without fetching or changing stored data.
 def build_parser() -> argparse.ArgumentParser:
     """Return the argument parser."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -63,18 +66,21 @@ def refresh(
         if store._path(options.KIND, asof, ticker).exists():
             print(f"{ticker:6} kept")
             continue
-        price, rows = None, []
+        chain = None
         # The feed refuses a burst; a refusal is retried after a pause, twice.
         for attempt in range(3):
             try:
-                price, rows = options.fetch_chain(ticker, transport, asof)
-            except Exception as exc:  # noqa: BLE001 - one name must not stop the rest
-                print(f"{ticker:6} error {type(exc).__name__}: {exc}")
-                price, rows = None, []
-            if price is not None and rows:
+                chain = options.fetch_collection(ticker, transport, asof)
+            except options.CollectionError as exc:
+                print(f"{ticker:6} error {exc}")
+                chain = None
+            except Exception:  # noqa: BLE001 - one name must not stop the rest
+                print(f"{ticker:6} error collection_unavailable")
+                chain = None
+            if chain is not None and chain.rows:
                 break
             sleep(BACKOFF_SECONDS * (attempt + 1))
-        if price is None or not rows:
+        if chain is None or not chain.rows:
             failed.append(ticker)
             print(f"{ticker:6} FAILED no chain")
         else:
@@ -82,37 +88,58 @@ def refresh(
                 options.KIND,
                 asof,
                 ticker,
-                options.frame(rows),
+                options.collection_frame(chain.rows),
                 {
-                    "price": f"{price:.4f}",
+                    **chain.metadata,
+                    **(
+                        {"price": f"{chain.price:.4f}"}
+                        if chain.price is not None
+                        else {}
+                    ),
                     "source_time": datetime.now(UTC).isoformat(timespec="seconds"),
                 },
             )
             stored += int(written)
+            price_label = (
+                f"{chain.price:.2f}" if chain.price is not None else "unavailable"
+            )
             print(
                 f"{ticker:6} {'ok' if written else 'kept'} "
-                f"{len(rows):5d} contracts at {price:.2f}"
+                f"{len(chain.rows):5d} contracts at {price_label}"
             )
         sleep(PACE_SECONDS)
     return stored, failed
 
 
+# Read OI and gamma complete across stored rows independently, without fetches/writes.
 def _print_walls(store: MarketStore, ticker: str, today: date) -> None:
     frame = store.read_frame(options.KIND, ticker)
     if frame is None:
         print(f"{ticker:6} no chain on file")
         return
     columns, meta = frame
-    rows = options.rows_from_frame(columns)
-    price = float(meta.get("price", "0") or 0.0)
-    w = options.walls(rows, price, today)
+    price = options.reference_price(meta.get("price"))
+    if price is None:
+        print(
+            f"{ticker:6} price unavailable  levels unavailable  "
+            "dealer gamma unavailable"
+        )
+        return
+    try:
+        rows = options.oi_rows_from_frame(columns)
+        w = options.oi_levels(rows, price, today)
+    except (KeyError, IndexError, TypeError, ValueError, OverflowError):
+        print(f"{ticker:6} levels unavailable  dealer gamma unavailable")
+        return
+    gamma = options.gamma_from_frame(columns, rows, price)
+    gamma_label = "unavailable" if gamma is None else f"{gamma:+,.0f} shares per 1%"
     put = f"{w.put_wall:.0f} ({w.put_wall_oi:,} OI)" if w.put_wall else "none in range"
     call = (
         f"{w.call_wall:.0f} ({w.call_wall_oi:,} OI)" if w.call_wall else "none in range"
     )
     print(
         f"{ticker:6} price {price:8.2f}  expiry {w.expiry}  put wall {put:22}  "
-        f"call wall {call:22}  dealer gamma {w.net_gamma:+,.0f} shares per 1%"
+        f"call wall {call:22}  dealer gamma {gamma_label}"
     )
 
 

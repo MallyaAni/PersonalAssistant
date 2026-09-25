@@ -173,6 +173,17 @@ Existing partitions are not migrated, query-only walls still use the latest
 unbounded frame, and cached dashboard refresh is not established by these tests.
 See the [collection-date contract](research/options-collection-date-2026-09-25.md).
 
+Collection uses its own nullable-row contract in the same options partition.
+Required OI admission is independent of volume, IV, gamma and underlying-price
+availability. Invalid required eligible rows reject the whole received chain;
+optional cells are reported numbers or null, with bounded admission metadata.
+Legacy full-parser APIs remain strict. The CLI reports incomplete stored-row
+gamma or missing reference prices as unavailable and never fetches on query.
+Run `backend/tests/test_options_collection_contract.py` with the preceding
+options/date/isolation regressions. These real synthetic CLI/Parquet checks
+do not prove provider completeness or recover previously omitted rows.
+See the [collection contract](research/options-collection-contract-2026-09-25.md).
+
 ### Verification instruments
 
 The instruments, in the order a change meets them. None of them is optional

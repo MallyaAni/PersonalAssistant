@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-25 — Preserve valid OI when optional collection fields are unavailable
+
+Options collection now stores nullable volume/IV/gamma independently of required
+OI in the same partition, even without the underlying reference. Invalid
+required eligible contracts fail the whole received collection; logs are fixed
+diagnostics. The CLI separately validates OI and complete stored-row gamma,
+showing unavailable rather than fabricating values or summing a partial chain.
+Legacy full APIs, valid output, gamma order, date/retention and existing-file
+bytes are preserved. Old incomplete files are not repaired or relabelled.
+
+Agent's 518 and root's independent 538 tests pass, zero skips, with 16 existing
+warnings. Original failures, review-found test gaps and the corrected symbol
+shape edge are retained. Real synthetic Parquet/CLI/API paths, fixed numerical
+oracles, query no-fetch/write sentinels, independent review and scoped lint pass.
+No deployment/provider-freshness/performance claim. See the
+[collection contract](research/options-collection-contract-2026-09-25.md).
+
 ## 2026-09-25 — Separate research identities when regime source changes
 
 The intraday research fingerprint now includes its directly consumed regime
