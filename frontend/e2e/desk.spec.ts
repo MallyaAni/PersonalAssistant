@@ -2754,12 +2754,12 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('3 grade changes marked')
   await expect(chart).toContainText('C→B')
   await expect(chart).toContainText('B→A')
-  await expect(chart).toContainText('below A · A→B')
+  await expect(chart).toContainText('Recalculated grade: A→B')
   await expect(chart).not.toContainText('sell ·')
-  await expect(chart).toContainText('snapshot-session changes')
+  await expect(chart).toContainText('Saved grades use nightly records; recalculated grades use historical data. Grade changes are not trades.')
   await showSignals.uncheck()
   await expect(chart).not.toContainText('3 grade changes marked')
-  await expect(chart).not.toContainText('below A · A→B')
+  await expect(chart).not.toContainText('Recalculated grade: A→B')
 
   // Weekly re-reads and swaps to the lines the weekly legs are built from.
   await frames.getByRole('button', {name: 'W'}).click()

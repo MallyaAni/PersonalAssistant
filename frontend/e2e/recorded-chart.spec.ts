@@ -26,7 +26,7 @@ async function observeMarkerCanvas(page: Page) {
     CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
       const [text, x, y] = args
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]')
-        && (text === 'Buy' || text === 'Sell' || text.startsWith('snapshot ·'))) {
+        && (text === 'Buy' || text === 'Sell' || text.startsWith('Saved grade:'))) {
         const point = new DOMPoint(x + this.measureText(text).width / 2, y).matrixTransform(this.getTransform())
         const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
         state.__chartMarkerDraws.push({text, center: point.x * this.canvas.getBoundingClientRect().width / this.canvas.width, timeframe})
@@ -98,7 +98,7 @@ test('real canvas draws saved actions and grade changes on their available candl
   await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Sell')
   const daily = await markerDraws(page)
   expect(daily.map(row => row.text)).toContain('Buy')
-  expect(daily.map(row => row.text)).toContain('snapshot · below A · A→B')
+  expect(daily.map(row => row.text)).toContain('Saved grade: A→B')
   await clearMarkerDraws(page)
   await chart.getByRole('button', {name: 'W', exact: true}).click()
   await expect(chart).toContainText('3 weeks loaded')
@@ -106,7 +106,7 @@ test('real canvas draws saved actions and grade changes on their available candl
   const weekly = await markerDraws(page)
   const buy = weekly.findLast(row => row.text === 'Buy')!
   const sell = weekly.findLast(row => row.text === 'Sell')!
-  const grade = weekly.findLast(row => row.text === 'snapshot · below A · A→B')!
+  const grade = weekly.findLast(row => row.text === 'Saved grade: A→B')!
   expect(buy).toBeDefined()
   expect(grade).toBeDefined()
   expect(Math.abs(buy.center - sell.center)).toBeLessThan(1)
@@ -123,11 +123,11 @@ for (const gap of ['all', 'open', 'high', 'low', 'close', 'absent'] as const) {
     await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Sell')
     const drawn = (await markerDraws(page)).map(row => row.text)
     expect(drawn).not.toContain('Buy')
-    expect(drawn).not.toContain('snapshot · below A · A→B')
+    expect(drawn).not.toContain('Saved grade: A→B')
     await expect(chart.getByLabel('Buy and Sell markers')).not.toContainText('Buy ·')
     await expect(chart).toContainText('No grade change marked on these candles.')
     await expect(chart.getByLabel('Chart data quality')).toContainText('Chart data incomplete · 1 missing session')
-    await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+    await chart.getByText('Saved recommendations (6 saved records)', {exact: true}).click()
     const table = chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'})
     await expect(table.locator('tbody tr')).toHaveCount(2)
     await expect(table.locator('tbody tr').first()).toContainText('Sep 15, 2026')
@@ -152,7 +152,7 @@ for (const gap of ['all', 'absent'] as const) {
     expect((await markerDraws(page)).filter(row => row.timeframe === 'W')).toEqual([])
     await expect(chart.getByLabel('Buy and Sell markers')).toContainText('No saved Buy/Sell on these candles')
     await expect(chart.getByLabel('Chart data quality')).toContainText('1 missing session')
-    await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+    await chart.getByText('Saved recommendations (6 saved records)', {exact: true}).click()
     const table = chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'})
     await expect(table.locator('tbody tr')).toHaveCount(2)
     await expect(table.locator('tbody tr').first()).toContainText('Sep 15, 2026')
@@ -188,7 +188,7 @@ test('recorded setups preserve original publication and all source readings', as
   await expect(table.locator('tbody tr').first()).toContainText('original/1 · immutabl')
   await expect(table.locator('tbody tr').first().getByTitle('immutable-policy')).toHaveText('immutabl')
   await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).toBeChecked()
-  await expect(chart).toContainText('snapshot · below A · A→B')
+  await expect(chart).toContainText('Saved grade: A→B')
   await expect(chart).toContainText('not a Buy instruction')
   await expect(chart).not.toContainText('The chart could not be drawn')
   await page.setViewportSize({width: 390, height: 844})
@@ -246,15 +246,15 @@ test('chart recommendations use saved actions, dedupe repeats and load earlier e
   await expect(markers).not.toContainText('Sep 16')
   await expect(markers).not.toContainText('Wait')
   await expect(markers).not.toContainText('breakout')
-  await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+  await chart.getByText('Saved recommendations (6 saved records)', {exact: true}).click()
   const table = chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'})
   await expect(table.locator('tbody tr')).toHaveCount(2)
   await expect(chart).toContainText('Partial history')
   await chart.getByRole('button', {name: 'Load earlier recommendations'}).click()
   await expect(table.locator('tbody tr')).toHaveCount(3)
   await expect(markers).toContainText('Sell · Sep 14, 2026')
-  await expect(chart).toContainText('No earlier snapshots were reported by the last history page.')
-  await expect(chart).toContainText('Loaded snapshots may omit receipts from other sessions or retain receipts since deleted or expired.')
+  await expect(chart).toContainText('No earlier saved records were reported by the last history page.')
+  await expect(chart).toContainText('Loaded saved records may omit receipts from other sessions or retain receipts since deleted or expired.')
   await expect(chart).not.toContainText('All available snapshots loaded.')
   await chart.getByRole('button', {name: 'W', exact: true}).click()
   await expect(markers).toContainText('Buy · Sep 15, 2026')
@@ -268,11 +268,11 @@ test('chart recommendations use saved actions, dedupe repeats and load earlier e
 test('missing recommendation history leaves grade evidence available', async ({page}) => {
   const {chart, errors, writes} = await setup(page)
   await page.route('**/desk/personal-history?*', route => route.fulfill({json: {}}))
-  await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+  await chart.getByText('Saved recommendations (6 saved records)', {exact: true}).click()
   await chart.getByRole('button', {name: 'Load earlier recommendations'}).click()
   await expect(chart.getByRole('status')).toHaveText('Recommendation history unavailable.')
   await expect(chart).not.toContainText('All available snapshots loaded.')
-  await expect(chart).toContainText('snapshot · below A · A→B')
+  await expect(chart).toContainText('Saved grade: A→B')
   expect(errors).toEqual([])
   expect(writes).toEqual([])
 })

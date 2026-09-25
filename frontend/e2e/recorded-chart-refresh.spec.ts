@@ -294,7 +294,7 @@ async function publish(page: Page, state: Scenario, item: DeskPersonalReceipt) {
 
 // Count immutable snapshots independently of the intentionally grouped action transitions.
 async function expectSnapshots(chart: ReturnType<Page['getByRole']>, count: number) {
-  await expect(chart.getByText(`Saved recommendations (${count} snapshots)`, {exact: true})).toBeVisible()
+  await expect(chart.getByText(`Saved recommendations (${count} saved record${count === 1 ? '' : 's'})`, {exact: true})).toBeVisible()
 }
 
 // Exact generated advice updates the same canvas before acknowledgement and does not reset paged history.
@@ -320,7 +320,7 @@ test('generated receipt updates the mounted chart before acknowledgement and pre
   await chart.getByRole('button', {name: 'Load earlier recommendations'}).click()
   await expectSnapshots(chart, 61)
   await expect(chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'}).locator('tbody tr')).toHaveCount(4)
-  await expect(chart.getByLabel('Saved recommendation history')).toContainText('No earlier snapshots were reported by the last history page.')
+  await expect(chart.getByLabel('Saved recommendation history')).toContainText('No earlier saved records were reported by the last history page.')
   const pages = state.requests.filter(entry => entry.path.endsWith('/personal-history'))
   expect(pages.map(entry => new URLSearchParams(entry.query).get('before'))).toEqual([null, state.head.at(-1)!.id, state.older.at(-1)!.id])
   ack.release()
@@ -477,7 +477,7 @@ for (const failure of ['http', 'mismatched ID'] as const) {
     await expectSnapshots(chart, 20)
     await expect(chart.getByLabel('Buy and Sell markers')).not.toContainText('Sep 22, 2026')
     await expect(chart.getByRole('button', {name: 'Load earlier recommendations'})).not.toBeVisible()
-    await expect(chart.getByLabel('Saved recommendation history')).toContainText('No earlier snapshots were reported by the last history page.')
+    await expect(chart.getByLabel('Saved recommendation history')).toContainText('No earlier saved records were reported by the last history page.')
     await expect(chart).toHaveAttribute('data-receipt-chart-identity', 'original')
   })
 }

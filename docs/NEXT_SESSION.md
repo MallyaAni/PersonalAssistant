@@ -1,5 +1,63 @@
 # Next session
 
+## 2026-09-25 — Plain-language dashboard labels; research execution-state export
+
+Starting branch `main`, clean HEAD `504b83ff608fad27dc7787c15ba274a9f9ed7827`;
+`git pull --rebase origin main` was up to date. User's newest concrete priority:
+remove confusing `post-market quote stale`, `snapshot`, `replay` and `below`
+wording. The overall trading research goal remains active/incomplete.
+
+**VERIFIED research checkpoint:**
+`a9f0aae8e7cd6b405a60b6a74dd69a7af20dcb0e`, published Mac → Spark → GitHub
+from Spark. Optional `market_verify_journal --phase-states` exposes declared
+opening and independently reconstructed post-fill balances only after complete
+verification. Root 274 tests pass; agent 346 broader passes, two deliberate
+no-fit/no-history-rerun deselections. Independent differential: 22 synthetic
+accounts, four malformed envelopes, 66 CLI processes, default output byte-identical.
+No producer arithmetic, journal schema or strategy change. See
+[contract](research/accounting-journal-2026-09-24.md); root JUnit
+`/private/tmp/anios-phase-cli.v7Wcn3/final.xml` SHA256
+`d9ed77d91162b42efa18f6206c0a82dcb1df6ae0c6a73955e21aaa4d3d364e68`.
+
+**VERIFIED local UI acceptance:** Saved/Recalculated grade labels, exact grade
+transitions, saved-record counts and plain expired/missing quote wording.
+Root 202 combined browser cases pass (115.422 s), zero skips/flakes; two phone
+quote cases and one final grade-toggle repeat pass. Source semantics and
+screenshots reviewed; TypeScript/build and all 33 diagram/page checks pass.
+Original wording failures and the initial 196-pass/six-failure run are retained:
+five read-only screenshot-mount errors, one incorrectly updated test expectation.
+No product rule or safety assertion was relaxed. Asset `index-CWPTRnOZ.js`, SHA256
+`d7530fc2fd09e0974a083f4a8b40a045a0b34b4349eb146646d7d0b5a2d8d64a`.
+[Scope and limits](research/plain-desk-labels-2026-09-25.md);
+evidence `/private/tmp/anios-plain-quotes.i8JEa9/`.
+Diagram impact: NONE — text rendering and optional verifier output only.
+
+**UNVERIFIED / release decision pending:** no deployment, restart, provider call,
+model call, account/order operation or laptop setting change. Spark shared HEAD
+was current with only untracked `scratch/`; deploy clone remains `879abc56`,
+expected data/secrets links preserved, deployed marker `68edfc0`. Do not conflate
+those revisions. The new quote endpoint is read-only: setting collector=false
+would remove the old on-demand refresh path, so this is not an equivalent release.
+Root explicitly corrected its initial suggestion to deploy disabled. An updated
+approval question asks whether to enable the existing-access 15-second collector
+or hold deployment; no answer yet. Enabling collection would not prove fresh
+all-hours coverage or new entitlement. Only deploy from Spark through
+`scripts/deploy.sh --wait-post` with required gates and actual browser/artifact
+proof. Current gate migrates isolated `anios_gate`; no proactive production DDL.
+
+**Research correction / next bounded work:** complete daily journals already
+contain the simulated open/close executions needed for frozen-baseline
+revaluation. Fresh hypothetical accounts generate their own reset/deferred/event
+state; missing actual paper-account history is not a general blocker. Do not
+rerun `/3` just to recover state. The remaining external boundary is compatible
+common intraday prices for held symbols plus SPY/QQQ, with exact units/calendar
+and closing-NAV reconciliation. The mixed-provider cache's basis check FAILED;
+no new valuation helper or strategy run was launched on it. Existing daily
+results and rejected allocation gate remain unchanged. Resolve data go/no-go
+before a new predeclared entry/risk challenger; no retuning examined history.
+The two-day target is deployment, a qualified baseline report and one testable
+challenger—not a promise of profitable or best-in-class performance.
+
 ## 2026-09-25 — Options collection contract accepted
 
 **VERIFIED scoped source checkpoint:**

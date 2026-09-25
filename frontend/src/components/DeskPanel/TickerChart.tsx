@@ -235,7 +235,7 @@ const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], ti
       position: up ? 'belowBar' : 'aboveBar',
       color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
-      text: `${rows[i].said ? 'snapshot' : 'replay'} · ${belowA ? 'below A · ' : ''}${before}→${now}`,
+      text: `${rows[i].said ? 'Saved grade' : 'Recalculated grade'}: ${before}→${now}`,
       size: rows[i].said ? 2 : 1,
     })
   }
@@ -601,8 +601,8 @@ export const TickerChart = ({
               : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>
-          {showSignals && <p className="mt-1 text-[11px] text-[#6e6e73]">
-            Grades: snapshot-session changes or historical replays. Session dates are not publication times.
+          {showSignals && <p className="mt-1 text-[11px] text-[#6e6e73]" title="Dates identify trading sessions, not publication times. A or A+ meets only the grade requirement for entry; other checks still apply.">
+            Saved grades use nightly records; recalculated grades use historical data. Grade changes are not trades.
           </p>}
 
           {personalHistory && showRecommendations && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Saved recommendation history">
@@ -611,12 +611,12 @@ export const TickerChart = ({
               : receiptBusy || receiptPending.length ? 'Loading recommendations…' : 'No saved Buy/Sell on these candles in the loaded history.'}</p>
             {receiptError && <p role="status">{receiptError}</p>}
             {!!receiptPending.length && <p role="status">Loading newly generated recommendations…</p>}
-            {!!receiptFailures.length && <p role="status">Some newly generated recommendation reads failed. Showing the snapshots successfully read.</p>}
+            {!!receiptFailures.length && <p role="status">Some newly generated recommendation reads failed. Showing the saved records successfully read.</p>}
             <details>
-              <summary className="cursor-pointer">Saved recommendations ({receipts.length} snapshots)</summary>
+              <summary className="cursor-pointer">Saved recommendations ({receipts.length} saved record{receipts.length === 1 ? '' : 's'})</summary>
               <p>Personal recommendations at generation time, not fills. Repeated unchanged actions are grouped. Research setups are not Buy/Sell instructions.</p>
               <p>Without a price candle, recommendations remain listed here but are not drawn.</p>
-              <p>{receiptCursor ? 'Partial history. Load earlier snapshots to extend coverage.' : receiptError || receiptBusy ? 'History coverage unconfirmed.' : 'No earlier snapshots were reported by the last history page.'} Loaded snapshots may omit receipts from other sessions or retain receipts since deleted or expired. Reload to read current stored history. Older unsaved decisions cannot be reconstructed.</p>
+              <p>{receiptCursor ? 'Partial history. Load earlier saved records to extend coverage.' : receiptError || receiptBusy ? 'History coverage unconfirmed.' : 'No earlier saved records were reported by the last history page.'} Loaded saved records may omit receipts from other sessions or retain receipts since deleted or expired. Reload to read current stored history. Older unsaved decisions cannot be reconstructed.</p>
               {!!receipts.length && <p>{recordedTime(receipts[receipts.length - 1].generated_at)} – {recordedTime(receipts[0].generated_at)}</p>}
               {receiptCursor && <button type="button" disabled={receiptBusy} onClick={() => void loadReceipts(receiptCursor)} className="text-[#0071e3]">{receiptBusy ? 'Loading…' : 'Load earlier recommendations'}</button>}
               {receiptError && <button type="button" onClick={() => void loadReceipts()} className="text-[#0071e3]">Retry history</button>}

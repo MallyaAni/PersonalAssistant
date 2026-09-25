@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-25 — Explain chart grades and unavailable quotes in plain language
+
+Chart markers now say **Saved grade** or **Recalculated grade**, with the exact
+grade transition instead of `snapshot`, `replay` and the ambiguous `below A`.
+Recommendation counts say **saved records**. Expired quotes say **No recent
+quote to display · Last quote: …**, retaining source/time without displaying an
+old midpoint as current. Detailed failure reasons move to the price tooltip.
+
+Root's 202-case combined browser run passed, plus two phone quote cases and a
+final grade-toggle repeat. TypeScript/build, semantic review and 33 diagram/page
+checks passed. Initial wording failures, screenshot-mount errors and the
+corrected recalculated-grade test expectation are retained. No quote validator,
+signal, recommendation, account, execution or marker geometry changed. Not yet
+deployed; all-hours freshness remains unverified. See the
+[scope and evidence](research/plain-desk-labels-2026-09-25.md).
+
 ## 2026-09-25 — Export verified research execution states
 
 The read-only journal command accepts `--phase-states`, exposing the declared

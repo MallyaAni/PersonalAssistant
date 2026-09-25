@@ -57,7 +57,7 @@ const quoteTime = (observed: number, now: number): string | null => {
     ...(!sameDay ? {month: 'short', day: 'numeric', ...(!sameYear ? {year: 'numeric'} : {})} as const : {})})
 }
 
-// Render snapshot-local midpoint evidence separately from execution checks and the regular bar.
+// Explain current or missing display quotes plainly without changing execution or candle evidence.
 export const SessionPrice = ({live, ticker, now, compact = false, close}: {live: DeskLive; ticker: string; now: number; compact?: boolean; close?: number | null}) => {
   const {quote, state, observed, session, currentSchedule, previousSession, unrecordedSession} = sessionPrice(live, ticker, now)
   const regular = live.quotes[ticker]
@@ -66,12 +66,12 @@ export const SessionPrice = ({live, ticker, now, compact = false, close}: {live:
   const regularText = regular && Number.isFinite(regular.last) ? `Regular-session bar $${regular.last.toFixed(2)} · ${regular.bar}` : 'Regular-session bar unavailable'
   const qualification = previousSession ? ' · previous-session observation' : unrecordedSession ? ' · session unrecorded' : ''
   const displayReason = quote?.status === 'unavailable' && quote.reason
-    ? quote.reason === 'No fresh quote from available feeds' ? 'No usable midpoint in this display snapshot' : `Recorded display-snapshot reason: ${quote.reason}` : null
-  return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. Display snapshot only; execution checks are separate.`}>
+    ? quote.reason === 'No fresh quote from available feeds' ? 'No usable bid/ask midpoint was returned for this display.' : `Price-data detail: ${quote.reason}` : null
+  return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}`}>
     {state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
-      : <><span className="text-[#9a6700]">{state === 'stale' ? `${session ? `${session} quote` : 'Quote'} stale · ${source}${at ? ` · ${at} ET` : ''}${qualification}` : 'Display midpoint unavailable'}</span>
+      : <><span className="text-[#9a6700]">{state === 'stale' ? `No recent quote to display${at ? ` · Last quote: ${at} ET` : ''}${session ? ` · ${session}` : ''} · ${source}${qualification}` : 'No recent quote to display'}</span>
         {compact && <div>{regular && Number.isFinite(regular.last) ? <>Regular bar ${regular.last.toFixed(2)}<ChangeMark last={regular.last} close={close} /></> : 'Regular bar unavailable'}</div>}</>}
-    {!compact && <p className="text-[11px] text-[#6e6e73]">Signal: regular session · Display snapshot; execution checks are separate{displayReason ? ` · ${displayReason}` : ''}</p>}
+    {!compact && <p className="text-[11px] text-[#6e6e73]">Price signals use regular-session candles.</p>}
   </div>
 }
 

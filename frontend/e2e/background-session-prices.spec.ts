@@ -167,14 +167,14 @@ async function expectFresh(page: Page, observed = OBSERVED, price = '$102.00', t
     await expect(reading).toContainText(`${price}`)
     await expect(reading).toContainText(`post-market · IEX · ${time} ET`)
     await expect(reading).not.toContainText('stale')
-    await expect(reading).toHaveAttribute('title', `Regular-session bar $100.00 · ${BAR}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${observed}. Expected schedule: post-market; not proof of venue availability. Display snapshot only; execution checks are separate.`)
+    await expect(reading).toHaveAttribute('title', `Regular-session bar $100.00 · ${BAR}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${observed}. Expected schedule: post-market; not proof of venue availability. For display only; execution checks are separate.`)
   }
   await expect(page.getByLabel('AAPL session price', {exact: true})).toHaveCount(2)
   await expectBoundary(page)
 }
 
 // Require absent current midpoints on board and chart while keeping the regular bar explicitly labelled.
-async function expectAbsent(page: Page, text = 'Display midpoint unavailable') {
+async function expectAbsent(page: Page, text = 'No recent quote to display') {
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
     await expect(reading).toContainText(text)
     await expect(reading).not.toContainText('$102.00')
@@ -216,12 +216,12 @@ test('stopped collection expires locally and repeated old snapshots cannot reviv
   await expectFresh(page)
   const reads = state.reads.length
   await page.clock.runFor(40_001)
-  await expectAbsent(page, 'post-market quote stale · IEX · 5:59:55 PM ET')
+  await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:55 PM ET · post-market · IEX')
   expect(state.reads).toHaveLength(reads)
   expect(state.snapshot.quotes.AAPL.status).toBe('fresh')
   for (let attempt = 0; attempt < 2; attempt += 1) {
     await refresh(page, state)
-    await expectAbsent(page, 'post-market quote stale · IEX · 5:59:55 PM ET')
+    await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:55 PM ET · post-market · IEX')
   }
   for (const read of state.reads) {
     expect(read.snapshot.as_of).toBe(CAPTURED)
@@ -261,9 +261,9 @@ test('a fresh later snapshot recovers from the saved unavailable attempt', async
 test('a new collection timestamp cannot make old source evidence fresh', async ({page, scenario: state}) => {
   state.snapshot = snapshot('2026-09-24T22:00:10Z', '2026-09-24T21:59:00Z')
   await openDesk(page, state)
-  await expectAbsent(page, 'post-market quote stale · IEX · 5:59:00 PM ET')
+  await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:00 PM ET · post-market · IEX')
   await refresh(page, state)
-  await expectAbsent(page, 'post-market quote stale · IEX · 5:59:00 PM ET')
+  await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:00 PM ET · post-market · IEX')
 })
 
 // Missing collection evidence cannot authorize a midpoint even when a malformed row advertises a fresh price.

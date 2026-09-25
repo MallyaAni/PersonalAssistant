@@ -214,7 +214,7 @@ for (const failure of ['missing', 'invalid envelope', 'future timestamp', 'missi
     else if (failure === 'missing feed') state.quote!.feed = null
     else state.quote!.price = -1
     await openDesk(page, state)
-    await expectReading(page, 'Display midpoint unavailable', false)
+    await expectReading(page, 'No recent quote to display', false)
     const reading = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')
     await expect(reading).toContainText('Regular bar $100.00')
     await expect(reading).not.toContainText('market closed')
@@ -226,10 +226,37 @@ for (const oldDay of [false, true]) {
   test(`${oldDay ? 'previous-day' : 'same-day'} stale evidence retains dated source without a current price`, async ({page, scenario: state}) => {
     state.quote = {...quote(oldDay ? '2026-09-23T22:00:00Z' : '2026-09-24T21:58:00Z'), price: null, status: 'stale', valid_until: null}
     await openDesk(page, state)
-    await expectReading(page, oldDay ? 'post-market quote stale · IEX · Sep 23, 6:00:00 PM ET' : 'post-market quote stale · IEX · 5:58:00 PM ET', false)
+    await expectReading(page, oldDay ? 'No recent quote to display · Last quote: Sep 23, 6:00:00 PM ET · post-market · IEX' : 'No recent quote to display · Last quote: 5:58:00 PM ET · post-market · IEX', false)
     await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')).toHaveAttribute('title', new RegExp(state.quote.at!))
   })
 }
+
+// Explain an expired after-hours quote plainly without displaying its price as current.
+test('old after-hours quote uses plain wording on the board and chart', async ({page, scenario: state}, info) => {
+  state.quote = {...quote('2026-09-24T20:00:05Z'), price: null, status: 'stale', valid_until: null}
+  await openDesk(page, state)
+  await expectReading(page, 'No recent quote to display · Last quote: 4:00:05 PM ET · post-market · IEX', false)
+  for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
+    await expect(reading).not.toContainText('stale')
+    await expect(reading).not.toContainText('snapshot')
+    await expect(reading).toHaveAttribute('title', /2026-09-24T20:00:05Z/)
+    await expect(reading).toHaveAttribute('title', /For display only; execution checks are separate/)
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await page.screenshot({path: info.outputPath('plain-price-labels.png'), fullPage: true})
+})
+
+// Keep collection diagnostics available on hover instead of repeating them in the chart.
+test('missing quote explains the display limit without internal snapshot jargon', async ({page, scenario: state}) => {
+  state.quote = {...quote(), price: null, status: 'unavailable', reason: 'Missing or future quote timestamp'}
+  await openDesk(page, state)
+  await expectReading(page, 'No recent quote to display', false)
+  for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
+    await expect(reading).not.toContainText('snapshot')
+    await expect(reading).not.toContainText('Missing or future quote timestamp')
+    await expect(reading).toHaveAttribute('title', /Price-data detail: Missing or future quote timestamp/)
+  }
+})
 
 // The header distinguishes completed bars and browser refresh from separate provider collection and quote freshness.
 test('bar cadence wording is separate from session-quote polling', async ({page, scenario: state}) => {
