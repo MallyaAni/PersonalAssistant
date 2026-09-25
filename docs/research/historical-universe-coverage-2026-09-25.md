@@ -15,6 +15,10 @@ used existing local archives, mounted read-only with network disabled in image
 `sha256:63056fccae989b0ef65bb198bc913da58c87648169a50c1e2422b9b3c267d8ca`.
 This is not a survey of uninspected Spark storage or external subscriptions.
 
+A subsequent bounded Spark inventory is recorded below. It found additional
+fundamentals, not the missing historical opportunity set; external source access
+and quality are still unverified.
+
 ## Verified local coverage
 
 | Evidence | Observed coverage | Limit |
@@ -42,6 +46,36 @@ its report pin is
 `d6f8fe0cbf74e7318352b8e9c02910cae00164a2a4900be6a8e24a9960401c26`.
 The cohort SHA-256 is
 `419be2dcc3afc71df2de0decc1179491706e031f7038c2c97936cbf7403aaa74`.
+
+## Verified Spark follow-up
+
+Observed through **2026-09-25T15:00:55Z**, with shared source at
+`565988a28d9939acc6c15d65899e4f5fe3ff3dea` before and after. Shared and deploy
+market roots resolve to the same `/home/animallya96/anios/data/market`, not two
+independent archives. Public market partitions and provenance-shaped research
+files were inspected read-only; no private desk, paper-account or receipt data,
+credentials, live services, models or source pins were touched.
+
+| Evidence | Observed coverage | Limit |
+| --- | --- | --- |
+| Bars/actions | 5,556 files of each kind across 16 September 5–24 snapshots; 550 ticker stems. Latest-existing bars have 1,532,754 rows, aggregate dates 2015-01-02–2026-09-24. | Mixed latest vintages: 128 September 24, 409 September 23, 13 September 5. Aggregate extrema are not continuous per-security coverage. The 13 extra names are ETFs, not recovered exited stocks. |
+| Latest-existing actions | 18,436 dividends and 179 splits; only `action_date/kind/value` fields. | No delisting, successor, entitlement or settlement fields. No other action kind occurs. |
+| September 24 EDGAR events/facts | 531 files per kind: 42,236 event rows (five empty foreign-issuer files), 304,476 fact rows. | Additional filing evidence absent from the local frozen archive; not historical membership, classification or share-class transition evidence. |
+| September 24 versioned facts | 174,512 rows for 94 names, filing dates spanning 2009-06-03–2026-09-24 in aggregate. | Every `accepted` value is blank. The implementation conservatively falls back to `filed + 1 day`; separate event acceptance timestamps exist. This is limited timestamp coverage, not a reproduced application defect. |
+| Latest-existing tone | 267 files, 11,461 rows; mixed September 5, 14 and 24 vintages. | Model-generated hindsight tone is not contemporaneously archived investor knowledge. |
+| Constituents/cohort | Current constituents remain 503 rows dated September 5, 2026; no `membership_history.csv`. The same AAPL/TWTR/SNOW cohort has ten matching source hashes, 720 sessions and zero complete-feature rows. | Retrospective demonstration only. No newly recovered historical opportunity set. |
+
+The extra ETF stems are IGV, IWM, SMH, SOXX, XLC, XLE, XLF, XLI, XLK, XLP,
+XLU, XLV and XLY. File counts include overlapping snapshots; no atomic all-store
+snapshot or full-file hash certification was performed. The initial CSV count
+mistakenly included its leading source comment; the corrected parser establishes
+503 rows, not 504. Missing date strings were distinguished from malformed dates.
+
+Evidence, exact scope, corrected outputs and hashes:
+`/private/tmp/anios-spark-public-market-inventory.LzgDUd/RECEIPT.md`, SHA-256
+`d5d46b9d96b6d6e4d2c3ace3287f2139baf60c9c3f59630f42d8a7ac80140282`.
+This inventory does not certify vendor accuracy, historical filing completeness
+or all uninspected storage, nor establish that paid data is required.
 
 ## First failing implementation boundary
 

@@ -1,5 +1,88 @@
 # Next session
 
+## 2026-09-25 — Polls retain their starting account context; source only
+
+**VERIFIED bounded dashboard checkpoint:**
+`9214c7cb1792da47ed1ec335153bb1c852e0f94a`, based on clean `main` at
+`565988a28d9939acc6c15d65899e4f5fe3ff3dea`. The initial pull was current;
+re-fetched Spark and GitHub before committing with no newer changes. Preserve
+Spark's unrelated untracked `scratch/`. Publish Mac → Spark → GitHub from Spark.
+No deployment was started; last verified deployed source remains `68edfc0`.
+The broader trading-system goal is active and incomplete.
+
+An old `poll()` could wait on `/live`, then send its captured old equity/cash/
+risk through `refreshMine()` while sampling the newer account generation. The
+new poll owns its generation, sequence and lifecycle before the first await;
+each later commit/read checks them. `refreshMine()` also checks its supplied
+guard before issuing a request. Effect cleanup invalidates manual refreshes too.
+The independent 15-second guidance timer, account persistence, strategy and API
+contracts are unchanged. There is no new diagnostic stock board.
+
+**FAILED baselines retained:** the independent delayed-live browser reproduction
+passed its healthy control and failed the race. After Apply changed
+200000/100000/2 to 100000/5000/0.5, the old continuation displayed an executable
+10%-of-account Buy beside the new form and acknowledged its old-input receipt.
+`/private/tmp/anios-delayed-live-account-stable.S9v2nJSZ/RECEIPT.md`.
+The eight new repo cases passed two controls and failed six account/overlap/
+unmount regressions on the unchanged old artifact:
+`/private/tmp/anios-poll-context-stable-baseline.miDCeL/`.
+
+**VERIFIED final acceptance:** production TypeScript/build passed, as did strict
+TypeScript for the new eight-case module. Final nine-module browser run:
+**174 passed, zero failed/skipped/flaky**, 77.549 seconds. Checks include actual
+form inputs, rendered prices/actions, receipt provenance, request continuation,
+intentional transport failures, same-context ordering and navigation teardown.
+All 13 source/test/lockfile hashes match before/after testing and committing.
+Evidence: `/private/tmp/anios-poll-context-acceptance.0lTa4D2l/`.
+Compiled artifact: `/private/tmp/anios-poll-context-candidate.y5SCy4LD/dist/`,
+entry `index-Beq4wmrw.js`, SHA-256
+`68022fd3ec8b8fdd1bfe46f0b637f89603f31078d568ca9404d4734216e7900e`.
+
+Unchanged independent original-input replay passes **2/2**, with zero browser,
+network or write diagnostics. Releasing the obsolete read starts zero further
+requests; the healthy control still completes guidance/acknowledgement/intraday/
+paper reads. `/private/tmp/anios-delayed-live-candidate-replay.4f1535JN/RECEIPT.md`.
+All API writes in these tests are intercepted fixtures, not real receipts,
+holdings or orders. Runtime is the network-disabled, read-only cached image
+`sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`.
+
+The first full run was **173 passed, one failed**: an older overlap test relied
+on redundant startup requests, now correctly discarded. Its unchanged old/new
+artifact runs pass/fail respectively. The revised test explicitly overlaps a
+manual Refresh with the independent 15-second timer, verifies identical inputs,
+no additional `/live`, reverse completion and retained newest Buy/reason. It
+passes on both artifacts; the older poll remains current, so the test still
+exercises the independent mine sequence guard. Evidence:
+`/private/tmp/anios-mine-overlap-final-new.IsLeIf/`.
+
+**FAILED separate checks:** strict whole-file `desk.spec.ts` TypeScript reports
+the same **13 pre-existing errors** on old and new source (11 fixture-shape,
+two Buffer-typing errors; coordinate-normalized diagnostics identical). Diagram
+synchronization still stops at unchanged stale `anios-system.svg`; an initial
+incomplete-mount attempt is retained separately from the corrected check. Existing
+CSS pseudo-class and bundle-size warnings remain. Not all repository gates pass.
+Diagram impact: NONE — internal lifecycle guards with unchanged frontend, desk
+and full-system relationships.
+
+**Next user priority:** keep overnight, premarket and postmarket prices updating;
+do not infer that all trading stops when XNYS regular hours end. The existing
+board/chart poll outside regular hours, but source inspection found that a
+regular `/live` network failure rejects `getDeskLive()` and discards a successful
+extended-price response. Independent browser reproduction is in progress before
+editing. Also inspect calendar-driven quote-fetch suppression and wording;
+freshness/entitlement failures must stay distinct from trading-session schedules.
+This does not authorize fabricated quotes, new subscriptions or bypassing the
+strategy's supported execution policy. Continuous extended-price behavior and
+deployed UI/persistence remain **UNVERIFIED**.
+
+The read-only Spark market inventory found EDGAR data beyond the local archive,
+but still no complete historical opportunity set. Updated counts, schemas,
+mixed vintages and limitations are in
+`research/historical-universe-coverage-2026-09-25.md`. Public source/access
+comparison is in progress; paid data is not assumed necessary. No model fit,
+frozen-study rerun, source-pin update or strategy-performance claim. Continue
+the goal and publish verified increments; do not deploy automatically.
+
 ## 2026-09-25 — Open-chart receipts refresh in place; source only
 
 **VERIFIED bounded dashboard checkpoint:**

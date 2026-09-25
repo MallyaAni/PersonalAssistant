@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-25 — Bind dashboard refreshes to their original account context
+
+Verified source checkpoint `9214c7cb1792da47ed1ec335153bb1c852e0f94a`, not
+deployed. A delayed market-data read can no longer resume with old equity/cash/
+risk while inheriting the new account generation. Poll generation, ordering and
+lifecycle are captured before the first await and checked before later requests
+or state updates, including manual refreshes and navigation teardown.
+
+The original browser failure displayed and acknowledged an obsolete Buy beside
+new account values. The unchanged independent replay now passes 2/2; the final
+nine-module suite passes **174/174**, zero skips/flaky. Production TypeScript,
+build and new-test strict typing pass. One old overlap test now deliberately
+triggers the independent quote timer instead of assuming redundant startup
+requests; its action/reason and reverse-completion assertions pass on both old
+and new builds. Thirteen pre-existing whole-file test typing errors, stale
+diagram synchronization and build warnings remain documented in `NEXT_SESSION.md`.
+No real account writes, strategy changes or deployment.
+
+Spark's read-only market inventory adds public EDGAR coverage to the historical
+source audit but does not establish past membership/classifications or exited-
+security outcomes. No historical backtest or fit was rerun. Continuous extended-
+hours pricing is the user's next explicit dashboard priority, not a verified
+result of this account-context change.
+
 ## 2026-09-25 — Refresh saved chart advice without losing history or zoom
 
 Verified source checkpoint `e01540fbe97a3b4950f1ed7fc198a56e827e5745`, not
