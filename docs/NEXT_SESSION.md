@@ -1,5 +1,67 @@
 # Next session
 
+## 2026-09-25 — Earnings features bounded before publication; source only
+
+**VERIFIED offline source checkpoint:**
+`df4dc66936599b6795398cde7db0b54414fa210d`, based on clean Mac/Spark/GitHub
+`d6edf563d9564a4d49e65e5f8dec1e3fe02b94e9`. Re-fetched Spark and GitHub before
+committing; no newer overnight changes were present. Preserved the concise
+dashboard and Spark's unrelated untracked `scratch/`. No deployment started;
+last verified deployed code remains `68edfc0` below.
+
+The expectations dataset now carries separate feature and reaction indices,
+SEC acceptance time and accession. Features precede both acceptance and the
+start of the target's first-filed day. Missing required sessions, unsupported
+calendar years, naive timestamps and bare reaction-index callers fail closed.
+Date-only fundamentals, valuation and tone are usable only after their date;
+matching SEC timestamps also bound tone when a ticker has events but no facts.
+Strict valuation retains original filing dates as share-basis provenance, not
+delayed visibility dates. Legacy shared helpers retain their default behavior.
+Scoring, pre-report return endpoints, bucket dates and overlap lags use the
+actual feature clock. This changes training eligibility and features, not just
+metadata; it is not a fitted-model or return improvement claim.
+
+Acceptance used immutable image
+`sha256:63056fccae989b0ef65bb198bc913da58c87648169a50c1e2422b9b3c267d8ca`,
+the exact checkout mounted read-only, network disabled and no model runtime:
+
+- **FAILED baseline preserved:** six failed, three passed actual Parquet-store
+  publication cases, including intraday, after-close, early-close, an earlier
+  target filing, and unordered same-day facts/tone. Original source/input/log
+  evidence: `/private/tmp/anios-release-timing-baseline.viuWgB/` on the Mac.
+- **VERIFIED correction:** final 18-module run **191 passed, one skipped,
+  two deselected, 115 synthetic-data warnings**, 5.61 seconds. Includes all nine
+  publication cases, 26 clock/provenance cases and the actual pre-report clock
+  propagation test. Skip: Torch-dependent EDGAR/model-loader test. The two
+  fitting tests were deliberately excluded; no model was trained.
+  `/private/tmp/anios-expectations-cutoff-fix.0LVS3j/{final.log,final.xml}`.
+  All eight source/test hashes match the before-run manifest. Changed-file
+  Ruff and `git diff --check` pass; pre-existing chart lint is not reclassified.
+- **VERIFIED independent original-input replay:** all four complete 17-column
+  feature rows stay identical while target revenue changes 120 to 180; first
+  feature stays `0.20067068934440613`, target changes 0.2 to 0.8. Feature day is
+  October 31; original November 1 pre-open / November 2 intraday reaction indices
+  are unchanged. All 13 source hashes and 12 original evidence artifacts remain
+  unchanged; zero fits, network attempts, model imports or warnings.
+  `/private/tmp/anios-release-timing-acceptance.Rk3sVgPn/RECEIPT.md`.
+  Its valuation fields remain NaN because that original fixture has no shares;
+  separate new publication tests exercise finite valuation inputs.
+
+**UNVERIFIED:** issuer-first-public press-release time, heuristic quarter/release
+association, historical share-unit correctness beyond the declared filing basis,
+fitted-model quality, full historical data provenance, strategy returns and live
+behavior. No holdings, orders, market-data repairs, model fits, frozen-study pin
+updates or historical-study reruns. This is a bounded causal correction, not
+qualification of `cash-bounded-breakout-rotation/3` against SPY or QQQ.
+
+Next bounded dashboard task: reproduce a saved Buy drawn on a prior valid candle
+when its own session has null OHLC. Keep the receipt's true date and missing-data
+disclosure. Independent local browser reproduction is in progress; not verified
+yet. Open-chart receipt refresh and allocation-first guide wording remain pending.
+Publish Mac to Spark, then GitHub from Spark. Do not deploy automatically.
+Diagram impact: NONE — internal publication-clock correction; no component,
+store, dependency, ownership boundary or cross-subsystem flow changed.
+
 ## 2026-09-25 — Overnight changes pulled; entry-calendar source checkpoint
 
 Latest user asked to pull the overnight Spark dashboard work here and resume the

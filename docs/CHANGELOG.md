@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-25 — Keep earnings outcomes out of pre-publication features
+
+Source checkpoint `df4dc66936599b6795398cde7db0b54414fa210d`, not deployed.
+Expectations now separates the feature clock from the reaction/return clock and
+bounds it before both SEC acceptance and the target's date-only first filing.
+Date-only fundamentals, valuation and tone are delayed conservatively; source
+filing dates remain distinct from first-visible share observations. Actual feature
+dates propagate through scoring and pre-report analysis. Shared legacy callers
+retain their defaults. Missing clock evidence fails closed.
+
+Six of nine original end-to-end publication cases failed before correction.
+Final focused acceptance: 191 passed, one Torch-dependent skip, two fitting
+tests excluded, 115 synthetic-data warnings; changed-file lint passed. An
+independent replay of the four original inputs confirms all feature rows remain
+unchanged when only the target earnings change. Original failures remain intact.
+Evidence, hashes and remaining provenance limitations are in `NEXT_SESSION.md`.
+No frontend changes, model fits, historical-study reruns, account writes or
+deployment; this does not establish strategy superiority or live accuracy.
+
 ## 2026-09-25 — Validate the live entry's exchange-session window
 
 Source checkpoint `4cadc135a805c784f5e2f7a3166d9789595aeecb`, not deployed.
