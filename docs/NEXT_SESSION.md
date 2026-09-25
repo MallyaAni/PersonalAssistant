@@ -1,5 +1,114 @@
 # Next session
 
+## 2026-09-25 — Raw options price/isolation verified; 2026 intraday research recorded
+
+**VERIFIED scoped source checkpoint:**
+`4ac9526d0e3b08f8499927535dbbf6103b94136b`, from clean main at
+`d12cfbec9ffad8f980306bc3706329351e2c4017`. Initial pull current; Mac remotes
+and Spark's GitHub origin re-fetched before publication. Published Mac →
+`git push spark main` → GitHub from Spark, retaining remote `scratch/`.
+The four code/test hashes remained unchanged through final tests and commit.
+No deployment, service restart, provider request, model fit, historical strategy
+rerun, account/holding/order operation, promotion or laptop access/settings change.
+
+`technical_detail` now compares raw option strikes to raw `panel.close` only
+for walls; adjusted technical evidence is unchanged. A per-symbol optional-chain
+boundary validates shape/scalars and isolates recognized storage/data failures
+as `{status: unavailable, reason: options_data_unavailable}`. Absent/empty chains
+and unusable raw prices still omit walls. Generic storage programming exceptions
+and unrelated calculation failures propagate. Both frontend displays narrow an
+explicit available/unavailable union before numeric access. Global wall formulas,
+options freshness, cached-snapshot behavior, OI wording and gamma proxy unchanged.
+
+**VERIFIED acceptance:**147 backend tests,zero skips,16 existing levels.py
+empty-slice warnings,2.35s;138 browser tests,zero skips/flaky/unexpected,60.228s.
+The new98-case backend matrix exercises real Parquet → technical producer →
+balancer/board → saved JSON, with synthetic opinion/provider/account boundaries.
+Three authenticated ASGI reads serve that actual saved snapshot without
+recalculation or changed plan/snapshot bytes; unauthenticated reads get401.
+The unrelated search-metering account lookup is explicitly stubbed, not bearer
+verification/ownership/scope checks. No listening/deployed API or real DB proof.
+Browser acceptance covers available/unavailable/absent options at both displays,
+retained technical evidence and full reload. All32 strict six-category diagnostic
+attachments are empty. TypeScript/build, scoped Ruff/check-format, independent
+review and all33 unchanged architecture diagrams/page checks pass.
+
+**FAILED before correction:** final original-source replay80 failed/18 passed,
+zero skips/warnings,2.03s. Independent review found Boolean coercion and broad
+generic storage catches;9 permanent regressions failed before correction. All
+original artifacts and harness failures remain retained. The first HTTP harness
+had3 passing response assertions/3 teardown errors from the guarded ancillary
+account-lookup attempt; final harness excludes only that unrelated DB boundary.
+Old JS already tolerated status-only objects; no original browser crash claimed.
+Introducing the honest union before guards produced26 retained TS2339 errors.
+
+Evidence: [options contract](research/options-diagnostic-isolation-2026-09-25.md);
+root `/private/tmp/anios-options-fix.RsXzen/RECEIPT.md`, SHA256
+`b400df04b2804adcef0af0cdfb1158e5b70d158fcea76e4af456cce67cb079d7`.
+Final JUnit SHA256
+`faba4e31e093c7fc621a2c00cb6e2e21b49c5f0c0c1774199c58159a5ffec1f4`.
+Frontend `/private/tmp/anios-options-frontend.MoRRUI/RECEIPT.md`, SHA256
+`4839caa4f1e4ccfd0e56025f4bd35669a591d6a6be5cb1a089527036d71f81f1`;
+candidate asset `index-BVKEnM4C.js`, SHA256
+`206fb70366be78d500b815f9a36273676d16a672a3a447d2727beb3ce8c1e43d`.
+Independent60-check receipt:
+`/private/tmp/anios-options-independent.jyWfFz/RECEIPT.md`, SHA256
+`2a9dbea70a49e83811b38a912af7b18be4c564e355d8e3f78dc7de23dc2d133c`.
+Root reviewed valid/unavailable screenshots. Only the agent-owned temporary
+frontend container was stopped/removed; evidence and production bundles remain.
+**Diagram impact: NONE — internal optional-data validation/field rendering.**
+
+**Research documentation checkpoint:**
+`bf22b42ba91f3b325e322033675b798535cb4e40` adds the
+[2026 microstructure review](research/microstructure-15-minute-review-2026-09-25.md)
+and links it from the existing ML/strategy protocols. It is also published
+Mac → Spark → GitHub from Spark, with Spark/GitHub HEADs equal. Two primary preprints
+were read and independently checked, not empirically replicated:
+TradeFM2602.23784v1's15–60 minutes is simulation duration, not a profitable
+holding horizon; its spread fidelity is not uniformly best and downstream RL
+usefulness is future work. Mesfin2605.04004v3's London15-minute control reports
+net+4.09 points/T4.30, flipping to−2.91/T−2.78 after one-bar delay. Its other
+positive control discloses leakage/search and both assume exact-stop fills;
+no matched funded SPY/QQQ or drawdown superiority. Peer review not established.
+Primary artifacts/receipt `/private/tmp/anios-2026-microstructure.pOTlBB/RECEIPT.md`,
+SHA256 `9778a11d2c8758e75829ee8dcecebbc422889b1f4c5173d28bb8c511d4eaf43c`.
+
+The proposed research hypothesis holds slow selection/holding policy fixed and
+separately registers one completed-bar range/volume entry veto/delay. It is
+not implemented, fitted, launched or authorized to revise/replay frozen studies.
+Existing OHLCV cannot reconstruct true order flow, spreads, queue fills or
+transaction VWAP; the latest-only quote collector is not an archive. Intraday
+funded accounting, costs/latency, missed rallies and chronological purging need
+qualification before an economic comparison. Decision cadence is not holding
+duration. The user's unacceptable drawdown remains unanswered; no risk budget
+or best horizon assumed. Independent review also identified stale older prose:
+`intraday-entry-contract-2026-09-22.md` says early closes unsupported although
+current code handles reviewed13:00 closes. Correct separately, not by changing
+the frozen experiment; that engine still excludes extended-hours bars.
+
+**Next atomic work:** precise options OI/collection/reference-price wording and
+freshness/cached-read semantics. A September1 chain can still be accepted on
+September25; collection time is not OI effective time. Existing cached snapshots
+are not repaired by the price/isolation fix. Do not invent an age cutoff or call
+these OI concentrations dealer gamma walls. Duplicate ET and unused gamma
+proxy/expired-contract assumptions remain known. Current AAOI/Barchart levels
+and deployed prevalence are unverified. A parallel read-only source-boundary
+audit is in progress; no follow-on source change yet.
+
+The wider goal stays **active/incomplete**: existing LightGBM expectations,
+deterministic `/3`, unpromoted neural/RL pilots. The gate loses its matched
+comparator10/14 folds at10bp and11/14 at25bp. Original producer OOM/missing
+manifest remains FAILED. No qualified top-tier edge; do not rerun completed
+historical observers merely for activity.
+
+Release-readiness target remains20:34UTC/16:34ET; latest clock18:41:24UTC.
+Collector activation remains unanswered: **do not restart the pending backend**,
+whose defaults enable recurring15-second quote reads. Authenticated market-data
+probe allowances remain exhausted. All-hours real-time coverage is unproved.
+Deploy only from Spark via `scripts/deploy.sh --wait-post`, preserving deploy
+data/secrets symlinks, identifying exact artifacts and completing full gates,
+browser/provider acceptance and postcheck verdict. No deployment was started.
+
 ## 2026-09-25 — Paired research reporting published; options boundaries reproduced
 
 **VERIFIED scoped source checkpoint:**
