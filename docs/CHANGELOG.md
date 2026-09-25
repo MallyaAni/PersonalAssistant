@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-25 — Correct intraday vote confirmation and expired-reading wording
+
+Computed intraday votes use the same three-session confirmation as evening
+votes, with the live bar representing today; the shared explanation no longer
+claims a bypass. An opportunity component's `intraday` basis now reads
+`intraday reading`, so an expired score does not call old evidence current.
+Scores, votes, grades, archived context and all trading behavior are unchanged.
+
+Both original failures reproduced. Exact-source acceptance: **22 browser tests
+passed** with zero skips/flaky cases or browser diagnostics; TypeScript/build
+pass with existing CSS/chunk warnings. Expiry preserves the last score, original
+bar time, prior-close context and nightly valuation distinction. The first
+edit-triggered Vite reload failure remains recorded; no assertions were weakened.
+No deployment, market-data request or account change. See the
+[wording correction and evidence](research/desk-analyst-meaning-2026-09-24.md).
+
 ## 2026-09-25 — Preserve source units without changing live fundamental loaders
 
 Verified scoped source checkpoint `8f3f41680f1d0af7f764f73829367fa4b0691994`,

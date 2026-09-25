@@ -1,5 +1,31 @@
 # What the desk's analysts actually measure
 
+## September 25 correction: intraday confirmation and expired provenance
+
+The original tooltip incorrectly said intraday price-sensitive votes could
+bypass the three-session wait. Current technical/plain-value readers call
+`Opinion.stances()` and apply the same persistence rule with today's live bar.
+The holdings reader honors those computed stances. Its legacy fallback for
+snapshots without a stance still uses bare thresholds, so the replacement text
+is deliberately scoped to **computed intraday votes**, not every old snapshot.
+
+Opportunity components now say `intraday reading`, not `current bar`: that
+field denotes provenance and survives expiry. The score's original bar time,
+last-reading state, prior-close context and nightly valuation label are retained.
+No score, grade, eligibility, persistence rule or stored record changed.
+
+VERIFIED on the shared checkout: both original wording failures reproduced;
+22 final browser cases pass with zero skips/flaky results and zero browser
+diagnostics, including fresh-to-expired transition and mobile/detail surfaces.
+TypeScript and production build pass with existing CSS/chunk warnings. Root
+also inspected the complete expired-card screenshot. One immediate candidate
+run failed strict request diagnostics during a Vite edit-triggered reload;
+the quiescent exact source passed without weakening assertions.
+Evidence: `/private/tmp/anios-intraday-wording.updDSi/RECEIPT.md`, SHA256
+`8f51c17396169a91571fffc47254d00eaf347e690643b753b5435d76f1cdf91a`.
+Deployed UI remains UNVERIFIED; no deployment or provider/model request.
+Diagram impact: NONE — wording only, unchanged data and ownership flows.
+
 ## Objective and acceptance boundary
 
 Make the existing analyst labels, evidence dates and explanations match the
@@ -64,9 +90,11 @@ price or confirmation of a website's overvaluation percentage.
 - A visible warning says no source-release link is recorded for the S vote.
   The separately fetched earnings read cannot establish which release supplied
   that recorded vote. Dates are not borrowed from it.
-- Evening votes use three-session confirmation; intraday price-sensitive votes
-  can update without that wait. Today's readings may differ from those that
-  established a persisted vote, so the explanation is not causal attribution.
+- Evening votes use three-session confirmation. Computed intraday votes apply
+  the same rule with the live bar as today's session; they do not count each
+  candle as another day. Today's readings may differ from those that established
+  a persisted vote, so the explanation is not causal attribution. The original
+  September 24 wording incorrectly claimed an intraday bypass; corrected above.
 - A recorded vote change no longer claims price independence when Value moved.
   A grade change with no recorded vote difference no longer invents a continuous
   score threshold as its cause. Reaction-date markers are not publication or

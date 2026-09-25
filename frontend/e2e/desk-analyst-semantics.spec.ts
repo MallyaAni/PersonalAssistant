@@ -13,7 +13,8 @@ const RANKS = {fundamental: .875, technical: .293, sentiment: .881, value: .786,
 const PERIODS = {revenue_yoy: '2026-06-30', revenue_qoq: '2026-06-30', revenue_acceleration: '2026-06-30', gross_margin: '2026-03-31', net_margin: '', capex_to_revenue: '2026-03-31'}
 const NO_SOURCE_LINK = 'No source-release link is recorded for the S vote.'
 const VOTE_CONTEXT = 'Evening votes use a three-session confirmation rule; the latest readings may differ from those that established a vote.'
-type Scenario = {withRow?: boolean; periods?: Record<string, string> | null; source?: string; ranks?: Record<string, number | null>; stances?: Record<string, number>; history?: {date: string; grade: string; stances: Record<string, number>}[]; revision?: boolean; oldEarnings?: boolean}
+const INTRADAY_VOTE_CONTEXT = 'Computed intraday votes apply the same confirmation rule, using the live bar as today’s session.'
+type Scenario = {withRow?: boolean; periods?: Record<string, string> | null; source?: string; ranks?: Record<string, number | null>; stances?: Record<string, number>; history?: {date: string; grade: string; stances: Record<string, number>}[]; revision?: boolean; oldEarnings?: boolean; intradayOpportunity?: boolean}
 
 // Supply dated evening evidence and a separately newer earnings read without contacting a backend.
 async function installScenario(page: Page, frontendURL: string, options: Scenario = {}) {
@@ -33,6 +34,7 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
     {analyst: 'fundamental', score: 8.7, weight: 1, basis: SESSION, evidence: ['Revenue grew 32%.']},
     {analyst: 'sentiment', score: 8.8, weight: 1, basis: SESSION, evidence: ['Guidance tone positive.']},
     {analyst: 'value', score: 7.8, weight: 1, basis: SESSION, evidence: ['Recorded value context remains unchanged.']},
+    ...(options.intradayOpportunity ? [{analyst: 'technical', score: 3.1, weight: 1, basis: 'intraday', evidence: ['Recorded technical context remains unchanged.']}] : []),
   ]}
   const mine = {session: SESSION, market_status: market, grade_valid_until: {AAOI: '2026-09-24T15:45:00Z'}, grades_live: {AAOI: current},
     rows: options.withRow ? [{ticker: 'AAOI', ...current, grade: 'A+', grade_source: 'intraday', action: 'hold', in_book: false, score: .82, rank: 1, stances, ranks, target_weight: 0, current_weight: 0, delta_weight: 0, shares: 0, entry_price: null, entry_date: null, last: 98.25, last_close: 101, pl_pct: null, until_rebalance: null, rebalance_due: false}] : [],
@@ -109,6 +111,8 @@ async function expectMeanings(surface: ReturnType<Page['getByRole']>) {
   await expect(current).toContainText('S88+')
   await expect(current).toContainText('not individual letter grades')
   await expect(current).toContainText(VOTE_CONTEXT)
+  await expect(current).toContainText(INTRADAY_VOTE_CONTEXT)
+  await expect(current).not.toContainText('without that wait')
   const evening = surface.getByRole('region', {name: 'Evening analysis', exact: true})
   await expect(evening).toContainText('Recorded grade A+')
   await expect(evening).toContainText('Combined analyst grade')
@@ -262,7 +266,7 @@ for (const valueChanged of [true, false]) {
   })
 }
 
-// The guide matches the board's order without overstating reaction dates, valuation or persisted votes.
+// The guide preserves reaction and valuation scope while explaining the confirmation of computed intraday votes.
 test('qualifies reaction dates valuation proxy and evening vote persistence', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!, {revision: true})
   try {
@@ -283,9 +287,36 @@ test('qualifies reaction dates valuation proxy and evening vote persistence', as
     await dialog.getByText('Score, log & backtest', {exact: true}).click()
     const opportunity = dialog.getByRole('region', {name: 'Opportunity score'})
     await expect(opportunity).toContainText(VOTE_CONTEXT)
-    await expect(opportunity).toContainText('Intraday price-sensitive votes can update without that wait.')
+    await expect(opportunity).toContainText(INTRADAY_VOTE_CONTEXT)
+    await expect(opportunity).not.toContainText('without that wait')
     await expect(opportunity.getByText('Growth & margins', {exact: true})).toBeVisible()
     await expect(opportunity.getByText('Earnings-release tone', {exact: true})).toBeVisible()
+  } finally {
+    await recordDiagnostics(testInfo, diagnostics)
+  }
+})
+
+// Expiry changes freshness, not the intraday provenance or the saved context behind a reading.
+test('preserves intraday provenance without calling an expired opportunity current', async ({page, baseURL}, testInfo) => {
+  const diagnostics = await installScenario(page, baseURL!, {intradayOpportunity: true})
+  try {
+    await page.goto('/#desk')
+    await page.getByRole('button', {name: 'AAOI', exact: true}).click()
+    const dialog = page.getByRole('dialog', {name: 'AAOI history'})
+    await dialog.getByText('Score, log & backtest', {exact: true}).click()
+    const opportunity = dialog.getByRole('region', {name: 'Opportunity score'})
+    await expect(opportunity).toContainText('Indicative at $98.25')
+    await expect(opportunity).toContainText('7.1/10')
+    await page.clock.fastForward(10 * 60 * 1000 + 1)
+    await expect(opportunity).toContainText('Last reading at the')
+    await expect(opportunity).toContainText('11:15 AM ET bar')
+    await expect(opportunity).not.toContainText('Indicative at')
+    await expect(opportunity).toContainText('7.1/10')
+    await expect(opportunity).toContainText('Lowers score · intraday reading')
+    await expect(opportunity).not.toContainText('current bar')
+    await expect(opportunity).toContainText('Prior-close context: Recorded technical context remains unchanged.')
+    await expect(opportunity).toContainText('valuation is nightly')
+    await opportunity.screenshot({path: testInfo.outputPath('expired-intraday-provenance.png')})
   } finally {
     await recordDiagnostics(testInfo, diagnostics)
   }
