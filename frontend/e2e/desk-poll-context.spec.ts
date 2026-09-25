@@ -197,7 +197,7 @@ async function applyAccount(page: Page, state: Scenario, account: Account) {
   await expect.poll(() => state.requests.slice(before).some(entry => entry.path.endsWith('/acknowledge')
     && entry.completed && sameAccount(entry.account, account))).toBe(true)
   await expect(page.getByLabel('AAPL strategy intent', {exact: true})).toHaveText(sameAccount(account, OLD_ACCOUNT) ? 'BUY' : 'Hold')
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded into dashboard')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard')
 }
 
 // Reach a settled desk with explicit old inputs; no test depends on default or persisted account values.
@@ -224,7 +224,7 @@ async function expectCurrentBoard(page: Page, account: Account, price: number, r
   await expect.soft(row).toContainText(`$${price.toFixed(2)}`)
   await expect.soft(page.getByLabel('AAPL strategy intent', {exact: true})).toHaveText(sameAccount(account, OLD_ACCOUNT) ? 'BUY' : 'Hold')
   await expect.soft(page.getByRole('region', {name: 'Stocks and cash', exact: true})).toContainText(reason)
-  await expect.soft(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded into dashboard')
+  await expect.soft(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard')
   await expect.soft(page.getByLabel('Today')).toContainText('XNYS regular session scheduled open')
 }
 

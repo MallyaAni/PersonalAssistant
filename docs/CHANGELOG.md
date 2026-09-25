@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-25 — Replace personal-history snapshot jargon
+
+Personal history now names saved guidance, dashboard loading confirmation and
+saved records separately. Guidance timestamps are explicitly as-of times.
+Expired or invalid confirmation windows no longer necessarily imply expired
+trading evidence, and confirmation-response failure does not imply lost advice.
+No calculations, API contracts, account behavior or stored history changed.
+
+Local acceptance: 198 browser cases, zero failures/skips/flakes; all 42 attached
+browser diagnostics clean. Desktop/phone filtering and reload paths, confirmation
+states, history operations and quote/chart regressions pass. TypeScript/build
+and all 33 diagram/page checks pass. [Evidence and retained failures](research/plain-desk-labels-2026-09-25.md#follow-on-personal-history-labels).
+Not deployed; the pending collector decision still holds release.
+Diagram impact: NONE — text only.
+
 ## 2026-09-25 — Clarify saved-signal research results
 
 The research panel distinguishes saved signals, usable outcomes and simulated

@@ -275,7 +275,7 @@ const test = base.extend<{scenario: Scenario}>({
 // Reach the real desk and its mounted chart without opening the separate personal-history panel.
 async function openChart(page: Page, state: Scenario) {
   await page.goto('/#desk')
-  if (state.writable) await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded into dashboard')
+  if (state.writable) await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: 'AAPL', exact: true}).click()
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
   await expect(chart.getByTestId('ticker-chart-canvas')).toBeVisible()
@@ -311,7 +311,7 @@ test('generated receipt updates the mounted chart before acknowledgement and pre
   await page.evaluate(() => { (window as typeof window & {__receiptRefreshPaints: Paint[]}).__receiptRefreshPaints = [] })
   await publish(page, state, item)
   await expectSnapshots(chart, 41)
-  await expect(page.getByLabel('Personal history recording status')).toContainText('confirming that it loaded')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance saved; confirming dashboard loading.')
   await expect(chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'}).locator('tbody tr')).toHaveCount(3)
   await expect(chart.getByLabel('Buy and Sell markers')).toContainText('Sell · Sep 24, 2026, 10:00:15 AM EDT')
   await expect.poll(async () => (await paints(page)).some(paint => paint.action === 'Sell' && paint.center > previousSell + 3)).toBe(true)
@@ -324,7 +324,7 @@ test('generated receipt updates the mounted chart before acknowledgement and pre
   const pages = state.requests.filter(entry => entry.path.endsWith('/personal-history'))
   expect(pages.map(entry => new URLSearchParams(entry.query).get('before'))).toEqual([null, state.head.at(-1)!.id, state.older.at(-1)!.id])
   ack.release()
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded into dashboard')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard')
   await publish(page, state, item)
   await expectSnapshots(chart, 61)
   expect(state.requests.filter(entry => entry.method === 'GET' && entry.path.endsWith(`/${item.id}`))).toHaveLength(1)

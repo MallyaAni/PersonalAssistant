@@ -160,3 +160,52 @@ presence on the user's dashboard is not a new source defect established here.
 **UNVERIFIED:** deployed artifact, fresh all-hours data and investment performance.
 No deployment occurred; the existing collector decision still holds release.
 Diagram impact: NONE — wording and disclosure placement only.
+
+## Follow-on personal-history labels
+
+A subsequent source review found `snapshot` still visible in the writable
+desk's personal-history status, count and controls. Those now say **Guidance
+saved**, **Guidance loaded into dashboard**, and **saved records**. Saving is
+distinct from browser confirmation; neither establishes that advice was read
+or a trade occurred. `generated_at` is labelled **Guidance as of**, not a save
+timestamp. The local invalid/expired confirmation message no longer asserts
+that trading evidence necessarily expired. An unavailable confirmation response
+does not claim the saved guidance was lost or that the server never confirmed it.
+
+Only `PersonalDecisionHistory.tsx`, three browser-test files and documentation
+changed. The backend commits before returning `generated`; counts remain loaded
+records before filtering. Retention, original values, history, API payloads,
+acknowledgement guards and account/trading behavior are unchanged. Backend
+limitations are still rendered verbatim. Independent source review accepted
+the copy; a syntax comparison excluding text/comments found no changed
+expressions, identifiers or structure.
+
+**VERIFIED locally:** 198 browser cases, zero failures/skips/flakes, 99.711s;
+all 42 attached browser diagnostics clean. Coverage includes desktop/phone
+history disclosure, ticker filtering, dated values, reload, waiting/pending/
+success, invalid/expired deadlines, request failures, pagination/export/deletion,
+chart receipt updates and earlier chart/quote wording. TypeScript/build and all
+33 unchanged diagram/page checks pass. Screenshots were inspected; the existing
+wide history table remains horizontally scrollable on a phone. No claim that
+all columns fit at once. These APIs use synthetic fixtures, not live accounts.
+
+Four old-bundle cases reproduced the wording/expiry failures. An intermediate
+197-pass/one-failure run retained one chart-refresh expectation for the old
+pending text; only that expectation was aligned, preserving its canvas,
+pagination and request assertions. The full final rerun passes. A temporary
+syntax checker initially compared the SourceFile's full text too; excluding
+that metadata corrected the checker, not application behavior.
+
+Evidence: `/private/tmp/anios-personal-wording.9zACGE/ROOT_RECEIPT.md` and
+`verified.json` (SHA256
+`c6da2e5ce0c43f86af8ae0b7603eeb85d6d2ec684c65f660cb1fe8861e528be5`).
+Final asset `index-9EMfMvhN.js`, SHA256
+`83158a886be9f9ad5f7d3b1da8bb3b20294913f3c484fbbfdadd6dca2c056969`.
+
+Fresh Spark inspection still found the gateway's old `index-Bjg8Yelb.js`,
+SHA256 `587491756c394027f3b478c7c409f8c8ecab01b875a22e32568e26283ee9c667`.
+**UNVERIFIED:** deployed fixes, fresh all-hours prices, real persistence in this
+turn and strategy superiority. No deployment, restart, provider/model request
+or strategy rerun occurred. The existing collector decision still holds release;
+disabling collection is not equivalent to the old on-demand endpoint.
+Diagram impact: NONE — text only; component relationships are unchanged.

@@ -30,7 +30,7 @@ const receiptPrice = (value: number | null | undefined) => typeof value === 'num
 // Show saved allocations as percentages, preserving the sign of an intended move.
 const receiptWeight = (value: number | null) => typeof value === 'number' && Number.isFinite(value) ? `${(value * 100).toFixed(2)}%` : 'Unavailable'
 
-// Explain which generated snapshot reached the live desk and expose its private history.
+// Explain which saved guidance reached the live desk and expose its private history.
 export const PersonalDecisionHistory = ({userId, context, decisions, session, written, active, displayPaused, isCurrent}: {
   userId: string
   context: PersonalHistoryContext | null
@@ -94,17 +94,17 @@ export const PersonalDecisionHistory = ({userId, context, decisions, session, wr
       && (row.action === 'Buy' || row.action === 'Sell')
       && (!Number.isFinite(Date.parse(row.valid_until ?? '')) || Date.parse(row.valid_until!) <= stamp))
     if (!Number.isFinite(deadline) || deadline <= stamp || expiredAction) {
-      setAck({id: receipt.id, status: 'failed', message: 'Snapshot generated, but its execution evidence expired before loading could be acknowledged.'})
+      setAck({id: receipt.id, status: 'failed', message: 'Guidance saved; the confirmation deadline or trading evidence is invalid or has expired.'})
       return
     }
-    setAck({id: receipt.id, status: 'pending', message: 'Snapshot generated; confirming that it loaded into the dashboard.'})
+    setAck({id: receipt.id, status: 'pending', message: 'Guidance saved; confirming dashboard loading.'})
     void acknowledgeDeskHistory(userId, receipt.id, session, written).then(result => {
       if (!mounted.current) return
-      setAck(previous => previous?.id === receipt.id ? {id: receipt.id, status: 'saved', message: `Snapshot loaded into dashboard · acknowledged ${receiptTime(result.acknowledged_at)}`} : previous)
+      setAck(previous => previous?.id === receipt.id ? {id: receipt.id, status: 'saved', message: `Guidance loaded into dashboard · confirmed ${receiptTime(result.acknowledged_at)}`} : previous)
       setHistory(previous => previous ? {...previous, items: previous.items.map(item => item.id === receipt.id ? {...item, acknowledged_at: result.acknowledged_at} : item)} : previous)
     }).catch(failure => {
       if (!mounted.current) return
-      setAck(previous => previous?.id === receipt.id ? {id: receipt.id, status: 'failed', message: `Snapshot generated; dashboard loading was not confirmed: ${failure instanceof Error ? failure.message : 'acknowledgement failed'}`} : previous)
+      setAck(previous => previous?.id === receipt.id ? {id: receipt.id, status: 'failed', message: `Guidance saved; dashboard loading confirmation is unavailable: ${failure instanceof Error ? failure.message : 'confirmation unavailable'}`} : previous)
     })
   }, [active, context, decisions, displayPaused, isCurrent, session, userId, written])
 
@@ -148,8 +148,8 @@ export const PersonalDecisionHistory = ({userId, context, decisions, session, wr
   const receipt = context?.receipt
   const status = receipt?.status === 'unavailable' ? `History recording unavailable: ${receipt.reason}`
     : receipt?.status === 'generated' && ack?.id === receipt.id ? ack.message
-      : receipt?.status === 'generated' ? 'Snapshot generated; loading into the live dashboard has not been confirmed.'
-        : 'Personal history is waiting for a new live-desk snapshot.'
+      : receipt?.status === 'generated' ? 'Guidance saved; loading into the live dashboard has not been confirmed.'
+        : 'Personal history is waiting for new guidance to be saved.'
   const failed = receipt?.status === 'unavailable' || (receipt?.status === 'generated' && ack?.id === receipt.id && ack.status === 'failed')
   const ticker = query.trim().toUpperCase()
   return <section aria-label="Personal decision history" className="rounded-xl border border-black/[0.08] bg-white p-3 text-xs">
@@ -158,21 +158,21 @@ export const PersonalDecisionHistory = ({userId, context, decisions, session, wr
       <button type="button" aria-expanded={open} className="shrink-0 font-medium text-[#0071e3]" onClick={() => { setOpen(!open); if (!open) void load() }}>Personal decision history</button>
     </div>
     {open && <div className="mt-2 space-y-3">
-      <p>Private snapshots of generated personal guidance. “Loaded into dashboard” records the browser acknowledgement; it does not prove you saw every stock or placed a trade. Historical actions and quotes are not current instructions. Earlier advice that was never recorded cannot be recovered here.</p>
+      <p>Private records of personal guidance, not trades. “Loaded into dashboard” records the browser confirmation; it does not prove you saw every stock or placed a trade. Historical actions and quotes are not current instructions. Earlier advice that was never recorded cannot be recovered here.</p>
       <div className="flex flex-wrap gap-3">
         <button type="button" disabled={busy} onClick={() => void load()} className="text-[#0071e3] disabled:opacity-40">Refresh personal history</button>
-        <label>Find ticker in loaded snapshots <input aria-label="Find ticker in personal snapshots" value={query} onChange={event => setQuery(event.target.value)} className="ml-2 w-28 rounded border px-2 py-1" /></label>
+        <label>Find ticker in loaded records <input aria-label="Find ticker in saved personal guidance" value={query} onChange={event => setQuery(event.target.value)} className="ml-2 w-28 rounded border px-2 py-1" /></label>
       </div>
       {error && <p role="alert" className="text-[#b42318]">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {busy && <p role="status">Loading personal history…</p>}
       {history && <>
-        <p className="text-[#6e6e73]">{history.items.length} snapshots loaded. Retention: acknowledged snapshots {history.retention.acknowledged_days} days; unacknowledged snapshots {history.retention.unacknowledged_hours} hours.</p>
+        <p className="text-[#6e6e73]">{history.items.length} saved records loaded. Retention: records with confirmed dashboard loading {history.retention.acknowledged_days} days; records without confirmation {history.retention.unacknowledged_hours} hours.</p>
         {!history.items.length && <p>No personal decision receipts are available.</p>}
         {history.items.map(item => <Receipt key={item.id} item={item} ticker={ticker} busy={busy} confirmDelete={confirmDelete === item.id}
           onExport={() => void exportReceipt(item.id)} onDelete={() => setConfirmDelete(item.id)} onCancelDelete={() => setConfirmDelete(null)} onConfirmDelete={() => void removeReceipt(item.id)} />)}
-        {ticker && history.items.length > 0 && !history.items.some(item => Object.keys(item.payload.rows).some(name => name.includes(ticker))) && <p>No matching ticker in these loaded snapshots.</p>}
-        {history.next_cursor && <button type="button" disabled={busy} className="text-[#0071e3] disabled:opacity-40" onClick={() => void load(history.next_cursor!)}>Load older personal snapshots</button>}
+        {ticker && history.items.length > 0 && !history.items.some(item => Object.keys(item.payload.rows).some(name => name.includes(ticker))) && <p>No matching ticker in these loaded records.</p>}
+        {history.next_cursor && <button type="button" disabled={busy} className="text-[#0071e3] disabled:opacity-40" onClick={() => void load(history.next_cursor!)}>Load older personal records</button>}
         {history.limitations.map((limitation, index) => <p key={index} className="text-[#6e6e73]">{limitation}</p>)}
       </>}
     </div>}
@@ -187,9 +187,9 @@ const Receipt = ({item, ticker, busy, confirmDelete, onExport, onDelete, onCance
   const rows = Object.entries(item.payload.rows).filter(([name]) => !ticker || name.includes(ticker))
   if (ticker && !rows.length) return null
   return <details className="rounded-lg border border-black/[0.08] p-2" aria-label={`Personal receipt ${item.id}`}>
-    <summary className="cursor-pointer font-medium">{item.acknowledged_at ? 'Loaded into dashboard' : 'Generated only · loading unconfirmed'} · {receiptTime(item.generated_at)}</summary>
+    <summary className="cursor-pointer font-medium">{item.acknowledged_at ? 'Loaded into dashboard' : 'Saved guidance · loading unconfirmed'} · as of {receiptTime(item.generated_at)}</summary>
     <div className="mt-2 space-y-2">
-      <p>Generated {receiptTime(item.generated_at)}. {item.acknowledged_at ? `Dashboard acknowledgement ${receiptTime(item.acknowledged_at)}.` : 'No dashboard acknowledgement was recorded.'}</p>
+      <p>Guidance as of {receiptTime(item.generated_at)}. {item.acknowledged_at ? `Dashboard loading confirmed ${receiptTime(item.acknowledged_at)}.` : 'No dashboard loading confirmation was recorded.'}</p>
       <p>Decision session {item.payload.session} · record written {receiptTime(item.payload.written)} · policy {item.payload.policy_version}</p>
       <div className="overflow-x-auto"><table className="w-full text-left tabular-nums [&_td]:p-2 [&_th]:p-2" aria-label={`Generated personal decisions ${item.id}`}>
         <thead><tr><th>Stock</th><th>Intent at generation</th><th>Action at generation</th><th>Evidence at generation</th><th>Intended move</th><th>Bar price</th><th>Reason</th></tr></thead>

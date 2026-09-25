@@ -3534,9 +3534,14 @@ const personalHistoryAnswer = (item: ReturnType<typeof personalHistoryReceipt>) 
   history_receipt: {status: 'generated', id: item.id, generated_at: item.generated_at, acknowledge_before: item.acknowledge_before},
 })
 
-// Acknowledged and generated-only snapshots stay distinct after reload, with frozen prices.
-test('personal history acknowledges a loaded snapshot and preserves generated-only evidence', async ({page}) => {
+for (const width of [1280, 390]) {
+// Saved guidance and confirmed dashboard loading stay distinct on both screen sizes and after reload.
+test(`personal history uses plain saved-guidance labels at ${width}px`, async ({page}, testInfo) => {
   const errors = observeBlockingBrowserErrors(page)
+  const failedRequests: string[] = []
+  page.on('requestfailed', request => failedRequests.push(request.url()))
+  page.on('response', response => { if (response.status() >= 400) failedRequests.push(`${response.status()} ${response.url()}`) })
+  await page.setViewportSize({width, height: 900})
   await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))
   await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
   const current = personalHistoryReceipt()
@@ -3557,37 +3562,79 @@ test('personal history acknowledges a loaded snapshot and preserves generated-on
     items: [current, unacknowledged], next_cursor: null, retention: {acknowledged_days: 90, unacknowledged_hours: 24}, limitations: [],
   }}))
   await page.goto('/#desk')
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded into dashboard')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard · confirmed')
   expect(bodies.every(body => (body as {record_history?: boolean}).record_history === true)).toBe(true)
   expect(acknowledgements).toEqual([{session: '2026-09-08', written: '2026-09-08T21:00:00Z'}])
   await page.getByRole('button', {name: 'Personal decision history', exact: true}).click()
   const history = page.getByRole('region', {name: 'Personal decision history', exact: true})
-  await expect(history).toContainText('Generated only · loading unconfirmed')
+  await expect(history).toContainText('Saved guidance · loading unconfirmed')
+  await expect(history).toContainText('2 saved records loaded')
+  await expect(history).toContainText('records with confirmed dashboard loading 90 days; records without confirmation 24 hours')
+  await expect(history).not.toContainText(/snapshot/i)
   await history.getByLabel(`Personal receipt ${current.id}`, {exact: true}).locator('summary').click()
   await expect(history.getByRole('table')).toContainText('$102.00')
   await expect(history.getByRole('table')).toContainText('Execution checks passed then')
   await expect(history.getByRole('table')).toContainText('Decision grade A')
   await expect(history.getByLabel(`Personal receipt ${current.id}`, {exact: true})).toContainText('record written')
+  await expect(history.getByLabel(`Personal receipt ${current.id}`, {exact: true})).toContainText('Guidance as of Sep 9, 2026')
+  await expect(history.getByLabel(`Personal receipt ${current.id}`, {exact: true})).toContainText('Dashboard loading confirmed')
   await expect(history).toContainText('Historical actions and quotes are not current instructions')
   const generatedOnly = history.getByLabel(`Personal receipt ${unacknowledged.id}`, {exact: true})
   await generatedOnly.locator('summary').click()
   await expect(generatedOnly.getByRole('cell').nth(4)).toContainText('Unavailable')
   await expect(generatedOnly.getByRole('cell').nth(4)).not.toContainText('0.00%')
+  await history.getByLabel('Find ticker in saved personal guidance').fill('ZZZ')
+  await expect(history).toContainText('No matching ticker in these loaded records.')
+  await expect(history.getByRole('table')).toHaveCount(0)
+  await history.getByLabel('Find ticker in saved personal guidance').fill('AAPL')
+  await history.getByLabel(`Personal receipt ${current.id}`, {exact: true}).locator('summary').click()
+  await expect(history.getByRole('table')).toContainText('$102.00')
+  await history.scrollIntoViewIfNeeded()
+  await testInfo.attach(`personal-history-${width}`, {body: await page.screenshot(), contentType: 'image/png'})
   await page.reload()
   await page.getByRole('button', {name: 'Personal decision history', exact: true}).click()
   await expect(history).toContainText('Dashboard')
   await expect(history.getByLabel(`Personal receipt ${current.id}`, {exact: true})).toContainText('Loaded into dashboard')
+  expect(failedRequests).toEqual([])
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+}
+
+// Saving precedes browser confirmation, so a delayed confirmation must not look like lost history.
+test('personal history distinguishes waiting saved and confirmed guidance', async ({page}) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
+  const item = personalHistoryReceipt()
+  let saved = false
+  let release: (() => void) | undefined
+  const confirmation = new Promise<void>(resolve => { release = resolve })
+  const writes: string[] = []
+  page.on('request', request => { if (['PUT', 'DELETE'].includes(request.method())) writes.push(request.url()) })
+  await page.route('**/desk/mine*', route => route.fulfill({json: saved ? personalHistoryAnswer(item) : mineAnswer(holdDecision('No new guidance'))}))
+  await page.route('**/desk/personal-history/*/acknowledge', async route => {
+    await confirmation
+    return route.fulfill({json: {id: item.id, status: 'acknowledged', acknowledged_at: '2026-09-09T14:00:01Z'}})
+  })
+  await page.goto('/#desk')
+  await expect(page.getByLabel('Personal history recording status')).toHaveText('Personal history is waiting for new guidance to be saved.')
+  saved = true
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect(page.getByLabel('Personal history recording status')).toHaveText('Guidance saved; confirming dashboard loading.')
+  release?.()
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard · confirmed')
+  expect(writes).toEqual([])
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
 // Expiry and record mismatches must never become acknowledgements of executable advice.
-for (const invalid of ['expired', 'expired-quote', 'wrong-record', 'event-override'] as const) {
+for (const invalid of ['expired', 'expired-quote', 'invalid-deadline', 'wrong-record', 'event-override'] as const) {
 // Check each invalid context independently without treating a generated receipt as loaded.
 test(`personal history leaves ${invalid} snapshots unacknowledged`, async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.clock.install({time: new Date('2026-09-09T14:00:00Z')})
   const item = personalHistoryReceipt()
   if (invalid === 'expired') item.acknowledge_before = '2026-09-09T13:59:59Z'
+  if (invalid === 'invalid-deadline') item.acknowledge_before = 'not-a-time'
   if (invalid === 'expired-quote') item.payload.rows.AAPL.valid_until = '2026-09-09T13:59:59Z'
   if (invalid === 'wrong-record') item.payload.written = '2026-09-08T20:59:00Z'
   if (invalid === 'event-override') {
@@ -3598,7 +3645,7 @@ test(`personal history leaves ${invalid} snapshots unacknowledged`, async ({page
   await page.route('**/desk/personal-history/*/acknowledge', route => { acks.push(route.request().url()); return route.fulfill({json: {}}) })
   await page.route('**/desk/mine*', route => route.fulfill({json: personalHistoryAnswer(item)}))
   await page.goto('/#desk')
-  await expect(page.getByLabel('Personal history recording status')).toContainText(invalid === 'expired' || invalid === 'expired-quote' ? 'expired before loading' : 'has not been confirmed')
+  await expect(page.getByLabel('Personal history recording status')).toContainText(invalid === 'expired' || invalid === 'expired-quote' || invalid === 'invalid-deadline' ? 'confirmation deadline or trading evidence is invalid or has expired' : 'has not been confirmed')
   expect(acks).toEqual([])
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
@@ -3624,7 +3671,7 @@ test('personal history never acknowledges a superseded account response', async 
     return route.fulfill({json: {id, status: 'acknowledged', acknowledged_at: '2026-09-09T14:00:01Z'}})
   })
   await page.goto('/#desk')
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded')
   await page.getByLabel('Personal account equity').fill('200000')
   await page.getByLabel('Personal available cash').fill('100000')
   await page.getByRole('button', {name: 'Apply', exact: true}).click()
@@ -3634,7 +3681,7 @@ test('personal history never acknowledges a superseded account response', async 
   await expect(page.getByLabel('Available cash status')).toContainText('$5,000')
   release?.()
   await page.waitForResponse(response => response.url().includes('/desk/mine') && response.request().postDataJSON().available_cash === 100000)
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded')
   expect(acks).not.toContain(superseded.id)
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
@@ -3673,10 +3720,10 @@ test('personal history exposes recording and acknowledgement failures', async ({
     return route.fulfill({status: 503, json: {detail: 'Receipt acknowledgement unavailable'}})
   })
   await page.goto('/#desk')
-  await expect(page.getByLabel('Personal history recording status')).toContainText('loading was not confirmed: Receipt acknowledgement unavailable')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance saved; dashboard loading confirmation is unavailable: Receipt acknowledgement unavailable')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL strategy intent', {exact: true})).toContainText('BUY')
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('Personal history recording status')).toContainText('loading was not confirmed: Receipt acknowledgement unavailable')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance saved; dashboard loading confirmation is unavailable: Receipt acknowledgement unavailable')
   expect(acknowledgements).toBe(1)
   unavailable = true
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
@@ -3701,7 +3748,7 @@ test(`personal history reports HTTP ${status} without automatic read retries`, a
   const history = page.getByRole('region', {name: 'Personal decision history', exact: true})
   await expect(history.getByRole('alert')).toContainText(`Personal history unavailable (${status})`)
   await page.clock.fastForward(180_000)
-  await history.getByLabel('Find ticker in personal snapshots').fill('AAPL')
+  await history.getByLabel('Find ticker in saved personal guidance').fill('AAPL')
   expect(reads).toBe(1)
   await history.getByRole('button', {name: 'Refresh personal history'}).click()
   await expect.poll(() => reads).toBe(2)
@@ -3809,7 +3856,7 @@ test('personal history does not capture the Research view', async ({page}) => {
   expect(acks).toEqual([])
   await page.getByRole('button', {name: 'Back to the desk', exact: true}).click()
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded')
   expect(captures).toContain(true)
   expect(acks).toEqual([item.id])
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
@@ -3844,7 +3891,7 @@ test('personal history does not acknowledge a response received while hidden', a
     Object.defineProperty(document, 'hidden', {configurable: true, value: false})
     document.dispatchEvent(new Event('visibilitychange'))
   })
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Snapshot loaded')
+  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded')
   expect(acks).toEqual([item.id])
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
@@ -3878,8 +3925,8 @@ test('personal history paginates exports and persists a selected receipt deletio
   const chunks: Buffer[] = []
   for await (const chunk of stream!) chunks.push(chunk)
   expect(JSON.parse(Buffer.concat(chunks).toString())).toEqual(first)
-  await history.getByRole('button', {name: 'Load older personal snapshots'}).click()
-  await expect(history).toContainText('2 snapshots loaded')
+  await history.getByRole('button', {name: 'Load older personal records'}).click()
+  await expect(history).toContainText('2 saved records loaded')
   await history.getByRole('button', {name: 'Delete this receipt'}).click()
   expect(stored).toHaveLength(2)
   await history.getByRole('button', {name: 'Confirm receipt deletion'}).click()
