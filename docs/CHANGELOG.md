@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-25 — Update session prices independently of regular data
+
+Verified source checkpoint `5e49870110f4a208e575410c08504f8b4d617c36`, not
+deployed. A regular-data delay, network failure or invalid JSON no longer
+withholds fresh independent session quotes or their invalidation. Session
+responses use existing poll/account/lifecycle guards; regular failure wording
+is explicitly scoped. No cadence, candle, freshness or execution rule changed.
+
+The expanded baseline failed four intended regressions; the candidate passes
+18/18 new and 174/174 existing browser cases across two runs, zero skips/flaky.
+Original frozen replay passes 2/2. Production build/typechecking and changed-test
+strict typing pass; existing unrelated gate failures remain in `NEXT_SESSION.md`.
+No real account writes or deployment.
+
+A separate four-GET live probe confirms current fresh IEX access, accessible
+indicative overnight data and SIP/BOATS denials—not all-session coverage. Remaining
+calendar/provider-fallback restrictions and source-coverage limits are recorded
+in `research/continuous-price-evidence-2026-09-25.md`. Historical source options
+are documented separately; no source purchase, model fit or strategy rerun.
+
 ## 2026-09-25 — Bind dashboard refreshes to their original account context
 
 Verified source checkpoint `9214c7cb1792da47ed1ec335153bb1c852e0f94a`, not

@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-09-25 — Independent session-price updates; coverage still incomplete
+
+**VERIFIED source checkpoint:** `5e49870110f4a208e575410c08504f8b4d617c36`,
+based on `c14df2befeaf875c554f56cc8e15ae9d828392dd`. Pushed Mac → Spark →
+GitHub from Spark after re-fetching both remotes; preserved `scratch/`.
+No deployment. The user's latest requirement is continuous overnight/premarket/
+postmarket pricing, without treating regular-session closure as all-venue closure.
+The overall trading goal remains active and incomplete.
+
+The browser now reads session prices independently of regular `/live` completion.
+Fresh quotes reach board/chart while regular data is pending or failed; optional
+failure invalidates its own envelope. Poll/account/lifecycle guards cover both
+completion paths. The regular-data failure text is explicitly scoped. Five-second
+optional timeout, cadence, freshness, candles, recording and execution unchanged.
+
+**FAILED original acceptance preserved:** independent control passes, regular
+transport-failure case discards a successful fresh postmarket quote. The expanded
+frozen baseline is 14 passed / four failed, additionally covering regular invalid
+JSON and held responses withholding new quotes or invalidations.
+**VERIFIED candidate:** 174 existing browser cases (84.625s) plus 18 new cases
+(25.976s), **192 distinct cases across two runs**, zero failed/skipped/flaky;
+unchanged original replay 2/2. Production TypeScript/build, changed-test strict
+typing and diff checks pass. Source/test hashes stayed fixed. The existing stale
+diagram check, 13 unrelated whole-file `desk.spec.ts` typing errors, CSS warning
+and bundle warning remain; not every repository gate is green.
+
+Artifact, evidence paths, failed harness calibrations and exact boundaries:
+[continuous-price evidence](research/continuous-price-evidence-2026-09-25.md).
+All browser APIs were mocked; no real receipts/holdings/orders changed.
+Diagram impact: NONE — internal completion handling, no changed architectural
+component, provider, store or ownership relationship.
+
+**VERIFIED bounded live feed probe:** four SPY GETs at 11:21 ET; IEX returns a
+fresh quote, indicative overnight returns an old overnight quote, SIP and BOATS
+return 403. The existing backend image and nine helper hashes are pinned in the
+linked evidence. This is not a deployed frontend check or all-hours coverage
+proof. The observed deploy checkout is `879abc5`, but the backend image has no
+revision label; do not substitute that checkout for runtime source identity.
+
+**Next atomic task:** backend per-symbol freshness/fallback and calendar-driven
+lookup suppression, plus accurate availability wording. Existing code suppresses
+regular/closed/unknown lookups and stops at empty/stale primary HTTP 200. The
+offline audit has 14 observations and 24 existing tests, not new-requirement
+acceptance. Available IEX/indicative-overnight feed types do not establish fresh
+04:00–08:00 or 17:00–20:00 coverage. Inspect/qualify existing alternative sources;
+do not infer an outage from midday-old overnight data or buy access without
+approval. Four authorized live probe reads are exhausted; no automatic rerun.
+Continuous live coverage and deployed UI remain **UNVERIFIED**.
+
+The [historical-universe audit](research/historical-universe-coverage-2026-09-25.md)
+now records a primary-document comparison of CRSP/Compustat, Norgate and public
+reconstruction, including PIT/identity/terminal-accounting and license gaps.
+User's existing historical-data access is still unknown. No new fit, source pin,
+historical-study rerun or strategy adoption. Continue verified increments; deploy
+only on explicit direction through Spark's `scripts/deploy.sh`.
+
 ## 2026-09-25 — Polls retain their starting account context; source only
 
 **VERIFIED bounded dashboard checkpoint:**

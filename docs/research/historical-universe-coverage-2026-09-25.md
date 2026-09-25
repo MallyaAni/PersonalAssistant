@@ -91,6 +91,44 @@ comparison in the frozen study inherit its reconstructed selected columns; the
 price-only gate does not make that opportunity set independently historical.
 The existing nested chronological machinery cannot repair this upstream boundary.
 
+## Public-source shortlist, checked September 25
+
+This is a **documentation comparison, not validated vendor data or confirmed
+access**. The first decision is what authorized access already exists. No
+purchase, signup, market-dataset download, adapter or source-pin change occurred.
+
+| Candidate | Primary documentation supports | Still required / caveat |
+| --- | --- | --- |
+| CRSP US Stock | Permanent PERMNO/PERMCO identifiers, dated security/issuer histories, delisting outcome/reason/successor/missingness fields and distribution declaration/ex/payment dates in the July 31, 2026 CIZ guide. | Strongest inspected documentation for identity and terminal returns, not proof of delivered September 2026 coverage, original publication clocks, GICS or PIT fundamentals. Licensed-use and retention rights unverified. |
+| Compustat via WRDS | Public catalog lists PIT, Snapshot, Preliminary History and Unrestated Quarterly as separate products. | Standard Compustat entitlement is not PIT access. Historical classifications, first-filed/revision semantics and time-valid security joins need entitlement-specific schemas and samples. Detailed documentation required sign-in. |
+| Norgate US Platinum | Delisted US prices and daily historical index membership; advertised USD 630/year. | Explicitly lacks historical fundamentals/classifications, index-announcement dates, historical ticker/name mapping, delisting returns/reasons and correction versioning. Temporary index inclusions are excluded. Windows updater and license limits affect collection, redistribution and retained raw evidence. A partial price/membership source, not a complete solution. |
+| Public reconstruction | Existing SEC cohort shows filing-based identity/merger evidence; Nasdaq documents current symbol fields. Community `fja05680/sp500` README advertises membership history since 1996. | Current directories are not historical archives. Community event completeness/provenance, latest coverage and licensing remain unverified. None establishes a complete price, identity, classification and terminal-accounting source. Public reconstruction remains worth investigating. |
+
+Primary sources: [CRSP product](https://indexes.morningstar.com/research-data-products/crsp-us-stock-databases),
+[July 2026 guide](https://indexes.morningstar.com/docs/guide/crsp-us-stock-databases-guide-for-flat-file-format-2-0?isRdp=true),
+[WRDS S&P catalog](https://wrds-www.wharton.upenn.edu/pages/about/data-vendors/sp-global-market-intelligence/),
+[Norgate coverage](https://norgatedata.com/data-content-tables.php),
+[limitations](https://norgatedata.com/data-package-faq.php),
+[license](https://norgatedata.com/subscribe/eula.php),
+[Nasdaq directory definitions](https://www.nasdaqtrader.com/Trader.aspx?id=SymbolDirDefs),
+and [community README](https://raw.githubusercontent.com/fja05680/sp500/master/README.md).
+Several SEC/S&P pages returned HTTP 403; no access controls were bypassed.
+
+Two accounting distinctions cannot be omitted: CRSP assigns a delisting return
+to the next trading date by convention, not as proof cash settled then; CIZ
+aggregate returns may already include it, so do not double-count it. Norgate's
+suggested final-available-bar exit is not an ex-ante executable decision. Neither
+can silently become spendable cash in the funded simulator.
+
+Full bounded comparison, source URLs, failed checks and excerpts:
+`/private/tmp/anios-historical-source-options.1E5gSX/RECEIPT.md`, SHA-256
+`d48102e18db8c39606aaec495a57db67cc6cedf8cbc0e74fc1dacad6e2607708`.
+The 97-page primary CRSP guide is retained with SHA-256
+`e42f452207d4a30ef05de542a2dac9522f240100cec99a0309b1b3ab20699ec6`.
+This is not an exhaustive source survey and does not establish that paid data
+is necessary. Request an entitlement-specific coverage/sample packet before
+wiring an adapter; no one source reconstructs today's discretionary overlay.
+
 ## Next bounded task
 
 Locate or obtain, under existing authorized access, dated evidence covering
