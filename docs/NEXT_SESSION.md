@@ -2,6 +2,14 @@
 
 ## 2026-09-25 — Regime research fingerprint acceptance
 
+**VERIFIED scoped source checkpoint:**
+`a6eca382f05e2c5001aa14513be3384a5390040d`, published Mac → `git push spark main`
+→ GitHub from Spark. Mac HEAD/origin/main/spark/main and Spark HEAD/GitHub
+origin match. A clean `git pull --rebase origin main` reports up to date.
+All 33 unchanged diagrams/page checks pass. No deployment/restart occurred.
+Root receipt: `/private/tmp/anios-policy-root.nGCj9m/ROOT_RECEIPT.md`, SHA256
+`eedeb681c0e715c1a3835bb0928c1e4091ee3010b59aeb56c3a6510e31ea8dca`.
+
 Starting `main` / `HEAD` is `07c1f97958a046b64679109be71692ae5c86d1c0`;
 Mac origin/spark and Spark HEAD/GitHub origin were fetched and match it.
 Spark's unrelated `scratch/` remains untouched. Only the two fingerprint
