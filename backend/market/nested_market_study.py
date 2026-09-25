@@ -29,6 +29,7 @@ from backend.market import neural_study_metrics as metrics
 from backend.market.allocation_attribution import attribution
 from backend.market.allocation_controls import adjusted_open, constant_exposure
 from backend.market.allocation_replay import AllocationInstruction, replay
+from backend.market.forecast_diagnostics import diagnose
 from backend.market.research_journal import ResearchJournal, _new_directory
 from backend.market.research_journal_replay import verify_archive, verify_snapshot
 
@@ -418,7 +419,7 @@ def _runtime():
     }
 
 
-# Fit once under the declared geometry and compare six independently verified accounts.
+# Compare actual outer forecasts and six reconciled accounts under the frozen geometry.
 def run(report, inputs: StudyInputs, *, protocol=nested.DEFAULT_PROTOCOL):
     _bind_inputs(report, inputs)
     hashes = _source_hashes()
@@ -454,6 +455,13 @@ def run(report, inputs: StudyInputs, *, protocol=nested.DEFAULT_PROTOCOL):
             raise ValueError("Every comparator must retain exactly the same calendar")
         accounts[str(cost)] = group
     summary = _scorecards(accounts, fitted, inputs.panel, first)
+    summary["forecast_diagnostics"] = diagnose(
+        inputs.regression,
+        fitted["outer_folds"],
+        first_decision=first,
+        stop_decision=len(inputs.panel.dates) - 1,
+        evaluated_on=inputs.panel.dates[-1],
+    )
     _bind_inputs(report, inputs)
     if hashes != _source_hashes() or configuration != _configuration():
         raise ValueError("Source or configuration changed during the study")

@@ -121,6 +121,36 @@ def test_full_sample_retains_decision_execution_outcomes(completed):
         assert table["independent_validation"] is False
 
 
+# Study summaries retain forecast diagnostics from the actual saved outer fits.
+def test_study_retains_chronological_forecast_diagnostics(completed):
+    evidence, _, inputs, protocol = completed
+    table = evidence["summary"]["forecast_diagnostics"]
+    from backend.market.forecast_diagnostics import diagnose
+
+    assert table == diagnose(
+        inputs.regression,
+        evidence["nested"]["outer_folds"],
+        first_decision=protocol.first_outer,
+        stop_decision=len(inputs.panel.dates) - 1,
+        evaluated_on=inputs.panel.dates[-1],
+    )
+    assert table["adoption_eligible"] is False
+    assert table["independent_validation"] is False
+    assert len(table["rows"]) == 33
+    assert len(table["actual_folds"]) == 4
+    for stats in table["full_sample"]["targets"].values():
+        assert (stats["observations"], stats["scored"], stats["excluded"]) == (
+            33,
+            28,
+            5,
+        )
+    assert all(
+        target["realized"] is None
+        for row in table["rows"][-5:]
+        for target in row["targets"].values()
+    )
+
+
 # All six accounts have a real independently reconstructed ledger at both costs.
 def test_complete_study_uses_matched_verified_accounts(completed):
     evidence, report, inputs, protocol = completed

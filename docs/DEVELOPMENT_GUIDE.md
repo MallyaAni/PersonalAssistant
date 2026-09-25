@@ -302,6 +302,19 @@ hashes. Full close-to-close returns include gaps before next-open execution;
 intent/sign partitions are descriptive, not counterfactual loss avoidance or
 independent validation. See the [attribution evidence](research/allocation-decision-attribution-2026-09-25.md).
 
+For saved chronological forecast diagnostics, run
+`python -m pytest -c /dev/null backend/tests/test_forecast_diagnostics.py backend/tests/test_nested_market_study.py backend/tests/test_nested_market_serialization.py -q`.
+`forecast_diagnostics.diagnose(inputs, outer_folds, first_decision=...,
+stop_decision=..., evaluated_on=...)` requires exact contiguous declared coverage
+and complete saved fit/prediction evidence. Supply the actual training-masked
+`RegressionInputs`, not raw labels that differ from the fit. No fit occurs in
+the observer; synthetic acceptance still exercises real NumPy fits upstream.
+Keep derived output outside an existing archive, record source/input/output
+hashes and preserve the original producer's completion status. Never rerun a
+historical strategy just to obtain the new report. Zero denominators and terminal
+missing labels must remain explicit. See the
+[contract](research/chronological-forecast-diagnostics-2026-09-25.md).
+
 ## Search routing evaluation
 
 Routing quality is measured against a committed labelled set rather than

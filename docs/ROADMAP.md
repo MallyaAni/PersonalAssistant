@@ -241,6 +241,10 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   Historical input availability, complete financial-quality features and
   independent economic qualification remain outstanding; this does not promote
   a new strategy.
+  Saved outer forecasts now have a separate missingness-aware diagnostic against
+  each fit's training-only target means; this adds measurement, not predictive
+  skill. The public constituent-history audit supplies a reconstruction seed,
+  not qualified point-in-time membership or recovered exited-security accounting.
   The operator's target is ex-ante risk-on
   selection of volatile quality names with cash/index alternatives ahead of
   forecast deterioration, measured by net wealth against `/3`, SPY and QQQ.

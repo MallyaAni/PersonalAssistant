@@ -699,6 +699,14 @@ log-growth contributions, not losses avoided or a new strategy. Closing exposure
 does not establish what was held before the opening gap. The helper can inspect
 existing snapshots without a fit, strategy replay, network call or archive rewrite.
 
+`forecast_diagnostics` separately binds saved outer forecasts to exact contiguous
+decision coverage, fit receipts, training-only target means and decision-time
+feature evidence. It scores only mature published labels and preserves missing
+forecasts/outcomes. The study retains it under `summary.forecast_diagnostics`;
+relative spreads require matching endpoints. This is descriptive gross-proxy
+forecast error, not funded P&L, probability calibration or strategy adoption.
+See the [saved-forecast contract](research/chronological-forecast-diagnostics-2026-09-25.md).
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in

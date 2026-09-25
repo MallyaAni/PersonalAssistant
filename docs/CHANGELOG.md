@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-25 — Diagnose saved forecasts with chronological training baselines
+
+The research study now retains an exact-coverage saved-forecast report alongside
+its funded-account scores. It checks fit/input/state/prediction hashes, validates
+decision-time feature application, derives target-specific training-label means,
+and masks outcomes unavailable at the evaluation date. Missing forecasts remain
+missing; target/spread denominators and undefined correlation/skill are explicit.
+No fit, strategy, execution, model prompt or live UI behavior changed.
+
+Acceptance: **1,215 passed**, one intentionally deselected completed historical
+reproduction, five existing warnings, 40.42s. The actual observer checked14 frozen
+folds/1,684 decisions and336 scalar comparisons across48 independently audited
+metric sets (max4.44e-16); all8 pinned inputs remained unchanged. Scoped lint,
+format and all33 diagram/page checks pass. Review-driven regressions cover
+constant/near-constant arithmetic and type-sensitive receipt validation. Original
+producer OOM/missing manifest remains explicit. No deployment or laptop settings
+changes; full live gates were not run.
+
+A bounded public-source audit qualified the community S&P history only as a
+reconstruction seed: 771 target-period ticker strings,125 internally reconciled
+change rows, but no announcement clocks, stable identities or historical
+classifications. No source adapter, authenticated quote request or purchase.
+See the [diagnostic contract and evidence](research/chronological-forecast-diagnostics-2026-09-25.md)
+and [source qualification](research/historical-universe-coverage-2026-09-25.md#bounded-public-reconstruction-audit).
+
 ## 2026-09-25 — Link frozen allocation decisions to actual fills and outcomes
 
 Verified source checkpoint `b5cd784a203fe1293b25dc29d77edf38b78b4490`, pushed

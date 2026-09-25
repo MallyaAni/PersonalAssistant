@@ -129,6 +129,45 @@ This is not an exhaustive source survey and does not establish that paid data
 is necessary. Request an entitlement-specific coverage/sample packet before
 wiring an adapter; no one source reconstructs today's discretionary overlay.
 
+## Bounded public reconstruction audit
+
+The shortlisted [`fja05680/sp500`](https://github.com/fja05680/sp500) source was
+subsequently inspected directly on September 25. **Qualified as a reconstruction
+seed; rejected as ready-to-use point-in-time membership.** Six raw files were
+retained with content hashes (5,647,284 bytes). No authenticated data endpoint,
+purchase, adapter, fit or strategy replay was used.
+
+- The updated history contains 2,720 dated membership rows from 1996-01-02 to
+  2026-08-18. From the 2014-12-24 seed for the 2015 study start, 607 rows contain
+  771 distinct ticker strings; 268 are absent from the final 503-name snapshot.
+  Those 268 strings are not necessarily delisted securities.
+- All 125 recorded 2019–2026 add/remove rows reconcile internally; the final
+  history matches the bundled current 503 names exactly. This does not establish
+  independent event completeness. The last event is 38 calendar days before
+  inspection, not proof that an intervening change was omitted.
+- The root license is MIT. The inherited book/Wikipedia data's upstream rights
+  were not established; a repository license alone does not resolve them.
+- Historical schemas are only `date,tickers` and `date,add,remove`: no separate
+  announcement clocks, source citations, stable share-class identities or
+  historical classifications. Current CIK/GICS fields do not fill these gaps.
+- The notebook strips `SYMBOL-yyyymm` suffixes, and the README proposes selling
+  on symbol changes. Neither is a valid substitute for security continuity or
+  funded corporate-action accounting. The notebook was inspected, not executed.
+
+GitHub metadata requests timed out; successful raw files are content-hash pinned,
+not commit-pinned. Do not set announcement equal to effective date, carry current
+classifications backwards, or treat the download date as historical availability.
+`backend/market/membership.py` requires cited entry/exit announcement evidence;
+these files cannot legitimately populate that contract as supplied.
+
+Receipt: `/private/tmp/anios-sp500-source-audit.hMbyyQ/RECEIPT.md`, SHA-256
+`2361703c0e6b135a77dfd0a39c2b4932f405260d1e89e20588d63bb42e4e7b4d`.
+Machine-readable audit SHA-256:
+`9da64c866ec63f91a00eb5812a8d38f48ce5c09fe69b3d78d1d67ba05bff8565`.
+It retains exact URLs, raw-file hashes, schemas, all event comparisons and failed
+requests. Source correctness, upstream rights and September completeness remain
+unverified. No source pins or eligibility rules changed.
+
 ## Next bounded task
 
 Locate or obtain, under existing authorized access, dated evidence covering
