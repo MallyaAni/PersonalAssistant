@@ -1662,6 +1662,11 @@ test('the board opens with top names, pages on request, and a search finds a tic
 // A held position must never fall below the paged fold, and each name's
 // move against its last close reads beside the price.
 test("held positions stay past the fold and rows show the day's move", async ({ page }) => {
+  // This verifies regular-session movement; extended quotes have their own provenance.
+  await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
+    as_of: '2026-09-09T14:00:00Z', market_status: {open: true, phase: 'open'},
+    quotes: {AAPL: {last: 102, bar: '2026-09-09T13:45:00Z'}, HOLDME: {last: 82, bar: '2026-09-09T13:45:00Z'}},
+  }}))
   const latest = deskRecord()
   for (let i = 0; i < 12; i += 1) {
     const t = `T${String(i).padStart(2, '0')}`

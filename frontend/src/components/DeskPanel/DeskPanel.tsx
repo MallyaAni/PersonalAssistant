@@ -1012,8 +1012,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     setNow(Date.now())
     try {
       setLive(await getDeskLive(userId))
+      setNow(Date.now())
     } catch {
-      setLive((previous) => ({ ...previous, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
+      setLive((previous) => ({ ...previous, extended_hours: undefined, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
     }
     await refreshMine()
     try {
@@ -1096,12 +1097,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     setDecisions(undefined)
   }, [userId])
 
+  // Expire displayed quotes and signals even when no network refresh completes.
   useEffect(() => {
-    const deadlines = [...Object.values(gradeContext.until), payload?.intraday_research?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
+    const deadlines = [...Object.values(gradeContext.until), payload?.intraday_research?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
+    deadlines.push(...[live.extended_hours?.as_of, ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.at)].map(value => Date.parse(value ?? '') + 60_000).filter(value => value > now))
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
     return () => window.clearTimeout(timer)
-  }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions])
+  }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions, live.extended_hours])
 
   // Refresh quote eligibility between candle updates and ignore obsolete account requests.
   useEffect(() => {
@@ -2664,7 +2667,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={ticker} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} tall />
+          <TickerChart key={ticker} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} tall />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}

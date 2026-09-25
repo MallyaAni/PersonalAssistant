@@ -206,6 +206,18 @@ def _curve_for_display(curve):
     return visible
 
 
+# Return independent display quotes without mutating regular-session strategy evidence.
+@router.get("/desk/session-prices")
+async def desk_session_prices(user_id: UserId, response: Response) -> dict:
+    _operator_only(user_id)
+    response.headers["Cache-Control"] = "private, no-store"
+    from backend.market import session_prices
+
+    latest, _previous = deskrecord.latest_pair(_root())
+    symbols = list((latest or {}).get("grades") or {})
+    return await asyncio.to_thread(session_prices.fetch, symbols)
+
+
 # One earlier session's record, as it was written.
 # The current candle against the board's levels: the last fifteen-minute
 # close, the session's high and low, for every name on the board. Read

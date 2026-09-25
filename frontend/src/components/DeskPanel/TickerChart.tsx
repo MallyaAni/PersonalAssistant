@@ -11,7 +11,8 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts'
 import { getDeskChart, type DeskChart, type DeskChartBar } from '../../services/api'
-import type { DeskHistory } from '../../services/api'
+import type { DeskHistory, DeskLive } from '../../services/api'
+import { SessionPrice } from './StockBoard'
 
 // The picture behind the grade. The board says what the desk concluded; this
 // shows adjusted price indicators beside recorded and replayed grade changes.
@@ -204,12 +205,16 @@ export const TickerChart = ({
   ticker,
   history,
   quote,
+  live,
+  now = Date.now(),
   tall = false,
 }: {
   userId: string
   ticker: string
   history?: DeskHistory
   quote?: LiveQuote
+  live?: DeskLive
+  now?: number
   tall?: boolean
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
@@ -397,6 +402,7 @@ export const TickerChart = ({
 
   return (
     <section className="mb-4" aria-label={`${ticker} price chart`}>
+      {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} /></div>}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-xs font-medium text-[#1d1d1f]">
           Price, indicators and grade history

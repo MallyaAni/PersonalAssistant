@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-25 — Extended-hours price context
+
+The board and chart now receive separately dated pre-market/post-market/overnight
+display quotes from existing data entitlements. Current midpoint, session, feed,
+timestamp and indicative status are explicit; stale or missing data stays
+unavailable. Regular candles, grades, predictions and executable sizing remain
+separate. This does not validate or enable an extended-hours trading strategy.
+The new private read-only endpoint and session/expiry/failure handling pass63
+relevant backend tests. No paid subscriptions, orders or account changes.
+
 ## 2026-09-25 — Count actual chart candles
 
 The chart caption counts rendered candles directly. A browser case covers a

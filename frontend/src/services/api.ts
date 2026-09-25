@@ -2256,6 +2256,7 @@ export interface DeskMarketStatus {
 }
 export interface DeskLive {
   as_of: string | null;
+  extended_hours?: DeskSessionPrices;
   market_status?: DeskMarketStatus;
   data_at?: string | null;
   decision_session?: string | null;
@@ -2636,14 +2637,30 @@ export const getDeskPaper = async (userId: string): Promise<DeskPaperLive> => {
   return (await response.json()) as DeskPaperLive;
 };
 
+export interface DeskSessionPrices {
+  session: 'pre-market' | 'post-market' | 'overnight' | 'closed' | 'regular' | 'unknown';
+  as_of: string;
+  signal_scope: 'regular-session';
+  quotes: Record<string, {price: number | null; bid?: number; ask?: number; at: string | null;
+    feed: string | null; indicative: boolean; status: 'fresh' | 'stale' | 'unavailable';
+    reason: string; valid_until: string | null}>;
+}
+
+// Keep optional session-price failures separate from the regular signal snapshot.
 export const getDeskLive = async (userId: string): Promise<DeskLive> => {
-  const response = await authenticatedFetch(
-    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live`,
-  );
+  const base = `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`;
+  const [response, session] = await Promise.all([
+    authenticatedFetch(`${base}/live`),
+    authenticatedFetch(`${base}/session-prices`, {signal: AbortSignal.timeout(5000)}).then(async result => result.ok ? result.json() : null).catch(() => null),
+  ]);
+  const valid = session && ['pre-market', 'post-market', 'overnight', 'closed', 'regular', 'unknown'].includes(session.session)
+    && session.signal_scope === 'regular-session' && typeof session.as_of === 'string'
+    && session.quotes && typeof session.quotes === 'object' && !Array.isArray(session.quotes);
+  const extended_hours = valid ? session as DeskSessionPrices : undefined;
   if (!response.ok) {
-    return { as_of: null, quotes: {} };
+    return { as_of: null, quotes: {}, extended_hours };
   }
-  return (await response.json()) as DeskLive;
+  return {...await response.json(), extended_hours} as DeskLive;
 };
 
 // The model's plain-language live technical read for one name. `read` is

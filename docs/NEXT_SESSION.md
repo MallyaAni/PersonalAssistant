@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-09-25 — Extended-hours display release
+
+User requests completion/commit/deploy within remaining6%weekly usage. Bounded
+scope: real session-labelled display quotes, separate from regular-session
+strategy/candles/sizing. Root owns all files again; no active worker or OpenCode.
+Starting source f206647, live0374bdf. No paid data or model changes authorized.
+
+VERIFIED provider entitlements: SIP and BOATS latest quotes403; IEX200 but old/
+empty overnight; free overnight200 with fresh indicative AAOI/NVDA/QQQ bid/ask.
+Primary docs https://docs.alpaca.markets/us/docs/245-trading-for-trading-api.
+New backend session_prices module batches quoted midpoints, dates sessions using
+published holiday/early-close calendar (overnight belongs to next trade date),
+falls back only across existing entitlements, rejects invalid/future/old-session
+quotes, expires at60seconds or session boundary. API is an authenticated private
+read-only /desk/session-prices. Regular strategy inputs are untouched.
+
+Frontend gets optional feed independently with bounded timeout. Board/chart show
+current midpoint/session/source/time; overnight marked indicative. Expiry and
+feed failure clear the current price, regular-bar evidence stays separate, no
+extended midpoint enters returns/grades/sizing or adjusted candle coordinates.
+Signal remains explicitly regular-session; extended-hours predictions/execution
+have NOT been validated or enabled. Free IEX may lack pre/post-market coverage;
+those gaps remain unavailable, never described as fresh or paid-consolidated data.
+
+VERIFIED63backend tests, Ruff, production build, actual feed/source exercise.
+Compiled119-case run passed118; remaining regular-session change% fixture had
+implicitly used a post-market clock. Explicit regular session restores its
+unchanged movement assertion; targeted case passed. Logs:
+/tmp/codex-extended-browser-20260925.log and
+/tmp/codex-extended-regular-check-20260925.log. Pending commit/push/main + normal
+scripts/deploy.sh serial gate and actual public API/
+browser/source-hash acceptance. Live source probe:
+/tmp/codex-extended-live-source-20260925.json. No orders/account edits/history
+rewrites/scoring/model changes. Preserve unrelated shared main scratch/.
+
 ## 2026-09-25 — Final released state and extended-hours gap
 
 Final live source **0374bdf7c08d8ebd293a5611e6d5387e2a812bc6**, normal frontend-only
