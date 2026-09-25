@@ -63,41 +63,47 @@ recorded reasons, all raw data, freshness/session/time semantics, actions and
 sizes. No backend/collector/Git/deploy change authorized to this agent. Desired
 browser failures must precede its source edit. Its source task starts at f108983.
 
-`/root/dashboard_current_claims` is READ-ONLY on the phone-test diagnosis.
+`/root/dashboard_current_claims` completed the read-only phone-test diagnosis.
 Both grade sections span 798 px and fit the 844 px viewport. Scrolling Evening
 alone lands at scrollTop 793 and clips Latest by 43.125 px; an upward native
 scroll exposes both at ratio 1 and all controls work, without horizontal
 overflow. Naive block:start alignment still clips 0.125 px (ratio0.9996973),
-so that attempted diagnostic is retained. The agent is checking robust
-geometry-derived alignment of their union, keeping BOTH full-visibility
-assertions and all content/control checks. No repository edit/xfail/looser
-assertion is authorized yet. Inspect its final receipt before adopting a
-test-only correction. `/root/chronological_validation` completed the independent
+so that attempted diagnostic is retained. Geometry-derived alignment of their
+union passes BOTH full-visibility assertions and all content/control checks
+on original and final bundles. Root read the receipt and authorized a minimal
+TEST-ONLY correction in `frontend/e2e/desk-evidence-timing.spec.ts`, preserving
+both ratio=1 assertions, the fixture, viewport and all content/control/diagnostic
+checks. No UI/CSS change or xfail is authorized. Final acceptance must rerun
+the full nine-case file on both pinned bundles and the combined broader suite
+with the display-wording agent. Receipt:
+`/private/tmp/anios-phone-reachability.No5YGt/RECEIPT.md`, SHA256
+`7f87d1b9ab08cca8faad99bdb562e9daae17c89c224b0deb2fd21a26623c2925`.
+`/root/chronological_validation` completed the independent
 OI and display-source reviews and owns no edits.
 
 The full goal stays **active/incomplete**. No top-tier economic edge is newly
 established. Existing LightGBM, deterministic `/3`, unpromoted DL/RL pilots and
 frozen study boundaries remain. Allocation-gate losses are still 10/14 matched
-folds at10bp and11/14 at25bp; original producer OOM/missing manifest stays FAILED.
+folds at 10 bp and 11/14 at 25 bp; original producer OOM/missing manifest stays FAILED.
 No new fit, horizon search or historical strategy rerun is authorized by these
 checkpoints. Completed 15-minute evidence is not a 15-minute holding policy;
 current intraday evaluation tracks targets, not all `/3` exits or matched
 SPY/QQQ accounts. Common intraday mark/fill/instruction evidence is still needed.
 
-A prior bounded saved-file read saw138 `decision-*.json` paths on Spark and
+A prior bounded saved-file read saw 138 `decision-*.json` paths on Spark and
 sampled newest filesystem mtime, NOT proven latest market time:
 `decision-4e73781b0e92194aff6e2a728faf221b5a5ba6b590820ded55a060da50f5bc9a.json`,
 SHA256 `2c4997a7d110035ea62de3c7c36b7efce2021ec958e6884fd73736edcc44beaa`.
-Its bar was2026-09-23T19:45Z, as_of20:00:57.531321Z, valid_until20:15Z;
+Its bar was 2026-09-23T19:45Z, as_of 20:00:57.531321Z, valid_until 20:15Z;
 prices include SPY, not QQQ, and no explicit fill/instruction/mark-grid fields.
 That single observation is not an archive coverage audit, a current live state
 or proof of real fills. Do not repeat the read or build another scaffold simply
 to report activity; source `intraday_evaluation` already identifies its limits.
 
-Release-readiness target remains20:34 UTC /16:34 ET; latest clock19:38:47 UTC.
+Release-readiness target remains 20:34 UTC / 16:34 ET; latest clock 19:40:03 UTC.
 Acceptable drawdown and recurring quote-collector activation remain unanswered.
 Authenticated market-data probe allowances are exhausted. **Do not restart the
-pending backend**, whose default enables15-second provider reads. Deploy only
+pending backend**, whose default enables 15-second provider reads. Deploy only
 on Spark via `scripts/deploy.sh --wait-post`, preserving data/secrets symlinks,
 exact artifact identity and full gates/browser/provider/postcheck evidence.
 
