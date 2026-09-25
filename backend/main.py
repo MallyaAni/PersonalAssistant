@@ -20,13 +20,13 @@ from backend.services.document_parse_queue import DocumentParseQueue
 from backend.services.document_retention import DocumentArchiver
 from backend.services.google_drive_source import DriveSync
 from backend.services.image_embedding_reconciler import ImageEmbeddingReconciler
+from backend.services.session_price_collector import SessionPriceCollector
 
 setup_logging("DEBUG" if settings.DEBUG else "INFO")
 logger = logging.getLogger(__name__)
 
 
-# Run the self-healing image-embedding reconciler for the app's lifetime, so any
-# image that failed to embed at write time is backfilled and stays recallable.
+# Run bounded maintenance and display-price collection for the backend lifetime.
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     reconciler = ImageEmbeddingReconciler(
@@ -44,9 +44,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     archiver.start()
     drive_sync = DriveSync(settings.GOOGLE_DRIVE_SYNC_INTERVAL_SECONDS)
     drive_sync.start()
+    session_prices = SessionPriceCollector(
+        settings.MARKET_DATA_ROOT,
+        settings.MARKET_SESSION_PRICES_POLL_SECONDS,
+        settings.MARKET_SESSION_PRICES_ENABLED,
+    )
+    session_prices.start()
     try:
         yield
     finally:
+        await session_prices.stop()
         await drive_sync.stop()
         await archiver.stop()
         await parse_queue.stop()

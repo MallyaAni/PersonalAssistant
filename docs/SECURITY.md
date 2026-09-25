@@ -201,6 +201,28 @@ AniOS is therefore a local development scaffold, not a hardened system for sensi
 
 ## Current development requirements
 
+Display-only session quotes are collected by the backend lifetime service into
+one bounded `MARKET_DATA_ROOT/desk/session-prices/latest.json` (at most 1 MB and
+256 graded symbols), coordinated by its own `collector.lock`, not the paper
+account lock. The record contains public symbol/source/price/time evidence only;
+no holdings, cash, accounts, credentials or model prompts. It replaces the prior
+snapshot, including a completed failed fetch; it is not a historical archive.
+Created files use private modes, bounded no-follow reads and atomic replacement;
+the parent market root must remain operator-controlled. Safe POSIX locking is
+required; unsupported hosts leave collection inactive rather than emulate locks.
+The existing desk-owner authenticated GET filters the latest graded universe,
+revalidates age, and writes nothing; it sends `private, no-store`.
+
+Existing Alpaca credentials stay server-side. Collection failure/recovery logs
+contain fixed status text, never provider bodies. Defaults schedule a pass every
+15 seconds while the backend is running, with shared due-time suppression;
+provider caching/backoff and access limits still apply. No subscriptions or broker
+account operations are introduced. `MARKET_SESSION_PRICES_ENABLED=false` disables
+new passes on the next backend start; the original timestamps still expire any
+remaining snapshot. Only the latest state is retained, plus ordinary market-root
+backups under existing retention. Operator removal of this display-only snapshot
+does not affect execution or account history; a running collector can recreate it.
+
 FOMC recovery is restricted to the official Alpaca paper endpoint. The deployment
 script writes `data/market/desk/event-recovery-enabled.json` with a hash of the
 deployed execution source; a collector that has only pulled newer Git code cannot

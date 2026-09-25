@@ -2638,7 +2638,7 @@ export const getDeskPaper = async (userId: string): Promise<DeskPaperLive> => {
 
 export interface DeskSessionPrices {
   session: 'pre-market' | 'post-market' | 'overnight' | 'closed' | 'regular' | 'unknown';
-  as_of: string;
+  as_of: string | null;
   signal_scope: 'regular-session';
   quotes: Record<string, {price: number | null; bid?: number; ask?: number; at: string | null;
     session?: DeskSessionPrices['session'];
@@ -2652,7 +2652,7 @@ export const getDeskSessionPrices = async (userId: string): Promise<DeskSessionP
   const session = await authenticatedFetch(`${base}/session-prices`, {signal: AbortSignal.timeout(5000)})
     .then(async result => result.ok ? result.json() : null).catch(() => null);
   const valid = session && ['pre-market', 'post-market', 'overnight', 'closed', 'regular', 'unknown'].includes(session.session)
-    && session.signal_scope === 'regular-session' && typeof session.as_of === 'string'
+    && session.signal_scope === 'regular-session' && (session.as_of === null || typeof session.as_of === 'string')
     && session.quotes && typeof session.quotes === 'object' && !Array.isArray(session.quotes);
   return valid ? session as DeskSessionPrices : undefined;
 };

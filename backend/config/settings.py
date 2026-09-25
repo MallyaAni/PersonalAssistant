@@ -716,6 +716,9 @@ class Settings(BaseSettings):
     ARTIFACT_STORAGE_ROOT: str = "data/artifacts"
     # Immutable as-of partitions of daily market history (backend/market/store.py).
     MARKET_DATA_ROOT: str = "data/market"
+    # Display-only collection continues without a browser, using existing credentials.
+    MARKET_SESSION_PRICES_ENABLED: bool = True
+    MARKET_SESSION_PRICES_POLL_SECONDS: float = Field(default=15.0, ge=10, le=30)
     PRESENTATION_RENDERER_BASE_URL: str = "http://127.0.0.1:8002"
     PRESENTATION_RENDERER_TIMEOUT_SECONDS: float = Field(default=60.0, gt=0, le=600)
     PRESENTATION_MAX_OUTPUT_BYTES: int = Field(

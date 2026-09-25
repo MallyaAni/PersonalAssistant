@@ -791,6 +791,9 @@ services:
       # keys live in .env and reach the container here and nowhere else.
       - APCA_API_KEY_ID=${APCA_API_KEY_ID:-}
       - APCA_API_SECRET_KEY=${APCA_API_SECRET_KEY:-}
+      # Existing backend lifecycle collects display quotes independently of browsers.
+      - MARKET_SESSION_PRICES_ENABLED=${MARKET_SESSION_PRICES_ENABLED:-true}
+      - MARKET_SESSION_PRICES_POLL_SECONDS=${MARKET_SESSION_PRICES_POLL_SECONDS:-15}
       - AUTH_SESSION_TTL_HOURS=${AUTH_SESSION_TTL_HOURS:-168}
       - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false}
       - AUTH_COOKIE_SAMESITE=${AUTH_COOKIE_SAMESITE:-lax}
@@ -1037,8 +1040,8 @@ services:
       # price store the live technical read runs over, and the per-name
       # history files the drill-down opens. Written by market_daily and the
       # host balancer after each close and on the fifteen-minute candle; the
-      # Desk view reads them, and writes only the person's own holdings file
-      # under desk/ (the Buy button), so the mount is writable, not :ro.
+      # Desk view reads them; the backend writes owner-authorized desk state
+      # and one bounded display-price snapshot, so the mount is writable.
       - ./data/market:/app/data/market:rw
       - artifactdata:/app/data/artifacts
       - searchdata:/app/data/search

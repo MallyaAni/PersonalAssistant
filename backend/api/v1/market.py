@@ -206,16 +206,16 @@ def _curve_for_display(curve):
     return visible
 
 
-# Return independent display quotes without mutating regular-session strategy evidence.
+# Read the collected display snapshot without triggering provider or account work.
 @router.get("/desk/session-prices")
 async def desk_session_prices(user_id: UserId, response: Response) -> dict:
     _operator_only(user_id)
     response.headers["Cache-Control"] = "private, no-store"
-    from backend.market import session_prices
+    from backend.market import session_price_snapshot
 
     latest, _previous = deskrecord.latest_pair(_root())
     symbols = list((latest or {}).get("grades") or {})
-    return await asyncio.to_thread(session_prices.fetch, symbols)
+    return await asyncio.to_thread(session_price_snapshot.read, _root(), symbols)
 
 
 # One earlier session's record, as it was written.

@@ -481,7 +481,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           {fomcLine && <p>{fomcLine}</p>}
         </div>
       </div>
-      <p className="mt-0.5" title="Fundamental analysis is nightly. Regular-session signals use completed 15-minute bars; independent session quotes are display-only and polling does not guarantee a new quote.">{time ? `Regular-session bar ${time} ET` : 'Regular-session bar unavailable'} · completed 15-minute bars; session quotes checked every minute{live.stale ? ' · regular bar stale' : ''}</p>
+      <p className="mt-0.5" title="Fundamental analysis is nightly. Regular-session signals use completed 15-minute bars. While open, the dashboard checks for display-only session quotes every minute; browser refresh and provider collection have separate schedules. A refresh does not guarantee a new or fresh quote.">{time ? `Regular-session bar ${time} ET` : 'Regular-session bar unavailable'} · completed 15-minute bars; dashboard checks for session quotes every minute{live.stale ? ' · regular bar stale' : ''}</p>
       <details className="mt-1"><summary className="cursor-pointer">Data & sizing details</summary>
         {liveSizingReady && !hidden && (
           <div className="flex shrink-0 gap-1" role="group" aria-label="Sizing policy">

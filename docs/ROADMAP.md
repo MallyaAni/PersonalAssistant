@@ -220,6 +220,12 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 
 ## Milestone 5: tools and specialized agents — IN PROGRESS
 
+- Desk pricing remains `IN PROGRESS`: browser-independent collection of existing
+  display quotes and original-time expiry are verified with isolated startup,
+  HTTP, storage and browser tests, not yet deployed. The single approved SIP
+  sample confirms dated historical pre/post bars, not continuous real-time
+  availability. [Coverage and acceptance](research/continuous-price-evidence-2026-09-25.md)
+  remain separate from execution inputs and strategy qualification.
 - Trading research remains `IN PROGRESS`: the optional account journal and
   independent replay are verified on synthetic accounting paths (292 tests;
   five archive/CLI journeys), not qualified market performance. Source-complete

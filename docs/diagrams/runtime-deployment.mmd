@@ -8,7 +8,7 @@ flowchart TB
     subgraph Spark1[spark1 - Docker Compose plus one systemd unit]
         Gateway[Same-origin gateway :8080<br/>compiled React and API proxy]
         Frontend[Vite development server<br/>:5173]
-        Backend[FastAPI backend<br/>chat, SSE, tools, recall]
+        Backend[FastAPI backend<br/>chat, SSE, tools, recall<br/>in-process display quote collector]
         Discovery[Discovery worker<br/>Scout sweeps, scheduled tasks,<br/>iMessage polling]
         Worker[Presentation worker]
         Maintenance[Memory maintenance and<br/>storage collection timers]
@@ -18,6 +18,7 @@ flowchart TB
         VLLMMain[vLLM :8000 DeepSeek V4 Flash<br/>tensor-parallel rank 0, systemd<br/>every text role]
         VLLMEmbed[vLLM embedding :8004<br/>Nomic text embeddings]
         Stores[(PostgreSQL and pgvector<br/>Redis, append-only<br/>both on host loopback only)]
+        QuoteSnapshot[(Bounded latest quote file<br/>shared market-data mount)]
         Tunnel[Cloudflare tunnel<br/>deep-matter.com, no LAN port opened]
     end
 
@@ -38,6 +39,7 @@ flowchart TB
 
     subgraph External[Optional external services]
         Integrations[[Configured MCP servers<br/>Google Search and Tavily]]
+        QuoteFeeds[[Existing market-data feeds]]
     end
 
     Browser -->|public HTTPS| Tunnel --> Gateway
@@ -50,6 +52,8 @@ flowchart TB
     Backend -->|only while the desktop is on| ComfyUI
     Backend --> MCP
     Backend --> Integrations
+    Backend -->|lifetime collection, not HTTP reads| QuoteFeeds
+    Backend -->|collector writes; display API reads| QuoteSnapshot
     Backend -->|send, read| Bridge
     Discovery -->|poll, deliver| Bridge
     Discovery --> Stores
@@ -77,5 +81,5 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
     class User,Browser,Phone user;
     class Gateway,Frontend,Backend,Discovery,Worker,Maintenance,MCP,Renderer,Adapters,VLLMMain,VLLMEmbed,VLLMRank1,VLM,Bridge,ComfyUI,Tunnel process;
-    class Stores,Mirror1,Mirror2 data;
-    class Integrations external;
+    class Stores,Mirror1,Mirror2,QuoteSnapshot data;
+    class Integrations,QuoteFeeds external;

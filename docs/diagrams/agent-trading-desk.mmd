@@ -14,7 +14,9 @@ flowchart TB
     Plan --> Records
     Records --> View[Desk API and dashboard<br/>dated advice and manual position recording]
     Journal --> View
-    Quotes[Read-only bid/ask and session clock<br/>SIP preferred; IEX identified] --> View
+    Quotes[Execution bid/ask and session clock<br/>SIP preferred; IEX identified] --> View
+    DisplayCollector[Backend-lifetime display collection<br/>existing feeds; no account actions] --> DisplaySnapshot[(Bounded latest display snapshot<br/>original source and capture times)]
+    DisplaySnapshot -->|Read-only API revalidates freshness| View
     Holdings[(Saved personal positions)] --> View
     View -->|Owner-only generated advice<br/>separate load acknowledgement| PersonalHistory[(Encrypted personal decision receipts<br/>dated, expiring; never trade executions)]
     PersonalHistory -->|Owned history, export and deletion| View
@@ -38,7 +40,9 @@ flowchart TB
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
-    class Store,Journal,Records,Holdings,Research,PersonalHistory data;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot data;
     class Providers,Broker,Quotes external;
     class Models model;
     class View interface;
+    class DisplayCollector application;

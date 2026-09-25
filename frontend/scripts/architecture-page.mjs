@@ -298,6 +298,12 @@ const publishedDiagrams = [
     change: "How daily market history is fetched without being refused, kept reproducible, and measured before any model is trusted.",
   },
   {
+    name: "session-price-collection",
+    title: "Session prices — collection and display",
+    scope: "Backend lifetime collection, one bounded latest snapshot, read-only dashboard access",
+    change: "How dated quotes reach the desk without browser-triggered provider calls, retimestamping old evidence, or changing execution.",
+  },
+  {
     name: "tool-memory-subsystem",
     title: "Tool memory & MCP",
     scope: "Discovery, semantic selection, and safe invocation",

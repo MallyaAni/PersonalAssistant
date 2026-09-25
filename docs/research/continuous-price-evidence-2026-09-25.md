@@ -1,5 +1,147 @@
 # Continuous price evidence — September 25, 2026
 
+## Background collection — isolated acceptance, not deployed coverage
+
+Based on `main` at `61a31e20761901615600846b8e0983b72001124d`. The current
+increment adds a backend-lifetime display collector and a single persisted
+snapshot. It does **not** add a historical archive, delayed SIP fallback,
+execution input, strategy, account operation or model call. No laptop system
+settings or computer-control permissions changed. No deployment was performed.
+
+### What changed
+
+- A due pass runs independently of browsers, default every 15 seconds while
+  the backend is running. Existing credentials and safe POSIX locking are
+  required; unsupported hosts remain importable with collection inactive.
+- A dedicated shared file lock and persisted attempt time suppress duplicate
+  worker passes. One private-mode, atomic, bounded `latest.json` holds up to
+  256 graded symbols and 1 MB. This is latest-state persistence, not an archive.
+- The existing authenticated GET only reads and revalidates persisted evidence.
+  Repeated reads neither contact a provider nor write files. Missing/corrupt
+  storage returns `as_of: null` and unavailable rows, not a fabricated capture.
+- Original `as_of`, quote `at`, recorded source/session and freshness deadline
+  are retained. Recorded phases, including `unknown`, are not recomputed against
+  a later calendar. Age is revalidated; a GET never renews freshness.
+- Completed malformed/failed fetches publish an empty failure instead of
+  preserving a still-fresh older success. A storage failure cannot promise a
+  replacement; retained data ages out normally. Sanitized failure-transition
+  and recovery logs disclose that distinction without provider contents.
+- Shutdown drains any active threaded pass. The UI explicitly says the
+  **dashboard checks** for session quotes every minute, distinct from the
+  collector schedule and any guarantee of new observations.
+
+### Final acceptance and boundaries
+
+**VERIFIED:** 357 backend cases passed, zero failures/skips, 7.59 seconds;
+60 existing all-NaN warnings remain in entry-session gap fixtures. This includes
+135 storage cases, eight collector cases, nine API cases, seven startup/config
+cases and existing feed/calendar/desk/execution regressions.
+
+The startup acceptance runs real `uvicorn.Server` with `backend.main:app` and
+its actual lifespan on container loopback. A real temporary snapshot appears
+before any HTTP client exists. Two authenticated clients perform ten reads with
+unchanged bytes/mtime and source timestamps; unauthenticated/wrong-owner requests
+fail 401/403. A failed pass replaces still-fresh success, a later pass recovers,
+and app shutdown waits for a held writer. After stopping, no new writes occur
+and the original quote expires. Only unrelated model/document maintenance and
+provider data are synthetic, and the test cadence is accelerated. No production
+database, model, provider, account, receipt or order is touched.
+
+Storage acceptance includes real cross-process duplicate suppression and lock
+recovery, bounded malformed JSON/FIFO/symlink handling, failed-publication cleanup,
+original timestamp expiry, and application import with `fcntl` unavailable.
+It does not prove cleanup of orphan temporary files after arbitrary process
+termination midway through publication; no scavenger was added.
+
+**VERIFIED browser workflow:** 47 focused cases (49.946 seconds) plus 171 broader
+cases (74.814 seconds), **218 distinct cases**, zero failed/skipped/flaky, against
+the same compiled artifact. Chart opening, first-open persisted evidence,
+reload, expiry without polling, failure/recovery, source/time labels and
+unchanged signal/size/account behavior are exercised. All browser API data is
+intercepted; these tests do not independently prove the backend collector or
+live provider. Production TypeScript/build and changed-test strict typing pass.
+
+**FAILED intermediate checks retained:** the first API test compared equivalent
+UTC/ET instants as unequal strings (six failures); the corrected assertion checks
+the exact stored original plus instant equality. The store's initial hardening
+suite had 107 passed / 14 failed, exposing malformed-input and unsafe-path cases.
+The frontend's first seven-case run had two reopen harness errors; corrected
+baseline is 7/7, and the new cadence assertion separately failed old wording.
+The first broad browser run passed 165 / failed six solely because its screenshot
+folder was read-only. Correcting that evidence mount, without production edits,
+produced the final 171/171 run. A reviewer reproduced four returned storage
+failures with no warning before the failure-transition logging correction.
+
+Changed collector/store/startup/API-test/main modules pass Ruff; the existing
+whole-file `_desk_mine_payload` complexity and a settings comment-length error
+remain outside this change. Existing frontend CSS/bundle warnings remain.
+Full repository/routing/deploy gates and deployed workflow are **UNVERIFIED**.
+
+### Artifact identity and receipts
+
+Backend runtime: immutable image
+`63056fccae989b0ef65bb198bc913da58c87648169a50c1e2422b9b3c267d8ca`;
+current source mounted read-only, network disabled, synthetic test credentials.
+Final JUnit evidence: `/private/tmp/anios-background-backend-final.LCxuKuKf/backend-final.xml`.
+Relevant source/test/config hashes stayed unchanged across acceptance.
+
+Browser runtime:
+`5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48`,
+isolated Vite preview of
+`/private/tmp/anios-background-session-locked.2RVA6ZyQ/dist/`, entry
+`index-CsdUQRsl.js`, SHA-256
+`f7ef22cf667105cc8f978df82611a85efc31f423f6ba3fd5ae31ed65875dc1f8`.
+Focused receipt/results are beside that artifact. Broad final results:
+`/private/tmp/anios-background-root-browser-locked.4bXuRMgK/results.json`, SHA-256
+`142a1eb1bb4061f2fdebb783884e7b7ab682f318d415c278e073cb3020f0ce46`.
+The initial screenshot-mount failure is retained at
+`/private/tmp/anios-background-root-browser.25ovoVHJ/`.
+
+Final frontend tooling comes from the existing read-only
+`anios_codex_node_modules` volume: Vite 8.1.4, Playwright 1.61.1, Chromium 1228.
+An offline version audit found 373 installed lock-aligned packages, 41 absent
+optional/platform packages, zero required omissions or version mismatches.
+This proves installed versions, not tarball content integrity or a fresh
+`npm ci`. No shared dependencies, lockfile or OS settings were changed.
+
+The same 218 cases also passed earlier on the newer host dependencies
+(Vite 8.3.1, Playwright 1.63.0), in 50.416 + 81.779 seconds. That separately
+pinned artifact remains at `/private/tmp/anios-background-session-candidate.8s5p6gQK/`;
+the broad receipt is `/private/tmp/anios-background-root-browser-final.rk6GcXwk/`.
+Those results are additional runtime evidence, not another 218 distinct tests
+or the final lock-aligned candidate.
+
+**Diagram impact: UPDATED — session-price-collection, anios-system,
+runtime-deployment, agent-trading-desk.** The 33-view canonical check and
+published-page check pass with locked Mermaid 11.16.0. Browser checks exercise
+all four affected views/links/zoom, with 81 contained labels and zero errors.
+All 29 unrelated sources/SVGs remain byte-identical. The old apparent stale
+diagram failure was local CLI 11.17.0 drift: the unchanged 32-view baseline
+passes with 11.16.0. Receipt:
+`/private/tmp/anios-session-price-diagrams.CSVmdaBf/RECEIPT.md`.
+
+### Still not proved
+
+Collection while the backend is stopped, an end-to-end latency SLA, all-hours
+fresh prices, all-symbol continuity, provider accuracy and real-time SIP access
+remain unverified or unavailable. The collector does not override provider
+coverage, caching/backoff or entitlement. A successful historical sample below
+cannot be relabelled real-time.
+
+The separately approved [single historical SIP request](extended-hours-source-options-2026-09-25.md)
+returned 3,316 valid September 24 minute bars for four symbols, including both
+gap windows, with no next page. That allowance is consumed; no further requests
+were made. No delayed fallback is wired. Independent
+[/3 attribution](fixed-strategy-attribution-2026-09-25.md) found roughly 90%
+stock exposure during its worst drawdown; it does not demonstrate red-day
+protection or qualify a strategy promotion.
+
+## Earlier availability checkpoint
+
+The remainder preserves earlier evidence and its then-current limitations;
+on-demand collection is superseded in source by the increment above, not claimed
+deployed merely because source was changed.
+
 ## Availability correction — source only, not continuous-coverage proof
 
 Verified scoped source checkpoint:

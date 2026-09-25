@@ -13,7 +13,7 @@ from backend.api.v1 import market
 from backend.config.settings import settings
 from backend.core.auth import issue_user_token
 from backend.main import app
-from backend.market import session_prices
+from backend.market import session_price_snapshot, session_prices
 
 
 # A per-user read returns only covered symbols, and refuses the wrong account first.
@@ -28,8 +28,8 @@ async def test_session_price_http_access(monkeypatch):
     )
     requested = []
 
-    # Capture the route's real covered universe without performing a provider call.
-    def fetch(symbols):
+    # Capture the route's read-only snapshot request without performing collection.
+    def read(root, symbols):
         requested.append(symbols)
         return {
             "session": "overnight",
@@ -37,7 +37,7 @@ async def test_session_price_http_access(monkeypatch):
             "quotes": {"AAOI": {"price": 101, "indicative": True}},
         }
 
-    monkeypatch.setattr(session_prices, "fetch", fetch)
+    monkeypatch.setattr(session_price_snapshot, "read", read)
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
@@ -53,7 +53,7 @@ async def test_session_price_http_access(monkeypatch):
     assert requested == [["AAOI", "Q"]]
 
 
-# Exercise actual quote selection through authorized HTTP across expected schedules.
+# Collect once, then serve the real persisted selection over HTTP without provider work.
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("stamp", "phase", "primary", "fallback"),
@@ -67,13 +67,14 @@ async def test_session_price_http_access(monkeypatch):
     ],
 )
 async def test_session_prices_http_keeps_per_symbol_source_evidence(
-    monkeypatch, stamp, phase, primary, fallback
+    monkeypatch, tmp_path, stamp, phase, primary, fallback
 ):
     now = datetime.fromisoformat(stamp)
     session_prices._cache.clear()
     session_prices._denied_until.clear()
     monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(
         market.deskrecord,
         "latest_pair",
@@ -90,6 +91,7 @@ async def test_session_prices_http_keeps_per_symbol_source_evidence(
         combine = staticmethod(datetime.combine)
 
     monkeypatch.setattr(session_prices, "datetime", DatedClock)
+    monkeypatch.setattr(session_price_snapshot, "utc_now", lambda: now)
     calls = []
 
     # Supply only synthetic quotes while recording the real transport contract.
@@ -122,6 +124,20 @@ async def test_session_prices_http_keeps_per_symbol_source_evidence(
         )
 
     monkeypatch.setattr(requests, "get", get)
+    outcome = session_price_snapshot.collect(
+        tmp_path, ["AAA", "BBB"], clock=lambda: now
+    )
+    assert outcome["status"] == "collected"
+    path = tmp_path / "desk/session-prices/latest.json"
+    before = path.read_bytes()
+    original = json.loads(before)["snapshot"]
+    modified = path.stat().st_mtime_ns
+
+    # Fail if any HTTP read attempts to fetch instead of reading collected evidence.
+    def forbidden(*args, **kwargs):
+        pytest.fail("HTTP snapshot reads must not call a provider")
+
+    monkeypatch.setattr(requests, "get", forbidden)
     auth = {"Authorization": "Bearer " + issue_user_token("desk_user")}
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
@@ -129,9 +145,17 @@ async def test_session_prices_http_keeps_per_symbol_source_evidence(
         response = await client.get(
             "/api/v1/market/desk_user/desk/session-prices", headers=auth
         )
+        repeated = await client.get(
+            "/api/v1/market/desk_user/desk/session-prices", headers=auth
+        )
     assert response.status_code == 200
     assert response.headers["cache-control"] == "private, no-store"
     payload = response.json()
+    assert repeated.json() == payload
+    assert payload["as_of"] == original["as_of"]
+    assert datetime.fromisoformat(payload["as_of"]) == now
+    assert path.read_bytes() == before
+    assert path.stat().st_mtime_ns == modified
     assert payload["session"] == phase
     assert payload["signal_scope"] == "regular-session"
     assert calls == [(primary, ["AAA", "BBB"]), (fallback, ["BBB"])]
@@ -144,3 +168,47 @@ async def test_session_prices_http_keeps_per_symbol_source_evidence(
         assert row["indicative"] is (feed == "overnight")
         assert datetime.fromisoformat(row["at"]) == now - timedelta(seconds=1)
         assert "eligible" not in row
+
+
+# Missing or corrupt evidence stays unavailable without provider calls or writes.
+@pytest.mark.asyncio
+@pytest.mark.parametrize("corrupt", [False, True])
+async def test_unavailable_http_snapshot_never_fetches(tmp_path, monkeypatch, corrupt):
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(
+        market.deskrecord,
+        "latest_pair",
+        lambda root: ({"grades": {"AAA": {}}}, None),
+    )
+    path = tmp_path / "desk/session-prices/latest.json"
+    if corrupt:
+        path.parent.mkdir(parents=True)
+        path.write_bytes(b"invalid snapshot")
+    before = sorted(str(item.relative_to(tmp_path)) for item in tmp_path.rglob("*"))
+
+    # Any provider or writer attempt is a failure even when evidence cannot be read.
+    def forbidden(*args, **kwargs):
+        pytest.fail("GET must not collect or publish")
+
+    monkeypatch.setattr(requests, "get", forbidden)
+    monkeypatch.setattr(session_price_snapshot, "collect", forbidden)
+    auth = {"Authorization": "Bearer " + issue_user_token("desk_user")}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        for _ in range(2):
+            response = await client.get(
+                "/api/v1/market/desk_user/desk/session-prices", headers=auth
+            )
+            assert response.status_code == 200
+            assert response.json()["as_of"] is None
+            assert response.json()["quotes"]["AAA"]["price"] is None
+            assert response.json()["quotes"]["AAA"]["status"] == "unavailable"
+    assert (
+        sorted(str(item.relative_to(tmp_path)) for item in tmp_path.rglob("*"))
+        == before
+    )
+    if corrupt:
+        assert path.read_bytes() == b"invalid snapshot"

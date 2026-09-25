@@ -1,0 +1,24 @@
+---
+title: Session prices - backend collection, read-only display
+---
+flowchart TB
+    Lifetime[FastAPI lifetime<br/>enabled with existing credentials] --> Collector[Display quote collector<br/>runs without an open browser]
+    Universe[(Latest graded universe)] --> Collector
+    Collector --> Reader[Existing bounded feed reader<br/>per-symbol source and quote time]
+    Feeds[Existing market-data feeds<br/>fresh coverage is not guaranteed] --> Reader
+    Reader --> Snapshot[(Bounded shared latest snapshot<br/>atomic replacement under writer lock)]
+    Collector -. completed failures replace old success .-> Snapshot
+    Snapshot --> API[Authenticated read-only API<br/>revalidates original quote and capture age]
+    API --> UI[Desk board and chart<br/>midpoint or dated stale / unavailable]
+    UI -. read only; never starts collection .-> API
+    Evidence[Original quote and capture times<br/>never advanced by a browser read] -.-> Snapshot
+    Policy[Separate regular-session policy<br/>candles, execution and receipts unchanged] --> UI
+
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    class Lifetime,Collector,Reader,API,Policy application;
+    class Universe,Snapshot,Evidence data;
+    class Feeds external;
+    class UI interface;

@@ -612,6 +612,23 @@ decides:* every grade, every size, every trade rule, and every number.
 *Folder:* `agents/trading/` and `agents/trading/desk/`, driving
 `backend/market/`. *Prompts:* `prompts/trading/` — three.
 
+Display prices have a [separate collection path](diagrams/session-price-collection.svg).
+`SessionPriceCollector` belongs to FastAPI's lifetime, not a browser request.
+When enabled with existing provider credentials, it collects the latest graded
+universe through the bounded session-price reader while the backend is running,
+including when no dashboard is open. Processes sharing `MARKET_DATA_ROOT`
+coordinate through a file lock and due-time check, then atomically replace one
+bounded latest snapshot under `desk/session-prices/`. A completed failed fetch
+replaces prior success with unavailable evidence when the store is writable.
+The authenticated session-price API only reads that snapshot, filters it to the
+current graded universe and revalidates its age; it never calls a provider, even
+when collection is disabled or the snapshot is absent. Original quote `at` and
+capture `as_of` times are not advanced by reads. Missing or corrupt evidence has
+no invented capture time, and expired evidence has no current midpoint. This
+display path changes neither regular-session candles nor execution, paper
+accounts or personal receipts. The source implementation is not yet deployed;
+a running collector cannot establish fresh all-hours provider coverage.
+
 Personal advice history is separate from both research readings and paper fills.
 The primary operator can request a minimized encrypted receipt while computing
 the personal board. The API stores the generated decision and its evidence;
@@ -943,15 +960,15 @@ The absence of one of these labels does not imply runtime verification.
 
 ![AniOS current system architecture](diagrams/anios-system.svg)
 
-The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, vLLM inference on the Sparks, ComfyUI on the desktop, vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
+The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, vLLM inference on the Sparks, ComfyUI on the desktop, vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings, hybrid opt-in web research, and backend-owned display-quote collection with read-only snapshot access are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
-The self-contained [manager-facing architecture page](architecture.html) publishes all 31 canonical views — 23 subsystem drawings and one for each of the eight agents — with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. All but two describe the system as it is; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening says how a turn is decided: the model is shown everything it could do and picks one as a real tool call rather than a keyword match, then may take another step once it has seen what the first one did.
+The self-contained [manager-facing architecture page](architecture.html) publishes the cataloged subsystem and agent views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. The separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening says how a turn is decided: the model is shown everything it could do and picks one as a real tool call rather than a keyword match, then may take another step once it has seen what the first one did.
 
 ## Detailed subsystem diagrams
 
 AniOS currently has a modular FastAPI backend rather than independently deployed internal microservices. These concise orientation views show ownership, major components, and primary flows; exact endpoints, schemas, and exception paths remain in this document and the code. The [diagram catalog](diagrams/README.md) explains which view answers each common technical question.
 
-It lists all 31 views with links to each Mermaid source and rendered SVG. A
+It lists every maintained view with links to its Mermaid source and rendered SVG. A
 partial copy of that index used to sit here, listing twelve of the twenty-three
 subsystem views; keeping one index is the reason it is gone.
 
@@ -963,7 +980,7 @@ the two data stores are published on the host's loopback only.
 
 | Service | Implementation | Reachable at | Role |
 | --- | --- | --- | --- |
-| `backend` | FastAPI/Uvicorn image from the root `Dockerfile` | behind `gateway` | HTTP API, SSE streaming, the iMessage chat worker's pipeline |
+| `backend` | FastAPI/Uvicorn image from the root `Dockerfile` | behind `gateway` | HTTP API, SSE streaming, the iMessage chat worker's pipeline; in-process display-quote collection when enabled and credentialed |
 | `gateway` | Nginx | host `8080`; public via `cloudflared` | Serves the compiled React app and proxies `/api` on one origin (the only public surface) |
 | `cloudflared` | Cloudflare tunnel | - | `deep-matter.com` -> `gateway`; no inbound port is opened on the LAN |
 | `frontend` | Vite dev server | host `5173` | Development console only |

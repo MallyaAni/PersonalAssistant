@@ -42,7 +42,15 @@ part of the freshness fingerprint, so the checked suite is identical:
 ARCHITECTURE_DIAGRAM_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run docs:diagram
 ```
 
-The renderer maintains every `.mmd` source under `docs/diagrams/` in one pass - 31 of them today, 23 subsystem views and one per agent - so a new diagram is picked up by adding the file, not by editing a list. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
+The renderer maintains the explicitly registered canonical suite in one pass.
+Add a new pair to the catalog and the registries in both
+`frontend/scripts/architecture-diagram.mjs` and `architecture-page.mjs`; adding
+a source file alone is insufficient. The check compares a cross-platform
+fingerprint of each normalized source, shared render configuration and installed
+Mermaid CLI version stored in its SVG, then syntax-renders every registered
+source. Use the lockfile's CLI version: a newer locally installed version can
+make unchanged diagrams appear stale. It intentionally does not compare SVG
+bytes because generated identifiers can vary without changing the drawing.
 
 Treat diagrams as orientation maps, not exhaustive dependency graphs. Each view should answer one engineering question, use one main reading direction, and normally stay within 15 conceptual nodes and 18 primary edges. Prefer a named shared boundary over repeated component-to-provider or component-to-store lines. Move endpoint inventories, schemas, configuration, retries, and uncommon failure branches to prose; show model names only at actual model-call points. Split a view when it needs two independent stories.
 
@@ -90,6 +98,50 @@ Use this ownership map when selecting affected views:
 Internal refactors, bug fixes, styling, tests, and field-level implementation details do not trigger a diagram edit when those architectural relationships remain unchanged. The synchronization check still validates every registered pair, while visual inspection may stay limited to diagrams whose source changed.
 
 ## How to verify a change
+
+### Browser-independent desk display quotes
+
+`backend.main:app` starts `SessionPriceCollector` through the normal FastAPI
+lifespan. It needs existing Alpaca credentials, a writable `MARKET_DATA_ROOT`
+and safe POSIX file locking. It reads the newest graded-symbol record only;
+it never invokes the balancer, a model, holdings or order services. The one
+latest snapshot at `desk/session-prices/latest.json` is not an archive.
+
+The backend Compose environment explicitly forwards
+`MARKET_SESSION_PRICES_ENABLED` (default `true`) and
+`MARKET_SESSION_PRICES_POLL_SECONDS` (default `15`, permitted `10`–`30`).
+Existing `.env` values override defaults. A config change requires backend
+recreation through the supported deployment path, not merely a Git pull.
+Unsupported locking hosts keep the backend importable but collection inactive.
+The loop cannot run while the backend is stopped. Schedule intervals, browser
+refreshes, provider response latency and quote freshness are separate measures.
+
+Verify without laptop accessibility or browser-control permissions:
+
+```sh
+python -m pytest backend/tests/test_session_price_snapshot.py \
+  backend/tests/test_session_price_collector.py \
+  backend/tests/test_session_prices_api.py \
+  backend/tests/test_session_price_startup.py -q
+```
+
+The startup test starts the real Uvicorn/FastAPI lifespan on isolated loopback,
+writes a real temporary snapshot before any client connects, then exercises
+authenticated HTTP, two clients, failed publication/recovery and graceful
+shutdown. Only unrelated maintenance services and provider data are synthetic;
+the schedule is accelerated for tests. It is not a deployed-provider check.
+Browser acceptance additionally runs `background-session-prices.spec.ts` and
+the existing desk/session suites against an explicitly built candidate using
+headless Chromium. Mount a separate writable screenshot directory when the
+source is read-only. Neither test requires macOS security setting changes.
+
+Deployment acceptance must identify the actual image/source, confirm these two
+settings inside the backend without printing unrelated environment values, and
+observe the original collection/quote timestamps through the authenticated
+dashboard. A successful GET or health check alone is insufficient. Deploy only
+from Spark through `scripts/deploy.sh` when explicitly requested.
+
+### Verification instruments
 
 The instruments, in the order a change meets them. None of them is optional
 for the kind of change it covers (AGENTS.md, completion rule).

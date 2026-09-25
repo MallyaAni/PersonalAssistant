@@ -231,13 +231,15 @@ for (const oldDay of [false, true]) {
   })
 }
 
-// The header distinguishes completed regular bars from how often independent quote evidence is checked.
+// The header distinguishes completed bars and browser refresh from separate provider collection and quote freshness.
 test('bar cadence wording is separate from session-quote polling', async ({page, scenario: state}) => {
   await openDesk(page, state)
   const board = page.getByRole('region', {name: 'Stocks and cash', exact: true})
   await expect(board).toContainText('Regular-session bar')
   await expect(board).toContainText('completed 15-minute bars')
-  await expect(board).toContainText('session quotes checked every minute')
+  await expect(board).toContainText('dashboard checks for session quotes every minute')
+  await expect(board.getByText('completed 15-minute bars', {exact: false})).toHaveAttribute('title', /browser refresh and provider collection have separate schedules/)
+  await expect(board.getByText('completed 15-minute bars', {exact: false})).toHaveAttribute('title', /does not guarantee a new or fresh quote/)
   await expect(board).not.toContainText('updates every 15 minutes while the market is open')
 })
 
