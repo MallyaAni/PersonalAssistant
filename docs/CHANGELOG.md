@@ -2,6 +2,9 @@
 
 ## 2026-09-25 — Diagnose saved forecasts with chronological training baselines
 
+Verified scoped source checkpoint `2094d249161af80f5c94b4764297aa6e0a47b5ec`,
+published through Spark to GitHub; not deployed.
+
 The research study now retains an exact-coverage saved-forecast report alongside
 its funded-account scores. It checks fit/input/state/prediction hashes, validates
 decision-time feature application, derives target-specific training-label means,

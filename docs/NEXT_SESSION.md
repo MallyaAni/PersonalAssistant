@@ -1,5 +1,89 @@
 # Next session
 
+## 2026-09-25 — Saved-forecast diagnostics verified; prepare the later Spark release
+
+**VERIFIED scoped source checkpoint:**
+`2094d249161af80f5c94b4764297aa6e0a47b5ec`, from clean `main` at
+`add4b86e59eb496005eaafd60c6504f5ebf72785`. Initial pull current; both Mac
+remotes and GitHub from Spark re-fetched before publication. All four Python
+hashes stayed unchanged through final acceptance and commit. Published Mac →
+Spark → GitHub from Spark; preserved Spark's unrelated `scratch/`. **No deploy.**
+No laptop system settings, permissions, authenticated data requests, subscriptions,
+holdings or orders changed. Both Mac remotes point to Spark; GitHub is Spark's
+`origin`, so do not mistake a local `origin` push for GitHub publication.
+
+The new `forecast_diagnostics.diagnose` observes exact contiguous saved outer
+coverage, checks receipt/state/input/prediction hashes, reconciles actual
+training evidence and applies saved coefficients to decision-time features.
+Each target baseline is its eligible pre-fit training-label mean. Unavailable
+outcomes stay masked; null forecasts stay null. Relative spreads use separately
+trained means and require matching endpoints. Empty/zero-denominator/zero-variance
+scores remain null with reasons. The study stores it under
+`summary.forecast_diagnostics`. No optimizer, strategy, execution or UI changed.
+
+**VERIFIED final acceptance:** **1,215 passed**, one intentionally deselected
+completed historical reproduction, five existing warnings, **40.42s**. Includes
+36 direct cases and actual synthetic study/archive/standalone verifier paths.
+Ruff/format and all33 unchanged diagram/page checks pass. Independent review
+has no outstanding findings. Reviewer-driven regressions fixed constant and
+near-constant correlation, baseline rounding, type-sensitive receipt/mask
+validation and extreme underflow. Full production model/browser/routing/deploy
+gates were not run for this internal reporting change.
+
+The actual observer verified14 frozen fits/1,684 decisions with1,679 scored labels
+per target and5 explicit terminal exclusions. Eight pinned input files unchanged;
+336 scalar comparisons over48 previously independently audited metric sets,
+max4.44e-16. The original producer is still **FAILED by OOM**, root manifest
+absent. No refit, historical strategy simulation or replacement manifest.
+Gate skill remains approximately −6.46% stock, −14.89% SPY, −15.35% QQQ versus
+training means; the gate stays rejected. Do not rerun these diagnostics or retune
+that gate merely to generate new activity.
+
+Evidence: [contract/results](research/chronological-forecast-diagnostics-2026-09-25.md),
+`/private/tmp/anios-forecast-diagnostics-final.hPcK1YmS/RECEIPT.md`
+(SHA256 `e81b6a693991ec062f57e185d98b345d44a37f927986db4ffb9f62c2809c35b0`).
+JUnit `f971c80a8d4c7aea7c3d17f4e0eaeb14bad14ff9dd3812ad5e1ab9cb7ec2fa51`;
+frozen proof `d7286daa30e24073d366dc12e7d33c84f24335037cc2df8632a9d0d93cc6cf54`.
+Initial failures and first passing tree remain in the prior temp directories
+named in the receipt. A final Docker nested-bind setup failure occurred before
+Python; a checked extraction copy fixed only that harness boundary.
+**Diagram impact: NONE — internal reporting within the existing research flow.**
+
+**Historical source qualification:** bounded public `fja05680/sp500` inspection
+found771 target-period ticker strings and125 internally reconciled change rows;
+the last503 names match its current file. Root MIT license verified, inherited
+data rights unresolved. It lacks announcement clocks, stable security identity,
+historical classification and terminal outcomes; qualified only as a reconstruction
+seed. Raw files are content-hash pinned, not commit-pinned after metadata timeouts.
+No adapter/source change. [Exact qualification and next missing evidence](research/historical-universe-coverage-2026-09-25.md#bounded-public-reconstruction-audit).
+
+**User update / release window:** at about16:34 UTC (12:34 ET), user stated four
+hours until the next Spark push/deploy, roughly20:34 UTC/16:34 ET. Target readiness
+then; no deployment has started. Parallel release-source review found latest
+recorded deployed proof `68edfc0757175c40a14a73e68a5a9c05eecaa5be`, not a fresh
+runtime check. No migration/dependency/deploy-script changes since that deployed
+tree; migration20260924_0021 was previously verified applied. Do not proactively
+alter production schema based on an old trap: the current unit gate migrates its
+isolated `anios_gate` database first.
+
+The pending collector defaults enabled and starts immediately with credentials.
+An async question asks whether this later deploy may activate recurring existing-
+feed background quote reads, separate from exhausted diagnostic probe allowances;
+**no answer received yet**. Resolve before restart; disabling collection also
+removes on-demand fetching, so stored quotes expire. No new subscription/order
+is implied. Continuous real-time pre/post/overnight coverage is still unproved.
+
+For the later explicitly directed Spark deployment: freeze exact source, check
+actual deployed artifacts/config without leaking secrets, use only
+`scripts/deploy.sh --wait-post` and no bypasses. The collector's
+`backend/services/` path triggers full search/journey postchecks, full unit/model
+gates and backend/frontend/gateway builds. Verify terminal postcheck status and
+actual deployed dashboard workflow; a deploy marker predates those postchecks.
+No reliable duration has been established. Continue safe source/data qualification
+and release preparation in parallel, not another fitted-model grid on biased
+history. Goal remains active/incomplete; ML/DL/RL pilots exist, but none of these
+challengers is qualified to replace the adopted rule.
+
 ## 2026-09-25 — Frozen decision/fill attribution verified and published
 
 **VERIFIED scoped source checkpoint:**
