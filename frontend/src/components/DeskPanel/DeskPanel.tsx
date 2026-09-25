@@ -22,6 +22,7 @@ import {
   getDeskLiveRead,
   getDeskMine,
   getDeskPaper,
+  getDeskSessionPrices,
   getTradingAutopsy,
   putDeskHoldings,
   type DeskCurve,
@@ -1016,14 +1017,20 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     // An obsolete poll must neither publish data nor start another private guidance capture.
     const current = () => active() && gen === accountGen.current && request === pollRequestSeq.current
     setNow(Date.now())
+    // Session quotes have their own completion path; regular-data waits or failures cannot discard them.
+    void getDeskSessionPrices(userId).then(extended_hours => {
+      if (!current()) return
+      setLive(previous => ({...previous, extended_hours}))
+      setNow(Date.now())
+    })
     try {
       const nextLive = await getDeskLive(userId)
       if (!current()) return
-      setLive(nextLive)
+      setLive(previous => ({...nextLive, extended_hours: previous.extended_hours}))
       setNow(Date.now())
     } catch {
       if (!current()) return
-      setLive((previous) => ({ ...previous, extended_hours: undefined, stale: true, reason: 'Market-data refresh failed; showing last known data.' }))
+      setLive((previous) => ({ ...previous, stale: true, reason: 'Regular-session data refresh failed; showing last known regular data.' }))
     }
     await refreshMine(current)
     if (!current()) return

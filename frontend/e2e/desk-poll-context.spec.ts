@@ -9,7 +9,7 @@ const DEADLINE = '2026-09-24T14:10:00Z'
 const OLD_ACCOUNT = {equity: 200000, available_cash: 100000, risk_budget_pct: 2}
 const NEW_ACCOUNT = {equity: 100000, available_cash: 5000, risk_budget_pct: .5}
 const INITIAL_ACCOUNT = {equity: 100000}
-const LIVE_FAILURE = 'Market-data refresh failed; showing last known data.'
+const LIVE_FAILURE = 'Regular-session data refresh failed; showing last known regular data.'
 
 type Account = {equity: number; available_cash?: number; risk_budget_pct?: number}
 type Gate = {wait: Promise<void>; release: () => void}

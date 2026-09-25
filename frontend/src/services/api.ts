@@ -2263,9 +2263,8 @@ export interface DeskLive {
   stale_symbols?: string[];
   quotes: Record<string, DeskQuote>;
   reason?: string;
-  // The snapshot's age in seconds, and whether it is older than a candle
-  // (fifteen minutes). A stale snapshot is served - a closed market has
-  // nothing fresher - but the panel shows it is not the current candle.
+  // The regular snapshot's age in seconds and whether it is older than a
+  // fifteen-minute candle. This says nothing about independent session quotes.
   age_seconds?: number | null;
   stale?: boolean;
   // The technical analyst's rating re-read at the live price: `now` is
@@ -2646,21 +2645,25 @@ export interface DeskSessionPrices {
     reason: string; valid_until: string | null}>;
 }
 
-// Keep optional session-price failures separate from the regular signal snapshot.
-export const getDeskLive = async (userId: string): Promise<DeskLive> => {
+// Read display-only session prices independently; failure invalidates the previous envelope.
+export const getDeskSessionPrices = async (userId: string): Promise<DeskSessionPrices | undefined> => {
   const base = `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`;
-  const [response, session] = await Promise.all([
-    authenticatedFetch(`${base}/live`),
-    authenticatedFetch(`${base}/session-prices`, {signal: AbortSignal.timeout(5000)}).then(async result => result.ok ? result.json() : null).catch(() => null),
-  ]);
+  const session = await authenticatedFetch(`${base}/session-prices`, {signal: AbortSignal.timeout(5000)})
+    .then(async result => result.ok ? result.json() : null).catch(() => null);
   const valid = session && ['pre-market', 'post-market', 'overnight', 'closed', 'regular', 'unknown'].includes(session.session)
     && session.signal_scope === 'regular-session' && typeof session.as_of === 'string'
     && session.quotes && typeof session.quotes === 'object' && !Array.isArray(session.quotes);
-  const extended_hours = valid ? session as DeskSessionPrices : undefined;
+  return valid ? session as DeskSessionPrices : undefined;
+};
+
+// Read the regular-session signal snapshot without delaying independent session prices.
+export const getDeskLive = async (userId: string): Promise<DeskLive> => {
+  const base = `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`;
+  const response = await authenticatedFetch(`${base}/live`);
   if (!response.ok) {
-    return { as_of: null, quotes: {}, extended_hours };
+    return { as_of: null, quotes: {} };
   }
-  return {...await response.json(), extended_hours} as DeskLive;
+  return await response.json() as DeskLive;
 };
 
 // The model's plain-language live technical read for one name. `read` is
