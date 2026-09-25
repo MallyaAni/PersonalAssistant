@@ -8,6 +8,8 @@ Ill-conditioned buy scales must match their recorded funding formula, and both
 their scale-induced and executed-spend discrepancies must be at most 1e-12
 times max(1, account NAV).
 The independently carried account is never reset to observed cash or quantities.
+Optional phase states expose opening and post-fill balances only after complete
+verification; they retain daily dates and execution phases, not intraday times.
 """
 
 from __future__ import annotations
@@ -713,18 +715,42 @@ class _Replay:
             self.finished = True
 
 
-# Independently verify canonical hashes and replay every event in an in-memory run.
-def verify_payload(manifest: Any, events: Any, prices: Any) -> dict:
+# Replay every event, optionally exposing phase states only after full verification.
+def verify_payload(
+    manifest: Any, events: Any, prices: Any, *, include_phase_states: bool = False
+) -> dict:
     result = _result()
     try:
+        _require(
+            type(include_phase_states) is bool, "include_phase_states must be Boolean"
+        )
         rows, columns = _manifest(manifest)
         _prices(prices, rows, columns)
         _hashes(manifest, events, prices)
         result["integrity_verified"] = True
         _require(isinstance(events, list) and bool(events), "event history is empty")
         replay = _Replay(manifest, prices, result)
+        phase_states = [] if include_phase_states else None
         for seq, event in enumerate(events):
             replay.event(event, seq)
+            if phase_states is not None and event["type"] in (
+                "open_account",
+                "fill_batch",
+            ):
+                phase_states.append(
+                    {
+                        "seq": event["seq"],
+                        "event_id": event["event_id"],
+                        "session": event["session"],
+                        "session_index": event["session_index"],
+                        "type": event["type"],
+                        "phase": event.get("phase"),
+                        "cash": replay.cash,
+                        "positions": list(replay.positions),
+                        "fees": replay.fees,
+                        "traded": replay.traded,
+                    }
+                )
         _require(replay.finished, "journal incomplete: finish event missing")
         result.update(
             ok=True,
@@ -733,17 +759,22 @@ def verify_payload(manifest: Any, events: Any, prices: Any) -> dict:
             total_fees=replay.fees,
             total_traded=replay.traded,
         )
+        if phase_states is not None:
+            result["phase_states"] = phase_states
     except (JournalError, ValueError, TypeError, KeyError, OverflowError) as exc:
         result["errors"].append(str(exc))
     return result
 
 
-# Accept the recorder's public snapshot without coupling replay to recorder code.
-def verify_snapshot(snapshot: Any) -> dict:
+# Verify a public snapshot and forward optional phase output without producer coupling.
+def verify_snapshot(snapshot: Any, *, include_phase_states: bool = False) -> dict:
     try:
         _fields(snapshot, {"manifest", "events", "prices"}, "snapshot")
         return verify_payload(
-            snapshot["manifest"], snapshot["events"], snapshot["prices"]
+            snapshot["manifest"],
+            snapshot["events"],
+            snapshot["prices"],
+            include_phase_states=include_phase_states,
         )
     except JournalError as exc:
         result = _result()
@@ -760,8 +791,8 @@ def _unique_pairs(pairs: list[tuple[str, Any]]) -> dict:
     return result
 
 
-# Read fixed local JSON files only, rejecting symlink escapes and changed bytes.
-def verify_archive(path: str | Path) -> dict:
+# Verify local files and optional phase states without escapes or changed bytes.
+def verify_archive(path: str | Path, *, include_phase_states: bool = False) -> dict:
     result = _result()
     try:
         requested = Path(path)
@@ -790,7 +821,10 @@ def verify_archive(path: str | Path) -> dict:
             )
             data[name] = parsed
         return verify_payload(
-            data["manifest.json"], data["events.json"], data["prices.json"]
+            data["manifest.json"],
+            data["events.json"],
+            data["prices.json"],
+            include_phase_states=include_phase_states,
         )
     except (OSError, ValueError, TypeError, KeyError, OverflowError) as exc:
         result["errors"].append(str(exc))

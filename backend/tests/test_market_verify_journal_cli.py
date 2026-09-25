@@ -56,7 +56,7 @@ def archive(tmp_path):
 
 
 # Exercise argument parsing, archive loading and independent replay in a real process.
-def _run(path):
+def _run(path, *options):
     return subprocess.run(
         [
             sys.executable,
@@ -64,6 +64,7 @@ def _run(path):
             "backend.cli.market_verify_journal",
             "--archive",
             str(path),
+            *options,
         ],
         capture_output=True,
         text=True,
@@ -177,4 +178,67 @@ def test_cli_refuses_symlink_archive(archive, tmp_path):
     assert process.returncode == 1
     report = json.loads(process.stdout)
     assert any("symlink" in error for error in report["errors"])
+    assert before == _hashes(archive)
+
+
+# Export reconstructed fill balances only when the entire saved account verifies.
+@pytest.mark.parametrize("manifest_path", [False, True])
+def test_cli_exports_phase_states_without_changing_default_output(
+    archive, manifest_path
+):
+    before = _hashes(archive)
+    path = archive / "manifest.json" if manifest_path else archive
+    default = _run(path)
+    process = _run(path, "--phase-states")
+    assert process.returncode == 0, process.stderr or process.stdout
+    assert default.returncode == 0, default.stderr or default.stdout
+    report = json.loads(process.stdout)
+    states = report.pop("phase_states")
+    assert report == json.loads(default.stdout)
+    assert len(states) == 2
+    assert states[0] == {
+        "seq": 0,
+        "event_id": "event-000000",
+        "session": "2024-01-02",
+        "session_index": 0,
+        "type": "open_account",
+        "phase": None,
+        "cash": 101.0,
+        "positions": [0.0],
+        "fees": 0.0,
+        "traded": 0.0,
+    }
+    assert states[1]["seq"] == 3
+    assert states[1]["event_id"] == "event-000003"
+    assert states[1]["session"] == "2024-01-03"
+    assert states[1]["session_index"] == 1
+    assert states[1]["type"] == "fill_batch"
+    assert states[1]["phase"] == "open"
+    assert states[1]["cash"] == pytest.approx(0.9)
+    assert states[1]["positions"] == [1.0]
+    assert states[1]["fees"] == pytest.approx(0.1)
+    assert states[1]["traded"] == 100.0
+    assert before == _hashes(archive)
+
+
+# A failed final event must not leak a usable-looking trace of earlier valid fills.
+@pytest.mark.parametrize("fault", ["hash", "accounting", "incomplete"])
+def test_cli_withholds_phase_states_when_full_verification_fails(archive, fault):
+    events = json.loads((archive / "events.json").read_bytes())
+    if fault == "incomplete":
+        _repin_events(archive, events[:-1], status="recording")
+    else:
+        events[-1]["cash"] += 1
+        if fault == "hash":
+            _json(archive / "events.json", events)
+        else:
+            _repin_events(archive, events)
+    before = _hashes(archive)
+    process = _run(archive, "--phase-states")
+    assert process.returncode == 1
+    report = json.loads(process.stdout)
+    assert report["ok"] is False
+    assert report["accounting_verified"] is False
+    assert "phase_states" not in report
+    assert report["errors"]
     assert before == _hashes(archive)

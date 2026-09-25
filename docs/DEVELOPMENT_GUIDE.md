@@ -322,6 +322,11 @@ holdings or execute orders. Verify an existing archive without rewriting it:
 python -m backend.cli.market_verify_journal --archive /absolute/path/to/archive
 ```
 
+Add `--phase-states` to include the declared opening endowment and independently
+reconstructed post-fill balances after complete verification. The optional array
+is absent on failure; dates/phases are not intraday timestamps. It changes no
+archive or execution and does not qualify external prices for adjusted units.
+
 Exit 0 means independent accounting passed; exit 1 means a reported validation
 failure; exit 2 means the archive could not be loaded or the CLI input was invalid.
 Inspect the report, including its always-false historical-availability,
@@ -335,6 +340,7 @@ From the repository root, run the relevant regression/integration acceptance:
 python -m pytest -c /dev/null \
   backend/tests/test_research_journal.py \
   backend/tests/test_research_journal_replay.py \
+  backend/tests/test_research_journal_phase_states.py \
   backend/tests/test_market_verify_journal_cli.py \
   backend/tests/test_research_journal_integration.py \
   backend/tests/test_trading_simulate.py \

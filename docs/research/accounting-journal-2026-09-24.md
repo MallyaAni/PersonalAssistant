@@ -1,5 +1,45 @@
 # Independently replayable research accounts — September 24, 2026
 
+## September 25: read-only execution-state export
+
+`market_verify_journal --phase-states` now adds a `phase_states` array only after
+the entire archive passes independent verification. It includes the declared
+opening endowment and independently reconstructed balances after each fill batch:
+event sequence/id, session date/index, type, phase, cash, copied position units,
+cumulative fees and traded notional. A later failure withholds the whole array.
+Without the flag, the report is unchanged; original archive bytes are never
+rewritten. The public payload/snapshot/archive verifiers offer the same optional
+`include_phase_states=False` keyword. No producer, ledger arithmetic, journal
+schema, decision, fill, holding or result changes.
+
+This closes an inspection gap, not a missing-account-history requirement:
+complete daily `/3`, SPY and QQQ journals already contain simulated executions.
+A fresh hypothetical account generates its own holdings, reset clock, deferred
+orders and event state; reproducing the actual paper account is a different task.
+Decision-only records do not necessarily contain those executions.
+
+These are daily session dates and open/close phases, **not intraday timestamps**.
+Future valuation must preserve fill order, carry state between fills, start at
+the original first closing mark, align accounts by actual dates rather than
+array indices, and reconcile every original closing NAV. The existing mixed-
+provider intraday cache failed price-basis reconciliation: raw prices must not
+value these adjusted synthetic units without qualified compatibility evidence.
+No intraday performance calculation or new historical experiment is included.
+
+Synthetic acceptance: 55 focused phase-state cases; 346 broader cases passed,
+zero skips, five existing warnings. Two cases were deliberately deselected to
+avoid a cached-history rerun and an unrelated fit. Root's final 274-case
+journal/CLI/phase-state run passed; five new CLI tests first failed on the missing
+flag. Independent old/new comparison covered 22 synthetic accounts, four invalid
+envelopes and 66 CLI subprocesses: default stdout/stderr/exit statuses were
+byte-identical, and opt-in success added only the requested trace.
+The actual archive/CLI paths preserve file hashes and reject rehashed accounting
+defects, late failure and incomplete evidence. Evidence directories:
+`/private/tmp/anios-journal-phase.g8hJer/` and
+`/private/tmp/anios-phase-cli.v7Wcn3/`. Deployed behavior and investment quality
+remain unverified. Diagram impact: NONE — optional output of the existing
+read-only accounting verifier.
+
 ## Scope and result
 
 The optional `research-journal/1` observer is implemented for the desk simulator,

@@ -647,7 +647,10 @@ SPY/QQQ controls can attach `ResearchJournal` to retain prices, decisions, actua
 fills, fees, closing valuations and terminal open state. A standalone replayer
 imports no producer ledger and independently reconciles the saved account;
 `market_verify_journal` exposes that read-only check. Recording leaves existing
-results unchanged. The JSON is research-only and unencrypted; adjusted units,
+results unchanged. Its optional `--phase-states` output exposes the declared
+opening endowment and independently reconstructed post-fill balances only after
+full verification, without changing daily journals or supplying intraday prices.
+The JSON is research-only and unencrypted; adjusted units,
 batch funding and source hashes do not prove broker shares, actual settlement
 or historical availability. Pending declarations are preserved, not independently
 regenerated from strategy policy. See the [accounting contract and evidence](

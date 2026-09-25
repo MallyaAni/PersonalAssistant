@@ -11,13 +11,24 @@ from pathlib import Path
 from backend.market.research_journal_replay import verify_archive
 
 
-# Report the independent replayer's result and fail closed without rewriting evidence.
+# Report verified accounting and optional phase balances without rewriting evidence.
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archive", type=Path, required=True)
+    parser.add_argument(
+        "--phase-states",
+        action="store_true",
+        help=(
+            "Include declared opening and independently reconstructed post-fill "
+            "balances "
+            "only after complete verification; not intraday prices or broker state."
+        ),
+    )
     arguments = parser.parse_args(argv)
     try:
-        report = verify_archive(arguments.archive)
+        report = verify_archive(
+            arguments.archive, include_phase_states=arguments.phase_states
+        )
     except (OSError, ValueError, TypeError, KeyError) as exc:
         parser.exit(2, f"Research journal verification failed: {exc}\n")
     print(json.dumps(report, indent=2, sort_keys=True, allow_nan=False))

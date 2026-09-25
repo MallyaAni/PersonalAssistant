@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-25 — Export verified research execution states
+
+The read-only journal command accepts `--phase-states`, exposing the declared
+opening endowment and independently reconstructed post-fill cash/units/cumulative
+costs only after the whole archive verifies. Defaults, saved files, ledger
+arithmetic and strategy execution are unchanged. This enables inspection of
+existing simulated execution state; it does not supply compatible intraday prices.
+
+Root: 274 synthetic journal/CLI checks passed. Agent: 346 broader checks passed,
+two intentional no-fit/no-history-rerun deselections and five existing warnings.
+Independent differential: 22 accounts, four invalid envelopes, 66 CLI processes;
+default output byte-identical. No deployment or investment-performance claim.
+See the [execution-state contract](research/accounting-journal-2026-09-24.md).
+
 ## 2026-09-25 — Preserve valid OI when optional collection fields are unavailable
 
 Options collection now stores nullable volume/IV/gamma independently of required
