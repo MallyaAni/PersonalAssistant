@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-25 — Correct phone evidence test scroll placement
+
+The phone acceptance test now centers the measured union of its two grade
+sections before retaining both original full-visibility assertions. No
+production UI, viewport, fixture, content/control check or diagnostic changed.
+The old failure was reproduced on both pinned bundles; a failed simpler
+alignment is retained, not hidden by lowering the visibility requirement.
+
+Agent acceptance passes 9 + 9 full-file cases and 1 + 1 focused cases on old
+and accepted bundles, with 20 clean diagnostics. Root independently passes
+nine cases with nine clean diagnostics and inspects the screenshot. No
+deployment or live-data claim. See the
+[test correction and evidence](research/phone-evidence-test-2026-09-25.md).
+
 ## 2026-09-25 — Qualify execution spreads and regular-session restrictions
 
 Both stock rows and decision details expose unverified IEX spreads and missing

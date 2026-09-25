@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-09-25 — Phone acceptance correction verified; display wording pending
+
+Starting branch `main`, HEAD `a5de878f62c54d2d6713d783c4312b012272c0bf`.
+Mac remotes and Spark's GitHub origin were fetched and match that SHA; remote
+`scratch/` is untouched. Existing wording-agent edits remain separate.
+
+**VERIFIED test-only checkpoint:** `desk-evidence-timing.spec.ts` adds measured
+native scroll alignment before the original two ratio=1 assertions. It rejects
+oversized content, changes no style or viewport, and preserves every other
+original byte. Full nine-case file passes on both pinned original/f108 bundles;
+focused phone runs each pass. All 20 diagnostic records are clean. Root's
+independent f108 run passes nine cases in 8.402 s, zero skips/flaky/unexpected
+results, nine clean six-category diagnostics; screenshot visually inspected.
+See [test correction](research/phone-evidence-test-2026-09-25.md) for exact
+hashes, receipts, original failure and retained unsuccessful alignment attempt.
+This is not a production layout fix, deployment or provider-data check.
+**Diagram impact: NONE — test-only native scroll alignment.**
+
+The separate `SessionPrice` wording change remains in progress with
+`options_frontend_contract`. Five old-bundle desired-behavior failures are
+retained; candidate focused 17/17 passes. An old exact tooltip assertion was
+found in the wider price suite and updated only by appending the approved
+qualification. Wait for final combined broad run and independent review before
+staging its six owned files. Root owns integration/publication; the full goal
+remains active with the deployment, research and data constraints below.
+
 ## 2026-09-25 — Execution wording, OI isolation and legacy-RL evidence published
 
 Three scoped checkpoints were verified and published Mac → `git push spark main`

@@ -162,6 +162,27 @@ for (const withRow of [false, true]) {
   })
 }
 
+// Center both measured grade regions in their native scrollport without changing fit criteria.
+async function alignGradeEvidenceInScrollport(dialog: ReturnType<Page['getByRole']>) {
+  await dialog.evaluate(element => {
+    const first = element.querySelector('[aria-label="Latest available grade"]')
+    const last = element.querySelector('[aria-label="Evening analysis"]')
+    if (!first || !last) throw new Error('Both grade regions must be present')
+    let scrollport = first.parentElement
+    while (scrollport && !(scrollport.scrollHeight > scrollport.clientHeight && ['auto', 'scroll'].includes(getComputedStyle(scrollport).overflowY))) {
+      scrollport = scrollport.parentElement
+    }
+    if (!scrollport) throw new Error('No native vertical evidence scrollport')
+    const firstRect = first.getBoundingClientRect()
+    const lastRect = last.getBoundingClientRect()
+    const unionTop = Math.min(firstRect.top, lastRect.top)
+    const unionBottom = Math.max(firstRect.bottom, lastRect.bottom)
+    if (unionBottom - unionTop > scrollport.clientHeight) throw new Error('Both grade regions must fit the actual scrollport')
+    const portTop = scrollport.getBoundingClientRect().top + scrollport.clientTop
+    scrollport.scrollBy({top: (unionTop + unionBottom) / 2 - (portTop + scrollport.clientHeight / 2), behavior: 'instant'})
+  })
+}
+
 // Dated grade sections and the original-wording controls remain usable without mobile panning.
 test('dated evening and intraday details fit a phone with usable archive controls', async ({page, baseURL}, testInfo) => {
   const {diagnostics} = await installEvidenceFixture(page, false, 'current', baseURL!)
@@ -185,6 +206,7 @@ test('dated evening and intraday details fit a phone with usable archive control
     await page.screenshot({path: testInfo.outputPath('mobile-detail.png'), fullPage: true})
     const evening = dialog.getByRole('region', {name: 'Evening analysis', exact: true})
     await evening.scrollIntoViewIfNeeded()
+    await alignGradeEvidenceInScrollport(dialog)
     await expect(evening).toBeInViewport({ratio: 1})
     await expect(dialog.getByRole('region', {name: 'Latest available grade', exact: true})).toBeInViewport({ratio: 1})
     await page.screenshot({path: testInfo.outputPath('mobile-detail-evidence.png'), fullPage: true})
