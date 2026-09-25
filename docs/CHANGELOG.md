@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-09-25 — Collect display quotes without an open dashboard
+
+Verified scoped source checkpoint
+`65379637fd1d6e481b92a802e9ecd4e0ef8800cb`, not deployed. Backend-lifetime
+collection uses existing display feeds and one bounded latest snapshot, with
+cross-process locking/due checks and graceful shutdown. Owner-authenticated
+HTTP reads never trigger collection or write state. Original source/capture
+times expire normally; missing/corrupt/failed evidence cannot become a new
+fresh quote. The dashboard distinguishes its refresh from collector cadence.
+No strategy, candle, model, account or execution behavior changed.
+
+Acceptance: **357 backend + 218 distinct browser tests pass**, zero
+failures/skips/flaky in final runs. Startup uses real Uvicorn, loopback HTTP
+and temporary persisted data; provider/browser data is synthetic. Type/build
+checks pass with cached lock-aligned installed frontend versions. All 33
+canonical diagrams/page checks pass; four affected diagrams were browser-tested
+and 29 unrelated views preserved. Known unrelated lint/build warnings and all
+intermediate harness/product failures remain in the evidence. No laptop system
+settings or extra computer-access permissions were required.
+
+The separately approved single historical SIP sample returned 3,316 valid bars
+with observations in both extended-hours gaps for four symbols. It proves sample
+history access, not continuous real-time coverage; that request allowance is
+exhausted. Independent frozen `/3` attribution corroborates accounting but finds
+roughly 90% stock exposure during the worst drawdown, not proven red-day
+protection. No further provider calls, strategy fit/replay or promotion.
+
+Persistence receipt: `MARKET_DATA_ROOT/desk/session-prices/latest.json` plus its
+dedicated lock, no archive or personal data. Disable new passes through
+`MARKET_SESSION_PRICES_ENABLED=false` on the next backend start; operator removal
+of the display snapshot affects no account history, and a running collector can
+recreate it. Full deployment gates/live coverage remain unverified. See the
+current handoff and linked research receipts for exact artifacts and limits.
+
 ## 2026-09-25 — Separate observed quote availability from expected schedules
 
 Verified scoped source checkpoint

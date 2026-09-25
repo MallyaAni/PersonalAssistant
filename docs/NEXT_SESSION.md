@@ -1,5 +1,88 @@
 # Next session
 
+## 2026-09-25 — Browser-independent display collection; no laptop permissions needed
+
+**VERIFIED scoped source checkpoint:**
+`65379637fd1d6e481b92a802e9ecd4e0ef8800cb`, based on clean `main` at
+`61a31e20761901615600846b8e0983b72001124d`. Source/test/config hashes remained
+unchanged across acceptance and the source commit. Re-fetched both Mac remotes
+and checked GitHub from Spark before publication; all were at the starting
+revision. Publish Mac → Spark → GitHub from Spark, preserving its unrelated
+`scratch/`. No deployment. The overall trading goal remains active/incomplete.
+
+The user cannot grant extra laptop/system access. **No system settings or
+permissions changed**: terminal, isolated Docker/headless Chromium and existing
+SSH sufficed. No new subscriptions, holdings, receipts or orders were changed.
+
+`SessionPriceCollector` runs through the backend's real FastAPI lifespan,
+independent of an open browser. Default interval 15 seconds (config 10–30),
+existing credentials and safe POSIX locking required. A dedicated shared lock
+and due-time check coordinate one bounded latest snapshot, not an archive.
+The existing owner-authenticated GET reads/revalidates only; original capture,
+quote time, source/session and expiry are not renewed by reads. Missing/corrupt
+evidence has null capture/no price. Completed fetch failures replace old success
+when storage is writable; storage failures are logged and old data expires.
+Shutdown drains in-flight work. Unsupported locking hosts keep the backend
+importable and collection inactive. UI wording separates browser quote checks
+from collection cadence and freshness. Execution/candles/strategy unchanged.
+
+**VERIFIED final acceptance:** **357 backend tests passed** (7.59s; 60 existing
+all-NaN fixture warnings); **47 focused + 171 broad browser tests passed**,
+**218 distinct**, zero failures/skips/flaky (49.946s + 74.814s). Real
+Uvicorn/FastAPI startup publishes a temporary snapshot before any client, then
+authenticated two-client HTTP verifies unchanged source timestamps/bytes/mtime,
+failure/recovery and shutdown draining. Providers and unrelated maintenance are
+synthetic; no production DB/model/account is touched. Browser APIs are fixtures,
+not live-provider acceptance. Relevant Ruff/format, production TypeScript/build
+and changed-test typing pass. Whole-file API/config lint retains two baseline
+violations; full repository/routing/deploy gates were not run.
+
+Final frontend artifact:
+`/private/tmp/anios-background-session-locked.2RVA6ZyQ/dist/`, entry
+`index-CsdUQRsl.js`, SHA-256
+`f7ef22cf667105cc8f978df82611a85efc31f423f6ba3fd5ae31ed65875dc1f8`.
+Existing cached dependencies match 373 locked installed versions; 41 absent
+optional/platform packages, zero missing required/version mismatches. This is
+not a fresh-install or package-content-integrity claim. Earlier successful
+newer-toolchain runs are retained, not counted as additional distinct cases.
+
+**Diagram impact: UPDATED — session-price-collection, anios-system,
+runtime-deployment, agent-trading-desk.** All 33 canonical views/page checks pass
+under locked Mermaid 11.16.0; four browser workflows/81 labels pass. All 29
+unrelated views remain byte-identical. The previously reported stale diagram
+was installed CLI 11.17.0 drift: the unchanged 32-view baseline passes 11.16.0.
+
+**VERIFIED bounded live probe:** the user's one newly approved historical SIP
+GET is consumed. September 24, 04:00–20:00 ET, SPY/QQQ/AAOI/ORCL: 3,316 valid
+minute bars, no invalid/duplicate slots or next page; all four have observations
+in both 04:00–08:00 and 17:00–20:00 gaps. This proves sample history access,
+not current publication delay, all-symbol continuity, accuracy or real-time
+entitlement. No additional provider request is authorized. No delayed fallback
+was implemented. Existing backend image and helper source hashes were pinned;
+its missing revision label is not replaced by a deploy-checkout assumption.
+
+**Research audit:** 21 frozen inputs unchanged, eight accounting self-checks and
+380 independent Decimal comparisons pass. `/3`'s worst drawdown was −37.33% /
+−37.58%; its average stock exposure in that episode was about 89.55%, with no
+SPY, so desired red-day protection is not demonstrated. Five names contribute
+66.91% / 68.00% of net gains. These are accounting findings, not an unbiased
+superiority result; PIT/survivorship/terminal-payout evidence remains incomplete.
+The original producer root manifest is still absent, and the fitted allocation
+gate remains rejected. No fit, strategy replay, recommendation or promotion.
+
+Detailed retained failures, exact commands/images, artifact hashes and limits:
+[continuous-price evidence](research/continuous-price-evidence-2026-09-25.md),
+[SIP sample/source qualification](research/extended-hours-source-options-2026-09-25.md),
+[frozen attribution](research/fixed-strategy-attribution-2026-09-25.md).
+
+**UNVERIFIED / next atomic work:** a qualified continuous source for the real
+extended-hours gaps. Always-on collection does not manufacture missing quotes
+or run while the backend is stopped. Delayed bars need their own explicit
+meaning and timestamps, never a fresh-quote label. Any further live probe needs
+fresh scope; do not purchase access or infer an allowance. Source work here is
+not deployed. Deploy only on explicit direction, from Spark via
+`scripts/deploy.sh`, with image/config and real workflow verification.
+
 ## 2026-09-25 — Quote availability is not gated by regular-session closure
 
 **VERIFIED scoped source checkpoint:**
