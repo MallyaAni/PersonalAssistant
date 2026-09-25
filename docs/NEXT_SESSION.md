@@ -1,5 +1,106 @@
 # Next session
 
+## 2026-09-25 — Execution wording, OI isolation and legacy-RL evidence published
+
+Three scoped checkpoints were verified and published Mac → `git push spark main`
+→ GitHub from Spark, starting at `8ca4f14f64f333de2c672192b73d68e46cbb84ab`:
+
+- `cd2f29dc2e5d5e3a595b6b14c399e51d8a11068f`: permanent exact-source legacy
+  allocation-gradient regression and dated research qualification. Root/agent
+  real-Torch runs each have 23 passes / 8 strict expected failures; separate
+  `--runxfail` exposes exactly 8 numerical failures, not extraction/import
+  failures. Original loss/source/results remain untouched. The cancellation
+  invalidates interpreting that objective as working REINFORCE, not `/3` or
+  every later RL experiment. Adam can amplify roundoff; historical parameters
+  were not proved stationary. [Contract](research/legacy-allocation-gradient-2026-09-25.md).
+- `eb235124eac6af2ccf24157b001ab55f1ede4306`: live stored-chain OI uses only
+  expiry/kind/strike/OI and omits unused gamma, with shared unchanged OI math.
+  Legacy parser/CLI/gamma behavior, provenance and history remain intact.
+  Root 418 tests pass, zero skips, 16 existing warnings; independent review
+  passes 2,500 differential / 36 adversarial / 7 CLI checks. Real synthetic
+  storage, balancer persistence and authenticated cached ASGI reads preserve
+  grades and bytes. Original final-contract 223 failures / 51 passes include
+  absent new helpers/field-contract assertions, not 223 arithmetic bugs.
+  Collection-time optional parsing is NOT fixed. [Contract](research/options-oi-only-2026-09-25.md).
+- `f108983d98692648c69b13188614a914d5d838ff`: collapsed/shared decisions expose
+  unverified IEX spreads and missing legacy flags; available-one-venue wording
+  no longer claims only one venue quotes. Visible clock blockers and titles
+  explicitly concern regular-session execution, including actual lowercase
+  blockers. Actions/sizes/ranking/filtering and original times are unchanged.
+  Root 19 browser cases pass; 8 actual-producer synthetic fixtures match.
+  Agent focused 12 pass, all strict diagnostics clean. TypeScript/build pass.
+  [Contract](research/execution-quote-wording-2026-09-25.md).
+
+**FAILED broader UI acceptance remains explicit:** 263 passes / one pre-existing
+phone viewport failure, zero skips/flaky; all 67 strict diagnostic records are
+clean. It reproduces on original and final bundles. No production deployment,
+provider/model-server/account call, fit, historical strategy replay, holding/order
+change, laptop permission change or source-data migration occurred. Scoped
+Ruff/format and all 33 unchanged diagram/page checks pass. Existing Spark
+`scratch/` is preserved. After these publications Mac HEAD/origin/main/spark/main
+match `f108983`; a clean `git pull --rebase origin main` reports current.
+
+Root evidence directory: `/private/tmp/anios-quote-rl-root.pM9CLO/`.
+`RL_RECEIPT.md` SHA256 `e4d63de586cbbd63a0ab0bad5593a8e87be151b59df578b3b62457737e53409c`;
+OI JUnit `dde9a98d7f64a11b1935a07253cc7c2bdaf9f5421bf3dd670a4eabef064ec4a2`;
+root UI report `d146822402a86c933585c341625200b3c17cef058635c900087022966648fd6f`.
+The three linked contracts contain agent receipts, original failures, immutable
+source/bundle hashes and exact limits. Final accepted UI asset is
+`index-CD-q3LR7.js`, SHA256
+`d557371561b3616e4d5e84810a0fb4954714835ab5b68307cf915e219a65ad5e`.
+**Diagram impact: NONE — internal arithmetic, regression and display wording.**
+
+### Parallel continuation — do not repeat completed work
+
+`/root/options_frontend_contract` is authorized to correct only the separate
+display-snapshot wording in `StockBoard.SessionPrice` and its relevant e2e
+cases. A read-only source audit proves `/session-prices` and `/mine` have
+independent read/fetch boundaries: missing/unreadable/timed-out display evidence
+can coexist with a fresh execution quote. `No fresh quote from available feeds`
+therefore overstates what the display knows. Both its main label and generic
+reason echoed in the subtitle need snapshot-local wording. Preserve useful
+recorded reasons, all raw data, freshness/session/time semantics, actions and
+sizes. No backend/collector/Git/deploy change authorized to this agent. Desired
+browser failures must precede its source edit. Its source task starts at f108983.
+
+`/root/dashboard_current_claims` is READ-ONLY on the phone-test diagnosis.
+Both grade sections span 798 px and fit the 844 px viewport. Scrolling Evening
+alone lands at scrollTop 793 and clips Latest by 43.125 px; an upward native
+scroll exposes both at ratio 1 and all controls work, without horizontal
+overflow. Naive block:start alignment still clips 0.125 px (ratio0.9996973),
+so that attempted diagnostic is retained. The agent is checking robust
+geometry-derived alignment of their union, keeping BOTH full-visibility
+assertions and all content/control checks. No repository edit/xfail/looser
+assertion is authorized yet. Inspect its final receipt before adopting a
+test-only correction. `/root/chronological_validation` completed the independent
+OI and display-source reviews and owns no edits.
+
+The full goal stays **active/incomplete**. No top-tier economic edge is newly
+established. Existing LightGBM, deterministic `/3`, unpromoted DL/RL pilots and
+frozen study boundaries remain. Allocation-gate losses are still 10/14 matched
+folds at10bp and11/14 at25bp; original producer OOM/missing manifest stays FAILED.
+No new fit, horizon search or historical strategy rerun is authorized by these
+checkpoints. Completed 15-minute evidence is not a 15-minute holding policy;
+current intraday evaluation tracks targets, not all `/3` exits or matched
+SPY/QQQ accounts. Common intraday mark/fill/instruction evidence is still needed.
+
+A prior bounded saved-file read saw138 `decision-*.json` paths on Spark and
+sampled newest filesystem mtime, NOT proven latest market time:
+`decision-4e73781b0e92194aff6e2a728faf221b5a5ba6b590820ded55a060da50f5bc9a.json`,
+SHA256 `2c4997a7d110035ea62de3c7c36b7efce2021ec958e6884fd73736edcc44beaa`.
+Its bar was2026-09-23T19:45Z, as_of20:00:57.531321Z, valid_until20:15Z;
+prices include SPY, not QQQ, and no explicit fill/instruction/mark-grid fields.
+That single observation is not an archive coverage audit, a current live state
+or proof of real fills. Do not repeat the read or build another scaffold simply
+to report activity; source `intraday_evaluation` already identifies its limits.
+
+Release-readiness target remains20:34 UTC /16:34 ET; latest clock19:38:47 UTC.
+Acceptable drawdown and recurring quote-collector activation remain unanswered.
+Authenticated market-data probe allowances are exhausted. **Do not restart the
+pending backend**, whose default enables15-second provider reads. Deploy only
+on Spark via `scripts/deploy.sh --wait-post`, preserving data/secrets symlinks,
+exact artifact identity and full gates/browser/provider/postcheck evidence.
+
 ## 2026-09-25 — New York options batch date verified and published
 
 **VERIFIED scoped source checkpoint:**
