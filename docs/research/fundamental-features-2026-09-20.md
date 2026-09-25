@@ -1,5 +1,14 @@
 # Point-in-time quarterly fundamental features — September 20, 2026
 
+**Current reach, checked September 25:** the initial research-only scope below
+is historical. `desk._fundamental_opinion` now uses this adapter and
+`fundamentals_asof.load_versions` for the corrected live fundamental opinion;
+learned-input and shadow paths also read the versioned source. The legacy
+version records omit their original units. Whole-snapshot unit selection can
+therefore undermine the temporal guarantees below before this adapter receives
+its inputs. The new unit-preserving source work is separate, not a silent
+migration or a claim that old frames can be labelled USD.
+
 A research-only adapter that turns the already-stored as-of filing versions
 (`backend/market/fundamentals_asof.py`) into quarterly fundamental features
 with explicit missingness. It is standalone, touches no frozen module, and

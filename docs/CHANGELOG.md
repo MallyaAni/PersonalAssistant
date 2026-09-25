@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-09-25 — Preserve source units without changing live fundamental loaders
+
+Added an isolated, hash/issuer-bound company-facts parser and explicit USD/share
+projection. It retains recognized units, vintages, original row positions and
+exclusions, and restores frames by re-extracting original bytes. Existing live
+loaders and unitless caches are unchanged; two newly reproduced legacy defects
+remain strict expected failures rather than being reported as fixed.
+
+Scoped acceptance: **189 passed**, one existing missing-Torch skip, three strict
+legacy xfails, 24 existing warnings, 6.41 seconds. The pinned public ASML source
+retains 647 observations across 5,176 checked source fields/positions; projection
+keeps 58 share rows and explicitly excludes 589 EUR monetary/EPS rows. JSON
+save/readback and relabelling rejection passed; synthetic Parquet round-trip,
+Ruff/format, independent review and all 33 unchanged diagram/page checks passed.
+No authenticated market-data request, model fit, strategy promotion or deployment.
+
+The parallel two-event primary-source audit finds a 2019 membership-date
+inconsistency and qualifies only the announced 2026 index substitution/continuity,
+not a complete historical security identity. This does not repair the source or
+qualify survivor-free performance. See the [unit-source evidence](research/fundamental-unit-sources-2026-09-25.md)
+and [membership qualification](research/historical-universe-coverage-2026-09-25.md).
+
 ## 2026-09-25 — Diagnose saved forecasts with chronological training baselines
 
 Verified scoped source checkpoint `2094d249161af80f5c94b4764297aa6e0a47b5ec`,

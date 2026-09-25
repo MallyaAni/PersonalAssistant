@@ -181,6 +181,15 @@ deploy used to; `--skip-post` skips them.
 
 ## Research-account journal validation
 
+For the isolated unit-preserving fundamental source, run
+`python -m pytest -c /dev/null backend/tests/test_fundamental_unit_sources.py backend/tests/test_fundamentals_asof.py backend/tests/test_fundamental_features.py -q`.
+Retain the original company-facts bytes and declared hash/CIK; a frame's unit
+columns alone cannot authenticate its extraction. Restore through
+`fundamental_unit_sources.from_frame(..., source_body=...)`, which re-parses the
+original snapshot. The new helper does not migrate the live loader or old
+unitless partitions. Keep the two legacy defect cases as strict xfails, not
+passes. See the [unit-source contract](research/fundamental-unit-sources-2026-09-25.md).
+
 The pinned price-only market study runs offline with the research dependencies
 (including `exchange-calendars`) and PyArrow. Keep the original95-column report
 and the matching September18 partitions separate from newer market vintages:

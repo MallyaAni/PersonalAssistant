@@ -402,6 +402,14 @@ with the declared snapshot, not the vendor's price accuracy or the availability
 of that data on a historical decision date. No model server or live trading
 service is used.
 
+The isolated `fundamental_unit_sources` helper accepts caller-supplied public
+company-facts bytes and returns immutable source objects or caller-owned frame
+containers. It has no network, store, account or live-loader access. Hash/CIK
+checks bind extraction to the declared bytes, not to signed SEC provenance or
+historical publication. The caller owns any persistence and retention; raw
+evidence stays outside Git and the public frontend, without private identifiers
+or credentials. Existing unitless partitions are not migrated by this helper.
+
 ### Personal decision receipts (2026-09-24; deployment pending)
 
 The primary desk owner's browser can request `record_history: true` on

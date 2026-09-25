@@ -168,6 +168,36 @@ It retains exact URLs, raw-file hashes, schemas, all event comparisons and faile
 requests. Source correctness, upstream rights and September completeness remain
 unverified. No source pins or eligibility rules changed.
 
+## Two primary-announcement checks after the seed audit
+
+Two raw event rows were subsequently checked against S&P's own press archive.
+This is a targeted consistency test, not validation of the remaining history.
+
+- **FAILED consistency — June 1, 2019 HRS/LHX:** the community history removes
+  HRS on June 1. S&P's [June 24 announcement](https://press.spglobal.com/2019-06-24-MarketAxess-Holdings-Set-to-Join-S-P-500-Axon-Enterprise-to-Join-S-P-MidCap-400-Others-to-Join-S-P-SmallCap-600)
+  still identifies Harris (NYSE:HRS) as an existing S&P 500 constituent.
+  The exact corrected rename date remains unverified. July 1 belongs to the
+  related MKTX/LLL substitution in that announcement; it must not be silently
+  substituted for missing HRS/LHX ticker-transition evidence.
+- **PARTIAL event qualification — August 18, 2026:** S&P's
+  [August 13 announcement](https://press.spglobal.com/2026-08-13-Reddit-Set-to-Join-S-P-500-and-Sun-Communities-to-Join-S-P-MidCap-400)
+  schedules RDDT replacing AVB before the August 18 open. It separately describes
+  EQR's post-merger rename to VMRK with continued index membership. That supports
+  announced index continuity, not an independently verified unchanged legal or
+  share-class identity, nor an exact ticker-transition date. The community row
+  combines these distinct events in one add/remove representation.
+
+These primary releases provide dated event edges, not a full AVB entry/exit
+interval or an exhaustive index history. Current publisher archives are not
+immutable contemporaneous captures. Issuer-completion sources returned 403/404
+or timed out; no restrictions were bypassed and no correction was guessed.
+
+Receipt: `/private/tmp/anios-sp500-event-evidence.hJprR3/RECEIPT.md`, SHA-256
+`f4c67b97a43528fbe8f740ad69fb9e4422c9637f326bd90b8e4cfa912be932f9`.
+Machine proof `c03e92730ca733c90ca6eccb6b721698110eddf6f7965f5ca6b8eab488241a7c`
+checks the original input hashes, seven primary-text properties and seven dated
+membership observations. No adapter, source-pin or strategy change followed.
+
 ## Next bounded task
 
 Locate or obtain, under existing authorized access, dated evidence covering

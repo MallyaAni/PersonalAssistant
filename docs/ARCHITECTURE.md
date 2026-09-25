@@ -707,6 +707,15 @@ relative spreads require matching endpoints. This is descriptive gross-proxy
 forecast error, not funded P&L, probability calibration or strategy adoption.
 See the [saved-forecast contract](research/chronological-forecast-diagnostics-2026-09-25.md).
 
+`fundamental_unit_sources` is a separate, unwired research input representation.
+It checks original company-facts bytes against a declared hash/CIK, retains
+recognized observations across all units and filing vintages, and projects only
+explicit USD, shares and USD/share dimensions. Restoring its separate frame
+schema re-extracts the original bytes. It neither migrates nor replaces the
+unitless `fundamentals_asof` loader used by the desk, learned inputs and shadow
+paths; its source hashes do not establish historical publication or share-class
+compatibility. See the [source contract](research/fundamental-unit-sources-2026-09-25.md).
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in
