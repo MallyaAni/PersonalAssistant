@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-09-25 — Completion: concise board and grade history LIVE
+
+Live source68edfc0757175c40a14a73e68a5a9c05eecaa5be, pushed to GitHub/main and
+Spark anios/main. Normal frontend deploy exited0, post-deploy ok. Exact artifact
+and unchanged models PASS /tmp/codex-concise-board-artifact-proof-20260925.json.
+Production build +122browser tests passed on compiled preview;16focused cases
+passed against deployed8080, /tmp/codex-concise-board-deployed-20260925.log.
+Actual logged-in deep-matter.com confirms five columns, collapsed decision
+reasons, concise cash/balance wording and dated indicative overnight prices.
+Public AAOI chart checked at prior f412cd9:26grade changes, no Wait markers,
+138original readings, default Grade changes/Buy-Sell and explicit partial saved
+recommendation coverage. Chart code unchanged in68edfc0; deployed tests repeat
+its acceptance. Console clean. No orders/position writes or model changes.
+All requested bounded UI work complete; stop additional audits/reruns at2%usage.
+Unchanged limitations: grades may be snapshot-session or replay, historical
+unsaved actions cannot be reconstructed, midpoint is indicative not fill proof,
+extended quotes do not make the regular-session strategy an overnight strategy.
+
 ## 2026-09-25 — Final release proof and concise main board
 
 Grade/action release f412cd9 is LIVE and pushed to main. Exact backend/asset
