@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-25 — Concise stock board
+
+Five main columns; decision explanations move to expanded rows. Short missing-
+data and FOMC-pause labels retain active restrictions. Cash and balance guidance
+is shorter, with full balance provenance on hover. Duplicate overnight feed
+wording removed. No strategy, account or execution change.
+
 ## 2026-09-25 — Historical grades and saved Buy/Sell recommendations
 
 Charts show grade changes by default. Saved personal Buy/Sell recommendations

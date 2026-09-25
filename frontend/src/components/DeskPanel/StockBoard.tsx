@@ -27,7 +27,7 @@ export const SessionPrice = ({live, ticker, now, compact = false}: {live: DeskLi
   const {quote, state, session} = reading
   const regular = live.quotes[ticker]
   const at = quote?.at && Number.isFinite(Date.parse(quote.at)) ? new Date(quote.at).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', second: '2-digit'}) : null
-  const source = session === 'overnight' || quote?.indicative ? `Indicative${quote?.feed ? ` · ${quote.feed.toUpperCase()}` : ''}` : quote?.feed?.toUpperCase() ?? 'Source unavailable'
+  const source = session === 'overnight' || quote?.indicative ? `Indicative${quote?.feed && quote.feed !== session ? ` · ${quote.feed.toUpperCase()}` : ''}` : quote?.feed?.toUpperCase() ?? 'Source unavailable'
   const regularText = regular && Number.isFinite(regular.last) ? `Regular-session bar $${regular.last.toFixed(2)} · ${regular.bar}` : 'Regular-session bar unavailable'
   return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill.`}>
     {state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session} · {source} · {at} ET</span></>
@@ -478,7 +478,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
-            <th colSpan={6} className="py-2 pr-3 font-normal">
+            <th colSpan={5} className="py-2 pr-3 font-normal">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="search"
@@ -500,7 +500,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />
               : <SortHead column="plan" sort={sort} onSort={setSort} title="The adopted strategy's recommendation; a blocked recommendation is not executable">Action</SortHead>}
             <SortHead column="size" sort={sort} onSort={setSort} title="Executable change as a percentage of your account; not a profit target.">Size</SortHead>
-            <th className="hidden sm:table-cell">Reason</th>
 
           </tr>
         </thead>
@@ -520,7 +519,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const deadline = Date.parse(decision?.valid_until ?? '')
           const canSize = executableSize(row.ticker) !== null
           const plan = paused ? 'Hold' : planOf(row.ticker)
-          const readiness = plan === 'Hold' ? null : decision?.executable === false
+          const readiness = paused ? 'FOMC pause' : plan === 'Hold' ? decision?.entry_status === 'unavailable' ? 'Data missing' : null : decision?.executable === false
             ? decision.blocker || (marketClosed ? 'Market closed' : 'Blocked now')
             : marketClosed ? 'Market closed'
             : !Number.isFinite(deadline) || deadline <= now ? 'Price check needed' : null
@@ -538,7 +537,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{sessionReading ? <SessionPrice live={live} ticker={row.ticker} now={now} compact /> : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}</>}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
-              {!isCash && <div aria-label={`${row.ticker} mobile reason`} className="mt-1 max-w-40 whitespace-normal text-[11px] text-[#6e6e73] sm:hidden">{reason}</div>}
             </td>
             <td className="text-xs" aria-label={`${row.ticker} displayed grade`} title={isCash ? undefined : grades[row.ticker] ? 'Current intraday grade' : `Recorded grade at the ${latest.session} close`}>
               {!isCash && <><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#1e7a3a]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span>
@@ -547,11 +545,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{isCash ? 'HOLD' : plan === 'Hold' ? 'Hold' : plan.toUpperCase()}</span>
               {readiness && <div className="text-[11px] text-[#9a6700]">{readiness}</div>}</td>
             <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : '—'}</td>
-            <td className="hidden max-w-72 whitespace-normal py-2 text-xs text-[#6e6e73] sm:table-cell">{isCash ? 'Unallocated strategy weight' : reason}</td>
 
           </tr>
           {/* Details follow the visible board width, not the horizontally scrollable table. */}
-          {open && expand && <tr><td colSpan={6} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">
+          {open && expand && <tr><td colSpan={5} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">
+            <p aria-label={`${row.ticker} decision reason`} className="mb-2 text-xs">{reason}</p>
             <dl aria-label={`${row.ticker} allocation and evidence`} className="mb-3 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
               {sessionReading && <div><dt className="text-[#6e6e73]">Regular-session signal price</dt><dd>{quote && Number.isFinite(quote.last) ? `$${quote.last.toFixed(2)} · ${quote.bar}` : 'Unavailable'}</dd></div>}
               <div><dt className="text-[#6e6e73]">Combined grade · not an entry signal</dt><dd aria-label={`${row.ticker} grade`}>{row.grade || 'Unavailable'} · {grades[row.ticker] ? 'intraday' : `${latest.session} close`}</dd></div>

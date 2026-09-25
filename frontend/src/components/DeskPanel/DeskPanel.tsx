@@ -1953,8 +1953,8 @@ const AccountInputs = ({ equity, cash, riskBudgetPct, cashStatus, onApply }: Acc
       </button>
       {error ? <p role="alert" className="text-xs text-[#b42318]">{error}</p> : cashStatus
         ? <p className="text-xs text-[#6e6e73]" aria-label="Available cash status">{cashStatus}</p>
-        : <p className="text-xs text-[#6e6e73]">Cash unknown; buys stay unfunded until you confirm it.</p>}
-      <p className="w-full text-[11px] text-[#6e6e73]">Planning equity is a browser input for sizing, not a broker-verified balance. The initial $100,000 is only a placeholder until you replace it.</p>
+        : <p className="text-xs text-[#6e6e73]">Confirm cash to fund buys.</p>}
+      <p className="w-full text-[11px] text-[#6e6e73]" title="Planning equity is a browser input for sizing, not a broker-verified balance. Replace the initial $100,000 placeholder with your account equity.">Unverified balance · $100,000 initial placeholder.</p>
     </div>
   )
 }

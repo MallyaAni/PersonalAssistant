@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-09-25 — Final release proof and concise main board
+
+Grade/action release f412cd9 is LIVE and pushed to main. Exact backend/asset
+hashes, post-deploy status and unchanged model containers PASS:
+/tmp/codex-grade-chart-artifact-proof-20260925.json. Nine browser cases pass
+against deployed8080; logged-in public AAOI chart visibly shows26grade changes,
+no Wait/setup markers, default Grade changes and Buy/Sell,138original research
+readings and explicit no saved Buy/Sell in the20loaded snapshots. Console clean.
+Extended674912e also verified actualAPI:94names,53fresh/41stale at03:58UTC;
+stale prices unavailable, fresh overnight marked indicative. Regular strategy
+is unchanged. Logs /tmp/codex-extended-api-proof-20260925.json and
+/tmp/codex-chart-deployed-browser-20260925.log. No superiority claim.
+
+Latest user: main dashboard has too many words. Narrow frontend follow-up moves
+long reasons into row expansion, five main columns, short Data missing/FOMC pause
+badges retain important restrictions; cash/placeholder note shortened and full
+balance caveat retained in tooltip; removes duplicate overnight feed label.
+VERIFIED production build and122browser tests on compiled5187; log
+/tmp/codex-concise-board-final-20260925.log. Pending commit/release proof only;
+no further scope at2%usage.
+
 ## 2026-09-25 — Grade and recommendation chart completion
 
 User has only2%weekly usage remaining: finish release/proof only, no new scope.
