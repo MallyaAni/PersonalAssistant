@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-25 — Align new options collection batches with New York dates
+
+The options CLI now selects its default batch date in New York, matching the
+date-bounded technical reader. Explicit dates, per-file UTC collection times,
+existing immutable partitions and unbounded query-only wall lookup are preserved.
+This also aligns the existing chain-retention and expiry-selection dates; it
+does not refresh old snapshots, establish OI freshness or change trading rules.
+
+Verified: the same 32-case CLI/Parquet regression matrix changes from 13 original
+failures / 19 passes to 32 passes; the wider relevant backend suite passes 267
+tests, zero skips, with 16 existing warnings. Scoped Ruff/format and 33 unchanged
+diagram/page checks pass. No deployment, provider call, fit, historical strategy
+rerun, account or order operation. Deployed/browser behavior is not newly verified.
+See the [collection-date contract](research/options-collection-date-2026-09-25.md).
+
 ## 2026-09-25 — Separate stored option OI evidence from stock-price freshness
 
 New option diagnostics retain the actual raw reference, original cached bar

@@ -141,8 +141,10 @@ research snapshots; that is not a changed forecast or allocation.
 The existing `/desk/live/read` explanation still interprets technical feature
 lines, not options levels. The read-time assessment stays outside its
 detail-based model-cache signature. No prompt/model behavior is changed or
-claimed verified. The producer's UTC partition convention and the unused
-gamma proxy's assumptions remain separate source-audit work.
+claimed verified. The CLI's default collection calendar is corrected in the
+separate [New York date fix](options-collection-date-2026-09-25.md); legacy
+UTC-labelled partitions are not migrated. The unused gamma proxy's assumptions
+remain separate source-audit work.
 
 No deployment or service restart was performed. Full deployment gates and
 postchecks remain required through Spark's `scripts/deploy.sh --wait-post`;

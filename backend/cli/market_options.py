@@ -4,9 +4,11 @@
     python -m backend.cli.market_options --walls ADBE NTAP  # the levels
     python -m backend.cli.market_options --walls-book       # every book name
 
-`--refresh` stores one immutable frame per name per session under
+`--refresh` stores one immutable frame per name per selected date under
 `data/market/options/asof=DATE/`, every listed contract within 180
-days with its open interest, implied volatility and gamma, from Cboe's
+days with its open interest, implied volatility and gamma. The default date is
+the New York calendar date selected once for this CLI run; `--asof` overrides it.
+Data comes from Cboe's
 free delayed feed. That is the history nobody else keeps; the walls
 can be tested against forward returns once a quarter of it exists
 (see `backend/market/options.py`). `--walls` reads the newest frame
@@ -18,6 +20,7 @@ import argparse
 import time
 from datetime import UTC, date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from backend.config.settings import settings
 from backend.market import options
@@ -27,6 +30,7 @@ from backend.market.yahoo import impersonating_transport
 
 PACE_SECONDS = 0.75
 BACKOFF_SECONDS = 8.0
+NEW_YORK = ZoneInfo("America/New_York")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -112,11 +116,12 @@ def _print_walls(store: MarketStore, ticker: str, today: date) -> None:
     )
 
 
+# Select one explicit or NY calendar date for the entire collection/read batch.
 def main() -> None:
     """Run the tool."""
     args = build_parser().parse_args()
     store = MarketStore(Path(args.data_dir))
-    today = args.asof or datetime.now(UTC).date()
+    today = args.asof or datetime.now(NEW_YORK).date()
     names = tuple(sorted(book_sides(build_universe())))
     if args.refresh:
         stored, failed = refresh(store, names, today)

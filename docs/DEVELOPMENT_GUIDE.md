@@ -165,6 +165,14 @@ old chains beside newer prices, reload, unavailable states and neutral wording.
 These offline checks do not qualify a deployed provider or options-derived
 trading edge. See the [contract and evidence](research/options-oi-provenance-2026-09-25.md).
 
+The options collection CLI selects its default batch date in New York once
+per invocation; explicit `--asof` and aware UTC collection timestamps remain
+distinct. Run `backend/tests/test_market_options_date.py` for real synthetic
+CLI/Parquet midnight, DST, immutable-rerun and expiry-boundary acceptance.
+Existing partitions are not migrated, query-only walls still use the latest
+unbounded frame, and cached dashboard refresh is not established by these tests.
+See the [collection-date contract](research/options-collection-date-2026-09-25.md).
+
 ### Verification instruments
 
 The instruments, in the order a change meets them. None of them is optional
