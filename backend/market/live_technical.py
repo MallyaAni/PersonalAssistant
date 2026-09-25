@@ -33,7 +33,7 @@ import numpy as np
 from backend.agents.trading.desk import regime
 from backend.agents.trading.desk import technical as technical_analyst
 from backend.agents.trading.desk.desk import book_panel, tightening_for
-from backend.market import baselines, calendar, options
+from backend.market import baselines, calendar, options, options_evidence
 from backend.market import technical as daily_technical
 from backend.market.panel import Panel
 
@@ -177,12 +177,24 @@ def _live_read(store, quotes: dict, today: date) -> dict:
         )
     except Exception:
         value_opinion = None
+    # Capture only the quote bars actually used to build this cached raw-price row.
+    reference_bars = {}
+    if panel.dates[-1].astype("datetime64[D]").astype(object) <= today:
+        for symbol, quote in quotes.items():
+            quoted = getattr(quote, "last", None)
+            if (
+                symbol in live.tickers
+                and _usable_option_price(quoted)
+                and float(live.close[-1, live.index(symbol)]) == float(quoted)
+            ):
+                reference_bars[symbol] = getattr(quote, "bar", None)
     _cache["key"], _cache["value"] = (
         key,
         {
             "panel": live,
             "opinion": opinion,
             "value": value_opinion,
+            "reference_bars": reference_bars,
             # The theme's trend, kept because the strongest measured dip
             # edge is a name below its band *while the basket is falling*.
             "ai_trend": view.ai_trend,
@@ -292,7 +304,15 @@ def _usable_option_price(price) -> bool:
 
 
 # Read walls at a raw price; isolate optional stored-data failures to this symbol.
-def _walls_for(store, symbol: str, price: float | None, today: date) -> dict | None:
+def _walls_for(
+    store,
+    symbol: str,
+    price: float | None,
+    today: date,
+    *,
+    reference_session: str | None = None,
+    reference_bar_start: str | None = None,
+) -> dict | None:
     """Return levels, an unavailable marker, or None for no chain/usable price."""
     if store is None or price is None or not _usable_option_price(price):
         return None
@@ -314,7 +334,14 @@ def _walls_for(store, symbol: str, price: float | None, today: date) -> dict | N
     if not rows:
         return None
     try:
-        w = options.walls(rows, price, today)
+        w = options.walls(
+            rows,
+            price,
+            today,
+            min_days=1,
+            max_days=options.WALL_DAYS,
+            min_oi=options.MIN_WALL_OI,
+        )
     except OverflowError:
         return unavailable
     if not math.isfinite(w.net_gamma):
@@ -329,6 +356,9 @@ def _walls_for(store, symbol: str, price: float | None, today: date) -> dict | N
         "put_wall_oi": w.put_wall_oi,
         "call_wall_oi": w.call_wall_oi,
         "net_gamma": w.net_gamma,
+        "calculation": options_evidence.calculation(
+            price, today, reference_session, reference_bar_start
+        ),
     }
     if w.put_wall:
         out["put_wall_distance"] = w.put_wall / price - 1.0
@@ -380,7 +410,14 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
             entry["candle"] = candle
         # Option strikes are raw prices; adjusted technical features stay unchanged.
         price = float(panel.close[-1, j]) if np.isfinite(panel.close[-1, j]) else None
-        walls = _walls_for(store, symbol, price, today)
+        walls = _walls_for(
+            store,
+            symbol,
+            price,
+            today,
+            reference_session=str(panel.dates[-1].astype("datetime64[D]")),
+            reference_bar_start=(read.get("reference_bars") or {}).get(symbol),
+        )
         if walls is not None:
             entry["walls"] = walls
         out[symbol] = entry

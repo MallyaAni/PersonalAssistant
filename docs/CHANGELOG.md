@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-25 — Separate stored option OI evidence from stock-price freshness
+
+New option diagnostics retain the actual raw reference, original cached bar
+when known, expiry-selection date and method version. Read-time projection
+dates collection separately and leaves effective OI time/freshness unknown;
+legacy or inconsistent calculations withhold displayed levels. Both existing
+dashboard locations share neutral OI wording, dated references, explicit missing
+states and historical-selection warnings. No inference from a newer stock quote,
+gamma-exposure claim, arbitrary freshness cutoff or trading rule is introduced.
+
+Verified: **235 relevant backend tests**, plus **54 downstream regression tests**,
+zero skips and 22 existing warnings across those runs; **152 browser tests**,
+zero skips/flaky results and 46 clean diagnostic records. Real synthetic
+Parquet/cache/balancer/persistence/authenticated ASGI reads preserve stored bytes
+and grades. Original semantic failures and one corrected floating-point boundary
+defect are retained. Independent 149-case review, TypeScript/build, scoped
+Ruff/format and 33 unchanged diagram/page checks pass. No deployment, provider
+request, model fit, historical replay, holding/order change or strategy promotion.
+See the [OI provenance contract](research/options-oi-provenance-2026-09-25.md).
+
 ## 2026-09-25 — Review 2026 microstructure research for slower trading
 
 Added a versioned primary-source review of TradeFM and Mesfin's intraday

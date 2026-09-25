@@ -38,6 +38,7 @@ import {
   type DeskLiveRead,
   type DeskLiveGrade,
   type DeskMineRow,
+  type DeskOptionsEvidence,
   type DeskPaperLive,
   type DeskPayload,
   type DeskQuote,
@@ -2271,23 +2272,79 @@ const triggers = (stances: Record<string, number>) =>
     .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
     .join(' ')
 
-// Available option walls carry stored-chain levels and signed price distances;
-// an unavailable marker carries no inferred levels or measurements.
-type DeskWalls = {
-  status?: undefined
-  expiry: string | null
-  through?: string | null
-  fetched_at?: string | null
-  put_wall: number | null
-  call_wall: number | null
-  put_wall_oi: number
-  call_wall_oi: number
-  net_gamma: number
-  put_wall_distance?: number
-  call_wall_distance?: number
-} | {
-  status: 'unavailable'
-  reason: 'options_data_unavailable'
+// Include the year and exchange timezone only when the supplied timestamp carries an offset.
+const optionEvidenceTime = (value: string | null | undefined): string | null => {
+  if (!value || !/(?:Z|[+-]\d{2}:\d{2})$/i.test(value) || !Number.isFinite(Date.parse(value))) return null
+  return `${new Date(value).toLocaleString('en-US', {
+    timeZone: 'America/New_York', year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  })} ET`
+}
+
+// Format the age supplied by a dated backend check without consulting the browser clock.
+const optionCollectionAge = (seconds: number | null | undefined): string | null => {
+  if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < 0) return null
+  const whole = Math.floor(seconds)
+  return `${Math.floor(whole / 86400)}d ${Math.floor(whole % 86400 / 3600)}h ${Math.floor(whole % 3600 / 60)}m ${whole % 60}s`
+}
+
+// Describe each level against its recorded raw reference without trading colors or directional arrows.
+const optionLevelText = (side: string, level: number | null, oi: number, distance: number | null): string => {
+  if (level == null) return `${side}: no qualifying level`
+  if (!Number.isFinite(level) || !Number.isFinite(oi)) return `${side}: level unavailable`
+  const location = distance == null || !Number.isFinite(distance) ? 'distance unavailable'
+    : distance === 0 ? 'at recorded reference (0.0%)'
+    : `${(Math.abs(distance) * 100).toFixed(1)}% ${distance < 0 ? 'below' : 'above'} recorded reference`
+  return `${side} ${priceMoney(level)} · ${oi.toLocaleString('en-US')} summed contracts · ${location}`
+}
+
+// Explain one stored OI descriptor identically at both existing diagnostic display locations.
+const StoredOptionOILevels = ({evidence}: {evidence: DeskOptionsEvidence | undefined}) => {
+  const recorded = evidence?.status === 'recorded' ? evidence : null
+  const checked = optionEvidenceTime(evidence?.checked_at)
+  const collected = optionEvidenceTime(evidence?.collected_at)
+  const age = optionCollectionAge(evidence?.collection_age_seconds)
+  const state = recorded
+    ? `${recorded.put_level == null ? 'Put: no qualifying level' : `Put ${priceMoney(recorded.put_level)}`} / ${recorded.call_level == null ? 'Call: no qualifying level' : `Call ${priceMoney(recorded.call_level)}`}`
+    : evidence?.status === 'absent' ? 'No stored options diagnostic supplied'
+    : evidence?.status === 'unavailable' ? 'Stored options data unavailable'
+    : 'Calculation provenance unavailable; stored levels withheld'
+  const collection = evidence?.collection_status === 'future'
+    ? `${collected ? `Collected ${collected}. ` : ''}Collection timestamp is after the evidence check.`
+    : evidence?.collection_status === 'invalid' || (evidence?.collection_status === 'recorded' && !collected)
+      ? 'Collection time invalid.'
+      : evidence?.collection_status === 'missing' ? 'Collection time missing.'
+      : collected ? `Collected ${collected}.` : 'Collection time unavailable.'
+  const collectionAge = evidence?.collection_status === 'recorded' && collected && checked && age
+    ? `Collection age ${age} as of ${checked}.`
+    : `Collection age unknown${checked ? ` as of ${checked}` : '; evidence check time unavailable'}.`
+  const method = recorded?.method
+  const methodKnown = method && [method.min_days, method.max_days, method.strike_range_fraction, method.min_open_interest].every(Number.isFinite)
+  const referenceBar = optionEvidenceTime(recorded?.reference_bar_start)
+  return (
+    <details aria-label="Stored option OI levels" className="mt-2 text-xs text-[#6e6e73]">
+      <summary className="cursor-pointer leading-relaxed"><span className="font-medium text-[#1d1d1f]">Stored option OI levels</span> · {state} · OI freshness unknown
+        {recorded?.calculation_date_status === 'historical' && ' · historical expiry selection; not rechecked for current date'}</summary>
+      <div className="mt-2 space-y-2 leading-relaxed">
+        <p>OI effective time: unknown. OI freshness: unknown. Collection time does not establish when the open interest applies.</p>
+        <p>{collection} {collectionAge}</p>
+        {recorded && <>
+          <p>Expiry selection date: {recorded.calculated_on}.
+            {recorded.calculation_date_status === 'historical' && ' Historical expiry selection; eligibility has not been rechecked for the current date.'}</p>
+          <p>Calculation version: {recorded.calculation_version}.</p>
+          <p>Reference {Number.isFinite(recorded.reference_price) ? priceMoney(recorded.reference_price) : 'unavailable'}: raw panel close. Raw panel row date: {recorded.reference_session}.
+            {referenceBar ? ` Reference bar ${referenceBar} (15-minute interval start).` : ' Reference bar time unavailable; panel row date does not establish quote freshness.'}</p>
+          <p>{methodKnown
+            ? `Method: sum open interest at each strike across expiries ${method.min_days}–${method.max_days} calendar days after ${recorded.calculated_on}; ${method.min_days > 0 ? 'same-day expiry excluded; ' : ''}within ±${method.strike_range_fraction * 100}% of the recorded reference. Select the largest summed put OI at or below the reference and the largest summed call OI at or above it; ties choose the strike nearest the reference. A selected strike must have at least ${method.min_open_interest.toLocaleString('en-US')} summed contracts on that side.`
+            : 'Method scope unavailable.'}</p>
+          <p>Included expiry span: {recorded.expiry ? `${recorded.expiry}${recorded.through && recorded.through !== recorded.expiry ? ` to ${recorded.through}` : ''}` : 'none recorded'}.</p>
+          <p>{optionLevelText('Put', recorded.put_level, recorded.put_oi, recorded.put_distance)}</p>
+          <p>{optionLevelText('Call', recorded.call_level, recorded.call_oi, recorded.call_distance)}</p>
+        </>}
+        <p>These are not gamma exposure, dealer positioning, a buy/sell signal or guaranteed support/resistance.</p>
+      </div>
+    </details>
+  )
 }
 
 // The live technical read for one name, split by how far ahead each fact
@@ -2301,6 +2358,7 @@ const LiveTechnical = ({
   detail,
   quote,
   row,
+  optionsEvidence,
 }: {
   userId: string
   ticker: string
@@ -2310,11 +2368,11 @@ const LiveTechnical = ({
         short: Record<string, number>
         medium: Record<string, number>
         long: Record<string, number>
-        walls?: DeskWalls
       }
     | undefined
   quote: DeskQuote | undefined
   row: DeskMineRow | null
+  optionsEvidence: DeskOptionsEvidence | undefined
 }) => {
   // The live read is the model's plain words over the analyst's live
   // readings, fetched once per name per candle. The fetch is keyed on the
@@ -2410,38 +2468,7 @@ const LiveTechnical = ({
           <span className="font-medium">{(tech * 100).toFixed(0)}</span> out of 100. Higher means a higher technical score among covered names with data.
         </p>
       )}
-      {detail?.walls && detail.walls.status === undefined && (detail.walls.put_wall != null || detail.walls.call_wall != null) && (
-        <p className="mt-2 text-xs text-[#6e6e73]">
-          Option walls{detail.walls.expiry ? ` (expiries ${detail.walls.expiry.slice(5)}${detail.walls.through && detail.walls.through !== detail.walls.expiry ? ` to ${detail.walls.through.slice(5)}` : ''}` : ''}{detail.walls.fetched_at ? `${detail.walls.expiry ? ', ' : ' ('}open interest fetched ${marketTime(detail.walls.fetched_at)} ET)` : detail.walls.expiry ? ')' : ''}:{' '}
-          {detail.walls.put_wall != null ? (
-            <>
-              put{' '}
-              <span className="text-[#1d1d1f]">
-                {priceMoney(detail.walls.put_wall)}
-                {detail.walls.put_wall_distance != null && (
-                  <span className="ml-1">(<Trend value={detail.walls.put_wall_distance * 100} /> below)</span>
-                )}
-              </span>
-            </>
-          ) : (
-            'no put wall in range'
-          )}{' '}
-          ·{' '}
-          {detail.walls.call_wall != null ? (
-            <>
-              call{' '}
-              <span className="text-[#1d1d1f]">
-                {priceMoney(detail.walls.call_wall)}
-                {detail.walls.call_wall_distance != null && (
-                  <span className="ml-1">(<Trend value={detail.walls.call_wall_distance * 100} /> above)</span>
-                )}
-              </span>
-            </>
-          ) : (
-            'no call wall in range'
-          )}
-        </p>
-      )}
+      <StoredOptionOILevels evidence={optionsEvidence} />
     </section>
   )
 }
@@ -2692,7 +2719,6 @@ const NameDetail = ({
     }
   }, [userId, ticker])
   const brief = latest.briefs?.[ticker]
-  const walls = (live.technical_detail?.[ticker] as {walls?: DeskWalls} | undefined)?.walls
   const gradeRead = latest.grades?.[ticker]?.read ?? null
   const gradeReads = latest.grades?.[ticker]?.reads
   const currentStances = row
@@ -2766,8 +2792,8 @@ const NameDetail = ({
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
             {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
-            {walls && walls.status === undefined && (walls.put_wall != null || walls.call_wall != null) ? ` · option walls ${walls.put_wall != null ? priceMoney(walls.put_wall) : '—'} / ${walls.call_wall != null ? priceMoney(walls.call_wall) : '—'}` : ''}
           </p>
+          <StoredOptionOILevels evidence={live.options_evidence?.[ticker]} />
         </section>
         {/* Recorded reasons retain their original scope even when a newer grade or price is available. */}
         {latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
@@ -2808,6 +2834,7 @@ const NameDetail = ({
           detail={live.technical_detail?.[ticker]}
           quote={live.quotes[ticker]}
           row={row ?? null}
+          optionsEvidence={live.options_evidence?.[ticker]}
         />
         <EarningsPanel key={ticker} userId={userId} ticker={ticker} />
         </details>

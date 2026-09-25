@@ -24,7 +24,11 @@ async function installOptionsFixture(page: Page, frontendURL: string, state: Opt
   }
   const walls = state === 'available' ? VALID_WALLS : {status: 'unavailable', reason: 'options_data_unavailable'}
   const detail = {now: .8, short: {support_level: 90}, medium: {distance_50: .1}, long: {distance_high: -.1}, ...(state === 'absent' ? {} : {walls})}
-  const live = {as_of: NOW, data_at: BAR, stale: false, market_status: market, quotes: {AAA: {symbol: 'AAA', last: 100, open: 99, high: 101, low: 98, bar: BAR, as_of: NOW}}, technical: {AAA: {now: .8, close: .6}}, technical_detail: {AAA: detail}}
+  const common = {checked_at: NOW, collected_at: VALID_WALLS.fetched_at, collection_status: 'recorded', collection_age_seconds: 9000, oi_effective_at: null, oi_freshness: 'unknown'}
+  const evidence = state === 'available'
+    ? {...common, status: 'recorded', calculation_version: 'raw-option-oi-levels/1', calculated_on: '2026-09-25', calculation_date_status: 'same_date', reference_price: 100, reference_basis: 'raw_panel_close', reference_session: '2026-09-25', reference_bar_start: BAR, expiry: VALID_WALLS.expiry, through: VALID_WALLS.through, method: {min_days: 1, max_days: 60, strike_range_fraction: .25, min_open_interest: 500}, put_level: 95, call_level: 105, put_oi: 1200, call_oi: 1800, put_distance: -.05, call_distance: .05}
+    : {...common, status: state, reason: state === 'absent' ? 'not_supplied' : 'options_data_unavailable'}
+  const live = {as_of: NOW, data_at: BAR, stale: false, market_status: market, quotes: {AAA: {symbol: 'AAA', last: 100, open: 99, high: 101, low: 98, bar: BAR, as_of: NOW}}, technical: {AAA: {now: .8, close: .6}}, technical_detail: {AAA: detail}, options_evidence: {AAA: evidence}}
   const mine = {session: SESSION, market_status: market, grade_valid_until: {}, grades_live: {}, rows: [],
     decisions: {session: SESSION, written: WRITTEN, as_of: NOW, rows: {AAA: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'Synthetic read-only fixture.', valid_until: null, target_weight: 0, current_weight: 0, move_weight: 0}}}}
   const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[]}
@@ -91,7 +95,7 @@ async function openTechnicalEvidence(page: Page) {
   return {dialog, allEvidence}
 }
 
-// Verify both wall locations without losing unrelated rank, price or technical content.
+// Verify both options statuses without losing unrelated rank, price or technical content.
 async function expectOptionsState(dialog: Locator, allEvidence: Locator, state: OptionsState) {
   const latest = dialog.getByRole('region', {name: 'Latest available grade', exact: true})
   await expect(latest).toContainText('$100.00')
@@ -101,16 +105,22 @@ async function expectOptionsState(dialog: Locator, allEvidence: Locator, state: 
   await expect(allEvidence.getByText('· Daily support is $90.', {exact: true})).toBeVisible()
   await expect(allEvidence.getByText('· Weekly trend evidence remains available.', {exact: true})).toBeVisible()
   await expect(allEvidence.getByText('· Longer-term reference evidence remains available.', {exact: true})).toBeVisible()
-  if (state === 'available') {
-    await expect(latest).toContainText('option walls $95.00 / $105.00')
-    const wallLine = allEvidence.locator('p').filter({hasText: /^Option walls/})
-    await expect(wallLine).toBeVisible()
-    await expect(wallLine).toHaveText('Option walls (expiries 10-16 to 11-20, open interest fetched Sep 25, 09:05 AM ET ET): put $95.00(↓ -5.0% below) · call $105.00(↑ +5.0% above)')
-  } else {
-    await expect(latest).not.toContainText('option walls')
-    await expect(allEvidence.locator('p').filter({hasText: /^Option walls/})).toHaveCount(0)
-    await expect(dialog).not.toContainText('options_data_unavailable')
+  for (const surface of [latest, allEvidence]) {
+    const options = surface.getByLabel('Stored option OI levels', {exact: true})
+    await expect(options).toBeVisible()
+    await options.locator(':scope > summary').click()
+    await expect(options).toContainText('OI effective time: unknown. OI freshness: unknown.')
+    if (state === 'available') {
+      await expect(options).toContainText('Put $95.00 · 1,200 summed contracts · 5.0% below recorded reference')
+      await expect(options).toContainText('Call $105.00 · 1,800 summed contracts · 5.0% above recorded reference')
+      await expect(options).toContainText('Included expiry span: 2026-10-16 to 2026-11-20')
+    } else {
+      await expect(options).toContainText(state === 'absent' ? 'No stored options diagnostic supplied' : 'Stored options data unavailable')
+      await expect(options).not.toContainText('$95.00')
+      await expect(options).not.toContainText('$105.00')
+    }
   }
+  await expect(dialog).not.toContainText('options_data_unavailable')
 }
 
 // Preserve every browser diagnostic even when an earlier content assertion fails.

@@ -185,7 +185,7 @@ def _stored_chain(root, monkeypatch, *, symbol="AAA", state="valid"):
     return store
 
 
-# Assert the existing valid-wall shape and independently calculated raw distances.
+# Assert valid walls, independently calculated raw distances, and producer provenance.
 def _assert_raw_walls(walls):
     assert set(walls) == {
         "expiry",
@@ -198,6 +198,7 @@ def _assert_raw_walls(walls):
         "net_gamma",
         "put_wall_distance",
         "call_wall_distance",
+        "calculation",
     }
     assert walls["expiry"] == walls["through"] == EXPIRY.isoformat()
     assert walls["fetched_at"] == "2026-09-25T12:45:00+00:00"
@@ -206,6 +207,20 @@ def _assert_raw_walls(walls):
     assert walls["put_wall_distance"] == pytest.approx(-0.05)
     assert walls["call_wall_distance"] == pytest.approx(0.05)
     assert walls["net_gamma"] == 0.0
+    assert walls["calculation"] == {
+        "version": "raw-option-oi-levels/1",
+        "date": TODAY.isoformat(),
+        "reference_price": 100.0,
+        "reference_basis": "raw_panel_close",
+        "reference_session": TODAY.isoformat(),
+        "reference_bar_start": None,
+        "method": {
+            "min_days": 1,
+            "max_days": options.WALL_DAYS,
+            "strike_range_fraction": options.WALL_RANGE,
+            "min_open_interest": options.MIN_WALL_OI,
+        },
+    }
 
 
 # Keep raw-dollar strike comparisons independent of adjusted technical features.

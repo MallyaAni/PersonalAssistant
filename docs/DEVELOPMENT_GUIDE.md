@@ -141,6 +141,30 @@ observe the original collection/quote timestamps through the authenticated
 dashboard. A successful GET or health check alone is insufficient. Deploy only
 from Spark through `scripts/deploy.sh` when explicitly requested.
 
+### Stored options evidence on the desk
+
+`/desk/live` derives `options_evidence` separately from stock-bar freshness.
+Legacy calculations without a recorded raw-price basis are withheld by the
+dashboard. New provenance dates the raw reference and expiry selection, but
+does not establish OI effective time or freshness. Collection age is explicitly
+as of the read-time check; no age cutoff or automatic provider refresh is added.
+
+For real synthetic Parquet/producer/cache/persistence and authenticated ASGI
+readback, run:
+
+```sh
+python -m pytest -c /dev/null \
+  backend/tests/test_options_evidence_provenance.py \
+  backend/tests/test_options_diagnostic_isolation.py -q
+```
+
+Use the current source, not a cached image's code. The browser path is
+`desk-options-provenance.spec.ts` plus `desk-options-isolation.spec.ts` against
+an identified production bundle; it covers both existing display locations,
+old chains beside newer prices, reload, unavailable states and neutral wording.
+These offline checks do not qualify a deployed provider or options-derived
+trading edge. See the [contract and evidence](research/options-oi-provenance-2026-09-25.md).
+
 ### Verification instruments
 
 The instruments, in the order a change meets them. None of them is optional

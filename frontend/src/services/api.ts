@@ -2255,6 +2255,38 @@ export interface DeskMarketStatus {
   opens_at: string | null;
   closes_at: string | null;
 }
+// Options provenance is independent of current stock quotes and cannot establish effective OI time.
+export type DeskOptionsEvidence = {
+  checked_at: string;
+  collected_at: string | null;
+  collection_status: 'recorded' | 'missing' | 'invalid' | 'future';
+  collection_age_seconds: number | null;
+  oi_effective_at: null;
+  oi_freshness: 'unknown';
+} & ({
+  status: 'recorded';
+  calculation_version: 'raw-option-oi-levels/1';
+  // This is the date used to select eligible expiries, not a calculation timestamp.
+  calculated_on: string;
+  calculation_date_status: 'same_date' | 'historical';
+  reference_price: number;
+  reference_basis: 'raw_panel_close';
+  reference_session: string;
+  reference_bar_start: string | null;
+  expiry: string | null;
+  through: string | null;
+  method: {min_days: number; max_days: number; strike_range_fraction: number; min_open_interest: number};
+  put_level: number | null;
+  call_level: number | null;
+  put_oi: number;
+  call_oi: number;
+  put_distance: number | null;
+  call_distance: number | null;
+} | {
+  status: 'absent' | 'unavailable' | 'unverified';
+  reason: string;
+});
+
 export interface DeskLive {
   as_of: string | null;
   extended_hours?: DeskSessionPrices;
@@ -2272,6 +2304,8 @@ export interface DeskLive {
   // where the name would rank if the session closed here, `close` where
   // it ranked at the last close.
   technical?: Record<string, { now: number; close: number }>;
+  // Only this descriptor qualifies displayed OI levels; legacy nested walls stay withheld.
+  options_evidence?: Record<string, DeskOptionsEvidence>;
   // The value analyst's rating re-read at the live price, the same shape
   // as `technical`: value is price-derived, so a name that cheapens
   // intraday moves its live grade too.

@@ -3,6 +3,8 @@
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from backend.market import options_evidence
+
 NEW_YORK = ZoneInfo("America/New_York")
 SNAPSHOT_SECONDS = 900
 BAR_SECONDS = 1800
@@ -68,6 +70,8 @@ def describe(snapshot: dict, now: datetime | None = None) -> dict:
         "data_at": min(dates) if dates else None,
         "quote_status": status,
         "stale_symbols": stale,
+        # Options clocks and reference prices are independent of stock-bar freshness.
+        "options_evidence": options_evidence.for_snapshot(snapshot, now),
         "stale": not quotes
         or bool(stale)
         or age is None
