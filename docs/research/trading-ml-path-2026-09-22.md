@@ -5,6 +5,11 @@ without treating prediction accuracy as profit or expanding the authorized fixed
 strategy evaluation. This is a specification only: no training, model downloads,
 data purchases, orders, services or dashboard changes.
 
+September 25 supplement: [2026 microstructure research at a 15-minute cadence](microstructure-15-minute-review-2026-09-25.md)
+reviews TradeFM and an intraday falsification study, distinguishes cadence from
+holding duration, and records a separate unlaunched timing hypothesis. It does
+not change this document's frozen ten-session forecast specification.
+
 ## What the papers establish
 
 **DeepLOB — Zhang, Zohren and Roberts.** A CNN/LSTM forecasts short-horizon

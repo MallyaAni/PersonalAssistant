@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-25 — Review 2026 microstructure research for slower trading
+
+Added a versioned primary-source review of TradeFM and Mesfin's intraday
+falsification study. Checked simulation-versus-trading claims, timing/cost
+sensitivity and methodological caveats; neither establishes a best 15-minute
+return/drawdown horizon. A separate unlaunched entry-filter hypothesis keeps
+selection/holding policy fixed and requires qualified intraday accounting and
+matched SPY/QQQ comparisons. Existing frozen studies are unchanged.
+
+Primary statements and artifact hashes were independently reviewed; empirical
+results were not replicated. No new fit, historical replay, provider request,
+strategy promotion or order. See the
+[microstructure review](research/microstructure-15-minute-review-2026-09-25.md).
+
 ## 2026-09-25 — Preserve technical evidence when optional options data fails
 
 Option strikes now use the raw stock-price basis without changing adjusted

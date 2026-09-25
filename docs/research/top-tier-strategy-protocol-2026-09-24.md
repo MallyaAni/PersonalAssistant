@@ -1,5 +1,10 @@
 # Fixed next-strategy protocol — September 24, 2026
 
+September 25 supplement: [microstructure ideas and 15-minute decisions](microstructure-15-minute-review-2026-09-25.md).
+This is a separate research assessment, not an amendment to the frozen rank
+blend or permission to search horizons on examined history. Neither reviewed
+2026 paper establishes a best return/drawdown timeframe for this desk.
+
 ## Operator objective clarified after the rank-blend freeze
 
 The operator's target is to own the strongest volatile, fundamentally sound
