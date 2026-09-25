@@ -1,5 +1,107 @@
 # Next session
 
+## 2026-09-25 — Source-qualified research reaches the actual desk and records
+
+Starting clean `main`, HEAD `9b21c84604517faafdbc6df396ef3bd16c01e0f6`;
+initial `git pull --rebase origin main` was up to date. Later modifications were
+the coordinated task only. Fresh Mac/Spark/GitHub fetches matched the predecessor
+before publication. Spark's unrelated untracked `scratch/` remains untouched.
+
+**VERIFIED scoped checkpoint:** `6a99cf8a0922780aa999cf64e96a1c37c82543f3`.
+Published Mac → `git push spark main` → GitHub from Spark. Spark HEAD and its
+GitHub origin match the code SHA; the clean post-commit pull was up to date.
+This is a subsequent documentation-only handoff commit.
+
+The explicit `qualified` mode connects original-byte archives in the existing
+market store through one declared USD customer-revenue quarterly profile to
+the actual fundamental opinion, vote resets, desk grades and separate research
+records. Its source is `fundamentals-qualified/1`. Complete intervals, units,
+signed derivations, original JSON pointers, hashes and issuer/date anchors stay
+attached. Missing/disputed inputs stay unavailable; missing archives never fall
+back to unitless data. Cooperating POSIX archive writers preserve first bytes.
+An offline importer accepts one already acquired local response with explicit
+provenance. No acquisition or live ingestion service was added.
+
+Nightly `current` `/3`, generic `corrected` `/2`, other analysts, learned inputs
+and historical records remain unchanged. Qualified mode requires no learned
+augmentations; the CLI supplies `inputs=()`. All four exposed historical CLI
+paths are refused, including `--history`. Resolved root/desk and final dated
+record paths cannot enter the operational input store. The ordinary record
+writer still has only sequential overwrite refusal, not concurrent-create
+protection; serialize record writers. These checks do not defend hostile races.
+
+**VERIFIED root acceptance:** 671 passed, one optional missing-Torch skip,
+four retained strict legacy-defect xfails, 72 known numerical/short-panel
+warnings, 4.749 seconds. Actual importer subprocess, archive readback/concurrent
+writers, opinion/grade/save/reload, rejected-name retention and command/path
+refusals are exercised. Independent review: 25 integration cases pass; its
+combined suite has 94 passes, zero failures/skips/xfails, 36 known warnings,
+2.54 seconds. The adapter owner's 76 feature cases also pass within the root
+suite. Configured Ruff/format, source hashes, final diff and all 33 unchanged
+diagram/page checks pass. No frontend or prompt changed.
+
+Original absence failures remain in root XML. Independent review found 16
+integration failures and two later symlink failures; their original tool-output
+results are transcribed in its receipt, not contemporaneous baseline XML.
+All original safety assertions pass before removal of their strict xfail marks.
+Root also retained 28 configured-lint findings and three mistaken new error
+message matches, corrected without changing corruption/persistence assertions.
+Do not claim an earlier default-config Ruff run was repository-configured.
+
+**VERIFIED retained-source comparison:** all 94 original bodies pass actual
+temporary archive write/readback and strict fundamental record-block JSON
+roundtrip. Original hashes remain unchanged. Finite feature cells change
+424 → 430: 139 gained, 133 withheld, 24 of 291 jointly finite values changed.
+Twenty names gain an F score and twenty lose one; 64 are scored in both modes.
+AAOI's six June inputs are unchanged, with a small peer-rank score change;
+AAPL and AMZN gain current-period inputs. ORCL retains a disputed-quarter
+refusal and no score. This is one date of fundamental features/scores, NOT a
+backtest or full combined-grade comparison. Full desk acceptance uses synthetic
+inputs. See the [contract and limits](research/qualified-customer-revenue-2026-09-25.md).
+
+Final evidence directory `/private/tmp/anios-qualified-final.YJSRqc/`:
+
+- Root receipt `ROOT_RECEIPT.md`, SHA256
+  `f2100ec8885b8f1b7e76448397a6729a35c4cfb98638c52dacd678e0fb613b4c`.
+- `final-broad-backend.xml`, SHA256
+  `7637a00689161b8599f08cf9110aa0379674a88c6342aa88dc82c64f62ebde7b`.
+- `current-comparison.json`, SHA256
+  `057d0e2cfcd377c695d168bb4400773d5d8433b68e74bdb83cafd8c1c3387aa8`.
+- `qualified-current-record-block.json`, SHA256
+  `f08af24259bbf5610f915fc983616e7d8fa8d54b70aa287854c725174abe2dda`.
+
+Comparison JSON binds all exercised production-module and original body hashes;
+root rechecked them against the final tree. Runtime image, commands and earlier
+receipts are in the root receipt. The fresh-write comparison must not be rerun
+in either existing evidence store. Reviewer receipt:
+`/private/tmp/anios-qualified-review-final.6EH0xP/RECEIPT.md`, SHA256
+`c0b4009a7d0ad1c5c5d822a48da554d33ff482eed000d743adf96befc9350631`.
+
+**FAILED / UNVERIFIED:** four known unitless legacy defects remain; the skipped
+training-selector test is not a pass. Historical acquisition authenticity,
+universal accounting comparability, full current coverage, fair value, all-hours
+quotes and trading superiority remain unverified. No model/provider/account
+call, fit, historical strategy rerun, orders, holding changes, laptop settings,
+server restart or deployment occurred.
+
+**Next atomic task:** investigate the new reported/derived disagreement evidence
+across the affected issuers, including dependent-quarter refusals, using the
+retained original source paths. Change a calculation only if the bytes establish
+an algorithmic error; otherwise preserve the refusal and name the missing
+evidence. Do not loosen concept/unit rules to manufacture scores. Do not repeat
+the completed 94-source inventory or examined SPY/QQQ backtests to report activity.
+Intraday qualification still needs compatible adjusted-price inputs.
+
+The exact dashboard `quote stale`, `snapshot`, `replay` and `below A` complaint
+was already fixed and browser-tested in preceding published checkpoints; no new
+UI work was needed here. Deployment remains held for the existing unanswered
+15-second quote-collector decision. Do not ask repeatedly or deploy collection
+disabled as an equivalent release. When cleared, use Spark-only
+`scripts/deploy.sh --wait-post`, required gates and actual artifact/browser proof.
+All scoped agents are finished. Overall trading goal stays active/incomplete.
+Diagram impact: NONE — representation and calculation within existing
+filing/market-store/analyst/record relationships, without a new service or boundary.
+
 ## 2026-09-25 — Chart meaning and grade-source checkpoint accepted
 
 Starting clean `main`, HEAD `cf9d7ca18feb2aad8dc1cb32bee322ba05f19a55`;
