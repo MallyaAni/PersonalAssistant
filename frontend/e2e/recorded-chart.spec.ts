@@ -7,8 +7,13 @@ const observations = [
   {id: 'undated', recorded_at: null, bar: null, entry_state: 'breakout', grade: 'C'},
 ].map(row => ({...row, allocation: .1, allocation_change: null, model_weight: .1, event_paused: false, price: 100, version: 'original/1', policy_sha256: 'immutable-policy', stock_total_return: null}))
 
+// Keep genuine personal actions distinct from blocked strategy intents and research setups.
+const saved = (id: string, at: string, action: string, strategy = action) => ({
+  id, generated_at: at, acknowledged_at: at, payload: {rows: {AAPL: {action, strategy_action: strategy, grade: 'A'}}},
+})
+
 // Render the actual stock modal against saved history and a separately changing current quote.
-async function setup(page: Page) {
+async function setup(page: Page, personal = true) {
   const errors: string[] = []
   const writes: string[] = []
   let last = 110
@@ -19,14 +24,17 @@ async function setup(page: Page) {
   await page.route('**/api/v1/**', async route => {
     const request = route.request()
     const path = new URL(request.url()).pathname
-    if (['PUT', 'PATCH', 'DELETE'].includes(request.method()) || request.method() === 'POST' && (!path.endsWith('/mine') || request.postDataJSON()?.record_history === true)) writes.push(path)
+    if (['PUT', 'PATCH', 'DELETE'].includes(request.method()) || request.method() === 'POST' && !path.endsWith('/mine')) writes.push(path)
     let json: unknown = {}
-    if (path.endsWith('/auth/session')) json = {authentication_required: true, user_id: 'ani.mallya', is_admin: true, desk_write: false}
+    if (path.endsWith('/auth/session')) json = {authentication_required: true, user_id: 'ani.mallya', is_admin: true, desk_write: personal}
     else if (path.includes('/conversations/')) json = {conversations: [], messages: []}
     else if (path.endsWith('/desk')) json = {latest: {session: '2026-09-24', written: '2026-09-24T00:00:00Z', regime: {exposure: 1, flags: []}, grades: {AAPL: {grade: last === 110 ? 'A' : 'C', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: [], briefs: {}}, sessions: ['2026-09-24']}
     else if (path.endsWith('/holdings')) json = {holdings: []}
     else if (path.endsWith('/live')) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}}
     else if (path.endsWith('/mine')) json = {rows: [], grades_live: {}, decisions: {rows: {AAPL: {action: 'Hold', strategy_action: 'Hold', move_weight: 0, reason: 'Waiting'}}}}
+    else if (path.endsWith('/personal-history')) json = new URL(request.url()).searchParams.has('before')
+      ? {items: [saved('older', '2026-09-14T14:30:00Z', 'Sell')], next_cursor: null}
+      : {items: [saved('hold', '2026-09-24T13:55:00Z', 'Hold'), saved('sell-repeat', '2026-09-17T15:00:00Z', 'Sell'), saved('sell', '2026-09-17T14:30:00Z', 'Sell'), saved('blocked', '2026-09-16T14:30:00Z', 'Hold', 'Buy'), saved('buy-repeat', '2026-09-15T15:00:00Z', 'Buy'), saved('buy', '2026-09-15T14:30:00Z', 'Buy')], next_cursor: 'earlier'}
     else if (path.endsWith('/history/AAPL')) json = {ticker: 'AAPL', rows: [{date: '2026-09-14', grade: 'A', said: true}, {date: '2026-09-15', grade: 'B', said: true}].map(row => ({...row, votes: 3, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, earnings: false})), backtest: null, recommendations: {observations, invalid_archives: 0, older_records_not_shown: false}}
     else if (path.endsWith('/chart/AAPL')) {
       const weekly = new URL(request.url()).searchParams.get('timeframe') === 'weekly'
@@ -39,20 +47,21 @@ async function setup(page: Page) {
   await page.goto('/#desk')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
-  await expect(chart.getByLabel('Recorded setup markers')).toContainText('2026-09-15: Dip→Wait · 2')
+  await expect(chart.getByLabel('Research publication groups')).toContainText('2026-09-15: Dip→Wait · 2')
   return {chart, errors, writes, changeQuote: () => { last = 150 }}
 }
 
 // Publication dating retains intraday changes, missing states and every original row without writes.
 test('recorded setups preserve original publication and all source readings', async ({page}) => {
   const {chart, errors, writes} = await setup(page)
-  await expect(chart.getByRole('checkbox', {name: 'Recorded setups · research'})).toBeChecked()
+  await expect(chart.getByRole('checkbox', {name: 'Buy / Sell'})).toBeChecked()
+  await expect(chart.getByRole('checkbox', {name: 'Recorded setups · research'})).toHaveCount(0)
   await expect(chart.getByRole('button', {name: 'Recent', exact: true})).toHaveAttribute('aria-pressed', 'true')
   await expect(chart).toContainText('6 sessions loaded; pan or zoom for history.')
   await chart.getByRole('button', {name: 'Full history', exact: true}).click()
   await expect(chart.getByRole('button', {name: 'Full history', exact: true})).toHaveAttribute('aria-pressed', 'true')
   await chart.getByRole('button', {name: 'Recent', exact: true}).click()
-  const markers = chart.getByLabel('Recorded setup markers')
+  const markers = chart.getByLabel('Research publication groups')
   await expect(markers).not.toContainText('2026-09-14:')
   await expect(markers).not.toContainText('2026-09-16:')
   await expect(markers).toContainText('2026-09-17: Not recorded · 1')
@@ -66,7 +75,7 @@ test('recorded setups preserve original publication and all source readings', as
   await expect(table.locator('tbody tr').last()).toContainText('Not recorded')
   await expect(table.locator('tbody tr').first()).toContainText('original/1 · immutabl')
   await expect(table.locator('tbody tr').first().getByTitle('immutable-policy')).toHaveText('immutabl')
-  await chart.getByRole('checkbox', {name: 'Show signal history'}).check()
+  await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).toBeChecked()
   await expect(chart).toContainText('snapshot · below A · A→B')
   await expect(chart).toContainText('not a Buy instruction')
   await expect(chart).not.toContainText('The chart could not be drawn')
@@ -79,14 +88,14 @@ test('recorded setups preserve original publication and all source readings', as
 // Weekly grouping cannot backdate publications, and current quote changes cannot rewrite archived setups.
 test('weekly recorded setups aggregate without changing original evidence', async ({page}) => {
   const {chart, errors, writes, changeQuote} = await setup(page)
-  const original = await chart.getByLabel('Recorded setup markers').textContent()
+  const original = await chart.getByLabel('Research publication groups').textContent()
   changeQuote()
   await page.clock.fastForward(61_000)
   await expect(chart).toContainText('$150.00')
-  await expect(chart.getByLabel('Recorded setup markers')).toHaveText(original!)
+  await expect(chart.getByLabel('Research publication groups')).toHaveText(original!)
   await chart.getByRole('button', {name: 'W', exact: true}).click()
-  await expect(chart.getByLabel('Recorded setup markers')).toContainText('2026-09-18: Dip→Wait→Not recorded · 3')
-  await expect(chart.getByLabel('Recorded setup markers')).not.toContainText('2026-09-11:')
+  await expect(chart.getByLabel('Research publication groups')).toContainText('2026-09-18: Dip→Wait→Not recorded · 3')
+  await expect(chart.getByLabel('Research publication groups')).not.toContainText('2026-09-11:')
   // The daily source-window count is not the number of aggregated weekly candles.
   await expect(chart).toContainText('3 weeks loaded; pan or zoom for history.')
   await expect(chart).not.toContainText('260 weeks')
@@ -111,7 +120,57 @@ test('current grade changes leave archived grades unchanged', async ({page}) => 
   const table = chart.getByRole('table', {name: 'Original chart setup readings'})
   await expect(table.locator('tbody tr').first().locator('td').nth(4)).toHaveText('A')
   await expect(table.locator('tbody tr').first().locator('td').nth(2)).toHaveText('$100.00')
-  await expect(chart.getByLabel('Recorded setup markers')).toContainText('2026-09-15: Dip→Wait · 2')
+  await expect(chart.getByLabel('Research publication groups')).toContainText('2026-09-15: Dip→Wait · 2')
+  expect(errors).toEqual([])
+  expect(writes).toEqual([])
+})
+
+// Plot saved Buy/Sell transitions only, retain pagination, and never relabel a cash-blocked intent.
+test('chart recommendations use saved actions, dedupe repeats and load earlier evidence', async ({page}) => {
+  const {chart, errors, writes} = await setup(page)
+  const markers = chart.getByLabel('Buy and Sell markers')
+  await expect(markers).toContainText('Buy · Sep 15, 2026')
+  await expect(markers).toContainText('Sell · Sep 17, 2026')
+  await expect(markers).not.toContainText('Sep 16')
+  await expect(markers).not.toContainText('Wait')
+  await expect(markers).not.toContainText('breakout')
+  await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+  const table = chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'})
+  await expect(table.locator('tbody tr')).toHaveCount(2)
+  await expect(chart).toContainText('Partial history')
+  await chart.getByRole('button', {name: 'Load earlier recommendations'}).click()
+  await expect(table.locator('tbody tr')).toHaveCount(3)
+  await expect(markers).toContainText('Sell · Sep 14, 2026')
+  await expect(chart).toContainText('All available snapshots loaded.')
+  await chart.getByRole('button', {name: 'W', exact: true}).click()
+  await expect(markers).toContainText('Buy · Sep 15, 2026')
+  await expect(markers).toContainText('Sell · Sep 17, 2026')
+  await expect(chart).not.toContainText('The chart could not be drawn')
+  expect(errors).toEqual([])
+  expect(writes).toEqual([])
+})
+
+// A missing receipt service cannot turn research setups into advice or claim complete history.
+test('missing recommendation history leaves grade evidence available', async ({page}) => {
+  const {chart, errors, writes} = await setup(page)
+  await page.route('**/desk/personal-history?*', route => route.fulfill({json: {}}))
+  await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+  await chart.getByRole('button', {name: 'Load earlier recommendations'}).click()
+  await expect(chart.getByRole('status')).toHaveText('Recommendation history unavailable.')
+  await expect(chart).not.toContainText('All available snapshots loaded.')
+  await expect(chart).toContainText('snapshot · below A · A→B')
+  expect(errors).toEqual([])
+  expect(writes).toEqual([])
+})
+
+// Read-only accounts retain public grade evidence without requesting the owner's private receipts.
+test('read-only chart does not request personal recommendation history', async ({page}) => {
+  const requests: string[] = []
+  page.on('request', request => { if (request.url().includes('/personal-history')) requests.push(request.url()) })
+  const {chart, errors, writes} = await setup(page, false)
+  await expect(chart.getByRole('checkbox', {name: 'Buy / Sell'})).toHaveCount(0)
+  await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).toBeChecked()
+  expect(requests).toEqual([])
   expect(errors).toEqual([])
   expect(writes).toEqual([])
 })

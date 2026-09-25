@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-25 — Historical grades and saved Buy/Sell recommendations
+
+Charts show grade changes by default. Saved personal Buy/Sell recommendations
+replace Wait/setup markers; fills, blocked intentions and research setups are
+not substituted for historical actions. Original research grades/readings remain
+expandable. Receipt pagination and missing history are explicit; private actions
+are excluded from research and read-only views. Production build and115browser
+cases passed on the compiled candidate; live release proof in NEXT_SESSION.
+
 ## 2026-09-25 — Extended-hours price context
 
 The board and chart now receive separately dated pre-market/post-market/overnight

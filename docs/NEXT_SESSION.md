@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-09-25 — Grade and recommendation chart completion
+
+User has only2%weekly usage remaining: finish release/proof only, no new scope.
+Root starts674912e, owns four frontend files. Restored grade changes by default;
+removed Wait/research-state/price-only breakout markers. Original research rows
+retain publication/reference times and original grades in expandable history.
+Personal Buy/Sell markers now read existing owner-only saved action receipts,
+independent of fills; blocked strategy intentions never become Buy markers.
+Repeated actions collapse, daily/weekly publication dates persist, bounded
+pagination discloses incomplete coverage. Research/read-only views never fetch
+private receipts. No new endpoint, signal, account write or reconstructed trade.
+Actual latest20snapshots (03:48–03:51UTC) contain1880Hold rows; older pages exist.
+This does not establish that all historical actions were Hold.
+
+VERIFIED production build and115browser cases on compiled root5187, including
+publication/grade immutability, Buy/Sell dedupe, blocked intent, pagination,
+missing history, owner scope and extended prices. Log:
+/tmp/codex-chart-final-suite-20260925.log. Pending chart commit/main/deploy/proof.
+Extended674912e normal release still active at this checkpoint:
+/tmp/codex-extended-release-20260925.log, launcher2418897. Passed5894unit,
+31skipped,1xfail and100model cases. Do not restart or edit main until it exits.
+Then verify674912e artifact/API, merge this frontend-only follow-up to main,
+normal scripts/deploy.sh, verify real browser and final source. Models untouched.
+
 ## 2026-09-25 — Extended-hours display release
 
 User requests completion/commit/deploy within remaining6%weekly usage. Bounded

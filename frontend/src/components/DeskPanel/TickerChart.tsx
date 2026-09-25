@@ -10,7 +10,7 @@ import {
   type ISeriesApi,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { getDeskChart, type DeskChart, type DeskChartBar } from '../../services/api'
+import { getDeskChart, getDeskPersonalHistory, type DeskPersonalReceipt, type DeskChart, type DeskChartBar } from '../../services/api'
 import type { DeskHistory, DeskLive } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 
@@ -140,9 +140,7 @@ const recordedGroups = (history: DeskHistory | undefined, bars: DeskChartBar[], 
   }
   return [...groups.entries()].map(([date, readings]) => {
     const states = readings.map(setupLabel).filter((value, index, values) => index === 0 || value !== values[index - 1])
-    const glyphs: Record<string, string> = {Dip: 'D', Breakout: 'B', Wait: 'W'}
-    const glyph = [...new Set(states.map(state => glyphs[state] ?? '?'))].join('/')
-    return {date, readings, glyph, label: `${states.slice(0, 3).join('→')}${states.length > 3 ? '…' : ''} · ${readings.length}`}
+    return {date, readings, label: `${states.slice(0, 3).join('→')}${states.length > 3 ? '…' : ''} · ${readings.length}`}
   })
 }
 
@@ -152,19 +150,37 @@ const recordedTime = (value: unknown) => {
   return instant ? new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}).format(instant) : 'Not recorded'
 }
 
-// Where price met the desk's entry condition, so the rule can be checked
-// against the chart rather than against a table. The grade half is not
-// included; the separate grade arrows show snapshot-session or replay changes.
-const entryMarkers = (chart: DeskChart | undefined) =>
-  (chart?.entries ?? []).map((date) => ({
-    time: stamp(date),
-    position: 'belowBar' as const,
-    color: '#0b5cad',
-    shape: 'circle' as const,
-    // Price-only evidence cannot claim a funded, grade-qualified buy decision.
-    text: 'breakout',
-    size: 1,
-  }))
+// Plot actual saved personal actions once per transition, independently of fills or research setups.
+const recommendationEvents = (receipts: DeskPersonalReceipt[], ticker: string) => {
+  const events: {id: string; at: string; session: string; action: 'Buy' | 'Sell'; grade: string | null}[] = []
+  let previous: string | null = null
+  const seen = new Set<string>()
+  for (const receipt of [...receipts].sort((a, b) => Date.parse(a.generated_at) - Date.parse(b.generated_at) || a.id.localeCompare(b.id))) {
+    if (seen.has(receipt.id)) continue
+    seen.add(receipt.id)
+    const row = receipt.payload?.rows?.[ticker]
+    const session = recordedSession(receipt.generated_at)
+    if (!row || !session) { previous = null; continue }
+    const action = row.action
+    if (action !== 'Buy' && action !== 'Sell') { previous = null; continue }
+    if (previous !== action) events.push({id: receipt.id, at: receipt.generated_at, session, action, grade: row.grade})
+    previous = action
+  }
+  return events
+}
+
+// Attach recommendations to their publication candle without inventing prices or backdating a signal.
+const recommendationMarkers = (events: ReturnType<typeof recommendationEvents>, bars: DeskChartBar[], timeframe: Timeframe) =>
+  events.flatMap(event => {
+    const candle = bars.find(bar => timeframe === 'daily' ? bar.date === event.session
+      : weekOf(bar.date) === weekOf(event.session) && bar.date >= event.session)
+    return candle ? [{
+      time: stamp(candle.date), position: event.action === 'Buy' ? 'belowBar' as const : 'aboveBar' as const,
+      color: event.action === 'Buy' ? '#1a7f37' : '#b42318',
+      shape: event.action === 'Buy' ? 'arrowUp' as const : 'arrowDown' as const,
+      text: event.action, size: 2, event,
+    }] : []
+  })
 
 // Mark grade changes, with stronger arrows only for recorded desk grades.
 const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
@@ -207,6 +223,7 @@ export const TickerChart = ({
   quote,
   live,
   now = Date.now(),
+  personalHistory = false,
   tall = false,
 }: {
   userId: string
@@ -215,11 +232,17 @@ export const TickerChart = ({
   quote?: LiveQuote
   live?: DeskLive
   now?: number
+  personalHistory?: boolean
   tall?: boolean
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
-  const [showSignals, setShowSignals] = useState(false)
-  const [showRecorded, setShowRecorded] = useState(true)
+  const [showSignals, setShowSignals] = useState(true)
+  const [showRecommendations, setShowRecommendations] = useState(true)
+  const [receipts, setReceipts] = useState<DeskPersonalReceipt[]>([])
+  const [receiptCursor, setReceiptCursor] = useState<string | null>(null)
+  const [receiptError, setReceiptError] = useState('')
+  const [receiptBusy, setReceiptBusy] = useState(false)
+  const receiptRequest = useRef(0)
   const [fullHistory, setFullHistory] = useState(false)
   const [data, setData] = useState<DeskChart | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -227,6 +250,31 @@ export const TickerChart = ({
   const [drawFailed, setDrawFailed] = useState(false)
   const holder = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
+
+  // Read one owner-scoped page; stale responses cannot cross an account or ticker change.
+  const loadReceipts = async (before?: string) => {
+    const request = ++receiptRequest.current
+    setReceiptBusy(true)
+    setReceiptError('')
+    try {
+      const page = await getDeskPersonalHistory(userId, before)
+      if (request !== receiptRequest.current) return
+      if (!Array.isArray(page.items)) throw new Error('Invalid recommendation history')
+      setReceipts(current => before ? [...current, ...page.items] : page.items)
+      setReceiptCursor(page.next_cursor && page.next_cursor !== before ? page.next_cursor : null)
+    } catch {
+      if (request === receiptRequest.current) setReceiptError('Recommendation history unavailable.')
+    } finally {
+      if (request === receiptRequest.current) setReceiptBusy(false)
+    }
+  }
+
+  useEffect(() => {
+    setReceipts([])
+    setReceiptCursor(null)
+    if (personalHistory) void loadReceipts()
+    return () => { receiptRequest.current += 1 }
+  }, [userId, ticker, personalHistory])
 
   useEffect(() => {
     setData(null)
@@ -267,6 +315,8 @@ export const TickerChart = ({
     }),
     [data],
   )
+  const events = useMemo(() => recommendationEvents(receipts, ticker), [receipts, ticker])
+  const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -349,12 +399,8 @@ export const TickerChart = ({
       drawn.push(series)
     }
 
-    const recorded = showRecorded ? recordedGroups(history, merged.bars, timeframe).map(group => ({
-      time: stamp(group.date), position: 'aboveBar' as const, color: '#7c3aed',
-      shape: 'square' as const, text: group.glyph, size: 1,
-    })) : []
     // Series points require uniqueness, but multiple distinct markers on one date must survive.
-    const markers = [...recorded, ...(showSignals ? [...gradeMarkers(history, merged.bars[0].date), ...entryMarkers(data)] : [])]
+    const markers = [...(personalHistory && showRecommendations ? actionMarkers : []), ...(showSignals ? gradeMarkers(history, merged.bars[0].date) : [])]
       .filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     if (markers.length) createSeriesMarkers(candles, markers)
     // Give recent candles enough horizontal space; all loaded bars remain available to pan and zoom.
@@ -376,7 +422,7 @@ export const TickerChart = ({
       chartRef.current = null
       drawn.length = 0
     }
-  }, [data, merged, timeframe, history, showSignals, showRecorded, fullHistory])
+  }, [data, merged, timeframe, history, showSignals, showRecommendations, actionMarkers, fullHistory, personalHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
@@ -412,13 +458,13 @@ export const TickerChart = ({
           <button type="button" aria-pressed={!fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(false)}>Recent</button>
           <button type="button" aria-pressed={fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(true)}>Full history</button>
           </div>
-          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
-            <input type="checkbox" checked={showRecorded} onChange={event => setShowRecorded(event.target.checked)} />
-            Recorded setups · research
-          </label>
+          {personalHistory && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+            <input type="checkbox" checked={showRecommendations} onChange={event => setShowRecommendations(event.target.checked)} />
+            Buy / Sell
+          </label>}
           <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />
-            Show signal history
+            Grade changes
           </label>
           <div className="flex gap-1" role="group" aria-label="Chart timeframe">
           {(['daily', 'weekly'] as Timeframe[]).map((frame) => (
@@ -477,23 +523,34 @@ export const TickerChart = ({
               : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>
-          {/* A mark nobody can read is decoration. Both of the desk's rules are
-              on the price now, so the legend has to name both. */}
           {showSignals && <p className="mt-1 text-[11px] text-[#6e6e73]">
-            <span className="font-medium text-[#0b5cad]">{'●'} breakout</span>{' '}
-            marks the incumbent band-breakout price condition, not a Buy instruction.
-            Grade, event pauses, cash and position caps also affect the personal plan.{' '}
-            <span className="font-medium text-[#b42318]">{'↓'} below A</span>{' '}
-            Grade arrows show snapshot-session changes or historical replays; session dates
-            do not establish when grades became available. These markers are not account orders or fills.
+            Grades: snapshot-session changes or historical replays. Session dates are not publication times.
           </p>}
 
-          {showRecorded && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Recorded setup history">
-            <p>D Dip · B Breakout · W Wait · ? Not recorded · / Mixed states</p>
-            <p className="sr-only" aria-label="Recorded setup markers">{groups.length ? `${groups.length} marked ${timeframe === 'weekly' ? 'weeks' : 'sessions'} · ${groups.map(group => `${group.date}: ${group.label}`).join(' · ')}` : 'No recorded setups on the loaded candles.'}</p>
+          {personalHistory && showRecommendations && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Saved recommendation history">
+            <p aria-label="Buy and Sell markers">{actionMarkers.length
+              ? actionMarkers.map(marker => `${marker.event.action} · ${recordedTime(marker.event.at)}`).join(' · ')
+              : receiptBusy ? 'Loading recommendations…' : 'No saved Buy/Sell on these candles in the loaded history.'}</p>
+            {receiptError && <p role="status">{receiptError}</p>}
+            <details>
+              <summary className="cursor-pointer">Saved recommendations ({receipts.length} snapshots)</summary>
+              <p>Personal recommendations at generation time, not fills. Repeated unchanged actions are grouped. Research setups are not Buy/Sell instructions.</p>
+              <p>{receiptCursor ? 'Partial history. Load earlier snapshots to extend coverage.' : receiptError || receiptBusy ? 'History coverage unconfirmed.' : 'All available snapshots loaded.'} Older unsaved decisions cannot be reconstructed.</p>
+              {!!receipts.length && <p>{recordedTime(receipts[receipts.length - 1].generated_at)} – {recordedTime(receipts[0].generated_at)}</p>}
+              {receiptCursor && <button type="button" disabled={receiptBusy} onClick={() => void loadReceipts(receiptCursor)} className="text-[#0071e3]">{receiptBusy ? 'Loading…' : 'Load earlier recommendations'}</button>}
+              {receiptError && <button type="button" onClick={() => void loadReceipts()} className="text-[#0071e3]">Retry history</button>}
+              <table className="w-full text-left [&_td]:p-1 [&_th]:p-1" aria-label="Saved Buy and Sell recommendations">
+                <thead><tr><th>Generated</th><th>Action</th><th>Grade</th></tr></thead>
+                <tbody>{events.map(event => <tr key={event.id}><td>{recordedTime(event.at)}</td><td>{event.action}</td><td>{event.grade || 'Not recorded'}</td></tr>)}</tbody>
+              </table>
+            </details>
+          </div>}
+
+          <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Recorded setup history">
+            <p className="sr-only" aria-label="Research publication groups">{groups.length ? `${groups.length} recorded ${timeframe === 'weekly' ? 'weeks' : 'sessions'} · ${groups.map(group => `${group.date}: ${group.label}`).join(' · ')}` : 'No recorded setups on the loaded candles.'}</p>
             <details className="mt-1">
               <summary className="cursor-pointer">Original readings ({observations.length})</summary>
-              <p>Dip is a pullback setup, not a Buy instruction. Markers group original publication times by {timeframe === 'weekly' ? 'week' : 'session'}; missing dates are not filled. Publication time and reference bar are separate. These are research observations, not personal actions, fills or an accuracy score.</p>
+              <p>Dip is a pullback setup, not a Buy instruction. Original research observations; not personal actions, fills or an accuracy score. Publication time and reference bar are separate.</p>
               <p>Prices: {data.basis}. Indicators can update during a session; weekly overlays include a forming week and can differ from a saved grade.</p>
               <div className="max-h-64 overflow-auto"><table className="w-full text-left [&_td]:p-1 [&_th]:p-1" aria-label="Original chart setup readings">
                 <thead><tr><th>Recorded</th><th>Reference bar</th><th title="Original unadjusted reference price; chart prices are adjusted.">Bar price</th><th>Setup</th><th>Grade</th><th>Policy</th></tr></thead>
@@ -507,7 +564,7 @@ export const TickerChart = ({
               {history?.recommendations?.older_records_not_shown && <p>Only recent archives are loaded; older records are not shown.</p>}
               {!!history?.recommendations?.invalid_archives && <p>Some archived records could not be read.</p>}
             </details>
-          </div>}
+          </div>
 
           {summary && (
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">
