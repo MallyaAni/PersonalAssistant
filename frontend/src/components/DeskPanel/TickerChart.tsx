@@ -43,7 +43,7 @@ export type LiveQuote = {
 
 // The lines drawn on price, in draw order, with the colour each is given.
 // The band edges are dashed because they are a range rather than a trend,
-// and the 52-week extremes are dotted because they are a boundary rather
+// and the 252-session extremes are dotted because they are a boundary rather
 // than a level being traded against. `from` says which block of the
 // payload the series comes out of.
 type Line = {
@@ -57,19 +57,19 @@ type Line = {
 }
 
 const DAILY_LINES: Line[] = [
-  { key: 'high_52w', label: '52-week high', color: '#d2d2d7', from: 'levels', dotted: true },
-  { key: 'low_52w', label: '52-week low', color: '#d2d2d7', from: 'levels', dotted: true },
-  { key: 'band_upper', label: 'Band upper', color: '#c7c7cc', dashed: true },
-  { key: 'band_lower', label: 'Band lower', color: '#c7c7cc', dashed: true },
-  { key: 'ema9', label: 'EMA 9', color: '#ff9500' },
-  { key: 'ema21', label: 'EMA 21', color: '#0071e3' },
-  { key: 'ema50', label: 'EMA 50', color: '#5856d6' },
-  { key: 'ema200', label: 'EMA 200', color: '#1d1d1f', width: 2 },
+  { key: 'high_52w', label: '252-session high', color: '#d2d2d7', from: 'levels', dotted: true },
+  { key: 'low_52w', label: '252-session low', color: '#d2d2d7', from: 'levels', dotted: true },
+  { key: 'band_upper', label: 'Upper Bollinger band', color: '#c7c7cc', dashed: true },
+  { key: 'band_lower', label: 'Lower Bollinger band', color: '#c7c7cc', dashed: true },
+  { key: 'ema9', label: '9-session EMA', color: '#ff9500' },
+  { key: 'ema21', label: '21-session EMA', color: '#0071e3' },
+  { key: 'ema50', label: '50-session EMA', color: '#5856d6' },
+  { key: 'ema200', label: '200-session EMA', color: '#1d1d1f', width: 2 },
 ]
 
 const WEEKLY_LINES: Line[] = [
-  { key: 'ema9', label: 'Weekly EMA 9', color: '#ff9500' },
-  { key: 'ema21', label: 'Weekly EMA 21', color: '#0071e3', width: 2 },
+  { key: 'ema9', label: '9-week EMA', color: '#ff9500' },
+  { key: 'ema21', label: '21-week EMA', color: '#0071e3', width: 2 },
 ]
 
 const GRADE_COLOR: Record<string, string> = {
@@ -207,7 +207,10 @@ const recommendationMarkers = (events: ReturnType<typeof recommendationEvents>, 
     }] : []
   })
 
-// Mark grade changes only on available candles, retaining their source day within weekly groups.
+// Describe only explicit source flags; missing or malformed provenance proves neither origin.
+const gradeSource = (said: unknown) => said === true ? 'Saved' : said === false ? 'Recalculated' : 'Source unverified'
+
+// Mark available-candle grade changes with each endpoint's source and original day within weekly groups.
 const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe) => {
   const rows = (history?.rows ?? []).filter((r) => r.grade)
   const out: {
@@ -228,6 +231,8 @@ const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], ti
     const candle = markerCandle(rows[i].date, bars, timeframe)
     if (!candle) continue
     const up = (rank[now] ?? -1) > (rank[before] ?? -1)
+    const previousSource = gradeSource(rows[i - 1].said)
+    const nextSource = gradeSource(rows[i].said)
     // Crossing below A can inform an exit, but history does not prove a trade.
     const belowA = wanted(before) && !wanted(now)
     out.push({
@@ -235,7 +240,8 @@ const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], ti
       position: up ? 'belowBar' : 'aboveBar',
       color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
-      text: `${rows[i].said ? 'Saved grade' : 'Recalculated grade'}: ${before}→${now}`,
+      text: previousSource === nextSource ? `${nextSource === 'Source unverified' ? 'Grades with unverified sources' : `${nextSource} grade`}: ${before}→${now}`
+        : `${previousSource} ${before} → ${nextSource} ${now}`,
       size: rows[i].said ? 2 : 1,
     })
   }
@@ -634,7 +640,6 @@ export const TickerChart = ({
             <details className="mt-1">
               <summary className="cursor-pointer">Original readings ({observations.length})</summary>
               <p>Dip is a pullback setup, not a Buy instruction. Original research observations; not personal actions, fills or an accuracy score. Publication time and reference bar are separate.</p>
-              <p>Prices: {data.basis}. Indicators can update during a session; weekly overlays include a forming week and can differ from a saved grade.</p>
               <div className="max-h-64 overflow-auto"><table className="w-full text-left [&_td]:p-1 [&_th]:p-1" aria-label="Original chart setup readings">
                 <thead><tr><th>Recorded</th><th>Reference bar</th><th title="Original unadjusted reference price; chart prices are adjusted.">Bar price</th><th>Setup</th><th>Grade</th><th>Policy</th></tr></thead>
                 <tbody>{observations.map(row => <tr key={row.id}>
@@ -650,26 +655,39 @@ export const TickerChart = ({
           </div>
 
           {summary && (
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">
-              <div className="flex justify-between gap-2">
-                <dt className="text-[#6e6e73]">{merged.live && summary.last.close !== null ? 'Quote-bar close' : 'Latest stored close'}</dt>
+            <>
+            <p className="mt-2 text-[11px] text-[#6e6e73]">Prices: {data.basis}. Indicators can update during a session; weekly overlays include the forming week when present and can differ from a saved grade.</p>
+            <p className="mt-1 text-[11px] text-[#6e6e73]">EMA means exponential moving average of candle closes; recent closes carry more weight.</p>
+            <details className="mt-1 text-[11px] text-[#6e6e73]">
+              <summary className="cursor-pointer">Indicator definitions</summary>
+              {timeframe === 'daily' ? <>
+                <p>Daily EMA spans count trading sessions. Bollinger bands use the mean of 20 session closes, plus or minus 2 population standard deviations of those closes.</p>
+                <p>The 252-session high and low use candle highs and lows, including the newest candle, not a calendar-year window.</p>
+              </> : <p>Weekly EMA spans count weeks, including the forming week when present.</p>}
+            </details>
+            <p className="mt-1 text-[11px] text-[#6e6e73]">Price distance = (chart price − indicator value) ÷ indicator value × 100, rounded to one decimal; not a return.</p>
+            <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 text-[11px] sm:grid-cols-2 xl:grid-cols-3">
+              <div className="flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-0.5">
+                <dt className="text-[#6e6e73]">{merged.live && summary.last.close !== null ? '15-minute bar close' : 'Newest stored candle price'}</dt>
                 <dd className="tabular-nums font-medium">
                   {summary.last.close === null ? '—' : `$${summary.last.close.toFixed(2)}`}
                 </dd>
               </div>
               {summary.readings.map((reading) => (
-                <div key={reading.label} className="flex justify-between gap-2">
+                <div key={reading.label} className="flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-0.5">
                   <dt className="text-[#6e6e73]">{reading.label}</dt>
-                  <dd className="tabular-nums">
-                    ${reading.value.toFixed(2)}{' '}
-                    <span className={reading.away >= 0 ? 'text-[#2da44e]' : 'text-[#b42318]'}>
-                      {reading.away >= 0 ? '+' : ''}
-                      {reading.away.toFixed(1)}%
+                  <dd className="text-right tabular-nums">
+                    <span className="block">${reading.value.toFixed(2)}</span>
+                    <span className={`block ${Number.isFinite(reading.away) ? reading.away >= 0 ? 'text-[#2da44e]' : 'text-[#b42318]' : 'text-[#6e6e73]'}`}>
+                      {Number.isFinite(reading.away)
+                        ? `Price distance ${reading.away >= 0 ? '+' : ''}${reading.away.toFixed(1)}%`
+                        : 'Distance unavailable'}
                     </span>
                   </dd>
                 </div>
               ))}
             </dl>
+            </>
           )}
 
           {showSignals && <p className="mt-2 text-[11px] text-[#6e6e73]">

@@ -2729,15 +2729,15 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('30 sessions loaded; pan or zoom for history.')
 
   // The daily readings are mirrored in text, with distance from price.
-  await expect(chart).toContainText('EMA 21')
-  await expect(chart).toContainText('EMA 200')
-  await expect(chart).toContainText('Band upper')
-  await expect(chart).toContainText('52-week high')
+  await expect(chart).toContainText('21-session EMA')
+  await expect(chart).toContainText('200-session EMA')
+  await expect(chart).toContainText('Upper Bollinger band')
+  await expect(chart).toContainText('252-session high')
   await expect(chart).toContainText('15-minute bar starting Sep 8, 2026, 3:45 PM EDT')
-  await expect(chart).toContainText('Quote-bar close')
+  await expect(chart).toContainText('15-minute bar close')
   // An older board quote cannot overwrite the newer chart snapshot or its distances.
-  await expect(chart.locator('dl > div').filter({has: page.locator('dt', {hasText: 'Quote-bar close'})})).toContainText('$115.00')
-  await expect(chart.locator('dl > div').filter({has: page.locator('dt', {hasText: 'EMA 21'})})).toContainText('$113.50 +1.3%')
+  await expect(chart.locator('dl > div').filter({has: page.locator('dt', {hasText: '15-minute bar close'})})).toContainText('$115.00')
+  await expect(chart.locator('dl > div').filter({has: page.locator('dt', {hasText: '21-session EMA'})})).toContainText('$113.50Price distance +1.3%')
   await expect(chart).not.toContainText('today, still moving')
   await expect(chart).not.toContainText('Price now')
   await expect(chart).not.toContainText('Last close')
@@ -2747,7 +2747,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(showSignals).toBeChecked()
   await expect(chart).toContainText('3 grade changes marked')
   await expect(chart).toContainText('C→B')
-  await expect(chart).toContainText('B→A')
+  await expect(chart).toContainText('Saved B → Recalculated A')
   await expect(chart).toContainText('Recalculated grade: A→B')
   await expect(chart).not.toContainText('sell ·')
   await expect(chart).toContainText('Saved grades use nightly records; recalculated grades use historical data. Grade changes are not trades.')
@@ -2758,8 +2758,8 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   // Weekly re-reads and swaps to the lines the weekly legs are built from.
   await frames.getByRole('button', {name: 'W'}).click()
   await expect(frames.getByRole('button', {name: 'W'})).toHaveAttribute('aria-pressed', 'true')
-  await expect(chart).toContainText('Weekly EMA 21')
-  await expect(chart).not.toContainText('EMA 200')
+  await expect(chart).toContainText('21-week EMA')
+  await expect(chart).not.toContainText('200-session EMA')
   await expect(chart).toContainText('weeks loaded; pan or zoom for history.')
   await expect(chart).toContainText('15-minute bar starting Sep 8, 2026, 3:45 PM EDT')
   await chart.getByText('Original readings (0)', {exact: true}).click()
@@ -2769,8 +2769,8 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   includeQuoteTime = false
   await page.clock.fastForward('01:01')
   await expect(chart).toContainText('Newest stored week: 2026-09-08 (forming candle)')
-  await expect(chart).toContainText('Latest stored close')
-  await expect(chart).not.toContainText('Quote-bar close')
+  await expect(chart).toContainText('Newest stored candle price')
+  await expect(chart).not.toContainText('15-minute bar close')
 
   // A delayed poll cannot roll back the complete snapshot from a later poll.
   delayNextChart = true
@@ -2778,7 +2778,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect.poll(() => Boolean(releaseChart)).toBe(true)
   lastClose = 120
   await page.clock.fastForward('01:01')
-  const storedClose = chart.locator('dl > div').filter({has: page.locator('dt', {hasText: 'Latest stored close'})})
+  const storedClose = chart.locator('dl > div').filter({has: page.locator('dt', {hasText: 'Newest stored candle price'})})
   await expect(storedClose).toContainText('$120.00')
   const delayedResponse = page.waitForResponse(response => response.url().includes('/desk/chart/AAPL'))
   releaseChart!()

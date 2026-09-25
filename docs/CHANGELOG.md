@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-25 — Explain chart indicator distances and each grade's origin
+
+Chart percentages now say **Price distance**, with the indicator denominator
+and rounding stated; they are not investment returns. Nonfinite ratios display
+unavailable. Daily/weekly EMA spans, upper/lower Bollinger construction and the
+actual 252-session high/low window are explicit. Price basis and forming-week
+caveats stay visible, and dated bar/fallback labels do not claim a current quote.
+
+Mixed grade transitions name both saved/recalculated origins. Missing or
+malformed source flags remain unverified rather than inventing an origin.
+Calculations, marker placement rules, original histories and account behavior
+are unchanged. Indicator rows wrap on phones.
+
+Root's fresh-bundle browser acceptance: **328 passed**, zero failures, skips or
+flakes; all 140 attached diagnostic records are clean. This includes eight
+independent numerical cases. Agent's focused 56-case suite also passed.
+Independent backend/source review: 45 passes, zero skips, with scalar checks of
+EMA, population deviation, exact window boundaries and interval-start timing.
+Original fail-before evidence is retained. TypeScript/build, diff checks and
+33 unchanged diagram/page checks pass; exact hashes are in the current handoff.
+No provider/model call, historical strategy rerun, account action or deployment.
+This is scoped local verification, not full-dashboard or all-hours feed proof.
+See the [meanings and limits](research/plain-desk-labels-2026-09-25.md).
+
 ## 2026-09-25 — Exclude obsolete financial periods and preserve independent dashboard warnings
 
 New nightly records explicitly select fundamental calculation `/3`. It excludes

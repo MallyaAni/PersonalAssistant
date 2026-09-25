@@ -1,6 +1,6 @@
 # Plain-language price and chart labels
 
-## Scope
+## Initial wording checkpoint
 
 The user reported confusing `post-market quote stale`, `snapshot`, `replay`
 and `below` labels. The change is confined to `StockBoard.SessionPrice`,
@@ -60,3 +60,67 @@ it remains an explicit approval question and would not establish data entitlemen
 or guarantee fresh quotes. Ship from Spark only through the gated deploy script.
 
 Diagram impact: NONE — rendering text and optional diagnostic placement only.
+
+## Follow-on chart meaning and source checks
+
+The next bounded change keeps the chart calculations, source observations,
+recorded actions and marker placement rules intact while making their meaning explicit:
+
+- Daily EMA labels name 9/21/50/200 trading-session spans; weekly labels name
+  9/21-week spans. An EMA weights recent closes more heavily, rather than taking
+  a simple average over only the named number of closes.
+- Bollinger labels say upper/lower explicitly. Their definition is the mean of
+  20 adjusted session closes plus/minus two population standard deviations.
+- The old `52-week` line names become `252-session high/low`, matching the actual
+  trailing adjusted-high/low window, including its newest candle. This is not a
+  literal calendar-year interval.
+- Each percentage says **Price distance** and explains its denominator:
+  `(chart price - indicator value) / indicator value * 100`, rounded to one
+  decimal, not investment return. The formula is unchanged. Zero-denominator or
+  overflowing results say **Distance unavailable**. Rounded signed zeros do not
+  assert equality; a negative band retains its negative denominator.
+- **15-minute bar close** retains the original interval-start date/time. A stored
+  fallback says **Newest stored candle price**, with the existing forming or
+  incomplete qualifier. Neither label establishes wall-clock freshness.
+- Mixed grade transitions name each endpoint's source, such as **Saved A →
+  Recalculated B**. Only exact true/false source flags establish those origins;
+  missing or malformed flags say **Source unverified**. Grade transitions remain
+  distinct from recommendations and fills. Marker eligibility, candle mapping,
+  colors, direction and size rules are unchanged.
+
+Price basis and the forming-week caveat are visible without opening the original
+research records. Definitions expand separately; indicator rows wrap on phones.
+Weekly chart EMAs can include the forming week and therefore differ from the
+completed-week inputs of a saved grade. This is an explanation of that existing
+behavior, not a change to the saved analyst.
+
+An independent source/payload review ran 45 existing backend and authenticated
+in-process chart HTTP tests, all passing with no skips. A separate scalar probe
+checked EMA recurrence, population versus sample deviation, the exact 252nd/253rd
+boundary and inclusion of a forming week. Backend files were unchanged. Receipt:
+`/private/tmp/anios-chart-contract-review.DUT5vy/RECEIPT.md`, SHA256
+`616d8fdfc6ce9779e1671b98070a076024a9dfb576e3ac0dc8002e55fc9c48f6`.
+
+Root reproduced three browser failures on the preceding committed bundle,
+including a visible `+Infinity%` at a zero band. Its independent eight-case
+matrix checks the denominator, negative bands, overflow, signed rounding and
+preservation of the endpoint's old dated candle despite a newer independent
+board quote. Missing-indicator regression assertions now target the renamed
+readings and explicitly check that an incomplete weekly candle has no price.
+Final browser counts, exact bundle and publication are in `NEXT_SESSION.md`.
+
+Final root acceptance: **328 passed**, zero failures/skips/flakes, 181.575 seconds;
+all 140 attached browser-diagnostic records are clean. This includes all eight
+independent numerical cases and broader saved-history, source-warning, account
+and session-price regressions. The focused agent suite passed 56 cases. Root
+independently rebuilt the frozen source and matched `index-DVSPpamk.js`, SHA256
+`f75ce3b9f1e22b2d6d06a390935a0f9d53d4d42fcda3b1e496599921af435e36`.
+TypeScript/build, diff review and 33 unchanged diagram/page checks pass. The
+final desktop/phone captures were inspected; tall element captures have
+scroll-occluded context and are not full-dialog viewport-fit evidence.
+Root receipt: `/private/tmp/anios-chart-meaning-root.sYANmh/ROOT_RECEIPT.md`.
+
+This does not resolve crowded weekly markers, qualify market-data coverage or
+establish strategy performance. There is no provider/model request, account
+change or deployment in this scope. Diagram impact: NONE — text rendering and
+display-only handling of nonfinite ratios within existing UI paths.
