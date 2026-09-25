@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-25 — Keep saved chart markers on their actual candle
+
+Source checkpoint `5dd45250dee3a0e2445a105cffcf2eb2b1822b9f`, not deployed.
+Saved Buy/Sell and grade markers require available OHLC on the matching day or
+same week; missing candles no longer send markers to a preceding candle.
+Original dated receipts remain in the table. Chart counts share the actual
+marker eligibility. Switching timeframe or ticker withholds the old response
+until a matching one arrives, preventing transient daily-as-weekly drawings.
+The compact board and all strategy/account behavior are unchanged.
+
+Preserved daily reproduction: one pass, one failure, with actual canvas
+coordinates proving backdating. Final production build and all 15 chart tests
+pass; the original two-case replay also passes on the exact compiled artifact.
+Expanded seven-module result: 134 passed, 21 failed, zero skipped. All 21 older
+analyst/evidence-timing failures reproduce on the unchanged prior artifact with
+identical reported errors and diagnostics; they remain unresolved, not waived.
+Evidence, artifact hashes and remaining tasks are recorded in `NEXT_SESSION.md`.
+No real account writes, model changes, research reruns or deployment.
+
 ## 2026-09-25 — Keep earnings outcomes out of pre-publication features
 
 Source checkpoint `df4dc66936599b6795398cde7db0b54414fa210d`, not deployed.

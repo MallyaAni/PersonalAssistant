@@ -1,5 +1,71 @@
 # Next session
 
+## 2026-09-25 — Chart markers no longer substitute another candle; not deployed
+
+Source checkpoint `5dd45250dee3a0e2445a105cffcf2eb2b1822b9f`, based on clean
+`91b8ca73ff1c175b3b3d31a882c0503087bcfafe`. **VERIFIED bounded browser change**,
+not a clean result for every dashboard test. The earnings correction below was
+already published through Spark to GitHub. No deployment was started for either
+correction; last verified live source remains `68edfc0`.
+
+Saved Buy/Sell and grade-change markers now require finite OHLC on their matching
+daily candle or same-week candle at/after the original source day. The chart and
+its textual marker counts use the same eligibility. Original recommendation
+dates and tables are preserved, with a short explanation inside their existing
+details. A ticker/timeframe switch withholds the previous response while the
+new one loads; it cannot reinterpret daily bars as weekly candles. The concise
+board, account controls, strategy, signals and stored receipts are unchanged.
+
+**FAILED baselines preserved:**
+
+- Original daily browser reproduction: one control passed, one regression
+  failed. Missing September 15 OHLC moved the saved Buy and grade marker from
+  x=77 to x=25, on September 14's candle; the receipt still said September 15.
+  Zero blocking browser/network errors. Frozen source, bundle, traces and
+  coordinate evidence: `/private/tmp/anios-null-candle-marker.XOy8rT/RECEIPT.md`.
+- First candidate passed the original daily replay but failed two of 15 repo
+  chart tests. A tagged-frame replay confirmed both failures occurred after W
+  was selected: old daily data was briefly drawn as weekly data. This prompted
+  the separate response-context guard, not weaker assertions. Evidence:
+  `/private/tmp/anios-chart-marker-suite.hBPMfSxQ/` and the intermediate daily-only
+  `/private/tmp/anios-null-candle-candidate.WSAOym/RECEIPT.md`.
+
+**VERIFIED final acceptance:** TypeScript and production build passed. The
+seven-module browser run was **134 passed, 21 failed, zero skipped**, 2.1 minutes;
+all 15 chart cases passed, including actual canvas painting, each missing OHLC
+field, absent dates, weekly grouping/transition, retained receipts, pagination
+and read-only scope. Existing three-grade-marker assertions were retained after
+correcting their synthetic source dates to dates with actual fixture candles;
+new separate cases test missing dates. Source/test/lockfile hashes stayed fixed.
+`/private/tmp/anios-chart-marker-final.R7N3SQxn/{browser.log,results.json}`.
+Entry bundle `index-C6VpcS4s.js`, SHA-256
+`c213dc8da4f3c0bba8cd77f5a66a79d5ff28c319a650bfb62f6a7d88652bc073`.
+The unchanged original external test separately passed **2/2** on this exact
+artifact, with no blocking errors or real API/account access:
+`/private/tmp/anios-null-candle-final-replay.9nsst9/RECEIPT.md`.
+
+**FAILED existing wider checks:** the same 21 failures reproduce on unchanged
+`91b8ca7`'s original compiled artifact: **0 passed, 21 failed, zero skipped**,
+76.019 seconds. Per-test statuses, full reported errors and decoded browser
+diagnostics match the candidate exactly. Both old strict fixture modules reject
+the added `/desk/session-prices` endpoint (44 mocked HTTP 418s). Six timing cases
+also seek the obsolete exact `AAOI grade` label; one analyst case waits on hidden
+`How ranking and sizing work`. Do not call this a fully green dashboard suite,
+or assume these fixtures validate every current wording choice. Baseline and
+comparison: `/private/tmp/anios-old-dashboard-baseline.xwgPLu/`. Tests were not
+deleted, skipped or loosened. Existing CSS pseudo-class/bundle-size build
+warnings also remain. All browser work used an isolated, network-disabled,
+read-only checkout and cached Playwright image `sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`.
+
+**UNVERIFIED / next bounded tasks:** reconcile those baseline fixtures with the
+current concise UI without losing their meaning assertions; reproduce and fix
+open-chart receipt refresh; correct expanded allocation-first sorting guidance.
+Complete historical provenance and strategy superiority remain unverified.
+No real account writes, orders, data repair, model fit or historical-study rerun.
+Publish Mac to Spark, then GitHub from Spark; do not deploy automatically.
+Diagram impact: NONE — internal candle eligibility and response-context guards;
+no component, store, dependency or ownership boundary changed.
+
 ## 2026-09-25 — Earnings features bounded before publication; source only
 
 **VERIFIED offline source checkpoint:**
