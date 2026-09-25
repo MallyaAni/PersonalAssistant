@@ -9,10 +9,10 @@ export const PLAN_ACTIONS = ['Buy', 'Sell', 'Hold'] as const
 export type PlanAction = (typeof PLAN_ACTIONS)[number]
 
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
-type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight'
+type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight' | 'size'
 // The natural first direction for each column: a name list reads A to Z, a
 // measure reads biggest first.
-const DESCENDING_FIRST: Record<SortColumn, boolean> = {ticker: false, grade: true, opportunity: true, plan: false, weight: true}
+const DESCENDING_FIRST: Record<SortColumn, boolean> = {ticker: false, grade: true, opportunity: true, plan: false, weight: true, size: true}
 
 // Format a portfolio weight without rounding a small positive allocation to zero.
 const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `${(weight * 100).toFixed(1)}%`
@@ -311,6 +311,20 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const brokerPositions = brokerCurrent ? broker.positions ?? [] : latest.paper?.positions ?? []
   const otherNames = [...new Set([...extraNames, ...Object.keys(decisions?.rows ?? {}),
     ...Object.keys(planTargets), ...(holdings ?? []).map(h => h.ticker), ...brokerPositions.map(p => p.symbol)])]
+  // Rank the same strategy action that the row displays, including an event pause.
+  const planOf = (ticker: string): PlanAction => {
+    if (paused) return 'Hold'
+    const said = planAction?.(ticker)
+    return PLAN_ACTIONS.includes(said as PlanAction) ? (said as PlanAction) : 'Hold'
+  }
+  // Rank only the executable addition or reduction displayed in the Size column.
+  const executableSize = (ticker: string): number | null => {
+    const row = decisions?.session === latest.session && decisions.written === latest.written
+      ? decisions.rows[ticker] : undefined
+    return !paused && !marketClosed && row?.executable === true && row.action !== 'Hold'
+      && Date.parse(row.valid_until ?? '') > now && Number.isFinite(row.move_weight)
+      ? Math.abs(row.move_weight) : null
+  }
   const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
     ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
@@ -318,17 +332,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     narrow: narrow(ticker),
     weight: weightOf(ticker),
   })), ...otherNames.filter(ticker => !(ticker in latest.grades)).map(ticker => ({ticker, grade: '', score: -Infinity, opportunity: null, narrow: [] as string[], weight: null}))].sort((a, b) =>
-    // The book leads. A trader's first question is what to own and how
-    // much, and the handful of names carrying a target weight is the whole
-    // answer; the rest of the graded universe is a watchlist behind it.
-    // Sorting by grade alone buried a sized A under an unsized A+, which is
-    // backwards for anyone deciding what to do now. Every column still
-    // sorts on a click when a different question is being asked.
-    ((b.weight ?? -1) > 0 ? 1 : 0) - ((a.weight ?? -1) > 0 ? 1 : 0)
-    || ((a.weight ?? 0) > 0 && (b.weight ?? 0) > 0 ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
-    || (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
-    || (b.opportunity ?? -1) - (a.opportunity ?? -1)
-    || (sized ? (b.weight ?? 0) - (a.weight ?? 0) : 0)
+    // Visible ranking: grade, Buy/Sell/Hold, executable size, then the grade score.
+    // Reset targets and research allocations are not current trade sizes.
+    (ORDER[b.grade] ?? -1) - (ORDER[a.grade] ?? -1)
+    || PLAN_ACTIONS.indexOf(planOf(a.ticker)) - PLAN_ACTIONS.indexOf(planOf(b.ticker))
+    || (executableSize(b.ticker) ?? -1) - (executableSize(a.ticker) ?? -1)
     || b.score - a.score || a.ticker.localeCompare(b.ticker))
   const heldNames = new Set((holdings ?? []).map((h) => h.ticker))
   const planGross = !showSizes && !hidden
@@ -345,7 +353,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // is in cash. Nothing else on this board reads that file any more, and the
   // cash row is part of the same book as the rows above it.
   const cash = {ticker: '__cash__', grade: '', score: 0, opportunity: null, narrow: [] as string[], weight: sized ? Math.max(0, 1 - gross!) : planGross !== null ? Math.max(0, 1 - planGross) : null}
-  const cashIndex = hidden || (paused && !sized) ? 0 : sized ? stocks.findIndex(stock => stock.weight! <= cash.weight!) : stocks.length
+  const cashIndex = paused ? 0 : stocks.length
   // The board opens with the top page of names and pages on request, so a
   // ninety-name list never becomes a wall to scroll through. A search narrows
   // to the names that match, and the cash row anchors only the full board: a
@@ -360,11 +368,6 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   // Anything that is not one of the three counts as Hold rather than opening a
   // fourth bucket no checkbox controls: a stray word would otherwise become a
   // row that every filter hides. "Wait" reached this column once already.
-  const planOf = (ticker: string): PlanAction => {
-    if (paused) return 'Hold'
-    const said = planAction?.(ticker)
-    return PLAN_ACTIONS.includes(said as PlanAction) ? (said as PlanAction) : 'Hold'
-  }
   const plans = PLAN_ACTIONS.map(name => ({
     name,
     count: stocks.filter(s => s.ticker !== '__cash__' && planOf(s.ticker) === name).length,
@@ -381,21 +384,23 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
   const sorted = !sort ? filtered : [...filtered].sort((a, b) => {
     const missing = (row: typeof a) =>
       sort.column === 'opportunity' ? row.opportunity === null
+      : sort.column === 'size' ? executableSize(row.ticker) === null
       : sort.column === 'weight' ? row.weight === null
       : sort.column === 'grade' ? !row.grade
       : false
     if (missing(a) !== missing(b)) return missing(a) ? 1 : -1
     const of = (row: typeof a) =>
       sort.column === 'ticker' ? row.ticker
+      : sort.column === 'size' ? (executableSize(row.ticker) ?? -Infinity)
       : sort.column === 'grade' ? (ORDER[row.grade] ?? -1)
       : sort.column === 'opportunity' ? (row.opportunity ?? -Infinity)
-      : sort.column === 'plan' ? (planAction?.(row.ticker) ?? '')
+      : sort.column === 'plan' ? PLAN_ACTIONS.indexOf(planOf(row.ticker))
       : (row.weight ?? -Infinity)
     const left = of(a), right = of(b)
     const order = typeof left === 'string' && typeof right === 'string'
       ? left.localeCompare(right as string)
       : (left as number) - (right as number)
-    return (sort.descending ? -order : order) || a.ticker.localeCompare(b.ticker)
+    return sort.descending ? -order : order
   })
   const ranked = [...sorted]
   if (!searchText && !sort) ranked.splice(cashIndex < 0 ? ranked.length : Math.min(cashIndex, ranked.length), 0, cash)
@@ -406,6 +411,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
+          {!sort ? <span title="Grades highest first; then Buy, Sell, Hold; then executable size. Ties use grade score, then ticker.">Grade ↓ · Action · Size ↓</span>
+            : <button type="button" className="text-[#0071e3] hover:underline" onClick={() => setSort(null)}>Reset ranking</button>}
           {fomcLine && <p>{fomcLine}</p>}
         </div>
       </div>
@@ -437,7 +444,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr className="border-b border-black/[0.06]">
-            <th colSpan={5} className="py-2 pr-3 font-normal">
+            <th colSpan={6} className="py-2 pr-3 font-normal">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="search"
@@ -454,10 +461,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           <tr>
             <th className="py-2">#</th>
             <SortHead column="ticker" sort={sort} onSort={setSort}>Stock</SortHead>
+            <SortHead column="grade" sort={sort ?? {column: 'grade', descending: true}} onSort={setSort} title="Latest valid grade; expired intraday readings revert to the dated close.">Grade</SortHead>
             {planAction
               ? <PlanHead sort={sort} onSort={setSort} plans={plans} shown={shownPlans} onShown={(next) => { setShownPlans(next); setVisible(10) }} />
               : <SortHead column="plan" sort={sort} onSort={setSort} title="The adopted strategy's recommendation; a blocked recommendation is not executable">Action</SortHead>}
-            <th title="Executable change as a percentage of your account. A dash means no currently available trade size; not a profit target.">Size</th>
+            <SortHead column="size" sort={sort} onSort={setSort} title="Executable change as a percentage of your account; not a profit target.">Size</SortHead>
             <th className="hidden sm:table-cell">Reason</th>
 
           </tr>
@@ -475,11 +483,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const decision = decisions?.session === latest.session && decisions.written === latest.written ? decisions.rows[row.ticker] : undefined
           const strategyMove = decision?.strategy_move_weight ?? decision?.move_weight
           const deadline = Date.parse(decision?.valid_until ?? '')
-          const canSize = !paused && !marketClosed && decision?.executable === true
-            && decision.action !== 'Hold' && deadline > now && Number.isFinite(decision.move_weight)
+          const canSize = executableSize(row.ticker) !== null
           const plan = paused ? 'Hold' : planOf(row.ticker)
-          const readiness = plan === 'Hold' ? null : marketClosed ? 'Market closed'
-            : decision?.executable === false ? 'Blocked now'
+          const readiness = plan === 'Hold' ? null : decision?.executable === false
+            ? decision.blocker || (marketClosed ? 'Market closed' : 'Blocked now')
+            : marketClosed ? 'Market closed'
             : !Number.isFinite(deadline) || deadline <= now ? 'Price check needed' : null
           const position = brokerPositions.find(p => p.symbol === row.ticker)
           const reason = paused ? 'FOMC cycle: regular trading paused'
@@ -497,6 +505,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <>{quote && Number.isFinite(quote.last) ? quote.last.toLocaleString('en-US', {style: 'currency', currency: 'USD'}) : 'Price unavailable'}{quote && Number.isFinite(quote.last) && <ChangeMark last={quote.last} close={closes?.[row.ticker]} />}{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
               {!isCash && <div aria-label={`${row.ticker} mobile reason`} className="mt-1 max-w-40 whitespace-normal text-[11px] text-[#6e6e73] sm:hidden">{reason}</div>}
             </td>
+            <td className="text-xs" aria-label={`${row.ticker} displayed grade`} title={isCash ? undefined : grades[row.ticker] ? 'Current intraday grade' : `Recorded grade at the ${latest.session} close`}>
+              {!isCash && <><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#1e7a3a]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span>
+                <div className="text-[10px] text-[#6e6e73]">{row.grade ? grades[row.ticker] ? 'Intraday' : 'Close' : 'Unrated'}</div></>}
+            </td>
             <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{isCash ? 'HOLD' : plan === 'Hold' ? 'Hold' : plan.toUpperCase()}</span>
               {readiness && <div className="text-[11px] text-[#9a6700]">{readiness}</div>}</td>
             <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : '—'}</td>
@@ -504,7 +516,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
 
           </tr>
           {/* Details follow the visible board width, not the horizontally scrollable table. */}
-          {open && expand && <tr><td colSpan={5} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">
+          {open && expand && <tr><td colSpan={6} className="border-t border-black/[0.05] bg-[#0071e3]/5 px-3 py-2"><div className="w-[calc(100cqw-1.5rem)]">
             <dl aria-label={`${row.ticker} allocation and evidence`} className="mb-3 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
               <div><dt className="text-[#6e6e73]">Combined grade · not an entry signal</dt><dd aria-label={`${row.ticker} grade`}>{row.grade || 'Unavailable'} · {grades[row.ticker] ? 'intraday' : `${latest.session} close`}</dd></div>
               <div><dt className="text-[#6e6e73]">Analyst conviction · not a return forecast</dt><dd aria-label={`${row.ticker} opportunity`}>{row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : 'Unavailable'}{row.narrow.length > 0 && ` · missing ${row.narrow.map(analystLabel).join(', ')}`}</dd></div>

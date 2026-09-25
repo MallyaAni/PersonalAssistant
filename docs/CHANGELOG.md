@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-25 — Restore trader ranking and original chart readings
+
+The stock board displays grades with Intraday/Close provenance and defaults to
+grade, action, then executable size. Missing, expired or wrong-revision sizes
+cannot rank as available trades. Recorded research setups appear on readable
+daily/weekly charts at their publication dates, with the original timestamps,
+reference price, grade and policy in expandable details. Missing history stays
+missing; research setups and historical grade replays are not orders or fills.
+
+Personal decision recording now tolerates legacy nonfinite values solely when
+hashing its source record; advice receipts remain strict JSON. A source NaN in Q
+had blocked receipt creation for the whole desk. Existing finite-source hashes
+and saved history are preserved. The adopted trading policy is unchanged.
+Validation: production build, 116 browser cases on the compiled preview, and
+53 relevant backend tests passed. Public release verification follows deployment.
+
 ## 2026-09-24 — Match stock reasons and incomplete weekly captions
 
 The stock table now shows the same full decision reason as its detail panel.

@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-09-25 — Trader ranking and original chart evidence
+
+Objective: restore visible grades and Grade → Buy/Sell/Hold → executable Size
+ranking, show original recorded setups clearly on daily/weekly charts, and
+repair the observed personal-history recording failure. Starting root/main
+`dbfb481`; live before release `c53b8a1`. Shared main's untracked scratch/ preserved.
+
+The board now shows Intraday/Close grade provenance, sorts only available trade
+sizes, reverts expired grades, and excludes wrong-revision decisions. Charts
+default to recorded research setups with compact D/B/W/? markers and a readable
+recent range; full history remains available. Original readings preserve actual
+publication time, reference bar, unadjusted bar price, grade and policy. Multiple
+same-session states survive. Missing days are not filled, and raw archived prices
+are not plotted on the adjusted axis. Optional grade arrows explicitly describe
+snapshot-session changes/replays, whose dates do not prove publication time.
+
+Actual archived evidence is 138 AAOI observations across six September sessions,
+not continuous historical personal Buy/Sell advice or an accuracy score. The
+existing adopted breakout policy is unchanged; Dip remains a research setup.
+Current read-only diagnosis found 94 strategy Holds and no executable size; 93
+entry inputs available, Q missing a session, market closed, cash unconfirmed.
+High grades alone do not satisfy an entry rule. Do not manufacture Buy signals.
+
+FAILED and corrected: September 24's source contains levels.Q.last_close=NaN,
+which made strict whole-record fingerprinting fail before recording any receipt.
+Legacy nonfinite source values now enter only a sorted hash representation; the
+stored receipt remains strict JSON, finite-record hashes unchanged, unknown/null/
+nonfinite values distinct. No source records or existing history rewritten.
+Root relevant backend verification: 53 passed in
+`/tmp/codex-history-recording-root-20260925.log`.
+
+VERIFIED: production build and all 116 browser cases passed against the compiled
+static preview on 5187. Log `/tmp/codex-trader-final-browser-20260925.log`; build
+log `/tmp/codex-trader-final-suite-v2-20260925.log`. Guarded release is pending:
+`/tmp/codex-trader-ranking-history-release-20260925.log` and matching `.exit`. Deploy only
+through scripts/deploy.sh with serial required model gate; then verify actual
+public rendering, history acknowledgement/persistence, exact artifact and model
+IDs/start times. No trades, account inputs, model services or research scoring
+changed. All agent ownership returned to root; never recopy old worker sources.
+
 ## 2026-09-24 — Completed live desk and clicked-chart verification
 
 **VERIFIED live release: `c53b8a13b8e4e9a6750ba53ddd6e03743fce9f76`**, committed on

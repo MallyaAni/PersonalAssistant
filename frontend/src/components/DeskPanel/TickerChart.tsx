@@ -98,10 +98,62 @@ const ordered = <T extends { time: UTCTimestamp }>(points: T[]): T[] => {
   return [...byTime.values()].sort((a, b) => (a.time as number) - (b.time as number))
 }
 
+type RecordedSetup = NonNullable<DeskHistory['recommendations']>['observations'][number]
+
+// Accept only dated instants with an explicit timezone; never guess publication time.
+const recordedInstant = (value: unknown) => typeof value === 'string'
+  && /(?:Z|[+-]\d{2}:\d{2})$/i.test(value) && Number.isFinite(Date.parse(value))
+  ? new Date(value) : null
+
+// Keep the original publication date in the exchange timezone, distinct from its price bar.
+const recordedSession = (value: unknown) => {
+  const instant = recordedInstant(value)
+  if (!instant) return null
+  const parts = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).formatToParts(instant)
+  return ['year', 'month', 'day'].map(kind => parts.find(part => part.type === kind)?.value).join('-')
+}
+
+// Identify a calendar week without attaching a later publication to an earlier week's candle.
+const weekOf = (session: string) => {
+  const day = new Date(`${session}T00:00:00Z`)
+  day.setUTCDate(day.getUTCDate() - (day.getUTCDay() + 6) % 7)
+  return day.toISOString().slice(0, 10)
+}
+
+// Display unknown setup evidence explicitly instead of inferring a neutral state.
+const setupLabel = (row: RecordedSetup) => row.entry_state
+  ? row.entry_state[0].toUpperCase() + row.entry_state.slice(1) : 'Not recorded'
+
+// Preserve every original reading while grouping visible markers by publication session or week.
+const recordedGroups = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe) => {
+  const groups = new Map<string, RecordedSetup[]>()
+  const rows = [...(history?.recommendations?.observations ?? [])].sort((a, b) =>
+    (recordedInstant(a.recorded_at)?.getTime() ?? Infinity) - (recordedInstant(b.recorded_at)?.getTime() ?? Infinity) || a.id.localeCompare(b.id))
+  for (const row of rows) {
+    const session = recordedSession(row.recorded_at)
+    if (!session) continue
+    const candle = bars.find(bar => timeframe === 'daily'
+      ? bar.date === session : weekOf(bar.date) === weekOf(session) && bar.date >= session)
+    if (!candle) continue
+    groups.set(candle.date, [...(groups.get(candle.date) ?? []), row])
+  }
+  return [...groups.entries()].map(([date, readings]) => {
+    const states = readings.map(setupLabel).filter((value, index, values) => index === 0 || value !== values[index - 1])
+    const glyphs: Record<string, string> = {Dip: 'D', Breakout: 'B', Wait: 'W'}
+    const glyph = [...new Set(states.map(state => glyphs[state] ?? '?'))].join('/')
+    return {date, readings, glyph, label: `${states.slice(0, 3).join('→')}${states.length > 3 ? '…' : ''} · ${readings.length}`}
+  })
+}
+
+// Date the original publication and reference observation independently in readable exchange time.
+const recordedTime = (value: unknown) => {
+  const instant = recordedInstant(value)
+  return instant ? new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}).format(instant) : 'Not recorded'
+}
+
 // Where price met the desk's entry condition, so the rule can be checked
 // against the chart rather than against a table. The grade half is not
-// included - these mark a band breakout, and the grade arrows beside them say
-// whether the desk wanted the name at the time.
+// included; the separate grade arrows show snapshot-session or replay changes.
 const entryMarkers = (chart: DeskChart | undefined) =>
   (chart?.entries ?? []).map((date) => ({
     time: stamp(date),
@@ -139,7 +191,7 @@ const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
       position: up ? 'belowBar' : 'aboveBar',
       color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
-      text: belowA ? `below A · ${before}→${now}` : `${before}→${now}`,
+      text: `${rows[i].said ? 'snapshot' : 'replay'} · ${belowA ? 'below A · ' : ''}${before}→${now}`,
       size: rows[i].said ? 2 : 1,
     })
   }
@@ -162,6 +214,8 @@ export const TickerChart = ({
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   const [showSignals, setShowSignals] = useState(false)
+  const [showRecorded, setShowRecorded] = useState(true)
+  const [fullHistory, setFullHistory] = useState(false)
   const [data, setData] = useState<DeskChart | null>(null)
   const [error, setError] = useState<string | null>(null)
   // The picture failed to draw but the readings below it are still good.
@@ -277,6 +331,8 @@ export const TickerChart = ({
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false,
+        // Distant reference levels remain available without compressing the visible price action.
+        autoscaleInfoProvider: line.from === 'levels' ? () => null : undefined,
       })
       series.setData(
         ordered(
@@ -288,17 +344,34 @@ export const TickerChart = ({
       drawn.push(series)
     }
 
-    const markers = ordered([...gradeMarkers(history, merged.bars[0].date), ...entryMarkers(data)])
-    if (showSignals && markers.length) createSeriesMarkers(candles, markers)
-    chart.timeScale().fitContent()
+    const recorded = showRecorded ? recordedGroups(history, merged.bars, timeframe).map(group => ({
+      time: stamp(group.date), position: 'aboveBar' as const, color: '#7c3aed',
+      shape: 'square' as const, text: group.glyph, size: 1,
+    })) : []
+    // Series points require uniqueness, but multiple distinct markers on one date must survive.
+    const markers = [...recorded, ...(showSignals ? [...gradeMarkers(history, merged.bars[0].date), ...entryMarkers(data)] : [])]
+      .filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
+    if (markers.length) createSeriesMarkers(candles, markers)
+    // Give recent candles enough horizontal space; all loaded bars remain available to pan and zoom.
+    const frameView = () => {
+      if (fullHistory) chart.timeScale().fitContent()
+      else {
+        const count = Math.max(12, Math.min(40, Math.floor(((holder.current?.clientWidth ?? 390) - 65) / 22)))
+        chart.timeScale().setVisibleLogicalRange({from: Math.max(0, merged.bars.length - count), to: merged.bars.length + 1})
+      }
+    }
+    frameView()
+    const resize = new ResizeObserver(frameView)
+    resize.observe(holder.current)
     setDrawFailed(false)
 
     return () => {
       chart.remove()
+      resize.disconnect()
       chartRef.current = null
       drawn.length = 0
     }
-  }, [data, merged, timeframe, history, showSignals])
+  }, [data, merged, timeframe, history, showSignals, showRecorded, fullHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
@@ -319,6 +392,8 @@ export const TickerChart = ({
   }, [data, merged, timeframe])
 
   const changes = useMemo(() => gradeMarkers(history, merged.bars[0]?.date ?? '0000'), [history, merged])
+  const groups = useMemo(() => recordedGroups(history, merged.bars, timeframe), [history, merged, timeframe])
+  const observations = history?.recommendations?.observations ?? []
 
   return (
     <section className="mb-4" aria-label={`${ticker} price chart`}>
@@ -326,11 +401,20 @@ export const TickerChart = ({
         <h4 className="text-xs font-medium text-[#1d1d1f]">
           Price, indicators and grade history
         </h4>
-        <div className="flex gap-1" role="group" aria-label="Chart timeframe">
+        <div className="flex flex-wrap gap-1">
+          <div className="flex gap-1" role="group" aria-label="Chart range">
+          <button type="button" aria-pressed={!fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(false)}>Recent</button>
+          <button type="button" aria-pressed={fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(true)}>Full history</button>
+          </div>
+          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+            <input type="checkbox" checked={showRecorded} onChange={event => setShowRecorded(event.target.checked)} />
+            Recorded setups · research
+          </label>
           <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />
             Show signal history
           </label>
+          <div className="flex gap-1" role="group" aria-label="Chart timeframe">
           {(['daily', 'weekly'] as Timeframe[]).map((frame) => (
             <button
               key={frame}
@@ -346,6 +430,7 @@ export const TickerChart = ({
               {frame === 'daily' ? 'D' : 'W'}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
@@ -384,10 +469,7 @@ export const TickerChart = ({
                   hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
                 }).format(new Date(data.quote_bar!))}.`
               : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
-            {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} shown, {data.basis}.
-            {' '}Daily and weekly indicator views; observations can update during a session.
-            {timeframe === 'weekly' && data.last_bar_complete === false && summary?.last.close !== null &&
-              ' Weekly overlays include the forming week and can differ from the weekly inputs of a saved grade.'}
+            {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>
           {/* A mark nobody can read is decoration. Both of the desk's rules are
               on the price now, so the legend has to name both. */}
@@ -396,9 +478,30 @@ export const TickerChart = ({
             marks the incumbent band-breakout price condition, not a Buy instruction.
             Grade, event pauses, cash and position caps also affect the personal plan.{' '}
             <span className="font-medium text-[#b42318]">{'↓'} below A</span>{' '}
-            marks a grade crossing below A. Bolder arrows show recorded grades; paler arrows
-            show historical grade replays. These markers are not account orders or fills.
+            Grade arrows show snapshot-session changes or historical replays; session dates
+            do not establish when grades became available. These markers are not account orders or fills.
           </p>}
+
+          {showRecorded && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Recorded setup history">
+            <p>D Dip · B Breakout · W Wait · ? Not recorded · / Mixed states</p>
+            <p className="sr-only" aria-label="Recorded setup markers">{groups.length ? `${groups.length} marked ${timeframe === 'weekly' ? 'weeks' : 'sessions'} · ${groups.map(group => `${group.date}: ${group.label}`).join(' · ')}` : 'No recorded setups on the loaded candles.'}</p>
+            <details className="mt-1">
+              <summary className="cursor-pointer">Original readings ({observations.length})</summary>
+              <p>Dip is a pullback setup, not a Buy instruction. Markers group original publication times by {timeframe === 'weekly' ? 'week' : 'session'}; missing dates are not filled. Publication time and reference bar are separate. These are research observations, not personal actions, fills or an accuracy score.</p>
+              <p>Prices: {data.basis}. Indicators can update during a session; weekly overlays include a forming week and can differ from a saved grade.</p>
+              <div className="max-h-64 overflow-auto"><table className="w-full text-left [&_td]:p-1 [&_th]:p-1" aria-label="Original chart setup readings">
+                <thead><tr><th>Recorded</th><th>Reference bar</th><th title="Original unadjusted reference price; chart prices are adjusted.">Bar price</th><th>Setup</th><th>Grade</th><th>Policy</th></tr></thead>
+                <tbody>{observations.map(row => <tr key={row.id}>
+                  <td>{recordedTime(row.recorded_at)}</td><td>{recordedTime(row.bar)}</td>
+                  <td>{typeof row.price === 'number' && Number.isFinite(row.price) ? `$${row.price.toFixed(2)}` : 'Unavailable'}</td>
+                  <td>{setupLabel(row)}{row.event_paused && ' · entries paused'}</td><td>{row.grade || 'Not recorded'}</td>
+                  <td>{row.version || 'Not recorded'} · <span title={row.policy_sha256 ?? undefined}>{row.policy_sha256?.slice(0, 8) ?? 'Unidentified'}</span></td>
+                </tr>)}</tbody>
+              </table></div>
+              {history?.recommendations?.older_records_not_shown && <p>Only recent archives are loaded; older records are not shown.</p>}
+              {!!history?.recommendations?.invalid_archives && <p>Some archived records could not be read.</p>}
+            </details>
+          </div>}
 
           {summary && (
             <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">

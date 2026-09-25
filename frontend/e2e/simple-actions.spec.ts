@@ -6,7 +6,7 @@ const at = '2026-09-24T14:00:00Z'
 const until = '2026-09-24T14:15:00Z'
 
 // Exercise the complete desk with deterministic account, market and recommendation responses.
-async function setup(page: Page, open = true, missingEntry = false, paused = false) {
+async function setup(page: Page, open = true, missingEntry = false, paused = false, beforeNavigate?: () => Promise<void>) {
   const errors: string[] = []
   const requests: Record<string, unknown>[] = []
   page.on('pageerror', error => errors.push(error.message))
@@ -41,18 +41,20 @@ async function setup(page: Page, open = true, missingEntry = false, paused = fal
     else if (path.endsWith('/paper')) json = {reason: 'unavailable'}
     await route.fulfill({json})
   })
+  if (beforeNavigate) await beforeNavigate()
   await page.goto('/#desk')
   return {errors, requests}
 }
 
 // Keep the primary board small while preserving evidence, account separation and the reason for waiting.
-test('five columns show recommendations and expose diagnostics only on request', async ({page}) => {
+test('visible grades and concise actions expose diagnostics only on request', async ({page}) => {
   const {errors} = await setup(page)
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const headers = board.locator('thead tr').last().getByRole('columnheader')
   await expect(page.locator('details[aria-label="Strategy details"]')).not.toHaveAttribute('open', '')
-  await expect(headers).toHaveCount(5)
-  await expect(headers).toHaveText(['#', /Stock/, /Action/, 'Size', 'Reason'])
+  await expect(headers).toHaveCount(6)
+  await expect(headers).toHaveText(['#', /Stock/, /Grade/, /Action/, /Size/, 'Reason'])
+  await expect(board.getByLabel('AAPL displayed grade', {exact: true})).toHaveText('AClose')
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toHaveText('2.0% of account')
   await expect(board.getByLabel('MSFT size')).toHaveText('—')
@@ -151,5 +153,43 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
   await chart.getByRole('button', {name: 'W', exact: true}).click()
   await expect(chart).toContainText('incomplete candle')
   await expect(chart).not.toContainText('Weekly overlays include the forming week')
+  expect(errors).toEqual([])
+})
+
+// Rank valid grades before action and executable size, and revert expired live grades honestly.
+test('default ranking follows grade action size and reranks expired intraday grades', async ({page}) => {
+  const grades = {
+    NVDA: {grade: 'B', score: .99}, AAPL: {grade: 'A+', score: .9},
+    MSFT: {grade: 'A+', score: .8}, AMZN: {grade: 'A+', score: .7}, AMD: {grade: 'A', score: 1},
+  }
+  const {errors} = await setup(page, true, false, false, async () => {
+  await page.route('**/desk', route => route.fulfill({json: {latest: {
+    session, written, regime: {exposure: 1, flags: []}, grades,
+    book: [{ticker: 'AMZN', weight: .9, grade: 'A+'}], actions: [], briefs: {},
+  }, sessions: [session]}}))
+  await page.route('**/desk/mine', route => route.fulfill({json: {
+    session, rows: [], grade_valid_until: {NVDA: until}, grades_live: {NVDA: {grade_live: 'A+', score_live: .95}},
+    decisions: {session, written, equity: 100000, holdings: {}, rows: {
+      NVDA: {action: 'Buy', strategy_action: 'Buy', executable: true, move_weight: .04, valid_until: until, reason: 'Entry confirmed'},
+      AAPL: {action: 'Buy', strategy_action: 'Buy', executable: true, move_weight: .02, valid_until: until, reason: 'Entry confirmed'},
+      MSFT: {action: 'Sell', strategy_action: 'Sell', executable: true, move_weight: -.08, valid_until: until, reason: 'Exit confirmed'},
+      AMZN: {action: 'Hold', strategy_action: 'Hold', executable: false, move_weight: 0, target_weight: .9, valid_until: until, reason: 'No entry'},
+      AMD: {action: 'Buy', strategy_action: 'Buy', executable: true, move_weight: .5, valid_until: until, reason: 'Entry confirmed'},
+    }},
+  }}))
+  })
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  // Read only stock rows so expanded details and the cash footer cannot affect ranking.
+  const order = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
+  await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('A+Intraday')
+  expect(await order()).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
+  await board.getByRole('button', {name: 'Size', exact: true}).click()
+  expect(await order()).toEqual(['AMD', 'MSFT', 'NVDA', 'AAPL', 'AMZN'])
+  await page.getByRole('button', {name: 'Reset ranking', exact: true}).click()
+  expect(await order()).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
+  await page.clock.fastForward(16 * 60 * 1000)
+  await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('BClose')
+  expect(await order()).toEqual(['AAPL', 'MSFT', 'AMZN', 'AMD', 'NVDA'])
+  await expect(board.getByLabel('NVDA size', {exact: true})).toHaveText('—')
   expect(errors).toEqual([])
 })

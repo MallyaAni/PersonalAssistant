@@ -62,7 +62,7 @@ test('account wording distinguishes allocation from profit and paper from person
   await expect(page.getByText(/“Blocked now” means the intent is visible but is not executable/)).toBeVisible()
   await expect(page.getByText('A dash means no trade size is available now.', {exact: false})).toBeVisible()
   await expect(page.getByText('Allocation %', {exact: true})).toBeVisible()
-  await expect(page.getByRole('columnheader', {name: 'Size', exact: true})).toHaveAttribute('title', /percentage of your account.*not a profit target/)
+  await expect(page.getByRole('button', {name: 'Size', exact: true})).toHaveAttribute('title', /percentage of your account.*not a profit target/)
   await expect(await stockDetails(page, 'AAPL')).toContainText('Separate paper position')
   await expect(page.locator('body')).not.toContainText('same whatever you have recorded')
   await expect(page.locator('body')).not.toContainText('24 points a year')
@@ -138,10 +138,12 @@ test('single-table strategy plan keeps actions, holdings and reasons consistent'
   await page.getByRole('button', {name: 'Filter strategy intent (filtered)'}).click()
   await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('BUY')
   await expect(board.getByLabel('NVDA strategy intent', {exact: true})).toHaveCount(0)
+  await page.waitForLoadState('networkidle')
   await page.reload()
   // Reload returns the board to the first page; reveal the whole universe
   // again before the below-the-fold assertion that follows.
   const revealAfter = page.getByRole('button', {name: /Show more/})
+  await expect(revealAfter).toBeVisible()
   while (await revealAfter.isVisible().catch(() => false)) { await revealAfter.click() }
   await expect(board.getByRole('button', {name: 'TEST17', exact: true})).toHaveCount(1)
   await page.setViewportSize({width: 390, height: 844})
@@ -366,7 +368,7 @@ test('unreadable research archives remain visible when the timeline is empty', a
 })
 
 // The default board ranks cash with allocations and refreshes the whole view together.
-test('single board ranks cash and updates allocations with the next candle', async ({page}) => {
+test('single board preserves cash accounting while stocks keep grade-first ranking', async ({page}) => {
   await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
@@ -387,17 +389,17 @@ test('single board ranks cash and updates allocations with the next candle', asy
   await sizingDetails(page)
   await expect(page.getByText('Size is a change in your account allocation', {exact: false})).toBeVisible()
   await expect(board.locator('tbody tr')).toHaveCount(4)
-  await expect(board.locator('tbody tr').first()).toContainText('USD')
-  await expect(board.locator('tbody tr').first()).toContainText('75.0%')
-  await expect(board.locator('tbody tr').nth(1)).toContainText('AAPL')
+  await expect(board.locator('tbody tr').last()).toContainText('USD')
+  await expect(board.locator('tbody tr').last()).toContainText('75.0%')
+  await expect(board.locator('tbody tr').first()).toContainText('AAPL')
   await strategyDetails(page)
   await expect(page.getByRole('heading', {name: 'Plan status'})).toHaveCount(1)
   next = true
   await page.clock.fastForward(15 * 60_000)
   const nvda = board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})
   await expect(nvda).toContainText('$110.00')
-  await expect(board.locator('tbody tr').nth(2)).toContainText('USD')
-  await expect(board.locator('tbody tr').nth(2)).toContainText('5.0%')
+  await expect(board.locator('tbody tr').last()).toContainText('USD')
+  await expect(board.locator('tbody tr').last()).toContainText('5.0%')
   await expect(await stockDetails(page, 'NVDA')).toContainText('55.0%')
   await page.setViewportSize({width: 390, height: 844})
   // The board's own box pans to reach the right-hand columns on a phone,
@@ -2499,7 +2501,7 @@ test('details splits into plan and research and the simple page carries only dec
   // The first line says what the desk is doing and whether there is anything to do.
   const today = page.getByLabel('Today')
   await expect(today).toContainText(/XNYS (regular session scheduled open|regular session closed|closed by schedule)|Before XNYS regular session/)
-  await expect(today).toContainText(/weights reset|weight reset/)
+  await expect(today).toContainText('No executable signals.')
   await expect(page.getByLabel('ML forward comparison')).toHaveCount(0)
   await expect(page.getByLabel('Board simulation')).toHaveCount(0)
   // A row opens in place with the name's reasons and plan.
@@ -2722,7 +2724,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   const frames = chart.getByRole('group', {name: 'Chart timeframe'})
   await expect(frames.getByRole('button')).toHaveCount(2)
   await expect(frames.getByRole('button', {name: 'D'})).toHaveAttribute('aria-pressed', 'true')
-  await expect(chart).toContainText('Daily and weekly indicator views')
+  await expect(chart).toContainText('30 sessions loaded; pan or zoom for history.')
 
   // The daily readings are mirrored in text, with distance from price.
   await expect(chart).toContainText('EMA 21')
@@ -2748,7 +2750,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('B→A')
   await expect(chart).toContainText('below A · A→B')
   await expect(chart).not.toContainText('sell ·')
-  await expect(chart).toContainText('recorded grade')
+  await expect(chart).toContainText('snapshot-session changes')
   await showSignals.uncheck()
   await expect(chart).not.toContainText('3 grade changes marked')
   await expect(chart).not.toContainText('below A · A→B')
@@ -2758,9 +2760,10 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(frames.getByRole('button', {name: 'W'})).toHaveAttribute('aria-pressed', 'true')
   await expect(chart).toContainText('Weekly EMA 21')
   await expect(chart).not.toContainText('EMA 200')
-  await expect(chart).toContainText('weeks shown,')
+  await expect(chart).toContainText('weeks loaded; pan or zoom for history.')
   await expect(chart).toContainText('15-minute bar starting Sep 8, 2026, 3:45 PM EDT')
-  await expect(chart).toContainText('Weekly overlays include the forming week')
+  await chart.getByText('Original readings (0)', {exact: true}).click()
+  await expect(chart.getByText(/Indicators can update during a session; weekly overlays/)).toBeVisible()
 
   // Missing provenance stays explicitly stored; an unfinished week is not called completed.
   includeQuoteTime = false
@@ -2848,12 +2851,8 @@ test('a name scored without the full analyst panel says so on the board and in t
 })
 
 
-// Sizing belongs in the one list, and the list is ordered the way it is
-// used: the book first, biggest position first, because "what do I own and
-// how much" is the first question. The graded universe behind it is a
-// watchlist. The Size % column is the single allocation statement; there is
-// no separate share-count column to read as a duplicate of it.
-test('the board leads with the book and shows the allocation without a shares column', async ({page}) => {
+// The requested grade-first ranking must not be overridden by a larger reset target.
+test('the board ranks grades before reset targets and keeps one trade size column', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
   latest.book = [
@@ -2873,15 +2872,14 @@ test('the board leads with the book and shows the allocation without a shares co
   await expect(board.getByRole('columnheader', {name: 'Size', exact: true})).toBeVisible()
   await expect(board.getByRole('columnheader', {name: 'Shares', exact: true})).toHaveCount(0)
 
-  // NVDA carries the bigger weight, so it leads even though AAPL grades
-  // higher. Grade-major ordering buried the position a trader acts on.
+  // Reset allocations remain visible in details but do not override the stock ranking.
   await expect(await stockDetails(page, 'NVDA')).toContainText('4.0%')
   await expect(await stockDetails(page, 'AAPL')).toContainText('1.0%')
   const ranked = await page.evaluate(() => [...document.querySelectorAll('tbody tr')]
     .map(row => (row.querySelector('td:nth-child(2) button')?.textContent ?? '').trim())
     .filter(Boolean))
   expect(ranked).toContain('NVDA')
-  expect(ranked.indexOf('NVDA')).toBeLessThan(ranked.indexOf('AAPL'))
+  expect(ranked.indexOf('AAPL')).toBeLessThan(ranked.indexOf('NVDA'))
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 

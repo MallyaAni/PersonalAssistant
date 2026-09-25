@@ -113,6 +113,16 @@ def source_fingerprint() -> dict[str, str]:
     }
 
 
+# Fingerprint legacy source records without turning unknown prices into advice values.
+def _record_fingerprint(record: dict) -> str:
+    # This is Python's sorted-key JSON representation, including its legacy
+    # NaN/Infinity tokens, solely as hash input. Only the digest enters a receipt.
+    # Finite records keep their existing hashes; null, omitted fields, strings
+    # and nonfinite floats remain distinct. Receipt output still uses strict _json.
+    encoded = json.dumps(record, sort_keys=True, allow_nan=True)
+    return hashlib.sha256(encoded.encode()).hexdigest()
+
+
 # Freeze only the allowlisted generated output and the evidence it actually used.
 def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dict:
     from backend.agents.trading.desk.paper import POLICY_VERSION
@@ -140,9 +150,7 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
         "decision_policy": decisions["policy"],
         "session": decisions["session"],
         "written": decisions.get("written"),
-        "record_sha256": hashlib.sha256(
-            json.dumps(record, sort_keys=True, allow_nan=False).encode()
-        ).hexdigest(),
+        "record_sha256": _record_fingerprint(record),
         "code_fingerprint": source_fingerprint(),
         "event_state": {
             key: (record.get("event_risk") or {}).get(key) for key in EVENT_FIELDS
