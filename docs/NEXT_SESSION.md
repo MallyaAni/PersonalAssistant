@@ -1,15 +1,37 @@
 # Next session
 
-## 2026-09-25 — Final weekly caption correction
+## 2026-09-25 — Final released state and extended-hours gap
 
-Live manual verification caught a remaining caption defect: weekly mode labelled
-the 260-daily-session input window as 260 weeks. An existing browser acceptance
-now reproduces it with three weekly candles and a 260-session source window.
-The caption now counts the actual merged chart candles. Targeted production
-build/browser check: `/tmp/codex-weekly-count-after-20260925.log`; before-fix
-failure `/tmp/codex-weekly-count-before-20260925.log`. Frontend-only guarded
-release and final live count verification pending; do not rerun backend/model
-gates when deploy.sh selects its normal frontend-only path.
+Final live source **0374bdf7c08d8ebd293a5611e6d5387e2a812bc6**, normal frontend-only
+deploy exited 0 with post-deploy cheap checks passing. Production build and four
+affected chart tests passed on preview and again on deployed 8080. Exact artifact:
+`/tmp/codex-trader-final-artifact-proof-20260925.json`; public asset
+`index-BEjie0kL.js`; unchanged backend/model IDs. Public logged-in browser confirms
+daily/weekly, Recent/Full history, six AAOI setup sessions/138 original readings,
+and new current-source history acknowledgement. Q's missing-session restriction
+remains visible. One transient guidance error during gateway replacement cleared
+on reload; final page loaded normally and browser console showed no errors.
+
+CORRECTION: the initial claim that live "260 weeks" was a daily window mislabel
+was wrong. Backend ticker_chart.build aggregates first, limits afterwards, and
+payload.sessions already equals len(chart.dates). The live weekly chart actually
+contains 260 weeks. The caption now derives from merged.bars.length directly;
+the synthetic mismatched-count test passes, but does not prove a historical
+production defect. This was explicitly corrected to the user. No signal changed.
+
+Latest user asks about overnight/premarket/postmarket prices and predictions.
+VERIFIED current limitation: live_quotes.quote_from_bars excludes extended hours
+(09:30 to exchange close only); experimental intraday_entry does likewise;
+execution_quotes.describe blocks when the provider's regular-market clock is
+closed. Current AAOI still refers to the 15:45 ET regular-session bar. This does
+not mean Schwab extended-hours trading is unavailable. Extended-hours data/feed
+coverage and session-specific signal parity are not implemented or verified;
+do not just remove the clock gate or present cached regular prices as current.
+User informed. No extended-hours implementation changes made in this turn.
+
+Logs: `/tmp/codex-trader-caption-release-20260925.log`,
+`/tmp/codex-weekly-count-{after,deployed}-20260925.log`. No redeployment needed
+for this docs-only correction. Shared main's unrelated scratch/ remains intact.
 
 ## 2026-09-25 — Trader workflow release verified live
 

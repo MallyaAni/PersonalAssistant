@@ -2,10 +2,11 @@
 
 ## 2026-09-25 — Count actual chart candles
 
-The weekly chart caption counts its aggregated candles, rather than labelling
-the daily source-window size as weeks. A browser case reproduces the mismatch
-with three weekly candles sourced from 260 sessions. No indicator or signal
-calculation changed.
+The chart caption counts rendered candles directly. A browser case covers a
+supplied count that differs from the weekly bars. The initial interpretation of
+the live 260-week count was incorrect: the backend already returns the actual
+weekly count, and 260 weeks was accurate. Production build and four chart cases
+passed on preview and deployed 0374bdf. No indicator or signal changed.
 
 ## 2026-09-25 — Restore trader ranking and original chart readings
 
