@@ -2567,7 +2567,7 @@ export interface DeskDecisions {
     current_weight: number;
     delta_weight: number;
     valid_until: string | null;
-    quote: {feed: string | null; at: string | null; bid?: number; ask?: number; spread_bps?: number; eligible: boolean; reason: string; valid_until: string | null};
+    quote: {feed: string | null; at: string | null; bid?: number; ask?: number; spread_bps?: number; spread_verified?: boolean; eligible: boolean; reason: string; valid_until: string | null};
   }>;
 }
 

@@ -1,0 +1,962 @@
+{
+  "schema": "synthetic-execution-browser-evidence/1",
+  "producer": "frontend/e2e/fixtures/execution_quotes.py",
+  "source_sha256": {
+    "backend/market/execution_quotes.py": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2",
+    "backend/market/decision_view.py": "a19cc1e889a2907ee1d7c8a20b1f06a9062318b3daf4249b1770e3132fe15fb5",
+    "backend/tests/test_decision_view.py": "fd604f729e2f163a85f86225d1070f433241217387dfb5549a66e6180572e4ab",
+    "backend/tests/test_intraday_candidate.py": "917462ec39925451a53f67b1d90f6cfc16e9586485703f0a84491c4497f15714"
+  },
+  "record": {
+    "session": "2026-09-11",
+    "regime": {
+      "exposure": 0.8,
+      "tightening": false
+    },
+    "grades": {
+      "S11": {
+        "grade": "A+",
+        "score": 4.11,
+        "stances": {
+          "technical": 1,
+          "value": 1,
+          "fundamental": 1,
+          "sentiment": 1
+        },
+        "ranks": {
+          "technical": 0.7,
+          "value": 0.9
+        }
+      }
+    },
+    "book": [
+      {
+        "ticker": "S11",
+        "weight": 0.1
+      }
+    ],
+    "provenance": {
+      "rule": {
+        "inputs": [
+          "expectations-gap"
+        ]
+      }
+    },
+    "paper": {
+      "until_rebalance": 0
+    },
+    "written": "2026-09-11T21:05:00Z"
+  },
+  "cases": {
+    "tight_sip": {
+      "now": "2026-09-14T14:01:00+00:00",
+      "regular_clock": true,
+      "snapshot": {
+        "as_of": "2026-09-14T14:01:00+00:00",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-14T13:45:00+00:00"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": 108.957483199302,
+          "bar": "2026-09-14T13:45:00+00:00",
+          "valid_until": "2026-09-14T14:15:00+00:00",
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "intraday",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Buy",
+        "reason": "price entry: breakout through its own 20-day band; sized against your holdings and dated prices",
+        "move_weight": 0.03312,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": null,
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T14:01:30+00:00",
+        "quote": {
+          "feed": "sip",
+          "at": "2026-09-14T14:01:00+00:00",
+          "eligible": true,
+          "reason": "SIP quote checks passed",
+          "valid_until": "2026-09-14T14:01:30+00:00",
+          "bid": 99.99,
+          "ask": 100.01,
+          "spread_bps": 2.000000000001023,
+          "bid_size": 10.0,
+          "ask_size": 10.0,
+          "spread_verified": true
+        },
+        "session": "2026-09-11",
+        "executable": true,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": 108.957483199302,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "No supported downside reference below the entry price"
+        }
+      }
+    },
+    "wide_sip": {
+      "now": "2026-09-14T14:01:00+00:00",
+      "regular_clock": true,
+      "snapshot": {
+        "as_of": "2026-09-14T14:01:00+00:00",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-14T13:45:00+00:00"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": 108.957483199302,
+          "bar": "2026-09-14T13:45:00+00:00",
+          "valid_until": "2026-09-14T14:15:00+00:00",
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "intraday",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Hold",
+        "reason": "Buy not executable: spread exceeds 25 bp",
+        "move_weight": 0.0,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": "spread exceeds 25 bp",
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T14:01:30+00:00",
+        "quote": {
+          "feed": "sip",
+          "at": "2026-09-14T14:01:00+00:00",
+          "eligible": false,
+          "reason": "Spread exceeds 25 bp",
+          "valid_until": "2026-09-14T14:01:30+00:00",
+          "bid": 95.0,
+          "ask": 105.0,
+          "spread_bps": 1000.0,
+          "bid_size": 10.0,
+          "ask_size": 10.0
+        },
+        "session": "2026-09-11",
+        "executable": false,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": 108.957483199302,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "No supported downside reference below the entry price"
+        }
+      }
+    },
+    "tight_iex": {
+      "now": "2026-09-14T14:01:00+00:00",
+      "regular_clock": true,
+      "snapshot": {
+        "as_of": "2026-09-14T14:01:00+00:00",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-14T13:45:00+00:00"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": 108.957483199302,
+          "bar": "2026-09-14T13:45:00+00:00",
+          "valid_until": "2026-09-14T14:15:00+00:00",
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "intraday",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Buy",
+        "reason": "price entry: breakout through its own 20-day band; sized against your holdings and dated prices",
+        "move_weight": 0.03312,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": null,
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T14:01:30+00:00",
+        "quote": {
+          "feed": "iex",
+          "at": "2026-09-14T14:01:00+00:00",
+          "eligible": true,
+          "reason": "IEX quote checks passed",
+          "valid_until": "2026-09-14T14:01:30+00:00",
+          "bid": 99.99,
+          "ask": 100.01,
+          "spread_bps": 2.000000000001023,
+          "bid_size": 10.0,
+          "ask_size": 10.0,
+          "spread_verified": true
+        },
+        "session": "2026-09-11",
+        "executable": true,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": 108.957483199302,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "No supported downside reference below the entry price"
+        }
+      }
+    },
+    "wide_iex": {
+      "now": "2026-09-14T14:01:00+00:00",
+      "regular_clock": true,
+      "snapshot": {
+        "as_of": "2026-09-14T14:01:00+00:00",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-14T13:45:00+00:00"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": 108.957483199302,
+          "bar": "2026-09-14T13:45:00+00:00",
+          "valid_until": "2026-09-14T14:15:00+00:00",
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "intraday",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Buy",
+        "reason": "price entry: breakout through its own 20-day band; sized against your holdings and dated prices",
+        "move_weight": 0.03312,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": null,
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T14:01:30+00:00",
+        "quote": {
+          "feed": "iex",
+          "at": "2026-09-14T14:01:00+00:00",
+          "eligible": true,
+          "reason": "One venue's book is thin here, so the spread is unverified",
+          "valid_until": "2026-09-14T14:01:30+00:00",
+          "bid": 95.0,
+          "ask": 105.0,
+          "spread_bps": 1000.0,
+          "bid_size": 10.0,
+          "ask_size": 10.0,
+          "spread_verified": false
+        },
+        "session": "2026-09-11",
+        "executable": true,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": 108.957483199302,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "No supported downside reference below the entry price"
+        }
+      }
+    },
+    "closed_clock": {
+      "now": "2026-09-14T01:01:00+00:00",
+      "regular_clock": false,
+      "snapshot": {
+        "as_of": "2026-09-11T20:01:00Z",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-11T19:45:00Z"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": null,
+          "bar": "2026-09-11T19:45:00Z",
+          "valid_until": null,
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Hold",
+        "reason": "Buy not executable: market closed or clock unavailable",
+        "move_weight": 0.0,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": "market closed or clock unavailable",
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T01:01:30+00:00",
+        "quote": {
+          "feed": "iex",
+          "at": "2026-09-14T01:01:00+00:00",
+          "eligible": false,
+          "reason": "Market closed or clock unavailable",
+          "valid_until": "2026-09-14T01:01:30+00:00",
+          "bid": 99.99,
+          "ask": 100.01,
+          "spread_bps": 2.000000000001023,
+          "bid_size": 10.0,
+          "ask_size": 10.0
+        },
+        "session": "2026-09-11",
+        "executable": false,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": null,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "Risk references are stale, future-dated or undated"
+        }
+      }
+    },
+    "unknown_clock": {
+      "now": "2026-09-14T01:01:00+00:00",
+      "regular_clock": null,
+      "snapshot": {
+        "as_of": "2026-09-11T20:01:00Z",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-11T19:45:00Z"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": null,
+          "bar": "2026-09-11T19:45:00Z",
+          "valid_until": null,
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Hold",
+        "reason": "Buy not executable: market closed or clock unavailable",
+        "move_weight": 0.0,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": "market closed or clock unavailable",
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T01:01:30+00:00",
+        "quote": {
+          "feed": "iex",
+          "at": "2026-09-14T01:01:00+00:00",
+          "eligible": false,
+          "reason": "Market closed or clock unavailable",
+          "valid_until": "2026-09-14T01:01:30+00:00",
+          "bid": 99.99,
+          "ask": 100.01,
+          "spread_bps": 2.000000000001023,
+          "bid_size": 10.0,
+          "ask_size": 10.0
+        },
+        "session": "2026-09-11",
+        "executable": false,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": null,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "Risk references are stale, future-dated or undated"
+        }
+      }
+    },
+    "stale_quote": {
+      "now": "2026-09-14T14:01:00+00:00",
+      "regular_clock": true,
+      "snapshot": {
+        "as_of": "2026-09-14T14:01:00+00:00",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-14T13:45:00+00:00"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": 108.957483199302,
+          "bar": "2026-09-14T13:45:00+00:00",
+          "valid_until": "2026-09-14T14:15:00+00:00",
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "intraday",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Hold",
+        "reason": "Buy not executable: quote expired",
+        "move_weight": 0.0,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": "quote expired",
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T14:00:59+00:00",
+        "quote": {
+          "feed": "sip",
+          "at": "2026-09-14T14:00:29+00:00",
+          "eligible": false,
+          "reason": "Quote expired",
+          "valid_until": "2026-09-14T14:00:59+00:00",
+          "bid": 99.99,
+          "ask": 100.01,
+          "spread_bps": 2.000000000001023,
+          "bid_size": 10.0,
+          "ask_size": 10.0
+        },
+        "session": "2026-09-11",
+        "executable": false,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": 108.957483199302,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "No supported downside reference below the entry price"
+        }
+      }
+    },
+    "absent_quote": {
+      "now": "2026-09-14T14:01:00+00:00",
+      "regular_clock": true,
+      "snapshot": {
+        "as_of": "2026-09-14T14:01:00+00:00",
+        "decision_session": "2026-09-11",
+        "quotes": {
+          "S11": {
+            "last": 108.957483199302,
+            "bar": "2026-09-14T13:45:00+00:00"
+          }
+        },
+        "technical": {
+          "S11": {
+            "now": 0.7,
+            "close": 0.7,
+            "stance": 1
+          }
+        },
+        "value": {
+          "S11": {
+            "now": 0.1,
+            "close": 0.9,
+            "stance": -1
+          }
+        },
+        "technical_detail": {
+          "SPY": {
+            "short": {
+              "daily_trend": -1
+            },
+            "medium": {
+              "weekly_trend": -1
+            }
+          }
+        }
+      },
+      "row": {
+        "opportunity": {
+          "version": "analyst-opportunity/1",
+          "score": 8.817206807583979,
+          "status": "indicative",
+          "last_score": 8.817206807583979,
+          "price": 108.957483199302,
+          "bar": "2026-09-14T13:45:00+00:00",
+          "valid_until": "2026-09-14T14:15:00+00:00",
+          "parts": [
+            {
+              "analyst": "technical",
+              "score": 8.162277660168378,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "intraday",
+              "evidence": []
+            },
+            {
+              "analyst": "value",
+              "score": 9.47213595499958,
+              "weight": 1.0,
+              "source": "rank",
+              "basis": "2026-09-11",
+              "evidence": []
+            }
+          ],
+          "missing": [
+            "fundamental",
+            "sentiment",
+            "rotation"
+          ],
+          "valuation_current": false,
+          "method": "Configured analyst convictions normalized to 0\u201310; rotation uses its recorded vote when no rank is stored. This is an evidence index, not a predicted return or probability of profit."
+        },
+        "action": "Hold",
+        "reason": "Buy not executable: quote unavailable",
+        "move_weight": 0.0,
+        "strategy_action": "Buy",
+        "strategy_move_weight": 0.03312,
+        "blocker": "quote unavailable",
+        "target_weight": 0.1,
+        "current_weight": 0.0,
+        "delta_weight": 0.1,
+        "valid_until": "2026-09-14T14:15:00+00:00",
+        "quote": {
+          "feed": "sip",
+          "at": null,
+          "eligible": false,
+          "reason": "Quote unavailable",
+          "valid_until": null
+        },
+        "session": "2026-09-11",
+        "executable": false,
+        "entry_status": "available",
+        "entry_reason": null,
+        "missing_sessions": [],
+        "risk_plan": {
+          "status": "unavailable",
+          "basis": "Approximate references derived from same-snapshot price distances; not a return forecast or guaranteed stop execution",
+          "entry": 108.957483199302,
+          "reference_support": null,
+          "reference_resistance": null,
+          "risk_pct": null,
+          "reward_pct": null,
+          "reward_risk_ratio": null,
+          "risk_budget_pct": null,
+          "max_add_weight": null,
+          "reason": "No supported downside reference below the entry price"
+        }
+      }
+    }
+  }
+}

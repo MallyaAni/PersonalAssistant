@@ -78,13 +78,18 @@ test('visible grades and concise actions expose diagnostics only on request', as
   expect(errors).toEqual([])
 })
 
-// A closed market retains the stock recommendation without an executable trade size.
-test('closed-market recommendation is explicit and cannot advertise a trade size', async ({page}) => {
+// A regular-session restriction retains intent and never implies all venues are closed.
+test('regular-session restriction is explicit and cannot advertise a trade size', async ({page}) => {
   const {errors} = await setup(page, false)
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toHaveText('—')
-  await expect(board).toContainText('Market closed')
+  for (const ticker of ['AAPL', 'NVDA']) {
+    const readiness = board.getByLabel(`${ticker} execution readiness`, {exact: true})
+    await expect(readiness).toHaveText('Regular-session execution blocked')
+    await expect(readiness).toHaveAttribute('title', 'Regular-session execution is blocked; the session is closed or its clock is unavailable')
+  }
+  await expect(board).not.toContainText('Market closed')
   expect(errors).toEqual([])
 })
 

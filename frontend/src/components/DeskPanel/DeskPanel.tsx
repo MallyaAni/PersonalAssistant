@@ -4,7 +4,7 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { BoardSimulation, MlComparison, PLAN_ACTIONS, StockBoard, type BoardEvent, type PlanAction } from './StockBoard'
+import { BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, StockBoard, type BoardEvent, type PlanAction } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { TickerChart } from './TickerChart'
@@ -2056,16 +2056,13 @@ const Positions = ({ holdings, error, onSave }: PositionsProps) => {
 const allocationPercent = (weight: number) => weight > 0 && weight < 0.001
   ? '<0.1%' : `${(100 * weight).toFixed(1)}%`
 
-// Withhold actions whose price, decision or account context no longer matches the page.
-// A quote guard is real-time information, and the board was printing it as
-// a refusal. "Wait · Spread exceeds 25 bp" tells a trader nothing they can
-// act on; the same fact, said as what to do about it, does. The backend's
-// own wording stays in the tooltip, because it is what the guard is called.
+// Explain recorded execution evidence without inferring market-wide quote availability.
 const actOnIt = (reason?: string | null): string | null => {
   if (!reason) return null
-  if (/unverified/i.test(reason)) return 'Only one venue is quoting here, so the spread is unknown; check your broker before crossing'
+  if (/unverified/i.test(reason)) return 'The available quote covers one venue; the consolidated spread is unverified. Check your broker before crossing.'
   if (/spread exceeds/i.test(reason)) return 'Spread exceeds the execution limit'
-  if (reason === 'Market closed or clock unavailable') return 'Regular-session execution is blocked; the session is closed or its clock is unavailable'
+  const clock = executionClockMessage(reason)
+  if (clock) return clock.full
   if (/invalid or empty|unavailable/i.test(reason)) return 'Quote unavailable; execution blocked'
   if (/refresh price evidence/i.test(reason)) return 'Price evidence has expired; reload for a current quote'
   return reason
@@ -2125,7 +2122,7 @@ const planFor = (
   }
 }
 
-// Show the recommendation and separately identify whether it can currently be acted on.
+// Show intent, execution restrictions and separately recorded spread-verification limits.
 const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = false}: {
   ticker: string; decisions?: DeskDecisions; latest: DeskRecord; now: number
   compact?: boolean; terse?: boolean
@@ -2133,7 +2130,12 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   const {row, action, reason, blocked, blocker} = planFor(ticker, decisions, latest, now)
   if (!row) return <span title={reason} className="text-[#6e6e73]" aria-label={`${ticker} strategy intent`}>Hold</span>
   const expired = !!row.valid_until && Number.isFinite(Date.parse(row.valid_until)) && Date.parse(row.valid_until) <= now
-  const executionStatus = blocked ? <span className="block font-normal text-[#b42318]">Blocked now{blocker ? ` · ${blocker}` : ''}</span> : null
+  const clockRestriction = executionClockMessage(blocker)
+  const executionStatus = blocked ? <span aria-label={`${ticker} execution readiness`} title={clockRestriction?.full ?? undefined} className="block font-normal text-[#b42318]">Blocked now{blocker ? ` · ${clockRestriction?.short ?? blocker}` : ''}</span> : null
+  const spreadStatus = row.quote?.spread_verified === false
+    ? `${row.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`
+    : row.quote?.eligible && row.quote.spread_verified !== true ? 'Spread verification unrecorded' : null
+  const spreadCaveat = spreadStatus ? <span aria-label={`${ticker} spread verification`} className="block font-normal text-[#9a6700]">{spreadStatus}</span> : null
   if (compact) {
     // Inside a trade row the badge above already carries the action, so this
     // line adds only the count when there is something to trade.
@@ -2141,7 +2143,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
     // "Sell 1.9%" beside a Target column reading 0.8% reads as a
     // contradiction. A sell is always the whole position, so it says so, and
     // a buy carries a + because it is an addition rather than a level.
-    return <span title={actOnIt(blocker ?? reason) ?? blocker ?? reason} aria-label={`${ticker} strategy intent`}>{action.toUpperCase()}{executionStatus}</span>
+    return <span title={actOnIt(blocker ?? reason) ?? blocker ?? reason} aria-label={`${ticker} strategy intent`}>{action.toUpperCase()}{executionStatus}{spreadCaveat}</span>
   }
   // A Plan column is a signal, not a sentence. The allocation has its own
   // column and the reasoning is a hover: a trader scanning ninety-four rows
@@ -2149,6 +2151,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   return <div className="min-w-24" aria-label={`${ticker} strategy intent`} title={actOnIt(blocker ?? reason) ?? blocker ?? reason}>
     <div className="font-medium">{action.toUpperCase()}</div>
     {executionStatus}
+    {spreadCaveat}
     {terse && !blocked && <p aria-label={`${ticker} decision reason`} className="text-xs font-normal text-[#6e6e73]">{action === 'Hold' && row.entry_status === 'unavailable' ? row.entry_reason ?? 'Entry data unavailable' : reason}</p>}
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Recorded allocation & execution quote</summary>
       <div>Recorded personal allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)} at the next reset</div>

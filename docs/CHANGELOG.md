@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-25 — Qualify execution spreads and regular-session restrictions
+
+Both stock rows and decision details expose unverified IEX spreads and missing
+legacy verification flags. One-venue wording no longer implies only one venue
+quotes; visible clock blockers and titles now explicitly concern regular-session
+execution. Actions, sizes, ranking, filtering, timestamps and expiry are unchanged.
+
+Root's 19 focused/action browser cases pass; eight real-producer synthetic
+fixtures match, and TypeScript/build pass. The broader run is explicitly
+263 passes / one pre-existing phone viewport failure, reproduced identically on
+original code; all 67 strict diagnostic records are clean. Original failures
+and the review-found visible-text correction are retained. No deployment,
+provider/account call or trading-performance claim.
+See the [wording contract and remaining limits](research/execution-quote-wording-2026-09-25.md).
+
 ## 2026-09-25 — Keep valid OI levels independent of optional gamma
 
 Live stored-chain diagnostics now read only the four required OI fields and

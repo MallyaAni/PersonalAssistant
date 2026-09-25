@@ -2,6 +2,12 @@ import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { DeskDecisions, DeskHolding, DeskLive, DeskLiveGrade, DeskPayload, DeskRecord, DeskPaperLive, DeskSessionPrices } from '../../services/api'
 import { analystLabel } from './analystLabels'
 
+// Scope known execution-clock reasons to the regular session without changing readiness.
+export const executionClockMessage = (reason?: string | null) => {
+  if (!['market closed or clock unavailable', 'market closed'].includes(reason?.toLowerCase() ?? '')) return null
+  return {short: 'Regular-session execution blocked', full: 'Regular-session execution is blocked; the session is closed or its clock is unavailable'}
+}
+
 // Accept only the documented schedule vocabulary; a schedule is never proof of venue availability.
 const quoteSchedule = (value: unknown): DeskSessionPrices['session'] | null =>
   typeof value === 'string' && ['pre-market', 'post-market', 'overnight', 'regular', 'closed', 'unknown'].includes(value)
@@ -553,6 +559,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             ? decision.blocker || (marketClosed ? 'Market closed' : 'Blocked now')
             : marketClosed ? 'Market closed'
             : !Number.isFinite(deadline) || deadline <= now ? 'Price check needed' : null
+          const clockRestriction = executionClockMessage(readiness)
           const position = brokerPositions.find(p => p.symbol === row.ticker)
           const reason = paused ? 'FOMC cycle: regular trading paused'
             : !(row.ticker in latest.grades) ? 'Outside current coverage; review manually'
@@ -573,7 +580,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 <div className="text-[10px] text-[#6e6e73]">{row.grade ? grades[row.ticker] ? 'Intraday' : 'Close' : 'Unrated'}</div></>}
             </td>
             <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{isCash ? 'HOLD' : plan === 'Hold' ? 'Hold' : plan.toUpperCase()}</span>
-              {readiness && <div className="text-[11px] text-[#9a6700]">{readiness}</div>}</td>
+              {readiness && <div aria-label={`${row.ticker} execution readiness`} title={clockRestriction?.full ?? readiness} className="text-[11px] text-[#9a6700]">{clockRestriction?.short ?? readiness}</div>}
+              {!isCash && (decision?.quote?.spread_verified === false || decision?.quote?.eligible && decision.quote.spread_verified !== true) &&
+                <div aria-label={`${row.ticker} spread verification`} className="text-[11px] text-[#9a6700]">{decision.quote.spread_verified === false
+                  ? `${decision.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`
+                  : 'Spread verification unrecorded'}</div>}</td>
             <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : '—'}</td>
 
           </tr>
