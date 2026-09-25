@@ -1969,15 +1969,16 @@ export interface DeskCurve {
 export interface DeskHistoryRow {
   date: string;
   grade: string;
-  votes: number;
+  // Published legacy rows can have no recorded aggregate vote total.
+  votes: number | null;
   stances: Record<string, number>;
   exposure: number;
   confidence: number;
   forward: number | null;
   forward_residual: number | null;
   earnings: boolean;
-  // True where a nightly record exists for the session and the row is what
-  // the desk said that night; false where it is today's rule replayed.
+  // True when published grade/votes/stances replace the replay's values.
+  // Outcomes, exposure, confidence and earnings markers remain replay-derived.
   said?: boolean;
 }
 export interface DeskHistory {

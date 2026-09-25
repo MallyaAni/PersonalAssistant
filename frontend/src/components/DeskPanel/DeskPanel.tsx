@@ -2064,7 +2064,7 @@ const actOnIt = (reason?: string | null): string | null => {
   if (!reason) return null
   if (/unverified/i.test(reason)) return 'Only one venue is quoting here, so the spread is unknown; check your broker before crossing'
   if (/spread exceeds/i.test(reason)) return 'Spread exceeds the execution limit'
-  if (/market closed/i.test(reason)) return 'Market closed; no executable quote until the open'
+  if (reason === 'Market closed or clock unavailable') return 'Regular-session execution is blocked; the session is closed or its clock is unavailable'
   if (/invalid or empty|unavailable/i.test(reason)) return 'Quote unavailable; execution blocked'
   if (/refresh price evidence/i.test(reason)) return 'Price evidence has expired; reload for a current quote'
   return reason
@@ -2442,11 +2442,24 @@ const LiveTechnical = ({
   )
 }
 
-// The sessions where the grade moved, with the analysts whose stance
-// changed and how: "technical turned against", "value no longer for".
+// Keep a recorded neutral vote distinct from absent or invalid historical evidence.
 const STANCE_WORD: Record<number, string> = { 1: 'for', 0: 'neutral', [-1]: 'against' }
+const UNKNOWN_VOTE_CONTEXT = 'Unknown means the vote was not recorded or was invalid; it does not mean neutral or prove that a vote changed.'
+const HISTORY_TRIGGER_LEGEND = `${ANALYST_MEANINGS} + for, · neutral, − against, ? missing or invalid vote.`
 // The grade one vote down from each grade.
 const GRADE_BELOW: Record<string, string> = { 'A+': 'A', A: 'B', B: 'C' }
+
+// Name only the three valid vote values; all other evidence remains unknown.
+const recordedStanceWord = (value: unknown): string =>
+  typeof value === 'number' && (value === -1 || value === 0 || value === 1) ? STANCE_WORD[value] : 'unknown'
+
+// Use the same historical vote validity for compact marks and narrated comparisons.
+const historyVoteMarks = (stances: Record<string, number>): string =>
+  TRIGGER_ORDER.filter(([key]) => key in stances)
+    .map(([key, letter]) => `${letter}${recordedStanceWord(stances[key]) === 'unknown' ? '?' : STANCE_MARK[stances[key]]}`)
+    .join(' ')
+
+// Compare both recorded panels when a grade changes without inventing missing votes.
 const gradeChanges = (rows: DeskHistoryRow[]) => {
   const out: { date: string; from: string; to: string; moved: string[]; said?: boolean }[] = []
   for (let i = 1; i < rows.length; i += 1) {
@@ -2454,13 +2467,20 @@ const gradeChanges = (rows: DeskHistoryRow[]) => {
     const row = rows[i]
     if (row.grade === prev.grade) continue
     const moved: string[] = []
-    for (const [analyst, now] of Object.entries(row.stances ?? {})) {
-      const before = prev.stances?.[analyst] ?? 0
-      if (before !== now) moved.push(`${analyst} ${STANCE_WORD[before] ?? before} → ${STANCE_WORD[now] ?? now}`)
+    for (const analyst of new Set([...Object.keys(prev.stances ?? {}), ...Object.keys(row.stances ?? {})])) {
+      const before = recordedStanceWord(prev.stances?.[analyst])
+      const now = recordedStanceWord(row.stances?.[analyst])
+      if (before !== now) moved.push(`${analyst} ${before} → ${now}`)
     }
     out.push({ date: row.date, from: prev.grade, to: row.grade, moved, said: row.said })
   }
   return out
+}
+
+// Convert the stored forward log return to an ordinary percentage, withholding invalid arithmetic.
+const ForwardPriceChange = ({logReturn}: {logReturn: number | null}) => {
+  const percent = typeof logReturn === 'number' && Number.isFinite(logReturn) ? Math.expm1(logReturn) * 100 : Number.NaN
+  return Number.isFinite(percent) ? <Trend value={percent} /> : <span className="text-[#9ca3af]">—</span>
 }
 
 // A stale brief dumps the desk's raw evidence ("revenue_yoy +0.262") in
@@ -2571,6 +2591,7 @@ const GradeMove = ({changes, session, reads, revision}: {
     return {text: `${analystLabel(analyst)}${text.slice(analyst.length)}`, readings}
   })
   const flipped = latest.moved.some((text) => / (for|against)$/.test(text))
+  const unknown = latest.moved.some((text) => text.includes('unknown'))
   return (
     <section aria-label="Why the grade moved" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
       <p>
@@ -2587,7 +2608,8 @@ const GradeMove = ({changes, session, reads, revision}: {
       ) : (
         <p className="mt-1 text-xs text-[#6e6e73]">No analyst vote change is recorded in this comparison; cause not recorded.</p>
       )}
-      {moved.length > 0 && <p className="mt-1 text-[11px] text-[#6e6e73]">Recorded vote changes do not establish what caused a price move.</p>}
+      {moved.length > 0 && <p className="mt-1 text-[11px] text-[#6e6e73]">{unknown ? 'Recorded vote comparisons do not establish what caused a price move.' : 'Recorded vote changes do not establish what caused a price move.'}</p>}
+      {unknown && <p className="mt-1 text-[11px] text-[#6e6e73]">{UNKNOWN_VOTE_CONTEXT}</p>}
       {flipped && <p className="mt-1 text-[11px] text-[#6e6e73]">{EVENING_VOTE_CONTEXT}</p>}
       {revised && <p className="mt-1 text-[11px] text-[#9a6200]">{revised}</p>}
     </section>
@@ -2818,6 +2840,7 @@ const NameDetail = ({
                 ))}
               </ul>
             )}
+            {changes.some(change => change.moved.some(text => text.includes('unknown'))) && <p className="mt-1 text-[11px] text-[#6e6e73]">{UNKNOWN_VOTE_CONTEXT}</p>}
             <p className="mb-2 text-xs leading-relaxed text-[#6e6e73]">
               Historical returns grouped by grade: sessions graded A or better against the other sessions.
               Annualized daily log-return means are conditional statistics, not funded portfolio returns or forecasts.
@@ -2831,19 +2854,20 @@ const NameDetail = ({
                 </div>
               ))}
             </div>
-            <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">The last {recent.length} sessions</h4>
+            <h4 className="mt-4 text-sm font-semibold text-[#1d1d1f]">The last {recent.length} session{recent.length === 1 ? '' : 's'}</h4>
             <p className="mt-0.5 text-xs text-[#6e6e73]">
-              Each night&rsquo;s grade with the analysts that voted for (+) or against (−) it, so a grade change shows
-              which analyst moved. A row marked &ldquo;published&rdquo; is the grade the desk actually wrote that
+              Each night&rsquo;s grade with the available analyst votes for (+), neutral (·), or against (−).
+              Missing votes do not establish which analyst moved. A row marked &ldquo;published&rdquo; is the grade the desk actually wrote that
               night. The rest are today&rsquo;s rules replayed over past prices, so they show what the desk
               would say now rather than what it said then.
             </p>
+            <p className="mt-1 text-xs text-[#6e6e73]">Adjusted-close percentage change over the next {history.horizon} sessions, from the available price history; not a funded trade return or your P/L. Unavailable or invalid outcomes are shown as —.</p>
             <table className="mt-1 w-full text-sm">
               <thead className="text-left text-[#6e6e73]">
                 <tr>
                   <th className="py-1">Date</th>
                   <th>Grade</th>
-                  <th title={TRIGGER_LEGEND}>Analysts</th>
+                  <th title={HISTORY_TRIGGER_LEGEND}>Analysts</th>
                   <th>Next {history.horizon} sessions</th>
                 </tr>
               </thead>
@@ -2857,10 +2881,12 @@ const NameDetail = ({
                     <td><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade] ?? ''}`}>{row.grade}</span></td>
                     <td className="whitespace-nowrap font-mono text-xs text-[#1d1d1f]">
                       {row.stances && Object.keys(row.stances).length > 0
-                        ? triggers(row.stances)
-                        : `${row.votes > 0 ? '+' : ''}${row.votes.toFixed(1)} votes`}
+                        ? historyVoteMarks(row.stances)
+                        : typeof row.votes === 'number' && Number.isFinite(row.votes)
+                          ? `${row.votes > 0 ? '+' : ''}${row.votes.toFixed(1)} votes`
+                          : 'Votes not recorded'}
                     </td>
-                    <td>{row.forward != null ? <Trend value={row.forward * 100} /> : <span className="text-[#9ca3af]">—</span>}</td>
+                    <td><ForwardPriceChange logReturn={row.forward} /></td>
                   </tr>
                 ))}
               </tbody>

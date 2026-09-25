@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-25 — Correct stock-history percentages and unknown vote meaning
+
+Historical adjusted-close log returns are now displayed as ordinary percentage
+changes, with their basis explicit and conditional log statistics unchanged.
+Missing/invalid historical votes remain unknown in comparisons and row marks;
+null aggregate votes no longer crash the history dialog. Regular-session clock
+uncertainty no longer becomes a blanket claim that quotes must wait for an open.
+Published-grade provenance and singular session-count wording are precise.
+
+Acceptance: **144 browser tests and 18 backend contract tests passed**, with
+zero skips or flaky cases. TypeScript/build, scoped lint/format, independent
+review and all 33 unchanged diagram/page checks pass. Original failures remain
+recorded. Proof uses synthetic APIs and isolated exact-source/built-artifact
+runtimes, not deployed market-data or investment-performance validation.
+No strategy, model, stored record, account, collector or execution behavior
+changed. Not deployed. See the
+[history meaning contract and evidence](research/desk-history-meaning-2026-09-25.md).
+
 ## 2026-09-25 — Correct earnings research's naive growth benchmark
 
 Verified scoped source checkpoint `375ba5f50be6e3b68ecbaf3637783aa41f2c409f`,
