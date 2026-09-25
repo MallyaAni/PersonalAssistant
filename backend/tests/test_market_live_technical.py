@@ -193,7 +193,7 @@ def test_technical_detail_carries_the_option_walls_when_stored(tmp_path, monkeyp
     assert walls["call_wall"] == 110.0
     assert walls["put_wall_distance"] == pytest.approx(-0.10)
     assert walls["call_wall_distance"] == pytest.approx(0.10)
-    assert "net_gamma" in walls
+    assert "net_gamma" not in walls
     # Without a chain (no store) the block is absent, not empty.
     bare = live_technical.technical_detail(None, {"AAA": quote}, today)
     assert "walls" not in bare["AAA"]

@@ -259,33 +259,35 @@ def value_now(store, quotes: dict, today: date | None = None) -> dict:
     return out
 
 
-# Reject malformed optional chain data before it can supply displayed levels.
-def _checked_option_rows(columns, metadata) -> list[options.ChainRow]:
+# Validate only the expiry, side, raw strike and OI needed for displayed levels.
+def _checked_option_rows(columns, metadata) -> list[options.OIRow]:
     if not isinstance(columns, Mapping) or not isinstance(metadata, Mapping):
         raise ValueError("options columns and metadata must be mappings")
-    required = [columns[name] for name in options.frame([])]
+    required = [columns[name] for name in ("expiry", "kind", "strike", "open_interest")]
     if (
         any(not isinstance(values, list) for values in required)
         or len({len(values) for values in required}) != 1
     ):
         raise ValueError("options columns must be equal-length lists")
-    for name in ("open_interest", "volume"):
-        for value in columns[name]:
-            if isinstance(value, (bool, np.bool_)) or value != int(value) or value < 0:
-                raise ValueError("options counts must be nonnegative integers")
-    for name in ("strike", "implied_volatility", "gamma"):
-        if any(isinstance(value, (bool, np.bool_)) for value in columns[name]):
-            raise ValueError("options numeric values must not be booleans")
-    rows = options.rows_from_frame(columns)
+    for value in columns["open_interest"]:
+        if isinstance(value, (bool, np.bool_)) or value != int(value) or value < 0:
+            raise ValueError("options counts must be nonnegative integers")
+    if any(isinstance(value, (bool, np.bool_)) for value in columns["strike"]):
+        raise ValueError("options numeric values must not be booleans")
+    rows = [
+        options.OIRow(
+            expiry=date.fromisoformat(str(columns["expiry"][i])),
+            kind=str(columns["kind"][i]),
+            strike=float(columns["strike"][i]),
+            open_interest=int(columns["open_interest"][i]),
+        )
+        for i in range(len(columns["strike"]))
+    ]
     for row in rows:
         if (
             row.kind not in ("call", "put")
-            or not all(
-                math.isfinite(value)
-                for value in (row.strike, row.implied_volatility, row.gamma)
-            )
+            or not math.isfinite(row.strike)
             or row.strike <= 0
-            or row.implied_volatility < 0
         ):
             raise ValueError("options rows contain unsupported scalar values")
     return rows
@@ -334,7 +336,7 @@ def _walls_for(
     if not rows:
         return None
     try:
-        w = options.walls(
+        w = options.oi_levels(
             rows,
             price,
             today,
@@ -343,8 +345,6 @@ def _walls_for(
             min_oi=options.MIN_WALL_OI,
         )
     except OverflowError:
-        return unavailable
-    if not math.isfinite(w.net_gamma):
         return unavailable
     out: dict = {
         "expiry": w.expiry.isoformat() if w.expiry else None,
@@ -355,7 +355,6 @@ def _walls_for(
         "call_wall": w.call_wall,
         "put_wall_oi": w.put_wall_oi,
         "call_wall_oi": w.call_wall_oi,
-        "net_gamma": w.net_gamma,
         "calculation": options_evidence.calculation(
             price, today, reference_session, reference_bar_start
         ),

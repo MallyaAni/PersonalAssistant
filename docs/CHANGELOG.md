@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-25 — Keep valid OI levels independent of optional gamma
+
+Live stored-chain diagnostics now read only the four required OI fields and
+omit unused raw gamma, using the same OI algorithm as the unchanged legacy
+gamma wrapper. Required malformed data still fails locally; old snapshots,
+provenance, grades, sizing and actions are preserved. Collection parsing and
+legacy gamma semantics are not changed or qualified.
+
+Root's wider suite passes 418 tests, zero skips, with 16 existing warnings.
+Independent review passes 2,500 differential, 36 adversarial and seven CLI
+checks; original failures and all 32 prior malformed fixtures are retained.
+Real synthetic storage/persistence/authenticated cached reads verify finite
+JSON and unchanged bytes. Scoped Ruff/format and 33 diagram/page checks pass.
+No deployment, provider call, fit, historical replay or account/order operation.
+See the [OI-only contract and limits](research/options-oi-only-2026-09-25.md).
+
 ## 2026-09-25 — Preserve the legacy allocation gradient defect as a regression
 
 Added an exact-source, real-Torch regression for the older allocation

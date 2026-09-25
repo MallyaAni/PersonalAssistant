@@ -20,6 +20,7 @@ on it.
 
 import json
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -55,6 +56,31 @@ class ChainRow:
     volume: int
     implied_volatility: float
     gamma: float  # per share, from the feed
+
+
+# One contract's required fields for OI concentration arithmetic only.
+@dataclass(frozen=True)
+class OIRow:
+    """Expiry, side, raw strike and open interest, without optional greeks."""
+
+    expiry: date
+    kind: str
+    strike: float
+    open_interest: int
+
+
+# OI concentration levels without a gamma estimate or fabricated default.
+@dataclass(frozen=True)
+class OILevels:
+    """Levels aggregated across the eligible expiries at a raw reference price."""
+
+    price: float
+    expiry: date | None
+    put_wall: float | None
+    put_wall_oi: int
+    call_wall: float | None
+    call_wall_oi: int
+    through: date | None = None
 
 
 @dataclass(frozen=True)
@@ -147,22 +173,16 @@ def rows_from_frame(columns: dict[str, list]) -> list[ChainRow]:
     ]
 
 
-# The walls at a price: the strike with the most put open interest at or
-# below the price and the most call open interest at or above it, within
-# WALL_RANGE, on the nearest expiry at least `min_days` away (a chain
-# that expires tomorrow is noise for a twenty-session book). The gamma
-# proxy sums open interest times the feed's gamma across every stored
-# expiry with the usual dealer-side convention, calls long and puts
-# short, as shares dealers must trade per one percent move.
-def walls(  # noqa: C901 - two sides, one pass each
-    rows: list[ChainRow],
+# Sum eligible OI by strike and select each side's maximum, with nearer-strike ties.
+def oi_levels(  # noqa: C901 - two sides, one pass each
+    rows: Sequence[OIRow | ChainRow],
     price: float,
     today: date,
     min_days: int = 1,
     max_days: int = WALL_DAYS,
     min_oi: int = MIN_WALL_OI,
-) -> Walls:
-    """Return the Walls read off `rows` at `price`, summed over the near expiries."""
+) -> OILevels:
+    """Return OI levels within the price range, summed over eligible expiries."""
     eligible = sorted(
         {r.expiry for r in rows if min_days <= (r.expiry - today).days <= max_days}
     )
@@ -189,11 +209,34 @@ def walls(  # noqa: C901 - two sides, one pass each
                 oi > call_oi or (oi == call_oi and strike < call_wall)
             ):
                 call_wall, call_oi = strike, oi
+    return OILevels(price, expiry, put_wall, put_oi, call_wall, call_oi, through)
+
+
+# Combine the shared OI levels with the unchanged legacy all-row gamma proxy.
+def walls(
+    rows: list[ChainRow],
+    price: float,
+    today: date,
+    min_days: int = 1,
+    max_days: int = WALL_DAYS,
+    min_oi: int = MIN_WALL_OI,
+) -> Walls:
+    """Return the Walls read off `rows` at `price`, summed over the near expiries."""
+    levels = oi_levels(rows, price, today, min_days, max_days, min_oi)
     net = 0.0
     for r in rows:
         shares = r.gamma * r.open_interest * 100 * price * 0.01
         net += shares if r.kind == "call" else -shares
-    return Walls(price, expiry, put_wall, put_oi, call_wall, call_oi, net, through)
+    return Walls(
+        levels.price,
+        levels.expiry,
+        levels.put_wall,
+        levels.put_wall_oi,
+        levels.call_wall,
+        levels.call_wall_oi,
+        net,
+        levels.through,
+    )
 
 
 # Fetch one name's chain. `transport` returns (status, headers, body)

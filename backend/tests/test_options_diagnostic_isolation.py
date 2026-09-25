@@ -8,7 +8,7 @@ are synthetic. This contract does not qualify options freshness or alpha.
 import hashlib
 import json
 import socket
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
 import pytest
@@ -61,6 +61,69 @@ FAILURES = (
     "unreadable_parquet",
     *INVALID_FIELDS,
 )
+# Retain every original fixture; only the declared OI-only contract changes.
+IRRELEVANT_FAILURES = (
+    "missing_column",
+    "unequal_lengths",
+    *(
+        name
+        for name, (column, _) in INVALID_FIELDS.items()
+        if column in ("volume", "implied_volatility", "gamma")
+    ),
+)
+REQUIRED_FAILURES = tuple(name for name in FAILURES if name not in IRRELEVANT_FAILURES)
+MISSING_COLUMNS = {
+    "missing_column": "gamma",
+    "missing_strike_column": "strike",
+    "missing_expiry_column": "expiry",
+    "missing_kind_column": "kind",
+    "missing_oi_column": "open_interest",
+    "missing_volume_column": "volume",
+    "missing_iv_column": "implied_volatility",
+}
+SHORT_COLUMNS = {
+    "unequal_lengths": "gamma",
+    "unequal_expiry": "expiry",
+    "unequal_kind": "kind",
+    "unequal_strike": "strike",
+    "unequal_oi": "open_interest",
+    "unequal_volume": "volume",
+    "unequal_iv": "implied_volatility",
+}
+EXTRA_REQUIRED = (
+    "missing_expiry_column",
+    "missing_kind_column",
+    "missing_oi_column",
+    "unequal_expiry",
+    "unequal_kind",
+    "unequal_strike",
+    "unequal_oi",
+)
+GAMMA_VALUES = {"null": None, "nan": np.nan, "infinite": np.inf, "overflow": 1e308}
+SUPPLEMENTAL_GAMMA = tuple(
+    f"supplemental_{scope}_{value}"
+    for scope in ("eligible", "expired", "far")
+    for value in GAMMA_VALUES
+)
+EXTRA_IRRELEVANT = (
+    "missing_volume_column",
+    "missing_iv_column",
+    "unequal_volume",
+    "unequal_iv",
+    "oi_only_frame",
+    *SUPPLEMENTAL_GAMMA,
+)
+UNAVAILABLE_STATES = (*REQUIRED_FAILURES, *EXTRA_REQUIRED)
+CHAIN_STATES = (*FAILURES, *EXTRA_REQUIRED, *EXTRA_IRRELEVANT)
+
+
+# Keep all old malformed cases while explicitly changing only irrelevant fields.
+def test_original_failure_contract_is_partitioned_not_deleted():
+    assert len(FAILURES) == len(set(FAILURES)) == 32
+    assert len(IRRELEVANT_FAILURES) == 17
+    assert len(REQUIRED_FAILURES) == 15
+    assert set(IRRELEVANT_FAILURES).isdisjoint(REQUIRED_FAILURES)
+    assert set(IRRELEVANT_FAILURES) | set(REQUIRED_FAILURES) == set(FAILURES)
 
 
 # Freeze only the synthetic observation clock, without changing system time.
@@ -137,10 +200,22 @@ def _chain_columns(state):
     columns = options.frame(_chain_rows())
     if state == "bad_expiry":
         columns["expiry"][0] = "bad-expiry"
-    elif state == "missing_column":
-        del columns["gamma"]
-    elif state == "missing_strike_column":
-        del columns["strike"]
+    elif state in MISSING_COLUMNS:
+        del columns[MISSING_COLUMNS[state]]
+    elif state == "oi_only_frame":
+        columns = {
+            key: columns[key] for key in ("expiry", "kind", "strike", "open_interest")
+        }
+    elif state in SUPPLEMENTAL_GAMMA:
+        _, scope, value = state.split("_")
+        expiry = TODAY + timedelta(
+            days={"eligible": 21, "expired": -7, "far": 90}[scope]
+        )
+        columns = options.frame(
+            _chain_rows()
+            + [options.ChainRow(expiry, "call", 100.0, 1000, 1, 0.5, 0.02)]
+        )
+        columns["gamma"][-1] = GAMMA_VALUES[value]
     elif state in INVALID_FIELDS:
         column, value = INVALID_FIELDS[state]
         if isinstance(value, bool):
@@ -169,7 +244,7 @@ def _stored_chain(root, monkeypatch, *, symbol="AAA", state="valid"):
             columns,
             {"source_time": "2026-09-25T12:45:00+00:00", "price": "100.0000"},
         )
-    if state == "unequal_lengths":
+    if state in SHORT_COLUMNS:
         original_read = MarketStore.read_frame
 
         # Corrupt only this frame's returned shape; the healthy symbol stays real.
@@ -177,7 +252,8 @@ def _stored_chain(root, monkeypatch, *, symbol="AAA", state="valid"):
             frame = original_read(self, kind, ticker, asof)
             if self.root == root and kind == options.KIND and ticker == symbol:
                 found, metadata = frame
-                found["gamma"] = found["gamma"][:-1]
+                column = SHORT_COLUMNS[state]
+                found[column] = found[column][:-1]
                 return found, metadata
             return frame
 
@@ -195,7 +271,6 @@ def _assert_raw_walls(walls):
         "call_wall",
         "put_wall_oi",
         "call_wall_oi",
-        "net_gamma",
         "put_wall_distance",
         "call_wall_distance",
         "calculation",
@@ -206,7 +281,8 @@ def _assert_raw_walls(walls):
     assert (walls["put_wall_oi"], walls["call_wall_oi"]) == (3000, 3000)
     assert walls["put_wall_distance"] == pytest.approx(-0.05)
     assert walls["call_wall_distance"] == pytest.approx(0.05)
-    assert walls["net_gamma"] == 0.0
+    assert "net_gamma" not in walls
+    json.dumps(walls, allow_nan=False)
     assert walls["calculation"] == {
         "version": "raw-option-oi-levels/1",
         "date": TODAY.isoformat(),
@@ -300,7 +376,7 @@ def test_unexpected_runtime_errors_still_propagate(tmp_path, monkeypatch, stage)
         raise RuntimeError("synthetic computation failure")
 
     if stage == "wall_calculation":
-        monkeypatch.setattr(options, "walls", fail)
+        monkeypatch.setattr(options, "oi_levels", fail)
     else:
         monkeypatch.setattr(live_technical, "_live_read", fail)
     with pytest.raises(RuntimeError, match="synthetic computation failure"):
@@ -336,8 +412,8 @@ def test_expected_storage_errors_return_unavailable(monkeypatch, error):
     assert live_technical._walls_for(store, "AAA", 100.0, TODAY) == UNAVAILABLE
 
 
-# Isolate each unreadable optional frame without removing healthy technical detail.
-@pytest.mark.parametrize("failure", FAILURES)
+# Keep required-field failures local, while unrelated fields cannot suppress OI.
+@pytest.mark.parametrize("failure", CHAIN_STATES)
 def test_bad_options_are_explicit_and_do_not_remove_other_detail(
     tmp_path, monkeypatch, failure
 ):
@@ -349,7 +425,11 @@ def test_bad_options_are_explicit_and_do_not_remove_other_detail(
     monkeypatch.setattr(live_technical, "_live_read", lambda *args: read)
     baseline = live_technical.technical_detail(None, quotes, TODAY)
     actual = live_technical.technical_detail(store, quotes, TODAY)
-    assert actual["AAA"].pop("walls") == UNAVAILABLE
+    json.dumps(actual, allow_nan=False)
+    if failure in UNAVAILABLE_STATES:
+        assert actual["AAA"].pop("walls") == UNAVAILABLE
+    else:
+        _assert_raw_walls(actual["AAA"].pop("walls"))
     _assert_raw_walls(actual["BBB"].pop("walls"))
     assert actual == baseline
     assert hashlib.sha256(bad_path.read_bytes()).hexdigest() == before
@@ -386,6 +466,7 @@ def _evening_record():
 def _run_synthetic_balancer(tmp_path, monkeypatch, chain_state):
     store = _stored_chain(tmp_path, monkeypatch, state=chain_state)
     _stored_chain(tmp_path, monkeypatch, symbol="BBB")
+    stored_bytes = {path: path.read_bytes() for path in tmp_path.rglob("*.parquet")}
     read, quotes = _synthetic_read()
     monkeypatch.setattr(live_technical, "_live_read", lambda *args: read)
     monkeypatch.setattr(live_technical, "datetime", _FixedDatetime)
@@ -409,23 +490,27 @@ def _run_synthetic_balancer(tmp_path, monkeypatch, chain_state):
     expected = live_technical.technical_now(store, quotes, TODAY)
     assert set(expected) == {"AAA", "BBB"}
     plan_path = market_balancer.run(tmp_path, 100_000.0)
+    assert {
+        path: path.read_bytes() for path in tmp_path.rglob("*.parquet")
+    } == stored_bytes
     return plan_path, expected
 
 
 # Run actual balancer persistence while excluding providers and account operations.
-@pytest.mark.parametrize("chain_state", ["absent", "valid", *FAILURES])
+@pytest.mark.parametrize("chain_state", ["absent", "valid", *CHAIN_STATES])
 def test_balancer_preserves_both_technical_reads_when_options_are_unavailable(
     tmp_path, monkeypatch, chain_state
 ):
     plan_path, expected = _run_synthetic_balancer(tmp_path, monkeypatch, chain_state)
     plan = json.loads(plan_path.read_text())
     snapshot = json.loads((tmp_path / "desk" / market_balancer.LIVE_FILE).read_text())
+    json.dumps(snapshot, allow_nan=False)
     assert snapshot["quotes"]["AAA"]["last"] == 100.0
     assert snapshot["technical"] == expected
     _assert_raw_walls(snapshot["technical_detail"]["BBB"]["walls"])
-    if chain_state in FAILURES:
+    if chain_state in UNAVAILABLE_STATES:
         assert snapshot["technical_detail"]["AAA"]["walls"] == UNAVAILABLE
-    elif chain_state == "valid":
+    elif chain_state != "absent":
         _assert_raw_walls(snapshot["technical_detail"]["AAA"]["walls"])
     else:
         assert "walls" not in snapshot["technical_detail"]["AAA"]
@@ -439,9 +524,16 @@ def test_balancer_preserves_both_technical_reads_when_options_are_unavailable(
 
 # Serve the actual persisted result through authenticated HTTP without recalculation.
 @pytest.mark.asyncio
-@pytest.mark.parametrize("chain_state", ["absent", "valid", "bad_expiry"])
+@pytest.mark.parametrize(
+    ("chain_state", "legacy"),
+    [
+        *((state, None) for state in ("absent", "valid", *CHAIN_STATES)),
+        ("valid", "versioned"),
+        ("valid", "unversioned"),
+    ],
+)
 async def test_live_api_preserves_produced_options_state_without_rewriting(
-    tmp_path, monkeypatch, chain_state
+    tmp_path, monkeypatch, chain_state, legacy
 ):
     from httpx import ASGITransport, AsyncClient
 
@@ -454,6 +546,13 @@ async def test_live_api_preserves_produced_options_state_without_rewriting(
 
     plan_path, expected = _run_synthetic_balancer(tmp_path, monkeypatch, chain_state)
     snapshot_path = tmp_path / "desk" / market_balancer.LIVE_FILE
+    if legacy:
+        old_snapshot = json.loads(snapshot_path.read_text())
+        old_walls = old_snapshot["technical_detail"]["AAA"]["walls"]
+        old_walls["net_gamma"] = 2000.0
+        if legacy == "unversioned":
+            del old_walls["calculation"]
+        snapshot_path.write_text(json.dumps(old_snapshot, allow_nan=False))
     saved_snapshot = snapshot_path.read_bytes()
     saved_plan = plan_path.read_bytes()
     snapshot = json.loads(saved_snapshot)
@@ -489,6 +588,7 @@ async def test_live_api_preserves_produced_options_state_without_rewriting(
     assert denied.status_code == 401
     assert response.status_code == 200, response.text
     body = response.json()
+    json.dumps(body, allow_nan=False)
     assert body["user_id"] == "options_test_user"
     assert body["technical"] == expected
     assert body["technical_detail"] == snapshot["technical_detail"]
@@ -496,11 +596,22 @@ async def test_live_api_preserves_produced_options_state_without_rewriting(
     assert body["stale"] is False
     assert body["stale_symbols"] == []
     _assert_raw_walls(body["technical_detail"]["BBB"]["walls"])
-    if chain_state == "bad_expiry":
+    if legacy:
+        assert body["technical_detail"]["AAA"]["walls"]["net_gamma"] == 2000.0
+        assert body["options_evidence"]["AAA"]["status"] == (
+            "recorded" if legacy == "versioned" else "unverified"
+        )
+    elif chain_state in UNAVAILABLE_STATES:
         assert body["technical_detail"]["AAA"]["walls"] == UNAVAILABLE
-    elif chain_state == "valid":
+        assert body["options_evidence"]["AAA"]["status"] == "unavailable"
+    elif chain_state != "absent":
         _assert_raw_walls(body["technical_detail"]["AAA"]["walls"])
+        assert body["options_evidence"]["AAA"]["status"] == "recorded"
+        assert body["options_evidence"]["AAA"]["put_level"] == 95.0
+        assert body["options_evidence"]["AAA"]["call_level"] == 105.0
     else:
         assert "walls" not in body["technical_detail"]["AAA"]
+        assert body["options_evidence"]["AAA"]["status"] == "absent"
+    assert "net_gamma" not in body["options_evidence"]["AAA"]
     assert snapshot_path.read_bytes() == saved_snapshot
     assert plan_path.read_bytes() == saved_plan
