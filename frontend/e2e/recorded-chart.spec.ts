@@ -12,14 +12,45 @@ const saved = (id: string, at: string, action: string, strategy = action) => ({
   id, generated_at: at, acknowledged_at: at, payload: {rows: {AAPL: {action, strategy_action: strategy, grade: 'A'}}},
 })
 
-// Render the actual stock modal against saved history and a separately changing current quote.
-async function setup(page: Page, personal = true) {
+type CandleGap = 'all' | 'open' | 'high' | 'low' | 'close' | 'absent'
+type MarkerDraw = {text: string; center: number; timeframe: string | null}
+type CanvasWindow = Window & {__chartMarkerDraws: MarkerDraw[]}
+
+// Observe the real marker paint calls without replacing or simulating the chart.
+async function observeMarkerCanvas(page: Page) {
+  await page.addInitScript(() => {
+    const state = window as unknown as CanvasWindow
+    state.__chartMarkerDraws = []
+    const fillText = CanvasRenderingContext2D.prototype.fillText
+    // Retain actual text centers so a correct caption cannot hide a wrong candle.
+    CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
+      const [text, x, y] = args
+      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]')
+        && (text === 'Buy' || text === 'Sell' || text.startsWith('snapshot ·'))) {
+        const point = new DOMPoint(x + this.measureText(text).width / 2, y).matrixTransform(this.getTransform())
+        const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
+        state.__chartMarkerDraws.push({text, center: point.x * this.canvas.getBoundingClientRect().width / this.canvas.width, timeframe})
+      }
+      return fillText.apply(this, args)
+    }
+  })
+}
+
+// Read actual marker draws rather than the independently rendered textual history.
+const markerDraws = (page: Page) => page.evaluate(() => (window as unknown as CanvasWindow).__chartMarkerDraws)
+
+// Discard earlier frames before checking a newly selected timeframe.
+const clearMarkerDraws = (page: Page) => page.evaluate(() => { (window as unknown as CanvasWindow).__chartMarkerDraws = [] })
+
+// Render saved history and changing quotes with optional missing daily or weekly candle evidence.
+async function setup(page: Page, personal = true, gap?: CandleGap) {
   const errors: string[] = []
   const writes: string[] = []
   let last = 110
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
   page.on('requestfailed', request => errors.push(request.url()))
+  page.on('response', response => { if (response.status() >= 400) errors.push(`HTTP ${response.status()}: ${response.url()}`) })
   await page.clock.install({time: new Date('2026-09-24T14:00:00Z')})
   await page.route('**/api/v1/**', async route => {
     const request = route.request()
@@ -39,7 +70,16 @@ async function setup(page: Page, personal = true) {
     else if (path.endsWith('/chart/AAPL')) {
       const weekly = new URL(request.url()).searchParams.get('timeframe') === 'weekly'
       const dates = weekly ? ['2026-09-11', '2026-09-18', '2026-09-24'] : ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-24']
-      json = {ticker: 'AAPL', timeframe: weekly ? 'weekly' : 'daily', adjusted: true, basis: 'adjusted prices', sessions: weekly ? 260 : dates.length, bars: dates.map(date => ({date, open: 100, high: Math.max(120, last), low: 90, close: last, volume: 100})), overlays: {}, levels: {}, entries: weekly ? [] : ['2026-09-15'], data_status: 'complete'}
+      const missingDate = weekly ? '2026-09-18' : '2026-09-15'
+      const bars = dates.filter(date => gap !== 'absent' || date !== missingDate).map(date => ({
+        date,
+        open: date === missingDate && (gap === 'all' || gap === 'open') ? null : 100,
+        high: date === missingDate && (gap === 'all' || gap === 'high') ? null : Math.max(120, last),
+        low: date === missingDate && (gap === 'all' || gap === 'low') ? null : 90,
+        close: date === missingDate && (gap === 'all' || gap === 'close') ? null : last,
+        volume: 100,
+      }))
+      json = {ticker: 'AAPL', timeframe: weekly ? 'weekly' : 'daily', adjusted: true, basis: 'adjusted prices', sessions: weekly ? 260 : dates.length, bars, overlays: {}, levels: {}, entries: weekly ? [] : ['2026-09-15'], data_status: gap ? 'incomplete' : 'complete', missing_sessions: gap ? ['2026-09-15'] : [], data_reason: gap ? 'Missing price evidence; affected candles are unavailable.' : null}
     } else if (path.endsWith('/entries') || path.endsWith('/intraday')) json = {rows: [], top_buys: [], changed: []}
     else if (path.endsWith('/paper')) json = {reason: 'unavailable'}
     await route.fulfill({json})
@@ -47,8 +87,80 @@ async function setup(page: Page, personal = true) {
   await page.goto('/#desk')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
-  await expect(chart.getByLabel('Research publication groups')).toContainText('2026-09-15: Dip→Wait · 2')
+  await expect(chart.getByLabel('Research publication groups')).toContainText(gap === 'absent' ? '2026-09-17: Not recorded · 1' : '2026-09-15: Dip→Wait · 2')
   return {chart, errors, writes, changeQuote: () => { last = 150 }}
+}
+
+// A valid-candle control proves both daily and same-week marker painting remain available.
+test('real canvas draws saved actions and grade changes on their available candles', async ({page}) => {
+  await observeMarkerCanvas(page)
+  const {chart, errors, writes} = await setup(page)
+  await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Sell')
+  const daily = await markerDraws(page)
+  expect(daily.map(row => row.text)).toContain('Buy')
+  expect(daily.map(row => row.text)).toContain('snapshot · below A · A→B')
+  await clearMarkerDraws(page)
+  await chart.getByRole('button', {name: 'W', exact: true}).click()
+  await expect(chart).toContainText('3 weeks loaded')
+  await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Sell')
+  const weekly = await markerDraws(page)
+  const buy = weekly.findLast(row => row.text === 'Buy')!
+  const sell = weekly.findLast(row => row.text === 'Sell')!
+  const grade = weekly.findLast(row => row.text === 'snapshot · below A · A→B')!
+  expect(buy).toBeDefined()
+  expect(grade).toBeDefined()
+  expect(Math.abs(buy.center - sell.center)).toBeLessThan(1)
+  expect(Math.abs(grade.center - sell.center)).toBeLessThan(1)
+  expect(errors).toEqual([])
+  expect(writes).toEqual([])
+})
+
+for (const gap of ['all', 'open', 'high', 'low', 'close', 'absent'] as const) {
+  // Missing prices may suppress a drawing, never backdate it or erase its original receipt.
+  test(`daily ${gap} candle gap never backdates a saved Buy or grade`, async ({page}) => {
+    await observeMarkerCanvas(page)
+    const {chart, errors, writes} = await setup(page, true, gap)
+    await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Sell')
+    const drawn = (await markerDraws(page)).map(row => row.text)
+    expect(drawn).not.toContain('Buy')
+    expect(drawn).not.toContain('snapshot · below A · A→B')
+    await expect(chart.getByLabel('Buy and Sell markers')).not.toContainText('Buy ·')
+    await expect(chart).toContainText('No grade change marked on these candles.')
+    await expect(chart.getByLabel('Chart data quality')).toContainText('Chart data incomplete · 1 missing session')
+    await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+    const table = chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'})
+    await expect(table.locator('tbody tr')).toHaveCount(2)
+    await expect(table.locator('tbody tr').first()).toContainText('Sep 15, 2026')
+    await expect(table.locator('tbody tr').first().locator('td').nth(1)).toHaveText('Buy')
+    await expect(chart).not.toContainText('could not be drawn')
+    expect(errors).toEqual([])
+    expect(writes).toEqual([])
+  })
+}
+
+for (const gap of ['all', 'absent'] as const) {
+  // An unavailable publication week cannot move either action onto the previous week's candle.
+  test(`weekly ${gap} candle gap retains dated receipts without substitute markers`, async ({page}) => {
+    await observeMarkerCanvas(page)
+    const {chart, errors, writes} = await setup(page, true, gap)
+    await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Sell')
+    await clearMarkerDraws(page)
+    await chart.getByRole('button', {name: 'W', exact: true}).click()
+    await expect(chart).toContainText(`${gap === 'absent' ? 2 : 3} weeks loaded`)
+    await page.clock.runFor(200)
+    // Ignore a final daily repaint before the click, but retain every draw after W is selected.
+    expect((await markerDraws(page)).filter(row => row.timeframe === 'W')).toEqual([])
+    await expect(chart.getByLabel('Buy and Sell markers')).toContainText('No saved Buy/Sell on these candles')
+    await expect(chart.getByLabel('Chart data quality')).toContainText('1 missing session')
+    await chart.getByText('Saved recommendations (6 snapshots)', {exact: true}).click()
+    const table = chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'})
+    await expect(table.locator('tbody tr')).toHaveCount(2)
+    await expect(table.locator('tbody tr').first()).toContainText('Sep 15, 2026')
+    await expect(table.locator('tbody tr').last()).toContainText('Sep 17, 2026')
+    await expect(chart).not.toContainText('could not be drawn')
+    expect(errors).toEqual([])
+    expect(writes).toEqual([])
+  })
 }
 
 // Publication dating retains intraday changes, missing states and every original row without writes.

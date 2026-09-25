@@ -2645,10 +2645,8 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
 })
 
 
-// The drill-down chart. It draws to a canvas, so nothing inside it can be
-// asserted on; every number it shows is mirrored into text beneath it, and
-// that mirror is what this test reads. The timeframes offered are the two
-// the desk actually scores from, daily and weekly, and nothing else.
+// This drill-down test checks accessible readings; recorded-chart.spec.ts also
+// observes the real canvas. Only the desk's daily and weekly timeframes are offered.
 test('the ticker chart draws the desk’s own timeframes and mirrors its readings in text', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   // A retained quote must disclose its original time rather than claim to be live today.
@@ -2662,11 +2660,12 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
   await page.route('**/desk/history/AAPL', route => route.fulfill({json: {
     ticker: 'AAPL', horizon: 20, asof: '2026-09-08', backtest: null,
+    // Every expected marker needs an actual fixture candle; gap rejection is tested separately.
     rows: [
-      {date: '2026-09-02', grade: 'C', votes: -1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
-      {date: '2026-09-04', grade: 'B', votes: 1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
-      {date: '2026-09-08', grade: 'A', votes: 3.2, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: false},
-      {date: '2026-09-09', grade: 'B', votes: 1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: false},
+      {date: '2026-07-06', grade: 'C', votes: -1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
+      {date: '2026-07-07', grade: 'B', votes: 1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: true},
+      {date: '2026-07-08', grade: 'A', votes: 3.2, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: false},
+      {date: '2026-07-09', grade: 'B', votes: 1, stances: {}, exposure: 1, confidence: .5, forward: null, forward_residual: null, said: false},
     ],
     recommendations: {status: 'available', outcomes: {status: 'awaiting_daily_validation'}, invalid_archives: 0, older_records_not_shown: false, observations: []},
   }}))

@@ -25,10 +25,8 @@ import { SessionPrice } from './StockBoard'
 // size no analyst looks at, which is the disagreement this chart exists to
 // remove.
 //
-// The chart itself draws to a canvas, so nothing inside it is readable by a
-// test or a screen reader. Every number it shows is therefore mirrored into
-// the summary line and the table beneath it, which is what the browser
-// tests assert on and what a screen reader announces.
+// Canvas content is mirrored into text for screen readers. Browser tests also
+// observe actual drawing calls: a correct caption does not prove marker placement.
 
 type Timeframe = 'daily' | 'weekly'
 
@@ -121,6 +119,17 @@ const weekOf = (session: string) => {
   return day.toISOString().slice(0, 10)
 }
 
+// Require the same finite price evidence for candles and every attached marker.
+const drawableCandle = (bar: DeskChartBar) =>
+  [bar.open, bar.high, bar.low, bar.close].every(value => typeof value === 'number' && Number.isFinite(value))
+
+// Match the original day or its own week without letting the library choose a substitute candle.
+const markerCandle = (session: string, bars: DeskChartBar[], timeframe: Timeframe) => {
+  const candle = bars.find(bar => timeframe === 'daily' ? bar.date === session
+    : weekOf(bar.date) === weekOf(session) && bar.date >= session)
+  return candle && drawableCandle(candle) ? candle : undefined
+}
+
 // Display unknown setup evidence explicitly instead of inferring a neutral state.
 const setupLabel = (row: RecordedSetup) => row.entry_state
   ? row.entry_state[0].toUpperCase() + row.entry_state.slice(1) : 'Not recorded'
@@ -172,8 +181,7 @@ const recommendationEvents = (receipts: DeskPersonalReceipt[], ticker: string) =
 // Attach recommendations to their publication candle without inventing prices or backdating a signal.
 const recommendationMarkers = (events: ReturnType<typeof recommendationEvents>, bars: DeskChartBar[], timeframe: Timeframe) =>
   events.flatMap(event => {
-    const candle = bars.find(bar => timeframe === 'daily' ? bar.date === event.session
-      : weekOf(bar.date) === weekOf(event.session) && bar.date >= event.session)
+    const candle = markerCandle(event.session, bars, timeframe)
     return candle ? [{
       time: stamp(candle.date), position: event.action === 'Buy' ? 'belowBar' as const : 'aboveBar' as const,
       color: event.action === 'Buy' ? '#1a7f37' : '#b42318',
@@ -182,9 +190,9 @@ const recommendationMarkers = (events: ReturnType<typeof recommendationEvents>, 
     }] : []
   })
 
-// Mark grade changes, with stronger arrows only for recorded desk grades.
-const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
-  const rows = (history?.rows ?? []).filter((r) => r.date >= since && r.grade)
+// Mark grade changes only on available candles, retaining their source day within weekly groups.
+const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe) => {
+  const rows = (history?.rows ?? []).filter((r) => r.grade)
   const out: {
     time: UTCTimestamp
     position: 'aboveBar' | 'belowBar'
@@ -200,11 +208,13 @@ const gradeMarkers = (history: DeskHistory | undefined, since: string) => {
     const before = rows[i - 1].grade
     const now = rows[i].grade
     if (!before || !now || before === now) continue
+    const candle = markerCandle(rows[i].date, bars, timeframe)
+    if (!candle) continue
     const up = (rank[now] ?? -1) > (rank[before] ?? -1)
     // Crossing below A can inform an exit, but history does not prove a trade.
     const belowA = wanted(before) && !wanted(now)
     out.push({
-      time: stamp(rows[i].date),
+      time: stamp(candle.date),
       position: up ? 'belowBar' : 'aboveBar',
       color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
@@ -244,7 +254,9 @@ export const TickerChart = ({
   const [receiptBusy, setReceiptBusy] = useState(false)
   const receiptRequest = useRef(0)
   const [fullHistory, setFullHistory] = useState(false)
-  const [data, setData] = useState<DeskChart | null>(null)
+  const [receivedData, setData] = useState<DeskChart | null>(null)
+  // A timeframe or ticker switch must not reinterpret the previous response while the next loads.
+  const data = receivedData?.ticker === ticker && receivedData.timeframe === timeframe ? receivedData : null
   const [error, setError] = useState<string | null>(null)
   // The picture failed to draw but the readings below it are still good.
   const [drawFailed, setDrawFailed] = useState(false)
@@ -317,6 +329,7 @@ export const TickerChart = ({
   )
   const events = useMemo(() => recommendationEvents(receipts, ticker), [receipts, ticker])
   const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
+  const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -354,7 +367,7 @@ export const TickerChart = ({
       candles.setData(
         ordered(
           merged.bars.map((b) =>
-            b.open !== null && b.high !== null && b.low !== null && b.close !== null ? {
+            drawableCandle(b) ? {
               time: stamp(b.date),
               open: b.open as number,
               high: b.high as number,
@@ -400,7 +413,7 @@ export const TickerChart = ({
     }
 
     // Series points require uniqueness, but multiple distinct markers on one date must survive.
-    const markers = [...(personalHistory && showRecommendations ? actionMarkers : []), ...(showSignals ? gradeMarkers(history, merged.bars[0].date) : [])]
+    const markers = [...(personalHistory && showRecommendations ? actionMarkers : []), ...(showSignals ? changes : [])]
       .filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     if (markers.length) createSeriesMarkers(candles, markers)
     // Give recent candles enough horizontal space; all loaded bars remain available to pan and zoom.
@@ -422,7 +435,7 @@ export const TickerChart = ({
       chartRef.current = null
       drawn.length = 0
     }
-  }, [data, merged, timeframe, history, showSignals, showRecommendations, actionMarkers, fullHistory, personalHistory])
+  }, [data, merged, timeframe, showSignals, showRecommendations, actionMarkers, changes, fullHistory, personalHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
@@ -442,7 +455,6 @@ export const TickerChart = ({
     return { last, readings }
   }, [data, merged, timeframe])
 
-  const changes = useMemo(() => gradeMarkers(history, merged.bars[0]?.date ?? '0000'), [history, merged])
   const groups = useMemo(() => recordedGroups(history, merged.bars, timeframe), [history, merged, timeframe])
   const observations = history?.recommendations?.observations ?? []
 
@@ -535,6 +547,7 @@ export const TickerChart = ({
             <details>
               <summary className="cursor-pointer">Saved recommendations ({receipts.length} snapshots)</summary>
               <p>Personal recommendations at generation time, not fills. Repeated unchanged actions are grouped. Research setups are not Buy/Sell instructions.</p>
+              <p>Without a price candle, recommendations remain listed here but are not drawn.</p>
               <p>{receiptCursor ? 'Partial history. Load earlier snapshots to extend coverage.' : receiptError || receiptBusy ? 'History coverage unconfirmed.' : 'All available snapshots loaded.'} Older unsaved decisions cannot be reconstructed.</p>
               {!!receipts.length && <p>{recordedTime(receipts[receipts.length - 1].generated_at)} – {recordedTime(receipts[0].generated_at)}</p>}
               {receiptCursor && <button type="button" disabled={receiptBusy} onClick={() => void loadReceipts(receiptCursor)} className="text-[#0071e3]">{receiptBusy ? 'Loading…' : 'Load earlier recommendations'}</button>}
@@ -591,7 +604,7 @@ export const TickerChart = ({
 
           {showSignals && <p className="mt-2 text-[11px] text-[#6e6e73]">
             {changes.length === 0
-              ? `No grade change in the drawn window.`
+              ? `No grade change marked on these candles.`
               : `${changes.length} grade change${changes.length === 1 ? '' : 's'} marked: ${changes
                   .slice(-6)
                   .map((c) => c.text)
