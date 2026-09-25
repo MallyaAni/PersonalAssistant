@@ -52,6 +52,9 @@ No timeout, fixture, equality assertion or error check was relaxed.
 - Combined desk/price/history/action/research UI suite: **269 pass**, 188.077 s,
   zero skipped, flaky or unexpected results and no report errors. All 72
   six-category diagnostic attachments are clean.
+  Separate fault-injection audits retain their exactly expected simulated
+  console/network failures; no page error, unexpected request or forbidden
+  write appears in those audits.
 - Root independently runs execution evidence, grade timing and simple actions:
   **33 pass**, 28.432 s, zero skips/flaky/unexpected results; all 26 diagnostic
   attachments clean. Seven simple-action cases have no such attachment.
@@ -86,6 +89,8 @@ Accepted asset `index-DytNPHqD.js`, SHA256
 
 Agent evidence directory:
 `/private/tmp/anios-display-snapshot-wording.7uTeIm/`.
+Final `RECEIPT.md` SHA256
+`28de1da8f323a53d3df2a5a933920e3a0b405fff8b761107e95d9d8677e2df06`;
 `BASELINE_FAILURE.md` SHA256
 `ec13ae14079fc8927ee5a681bf321e720ce7141f88f2d9d5ac462185976b018e`;
 `candidate-broad-report.json` SHA256
@@ -99,6 +104,11 @@ Its `display-report.json` SHA256 is
 Both use cached headless Chromium, isolated network-none containers, read-only
 source and identified assets, with synthetic API interception. No macOS
 computer-access permission or system-setting change is needed.
+
+Published code checkpoint `f58067d335e9032f6f529f9527dbc16e71ae1ba3` follows
+Mac → Spark → GitHub from Spark. Both remotes and both checkouts were verified
+at that SHA; a clean pull reports current, and all frontend hashes still match.
+Only temporary test containers were removed; evidence and shared caches remain.
 
 ## Limits
 

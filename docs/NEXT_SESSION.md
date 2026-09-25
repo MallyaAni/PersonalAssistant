@@ -1,8 +1,15 @@
 # Next session
 
-## 2026-09-25 — Display snapshot wording and combined UI acceptance verified
+## 2026-09-25 — Display snapshot wording and combined UI acceptance published
 
-**VERIFIED candidate:** `SessionPrice` now limits absence to its display
+**VERIFIED source checkpoint:**
+`f58067d335e9032f6f529f9527dbc16e71ae1ba3`, published Mac → `git push spark main`
+→ GitHub from Spark. Mac HEAD/origin/main/spark/main and Spark HEAD/GitHub
+origin match; clean `git pull --rebase origin main` reports up to date. The
+entire frontend fingerprint still matches the tested tree. Remote scratch/
+is preserved; no deployment occurred.
+
+`SessionPrice` now limits absence to its display
 snapshot, explicitly separates execution checks and attributes specific
 recorded reasons. The exact old generic reason is replaced only in rendering.
 No validators, source fallback, timestamps, scheduling, API/backend/collector,
@@ -26,6 +33,13 @@ for source/bundle/receipt hashes and exact limits. Root receipt:
 `0db5f60102cc0597979200dbb66983ac2a6392971b2811eb79b908ebecf2fa01`.
 Accepted asset `index-DytNPHqD.js`, SHA256
 `8d078ca40efe634b83eece063b23a07237ece4f09c44609e7926ad45b7a07119`.
+Final agent receipt:
+`/private/tmp/anios-display-snapshot-wording.7uTeIm/RECEIPT.md`, SHA256
+`28de1da8f323a53d3df2a5a933920e3a0b405fff8b761107e95d9d8677e2df06`.
+It separately inventories intentional fault-injection diagnostics; exact
+expected console/network failures passed, with no page errors, unexpected
+requests or forbidden writes. Agent/root test containers are removed; all
+evidence, source snapshots, built assets and shared caches remain retained.
 **Diagram impact: NONE — snapshot-local wording and test-only scroll alignment.**
 
 The phone correction below is already published as
@@ -48,7 +62,8 @@ authenticated market-data probe allowances are exhausted. **Do not restart
 the pending backend.** Deployment remains Spark-only through `scripts/deploy.sh
 --wait-post` with full gates/postchecks and exact artifact identity. Preserve
 remote scratch/ and deploy data/secrets symlinks. Release-readiness target is
-20:34 UTC / 16:34 ET. Acceptable drawdown remains unanswered; a concise preference
+20:34 UTC / 16:34 ET; latest clock 19:53:46 UTC. Acceptable drawdown remains
+unanswered; a concise preference
 question was presented while the final regression ran. Do not relaunch completed
 observers or build another scaffold just to report activity.
 
