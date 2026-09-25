@@ -19,7 +19,9 @@ No producer arithmetic, journal schema or strategy change. See
 `/private/tmp/anios-phase-cli.v7Wcn3/final.xml` SHA256
 `d9ed77d91162b42efa18f6206c0a82dcb1df6ae0c6a73955e21aaa4d3d364e68`.
 
-**VERIFIED local UI acceptance:** Saved/Recalculated grade labels, exact grade
+**VERIFIED local UI checkpoint:**
+`5516bc8df5ba48db743c493e6fdb0c9cb9523d07`, published Mac → Spark → GitHub
+from Spark. Saved/Recalculated grade labels, exact grade
 transitions, saved-record counts and plain expired/missing quote wording.
 Root 202 combined browser cases pass (115.422 s), zero skips/flakes; two phone
 quote cases and one final grade-toggle repeat pass. Source semantics and
