@@ -242,8 +242,19 @@ unitless partitions. Keep the two legacy defect cases as strict xfails, not
 passes. See the [unit-source contract](research/fundamental-unit-sources-2026-09-25.md).
 The separate period evaluator also requires explicit monetary concepts, unit,
 horizon and ordered decision dates; retain full interval/component evidence,
-not only its ratio. Its three additional legacy failure cases stay xfailed.
+not only its ratio. Its mixed-currency and annual-coverage legacy failures stay
+xfailed. The same-end/different-start regression is now also an acceptance case
+for the connected current-consumer fix, not only the isolated research helper.
 See the [period/source acceptance](research/fundamental-period-sources-2026-09-25.md).
+
+For current margin interval matching, run
+`python -m pytest -c /dev/null backend/tests/test_fundamental_margin_intervals.py backend/tests/test_fundamental_features.py backend/tests/test_fundamentals_asof.py backend/tests/test_fundamental_period_sources.py backend/tests/test_trading_desk.py backend/tests/test_market_daily.py -q`.
+The stored-frame → desk analyst acceptance must show mismatched periods cannot
+contribute a scored leg. Browser acceptance is
+`frontend/e2e/fundamental-source-versions.spec.ts`, covering current/prior/legacy,
+unrecognized and absent source tags, cross-version records/curves and reload.
+Matching dates is not currency or annual-coverage validation. See the
+[scope and evidence](research/live-margin-period-checks-2026-09-25.md).
 
 The pinned price-only market study runs offline with the research dependencies
 (including `exchange-calendars`) and PyArrow. Keep the original95-column report

@@ -1,33 +1,23 @@
-"""Versioned, as-of fundamentals for the research path: every filing kept,
-the value a decision could see chosen at the decision's own date.
+"""Versioned filing inputs used by the current desk, learned inputs and shadow paths.
 
-The frozen production path (`edgar.parse_company_facts`, `levels_pit`)
-keeps one value per period, the earliest filed, and chooses each
-fundamental's XBRL tag once for the whole history, by which tag has the
-most quarters in the snapshot. Two consequences were shown on 2026-09-14:
-a restatement never reaches any later decision, and a later snapshot can
-change every historical value of a name by switching its tag. This
-module is the correction, kept separate so the production fingerprint
-is untouched:
+Stored Versions retain period starts/ends, filing dates, optional acceptance
+times and accessions. The downstream selectors use only versions available by
+each decision date, with the existing conservative daily availability rule and
+table-order tag ties. This is not proof of original historical publication.
 
-- Every filing of every period is preserved as a `Version` with the
-  filing date, the acceptance time where the source has one, and the
-  accession that identifies the document.
-- A version is *available* from the first session on which it was
-  public: the acceptance date when accepted before 16:00 New York, the
-  next calendar day when accepted later, and, where the source carries a
-  filing date but no time (the company-facts feed), the day after the
-  filing date. That is the conservative next-day rule, kept on purpose.
-- At each session the selector uses only versions available by then:
-  the latest-filed available version of each period (so a restatement
-  changes decisions from its availability on, never before), fourth
-  quarters and year-to-date differences derived from those, and the tag
-  chosen among the candidates by the quarters available *at that
-  session*, ties broken by the tag table's order.
+The parser still selects the largest unit group over the supplied snapshot and
+drops its unit before storage. These legacy partitions cannot establish currency
+compatibility; later source snapshots can change that initial unit selection.
+The separate unit-source helper does not silently repair or replace this loader.
 
-Outputs are the same level names as `levels_pit.trailing_levels`, so
-`opportunity_learning.ratios` turns them into the same feature columns.
-Nothing here is read by the nightly desk or the frozen shadow ledger.
+Quarter construction preserves the existing reported, YTD-difference and annual
+remainder arithmetic. `_quarter_intervals` exposes its retained full spans for
+the current margin adapter; `_quarters` keeps the original by-end projection and
+priority for tag selection, growth and other consumers. Matching retained spans
+does not validate the known gapped/overlapping annual-partition limitation.
+
+The level outputs retain the vocabulary consumed by `opportunity_learning.ratios`.
+The separate frozen `edgar`/`levels_pit` paths remain for their existing callers.
 """
 
 from __future__ import annotations
@@ -191,13 +181,10 @@ def _tag_order(name: str) -> list[str]:
     return [f"{tx}:{tag}" for tx, tag in edgar.INSTANT_TAGS.get(name, ())]
 
 
-# The quarters of one tag, from the versions available now: reported
-# quarters, year-to-date differences, and a fourth quarter from the year,
-# each keyed by its end and carrying the value the latest available filing
-# of its parts implies.
-def _quarters(
+# Preserve quarterly spans and original YTD priority without changing arithmetic.
+def _quarter_intervals(
     available: Mapping[tuple[date | None, date], Version], use_ytd: bool = True
-) -> dict[date, float]:
+) -> tuple[dict[tuple[date, date], float], set[tuple[date, date]]]:
     quarters: dict[tuple[date, date], float] = {}
     ytd: dict[tuple[date, date], float] = {}
     years: dict[tuple[date, date], float] = {}
@@ -212,6 +199,14 @@ def _quarters(
     derived = _ytd_differences(quarters, ytd)
     quarters.update(derived)
     quarters.update(_fourth_quarters(quarters, years))
+    return quarters, set(derived)
+
+
+# Keep the original by-end values and reported-before-YTD ordering for consumers.
+def _quarters(
+    available: Mapping[tuple[date | None, date], Version], use_ytd: bool = True
+) -> dict[date, float]:
+    quarters, derived = _quarter_intervals(available, use_ytd)
     # By end; a reported quarter beats a derived one on the same end.
     by_end: dict[date, float] = {}
     for (_start, end), value in sorted(

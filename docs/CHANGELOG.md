@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-25 — Exclude mismatched fiscal intervals from current margins
+
+The desk now withholds a margin when the latest shared period end has unequal
+starts or competing intervals. Compatible values, revenue growth, tag selection
+and legacy quarter projections are preserved. New results carry fundamental
+source `/2`; the dashboard distinguishes `/1`, frozen legacy, unknown and absent
+sources without relabelling old simulations or saved records.
+
+Root: 238 backend passes, one optional-Torch skip, four retained known-defect
+xfails; 214 browser passes, zero skips/flakes and 62 clean diagnostic records.
+The independent predecessor comparison includes 2,048 quarter projections.
+TypeScript/build, scoped lint, source review and 33 diagram/page checks pass.
+Currency and annual-coverage defects remain unresolved. No historical rerun,
+investment-performance claim or deployment. See the
+[connected correction and evidence](research/live-margin-period-checks-2026-09-25.md).
+
 ## 2026-09-25 — Explain chart grades and unavailable quotes in plain language
 
 Chart markers now say **Saved grade** or **Recalculated grade**, with the exact

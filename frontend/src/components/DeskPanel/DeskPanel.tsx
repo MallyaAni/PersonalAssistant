@@ -311,6 +311,31 @@ const EveningAnalysis = ({grade, session, written, fundamental, ticker}: {grade:
   </section>
 )
 
+// Describe only recognized stored source versions, keeping unknown provenance distinct from legacy inputs.
+const describeFundamentalSource = (source?: string) => {
+  const title = `Recorded fundamental source: ${source || 'not recorded'}.`
+  switch (source) {
+    case 'fundamentals-features/2':
+      return {title, current: true, known: true,
+        notice: 'Fundamentals: stored filing versions; margin period dates checked.',
+        simulationNote: ''}
+    case 'fundamentals-features/1':
+      return {title, current: false, known: true,
+        notice: 'Fundamentals: stored filing versions (earlier margin calculation).',
+        simulationNote: 'Uses the earlier stored-filing calculation, before margin period dates were checked. Not measured with the current margin calculation.'}
+    case 'edgar-frozen':
+      return {title, current: false, known: true,
+        notice: 'Fundamentals: frozen EDGAR snapshot (legacy).',
+        simulationNote: 'Uses the frozen EDGAR snapshot, not the current stored-filing calculation.'}
+    default:
+      return {title, current: false, known: false,
+        notice: source ? 'Fundamentals: unrecognized recorded data source.' : 'Fundamentals: data source not tagged.',
+        simulationNote: source
+          ? 'The recorded fundamental source is not recognized; its inputs cannot be verified.'
+          : 'The simulation did not record its fundamental data source; its inputs cannot be verified.'}
+  }
+}
+
 // One number to read at a glance: the paper account's worth, its return
 // since the desk started trading it, today's move, the rules' track record
 // against the market, how much of the book the desk is carrying, and when
@@ -340,16 +365,14 @@ const SummaryStrip = ({
   const backtest = curve?.backtest
   const stats = backtest?.stats
   const currentPolicy = backtest?.strategy_policy === (currentPolicyVersion ?? 'cash-bounded-breakout-rotation/3')
-  // A curve whose simulation read the frozen EDGAR snapshot - or a record
-  // written before the source was carried - is an older fundamental-input
-  // simulation even when the execution policy version matches. The source is
-  // separate from the policy, so a matching version number must not present a
-  // legacy-input curve as measured under corrected fundamentals.
-  const currentFundamentals = backtest?.fundamentals_source === 'fundamentals-features/1'
+  // A historical curve keeps its own source, independently of today's record or execution policy.
+  const simulationFundamentals = describeFundamentalSource(backtest?.fundamentals_source)
   const curveLabel = currentPolicy
-    ? currentFundamentals
+    ? simulationFundamentals.current
       ? 'Current policy simulation'
-      : 'Current policy, older fundamental inputs'
+      : simulationFundamentals.known
+        ? 'Current policy, older fundamental inputs'
+        : 'Current policy, fundamental inputs unverified'
     : 'Older policy simulation'
   const last = (arr?: number[]) => (arr && arr.length ? arr[arr.length - 1] : null)
   const rulesTotal = last(backtest?.rules)
@@ -408,6 +431,7 @@ const SummaryStrip = ({
       ? [
           {
             label: curveLabel,
+            title: `Recorded simulation fundamental source: ${backtest?.fundamentals_source || 'not recorded'}.`,
             value: (
               <>
                 <Trend value={rulesTotal * 100} />
@@ -422,8 +446,8 @@ const SummaryStrip = ({
                 </span>
               </>
             ),
-            note: !currentPolicy ? 'Predates the shared strategy rules; awaiting a new nightly simulation.' : !currentFundamentals
-              ? 'Current policy, but its history was simulated on the frozen EDGAR snapshot (legacy or unrecorded fundamentals); it is not measured on the corrected point-in-time data.'
+            note: !currentPolicy ? 'Predates the shared strategy rules; awaiting a new nightly simulation.' : !simulationFundamentals.current
+              ? simulationFundamentals.simulationNote
               : backtest?.funding_model === 'cash-at-fill-v1'
                 ? 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns'
                 : stats && stats.drawdown !== null
@@ -443,27 +467,20 @@ const SummaryStrip = ({
       note: 'share of the practice account in positions',
     },
   ]
-  const fundamentalSource = latest.provenance?.data?.fundamentals
-  // The same concise source wording as the label beside the board, so the
-  // at-a-glance strip never claims a source the decision was not read with.
-  const fundamentalNotice = !fundamentalSource
-    ? 'Fundamentals: data source not tagged.'
-    : fundamentalSource === 'fundamentals-features/1'
-      ? 'Fundamentals: stored point-in-time filing versions.'
-      : 'Fundamentals: frozen EDGAR snapshot (legacy).'
+  const fundamentalSource = describeFundamentalSource(latest.provenance?.data?.fundamentals)
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4" aria-label="The desk at a glance">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {cells.map((c) => (
           <div key={c.label} className="rounded-2xl border border-black/[0.08] bg-white p-3">
-            <p className="text-xs text-[#6e6e73]">{c.label}</p>
+            <p className="text-xs text-[#6e6e73]" title={c.title}>{c.label}</p>
             <p className="mt-0.5 truncate text-lg font-semibold text-[#1d1d1f]">{c.value}</p>
             <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
           </div>
         ))}
       </div>
-      <p className="mt-3 border-t border-black/[0.06] pt-2 text-xs text-[#6e6e73]">
-        {fundamentalNotice}
+      <p aria-label="Summary fundamental data source" title={fundamentalSource.title} className="mt-3 border-t border-black/[0.06] pt-2 text-xs text-[#6e6e73]">
+        {fundamentalSource.notice}
       </p>
     </section>
   )
@@ -1358,12 +1375,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
       </div>}
       {latest && <details aria-label="Strategy details" className="rounded-xl border border-black/[0.08] bg-white p-3 text-xs"><summary className="cursor-pointer font-medium">Strategy details</summary>
-      <p aria-label="Fundamental data source" className="border-b border-black/[0.06] px-3 py-1.5 text-[11px] text-[#6e6e73]">
-        {latest.provenance?.data?.fundamentals === 'fundamentals-features/1'
-          ? 'Fundamentals: stored point-in-time filing versions.'
-          : latest.provenance?.data?.fundamentals
-            ? 'Fundamentals: frozen EDGAR snapshot (legacy).'
-            : 'Fundamentals: data source not tagged.'}
+      <p aria-label="Fundamental data source" title={describeFundamentalSource(latest.provenance?.data?.fundamentals).title} className="border-b border-black/[0.06] px-3 py-1.5 text-[11px] text-[#6e6e73]">
+        {describeFundamentalSource(latest.provenance?.data?.fundamentals).notice}
       </p>
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
               {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'

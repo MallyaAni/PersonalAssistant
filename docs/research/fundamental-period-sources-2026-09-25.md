@@ -1,5 +1,10 @@
 # Source-bound financial periods — September 25, 2026
 
+Later same-day update: the [connected margin correction](live-margin-period-checks-2026-09-25.md)
+addresses the same-end/different-start defect in the current feature consumer.
+The isolated helper and the original evidence below are unchanged. Currency and
+legacy annual-coverage defects remain unresolved; this helper is still unwired.
+
 ## Failure and scope
 
 Unit preservation alone does not make a financial ratio compatible. The legacy

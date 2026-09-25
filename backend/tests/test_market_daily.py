@@ -242,10 +242,12 @@ def test_record_and_save(tmp_path):
     assert json.loads(path.read_text(encoding="utf-8"))["session"] == "2026-09-03"
 
 
-# The record names which data source the fundamental analyst read and carries
-# each cited figure's fiscal period end, so a corrected figure can be traced
-# to the quarter it refers to.
-def test_record_carries_the_fundamental_source_and_period_dates():
+# Persist each recorded source unchanged alongside its cited fiscal dates;
+# a new calculation version must not relabel an older saved decision.
+@pytest.mark.parametrize(
+    "source", ["fundamentals-features/1", "fundamentals-features/2"]
+)
+def test_record_carries_the_fundamental_source_and_period_dates(tmp_path, source):
     from backend.agents.trading.desk.opinions import Opinion
 
     t = 3
@@ -259,21 +261,25 @@ def test_record_carries_the_fundamental_source_and_period_dates():
         "fundamental",
         scores,
         evidence,
-        meta={"source": "fundamentals-features/1", "period_ends": period_ends},
+        meta={"source": source, "period_ends": period_ends},
     )
     report = replace(
         _report(),
-        fundamentals_source="fundamentals-features/1",
+        fundamentals_source=source,
         opinions={"fundamental": opinion},
     )
     data = market_daily.record(report)
-    assert data["provenance"]["data"]["fundamentals"] == "fundamentals-features/1"
+    assert data["provenance"]["data"]["fundamentals"] == source
     block = data["fundamental"]
-    assert block["source"] == "fundamentals-features/1"
+    assert block["source"] == source
     # SNDK has a finite score, so its cited period ends are dated.
     assert block["dates"]["SNDK"]["gross_margin"] == "2025-12-31"
     # IREN has no finite score: it is not dated.
     assert "IREN" not in block["dates"]
+    path = market_daily.save(tmp_path, data)
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert saved["provenance"]["data"]["fundamentals"] == source
+    assert saved["fundamental"] == block
 
 
 # A legacy comparison run is labelled with the frozen source, and a name with
@@ -288,12 +294,15 @@ def test_record_carries_the_legacy_source_when_the_desk_read_legacy():
 
 # The track-record curve names the fundamental data source its simulation's
 # analysts read, separate from the execution policy, so the page can tell a
-# corrected-input curve from an older one.
-def test_curve_block_carries_the_fundamental_data_source(monkeypatch):
+# period-checked curve from an older calculation without relabelling either.
+@pytest.mark.parametrize(
+    "source", ["fundamentals-features/1", "fundamentals-features/2"]
+)
+def test_curve_block_carries_the_fundamental_data_source(monkeypatch, source):
     from backend.agents.trading.desk import scorecard
     from backend.agents.trading.desk import simulate as sim_module
 
-    report = replace(_report(), fundamentals_source="fundamentals-features/1")
+    report = replace(_report(), fundamentals_source=source)
     sim = sim_module.SimResult(
         dates=report.panel.dates,
         returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
@@ -310,7 +319,7 @@ def test_curve_block_carries_the_fundamental_data_source(monkeypatch):
     )
     block = market_daily.curve_block(report, None)
     assert block is not None
-    assert block["fundamentals_source"] == "fundamentals-features/1"
+    assert block["fundamentals_source"] == source
 
 
 # A record is the day's decision and must not be silently replaced: saving

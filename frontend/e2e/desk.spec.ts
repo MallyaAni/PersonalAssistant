@@ -1469,40 +1469,34 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// The fundamental data source is named on the one rendered table (StockBoard,
-// aria-label "Ranked stocks and cash") and in the at-a-glance summary, and a
-// curve whose simulation read the frozen EDGAR snapshot is distinguished even
-// when the execution policy version matches: the source travels beside the
-// policy, so a matching version must not present legacy input as corrected.
+// Current margin-date inputs are named in strategy details and the summary without relabelling legacy curves.
 test('names the fundamental data source and flags older fundamental-input curves', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  latest.provenance = { data: { fundamentals: 'fundamentals-features/1' } }
+  latest.provenance = { data: { fundamentals: 'fundamentals-features/2' } }
   latest.curve = {
     ...latest.curve!,
     backtest: {
       ...latest.curve!.backtest,
       strategy_policy: 'cash-bounded-breakout-rotation/3',
-      fundamentals_source: 'fundamentals-features/1',
+      fundamentals_source: 'fundamentals-features/2',
     },
   }
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
   await page.goto('/?deskDetails=1#desk')
 
-  // The desk renders a single table, StockBoard. Its source label sits
-  // immediately above it and reads the corrected source, visible without
-  // opening anything.
+  // The single stock board keeps source provenance in the strategy disclosure.
   const board = page.getByLabel('Ranked stocks and cash')
   await expect(board).toBeVisible()
   await strategyDetails(page)
-  await expect(page.getByLabel('Fundamental data source')).toContainText('stored point-in-time filing versions')
+  await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('stored filing versions; margin period dates checked')
 
   // The same source wording in the at-a-glance summary, and a curve whose
   // policy and fundamentals are both current: the current-policy simulation.
   await page.locator('summary', { hasText: 'Practice account' }).click()
   const glance = page.getByLabel('The desk at a glance')
-  await expect(glance).toContainText('stored point-in-time filing versions')
+  await expect(glance).toContainText('stored filing versions; margin period dates checked')
   await expect(glance.getByText('Current policy simulation', { exact: true })).toBeVisible()
 
   // Same execution policy version, a record whose analyst read the frozen
@@ -1514,7 +1508,7 @@ test('names the fundamental data source and flags older fundamental-input curves
   await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
   await page.reload()
   await strategyDetails(page)
-  await expect(page.getByLabel('Fundamental data source')).toContainText('frozen EDGAR snapshot')
+  await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('frozen EDGAR snapshot')
   await page.locator('summary', { hasText: 'Practice account' }).click()
   const glance2 = page.getByLabel('The desk at a glance')
   await expect(glance2.getByText('Current policy, older fundamental inputs', { exact: true })).toBeVisible()
@@ -2283,7 +2277,7 @@ test('cash-limited performance is distinguished from legacy simulated borrowing'
   const latest = deskRecord()
   const bt = latest.curve!.backtest!
   bt.strategy_policy = 'cash-bounded-breakout-rotation/3'
-  bt.fundamentals_source = 'fundamentals-features/1'
+  bt.fundamentals_source = 'fundamentals-features/2'
   bt.funding_model = 'cash-at-fill-v1'
   await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({latest, changes: null}),

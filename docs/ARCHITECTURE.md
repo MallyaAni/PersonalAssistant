@@ -726,6 +726,14 @@ latest-compatible-period ratio. Decision-facing exclusions use only eligible
 evidence. This remains an unwired research calculation, not a live feature
 migration; see the [period contract](research/fundamental-period-sources-2026-09-25.md).
 
+The current `fundamental_features` consumer separately retains stored start/end
+dates for margin matching. Its `fundamentals-features/2` source withholds a margin
+when the latest shared end has unequal starts or competing intervals; the legacy
+quarter-end projection and revenue-growth calculations remain unchanged. This
+does not recover missing currency dimensions or validate legacy annual-quarter
+coverage. Earlier `/1` records keep their original identity. See the
+[connected correction](research/live-margin-period-checks-2026-09-25.md).
+
 ### Adding one
 
 Two steps, deliberately. A folder with a card, and an entry in the tuple in

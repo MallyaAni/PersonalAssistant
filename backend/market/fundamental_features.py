@@ -1,4 +1,4 @@
-"""Quarterly fundamental features, point-in-time, from stored versions.
+"""Current desk quarterly features from date-selected, unitless filing versions.
 
 The frozen feature path (`edgar.edgar_features`) chooses one tag per name
 over the whole snapshot, keeps the earliest-filed value of each period, and
@@ -7,13 +7,12 @@ turns any missing ratio into a zero: `np.where(np.isfinite(series), series,
 reads a row whose `has_fundamentals` flag is set — set from revenue being
 known — and ranks those fabricated zeros as valid inputs.
 
-This module is the research-only correction, built on the as-of versions in
-`fundamentals_asof` and otherwise standalone:
+This module supplies the current desk's fundamental analyst from the as-of
+versions in `fundamentals_asof`:
 
-- Every feature is computed from the versions available at each session,
-  never from a later filing or a future period; a restatement changes a
-  feature only from its availability on, and a later filing cannot change
-  any earlier feature, including the tag-selection decision.
+- Each session uses versions whose calculated availability is no later than
+  that session. Within the supplied versions, a restatement changes features
+  and tag selection only from that calculated availability onward.
 - Each name's quarterly values come from the tag the as-of selector would
   choose with the periods available then (deterministic table-order ties),
   with quarters derived from six/nine-month spans and from the year exactly
@@ -21,18 +20,22 @@ This module is the research-only correction, built on the as-of versions in
 - Missing values stay NaN. No zero is fabricated: a genuinely zero growth
   or margin is a real zero, while a missing lagged quarter or a zero
   denominator is NaN.
-- Ratios divide values of the same fiscal period: numerator and denominator
-  are taken from the latest quarter end where both are known, so an old
-  numerator is never divided by a newer quarter of revenue.
+- Margins require exactly one retained interval per operand at the latest
+  common quarter end, with identical starts. Mismatched or ambiguous intervals
+  stay missing; they do not revive an older matching ratio. A newer end in only
+  one operand still permits the older shared end, as before.
 - Every economic feature's reference period end is exposed as a separate
   datetime64[D] tensor (`period_ends`), NaT where the feature is unknown, so
   a consumer can see that a margin still sits on an older quarter while
   revenue growth has moved on. Filing staleness is a separate, filing
   activity counter, not a freshness flag for each feature.
 
-Nothing here is read by the nightly desk or the frozen shadow ledger. This
-is a research input only and does not by itself establish a profitable
-strategy or promote any model.
+Growth and tag selection retain the original by-end quarter projection.
+The stored parser has discarded units, so interval matching cannot establish
+currency compatibility. Existing YTD/annual derivation arithmetic is unchanged,
+including its known annual-partition limitation; the retained intervals are not
+independently audited economic quarters. Historical source authenticity and
+investment quality are not established by this calculation.
 """
 
 from __future__ import annotations
@@ -145,6 +148,7 @@ def _ticker_features(
     state: dict[str, dict[str, dict[tuple[date | None, date], fa.Version]]] = {}
     # quarters_by_name[name] -> the chosen tag's per-end quarterly values.
     quarters_by_name: dict[str, dict[date, float]] = {}
+    intervals_by_name: dict[str, dict[tuple[date, date], float]] = {}
     pointer = 0
     last_update = -1
     calendar = dates.astype("datetime64[D]").astype(object)
@@ -162,7 +166,7 @@ def _ticker_features(
         if dirty:
             last_update = t
             for name in dirty:
-                quarters_by_name[name] = _chosen_quarters(
+                quarters_by_name[name], intervals_by_name[name] = _chosen_quarters(
                     state[name], name, name in ytd_names
                 )
         if pointer == 0:
@@ -170,7 +174,7 @@ def _ticker_features(
         available[t] = True
         if last_update >= 0:
             staleness[t] = float(t - last_update)
-        row, ends = _feature_row(quarters_by_name)
+        row, ends = _feature_row(quarters_by_name, intervals_by_name)
         values[t, :] = row
         for k, end in enumerate(ends):
             if end is not None:
@@ -178,25 +182,23 @@ def _ticker_features(
     return _TickerSeries(values, period_ends, available, staleness)
 
 
-# The chosen tag's per-end quarterly values, or {} when no tag qualifies.
-# Reuses the as-of selector so the tie-break order and the
-# most-periods-available rule are the documented ones.
+# Keep the unchanged chosen tag's growth projection beside its uncollapsed margin spans.
 def _chosen_quarters(
     by_tag: Mapping[str, Mapping[tuple[date | None, date], fa.Version]],
     name: str,
     use_ytd: bool,
-) -> dict[date, float]:
+) -> tuple[dict[date, float], dict[tuple[date, date], float]]:
     chosen = fa._select(name, by_tag, use_ytd)[1]
     if chosen is None:
-        return {}
-    return fa._quarters(by_tag[chosen], use_ytd)
+        return {}, {}
+    spans = by_tag[chosen]
+    return fa._quarters(spans, use_ytd), fa._quarter_intervals(spans, use_ytd)[0]
 
 
-# One session's feature row and each feature's reference period end, from the
-# per-name quarterly values available by then; every piece that is not known
-# stays NaN (and its period end NaT), never a fabricated zero.
+# Keep growth on its old by-end series while margins use full retained intervals.
 def _feature_row(
     quarters_by_name: Mapping[str, Mapping[date, float]],
+    intervals_by_name: Mapping[str, Mapping[tuple[date, date], float]],
 ) -> tuple[np.ndarray, list[date | None]]:
     out = np.full(len(FEATURE_NAMES), np.nan)
     ends: list[date | None] = [None] * len(FEATURE_NAMES)
@@ -222,7 +224,7 @@ def _feature_row(
     for feature, numerator, denominator in _MARGINS:
         index = FEATURE_NAMES.index(feature)
         out[index], ends[index] = _aligned_ratio(
-            quarters_by_name, numerator, denominator
+            intervals_by_name, numerator, denominator
         )
     return out, ends
 
@@ -266,26 +268,26 @@ def _ratio(a: float, b: float) -> float:
     return float(value) if np.isfinite(value) else float("nan")
 
 
-# numerator / denominator on the latest quarter end where both are known, so
-# the ratio always compares one fiscal period and never an old numerator
-# against a newer quarter of revenue; returns (value, that end) with the end
-# None when there is no common end or the ratio is not finite.
+# Require identical full spans at the latest common end, without older fallback.
 def _aligned_ratio(
-    quarters_by_name: Mapping[str, Mapping[date, float]],
+    intervals_by_name: Mapping[str, Mapping[tuple[date, date], float]],
     numerator: str,
     denominator: str,
 ) -> tuple[float, date | None]:
-    num = quarters_by_name.get(numerator)
-    den = quarters_by_name.get(denominator)
+    num = intervals_by_name.get(numerator)
+    den = intervals_by_name.get(denominator)
     if not num or not den:
         return float("nan"), None
-    end = None
-    for candidate in num:
-        if candidate in den and (end is None or candidate > end):
-            end = candidate
-    if end is None:
+    common_ends = {end for _, end in num} & {end for _, end in den}
+    if not common_ends:
         return float("nan"), None
-    value = _ratio(num[end], den[end])
+    end = max(common_ends)
+    num_spans = [span for span in num if span[1] == end]
+    den_spans = [span for span in den if span[1] == end]
+    if len(num_spans) != 1 or len(den_spans) != 1 or num_spans[0] != den_spans[0]:
+        return float("nan"), None
+    span = num_spans[0]
+    value = _ratio(num[span], den[span])
     if not np.isfinite(value):
         return float("nan"), None
     return value, end
@@ -300,7 +302,7 @@ def features(
     """Return a `FundamentalFeatures` aligned to the panel, NaN where unknown.
 
     One column per panel ticker, one value per session, NaN wherever the
-    feature is not computable from the versions public by that session, with
+    feature is not computable from versions available by the calculated cutoff, with
     each feature's reference period end in `period_ends` (NaT where the
     feature is NaN). A ticker with no versions on file stays entirely
     missing rather than vanishing or reading as a fabricated zero.

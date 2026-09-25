@@ -12,8 +12,10 @@ known: a real correctness defect, kept only for explicit side-by-side
 comparison and for the frozen callers. `opine_corrected` reads the corrected
 feature adapter (`market/fundamental_features`), built from the stored
 as-of filing versions, where a missing ratio stays NaN and a genuine zero
-stays a valid zero. The desk runs the corrected path; `opine` remains for
-comparisons.
+stays a valid zero. Version 2 also requires margins to match retained full
+intervals without hiding ambiguity at the latest common end. Growth and the
+scoring blend are unchanged; legacy currency and annual-partition limitations
+remain. The desk runs the corrected path; `opine` remains for comparisons.
 """
 
 import numpy as np
@@ -50,7 +52,7 @@ CITED_CORRECTED = (
 # DeskReport and the nightly record so a figure is never presented under a
 # source it was not measured with. These identify data; paper.POLICY_VERSION
 # identifies execution, while report.inputs names analyst augmentations.
-CORRECTED_SOURCE = "fundamentals-features/1"
+CORRECTED_SOURCE = "fundamentals-features/2"
 LEGACY_SOURCE = "edgar-frozen"
 
 

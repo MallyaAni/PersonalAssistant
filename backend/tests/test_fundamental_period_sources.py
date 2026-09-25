@@ -1,9 +1,11 @@
-"""Exact-period monetary ratios without changing the legacy feature path.
+"""Exact-period monetary ratios and the remaining unitless-path limitations.
 
 The legacy full-period mismatch was reproduced on 2026-09-25 at 6c035a1:
 USD revenue 100 for Jan 1–Mar 31 and income 10 for Dec 22–Mar 31 produce
 net_margin=0.1 after UnitSource.parse -> project -> features(real Panel).
-The strict xfail preserves that unfixed consumer defect.
+The current feature adapter now rejects that mismatch; its original failing
+evidence is retained with the interval-alignment correction. Currency and annual
+partition defects remain strict expected failures in the unitless path.
 """
 
 import hashlib
@@ -73,14 +75,7 @@ def _panel():
     )
 
 
-# Preserve the public-path failure: equal period ends do not mean equal periods.
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Reproduced 2026-09-25 at 6c035a1: UnitSource->project->features returns "
-        "0.1 for Dec22-Mar31 income / Jan1-Mar31 revenue; full starts differ"
-    ),
-)
+# Pin the corrected public path: equal period ends do not mean equal full intervals.
 def test_legacy_same_end_different_start_does_not_become_a_margin():
     source = _source(
         _payload(
