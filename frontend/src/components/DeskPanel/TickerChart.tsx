@@ -469,7 +469,7 @@ export const TickerChart = ({
                   hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
                 }).format(new Date(data.quote_bar!))}.`
               : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
-            {data.sessions} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
+            {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>
           {/* A mark nobody can read is decoration. Both of the desk's rules are
               on the price now, so the legend has to name both. */}

@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-09-25 — Final weekly caption correction
+
+Live manual verification caught a remaining caption defect: weekly mode labelled
+the 260-daily-session input window as 260 weeks. An existing browser acceptance
+now reproduces it with three weekly candles and a 260-session source window.
+The caption now counts the actual merged chart candles. Targeted production
+build/browser check: `/tmp/codex-weekly-count-after-20260925.log`; before-fix
+failure `/tmp/codex-weekly-count-before-20260925.log`. Frontend-only guarded
+release and final live count verification pending; do not rerun backend/model
+gates when deploy.sh selects its normal frontend-only path.
+
+## 2026-09-25 — Trader workflow release verified live
+
+VERIFIED live source **4909b98508cebb45830bd3e9c27bb27bcb75f82f**, on Spark main
+and origin/main. Normal scripts/deploy.sh exited 0: **5,869 unit passed, 31 skips,
+1 xfail; 100/100 live-model gate passed; post-deploy cheap checks passed**. Source
+build and all 116 compiled-preview browser cases passed; **15 affected browser
+cases passed against deployed 8080**. Exact backend hashes and gateway bytes
+match; model container IDs/start times unchanged. Public browser serves
+`index-BJIY7D10.js` and has no console errors/warnings.
+
+Actual logged-in acceptance: visible Close grades and Grade → Action → Size
+ranking; AAOI chart defaults to original research setup markers, with six marked
+sessions and 138 original readings. Details retain publication/reference times,
+original bar price and grade. Daily/weekly and Recent/Full history controls are
+available. This improves visual inspection, not evidence of strategy superiority.
+
+The observed history failure is fixed in production. Before release, latest saved
+receipts used September 23's source. After normal browser loading, the current
+September 24 source produced an acknowledged receipt containing all 94 decisions;
+read-only HTTP retrieval confirmed strict JSON and preserved source/payload
+hashes. No manual capture call, account input, position or order was submitted.
+Historical gaps are not retroactively reconstructed. Strategy remains unchanged.
+
+Evidence: `/tmp/codex-trader-ranking-history-release-20260925.log`,
+`/tmp/codex-trader-deployed-browser-20260925.log`,
+`/tmp/codex-trader-artifact-proof-20260925.json`,
+`/tmp/codex-trader-history-{before,after}-20260925.json`.
+Root tree is committed; shared main retains only unrelated untracked scratch/.
+No new workers or deployment required for this documentation-only handoff.
+
 ## 2026-09-25 — Trader ranking and original chart evidence
 
 Objective: restore visible grades and Grade → Buy/Sell/Hold → executable Size

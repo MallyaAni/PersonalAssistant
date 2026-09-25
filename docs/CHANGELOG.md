@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-25 — Count actual chart candles
+
+The weekly chart caption counts its aggregated candles, rather than labelling
+the daily source-window size as weeks. A browser case reproduces the mismatch
+with three weekly candles sourced from 260 sessions. No indicator or signal
+calculation changed.
+
 ## 2026-09-25 — Restore trader ranking and original chart readings
 
 The stock board displays grades with Intraday/Close provenance and defaults to
@@ -14,7 +21,12 @@ hashing its source record; advice receipts remain strict JSON. A source NaN in Q
 had blocked receipt creation for the whole desk. Existing finite-source hashes
 and saved history are preserved. The adopted trading policy is unchanged.
 Validation: production build, 116 browser cases on the compiled preview, and
-53 relevant backend tests passed. Public release verification follows deployment.
+53 relevant backend tests passed. Release 4909b98 passed 5,869 unit tests and
+100/100 live-model gate cases; 15 affected browser cases passed against the
+deployed bundle. The logged-in public browser shows the restored grades and
+original chart readings; read-only retrieval confirms its new acknowledged
+94-decision receipt persisted. Exact artifact matches and model services are
+unchanged. No historical missing advice was reconstructed.
 
 ## 2026-09-24 — Match stock reasons and incomplete weekly captions
 

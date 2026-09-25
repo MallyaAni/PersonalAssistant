@@ -31,7 +31,7 @@ async function setup(page: Page) {
     else if (path.endsWith('/chart/AAPL')) {
       const weekly = new URL(request.url()).searchParams.get('timeframe') === 'weekly'
       const dates = weekly ? ['2026-09-11', '2026-09-18', '2026-09-24'] : ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-24']
-      json = {ticker: 'AAPL', timeframe: weekly ? 'weekly' : 'daily', adjusted: true, basis: 'adjusted prices', sessions: dates.length, bars: dates.map(date => ({date, open: 100, high: Math.max(120, last), low: 90, close: last, volume: 100})), overlays: {}, levels: {}, entries: weekly ? [] : ['2026-09-15'], data_status: 'complete'}
+      json = {ticker: 'AAPL', timeframe: weekly ? 'weekly' : 'daily', adjusted: true, basis: 'adjusted prices', sessions: weekly ? 260 : dates.length, bars: dates.map(date => ({date, open: 100, high: Math.max(120, last), low: 90, close: last, volume: 100})), overlays: {}, levels: {}, entries: weekly ? [] : ['2026-09-15'], data_status: 'complete'}
     } else if (path.endsWith('/entries') || path.endsWith('/intraday')) json = {rows: [], top_buys: [], changed: []}
     else if (path.endsWith('/paper')) json = {reason: 'unavailable'}
     await route.fulfill({json})
@@ -48,6 +48,7 @@ test('recorded setups preserve original publication and all source readings', as
   const {chart, errors, writes} = await setup(page)
   await expect(chart.getByRole('checkbox', {name: 'Recorded setups · research'})).toBeChecked()
   await expect(chart.getByRole('button', {name: 'Recent', exact: true})).toHaveAttribute('aria-pressed', 'true')
+  await expect(chart).toContainText('6 sessions loaded; pan or zoom for history.')
   await chart.getByRole('button', {name: 'Full history', exact: true}).click()
   await expect(chart.getByRole('button', {name: 'Full history', exact: true})).toHaveAttribute('aria-pressed', 'true')
   await chart.getByRole('button', {name: 'Recent', exact: true}).click()
@@ -86,6 +87,9 @@ test('weekly recorded setups aggregate without changing original evidence', asyn
   await chart.getByRole('button', {name: 'W', exact: true}).click()
   await expect(chart.getByLabel('Recorded setup markers')).toContainText('2026-09-18: Dip→Wait→Not recorded · 3')
   await expect(chart.getByLabel('Recorded setup markers')).not.toContainText('2026-09-11:')
+  // The daily source-window count is not the number of aggregated weekly candles.
+  await expect(chart).toContainText('3 weeks loaded; pan or zoom for history.')
+  await expect(chart).not.toContainText('260 weeks')
   await chart.getByText('Original readings (4)', {exact: true}).click()
   await expect(chart.getByRole('table', {name: 'Original chart setup readings'}).locator('tbody tr')).toHaveCount(4)
   await expect(chart).not.toContainText('The chart could not be drawn')
