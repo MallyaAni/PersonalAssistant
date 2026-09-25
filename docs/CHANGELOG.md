@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-25 — Preserve technical evidence when optional options data fails
+
+Option strikes now use the raw stock-price basis without changing adjusted
+technical inputs. Malformed/unreadable stored chains return a per-symbol
+unavailable marker instead of erasing otherwise healthy technical evidence.
+The frontend models that marker explicitly at both wall displays. Existing
+wall wording, freshness and the unused gamma proxy remain separate work.
+
+Acceptance: **147 backend tests and 138 browser tests passed**, zero skips;
+16 pre-existing backend warnings. Actual synthetic Parquet → balancer → saved
+snapshot → authenticated ASGI readback is verified, with unchanged saved bytes.
+The original source fails80 of98 new cases; all original failures and harness
+errors remain retained. Independent60-case review, TypeScript/build, scoped
+Ruff/format and33 unchanged diagram/page checks pass. This is not deployed,
+provider-data or strategy-performance acceptance. No accounts, orders, models,
+collector settings or historical studies changed. See the
+[options isolation contract](research/options-diagnostic-isolation-2026-09-25.md).
+
 ## 2026-09-25 — Compare earnings forecasts on observed common cohorts
 
 Research-only reporting now distinguishes genuine zero growth from unsupported

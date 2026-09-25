@@ -22,6 +22,8 @@ the same run is the comparison the page makes. One run per candle,
 cached.
 """
 
+import math
+from collections.abc import Mapping
 from dataclasses import replace
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
@@ -245,26 +247,82 @@ def value_now(store, quotes: dict, today: date | None = None) -> dict:
     return out
 
 
-# The option walls read from the newest stored chain for `symbol`, at
-# `price`, as distances from it. None when the store has no chain or the
-# price is absent, so a missing options partition costs the read nothing.
+# Reject malformed optional chain data before it can supply displayed levels.
+def _checked_option_rows(columns, metadata) -> list[options.ChainRow]:
+    if not isinstance(columns, Mapping) or not isinstance(metadata, Mapping):
+        raise ValueError("options columns and metadata must be mappings")
+    required = [columns[name] for name in options.frame([])]
+    if (
+        any(not isinstance(values, list) for values in required)
+        or len({len(values) for values in required}) != 1
+    ):
+        raise ValueError("options columns must be equal-length lists")
+    for name in ("open_interest", "volume"):
+        for value in columns[name]:
+            if isinstance(value, (bool, np.bool_)) or value != int(value) or value < 0:
+                raise ValueError("options counts must be nonnegative integers")
+    for name in ("strike", "implied_volatility", "gamma"):
+        if any(isinstance(value, (bool, np.bool_)) for value in columns[name]):
+            raise ValueError("options numeric values must not be booleans")
+    rows = options.rows_from_frame(columns)
+    for row in rows:
+        if (
+            row.kind not in ("call", "put")
+            or not all(
+                math.isfinite(value)
+                for value in (row.strike, row.implied_volatility, row.gamma)
+            )
+            or row.strike <= 0
+            or row.implied_volatility < 0
+        ):
+            raise ValueError("options rows contain unsupported scalar values")
+    return rows
+
+
+# Require a finite positive numeric raw price without coercing missingness to zero.
+def _usable_option_price(price) -> bool:
+    try:
+        return (
+            not isinstance(price, (bool, np.bool_))
+            and math.isfinite(price)
+            and price > 0
+        )
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
+# Read walls at a raw price; isolate optional stored-data failures to this symbol.
 def _walls_for(store, symbol: str, price: float | None, today: date) -> dict | None:
-    """Return the option walls near `price`, or None when none are stored."""
-    if store is None or not price or price <= 0:
+    """Return levels, an unavailable marker, or None for no chain/usable price."""
+    if store is None or price is None or not _usable_option_price(price):
         return None
-    frame = store.read_frame(options.KIND, symbol, today)
+    from pyarrow import ArrowInvalid, ArrowKeyError, ArrowTypeError
+
+    price = float(price)
+    unavailable = {"status": "unavailable", "reason": "options_data_unavailable"}
+    try:
+        frame = store.read_frame(options.KIND, symbol, today)
+    except (OSError, UnicodeError, ArrowInvalid, ArrowTypeError, ArrowKeyError):
+        return unavailable
     if frame is None:
         return None
-    columns, meta = frame
-    rows = options.rows_from_frame(columns)
+    try:
+        columns, meta = frame
+        rows = _checked_option_rows(columns, meta)
+    except (KeyError, IndexError, TypeError, ValueError, OverflowError):
+        return unavailable
     if not rows:
         return None
-    w = options.walls(rows, price, today)
+    try:
+        w = options.walls(rows, price, today)
+    except OverflowError:
+        return unavailable
+    if not math.isfinite(w.net_gamma):
+        return unavailable
     out: dict = {
         "expiry": w.expiry.isoformat() if w.expiry else None,
         "through": w.through.isoformat() if w.through else None,
-        # When the chain was fetched: open interest changes once a day,
-        # overnight, so the reader needs the date it is from, not the bar.
+        # Collection time is not the provider's open-interest effective time.
         "fetched_at": meta.get("source_time"),
         "put_wall": w.put_wall,
         "call_wall": w.call_wall,
@@ -320,11 +378,8 @@ def technical_detail(store, quotes: dict, today: date | None = None) -> dict:
         candle = _today_candle(candles, panel, last, j)
         if candle is not None:
             entry["candle"] = candle
-        price = (
-            float(panel.adj_close[-1, j])
-            if np.isfinite(panel.adj_close[-1, j])
-            else None
-        )
+        # Option strikes are raw prices; adjusted technical features stay unchanged.
+        price = float(panel.close[-1, j]) if np.isfinite(panel.close[-1, j]) else None
         walls = _walls_for(store, symbol, price, today)
         if walls is not None:
             entry["walls"] = walls

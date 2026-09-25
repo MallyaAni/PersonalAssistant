@@ -2271,9 +2271,10 @@ const triggers = (stances: Record<string, number>) =>
     .map(([k, letter]) => `${letter}${STANCE_MARK[stances[k] ?? 0]}`)
     .join(' ')
 
-// The option walls read off the stored chain at the live price, with the
-// put and call walls as distances from it (negative below, positive above).
+// Available option walls carry stored-chain levels and signed price distances;
+// an unavailable marker carries no inferred levels or measurements.
 type DeskWalls = {
+  status?: undefined
   expiry: string | null
   through?: string | null
   fetched_at?: string | null
@@ -2284,6 +2285,9 @@ type DeskWalls = {
   net_gamma: number
   put_wall_distance?: number
   call_wall_distance?: number
+} | {
+  status: 'unavailable'
+  reason: 'options_data_unavailable'
 }
 
 // The live technical read for one name, split by how far ahead each fact
@@ -2406,7 +2410,7 @@ const LiveTechnical = ({
           <span className="font-medium">{(tech * 100).toFixed(0)}</span> out of 100. Higher means a higher technical score among covered names with data.
         </p>
       )}
-      {detail?.walls && (detail.walls.put_wall != null || detail.walls.call_wall != null) && (
+      {detail?.walls && detail.walls.status === undefined && (detail.walls.put_wall != null || detail.walls.call_wall != null) && (
         <p className="mt-2 text-xs text-[#6e6e73]">
           Option walls{detail.walls.expiry ? ` (expiries ${detail.walls.expiry.slice(5)}${detail.walls.through && detail.walls.through !== detail.walls.expiry ? ` to ${detail.walls.through.slice(5)}` : ''}` : ''}{detail.walls.fetched_at ? `${detail.walls.expiry ? ', ' : ' ('}open interest fetched ${marketTime(detail.walls.fetched_at)} ET)` : detail.walls.expiry ? ')' : ''}:{' '}
           {detail.walls.put_wall != null ? (
@@ -2762,7 +2766,7 @@ const NameDetail = ({
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
             {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
-            {walls && (walls.put_wall != null || walls.call_wall != null) ? ` · option walls ${walls.put_wall != null ? priceMoney(walls.put_wall) : '—'} / ${walls.call_wall != null ? priceMoney(walls.call_wall) : '—'}` : ''}
+            {walls && walls.status === undefined && (walls.put_wall != null || walls.call_wall != null) ? ` · option walls ${walls.put_wall != null ? priceMoney(walls.put_wall) : '—'} / ${walls.call_wall != null ? priceMoney(walls.call_wall) : '—'}` : ''}
           </p>
         </section>
         {/* Recorded reasons retain their original scope even when a newer grade or price is available. */}
