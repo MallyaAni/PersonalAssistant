@@ -10,8 +10,13 @@ The helpers accept an optional extraction-partition cutoff, propagated by the
 desk through prices, records, tone and valuation. None retains latest-data
 behavior. Training now retains the first filed label and bounds each annual
 fit by its publication date, with the minimum sample count applied per fit.
-This does not establish historical membership or prove every feature's
-within-vintage availability. The older
+The feature row now precedes both associated SEC acceptance and the start of
+the target's date-only first filing. Date-only fundamentals and tone become
+usable only on a later session. Reviewed exchange closes bound timestamps;
+unknown calendar years or missing required sessions do not form training rows.
+This changes training eligibility, not just metadata. It does not establish
+historical membership, the first public press-release time, correct quarter-to-
+release association, or all remaining within-vintage source assumptions. The older
 study description/results below are historical development evidence, not
 qualified performance or proof that those unresolved boundaries are correct.
 The gap was subsequently promoted on 2026-09-10; that operational decision is
@@ -33,7 +38,7 @@ One row per filed revenue quarter on the universe (some five hundred
 names since 2016) whose results release (an 8-K with item 2.02) can be
 placed: the reaction session `r`. The target is the quarter's revenue
 growth over the same quarter a year earlier, clipped to [-0.9, 5]. The
-features are read at the close before the report, `r - 1`, and are
+features use a separate conservative pre-publication index, not `r - 1`, and are
 what the desk already knows there: the point-in-time fundamental block
 (last growth, sequential growth, acceleration, margins, the last
 reaction, sessions since the last report), the release tone of the last
@@ -116,15 +121,15 @@ and let the forward record decide, which the review asked for.
 """
 
 import argparse
-from dataclasses import replace
-from datetime import date, datetime
+from dataclasses import dataclass, replace
+from datetime import date, datetime, time
 from pathlib import Path
 
 import numpy as np
 
 from backend.cli.market_earnings import reaction_sessions
 from backend.cli.market_snapback import _spread
-from backend.market import edgar, language, valuation
+from backend.market import calendar, edgar, language, valuation
 from backend.market.levels_pit import point_in_time_levels
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
@@ -166,6 +171,95 @@ PARAMS = {
 }
 
 
+@dataclass(frozen=True)
+class ReleaseWindow:
+    """Keep the return index separate from a timestamp-bounded feature index."""
+
+    reaction: int
+    feature: int
+    accepted: datetime
+    accession: str
+
+
+# Preserve each associated release's timing; never infer it from a return index.
+def _release_windows(dates, record):
+    windows = {}
+    for event in record.events:
+        before = calendar.publication_session(event.accepted, before=True)
+        if before is None:
+            continue
+        feature = int(np.searchsorted(dates, before))
+        if feature >= len(dates) or dates[feature] != before:
+            continue
+        reactions = reaction_sessions(
+            dates,
+            {
+                "accepted": [event.accepted.isoformat()],
+                "filed": [event.filed],
+                "items": [event.items],
+            },
+        )
+        if not reactions or feature >= reactions[0]:
+            continue
+        reaction = reactions[0]
+        candidate = ReleaseWindow(reaction, feature, event.accepted, event.accession)
+        previous = windows.get(reaction)
+        if previous is None or candidate.accepted < previous.accepted:
+            windows[reaction] = candidate
+    return [windows[index] for index in sorted(windows)]
+
+
+# Read available SEC timing even when absent financial facts prevented a full record.
+def _tone_event_times(store, ticker, record, asof):
+    if record is not None:
+        rows = [(event.accession, event.accepted) for event in record.events]
+    else:
+        frame = store.read_frame("edgar_events", ticker, asof)
+        columns = frame[0] if frame is not None else {}
+        rows = [
+            (accession, datetime.fromisoformat(str(accepted)))
+            for accession, accepted in zip(
+                columns.get("accession", []), columns.get("accepted", []), strict=True
+            )
+        ]
+    times = {}
+    for accession, accepted in rows:
+        times.setdefault(accession, []).append(accepted)
+    return times
+
+
+# Load date-only tone conservatively, never ahead of a matching SEC acceptance.
+def _tone_before_session(store, panel, records, asof):
+    by_ticker = {}
+    for ticker in panel.tickers:
+        frame = store.read_frame(language.TONE_KIND, ticker, asof)
+        if frame is None:
+            continue
+        times = _tone_event_times(store, ticker, records.get(ticker), asof)
+        bounded = []
+        for tone in language.records_from_frame(frame[0]):
+            matched = times.get(tone.accession, ())
+            if any(
+                accepted.tzinfo is None or accepted.utcoffset() is None
+                for accepted in matched
+            ):
+                continue
+            not_before = max(
+                [tone.reaction_date]
+                + [
+                    accepted.astimezone(calendar.NEW_YORK).date()
+                    for accepted in matched
+                ]
+            )
+            bounded.append(replace(tone, reaction_date=not_before))
+        by_ticker[ticker] = bounded
+    return (
+        language.tone_features(panel, by_ticker, strict_before_session=True)
+        if by_ticker
+        else None
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Return the argument parser."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -200,7 +294,7 @@ def _universe_panel(store, book_only: bool, asof: date | None = None):
     )
 
 
-# Load records, quarters and reactions from each kind's latest eligible partition.
+# Load original labels and timestamp-bounded release windows at the partition cutoff.
 def _records(store, panel, dates, asof: date | None = None):
     records, quarters, reactions = {}, {}, {}
     for ticker in panel.tickers:
@@ -224,7 +318,7 @@ def _records(store, panel, dates, asof: date | None = None):
             ((f.end, f.value, f.filed) for f in record.facts if f.name == "revenue"),
             key=lambda x: x[0],
         )
-        reactions[ticker] = reaction_sessions(dates, events[0])
+        reactions[ticker] = _release_windows(dates, record)
     return records, quarters, reactions
 
 
@@ -253,20 +347,15 @@ def _fit_predict(x_train, y_train, x_test, names):
     return booster.predict(np.nan_to_num(x_test, nan=0.0)), booster
 
 
-# Derive features without letting tone, valuation filings or splits lose the cutoff.
+# Bound every date-only filing/tone input while retaining the actual price session.
 def _features(store, panel, records, asof: date | None = None):
-    # Imported at the use-site, as lightgbm is: the model module pulls torch,
-    # which the test image does not carry, and the pure parts of this study
-    # (momentum, the learner) must not require it.
-    from backend.market.model import load_tone_features
-
-    fund = edgar.edgar_features(panel, records)
+    fund = edgar.edgar_features(panel, records, strict_publication=True)
     fidx = {n: i for i, n in enumerate(edgar.FEATURE_NAMES)}
-    tone = load_tone_features(store, panel, asof)
+    tone = _tone_before_session(store, panel, records, asof)
     tidx = {n: i for i, n in enumerate(language.FEATURE_NAMES)}
     beta = panel.rolling_beta(120)
     mom = {k: _momentum(panel, beta, k) for k in (20, 60, 120)}
-    levels = point_in_time_levels(store, panel, asof)
+    levels = point_in_time_levels(store, panel, asof, strict_publication=True)
     ratios = valuation.multiples(
         panel,
         levels["revenue"],
@@ -324,7 +413,24 @@ def _first_reports(quarters):
     return {end: value for end, value in first.items() if end not in ambiguous}
 
 
-# Preserve first-reported labels and their publication dates independently of returns.
+# Select an observed, warmed-up close before both independently recorded source bounds.
+def _pre_report_index(dates, window, filed):
+    release_before = calendar.publication_session(window.accepted, before=True)
+    filed_before = calendar.publication_session(
+        datetime.combine(filed, time.min, calendar.NEW_YORK), before=True
+    )
+    if release_before is None or filed_before is None:
+        return None
+    if not 0 <= window.feature < len(dates) or dates[window.feature] != release_before:
+        return None
+    feature_day = min(release_before, filed_before)
+    feature = int(np.searchsorted(dates, feature_day))
+    if feature < 130 or feature >= len(dates) or dates[feature] != feature_day:
+        return None
+    return feature
+
+
+# Keep features before both the associated SEC timestamp and date-only target filing.
 def _dataset(panel, dates, quarters, reactions, feats):
     rows_n = panel.adj_close.shape[0]
     date_arr = np.array(dates)
@@ -334,7 +440,9 @@ def _dataset(panel, dates, quarters, reactions, feats):
             continue
         by_end = _first_reports(quarters[ticker])
         ends = sorted(by_end)
-        rs = np.array(reactions.get(ticker, []), dtype=int)
+        windows = reactions.get(ticker, [])
+        if any(not isinstance(window, ReleaseWindow) for window in windows):
+            raise ValueError("expectations require timestamp-bounded release windows")
         for e in ends:
             v, filed = by_end[e]
             prior = [
@@ -344,21 +452,38 @@ def _dataset(panel, dates, quarters, reactions, feats):
                 continue
             g = float(np.clip(v / by_end[prior[-1]][0] - 1.0, -0.9, 5.0))
             lo = np.searchsorted(date_arr, e)
-            cand = rs[(rs > lo) & (rs <= min(rows_n - 1, lo + 70))]
+            cand = sorted(
+                (w for w in windows if lo < w.reaction <= min(rows_n - 1, lo + 70)),
+                key=lambda w: w.reaction,
+            )
             if len(cand) == 0:
                 continue
-            r = int(cand[0])
+            window = cand[0]
+            r = window.reaction
             days = (dates[r] - e).days
             if days < 10 or days > 100 or r < 131:
                 continue
-            row = feats[r - 1, j]
+            feature = _pre_report_index(dates, window, filed)
+            if feature is None:
+                continue
+            row = feats[feature, j]
             if not np.isfinite(row[0]):
                 continue
             x.append(row)
             y.append(g)
             # Facts retain a filing day, not an acceptance timestamp. Annual
             # cutoffs exclude the fit day itself; no earlier intraday claim is made.
-            meta.append((j, r, dates[r].year, max(filed, dates[r])))
+            meta.append(
+                (
+                    j,
+                    r,
+                    dates[r].year,
+                    max(filed, dates[r]),
+                    feature,
+                    window.accepted,
+                    window.accession,
+                )
+            )
     return (
         np.asarray(x, dtype=float).reshape(-1, feats.shape[-1]),
         np.asarray(y, dtype=float),
@@ -441,26 +566,27 @@ def _accuracy(expected, naive, y, meta_year, years, model):
 # from each row's reaction session. The cutoffs are trailing: a row's fifth
 # is set by the reports up to its own session, never by reports later in the
 # year, or the buckets would know the future. A row is not bucketed until
-# its own history has enough reports to place it.
-def _fifths(values, mask, meta, meta_year, years, shape, offset):
+# its own history has enough reports to place it. Explicit feature-session
+# positions keep pre-report reads separate from reaction-relative return windows.
+def _fifths(values, mask, meta, meta_year, years, shape, offset, *, positions=None):
     out = np.zeros((*shape, 5), dtype=bool)
+    positions = [m[1] + offset for m in meta] if positions is None else positions
     for yr in years:
         sel = mask & (meta_year == yr) & np.isfinite(values)
         if sel.sum() < 25:
             continue
-        indices = sorted(np.flatnonzero(sel), key=lambda i: meta[i][1])
+        indices = sorted(np.flatnonzero(sel), key=lambda i: positions[i])
         pool: list[float] = []
         for i in indices:
             pool.append(float(values[i]))
             if len(pool) < 25:
                 continue
             cuts = np.quantile(pool, [0.2, 0.4, 0.6, 0.8])
-            j, r, _yy = meta[i][:3]
-            if not 0 <= r + offset < shape[0]:
+            j = meta[i][0]
+            position = positions[i]
+            if not 0 <= position < shape[0]:
                 continue
-            out[r + offset, j, int(np.searchsorted(cuts, values[i], side="right"))] = (
-                True
-            )
+            out[position, j, int(np.searchsorted(cuts, values[i], side="right"))] = True
     return out
 
 
@@ -472,7 +598,7 @@ def _after(panel, expected, naive, y, meta, meta_year, years):
         [
             r + 1 < len(panel.dates)
             and np.datetime64(published) < panel.dates[r + 1].astype("datetime64[D]")
-            for _j, r, _year, published in meta
+            for _j, r, _year, published, *_timing in meta
         ],
         dtype=bool,
     )
@@ -500,15 +626,19 @@ def _after(panel, expected, naive, y, meta, meta_year, years):
     )
 
 
-# The gap read BEFORE sessions earlier, and what it earned into and
-# through the print. Returns the cheapest-fifth mask on the panel.
+# Read the gap BEFORE sessions ahead of the conservative feature cutoff,
+# retaining separate associated reaction-return endpoints.
 def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
     rows_n, cols = panel.adj_close.shape
+    # The feature bound may precede r - 1; retain the longest actual return window.
+    through_horizon = max(
+        (m[1] + 1 - (m[4] - BEFORE) for m in meta), default=BEFORE + 2
+    )
     implied_col = NAMES.index("ps_implied_growth")
     x_before = x.copy()
     ok = np.zeros(len(y), dtype=bool)
-    for i, (j, r, _yy, _published) in enumerate(meta):
-        t = r - 1 - BEFORE
+    for i, (j, _r, _yy, _published, feature, *_source) in enumerate(meta):
+        t = feature - BEFORE
         if t < 130:
             continue
         x_before[i] = feats[t, j]
@@ -522,34 +652,41 @@ def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
         x_before,
         ok,
         available_dates=[m[3] for m in meta],
-        score_dates=[dates[max(0, m[1] - 1 - BEFORE)] for m in meta],
+        score_dates=[dates[max(0, m[4] - BEFORE)] for m in meta],
     )
     gap = expected - x_before[:, implied_col]
     into = np.full((rows_n, cols), np.nan)
     through = np.full((rows_n, cols), np.nan)
     adj = panel.adj_close
     bench = adj[:, panel.index(panel.benchmark)]
-    for i, (j, r, _yy, _published) in enumerate(meta):
-        t = r - 1 - BEFORE
+    for i, (j, r, _yy, _published, feature, *_source) in enumerate(meta):
+        t = feature - BEFORE
         if t < 130 or not np.isfinite(gap[i]):
             continue
         with np.errstate(all="ignore"):
-            into[t, j] = np.log(adj[r - 1, j] / adj[t, j]) - beta[t, j] * np.log(
-                bench[r - 1] / bench[t]
+            into[t, j] = np.log(adj[feature, j] / adj[t, j]) - beta[t, j] * np.log(
+                bench[feature] / bench[t]
             )
             if r + 1 < rows_n:
                 through[t, j] = np.log(adj[r + 1, j] / adj[t, j]) - beta[t, j] * np.log(
                     bench[r + 1] / bench[t]
                 )
     fg = _fifths(
-        gap, np.isfinite(gap), meta, meta_year, years, (rows_n, cols), -1 - BEFORE
+        gap,
+        np.isfinite(gap),
+        meta,
+        meta_year,
+        years,
+        (rows_n, cols),
+        0,
+        positions=[m[4] - BEFORE for m in meta],
     )
     anyg = fg.any(axis=2)
     cheap = fg[:, :, 4]
-    print(f"\nbefore the report: the gap read {BEFORE} sessions before, in fifths")
+    print(f"\ngap read {BEFORE} sessions before the conservative feature cutoff")
     print(
-        f"{'fifth of the gap (expected - implied)':44} {'into the close before':>24} "
-        f"{'through the print':>22}"
+        f"{'fifth of the gap (expected - implied)':44} {'to feature cutoff':>24} "
+        f"{'through reaction + 1':>22}"
     )
     labels = (
         "richest: price implies more than expected",
@@ -560,10 +697,12 @@ def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
     )
     for q, label in enumerate(labels):
         m1, t1, n1 = _spread(into, fg[:, :, q], anyg & ~fg[:, :, q], BEFORE)
-        m2, t2, _n2 = _spread(through, fg[:, :, q], anyg & ~fg[:, :, q], BEFORE + 2)
+        m2, t2, _n2 = _spread(
+            through, fg[:, :, q], anyg & ~fg[:, :, q], through_horizon
+        )
         print(f"{label:44} {m1:+8.2%} (t {t1:5.1f}) {n1:5d}  {m2:+8.2%} (t {t2:5.1f})")
     a = _spread(into, cheap, fg[:, :, 0], BEFORE)
-    b = _spread(through, cheap, fg[:, :, 0], BEFORE + 2)
+    b = _spread(through, cheap, fg[:, :, 0], through_horizon)
     print(
         f"{'cheapest fifth less richest fifth':44} {a[0]:+8.2%} (t {a[1]:5.1f})"
         f"        {b[0]:+8.2%} (t {b[1]:5.1f})"
@@ -572,19 +711,20 @@ def _before(panel, dates, x, y, meta, meta_year, years, feats, beta, mom, args):
     yrs = np.array([d.year for d in dates])
     for yr in years:
         rows = yrs == yr
-        m, t, n = _spread(through[rows], cheap[rows], (anyg & ~cheap)[rows], BEFORE + 2)
+        m, t, n = _spread(
+            through[rows], cheap[rows], (anyg & ~cheap)[rows], through_horizon
+        )
         if n:
             print(f"    {yr}: {m:+7.2%} (t {t:4.1f})  events {n}")
-    _by_tape(meta, mom, cheap, anyg, into, through, (rows_n, cols))
+    _by_tape(meta, mom, cheap, anyg, into, through, (rows_n, cols), through_horizon)
     return cheap
 
 
-# The cheapest fifth split by whether the tape was improving when it was
-# read: the review's "cheap, improving, favourable expectations".
-def _by_tape(meta, mom, cheap, anyg, into, through, shape) -> None:
+# Split by tape at the same conservative feature-relative read used by the gap.
+def _by_tape(meta, mom, cheap, anyg, into, through, shape, through_horizon) -> None:
     improving = np.zeros(shape, dtype=bool)
-    for j, r, _yy, _published in meta:
-        t = r - 1 - BEFORE
+    for j, _r, _yy, _published, feature, *_source in meta:
+        t = feature - BEFORE
         if t >= 130 and np.isfinite(mom[20][t, j]) and mom[20][t, j] > 0:
             improving[t, j] = True
     for name, mask in (
@@ -592,7 +732,7 @@ def _by_tape(meta, mom, cheap, anyg, into, through, shape) -> None:
         ("cheapest fifth, tape not improving", cheap & ~improving),
     ):
         m1, t1, n1 = _spread(into, mask, anyg & ~cheap, BEFORE)
-        m2, t2, _n2 = _spread(through, mask, anyg & ~cheap, BEFORE + 2)
+        m2, t2, _n2 = _spread(through, mask, anyg & ~cheap, through_horizon)
         print(f"{name:44} {m1:+8.2%} (t {t1:5.1f}) {n1:5d}  {m2:+8.2%} (t {t2:5.1f})")
 
 
@@ -777,6 +917,7 @@ def _leg(
         print(f"    {yr}: " + "   ".join(cells))
 
 
+# Run the source-bounded study with separate feature and reaction-session clocks.
 def main() -> None:
     """Run the study."""
     args = build_parser().parse_args()
@@ -807,7 +948,7 @@ def main() -> None:
         years,
         args.min_train_years,
         available_dates=[m[3] for m in meta],
-        score_dates=[dates[m[1] - 1] for m in meta],
+        score_dates=[dates[m[4]] for m in meta],
     )
     naive = x[:, NAMES.index("revenue_yoy")]
     _accuracy(expected, naive, y, meta_year, years, model)
@@ -823,7 +964,7 @@ def main() -> None:
             x,
             y,
             meta_year,
-            years,
+            sorted({d.year for d in dates}),
             feats,
             implied,
             args,

@@ -140,6 +140,26 @@ def session_close(day: date) -> time:
     return _published_early_closes().get(day, REGULAR_CLOSE)
 
 
+# Locate a reviewed close strictly before or after an aware publication instant.
+def publication_session(instant: datetime, *, before: bool) -> date | None:
+    if instant.tzinfo is None or instant.utcoffset() is None:
+        return None
+    local = instant.astimezone(NEW_YORK)
+    years, sessions = reviewed_sessions()
+    if local.year not in years:
+        return None
+    day = np.datetime64(local.date(), "D")
+    target = np.busday_offset(
+        day, 0, roll="backward" if before else "forward", busdaycal=sessions
+    )
+    if target == day:
+        close = datetime.combine(local.date(), session_close(local.date()), NEW_YORK)
+        if (before and close >= local) or (not before and close <= local):
+            target = np.busday_offset(target, -1 if before else 1, busdaycal=sessions)
+    result = target.astype(object)
+    return result if result.year in years else None
+
+
 # Describe the scheduled XNYS session from the reviewed holiday and early-close
 # files so every consumer shares one fail-closed schedule clock.
 def exchange_status(now: datetime) -> dict[str, object]:

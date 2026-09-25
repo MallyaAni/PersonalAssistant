@@ -148,15 +148,27 @@ def _splits(store: MarketStore, ticker: str, asof=None) -> list[tuple[date, floa
 # multiplied by is on today's split basis. Every split between the session
 # a count first appeared (its filing) and the session it is used on
 # multiplies it, so NVDA's 10:1 in 2024 does not read as a tenfold
-# re-rating until the next 10-Q and a tenfold cheapness before it.
+# re-rating until the next 10-Q and a tenfold cheapness before it. When supplied,
+# source basis dates take precedence over inferred first-visible rows.
 def split_adjusted_shares(
-    shares: np.ndarray, dates: np.ndarray, splits: list[tuple[date, float]]
+    shares: np.ndarray,
+    dates: np.ndarray,
+    splits: list[tuple[date, float]],
+    *,
+    basis_dates: np.ndarray | None = None,
 ) -> np.ndarray:
     """Return the share series with later splits applied to earlier filings."""
     out = np.asarray(shares, dtype=float).copy()
     if not splits or len(out) == 0:
         return out
     days = np.asarray(dates).astype("datetime64[D]")
+    basis = (
+        None if basis_dates is None else np.asarray(basis_dates, dtype="datetime64[D]")
+    )
+    if basis is not None and basis.shape != days.shape:
+        raise ValueError(
+            "one source filing basis date is required per share observation"
+        )
     first_seen = np.zeros(len(out), dtype=int)
     for t in range(1, len(out)):
         same = np.isfinite(out[t]) and np.isfinite(out[t - 1]) and out[t] == out[t - 1]
@@ -165,7 +177,10 @@ def split_adjusted_shares(
     for t in range(len(out)):
         if not np.isfinite(out[t]):
             continue
-        seen = days[first_seen[t]]
+        seen = days[first_seen[t]] if basis is None else basis[t]
+        if np.isnat(seen):
+            out[t] = np.nan
+            continue
         factor = 1.0
         for day, ratio in split_days:
             if seen < day <= days[t]:
@@ -174,8 +189,9 @@ def split_adjusted_shares(
     return out
 
 
+# Read valuation inputs with optional strict publication and source share-basis bounds.
 def point_in_time_levels(
-    store: MarketStore, panel: Panel, asof=None
+    store: MarketStore, panel: Panel, asof=None, *, strict_publication: bool = False
 ) -> dict[str, np.ndarray]:
     """Return {"revenue", "earnings", "equity", "shares", "revenue_growth"}."""
     shape = (len(panel.dates), len(panel.tickers))
@@ -197,16 +213,25 @@ def point_in_time_levels(
             facts[0],
             datetime.fromisoformat(stamp) if stamp else datetime.now(),
         )
-        series = {
-            name: edgar._known_series(record.facts, name, panel.dates)[0]
+        known = {
+            name: edgar._known_quarters(
+                record.facts,
+                name,
+                panel.dates,
+                strict_before_session=strict_publication,
+            )
             for name in ("revenue", "net_income", "equity", "shares")
         }
+        series = {name: values[0] for name, values in known.items()}
         with np.errstate(all="ignore"):
             out["revenue"][:, column] = series["revenue"][0] * QUARTERS
             out["earnings"][:, column] = series["net_income"][0] * QUARTERS
             out["equity"][:, column] = series["equity"][0]
             out["shares"][:, column] = split_adjusted_shares(
-                series["shares"][0], panel.dates, _splits(store, ticker, asof)
+                series["shares"][0],
+                panel.dates,
+                _splits(store, ticker, asof),
+                basis_dates=known["shares"][2] if strict_publication else None,
             )
             out["revenue_growth"][:, column] = (
                 series["revenue"][0] / series["revenue"][4] - 1.0

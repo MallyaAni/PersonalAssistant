@@ -553,30 +553,39 @@ def fetch_company(
 # known then, plus the session index at which the latest was filed.
 #
 # Returns {0: latest, 1: one back, 4: four back, 5: five back} of (T,)
-# arrays, NaN where unknown, and filed_at (T,) NaN until the first filing.
-def _known_series(
+# arrays, NaN where unknown, first-visible rows and the selected source filing
+# dates (NaT where unknown). Strict mode excludes date-only same-day facts.
+def _known_quarters(
     facts: Sequence[QuarterFact],
     name: str,
     dates: np.ndarray,
-) -> tuple[dict[int, np.ndarray], np.ndarray]:
+    *,
+    strict_before_session: bool = False,
+) -> tuple[dict[int, np.ndarray], np.ndarray, np.ndarray]:
     rows = sorted((f for f in facts if f.name == name), key=lambda f: (f.filed, f.end))
     size = len(dates)
     lags = (0, 1, 4, 5)
     series = {lag: np.full(size, np.nan) for lag in lags}
     filed_at = np.full(size, np.nan)
+    source_filed = np.full(size, np.datetime64("NaT", "D"))
     if not rows:
-        return series, filed_at
+        return series, filed_at, source_filed
     calendar = dates.astype("datetime64[D]")
     by_end: dict[date, float] = {}
+    filed_by_end: dict[date, date] = {}
     known_ends: list[date] = []
     pointer = 0
     current_end: date | None = None
     for t in range(size):
         session = calendar[t].astype("datetime64[D]").astype(object)
-        while pointer < len(rows) and rows[pointer].filed <= session:
+        while pointer < len(rows) and (
+            rows[pointer].filed < session
+            or (not strict_before_session and rows[pointer].filed == session)
+        ):
             fact = rows[pointer]
             if fact.end not in by_end:
                 by_end[fact.end] = fact.value
+                filed_by_end[fact.end] = fact.filed
                 known_ends.append(fact.end)
                 known_ends.sort()
             if current_end is None or fact.end > current_end:
@@ -586,8 +595,23 @@ def _known_series(
         if current_end is None:
             continue
         series[0][t] = by_end[current_end]
+        source_filed[t] = np.datetime64(filed_by_end[current_end], "D")
         for lag in lags[1:]:
             series[lag][t] = _quarters_back(by_end, known_ends, current_end, lag)
+    return series, filed_at, source_filed
+
+
+# Preserve the legacy two-array interface while optionally excluding same-day facts.
+def _known_series(
+    facts: Sequence[QuarterFact],
+    name: str,
+    dates: np.ndarray,
+    *,
+    strict_before_session: bool = False,
+) -> tuple[dict[int, np.ndarray], np.ndarray]:
+    series, filed_at, _source_filed = _known_quarters(
+        facts, name, dates, strict_before_session=strict_before_session
+    )
     return series, filed_at
 
 
@@ -605,11 +629,13 @@ def _quarters_back(
 
 # Sessions since each session's most recent earnings reaction date, and the
 # residual return over the reaction window (that session and the next),
-# carried forward until the next event.
+# carried forward until the next event. Strict mode uses reviewed session closes.
 def _event_series(
     events: Sequence[EarningsEvent],
     dates: np.ndarray,
     residual: np.ndarray,
+    *,
+    strict_publication: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     size = len(dates)
     since = np.full(size, float(NO_EVENT_SESSIONS))
@@ -617,9 +643,17 @@ def _event_series(
     if not events:
         return since, reaction
     calendar = dates.astype("datetime64[D]")
-    reaction_days = np.asarray(
-        sorted({e.reaction_date for e in events}), dtype="datetime64[D]"
-    )
+    if strict_publication:
+        from backend.market.calendar import publication_session
+
+        days = {
+            day
+            for event in events
+            if (day := publication_session(event.accepted, before=False)) is not None
+        }
+    else:
+        days = {event.reaction_date for event in events}
+    reaction_days = np.asarray(sorted(days), dtype="datetime64[D]")
     # The session on or after each reaction date.
     positions = np.searchsorted(calendar, reaction_days, side="left")
     positions = positions[positions < size]
@@ -647,8 +681,14 @@ def _event_series(
 # Build the (T, N, FEATURE_COUNT) EDGAR feature array for a panel.
 #
 # `records` maps ticker -> CompanyRecord; names absent from it get the
-# neutral fills and zero indicators.
-def edgar_features(panel: Panel, records: Mapping[str, CompanyRecord]) -> np.ndarray:
+# neutral fills and zero indicators. Optional strict publication timing keeps
+# date-only facts past their filing day and respects actual exchange close times.
+def edgar_features(
+    panel: Panel,
+    records: Mapping[str, CompanyRecord],
+    *,
+    strict_publication: bool = False,
+) -> np.ndarray:
     """Return point-in-time event and fundamental features per (session, name)."""
     size = len(panel.dates)
     names = len(panel.tickers)
@@ -662,7 +702,10 @@ def edgar_features(panel: Panel, records: Mapping[str, CompanyRecord]) -> np.nda
         if record is None:
             continue
         since, reaction = _event_series(
-            record.events, panel.dates, residual_all[:, column]
+            record.events,
+            panel.dates,
+            residual_all[:, column],
+            strict_publication=strict_publication,
         )
         out[:, column, FEATURE_NAMES.index("sessions_since_earnings")] = since
         out[:, column, FEATURE_NAMES.index("earnings_reaction")] = reaction
@@ -670,15 +713,34 @@ def edgar_features(panel: Panel, records: Mapping[str, CompanyRecord]) -> np.nda
             1.0 if record.events else 0.0
         )
 
-        rev, filed_at = _known_series(record.facts, "revenue", panel.dates)
-        ni, _ = _known_series(record.facts, "net_income", panel.dates)
-        eps, _ = _known_series(record.facts, "eps", panel.dates)
-        capex, _ = _known_series(record.facts, "capex", panel.dates)
-        ocf, _ = _known_series(record.facts, "operating_cash_flow", panel.dates)
-        gp, _ = _known_series(record.facts, "gross_profit", panel.dates)
-        assets, _ = _known_series(record.facts, "assets", panel.dates)
-        equity, _ = _known_series(record.facts, "equity", panel.dates)
-        shares, _ = _known_series(record.facts, "shares", panel.dates)
+        known = {
+            name: _known_series(
+                record.facts,
+                name,
+                panel.dates,
+                strict_before_session=strict_publication,
+            )
+            for name in (
+                "revenue",
+                "net_income",
+                "eps",
+                "capex",
+                "operating_cash_flow",
+                "gross_profit",
+                "assets",
+                "equity",
+                "shares",
+            )
+        }
+        rev, filed_at = known["revenue"]
+        ni, _ = known["net_income"]
+        eps, _ = known["eps"]
+        capex, _ = known["capex"]
+        ocf, _ = known["operating_cash_flow"]
+        gp, _ = known["gross_profit"]
+        assets, _ = known["assets"]
+        equity, _ = known["equity"]
+        shares, _ = known["shares"]
         has = np.isfinite(rev[0])
         with np.errstate(divide="ignore", invalid="ignore"):
             yoy = np.log(rev[0] / rev[4])

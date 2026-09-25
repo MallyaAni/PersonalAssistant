@@ -1,13 +1,14 @@
 """Exercise real dataset and yearly selection without fitting any model."""
 
-from datetime import date
+from datetime import UTC, date, datetime
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
 from backend.cli import market_expectations as mx
-from backend.market import challenger
+from backend.market import calendar, challenger
+from backend.market.panel import Panel
 
 
 # Build a causal feature panel containing a December earnings reaction.
@@ -23,7 +24,10 @@ def _inputs(end="2024-01-03"):
             (date(2023, 11, 30), 120.0, date(2024, 2, 1)),
         ]
     }
-    return panel, dates, quarters, {"SYNTH": [reaction]}, feats
+    window = mx.ReleaseWindow(
+        reaction, reaction - 1, datetime(2023, 12, 20, 13, tzinfo=UTC), "synthetic"
+    )
+    return panel, dates, quarters, {"SYNTH": [window]}, feats
 
 
 # Keep the row even without a post-reaction return horizon, retaining filing time.
@@ -263,3 +267,78 @@ def test_live_gap_forwards_publication_to_real_carried(monkeypatch):
     assert out.shape == panel.adj_close.shape
     assert np.isnan(out).all()
     assert calls == []
+
+
+# Propagate the feature clock into scoring, return endpoints, bucket dates and HAC lags.
+def test_before_report_analysis_uses_the_actual_feature_clock(monkeypatch):
+    _, sessions = calendar.reviewed_sessions()
+    dates = (
+        np.busday_offset(
+            np.datetime64("2023-01-03"), np.arange(220), busdaycal=sessions
+        )
+        .astype(object)
+        .tolist()
+    )
+    prices = np.column_stack((100.0 + np.arange(220), np.full(220, 200.0)))
+    panel = Panel(
+        np.asarray(dates, dtype="datetime64[D]"),
+        ("SYNTH", "SPY"),
+        prices,
+        prices,
+        prices,
+        prices,
+        prices,
+        np.ones_like(prices),
+        {},
+        "SPY",
+    )
+    features = np.broadcast_to(
+        np.arange(220)[:, None, None] / 100, (220, 2, len(mx.NAMES))
+    ).copy()
+    meta = [(0, r, 2023, dates[r], r - 4) for r in range(160, 190)]
+    positions = [m[4] - mx.BEFORE for m in meta]
+    observed = {}
+    spreads = []
+
+    # Supply fixed predictions solely to inspect timing propagation, never fit a model.
+    def expected(x, y, years, score_years, minimum, x_score, ok, **kwargs):
+        observed["x_score"] = x_score.copy()
+        observed["dates"] = kwargs["score_dates"]
+        return np.ones(len(y)), None
+
+    # Observe actual return arrays and overlap lags without reporting study statistics.
+    def spread(labels, chosen, other, horizon):
+        spreads.append((labels.copy(), chosen.copy(), horizon))
+        return 0.0, 0.0, int(chosen.sum())
+
+    monkeypatch.setattr(mx, "_expected", expected)
+    monkeypatch.setattr(mx, "_spread", spread)
+    count = len(meta)
+    mx._before(
+        panel,
+        dates,
+        np.zeros((count, len(mx.NAMES))),
+        np.ones(count),
+        meta,
+        np.full(count, 2023),
+        [2023],
+        features,
+        np.ones_like(prices),
+        {20: np.ones_like(prices)},
+        SimpleNamespace(min_train_years=3),
+    )
+    np.testing.assert_array_equal(observed["x_score"], features[positions, 0])
+    assert observed["dates"] == [dates[t] for t in positions]
+    # The first spread compares returns into the feature close, not r - 1.
+    into, _, horizon = spreads[0]
+    assert horizon == mx.BEFORE
+    for position, row in zip(positions, meta, strict=True):
+        assert into[position, 0] == pytest.approx(
+            np.log(prices[row[4], 0] / prices[position, 0])
+        )
+    assert spreads[1][2] == mx.BEFORE + 5
+    drawn = set(
+        np.flatnonzero(np.logical_or.reduce([s[1] for s in spreads]).any(axis=1))
+    )
+    assert drawn
+    assert drawn <= set(positions[24:])

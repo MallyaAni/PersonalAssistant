@@ -271,9 +271,12 @@ def read_partial(path: Path) -> dict[str, ToneRecord]:
 # --- features --------------------------------------------------------------
 
 
-# Build the (T, N, FEATURE_COUNT) tone feature array for a panel.
+# Build tone features, optionally delaying date-only readings until a later session.
 def tone_features(
-    panel: Panel, records: Mapping[str, Sequence[ToneRecord]]
+    panel: Panel,
+    records: Mapping[str, Sequence[ToneRecord]],
+    *,
+    strict_before_session: bool = False,
 ) -> np.ndarray:
     """Return point-in-time release-tone features per (session, name)."""
     size = len(panel.dates)
@@ -284,14 +287,12 @@ def tone_features(
         rows = sorted(records.get(ticker, ()), key=lambda r: r.reaction_date)
         if not rows:
             continue
-        # The session on or after each reaction date is when the scores are
-        # first known; the window closes the session after, like the
-        # reaction return, so use the reaction session itself here — the
-        # text was public before it opened.
+        # The legacy path starts on the recorded reaction date. Strict mode
+        # cannot establish ordering within that day, so waits until a later one.
         positions = np.searchsorted(
             calendar,
             np.asarray([r.reaction_date for r in rows], dtype="datetime64[D]"),
-            side="left",
+            side="right" if strict_before_session else "left",
         )
         previous: ToneRecord | None = None
         for index, record in enumerate(rows):
