@@ -170,7 +170,7 @@ def _fact(name, tag, unit, row, index, path, instant, seen):
     return fact
 
 
-# Extract every recognized unit group without whole-history unit selection.
+# Authenticate integer or canonical text CIKs and extract every recognized unit group.
 def parse(body: bytes, *, expected_sha256: str, expected_cik: int) -> UnitSource:
     _require(type(body) is bytes and bool(body), "nonempty original bytes are required")
     _require(
@@ -183,8 +183,10 @@ def parse(body: bytes, *, expected_sha256: str, expected_cik: int) -> UnitSource
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError("invalid companyfacts JSON") from exc
     _require(isinstance(payload, dict), "companyfacts root must be an object")
+    source_cik = payload.get("cik")
     _require(
-        type(payload.get("cik")) is int and payload["cik"] == expected_cik,
+        (type(source_cik) is int and source_cik == expected_cik)
+        or (type(source_cik) is str and source_cik == f"{expected_cik:010d}"),
         "source CIK mismatch",
     )
     root = payload.get("facts")

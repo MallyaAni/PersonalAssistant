@@ -26,6 +26,9 @@ The old two failures remain strict expected-failure regression cases, not passes
 
 - `parse(body, expected_sha256=..., expected_cik=...)` authenticates the supplied
   original JSON bytes against their declared hash and issuer before extraction.
+  The source CIK may be a JSON integer or exactly ten ASCII decimal characters;
+  both must identify the caller's strictly positive integer CIK. Original bytes
+  and hashes are preserved, not normalized to change the source representation.
   Duplicate JSON keys, inconsistent envelopes and conflicting same-observation
   facts fail. Recognized valid source rows retain their exact unit, accession,
   filing/acceptance fields, fiscal period and original JSON-pointer position.
@@ -127,6 +130,12 @@ Receipt: `/private/tmp/anios-fundamental-inventory.sdMpO7/RECEIPT.md`, SHA256
 The separate [period-compatible ratio helper](fundamental-period-sources-2026-09-25.md)
 now retains full intervals and units, including explicitly declared annual
 EUR/EUR ratios, without changing this module's USD projection or a live loader.
+
+A later [94-issuer current-source qualification](current-sec-qualification-2026-09-25.md)
+retains one new original response per current issuer. It found twelve matching
+padded-string CIKs rejected by the old integer-only boundary, and materially old
+periods in several current desk features. This new packet does not recover the
+missing historical responses or change a live consumer.
 
 ## Limits and rollout requirements
 

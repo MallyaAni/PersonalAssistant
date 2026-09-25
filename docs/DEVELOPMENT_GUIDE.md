@@ -233,13 +233,18 @@ quality; a missing-LightGBM skip is not a model-fit pass. See the
 [reporting-scale contract](research/expectations-baseline-scale-2026-09-25.md).
 
 For the isolated unit-preserving fundamental source, run
-`python -m pytest -c /dev/null backend/tests/test_fundamental_period_sources.py backend/tests/test_fundamental_unit_sources.py backend/tests/test_fundamentals_asof.py backend/tests/test_fundamental_features.py -q`.
+`python -m pytest -c /dev/null backend/tests/test_fundamental_source_identity.py backend/tests/test_fundamental_period_sources.py backend/tests/test_fundamental_unit_sources.py backend/tests/test_fundamentals_asof.py backend/tests/test_fundamental_features.py -q`.
 Retain the original company-facts bytes and declared hash/CIK; a frame's unit
 columns alone cannot authenticate its extraction. Restore through
 `fundamental_unit_sources.from_frame(..., source_body=...)`, which re-parses the
 original snapshot. The new helper does not migrate the live loader or old
 unitless partitions. Keep the two legacy defect cases as strict xfails, not
 passes. See the [unit-source contract](research/fundamental-unit-sources-2026-09-25.md).
+The source-identity suite covers integer and exact ten-digit ASCII source CIKs,
+unchanged financial extraction, frame readback and malformed/wrong-issuer guards.
+The [94-issuer source qualification](research/current-sec-qualification-2026-09-25.md)
+includes an offline parser re-check using already-retained original responses,
+without rewriting JSON or making additional requests.
 The separate period evaluator also requires explicit monetary concepts, unit,
 horizon and ordered decision dates; retain full interval/component evidence,
 not only its ratio. Its mixed-currency and annual-coverage legacy failures stay

@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-25 — Accept canonical SEC text issuer IDs without changing facts
+
+The isolated unit-preserving source parser now accepts an integer CIK or its
+exact ten-digit ASCII representation, while still requiring the expected issuer
+and original-byte hash. Financial extraction, schemas, units and frame metadata
+are unchanged. This does not switch the live desk's input source.
+
+Root: 318 passes, one optional-Torch skip, four retained known-defect xfails.
+The independent original-response comparison now accepts 94/94 issuers and
+round-trips all through JSON; the original 82 outputs remain exactly unchanged.
+The twelve formerly refused issuers add 4,832 retained facts. Original bytes
+are untouched; invalid rows still have explicit exclusions. Lint, independent
+review and all 33 unchanged diagram/page checks pass.
+
+Current-source diagnostics also traced materially old financial periods to
+longest-history tag selection. A newest-tag substitution is not yet justified:
+some concepts differ in economic scope or have unresolved duration ambiguity.
+No new strategy result, historical-source authentication or deployment is
+claimed. See the [qualification and next boundary](research/current-sec-qualification-2026-09-25.md).
+
 ## 2026-09-25 — Exclude mismatched fiscal intervals from current margins
 
 The desk now withholds a margin when the latest shared period end has unequal
