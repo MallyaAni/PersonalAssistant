@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-25 — Trace financial disagreements before changing admissibility
+
+The saved qualified record now has a completed source-level audit: sixteen
+distinct issuer/concept/quarter disagreements across twelve issuers, with all
+47 original disputed pointers and twenty dependent-quarter pointers checked.
+Exact Decimal and independent integer arithmetic agree with every saved amount.
+Twelve residuals are $1,000/$1,000,000-scale without declared precision; one
+APLD mismatch demonstrably mixes changed and unchanged retained versions; three
+larger APLD/BE differences remain unresolved. Five dependent-quarter refusals
+correctly retain non-cancelled disputed terms.
+
+Eight synthetic real-feature-path characterizations, independently repeated by
+root, distinguish partial revisions from unchanged repeats and coherent revisions.
+The official Calculations 1.1 precision-interval standard was reviewed, without
+claiming that it validates cross-period derivation or is implemented here.
+This evidence directs the next step to original filing precision and accounting
+basis, not an arbitrary numerical tolerance or a score restoration. No production
+code, financial value, accepted policy, account or deployment changed. See the
+[audit, exact cases and remaining limits](research/filing-disagreement-audit-2026-09-25.md).
+
 ## 2026-09-25 — Connect source-qualified fundamentals to research records
 
 An explicit `qualified` mode now reads original-byte archives through a declared

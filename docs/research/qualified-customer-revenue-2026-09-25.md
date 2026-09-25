@@ -125,6 +125,11 @@ gated operation, not part of importing or running this comparison.
 
 ## Verification
 
+The subsequent [disagreement audit](filing-disagreement-audit-2026-09-25.md)
+traces the retained refusals to original rows and separates missing precision
+from mixed filing versions. It changes no value or source policy; an exact
+numerical discrepancy is not by itself proof that a reported quarter is wrong.
+
 The final retained-source comparison imports all 94 already acquired original
 responses into a temporary real archive, reads their exact bytes back, compares
 the actual current and qualified fundamental consumers, and round-trips all
