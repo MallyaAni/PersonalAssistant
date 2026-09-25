@@ -70,6 +70,9 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest, sessions: [SESSION]}
     else if (url.pathname === `${base}/live`) json = live
+    else if (url.pathname === `${base}/session-prices`) json = {session: 'regular', as_of: NOW, signal_scope: 'regular-session', quotes: {AAOI: {
+      price: null, at: null, feed: null, indicative: false, status: 'unavailable', reason: 'No optional session-price evidence in this fixture.', valid_until: null,
+    }}}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
     else if (url.pathname === `${base}/mine`) json = mine
     else if (url.pathname === `${base}/intraday`) json = {session: SESSION, as_of: NOW, equity: 100000, rows: [], changed: [], top_buys: []}
@@ -88,10 +91,10 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
   return diagnostics
 }
 
-// Retain error/write diagnostics even when a content assertion fails first.
+// Fail on every error/write category without replacing an earlier content assertion failure.
 async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
   await testInfo.attach('browser-diagnostics', {body: JSON.stringify(diagnostics, null, 2), contentType: 'application/json'})
-  for (const failures of Object.values(diagnostics)) expect(failures).toEqual([])
+  for (const [category, failures] of Object.entries(diagnostics)) expect.soft(failures, `Browser ${category}`).toEqual([])
 }
 
 // Check the compact parts without converting their ranks or votes into individual letter grades.
@@ -259,13 +262,15 @@ for (const valueChanged of [true, false]) {
   })
 }
 
-// A re-read marker, relative valuation proxy and intraday grade must not acquire stronger meanings in prose.
+// The guide matches the board's order without overstating reaction dates, valuation or persisted votes.
 test('qualifies reaction dates valuation proxy and evening vote persistence', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!, {revision: true})
   try {
     await page.goto('/?deskDetails=1#desk')
+    await page.locator('details[aria-label="Strategy details"] > summary').click()
     await page.getByText('How ranking and sizing work', {exact: true}).click()
     const guide = page.getByRole('region', {name: 'Desk guide', exact: true})
+    await expect(guide).toContainText('The default stock order is grade (highest first), then action (Buy, Sell, Hold), then executable size (largest first). Ties use grade score (highest first), then ticker alphabetically.')
     await expect(guide).toContainText('model-estimated revenue growth minus a relative-P/S valuation proxy')
     await expect(guide).toContainText('quarterly revenue × 4')
     await expect(guide).toContainText('not trailing-twelve-month revenue')

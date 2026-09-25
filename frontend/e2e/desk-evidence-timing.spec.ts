@@ -68,6 +68,9 @@ async function installEvidenceFixture(page: Page, withRow: boolean, state: Evide
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest: fixture.latest, sessions: [SESSION]}
     else if (url.pathname === `${base}/live`) json = fixture.live
+    else if (url.pathname === `${base}/session-prices`) json = {session: 'regular', as_of: NOW, signal_scope: 'regular-session', quotes: {AAOI: {
+      price: null, at: null, feed: null, indicative: false, status: 'unavailable', reason: 'No optional session-price evidence in this fixture.', valid_until: null,
+    }}}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
     else if (url.pathname === `${base}/mine`) json = fixture.mine
     else if (url.pathname === `${base}/intraday`) json = {session: SESSION, as_of: NOW, equity: 100000, rows: [], changed: [], top_buys: []}
@@ -107,10 +110,10 @@ async function expectSeparatedEvidence(surface: ReturnType<Page['getByRole']>, c
   else await expect(latest).not.toContainText('Since evening:')
 }
 
-// Retain page diagnostics even when a rendered-content regression fails first.
+// Fail on every browser-error category without replacing an earlier content assertion failure.
 async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
   await testInfo.attach('browser-diagnostics', {body: JSON.stringify(diagnostics, null, 2), contentType: 'application/json'})
-  for (const errors of Object.values(diagnostics)) expect(errors).toEqual([])
+  for (const [category, errors] of Object.entries(diagnostics)) expect.soft(errors, `Browser ${category}`).toEqual([])
 }
 
 for (const withRow of [false, true]) {
@@ -120,7 +123,7 @@ for (const withRow of [false, true]) {
       const {fixture, diagnostics} = await installEvidenceFixture(page, withRow, state, baseURL!)
       try {
         await page.goto('/#desk')
-        await expect(page.getByLabel('AAOI grade', {exact: true})).toContainText(state === 'current' ? 'B' : 'A+')
+        await expect(page.getByLabel('AAOI displayed grade', {exact: true})).toContainText(state === 'current' ? 'B' : 'A+')
         await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
         const expansion = page.getByRole('region', {name: 'AAOI decision details', exact: true})
         await expectSeparatedEvidence(expansion, state === 'current')

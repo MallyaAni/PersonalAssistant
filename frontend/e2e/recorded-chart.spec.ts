@@ -237,7 +237,7 @@ test('current grade changes leave archived grades unchanged', async ({page}) => 
   expect(writes).toEqual([])
 })
 
-// Plot saved Buy/Sell transitions only, retain pagination, and never relabel a cash-blocked intent.
+// Retain paged saved actions without claiming that the last page proves complete current coverage.
 test('chart recommendations use saved actions, dedupe repeats and load earlier evidence', async ({page}) => {
   const {chart, errors, writes} = await setup(page)
   const markers = chart.getByLabel('Buy and Sell markers')
@@ -253,7 +253,9 @@ test('chart recommendations use saved actions, dedupe repeats and load earlier e
   await chart.getByRole('button', {name: 'Load earlier recommendations'}).click()
   await expect(table.locator('tbody tr')).toHaveCount(3)
   await expect(markers).toContainText('Sell · Sep 14, 2026')
-  await expect(chart).toContainText('All available snapshots loaded.')
+  await expect(chart).toContainText('No earlier snapshots were reported by the last history page.')
+  await expect(chart).toContainText('Loaded snapshots may omit receipts from other sessions or retain receipts since deleted or expired.')
+  await expect(chart).not.toContainText('All available snapshots loaded.')
   await chart.getByRole('button', {name: 'W', exact: true}).click()
   await expect(markers).toContainText('Buy · Sep 15, 2026')
   await expect(markers).toContainText('Sell · Sep 17, 2026')

@@ -1472,6 +1472,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           compact
           userId={userId}
           personalHistory={canWrite && !research}
+          historyGeneration={accountGen.current}
+          personalReceiptId={historyContext?.userId === userId
+            && historyContext.generation === accountGen.current
+            && historyContext.request === acceptedMineRequest.current
+            && historyContext.decisions === decisions
+            && historyContext.receipt.status === 'generated' ? historyContext.receipt.id : undefined}
           ticker={openName}
           paused={Boolean(eventPaused)}
           holdings={holdingsReady ? holdings : null}
@@ -2137,7 +2143,7 @@ const DeskGuide = ({latest, open}: {latest: DeskRecord; open: boolean}) => {
         <summary className="cursor-pointer font-medium">Desk guide · ranking and timing</summary>
       <details className="mt-3">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
-        <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. The default stock order puts positive displayed allocations first, largest to smallest, then grade, opportunity and conviction. Column headings can change the order. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
+        <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. The default stock order is grade (highest first), then action (Buy, Sell, Hold), then executable size (largest first). Ties use grade score (highest first), then ticker alphabetically. Column headings can change the order. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
         <p className="mt-2">Current voting rules: growth &amp; margins, price trend, earnings-release tone and relative valuation each carry one vote;
           rotation carries half a vote. A bearish core analyst caps the grade at B.
           Position sizes also depend on volatility, grade multipliers, concentration limits and market exposure.</p>
@@ -2602,6 +2608,8 @@ const NameDetail = ({
   holdings = null,
   equity = 0,
   personalHistory = false,
+  historyGeneration = 0,
+  personalReceiptId,
 }: {
   userId: string
   ticker: string
@@ -2617,6 +2625,8 @@ const NameDetail = ({
   holdings?: DeskHolding[] | null
   equity?: number
   personalHistory?: boolean
+  historyGeneration?: number
+  personalReceiptId?: string
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
   const [error, setError] = useState('')
@@ -2670,7 +2680,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={ticker} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} tall />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}

@@ -8,9 +8,11 @@ import {
   createSeriesMarkers,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
+  type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { getDeskChart, getDeskPersonalHistory, type DeskPersonalReceipt, type DeskChart, type DeskChartBar } from '../../services/api'
+import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, type DeskPersonalReceipt, type DeskChart, type DeskChartBar } from '../../services/api'
 import type { DeskHistory, DeskLive } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 
@@ -98,6 +100,12 @@ const ordered = <T extends { time: UTCTimestamp }>(points: T[]): T[] => {
 }
 
 type RecordedSetup = NonNullable<DeskHistory['recommendations']>['observations'][number]
+type ChartReceipt = {
+  id: string
+  generated_at: string
+  action: 'Buy' | 'Sell' | 'Hold' | null
+  grade: string | null
+}
 
 // Accept only dated instants with an explicit timezone; never guess publication time.
 const recordedInstant = (value: unknown) => typeof value === 'string'
@@ -160,22 +168,31 @@ const recordedTime = (value: unknown) => {
 }
 
 // Plot actual saved personal actions once per transition, independently of fills or research setups.
-const recommendationEvents = (receipts: DeskPersonalReceipt[], ticker: string) => {
+const recommendationEvents = (receipts: ChartReceipt[]) => {
   const events: {id: string; at: string; session: string; action: 'Buy' | 'Sell'; grade: string | null}[] = []
   let previous: string | null = null
   const seen = new Set<string>()
   for (const receipt of [...receipts].sort((a, b) => Date.parse(a.generated_at) - Date.parse(b.generated_at) || a.id.localeCompare(b.id))) {
     if (seen.has(receipt.id)) continue
     seen.add(receipt.id)
-    const row = receipt.payload?.rows?.[ticker]
     const session = recordedSession(receipt.generated_at)
-    if (!row || !session) { previous = null; continue }
-    const action = row.action
+    if (!session) { previous = null; continue }
+    const action = receipt.action
     if (action !== 'Buy' && action !== 'Sell') { previous = null; continue }
-    if (previous !== action) events.push({id: receipt.id, at: receipt.generated_at, session, action, grade: row.grade})
+    if (previous !== action) events.push({id: receipt.id, at: receipt.generated_at, session, action, grade: receipt.grade})
     previous = action
   }
   return events
+}
+
+// Retain only this ticker's chart fields while merging stored identities in generation order.
+const mergeReceipts = (current: ChartReceipt[], incoming: DeskPersonalReceipt[], ticker: string) => {
+  const byId = new Map(current.map(item => [item.id, item]))
+  for (const item of incoming) {
+    const row = item.payload?.rows?.[ticker]
+    byId.set(item.id, {id: item.id, generated_at: item.generated_at, action: row?.action ?? null, grade: row?.grade ?? null})
+  }
+  return [...byId.values()].sort((a, b) => Date.parse(b.generated_at) - Date.parse(a.generated_at) || b.id.localeCompare(a.id))
 }
 
 // Attach recommendations to their publication candle without inventing prices or backdating a signal.
@@ -234,6 +251,7 @@ export const TickerChart = ({
   live,
   now = Date.now(),
   personalHistory = false,
+  personalReceiptId,
   tall = false,
 }: {
   userId: string
@@ -243,16 +261,22 @@ export const TickerChart = ({
   live?: DeskLive
   now?: number
   personalHistory?: boolean
+  personalReceiptId?: string
   tall?: boolean
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   const [showSignals, setShowSignals] = useState(true)
   const [showRecommendations, setShowRecommendations] = useState(true)
-  const [receipts, setReceipts] = useState<DeskPersonalReceipt[]>([])
+  const [receipts, setReceipts] = useState<ChartReceipt[]>([])
   const [receiptCursor, setReceiptCursor] = useState<string | null>(null)
   const [receiptError, setReceiptError] = useState('')
   const [receiptBusy, setReceiptBusy] = useState(false)
   const receiptRequest = useRef(0)
+  const receiptScope = useRef(0)
+  const pendingReceiptReads = useRef(new Set<string>())
+  const [receiptPending, setReceiptPending] = useState<string[]>([])
+  const [receiptFailures, setReceiptFailures] = useState<string[]>([])
+  const [receiptReload, setReceiptReload] = useState(0)
   const [fullHistory, setFullHistory] = useState(false)
   const [receivedData, setData] = useState<DeskChart | null>(null)
   // A timeframe or ticker switch must not reinterpret the previous response while the next loads.
@@ -262,6 +286,7 @@ export const TickerChart = ({
   const [drawFailed, setDrawFailed] = useState(false)
   const holder = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
+  const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
 
   // Read one owner-scoped page; stale responses cannot cross an account or ticker change.
   const loadReceipts = async (before?: string) => {
@@ -272,7 +297,7 @@ export const TickerChart = ({
       const page = await getDeskPersonalHistory(userId, before)
       if (request !== receiptRequest.current) return
       if (!Array.isArray(page.items)) throw new Error('Invalid recommendation history')
-      setReceipts(current => before ? [...current, ...page.items] : page.items)
+      setReceipts(current => mergeReceipts(current, page.items, ticker))
       setReceiptCursor(page.next_cursor && page.next_cursor !== before ? page.next_cursor : null)
     } catch {
       if (request === receiptRequest.current) setReceiptError('Recommendation history unavailable.')
@@ -281,12 +306,47 @@ export const TickerChart = ({
     }
   }
 
+  // Read the accepted immutable receipt, independently of pagination and acknowledgement.
+  const loadReceipt = async (id: string) => {
+    if (!personalHistory || pendingReceiptReads.current.has(id)) return
+    const scope = receiptScope.current
+    pendingReceiptReads.current.add(id)
+    setReceiptPending(current => [...current, id])
+    setReceiptFailures(current => current.filter(failed => failed !== id))
+    try {
+      const item = await exportDeskPersonalReceipt(userId, id)
+      if (scope !== receiptScope.current) return
+      if (item.id !== id || !recordedInstant(item.generated_at) || !item.payload?.rows
+        || typeof item.payload.rows !== 'object' || Array.isArray(item.payload.rows)) {
+        throw new Error('Invalid recommendation receipt')
+      }
+      setReceipts(current => mergeReceipts(current, [item], ticker))
+    } catch {
+      if (scope === receiptScope.current) setReceiptFailures(current => [...new Set([...current, id])])
+    } finally {
+      if (scope === receiptScope.current) {
+        pendingReceiptReads.current.delete(id)
+        setReceiptPending(current => current.filter(pending => pending !== id))
+      }
+    }
+  }
+
   useEffect(() => {
+    receiptScope.current += 1
+    pendingReceiptReads.current.clear()
     setReceipts([])
     setReceiptCursor(null)
+    setReceiptError('')
+    setReceiptBusy(false)
+    setReceiptPending([])
+    setReceiptFailures([])
     if (personalHistory) void loadReceipts()
-    return () => { receiptRequest.current += 1 }
-  }, [userId, ticker, personalHistory])
+    return () => { receiptRequest.current += 1; receiptScope.current += 1 }
+  }, [userId, ticker, personalHistory, receiptReload])
+
+  useEffect(() => {
+    if (personalHistory && personalReceiptId) void loadReceipt(personalReceiptId)
+  }, [userId, ticker, personalHistory, personalReceiptId, receiptReload])
 
   useEffect(() => {
     setData(null)
@@ -327,7 +387,7 @@ export const TickerChart = ({
     }),
     [data],
   )
-  const events = useMemo(() => recommendationEvents(receipts, ticker), [receipts, ticker])
+  const events = useMemo(() => recommendationEvents(receipts), [receipts])
   const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
 
@@ -412,10 +472,7 @@ export const TickerChart = ({
       drawn.push(series)
     }
 
-    // Series points require uniqueness, but multiple distinct markers on one date must survive.
-    const markers = [...(personalHistory && showRecommendations ? actionMarkers : []), ...(showSignals ? changes : [])]
-      .filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
-    if (markers.length) createSeriesMarkers(candles, markers)
+    markersRef.current = createSeriesMarkers(candles, [])
     // Give recent candles enough horizontal space; all loaded bars remain available to pan and zoom.
     const frameView = () => {
       if (fullHistory) chart.timeScale().fitContent()
@@ -433,9 +490,18 @@ export const TickerChart = ({
       chart.remove()
       resize.disconnect()
       chartRef.current = null
+      markersRef.current = null
       drawn.length = 0
     }
-  }, [data, merged, timeframe, showSignals, showRecommendations, actionMarkers, changes, fullHistory, personalHistory])
+  }, [data, merged, timeframe, fullHistory])
+
+  // Update markers in place so receipt-only changes preserve the user's chart position and zoom.
+  useEffect(() => {
+    // Series points require uniqueness, but distinct markers on the same date must survive.
+    const markers = [...(personalHistory && showRecommendations ? actionMarkers : []), ...(showSignals ? changes : [])]
+      .filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
+    markersRef.current?.setMarkers(markers)
+  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, actionMarkers, changes, personalHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
@@ -542,16 +608,20 @@ export const TickerChart = ({
           {personalHistory && showRecommendations && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Saved recommendation history">
             <p aria-label="Buy and Sell markers">{actionMarkers.length
               ? actionMarkers.map(marker => `${marker.event.action} · ${recordedTime(marker.event.at)}`).join(' · ')
-              : receiptBusy ? 'Loading recommendations…' : 'No saved Buy/Sell on these candles in the loaded history.'}</p>
+              : receiptBusy || receiptPending.length ? 'Loading recommendations…' : 'No saved Buy/Sell on these candles in the loaded history.'}</p>
             {receiptError && <p role="status">{receiptError}</p>}
+            {!!receiptPending.length && <p role="status">Loading newly generated recommendations…</p>}
+            {!!receiptFailures.length && <p role="status">Some newly generated recommendation reads failed. Showing the snapshots successfully read.</p>}
             <details>
               <summary className="cursor-pointer">Saved recommendations ({receipts.length} snapshots)</summary>
               <p>Personal recommendations at generation time, not fills. Repeated unchanged actions are grouped. Research setups are not Buy/Sell instructions.</p>
               <p>Without a price candle, recommendations remain listed here but are not drawn.</p>
-              <p>{receiptCursor ? 'Partial history. Load earlier snapshots to extend coverage.' : receiptError || receiptBusy ? 'History coverage unconfirmed.' : 'All available snapshots loaded.'} Older unsaved decisions cannot be reconstructed.</p>
+              <p>{receiptCursor ? 'Partial history. Load earlier snapshots to extend coverage.' : receiptError || receiptBusy ? 'History coverage unconfirmed.' : 'No earlier snapshots were reported by the last history page.'} Loaded snapshots may omit receipts from other sessions or retain receipts since deleted or expired. Reload to read current stored history. Older unsaved decisions cannot be reconstructed.</p>
               {!!receipts.length && <p>{recordedTime(receipts[receipts.length - 1].generated_at)} – {recordedTime(receipts[0].generated_at)}</p>}
               {receiptCursor && <button type="button" disabled={receiptBusy} onClick={() => void loadReceipts(receiptCursor)} className="text-[#0071e3]">{receiptBusy ? 'Loading…' : 'Load earlier recommendations'}</button>}
               {receiptError && <button type="button" onClick={() => void loadReceipts()} className="text-[#0071e3]">Retry history</button>}
+              {!!receiptFailures.length && <button type="button" disabled={receiptPending.length > 0} onClick={() => receiptFailures.forEach(id => void loadReceipt(id))} className="text-[#0071e3]">Retry new recommendations</button>}
+              <button type="button" disabled={receiptBusy || receiptPending.length > 0} onClick={() => setReceiptReload(current => current + 1)} className="ml-2 text-[#0071e3]">Reload saved history</button>
               <table className="w-full text-left [&_td]:p-1 [&_th]:p-1" aria-label="Saved Buy and Sell recommendations">
                 <thead><tr><th>Generated</th><th>Action</th><th>Grade</th></tr></thead>
                 <tbody>{events.map(event => <tr key={event.id}><td>{recordedTime(event.at)}</td><td>{event.action}</td><td>{event.grade || 'Not recorded'}</td></tr>)}</tbody>
