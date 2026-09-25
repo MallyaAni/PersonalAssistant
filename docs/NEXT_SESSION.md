@@ -1,5 +1,59 @@
 # Next session
 
+## 2026-09-25 — Saved-signal wording verified; live delivery still pending
+
+Started clean `main` at `cdcb753197504c1915d937cd13aa60ba706ab48f`; the
+initial pull was up to date. **Verified scoped checkpoint:**
+`99adcae00cd7afe93872cb7222681200313f4ab2`, published Mac → Spark → GitHub
+from Spark. Remote HEAD and GitHub origin matched; Spark's unrelated untracked
+`scratch/` was preserved. This is a subsequent documentation-only handoff.
+
+**VERIFIED:** `ForwardEvidence` distinguishes saved signals, usable outcomes,
+reported coverage and simulated accounts. Sampled peak losses, cumulative
+returns and gross trading units are explicit; methodology is expandable.
+No backend, API, arithmetic, archive or account changes. Final root acceptance:
+184 browser cases, zero failures/skips/flakes, 84.280s; all 50 attached browser
+diagnostics clean. Ten focused cases preserve numbers and exercise desktop/
+phone disclosure/reload paths. Both workflows issue two non-recording previews
+and two desk reads, no market writes. Backend semantics: 74 passes, zero skips,
+22 existing all-NaN warnings. TypeScript/build, diff review and all 33 unchanged
+diagram/page checks pass. Independent semantic review passes.
+
+Final asset `index-ZcOdBGAb.js`, SHA256
+`38e9fe50ac6c9c4433a24f1f8dea11f8ae38a5200a58c38bf4f5a6649f469c96`.
+Evidence `/private/tmp/anios-forward-meaning.s0adVc/ROOT_RECEIPT.md`, SHA256
+`731985ac910079f1ddabd4afe4d45f3273e0eef12bc8a0bad61c7629a8083e1f`.
+Final browser report `verified.json`, SHA256
+`a27d894a07bab9d0821d40708bd1a2dce72e85b1289b22ea912c3fe2d5c1ac6e`.
+The [existing wording report](research/plain-desk-labels-2026-09-25.md#follow-on-saved-signal-results)
+records the retained baseline and harness failures. Eight intended baseline
+wording failures were reproduced; a helper toggle error and a later audit that
+mistook `record_history=false` POST previews for writes were corrected only in
+tests. Screenshots were inspected; tall phone element captures are scroll-
+occluded, not full-panel viewport-fit proof. Actual controls were browser-tested.
+
+**UNVERIFIED:** live deployed artifact, fresh all-hours prices, price/action
+consistency and strategy superiority. The user's exact `quote stale`, `snapshot`,
+`replay`, `below A` phrases were already replaced in `5516bc8`/`f9dd2e1` and
+retested here; do not implement them again or claim current source proves live
+delivery. Deployment remains held on the existing 15-second collector decision.
+Do not repeat the question or deploy collection disabled as equivalent. When
+cleared, deploy from Spark only through `scripts/deploy.sh --wait-post` and prove
+the served artifact plus actual browser workflow. No provider/model request,
+fit, strategy-history rerun, real account action or deployment this turn.
+
+Earlier in this turn, the first frozen intraday mark was traced without a
+calculation change: SPY January 7, 2020, 09:45 ET; January 6 starts cash-only.
+The retained delivery lacks the required intraday file and a source-qualified
+bridge to the frozen Yahoo adjusted units. Evidence:
+`/private/tmp/anios-intraday-boundary.EQRewK/RECEIPT.md` (SHA256
+`efa2c1e1c033969476f1e8cf84e12afd8277e1910d98cbdadda74fa43173d467`).
+Do not fit ratios, remove missing names or rerun the strategy to conceal this.
+The conditional double-adjustment probe was invalid-input characterization,
+not a demonstrated production defect. Source qualification remains separate
+from this finished wording task. Scoped agents are finished; overall goal stays
+active/incomplete. Diagram impact: NONE — text/disclosure changes only.
+
 ## 2026-09-25 — Oracle primary precision observed; source comparison remains incomplete
 
 Starting clean `main`, HEAD `e44ddd6663b085df2b710f23cb8d06b5eb4405e5`;
