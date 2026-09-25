@@ -1,5 +1,111 @@
 # Next session
 
+## 2026-09-25 — History meaning corrected and published; missing-growth boundary reproduced
+
+**VERIFIED scoped source checkpoint:**
+`343848d6a50954b5166f09cb10aa81e77d0c5a14`, from main at
+`d8dcca430267df410ebe7892669e15de6e780153`. Initial pull current; Spark and
+GitHub re-fetched before publication. Published Mac → `git push spark main` →
+GitHub from Spark, preserving unrelated Spark `scratch/`. Four code/test hashes
+stayed unchanged through acceptance and commit. No deployment, production
+service restart, provider request, model fit, historical strategy rerun,
+account/holding/order operation, laptop access/settings change or promotion.
+
+The dashboard now inverts stored forward log returns into ordinary adjusted-
+close percentage changes and names their basis. Annualized conditional log
+statistics and stored values are unchanged. Historical missing/invalid votes
+remain unknown in both comparisons and glyphs; null totals do not crash the
+dialog, and genuine zero remains zero. The clock explanation preserves
+regular-session uncertainty alongside independent overnight display quotes
+and blocked strategy intent. Published-grade provenance and single-row
+wording are corrected. No production backend behavior changes.
+
+**VERIFIED acceptance:** 144 browser tests (16 new, 128 neighboring), zero
+skips/flaky/unexpected, 67.94s; 38 strict six-category diagnostic attachments
+all empty. TypeScript/build pass with existing CSS/chunk warnings. The final
+browser serves the preserved production build over isolated loopback5178,
+with intercepted synthetic APIs and no external network. Root and frontend
+agent visually checked the history/unknown-vote/overnight-clock paths; root
+also inspected the final singular heading. Independent source review found
+and then cleared the historical null/invalid glyph contradiction. Original
+content, crash, glyph, grammar and edit-triggered hot-reload failures remain
+retained; no diagnostics were weakened.
+
+Backend acceptance: 18 passed, no skips/warnings,1.90s. Real synthetic history
+writer → authenticated ASGI HTTP readback preserves rounded log units and
+published vote missingness, including explicit-null and omitted aggregate
+keys; GET leaves JSON bytes unchanged. Quote/intent assertions cover describe
+and decision_view, **not** collection or execution_quotes.fetch clock failure.
+No Uvicorn, real model or deployed-provider acceptance is claimed. Scoped Ruff/
+format and all33 unchanged diagram/page checks pass. Initial diagram invocation
+used host Mermaid11.17 instead of pinned11.16; the existing dependency volume
+corrected the test invocation without changing any diagram/dependency.
+
+Evidence: [history contract](research/desk-history-meaning-2026-09-25.md),
+`/private/tmp/anios-history-accuracy.Owh809/RECEIPT.md`
+(SHA256 `9a3c0c216e5ffadb84a1165cd6aab57ae2cad33190a0e26a05c820b403ca80dc`),
+`/private/tmp/anios-history-contract.qrDGKs/RECEIPT.md`
+(SHA256 `b40ab30dfaa5b6dfa41b1956012bfc00a7070c5ce470ee2d4206a9cd803d71de`).
+Browser report `8337783e8988a288fd15234e9852c7151b8c3383335b24d80bca9ecc6b8f94da`;
+main built asset `index-CPp9Lo2K.js`, SHA256
+`3351f0703fe1226e78df1caa754c0c0eb875dab92e828ace722e35f218f96d83`.
+**Diagram impact: NONE — field-level frontend meanings and contract tests.**
+
+**Research input audit, not implemented:** a parallel read-only synthetic run
+through real edgar_features → _block → _dataset reproduces loss of growth
+missingness at edgar.py's `np.where(isfinite(series), series, 0.0)`. Genuine
+zero growth, missing prior year, zero denominator, no fundamentals yet, zero
+current revenue and two negative revenues all survived as feature/baseline0
+with independently valid +10% targets. `_known_quarters` still has operand/
+NaN distinctions before that boundary. `has_fundamentals` describes only
+current revenue and is absent from expectations' NAMES; finite-column-zero
+checks cannot reconstruct missingness. This is not evidence of target zero-
+filling or measured model/P&L damage. No network/fitting calls occurred.
+
+A separately scoped research-only computability sidecar could retain current/
+lag operands and explicit reasons at each strict pre-session feature date,
+without changing shared arrays, metadata, fitting, grading or live dispatch.
+It must be labelled legacy-source computability, not qualified point-in-time
+financial provenance. Masking only naive values is insufficient: the existing
+accuracy report was reproduced comparing naive MAE0 on one row against learner
+MAE0.5 on three while printing '3 rows'. Accuracy and surprise comparisons need
+common cohorts, explicit exclusions and separately labelled all-row learner
+metrics. No sidecar, cohort correction or historical prevalence estimate was
+implemented. These results are in the agent audit/tool transcript, not a new
+committed regression suite or persistent acceptance receipt.
+
+**Next:** goal remains active/incomplete. The missing-growth reporting contract
+above or separately scoped raw-source retention can advance research without
+another fit on the examined biased history. The SEC retention audit found no
+existing raw archive: capture returned entity bytes before JSON decoding and
+outside the transport exception handler; otherwise archive errors may cause
+extra requests. All-attempt versus200-only capture, archive failure policy and
+retention bounds remain design choices, not implemented behavior. Do not
+relabel old unitless caches or silently change shared live expectations inputs.
+
+ML/DL/RL status remains as recorded below: existing LightGBM expectations,
+deterministic `/3` allocation, experimental unpromoted neural/sequential-RL
+pilots. The gate loses to its matched adapter in10/14 folds at10bp and11/14 at
+25bp; original producer OOM/missing manifest remains **FAILED**. No new paper
+request or independently replicated paper-derived alpha this turn. Completed
+historical observers should not be rerun merely for activity.
+
+Approximate release-readiness target remains20:34UTC /16:34ET; last clock
+17:55:47UTC. No fresh runtime provenance check this turn. The source-only
+release audit atd8dcca4 found83 files versus known deployed68edfc0, including
+backend changes; this is not dashboard-only. Supported deploy selects8
+services and requires full gates/postchecks. The current unit gate creates/
+migrates isolated anios_gate, so no manual live-database migration is needed.
+Collector activation remains unanswered: **do not restart the pending backend**,
+whose defaults enable recurring15-second quote reads. Disabling it silently is
+not equivalent because the new session-price API has no on-demand fallback.
+Authenticated market-data probe allowances remain exhausted; all-hours
+real-time coverage is unproved. Deploy only from Spark through
+`scripts/deploy.sh --wait-post`, with exact post-pull SHA, artifact/browser
+acceptance and completed postcheck verdict. Preserve deploy data/secrets
+symlinks. Only the agent-owned temporary browser container was stopped;
+all local evidence/builds remain retained.
+
 ## 2026-09-25 — Baseline-scale correction verified; prior checkpoints published
 
 **VERIFIED scoped source checkpoint:**
