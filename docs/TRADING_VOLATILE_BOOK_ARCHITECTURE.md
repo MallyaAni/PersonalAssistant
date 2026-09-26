@@ -33,6 +33,9 @@ the operator's word). A research verdict is recorded as `PASSED` or
 | Phase 2 outcome-free census, then one frozen run per rule family | 2 | gate files, research notes | PLANNED |
 | P2.4 Live wiring (balancer, executor, in-session order class, nightly events, personal board) | 3 / serial | `market_balancer.py`, `market_daily.py`, `market_signal_executor.py`, `decision_view.py`, `DeskPanel.tsx` | PLANNED |
 | Fidelity shadow → paper switch `/4`, `/5` | 4 | — | PLANNED |
+| Learning-layer design (supervised / deep / RL research, then choice) | 1b / 3 research agents | design notes only | IN PROGRESS |
+| Pilot P1 (13 dashboard names + SPY/QQQ/SMH/IGV): SIP data, learned models trained before 2026-06-01, decision audit 2026-06..09 | 2 | — | PLANNED |
+| Full universe (only if the pilot meets its criteria) | 2+ | — | PLANNED |
 
 ## Parameter provenance
 
@@ -58,6 +61,66 @@ round and frozen before any outcome is seen; it is not a measurement.
 | Gate H-E | offsets + non-inferiority −0.5 CAGR | Default, operator-chosen adoption path 2026-09-25 |
 | Fidelity shadow | 4-6 weeks; ≥ 95% order agreement; ≤ 5 bp/day tracking; zero negative cash; ≥ 10 fills per new order class | Operator decision (duration) 2026-09-25; thresholds default |
 
+
+## Learning layer, pilot first, and the decision audit (added 2026-09-26)
+
+**Operator direction (2026-09-26):** "develop this intelligently not rule based
+or hard coded. Maybe ML, DL, RL ... whatever works best"; "are you going to
+backtest it on 2026 recent weeks of data and then verify that the decisions
+were right?"; "test it with a few tickers that the dashboard uses first then
+test all if it looks promising".
+
+- **Learned decisions, rules as the baseline.** Selection, entry, add,
+  profit-taking/exit and risk-off are decided by learned models behind two
+  protocols: `DecisionModel` in `signals.py`, and `RiskModel` in
+  `risk_state.py`. The frozen rules become `RuleBaselineModel` and the
+  frozen brake. Each learned model must beat its baseline in the harness, and
+  the baseline is also the fallback when a model's inputs are unavailable.
+- **Fixed constraints are not learned.** The operator's limits stay fixed:
+  the 20% hold limit, no leverage, and anti-overtrading (one action per name
+  per episode, a cooldown, no same-day reversal, a daily cap).
+- **Which learner wins is decided by evidence.** Three designs are in
+  research: supervised gradient-boosted trees with meta-labelling, deep
+  sequence models on 15-minute bars, and reinforcement learning for position
+  management. Each is judged on the same data, the same costs and the same
+  gates. Every model trains on the same feature code the live engine runs
+  (training/serving parity).
+- **Pilot universe P1, frozen 2026-09-26 before any result.**
+  - The tickers the dashboard uses on 2026-09-25: book targets NVDA, NTAP,
+    FTNT, SNOW, MDB, HPE, LITE, SNDK, AAOI; paper holdings ANET and SMCI
+    (plus the overlapping names); and the operator's focus names CRWV and
+    IREN. That makes 13 names.
+  - The benchmarks and baskets: SPY, QQQ, SMH and IGV.
+  - Caveat: these names are today's grades and holdings, so the pilot tests
+    timing, exits and risk decisions on names already chosen. It says nothing
+    about selection skill. The pilot is a smoke test and a first read, not
+    proof.
+- **Decision audit on recent weeks.**
+  - Models train strictly before 2026-06-01, then the engine is replayed bar by
+    bar over 2026-06-01..2026-09-25.
+  - For every decision it logs what it did and why (features and scores), and
+    its fill.
+  - Each decision is graded at +1 day, +5 days and +20 days against: not
+    acting, simply holding, the incumbent `/3` decision on the same name, and
+    buy-and-hold SPY and QQQ.
+  - The audit is also run per decision type: entries, adds, trims or profit
+    taking, exits, and risk-off.
+  - 2026 has already been examined by earlier studies, so it is graded and
+    never tuned on.
+  - The truly unseen test is every session from now on, graded the same way
+    each night in the forward shadow.
+- **Going from the pilot to all names.** These criteria were written before
+  the pilot runs. The full universe is run only if all of them hold:
+  1. The data acceptance passes for all P1 names, and causality and
+     live/replay parity tests are green.
+  2. In the decision audit, each learned decision type has a mean graded
+     outcome at or above both "no action" and the rule baseline on the same
+     names at +5 days and +20 days.
+  3. No single name supplies more than half of the gain.
+  4. The funded replay on P1 over 2016-2023 (dev) is not worse than the rule
+     baseline at 25 bp.
+  If any criterion fails, the result is recorded as "not promising yet" and
+  the design is revised without retuning on the audited weeks.
 
 ## The approved plan
 
