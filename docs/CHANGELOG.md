@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-09-26 — Point-in-time membership, the honest scorecard and the gate's statistics
+
+Every backtest so far graded 2016-2026 on today's book (this year's
+constituents in the book's sub-industries plus a hand overlay that includes
+2024-25 listings and this year's winners), which `market_survivorship` had put
+at about 19 CAGR points a year of the lead over QQQ. `universe.as_of` always
+refused to answer without a dated history and none existed. Now:
+
+- `backend/market/data/membership_history.csv`, rebuilt by
+  `python -m backend.cli.market_membership` from the committed constituent
+  snapshot walked backward through the published S&P 500 component changes
+  (`data/sp500_changes_wikipedia.csv`), keeping names in the book's
+  sub-industries with a curated sub-industry for each exit; overlay names are
+  dated by the commit that added their line to `universe.py` (all 68 are
+  September 2026, so over 2016-2025 the point-in-time book is the index rule
+  alone). Announcement dates equal effective dates: late, never early.
+- `desk/point_in_time.py`: `restrict` grades every (session, name) outside its
+  interval C with no score; `equal_weight_allocator` is the survivorship
+  hurdle on the same mask and reads only the decision session.
+- `python -m backend.cli.market_pit_scorecard`: the rule on today's book, the
+  rule point in time, equal weight point in time, equal weight on today's
+  book, funded SPY and QQQ, on identical sessions at all 20 offsets and 10/25
+  bp, 2016-2023 and 2024-2026 apart, with paired Newey-West t and PSR. Needs
+  the store and torch; not yet run.
+- `backend/market/candidate_stats.py`: deflated Sharpe, PSR, MinTRL, CSCV
+  PBO, Hansen SPA and the stationary bootstrap, NumPy only, each tested on
+  series whose truth is chosen. Nothing under `backend/` computed these before.
+- The published curve's SPY and QQQ now come from `benchmarks.load_benchmark`
+  (funded like the rules, same sessions, same cost, dividend-adjusted); an
+  unavailable benchmark is left off with its reason in `benchmark_notes`
+  rather than drawn flat from zero-filled gaps or a raw close column.
+- `Opinion.signed` / `regime.opine(signed_rotation=True)`: the rotation half
+  vote reaches both sides instead of only the smaller one (tie-averaged ranks
+  of a two-valued score on a 68/26 split left the leading AI side neutral).
+  Off by default; a registered arm for the scorecard, not a live change.
+
+Sandbox evidence: the trading test subset (2,800+ tests across the market,
+desk, learned and intraday modules) has the same failures as before the
+change - all parquet stand-in artefacts - plus 0 new; the new tests (34) pass.
+The full unit gate runs at deploy. Diagram impact: NONE — new research
+modules and a data file; no runtime relationship changed.
+
 ## 2026-09-26 — Deploy the verified dashboard wording; continue the ML ledger
 
 `78a7b3c` is now live on `deep-matter.com` (deployed via

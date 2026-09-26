@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-09-26 — Point-in-time book, honest scorecard, gate statistics (branch `trading/week-one-readable-results`)
+
+Started from GitHub main `d2da64f3` (which already carried the ML-ledger
+continuation rows into `4b5e7110`). Five commits, rebased onto it, each
+carrying its tests. Review that motivated them:
+[docs/research/claude-review-2026-09-26-ml-balancer.md](research/claude-review-2026-09-26-ml-balancer.md).
+
+**VERIFIED in a sandbox (not the Spark):** the trading test subset - every
+`test_market_*`, `test_trading_*`, desk, learned, nested, intraday and
+opportunity module, 2,800+ tests - shows exactly the pre-change failure set
+(40 tests in `test_intraday_cache*.py`, `test_intraday_preflight.py` and
+`test_market_historical_cohort_cli.py`, all artefacts of a pickle stand-in for
+pyarrow in the sandbox) and nothing new. New tests: `test_candidate_stats.py`
+(10), `test_market_membership.py` (5), `test_market_pit_scorecard.py` (5),
+`test_rotation_signed_stance.py` (3), plus rewritten `curve_block` tests in
+`test_market_daily.py` (69 in that file pass). The SEC timestamp question a
+reviewer raised was checked against NVDA's 2026-08-26 8-K: the index page says
+Accepted 16:21:19, the JSON says `20:21:19Z`; the stamp is real UTC and
+`edgar.py` is right.
+
+**UNVERIFIED (needs the Spark):** the full unit gate (`scripts/gate.sh
+--unit`) on the merged tree; and the scorecard itself has not been run. The
+first honest number the project will have is:
+
+    python -m backend.cli.market_pit_scorecard --root data/market
+
+which writes `data/market/desk/pit_scorecard.json` and prints, for 10 and 25
+bp and for 2016-2023 and 2024-2026 apart, the rule on today's book, the rule
+point in time, equal-weight point in time (the survivorship hurdle),
+equal-weight today's book, SPY and QQQ, median and worst across 20 offsets.
+Read the point-in-time rows first; the today's-book rows are what every
+earlier curve showed. The point-in-time book is smaller (about 50 index
+names in 2016-2020 against 94 today) and the rule's top decile is scaled to
+the names it can see, so it holds about 5 names early on; that is the rule's
+own definition, not a bug.
+
+**Next, in order.** (1) Run the scorecard on the Spark and record the table
+here and in `TRADING_ROADMAP.md`; it decides whether the rule's lead survives
+membership at all. (2) Register `signed_rotation` as the first arm and score
+it with the same command (add a `--signed-rotation` flag to
+`market_pit_scorecard` that passes it to `regime.opine` via `desk.run`); gate H
+with `candidate_stats.gate_statistics`, trials counted. (3) Route the ML
+sweep's labels through `strict_publication=True` or next-open returns before
+citing any IC. (4) The dashboard can show `benchmark_notes` when a benchmark
+line is absent (`DeskPanel.tsx` reads `backtest.spy/qqq`; an empty array is
+already tolerated).
+
+**Data notes.** The corrected EDGAR tag selection (`5bfdf1a0`) changes the
+stored revenue/earnings frames for about 31 of 94 names at the next refresh;
+the frozen ML ledger's value features read those frames, so its inputs move
+even though its read code did not - watch the record. Membership exits with
+no curated sub-industry are listed by `market_membership --check`; two
+possible book names were left out for want of a certain classification (IPGP
+2022-06-21, TDC 2017-06-19) and HRS's 2016-2019 communications-equipment
+stint is omitted because its later rename is not in the change table.
+
 ## 2026-09-26 — Dashboard wording deployed; the held release is now live
 
 **Deployed `78a7b3c8cb434a3a7d4f7dd9424021fe6afe43e1`** (main, pushed from the
