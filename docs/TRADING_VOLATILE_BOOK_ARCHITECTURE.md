@@ -20,7 +20,7 @@ the operator's word). A research verdict is recorded as `PASSED` or
 | Item | Wave / agent | Owner files (disjoint) | Status |
 |---|---|---|---|
 | Design, ADR, specs, roadmap amendment | 0 / integrator | this doc, `adr/0024`, `research/volatile-book-review-2026-09-25/`, `TRADING_ROADMAP.md` | BUILT |
-| Main-only nightly fixes (opportunity_shadow migration by 2026-09-28 19:30 ET; NY-date `asof` before 2026-11-01) | 0 / integrator, branch `trading/nightly-fixes` for the operator to merge | `data/opportunity_shadow_migrations.json`, `market_daily.py` asof only | PLANNED |
+| Main-only nightly fixes: ML-ledger continuation (the Spark ledger's latest row, seq 7 on 2026-09-25, is under df47189d; main's identity is 95a54c58 and its unit test fails until declared) and a New York-date `asof` (before 2026-11-01) | 0 / integrator, branch `trading/nightly-fixes` @ `78a7b3c8` for the operator to merge into main | `data/opportunity_shadow_migrations.json`, `market_daily.py` (`_nightly_asof`), `test_market_daily.py` | BUILT (42 tests pass); awaiting merge to main |
 | P0.3 SIP 15-minute history + 2016-2018 calendar | 1 / A | `alpaca.py`, `intraday_sip.py`, `market_intraday.py`, calendar JSON, nightly script | PLANNED |
 | P0.1 Candidate harness, statistics, gates, trials registry | 1 / B | `candidate_bench.py`, `candidate_stats.py`, `candidate_gate.py`, `trials_registry.py`, `market_candidate_bench.py`, `macro.py`, `allocation_controls.py` | PLANNED |
 | Simulator/balancer API (P1 arms, defensive destination, tranches, fill log, cash yield, dead-hook refusals, FOMC parity) | 1 / C | `simulate.py`, `paper.py`, `planner.py`, `risk.py`, `sizing.py`, `entry.py`, `book_sizing.py`, `defensive.py`, `tranches.py`, `fill_log.py` | PLANNED |
