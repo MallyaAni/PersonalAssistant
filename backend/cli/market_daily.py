@@ -1243,7 +1243,7 @@ def save(root: Path, data: dict, allow_overwrite: bool = False) -> Path:
 # again (the backend serving the page has no torch).
 def curve_block(report, store) -> dict | None:
     """Return the backtest curve block, or None when it cannot be drawn."""
-    from backend.agents.trading.desk import event_risk, scorecard, simulate
+    from backend.agents.trading.desk import event_risk, simulate
     from backend.agents.trading.desk import paper as paper_rules
 
     panel = report.panel
@@ -1269,32 +1269,21 @@ def curve_block(report, store) -> dict | None:
         return None
     if len(sim.dates) < 2 or sim.equity is None or not np.isfinite(sim.equity[0]):
         return None
-    start = int(np.searchsorted(panel.dates, sim.dates[0]))
     dates = [str(d) for d in sim.dates]
     equity = np.asarray(sim.equity, dtype=float)
     base = equity[0] if equity[0] > 0 else 1.0
     rules = [float(e / base - 1.0) for e in equity]
-    with np.errstate(all="ignore"):
-        simple = np.expm1(panel.log_returns())
-    bench = panel.index(panel.benchmark)
-    # The strategy is first invested at the close of `sim.dates[0]`, so its
-    # first return is the period from that close to the next; the benchmark
-    # must start there too, or it earns the return into the base date the
-    # strategy never held (the leading NaN pad only hides this when the sim
-    # happens to start at the panel's first row). Both curves are normalised
-    # to 0 at the same base date as the rules.
-    spy = simple[start + 1 : start + len(dates), bench]
-    spy = np.nan_to_num(spy, nan=0.0)
-    spy_curve = [0.0] + [float(v - 1.0) for v in np.cumprod(1.0 + spy)]
-    qqq = scorecard.index_returns(store, "QQQ", sim.dates)
-    if qqq is not None and len(qqq) and np.isfinite(qqq).any():
-        # The curve stays aligned to `dates`: a wholly missing series must
-        # not render as a flat 0% line, so it is dropped instead.
-        qqq_curve = [
-            float(v - 1.0) for v in np.cumprod(1.0 + np.nan_to_num(qqq, nan=0.0))
-        ]
-    else:
-        qqq_curve = []
+    # Both benchmarks come from the one strict loader the comparison uses
+    # (`benchmarks.load_benchmark`): funded like the rules, on the rules'
+    # own sessions, at the same one-way cost, dividend-adjusted, and
+    # reported as unavailable with a reason rather than drawn as a flat
+    # line when a bar or the adjusted column is missing. The page used to
+    # draw SPY from the panel's close-to-close returns with every NaN read
+    # as a 0% day and no cost, and QQQ from whichever price column the
+    # store happened to carry, so the lines the rules were judged against
+    # were not the benchmark the scorecard prices.
+    spy_curve, spy_note = _benchmark_curve(store, "SPY", sim.dates)
+    qqq_curve, qqq_note = _benchmark_curve(store, "QQQ", sim.dates)
     stats = sim.stats()
     return {
         "label": "historical simulation with cash-limited fills; not a live record",
@@ -1312,8 +1301,37 @@ def curve_block(report, store) -> dict | None:
         "rules": rules,
         "spy": spy_curve,
         "qqq": qqq_curve,
+        # Why a benchmark line is absent, when it is; empty when both drew.
+        "benchmark_notes": {
+            k: v for k, v in (("SPY", spy_note), ("QQQ", qqq_note)) if v
+        },
+        "benchmark_cost_bps": simulate.COST_BPS,
         "stats": {k: (None if v != v else float(v)) for k, v in stats.items()},
     }
+
+
+# One benchmark's cumulative-return curve on the simulation's sessions,
+# priced by the strict loader, plus the reason when it cannot be drawn.
+# The curve starts at 0 on the rules' base date (the loader's NAV starts
+# at the starting capital there and buys at the first next-open, exactly
+# as the funded ledger does), so the two lines share their origin.
+def _benchmark_curve(store, symbol: str, sessions) -> tuple[list[float], str]:
+    """Return ([cumulative return per session], note); an empty curve carries a note."""
+    from backend.agents.trading.desk import simulate
+    from backend.market import benchmarks
+
+    if store is None:
+        return [], f"{symbol} not priced: no market store was given"
+    try:
+        series = benchmarks.load_benchmark(
+            store, symbol, sessions, cost_bps=simulate.COST_BPS
+        )
+    except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
+        return [], f"{symbol} not priced: {type(exc).__name__}: {exc}"
+    if not series.available or series.equity is None:
+        return [], series.reason or f"{symbol} unavailable"
+    base = float(series.equity[0])
+    return [float(e / base - 1.0) for e in series.equity], ""
 
 
 # The paper account's live equity history, for the same chart: the only

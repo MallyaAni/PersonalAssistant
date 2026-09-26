@@ -299,7 +299,6 @@ def test_record_carries_the_legacy_source_when_the_desk_read_legacy():
     "source", ["fundamentals-features/1", "fundamentals-features/2"]
 )
 def test_curve_block_carries_the_fundamental_data_source(monkeypatch, source):
-    from backend.agents.trading.desk import scorecard
     from backend.agents.trading.desk import simulate as sim_module
 
     report = replace(_report(), fundamentals_source=source)
@@ -312,11 +311,6 @@ def test_curve_block_carries_the_fundamental_data_source(monkeypatch, source):
         equity=np.array([1.0, 1.05, 1.1]),
     )
     monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
-    monkeypatch.setattr(
-        scorecard,
-        "index_returns",
-        lambda store, ticker, dates: np.array([0.0, 0.0, 0.01, 0.0]),
-    )
     block = market_daily.curve_block(report, None)
     assert block is not None
     assert block["fundamentals_source"] == source
@@ -551,8 +545,8 @@ def test_prior_tone_records_carry_forward(tmp_path):
 # The record's curve block: the rules walked forward against SPY and QQQ,
 # from the simulation the nightly run already has, plus the headline stats.
 def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
-    from backend.agents.trading.desk import scorecard
     from backend.agents.trading.desk import simulate as sim_module
+    from backend.market import benchmarks
 
     report = _report()
     sim = sim_module.SimResult(
@@ -565,15 +559,19 @@ def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
     )
     monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
     monkeypatch.setattr(
-        scorecard,
-        "index_returns",
-        lambda store, ticker, dates: np.array([0.0, 0.0, 0.01, 0.0]),
+        benchmarks,
+        "load_benchmark",
+        lambda store, symbol, sessions, **kw: benchmarks.BenchmarkSeries(
+            symbol, True, None, np.array([1.0, 1.02, 1.03]), np.asarray(sessions)
+        ),
     )
-    block = market_daily.curve_block(report, None)
+    block = market_daily.curve_block(report, object())
     assert block is not None
     assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
-    assert len(block["spy"]) == 3
-    assert len(block["qqq"]) == 4  # one entry per return given
+    assert block["spy"] == pytest.approx([0.0, 0.02, 0.03])
+    assert block["qqq"] == pytest.approx([0.0, 0.02, 0.03])
+    assert block["benchmark_notes"] == {}
+    assert block["benchmark_cost_bps"] == sim_module.COST_BPS
     assert block["stats"]["total"] == pytest.approx(0.1)
     assert block["asof"] == "2026-09-03"
     assert block["funding_model"] == sim_module.FUNDING_MODEL
@@ -584,8 +582,9 @@ def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
 # which the strategy never held. The off-by-one is visible only when the sim
 # starts mid-panel, so this sim does.
 def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
-    from backend.agents.trading.desk import grading, regime, scorecard
+    from backend.agents.trading.desk import grading, regime
     from backend.agents.trading.desk import simulate as sim_module
+    from backend.market import benchmarks
     from backend.agents.trading.desk.desk import DeskReport
     from backend.agents.trading.desk.opinions import Opinion
     from backend.agents.trading.desk.risk import Sized
@@ -663,18 +662,65 @@ def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
         equity=np.array([1.0, 1.05, 1.1]),
     )
     monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
-    monkeypatch.setattr(
-        scorecard,
-        "index_returns",
-        lambda store, ticker, dates: np.array([0.0, 0.1, 0.1]),
-    )
-    block = market_daily.curve_block(report, None)
+    seen = {}
+
+    # The strict loader is handed the simulation's own sessions, so the
+    # benchmark cannot earn the -10% into the base date; it is priced from
+    # that date's close forward, exactly like the rules.
+    def fake_load(store, symbol, sessions, **kw):
+        seen[symbol] = [str(d) for d in sessions]
+        return benchmarks.BenchmarkSeries(
+            symbol, True, None, np.array([1.0, 1.1, 1.21]), np.asarray(sessions)
+        )
+
+    monkeypatch.setattr(benchmarks, "load_benchmark", fake_load)
+    block = market_daily.curve_block(report, object())
     assert block is not None
     assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
-    # The benchmark curve starts at 0 (it did not earn the -10% into the base
-    # date) and its cumulative return is the two +10% periods the strategy held.
+    assert seen["SPY"] == [str(d) for d in panel.dates[1:]]
+    assert seen["QQQ"] == seen["SPY"]
     assert block["spy"] == pytest.approx([0.0, 0.1, 0.21])
     assert block["qqq"] == pytest.approx([0.0, 0.1, 0.21])
+
+
+# A benchmark the strict loader cannot price is left off the chart with its
+# reason on the record, never drawn as a flat 0% line from zero-filled gaps.
+def test_curve_block_reports_an_unavailable_benchmark_instead_of_drawing_it(
+    monkeypatch,
+):
+    from backend.agents.trading.desk import simulate as sim_module
+    from backend.market import benchmarks
+
+    report = _report()
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
+
+    def fake_load(store, symbol, sessions, **kw):
+        if symbol == "QQQ":
+            return benchmarks.BenchmarkSeries(
+                symbol, False, None, None, np.asarray(sessions),
+                reason="QQQ has no bars in the store",
+            )
+        return benchmarks.BenchmarkSeries(
+            symbol, True, None, np.array([1.0, 1.0, 1.0]), np.asarray(sessions)
+        )
+
+    monkeypatch.setattr(benchmarks, "load_benchmark", fake_load)
+    block = market_daily.curve_block(report, object())
+    assert block["spy"] == pytest.approx([0.0, 0.0, 0.0])
+    assert block["qqq"] == []
+    assert block["benchmark_notes"] == {"QQQ": "QQQ has no bars in the store"}
+    # Without a store nothing is priced, and the record says so.
+    none = market_daily.curve_block(report, None)
+    assert none["spy"] == [] and none["qqq"] == []
+    assert set(none["benchmark_notes"]) == {"SPY", "QQQ"}
 
 
 # The published backtest must run the same execution policy as the live
@@ -682,7 +728,6 @@ def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
 # flag in simulate.LIVE_POLICY is passed through curve_block; a policy that
 # adds a rule without this test knowing is a backtest that has drifted.
 def test_curve_block_runs_the_live_execution_policy(monkeypatch):
-    from backend.agents.trading.desk import scorecard
     from backend.agents.trading.desk import simulate as sim_module
 
     report = _report()
@@ -701,11 +746,6 @@ def test_curve_block_runs_the_live_execution_policy(monkeypatch):
         return sim
 
     monkeypatch.setattr(sim_module, "run", fake_run)
-    monkeypatch.setattr(
-        scorecard,
-        "index_returns",
-        lambda store, ticker, dates: np.array([0.0, 0.0, 0.01, 0.0]),
-    )
     market_daily.curve_block(report, None)
     assert sim_module.LIVE_POLICY, "the live policy must not be empty"
     for flag in sim_module.LIVE_POLICY:
