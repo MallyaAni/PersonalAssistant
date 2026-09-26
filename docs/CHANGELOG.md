@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-26 — Deploy the verified dashboard wording; continue the ML ledger
+
+`78a7b3c` is now live on `deep-matter.com` (deployed via
+`~/deploy/anios/scripts/deploy.sh --wait-post`). The gateway serves
+`index-9EMfMvhN.js` (SHA256 `83158a88…`), the exact bundle the 2026-09-25
+personal-history wording checkpoint verified — the plain-language dashboard
+labels are now what users see. Unit gate 7447 passed, routing gate 100 passed,
+post-deploy sweep and search harness green, gateway probe 401 (auth intact).
+The release hold is lifted; `MARKET_SESSION_PRICES_ENABLED` stays at its
+compose default (true), so display-price collection runs with existing
+credentials.
+
+The deploy also carries `78a7b3c`'s shadow-ledger continuation: the frozen ML
+ledger identity moved to `95a54c58` with no declared chain and would have
+halted the next nightly, now declared `df47189d`, `dc1d5fa6`, `19f933ff ->
+95a54c58`, and the nightly asof now uses the New York date rather than UTC.
+Diagram impact: NONE — delivery of already-documented code and a data-file
+continuation; no architectural relationship changed.
+
 ## 2026-09-25 — Replace personal-history snapshot jargon
 
 Personal history now names saved guidance, dashboard loading confirmation and

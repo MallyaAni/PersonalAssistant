@@ -1,6 +1,36 @@
 # Next session
 
-## 2026-09-25 — Personal-history jargon removed; deployment still held
+## 2026-09-26 — Dashboard wording deployed; the held release is now live
+
+**Deployed `78a7b3c8cb434a3a7d4f7dd9424021fe6afe43e1`** (main, pushed from the
+Spark) via `~/deploy/anios/scripts/deploy.sh --wait-post`. The user cleared
+the held release; `MARKET_SESSION_PRICES_ENABLED` is unset in `.env`, so the
+compose default **true** applies — collection runs with existing credentials,
+not the "disabled as an equivalent release" the handoff forbade.
+
+**VERIFIED:** unit gate 7447 passed / 55 skipped / 5 xfailed, routing gate 100
+passed; backup + migration (`20260924_0021_personal_decision_receipts`, a new
+additive table) applied in order; post-deploy sweep and search harness all
+green. Gateway serves `index-9EMfMvhN.js` SHA256
+`83158a886be9f9ad5f7d3b1da8bb3b20294913f3c484fbbfdadd6dca2c056969` — the exact
+verified bundle from the personal-history wording checkpoint. Served JS contains
+the new strings (`Guidance saved; confirming dashboard loading`, `Private records
+of personal guidance, not trades`). Gateway probe returns 401 (auth boundary
+intact), not 502.
+
+**The deploy was blocked once** by `test_the_deployed_ledger_continues_into_the_current_identity`
+failing on main: the ledger identity moved to `95a54c58` with no declared
+continuation. The existing `trading/nightly-fixes` commit `78a7b3c` declares
+`df47189d`, `dc1d5fa6`, `19f933ff -> 95a54c58` (JSON) plus a New-York-clock asof
+fix in `market_daily.py`; it was fast-forwarded onto main (parent was main's
+HEAD) and its `test_opportunity_shadow.py` (9) passed before the redeploy. That
+merge is **VERIFIED** by the gate passing on the merged tree.
+
+**UNVERIFIED:** fresh all-hours quotes and trading superiority remain open (the
+collector now runs but a running collector alone does not establish fresh
+coverage or entitlement). No further deployment, account, or model changes were
+made. Diagram impact: NONE — no architecture change; this is delivery of
+already-documented code.
 
 Started clean main at `8e576c97064cbe21d98677a0f641d01272434381`; initial pull
 was up to date. **Verified scoped checkpoint:**
