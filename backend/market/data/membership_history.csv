@@ -1,0 +1,111 @@
+ticker,entered,entry_announced,exited,exit_announced,source,rule
+AAOI,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+AAPL,2026-09-06,2026-09-06,,,"backend/market/universe.py OVERLAY, commit 0e251bc3",listed by hand in universe.py on 2026-09-06
+ACN,2026-09-06,2026-09-06,,,"backend/market/universe.py OVERLAY, commit 0e251bc3",listed by hand in universe.py on 2026-09-06
+ADBE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+ADI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+ADSK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+ALAB,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+AMAT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment; in the index at the window start 2016-01-04
+AMD,2017-03-20,2017-03-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+AMZN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ANET,2018-08-28,2018-08-28,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment
+ANSS,2017-06-19,2017-06-19,2025-07-18,2025-07-18,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+APLD,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ARM,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ASML,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+AVGO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+BE,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+BRCM,2016-01-04,2016-01-04,2016-02-01,2016-02-01,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+CA,2016-01-04,2016-01-04,2018-11-06,2018-11-06,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+CDAY,2021-09-20,2021-09-20,2024-02-01,2024-02-01,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+CDNS,2017-09-18,2017-09-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+CEG,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+CIEN,2026-02-09,2026-02-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment
+CIFR,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+COHR,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+CORZ,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+CRDO,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+CRM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+CRWD,2024-06-24,2024-06-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+CRWV,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+CSCO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+CTXS,2016-01-04,2016-01-04,2022-10-03,2022-10-03,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+DAY,2024-02-01,2024-02-01,2026-02-09,2026-02-09,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+DDOG,2025-07-09,2025-07-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+DELL,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+ENPH,2021-01-07,2021-01-07,2025-09-22,2025-09-22,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+ETN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+FFIV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+FICO,2023-03-20,2023-03-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+FN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+FSLR,2016-01-04,2016-01-04,2017-03-20,2017-03-20,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+FSLR,2022-12-19,2022-12-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+FTNT,2018-10-11,2018-10-11,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+GEN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+GEV,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+GLW,2026-09-19,2026-09-19,,,"backend/market/universe.py OVERLAY, commit 4b322ea8",listed by hand in universe.py on 2026-09-19
+GLXY,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+GOOGL,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+HPE,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+HUT,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+IBM,2026-09-06,2026-09-06,,,"backend/market/universe.py OVERLAY, commit 0e251bc3",listed by hand in universe.py on 2026-09-06
+INTC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+INTU,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+IREN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+JNPR,2016-01-04,2016-01-04,2025-07-09,2025-07-09,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+KLAC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment; in the index at the window start 2016-01-04
+LITE,2026-03-23,2026-03-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment
+LLTC,2016-01-04,2016-01-04,2017-03-13,2017-03-13,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+LRCX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment; in the index at the window start 2016-01-04
+MCHP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+MDB,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+META,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+MOD,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+MPWR,2021-02-12,2021-02-12,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+MRVL,2026-06-22,2026-06-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+MSFT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+MSI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+MU,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+MXIM,2018-12-03,2018-12-03,2021-08-30,2021-08-30,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+NBIS,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+NET,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+NOW,2019-11-21,2019-11-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+NTAP,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+NVDA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+NXPI,2021-03-22,2021-03-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+OKLO,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ON,2022-06-21,2022-06-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+ORCL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+PANW,2023-06-20,2023-06-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+PAYC,2020-01-28,2020-01-28,2026-03-23,2026-03-23,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+PLTR,2024-09-23,2024-09-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+POWL,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+PTC,2021-04-20,2021-04-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+Q,2025-11-03,2025-11-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+QCOM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+QRVO,2016-01-04,2016-01-04,2024-12-23,2024-12-23,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+RHT,2016-01-04,2016-01-04,2019-07-15,2019-07-15,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+SEDG,2021-12-20,2021-12-20,2023-12-18,2023-12-18,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+SIMO,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+SMCI,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+SMR,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+SNDK,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+SNOW,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+SNPS,2017-03-16,2017-03-16,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+STX,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+SWKS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+TEAM,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+TER,2020-09-21,2020-09-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+TLN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+TRMB,2021-01-21,2021-01-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+TSM,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+TXN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+TYL,2020-06-22,2020-06-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+VRT,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+VST,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+WDAY,2024-12-23,2024-12-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+WDC,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+WULF,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+XLNX,2016-01-04,2016-01-04,2022-02-15,2022-02-15,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+ZS,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
