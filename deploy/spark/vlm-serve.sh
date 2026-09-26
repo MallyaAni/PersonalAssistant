@@ -9,7 +9,12 @@
 #     the ~16 GB actually available with headroom.
 #   - mm_processor_cache_gb defaults to 4 GiB, a third of our budget, and
 #     nothing warns you. Set to 0.
-#   - kv-cache-memory-bytes is set EXPLICITLY (3 GiB). Trusting the
+#   - kv-cache-memory-bytes is set EXPLICITLY (2.4 GiB since 2026-09-26, was
+#     3 GiB). At 144 KiB/token (36 layers x 8 KV heads x 128 x K,V x bf16)
+#     2.4 GiB is 17.4k tokens: one full 16,384-token request, which is the
+#     floor below which vLLM refuses to start. Measured peak use was ~13k
+#     tokens (59.9% of the old 21,840-token pool), never two requests at once.
+#     Trimmed to widen spark2's margin beside the ds4 worker. Trusting the
 #     utilization fraction alone produced 7.46 GiB of KV on top of 7.1 GB of
 #     weights - about 16 GB total - and left the box with 538 MB free. The
 #     profiler sizes KV from what it observes free at startup, so on a
@@ -42,7 +47,7 @@ exec docker run --rm --name anios-vlm \
   --trust-remote-code \
   --host 0.0.0.0 --port 8001 \
   --gpu-memory-utilization 0.09 \
-  --kv-cache-memory-bytes 3221225472 \
+  --kv-cache-memory-bytes 2576980378 \
   --max-model-len 16384 \
   --max-num-seqs 4 \
   --limit-mm-per-prompt '{"image":4}' \

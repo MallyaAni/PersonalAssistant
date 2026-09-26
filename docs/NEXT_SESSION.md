@@ -29,6 +29,18 @@ engine reports 16.46 GiB KV (1.24M tokens), so 1M context would fit again; not
 restored because nothing needs it. Anemll issue #27's partial-prefill hotfix is
 not applied. `scripts/gate.sh --all` was not run.
 
+**VLM KV trimmed, same day.** `vlm-serve.sh` `--kv-cache-memory-bytes` 3 GiB
+-> 2.4 GiB (21,840 -> 17,472 tokens; 16,384 is the floor for one full request).
+Measured peak use under the old pool was ~13k tokens, one request at a time.
+Restarted with `docker stop anios-vlm` (the unit's Restart=always relaunches;
+no sudo). VERIFIED: benchmark_inference 5/5 (vision grounded, 8.9 s cold);
+test_discuss_image 4/4, test_vision_naming + test_vision_upload_size 3/3.
+The ~0.6 GiB it frees did not show in MemAvailable (0.65 GiB after), because
+the restart paged ~4 GB of the old process back from swap. The lever that
+would move spark2 materially is ds4 `--gpu-memory-utilization` 0.81 -> 0.79
+(~2.4 GiB per node; KV 16.5 -> ~14 GiB, still ~1.05M tokens against a 393k
+limit), which costs a ~17-minute ds4 restart and was not done.
+
 **Access.** The Sparks accept an SSH key labelled `claude-cowork-session` in
 `~/.ssh/authorized_keys` on both boxes; delete that line to revoke.
 
