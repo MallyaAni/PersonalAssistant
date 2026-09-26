@@ -187,3 +187,53 @@ def test_window_stats():
     halved = sc.window_stats(np.array([0.0] * 10 + [-0.5] + [0.0] * 10))
     assert halved["drawdown"] == pytest.approx(-0.5)
     assert sc.window_stats(np.array([np.nan, 0.01]))["sessions"] == 1
+
+
+# The graded equal-weight arm holds every eligible A-or-better name at
+# min(1/count, cap), leaves the rest in cash, and ignores C names.
+def test_graded_equal_weight_allocator(history):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    grades = restricted.graded.grades.copy()
+    grades[:, 1] = grading.ORDINAL["C"]  # BBB never qualifies
+    from dataclasses import replace
+
+    demoted = replace(restricted, graded=replace(restricted.graded, grades=grades))
+    allocate = point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=grading.ORDINAL["A"], cap=0.10
+    )
+    early = allocate(demoted, report.panel, None, 10)
+    # Eligible early: AAA, CCC, DDD, FFF (4 names) -> capped at 10% each, 60% cash.
+    assert early[1] == 0 and early[4] == 0 and early[6] == 0
+    assert early[0] == pytest.approx(0.10) and early[5] == pytest.approx(0.10)
+    assert early.sum() == pytest.approx(0.40)
+    wide = point_in_time.graded_equal_weight_allocator(mask, min_grade=0, cap=0.5)
+    late = wide(demoted, report.panel, None, T - 1)
+    assert late.sum() == pytest.approx(1.0) and late[5] == 0 and late[4] == pytest.approx(0.2)
+    with pytest.raises(ValueError):
+        point_in_time.graded_equal_weight_allocator(mask, 0, cap=0.0)
+
+
+# An arm replaces the rule lines and is named in the payload and the file.
+def test_scorecard_arm_replaces_the_rule_lines(history, monkeypatch, tmp_path):
+    report = _report()
+    monkeypatch.setattr(
+        benchmarks,
+        "load_benchmark",
+        lambda store, symbol, sessions, cost_bps=10.0, **kw: benchmarks.BenchmarkSeries(
+            symbol, True, np.zeros(len(sessions)), np.ones(len(sessions)), np.asarray(sessions)
+        ),
+    )
+    seen = []
+    real = sc.simulate.run
+
+    def spy(report_, **kw):
+        seen.append(kw.get("allocator"))
+        return real(report_, **kw)
+
+    monkeypatch.setattr(sc.simulate, "run", spy)
+    payload = sc.build(report, object(), offsets=1, costs=(10.0,), history_path=history, arm=sc.ARMS["ew_graded"])
+    # Four simulator runs per offset: two arm lines and two equal-weight controls, all with allocators.
+    assert len(seen) == 4 and all(a is not None for a in seen)
+    assert {r["line"] for r in payload["rows"]} >= {sc.RULE_TODAY, sc.RULE_PIT}
+    assert "ew_graded" in sc.ARMS

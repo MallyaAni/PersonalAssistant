@@ -44,7 +44,7 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.agents.trading.desk import event_risk, paper, point_in_time, simulate
+from backend.agents.trading.desk import event_risk, grading, paper, point_in_time, simulate
 from backend.market import benchmarks, candidate_stats
 from backend.market.universe import MARKET_INDICES
 
@@ -58,6 +58,17 @@ RULE_TODAY = "rule / today's book"
 RULE_PIT = "rule / point-in-time"
 EW_PIT = "equal weight / point-in-time"
 EW_TODAY = "equal weight / today's book"
+
+# Allocation arms the scorecard can put on the rule lines. Each is a factory
+# taking the (T, N) membership mask and returning a `simulate.run` allocator.
+# Parameters are frozen here, before any result is seen, and named in the
+# output file, so an arm is one registered trial.
+ARMS = {
+    # P1.2: every A/A+ name at equal weight, capped at 10% of equity each.
+    "ew_graded": lambda mask: point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=grading.ORDINAL[grading.A], cap=0.10, gross=1.0
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -99,18 +110,31 @@ def _live_options(panel) -> dict:
 
 # Price the six lines from one offset at one cost.
 def price_offset(
-    report, restricted, mask: np.ndarray, store, since, cost_bps: float
+    report, restricted, mask: np.ndarray, store, since, cost_bps: float,
+    arm=None,
 ) -> dict[str, Curve]:
-    """Return {label: Curve} for every line on this offset."""
+    """Return {label: Curve} for every line on this offset.
+
+    `arm`, when given, is an allocator factory `(mask) -> allocator` that
+    replaces the rule on the two "rule" lines (today's book and point in
+    time), so an allocation arm is scored on exactly the sessions, costs
+    and controls the frozen rule is. The labels keep their keys; the
+    payload's `arm` field says what they hold.
+    """
     panel = report.panel
     live = _live_options(panel)
     out: dict[str, Curve] = {}
-    rule_today = simulate.run(report, since=since, cost_bps=cost_bps, **live)
-    out[RULE_TODAY] = Curve(RULE_TODAY, rule_today.dates, rule_today.returns)
-    rule_pit = simulate.run(restricted, since=since, cost_bps=cost_bps, **live)
-    out[RULE_PIT] = Curve(RULE_PIT, rule_pit.dates, rule_pit.returns)
     everyone = np.ones_like(mask)
     everyone[:, panel.index(panel.benchmark)] = False
+    if arm is None:
+        rule_today = simulate.run(report, since=since, cost_bps=cost_bps, **live)
+        rule_pit = simulate.run(restricted, since=since, cost_bps=cost_bps, **live)
+    else:
+        plain = dict(use_exits=False, rebalance=paper.REBALANCE_EVERY, cost_bps=cost_bps)
+        rule_today = simulate.run(report, since=since, allocator=arm(everyone), **plain)
+        rule_pit = simulate.run(restricted, since=since, allocator=arm(mask), **plain)
+    out[RULE_TODAY] = Curve(RULE_TODAY, rule_today.dates, rule_today.returns)
+    out[RULE_PIT] = Curve(RULE_PIT, rule_pit.dates, rule_pit.returns)
     for label, book_mask in ((EW_PIT, mask), (EW_TODAY, everyone)):
         sim = simulate.run(
             restricted if label == EW_PIT else report,
@@ -229,8 +253,10 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
 
 
 # Run everything and assemble the payload; `report` is the desk's unrestricted report.
-def build(report, store, offsets: int, costs: tuple[float, ...], history_path=None) -> dict:
-    """Return the scorecard payload."""
+def build(
+    report, store, offsets: int, costs: tuple[float, ...], history_path=None, arm=None
+) -> dict:
+    """Return the scorecard payload; `arm` as in `price_offset`."""
     panel = report.panel
     restricted, mask = (
         point_in_time.point_in_time(report, history_path)
@@ -260,7 +286,7 @@ def build(report, store, offsets: int, costs: tuple[float, ...], history_path=No
     }
     for cost in costs:
         priced = [
-            price_offset(report, restricted, mask, store, _since(panel, k), cost)
+            price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
             for k in range(offsets)
         ]
         payload["rows"].extend(summarise(priced, cost))
@@ -323,6 +349,12 @@ def main(argv: list[str] | None = None) -> int:
         help="score the signed-rotation arm instead of the frozen rule; "
         "writes pit_scorecard_signed_rotation.json",
     )
+    parser.add_argument(
+        "--arm",
+        choices=sorted(ARMS),
+        help="score an allocation arm on the two rule lines instead of the "
+        "frozen rule; writes pit_scorecard_<arm>.json",
+    )
     args = parser.parse_args(argv)
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
@@ -332,9 +364,11 @@ def main(argv: list[str] | None = None) -> int:
     report = desk.run(
         store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
     )
-    payload = build(report, store, args.offsets, tuple(args.costs))
-    payload["arm"] = "signed_rotation" if args.signed_rotation else "frozen rule"
-    name = FILE if not args.signed_rotation else FILE.replace(".json", "_signed_rotation.json")
+    arm = ARMS[args.arm] if args.arm else None
+    payload = build(report, store, args.offsets, tuple(args.costs), arm=arm)
+    tags = [t for t, on in (("signed_rotation", args.signed_rotation), (args.arm, args.arm)) if on]
+    payload["arm"] = " + ".join(tags) if tags else "frozen rule"
+    name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
     target = root / "desk" / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")

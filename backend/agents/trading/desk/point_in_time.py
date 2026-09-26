@@ -106,3 +106,31 @@ def window(dates: np.ndarray, start: date | None, end: date | None) -> np.ndarra
     if end is not None:
         out &= days < np.datetime64(end, "D")
     return out
+
+
+# Arm P1.2 of the volatile-book plan: capped equal weight across every name
+# the desk grades A or better on the decision session, within the book's
+# membership, at most `cap` of equity each, never more than `gross` in
+# total. With ten or more qualifying names the book is fully invested and
+# equal weight; with fewer, each takes `cap` and the rest stays in cash
+# (the plan's rule: leftover cash stays in cash). No volatility target, no
+# regime multiplier and no grade ladder: those are exactly what the arm
+# removes, and each is measured by the scorecard rather than assumed.
+def graded_equal_weight_allocator(
+    mask: np.ndarray, min_grade: int, cap: float = 0.10, gross: float = 1.0
+):
+    """Return a callable (report, panel, config, t) -> target weights."""
+    if not 0 < cap <= gross <= 1.0:
+        raise ValueError("need 0 < cap <= gross <= 1")
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        eligible = mask[t] & (report.graded.grades[t] >= min_grade)
+        eligible[panel.index(panel.benchmark)] = False
+        eligible &= np.isfinite(panel.adj_close[t])
+        targets = np.zeros(len(panel.tickers))
+        count = int(eligible.sum())
+        if count:
+            targets[eligible] = min(gross / count, cap)
+        return targets
+
+    return allocate
