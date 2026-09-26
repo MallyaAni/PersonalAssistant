@@ -1508,9 +1508,21 @@ def _ml_forward_receipt(row: dict | None, session: str | None = None) -> dict | 
     }
 
 
+# The session date a nightly run writes under: the New York calendar date.
+# The cron fires at 19:30 on the Spark's New York clock; in winter that is
+# 00:30 UTC the next day, so a UTC date would label every partition a day
+# late and refuse the same-session bar repair (snapshot._repair_sessions).
+def _nightly_asof(now: datetime | None = None) -> date:
+    """Return today's date on the exchange's New York clock."""
+    from backend.market.calendar import NEW_YORK
+
+    moment = now or datetime.now(tz=UTC)
+    return moment.astimezone(NEW_YORK).date()
+
+
 # Run the nightly writer with explicitly versioned inputs and existing execution guards.
 def _run(args, store: MarketStore) -> None:  # noqa: C901
-    asof = args.asof or datetime.now(tz=UTC).date()
+    asof = args.asof or _nightly_asof()
     current = args.asof is None
     observed: dict = {}
     if args.refresh:

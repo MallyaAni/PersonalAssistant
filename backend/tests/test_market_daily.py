@@ -925,3 +925,24 @@ def test_a_b_grade_is_rotated_out_like_a_c():
     assert "B" not in paper.ENTRY_MIN_GRADE
     report = _stretch_report({"BEE": 100.0}, {"BEE": "B"})
     assert set(market_daily._downgraded(report, {"BEE": 7.0})) == {"BEE"}
+
+
+# A winter nightly at 19:30 New York time is 00:30 UTC the next day; the
+# session it writes must still be the New York date.
+def test_the_nightly_session_date_is_the_new_york_date_in_winter():
+    from datetime import UTC, date, datetime
+
+    from backend.cli.market_daily import _nightly_asof
+
+    winter_run = datetime(2026, 11, 3, 0, 30, tzinfo=UTC)  # 19:30 EST, Nov 2
+    assert _nightly_asof(winter_run) == date(2026, 11, 2)
+
+
+# In summer 19:30 New York time is 23:30 UTC the same day, and the date agrees.
+def test_the_nightly_session_date_is_unchanged_in_summer():
+    from datetime import UTC, date, datetime
+
+    from backend.cli.market_daily import _nightly_asof
+
+    summer_run = datetime(2026, 9, 25, 23, 30, tzinfo=UTC)  # 19:30 EDT
+    assert _nightly_asof(summer_run) == date(2026, 9, 25)
