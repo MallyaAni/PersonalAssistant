@@ -158,8 +158,13 @@ def run(
     asof: date | None = None,
     inputs: tuple[str, ...] = LIVE_INPUTS,
     fundamentals: str = FUNDAMENTALS_CORRECTED,
+    signed_rotation: bool = False,
 ) -> DeskReport:
     """Return the desk using partitions on/before `asof` (latest if None).
+
+    `signed_rotation` is a research arm, never the live default: it makes the
+    rotation analyst's stance the sign of the leader-minus-laggard spread on
+    every name (`regime.opine`), so the half vote reaches both sides.
 
     This bounds extraction vintages, not row-level publication eligibility or
     historical universe membership. Never infer the cutoff from the last bar:
@@ -211,7 +216,9 @@ def run(
 
     panel, sides = book_panel(store, asof)
     tone = load_tone_features(store, panel, asof)
-    view = regime.opine(panel, sides, tightening_for(store, panel, asof))
+    view = regime.opine(
+        panel, sides, tightening_for(store, panel, asof), signed_rotation=signed_rotation
+    )
     opinions = {
         fundamental.NAME: _fundamental_opinion(store, panel, asof, fundamentals),
         technical.NAME: technical.opine(panel, view.ai_trend),

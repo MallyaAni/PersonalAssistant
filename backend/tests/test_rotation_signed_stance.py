@@ -66,3 +66,44 @@ def test_regime_opine_passes_the_flag(monkeypatch):
     assert captured.get("signed") is False
     regime.opine(panel, sides, signed_rotation=True)
     assert captured.get("signed") is True
+
+
+# desk.run hands the arm through to the regime analyst and defaults to off.
+def test_desk_run_accepts_the_arm(monkeypatch):
+    import inspect
+
+    from backend.agents.trading.desk import desk
+
+    assert inspect.signature(desk.run).parameters["signed_rotation"].default is False
+    seen = {}
+    real = desk.regime.opine
+
+    def spy(panel, sides, tightening=None, signed_rotation=False):
+        seen["signed_rotation"] = signed_rotation
+        return real(panel, sides, tightening, signed_rotation=signed_rotation)
+
+    monkeypatch.setattr(desk.regime, "opine", spy)
+    source = inspect.getsource(desk.run)
+    assert "signed_rotation=signed_rotation" in source
+
+
+# The scorecard's flag routes the arm into desk.run and names the output.
+def test_scorecard_flag_names_the_arm(monkeypatch, tmp_path):
+    from backend.cli import market_pit_scorecard as sc
+
+    calls = {}
+
+    def fake_run(store, asof, inputs=(), signed_rotation=False):
+        calls["signed_rotation"] = signed_rotation
+        raise RuntimeError("stop here")
+
+    monkeypatch.setattr("backend.agents.trading.desk.desk.run", fake_run)
+    monkeypatch.setattr("backend.market.store.MarketStore", lambda root: None)
+    import pytest
+
+    with pytest.raises(RuntimeError):
+        sc.main(["--root", str(tmp_path), "--signed-rotation"])
+    assert calls["signed_rotation"] is True
+    with pytest.raises(RuntimeError):
+        sc.main(["--root", str(tmp_path)])
+    assert calls["signed_rotation"] is False

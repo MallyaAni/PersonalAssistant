@@ -317,15 +317,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", default="data/market")
     parser.add_argument("--offsets", type=int, default=20)
     parser.add_argument("--costs", type=float, nargs="+", default=[10.0, 25.0])
+    parser.add_argument(
+        "--signed-rotation",
+        action="store_true",
+        help="score the signed-rotation arm instead of the frozen rule; "
+        "writes pit_scorecard_signed_rotation.json",
+    )
     args = parser.parse_args(argv)
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
 
     root = Path(args.root)
     store = MarketStore(root)
-    report = desk.run(store, None, inputs=(desk.EXPECTATIONS_GAP,))
+    report = desk.run(
+        store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
+    )
     payload = build(report, store, args.offsets, tuple(args.costs))
-    target = root / "desk" / FILE
+    payload["arm"] = "signed_rotation" if args.signed_rotation else "frozen rule"
+    name = FILE if not args.signed_rotation else FILE.replace(".json", "_signed_rotation.json")
+    target = root / "desk" / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")
     print(render(payload))
