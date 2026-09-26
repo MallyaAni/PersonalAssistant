@@ -76,6 +76,11 @@ ARMS = {
     "ew_graded": lambda report, mask: point_in_time.graded_equal_weight_allocator(
         mask, min_grade=grading.ORDINAL[grading.A], cap=0.10, gross=1.0
     ),
+    # The same names with no cap: fully invested whatever the count, so the
+    # grade's selection is measured apart from the cash the cap leaves idle.
+    "ew_graded_full": lambda report, mask: point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=grading.ORDINAL[grading.A], cap=1.0, gross=1.0
+    ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed
     # conviction (the baseline every earlier attempt used); "hgb_desk" on
