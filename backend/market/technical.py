@@ -271,12 +271,20 @@ def technical_features(panel: Panel) -> np.ndarray:
     w9 = _weekly_ema(panel, close, 9)
     w21 = _weekly_ema(panel, close, 21)
     weekly_stack = np.where(np.isfinite(w21), np.where(w9 > w21, 1.0, -1.0), np.nan)
-    high52 = _rolling_extreme(panel.high, 252, largest=True)
-    low52 = _rolling_extreme(panel.low, 252, largest=False)
+    # Highs and lows are raw prints; the close they are compared with is
+    # dividend-adjusted. Put the extremes on the same basis (as
+    # `levels.level_features` does) or a dividend payer reads further below
+    # its 52-week high than it is and a new high fires late.
+    with np.errstate(invalid="ignore", divide="ignore"):
+        basis = np.where(panel.close > 0, close / panel.close, np.nan)
+    high_adj = panel.high * basis
+    low_adj = panel.low * basis
+    high52 = _rolling_extreme(high_adj, 252, largest=True)
+    low52 = _rolling_extreme(low_adj, 252, largest=False)
     prev_high52 = np.vstack([np.full((1, close.shape[1]), np.nan), high52[:-1]])
     new_high = np.where(
         np.isfinite(high52) & np.isfinite(prev_high52),
-        (panel.high >= prev_high52).astype(float),
+        (high_adj >= prev_high52).astype(float),
         np.nan,
     )
     new_high5 = np.full_like(new_high, np.nan)

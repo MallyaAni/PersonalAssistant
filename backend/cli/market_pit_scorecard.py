@@ -76,9 +76,13 @@ ARMS = {
     "ew_graded": lambda report, mask: point_in_time.graded_equal_weight_allocator(
         mask, min_grade=grading.ORDINAL[grading.A], cap=0.10, gross=1.0
     ),
-    # A walk-forward gradient-boosted ranker on price features plus the
-    # desk's grade and conviction, top ten members at 10% each.
-    "hgb_rank": lambda report, mask: learned_arm.arm(report, mask),
+    # A walk-forward gradient-boosted ranker, top ten members at 10% each.
+    # "hgb_rank" trains on price features plus the desk's grade and summed
+    # conviction (the baseline every earlier attempt used); "hgb_desk" on
+    # the analysts' own evidence, the alpha summaries and the regime context
+    # (`learned_arm.FEATURE_SETS`). Two registered trials.
+    "hgb_rank": lambda report, mask: learned_arm.arm(report, mask, "price"),
+    "hgb_desk": lambda report, mask: learned_arm.arm(report, mask, "desk"),
 }
 
 

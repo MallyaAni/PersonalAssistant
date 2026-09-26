@@ -129,3 +129,37 @@ def test_registry_and_cache(fitted):
     assert len(learned_arm._CACHE) == 1
     t = T - 1
     np.testing.assert_array_equal(a(report, report.panel, None, t), b(report, report.panel, None, t))
+
+
+# The desk feature set carries every analyst's conviction and numeric
+# evidence, the alpha summaries and the regime context, each named, with
+# text evidence left out; the price set is the ten-column baseline.
+def test_desk_feature_stack_names_every_column(fitted):
+    report, mask, _ = fitted
+    from dataclasses import replace
+
+    from backend.agents.trading.desk.opinions import Opinion
+    from backend.market import alpha
+
+    n = len(NAMES) + 1
+    evidence = {
+        "revenue_yoy": np.random.default_rng(1).normal(size=(T, n)),
+        "support_kind": np.full((T, n), "swing", dtype=object),
+    }
+    opinions = {"fundamental": Opinion("fundamental", np.random.default_rng(2).normal(size=(T, n)), evidence)}
+    rich = replace(report, opinions=opinions)
+    price, price_names = learned_arm.feature_stack(rich, "price")
+    assert price.shape == (T, n, 10) and price_names[-2:] == ("desk_grade", "desk_conviction")
+    desk, desk_names = learned_arm.feature_stack(rich, "desk")
+    assert desk.shape[2] == len(desk_names) == 10 + 2 + alpha.ALPHA_COUNT + 9
+    assert "fundamental:conviction" in desk_names and "fundamental:revenue_yoy" in desk_names
+    assert not any(name.endswith("support_kind") for name in desk_names)
+    assert "alpha:rel_theme_20" in desk_names and "regime:novelty_z" in desk_names
+    assert np.isfinite(desk[T - 1, 0, desk_names.index("regime:exposure")])
+    with pytest.raises(ValueError):
+        learned_arm.feature_stack(rich, "other")
+    inputs = learned_arm.historical_inputs(rich, mask, "desk")
+    assert inputs.features.shape[2] == len(desk_names)
+    from backend.cli import market_pit_scorecard as sc
+
+    assert {"hgb_rank", "hgb_desk"} <= set(sc.ARMS)

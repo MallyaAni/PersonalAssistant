@@ -155,3 +155,34 @@ def test_weekly_ema_does_not_change_when_the_future_is_removed():
         cut = _weekly_ema(short, close[: stop + 1], 21)
         assert np.isfinite(full[stop, 0])
         assert cut[stop, 0] == pytest.approx(full[stop, 0]), stop
+
+
+# A dividend payer's 52-week high is measured on the adjusted basis the
+# close uses, so a name sitting exactly at its high reads a zero distance
+# and fires a new high, whatever the dividend history did to raw prints.
+def test_52_week_high_uses_the_adjusted_basis():
+    from datetime import date, timedelta
+
+    from backend.market import technical as tech
+    from backend.market.panel import Panel
+
+    t = 300
+    dates = np.array([date(2024, 1, 1) + timedelta(days=i) for i in range(t)], dtype="datetime64[D]")
+    raw = np.full((t, 2), 100.0)
+    # Name 0 pays a dividend at t=150 that lifts the adjustment ratio 3%;
+    # its adjusted series is flat, so it is always at its adjusted high.
+    adj = raw.copy()
+    adj[:150, 0] = 97.0
+    high = raw * 1.0
+    low = raw * 1.0
+    panel = Panel(
+        dates=dates, tickers=("DIV", "SPY"), open=raw, high=high, low=low,
+        close=raw, adj_close=adj, volume=np.full((t, 2), 1e6), themes={}, benchmark="SPY",
+    )
+    feats = tech.technical_features(panel)
+    idx = tech.TECHNICAL_NAMES.index("high_52w_distance")
+    new_idx = tech.TECHNICAL_NAMES.index("new_52w_high")
+    # Before the fix the raw 52-week high (100) was divided into the adjusted
+    # close (97), reading -3% below a high the name was actually sitting on.
+    assert feats[-1, 0, idx] == pytest.approx(0.0, abs=1e-9)
+    assert feats[-1, 0, new_idx] == 1.0
