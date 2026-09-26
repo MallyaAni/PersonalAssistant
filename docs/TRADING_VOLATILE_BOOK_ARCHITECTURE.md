@@ -20,7 +20,7 @@ the operator's word). A research verdict is recorded as `PASSED` or
 | Item | Wave / agent | Owner files (disjoint) | Status |
 |---|---|---|---|
 | Design, ADR, specs, roadmap amendment | 0 / integrator | this doc, `adr/0024`, `research/volatile-book-review-2026-09-25/`, `TRADING_ROADMAP.md` | BUILT |
-| Main-only nightly fixes: ML-ledger continuation (the Spark ledger's latest row, seq 7 on 2026-09-25, is under df47189d; main's identity is 95a54c58 and its unit test fails until declared) and a New York-date `asof` (before 2026-11-01) | 0 / integrator, branch `trading/nightly-fixes` @ `78a7b3c8` for the operator to merge into main | `data/opportunity_shadow_migrations.json`, `market_daily.py` (`_nightly_asof`), `test_market_daily.py` | BUILT (42 tests pass); awaiting merge to main |
+| Main-only nightly fixes: ML-ledger continuation (the Spark ledger's latest row, seq 7 on 2026-09-25, is under df47189d; main's identity is 95a54c58 and its unit test fails until declared) and a New York-date `asof` (before 2026-11-01) | 0 / integrator, branch `trading/nightly-fixes` @ `78a7b3c8`, merged into this feature branch (`4413218d`); reaches main only with the whole branch, once proven | `data/opportunity_shadow_migrations.json`, `market_daily.py` (`_nightly_asof`), `test_market_daily.py` | BUILT (42 tests pass) |
 | P0.3 SIP 15-minute history + 2016-2018 calendar | 1 / A | `alpaca.py`, `intraday_sip.py`, `market_intraday.py`, calendar JSON, nightly script | PLANNED |
 | P0.1 Candidate harness, statistics, gates, trials registry | 1 / B | `candidate_bench.py`, `candidate_stats.py`, `candidate_gate.py`, `trials_registry.py`, `market_candidate_bench.py`, `macro.py`, `allocation_controls.py` | PLANNED |
 | Simulator/balancer API (P1 arms, defensive destination, tranches, fill log, cash yield, dead-hook refusals, FOMC parity) | 1 / C | `simulate.py`, `paper.py`, `planner.py`, `risk.py`, `sizing.py`, `entry.py`, `book_sizing.py`, `defensive.py`, `tranches.py`, `fill_log.py` | PLANNED |
@@ -284,7 +284,7 @@ The plan as approved on 2026-09-25, kept verbatim so later changes are visible a
 - **Wave 0 (me, half a day).**
   - Create a worktree at `../anios-trading-volatile-15m` on branch `trading/volatile-book-15m`, cut from `origin/main`.
   - Commit `docs/research/volatile-book-15m-design-2026-09-26.md`, which holds the full design, the specs and your decisions, plus protocol P, `docs/research/gates/TEMPLATE.gate.json` and the legacy trial count.
-  - Two fixes have to reach `main` because the nightly pulls `main`. They go on a separate branch `trading/nightly-fixes`, for you (or the main agent) to merge:
+  - Two fixes belong on `main` because the nightly pulls `main`. They sit on `trading/nightly-fixes`, merged into the feature branch; per the operator (2026-09-26) nothing is merged into `main` until the whole branch is proven:
     - the `opportunity_shadow` migration row, due by Mon 2026-09-28 19:30 ET, or the frozen ML ledger stops recording;
     - a New York date for the nightly `asof`, due before 2026-11-01, when the clocks change to EST.
 - **Wave 1 (7 agents in parallel).** Each works in its own worktree on a sub-branch and owns disjoint files:
