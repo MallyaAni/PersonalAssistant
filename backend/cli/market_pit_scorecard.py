@@ -81,6 +81,10 @@ ARMS = {
     "ew_graded_full": lambda report, mask: point_in_time.graded_equal_weight_allocator(
         mask, min_grade=grading.ORDINAL[grading.A], cap=1.0, gross=1.0
     ),
+    # The deployable form: the same, under the operator's 20% hold limit.
+    "ew_graded_20": lambda report, mask: point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=grading.ORDINAL[grading.A], cap=0.20, gross=1.0
+    ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed
     # conviction (the baseline every earlier attempt used); "hgb_desk" on

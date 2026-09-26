@@ -162,4 +162,4 @@ def test_desk_feature_stack_names_every_column(fitted):
     assert inputs.features.shape[2] == len(desk_names)
     from backend.cli import market_pit_scorecard as sc
 
-    assert {"hgb_rank", "hgb_desk", "ew_graded_full"} <= set(sc.ARMS)
+    assert {"hgb_rank", "hgb_desk", "ew_graded_full", "ew_graded_20"} <= set(sc.ARMS)
