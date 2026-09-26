@@ -69,6 +69,25 @@ strategy that changes only when untouched sessions say so.
   of the fundamentals switch after a week of blocks; the FOMC verdict
   after six meetings; nothing on strategy.
 
+- 2026-09-26 (operator amendments, design in
+  [TRADING_VOLATILE_BOOK_ARCHITECTURE.md](TRADING_VOLATILE_BOOK_ARCHITECTURE.md),
+  [ADR 0024](adr/0024-one-signal-engine-for-paper-and-personal.md)):
+  - **Adoption path.** A change passes a historical gate committed before its
+    run (all 20 reset offsets, 10/25 bp, equal-weight-book hurdle, DSR/SPA/PBO
+    with trials counted), then a 4-6 week fidelity shadow, then switches the
+    paper account with the old policy kept as a shadow. This replaces "a named
+    shadow for a season" in stages 3 and 5: a season cannot detect a
+    realistic edge over QQQ, so forward shadows check fill fidelity only.
+  - **SPY and QQQ** are buy-and-hold benchmarks and, when volatile names are
+    expected to crash, a defensive destination (broad break → cash/SWVXX
+    modelled as cash plus dated T-bill yield; volatile-only break → SPY; never
+    QQQ). Idle cash is never parked in an index.
+  - **One signal stream** drives both the paper account and the personal board;
+    the 2026-09-22 rule that kept paper out of personal instructions is
+    superseded.
+  - Total return first, no leverage; drawdown reported, not gated; a 20% hold
+    limit on any name.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

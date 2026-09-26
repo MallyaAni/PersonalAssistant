@@ -593,6 +593,12 @@ whole thing after each close, writes a record of the session, and the Desk view
 reads that record. The desk belongs to one person: `MARKET_DESK_USER` names
 them and every other user is refused.
 
+**Planned next shape (not live):** the volatile book and a 15-minute signal
+engine shared by the paper account and the personal board, with a
+crash-avoidance switch and a gated adoption path -
+[design and status](TRADING_VOLATILE_BOOK_ARCHITECTURE.md),
+[ADR 0024](adr/0024-one-signal-engine-for-paper-and-personal.md).
+
 The only model in the desk's decision path reads documents, not prices. It
 scores each earnings release for what the company said about its outlook, and
 those scores become the sentiment analyst. It also writes the plain-English
