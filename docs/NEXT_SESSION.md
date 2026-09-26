@@ -65,13 +65,28 @@ the flag had landed after `fundamentals` in `desk.run`, moving
 default; those tests live in modules the review sandbox could not collect.
 Any future desk.run option goes behind the `*`.
 
-**Next, in order.** (1) Copy the two JSON files beside the research note so
-the six-line tables are in git. (2) Score P1.2, capped equal weight across
-every A/A+ name, with `market_pit_scorecard` (needs an `--arm` option that
-routes an allocator; the equal-weight allocator in `point_in_time.py` is
-the template). (3) Put the point-in-time line on the dashboard curve beside
-the today's-book line, labelled. (4) Only then the learned ranker, judged
-against equal weight point in time at 25 bp on 2016-2023.
+**Built since (same day, this branch).** `market_pit_scorecard --arm ew_graded`
+(P1.2, every A/A+ name at equal weight capped at 10%) and `--arm hgb_rank`
+(walk-forward gradient-boosted ranker on the eight causal price features
+plus the desk's grade and conviction, trained only on members, purged
+monthly refits via `learned_policy.walk_forward_ranker`, top ten members at
+10% each; `desk/learned_arm.py`). The nightly record now carries
+`rules_point_in_time` and its stats, and the dashboard draws it as "same
+rules, names known at the time" beside the published line with its CAGR in
+the stats row. TypeScript checked with `tsc --noEmit` on the desktop
+toolchain; **UNVERIFIED:** no browser test covers the new line yet.
+
+**Next, in order.** (1) Run on the Spark, after the deploy:
+`python -m backend.cli.market_pit_scorecard --root data/market --arm ew_graded`
+and the same with `--arm hgb_rank` (the ranker fits about a hundred
+monthly models per line, so allow tens of minutes). Judge each against the
+frozen rule's point-in-time line on 2016-2023 at both costs, then against
+equal weight point in time; record PASSED or INSUFFICIENT EVIDENCE in
+`TRADING_ROADMAP.md`. (2) Copy the `pit_scorecard*.json` files beside the
+research note. (3) A browser test for the point-in-time line. (4) The
+day-type classifier (probability of a large basket down-move over 1-5
+sessions, exposure scalar only, Brier skill against climatology on
+2016-2023) once the selection question is settled.
 
 ## 2026-09-26 — Point-in-time book, honest scorecard, gate statistics (branch `trading/week-one-readable-results`)
 

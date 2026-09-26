@@ -47,3 +47,6 @@ secrets/
 # The committed research universe lives under a directory named data/; the
 # bare data/ rule above must not swallow it.
 !backend/market/data/
+
+# Transfer bundles and a push credential this workstation keeps for Claude; never committed.
+.claude-bundles/

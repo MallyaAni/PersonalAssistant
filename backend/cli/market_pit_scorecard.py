@@ -44,7 +44,14 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.agents.trading.desk import event_risk, grading, paper, point_in_time, simulate
+from backend.agents.trading.desk import (
+    event_risk,
+    grading,
+    learned_arm,
+    paper,
+    point_in_time,
+    simulate,
+)
 from backend.market import benchmarks, candidate_stats
 from backend.market.universe import MARKET_INDICES
 
@@ -60,14 +67,18 @@ EW_PIT = "equal weight / point-in-time"
 EW_TODAY = "equal weight / today's book"
 
 # Allocation arms the scorecard can put on the rule lines. Each is a factory
-# taking the (T, N) membership mask and returning a `simulate.run` allocator.
-# Parameters are frozen here, before any result is seen, and named in the
-# output file, so an arm is one registered trial.
+# taking the report the line runs on and its (T, N) membership mask, and
+# returning a `simulate.run` allocator. Parameters are frozen here, before
+# any result is seen, and named in the output file, so an arm is one
+# registered trial.
 ARMS = {
     # P1.2: every A/A+ name at equal weight, capped at 10% of equity each.
-    "ew_graded": lambda mask: point_in_time.graded_equal_weight_allocator(
+    "ew_graded": lambda report, mask: point_in_time.graded_equal_weight_allocator(
         mask, min_grade=grading.ORDINAL[grading.A], cap=0.10, gross=1.0
     ),
+    # A walk-forward gradient-boosted ranker on price features plus the
+    # desk's grade and conviction, top ten members at 10% each.
+    "hgb_rank": lambda report, mask: learned_arm.arm(report, mask),
 }
 
 
@@ -115,7 +126,7 @@ def price_offset(
 ) -> dict[str, Curve]:
     """Return {label: Curve} for every line on this offset.
 
-    `arm`, when given, is an allocator factory `(mask) -> allocator` that
+    `arm`, when given, is an allocator factory `(report, mask) -> allocator` that
     replaces the rule on the two "rule" lines (today's book and point in
     time), so an allocation arm is scored on exactly the sessions, costs
     and controls the frozen rule is. The labels keep their keys; the
@@ -131,8 +142,8 @@ def price_offset(
         rule_pit = simulate.run(restricted, since=since, cost_bps=cost_bps, **live)
     else:
         plain = dict(use_exits=False, rebalance=paper.REBALANCE_EVERY, cost_bps=cost_bps)
-        rule_today = simulate.run(report, since=since, allocator=arm(everyone), **plain)
-        rule_pit = simulate.run(restricted, since=since, allocator=arm(mask), **plain)
+        rule_today = simulate.run(report, since=since, allocator=arm(report, everyone), **plain)
+        rule_pit = simulate.run(restricted, since=since, allocator=arm(restricted, mask), **plain)
     out[RULE_TODAY] = Curve(RULE_TODAY, rule_today.dates, rule_today.returns)
     out[RULE_PIT] = Curve(RULE_PIT, rule_pit.dates, rule_pit.returns)
     for label, book_mask in ((EW_PIT, mask), (EW_TODAY, everyone)):
