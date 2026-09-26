@@ -34,5 +34,23 @@
   "to": "95a54c5804a2d85610a8f2c069bfd87e6fc5d5a543002d1e57c5dc9c2842a551",
   "declared": "2026-09-26",
   "reason": "Chains the already-declared 19f933ff -> df47189d (2026-09-23) and 19f933ff -> dc1d5fa6 (2026-09-24) continuations into the current identity. Revisions 3b45ed03 (calendar exchange_status/REGULAR_OPEN/NEW_YORK), 4cadc135 (calendar reviewed_sessions) and df4dc669 (edgar _known_quarters with a strict_before_session option, calendar publication_session, levels_pit point_in_time_levels strict_publication/basis_dates) changed hashed files only by additions and opt-in options. The shadow's reads are unchanged: trailing_levels is untouched, edgar._known_series with its default keeps `filed <= session` and returns the same two arrays, record_from_frames is untouched, and calendar._future_session_offset, fomc_decisions and _fomc_distances are untouched. The model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (sequence 7, session 2026-09-25, policy df47189d) continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "to": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "declared": "2026-09-26",
+  "reason": "Revision 5bfdf1a (edgar parse_company_facts and _instant_facts prefer the tag still being reported - most recent period end - over the one with most quarters, so the 2018 ASC 606 rename cannot freeze revenue) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which is untouched; trailing_levels, the model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (sequence 7, session 2026-09-25, policy df47189d) continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+  "to": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "declared": "2026-09-26",
+  "reason": "Revision 5bfdf1a (edgar parse_company_facts and _instant_facts prefer the tag still being reported - most recent period end - over the one with most quarters, so the 2018 ASC 606 rename cannot freeze revenue) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which is untouched; trailing_levels, the model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (sequence 7, session 2026-09-25, policy df47189d) continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "declared": "2026-09-26",
+  "reason": "Chains the already-declared 19f933ff -> df47189d (2026-09-23) and 19f933ff -> dc1d5fa6 (2026-09-24) continuations into the current identity. Revision 5bfdf1a (edgar parse_company_facts and _instant_facts prefer the tag still being reported - most recent period end - over the one with most quarters, so the 2018 ASC 606 rename cannot freeze revenue) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which is untouched; trailing_levels, the model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (sequence 7, session 2026-09-25, policy df47189d) continues; archived transitions are not rewritten."
  }
 ]
