@@ -44,6 +44,35 @@ limit), which costs a ~17-minute ds4 restart and was not done.
 **Access.** The Sparks accept an SSH key labelled `claude-cowork-session` in
 `~/.ssh/authorized_keys` on both boxes; delete that line to revoke.
 
+## 2026-09-26 — First point-in-time scorecard: the rule's edge is the universe
+
+**VERIFIED on the Spark** (run from `39175f37`, outputs
+`data/market/desk/pit_scorecard.json` and `pit_scorecard_signed_rotation.json`;
+figures in [research/pit-scorecard-2026-09-26.md](research/pit-scorecard-2026-09-26.md)):
+rule on today's book 42.3% CAGR (10 bp, all) against 18.8% point in time;
+rule point-in-time minus QQQ -0.4 bp/day (t -0.28); minus equal-weight
+point-in-time -2.9 bp/day (t -1.80); today's book minus QQQ +7.8 bp/day
+(t +3.33). The lead over QQQ is the hindsight choice of names.
+
+**Gate H, signed-rotation arm: FAILED** — median improvement on 2016-2023 is
+-1.4 points at 10 bp and -1.5 at 25 bp (ahead only in 2024-2026, which is
+never tuned on). Insufficient evidence; `signed_rotation` stays off and
+available. Recorded in `TRADING_ROADMAP.md`.
+
+**Process note.** `39175f37` (opencode) made `signed_rotation` keyword-only:
+the flag had landed after `fundamentals` in `desk.run`, moving
+`__defaults__[-1]` and breaking two tests that pin the live fundamentals
+default; those tests live in modules the review sandbox could not collect.
+Any future desk.run option goes behind the `*`.
+
+**Next, in order.** (1) Copy the two JSON files beside the research note so
+the six-line tables are in git. (2) Score P1.2, capped equal weight across
+every A/A+ name, with `market_pit_scorecard` (needs an `--arm` option that
+routes an allocator; the equal-weight allocator in `point_in_time.py` is
+the template). (3) Put the point-in-time line on the dashboard curve beside
+the today's-book line, labelled. (4) Only then the learned ranker, judged
+against equal weight point in time at 25 bp on 2016-2023.
+
 ## 2026-09-26 — Point-in-time book, honest scorecard, gate statistics (branch `trading/week-one-readable-results`)
 
 Started from GitHub main `d2da64f3` (which already carried the ML-ledger

@@ -69,6 +69,18 @@ strategy that changes only when untouched sessions say so.
   of the fundamentals switch after a week of blocks; the FOMC verdict
   after six meetings; nothing on strategy.
 
+- 2026-09-26: the first point-in-time scorecard
+  ([pit-scorecard-2026-09-26.md](research/pit-scorecard-2026-09-26.md)).
+  On the names the desk could have known about (dated membership file,
+  `market_membership`), the rule earns what QQQ earns (paired t -0.28) and
+  trails the equal-weight point-in-time book by about 7 CAGR points (t
+  -1.80); the 23-point gap to the today's-book curve is the hindsight
+  choice of names. The hurdle for every candidate from here is equal weight
+  on the point-in-time universe at 25 bp on 2016-2023. First arm scored,
+  `signed_rotation`: FAILED gate H (median -1.4 / -1.5 points on the
+  choosing window); insufficient evidence, live rule unchanged. Next arm:
+  capped equal weight across every A/A+ name (P1.2).
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation
