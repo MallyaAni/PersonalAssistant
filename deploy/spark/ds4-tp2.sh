@@ -36,7 +36,37 @@
 #     way to widen it is to trim the VLM's KV on spark2, not to raise
 #     this.
 #     Raise this only after checking `free -g` on SPARK2.
-#   - 1M context at 0.83 utilization, and --speculative-config REMOVED. These
+#   - 2026-09-26: DSpark re-enabled, prefill chunked, context 384k. VERIFIED
+#     2026-09-26 (deploy/spark/README.md has the evidence). Measured: code
+#     decode 26.5 -> ~67 tok/s single stream, ~200 aggregate at 6, draft
+#     acceptance 75% (~4.8 tokens/step), KV pool 16.46 GiB = 1.24M tokens,
+#     boot ~17 min (was ~6: draft load + graph capture). The reasoning:
+#       * The script had run with no --speculative-config since 2026-08-23 (see
+#         the note below). MODEL_EVALUATION.md measured the DSpark drafter at
+#         2.57-4.08 accepted tokens per step, and every published recipe on this
+#         same 0.1.1 image runs it (62-83 tok/s single stream), so leaving it off
+#         costs roughly half of decode. The JSON is the exact form that ran here
+#         before the removal; k=5 is the DSpark block size (7 and 10 crash).
+#       * --max-model-len 393216, down from 1M. The draft layers need memory on
+#         each rank, and at 0.81 the KV pool (~8.7 GiB) had only ~1.2 GiB to
+#         spare above the 7.54 GiB that 1M needs. 384k needs ~2.9 GiB, is the
+#         floor DeepSeek recommends for Think Max, and is ~24x the worst measured
+#         turn (max 16.1k). 0.81 is NOT raised: spark2's margin is 1.9 GiB.
+#         The opencode client is capped at 262144 context + 65536 output so a
+#         request can never exceed this ceiling.
+#       * --enable-chunked-prefill --long-prefill-token-threshold 1024 and
+#         --async-scheduling: with several agent workers sending 100k+ prompts,
+#         one long prefill otherwise stalls every other stream's decode. Anemll
+#         issue #27 has a further hotfix (max 2 in-flight partial prefills) that
+#         is applied by patching the container at start; not carried here yet.
+#       * --max-cudagraph-capture-size 40 = max-num-seqs 6 x (k+1) = 36, padded
+#         to a multiple of 8, so speculative batches are captured, not eager.
+#     If the head refuses to boot with a KV-cache-too-small error, the draft
+#     layers took more than expected: lower --max-model-len to 262144 before
+#     touching utilization. If it boots and dies on the first real request,
+#     that is the documented spec-decode allocation failure: remove
+#     --speculative-config and redeploy; do not raise utilization.
+#   - (superseded 2026-09-26) 1M context at 0.83 utilization, and --speculative-config REMOVED. These
 #     three go together and the reason is worth reading before changing any of
 #     them.
 #
@@ -139,10 +169,15 @@ exec docker run --rm --name "ds4-$ROLE" \
   --distributed-executor-backend mp \
   --kv-cache-dtype nvfp4_ds_mla \
   --block-size 256 \
-  --max-model-len 1048576 \
+  --max-model-len 393216 \
   --max-num-seqs 6 \
   --max-num-batched-tokens 8192 \
   --gpu-memory-utilization 0.81 \
+  --speculative-config '{"method":"dspark","num_speculative_tokens":5,"draft_sample_method":"probabilistic"}' \
+  --enable-chunked-prefill \
+  --long-prefill-token-threshold 1024 \
+  --async-scheduling \
+  --max-cudagraph-capture-size 40 \
   --enable-prefix-caching \
   --tokenizer-mode deepseek_v4 \
   --tool-call-parser deepseek_v4 --enable-auto-tool-choice \

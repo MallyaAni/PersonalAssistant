@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-09-26 — DSpark speculative decode back on for DeepSeek-V4-Flash (live on both Sparks)
+
+**What changed.** `deploy/spark/ds4-tp2.sh` had run with no
+`--speculative-config` since 2026-08-23 (removed during the comment-in-exec-block
+incident, never restored), so production decoded at 26.5 tok/s while
+`models.json` claimed 63. Re-enabled DSpark k=5 with the JSON that ran before,
+added `--enable-chunked-prefill --long-prefill-token-threshold 1024
+--async-scheduling --max-cudagraph-capture-size 40`, and lowered
+`--max-model-len` 1M -> 393216. Utilisation stays 0.81 (spark2 bound). The
+opencode client on the desktop (`~/.config/opencode/opencode.jsonc`) now caps
+context at 262144 so it compacts before the server ceiling (opencode #50574).
+
+**VERIFIED on the Sparks, 2026-09-26.** Rolled out with
+`scripts/spark-dspark-rollout.sh` (preflight, baseline, deploy, auto-rollback,
+soak); log `test-results/dspark-rollout-20260926T174931.log`. Code decode 26.5
+-> ~67 tok/s single stream, ~200 tok/s aggregate at 6 streams; 12,656/16,820
+draft tokens accepted (75%, ~4.8 tokens per step); 18-request concurrent soak
+clean. `scripts/gate.sh` from `~/deploy/anios` at `39175f37`: 100 passed.
+`benchmark_inference`: 5/5 (main TTFT 0.24 s, tool 0.95 s, presentation
+0.31 s, vision 3.66 s).
+
+**Known and not fixed.** Boot now takes ~17 min, not ~6 (draft load + graph
+capture), inside `TimeoutStartSec=3900`. spark2 shows 0 GiB available and 8 GB
+swap with ds4-worker + VLM resident - the same thin margin as before; trimming
+the VLM's KV in `vlm-serve.sh` is the documented fix and is the next step. The
+engine reports 16.46 GiB KV (1.24M tokens), so 1M context would fit again; not
+restored because nothing needs it. Anemll issue #27's partial-prefill hotfix is
+not applied. `scripts/gate.sh --all` was not run.
+
+**Access.** The Sparks accept an SSH key labelled `claude-cowork-session` in
+`~/.ssh/authorized_keys` on both boxes; delete that line to revoke.
+
 ## 2026-09-26 — Point-in-time book, honest scorecard, gate statistics (branch `trading/week-one-readable-results`)
 
 Started from GitHub main `d2da64f3` (which already carried the ML-ledger

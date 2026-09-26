@@ -12,8 +12,8 @@
   "rows": [
     [
       "DeepSeek-V4-Flash FP8 (official) — CURRENT",
-      "vLLM 0.25.2 TP=2 across 2 Sparks, B12X MoE, DSpark k=5, 1M ctx",
-      "40 math / 30 prose / 63 code / 80 counting; 383 agg @ c=6",
+      "vLLM 0.25.2 TP=2 across 2 Sparks, B12X MoE, DSpark k=5 (re-enabled 2026-09-26; off 2026-08-23..09-26), chunked prefill, 384k ctx",
+      "~67 code single-stream (26.5 with DSpark off, measured 2026-09-26); ~200 agg @ c=6; draft acceptance 75%",
       "1785-2639",
       "11.5x (warm ~512 ms @ 11.7k)",
       "yes (enforced)",
