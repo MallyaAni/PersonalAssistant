@@ -692,6 +692,9 @@ const CurveChart = ({
   const series: { label: string; color: string; values: number[] }[] = []
   if (backtest) {
     series.push({ label: 'stored simulation', color: '#1e7a3a', values: align(btDates, backtest.rules) })
+    if (backtest.rules_point_in_time && backtest.rules_point_in_time.length) {
+      series.push({ label: 'same rules, names known at the time', color: '#b45309', values: align(btDates, backtest.rules_point_in_time) })
+    }
     series.push({ label: 'SPY', color: '#9ca3af', values: align(btDates, backtest.spy) })
     if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: align(btDates, backtest.qqq) })
   }
@@ -824,8 +827,13 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
       </section>
     )
   }
+  const pit = backtest.stats_point_in_time
   const cells = [
     { label: 'CAGR', value: stats.cagr != null ? `${(stats.cagr * 100).toFixed(1)}%` : '—' },
+    // The honest figure beside the published one: the same rules on the
+    // names the book could have held on each session. The difference is
+    // the choice of names, not the strategy.
+    { label: 'CAGR, names known at the time', value: pit && pit.cagr != null ? `${(pit.cagr * 100).toFixed(1)}%` : '—' },
     { label: 'Volatility', value: stats.volatility != null ? `${(stats.volatility * 100).toFixed(0)}%` : '—' },
     { label: 'Worst drawdown', value: stats.drawdown != null ? `${(stats.drawdown * 100).toFixed(0)}%` : '—' },
     { label: 'Total return', value: stats.total != null ? `${(stats.total * 100).toFixed(0)}%` : '—' },

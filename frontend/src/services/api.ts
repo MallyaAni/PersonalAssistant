@@ -1957,6 +1957,11 @@ export interface DeskCurve {
     asof: string;
     dates: string[];
     rules: number[];
+    // The same rules restricted each session to the names the book could
+    // have held then; empty, with a note, when the nightly could not draw it.
+    rules_point_in_time?: number[];
+    stats_point_in_time?: Record<string, number | null>;
+    point_in_time_note?: string;
     spy: number[];
     qqq: number[];
     stats: Record<string, number | null>;

@@ -571,6 +571,12 @@ def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
     assert block["spy"] == pytest.approx([0.0, 0.02, 0.03])
     assert block["qqq"] == pytest.approx([0.0, 0.02, 0.03])
     assert block["benchmark_notes"] == {}
+    # The point-in-time line runs the same (patched) simulation on the
+    # restricted report, so here it equals the rules line; the record
+    # carries its own stats and an empty note.
+    assert block["rules_point_in_time"] == pytest.approx([0.0, 0.05, 0.1])
+    assert block["stats_point_in_time"]["total"] == pytest.approx(0.1)
+    assert block["point_in_time_note"] == ""
     assert block["benchmark_cost_bps"] == sim_module.COST_BPS
     assert block["stats"]["total"] == pytest.approx(0.1)
     assert block["asof"] == "2026-09-03"
@@ -986,3 +992,42 @@ def test_the_nightly_session_date_is_unchanged_in_summer():
 
     summer_run = datetime(2026, 9, 25, 23, 30, tzinfo=UTC)  # 19:30 EDT
     assert _nightly_asof(summer_run) == date(2026, 9, 25)
+
+
+# When the point-in-time run cannot be drawn (here: the simulation raises on
+# the restricted report only), the published line still stands and the
+# record says why the second line is absent.
+def test_curve_block_reports_a_missing_point_in_time_line(monkeypatch):
+    from backend.agents.trading.desk import simulate as sim_module
+    from backend.market import benchmarks
+
+    report = _report()
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    calls = {"n": 0}
+
+    def fake_run(report_, **kwargs):
+        calls["n"] += 1
+        if calls["n"] > 1:
+            raise RuntimeError("restricted run failed")
+        return sim
+
+    monkeypatch.setattr(sim_module, "run", fake_run)
+    monkeypatch.setattr(
+        benchmarks,
+        "load_benchmark",
+        lambda store, symbol, sessions, **kw: benchmarks.BenchmarkSeries(
+            symbol, True, None, np.array([1.0, 1.0, 1.0]), np.asarray(sessions)
+        ),
+    )
+    block = market_daily.curve_block(report, object())
+    assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
+    assert block["rules_point_in_time"] == []
+    assert block["stats_point_in_time"] == {}
+    assert "restricted run failed" in block["point_in_time_note"]

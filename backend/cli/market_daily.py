@@ -1284,6 +1284,7 @@ def curve_block(report, store) -> dict | None:
     # were not the benchmark the scorecard prices.
     spy_curve, spy_note = _benchmark_curve(store, "SPY", sim.dates)
     qqq_curve, qqq_note = _benchmark_curve(store, "QQQ", sim.dates)
+    pit_curve, pit_stats, pit_note = _point_in_time_curve(report, sim.dates)
     stats = sim.stats()
     return {
         "label": "historical simulation with cash-limited fills; not a live record",
@@ -1299,6 +1300,14 @@ def curve_block(report, store) -> dict | None:
         "asof": str(panel.dates[-1]),
         "dates": dates,
         "rules": rules,
+        # The same rules restricted each session to the names the book could
+        # have held then (the dated membership file). The gap between this
+        # line and `rules` is the hindsight choice of names, which the first
+        # point-in-time scorecard measured at about 23 CAGR points; without
+        # this line the page presents that choice as the strategy's return.
+        "rules_point_in_time": pit_curve,
+        "stats_point_in_time": pit_stats,
+        "point_in_time_note": pit_note,
         "spy": spy_curve,
         "qqq": qqq_curve,
         # Why a benchmark line is absent, when it is; empty when both drew.
@@ -1308,6 +1317,37 @@ def curve_block(report, store) -> dict | None:
         "benchmark_cost_bps": simulate.COST_BPS,
         "stats": {k: (None if v != v else float(v)) for k, v in stats.items()},
     }
+
+
+# The rules' curve on the point-in-time book, aligned to the published
+# simulation's sessions, with its headline stats; an empty curve carries
+# the reason (no membership file, or the restricted run failed).
+def _point_in_time_curve(report, sessions) -> tuple[list[float], dict, str]:
+    """Return (cumulative return per session, stats, note)."""
+    from backend.agents.trading.desk import event_risk, point_in_time, simulate
+    from backend.agents.trading.desk import paper as paper_rules
+
+    try:
+        restricted, _mask = point_in_time.point_in_time(report)
+        sim = simulate.run(
+            restricted,
+            since=sessions[0].astype("datetime64[D]").astype(object)
+            if hasattr(sessions[0], "astype")
+            else sessions[0],
+            use_exits=False,
+            rebalance=paper_rules.REBALANCE_EVERY,
+            event_exposure=event_risk.live_path(report.panel),
+            event_lifecycle=True,
+            **simulate.LIVE_POLICY,
+        )
+    except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
+        return [], {}, f"point-in-time line not drawn: {type(exc).__name__}: {exc}"
+    if sim.equity is None or len(sim.dates) != len(sessions):
+        return [], {}, "point-in-time line not drawn: sessions differ from the published run"
+    equity = np.asarray(sim.equity, dtype=float)
+    base = equity[0] if equity[0] > 0 else 1.0
+    stats = {k: (None if v != v else float(v)) for k, v in sim.stats().items()}
+    return [float(e / base - 1.0) for e in equity], stats, ""
 
 
 # One benchmark's cumulative-return curve on the simulation's sessions,
