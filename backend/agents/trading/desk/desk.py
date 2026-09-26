@@ -158,6 +158,7 @@ def run(
     asof: date | None = None,
     inputs: tuple[str, ...] = LIVE_INPUTS,
     fundamentals: str = FUNDAMENTALS_CORRECTED,
+    *,
     signed_rotation: bool = False,
 ) -> DeskReport:
     """Return the desk using partitions on/before `asof` (latest if None).
