@@ -204,9 +204,18 @@ def novelty(baskets: np.ndarray, window: int = CORRELATION_SESSIONS) -> np.ndarr
 
 # Run the regime analyst over the panel for the names in `sides`.
 def opine(
-    panel: Panel, sides: dict[str, str], tightening: np.ndarray | None = None
+    panel: Panel,
+    sides: dict[str, str],
+    tightening: np.ndarray | None = None,
+    signed_rotation: bool = False,
 ) -> RegimeView:
-    """Return the RegimeView: per-session states and the rotation Opinion."""
+    """Return the RegimeView: per-session states and the rotation Opinion.
+
+    `signed_rotation` makes the rotation stance the sign of the spread for
+    every name on a side (see `Opinion.signed`); off, the stance comes from
+    percentile ranks of a two-valued score, which can only ever vote on the
+    smaller side. Off is the frozen live behaviour.
+    """
     count = len(panel.dates)
     is_ai = np.array([sides.get(t) == AI_SIDE for t in panel.tickers])
     is_sw = np.array([sides.get(t) == SOFTWARE_SIDE for t in panel.tickers])
@@ -278,7 +287,10 @@ def opine(
             )
         )
     rotation = Opinion(
-        "rotation", rotation_scores, {"rotation_spread_60": rotation_scores}
+        "rotation",
+        rotation_scores,
+        {"rotation_spread_60": rotation_scores},
+        signed=signed_rotation,
     )
     return RegimeView(states, rotation, ai_trend)
 

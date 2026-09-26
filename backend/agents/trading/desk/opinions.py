@@ -56,10 +56,25 @@ class Opinion:
     # confirmation when that analyst's input validity changes. None keeps
     # legacy persistence, including its handling of temporarily missing scores.
     stance_resets: np.ndarray | None = None
+    # A signed opinion is a vote about a side, not a ranking of names: its
+    # score is one constant per side (the rotation analyst's leader-minus-
+    # laggard spread, positive for the leading side), and the stance is
+    # the sign of that score. Ranking such a score by percentile does not
+    # do that: with 68 AI names and 26 software names, tie-averaged ranks
+    # put the leading AI side at 0.64 (neutral, never bullish) and the
+    # software side at 0.13 (bearish), and the reverse when software leads
+    # puts software at 0.86 (bullish) and AI at 0.36 (neutral). The half
+    # vote could only ever penalise or reward the smaller side. `signed`
+    # makes the rank the sign, so both sides vote as the docstring says.
+    # Off by default: the live policy is frozen and this is measured as an
+    # arm before it is adopted.
+    signed: bool = False
 
     # Ranks in [0, 1] across the names with a score on each session.
     def ranks(self) -> np.ndarray:
         """Return (T, N) percentile ranks of the scores per session."""
+        if self.signed:
+            return signed_ranks(self.scores)
         return percentile_rank(self.scores)
 
     # Persist rank stances per name, honoring explicit input-validity resets.
@@ -127,6 +142,18 @@ def persist(
             previous = np.where(resets[t], NEUTRAL, previous)
         held[t] = np.where(run >= sessions, raw[t], previous)
     return held
+
+
+# Ranks from the sign of a score: 1 for positive, 0 for negative, 0.5 for
+# zero, NaN where the score is. Top-fraction and bottom-fraction stances and
+# the conviction then read the sign, whatever the side counts are.
+def signed_ranks(scores: np.ndarray) -> np.ndarray:
+    """Return (T, N) ranks in {0, 0.5, 1}, NaN where the score is NaN."""
+    values = np.asarray(scores, dtype=float)
+    out = np.full(values.shape, np.nan)
+    known = np.isfinite(values)
+    out[known] = 0.5 + 0.5 * np.sign(values[known])
+    return out
 
 
 # A rank in [0, 1] mapped smoothly onto [-1, 1]. A sharpness of 1 is a
