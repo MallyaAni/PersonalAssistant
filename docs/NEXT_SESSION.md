@@ -76,10 +76,31 @@ rules, names known at the time" beside the published line with its CAGR in
 the stats row. TypeScript checked with `tsc --noEmit` on the desktop
 toolchain; **UNVERIFIED:** no browser test covers the new line yet.
 
+**Day-type study built** (`backend/market/day_type.py`,
+`python -m backend.cli.market_day_type --root data/market`): the "green day /
+red day" question as a kill-criterion study before any exposure rule. Label:
+the point-in-time basket's open-to-open return over 1 and 5 sessions below
+the bottom tenth of its own trailing 250-session distribution (a red day
+*for that regime*, so volatility clustering cannot count as skill by
+itself). Features: basket and index returns and realised volatility at
+several horizons and their ratios, how the index candle was built (close
+location, range ratio, gap), breadth above the 20- and 50-session averages
+and up-on-the-day, 250-session drawdown and high distance, weekday, FOMC
+distances, and the regime context. Logistic and a heavily regularised
+boosted model, refit every 63 sessions with a purge, scored on Brier skill
+against the trailing base rate; exposure diagnostic beside the 1.5-CAGR
+budget. Kill floor: skill < 0.02 on 2016-2023 = INSUFFICIENT EVIDENCE. On a
+synthetic clustered-volatility book both models score +0.03..+0.04 and on
+iid returns -0.01, so the floor separates the two. Also `--arm hgb_desk`
+(the learned ranker on the analysts' point-in-time evidence, alpha
+summaries and regime context; `learned_arm.FEATURE_SETS`) and the 52-week
+basis fix in `technical.py`.
+
 **Next, in order.** (1) Run on the Spark, after the deploy:
 `python -m backend.cli.market_pit_scorecard --root data/market --arm ew_graded`
-and the same with `--arm hgb_rank` (the ranker fits about a hundred
-monthly models per line, so allow tens of minutes). Judge each against the
+and the same with `--arm hgb_rank` and `--arm hgb_desk` (each ranker fits
+about a hundred monthly models per line, so allow tens of minutes), then
+`python -m backend.cli.market_day_type --root data/market`. Judge each against the
 frozen rule's point-in-time line on 2016-2023 at both costs, then against
 equal weight point in time; record PASSED or INSUFFICIENT EVIDENCE in
 `TRADING_ROADMAP.md`. (2) Copy the `pit_scorecard*.json` files beside the
