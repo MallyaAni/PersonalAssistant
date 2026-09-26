@@ -398,9 +398,12 @@ def parse_company_facts(payload: Mapping[str, Any]) -> list[QuarterFact]:
     out: list[QuarterFact] = []
     for name, tags in FACT_TAGS.items():
         chosen: list[QuarterFact] = []
-        # Filers switch tags over the years; the tag with the most quarters
-        # on file is the one with the history worth reading.
-        best_count = 0
+        # Filers switch tags over the years (ASC 606 renamed revenue for most
+        # of the market in 2018). A tag that stopped being filed freezes its
+        # series at its last reported quarter, so "most quarters" selects the
+        # dead tag forever. Prefer the tag still being reported: the one with
+        # the most recent period end, ties broken by how much history it has.
+        best: tuple[date, int] | None = None
         for taxonomy in ("us-gaap", "ifrs-full"):
             for tag in tags:
                 rows = _rows_for(facts_root, taxonomy, tag)
@@ -409,9 +412,14 @@ def parse_company_facts(payload: Mapping[str, Any]) -> list[QuarterFact]:
                     quarters = _with_year_to_date_quarters(
                         quarters, _ytd_spans(rows, name)
                     )
-                if len(quarters) > best_count:
-                    best_count = len(quarters)
-                    chosen = _with_derived_fourth_quarters(quarters, years)
+                candidate = _with_derived_fourth_quarters(quarters, years)
+                if not candidate:
+                    continue
+                latest = max(f.end for f in candidate)
+                key = (latest, len(candidate))
+                if best is None or key > best:
+                    best = key
+                    chosen = candidate
         out.extend(chosen)
     out.extend(_instant_facts(facts_root))
     out.sort(key=lambda f: (f.name, f.end, f.filed))
@@ -419,12 +427,15 @@ def parse_company_facts(payload: Mapping[str, Any]) -> list[QuarterFact]:
 
 
 # Instant facts (assets, equity, shares): the earliest-filed value at each
-# balance-sheet date, from the first taxonomy/tag pair with the most dates
-# on file. Stored as QuarterFact rows with start == end.
+# balance-sheet date, from the taxonomy/tag pair with the most recent date
+# on file (ties broken by how many dates it carries), so a filer that
+# switched tags mid-history is read from its current tag rather than a
+# frozen one. Stored as QuarterFact rows with start == end.
 def _instant_facts(facts_root: Mapping[str, Any]) -> list[QuarterFact]:
     out: list[QuarterFact] = []
     for name, pairs in INSTANT_TAGS.items():
         best: dict[date, QuarterFact] = {}
+        best_key: tuple[date, int] | None = None
         for taxonomy, tag in pairs:
             rows = _rows_for(facts_root, taxonomy, tag)
             found: dict[date, QuarterFact] = {}
@@ -439,7 +450,12 @@ def _instant_facts(facts_root: Mapping[str, Any]) -> list[QuarterFact]:
                     continue
                 if end not in found or filed < found[end].filed:
                     found[end] = QuarterFact(name, end, end, value, filed)
-            if len(found) > len(best):
+            if not found:
+                continue
+            latest = max(found)
+            key = (latest, len(found))
+            if best_key is None or key > best_key:
+                best_key = key
                 best = found
         out.extend(best.values())
     return out

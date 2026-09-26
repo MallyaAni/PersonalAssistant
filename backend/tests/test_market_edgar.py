@@ -102,6 +102,73 @@ def test_instant_facts_and_growth_features():
     assert shares[date(2025, 3, 31)].value == 110
 
 
+# The 2018 ASC 606 rename froze most filers' revenue under the old tag:
+# "Revenues" stopped being reported but had the most quarters on file, so
+# tag-by-count selected the dead series forever. A tag still being filed
+# must win by its most recent quarter, not by how many it has.
+def test_tag_switch_prefers_the_currently_reported_series():
+    def fact(start, end, val, filed):
+        return {"start": start, "end": end, "val": val, "filed": filed}
+
+    # The old tag: 40 quarters, but the last one is 2018.
+    old = [
+        fact(f"{2016 + i // 4}-0{1 + i % 4 % 3}-01", f"2016-03-31", 100 + i, f"2016-05-01")
+        for i in range(36)
+    ]
+    old += [fact("2018-01-01", "2018-03-31", 200, "2018-05-01")]
+    # The new tag: only 20 quarters, but it is current.
+    new = [
+        fact(f"{year}-01-01", f"{year}-03-31", 1000 + i, f"{year}-05-01")
+        for i, year in enumerate(range(2020, 2025))
+    ]
+    new += [
+        fact("2024-01-01", "2024-03-31", 1500, "2024-05-01"),
+        fact("2025-01-01", "2025-03-31", 1600, "2025-05-01"),
+    ]
+    payload = {
+        "facts": {
+            "us-gaap": {
+                "Revenues": {"units": {"USD": old}},
+                "RevenueFromContractWithCustomerExcludingAssessedTax": {
+                    "units": {"USD": new}
+                },
+            }
+        }
+    }
+    facts = edgar.parse_company_facts(payload)
+    revenue = sorted(
+        (f for f in facts if f.name == "revenue"), key=lambda f: f.end
+    )
+    assert revenue[-1].end == date(2025, 3, 31)
+    assert revenue[-1].value == 1600
+
+
+# Balance-sheet facts face the same tag switch; the current tag must win.
+def test_instant_tag_switch_prefers_the_currently_reported_series():
+    def inst(end, val, filed):
+        return {"end": end, "val": val, "filed": filed}
+
+    old = [inst(f"2017-12-31", 1000 + i, "2018-02-01") for i in range(10)]
+    new = [
+        inst("2024-12-31", 5000, "2025-02-01"),
+        inst("2025-12-31", 6000, "2026-02-01"),
+    ]
+    payload = {
+        "facts": {
+            "us-gaap": {
+                "Assets": {"units": {"USD": old}},
+                "StockholdersEquity": {"units": {"USD": old}},
+                "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest": {
+                    "units": {"USD": new}
+                },
+            }
+        }
+    }
+    facts = edgar.parse_company_facts(payload)
+    equity = {f.end: f for f in facts if f.name == "equity"}
+    assert equity[date(2025, 12, 31)].value == 6000
+
+
 # 8-K item 2.02 filings become events; anything else is ignored; a release
 # accepted after the New York close reacts the next day.
 def test_submissions_events_and_reaction_dates():
