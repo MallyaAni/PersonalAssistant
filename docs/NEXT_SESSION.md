@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-09-27, midday — The policy's buy/sell/hold and sizes drawn on every ticker chart
+
+**Deployed `544c73f1`** (unit gate 7,596, routing gate green, post-deploy
+`2026-09-27T12:15:12Z 544c73f1 ok (cheap)`). Each ticker's history file now
+carries, per session, the active policy's (`graded-equal-weight/4`) target
+weight on the names known at the time, the change, and the decision -
+buy / add / trim / sell / hold (`decision_history.py`; add/trim only when
+the weight moves 2.5 points or more, since equal weights shift a little
+whenever the count of A names changes) - plus the paper account's real
+fills from the nightly records. `TickerChart` draws them as markers
+("Buy 14%", "Add →20%", "Trim →12%", "Sell", "Filled 63 @ 224.81") beside
+the grade markers, with a DOM list of the last twelve decisions and the
+current one ("Now: Hold 17%"). Decisions are at the close, fills at the
+next open; the caption says so. `market_daily --history-only` rewrites
+the histories without a record or a trade; run once on the Spark to
+backfill 94 names (NVDA: 155 non-hold decisions since 2015, 6 fills).
+
+**Still pending the operator's permission path:** the paper account and
+the board's own buy/sell sizes remain on `/3`; the half-built switch is
+on branch `trading/policy-v4-live` (`f591ff4`) with the remaining three
+edits listed in the previous entry.
+
 ## 2026-09-27, morning, addendum — The candidate priced under the live execution policy
 
 The operator asked why the candidate is in a shadow rather than live when
