@@ -172,12 +172,13 @@ def test_unreviewed_calendar_year_is_explicitly_unavailable():
         assert "calendar" in row["entry_reason"].lower()
 
 
-# A reviewed January date still needs coverage for the preceding December window.
+# A reviewed January date still needs coverage for the preceding December
+# window. 2016 is the first reviewed year, so 2015 is the unreviewed one.
 def test_reviewed_current_year_does_not_invent_prior_year_coverage():
-    today = date(2019, 1, 4)
+    today = date(2016, 1, 6)
     for row in read_entries(make_store(today), today).values():
         assert_unavailable(row)
-        assert "2018" in row["entry_reason"]
+        assert "2015" in row["entry_reason"]
 
 
 # A future cached history must not be presented as an entry reading for today.

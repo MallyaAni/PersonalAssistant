@@ -20,8 +20,10 @@ def test_calendar_counts_exchange_sessions_and_bounds_coverage():
     assert calendar.close_time(date(2026, 11, 27)) == time(13)
     assert calendar.offset(date(2026, 11, 25), 1) == date(2026, 11, 27)
     assert calendar.offset(date(2026, 9, 8), 20) == date(2026, 10, 6)
+    # The reviewed calendar starts at 2016; the session before 2016-01-04
+    # is in a year nobody has reviewed.
     with pytest.raises(ValueError, match="coverage"):
-        calendar.offset(date(2019, 1, 2), -1)
+        calendar.offset(date(2016, 1, 4), -1)
     with pytest.raises(ValueError, match="trading session"):
         calendar.offset(date(2025, 1, 9), 1)
 
