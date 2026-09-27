@@ -2881,10 +2881,19 @@ export const getDeskEntries = async (
 // One name's drawable price history: the bars a trader looks at, plus the
 // averages, bands and levels the analysts actually score on. Split from the
 // history call on purpose — that one answers what the desk concluded, this
-// one answers what it was looking at. `timeframe` is daily or weekly and
-// nothing else, because those are the only two the desk reads.
+// one answers what it was looking at. `timeframe` is daily or weekly, the
+// two the desk reads, or 15m: raw-basis fifteen-minute bars of the last few
+// sessions so a trader can see when in the session a decision and its fill
+// happen, with no daily overlays or levels.
+export type DeskChartTimeframe = 'daily' | 'weekly' | '15m';
+
 export interface DeskChartBar {
+  // The session date; on 15m every bar of a session carries the same one.
   date: string;
+  // 15m only: the bar's start as ISO-8601 with its New York offset.
+  time?: string;
+  // 15m only: true on the closing-auction bar appended after the regular slots.
+  auction?: boolean;
   open: number | null;
   high: number | null;
   low: number | null;
@@ -2892,11 +2901,33 @@ export interface DeskChartBar {
   volume: number | null;
 }
 
+// A policy decision placed on a fifteen-minute bar: on the session's last
+// regular bar (the close it was decided at), or, as a `fills_at` entry, on
+// the bar the executor fills it at in the next session (a buy at the 09:30
+// bar, an ordinary sell at the closing bar). `label` is the marker's words.
+export interface DeskChartDecision {
+  time: string;
+  date: string;
+  action: 'buy' | 'sell' | 'add' | 'trim';
+  target_weight: number | null;
+  label: string;
+}
+
+// A paper-account fill placed on the fifteen-minute bar it filled in.
+export interface DeskChartFill {
+  time: string;
+  date: string;
+  side: 'buy' | 'sell';
+  qty: number;
+  price: number;
+  label: string;
+}
+
 export interface DeskChart {
   user_id: string;
   ticker: string;
-  timeframe: 'daily' | 'weekly';
-  timeframes: string[];
+  timeframe: DeskChartTimeframe;
+  timeframes?: string[];
   adjusted: boolean;
   data_status?: 'complete' | 'incomplete' | 'unavailable';
   data_reason?: string | null;
@@ -2917,13 +2948,27 @@ export interface DeskChart {
   // Reference levels the reads quote by name: swing points, the 52-week
   // extremes, the 60-session range.
   levels: Record<string, (number | null)[]>;
+  // 15m only: the sessions asked for after clamping, and the three marker
+  // lists computed server-side from the name's history file.
+  sessions_requested?: number;
+  decisions?: DeskChartDecision[];
+  fills_at?: DeskChartDecision[];
+  fills?: DeskChartFill[];
 }
+
+// How many sessions each timeframe loads unless the caller says otherwise:
+// about a year of daily or weekly candles, two weeks of fifteen-minute bars.
+export const DESK_CHART_DEFAULT_SESSIONS: Record<DeskChartTimeframe, number> = {
+  daily: 260,
+  weekly: 260,
+  '15m': 10,
+};
 
 export const getDeskChart = async (
   userId: string,
   ticker: string,
-  timeframe: 'daily' | 'weekly' = 'daily',
-  sessions = 260,
+  timeframe: DeskChartTimeframe = 'daily',
+  sessions = DESK_CHART_DEFAULT_SESSIONS[timeframe],
 ): Promise<DeskChart> => {
   const query = new URLSearchParams({ timeframe, sessions: String(sessions) });
   const response = await authenticatedFetch(

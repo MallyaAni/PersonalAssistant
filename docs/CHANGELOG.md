@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-09-27 — The ticker chart at fifteen minutes, with the decision and fill times marked
+
+Daily was the smallest bar the operator could see, so a decision marker
+said which session the desk acted on and not when in that session it
+was decided or filled. The chart now has a `15m` view built from the
+raw-basis SIP store, with the policy's decisions and the paper account's
+fills placed on the bar they happen on.
+
+- **`market/ticker_chart_intraday.py`.** `payload(store, root, ticker,
+  sessions, history)`: the last N complete stored sessions (default 10,
+  clamped 1..60) as fifteen-minute bars stamped with their New York
+  start and offset - the regular slots (26, or 14 on an early close)
+  plus the closing-auction bar flagged `auction: true` when the partition
+  has one - on the basis `raw prices as printed (consolidated SIP)`,
+  `adjusted: false`, no overlays or levels but a `session_vwap` line
+  (closes weighted by volume, restarting each session), `data_status`
+  `complete` / `incomplete` / `unavailable` with the missing exchange
+  sessions listed rather than closed over. Three marker lists computed
+  from the name's history file: `decisions` on the session's last
+  regular bar ("Buy 14% decided at the close"), `fills_at` on the bar
+  the executor fills it at - the next session's 09:30 bar for a buy or
+  an add (`_submit` queues them market-on-open) and its last regular bar
+  for an ordinary sell or trim (market-on-close) - only when that next
+  exchange session is drawn, and `fills` from the file's paper fills on
+  the opening bar (buy) or closing bar (sell) unless the row carries an
+  explicit instant. `GET /desk/chart/{ticker}?timeframe=15m&sessions=N`
+  serves it; a name with no partition is a 404 like the daily chart's
+  "no price history".
+- **`TickerChart`.** A `15m` button beside D and W, a 5 / 10 / 20 / 60
+  sessions selector shown on 15m only, candles on UTC timestamps with the
+  axis and crosshair written in New York time, the VWAP line, the three
+  marker layers (decision arrows, small "fills at" circles in the same
+  colour, blue "Filled ..." circles) under the existing Policy buy/sell
+  and Paper fills switches, no grade or recommendation markers at that
+  resolution (a grade is a session's reading), and the decisions list
+  saying "decided at the close". `DeskChart` types carry `time`,
+  `auction`, `decisions`, `fills_at`, `fills`.
+- **Tests.** `backend/tests/test_ticker_chart_intraday.py` (10: bar
+  counts and the auction flag on an early close and a normal day, ISO
+  times with New York offsets, `sessions` honoured and clamped, decision
+  and fills-at placement under the executor rule, fill placement by
+  convention and by explicit instant, the history file read from the
+  root, a missing session reported with no fill moved across it,
+  incomplete partitions skipped, None for a name with no partition, the
+  VWAP restart, and the route's 200 / 404 / 400 - that last one skipped
+  where fastapi is not installed). `frontend/e2e/chart-15m.spec.ts`
+  mocks the 15m payload with two sessions and asserts the caption and
+  basis, the three labels reaching the canvas, no grade marker, and the
+  sessions selector changing `sessions=` on the request. `tsc` and
+  Playwright have not run in the sandbox: the frontend is UNVERIFIED
+  until the integrator's run.
+
 ## 2026-09-27 — Stage 1 of the deep-intraday plan, built and not run
 
 The pre-registration

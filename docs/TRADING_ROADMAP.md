@@ -197,6 +197,19 @@ strategy that changes only when untouched sessions say so.
   data/market` on spark1's CPUs (one evening), the result as a research
   note, and stage 2 only if the verdict is PASSED.
 
+- 2026-09-27, night: the ticker chart at fifteen minutes, BUILT
+  (`market/ticker_chart_intraday.py`, `timeframe=15m` on
+  `/desk/chart/{ticker}` with `sessions` 1..60, the `15m` button and
+  sessions selector in `TickerChart`). The operator could not tell from a
+  daily candle when in the session a buy, trim or sell happens. The view
+  draws the last N complete sessions of raw SIP fifteen-minute bars
+  (auction bar included) and marks the decision on the last bar before
+  the close it was made at, where it fills (next open for a buy, next
+  close for an ordinary sell, from `market_daily._submit`'s order types)
+  and the paper account's real fills on the bar they crossed in. Display
+  only. Backend tests pass (10 new); `chart-15m.spec.ts` and `tsc` have
+  not run in the sandbox: UNVERIFIED until the next deploy.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

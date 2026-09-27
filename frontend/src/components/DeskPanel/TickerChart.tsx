@@ -4,6 +4,7 @@ import {
   CrosshairMode,
   LineSeries,
   LineStyle,
+  TickMarkType,
   createChart,
   createSeriesMarkers,
   type IChartApi,
@@ -12,7 +13,7 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, type DeskPersonalReceipt, type DeskChart, type DeskChartBar } from '../../services/api'
+import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_CHART_DEFAULT_SESSIONS, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartFill, type DeskChartTimeframe } from '../../services/api'
 import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 
@@ -20,17 +21,22 @@ import { SessionPrice } from './StockBoard'
 // shows adjusted price indicators beside recorded and replayed grade changes.
 // Forming-week overlays may differ from the weekly inputs of a saved grade.
 //
-// Only daily and weekly exist here because they are the only two timeframes
-// the desk reads: the 9/21/50/200 EMAs and the 20-session band are daily,
-// and `weekly_trend` and `weekly_stack` come from the 9 and 21 EMAs on
-// weekly closes. A monthly view would invite a trader to reason from a bar
-// size no analyst looks at, which is the disagreement this chart exists to
-// remove.
+// Daily and weekly are the two timeframes the desk reads: the 9/21/50/200
+// EMAs and the 20-session band are daily, and `weekly_trend` and
+// `weekly_stack` come from the 9 and 21 EMAs on weekly closes. A monthly
+// view would invite a trader to reason from a bar size no analyst looks at,
+// which is the disagreement this chart exists to remove.
+//
+// The 15m view is not a third analyst timeframe: it is the last few sessions
+// of raw fifteen-minute bars, so the operator can see at what time in the
+// session a buy, trim or sell is decided (the last bar before the close) and
+// at what time it fills (the next session's open for a buy, its close for a
+// sell). Nothing the desk grades on is drawn there, only the session VWAP.
 //
 // Canvas content is mirrored into text for screen readers. Browser tests also
 // observe actual drawing calls: a correct caption does not prove marker placement.
 
-type Timeframe = 'daily' | 'weekly'
+type Timeframe = DeskChartTimeframe
 
 // The candle's live quote for this name, as the board already holds it.
 export type LiveQuote = {
@@ -72,6 +78,19 @@ const WEEKLY_LINES: Line[] = [
   { key: 'ema21', label: '21-week EMA', color: '#0071e3', width: 2 },
 ]
 
+// The one line on the fifteen-minute view: the session's volume-weighted
+// average of bar closes, drawn when the payload carries it.
+const INTRADAY_LINES: Line[] = [
+  { key: 'session_vwap', label: 'Session VWAP', color: '#5856d6' },
+]
+
+// How many sessions of fifteen-minute bars the operator can ask for.
+const INTRADAY_SESSIONS = [5, 10, 20, 60]
+
+// The lines drawn and read out under each timeframe.
+const linesFor = (timeframe: Timeframe): Line[] =>
+  timeframe === 'weekly' ? WEEKLY_LINES : timeframe === '15m' ? INTRADAY_LINES : DAILY_LINES
+
 const GRADE_COLOR: Record<string, string> = {
   'A+': '#1a7f37',
   A: '#2da44e',
@@ -84,6 +103,39 @@ const GRADE_COLOR: Record<string, string> = {
 // and the axis shows the session a trader means.
 const stamp = (session: string): UTCTimestamp =>
   (Date.parse(`${session}T00:00:00Z`) / 1000) as UTCTimestamp
+
+// An ISO-8601 instant with its offset (a fifteen-minute bar's start, a
+// marker's time) to the seconds-based stamp; NaN when it does not parse, which
+// `ordered` and the marker filter then drop.
+const instantStamp = (iso: string | undefined): UTCTimestamp =>
+  Math.floor(Date.parse(iso ?? '') / 1000) as UTCTimestamp
+
+// Where a bar sits on the time axis: its own start on 15m, the session's
+// midnight on daily and weekly.
+const barStamp = (bar: DeskChartBar, timeframe: Timeframe): UTCTimestamp =>
+  timeframe === '15m' ? instantStamp(bar.time) : stamp(bar.date)
+
+// A stamp on the fifteen-minute axis, written in New York time: the clock
+// alone within a day, the day too when the axis is at a day boundary or the
+// crosshair asks for the whole thing.
+const newYorkClock = (seconds: number, withDay: boolean) => new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit',
+  ...(withDay ? {month: 'short', day: 'numeric'} : {}),
+}).format(new Date(seconds * 1000))
+
+// The axis tick labels on 15m: a day boundary names the day, a tick within
+// the day names the New York clock. The library would otherwise write UTC.
+const newYorkTick = (time: Time, kind: TickMarkType) => {
+  if (typeof time !== 'number') return null
+  const day = new Date(time * 1000)
+  const zoned = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', ...options}).format(day)
+  switch (kind) {
+    case TickMarkType.Year: return zoned({year: 'numeric'})
+    case TickMarkType.Month: return zoned({month: 'short'})
+    case TickMarkType.DayOfMonth: return zoned({month: 'short', day: 'numeric'})
+    default: return newYorkClock(time, false)
+  }
+}
 
 // The chart library throws on a series that is unsorted or repeats a
 // timestamp, and an exception here would take the whole ticker panel down
@@ -132,7 +184,11 @@ const drawableCandle = (bar: DeskChartBar) =>
   [bar.open, bar.high, bar.low, bar.close].every(value => typeof value === 'number' && Number.isFinite(value))
 
 // Match the original day or its own week without letting the library choose a substitute candle.
+// On 15m a session is many candles and none of them is "the" one, so the
+// session-dated layers (grades, recommendations, history decisions) draw
+// nothing there; the intraday markers come timed from the payload instead.
 const markerCandle = (session: string, bars: DeskChartBar[], timeframe: Timeframe) => {
+  if (timeframe === '15m') return undefined
   const candle = bars.find(bar => timeframe === 'daily' ? bar.date === session
     : weekOf(bar.date) === weekOf(session) && bar.date >= session)
   return candle && drawableCandle(candle) ? candle : undefined
@@ -150,7 +206,8 @@ const recordedGroups = (history: DeskHistory | undefined, bars: DeskChartBar[], 
   for (const row of rows) {
     const session = recordedSession(row.recorded_at)
     if (!session) continue
-    const candle = bars.find(bar => timeframe === 'daily'
+    // Daily and 15m group by the publication session (15m bars carry their session's date); weekly by its week.
+    const candle = bars.find(bar => timeframe !== 'weekly'
       ? bar.date === session : weekOf(bar.date) === weekOf(session) && bar.date >= session)
     if (!candle) continue
     groups.set(candle.date, [...(groups.get(candle.date) ?? []), row])
@@ -334,6 +391,59 @@ const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], tim
     }] : []
   })
 
+// Only a payload decision with a parseable time, a traded action and a label is drawable.
+const drawableDecision = (row: DeskChartDecision) =>
+  Boolean(row) && typeof row.time === 'string' && Number.isFinite(Date.parse(row.time))
+  && (row.action === 'buy' || row.action === 'add' || row.action === 'sell' || row.action === 'trim')
+  && typeof row.label === 'string' && row.label.length > 0
+
+// The policy's decisions on the fifteen-minute bars, timed by the server: on
+// the last regular bar of the session they were decided at. Buys and adds
+// point up from below in green, trims and sells down from above in red, the
+// label saying what and that it was decided at the close.
+const intradayDecisionMarkers = (data: DeskChart | null): ChartMarker[] =>
+  (data?.timeframe === '15m' && Array.isArray(data.decisions) ? data.decisions : []).filter(drawableDecision).map(row => {
+    const up = row.action === 'buy' || row.action === 'add'
+    return {
+      time: instantStamp(row.time),
+      position: up ? 'belowBar' as const : 'aboveBar' as const,
+      color: up ? DECISION_BUY : DECISION_SELL,
+      shape: up ? 'arrowUp' as const : 'arrowDown' as const,
+      text: row.label, size: 2,
+    }
+  })
+
+// Where each decision fills: a small circle in the decision's colour on the
+// next session's opening bar for a buy or an add and its closing bar for a
+// sell or a trim, labelled "... fills at the open/close" by the server.
+const intradayFillsAtMarkers = (data: DeskChart | null): ChartMarker[] =>
+  (data?.timeframe === '15m' && Array.isArray(data.fills_at) ? data.fills_at : []).filter(drawableDecision).map(row => {
+    const up = row.action === 'buy' || row.action === 'add'
+    return {
+      time: instantStamp(row.time),
+      position: up ? 'belowBar' as const : 'aboveBar' as const,
+      color: up ? DECISION_BUY : DECISION_SELL,
+      shape: 'circle' as const,
+      text: row.label, size: 1,
+    }
+  })
+
+// Only a payload fill with a parseable time, a side and a label is drawable.
+const drawableTimedFill = (fill: DeskChartFill) =>
+  Boolean(fill) && typeof fill.time === 'string' && Number.isFinite(Date.parse(fill.time))
+  && (fill.side === 'buy' || fill.side === 'sell') && typeof fill.label === 'string' && fill.label.length > 0
+
+// The paper account's real fills on the bar they filled in, as blue circles,
+// below for a buy and above for a sell, labelled "Filled buy 63 @ 224.81".
+const intradayFillMarkers = (data: DeskChart | null): ChartMarker[] =>
+  (data?.timeframe === '15m' && Array.isArray(data.fills) ? data.fills : []).filter(drawableTimedFill).map(fill => ({
+    time: instantStamp(fill.time),
+    position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
+    color: FILL_BLUE,
+    shape: 'circle' as const,
+    text: fill.label, size: 2,
+  }))
+
 // A session as a trader writes it: the month and day, with the year only when
 // it is not the year of the newest row, so a list spanning years stays honest.
 const sessionLabel = (session: string, currentYear: string) => {
@@ -377,6 +487,8 @@ export const TickerChart = ({
   close?: number | null
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
+  // How many sessions of fifteen-minute bars to load; only 15m reads it.
+  const [intradaySessions, setIntradaySessions] = useState(DESK_CHART_DEFAULT_SESSIONS['15m'])
   const [showSignals, setShowSignals] = useState(true)
   const [showRecommendations, setShowRecommendations] = useState(true)
   const [showDecisions, setShowDecisions] = useState(true)
@@ -465,7 +577,7 @@ export const TickerChart = ({
   useEffect(() => {
     setData(null)
     setError(null)
-  }, [userId, ticker, timeframe])
+  }, [userId, ticker, timeframe, intradaySessions])
 
   useEffect(() => {
     let live = true
@@ -473,7 +585,7 @@ export const TickerChart = ({
     // Only the newest request may publish its coherent candle/indicator snapshot.
     const read = (first: boolean) => {
       const sequence = ++request
-      getDeskChart(userId, ticker, timeframe)
+      getDeskChart(userId, ticker, timeframe, timeframe === '15m' ? intradaySessions : DESK_CHART_DEFAULT_SESSIONS[timeframe])
         .then((payload) => {
           if (!live || sequence !== request) return
           setData(payload)
@@ -490,7 +602,7 @@ export const TickerChart = ({
       live = false
       window.clearInterval(timer)
     }
-  }, [userId, ticker, timeframe, quote?.bar, quote?.last])
+  }, [userId, ticker, timeframe, intradaySessions, quote?.bar, quote?.last])
 
   // Candles and indicators share the endpoint's snapshot. The independently
   // polled board quote triggers refresh but must never replace just the candle.
@@ -507,6 +619,10 @@ export const TickerChart = ({
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const fillMarks = useMemo(() => fillMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const fills = useMemo(() => fillRows(history), [history])
+  // The fifteen-minute layers come timed from the payload rather than dated
+  // from the history file, so they are empty on daily and weekly.
+  const timedDecisions = useMemo(() => [...intradayDecisionMarkers(data), ...intradayFillsAtMarkers(data)], [data])
+  const timedFills = useMemo(() => intradayFillMarkers(data), [data])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -520,11 +636,19 @@ export const TickerChart = ({
           vertLines: { color: 'rgba(0,0,0,0.03)' },
         },
         rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
-        timeScale: { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4 },
+        // On 15m the axis shows the clock, in New York time: the library
+        // would otherwise write the bar starts as UTC.
+        timeScale: timeframe === '15m'
+          ? { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4, timeVisible: true, secondsVisible: false, tickMarkFormatter: newYorkTick }
+          : { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4 },
         crosshair: { mode: CrosshairMode.Normal },
         // The chart library otherwise trusts navigator.language, which can
         // be a POSIX tag that Intl rejects when it draws the time axis.
-        localization: { locale: 'en-US', priceFormatter: (v: number) => `$${v.toFixed(2)}` },
+        localization: {
+          locale: 'en-US',
+          priceFormatter: (v: number) => `$${v.toFixed(2)}`,
+          ...(timeframe === '15m' ? { timeFormatter: (time: Time) => typeof time === 'number' ? `${newYorkClock(time, true)} ET` : String(time) } : {}),
+        },
       })
     } catch {
       setDrawFailed(true)
@@ -545,12 +669,12 @@ export const TickerChart = ({
         ordered(
           merged.bars.map((b) =>
             drawableCandle(b) ? {
-              time: stamp(b.date),
+              time: barStamp(b, timeframe),
               open: b.open as number,
               high: b.high as number,
               low: b.low as number,
               close: b.close as number,
-            } : { time: stamp(b.date) }),
+            } : { time: barStamp(b, timeframe) }),
         ),
       )
     } catch {
@@ -560,7 +684,7 @@ export const TickerChart = ({
       return
     }
 
-    const lines = timeframe === 'weekly' ? WEEKLY_LINES : DAILY_LINES
+    const lines = linesFor(timeframe)
     const drawn: ISeriesApi<'Line'>[] = []
     for (const line of lines) {
       const values = (line.from === 'levels' ? data.levels : data.overlays)[line.key]
@@ -582,8 +706,8 @@ export const TickerChart = ({
       series.setData(
         ordered(
           merged.bars.map((b, i) => values[i] !== null && Number.isFinite(values[i])
-            ? { time: stamp(b.date), value: values[i] as number }
-            : { time: stamp(b.date) }),
+            ? { time: barStamp(b, timeframe), value: values[i] as number }
+            : { time: barStamp(b, timeframe) }),
         ),
       )
       drawn.push(series)
@@ -591,10 +715,14 @@ export const TickerChart = ({
 
     markersRef.current = createSeriesMarkers(candles, [])
     // Give recent candles enough horizontal space; all loaded bars remain available to pan and zoom.
+    // On 15m a session is 27 bars, so the recent view holds about two sessions.
     const frameView = () => {
       if (fullHistory) chart.timeScale().fitContent()
       else {
-        const count = Math.max(12, Math.min(40, Math.floor(((holder.current?.clientWidth ?? 390) - 65) / 22)))
+        const width = (holder.current?.clientWidth ?? 390) - 65
+        const count = timeframe === '15m'
+          ? Math.max(27, Math.min(108, Math.floor(width / 8)))
+          : Math.max(12, Math.min(40, Math.floor(width / 22)))
         chart.timeScale().setVisibleLogicalRange({from: Math.max(0, merged.bars.length - count), to: merged.bars.length + 1})
       }
     }
@@ -615,21 +743,23 @@ export const TickerChart = ({
   // Update markers in place so receipt-only changes preserve the user's chart position and zoom.
   useEffect(() => {
     // Series points require uniqueness, but distinct markers on the same date must survive.
+    // Grade changes do not apply on 15m (a grade is a session's reading, not a
+    // bar's); the decision and fill layers there are the payload's timed ones.
     const markers = [
       ...(personalHistory && showRecommendations ? actionMarkers : []),
       ...(showSignals ? changes : []),
-      ...(showDecisions ? decisions : []),
-      ...(showFills ? fillMarks : []),
+      ...(showDecisions ? [...decisions, ...timedDecisions] : []),
+      ...(showFills ? [...fillMarks, ...timedFills] : []),
     ].filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     markersRef.current?.setMarkers(markers)
-  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, actionMarkers, changes, decisions, fillMarks, personalHistory])
+  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
   const summary = useMemo(() => {
     if (!data || !merged.bars.length) return null
     const last = merged.bars[merged.bars.length - 1]
-    const lines = timeframe === 'weekly' ? WEEKLY_LINES : DAILY_LINES
+    const lines = linesFor(timeframe)
     const readings = lines
       .map((line) => {
         const series = (line.from === 'levels' ? data.levels : data.overlays)[line.key]
@@ -678,20 +808,39 @@ export const TickerChart = ({
             <input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />
             Paper fills
           </label>}
+          {timeframe === '15m' && <div className="flex gap-1" role="group" aria-label="Chart sessions">
+          {INTRADAY_SESSIONS.map((count) => (
+            <button
+              key={count}
+              type="button"
+              onClick={() => setIntradaySessions(count)}
+              aria-pressed={intradaySessions === count}
+              title={`Load the last ${count} sessions of fifteen-minute bars`}
+              className={`rounded px-2 py-0.5 text-xs ${
+                intradaySessions === count
+                  ? 'bg-[#1d1d1f] text-white'
+                  : 'bg-[#f5f5f7] text-[#6e6e73] hover:text-[#0071e3]'
+              }`}
+            >
+              {count}
+            </button>
+          ))}
+          </div>}
           <div className="flex gap-1" role="group" aria-label="Chart timeframe">
-          {(['daily', 'weekly'] as Timeframe[]).map((frame) => (
+          {(['15m', 'daily', 'weekly'] as Timeframe[]).map((frame) => (
             <button
               key={frame}
               type="button"
               onClick={() => setTimeframe(frame)}
               aria-pressed={timeframe === frame}
+              title={frame === '15m' ? 'Fifteen-minute bars of the last sessions' : frame === 'daily' ? 'Daily candles' : 'Weekly candles'}
               className={`rounded px-2 py-0.5 text-xs ${
                 timeframe === frame
                   ? 'bg-[#1d1d1f] text-white'
                   : 'bg-[#f5f5f7] text-[#6e6e73] hover:text-[#0071e3]'
               }`}
             >
-              {frame === 'daily' ? 'D' : 'W'}
+              {frame === 'daily' ? 'D' : frame === 'weekly' ? 'W' : '15m'}
             </button>
           ))}
           </div>
@@ -726,7 +875,13 @@ export const TickerChart = ({
               The chart could not be drawn from this data. The readings below are unaffected.
             </p>
           )}
-          <p className="mt-1 text-[11px] text-[#6e6e73]">
+          {timeframe === '15m'
+            ? <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute chart caption">
+              Newest stored session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}
+              {data.sessions} complete session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time, closing auction included where stored); pan or zoom for history.
+              Decisions are marked on the last bar before the close they were made at; fills on the bar the executor sends them into.
+            </p>
+            : <p className="mt-1 text-[11px] text-[#6e6e73]">
             {merged.live && summary?.last.close !== null
               ? `Candle includes the 15-minute bar starting ${new Intl.DateTimeFormat('en-US', {
                   timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric',
@@ -734,7 +889,7 @@ export const TickerChart = ({
                 }).format(new Date(data.quote_bar!))}.`
               : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
-          </p>
+          </p>}
           {showSignals && <p className="mt-1 text-[11px] text-[#6e6e73]" title="Dates identify trading sessions, not publication times. A or A+ meets only the grade requirement for entry; other checks still apply.">
             Saved grades use nightly records; recalculated grades use historical data. Grade changes are not trades.
           </p>}
@@ -753,7 +908,8 @@ export const TickerChart = ({
               : <ul className="mt-0.5">
                 {recentDecisions.map(row => {
                   const price = closeOn(row.date, merged.bars, timeframe)
-                  return <li key={row.date}>{sessionLabel(row.date, currentYear)} · {decisionText(row)}{price !== null ? ` · close $${price.toFixed(2)}` : ''}</li>
+                  // On 15m the list says when in the session the decision is made, since that is what the view is for.
+                  return <li key={row.date}>{sessionLabel(row.date, currentYear)} · {decisionText(row)}{price !== null ? ` · close $${price.toFixed(2)}` : ''}{timeframe === '15m' ? ' · decided at the close' : ''}</li>
                 })}
               </ul>}
             {fills.length > 0 && <ul className="mt-1" aria-label={`${ticker} paper fills`}>
@@ -808,14 +964,17 @@ export const TickerChart = ({
 
           {summary && (
             <>
-            <p className="mt-2 text-[11px] text-[#6e6e73]">Prices: {data.basis}. Indicators can update during a session; weekly overlays include the forming week when present and can differ from a saved grade.</p>
-            <p className="mt-1 text-[11px] text-[#6e6e73]">EMA means exponential moving average of candle closes; recent closes carry more weight.</p>
+            {timeframe === '15m'
+              ? <p className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute price basis">Prices: {data.basis}; not adjusted for splits or dividends, so a fill can be checked against the print it crossed at. The daily averages, bands and levels are not drawn at this resolution.</p>
+              : <p className="mt-2 text-[11px] text-[#6e6e73]">Prices: {data.basis}. Indicators can update during a session; weekly overlays include the forming week when present and can differ from a saved grade.</p>}
+            {timeframe !== '15m' && <p className="mt-1 text-[11px] text-[#6e6e73]">EMA means exponential moving average of candle closes; recent closes carry more weight.</p>}
             <details className="mt-1 text-[11px] text-[#6e6e73]">
               <summary className="cursor-pointer">Indicator definitions</summary>
               {timeframe === 'daily' ? <>
                 <p>Daily EMA spans count trading sessions. Bollinger bands use the mean of 20 session closes, plus or minus 2 population standard deviations of those closes.</p>
                 <p>The 252-session high and low use candle highs and lows, including the newest candle, not a calendar-year window.</p>
-              </> : <p>Weekly EMA spans count weeks, including the forming week when present.</p>}
+              </> : timeframe === 'weekly' ? <p>Weekly EMA spans count weeks, including the forming week when present.</p>
+              : <p>Session VWAP is the volume-weighted average of fifteen-minute bar closes since that session's open, restarting each session; the closing-auction bar continues the session it closes.</p>}
             </details>
             <p className="mt-1 text-[11px] text-[#6e6e73]">Price distance = (chart price − indicator value) ÷ indicator value × 100, rounded to one decimal; not a return.</p>
             <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 text-[11px] sm:grid-cols-2 xl:grid-cols-3">
@@ -843,7 +1002,9 @@ export const TickerChart = ({
           )}
 
           {showSignals && <p className="mt-2 text-[11px] text-[#6e6e73]">
-            {changes.length === 0
+            {timeframe === '15m'
+              ? 'Grade changes are session readings and are not marked on fifteen-minute bars; switch to D or W to see them.'
+              : changes.length === 0
               ? `No grade change marked on these candles.`
               : `${changes.length} grade change${changes.length === 1 ? '' : 's'} marked: ${changes
                   .slice(-6)

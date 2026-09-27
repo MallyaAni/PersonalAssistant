@@ -41,6 +41,7 @@ from backend.market import (
     live_quotes,
     live_technical,
     ticker_chart,
+    ticker_chart_intraday,
 )
 from backend.market import calendar as exchange_calendar
 from backend.market.store import MarketStore
@@ -1272,21 +1273,44 @@ async def desk_entries(user_id: UserId, grades: str = "A+,A") -> dict[str, objec
 # scores on. Split from /desk/history deliberately: that endpoint answers
 # "what did the desk conclude", this one answers "what was it looking at",
 # and a drill-down that only wants the grades should not pay to read bars.
+#
+# `timeframe=15m` is the one intraday view: the last `sessions` complete
+# sessions of raw-basis SIP fifteen-minute bars (default 10, at most 60)
+# with the policy's decisions, the fills they lead to and the paper
+# account's real fills marked on the bars they happen on. The history file
+# is read the way /desk/history reads it; the daily overlays and levels do
+# not apply at that resolution and are empty.
 @router.get("/desk/chart/{ticker}")
 async def desk_chart(
     user_id: UserId,
     ticker: str,
-    sessions: int = ticker_chart.DEFAULT_SESSIONS,
+    sessions: int | None = None,
     timeframe: str = ticker_chart.DAILY,
 ) -> dict[str, object]:
     """Return adjusted bars, overlay lines and levels for one name."""
     _operator_only(user_id)
+    if timeframe == ticker_chart_intraday.TIMEFRAME:
+        root = _root()
+        built = await asyncio.to_thread(
+            ticker_chart_intraday.payload,
+            MarketStore(root),
+            root,
+            ticker.upper(),
+            ticker_chart_intraday.clamp_sessions(sessions),
+            ticker_chart_intraday.read_history(root, ticker.upper()),
+        )
+        if built is None:
+            raise HTTPException(
+                status_code=404, detail="no fifteen-minute bars stored for that name"
+            )
+        return {"user_id": user_id, **built}
     if timeframe not in ticker_chart.TIMEFRAMES:
+        allowed = (*ticker_chart.TIMEFRAMES, ticker_chart_intraday.TIMEFRAME)
         raise HTTPException(
             status_code=400,
-            detail=f"timeframe must be one of {', '.join(ticker_chart.TIMEFRAMES)}",
+            detail=f"timeframe must be one of {', '.join(allowed)}",
         )
-    capped = max(20, min(int(sessions), 2000))
+    capped = max(20, min(int(sessions or ticker_chart.DEFAULT_SESSIONS), 2000))
     # The same candle the board reads, so the averages and bands include
     # today rather than ending at the last close while the price moves.
     snap = _live_snapshot() or {}
