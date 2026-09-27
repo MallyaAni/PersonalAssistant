@@ -43,6 +43,40 @@ next Playwright run. On a mismatch: do not trade from the board; run the
 CLI; inspect `membership_history.csv` for the named tickers and the store's
 latest partition dates against the record's session.
 
+**Drift, same day.** The CLI was run on the real store two days after the
+2026-09-25 record and flagged 23 grade mismatches. Neither side was wrong:
+the record's `provenance.code_revision` was 879abc56 and the checkout was
+~199 commits later, several touching grade inputs (the 52-week basis fix,
+the fundamental period exclusions), and the store had gained
+`edgar_facts/asof=2026-09-26` and `edgar_events/asof=2026-09-26` after
+`record["written"]`. A replay from a later checkout or a later store is a
+reading of how far the board has gone stale, not a pipeline-parity failure
+- but the operator still needs it. `compare` now takes a `context`
+(`record_code`, `replay_code`, `moved_inputs`) and the result carries
+`mode` ("parity" when the record's code is the replay's and nothing moved,
+else "drift"), `code` `{record, replay}` and `moved_inputs`; `ok` is False
+on any mismatch in either mode and the rows are unchanged. `run` builds
+the context: the replay code is the running checkout's short SHA read the
+way `market_daily` stamps provenance (`_git_revision`, once per process);
+the moved inputs are every `<root>/<kind>/asof=<date>` directory outside
+`desk/`, `history/` and `research/` whose date is after the record's
+session or whose mtime is after `record["written"]`, listed as
+`<kind>/asof=<date>`. The nightly path (report in hand) is parity by
+construction. In drift mode the line reads `GRADE DRIFT since <date>'s
+record (code a→b; inputs moved: ...): N names - <rows> - the board is
+stale; the next nightly re-grades`, the CLI exits 3 (0 ok, 1 parity
+mismatch, 2 could not check), the `/desk` payload's `grade_parity` carries
+`mode`, `code` and `moved_inputs`, and the board's banner is amber -
+"Grades have moved since <date>'s record — N names", the code pair, the
+moved inputs, "The board shows <date>'s grades; the next nightly record
+re-grades on current code and data." - where a parity mismatch stays red
+with "do not trade". Tests added to `test_grade_parity.py` (parity with
+equal code, drift on a code change, drift on a moved partition, the
+partition scan on a fake root ignoring the output folders, `run` building
+the context per path with the nightly always parity, the CLI exiting 3)
+and a drift case in `desk-grade-parity.spec.ts` (UNVERIFIED in the
+sandbox, no Playwright).
+
 ## 2026-09-27 — Catastrophe stop on the /4 book, built and run: every stop RECORD
 
 Run on spark1 the same night; results in

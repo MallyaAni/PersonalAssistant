@@ -5,14 +5,17 @@ report, so on a membership file that admits every name the check passes; a
 flipped live grade, a name missing from the membership history, a target
 weight off by more than the tolerance and a store that moved on are each
 caught and named. The CLI turns the verdict into an exit code, and the
-nightly path calls the check without letting it raise.
+nightly path calls the check without letting it raise. A mismatch is parity
+(same code, nothing moved: do not trade) or drift (a later checkout or a
+store partition newer than the record: the board is stale); the nightly
+path is parity by construction and the CLI exits 3 on drift.
 """
 
 from __future__ import annotations
 
 import json
 from dataclasses import replace
-from datetime import date
+from datetime import UTC, date, datetime
 
 import numpy as np
 import pytest
@@ -366,3 +369,187 @@ def test_the_nightly_finishes_and_records_a_mismatch(
     assert saved["grade_parity"]["ok"] is False
     assert saved["grade_parity"]["mismatches"][0]["ticker"] == "FFF"
     assert grade_parity.for_session(tmp_path, LAST)["ok"] is False
+
+
+# The context that says "same code, nothing moved", for tests of parity mode.
+def _same(code="abc1234") -> dict:
+    return {"record_code": code, "replay_code": code, "moved_inputs": []}
+
+
+# Parity mode when the record's code is the replay's and nothing moved;
+# with no context at all the reading is parity too, because a mismatch is
+# never made milder by not knowing what produced it.
+def test_mode_is_parity_when_code_equal_and_nothing_moved(full_history):
+    report = _report()
+    record = _record(report)
+    record["grades"]["CCC"]["grade"] = "B"
+    result = grade_parity.compare(record, report, LAST, full_history, _same())
+    assert result["ok"] is False
+    assert result["mode"] == grade_parity.PARITY
+    assert result["code"] == {"record": "abc1234", "replay": "abc1234"}
+    assert result["moved_inputs"] == []
+    assert grade_parity.line(result).startswith("GRADE PARITY MISMATCH")
+    assert grade_parity.line(result).endswith("do not trade from the board")
+    assert grade_parity.compare(record, report, LAST, full_history)["mode"] == "parity"
+    # A passing result still says what mode it was checked in.
+    fine = grade_parity.compare(_record(report), report, LAST, full_history, _same())
+    assert fine["ok"] is True
+    assert fine["mode"] == "parity"
+
+
+# Drift mode when the replay's code differs from the record's: `ok` stays
+# False, the rows are unchanged, and the line names the code pair, says the
+# board is stale and does not say "do not trade".
+def test_mode_is_drift_when_code_differs(full_history):
+    report = _report()
+    record = _record(report)
+    record["grades"]["CCC"]["grade"] = "B"
+    same = grade_parity.compare(record, report, LAST, full_history, _same())
+    result = grade_parity.compare(
+        record,
+        report,
+        LAST,
+        full_history,
+        {"record_code": "879abc56", "replay_code": "1325466b", "moved_inputs": []},
+    )
+    assert result["ok"] is False
+    assert result["mode"] == grade_parity.DRIFT
+    assert result["code"] == {"record": "879abc56", "replay": "1325466b"}
+    assert result["mismatches"] == same["mismatches"]
+    text = grade_parity.line(result)
+    assert text == (
+        f"GRADE DRIFT since {LAST}'s record (code 879abc56→1325466b; "
+        "inputs moved: none): 1 names - CCC grade live=B replay=A+"
+        " - the board is stale; the next nightly re-grades"
+    )
+    assert "do not trade" not in text
+
+
+# Drift mode when a store partition is newer than the record, even on the
+# same code; the moved partitions are listed on the result and in the line.
+def test_mode_is_drift_when_an_input_moved(full_history):
+    report = _report()
+    record = _record(report)
+    record["grades"]["CCC"]["grade"] = "B"
+    result = grade_parity.compare(
+        record,
+        report,
+        LAST,
+        full_history,
+        {
+            "record_code": "abc1234",
+            "replay_code": "abc1234",
+            "moved_inputs": [
+                "edgar_events/asof=2024-03-25",
+                "edgar_facts/asof=2024-03-25",
+            ],
+        },
+    )
+    assert result["mode"] == grade_parity.DRIFT
+    assert result["moved_inputs"] == [
+        "edgar_events/asof=2024-03-25",
+        "edgar_facts/asof=2024-03-25",
+    ]
+    text = grade_parity.line(result)
+    moved = "edgar_events/asof=2024-03-25, edgar_facts/asof=2024-03-25"
+    assert f"(code abc1234\u2192abc1234; inputs moved: {moved})" in text
+    assert text.endswith("the board is stale; the next nightly re-grades")
+
+
+# `moved_inputs` finds every dated partition after the record's session, or
+# touched after the record was written, under any input folder - and
+# nothing under desk/, history/ or research/, nor a partition that predates
+# the record.
+def test_moved_inputs_finds_later_partitions_and_ignores_outputs(tmp_path):
+    import os
+
+    record = {"session": LAST, "written": "2024-03-22T21:05:00+00:00"}
+    before = datetime(2024, 3, 22, 20, 0, tzinfo=UTC).timestamp()
+    after = datetime(2024, 3, 24, 9, 0, tzinfo=UTC).timestamp()
+    for rel, when in [
+        ("edgar_facts/asof=2024-03-25", after),  # later date
+        ("edgar_events/asof=2024-03-22", after),  # same date, written after
+        ("bars/asof=2024-03-22", before),  # tonight's own partition
+        ("fundamentals-features/asof=2024-03-01", before),  # older
+        ("options/asof=2024-03-26", after),
+        ("desk/asof=2024-03-26", after),  # outputs, never inputs
+        ("history/asof=2024-03-26", after),
+        ("research/asof=2024-03-26", after),
+        ("edgar_facts/not-a-partition", after),
+        ("edgar_facts/asof=garbage", after),
+    ]:
+        d = tmp_path / rel
+        d.mkdir(parents=True)
+        os.utime(d, (when, when))
+    (tmp_path / "desk" / "grade_parity.json").write_text("{}")
+    assert grade_parity.moved_inputs(tmp_path, record) == [
+        "edgar_events/asof=2024-03-22",
+        "edgar_facts/asof=2024-03-25",
+        "options/asof=2024-03-26",
+    ]
+    # Without a `written` timestamp only the dates decide.
+    assert grade_parity.moved_inputs(tmp_path, {"session": LAST}) == [
+        "edgar_facts/asof=2024-03-25",
+        "options/asof=2024-03-26",
+    ]
+    assert grade_parity.moved_inputs(tmp_path / "nowhere", record) == []
+
+
+# `run` from the store (the CLI path) reads the running checkout's revision
+# the way `market_daily` stamps provenance and lists the moved partitions;
+# the nightly path (report in hand) is parity by construction whatever the
+# store has since gained.
+def test_run_builds_the_context_per_path(tmp_path, monkeypatch, full_history):
+    import os
+
+    report = _report()
+    record = _record(report)
+    record["grades"]["CCC"]["grade"] = "B"
+    record["provenance"]["code_revision"] = "879abc56"
+    market_daily.save(tmp_path, record)
+    monkeypatch.setattr(market_daily, "desk_report", lambda store, asof: report)
+    monkeypatch.setattr(market_daily, "_git_revision", lambda: "1325466b")
+    later = tmp_path / "edgar_facts" / "asof=2024-03-26"
+    later.mkdir(parents=True)
+    stamp = datetime(2024, 3, 26, 9, 0, tzinfo=UTC).timestamp()
+    os.utime(later, (stamp, stamp))
+    result = grade_parity.run(tmp_path, history_path=full_history)
+    assert result["ok"] is False
+    assert result["mode"] == grade_parity.DRIFT
+    assert result["code"] == {"record": "879abc56", "replay": "1325466b"}
+    assert result["moved_inputs"] == ["edgar_facts/asof=2024-03-26"]
+    assert grade_parity.for_session(tmp_path, LAST)["mode"] == "drift"
+    # Same code, but the partition moved: still drift.
+    monkeypatch.setattr(market_daily, "_git_revision", lambda: "879abc56")
+    assert grade_parity.run(tmp_path, history_path=full_history)["mode"] == "drift"
+    # The nightly path: report and record in hand, parity whatever the store holds.
+    monkeypatch.setattr(market_daily, "_git_revision", lambda: "1325466b")
+    nightly = grade_parity.run(
+        tmp_path, LAST, report=report, record=record, history_path=full_history
+    )
+    assert nightly["ok"] is False
+    assert nightly["mode"] == grade_parity.PARITY
+    assert nightly["code"] == {"record": "879abc56", "replay": "879abc56"}
+    assert nightly["moved_inputs"] == []
+    hook = market_daily._grade_parity(tmp_path, report, record)
+    assert hook["mode"] == grade_parity.PARITY
+
+
+# The CLI exits 3 on drift, printing the drift line, and 1 on a parity
+# mismatch from the same store when nothing has moved.
+def test_cli_exits_three_on_drift(tmp_path, monkeypatch, capsys, fff_left):
+    report = _report()
+    record = _record(report)
+    record["provenance"]["code_revision"] = "879abc56"
+    market_daily.save(tmp_path, record)
+    monkeypatch.setattr(market_daily, "desk_report", lambda store, asof: report)
+    monkeypatch.setattr(market_daily, "_git_revision", lambda: "1325466b")
+    args = ["--root", str(tmp_path), "--membership", str(fff_left)]
+    assert market_grade_parity.main(args) == 3
+    out = capsys.readouterr().out
+    assert f"GRADE DRIFT since {LAST}'s record (code 879abc56→1325466b" in out
+    assert "the board is stale; the next nightly re-grades" in out
+    assert "membership: FFF:" in out
+    monkeypatch.setattr(market_daily, "_git_revision", lambda: "879abc56")
+    assert market_grade_parity.main(args) == 1
+    assert "GRADE PARITY MISMATCH" in capsys.readouterr().out

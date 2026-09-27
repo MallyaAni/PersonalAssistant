@@ -667,17 +667,34 @@ function RecordStatus({status, prose, session}: {status?: DeskPayload['record_st
 
 // The board is what the operator sizes real positions from, so when the
 // nightly's parity check found its grades or targets disagreeing with the
-// point-in-time replay, say so in red where the board is read, with the
-// names, and say not to trade from it. Nothing is rendered when the check
-// passed or when the record predates the check.
+// point-in-time replay, say so where the board is read, with the names.
+// In parity mode (same code, same store) that is red and says not to trade
+// from it. In drift mode (the check re-run from a later checkout or a
+// store that has gained partitions since the record) it is amber: the
+// board shows the record's grades, and the next nightly re-grades. Nothing
+// is rendered when the check passed or when the record predates the check.
 function GradeParityBanner({parity}: {parity?: DeskPayload['grade_parity']}) {
   if (!parity || parity.ok) return null
   const names = [...new Set(parity.mismatches.map(m => m.ticker).filter((t): t is string => !!t))].sort()
   const others = parity.mismatches.filter(m => !m.ticker)
+  const date = parity.date ?? 'this session'
+  const count = `${names.length} ${names.length === 1 ? 'name' : 'names'}`
+  const rows = names.length > 0 && <p className="text-xs">{parity.mismatches.filter(m => m.ticker).map(m => `${m.ticker} (${m.kind}: live ${m.live ?? '—'}, replay ${m.replay ?? '—'})`).join(' · ')}</p>
+  const details = others.map(m => <p key={`${m.kind}:${m.detail}`} className="text-xs">{m.kind}: {m.detail}</p>)
+  if (parity.mode === 'drift') {
+    const moved = parity.moved_inputs ?? []
+    return <div role="alert" aria-label="Grade parity" className="border-b border-[#b45309]/30 bg-[#fffbeb] px-3 py-2 text-sm text-[#92400e]">
+      <p className="font-semibold">Grades have moved since {date}'s record — {count}</p>
+      <p className="text-xs">code {parity.code?.record ?? '—'} → {parity.code?.replay ?? '—'}; inputs moved: {moved.length > 0 ? moved.join(', ') : 'none'}</p>
+      {rows}
+      {details}
+      <p className="text-xs">The board shows {date}'s grades; the next nightly record re-grades on current code and data.</p>
+    </div>
+  }
   return <div role="alert" aria-label="Grade parity" className="border-b border-[#b42318]/30 bg-[#fef2f2] px-3 py-2 text-sm text-[#b42318]">
-    <p className="font-semibold">Grade parity failed for {parity.date ?? 'this session'}: {names.length} {names.length === 1 ? 'name' : 'names'} — do not trade from this board</p>
-    {names.length > 0 && <p className="text-xs">{parity.mismatches.filter(m => m.ticker).map(m => `${m.ticker} (${m.kind}: live ${m.live ?? '—'}, replay ${m.replay ?? '—'})`).join(' · ')}</p>}
-    {others.map(m => <p key={`${m.kind}:${m.detail}`} className="text-xs">{m.kind}: {m.detail}</p>)}
+    <p className="font-semibold">Grade parity failed for {date}: {count} — do not trade from this board</p>
+    {rows}
+    {details}
   </div>
 }
 

@@ -2175,12 +2175,21 @@ export interface GradeParityMismatch {
   detail?: string;
 }
 
-// The nightly's grade parity verdict for one session.
+// The nightly's grade parity verdict for one session. `mode` says what a
+// mismatch means: 'parity' (the replay ran on the record's own code and
+// store - do not trade) or 'drift' (a later checkout or a store partition
+// newer than the record - the board is stale until the next nightly).
+// Absent on rows from before modes existed, which read as parity.
 export interface GradeParity {
   ok: boolean;
   date: string | null;
   names?: number;
   mismatches: GradeParityMismatch[];
+  mode?: 'parity' | 'drift';
+  // The record's `provenance.code_revision` and the replay's checkout.
+  code?: {record: string | null; replay: string | null};
+  // Store partitions newer than the record, as "<kind>/asof=<date>".
+  moved_inputs?: string[];
   note?: string;
 }
 

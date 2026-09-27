@@ -49,7 +49,8 @@ What is compared, for the record's session d:
 
 `run` writes `<root>/desk/grade_parity.json`: one row per date, replaced
 when the same date is checked again, the last 90 days kept. On a mismatch
-the CLI exits 1 and the nightly prints `GRADE PARITY MISMATCH` into the
+the CLI exits 1 (3 in drift mode, below) and the nightly prints `GRADE
+PARITY MISMATCH` into the
 same log the shadow ledger's receipt goes to (`~/desk_daily.log` on the
 Spark); the nightly never raises on it, and the result rides on the record
 as `record["grade_parity"]` so the board shows a red banner.
@@ -59,6 +60,25 @@ the store refreshed between the record and a later CLI run (the session
 row says so); `membership_history.csv` edited after the record; a code
 deploy between the two. Each of those is exactly what the operator should
 know before sizing a position from the board.
+
+**Parity and drift.** The same mismatch rows mean two different things
+depending on what produced the replay. On the nightly path - report in
+hand, the record just decided, same code and same store - a mismatch is a
+*parity* failure: two code paths in one process disagree about tonight's
+grades, and the board must not be traded from. From the CLI days later
+the replay runs on whatever the checkout and the store have become; on
+2026-09-27 a record written at 879abc56 was replayed ~199 commits later
+(the 52-week basis fix and the fundamental period exclusions among them)
+from a store that had gained `edgar_facts/asof=2026-09-26` and
+`edgar_events/asof=2026-09-26` since the record, and 23 grades differed.
+That is *drift*: the board is stale, not the pipeline broken. `compare`
+takes a `context` (the record's `provenance.code_revision`, the replay's
+code and the store partitions newer than the record) and the result says
+which it is in `mode`: "parity" when the code is the same and nothing
+moved, else "drift". `ok` is False on any mismatch in either mode; the
+line and the banner differ (red "do not trade" against amber "the board is
+stale; the next nightly re-grades"), and the CLI exits 3 on drift rather
+than 1. The nightly path is parity by construction.
 """
 
 from __future__ import annotations
@@ -81,6 +101,13 @@ MEMBERSHIP = "membership"
 TARGETS = "targets"
 SESSION = "session"
 KINDS = (SESSION, MEMBERSHIP, GRADE, TARGETS)
+# What a mismatch means: the same code and store as the record (a pipeline
+# disagreement), or a later checkout or store (the board has gone stale).
+PARITY = "parity"
+DRIFT = "drift"
+# Top-level folders under the root that are outputs, never replay inputs;
+# a dated directory under one of them is not a moved input.
+NOT_INPUTS = frozenset({"desk", "history", "research"})
 
 
 # Where the parity file lives under the market data root.
@@ -143,16 +170,37 @@ def _same_weight(a: float | None, b: float | None) -> bool:
     return abs(x - y) <= TOLERANCE
 
 
+# The mode a context implies: drift needs positive evidence - the replay's
+# code differs from the record's, or a store partition is newer than the
+# record. With nothing known (no context) the result is parity, the reading
+# that says not to trade, because a mismatch is never made milder by
+# ignorance of what produced it.
+def mode_of(context: dict | None) -> str:
+    """Return PARITY or DRIFT for `context`."""
+    ctx = context or {}
+    same_code = ctx.get("record_code") == ctx.get("replay_code")
+    return PARITY if same_code and not ctx.get("moved_inputs") else DRIFT
+
+
 # The comparison itself, on data already in hand: the saved record, the
 # desk report the nightly decided from (rebuilt or the very object), and
 # the date. Pure: reads nothing, writes nothing, so a test can inject a
 # flipped grade or a missing member and read the row that names it.
+# `context` says what produced the replay - `record_code`, `replay_code`,
+# `moved_inputs` (store partitions newer than the record) - and decides
+# the result's `mode`; None means nothing is known, which reads as parity.
 def compare(
-    record: dict, report_pit, day: _date | str, history_path: Path | None = None
+    record: dict,
+    report_pit,
+    day: _date | str,
+    history_path: Path | None = None,
+    context: dict | None = None,
 ) -> dict:
     """Return the parity result for `record` against `report_pit` on `day`."""
     from backend.agents.trading.desk import live_policy
 
+    ctx = dict(context or {})
+    moved_inputs = [str(x) for x in (ctx.get("moved_inputs") or [])]
     day_text = str(day)
     mismatches: list[dict] = []
     live_grades = {
@@ -240,6 +288,12 @@ def compare(
         "date": day_text,
         "checked": datetime.now(tz=UTC).isoformat(timespec="seconds"),
         "ok": not mismatches,
+        "mode": mode_of(ctx),
+        "code": {
+            "record": ctx.get("record_code"),
+            "replay": ctx.get("replay_code"),
+        },
+        "moved_inputs": moved_inputs,
         "names": len(compared),
         "members": len(members),
         "on_board": len(board),
@@ -285,9 +339,11 @@ def names_touched(result: dict) -> list[str]:
     )
 
 
-# The one-line verdict the nightly prints and the CLI ends with.
+# The one-line verdict the nightly prints and the CLI ends with. In parity
+# mode a mismatch says not to trade; in drift mode it names the code pair
+# and the moved partitions and says the board is stale.
 def line(result: dict) -> str:
-    """Return "grade parity: OK (n names)" or the mismatch line."""
+    """Return "grade parity: OK (n names)", the mismatch line or the drift line."""
     if result.get("ok"):
         return f"grade parity: OK ({result.get('names', 0)} names)"
     touched = names_touched(result)
@@ -300,11 +356,92 @@ def line(result: dict) -> str:
             )
         else:
             parts.append(f"{kind}: {m.get('detail')}")
+    rows = "; ".join(parts)
+    if result.get("mode") == DRIFT:
+        code = result.get("code") or {}
+        moved = ", ".join(result.get("moved_inputs") or []) or "none"
+        return (
+            f"GRADE DRIFT since {result.get('date')}'s record "
+            f"(code {code.get('record')}→{code.get('replay')}; "
+            f"inputs moved: {moved}): {len(touched)} names - {rows}"
+            " - the board is stale; the next nightly re-grades"
+        )
     return (
         f"GRADE PARITY MISMATCH: {result.get('date')}: {len(touched)} names - "
-        + "; ".join(parts)
+        + rows
         + " - do not trade from the board"
     )
+
+
+# The record's `written` timestamp as an aware datetime, or None when the
+# record has none or it does not parse.
+def _written_at(record: dict) -> datetime | None:
+    """Return when `record` was written, or None."""
+    try:
+        written = datetime.fromisoformat(str(record.get("written")))
+    except (TypeError, ValueError):
+        return None
+    return written if written.tzinfo else written.replace(tzinfo=UTC)
+
+
+# Whether one partition directory is newer than the record: dated after
+# its session, or touched after it was written.
+def _moved(part: Path, session: _date, written: datetime | None) -> bool:
+    """Return True when `part` is a partition newer than the record."""
+    from backend.market.store import _partition_date
+
+    asof = _partition_date(part.name)
+    if asof is None:
+        return False
+    if asof > session:
+        return True
+    if written is None:
+        return False
+    return datetime.fromtimestamp(part.stat().st_mtime, tz=UTC) > written
+
+
+# The store partitions newer than the record: every `<root>/<kind>/asof=<d>`
+# directory, outside the output folders, whose date is after the record's
+# session or whose mtime is after the record's `written` timestamp. Named
+# "<kind>/asof=<d>", sorted. A record with no parseable `written` compares
+# on dates alone.
+def moved_inputs(root: Path, record: dict) -> list[str]:
+    """Return the dated partitions under `root` newer than `record`."""
+    root = Path(root)
+    if not root.is_dir():
+        return []
+    session = _date.fromisoformat(str(record["session"]))
+    written = _written_at(record)
+    moved: list[str] = []
+    for kind in root.iterdir():
+        if not kind.is_dir() or kind.name in NOT_INPUTS or kind.name.startswith("."):
+            continue
+        for part in kind.iterdir():
+            if part.is_dir() and _moved(part, session, written):
+                moved.append(f"{kind.name}/{part.name}")
+    return sorted(moved)
+
+
+# The context for a replay: the record's code revision, the running
+# checkout's (read the way `market_daily` stamps `provenance`, once per
+# process) and the partitions that moved. On the nightly path the report
+# is the record's own, so the code is the same and nothing has moved.
+def context_for(root: Path, record: dict, *, nightly: bool) -> dict:
+    """Return {"record_code", "replay_code", "moved_inputs"} for `record`."""
+    from backend.cli import market_daily
+
+    record_code = (record.get("provenance") or {}).get("code_revision")
+    if nightly:
+        return {
+            "record_code": record_code,
+            "replay_code": record_code,
+            "moved_inputs": [],
+        }
+    return {
+        "record_code": record_code,
+        "replay_code": market_daily._git_revision(),
+        "moved_inputs": moved_inputs(root, record),
+    }
 
 
 # The file's rows, oldest first; a missing or unreadable file is no rows.
@@ -355,9 +492,12 @@ def write(root: Path, result: dict) -> Path:
 # The check end to end. `date` None means the latest record. The report and
 # record are rebuilt from the store exactly as the nightly builds them
 # (`market_daily.desk_report`, `deskrecord.load`) unless the nightly, which
-# has both in hand, passes them in. The result is written to the parity
-# file and returned; raising is left to the caller, so the nightly can
-# swallow it and the CLI can exit on it.
+# has both in hand, passes them in. A passed-in report is the nightly path
+# and the result is parity mode by construction; a rebuilt one carries the
+# running code's revision and the partitions newer than the record, so a
+# later CLI run reads as drift. The result is written to the parity file
+# and returned; raising is left to the caller, so the nightly can swallow
+# it and the CLI can exit on it.
 def run(
     root: Path,
     date: _date | str | None = None,
@@ -382,6 +522,7 @@ def run(
     session = record["session"]
     if date is not None and str(date) != session:
         raise ValueError(f"the record under {root} is for {session}, not {date}")
+    nightly = report is not None
     if report is None:
         from backend.cli import market_daily
         from backend.market.store import MarketStore
@@ -392,6 +533,7 @@ def run(
         # the same way.
         asof = None if date is None else _date.fromisoformat(session)
         report = market_daily.desk_report(store, asof)
-    result = compare(record, report, session, history_path)
+    context = context_for(root, record, nightly=nightly)
+    result = compare(record, report, session, history_path, context)
     write(root, result)
     return result

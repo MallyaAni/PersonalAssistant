@@ -144,6 +144,22 @@ the store's `asof=` dates; a `grade` or `targets` row with neither of those is
 a code-path drift between `market_daily.record`, `point_in_time` and
 `live_policy` and needs the commit found before the next session.
 
+The line and the exit code say which of two things a mismatch is. **Parity
+mismatch** (`GRADE PARITY MISMATCH`, exit 1, red banner): the replay ran on
+the record's own code and store and still disagrees - stop, do not trade
+from the board, find the cause as above. **Drift** (`GRADE DRIFT since
+<date>'s record (code a→b; inputs moved: ...)`, exit 3, amber banner): the
+CLI was run from a later checkout than the record's
+`provenance.code_revision`, or the store has partitions (`<kind>/asof=<date>`)
+newer than the record - the board shows the record's grades and the current
+code and data would grade some names differently. That is not a pipeline
+failure; the next nightly record re-grades on current code and data. If the
+operator needs current grades before then, re-run the nightly record
+(`python -m backend.cli.market_daily`, without `--paper-trade`) and the
+parity check runs in-process on the new record. The nightly's own check is
+always parity mode, because the report, code and store are the same ones
+the record was decided from.
+
 Run `test_fundamental_period_eligibility.py`, `test_opinion_persistence_resets.py`,
 `test_fundamental_current_path.py` and `test_fundamental_current_review.py` with
 the existing fundamental/desk/daily suites. They cover valid-period exclusion,

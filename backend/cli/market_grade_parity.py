@@ -9,10 +9,13 @@ targets, and writes the result to `<root>/desk/grade_parity.json`
 (`backend.market.grade_parity` says precisely what is compared). Prints the
 verdict line and every mismatch.
 
-Exit codes: 0 when live and replay agree; 1 on any mismatch (do not trade
-from the board until it is understood: inspect membership_history.csv and
-the store's latest partition dates); 2 when the check could not run (no
-record for the date, the store unreadable).
+Exit codes: 0 when live and replay agree; 1 on a parity mismatch - the
+replay ran on the record's own code and store and still disagrees (do not
+trade from the board until it is understood: inspect membership_history.csv
+and the store's latest partition dates); 2 when the check could not run (no
+record for the date, the store unreadable); 3 on drift - the checkout or
+the store has moved on since the record (the line names the code pair and
+the partitions), so the board is stale and the next nightly re-grades.
 """
 
 from __future__ import annotations
@@ -23,7 +26,7 @@ from pathlib import Path
 
 from backend.market import grade_parity
 
-OK, MISMATCH, UNAVAILABLE = 0, 1, 2
+OK, MISMATCH, UNAVAILABLE, DRIFT = 0, 1, 2, 3
 
 
 # The argument parser, separate so a test can drive `main` with a list.
@@ -43,7 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # Run the check and turn the result into an exit code: the verdict line and
-# each mismatch on stdout; a check that could not run says why on stderr.
+# each mismatch on stdout; a check that could not run says why on stderr; a
+# mismatch exits 1 in parity mode and 3 in drift mode.
 def main(argv: list[str] | None = None) -> int:
     """Entry point; returns the exit code."""
     args = build_parser().parse_args(argv)
@@ -63,7 +67,9 @@ def main(argv: list[str] | None = None) -> int:
         who = f"{m['ticker']}: " if m.get("ticker") else ""
         print(f"  {m['kind']}: {who}{m.get('detail', '')}")
     print(f"written: {grade_parity.path(Path(args.root))}")
-    return OK if result["ok"] else MISMATCH
+    if result["ok"]:
+        return OK
+    return DRIFT if result.get("mode") == grade_parity.DRIFT else MISMATCH
 
 
 if __name__ == "__main__":

@@ -3,8 +3,11 @@ import {expect, test, type Page, type TestInfo} from '@playwright/test'
 // Browser acceptance for the grade parity banner: when the nightly's check
 // found the board's grades or targets disagreeing with the point-in-time
 // replay, the board says so in red, with the date and the names, and tells
-// the operator not to trade from it; when the check passed, or the record
-// predates the check, nothing is shown. The verdict is a read-only view of
+// the operator not to trade from it; when the same rows came from a replay
+// on a later checkout or a store that gained partitions since the record
+// (`mode: 'drift'`), the banner is amber, names the code pair and the moved
+// partitions, and says the board is stale until the next nightly; when the
+// check passed, or the record predates the check, nothing is shown. The verdict is a read-only view of
 // what the nightly wrote, so every endpoint is answered from fixtures. The
 // helpers follow desk-candidate-line.spec.ts, which must stay as it is.
 
@@ -16,6 +19,7 @@ const BAR = '2026-09-26T15:15:00Z'
 const STANCES = {fundamental: 1, technical: 1, sentiment: 0, value: 0, rotation: 0}
 const BANNER = 'Grade parity'
 const HEADLINE = `Grade parity failed for ${SESSION}: 2 names — do not trade from this board`
+const DRIFT_HEADLINE = `Grades have moved since ${SESSION}'s record — 2 names`
 type Parity = Record<string, unknown> | null
 
 // A failed verdict: one grade flip, one name the membership history does
@@ -28,6 +32,18 @@ function failedParity(): Parity {
       {kind: 'membership', ticker: 'MSFT', live: 'A+', replay: 'C', detail: `on the board, not a member of the point-in-time book on ${SESSION} (membership_history.csv)`},
       {kind: 'session', detail: 'the rebuilt report ends 2026-09-26, not 2026-09-25: the store moved on since the record; targets not compared'},
     ],
+  }
+}
+
+// The same three rows from a replay two days later on a newer checkout and a
+// store that gained two EDGAR partitions since the record: drift, not a
+// pipeline failure.
+function driftParity(): Parity {
+  return {
+    ...failedParity(),
+    mode: 'drift',
+    code: {record: '879abc56', replay: '1325466b'},
+    moved_inputs: ['edgar_events/asof=2026-09-26', 'edgar_facts/asof=2026-09-26'],
   }
 }
 
@@ -122,6 +138,26 @@ test('shows the red banner with the names when parity failed', async ({page, bas
     await expect(banner).toContainText('MSFT (membership: live A+, replay C)')
     await expect(banner).toContainText('session: the rebuilt report ends 2026-09-26')
     await banner.screenshot({path: testInfo.outputPath('grade-parity-failed.png')})
+  } finally {
+    await recordDiagnostics(testInfo, diagnostics)
+  }
+})
+
+// A drift verdict paints an amber notice with the date, the count of names, the code pair, the moved partitions and both grades per name, and says the board is stale rather than not to trade.
+test('shows the amber drift banner with the code pair and moved inputs', async ({page, baseURL}, testInfo) => {
+  const diagnostics = await installParity(page, baseURL!, driftParity())
+  try {
+    await openBoard(page)
+    const banner = page.getByRole('alert', {name: BANNER, exact: true})
+    await expect(banner).toBeVisible()
+    await expect(banner).toContainText(DRIFT_HEADLINE)
+    await expect(banner).toContainText('code 879abc56 → 1325466b; inputs moved: edgar_events/asof=2026-09-26, edgar_facts/asof=2026-09-26')
+    await expect(banner).toContainText('AAPL (grade: live A, replay B)')
+    await expect(banner).toContainText('MSFT (membership: live A+, replay C)')
+    await expect(banner).toContainText(`The board shows ${SESSION}'s grades; the next nightly record re-grades on current code and data.`)
+    await expect(banner).not.toContainText('do not trade')
+    await expect(banner).toHaveCSS('background-color', 'rgb(255, 251, 235)')
+    await banner.screenshot({path: testInfo.outputPath('grade-parity-drift.png')})
   } finally {
     await recordDiagnostics(testInfo, diagnostics)
   }
