@@ -1,0 +1,1304 @@
+{
+  "study": "deep_intraday",
+  "stage": 1,
+  "version": 1,
+  "plan": "docs/research/deep-intraday-plan-2026-09-27.md",
+  "choosing_window": "2016-2023",
+  "windows": {
+    "2016-2023": {
+      "start": "2016-01-01",
+      "end": "2024-01-01"
+    },
+    "2024-2026": {
+      "start": "2024-01-01",
+      "end": null
+    }
+  },
+  "constants": {
+    "k_sessions": 5,
+    "slots": 26,
+    "channels": [
+      "bar_return",
+      "volume_share",
+      "range"
+    ],
+    "scalars": [
+      "gap",
+      "trailing_return_20",
+      "trailing_vol_20"
+    ],
+    "trailing": 20,
+    "refit": 63,
+    "min_train": 500,
+    "purge": 5,
+    "top_quantile": 0.2,
+    "cost_bps": 10.0,
+    "hac_lag": 20,
+    "ic_t_floor": 2.0,
+    "portfolio_t_floor": 2.0,
+    "min_names": 3,
+    "ridge_alpha": 10.0,
+    "cnn": {
+      "lr": 0.001,
+      "epochs": 20,
+      "batch": 512,
+      "dropout": 0.1,
+      "weight_decay": 0.0001,
+      "channels": 32,
+      "kernel": 5,
+      "dilations": [
+        1,
+        2,
+        4
+      ],
+      "hidden": 32,
+      "seed": 0
+    }
+  },
+  "trials": 4,
+  "dataset": {
+    "rows": 81612,
+    "names": 94,
+    "sessions": 2552,
+    "first": "2016-02-01",
+    "last": "2026-09-24",
+    "rows_per_window": {
+      "2016-2023": 54804,
+      "2024-2026": 26808
+    },
+    "graded_rows": 15727
+  },
+  "fits": {
+    "ridge/rank": [
+      {
+        "train_through": "2018-02-12",
+        "test_start": "2018-02-21",
+        "test_end": "2018-05-21",
+        "n_train": 11567,
+        "n_test": 1421,
+        "seconds": 0.03782138088718057
+      },
+      {
+        "train_through": "2018-05-14",
+        "test_start": "2018-05-22",
+        "test_end": "2018-08-28",
+        "n_train": 12988,
+        "n_test": 1576,
+        "seconds": 0.029101680032908916
+      },
+      {
+        "train_through": "2018-08-21",
+        "test_start": "2018-08-29",
+        "test_end": "2018-12-06",
+        "n_train": 14563,
+        "n_test": 1671,
+        "seconds": 0.03247113386169076
+      },
+      {
+        "train_through": "2018-11-19",
+        "test_start": "2018-12-07",
+        "test_end": "2019-03-19",
+        "n_train": 16225,
+        "n_test": 1701,
+        "seconds": 0.3768748939037323
+      },
+      {
+        "train_through": "2019-03-12",
+        "test_start": "2019-03-20",
+        "test_end": "2019-06-18",
+        "n_train": 17926,
+        "n_test": 1701,
+        "seconds": 0.44780368311330676
+      },
+      {
+        "train_through": "2019-06-11",
+        "test_start": "2019-06-19",
+        "test_end": "2019-09-25",
+        "n_train": 19627,
+        "n_test": 1677,
+        "seconds": 0.6081414404325187
+      },
+      {
+        "train_through": "2019-09-18",
+        "test_start": "2019-09-26",
+        "test_end": "2020-01-13",
+        "n_train": 21304,
+        "n_test": 1712,
+        "seconds": 2.708869111724198
+      },
+      {
+        "train_through": "2020-01-06",
+        "test_start": "2020-01-14",
+        "test_end": "2020-04-14",
+        "n_train": 23011,
+        "n_test": 1728,
+        "seconds": 2.8030026322230697
+      },
+      {
+        "train_through": "2020-04-06",
+        "test_start": "2020-04-15",
+        "test_end": "2020-07-14",
+        "n_train": 24739,
+        "n_test": 1775,
+        "seconds": 2.769564506597817
+      },
+      {
+        "train_through": "2020-07-07",
+        "test_start": "2020-07-15",
+        "test_end": "2020-10-12",
+        "n_train": 26514,
+        "n_test": 1836,
+        "seconds": 2.9301333748735487
+      },
+      {
+        "train_through": "2020-10-05",
+        "test_start": "2020-10-13",
+        "test_end": "2021-01-29",
+        "n_train": 28340,
+        "n_test": 1888,
+        "seconds": 3.9505234779790044
+      },
+      {
+        "train_through": "2021-01-22",
+        "test_start": "2021-02-01",
+        "test_end": "2021-04-30",
+        "n_train": 30223,
+        "n_test": 1997,
+        "seconds": 4.403797089122236
+      },
+      {
+        "train_through": "2021-04-23",
+        "test_start": "2021-05-03",
+        "test_end": "2021-07-30",
+        "n_train": 32205,
+        "n_test": 2124,
+        "seconds": 4.7901243469677866
+      },
+      {
+        "train_through": "2021-07-23",
+        "test_start": "2021-08-02",
+        "test_end": "2021-10-28",
+        "n_train": 34334,
+        "n_test": 2077,
+        "seconds": 4.237598962150514
+      },
+      {
+        "train_through": "2021-10-21",
+        "test_start": "2021-10-29",
+        "test_end": "2022-02-07",
+        "n_train": 36436,
+        "n_test": 2055,
+        "seconds": 5.797289305832237
+      },
+      {
+        "train_through": "2022-01-31",
+        "test_start": "2022-02-08",
+        "test_end": "2022-05-09",
+        "n_train": 38465,
+        "n_test": 2069,
+        "seconds": 4.5825564549304545
+      },
+      {
+        "train_through": "2022-05-02",
+        "test_start": "2022-05-10",
+        "test_end": "2022-08-09",
+        "n_train": 40530,
+        "n_test": 2175,
+        "seconds": 5.079070265870541
+      },
+      {
+        "train_through": "2022-08-02",
+        "test_start": "2022-08-10",
+        "test_end": "2022-11-07",
+        "n_train": 42702,
+        "n_test": 2185,
+        "seconds": 6.513752047903836
+      },
+      {
+        "train_through": "2022-10-31",
+        "test_start": "2022-11-08",
+        "test_end": "2023-02-16",
+        "n_train": 44885,
+        "n_test": 2240,
+        "seconds": 6.977146113291383
+      },
+      {
+        "train_through": "2023-02-09",
+        "test_start": "2023-02-17",
+        "test_end": "2023-05-18",
+        "n_train": 47120,
+        "n_test": 2275,
+        "seconds": 7.1033806023187935
+      },
+      {
+        "train_through": "2023-05-11",
+        "test_start": "2023-05-19",
+        "test_end": "2023-08-28",
+        "n_train": 49392,
+        "n_test": 2302,
+        "seconds": 6.837420755065978
+      },
+      {
+        "train_through": "2023-08-21",
+        "test_start": "2023-08-29",
+        "test_end": "2023-12-05",
+        "n_train": 51697,
+        "n_test": 2303,
+        "seconds": 6.667831648141146
+      },
+      {
+        "train_through": "2023-11-17",
+        "test_start": "2023-12-06",
+        "test_end": "2024-03-07",
+        "n_train": 53999,
+        "n_test": 2279,
+        "seconds": 6.247655112762004
+      },
+      {
+        "train_through": "2024-02-29",
+        "test_start": "2024-03-08",
+        "test_end": "2024-06-06",
+        "n_train": 56279,
+        "n_test": 2272,
+        "seconds": 5.54687715601176
+      },
+      {
+        "train_through": "2024-05-30",
+        "test_start": "2024-06-07",
+        "test_end": "2024-09-16",
+        "n_train": 58551,
+        "n_test": 2340,
+        "seconds": 7.138586743734777
+      },
+      {
+        "train_through": "2024-09-09",
+        "test_start": "2024-09-17",
+        "test_end": "2025-01-02",
+        "n_train": 60889,
+        "n_test": 2412,
+        "seconds": 6.858897948637605
+      },
+      {
+        "train_through": "2024-12-16",
+        "test_start": "2025-01-03",
+        "test_end": "2025-04-04",
+        "n_train": 63288,
+        "n_test": 2472,
+        "seconds": 8.127853391692042
+      },
+      {
+        "train_through": "2025-03-28",
+        "test_start": "2025-04-07",
+        "test_end": "2025-07-16",
+        "n_train": 65758,
+        "n_test": 2483,
+        "seconds": 6.780285014770925
+      },
+      {
+        "train_through": "2025-06-30",
+        "test_start": "2025-07-17",
+        "test_end": "2025-10-14",
+        "n_train": 68239,
+        "n_test": 2546,
+        "seconds": 7.422443795017898
+      },
+      {
+        "train_through": "2025-10-07",
+        "test_start": "2025-10-15",
+        "test_end": "2026-02-02",
+        "n_train": 70780,
+        "n_test": 2655,
+        "seconds": 8.432317736092955
+      },
+      {
+        "train_through": "2026-01-26",
+        "test_start": "2026-02-03",
+        "test_end": "2026-05-04",
+        "n_train": 73424,
+        "n_test": 2798,
+        "seconds": 11.170511045027524
+      },
+      {
+        "train_through": "2026-04-27",
+        "test_start": "2026-05-05",
+        "test_end": "2026-08-04",
+        "n_train": 76212,
+        "n_test": 2866,
+        "seconds": 10.860382427927107
+      },
+      {
+        "train_through": "2026-07-28",
+        "test_start": "2026-08-05",
+        "test_end": "2026-09-24",
+        "n_train": 79073,
+        "n_test": 2309,
+        "seconds": 12.235500012990087
+      }
+    ],
+    "ridge/vol": [
+      {
+        "train_through": "2018-02-12",
+        "test_start": "2018-02-21",
+        "test_end": "2018-05-21",
+        "n_train": 11567,
+        "n_test": 1421,
+        "seconds": 0.023607817012816668
+      },
+      {
+        "train_through": "2018-05-14",
+        "test_start": "2018-05-22",
+        "test_end": "2018-08-28",
+        "n_train": 12988,
+        "n_test": 1576,
+        "seconds": 0.02587749157100916
+      },
+      {
+        "train_through": "2018-08-21",
+        "test_start": "2018-08-29",
+        "test_end": "2018-12-06",
+        "n_train": 14563,
+        "n_test": 1671,
+        "seconds": 0.028782432433217764
+      },
+      {
+        "train_through": "2018-11-19",
+        "test_start": "2018-12-07",
+        "test_end": "2019-03-19",
+        "n_train": 16225,
+        "n_test": 1701,
+        "seconds": 0.06144214607775211
+      },
+      {
+        "train_through": "2019-03-12",
+        "test_start": "2019-03-20",
+        "test_end": "2019-06-18",
+        "n_train": 17926,
+        "n_test": 1701,
+        "seconds": 0.3322072271257639
+      },
+      {
+        "train_through": "2019-06-11",
+        "test_start": "2019-06-19",
+        "test_end": "2019-09-25",
+        "n_train": 19627,
+        "n_test": 1677,
+        "seconds": 0.5588929899968207
+      },
+      {
+        "train_through": "2019-09-18",
+        "test_start": "2019-09-26",
+        "test_end": "2020-01-13",
+        "n_train": 21304,
+        "n_test": 1712,
+        "seconds": 2.772926024161279
+      },
+      {
+        "train_through": "2020-01-06",
+        "test_start": "2020-01-14",
+        "test_end": "2020-04-14",
+        "n_train": 23011,
+        "n_test": 1728,
+        "seconds": 3.0665817237459123
+      },
+      {
+        "train_through": "2020-04-06",
+        "test_start": "2020-04-15",
+        "test_end": "2020-07-14",
+        "n_train": 24739,
+        "n_test": 1775,
+        "seconds": 2.9321157350204885
+      },
+      {
+        "train_through": "2020-07-07",
+        "test_start": "2020-07-15",
+        "test_end": "2020-10-12",
+        "n_train": 26514,
+        "n_test": 1836,
+        "seconds": 4.024138394743204
+      },
+      {
+        "train_through": "2020-10-05",
+        "test_start": "2020-10-13",
+        "test_end": "2021-01-29",
+        "n_train": 28340,
+        "n_test": 1888,
+        "seconds": 18.215171665884554
+      },
+      {
+        "train_through": "2021-01-22",
+        "test_start": "2021-02-01",
+        "test_end": "2021-04-30",
+        "n_train": 30223,
+        "n_test": 1997,
+        "seconds": 19.13462292868644
+      },
+      {
+        "train_through": "2021-04-23",
+        "test_start": "2021-05-03",
+        "test_end": "2021-07-30",
+        "n_train": 32205,
+        "n_test": 2124,
+        "seconds": 3.601461404003203
+      },
+      {
+        "train_through": "2021-07-23",
+        "test_start": "2021-08-02",
+        "test_end": "2021-10-28",
+        "n_train": 34334,
+        "n_test": 2077,
+        "seconds": 4.245420412160456
+      },
+      {
+        "train_through": "2021-10-21",
+        "test_start": "2021-10-29",
+        "test_end": "2022-02-07",
+        "n_train": 36436,
+        "n_test": 2055,
+        "seconds": 4.53251908486709
+      },
+      {
+        "train_through": "2022-01-31",
+        "test_start": "2022-02-08",
+        "test_end": "2022-05-09",
+        "n_train": 38465,
+        "n_test": 2069,
+        "seconds": 4.3947701547294855
+      },
+      {
+        "train_through": "2022-05-02",
+        "test_start": "2022-05-10",
+        "test_end": "2022-08-09",
+        "n_train": 40530,
+        "n_test": 2175,
+        "seconds": 5.055994478985667
+      },
+      {
+        "train_through": "2022-08-02",
+        "test_start": "2022-08-10",
+        "test_end": "2022-11-07",
+        "n_train": 42702,
+        "n_test": 2185,
+        "seconds": 5.664630905259401
+      },
+      {
+        "train_through": "2022-10-31",
+        "test_start": "2022-11-08",
+        "test_end": "2023-02-16",
+        "n_train": 44885,
+        "n_test": 2240,
+        "seconds": 5.768891227897257
+      },
+      {
+        "train_through": "2023-02-09",
+        "test_start": "2023-02-17",
+        "test_end": "2023-05-18",
+        "n_train": 47120,
+        "n_test": 2275,
+        "seconds": 6.716166368685663
+      },
+      {
+        "train_through": "2023-05-11",
+        "test_start": "2023-05-19",
+        "test_end": "2023-08-28",
+        "n_train": 49392,
+        "n_test": 2302,
+        "seconds": 7.348346979357302
+      },
+      {
+        "train_through": "2023-08-21",
+        "test_start": "2023-08-29",
+        "test_end": "2023-12-05",
+        "n_train": 51697,
+        "n_test": 2303,
+        "seconds": 6.799508478026837
+      },
+      {
+        "train_through": "2023-11-17",
+        "test_start": "2023-12-06",
+        "test_end": "2024-03-07",
+        "n_train": 53999,
+        "n_test": 2279,
+        "seconds": 7.170289719942957
+      },
+      {
+        "train_through": "2024-02-29",
+        "test_start": "2024-03-08",
+        "test_end": "2024-06-06",
+        "n_train": 56279,
+        "n_test": 2272,
+        "seconds": 6.5992315472103655
+      },
+      {
+        "train_through": "2024-05-30",
+        "test_start": "2024-06-07",
+        "test_end": "2024-09-16",
+        "n_train": 58551,
+        "n_test": 2340,
+        "seconds": 7.59366568364203
+      },
+      {
+        "train_through": "2024-09-09",
+        "test_start": "2024-09-17",
+        "test_end": "2025-01-02",
+        "n_train": 60889,
+        "n_test": 2412,
+        "seconds": 8.747809113003314
+      },
+      {
+        "train_through": "2024-12-16",
+        "test_start": "2025-01-03",
+        "test_end": "2025-04-04",
+        "n_train": 63288,
+        "n_test": 2472,
+        "seconds": 7.5687106740660965
+      },
+      {
+        "train_through": "2025-03-28",
+        "test_start": "2025-04-07",
+        "test_end": "2025-07-16",
+        "n_train": 65758,
+        "n_test": 2483,
+        "seconds": 8.568562017288059
+      },
+      {
+        "train_through": "2025-06-30",
+        "test_start": "2025-07-17",
+        "test_end": "2025-10-14",
+        "n_train": 68239,
+        "n_test": 2546,
+        "seconds": 8.297097133938223
+      },
+      {
+        "train_through": "2025-10-07",
+        "test_start": "2025-10-15",
+        "test_end": "2026-02-02",
+        "n_train": 70780,
+        "n_test": 2655,
+        "seconds": 9.905129610095173
+      },
+      {
+        "train_through": "2026-01-26",
+        "test_start": "2026-02-03",
+        "test_end": "2026-05-04",
+        "n_train": 73424,
+        "n_test": 2798,
+        "seconds": 10.813382001593709
+      },
+      {
+        "train_through": "2026-04-27",
+        "test_start": "2026-05-05",
+        "test_end": "2026-08-04",
+        "n_train": 76212,
+        "n_test": 2866,
+        "seconds": 10.13725753268227
+      },
+      {
+        "train_through": "2026-07-28",
+        "test_start": "2026-08-05",
+        "test_end": "2026-09-24",
+        "n_train": 79073,
+        "n_test": 2309,
+        "seconds": 12.370079976972193
+      }
+    ]
+  },
+  "parameters": {},
+  "results": [
+    {
+      "model": "ridge",
+      "target": "rank",
+      "rows": 43112,
+      "dates": 1403,
+      "ic": {
+        "mean": 0.013245650177233522,
+        "t": 2.109269960662549,
+        "dates": 1403
+      },
+      "portfolio": {
+        "mean_bp": -13.144697398345022,
+        "t": -10.151553170399396,
+        "dates": 1403,
+        "portfolio_bp": -11.277464452303525,
+        "hurdle_bp": 1.8672329460414987,
+        "portfolio_gross_bp": 4.439977763356796,
+        "hurdle_gross_bp": 1.97096009396107,
+        "turnover": 1.5717442215660322,
+        "names": 30.728439059158944
+      },
+      "portfolio_a": {
+        "mean_bp": -8.37507337509004,
+        "t": -3.11747271236849,
+        "dates": 1347,
+        "portfolio_bp": -8.0395157029654,
+        "hurdle_bp": 0.3355576721246417,
+        "portfolio_gross_bp": 6.82561669000664,
+        "hurdle_gross_bp": 1.5540652636834578,
+        "turnover": 1.4865132392972038,
+        "names": 6.551596139569414
+      },
+      "control": {
+        "mean": 0.008990968262581717,
+        "t": 1.527412433800142,
+        "dates": 1403
+      },
+      "vol_r2": null,
+      "window": "2016-2023"
+    },
+    {
+      "model": "ridge",
+      "target": "vol",
+      "rows": 43112,
+      "dates": 1403,
+      "ic": null,
+      "portfolio": null,
+      "portfolio_a": null,
+      "control": null,
+      "vol_r2": {
+        "r2": 0.13062004508909553,
+        "n": 43112,
+        "mse_model": 0.45558915736902533,
+        "mse_baseline": 0.5240391784921185
+      },
+      "window": "2016-2023"
+    },
+    {
+      "model": "ridge",
+      "target": "rank",
+      "rows": 26808,
+      "dates": 649,
+      "ic": {
+        "mean": 0.0061118202499405505,
+        "t": 0.889948368330444,
+        "dates": 649
+      },
+      "portfolio": {
+        "mean_bp": -12.514118171381737,
+        "t": -4.849831097346741,
+        "dates": 649,
+        "portfolio_bp": -12.990328117777588,
+        "hurdle_bp": -0.4762099463958501,
+        "portfolio_gross_bp": 2.76467379378097,
+        "hurdle_gross_bp": -0.3738528799187636,
+        "turnover": 1.575500191155856,
+        "names": 41.30662557781202
+      },
+      "portfolio_a": {
+        "mean_bp": -16.576754717607592,
+        "t": -2.7632376561472003,
+        "dates": 586,
+        "portfolio_bp": -14.88864745724009,
+        "hurdle_bp": 1.688107260367502,
+        "portfolio_gross_bp": 0.48109088178152976,
+        "hurdle_gross_bp": 3.0775398793223068,
+        "turnover": 1.5369738339021615,
+        "names": 5.440273037542662
+      },
+      "control": {
+        "mean": 0.005071265465768295,
+        "t": 0.7518707117461886,
+        "dates": 649
+      },
+      "vol_r2": null,
+      "window": "2024-2026"
+    },
+    {
+      "model": "ridge",
+      "target": "vol",
+      "rows": 26808,
+      "dates": 649,
+      "ic": null,
+      "portfolio": null,
+      "portfolio_a": null,
+      "control": null,
+      "vol_r2": {
+        "r2": 0.2110379431462177,
+        "n": 26808,
+        "mse_model": 0.46812578477704775,
+        "mse_baseline": 0.593343850582418
+      },
+      "window": "2024-2026"
+    }
+  ],
+  "verdict_detail": [
+    "ridge/rank on 2016-2023: IC mean 0.0132 t 2.11 (floor 2.0); top-quintile minus hurdle -13.1 bp/d t -10.15 (floor 2.0): fails the kill criteria",
+    "ridge/vol on 2016-2023: R2 0.1306 against trailing volatility: beats the baseline",
+    "trials counted: 4"
+  ],
+  "verdict": "INSUFFICIENT EVIDENCE",
+  "root": "data/market",
+  "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+  "models": [
+    "ridge"
+  ],
+  "skipped": [],
+  "grade_note": null,
+  "exclusions": {
+    "AAOI": {
+      "early_close": 21,
+      "incomplete": 120,
+      "no_prior_close": 0
+    },
+    "AAPL": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ACN": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "ADBE": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ADI": {
+      "early_close": 21,
+      "incomplete": 5,
+      "no_prior_close": 0
+    },
+    "ADSK": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "ALAB": {
+      "early_close": 6,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "AMAT": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "AMD": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "AMZN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ANET": {
+      "early_close": 21,
+      "incomplete": 6,
+      "no_prior_close": 0
+    },
+    "APLD": {
+      "early_close": 9,
+      "incomplete": 14,
+      "no_prior_close": 0
+    },
+    "ARM": {
+      "early_close": 7,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "ASML": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "AVGO": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "BE": {
+      "early_close": 17,
+      "incomplete": 8,
+      "no_prior_close": 0
+    },
+    "CDNS": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "CEG": {
+      "early_close": 9,
+      "incomplete": 0,
+      "no_prior_close": 0
+    },
+    "CIEN": {
+      "early_close": 21,
+      "incomplete": 6,
+      "no_prior_close": 0
+    },
+    "CIFR": {
+      "early_close": 11,
+      "incomplete": 154,
+      "no_prior_close": 0
+    },
+    "COHR": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "CORZ": {
+      "early_close": 8,
+      "incomplete": 85,
+      "no_prior_close": 340
+    },
+    "CRDO": {
+      "early_close": 9,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "CRM": {
+      "early_close": 21,
+      "incomplete": 5,
+      "no_prior_close": 0
+    },
+    "CRWD": {
+      "early_close": 15,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "CRWV": {
+      "early_close": 3,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "CSCO": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "DDOG": {
+      "early_close": 14,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "DELL": {
+      "early_close": 15,
+      "incomplete": 8,
+      "no_prior_close": 0
+    },
+    "ETN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "FFIV": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "FICO": {
+      "early_close": 21,
+      "incomplete": 405,
+      "no_prior_close": 0
+    },
+    "FN": {
+      "early_close": 21,
+      "incomplete": 130,
+      "no_prior_close": 0
+    },
+    "FSLR": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "FTNT": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "GEN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "GEV": {
+      "early_close": 6,
+      "incomplete": 0,
+      "no_prior_close": 0
+    },
+    "GLW": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "GLXY": {
+      "early_close": 3,
+      "incomplete": 0,
+      "no_prior_close": 1
+    },
+    "GOOGL": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "HPE": {
+      "early_close": 21,
+      "incomplete": 5,
+      "no_prior_close": 0
+    },
+    "HUT": {
+      "early_close": 10,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "IBM": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "INTC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "INTU": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "IREN": {
+      "early_close": 10,
+      "incomplete": 80,
+      "no_prior_close": 0
+    },
+    "KLAC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "LITE": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "LRCX": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "MCHP": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MDB": {
+      "early_close": 19,
+      "incomplete": 17,
+      "no_prior_close": 0
+    },
+    "META": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MOD": {
+      "early_close": 21,
+      "incomplete": 72,
+      "no_prior_close": 0
+    },
+    "MPWR": {
+      "early_close": 21,
+      "incomplete": 19,
+      "no_prior_close": 0
+    },
+    "MRVL": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MSFT": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MSI": {
+      "early_close": 21,
+      "incomplete": 6,
+      "no_prior_close": 0
+    },
+    "MU": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "NBIS": {
+      "early_close": 17,
+      "incomplete": 3,
+      "no_prior_close": 1535
+    },
+    "NET": {
+      "early_close": 14,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "NOW": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "NTAP": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "NVDA": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "NXPI": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "OKLO": {
+      "early_close": 10,
+      "incomplete": 608,
+      "no_prior_close": 0
+    },
+    "ON": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ORCL": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "PANW": {
+      "early_close": 21,
+      "incomplete": 8,
+      "no_prior_close": 0
+    },
+    "PLTR": {
+      "early_close": 12,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "POWL": {
+      "early_close": 21,
+      "incomplete": 1553,
+      "no_prior_close": 0
+    },
+    "PTC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "Q": {
+      "early_close": 4,
+      "incomplete": 0,
+      "no_prior_close": 470
+    },
+    "QCOM": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "SIMO": {
+      "early_close": 21,
+      "incomplete": 54,
+      "no_prior_close": 0
+    },
+    "SMCI": {
+      "early_close": 16,
+      "incomplete": 52,
+      "no_prior_close": 0
+    },
+    "SMR": {
+      "early_close": 11,
+      "incomplete": 187,
+      "no_prior_close": 126
+    },
+    "SNDK": {
+      "early_close": 3,
+      "incomplete": 2,
+      "no_prior_close": 0
+    },
+    "SNOW": {
+      "early_close": 14,
+      "incomplete": 46,
+      "no_prior_close": 354
+    },
+    "SNPS": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "STX": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "SWKS": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TEAM": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TER": {
+      "early_close": 21,
+      "incomplete": 0,
+      "no_prior_close": 0
+    },
+    "TLN": {
+      "early_close": 6,
+      "incomplete": 0,
+      "no_prior_close": 233
+    },
+    "TRMB": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TSM": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "TXN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TYL": {
+      "early_close": 21,
+      "incomplete": 185,
+      "no_prior_close": 0
+    },
+    "VRT": {
+      "early_close": 16,
+      "incomplete": 324,
+      "no_prior_close": 0
+    },
+    "VST": {
+      "early_close": 20,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "WDAY": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "WDC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "WULF": {
+      "early_close": 17,
+      "incomplete": 1225,
+      "no_prior_close": 0
+    },
+    "ZS": {
+      "early_close": 18,
+      "incomplete": 4,
+      "no_prior_close": 0
+    }
+  },
+  "sessions_per_ticker": {
+    "AAOI": 2557,
+    "AAPL": 2674,
+    "ACN": 2673,
+    "ADBE": 2674,
+    "ADI": 2672,
+    "ADSK": 2673,
+    "ALAB": 625,
+    "AMAT": 2674,
+    "AMD": 2674,
+    "AMZN": 2674,
+    "ANET": 2671,
+    "APLD": 1094,
+    "ARM": 753,
+    "ASML": 2674,
+    "AVGO": 2674,
+    "BE": 2029,
+    "CDNS": 2674,
+    "CEG": 1157,
+    "CIEN": 2670,
+    "CIFR": 1292,
+    "COHR": 2670,
+    "CORZ": 664,
+    "CRDO": 1160,
+    "CRM": 2672,
+    "CRWD": 1817,
+    "CRWV": 372,
+    "CSCO": 2674,
+    "DDOG": 1749,
+    "DELL": 1923,
+    "ETN": 2673,
+    "FFIV": 2670,
+    "FICO": 2272,
+    "FN": 2547,
+    "FSLR": 2674,
+    "FTNT": 2673,
+    "GEN": 2674,
+    "GEV": 618,
+    "GLW": 2673,
+    "GLXY": 338,
+    "GOOGL": 2674,
+    "HPE": 2672,
+    "HUT": 1316,
+    "IBM": 2673,
+    "INTC": 2674,
+    "INTU": 2673,
+    "IREN": 1128,
+    "KLAC": 2674,
+    "LITE": 2674,
+    "LRCX": 2673,
+    "MCHP": 2674,
+    "MDB": 2209,
+    "META": 2674,
+    "MOD": 2605,
+    "MPWR": 2658,
+    "MRVL": 2674,
+    "MSFT": 2674,
+    "MSI": 2671,
+    "MU": 2674,
+    "NBIS": 478,
+    "NET": 1747,
+    "NOW": 2670,
+    "NTAP": 2674,
+    "NVDA": 2674,
+    "NXPI": 2674,
+    "OKLO": 661,
+    "ON": 2674,
+    "ORCL": 2670,
+    "PANW": 2669,
+    "PLTR": 1487,
+    "POWL": 1122,
+    "PTC": 2674,
+    "Q": 223,
+    "QCOM": 2674,
+    "SIMO": 2623,
+    "SMCI": 2281,
+    "SMR": 1131,
+    "SNDK": 401,
+    "SNOW": 1496,
+    "SNPS": 2674,
+    "STX": 2674,
+    "SWKS": 2674,
+    "TEAM": 2674,
+    "TER": 2677,
+    "TLN": 551,
+    "TRMB": 2674,
+    "TSM": 2670,
+    "TXN": 2674,
+    "TYL": 2492,
+    "VRT": 1681,
+    "VST": 2331,
+    "WDAY": 2674,
+    "WDC": 2674,
+    "WULF": 1146,
+    "ZS": 2122
+  },
+  "asof": "2026-09-25"
+}
