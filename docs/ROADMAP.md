@@ -244,6 +244,13 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   sample confirms dated historical pre/post bars, not continuous real-time
   availability. [Coverage and acceptance](research/continuous-price-evidence-2026-09-25.md)
   remain separate from execution inputs and strategy qualification.
+- Fill timing inside the session is `SCAFFOLDED` (built, not run): `market_fill_timing`
+  prices the `/4` policy's own orders under the seven fill conventions the
+  [pre-registered plan](research/execution-timing-plan-2026-09-27.md) fixed,
+  with the control pinned to the simulator to 1e-10 on a synthetic store and
+  the plan's kill floors applied unchanged. The first run on the Spark's SIP
+  store decides whether any convention or price gate is adopted; until then
+  the executor fills at the next open as before.
 - Trading research remains `IN PROGRESS`: the optional account journal and
   independent replay are verified on synthetic accounting paths (292 tests;
   five archive/CLI journeys), not qualified market performance. Source-complete

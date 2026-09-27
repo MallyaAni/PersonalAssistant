@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-09-27 — Fill-timing trial built, not run
+
+`backend/market/fill_timing.py` and `python -m backend.cli.market_fill_timing`
+implement the seven fill conventions and the statistics that
+`docs/research/execution-timing-plan-2026-09-27.md` fixed before any run:
+`next_open` (the control), `first_hour_vwap`, `session_vwap`, `next_close`,
+`dip_or_close` (DIP 1%), `late_day` (slots 22-25) and `breakout_gate` (the
+executor's own band condition, `exit.evidence(panel).signalled()`, the function
+`market_daily._band_blocked` reads; a rejecting buy waits a session and is
+re-tested, at most five times). The orders are the plain simulator's for
+`graded-equal-weight/4` on the point-in-time book: `target_path` re-derives
+the decision clock and the policy's targets, `price_book` holds them in
+`simulate._Book` itself (same cash budget, same 10 bp one way on turnover,
+same missing-price rule), fills at the convention's SIP price scaled to the
+panel's adjusted basis and marks at the panel's adjusted daily close for
+every convention. `next_open` reproduces `simulate.run(...)` to 1e-10 on a
+synthetic store (`test_fill_timing.py`), and the payload carries the gap to
+the simulator at the median offset so the real store's difference between
+the SIP first print and the daily open is measured rather than assumed.
+Per window: median CAGR across offsets, offsets above the control, paired bp
+a session with HAC t at lag 20, deferral and fallback counts, and the best
+convention's deflated Sharpe against seven trials. `verdict` applies the
+kill floors unchanged (ADOPTED only at >= 5 bp a session, t >= 2.5 on
+2016-2023, not worse on 2024-2026; else RECORDED, NOT ACTED ON) and states
+`breakout_gate` against `next_open` separately. Fourteen tests: per-convention
+prices on a hand-made session, the simulator identity at three offsets, a
+store that always dips in the first hour (ADOPTED), iid intraday noise
+(RECORDED), the gate's deferral and its cap, the verdict's floors, and the
+command end to end on a temporary SIP store. Not yet run on the Spark; no
+number in this entry is a result.
+
 ## 2026-09-27 — Pre-registration of the fill-timing trial; the RTX 5080 as a training worker
 
 `docs/research/execution-timing-plan-2026-09-27.md` fixes seven fill
