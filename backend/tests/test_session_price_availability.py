@@ -538,8 +538,15 @@ def test_both_feeds_invalid_never_produce_a_fresh_midpoint(change):
     read = QuoteResponses((200, payload), (200, payload))
     result = prices.fetch(["AAA"], now, read, Clock())
     assert read.calls == [("sip", ("AAA",)), ("iex", ("AAA",))]
-    assert result["quotes"]["AAA"]["price"] is None
-    assert result["quotes"]["AAA"]["status"] != "fresh"
+    row = result["quotes"]["AAA"]
+    assert row["status"] != "fresh"
+    # An expired but well-formed quote keeps its last observed midpoint as a
+    # stale row (the board shows it as the last price, dated); invalid
+    # geometry or an unreadable timestamp carries no price at all.
+    if change == {"t": "2026-09-24T17:59:00-04:00"}:
+        assert row["status"] == "stale" and row["price"] == 101.0
+    else:
+        assert row["price"] is None
     json.dumps(result, allow_nan=False)
 
 
