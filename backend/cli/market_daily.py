@@ -857,6 +857,42 @@ def observe_ml_forward(
     return opportunity_shadow.observe_if_current(root, True)
 
 
+# The dry-run policy shadows observed tonight, keyed by policy version:
+# tonight `graded-equal-weight/4`, the `/4` candidate on its fidelity
+# shadow. Each value is the ledger's small receipt (sequence, equity, the
+# day's return, orders decided, a note) or, when the shadow could not be
+# observed, a note saying why. It runs after the live paper account and
+# before the record, inside its own try/except, and it never touches the
+# live book, an order or an existing record key: a failure is a visible
+# note in the record, never a lost record. A historical (`--asof`) run is
+# not an observation, the same rule the frozen ML observer follows; a
+# forced rerun of tonight's session finds its row already there and the
+# ledger appends nothing.
+def _policy_shadows(store_root: Path, report, session: str, current: bool) -> dict:
+    """Return {policy version: receipt or note} for tonight's record."""
+    from backend.agents.trading.desk import policy_v4, shadow_ledger
+
+    key = policy_v4.POLICY_VERSION
+    if not current:
+        return {key: {"note": "shadow not observed: historical run"}}
+    try:
+        panel = report.panel
+        last = len(panel.dates) - 1
+        opens = {t: float(panel.open[last, j]) for j, t in enumerate(panel.tickers)}
+        closes = {t: float(panel.close[last, j]) for j, t in enumerate(panel.tickers)}
+        row = shadow_ledger.observe(Path(store_root), report, opens, closes, session)
+        receipt = shadow_ledger.receipt(row)
+        print(
+            f"\npolicy shadow {key}: sequence {receipt['sequence']}, "
+            f"equity {receipt['equity']:,.0f}, {receipt['orders_decided']} orders "
+            f"decided ({receipt['note']})"
+        )
+        return {key: receipt}
+    except Exception as exc:  # noqa: BLE001 - a shadow never loses the record
+        print(f"\npolicy shadow {key}: not observed ({type(exc).__name__}: {exc})")
+        return {key: {"note": f"shadow not observed: {type(exc).__name__}: {exc}"}}
+
+
 # The day's record, as plain data.
 # The shadow's block for tonight, or None when there is none: the live
 # desk carries its alternate (the plain rule when the gap is live), and a
@@ -968,6 +1004,7 @@ def record(
     fundamentals: dict | None = None,
     ml_forward: dict | None = None,
     revisions: dict[str, dict] | None = None,
+    policy_shadows: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
     from backend.agents.trading.desk import event_risk
@@ -1086,6 +1123,11 @@ def record(
         # tonight. Evidence for switching the value analyst's input; never
         # traded. Absent before this existed or when no versions are stored.
         "fundamentals_asof": fundamentals,
+        # The dry-run policy shadows observed tonight, by policy version:
+        # each a receipt from its own ledger, or a note saying why it was
+        # not observed. Never traded; the `/4` fidelity shadow is judged
+        # from these. Empty on records written before this existed.
+        "policy_shadows": policy_shadows or {},
         # The fundamental analyst's data source and each name's cited fiscal
         # period ends on the last session, so a corrected figure can be
         # traced to the quarter it refers to. The `fundamentals_asof` block
@@ -1632,6 +1674,9 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
             )
         except Exception as exc:  # the account being away must not lose the record
             print(f"\npaper book: not traded ({type(exc).__name__}: {exc})")
+    # The dry-run policy shadows, after the live book has had its turn and
+    # with no hand in it: their receipts go into the record, nothing else.
+    policy_shadows = _policy_shadows(Path(store.root), report, session, current)
     shadow = None
     if args.challenger:
         shadow = _challenger_block(store, report)
@@ -1653,6 +1698,7 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         fundamentals=fundamentals,
         ml_forward=_ml_forward_receipt(observed.get("row"), session),
         revisions=revisions,
+        policy_shadows=policy_shadows,
     )
 
     # The prose, after the record: model-written briefs and reads under one

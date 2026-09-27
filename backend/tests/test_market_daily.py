@@ -1031,3 +1031,119 @@ def test_curve_block_reports_a_missing_point_in_time_line(monkeypatch):
     assert block["rules_point_in_time"] == []
     assert block["stats_point_in_time"] == {}
     assert "restricted run failed" in block["point_in_time_note"]
+
+
+# The record carries the policy shadows' receipts under their own key, and
+# an empty map when none were passed, so older records read the same way.
+def test_record_carries_the_policy_shadows():
+    receipt = {
+        "sequence": 3,
+        "equity": 101_000.0,
+        "return_1d": 0.01,
+        "orders_decided": 0,
+    }
+    data = market_daily.record(
+        _report(), policy_shadows={"graded-equal-weight/4": receipt}
+    )
+    assert data["policy_shadows"]["graded-equal-weight/4"] == receipt
+    assert market_daily.record(_report())["policy_shadows"] == {}
+
+
+# The /4 shadow is observed on tonight's report and prices, and its receipt
+# lands under the policy version; an exception becomes a note, so the
+# record is still written and says what happened.
+def test_policy_shadow_receipt_lands_and_a_failure_becomes_a_note(
+    tmp_path, monkeypatch, capsys
+):
+    from backend.agents.trading.desk import shadow_ledger
+
+    seen = {}
+
+    def fake_observe(root, report, opens, closes, session, now=None, migrations=None):
+        seen.update(root=root, opens=opens, closes=closes, session=session)
+        return {
+            "sequence": 2,
+            "session": session,
+            "equity": 100_500.0,
+            "return_1d": 0.005,
+            "pending": {"orders": {"SNDK": 200}},
+            "fills": [],
+            "refusals": [],
+            "status": "Observed; targets reset",
+        }
+
+    monkeypatch.setattr(shadow_ledger, "observe", fake_observe)
+    block = market_daily._policy_shadows(tmp_path, _report(), "2026-09-03", True)
+    receipt = block["graded-equal-weight/4"]
+    assert receipt["sequence"] == 2
+    assert receipt["equity"] == 100_500.0
+    assert receipt["return_1d"] == 0.005
+    assert receipt["orders_decided"] == 1
+    assert receipt["note"] == "Observed; targets reset"
+    assert seen["session"] == "2026-09-03"
+    assert seen["root"] == tmp_path
+    assert seen["closes"] == {"SNDK": 100.0, "IREN": 100.0, "SPY": 100.0}
+    assert seen["opens"] == seen["closes"]
+    assert "policy shadow graded-equal-weight/4: sequence 2" in capsys.readouterr().out
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("ledger folder unwritable")
+
+    monkeypatch.setattr(shadow_ledger, "observe", broken)
+    block = market_daily._policy_shadows(tmp_path, _report(), "2026-09-03", True)
+    assert block == {
+        "graded-equal-weight/4": {
+            "note": "shadow not observed: RuntimeError: ledger folder unwritable"
+        }
+    }
+    assert "not observed (RuntimeError" in capsys.readouterr().out
+    # A historical run is not an observation.
+    calls = []
+    monkeypatch.setattr(shadow_ledger, "observe", lambda *a, **k: calls.append(a))
+    block = market_daily._policy_shadows(tmp_path, _report(), "2026-09-03", False)
+    assert (
+        block["graded-equal-weight/4"]["note"] == "shadow not observed: historical run"
+    )
+    assert calls == []
+
+
+# The whole nightly, with the data steps stubbed: the real ledger is written
+# under the store and its receipt is in the saved record, beside the paper
+# entry and without disturbing it.
+def test_the_nightly_writes_the_shadow_ledger_and_its_receipt(tmp_path, monkeypatch):
+    from backend.cli import market_economics
+
+    monkeypatch.setattr(
+        market_daily.trading_desk,
+        "run",
+        lambda store, asof=None, fundamentals="c": _report(),
+    )
+    monkeypatch.setattr(market_daily, "paper_trade", lambda *a, **k: {"equity": 5.0})
+    for name in ("_print_regime", "_print_grades", "_print_book", "_reversal_shadows"):
+        monkeypatch.setattr(market_daily, name, lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "observe_ml_forward", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "_fundamentals_block", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "_tone_revisions", lambda *a, **k: {})
+    monkeypatch.setattr(market_daily, "curves", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "write_history", lambda *a, **k: 0)
+    monkeypatch.setattr(market_daily, "prune", lambda *a, **k: [])
+    monkeypatch.setattr(market_daily, "enrich_prose", lambda *a, **k: ("skipped", ""))
+    monkeypatch.setattr(market_economics, "refresh_if_current", lambda *a, **k: None)
+    monkeypatch.setattr(
+        sys, "argv", ["market_daily", "--data-dir", str(tmp_path), "--paper-dry-run"]
+    )
+    market_daily.main()
+    record = json.loads(
+        (Path(tmp_path) / "desk" / "asof=2026-09-03" / "desk.json").read_text()
+    )
+    receipt = record["policy_shadows"]["graded-equal-weight/4"]
+    assert receipt["sequence"] == 1
+    assert receipt["equity"] == 100_000.0
+    # SNDK is the one A+ name at 100: a fifth of the account, 200 shares.
+    assert receipt["orders_decided"] == 1
+    assert record["paper"] == {"equity": 5.0}
+    rows = sorted((Path(tmp_path) / "desk/shadow/graded-equal-weight-4").glob("*.json"))
+    assert [p.name for p in rows] == ["00000000.json", "00000001.json"]
+    last = json.loads(rows[-1].read_text())
+    assert last["pending"]["orders"] == {"SNDK": 200}
+    assert last["session"] == "2026-09-03"
