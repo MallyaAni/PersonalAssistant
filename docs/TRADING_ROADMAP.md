@@ -180,6 +180,23 @@ strategy that changes only when untouched sessions say so.
   Spark with `python -m backend.cli.market_daily --history-only
   --data-dir data/market` before the nightly next rewrites the files.
 
+- 2026-09-27, late: stage 1 of the deep-intraday plan, BUILT and not run
+  ([research/deep-intraday-plan-2026-09-27.md](research/deep-intraday-plan-2026-09-27.md);
+  `market/deep_intraday.py`, `market/deep_intraday_cnn.py`,
+  `cli/market_deep_intraday.py`). One question, kill criteria fixed
+  before the first fit: does a small sequence model on five sessions of
+  fifteen-minute bars carry out-of-sample information about the next
+  session that the grade does not already have? Ridge and a temporal CNN,
+  rank and volatility targets, walk-forward with a purge, the daily IC
+  and the cost-charged top-quintile portfolio against equal weight (and
+  against equal weight of the A/A+ names), volatility R² against trailing
+  volatility, the volatility control; INSUFFICIENT EVIDENCE unless IC t
+  and portfolio t both clear 2.0 on 2016-2023. Four trials. The synthetic
+  tests find a planted signal and nothing in noise; the CNN has run
+  nowhere yet. Next: `python -m backend.cli.market_deep_intraday --root
+  data/market` on spark1's CPUs (one evening), the result as a research
+  note, and stage 2 only if the verdict is PASSED.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

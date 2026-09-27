@@ -1,5 +1,73 @@
 # Changelog
 
+## 2026-09-27 — Stage 1 of the deep-intraday plan, built and not run
+
+The pre-registration
+[deep-intraday-plan-2026-09-27.md](research/deep-intraday-plan-2026-09-27.md)
+asks one question before any network is trained: does a small sequence
+model on the last five sessions of fifteen-minute bars carry out-of-sample
+information about the next session that the grade does not already have?
+The kill criteria are fixed there. This change implements stage 1 exactly
+as written and nothing further; the command has not run against the
+store, so there are no results.
+
+- **`market/deep_intraday.py`.** `dataset(cubes, mask)` builds one row per
+  member (name, session t) from the session cubes: the K=5 sessions of
+  bars as a 130-step sequence with three channels (bar log return, bar
+  volume share, bar range over close) plus three scalars (gap, trailing
+  20-session return, trailing 20-session realized volatility), with the
+  next session's open-to-close return, its rank in [0, 1] within the
+  date's eligible names, and the log of its realized variance as targets;
+  rows only where the K sessions are consecutive complete sessions on the
+  reviewed exchange calendar and t+1 is the next one. Everything in X is
+  at or before the close of t. `ridge_fit`/`ridge_predict` (numpy closed
+  form, L2 on standardized features, Gram accumulated in chunks);
+  `walk_forward(ds, model, target)` with the plan's schedule (first fit
+  after 500 sessions, a refit every 63 on an expanding window, a 5-session
+  purge, predictions only out of sample); `daily_ic` (Spearman per date,
+  mean and Newey-West t at lag 20), `top_quantile_portfolio` (equal weight
+  of the top 20% by forecast, next-session open to close, 10 bp one way on
+  every entry and exit, against equal weight of every eligible name that
+  date, paired daily difference; the same restricted to names graded
+  A/A+), `vol_r2` (out-of-sample R² against trailing volatility),
+  `volatility_control` (the return forecast's IC after regressing it on
+  the volatility forecast within each date), `study` (the payload) and
+  `verdict` (INSUFFICIENT EVIDENCE unless a return head clears both
+  floors on 2016-2023; clearing them but not the control is a VOLATILITY
+  RESULT; trials counted 4).
+- **`market/deep_intraday_cnn.py`.** The temporal CNN (three dilated
+  convolutions at 1, 2, 4, mean and max pooling, the scalars joined, two
+  heads), trained on the CPU with the one fixed configuration (Adam 1e-3,
+  20 epochs, batch 512, dropout 0.1, weight decay 1e-4, 32 channels,
+  kernel 5). Imported only when the CNN is asked for, so everything else
+  runs where torch is absent. With the written configuration the network
+  has 13,058 parameters, not the plan's estimated fifty thousand; the
+  count is reported, not tuned toward the estimate.
+- **`cli/market_deep_intraday.py`.** `--root`, `--tickers`, `--membership`,
+  `--workers` (cubes through `market_session_anatomy.load_cubes`),
+  `--models ridge,cnn`, `--json`. Runs the desk once for the grades (the
+  A/A+ line; a desk that fails is reported and the line left unscored),
+  builds the dataset, walks each model forward on both targets printing
+  the rows and seconds of every fit, prints one table row per (window,
+  model, target) and the verdict, writes `<root>/desk/deep_intraday.json`.
+
+Tests: `backend/tests/test_deep_intraday.py` (15: the row rule and
+shapes, a missing session drops exactly the rows that span it, the
+causality tamper - every session after t+1 rewritten leaves X and y at t
+byte-identical and t+1 rewritten changes only y - rank normalization
+within date, the ridge closed form against least squares, the walk-forward
+schedule and purge on the real constants, a planted late-day signal found
+by the ridge with IC t about 20 and the top quintile beating the hurdle at
+10 bp, iid noise giving |IC t| < 1 and INSUFFICIENT EVIDENCE, volatility
+R² about 0.5 when volatility clusters and about -0.03 on iid bars, a
+volatility-driven IC removed by the control (residual t about 0) and
+named a VOLATILITY RESULT, the verdict rules on hand-built payloads, the
+CLI end to end on a temporary SIP store with three names and a desk hook,
+`--json` / empty store / model validation / a failing desk). 14 passed and
+the CNN smoke test skipped where torch is absent. Not run on the Spark;
+the CNN has not been exercised anywhere yet: UNVERIFIED until
+`python -m backend.cli.market_deep_intraday --root data/market` runs there.
+
 ## 2026-09-27 — The paper account, the record and the board follow `graded-equal-weight/4`
 
 The operator's instruction: the paper account executes as a live account
