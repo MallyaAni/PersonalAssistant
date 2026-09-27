@@ -16,7 +16,19 @@ candidate stays at 20% for the shadow and the limit is the operator's to
 move with the price list in hand, before the shadow's verdict is read.
 
 **Board: the last observed price is always shown when the market is
-closed** (`42fe881` + `978b470`; deploy pending the routing gate). The
+closed** (`42fe881` + `978b470`, deployed 07:10Z; then `e5d6b51`, deployed
+07:30Z, which picks the quote feed pair from the exchange calendar: the
+overnight venues only while an overnight session runs or before 08:00 on
+a session day, the day feeds on weekend and holiday nights - the first
+live check at 03:13 Saturday had shown Friday's 04:00 overnight quote
+instead of IEX's 16:59). Verified in the running backend at 07:31Z: NVDA
+`stale 227.79 post-market iex Fri 16:59:49`; AAPL and AVGO `unavailable`
+because IEX withdraws its quote at 16:00:02 for them (one-sided, no
+midpoint), so the board shows their last close as `last close`. Follow-up
+worth a trial: IEX's last *trade* (`/v2/stocks/trades/latest?feed=iex`)
+as a display source for names whose quote is withdrawn - a trade is the
+last price the operator means, and the display contract's "midpoint is
+not a trade" caveat would then be a "last trade" fact. The
 session-price path used to blank any midpoint older than 60 s, and on
 this account the extended feeds cover only 08:00-17:00 (IEX) and
 20:00-04:00 (indicative overnight), so 17:00-20:00, 04:00-08:00 and
