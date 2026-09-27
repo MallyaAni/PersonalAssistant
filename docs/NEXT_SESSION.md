@@ -1,5 +1,52 @@
 # Next session
 
+## 2026-09-26, evening — Deployed `9331209`; six arms and the day-type study scored on the Spark
+
+**Deployed `9331209e`** from `~/deploy/anios` via `scripts/deploy.sh
+--wait-post` (run over SSH from the Cowork session with the
+`claude-cowork-trading` key): unit gate 7,490 passed / 55 skipped / 5 xfailed,
+routing gate passed, backup mirrored, migrations applied, backend restarted,
+gateway 401, cheap post-deploy checks all green (`data/.post-deploy-status`:
+`ok (cheap)`). The model servers were not touched. Note the fix that made
+the gate green: `c3fac76` had added four vLLM flags with no row in
+`ML_SYSTEM_DESIGN.md` and `test_every_serving_flag_has_a_documented_origin`
+failed on main; rows added from the script header and the rollout record.
+
+**VERIFIED on the Spark, all from `~/deploy/anios/data/market`** (results and
+the reasoning in
+[research/pit-arms-2026-09-26.md](research/pit-arms-2026-09-26.md); the JSON
+outputs are copied to `docs/research/scorecards/`): on the point-in-time
+book at 25 bp, 2016-2023, median across 20 offsets - frozen rule 14.4%,
+equal weight of every member 27.7%, `ew_graded_full` 29.9% (19/20 offsets
+above equal weight, t 1.5), `ew_graded_20` 28.3% (level with equal weight,
+20/20 above the rule), `ew_graded` with a 10% cap 17.8% (idle cash),
+`hgb_rank` 12.6% (t -3.2 against equal weight), `hgb_desk` 17.0% (t -1.8),
+`signed_rotation` 13.4%. Day-type study: best Brier skill -0.001 on
+2019-2023, verdict INSUFFICIENT EVIDENCE. **The grade selects a little; the
+sizing layer loses ~15 points a year; equal weight of every A/A+ member under
+the 20% hold limit is the `/4` candidate.**
+
+**Next, in order.** (1) Build the `/4` policy in `paper.py`/`simulate.py`
+terms - every A/A+ member of the point-in-time book at equal weight, 20%
+cap, fully invested at ten or more names, spare cash in cash, no
+volatility target, no regime multiplier - as a named policy beside `/3`,
+with the simulator reproducing the `ew_graded_20` curve byte for byte,
+then the 4-6 week fidelity shadow on a dry-run ledger (order agreement,
+tracking, zero negative cash). The paper executor's band entries,
+green-day skip and close-vs-open conventions must each be re-derived for a
+fully invested book; none carries over by assumption. (2) Put
+`ew_graded_20` on the dashboard curve as the candidate line. (3) Selection
+research is paused: two learned rankers and the rotation fix failed the
+hurdle. (4) The 15-minute layer's SIP store (P0.3) moves up, because
+execution is where the remaining measurable bp are. (5) A browser test for
+the point-in-time dashboard line is still owed.
+
+**Access.** The Sparks also accept the key `claude-cowork-trading` (this
+session); the earlier `claude-cowork-session` line belongs to another
+session. `~/dspark-commit` is the commit clone; research runs use
+`~/research-venv/bin/python` from `~/deploy/anios` with
+`CUDA_VISIBLE_DEVICES=` as the nightly does.
+
 ## 2026-09-26 — DSpark speculative decode back on for DeepSeek-V4-Flash (live on both Sparks)
 
 **What changed.** `deploy/spark/ds4-tp2.sh` had run with no

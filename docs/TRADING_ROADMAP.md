@@ -81,6 +81,19 @@ strategy that changes only when untouched sessions say so.
   choosing window); insufficient evidence, live rule unchanged. Next arm:
   capped equal weight across every A/A+ name (P1.2).
 
+- 2026-09-26, evening: six arms scored on the point-in-time book
+  ([pit-arms-2026-09-26.md](research/pit-arms-2026-09-26.md)). Equal
+  weight of every A/A+ member, fully invested, earns 29.9% on 2016-2023 at
+  25 bp against 14.4% for the frozen rule (20/20 offsets) and 27.7% for
+  equal weight of every member (19/20, t 1.5): the grade selects a little,
+  and the sizing layer on top of it (inverse volatility, the 0.30 target,
+  regime multipliers, top-decile concentration) is what has been losing
+  about 15 points a year. Under the 20% hold limit (`ew_graded_20`): 28.3%,
+  level with equal weight, 14 points over the rule in every offset -
+  **the `/4` candidate, to the fidelity shadow next.** Both learned
+  rankers and the day-type classifier: insufficient evidence; the price
+  ranker fails outright.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation
