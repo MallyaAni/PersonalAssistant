@@ -1,5 +1,87 @@
 # Next session
 
+## 2026-09-27, night — Three registered trials landed; the board was re-graded on the deployed code; grade parity now runs every night
+
+**Execution ablation, VERIFIED on spark1** from `01a661de`
+([research/execution-ablation-2026-09-27.md](research/execution-ablation-2026-09-27.md),
+payload `research/scorecards/execution_ablation.json`): ten variants, 400
+runs. The whole 4.3-point plain-minus-live gap on 2016-2023 is
+`live_midcycle` (removing it: 27.8% against 23.2%) at paired t 0.5 - a
+difference of paths, not an edge - and on 2024-2026 the same option earns
+5 points and 10 points of drawdown (live 52.6% / -17% against plain 46.2%
+/ -24%). Across the full span the live conventions cost about a point a
+year and buy six points of drawdown. `green_day_skip` earns its place
+recently (t -2.4 when removed). **Every option KEEP; the executor is
+unchanged.** The one candidate for a redesign is the mid-cycle entry rule
+*for this book* (built for concentrated `/3` sizes) - a new claim, its own
+pre-registration, not a removal.
+
+**Catastrophe stop, VERIFIED on spark1** from `170914de`
+([research/catastrophe-stop-2026-09-27.md](research/catastrophe-stop-2026-09-27.md),
+payload `research/scorecards/catastrophe_stop.json`): a stop 50% below
+entry fired zero times in ten point-in-time years, 60% below the peak zero
+times; the stops that did fire (2020-03-18, spring 2022, CRWD's 2024
+outage) were 100% false alarms and cost 0.1-1.4 CAGR points. Worst
+single-name day -2.7% of equity (2016-2023), -3.6% (2024-2026). **Every
+stop RECORD.** The universe, the equal-weight cap and the grade rotation
+are the protection against a Lucid-type collapse and the trial says they
+are sufficient. `simulate.run` gained `weight_filter=None` (byte-identical
+when None; tested under plain, live and exits option sets).
+
+**Grade parity, DEPLOYED** (`954c39da`; `market/grade_parity.py`,
+`market_grade_parity` CLI, the `_grade_parity` hook in the nightly, a
+`grade_parity` block on the record and the `/desk` payload, a banner above
+the board). Every night, after `record()`: live grade per name against the
+point-in-time replay of the same report, and `record["targets"]` against
+`live_policy.targets`. `mode: parity` (same code, same store; a mismatch
+is red, "do not trade from this board") against `mode: drift` (the record's
+`provenance.code_revision` differs from the running code, or an input
+partition `<kind>/asof=<date>` is newer than the record; amber, "the board
+is stale; the next nightly re-grades"). CLI exits 0 / 1 parity mismatch /
+2 could not check / 3 drift. `market_daily.desk_report(store, asof)` is now
+the single place the nightly, `--history-only` and the replay build the
+report.
+
+**What the first real parity run found, and what was done about it.**
+Friday's record (`asof=2026-09-25`) was decided by `879abc56` (Wednesday's
+code; the nightly does not pull). Replayed on the deployed code with the
+same as-of partitions, 11 letters differed; on today's store 23 did. The
+cause is two things that both happened this weekend: the fundamental
+analyst's fixes (obsolete periods excluded, fiscal intervals checked -
+the analyst now abstains on many names where it voted ±1) plus the 52-week
+basis fix, and a fresh `edgar_facts/asof=2026-09-26` partition the deployed
+backend fetched on Saturday. Every scorecard this weekend, and Monday's
+nightly, use the new code - so the board was showing grades nothing else
+in the system agreed with. **Re-recorded 2026-09-25 on `954c39da`**
+(`market_daily --force --brief-book --challenger`, *without*
+`--paper-trade`, from `~/deploy/anios`; `~/scratch/rerecord.log`). The
+original is kept beside it as `desk.json.879abc56` / `prose.json.879abc56`;
+Friday's paper receipt (5 orders actually placed) is carried into the new
+record unchanged and `provenance.rerecorded` says why. Result: 23 letters
+changed (MU C→A, COHR C→A, SWKS C→A, STX B→A; SNOW A→B, NVDA A→B, FTNT
+A→B, MRVL A→B, ...), parity OK on the nightly path, the active book is
+**11 names at 9.09%: AAOI, COHR, HPE, LITE, MDB, MU, NTAP, SMCI, SNDK,
+STX, SWKS** (CRM and SNOW are out against Saturday's list; SWKS is in).
+Monday night's forced `/4` rebalance trades whatever Monday's grades say.
+
+**Lesson, for the operator and the runbook:** the board is the last
+nightly's grades; a deploy that touches an analyst, or a data refresh
+between nightlies, moves them and the board does not know until the next
+nightly. The drift banner now says so. A same-session re-record without
+`--paper-trade` is the remedy when grades are needed before then.
+
+**Monday 2026-09-28 check (scheduled):** `~/desk_daily.log` for "grade
+parity: OK", "policy change: ..." and the rebalance orders; the record's
+`grade_parity.ok`; `state.policy_version`; `record["targets"]`; the board.
+If the banner is red on Tuesday morning, nobody trades from it until the
+CLI (`market_grade_parity --root data/market`) says why.
+
+**Trials still queued (pre-register before running):** the CNN volatility
+forecast as the sizing input for the graded book; the structure-learning
+second look (longer context, market context, drawdown/vol targets,
+self-supervised pretraining) on the RTX; a mid-cycle entry rule sized for
+the equal-weight book.
+
 ## 2026-09-27, evening — Fill timing measured on the /4 policy's own orders: the clock does not matter; the band gate is not the 4.4 points
 
 **VERIFIED on spark1** from `8ebbd4e`
