@@ -260,6 +260,13 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   fill-timing trial found the band gate on buys neutral; this measurement
   says which of the other live conventions the 4.4 CAGR points belong to.
   It ran: the gap is the mid-cycle entries at t 0.5, and the executor keeps every live option.
+- The mid-cycle rule redesigned for the `/4` book is `SCAFFOLDED` (built, not
+  run): `market_midcycle_ew` prices the policy under the full live execution
+  policy with the mid-cycle entry leg alone modified, in six registered
+  variants (`market/midcycle_ew.py`, two new `simulate.run` options with
+  byte-identical defaults), with the diagnostics, the floors and the
+  [pre-registered plan](research/midcycle-ew-plan-2026-09-27.md) fixed before
+  the run. Until it runs the executor keeps the live rule.
 - Trading research remains `IN PROGRESS`: the optional account journal and
   independent replay are verified on synthetic accounting paths (292 tests;
   five archive/CLI journeys), not qualified market performance. Source-complete

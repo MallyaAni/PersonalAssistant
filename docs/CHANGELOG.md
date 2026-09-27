@@ -1,5 +1,56 @@
 # Changelog
 
+## 2026-09-27 — The mid-cycle rule redesigned for the /4 book: built, not run
+
+The candidate the execution ablation left behind. `live_midcycle` was the
+whole 4.3-point gap between plain fills and the live policy on the graded
+equal-weight book (23.2% against 27.8%, 2016-2023, paired t 0.5) and the
+source of 5 points of return and 10 of drawdown on 2024-2026; the rule was
+built to size concentrated `/3` positions from a real cash reserve.
+Reading `simulate._live_midcycle` and `paper.midcycle_orders` on this
+book: a downgrade is sold within a session and its proceeds are planned
+pro rata into the other names but paid from tonight's cash, which is
+nothing, so they are retried once a session later and dropped if a gate
+refuses; with fewer than seven members the policy's weight exceeds the
+paper's 15% cap and a downgrade's proceeds idle until the reset; and
+every breakout in an A/A+ name buys 1.8% of equity - a fifth of the 9%
+the reset gives a name - from whatever cash the rotation freed. So on
+this book the rule is a fast exit, a small momentum tilt and undersized
+entries, and the trial is built to tell them apart.
+
+`simulate.run` gained `midcycle_entries` ("breakout", the live rule;
+"target", the same trigger sized to the allocator's weight for the name
+that session; "new-grade", no band trigger, a name the allocator would
+hold today that it did not hold at the reset enters at target; "none")
+and `midcycle_sweep` (cash beyond the allocator's own idle share
+redeployed pro rata to the held names each session). Both require
+`live_midcycle`; the defaults are byte-identical to the live rule, with
+or without a journal attached (tested). The rotation, the deferred retry,
+the cash bound and every other live convention are the paper planner's
+own functions in the same order. `backend/market/midcycle_ew.py` fixes
+six variants - `mc-off` (the ablation's anchor), `live`,
+`mc-target-size`, `mc-no-idle-cash`, `mc-new-grades-only`,
+`mc-exit-only` - prices each under the full live policy on the pit
+scorecard's offsets and costs, pairs each against `live` and `mc-off`
+(Newey-West lag 20), and reads diagnostics off a passive `Ledger` on the
+journal hook: mid-cycle and rebalance turnover, cash share, entries and
+exits a year, entry weight, entries still held at the next rebalance,
+exits the rebalance buys back. ADOPT (registered) only at >= 1.0 CAGR
+point over live on 2016-2023 at 25 bp with paired t >= 2.0, not worse
+on 2024-2026 by paired bp/d, and drawdown within 3 points of live on
+both windows; else RECORD. `python -m backend.cli.market_midcycle_ew
+--root --membership --offsets --costs --json` writes
+`<root>/desk/midcycle_ew.json`. Pre-registration with the mechanism
+reading, the prior (target-size entries recover 1-3 of the 4.3 points
+while keeping most of the 2024-2026 drawdown) and what would make it
+wrong: `docs/research/midcycle-ew-plan-2026-09-27.md`. Tests:
+`backend/tests/test_midcycle_ew.py` (the variant set, the options
+against `_live_options`, byte identity of the defaults and the ledger,
+refusals, the entry modes and the sweep on hand-built inputs, the
+variants on a flicker-grade book, the diagnostics on a hand-built
+ledger, the payload, the verdict floors, the CLI end to end). 12 pass;
+the command has not run against the store.
+
 ## 2026-09-27 — Volatility sizing on the /4 book: built and run, every variant RECORD
 
 Run the same night (CNN forecasts on the RTX 5080 in 3 m 22 s, R² 0.271 /

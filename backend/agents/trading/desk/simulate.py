@@ -77,6 +77,22 @@ LIVE_POLICY: dict[str, bool] = {
     "deferred_buys": True,
 }
 
+# How `live_midcycle` sizes and triggers its entries between rebalances.
+# "breakout" is the live rule (`paper.midcycle_orders`: a band breakout in
+# an A/A+ name buys `paper.entry_size(band)` of equity, up to the paper name
+# cap). The others are research variants of the entry leg alone - the
+# rotation out of downgraded names, the deferred retry, the cash bound and
+# every other live convention are unchanged:
+#   "target"     the same breakout trigger, sized straight to the weight the
+#                run's allocator would give the name today, less what is held
+#   "new-grade"  no band trigger: a name the allocator would hold today that
+#                it did not hold at the last rebalance (newly graded in), and
+#                that the book does not hold, enters at today's target weight
+#   "none"       no entries at all; rotation exits still fire and their
+#                proceeds are still redeployed
+MIDCYCLE_ENTRIES: tuple[str, ...] = ("breakout", "target", "new-grade", "none")
+MIDCYCLE_BREAKOUT = "breakout"
+
 
 # The session's inputs to the shared paper planner, read from the book and
 # the report the way `market_daily` reads them from the account and the desk.
@@ -109,11 +125,193 @@ def _paper_inputs(book, report, t, blocked):
     return prices, held, grades, finished, excluded
 
 
+# A target weight vector as {symbol: weight} over its positive, finite entries.
+def _weights_by_symbol(target, tickers) -> dict[str, float]:
+    """Return the positive finite weights of `target` keyed by ticker."""
+    return {
+        s: float(w)
+        for s, w in zip(tickers, np.asarray(target, dtype=float), strict=False)
+        if np.isfinite(w) and w > 0
+    }
+
+
+# The mid-cycle entry orders of one research variant of the entry leg, in
+# place of `paper._entry_orders`: the same gates (graded A or better, not
+# rotating out, not blocked, a price today) with the trigger and the size
+# the mode names. `today` and `at_rebalance` are the allocator's weight per
+# symbol for this session and for the last rebalance session; `reserved` is
+# what the plan already holds or has bought tonight.
+def _variant_entry_orders(
+    mode, entries, reserved, prices, equity, grades, finished, excluded, today,
+    at_rebalance, session, state,
+) -> list:
+    """Return the buy orders the entry mode wants tonight, unbounded by cash."""
+    from backend.agents.trading.desk import paper
+
+    if mode == "none" or equity <= 0:
+        return []
+    orders = []
+    for symbol in sorted(prices):
+        price = float(prices.get(symbol) or 0.0)
+        if (
+            price <= 0
+            or symbol in excluded
+            or symbol in finished
+            or grades.get(symbol) not in paper.ENTRY_MIN_GRADE
+        ):
+            continue
+        target = float(today.get(symbol, 0.0))
+        current = float(reserved.get(symbol, 0.0)) * price / equity
+        if mode == "target":
+            # The live trigger, sized to the policy's own weight for the name.
+            if paper.entry_size(float(entries.get(symbol, float("nan")))) <= 0:
+                continue
+            reason = "price entry at target: breakout through its own 20-day band"
+        elif mode == "new-grade":
+            # Newly graded in since the rebalance and not held: the position
+            # the next rebalance would open, opened now at its target weight.
+            if (
+                target <= 0
+                or float(at_rebalance.get(symbol, 0.0)) > 0
+                or current > 0
+            ):
+                continue
+            reason = "grade entry: newly graded in since the rebalance"
+        else:
+            raise ValueError(f"unknown mid-cycle entry mode {mode!r}")
+        want = target - current
+        if want < paper.MIN_TRADE:
+            continue
+        seq = state.order_seq
+        state.order_seq += 1
+        orders.append(
+            paper.PaperOrder(
+                symbol,
+                "buy",
+                want * equity / price,
+                reason,
+                client_order_id=paper.order_id(session, symbol, "buy", seq),
+            )
+        )
+    return orders
+
+
+# The cash sweep of the "no idle cash" variant: whatever cash the plan would
+# leave tonight beyond the share the allocator itself keeps idle today goes
+# pro rata (by held value) into the names the book holds and the desk has
+# not turned against, the way the rotation redeploys a downgraded name's
+# proceeds. A name may be filled to the paper name cap or to its own target
+# weight today, whichever is larger, so the sweep can never hold a name
+# above what either rule allows.
+def _sweep_orders(
+    orders, reserved, prices, equity, grades, finished, excluded, today, cash,
+    session, state,
+) -> list:
+    """Return the pro-rata buys that put tonight's spare cash back to work."""
+    from backend.agents.trading.desk import paper
+
+    if equity <= 0:
+        return []
+    planned = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    idle_share = max(0.0, 1.0 - float(sum(today.values())))
+    spare = max(0.0, cash - planned - idle_share * equity)
+    if spare < paper.MIN_TRADE * equity:
+        return []
+    projected = dict(reserved)
+    for order in orders:
+        if order.side == "buy":
+            projected[order.symbol] = projected.get(order.symbol, 0.0) + order.qty
+    takers = {
+        s: float(q) * float(prices.get(s) or 0.0)
+        for s, q in projected.items()
+        if q > 0
+        and s not in finished
+        and s not in excluded
+        and grades.get(s) in paper.ENTRY_MIN_GRADE
+        and (prices.get(s) or 0) > 0
+    }
+    pool = sum(takers.values())
+    if pool <= 0:
+        return []
+    out = []
+    for symbol, value in sorted(takers.items()):
+        price = float(prices[symbol])
+        current = float(projected[symbol]) * price / equity
+        cap = max(paper.ENTRY_NAME_CAP, float(today.get(symbol, 0.0)))
+        want = min(spare * (value / pool), max(0.0, cap - current) * equity)
+        qty = want / price
+        if qty <= 0 or qty * price < paper.MIN_TRADE * equity:
+            continue
+        seq = state.order_seq
+        state.order_seq += 1
+        out.append(
+            paper.PaperOrder(
+                symbol,
+                "buy",
+                qty,
+                "sweep: spare cash redeployed pro rata to the held names",
+                client_order_id=paper.order_id(session, symbol, "buy", seq),
+            )
+        )
+    return out
+
+
+# `paper.midcycle_orders` with the entry leg replaced by a research variant
+# and an optional cash sweep: the rotation out of downgraded names, the
+# joint reservation of name capacity and the cash bound are the paper
+# planner's own functions, called in the same order.
+def _variant_midcycle_orders(
+    session, equity, held, prices, grades, finished, entries, excluded, cash,
+    mode, sweep, today, at_rebalance, unfunded=None,
+) -> list:
+    """Return tonight's funded mid-cycle orders under the variant."""
+    from backend.agents.trading.desk import paper
+
+    state = paper.PaperState()
+    orders = paper._rotation_orders(
+        finished, held, prices, equity, session, state, excluded, whole_shares=False
+    )
+    projected = dict(held)
+    for order in orders:
+        if order.side == "buy":
+            projected[order.symbol] = projected.get(order.symbol, 0) + order.qty
+    if mode == MIDCYCLE_BREAKOUT:
+        eligible = {
+            s: b
+            for s, b in entries.items()
+            if grades.get(s) in paper.ENTRY_MIN_GRADE and s not in finished
+        }
+        orders += paper._entry_orders(
+            eligible, projected, prices, equity, session, state, excluded,
+            whole_shares=False,
+        )
+    else:
+        orders += _variant_entry_orders(
+            mode, entries, projected, prices, equity, grades, finished, excluded,
+            today, at_rebalance, session, state,
+        )
+    if sweep:
+        orders += _sweep_orders(
+            orders, held, prices, equity, grades, finished, excluded, today,
+            max(0.0, cash), session, state,
+        )
+    funded, unpaid = paper._fund_buys(orders, max(0.0, cash), prices, False)
+    if unfunded is not None:
+        for symbol, qty in unpaid.items():
+            unfunded[symbol] = unfunded.get(symbol, 0.0) + qty
+    return funded
+
+
 # Replay the paper planner's joint rotation and entry orders without share rounding.
 # `deferred`, when given, is the previous session's unpaid buy shares per
 # symbol, retried first from the cash on hand exactly as `paper.plan` does;
 # `unfunded`, when a dict is given, receives tonight's unpaid buy shares.
-def _live_midcycle(book, report, t, bands, blocked, deferred=None, unfunded=None):
+# `variant`, when given, is (entry mode, sweep, today's allocator weights,
+# the last rebalance's allocator weights) and routes the plan through
+# `_variant_midcycle_orders`; None is the live rule, byte for byte.
+def _live_midcycle(
+    book, report, t, bands, blocked, deferred=None, unfunded=None, variant=None
+):
     from backend.agents.trading.desk import paper
 
     panel = report.panel
@@ -146,20 +344,40 @@ def _live_midcycle(book, report, t, bands, blocked, deferred=None, unfunded=None
     reserved = dict(held)
     for order in retry:
         reserved[order.symbol] = reserved.get(order.symbol, 0.0) + order.qty
-    orders = retry + paper.midcycle_orders(
-        session,
-        paper.PaperState(),
-        equity,
-        reserved,
-        prices,
-        grades,
-        finished,
-        entries,
-        excluded,
-        book.cash - spent,
-        whole_shares=False,
-        unfunded=unfunded,
-    )
+    if variant is None:
+        planned = paper.midcycle_orders(
+            session,
+            paper.PaperState(),
+            equity,
+            reserved,
+            prices,
+            grades,
+            finished,
+            entries,
+            excluded,
+            book.cash - spent,
+            whole_shares=False,
+            unfunded=unfunded,
+        )
+    else:
+        mode, sweep, today, at_rebalance = variant
+        planned = _variant_midcycle_orders(
+            session,
+            equity,
+            reserved,
+            prices,
+            grades,
+            finished,
+            entries,
+            excluded,
+            book.cash - spent,
+            mode,
+            sweep,
+            today,
+            at_rebalance,
+            unfunded=unfunded,
+        )
+    orders = retry + planned
     wanted = book.shares.copy()
     for order in orders:
         wanted[panel.index(order.symbol)] += order.qty * (
@@ -673,6 +891,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     brake_path_override: np.ndarray | None = None,
     journal=None,
     weight_filter=None,
+    midcycle_entries: str = MIDCYCLE_BREAKOUT,
+    midcycle_sweep: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -808,8 +1028,33 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     sees because it is only called on rebalance sessions - can be priced
     inside the same book. None leaves every result byte-identical;
     `funded_allocation` refuses it.
+
+    `midcycle_entries` and `midcycle_sweep` are research variants of the
+    entry leg of `live_midcycle` alone, and require it. `MIDCYCLE_ENTRIES`
+    names the modes: "breakout" (the default) is the live rule through
+    `paper.midcycle_orders`, byte for byte; "target" keeps the band trigger
+    and sizes an entry to the weight the run's allocator would give the name
+    on that session (`allocator(report, panel, config, t)`, so a policy that
+    reads only row t is asked about today) less what is held; "new-grade"
+    drops the band and opens, at today's target weight, any name the
+    allocator would hold today that it did not hold at the last rebalance
+    and the book does not hold; "none" makes no entries. `midcycle_sweep`
+    puts the cash the plan would leave beyond the allocator's own idle share
+    pro rata into the held names each session, the way the rotation
+    redeploys a downgraded name's proceeds. Everything else - the rotation
+    out of downgraded names, the deferred retry, the cash bound, the buy
+    gates, the fills - is unchanged, so a variant measures the entry rule
+    and nothing else. The defaults leave every result byte-identical.
     """
     decide = allocator or _targets
+    if midcycle_entries not in MIDCYCLE_ENTRIES:
+        raise ValueError(
+            "midcycle_entries must be one of "
+            f"{MIDCYCLE_ENTRIES}, got {midcycle_entries!r}"
+        )
+    midcycle_variant = midcycle_entries != MIDCYCLE_BREAKOUT or bool(midcycle_sweep)
+    if midcycle_variant and not live_midcycle:
+        raise ValueError("midcycle_entries and midcycle_sweep require live_midcycle")
     fired, blocked, trend_up, dips = _signals_for(
         report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
     )
@@ -935,6 +1180,9 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     next_rebalance = start
     funded_trace: list[dict] = []
     excluded: set[str] = set()
+    # The allocator's weights at the last rebalance, per symbol, for the
+    # mid-cycle entry variants that ask what the rebalance would have held.
+    rebalance_weights: dict[str, float] = {}
     for t in range(start, rows - 1):
         if funded_allocation:
             # An explicit company exit, named for this decision date, removes
@@ -1143,6 +1391,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         if rebalanced:
             next_rebalance = t + rebalance
             target = decide(report, panel, config, t)
+            if midcycle_variant:
+                rebalance_weights = _weights_by_symbol(target, panel.tickers)
             if fired is not None or blocked is not None:
                 total = book.equity(closes[t])
                 weights = (
@@ -1214,6 +1464,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             carried, pending_deferred = ({} if rebalanced else pending_deferred), {}
         if live_midcycle and not rebalanced and not event_changed:
             unfunded: dict[str, float] = {}
+            variant = None
+            if midcycle_variant:
+                # The variant asks the allocator what it would hold today,
+                # from row t alone, and remembers what it held at the reset.
+                variant = (
+                    midcycle_entries,
+                    bool(midcycle_sweep),
+                    _weights_by_symbol(decide(report, panel, config, t), panel.tickers),
+                    rebalance_weights,
+                )
             order = _live_midcycle(
                 book,
                 report,
@@ -1222,6 +1482,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 blocked,
                 deferred=carried or None,
                 unfunded=unfunded if deferred_buys and not reduced else None,
+                variant=variant,
             )
             if reduced:
                 order = np.minimum(order, book.shares)

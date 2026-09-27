@@ -237,6 +237,32 @@ strategy that changes only when untouched sessions say so.
   INSUFFICIENT EVIDENCE for returns; RL sizing does not start; the
   volatility head goes to a sizing trial on the graded book.
 
+- 2026-09-27, night: the mid-cycle rule redesigned for the `/4` book, BUILT
+  and not run
+  ([research/midcycle-ew-plan-2026-09-27.md](research/midcycle-ew-plan-2026-09-27.md)):
+  the candidate the execution ablation named. Read from the code, the
+  live rule on this book is a fast exit on a downgrade (sold within a
+  session, proceeds retried once from cash a session later, idle when a
+  gate refuses or fewer than seven members put the policy's weight over
+  the paper's 15% cap), a small momentum tilt into held names that break
+  out, and entries into newly graded names at 1.8% against the 9% the
+  reset gives them. Six registered variants under the full live policy
+  with the mid-cycle rule alone modified - `mc-off` (anchor), `live`,
+  `mc-target-size`, `mc-no-idle-cash`, `mc-new-grades-only`,
+  `mc-exit-only` - through two new `simulate.run` options
+  (`midcycle_entries`, `midcycle_sweep`; defaults byte-identical), with
+  diagnostics read off a passive ledger (mid-cycle turnover, cash share,
+  entries and exits a year, entry weight, entries held at the next
+  rebalance, exits bought back) (`market/midcycle_ew.py`, `python -m
+  backend.cli.market_midcycle_ew`). ADOPT (registered) only at >= 1.0
+  CAGR point over live on 2016-2023 at 25 bp with paired t >= 2.0, not
+  worse on 2024-2026, drawdown within 3 points of live; else RECORD.
+  Prior: target-size entries recover 1-3 of the 4.3 points while keeping
+  most of the 2024-2026 drawdown benefit. Twelve tests pass on the
+  synthetic book; the command has not run against the store. Next: run
+  it on the Spark (240 simulator runs, about 25 minutes), record the
+  note, and change the executor only for a variant the verdict names.
+
 - 2026-09-27, night: the catastrophe stop, RUN and RECORDED
   ([research/catastrophe-stop-2026-09-27.md](research/catastrophe-stop-2026-09-27.md)):
   a stop 50% below entry fired zero times in ten point-in-time years, 60%
