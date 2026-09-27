@@ -1,5 +1,84 @@
 # Changelog
 
+## 2026-09-27 — Session anatomy: the first fifteen-minute study, BUILT and not run
+
+The consolidated SIP store now has its first study: how the 26
+fifteen-minute bars build the daily bar for the book's names, and whether
+an intraday dip or extension carries information at the session scale.
+Nothing has been run against the store yet; there are no numbers, and none
+are recorded anywhere. The hypotheses are in the module docstring, written
+before the first run:
+
+- H1 (variance): the share of squared bar returns is U-shaped across the
+  slots, the first slot largest, the last second; the session high and
+  low are set in the first two or last two slots far more often than 4/26.
+- H2 (open drive): the first half-hour's return says nothing usable about
+  the rest of the session at the pooled level (|t| < 2 at HAC lag 5 on
+  2016-2023); a negative slope would be reversal, a positive one
+  continuation, and either is recorded, not acted on.
+- H3 (dips and extensions): conditioning on a 1/2/3% drawdown or run-up
+  from the open by 10:30, 11:30 or 12:45 does not move the expected
+  return to the close by more than noise (|t| < 2 on the choosing window);
+  a cell outside that is a lead to re-test on 2024-2026, never a rule.
+- H4 (execution): the first hour's volume-weighted price is cheaper than
+  the open on a median session, and the open-to-close standard deviation
+  is the scale every fill-timing idea has to beat.
+
+Why: the fifteen-minute engine's later questions (when to fill, whether to
+wait for a dip) should be asked against measured structure, not lore, and
+the first study on a new store should be descriptive with fixed thresholds
+rather than a search.
+
+- `backend/market/sip_cube.py`: `SessionCube` (one ticker's complete
+  26-slot sessions as (N, 26) arrays plus a prior close on the session's
+  own raw basis; early closes, incomplete partitions and sessions with no
+  prior daily bar excluded and counted) and `load(store, ticker)` with an
+  on-disk cache at `<root>/research/sip_cubes/<TICKER>.npz` keyed by the
+  session count, the newest session and `CUBE_VERSION`. The prior close
+  is the daily store's close of the previous session times
+  `split_factor(history, session)` - the *session's* factor, as
+  `reconcile` uses - so a 2:1 split between the two sessions reads as no
+  gap; scaling by the previous session's own factor would read it as a
+  halving, and the test with a synthetic split pins that.
+- `backend/market/session_anatomy.py`: bar returns, session return, gap,
+  variance and extreme-slot shares, open drive (r1 = open to the 10:00
+  close, r_rest = 10:00 close to 16:00) with quintiles on edges from the
+  choosing window only and a pooled slope, dips and extensions at
+  `CHECK_SLOTS = (3, 7, 12)` against `DIP_THRESHOLDS = (-1%, -2%, -3%)`
+  and `EXT_THRESHOLDS = (+1%, +2%, +3%)`, and fill costs against the open
+  for the first-hour VWAP, the session VWAP and the close (VWAP is a proxy:
+  bar closes weighted by bar volume). Every t is on the daily
+  cross-sectional average series, Newey-West at lag 5 (`hac_t` reused; the
+  slope's t is `hac_t` on the OLS score plus a constant, which equals the
+  slope's sandwich exactly and is tested against a direct computation),
+  because N names on one date are closer to one observation than to N; a
+  t on fewer than `MIN_CELL_DATES = 30` dates is not reported. `study`
+  pools the book's names equally on their point-in-time member sessions
+  per window (2016-2023 choosing, 2024-2026 reported), and reports SPY,
+  QQQ, SMH and IGV each on their own, never pooled with the book.
+- `backend/cli/market_session_anatomy.py`: `--root data/market`
+  (default), `--tickers` (default the 98), `--membership` (default the
+  dated history), `--json`; loads the cubes printing each name's
+  exclusion counts, builds the mask from `point_in_time.eligibility` over
+  the union of cube dates, writes `<root>/desk/session_anatomy.json` and
+  prints the four tables.
+- Tests: `test_sip_cube.py` (assembly, exclusion counts, the prior close
+  across a split, cache hit/miss/version/corrupt file),
+  `test_session_anatomy.py` (a U-shaped process puts the largest shares in
+  the first and last slots; an open-drive process with r_rest = 0.5 r1 +
+  noise recovers a slope within 0.1 of 0.5 with |t| > 3 on 2000 sessions x
+  5 names; a dip-recovery process where a 2% drawdown by 11:30 earns +1%
+  gives a positive difference with t > 3; an iid null gives |t| < 3 on
+  the slope and every cell; the VWAP by hand; benchmarks never pooled;
+  windows and the dict/callable mask), `test_market_session_anatomy_cli.py`
+  (end to end on a temporary store with two names and SPY: payload shape,
+  counts, strict JSON, every table in the text). 21 new tests; 35 passed
+  with `test_intraday_sip.py` and `test_market_intraday_sip_cli.py`.
+- Not run: the study has not been executed against the Spark's store. The
+  command is `CUDA_VISIBLE_DEVICES= ~/research-venv/bin/python -m
+  backend.cli.market_session_anatomy --root data/market`; the first run
+  also builds the 98 cube caches.
+
 ## 2026-09-27 — The `/4` candidate's curve on the desk dashboard
 
 The track record on the practice-account page now draws three strategy

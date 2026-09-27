@@ -129,6 +129,19 @@ strategy that changes only when untouched sessions say so.
   (`desk-candidate-line.spec.ts`) has not run in the sandbox: UNVERIFIED
   until the next deploy's Playwright run.
 
+- 2026-09-27: session anatomy, the first fifteen-minute study, BUILT and
+  not run (`market/sip_cube.py`, `market/session_anatomy.py`,
+  `cli/market_session_anatomy.py`). Session cubes from the SIP store with
+  an on-disk cache; variance and extreme-slot shares, the open drive,
+  dips and extensions at fixed slots and thresholds, fill costs against
+  the open; every t on the daily cross-sectional average at HAC lag 5;
+  the book pooled on point-in-time membership, benchmarks apart; 2016-2023
+  choosing, 2024-2026 reported. The hypotheses are in the module
+  docstring, written before any number exists. There are no results: the
+  command has not run against the store. Next: run it on the Spark, read
+  the tables against the hypotheses, and record the result as a research
+  note before anything downstream uses it.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation
