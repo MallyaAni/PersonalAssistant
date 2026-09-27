@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-27 — Session-anatomy cubes build in a process pool
+
+The first run on the Spark assembled cubes at about a name a minute
+(2,700 parquet reads each), an hour and a half for the book before a
+single statistic. `market_session_anatomy --workers N` (default half the
+cores, at most eight) builds them in a process pool, each worker
+re-opening the store from its root; the cache makes the next run reads
+only. A test checks the pooled cubes equal the serial ones.
+
 ## 2026-09-27 — The cube carries the closing auction; the execution table prices a close fill at the cross
 
 - `sip_cube` (CUBE_VERSION 2): `auction_open` and `auction_volume` per

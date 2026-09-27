@@ -21,6 +21,8 @@ never tuned on. Nothing here trades.
 from __future__ import annotations
 
 import argparse
+import os
+from concurrent.futures import ProcessPoolExecutor
 import json
 import sys
 from pathlib import Path
@@ -35,6 +37,9 @@ from backend.market.sip_cube import SessionCube
 from backend.market.store import MarketStore
 
 FILE = "session_anatomy.json"
+# Cube-building processes by default: half the cores, at most eight, so a
+# run shares the machine with the nightly and the model servers.
+DEFAULT_WORKERS = max(1, min(8, (os.cpu_count() or 2) // 2))
 # Rendered slots for the extreme-slot shares: the first two and last two.
 EDGE_SLOTS = session_anatomy.EDGE_SLOTS
 # Width of one (difference, t, n) cell in the dip and extension tables.
@@ -58,19 +63,42 @@ def build_parser() -> argparse.ArgumentParser:
         help="dated membership history CSV for the point-in-time mask",
     )
     parser.add_argument("--json", action="store_true", help="print the payload as JSON")
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=DEFAULT_WORKERS,
+        help="processes building cubes in parallel (1 = in this process)",
+    )
     return parser
+
+
+# Build (or read from cache) one ticker's cube in a worker process: the
+# store is re-opened from its root because a MarketStore is not sent
+# across processes, and the cube comes back pickled. Assembling a cube
+# is 2,700 parquet reads a name, about a minute each on the Spark, so
+# the 98-name book takes an hour and a half in one process and a few
+# minutes across the cores.
+def _load_one(root: str, ticker: str) -> SessionCube:
+    """Return ``ticker``'s cube from the store at ``root``."""
+    return sip_cube.load(MarketStore(Path(root)), ticker)
 
 
 # Load every ticker's cube, reporting exclusions and names with no
 # sessions at all. Returns (cubes with at least one session, lines).
+# With `workers` above one the cubes are assembled in a process pool,
+# in the order given; the cache means a second run is reads only.
 def load_cubes(
-    store: MarketStore, tickers: tuple[str, ...]
+    store: MarketStore, tickers: tuple[str, ...], workers: int = 1
 ) -> tuple[dict[str, SessionCube], list[str]]:
     """Return {ticker: cube} for the tickers the store holds, and the log lines."""
     cubes: dict[str, SessionCube] = {}
     lines: list[str] = []
-    for ticker in tickers:
-        cube = sip_cube.load(store, ticker)
+    if workers > 1 and len(tickers) > 1:
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            loaded = list(pool.map(_load_one, [str(store.root)] * len(tickers), tickers))
+    else:
+        loaded = [sip_cube.load(store, ticker) for ticker in tickers]
+    for ticker, cube in zip(tickers, loaded, strict=True):
         excluded = ", ".join(f"{k} {v}" for k, v in cube.excluded.items())
         if len(cube) == 0:
             lines.append(f"  {ticker:<6} no complete sessions ({excluded})")
@@ -227,7 +255,7 @@ def run(args: argparse.Namespace, out: TextIO = sys.stdout) -> int:
     root = Path(args.root)
     store = MarketStore(root)
     tickers = select_tickers(args.tickers)
-    cubes, lines = load_cubes(store, tickers)
+    cubes, lines = load_cubes(store, tickers, workers=max(1, args.workers))
     if not args.json:
         print(f"cubes from {root} ({len(tickers)} tickers requested):", file=out)
         for line in lines:

@@ -224,3 +224,24 @@ def test_cli_json_and_empty_store(tmp_path):
     defaults = cli.build_parser().parse_args([])
     assert defaults.root == "data/market"
     assert defaults.tickers == ""
+
+
+# Cubes built across worker processes are the cubes built in this one:
+# same sessions, same arrays, same exclusion counts, same order.
+def test_load_cubes_in_a_process_pool_matches_the_serial_build(tmp_path):
+    store = MarketStore(tmp_path)
+    sessions = _sessions(12)
+    _write(store, "AAA", sessions, 1)
+    _write(store, "BBB", sessions, 2)
+    serial, serial_lines = cli.load_cubes(store, ("AAA", "BBB"), workers=1)
+    for path in (tmp_path / "research" / "sip_cubes").glob("*.npz"):
+        path.unlink()
+    pooled, pooled_lines = cli.load_cubes(store, ("AAA", "BBB"), workers=2)
+    assert list(pooled) == list(serial) == ["AAA", "BBB"]
+    assert pooled_lines == serial_lines
+    for ticker in serial:
+        np.testing.assert_array_equal(pooled[ticker].dates, serial[ticker].dates)
+        np.testing.assert_array_equal(pooled[ticker].close, serial[ticker].close)
+        assert pooled[ticker].excluded == serial[ticker].excluded
+    assert cli.DEFAULT_WORKERS >= 1
+    assert cli.build_parser().parse_args(["--workers", "3"]).workers == 3
