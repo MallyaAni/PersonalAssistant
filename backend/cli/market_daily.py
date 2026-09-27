@@ -736,7 +736,13 @@ def _paper_trade(
             entries=_price_entries(report),
             cash=account.cash,
         )
-    new_state.policy_version = live_policy.ACTIVE
+    # The stamp says "this state's book is the active policy's". It is
+    # written when the book already was, or when tonight's plan rebalanced
+    # into it; a session that could not rebalance (an event cycle, pending
+    # orders, a refused rebalance below) leaves the old stamp so the next
+    # session forces the rebalance again.
+    if not live_policy.needs_rebalance(state.policy_version) or what == "rebalance":
+        new_state.policy_version = live_policy.ACTIVE
     print(
         f"\npaper book ({live_policy.ACTIVE}; {what}"
         f"{', forced tonight' if rebalance_now else ''}), "
@@ -778,6 +784,7 @@ def _paper_trade(
     if refused and what == "rebalance":
         new_state.last_rebalance = state.last_rebalance
         new_state.sessions_since_rebalance = state.sessions_since_rebalance
+        new_state.policy_version = state.policy_version
         print(
             f"  {len(refused)} of {len(orders)} orders refused: the rebalance "
             f"clock is not advanced, so the next session tries again"
@@ -1033,7 +1040,7 @@ def record(
     policy_shadows: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
-    from backend.agents.trading.desk import event_risk
+    from backend.agents.trading.desk import event_risk, live_policy
 
     panel = report.panel
     last = len(panel.dates) - 1
@@ -1117,6 +1124,10 @@ def record(
             for k, v in state.__dict__.items()
         },
         "grades": grades,
+        # What the account trades and the dashboard sizes against: the active
+        # policy's weight for every graded name (`live_policy`). `book` below
+        # is the desk's `/3` sizing, kept on the record for reference.
+        "targets": live_policy.record_targets(report),
         "book": [
             {
                 "ticker": s.position.ticker,
@@ -1311,7 +1322,7 @@ def save(root: Path, data: dict, allow_overwrite: bool = False) -> Path:
 # again (the backend serving the page has no torch).
 def curve_block(report, store) -> dict | None:
     """Return the backtest curve block, or None when it cannot be drawn."""
-    from backend.agents.trading.desk import event_risk, policy_v4, simulate
+    from backend.agents.trading.desk import event_risk, live_policy, policy_v4, simulate
     from backend.agents.trading.desk import paper as paper_rules
 
     panel = report.panel
@@ -1361,7 +1372,10 @@ def curve_block(report, store) -> dict | None:
         "label": "historical simulation with cash-limited fills; not a live record",
         "funding_model": simulate.FUNDING_MODEL,
         "valuation_model": simulate.VALUATION_MODEL,
-        "strategy_policy": paper_rules.POLICY_VERSION,
+        "strategy_policy": live_policy.ACTIVE,
+        # The executor's conventions, separate from the allocation policy
+        # above: the same executor runs whichever targets it is given.
+        "execution_policy": paper_rules.POLICY_VERSION,
         # The data source the simulation's analysts read, kept separate from
         # the execution policy above, so the curve is never presented as
         # measured under corrected inputs when it predates them.

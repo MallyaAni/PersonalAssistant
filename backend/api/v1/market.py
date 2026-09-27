@@ -632,6 +632,31 @@ class DeskMineInput(BaseModel):
 # business logic; the account figures are validated before any evidence is
 # collected. An optional private sink freezes only generated output and its
 # evidence for owner-requested history before later provider reads change.
+# The board sizes buys, sells and holds against the active allocation
+# policy's weights (`record["targets"]`, written by the nightly from
+# `live_policy`), not against the desk's `/3` book. Records from before the
+# stamp have no `targets` and keep their book; the paper section reads the
+# record's own `paper` block either way.
+def _with_active_targets(record: dict) -> dict:
+    """Return `record` with `book` replaced by the active policy's weights."""
+    targets = record.get("targets") or {}
+    weights = targets.get("weights")
+    if not isinstance(weights, dict) or not weights:
+        return record
+    grades = record.get("grades") or {}
+    book = [
+        {
+            "ticker": ticker,
+            "weight": float(weight),
+            "grade": (grades.get(ticker) or {}).get("grade"),
+            "policy": targets.get("policy"),
+        }
+        for ticker, weight in weights.items()
+        if isinstance(weight, (int, float)) and weight > 0
+    ]
+    return {**record, "book": book}
+
+
 async def _desk_mine_payload(
     user_id: str,
     equity: float,
@@ -655,6 +680,7 @@ async def _desk_mine_payload(
     from backend.market import event_status
 
     latest = event_status.for_planning(latest, _root())
+    latest = _with_active_targets(latest)
     snap = _live_snapshot()
     from backend.market import decision_view, execution_quotes
 

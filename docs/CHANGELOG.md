@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-09-27 — The paper account, the record and the board follow `graded-equal-weight/4`
+
+The operator's instruction: the paper account executes as a live account
+would, on the best measured strategy. On the point-in-time book under the
+live executor's conventions the `/3` sizing earned 14.6% a year against
+23.3% for `graded-equal-weight/4` (NEXT_SESSION, 2026-09-27 addendum), so
+the account moves to `/4`. `live_policy.py` is the one place that says
+which allocation policy is active; the executor is unchanged and
+policy-agnostic.
+
+- `live_policy.ACTIVE`, `targets(report)` (byte-equal to
+  `shadow_ledger.decide`, so the account and its shadow ask for the same
+  book and the shadow's receipts measure the executor alone),
+  `record_targets(report)` (every graded name, zeros included),
+  `needs_rebalance(state_policy)`.
+- `market_daily._paper_trade` takes its targets from `live_policy`, not
+  `report.book`; `PaperState.policy_version` stamps the policy the last
+  plan was made under; an unstamped or differently stamped state forces
+  one rebalance into the active targets, and the stamp is written only when
+  that rebalance was planned (an event-cycle session or a refused rebalance
+  leaves it, so the next session forces again). First effect: Monday
+  2026-09-28's nightly rebalances the seven `/3` positions into the `/4`
+  book at Tuesday's open.
+- The record carries `targets` (`policy`, `weights`) beside the `/3`
+  `book`, which stays for reference; the curve block's `strategy_policy`
+  is the active policy and a new `execution_policy` names the executor's
+  conventions. `/desk/mine` (`_with_active_targets`) sizes the board's
+  buy/sell/hold against `targets`, so the operator's manual account and
+  the paper account read the same weights; the paper section reads the
+  record's `paper` block as before.
+- Tests: `test_live_policy.py` (targets equal the shadow's; the record
+  block's shape; the record and curve block; the board swap; an unstamped
+  state rebalances once and is stamped; an event-cycle session keeps the
+  old stamp).
+- Not changed yet: the dashboard's series label still says "candidate /4";
+  the shadow ledger keeps running (its plain-fill curve against the
+  account's fills is the executor's measured cost).
+
 ## 2026-09-27 — The policy's buy/sell/hold and size, back in time, on the ticker chart
 
 The operator's request: for each stock, plot the buy/sell/hold
