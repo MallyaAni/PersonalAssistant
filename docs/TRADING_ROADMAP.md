@@ -154,6 +154,16 @@ strategy that changes only when untouched sessions say so.
   The fifteen-minute engine's edge, if any, is below the session or in
   conditioning the desk does not yet do; execution timing is not it.
 
+- 2026-09-27, later: the hold cap priced
+  ([research/cap-sweep-2026-09-27.md](research/cap-sweep-2026-09-27.md)):
+  eight caps on the point-in-time book. The cap binds only when fewer
+  names qualify than it allows and its whole cost is idle cash: 19 CAGR
+  points from 5% to 20%, 1.2 from 20% to 25%, 0.2 to 33%, nothing above.
+  It buys a bound on one name (worst single-name day 3.1% at 20%, 3.6% at
+  25%, 5.8% uncapped). 20% is the knee, the conservative end of a flat
+  region; the candidate stays there for the shadow and the limit is the
+  operator's to move before the shadow's verdict, not after.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-09-27, later — The cap priced; the board always shows the last price
+
+**VERIFIED on spark1
+([research/cap-sweep-2026-09-27.md](research/cap-sweep-2026-09-27.md)):**
+the graded equal-weight rule at eight hold caps on the point-in-time book,
+with concentration read off the target book (`market_pit_scorecard
+--graded-cap`, `59d3351`). The cap binds only on days with fewer A/A+
+names than it allows and its cost is idle cash: 9.5% CAGR at 5%, 18.9% at
+10%, 24.6% at 15%, 27.5% at 20%, 28.7% at 25%, 28.9% at 33%, 28.8%
+uncapped (2016-2023, 25 bp). It buys a bound on one name: worst
+single-name day 3.1% of the book at 20%, 3.6% at 25%, 5.8% uncapped (a
+half-book position down 11.5%). 20% is the knee of the curve; the
+candidate stays at 20% for the shadow and the limit is the operator's to
+move with the price list in hand, before the shadow's verdict is read.
+
+**Board: the last observed price is always shown when the market is
+closed** (`42fe881` + `978b470`; deploy pending the routing gate). The
+session-price path used to blank any midpoint older than 60 s, and on
+this account the extended feeds cover only 08:00-17:00 (IEX) and
+20:00-04:00 (indicative overnight), so 17:00-20:00, 04:00-08:00 and
+weekends showed nothing. Now: a stale quote keeps its last price with its
+session, feed and dated time (`$336.13 last post-market · IEX · Sep 25,
+4:59:58 PM ET`, muted, never bold, never "fresh"); with no quote at all
+the last close is shown as `last close`; tooltips say "Last observed
+price; not a current quote." Signals still use regular-session candles.
+tsc clean; the five touched Playwright specs pass except 8 tests that
+fail identically on main in the Spark's container (an aborted
+`conversations` fetch during reload - environment, not code; they need
+`VITE_API_URL=` to run there at all, since the dev server otherwise
+targets localhost:8000 and the harness blocks it as external).
+
+**Gate note.** The first deploy of `978b470` failed the routing gate on
+`test_each_built_in_action_holds_its_measured_floor` (`edit_document` 1
+of 3 against a 0.66 floor) - a live-model behaviour test unrelated to the
+change, green on the five deploys earlier tonight; re-run without
+skipping the gate.
+
 ## 2026-09-27, morning — SIP store accepted (schema 2), session anatomy run, candidate line deployed
 
 **Deployed, in order, all from `~/deploy/anios` via `scripts/deploy.sh`,
