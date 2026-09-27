@@ -15,6 +15,14 @@ counted, and a session with no daily bar before it in the daily store
 (so no prior close, so no gap) is excluded and counted. The counts are
 carried on the cube so a study can print what it left out.
 
+The closing auction. A partition of schema 2 carries the bar that starts
+at the close; the cube keeps its first print as `auction_open` (the
+official close, what the daily bar reports and what a "fill at the
+close" gets) and its volume as `auction_volume`, NaN where the partition
+predates the row or the feed had no cross. The regular 26 slots are
+unchanged, so every study of the day's shape is unchanged; the execution
+table is what reads the auction.
+
 Basis. The SIP bars are raw dollars as the tape printed them, so a row's
 open, high, low, close are all on that session's own basis. The prior
 close comes from the daily store, whose closes are split-adjusted as of
@@ -50,7 +58,8 @@ from backend.market.store import MarketStore
 from backend.market.yahoo import TickerHistory
 
 # Bump when the cube's layout or assembly rule changes; stale caches rebuild.
-CUBE_VERSION = 1
+# 2: the closing-auction columns.
+CUBE_VERSION = 2
 # Slots in a full regular session: 09:30 to 16:00 New York at fifteen minutes.
 FULL_SESSION_SLOTS = 26
 # Where cubes are cached, under the market store's root.
@@ -72,6 +81,8 @@ class SessionCube:
     volume: np.ndarray  # (N, 26)
     prior_close: np.ndarray  # (N,) previous session's close on this session's basis
     excluded: dict[str, int]  # reason -> sessions left out
+    auction_open: np.ndarray  # (N,) closing cross's first print, NaN when absent
+    auction_volume: np.ndarray  # (N,) closing cross's volume, NaN when absent
 
     # Sessions in the cube.
     def __len__(self) -> int:
@@ -124,15 +135,17 @@ def build(
         k: [] for k in ("open", "high", "low", "close", "volume")
     }
     prior: list[float] = []
+    auction_open: list[float] = []
+    auction_volume: list[float] = []
     for session in intraday_sip.sessions_available(store, ticker):
         if bars_expected(session) != FULL_SESSION_SLOTS:
             excluded["early_close"] += 1
             continue
-        stored = intraday_sip.read_session(store, ticker, session)
+        stored = intraday_sip.read_session_full(store, ticker, session)
         if stored is None:
             excluded["incomplete"] += 1
             continue
-        bars, metadata = stored
+        bars, auction, metadata = stored
         if metadata.get("complete") != "true" or len(bars) != FULL_SESSION_SLOTS:
             excluded["incomplete"] += 1
             continue
@@ -153,6 +166,8 @@ def build(
         columns["low"].append([b.low for b in bars])
         columns["close"].append([b.close for b in bars])
         columns["volume"].append([b.volume for b in bars])
+        auction_open.append(auction.open if auction is not None else np.nan)
+        auction_volume.append(auction.volume if auction is not None else np.nan)
     shape = (len(dates), FULL_SESSION_SLOTS)
     arrays = {
         k: (np.asarray(v, dtype=float) if v else np.zeros(shape))
@@ -168,6 +183,8 @@ def build(
         volume=arrays["volume"],
         prior_close=np.asarray(prior, dtype=float),
         excluded=excluded,
+        auction_open=np.asarray(auction_open, dtype=float),
+        auction_volume=np.asarray(auction_volume, dtype=float),
     )
 
 
@@ -187,6 +204,8 @@ def _write_cache(path: Path, key: np.ndarray, cube: SessionCube) -> None:
             close=cube.close,
             volume=cube.volume,
             prior_close=cube.prior_close,
+            auction_open=cube.auction_open,
+            auction_volume=cube.auction_volume,
             excluded_reasons=np.array(list(cube.excluded)),
             excluded_counts=np.array(list(cube.excluded.values()), dtype=np.int64),
         )
@@ -214,6 +233,8 @@ def _read_cache(path: Path, key: np.ndarray, ticker: str) -> SessionCube | None:
                 volume=data["volume"],
                 prior_close=data["prior_close"],
                 excluded=dict(zip(reasons, counts, strict=True)),
+                auction_open=data["auction_open"],
+                auction_volume=data["auction_volume"],
             )
     except (OSError, ValueError, KeyError):
         return None

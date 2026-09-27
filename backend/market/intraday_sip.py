@@ -313,6 +313,21 @@ def read_closing_auction(store: MarketStore, ticker: str, session: date) -> Intr
     return closing_auction(rows[0], session)
 
 
+# Both parts of a session's partition in one read: the regular slots, the
+# closing-auction bar (None when absent) and the metadata; None when the
+# session is not stored. For readers that want the whole session without
+# paying two parquet reads.
+def read_session_full(
+    store: MarketStore, ticker: str, session: date
+) -> tuple[list[IntradayBar], IntradayBar | None, dict[str, str]] | None:
+    """Return (regular bars, auction bar or None, metadata) for ``session``."""
+    rows = _read_rows(store, ticker, session)
+    if rows is None:
+        return None
+    bars, metadata = rows
+    return regular_bars(bars, session), closing_auction(bars, session), metadata
+
+
 # Every stored row of a session's partition with its metadata.
 def _read_rows(
     store: MarketStore, ticker: str, session: date

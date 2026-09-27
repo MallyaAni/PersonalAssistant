@@ -44,6 +44,7 @@ def _cube(
     open0: float = 100.0,
     volume: np.ndarray | None = None,
     prior_close: np.ndarray | None = None,
+    auction_open: np.ndarray | None = None,
 ) -> SessionCube:
     n = len(dates)
     close = open0 * np.exp(np.cumsum(returns, axis=1))
@@ -58,6 +59,8 @@ def _cube(
         volume=volume if volume is not None else np.full((n, SLOTS), 1000.0),
         prior_close=prior_close if prior_close is not None else np.full(n, open0),
         excluded={"early_close": 0, "incomplete": 0, "no_prior_close": 0},
+        auction_open=auction_open if auction_open is not None else np.full(n, np.nan),
+        auction_volume=np.full(n, np.nan),
     )
 
 
@@ -203,6 +206,12 @@ def test_fill_costs_by_hand():
     assert costs["first_hour_vwap"][0] == pytest.approx(math.log(first_hour / 100))
     assert costs["session_vwap"][0] == pytest.approx(math.log(session / 100))
     assert costs["close"][0] == pytest.approx(math.log(125 / 100))
+    # No auction row in the cube: the auction cost is NaN and counts as no
+    # observation; with one, it is the cross's print against the open.
+    assert math.isnan(costs["auction"][0])
+    assert sa._moments(costs["auction"])["n"] == 0
+    with_cross = _cube("AAA", _dates(1), returns, volume=volume, auction_open=np.array([126.0]))
+    assert sa.fill_costs(with_cross)["auction"][0] == pytest.approx(math.log(126 / 100))
     # A session with no volume has no VWAP, and the moments say so.
     zero = _cube("AAA", _dates(1), returns, volume=np.zeros((1, SLOTS)))
     assert math.isnan(sa.fill_costs(zero)["session_vwap"][0])

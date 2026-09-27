@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-27 — The cube carries the closing auction; the execution table prices a close fill at the cross
+
+- `sip_cube` (CUBE_VERSION 2): `auction_open` and `auction_volume` per
+  session, NaN where the partition predates schema 2 or the feed had no
+  cross, read in the same parquet pass as the regular slots
+  (`intraday_sip.read_session_full`). The 26 slots are unchanged, so
+  every study of the day's shape is unchanged. Cached cubes rebuild.
+- `session_anatomy.fill_costs` adds `auction`: log(cross's first print /
+  open), the cost of a market-on-close fill against the open; the CLI's
+  table D shows it as "closing auction" beside "last regular print". A
+  cube with no auction contributes no observation to that row.
+
 ## 2026-09-27 — The SIP store keeps the closing auction; the first reconcile explained
 
 The first backfill's reconcile (98 names, 224,992 sessions, 2016-01-04 to

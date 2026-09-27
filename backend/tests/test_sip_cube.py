@@ -72,7 +72,8 @@ def test_build_stacks_complete_sessions_and_counts_exclusions(tmp_path):
     store = MarketStore(tmp_path)
     sip.write_session(store, "AVGO", EARLY, _bars(EARLY), PROVENANCE)
     sip.write_session(store, "AVGO", MON, _bars(MON, base=100.0), PROVENANCE)
-    sip.write_session(store, "AVGO", TUE, _bars(TUE, base=200.0), PROVENANCE)
+    # TUE carries a closing-auction bar (count 27: the 16:00 bar); THU none.
+    sip.write_session(store, "AVGO", TUE, _bars(TUE, base=200.0, count=27), PROVENANCE)
     sip.write_session(store, "AVGO", WED, _bars(WED, count=20), PROVENANCE)
     sip.write_session(store, "AVGO", THU, _bars(THU, base=300.0), PROVENANCE)
     # No daily bar before EARLY or MON: MON has no prior close.
@@ -93,6 +94,12 @@ def test_build_stacks_complete_sessions_and_counts_exclusions(tmp_path):
     assert cube.volume[0, 25] == 125.0
     assert list(cube.prior_close) == [125.0, 250.0]
     assert cube.excluded == {"early_close": 1, "incomplete": 1, "no_prior_close": 1}
+    # The auction columns: the cross's first print and volume where the
+    # partition holds the bar, NaN where it does not; the 26 slots are
+    # unchanged by its presence.
+    assert cube.auction_open[0] == 226.0 and cube.auction_volume[0] == 126.0
+    assert np.isnan(cube.auction_open[1]) and np.isnan(cube.auction_volume[1])
+    assert cube.close.shape == (2, 26)
 
 
 # With no daily history at all every session lacks a prior close; the

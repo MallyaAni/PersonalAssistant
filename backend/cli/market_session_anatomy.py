@@ -191,7 +191,8 @@ def _render_block(block: dict[str, Any]) -> list[str]:
     for name, label in (
         ("first_hour_vwap", "first-hour VWAP"),
         ("session_vwap", "session VWAP"),
-        ("close", "close"),
+        ("close", "last regular print"),
+        ("auction", "closing auction"),
     ):
         m = costs[name]
         lines.append(

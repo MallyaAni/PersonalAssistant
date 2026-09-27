@@ -99,6 +99,8 @@ MIN_CELL_DATES = 30
 EDGE_SLOTS = (0, 1, FULL_SESSION_SLOTS - 2, FULL_SESSION_SLOTS - 1)
 # Basis points per unit log return, for reporting.
 BP = 1e4
+# The fill windows priced against the open in D, in report order.
+FILL_COSTS = ("first_hour_vwap", "session_vwap", "close", "auction")
 
 # A membership mask: a callable (ticker, dates) -> (N,) bool, or a mapping
 # from ticker to the dates (datetime64[D] array, or a set of dates) on
@@ -351,8 +353,10 @@ def conditional_difference(
 def fill_costs(cube: SessionCube) -> dict[str, np.ndarray]:
     """Return per-session log fill costs of three windows against the open."""
     if len(cube) == 0:
-        return {k: np.zeros(0) for k in ("first_hour_vwap", "session_vwap", "close")}
+        return {k: np.zeros(0) for k in FILL_COSTS}
     open0 = cube.open[:, 0]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        auction = np.log(cube.auction_open / open0)
     return {
         "first_hour_vwap": np.log(
             _vwap(cube.close[:, :FIRST_HOUR_SLOTS], cube.volume[:, :FIRST_HOUR_SLOTS])
@@ -360,6 +364,9 @@ def fill_costs(cube: SessionCube) -> dict[str, np.ndarray]:
         ),
         "session_vwap": np.log(_vwap(cube.close, cube.volume) / open0),
         "close": np.log(cube.close[:, -1] / open0),
+        # The closing cross's first print: the official close, what a
+        # market-on-close order gets. NaN where the cube has no auction.
+        "auction": auction,
     }
 
 
@@ -454,6 +461,8 @@ def _empty_cube() -> SessionCube:
         np.zeros(shape),
         np.zeros(0),
         {},
+        np.zeros(0),
+        np.zeros(0),
     )
 
 
@@ -506,10 +515,7 @@ def analyse(
         },
         "dips": dips,
         "extensions": extensions,
-        "fill_costs": {
-            name: _moments(rows[f"cost_{name}"])
-            for name in ("first_hour_vwap", "session_vwap", "close")
-        },
+        "fill_costs": {name: _moments(rows[f"cost_{name}"]) for name in FILL_COSTS},
     }
 
 
