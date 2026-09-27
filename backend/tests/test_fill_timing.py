@@ -640,3 +640,48 @@ def test_cli_end_to_end(tmp_path):
     assert cli.run(args, out, desk_run=fake_desk) == 0
     printed = json.loads(out.getvalue())
     assert printed["cube_coverage"]["names_with_cube"] == 2
+
+
+# A split: the daily store shows split-adjusted history (a tenth of the
+# raw price before the split date) while the cube keeps the raw tape. The
+# first real-store run scaled raw fills by `adj_close / close`, which does
+# not undo a split, and marked a pre-split raw fill against a post-split
+# close (a 1190x "gap" on the worst day). With the cube's own official
+# close as the basis, `next_open` reproduces the simulator through the
+# split to 1e-10.
+def test_next_open_reproduces_the_simulator_through_a_split():
+    from dataclasses import replace
+
+    report, mask, cubes = _world(t=260, seed=3)
+    panel = report.panel
+    split_row, ratio = 150, 10.0
+    scale = np.ones_like(panel.close)
+    scale[:split_row, 0] = 1.0 / ratio  # name 0's history, as the daily store shows it
+    adjusted = replace(
+        panel,
+        open=panel.open * scale,
+        high=panel.high * scale,
+        low=panel.low * scale,
+        close=panel.close * scale,
+        adj_close=panel.adj_close * scale,
+    )
+    split_report = replace(report, panel=adjusted)
+    since = ft.since_offset(adjusted, 5)
+    sim = simulate.run(
+        split_report,
+        since=since,
+        allocator=policy_v4.allocator(mask),
+        cost_bps=10.0,
+        use_exits=False,
+        rebalance=paper.REBALANCE_EVERY,
+    )
+    prices = ft.cube_prices(cubes, adjusted, "next_open")
+    # The raw cube's bar-0 open is ten times the panel's before the split
+    # and the scaled fill price is the panel's adjusted open.
+    j = 0
+    assert cubes[adjusted.tickers[j]].open[10, 0] == pytest.approx(adjusted.open[10, j] * ratio)
+    assert prices.buy[10, j] == pytest.approx(simulate.adjusted_open(adjusted)[10, j])
+    ours = ft.price_book(
+        ft.target_path(split_report, mask, since), split_report, prices, "next_open", 10.0
+    )
+    np.testing.assert_allclose(ours.returns[5:], sim.returns, atol=1e-10, rtol=0, equal_nan=True)

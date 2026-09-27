@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-27 — Fill-timing engine: raw fills onto the adjusted basis by the session's own official close
+
+The first run on the real store put `next_open` at 13.6% a year against
+the simulator's 27.7% for the same orders, with a worst daily gap of
+1190x: raw SIP fills were scaled by the panel's `adj_close / close`, which
+undoes dividends only because the daily store's `close` is already
+split-adjusted, so a pre-split raw fill was marked against a post-split
+close. `cube_prices` now scales each fill by the panel's adjusted close
+over the cube's official close on the fill day (the closing cross, or the
+last regular print), which carries splits and dividends whatever the split
+calendar; a test runs a 10:1 split through the engine and reproduces the
+simulator to 1e-10. The first run's numbers are discarded.
+
 ## 2026-09-27 — Fill-timing trial built, not run
 
 `backend/market/fill_timing.py` and `python -m backend.cli.market_fill_timing`

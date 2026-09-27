@@ -28,8 +28,10 @@ asserting that `next_open` priced here reproduces the simulator's returns to
 the same "missing price keeps the holding") and fills every order at the
 convention's price on the fill session. Fill prices come from the SIP
 session cube (26 regular bars plus the closing auction, raw basis) and are
-moved onto the panel's adjusted basis by the same factor `adjusted_open`
-uses (`adj_close / close` on the fill session), so a split never sits
+moved onto the panel's adjusted basis by the ratio of the panel's adjusted
+close to the cube's own official close on the fill session (the daily
+store's `close` is already split-adjusted, so `adj_close / close` would
+undo dividends only), so a split never sits
 between a fill and a mark. Marks are the panel's adjusted daily close - the
 official close, what the cube's `auction_open` holds where present - on the
 fill session and on every session after it, for every convention alike.
@@ -291,9 +293,23 @@ def cube_prices(cubes: dict[str, SessionCube], panel, convention: str) -> FillPr
             continue
         pos = np.searchsorted(dates, cube.dates)
         ok = (pos < rows) & (dates[np.minimum(pos, rows - 1)] == cube.dates)
-        buy[pos[ok], j] = session_prices(cube, convention, "buy")[ok]
-        sell[pos[ok], j] = session_prices(cube, convention, "sell")[ok]
-        available[pos[ok], j] = True
+        # Raw tape dollars onto the panel's adjusted basis by the session's own
+        # official close: the cube's closing cross (last regular print when
+        # the partition has no cross) against the panel's adjusted close of
+        # the same day. The daily store's `close` is already split-adjusted
+        # (its `adj_close / close` undoes dividends only), so scaling by that
+        # ratio left a pre-split raw fill against a post-split mark; this
+        # ratio carries both splits and dividends, whatever the split calendar.
+        official = np.where(
+            np.isfinite(cube.auction_open) & (cube.auction_open > 0),
+            cube.auction_open,
+            cube.close[:, -1],
+        )
+        with np.errstate(all="ignore"):
+            scale = np.where(official > 0, panel.adj_close[pos[ok], j] / official[ok], np.nan)
+        buy[pos[ok], j] = session_prices(cube, convention, "buy")[ok] * scale
+        sell[pos[ok], j] = session_prices(cube, convention, "sell")[ok] * scale
+        available[pos[ok], j] = np.isfinite(scale)
     return FillPrices(convention, buy, sell, available)
 
 
@@ -333,8 +349,6 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
     rows, names = panel.adj_close.shape
     closes = panel.adj_close
     opens = simulate.adjusted_open(panel)
-    with np.errstate(all="ignore"):
-        factor = np.where(panel.close > 0, panel.adj_close / panel.close, np.nan)
     stamps = [str(d) for d in panel.dates]
     book = simulate._Book(names, simulate.START_EQUITY, cost_bps, panel, report, stamps)
     returns = np.full(rows, np.nan)
@@ -373,8 +387,9 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
         for j, delta in due:
             order[j] = max(book.shares[j] + delta, 0.0)
             raw = prices.buy[s, j] if delta > 0 else prices.sell[s, j]
+            # `prices` are already on the panel's adjusted basis (cube_prices).
             if prices.available[s, j] and np.isfinite(raw) and raw > 0:
-                price[j] = raw * factor[s, j]
+                price[j] = raw
             else:
                 price[j] = opens[s, j]
                 fallbacks += 1
