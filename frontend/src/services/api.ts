@@ -1962,6 +1962,14 @@ export interface DeskCurve {
     rules_point_in_time?: number[];
     stats_point_in_time?: Record<string, number | null>;
     point_in_time_note?: string;
+    // The `/4` candidate policy on the same point-in-time book, priced
+    // plain (next-open fills, no live executor): the scorecard's measured
+    // arm, not a live record. Empty, with a note, when it could not be drawn.
+    candidate_point_in_time?: number[];
+    stats_candidate?: Record<string, number | null>;
+    candidate_note?: string;
+    candidate_policy?: string;
+    candidate_label?: string;
     spy: number[];
     qqq: number[];
     stats: Record<string, number | null>;

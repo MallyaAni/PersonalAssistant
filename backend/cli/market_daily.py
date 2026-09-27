@@ -1285,7 +1285,7 @@ def save(root: Path, data: dict, allow_overwrite: bool = False) -> Path:
 # again (the backend serving the page has no torch).
 def curve_block(report, store) -> dict | None:
     """Return the backtest curve block, or None when it cannot be drawn."""
-    from backend.agents.trading.desk import event_risk, simulate
+    from backend.agents.trading.desk import event_risk, policy_v4, simulate
     from backend.agents.trading.desk import paper as paper_rules
 
     panel = report.panel
@@ -1327,6 +1327,9 @@ def curve_block(report, store) -> dict | None:
     spy_curve, spy_note = _benchmark_curve(store, "SPY", sim.dates)
     qqq_curve, qqq_note = _benchmark_curve(store, "QQQ", sim.dates)
     pit_curve, pit_stats, pit_note = _point_in_time_curve(report, sim.dates)
+    candidate_curve, candidate_stats, candidate_note = _candidate_curve(
+        report, sim.dates
+    )
     stats = sim.stats()
     return {
         "label": "historical simulation with cash-limited fills; not a live record",
@@ -1350,6 +1353,20 @@ def curve_block(report, store) -> dict | None:
         "rules_point_in_time": pit_curve,
         "stats_point_in_time": pit_stats,
         "point_in_time_note": pit_note,
+        # The `/4` candidate on the same point-in-time book, as a third
+        # strategy line. The rules line above is priced with the live
+        # execution policy because it is what the account runs; the
+        # candidate is priced plain (next-open fills, default cost, no
+        # band entries, no green-day skip) because the scorecard's arm
+        # line is priced plain, and this line's one claim is that it is
+        # that measured arm - the `ew_graded_20` number, not a live record.
+        # What the candidate's execution would earn is the fidelity
+        # shadow's question (`record["policy_shadows"]`), not this line's.
+        "candidate_point_in_time": candidate_curve,
+        "stats_candidate": candidate_stats,
+        "candidate_note": candidate_note,
+        "candidate_policy": policy_v4.POLICY_VERSION,
+        "candidate_label": CANDIDATE_LABEL,
         "spy": spy_curve,
         "qqq": qqq_curve,
         # Why a benchmark line is absent, when it is; empty when both drew.
@@ -1386,6 +1403,51 @@ def _point_in_time_curve(report, sessions) -> tuple[list[float], dict, str]:
         return [], {}, f"point-in-time line not drawn: {type(exc).__name__}: {exc}"
     if sim.equity is None or len(sim.dates) != len(sessions):
         return [], {}, "point-in-time line not drawn: sessions differ from the published run"
+    equity = np.asarray(sim.equity, dtype=float)
+    base = equity[0] if equity[0] > 0 else 1.0
+    stats = {k: (None if v != v else float(v)) for k, v in sim.stats().items()}
+    return [float(e / base - 1.0) for e in equity], stats, ""
+
+
+# What the dashboard says the candidate line is. The label is fixed here,
+# not in the page, so a record read later still says how the line was priced.
+CANDIDATE_LABEL = (
+    "candidate /4: every A/A+ name at equal weight, 20% cap, names known at "
+    "the time; plain next-open fills, not the live executor"
+)
+
+
+# The `/4` candidate's curve on the point-in-time book, aligned to the
+# published simulation's sessions, with its headline stats; an empty curve
+# carries the reason (no membership file, or the restricted run failed).
+# Priced plain - next-open fills at the default cost, the arm's rebalance
+# clock, no exits - because that is exactly how the scorecard prices
+# `ARMS["ew_graded_20"]`, and the whole point of this line is to be the
+# measured arm and nothing else: `test_market_daily` asserts the two agree
+# to 1e-12. `simulate.LIVE_POLICY` is deliberately not passed: the
+# candidate has no band entries and no green-day skip, and what its
+# execution would actually earn is the fidelity shadow's question, not
+# this line's.
+def _candidate_curve(report, sessions) -> tuple[list[float], dict, str]:
+    """Return (cumulative return per session, stats, note) for the /4 candidate."""
+    from backend.agents.trading.desk import point_in_time, policy_v4, simulate
+    from backend.agents.trading.desk import paper as paper_rules
+
+    try:
+        restricted, mask = point_in_time.point_in_time(report)
+        sim = simulate.run(
+            restricted,
+            since=sessions[0].astype("datetime64[D]").astype(object)
+            if hasattr(sessions[0], "astype")
+            else sessions[0],
+            use_exits=False,
+            rebalance=paper_rules.REBALANCE_EVERY,
+            allocator=policy_v4.allocator(mask),
+        )
+    except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
+        return [], {}, f"candidate line not drawn: {type(exc).__name__}: {exc}"
+    if sim.equity is None or len(sim.dates) != len(sessions):
+        return [], {}, "candidate line not drawn: sessions differ from the published run"
     equity = np.asarray(sim.equity, dtype=float)
     base = equity[0] if equity[0] > 0 else 1.0
     stats = {k: (None if v != v else float(v)) for k, v in sim.stats().items()}

@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-09-27 — The `/4` candidate's curve on the desk dashboard
+
+The track record on the practice-account page now draws three strategy
+lines: the stored simulation (the live rule, priced with the live
+execution policy), the same rules on the names known at the time, and
+the `graded-equal-weight/4` candidate on that same point-in-time book.
+The candidate line is the scorecard's `ew_graded_20` arm and nothing
+else: the nightly prices it exactly the way `market_pit_scorecard` prices
+an arm - `simulate.run` on the restricted report with
+`policy_v4.allocator(mask)`, next-open fills at the default cost, the
+20-session rebalance clock, no exits, and none of `simulate.LIVE_POLICY`
+(the candidate has no band entries or green-day skip; what its execution
+would earn is the fidelity shadow's question). Its CAGR on the page is
+the measured arm's number, not a live record, and the record's
+`candidate_label` says so.
+
+- `market_daily._candidate_curve(report, sessions)` beside
+  `_point_in_time_curve`: the same session-alignment guard, the same
+  "candidate line not drawn: <reason>" note when the membership file is
+  missing or the restricted run fails. `curve_block` carries
+  `candidate_point_in_time`, `stats_candidate`, `candidate_note`,
+  `candidate_policy` (`graded-equal-weight/4`) and `candidate_label`.
+- Tests in `test_market_daily.py`: the block carries the keys and the
+  curve has the rules line's length from 0; the curve equals, value for
+  value (`assert_allclose` at `atol=1e-12`), `ARMS["ew_graded_20"]` priced
+  plain on the same report and sessions - the guarantee that the page shows
+  the measured arm; a missing membership file gives an empty curve, empty
+  stats and a note starting "candidate line not drawn:". 52 passed with
+  `test_policy_v4.py`.
+- `DeskPanel.tsx`: a third series, `candidate /4, names known at the time`
+  in `#0f766e`, a `CAGR, candidate /4` cell (a dash when absent) and a
+  `Candidate note` paragraph when the nightly could not draw it. The two
+  existing lines, labels and colours are untouched; `api.ts` carries the
+  optional fields. `e2e/desk-candidate-line.spec.ts` pins both states
+  with the point-in-time spec's fixtures copied, not shared; it has not
+  been run in the sandbox (no browser) and is UNVERIFIED until the
+  integrator runs it.
+
 ## 2026-09-27 — Deployed `1fc59696`; the SIP backfill's real request count; the 2016-2018 exchange calendar
 
 Three branches built in parallel landed on main in order and were deployed

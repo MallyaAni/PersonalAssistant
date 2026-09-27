@@ -1033,6 +1033,173 @@ def test_curve_block_reports_a_missing_point_in_time_line(monkeypatch):
     assert "restricted run failed" in block["point_in_time_note"]
 
 
+# A report the simulator can actually walk: eight names and SPY over
+# `sessions` weekdays of random-walk prices, grades that move between A+, A,
+# B and C, so the candidate has to select, cap and hold cash. The same
+# shape as `test_policy_v4`'s report, built here so this module's guarantee
+# does not depend on another test file's fixture.
+def _walk_report(sessions: int = 160, seed: int = 3) -> DeskReport:
+    names = ("AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH")
+    rng = np.random.default_rng(seed)
+    n = len(names)
+    days = []
+    d = date(2022, 1, 3)
+    while len(days) < sessions:
+        if d.weekday() < 5:
+            days.append(d)
+        d += timedelta(days=1)
+    dates = np.array(days, dtype="datetime64[D]")
+    log = rng.normal(0.0004, 0.02, size=(sessions, n + 1)).cumsum(axis=0)
+    close = 100.0 * np.exp(log)
+    panel = Panel(
+        dates=dates,
+        tickers=names + ("SPY",),
+        open=close * (1 + rng.normal(0, 0.002, size=close.shape)),
+        high=close * 1.01,
+        low=close * 0.99,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1e6),
+        themes={t: (AI_COMPUTE,) for t in names},
+        benchmark="SPY",
+    )
+    grades = rng.choice(
+        [grading.ORDINAL[g] for g in ("A+", "A", "B", "C")],
+        size=(sessions, n + 1),
+        p=[0.3, 0.3, 0.2, 0.2],
+    )
+    grades[:, n] = 0
+    conviction = rng.normal(size=(sessions, n + 1))
+    conviction[:, n] = np.nan
+    graded = grading.Graded(grades, conviction.copy(), {}, conviction)
+    state = regime.RegimeState(
+        0.0, 0.0, 0.5, 0.0, 0.0, 0.0, "ai", 0.1, 0.0, 1.0, 1.0, (), 0.0, False
+    )
+    view = regime.RegimeView(
+        [state] * sessions, Opinion("rotation", np.full((sessions, n + 1), np.nan))
+    )
+    return DeskReport(
+        panel, {t: "ai" for t in names}, {}, view, graded, graded.as_scores(), []
+    )
+
+
+# A membership history for the walk report: six names throughout, GGG
+# entering late and FFF leaving early, so the point-in-time mask changes.
+def _walk_history(tmp_path: Path) -> Path:
+    path = tmp_path / "membership_history.csv"
+    rows = ["ticker,entered,entry_announced,exited,exit_announced,source,rule"]
+    for t in ("AAA", "BBB", "CCC", "DDD", "EEE", "HHH"):
+        rows.append(f"{t},2016-01-04,2016-01-04,,,test,member throughout")
+    rows.append("GGG,2022-05-02,2022-05-02,,,test,enters late")
+    rows.append("FFF,2016-01-04,2016-01-04,2022-06-01,2022-06-01,test,leaves early")
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    return path
+
+
+# Point the nightly's restriction at a history file of the test's choosing
+# (the production default is bound into the function's signature, so the
+# module constant cannot be patched instead).
+def _use_history(monkeypatch, history_path: Path) -> None:
+    from backend.agents.trading.desk import point_in_time
+
+    original = point_in_time.point_in_time
+    monkeypatch.setattr(
+        point_in_time,
+        "point_in_time",
+        lambda report, history_path=history_path: original(
+            report, history_path=history_path
+        ),
+    )
+
+
+# The curve block carries the `/4` candidate as a third strategy line: the
+# same length as the published rules line, starting at 0, named by its
+# policy version and a fixed label that says how it was priced.
+def test_curve_block_carries_the_candidate_line(monkeypatch, tmp_path):
+    from backend.agents.trading.desk import policy_v4
+
+    _use_history(monkeypatch, _walk_history(tmp_path))
+    block = market_daily.curve_block(_walk_report(), None)
+    assert block is not None
+    curve = block["candidate_point_in_time"]
+    assert len(curve) == len(block["rules"]) > 2
+    assert curve[0] == 0.0
+    assert block["candidate_note"] == ""
+    assert block["candidate_policy"] == policy_v4.POLICY_VERSION == "graded-equal-weight/4"
+    assert block["candidate_label"] == market_daily.CANDIDATE_LABEL
+    assert block["candidate_label"].startswith("candidate /4: every A/A+ name")
+    assert "not the live executor" in block["candidate_label"]
+    stats = block["stats_candidate"]
+    assert set(stats) >= {"cagr", "volatility", "drawdown", "total"}
+    assert all(v is None or isinstance(v, float) for v in stats.values())
+    assert stats["total"] == pytest.approx(curve[-1])
+    # It is a different line from the rules and from the point-in-time
+    # rules, not one of them relabelled.
+    assert curve != block["rules"]
+    assert curve != block["rules_point_in_time"]
+
+
+# The guarantee behind the line: value for value, the dashboard's candidate
+# curve is the scorecard's `ew_graded_20` arm priced the plain way the
+# scorecard prices an arm (next-open fills at the default cost, the arm's
+# rebalance clock, no exits, no live policy) on the same report and the
+# same sessions. If either side drifts - a flag added here, a constant
+# changed in the arm - the page would be showing a number the scorecard
+# never measured, and this is what notices.
+def test_candidate_line_is_the_scorecard_arm_priced_plain(monkeypatch, tmp_path):
+    from backend.agents.trading.desk import paper, point_in_time, simulate
+    from backend.cli import market_pit_scorecard as sc
+
+    history = _walk_history(tmp_path)
+    _use_history(monkeypatch, history)
+    report = _walk_report()
+    block = market_daily.curve_block(report, None)
+    assert block["candidate_note"] == ""
+    restricted, mask = point_in_time.point_in_time(report, history_path=history)
+    arm = simulate.run(
+        restricted,
+        since=date.fromisoformat(block["dates"][0]),
+        use_exits=False,
+        rebalance=paper.REBALANCE_EVERY,
+        cost_bps=simulate.COST_BPS,
+        allocator=sc.ARMS["ew_graded_20"](restricted, mask),
+    )
+    assert [str(d) for d in arm.dates] == block["dates"]
+    expected = arm.equity / arm.equity[0] - 1.0
+    np.testing.assert_allclose(
+        block["candidate_point_in_time"], expected, rtol=0, atol=1e-12
+    )
+    # Not a vacuous match: the arm traded and moved.
+    assert np.abs(expected).max() > 0
+    assert arm.rebalances > 1
+    for key, value in arm.stats().items():
+        if value != value:
+            assert block["stats_candidate"][key] is None
+        else:
+            assert block["stats_candidate"][key] == pytest.approx(value)
+
+
+# Without the membership file the candidate cannot be placed on the
+# point-in-time book: the curve is empty, the stats are empty and the note
+# says why, while the published rules line still stands.
+def test_curve_block_reports_a_missing_candidate_line(monkeypatch, tmp_path):
+    _use_history(monkeypatch, tmp_path / "no-such-membership.csv")
+    block = market_daily.curve_block(_walk_report(), None)
+    assert block is not None
+    assert len(block["rules"]) > 2
+    assert block["candidate_point_in_time"] == []
+    assert block["stats_candidate"] == {}
+    assert block["candidate_note"].startswith("candidate line not drawn:")
+    assert "FileNotFoundError" in block["candidate_note"]
+    # The same failure takes the point-in-time rules line with it.
+    assert block["rules_point_in_time"] == []
+    assert block["point_in_time_note"].startswith("point-in-time line not drawn:")
+    # The line is absent, not mislabelled: the policy and label still say
+    # what would have been drawn.
+    assert block["candidate_policy"] == "graded-equal-weight/4"
+    assert block["candidate_label"] == market_daily.CANDIDATE_LABEL
+
+
 # The record carries the policy shadows' receipts under their own key, and
 # an empty map when none were passed, so older records read the same way.
 def test_record_carries_the_policy_shadows():

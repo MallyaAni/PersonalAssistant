@@ -695,6 +695,12 @@ const CurveChart = ({
     if (backtest.rules_point_in_time && backtest.rules_point_in_time.length) {
       series.push({ label: 'same rules, names known at the time', color: '#b45309', values: align(btDates, backtest.rules_point_in_time) })
     }
+    // The /4 candidate on the same point-in-time book: the scorecard's
+    // measured arm priced plain, so the page shows the line the operator is
+    // deciding on next to the one the account runs.
+    if (backtest.candidate_point_in_time && backtest.candidate_point_in_time.length) {
+      series.push({ label: 'candidate /4, names known at the time', color: '#0f766e', values: align(btDates, backtest.candidate_point_in_time) })
+    }
     series.push({ label: 'SPY', color: '#9ca3af', values: align(btDates, backtest.spy) })
     if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: align(btDates, backtest.qqq) })
   }
@@ -828,12 +834,16 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
     )
   }
   const pit = backtest.stats_point_in_time
+  const candidate = backtest.stats_candidate
   const cells = [
     { label: 'CAGR', value: stats.cagr != null ? `${(stats.cagr * 100).toFixed(1)}%` : '—' },
     // The honest figure beside the published one: the same rules on the
     // names the book could have held on each session. The difference is
     // the choice of names, not the strategy.
     { label: 'CAGR, names known at the time', value: pit && pit.cagr != null ? `${(pit.cagr * 100).toFixed(1)}%` : '—' },
+    // The /4 candidate on the same names, priced plain: the scorecard's
+    // ew_graded_20 number, not a live record.
+    { label: 'CAGR, candidate /4', value: candidate && candidate.cagr != null ? `${(candidate.cagr * 100).toFixed(1)}%` : '—' },
     { label: 'Volatility', value: stats.volatility != null ? `${(stats.volatility * 100).toFixed(0)}%` : '—' },
     { label: 'Worst drawdown', value: stats.drawdown != null ? `${(stats.drawdown * 100).toFixed(0)}%` : '—' },
     { label: 'Total return', value: stats.total != null ? `${(stats.total * 100).toFixed(0)}%` : '—' },
@@ -860,6 +870,11 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
           differed. */}
       {backtest.point_in_time_note && (
         <p aria-label="Point-in-time note" className="mb-3 text-xs text-[#6e6e73]">{backtest.point_in_time_note}</p>
+      )}
+      {/* The same for the candidate line: an absent third line needs its
+          reason, or it reads as if the candidate was never measured. */}
+      {backtest.candidate_note && (
+        <p aria-label="Candidate note" className="mb-3 text-xs text-[#6e6e73]">{backtest.candidate_note}</p>
       )}
       <CurveChart backtest={backtest} paper={curve?.paper} />
       {backtest.evaluation_periods?.map((period) => (

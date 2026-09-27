@@ -118,6 +118,17 @@ strategy that changes only when untouched sessions say so.
   calendar is now reviewed from the official releases. Open: the reconcile
   verdict, the nightly SIP append, the candidate line on the dashboard.
 
+- 2026-09-27: the `/4` candidate line is on the dashboard, BUILT
+  (`market_daily._candidate_curve`, `curve_block["candidate_point_in_time"]`,
+  a third series and a `CAGR, candidate /4` cell in `DeskPanel`). It is
+  priced plain - next-open fills at the default cost, the arm's rebalance
+  clock, no exits, none of the live execution policy - so its number is
+  the scorecard's `ew_graded_20` line, asserted equal to 1e-12 on the same
+  report and sessions, and not a live record; what the candidate's
+  execution earns stays the fidelity shadow's question. The browser spec
+  (`desk-candidate-line.spec.ts`) has not run in the sandbox: UNVERIFIED
+  until the next deploy's Playwright run.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation
