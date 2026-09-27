@@ -219,6 +219,25 @@ strategy that changes only when untouched sessions say so.
   INSUFFICIENT EVIDENCE for returns; RL sizing does not start; the
   volatility head goes to a sizing trial on the graded book.
 
+- 2026-09-27, night: the execution ablation, BUILT and not run
+  (`market/execution_ablation.py`, `python -m
+  backend.cli.market_execution_ablation`). The fill-timing trial
+  ([research/execution-timing-2026-09-27.md](research/execution-timing-2026-09-27.md))
+  showed the band gate on buys is neutral, so the 4.4 CAGR points the live
+  execution policy costs the `/4` book on 2016-2023 at 25 bp belong to the
+  other live conventions. Ten variants fixed before the run - plain, live,
+  live with each of `block_overbought`, `exit_at_close` (with
+  `deferred_buys`, which needs it), `green_day_skip`, `live_midcycle`,
+  `deferred_buys` and the FOMC path removed, plain with `exit_at_close` or
+  the FOMC path added - each a registered trial, paired against both plain
+  and live at every offset and cost. A removal is REMOVE (registered) only
+  at >= 1.0 CAGR point with paired t >= 2.0 on 2016-2023 and not worse on
+  2024-2026; the sum of single removals is set against the plain-minus-live
+  gap so an interaction is visible. Eight tests pass on the synthetic book;
+  the command has not run against the store. Next: run it on the Spark
+  (about 400 simulator runs), record the note, and change the executor
+  only for options the verdict names.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

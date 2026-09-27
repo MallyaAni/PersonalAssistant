@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-09-27 — Execution ablation on the /4 book, built and not run
+
+`backend/market/execution_ablation.py` and `python -m
+backend.cli.market_execution_ablation` price `graded-equal-weight/4` on the
+point-in-time book under ten option sets fixed in `VARIANTS` before any
+run, each one registered trial: `plain` (`use_exits=False`,
+`rebalance=paper.REBALANCE_EVERY`, next-open fills), `live` (the scorecard's
+`_live_options`: `simulate.LIVE_POLICY`, `event_risk.live_path` and the FOMC
+lifecycle), live with one option removed (`live-block_overbought`,
+`live-exit_at_close` - which drops `deferred_buys` with it because
+`simulate.run` refuses the deferred leg without close fills, and says so in
+its note - `live-green_day_skip`, `live-live_midcycle`, `live-deferred_buys`,
+`live-event`), and plain with one option added (`plain+exit_at_close`,
+`plain+event`). Every variant runs from each of the first `--offsets`
+sessions at each `--costs` (default 10 and 25 bp); per scorecard window the
+median CAGR and median worst drawdown across offsets, the count of offsets
+above plain, and the paired daily difference against plain and against live
+at the median offset with a Newey-West t at lag 20, reusing the scorecard's
+`Curve`, `window_stats`, `_on` and `_since` and keeping its field names. A
+variant `simulate.run` refuses is recorded under `refused` with the reason,
+never silently skipped. `verdict` reads 2016-2023 at 25 bp: the CAGR points
+each removal earns (positive) or costs relative to live, REMOVE (registered)
+only when a removal earns at least 1.0 point with paired t >= 2.0 against
+live and is not worse on 2024-2026, else KEEP, and the reconstruction check
+- the sum of the single-removal effects against the plain-minus-live gap, so
+an interaction between options is a number rather than an assumption.
+Writes `<root>/desk/execution_ablation.json`. Eight tests on the pit
+scorecard's synthetic book: the variant set, plain and live reproducing
+`simulate.run` with the scorecard's option sets element for element, each
+removal changing exactly the named keys, every variant running, a refused
+variant recorded, the verdict's floors and reconstruction on a hand-built
+payload, and the command end to end. Not yet run on the Spark; no number
+in this entry is a result.
+
 ## 2026-09-27 — Fill-timing engine: raw fills onto the adjusted basis by the session's own official close
 
 The first run on the real store put `next_open` at 13.6% a year against
