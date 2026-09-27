@@ -58,11 +58,13 @@ async def test_session_price_http_access(monkeypatch):
 @pytest.mark.parametrize(
     ("stamp", "phase", "primary", "fallback"),
     [
-        ("2026-09-24T07:00:00-04:00", "pre-market", "sip", "iex"),
+        ("2026-09-24T07:00:00-04:00", "pre-market", "boats", "overnight"),
+        ("2026-09-24T08:30:00-04:00", "pre-market", "sip", "iex"),
         ("2026-09-24T12:00:00-04:00", "regular", "sip", "iex"),
         ("2026-09-24T18:00:00-04:00", "post-market", "sip", "iex"),
         ("2026-09-24T22:00:00-04:00", "overnight", "boats", "overnight"),
-        ("2026-09-25T22:00:00-04:00", "closed", "boats", "overnight"),
+        # No overnight session runs into a weekend: the day feeds hold the newest print.
+        ("2026-09-25T22:00:00-04:00", "closed", "sip", "iex"),
         ("2039-01-03T22:00:00-05:00", "unknown", "boats", "overnight"),
     ],
 )

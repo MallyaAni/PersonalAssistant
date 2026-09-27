@@ -146,16 +146,40 @@ def _request_quotes(symbols, feed, tick, request):
     return quotes
 
 
-# Prefer fresh primary evidence, fresh fallback, then the newest valid stale quote.
-def _select(primary, fallback):
-    if primary["status"] == "fresh":
-        return primary
-    if fallback["status"] == "fresh":
-        return fallback
-    stale = [row for row in (primary, fallback) if row["status"] == "stale"]
+# Prefer fresh evidence in feed order, then the newest valid stale quote
+# from any feed asked, then the first row that at least carries a time.
+def _select(*candidates):
+    for row in candidates:
+        if row["status"] == "fresh":
+            return row
+    stale = [row for row in candidates if row["status"] == "stale"]
     if stale:
         return max(stale, key=lambda row: desk_freshness.timestamp(row["at"]))
-    return primary if primary["at"] else fallback
+    for row in candidates:
+        if row["at"]:
+            return row
+    return candidates[0]
+
+
+# The feed pair to ask, from the exchange calendar rather than the clock
+# alone. The overnight venues run only into a session day (Sunday 20:00
+# to Friday 04:00), so they are asked while an overnight session is on and
+# through the pre-market hours before IEX starts printing at 08:00, when
+# their 03:59 print is the newest there is. On a weekend or holiday night
+# nothing overnight is running and the newest observation is IEX's last
+# regular or post-market print, so the day pair is asked. Two feeds per
+# fetch, as the transport's timeout budget is sized for.
+def _feed_pair(now):
+    """Return (preferred, fallback) feeds for ``now``."""
+    phase = session_window(now)[0]
+    wall = now.astimezone(calendar.NEW_YORK).time().replace(tzinfo=None)
+    night = wall >= day_time(20) or wall < day_time(4)
+    if phase == "unknown":
+        # No calendar for the year: the clock is the only guide.
+        return ("boats", "overnight") if night else ("sip", "iex")
+    if phase == "overnight" or (phase == "pre-market" and wall < day_time(8)):
+        return ("boats", "overnight")
+    return ("sip", "iex")
 
 
 # Fetch a bounded display batch without purchasing data or sending orders.
@@ -174,12 +198,7 @@ def fetch(symbols, now=None, request=transport, monotonic=time.monotonic):
     symbols = tuple(sorted(set(symbols)))
     if not symbols:
         return result
-    wall = now.astimezone(calendar.NEW_YORK).time().replace(tzinfo=None)
-    preferred, fallback = (
-        ("boats", "overnight")
-        if wall >= day_time(20) or wall < day_time(4)
-        else ("sip", "iex")
-    )
+    preferred, fallback = _feed_pair(now)
     primary = _request_quotes(symbols, preferred, monotonic(), request)
     if not supplied_now:
         now = datetime.now(UTC)
@@ -199,6 +218,8 @@ def fetch(symbols, now=None, request=transport, monotonic=time.monotonic):
         if unresolved
         else {}
     )
+    if not supplied_now:
+        now = datetime.now(UTC)
     if not supplied_now:
         now = datetime.now(UTC)
     result["session"] = session_window(now)[0]

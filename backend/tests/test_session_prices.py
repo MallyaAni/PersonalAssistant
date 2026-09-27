@@ -147,3 +147,38 @@ def test_regular_and_weekend_schedules_still_request_quotes(stamp):
     assert len(calls) == 1
     assert result["quotes"]["AAOI"]["price"] == 101
     assert result["signal_scope"] == "regular-session"
+
+
+# The pair follows the calendar, not the clock alone: on a Saturday at
+# 03:00 New York no overnight session is running and IEX holds the newest
+# print (Friday 16:59), so the day pair is asked; on a Monday at 05:00 the
+# overnight venue's 03:59 print is the newest, so the night pair is; from
+# 08:00 IEX prints again and the day pair returns.
+@pytest.mark.parametrize(
+    ("stamp", "pair"),
+    [
+        ("2026-09-26T07:00:00+00:00", ["sip", "iex"]),  # Saturday 03:00
+        ("2026-09-27T01:00:00+00:00", ["sip", "iex"]),  # Saturday 21:00
+        ("2026-09-28T01:00:00+00:00", ["boats", "overnight"]),  # Sunday 21:00
+        ("2026-09-28T09:00:00+00:00", ["boats", "overnight"]),  # Monday 05:00
+        ("2026-09-28T12:30:00+00:00", ["sip", "iex"]),  # Monday 08:30
+        ("2026-09-25T03:00:00+00:00", ["boats", "overnight"]),  # Thursday 23:00
+    ],
+)
+def test_feed_pair_follows_the_exchange_calendar(stamp, pair):
+    now = instant(stamp)
+    friday_close = instant("2026-09-25T20:59:58+00:00")
+    calls = []
+
+    def request(url, headers):
+        calls.append(url.split("feed=")[1])
+        if "feed=iex" in url:
+            return 200, json.dumps({"quotes": {"AAOI": quote(friday_close, bp=200, ap=202)}}).encode()
+        return 403, b"{}"
+
+    result = prices.fetch(["AAOI"], now, request, lambda: 1)
+    assert calls == pair
+    row = result["quotes"]["AAOI"]
+    if pair == ["sip", "iex"]:
+        assert row["status"] == "stale" and row["feed"] == "iex" and row["price"] == 201
+        assert row["at"] == friday_close.isoformat() and row["session"] == "post-market"

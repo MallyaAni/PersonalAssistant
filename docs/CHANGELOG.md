@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-27 — The session-quote feed pair follows the exchange calendar
+
+Verified live after the last-price change: at 03:13 New York on a Saturday
+the board's last price for AAPL was Friday's 04:00 indicative overnight
+quote, because the collector chose its feed pair by the clock alone
+(overnight venues 20:00-04:00) and the overnight venues do not run on a
+Friday or Saturday night, so their last print was older than IEX's Friday
+16:59. `_feed_pair` now asks the overnight venues only while
+`session_window` says an overnight session is on, or before 08:00 on a
+session day (their 03:59 print is the newest until IEX starts); on a
+weekend or holiday night it asks the day pair. Still two feeds a fetch,
+within the transport's timeout budget. Test: six instants across a
+weekend, with the Saturday cases asserting IEX's Friday close is what is
+kept.
+
 ## 2026-09-27 — The board always shows the last observed price when the market is closed
 
 The operator's request: "when market is closed I'd like to always see the

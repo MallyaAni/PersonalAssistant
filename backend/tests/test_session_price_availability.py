@@ -97,7 +97,8 @@ def isolated(monkeypatch):
 @pytest.mark.parametrize(
     ("stamp", "feed"),
     [
-        ("2026-09-24T07:00:00-04:00", "sip"),
+        ("2026-09-24T07:00:00-04:00", "boats"),  # before IEX prints at 08:00
+        ("2026-09-24T08:30:00-04:00", "sip"),
         ("2026-09-24T18:00:00-04:00", "sip"),
         ("2026-09-24T22:00:00-04:00", "boats"),
     ],
@@ -123,8 +124,10 @@ def test_existing_fresh_primary_needs_no_fallback(stamp, feed):
     [
         ("2026-09-24T12:00:00-04:00", "regular", "sip"),
         ("2026-09-26T12:00:00-04:00", "closed", "sip"),
-        ("2026-09-25T21:00:00-04:00", "closed", "boats"),
-        ("2026-09-06T21:00:00-04:00", "closed", "boats"),
+        # No overnight session runs into a weekend or holiday, so the day
+        # feeds hold the newest print on those nights.
+        ("2026-09-25T21:00:00-04:00", "closed", "sip"),
+        ("2026-09-06T21:00:00-04:00", "closed", "sip"),
         ("2026-09-07T12:00:00-04:00", "closed", "sip"),
         ("2039-01-03T12:00:00-05:00", "unknown", "sip"),
         ("2039-01-03T21:00:00-05:00", "unknown", "boats"),
@@ -146,7 +149,7 @@ def test_expected_schedule_is_not_an_availability_gate(stamp, schedule, feed):
 @pytest.mark.parametrize(
     ("stamp", "previous", "current", "feed"),
     [
-        ("2026-09-24T04:00:01-04:00", "overnight", "pre-market", "sip"),
+        ("2026-09-24T04:00:01-04:00", "overnight", "pre-market", "boats"),
         ("2026-09-24T09:30:01-04:00", "pre-market", "regular", "sip"),
         ("2026-09-24T16:00:01-04:00", "regular", "post-market", "sip"),
         ("2026-09-24T20:00:01-04:00", "post-market", "overnight", "boats"),
@@ -220,7 +223,7 @@ def test_mixed_primary_batch_selects_each_symbols_own_source_and_time():
     ],
 )
 def test_empty_or_malformed_primary_success_does_not_stop_fallback(primary):
-    now = instant("2026-09-24T07:00:00-04:00")
+    now = instant("2026-09-24T08:30:00-04:00")
     read = QuoteResponses((200, primary), (200, {"quotes": {"AAA": quote(now)}}))
     result = prices.fetch(["AAA"], now, read, Clock())
     assert read.calls == [("sip", ("AAA",)), ("iex", ("AAA",))]
