@@ -142,6 +142,18 @@ strategy that changes only when untouched sessions say so.
   the tables against the hypotheses, and record the result as a research
   note before anything downstream uses it.
 
+- 2026-09-27, morning: the SIP fifteen-minute store is filled and accepted
+  ([research/sip-15m-acceptance-2026-09-27.md](research/sip-15m-acceptance-2026-09-27.md)):
+  the closing auction was the missing quarter of every day's volume and
+  is now a stored row; the 2016-2018 half days are repaired. The first
+  fifteen-minute study ran
+  ([research/session-anatomy-2026-09-27.md](research/session-anatomy-2026-09-27.md)):
+  the day is front-loaded (22% of variance in the first bar), the first
+  half-hour predicts nothing, intraday dips continue slightly rather than
+  bounce, and fill timing is worth 1-4 bp against a 186 bp session sd.
+  The fifteen-minute engine's edge, if any, is below the session or in
+  conditioning the desk does not yet do; execution timing is not it.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

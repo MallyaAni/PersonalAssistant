@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-09-27, morning — SIP store accepted (schema 2), session anatomy run, candidate line deployed
+
+**Deployed, in order, all from `~/deploy/anios` via `scripts/deploy.sh`,
+every gate green, model servers untouched:** `9ff818a5` (estimator, the
+2016-2018 calendar, the `/4` candidate line on the dashboard, diagram
+re-render; 7,547 unit), `e181651c` (session-anatomy study, built),
+`ce851675` (stale SIP partitions rewritten; 7,564), `f6228b7f` (the
+closing-auction row in the store and the cube, pooled cube builds; 7,568).
+`data/.post-deploy-status`: `2026-09-27T04:57:37Z f6228b7f ok (cheap)`.
+One deploy (`9b7852d` + calendar) failed its gate on three tests that used
+2018 as the unreviewed-year sentinel and the system stayed on `1fc59696`
+until `9ff818a5` fixed them - the gate did its job.
+
+**VERIFIED on spark1 (details in
+[research/sip-15m-acceptance-2026-09-27.md](research/sip-15m-acceptance-2026-09-27.md)):**
+the SIP backfill is 9,115 requests, not 1,633 (Alpaca pages at ~1,000
+bars); the first reconcile passed 70.1% and nearly every failure was the
+closing auction, which the tape stamps at 16:00 and the store dropped
+(AAPL 2026-09-18: 49.8M of 86.6M shares in that bar); the six 2016-2018
+half days had been cut at 16:00 with after-hours prints. Both fixed in
+code, both repaired in the store (schema 2 rewrite: 9,384 requests in
+three streams, 47 minutes). The second reconcile passes **92.0%** of 224,992 sessions (93.4% of the sessions that are this company; the price gate holds on 99.7%), and the store is ACCEPTED for the studies, not yet for any decision.
+
+**VERIFIED, the first fifteen-minute study
+([research/session-anatomy-2026-09-27.md](research/session-anatomy-2026-09-27.md),
+hypotheses written before the run):** on the point-in-time book 2016-2023
+(38 names, 58,122 name-sessions) the 09:30 bar carries 22% of the day's
+variance and sets the high a third of the time (H1 confirmed); the first
+half-hour's return has no usable relation to the rest of the day (slope
++0.02, t 0.2; H2 null confirmed); a 2% dip by 11:30 is followed by
+slightly *less* return to the close, not more (-3.4 bp, t -2.5; -9.9 bp,
+t -2.2 on 2024-2026) and extensions do nothing (H3 confirmed - the dip
+is not bought at the session scale); fill timing within the session is
+worth 1-4 bp against a 186-235 bp session standard deviation, and the
+first-hour VWAP is within a basis point of the open (H4: the open fill is
+not a headwind). Also recorded: the book's return on 2024-2026 came
+overnight (gap +7.6 bp a session, open-to-close -0.4 bp).
+
+**Not done, next in order.** (1) Install the nightly SIP append: `crontab
+-e` on spark1, `45 16 * * 1-5 /home/animallya96/desk_sip.sh` (drafted at
+`~/desk_sip.sh`; appends the last ten sessions and reconciles them; one
+request a name). (2) Monday 2026-09-28, 19:30 ET: the first `/4` shadow
+receipt (`record["policy_shadows"]`), the point-in-time line and the new
+candidate line on the dashboard. (3) The anatomy tables conditioned on
+the desk's own state (grade, regime) rather than pooled, and the
+overnight/intraday split by year - that split bears on the next-open
+fill convention more than any timing idea. (4) `--report` should reuse
+the reconcile's records; IGV/SMH daily bars are three weeks stale
+(nightly refreshes the book and SPY/QQQ only). (5) The shadow ledger
+still holds raw share counts across splits.
+
 ## 2026-09-27 — Deployed `1fc59696` (`/4` shadow, SIP store, PIT browser test); the SIP backfill is running
 
 **Deployed `1fc59696`** from `~/deploy/anios` via `scripts/deploy.sh` (over
