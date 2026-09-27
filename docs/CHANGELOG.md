@@ -302,6 +302,64 @@ variants on a flicker-grade book, the diagnostics on a hand-built
 ledger, the payload, the verdict floors, the CLI end to end). 12 pass;
 the command has not run against the store.
 
+## 2026-09-27 — Deep sequence models, stage 2: inputs first, decision targets; BUILT, not run
+
+The operator asked whether the CNN and PatchTST were being discarded for
+learning structure, and reminded that an ML experiment lives or dies on
+its inputs. Stage 2 keeps both models unchanged and changes what they
+see and what they are judged on. Pre-registration first, with the kill
+criteria fixed before any code:
+`docs/research/deep-stage2-plan-2026-09-27.md`.
+
+`backend/market/deep_stage2.py` builds `Dataset2`: one row per graded
+point-in-time member (name, session t) with the last 60 complete
+sessions of bars (1,560 steps; the window may span 6 extra exchange
+sessions because early closes are not in the cubes), six channels (the
+name's bar return, volume share and range, plus SPY, QQQ and SMH bar
+returns on the same sessions - whichever of the three the store holds,
+a missing benchmark session zero-filled and counted), and the scalars
+stage 1 had plus breadth, the desk's regime, the grade one-hot, every
+analyst stance and the band z, everything known at the close of t.
+Targets: stage 1's `rank`; `downgrade20` (an A/A+ name graded below A
+within 20 sessions; undefined below A); `drawdown20` (min over 20
+sessions of adjusted close over today's, minus one); `vol20` (log
+realized variance of the next 20 daily returns, baseline the trailing
+20). The 20-session targets are read from the desk's daily panel.
+Walk-forward is stage 1's (first fit 500, refit 63) with the **purge
+raised to 20** so no training target overlaps the test block. Models:
+stage 1's ridge (about 9.4k features), the temporal CNN and PatchTST
+with one head per target trained jointly (MSE, BCE on the downgrade;
+`backend/market/deep_stage2_nn.py`), and `patchtst-pretrained`: the
+encoder trained 5 epochs to reconstruct 40% masked patches on the fold's
+training rows, then frozen and read by a ridge on [embedding, scalars]
+(a linear probe). Metrics: stage 1's for `rank`; AUC and the **decision
+test** for `downgrade20` (the A/A+ book with the worst decile by
+forecast dropped each day against the book, next-20-session return,
+paired per session, net of 10 bp on the extra turnover, HAC lag 20);
+Spearman IC and the same test for `drawdown20`; R² for `vol20`. Kill
+criteria: a target is INSUFFICIENT EVIDENCE unless its decision test
+earns >= +2 bp per session with t >= 2.0 on 2016-2023 and is not
+negative on 2024-2026; AUC, IC and R² alone never pass. Sixteen trials.
+CLI `python -m backend.cli.market_deep_stage2`: `--export <npz>` on the
+Spark (sequence written as float16, about 1.5 GB), `--dataset <npz>
+--models ... --device cuda --out <json>` on the RTX, `--workers` for the
+cube pool, `--benchmarks`. `deep_intraday.ridge_fit`/`ridge_predict`
+gained a `chunk` argument (default unchanged).
+
+Tests (`backend/tests/test_deep_stage2.py`, 14, twelve pass here and the
+two torch ones skip without torch): the row rule and every input against
+a hand computation from a synthetic desk report, the slack window, the
+benchmark fill, the no-lookahead tamper (bars, benchmark, grades,
+stances and prices after t leave row t's inputs unchanged; a grade path
+shifted one session moves the downgrade target of those rows only), the
+horizon targets on hand-built paths, the 20-session purge, the decision
+test on hand-built forecasts with the turnover by hand, the AUC, the
+ridge end to end (finds stage 1's planted signal, INSUFFICIENT on
+unrelated downgrades), the verdict from an oracle (PASSED only with the
+later window non-negative), the float16 export round trip and the CLI
+end to end. Stage 1's 25 tests still pass. Nothing has run against the
+store; the torch families and the pretraining have not run anywhere.
+
 ## 2026-09-27 — Volatility sizing on the /4 book: built and run, every variant RECORD
 
 Run the same night (CNN forecasts on the RTX 5080 in 3 m 22 s, R² 0.271 /

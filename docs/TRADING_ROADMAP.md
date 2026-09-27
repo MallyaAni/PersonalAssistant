@@ -358,6 +358,27 @@ strategy that changes only when untouched sessions say so.
   on the Spark (280 simulator runs), record the note, and change the
   executor only if the verdict names a stop.
 
+- 2026-09-27, late night: deep sequence models, stage 2, BUILT and not run
+  ([research/deep-stage2-plan-2026-09-27.md](research/deep-stage2-plan-2026-09-27.md);
+  `market/deep_stage2.py`, `market/deep_stage2_nn.py`,
+  `cli/market_deep_stage2.py`). The operator's two points answered in the
+  design: the CNN and PatchTST are kept as written for learning structure
+  (plus a masked-patch pretrained PatchTST read by a linear probe), and
+  the inputs change first - sixty sessions of bars instead of five, SPY,
+  QQQ and SMH bars beside the name's, breadth, the desk's regime, the
+  grade, the stances and the band z as scalars. Targets the decision
+  would act on: the probability an A/A+ name is downgraded within 20
+  sessions, the 20-session drawdown, the 20-session volatility, with
+  stage 1's rank kept as the anchor. Purge 20. Judged by the decision
+  test - the graded book with the worst decile by forecast dropped
+  against the book, next-20-session return, net of cost - at >= +2 bp
+  per session, t >= 2 on 2016-2023 and not negative on 2024-2026; AUC,
+  IC and R² never pass alone. Sixteen trials. Fourteen tests on a
+  synthetic cube-and-desk fixture. Next: `--export` on the Spark (about
+  3 GB in memory, 1.5 GB float16 on disk), the file to the RTX, the four
+  models in hours, the note, and a scorecard trial for the drop rule only
+  if a pair PASSES.
+
 - 2026-09-27, night: volatility sizing on the `/4` book, RUN and RECORDED
   ([research/vol-sizing-2026-09-27.md](research/vol-sizing-2026-09-27.md)):
   every variant loses to equal weight under live execution (inverse-vol

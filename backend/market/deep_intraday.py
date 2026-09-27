@@ -462,7 +462,9 @@ class Ridge:
 # Closed-form ridge on standardized features: (Xs'Xs + alpha I) b = Xs'(y -
 # mean y), the intercept unpenalized, the Gram matrix accumulated in
 # chunks so a float32 feature matrix is never copied whole to float64.
-def ridge_fit(x: np.ndarray, y: np.ndarray, alpha: float = RIDGE_ALPHA) -> Ridge:
+def ridge_fit(
+    x: np.ndarray, y: np.ndarray, alpha: float = RIDGE_ALPHA, chunk: int = RIDGE_CHUNK
+) -> Ridge:
     """Return the ridge fitted on rows `x` (n, p) to `y` (n,)."""
     x = np.asarray(x)
     y = np.asarray(y, dtype=float)
@@ -475,22 +477,23 @@ def ridge_fit(x: np.ndarray, y: np.ndarray, alpha: float = RIDGE_ALPHA) -> Ridge
     p = x.shape[1]
     gram = np.zeros((p, p))
     moment = np.zeros(p)
-    for lo in range(0, len(y), RIDGE_CHUNK):
-        block = (x[lo : lo + RIDGE_CHUNK].astype(np.float64) - mean) / scale
+    for lo in range(0, len(y), chunk):
+        block = (x[lo : lo + chunk].astype(np.float64) - mean) / scale
         gram += block.T @ block
-        moment += block.T @ (y[lo : lo + RIDGE_CHUNK] - y_mean)
+        moment += block.T @ (y[lo : lo + chunk] - y_mean)
     coef = np.linalg.solve(gram + alpha * np.eye(p), moment)
     return Ridge(mean=mean, scale=scale, coef=coef, intercept=y_mean)
 
 
-# Predictions of a fitted ridge on rows `x`.
-def ridge_predict(model: Ridge, x: np.ndarray) -> np.ndarray:
+# Predictions of a fitted ridge on rows `x`. `chunk` rows are widened to
+# float64 at a time (stage 2's 9.4k-feature rows use a smaller chunk).
+def ridge_predict(model: Ridge, x: np.ndarray, chunk: int = RIDGE_CHUNK) -> np.ndarray:
     """Return the (n,) predictions."""
     x = np.asarray(x)
     out = np.empty(len(x))
-    for lo in range(0, len(x), RIDGE_CHUNK):
-        block = (x[lo : lo + RIDGE_CHUNK].astype(np.float64) - model.mean) / model.scale
-        out[lo : lo + RIDGE_CHUNK] = block @ model.coef + model.intercept
+    for lo in range(0, len(x), chunk):
+        block = (x[lo : lo + chunk].astype(np.float64) - model.mean) / model.scale
+        out[lo : lo + chunk] = block @ model.coef + model.intercept
     return out
 
 
