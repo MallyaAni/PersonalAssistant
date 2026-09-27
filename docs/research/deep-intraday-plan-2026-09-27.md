@@ -73,6 +73,21 @@ grade does not already have?**
   500 sessions. No hyperparameter search beyond one fixed configuration
   written here: Adam 1e-3, 20 epochs, batch 512, dropout 0.1, weight decay
   1e-4.
+- **Added 2026-09-27, before any of the four was run on the store.** Two
+  more model families on the same inputs, targets, walk-forward and
+  configuration constants: a PatchTST (non-overlapping patches of 13
+  steps, channel-independent, d_model 64, two encoder layers, mean-pooled)
+  and a frozen pretrained Chronos-Bolt encoder whose mean-pooled
+  embedding of the bar-return channel feeds the same ridge as the
+  baseline; with both counted on both targets the trial count becomes
+  eight. Transfer learning is tried as a frozen encoder rather than
+  fine-tuning because a frozen encoder adds no training loop and no
+  learning rate or epoch count to choose - the embedding of a row depends
+  on that row alone and the only fitted object is the ridge on top, so the
+  one-configuration, no-search rule and the purge hold as written;
+  fine-tuning is a stage-2 question if the frozen embedding shows
+  anything. The models now train on the GPU when one is present; the
+  statistics, the schedule and the kill criteria do not change.
 - **Metrics.** Return head: daily cross-sectional Spearman IC, its mean
   and Newey-West t over dates; and the equal-weight top-quintile
   portfolio (next-session open to close, 10 bp) against equal weight of
@@ -87,7 +102,8 @@ grade does not already have?**
   finding. A return-head result that vanishes when the volatility head's
   prediction is added as a control is a volatility result and is reported
   as such. Trials counted: two models, two targets, one configuration -
-  four.
+  four (eight with the two families added on 2026-09-27, above; a
+  payload counts the pairs it ran against that total).
 - **Budget.** One evening on twenty CPU cores. If it needs the GPU it is
   already too big for this question.
 

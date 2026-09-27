@@ -8,17 +8,21 @@ return that depends on the last session's late-day bars (the ridge must
 find it, and the top-quintile portfolio must beat the hurdle), clustered
 volatility (the volatility head must beat trailing volatility), and a
 return whose size but not sign is predictable (the volatility control must
-remove the IC it creates). The CNN smoke test is skipped where torch is
-absent.
+remove the IC it creates). The CNN and PatchTST smoke tests are skipped
+where torch is absent, the Chronos one where chronos is; the device
+resolution, the embedding cache fingerprint and the chronos feature join
+are tested without either.
 """
 
 from __future__ import annotations
 
+import contextlib
 import io
 import json
 import math
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -371,7 +375,13 @@ def test_noise_gives_insufficient_evidence():
     assert abs(ic.t) < 3.0
     payload = di.study(ds, {("ridge", "rank"): rank, ("ridge", "vol"): vol})
     assert payload["verdict"] == di.INSUFFICIENT
-    assert payload["trials"] == 4
+    # The pairs run against the family total: the plan's four plus the two
+    # families added on 2026-09-27 on both targets.
+    assert payload["trials"] == 2
+    assert payload["trials_total"] == di.TRIALS == 8
+    assert payload["plan_trials"] == di.PLAN_TRIALS == 4
+    assert payload["models"] == ["ridge"]
+    assert payload["targets"] == ["rank", "vol"]
     assert {r["window"] for r in payload["results"]} == {"2016-2023", "2024-2026"}
     assert len(payload["results"]) == 4
     later = next(r for r in payload["results"] if r["window"] == "2024-2026")
@@ -379,7 +389,7 @@ def test_noise_gives_insufficient_evidence():
     # The detail names both floors and the trial count.
     detail = "\n".join(payload["verdict_detail"])
     assert "fails the kill criteria" in detail
-    assert "trials counted: 4" in detail
+    assert "trials counted: 2 run of 8 pre-registered" in detail
     # Strict JSON round-trips.
     json.dumps(payload, allow_nan=False)
 
@@ -519,6 +529,286 @@ def test_cnn_smoke():
     )
     assert predicted.shape == (10,)
     assert np.isfinite(predicted).all()
+
+
+# The dispatch knows the four families and no other; the torch and chronos
+# families fail at their lazy import where the package is absent, never
+# with "unknown model".
+def test_dispatch_names():
+    assert di.MODELS == ("ridge", "cnn", "patchtst", "chronos")
+    assert di.TORCH_MODELS == ("cnn", "patchtst")
+    cubes, mask = _book("noise", names=3, n=40, seed=13)
+    ds = di.dataset(cubes, mask, CAL)
+    for name in ("forest", "lstm", "", "Ridge"):
+        with pytest.raises(ValueError, match="unknown model"):
+            di.walk_forward(ds, name, "rank")
+    for name in ("cnn", "patchtst", "chronos"):
+        # The package may be absent here; the name itself is accepted.
+        with contextlib.suppress(ImportError):
+            di.walk_forward(ds, name, "rank", device="cpu")
+
+
+# `resolve_device` is pure: auto follows CUDA availability, cpu is cpu,
+# cuda needs a device, anything else is refused. The announcement prints
+# once per process per device.
+def test_resolve_device_and_announce(monkeypatch):
+    assert di.resolve_device("auto", True) == "cuda"
+    assert di.resolve_device("auto", False) == "cpu"
+    assert di.resolve_device("AUTO", False) == "cpu"
+    assert di.resolve_device("cpu", True) == "cpu"
+    assert di.resolve_device("cpu", False) == "cpu"
+    assert di.resolve_device("cuda", True) == "cuda"
+    with pytest.raises(ValueError, match="no CUDA device"):
+        di.resolve_device("cuda", False)
+    with pytest.raises(ValueError, match="unknown device"):
+        di.resolve_device("tpu", True)
+    assert di.cuda_available() in (True, False)
+    monkeypatch.setattr(di, "_ANNOUNCED", set())
+    said: list[str] = []
+    assert di.announce_device("cpu", said.append) is True
+    assert di.announce_device("cpu", said.append) is False
+    assert di.announce_device("cuda", said.append) is True
+    assert said == ["device: cpu", "device: cuda"]
+
+
+# The ridge is untouched by the device option and the new dispatch: the
+# planted-signal IC is the value the pre-extension code produced
+# (recorded from main at 3945c06 on 2026-09-27), and the forecast is
+# byte-identical whatever device is named.
+def test_ridge_results_unchanged_by_the_extension():
+    cubes, mask = _book("late_signal", names=12, n=950, seed=7)
+    ds = di.dataset(cubes, mask, CAL)
+    forecast = di.walk_forward(ds, "ridge", "rank")
+    ic = di.daily_ic(ds, forecast)
+    assert ic.n == 430
+    assert ic.mean == pytest.approx(0.2675394373068791, abs=1e-9)
+    assert ic.t == pytest.approx(19.832886693475825, abs=1e-6)
+    on_cuda_name = di.walk_forward(ds, "ridge", "rank", device="cuda")
+    np.testing.assert_array_equal(forecast.values, on_cuda_name.values)
+    assert forecast.parameters is None
+
+
+# The chronos model is the ridge on [embedding, scalars]: with the encoder
+# replaced by a fake (the package need not be present), it walks forward
+# on the ridge's schedule, reports the encoder's parameter count, and with
+# an embedding equal to the flattened bar returns it reproduces the ridge
+# on those features exactly.
+def test_chronos_is_ridge_on_the_embedding(monkeypatch):
+    from backend.market import deep_intraday_pretrained as pretrained
+
+    cubes, mask = _book("late_signal", names=6, n=620, seed=14)
+    ds = di.dataset(cubes, mask, CAL)
+    returns = ds.x_seq[:, :, 0].astype(np.float32)
+    calls: list[dict] = []
+
+    def fake_embedding(
+        ds_, device="auto", cache_dir=None, model_id="", batch_size=0, log=None
+    ):
+        calls.append({"device": device, "cache_dir": cache_dir, "model_id": model_id})
+        return returns, {"parameters": 1234, "cached": False}
+
+    monkeypatch.setattr(pretrained, "dataset_embedding", fake_embedding)
+    forecast = di.walk_forward(ds, "chronos", "rank", device="cpu", cache_dir=None)
+    assert len(calls) == 1
+    assert calls[0]["model_id"] == di.CHRONOS_CONFIG["model_id"]
+    assert forecast.model == "chronos"
+    assert forecast.parameters == 1234
+    ridge = di.walk_forward(ds, "ridge", "rank")
+    assert [f["test_start"] for f in forecast.fits] == [
+        f["test_start"] for f in ridge.fits
+    ]
+    # The same ridge by hand on the same features, fit by fit.
+    features = pretrained.features(returns, ds.x_scalar)
+    assert features.shape == (len(ds), di.SEQ_LEN + len(di.SCALARS))
+    s = ds.session_index
+    start = di.MIN_TRAIN
+    train = s < start - di.PURGE
+    test = (s >= start) & (s < start + di.REFIT)
+    fitted = di.ridge_fit(features[train], ds.y_rank[train])
+    np.testing.assert_array_equal(
+        forecast.values[test], di.ridge_predict(fitted, features[test])
+    )
+    with pytest.raises(ValueError, match="does not match"):
+        pretrained.features(returns[:-1], ds.x_scalar)
+
+
+# The embedding cache is keyed on the dataset: the fingerprint is a pure
+# function of dates, tickers and the sequence shape, stable across calls,
+# different for a different membership, order, window or shape; the path
+# carries the model slug and the fingerprint.
+def test_embedding_cache_fingerprint(tmp_path):
+    from backend.market import deep_intraday_pretrained as pretrained
+
+    cubes, mask = _book("noise", names=3, n=40, seed=15)
+    ds = di.dataset(cubes, mask, CAL)
+    key = pretrained.dataset_fingerprint(ds.dates, ds.tickers, ds.x_seq.shape)
+    assert key == pretrained.dataset_fingerprint(ds.dates, ds.tickers, ds.x_seq.shape)
+    assert len(key) == pretrained.FINGERPRINT_DIGITS
+    assert all(c in "0123456789abcdef" for c in key)
+    # A different dataset gives a different key.
+    smaller = di.dataset(
+        cubes, {"N00": cubes["N00"].dates, "N01": cubes["N01"].dates}, CAL
+    )
+    assert (
+        pretrained.dataset_fingerprint(
+            smaller.dates, smaller.tickers, smaller.x_seq.shape
+        )
+        != key
+    )
+    other = ds.tickers.copy()
+    other[0] = "ZZZ"
+    assert pretrained.dataset_fingerprint(ds.dates, other, ds.x_seq.shape) != key
+    assert (
+        pretrained.dataset_fingerprint(
+            ds.dates + np.timedelta64(1, "D"), ds.tickers, ds.x_seq.shape
+        )
+        != key
+    )
+    assert (
+        pretrained.dataset_fingerprint(ds.dates, ds.tickers, (len(ds), di.SEQ_LEN, 2))
+        != key
+    )
+    # The path: <cache_dir>/embeddings_<slug>_<fingerprint>.npy.
+    assert (
+        pretrained.model_slug("amazon/chronos-bolt-small")
+        == "amazon_chronos-bolt-small"
+    )
+    path = pretrained.cache_path(tmp_path, "amazon/chronos-bolt-small", key)
+    assert path == tmp_path / f"embeddings_amazon_chronos-bolt-small_{key}.npy"
+    assert pretrained.cache_path(tmp_path, "amazon/chronos-bolt-base", key) != path
+
+
+# A cached embedding is read back without loading the pipeline; a file for
+# another dataset (a different fingerprint, or the wrong row count) is not.
+def test_embedding_cache_round_trip(tmp_path, monkeypatch):
+    from backend.market import deep_intraday_pretrained as pretrained
+
+    cubes, mask = _book("noise", names=3, n=40, seed=16)
+    ds = di.dataset(cubes, mask, CAL)
+    model_id = "fake/encoder"
+    fake = np.arange(len(ds) * 4, dtype=np.float32).reshape(len(ds), 4)
+    loads: list[str] = []
+
+    class Pipeline:
+        # A fake pipeline: an "encoder" with no parameters, and an embed()
+        # the test never lets run (the embedding itself is faked below).
+        class Model:
+            # The fake encoder's (empty) parameter list.
+            @staticmethod
+            def parameters():
+                return iter(())
+
+        model = Model()
+
+        @staticmethod
+        def embed(context):
+            raise AssertionError("embed must not run in this test")
+
+    def fake_load(model_id_, device):
+        loads.append(model_id_)
+        return Pipeline()
+
+    monkeypatch.setattr(pretrained, "load_pipeline", fake_load)
+    monkeypatch.setattr(pretrained, "embed", lambda *a, **k: fake)
+    lines: list[str] = []
+    first, info = pretrained.dataset_embedding(
+        ds, "cpu", tmp_path, model_id=model_id, log=lines.append
+    )
+    np.testing.assert_array_equal(first, fake)
+    assert info["cached"] is False
+    assert info["parameters"] == 0
+    assert info["dim"] == 4
+    assert loads == [model_id]
+    path = Path(info["path"])
+    assert path.exists()
+    assert path.with_suffix(".json").exists()
+    meta = json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))
+    assert meta["rows"] == len(ds)
+    assert meta["dim"] == 4
+    assert meta["parameters"] == 0
+    # Second call: read from the cache, the pipeline not loaded again.
+    second, info2 = pretrained.dataset_embedding(ds, "cpu", tmp_path, model_id=model_id)
+    np.testing.assert_array_equal(second, fake)
+    assert info2["cached"] is True
+    assert info2["parameters"] == 0
+    assert loads == [model_id]
+    assert any("written to" in line for line in lines)
+    # A different dataset does not read this file.
+    other = di.dataset({"N00": cubes["N00"]}, mask, CAL)
+    _, info3 = pretrained.dataset_embedding(other, "cpu", tmp_path, model_id=model_id)
+    assert info3["cached"] is False
+    assert loads == [model_id, model_id]
+    # No cache dir: computed, nothing written.
+    _, info4 = pretrained.dataset_embedding(ds, "cpu", None, model_id=model_id)
+    assert info4["cached"] is False
+    assert info4["path"] is None
+
+
+# The PatchTST trains and predicts on a tiny book with the fixed
+# configuration (skipped where torch is absent), on the CPU explicitly.
+def test_patchtst_smoke():
+    pytest.importorskip("torch")
+    import torch
+
+    from backend.market import deep_intraday_patchtst as patchtst
+
+    cubes, mask = _book("late_signal", names=3, n=530, seed=17)
+    ds = di.dataset(cubes, mask, CAL)
+    forecast = di.walk_forward(ds, "patchtst", "rank", device="cpu")
+    assert forecast.parameters is not None
+    assert forecast.parameters > 10_000
+    scored = ds.session_index >= di.MIN_TRAIN
+    assert np.isfinite(forecast.values[scored]).all()
+    assert np.isnan(forecast.values[~scored]).all()
+    assert len(forecast.fits) == 1
+    model = patchtst.build(
+        len(di.CHANNELS), len(di.SCALARS), di.SEQ_LEN, di.PATCHTST_CONFIG
+    )
+    assert model.n_patches == di.SEQ_LEN // di.PATCHTST_CONFIG["patch"] == 10
+    from backend.market.deep_intraday_cnn import parameter_count
+
+    assert parameter_count(model) == forecast.parameters
+    out = model(
+        torch.zeros(4, di.SEQ_LEN, len(di.CHANNELS)), torch.zeros(4, len(di.SCALARS))
+    )
+    assert tuple(out.shape) == (4, 2)
+    with pytest.raises(ValueError, match="not a multiple"):
+        patchtst.PatchTST(3, 3, seq_len=131, patch=13)
+    predicted, _ = patchtst.fit_predict(
+        ds.x_seq[:200],
+        ds.x_scalar[:200],
+        ds.y_vol[:200],
+        ds.x_seq[200:210],
+        ds.x_scalar[200:210],
+        "vol",
+        {**di.PATCHTST_CONFIG, "epochs": 1},
+        device="cpu",
+    )
+    assert predicted.shape == (10,)
+    assert np.isfinite(predicted).all()
+
+
+# The Chronos-Bolt encoder embeds a few rows (skipped where torch or
+# chronos is absent; downloads the checkpoint on first use) and the
+# walk-forward on the embedding runs through the cache.
+def test_chronos_smoke(tmp_path):
+    pytest.importorskip("torch")
+    pytest.importorskip("chronos")
+    from backend.market import deep_intraday_pretrained as pretrained
+
+    cubes, mask = _book("noise", names=2, n=40, seed=18)
+    ds = di.dataset(cubes, mask, CAL)
+    embedding = pretrained.embed(ds.x_seq[:5], "cpu", batch_size=2)
+    assert embedding.shape[0] == 5
+    assert embedding.shape[1] > 8
+    assert np.isfinite(embedding).all()
+    full, info = pretrained.dataset_embedding(ds, "cpu", tmp_path, batch_size=16)
+    assert full.shape == (len(ds), embedding.shape[1])
+    assert info["parameters"] is not None
+    assert info["parameters"] > 1_000_000
+    again, info2 = pretrained.dataset_embedding(ds, "cpu", tmp_path)
+    assert info2["cached"] is True
+    np.testing.assert_array_equal(full, again)
 
 
 # ---- the command on a temporary store ----------------------------------------
@@ -690,7 +980,11 @@ def test_cli_end_to_end(tmp_path):
     assert payload["stage"] == 1
     assert payload["plan"] == di.PLAN
     assert payload["models"] == ["ridge"]
-    assert payload["trials"] == 4
+    assert payload["targets"] == ["rank", "vol"]
+    assert payload["requested"] == {"models": ["ridge"], "targets": ["rank", "vol"]}
+    assert payload["trials"] == 2
+    assert payload["trials_total"] == 8
+    assert payload["device"] == "cpu"
     assert set(payload["sessions_per_ticker"]) == set(names)  # SPY was dropped
     assert payload["dataset"]["names"] == 3
     assert payload["dataset"]["rows"] > 3 * di.MIN_TRAIN
@@ -738,9 +1032,23 @@ def test_cli_json_empty_store_and_model_validation(tmp_path):
     with pytest.raises(SystemExit):
         cli.parse_models("ridge,forest")
     assert cli.parse_models("cnn, ridge") == ("cnn", "ridge")
+    assert cli.parse_models("patchtst,chronos") == ("patchtst", "chronos")
+    with pytest.raises(SystemExit):
+        cli.parse_targets("rank,price")
+    assert cli.parse_targets("VOL") == ("vol",)
+    with pytest.raises(SystemExit):
+        cli.parse_out("sub/dir.json")
+    with pytest.raises(SystemExit):
+        cli.parse_out("")
+    assert cli.parse_out("cnn.json") == "cnn.json"
     defaults = cli.build_parser().parse_args([])
-    assert defaults.models == "ridge,cnn"
+    assert defaults.models == "ridge,cnn,patchtst,chronos"
+    assert defaults.targets == "rank,vol"
+    assert defaults.device == "auto"
+    assert defaults.out == "deep_intraday.json"
     assert defaults.root == "data/market"
+    with pytest.raises(SystemExit):
+        cli.build_parser().parse_args(["--device", "tpu"])
 
     store = MarketStore(tmp_path)
     sessions = _exchange_sessions(di.MIN_TRAIN + 30)
@@ -779,3 +1087,69 @@ def test_cli_json_empty_store_and_model_validation(tmp_path):
     assert payload["dataset"]["graded_rows"] is None
     rank = next(r for r in payload["results"] if r["target"] == "rank")
     assert rank["portfolio_a"] is None
+
+
+# `--out` names the payload file under <root>/desk/ and the default file is
+# left alone; `--targets vol` runs only the volatility rows and the payload
+# says so; `--device cpu` is recorded.
+def test_cli_out_and_targets(tmp_path, monkeypatch):
+    from backend.cli import market_deep_intraday as cli
+
+    # The device is announced once per process; start this one fresh.
+    monkeypatch.setattr(di, "_ANNOUNCED", set())
+    store = MarketStore(tmp_path)
+    sessions = _exchange_sessions(di.MIN_TRAIN + 45)
+    for i, ticker in enumerate(("AAA", "BBB", "CCC")):
+        _write(store, ticker, sessions, 20 + i)
+    membership = tmp_path / "membership.csv"
+    membership.write_text(
+        "ticker,entered,entry_announced,exited,exit_announced,source,rule\n"
+        + "".join(
+            f"{t},2015-01-02,2015-01-02,,,test,test\n" for t in ("AAA", "BBB", "CCC")
+        ),
+        encoding="utf-8",
+    )
+
+    def broken_desk(store_):
+        raise RuntimeError("no fundamentals here")
+
+    out = io.StringIO()
+    args = cli.build_parser().parse_args(
+        [
+            "--root",
+            str(tmp_path),
+            "--tickers",
+            "AAA,BBB,CCC",
+            "--membership",
+            str(membership),
+            "--models",
+            "ridge",
+            "--targets",
+            "vol",
+            "--device",
+            "cpu",
+            "--out",
+            "deep_intraday_ridge.json",
+            "--workers",
+            "1",
+        ]
+    )
+    assert cli.run(args, out, desk_run=broken_desk) == 0
+    text = out.getvalue()
+    named = tmp_path / "desk" / "deep_intraday_ridge.json"
+    assert named.exists()
+    assert not (tmp_path / "desk" / "deep_intraday.json").exists()
+    assert f"wrote {named}" in text
+    assert "device: cpu" in text
+    payload = json.loads(named.read_text(encoding="utf-8"))
+    assert payload["device"] == "cpu"
+    assert payload["targets"] == ["vol"]
+    assert payload["requested"] == {"models": ["ridge"], "targets": ["vol"]}
+    assert payload["trials"] == 1
+    assert payload["trials_total"] == 8
+    assert {r["target"] for r in payload["results"]} == {"vol"}
+    assert list(payload["fits"]) == ["ridge/vol"]
+    assert payload["verdict"] == di.INSUFFICIENT
+    assert "ridge/vol fit 1: train through" in text
+    assert "ridge/rank" not in text
+    assert "trials 1 run of 8; device cpu" in text

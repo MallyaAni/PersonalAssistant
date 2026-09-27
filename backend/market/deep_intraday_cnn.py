@@ -6,10 +6,20 @@ the plan's: three dilated one-dimensional convolutions (dilations 1, 2, 4)
 over the `K * 26`-step sequence, global pooling, the three scalars joined,
 one hidden layer and two heads (rank, volatility). Training is the plan's
 one fixed configuration (`deep_intraday.CNN_CONFIG`): Adam, 20 epochs,
-batch 512, dropout 0.1, weight decay 1e-4, on the CPU. The loss is the
-mean squared error of the head the target names; the other head is left
-untrained on that fit, so "cnn x rank" and "cnn x vol" are two trials, as
-the plan counts them.
+batch 512, dropout 0.1, weight decay 1e-4. The loss is the mean squared
+error of the head the target names; the other head is left untrained on
+that fit, so "cnn x rank" and "cnn x vol" are two trials, as the plan
+counts them.
+
+Device. `fit_predict(..., device="auto")` trains on cuda when torch sees
+one and on the CPU otherwise (`deep_intraday.resolve_device`). The model
+and each batch go to the device; the standardized dataset stays on the CPU
+and is moved one batch at a time, so a large dataset never has to fit in
+GPU memory beside whatever else is running there. On the CPU the
+arithmetic is exactly what it was before the device option existed: the
+seed, the parameter initialization, the shuffle generator and the batch
+order are unchanged. The training loop (`train_predict`) is shared with
+`deep_intraday_patchtst`, so the two families differ only in the network.
 
 Size. With the configuration as written (32 channels, kernel 5, dilations
 1, 2, 4, a 32-unit hidden layer) the network has 13,058 trainable
@@ -27,6 +37,8 @@ from typing import Any
 import numpy as np
 import torch
 from torch import nn
+
+from backend.market.deep_intraday import announce_device, resolve_device
 
 # Rows per prediction batch.
 PREDICT_BATCH = 4096
@@ -113,6 +125,7 @@ def _standardizer(
 # the fixed configuration and return (predictions on the test rows, the
 # parameter count). Inputs are standardized on the training rows, the
 # target centred and scaled on them and the prediction mapped back.
+# `device` is "auto", "cpu" or "cuda".
 def fit_predict(
     seq_train: np.ndarray,
     scalar_train: np.ndarray,
@@ -121,41 +134,10 @@ def fit_predict(
     scalar_test: np.ndarray,
     target: str,
     config: Mapping[str, Any],
+    device: str = "auto",
 ) -> tuple[np.ndarray, int]:
     """Return (test predictions, parameter count)."""
-    if target not in HEADS:
-        raise ValueError(f"unknown target {target!r}; expected one of {HEADS}")
-    head = HEADS.index(target)
     torch.manual_seed(int(config.get("seed", 0)))
-    device = torch.device("cpu")
-    seq_mean, seq_scale, scalar_mean, scalar_scale = _standardizer(
-        seq_train, scalar_train
-    )
-    y = np.asarray(y_train, dtype=np.float64)
-    y_mean, y_scale = float(y.mean()), float(y.std())
-    if not y_scale > 0:
-        y_scale = 1.0
-
-    # Standardized float32 tensors.
-    def tensors(
-        seq: np.ndarray, scalar: np.ndarray
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        s = torch.as_tensor(
-            ((seq.astype(np.float32, copy=False) - seq_mean) / seq_scale).astype(
-                np.float32
-            ),
-            device=device,
-        )
-        c = torch.as_tensor(
-            ((scalar.astype(np.float32) - scalar_mean) / scalar_scale).astype(
-                np.float32
-            ),
-            device=device,
-        )
-        return s, c
-
-    seq_t, scalar_t = tensors(seq_train, scalar_train)
-    y_t = torch.as_tensor(((y - y_mean) / y_scale).astype(np.float32), device=device)
     model = TemporalCNN(
         in_channels=seq_train.shape[-1],
         scalars=scalar_train.shape[-1],
@@ -164,7 +146,73 @@ def fit_predict(
         dilations=tuple(int(d) for d in config["dilations"]),
         dropout=float(config["dropout"]),
         hidden=int(config.get("hidden", 32)),
-    ).to(device)
+    )
+    return train_predict(
+        model,
+        seq_train,
+        scalar_train,
+        y_train,
+        seq_test,
+        scalar_test,
+        target,
+        config,
+        device,
+    )
+
+
+# Train an already-built two-head network (built after `torch.manual_seed`
+# by the caller, so its initialization is the seeded one) on the training
+# rows for `target` with the fixed configuration - Adam at `lr` with
+# `weight_decay`, `epochs` passes over shuffled batches of `batch` rows,
+# MSE on the selected head - and return (test predictions, parameter
+# count). Inputs are standardized on the training rows, the target centred
+# and scaled on them and the prediction mapped back. The standardized
+# arrays stay on the CPU; each batch is moved to the device as it is used.
+def train_predict(
+    model: nn.Module,
+    seq_train: np.ndarray,
+    scalar_train: np.ndarray,
+    y_train: np.ndarray,
+    seq_test: np.ndarray,
+    scalar_test: np.ndarray,
+    target: str,
+    config: Mapping[str, Any],
+    device: str = "auto",
+) -> tuple[np.ndarray, int]:
+    """Return (test predictions, parameter count)."""
+    if target not in HEADS:
+        raise ValueError(f"unknown target {target!r}; expected one of {HEADS}")
+    head = HEADS.index(target)
+    resolved = resolve_device(device, torch.cuda.is_available())
+    announce_device(resolved)
+    where = torch.device(resolved)
+    seq_mean, seq_scale, scalar_mean, scalar_scale = _standardizer(
+        seq_train, scalar_train
+    )
+    y = np.asarray(y_train, dtype=np.float64)
+    y_mean, y_scale = float(y.mean()), float(y.std())
+    if not y_scale > 0:
+        y_scale = 1.0
+
+    # Standardized float32 tensors, on the CPU.
+    def tensors(
+        seq: np.ndarray, scalar: np.ndarray
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        s = torch.as_tensor(
+            ((seq.astype(np.float32, copy=False) - seq_mean) / seq_scale).astype(
+                np.float32
+            )
+        )
+        c = torch.as_tensor(
+            ((scalar.astype(np.float32) - scalar_mean) / scalar_scale).astype(
+                np.float32
+            )
+        )
+        return s, c
+
+    seq_t, scalar_t = tensors(seq_train, scalar_train)
+    y_t = torch.as_tensor(((y - y_mean) / y_scale).astype(np.float32))
+    model = model.to(where)
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=float(config["lr"]),
@@ -179,8 +227,8 @@ def fit_predict(
         for lo in range(0, n, batch):
             rows = order[lo : lo + batch]
             optimizer.zero_grad()
-            out = model(seq_t[rows], scalar_t[rows])[:, head]
-            loss = torch.mean((out - y_t[rows]) ** 2)
+            out = model(seq_t[rows].to(where), scalar_t[rows].to(where))[:, head]
+            loss = torch.mean((out - y_t[rows].to(where)) ** 2)
             loss.backward()
             optimizer.step()
     model.eval()
@@ -189,7 +237,8 @@ def fit_predict(
     with torch.no_grad():
         for lo in range(0, len(seq_v), PREDICT_BATCH):
             out = model(
-                seq_v[lo : lo + PREDICT_BATCH], scalar_v[lo : lo + PREDICT_BATCH]
+                seq_v[lo : lo + PREDICT_BATCH].to(where),
+                scalar_v[lo : lo + PREDICT_BATCH].to(where),
             )
             predictions.append(out[:, head].cpu().numpy())
     predicted = np.concatenate(predictions) if predictions else np.zeros(0)

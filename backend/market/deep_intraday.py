@@ -22,12 +22,17 @@ variance (the volatility question, kept apart so the ranking result cannot
 be credited with it).
 
 The models. Ridge on the flattened inputs (numpy closed form with an L2
-term on standardized features) and a temporal CNN (`deep_intraday_cnn`,
-imported only when asked for, so this module runs where torch is absent).
-Both walk forward: the first fit after `MIN_TRAIN` sessions, a refit every
-`REFIT` sessions on an expanding window, `PURGE` sessions between the last
-training session and the first test session, predictions only out of
-sample. One fixed configuration, no search.
+term on standardized features), a temporal CNN (`deep_intraday_cnn`), a
+PatchTST encoder (`deep_intraday_patchtst`) and a frozen pretrained
+Chronos-Bolt encoder whose mean-pooled embedding feeds the same ridge
+(`deep_intraday_pretrained`). The torch and chronos modules are imported
+only when asked for, so this module runs where they are absent. Every
+model walks forward the same way: the first fit after `MIN_TRAIN`
+sessions, a refit every `REFIT` sessions on an expanding window, `PURGE`
+sessions between the last training session and the first test session,
+predictions only out of sample. One fixed configuration per model, no
+search. The torch models train on the device `walk_forward(device=)`
+names ("auto" is cuda when available, else cpu); the ridge ignores it.
 
 The metrics. Return head: the daily cross-sectional Spearman IC, its mean
 and Newey-West t at `HAC_LAG` over dates; the equal-weight top-quintile
@@ -43,17 +48,22 @@ result and is reported as such.
 The kill criteria, as the plan fixes them. On the choosing window, mean IC
 t < 2.0 or top-quintile-minus-hurdle t < 2.0 at 10 bp is INSUFFICIENT
 EVIDENCE. Volatility R² <= 0 against trailing volatility is a failure of
-the model, not a finding. Trials counted: two models, two targets, one
-configuration - four.
+the model, not a finding. Trials counted: the plan's two models on two
+targets, one configuration - four - plus the two model families added on
+2026-09-27 (PatchTST; the Chronos-Bolt frozen encoder with a ridge on
+top) on the same two targets: eight in all. A payload counts the (model,
+target) pairs it actually ran against that total.
 """
 
 from __future__ import annotations
 
 import math
+import sys
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -100,10 +110,19 @@ PORTFOLIO_T_FLOOR = 2.0
 # The plan's "what would make me wrong about the ceiling".
 CEILING_IC = 0.05
 CEILING_T = 4.0
-# Trials counted by the plan: two models, two targets, one configuration.
-TRIALS = 4
-MODELS = ("ridge", "cnn")
+# Trials counted by the plan as written: two models, two targets, one
+# configuration - four; and the total once the two families added on
+# 2026-09-27 (patchtst, chronos) are counted on both targets - eight. A
+# payload's `trials` is the number of (model, target) pairs it ran,
+# against `trials_total`.
+PLAN_TRIALS = 4
+TRIALS = 8
+MODELS = ("ridge", "cnn", "patchtst", "chronos")
+# The models that train with torch and take the device option.
+TORCH_MODELS = ("cnn", "patchtst")
 TARGETS = ("rank", "vol")
+# Device names `walk_forward` accepts; "auto" resolves to cuda or cpu.
+DEVICES = ("auto", "cpu", "cuda")
 # A date needs this many eligible names for a cross-sectional statistic
 # (a Spearman on two names is always +-1).
 MIN_NAMES = 3
@@ -123,6 +142,29 @@ CNN_CONFIG: dict[str, Any] = {
     "dilations": (1, 2, 4),
     "hidden": 32,
     "seed": 0,
+}
+# The PatchTST configuration, fixed on 2026-09-27 before it was run; the
+# training constants are the CNN's. `deep_intraday_patchtst` reads it.
+PATCHTST_CONFIG: dict[str, Any] = {
+    "lr": 1e-3,
+    "epochs": 20,
+    "batch": 512,
+    "dropout": 0.1,
+    "weight_decay": 1e-4,
+    "patch": 13,
+    "d_model": 64,
+    "heads": 4,
+    "layers": 2,
+    "ff": 128,
+    "hidden": 32,
+    "seed": 0,
+}
+# The pretrained encoder: which Hugging Face checkpoint, the rows per
+# embedding batch, and the sequence channel it reads (the bar return).
+CHRONOS_CONFIG: dict[str, Any] = {
+    "model_id": "amazon/chronos-bolt-small",
+    "batch_size": 256,
+    "channel": "bar_return",
 }
 # Basis points per unit log return.
 BP = 1e4
@@ -405,6 +447,52 @@ def ridge_predict(model: Ridge, x: np.ndarray) -> np.ndarray:
     return out
 
 
+# The device a name resolves to: "auto" is cuda when it is available and
+# cpu otherwise; "cpu" is itself; "cuda" is itself only when available.
+# Pure, so it is testable where torch is absent - the callers pass
+# `torch.cuda.is_available()`.
+def resolve_device(name: str, cuda_available: bool) -> str:
+    """Return "cpu" or "cuda" for the device name."""
+    name = (name or "auto").strip().lower()
+    if name not in DEVICES:
+        raise ValueError(f"unknown device {name!r}; expected one of {DEVICES}")
+    if name == "auto":
+        return "cuda" if cuda_available else "cpu"
+    if name == "cuda" and not cuda_available:
+        raise ValueError("device 'cuda' requested but torch reports no CUDA device")
+    return name
+
+
+# Whether torch can see a CUDA device here; False where torch is absent.
+def cuda_available() -> bool:
+    """Return True when torch is importable and reports a CUDA device."""
+    try:
+        import torch
+    except ImportError:
+        return False
+    return bool(torch.cuda.is_available())
+
+
+# Devices already announced in this process.
+_ANNOUNCED: set[str] = set()
+
+
+# Say which device the models run on, once per process per device (the
+# CLI and every torch model call this; only the first one prints). The
+# default sink is stderr so a `--json` run's stdout stays JSON.
+def announce_device(device: str, say: Callable[[str], None] | None = None) -> bool:
+    """Print the device once; return True when this call printed it."""
+    if device in _ANNOUNCED:
+        return False
+    _ANNOUNCED.add(device)
+    line = f"device: {device}"
+    if say is None:
+        print(line, file=sys.stderr)
+    else:
+        say(line)
+    return True
+
+
 @dataclass(frozen=True)
 class Forecast:
     """Out-of-sample predictions of one model for one target."""
@@ -425,15 +513,91 @@ def _target(ds: Dataset, target: str) -> np.ndarray:
     raise ValueError(f"unknown target {target!r}; expected one of {TARGETS}")
 
 
+# The per-block fitter of one model for one target, and the parameter
+# count known before any fit (the frozen chronos encoder's; None
+# otherwise). The ridge fits `flat` rows; chronos fits the same ridge on
+# [embedding, scalars], the embedding computed once for the whole dataset
+# here (a frozen encoder fits nothing, so a row's embedding depends on
+# that row alone and cannot carry anything across the purge); the torch
+# families train on `device`.
+def _fitter(
+    ds: Dataset,
+    model: str,
+    target: str,
+    y: np.ndarray,
+    device: str,
+    cache_dir: Path | None,
+    log: Callable[[str], None] | None,
+) -> tuple[
+    Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, int | None]], int | None
+]:
+    parameters: int | None = None
+    if model in ("ridge", "chronos"):
+        if model == "ridge":
+            flat = ds.flat()
+        else:
+            from backend.market import deep_intraday_pretrained as pretrained
+
+            embedding, info = pretrained.dataset_embedding(
+                ds,
+                device=device,
+                cache_dir=cache_dir,
+                model_id=str(CHRONOS_CONFIG["model_id"]),
+                batch_size=int(CHRONOS_CONFIG["batch_size"]),
+                log=log,
+            )
+            flat = pretrained.features(embedding, ds.x_scalar)
+            parameters = info.get("parameters")
+
+        # Fit the ridge on the training rows and predict the test rows.
+        def fit_predict(
+            train: np.ndarray, test: np.ndarray
+        ) -> tuple[np.ndarray, int | None]:
+            fitted = ridge_fit(flat[train], y[train])
+            return ridge_predict(fitted, flat[test]), parameters
+
+        return fit_predict, parameters
+    if model == "cnn":
+        from backend.market import deep_intraday_cnn as family
+
+        config = CNN_CONFIG
+    else:
+        from backend.market import deep_intraday_patchtst as family
+
+        config = PATCHTST_CONFIG
+
+    # Train the network on the training rows and predict the test rows.
+    def fit_predict(
+        train: np.ndarray, test: np.ndarray
+    ) -> tuple[np.ndarray, int | None]:
+        return family.fit_predict(
+            ds.x_seq[train],
+            ds.x_scalar[train],
+            y[train],
+            ds.x_seq[test],
+            ds.x_scalar[test],
+            target,
+            config,
+            device=device,
+        )
+
+    return fit_predict, parameters
+
+
 # Walk-forward predictions: the first fit once `MIN_TRAIN` sessions exist,
 # a refit every `REFIT` sessions on every row whose session is more than
 # `PURGE` sessions before the test block's first session, predictions on
 # the block only. `log` receives one line per fit with its timing.
+# `device` is where the torch models train (the ridge ignores it);
+# `cache_dir` is where the chronos embedding is cached between runs (None:
+# recomputed every call).
 def walk_forward(
     ds: Dataset,
     model: str = "ridge",
     target: str = "rank",
     log: Callable[[str], None] | None = None,
+    device: str = "auto",
+    cache_dir: Path | None = None,
 ) -> Forecast:
     """Return the Forecast of `model` for `target` over the dataset."""
     if model not in MODELS:
@@ -442,35 +606,7 @@ def walk_forward(
     s = ds.session_index
     values = np.full(len(ds), np.nan)
     fits: list[dict[str, Any]] = []
-    parameters: int | None = None
-    fit_predict: Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, int | None]]
-    if model == "ridge":
-        flat = ds.flat()
-
-        # Fit the ridge on the training rows and predict the test rows.
-        def fit_predict(
-            train: np.ndarray, test: np.ndarray
-        ) -> tuple[np.ndarray, int | None]:
-            fitted = ridge_fit(flat[train], y[train])
-            return ridge_predict(fitted, flat[test]), None
-
-    else:
-        from backend.market import deep_intraday_cnn
-
-        # Train the CNN on the training rows and predict the test rows.
-        def fit_predict(
-            train: np.ndarray, test: np.ndarray
-        ) -> tuple[np.ndarray, int | None]:
-            return deep_intraday_cnn.fit_predict(
-                ds.x_seq[train],
-                ds.x_scalar[train],
-                y[train],
-                ds.x_seq[test],
-                ds.x_scalar[test],
-                target,
-                CNN_CONFIG,
-            )
-
+    fit_predict, parameters = _fitter(ds, model, target, y, device, cache_dir, log)
     for start in range(MIN_TRAIN, len(ds.sessions), REFIT):
         end = min(start + REFIT, len(ds.sessions))
         train = (s < start - PURGE) & np.isfinite(y)
@@ -834,8 +970,16 @@ def study(
                 k: (list(v) if isinstance(v, tuple) else v)
                 for k, v in CNN_CONFIG.items()
             },
+            "patchtst": dict(PATCHTST_CONFIG),
+            "chronos": dict(CHRONOS_CONFIG),
         },
-        "trials": TRIALS,
+        # The (model, target) pairs this payload ran, against the family
+        # total: the plan's four plus the two families added on 2026-09-27.
+        "trials": len(forecasts),
+        "trials_total": TRIALS,
+        "plan_trials": PLAN_TRIALS,
+        "models": sorted({m for m, _ in forecasts}, key=MODELS.index),
+        "targets": sorted({t for _, t in forecasts}, key=TARGETS.index),
         "dataset": {
             "rows": len(ds),
             "names": int(len(np.unique(ds.tickers))) if len(ds) else 0,
@@ -924,7 +1068,12 @@ def verdict_detail(payload: Mapping[str, Any]) -> list[str]:
                     else " fails (a failure of the model, not a finding)"
                 )
             )
-    lines.append(f"trials counted: {payload.get('trials', TRIALS)}")
+    lines.append(
+        f"trials counted: {payload.get('trials', TRIALS)} run of"
+        f" {payload.get('trials_total', TRIALS)} pre-registered"
+        f" (the plan's {payload.get('plan_trials', PLAN_TRIALS)} plus the two"
+        " families added on 2026-09-27, patchtst and chronos, on both targets)"
+    )
     return lines
 
 

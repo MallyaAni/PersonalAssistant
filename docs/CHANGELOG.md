@@ -1,5 +1,92 @@
 # Changelog
 
+## 2026-09-27 — Stage 1 of the deep-intraday plan on the GPU, in parallel, with PatchTST and a frozen Chronos-Bolt encoder
+
+Stage 1 was written for one evening on the CPUs. This change lets its
+models train on the GPU, run as separate processes that do not overwrite
+each other's payload, and adds two model families - a PatchTST and a
+pretrained Chronos-Bolt encoder used frozen with the ridge on top - without
+touching the statistics, the walk-forward schedule, the kill criteria or
+what the ridge and the CNN compute. The plan's Stage 1 section records the
+addition and why transfer learning is tried as a frozen encoder rather
+than fine-tuning.
+
+- **`market/deep_intraday.py`.** `resolve_device(name, cuda_available)`
+  (pure: "auto" is cuda when available else cpu; "cuda" without a device
+  is refused), `cuda_available()`, `announce_device()` (once per process,
+  to stderr unless a sink is given, so `--json` stays JSON).
+  `walk_forward(..., device="auto", cache_dir=None)` dispatches the four
+  families: `ridge` and `cnn` as before, `patchtst` through
+  `deep_intraday_patchtst`, `chronos` as the ridge on
+  `[embedding, scalars]` where the embedding is computed once for the
+  whole dataset by `deep_intraday_pretrained` (a frozen encoder fits
+  nothing, so a row's embedding depends on that row alone and the purge
+  holds; only the ridge is fitted, inside the loop). `MODELS` is
+  `ridge,cnn,patchtst,chronos`; `PATCHTST_CONFIG` and `CHRONOS_CONFIG`
+  are in the payload's constants. The payload's `trials` is now the
+  number of (model, target) pairs it ran, beside `trials_total` 8 (the
+  plan's 4 plus the two added families on both targets) and
+  `plan_trials` 4, with `models` and `targets` the ones that ran; the
+  verdict was always computed over the rows present.
+- **`market/deep_intraday_cnn.py`.** `fit_predict(..., device="auto")`:
+  the model and each batch go to the device; the standardized dataset
+  stays on the CPU and is moved a batch at a time (the GB10 has a model
+  server beside it, so nothing is made resident on the GPU). On the CPU
+  the seed, initialization, shuffle and batch order are exactly what they
+  were. The training loop is now `train_predict(model, ...)`, shared with
+  the PatchTST so the families differ only in the network.
+- **`market/deep_intraday_patchtst.py`** (new). The 130 x 3 sequence cut
+  into non-overlapping patches of 13 (ten per channel, channel-independent
+  as in Nie et al.), linear patch embedding to d_model 64, learnable
+  positional embedding, two transformer encoder layers (4 heads,
+  feed-forward 128, dropout 0.1), mean-pooled over patches and channels,
+  the three scalars joined, hidden 32, the two heads; the CNN's training
+  constants; `fit_predict` with the CNN's signature. By hand 70,722
+  parameters; the payload reports the count as built.
+- **`market/deep_intraday_pretrained.py`** (new). `embed(x_seq, device,
+  batch_size=256, model_id="amazon/chronos-bolt-small")` runs each row's
+  bar-return channel through `BaseChronosPipeline.from_pretrained(...,
+  device_map=device, torch_dtype=bfloat16 on cuda else float32)` using
+  `pipeline.embed(context)` (chronos-forecasting returns `(embeddings
+  (batch, tokens, d), loc_scale)`), falling back to
+  `model.encode(context=)` and raising a clear error when neither exists;
+  mean-pooled over the tokens to (M, D). `dataset_embedding(ds, device,
+  cache_dir)` caches the array at `<root>/research/deep_intraday/
+  embeddings_<model slug>_<fingerprint>.npy` with a JSON sidecar
+  (rows, dimension, the encoder's parameter count), the fingerprint the
+  sha256 of the dataset's dates, tickers and sequence shape, so a second
+  walk-forward on the same dataset reads the file and a different dataset
+  never reads a stale one. torch and chronos are imported inside the
+  functions; the fingerprint, the path and the feature join run without
+  them. Weights download from Hugging Face on first use.
+- **`cli/market_deep_intraday.py`.** `--device auto|cpu|cuda`,
+  `--targets rank,vol`, `--models ridge,cnn,patchtst,chronos` (a model
+  whose package does not import is skipped with a note), `--out NAME`
+  (the payload's basename under `<root>/desk/`, default
+  `deep_intraday.json`, so parallel processes do not overwrite each
+  other). The payload records `device`, `requested` (models and targets
+  asked for, beside the ones that ran), the parameter counts of every
+  model that reports one, and the header line says `trials N run of 8`
+  and the device. Per-fit timing is printed as before.
+
+Tests: `backend/tests/test_deep_intraday.py` (24: the 15 of the first
+change with the trial-count assertions updated to "pairs run of 8", plus
+the dispatch accepting the four names and refusing others, `resolve_device`
+and the once-per-process announcement, the planted-signal ridge IC equal
+to the pre-extension value recorded from main at 3945c06 (mean
+0.26754, t 19.83 over 430 dates) and the forecast byte-identical whatever
+device is named, the chronos model reproducing the ridge on a faked
+embedding fit by fit with the walk-forward schedule of the ridge, the
+cache fingerprint stable and changed by membership, ticker, date or shape
+with the path carrying the model slug, the cache round trip through a
+faked pipeline (read back without reloading; another dataset not read),
+`--out` / `--targets vol` / `--device cpu` on a temporary store, and the
+PatchTST and Chronos smoke tests). 21 passed and 3 skipped where torch
+and chronos are absent: the CNN on a device, the PatchTST and the Chronos
+encoder have not been executed anywhere and are UNVERIFIED until the
+integrator runs them on the Spark. The PatchTST parameter count is a hand
+count until then.
+
 ## 2026-09-27 — The ticker chart at fifteen minutes, with the decision and fill times marked
 
 Daily was the smallest bar the operator could see, so a decision marker

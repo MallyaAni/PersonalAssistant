@@ -2,15 +2,22 @@
 
     python -m backend.cli.market_deep_intraday --root data/market
     python -m backend.cli.market_deep_intraday --models ridge --json
+    python -m backend.cli.market_deep_intraday --models cnn --device cuda \
+        --out deep_intraday_cnn.json
 
 Loads one session cube per book name from the raw-basis SIP store
 (`market_session_anatomy.load_cubes`, cached under
 `<root>/research/sip_cubes/`), builds the point-in-time membership mask
 from the dated history, runs the desk once for the grades (the A/A+
 restriction of the portfolio test), assembles the dataset
-(`deep_intraday.dataset`), walks each requested model forward on both
-targets, prints one table row per (window, model, target) and the verdict
-the plan fixes, and writes `<root>/desk/deep_intraday.json`.
+(`deep_intraday.dataset`), walks each requested model forward on each
+requested target, prints one table row per (window, model, target) and
+the verdict the plan fixes over the pairs run, and writes
+`<root>/desk/<--out>` (default `deep_intraday.json`). The four model
+families (`--models ridge,cnn,patchtst,chronos`) can run as separate
+processes with separate `--out` names; `--device auto|cpu|cuda` is where
+the torch models train (the chronos embedding is cached under
+`<root>/research/deep_intraday/` so a second run does not recompute it).
 
 The protocol and the kill criteria are the pre-registration
 `docs/research/deep-intraday-plan-2026-09-27.md`, implemented in
@@ -42,6 +49,8 @@ from backend.market.deep_intraday import Dataset
 from backend.market.store import MarketStore
 
 FILE = "deep_intraday.json"
+# The embedding cache of the pretrained encoder, under the store root.
+EMBEDDING_CACHE = Path("research") / "deep_intraday"
 # The desk grade the A/A+ portfolio test keeps.
 A_MIN_GRADE = grading.ORDINAL[grading.A]
 # A grade unknown to the desk (name or date outside its panel).
@@ -71,7 +80,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--models",
         default=",".join(deep_intraday.MODELS),
-        help="comma-separated subset of ridge,cnn",
+        help=f"comma-separated subset of {','.join(deep_intraday.MODELS)}",
+    )
+    parser.add_argument(
+        "--targets",
+        default=",".join(deep_intraday.TARGETS),
+        help=f"comma-separated subset of {','.join(deep_intraday.TARGETS)}",
+    )
+    parser.add_argument(
+        "--device",
+        default="auto",
+        choices=deep_intraday.DEVICES,
+        help="where the torch models train; auto is cuda when available",
+    )
+    parser.add_argument(
+        "--out",
+        default=FILE,
+        help=f"basename of the payload under <root>/desk/ (default {FILE})",
     )
     parser.add_argument("--json", action="store_true", help="print the payload as JSON")
     return parser
@@ -80,16 +105,36 @@ def build_parser() -> argparse.ArgumentParser:
 # The requested models, validated.
 def parse_models(spec: str) -> tuple[str, ...]:
     """Return the model names in `spec`, in order, each once."""
-    models = tuple(
+    return _parse_names(spec, deep_intraday.MODELS, "--models")
+
+
+# The requested targets, validated.
+def parse_targets(spec: str) -> tuple[str, ...]:
+    """Return the target names in `spec`, in order, each once."""
+    return _parse_names(spec, deep_intraday.TARGETS, "--targets")
+
+
+# A comma-separated subset of `allowed`, lower-cased, each once, in order;
+# SystemExit naming the option when a name is unknown or none is given.
+def _parse_names(spec: str, allowed: tuple[str, ...], option: str) -> tuple[str, ...]:
+    names = tuple(
         dict.fromkeys(m.strip().lower() for m in spec.split(",") if m.strip())
     )
-    unknown = [m for m in models if m not in deep_intraday.MODELS]
-    if unknown or not models:
+    unknown = [m for m in names if m not in allowed]
+    if unknown or not names:
         raise SystemExit(
-            "--models must name a subset of"
-            f" {','.join(deep_intraday.MODELS)}, got {spec!r}"
+            f"{option} must name a subset of {','.join(allowed)}, got {spec!r}"
         )
-    return models
+    return names
+
+
+# The payload's basename under <root>/desk/: a file name, not a path.
+def parse_out(name: str) -> str:
+    """Return the validated basename."""
+    name = (name or "").strip()
+    if not name or name in (".", "..") or Path(name).name != name:
+        raise SystemExit(f"--out must be a file name under <root>/desk/, got {name!r}")
+    return name
 
 
 # The desk as the study reads it: the live rule's report on the store.
@@ -152,7 +197,9 @@ def render(payload: dict[str, Any]) -> str:
     ds = payload["dataset"]
     lines = [
         f"deep intraday, stage 1 (study v{payload['version']}; choosing window"
-        f" {payload['choosing_window']}; trials {payload['trials']})",
+        f" {payload['choosing_window']}; trials {payload['trials']} run of"
+        f" {payload.get('trials_total', payload['trials'])};"
+        f" device {payload.get('device', '-')})",
         f"  dataset: {ds['rows']:,} rows, {ds['names']} names,"
         f" {ds['sessions']:,} sessions"
         f" {ds['first']}..{ds['last']}; per window "
@@ -217,26 +264,48 @@ def graded_rows(
     return keep_a, None
 
 
-# Walk every requested model forward on both targets; the CNN is skipped
-# with a note where torch cannot be imported. Returns (forecasts, notes).
+# The packages a model needs beyond numpy, checked before its walk-forward
+# so a missing one is a note rather than a traceback.
+REQUIRES = {"cnn": ("torch",), "patchtst": ("torch",), "chronos": ("torch", "chronos")}
+
+
+# The first package `model` needs that cannot be imported here, or None.
+def missing_package(model: str) -> str | None:
+    """Return the name of the missing package, or None when all import."""
+    import importlib
+
+    for package in REQUIRES.get(model, ()):
+        try:
+            importlib.import_module(package)
+        except ImportError:
+            return package
+    return None
+
+
+# Walk every requested model forward on every requested target on
+# `device`; a model whose package cannot be imported is skipped with a
+# note. `cache_dir` holds the chronos embedding. Returns (forecasts, notes).
 def forecast_all(
-    ds: Dataset, models: tuple[str, ...], say: Callable[[str], None]
+    ds: Dataset,
+    models: tuple[str, ...],
+    say: Callable[[str], None],
+    targets: tuple[str, ...] = deep_intraday.TARGETS,
+    device: str = "auto",
+    cache_dir: Path | None = None,
 ) -> tuple[dict[tuple[str, str], deep_intraday.Forecast], list[str]]:
     """Return {(model, target): Forecast} and the skipped-model notes."""
     forecasts: dict[tuple[str, str], deep_intraday.Forecast] = {}
     skipped: list[str] = []
     for model in models:
-        if model == "cnn":
-            try:
-                import torch  # noqa: F401
-            except ImportError:
-                skipped.append("cnn: torch is not importable here")
-                say(skipped[-1])
-                continue
-        for target in deep_intraday.TARGETS:
+        package = missing_package(model)
+        if package is not None:
+            skipped.append(f"{model}: {package} is not importable here")
+            say(skipped[-1])
+            continue
+        for target in targets:
             say(f"{model}/{target}: walking forward")
             forecasts[(model, target)] = deep_intraday.walk_forward(
-                ds, model, target, log=say
+                ds, model, target, log=say, device=device, cache_dir=cache_dir
             )
     return forecasts, skipped
 
@@ -252,6 +321,11 @@ def run(
     root = Path(args.root)
     store = MarketStore(root)
     models = parse_models(args.models)
+    targets = parse_targets(getattr(args, "targets", ",".join(deep_intraday.TARGETS)))
+    out_name = parse_out(getattr(args, "out", FILE))
+    device = deep_intraday.resolve_device(
+        getattr(args, "device", "auto"), deep_intraday.cuda_available()
+    )
     tickers = tuple(
         t for t in select_tickers(args.tickers) if t not in session_anatomy.BENCHMARKS
     )
@@ -284,17 +358,24 @@ def run(
         )
         return 1
     keep_a, grade_note = graded_rows(ds, store, desk_run or default_desk, say)
-    forecasts, skipped = forecast_all(ds, models, say)
+    deep_intraday.announce_device(device, say)
+    forecasts, skipped = forecast_all(
+        ds, models, say, targets, device, root / EMBEDDING_CACHE
+    )
     payload = deep_intraday.study(ds, forecasts, keep_a)
     payload["root"] = str(root)
     payload["membership_history"] = str(args.membership)
-    payload["models"] = list(models)
+    # `models` and `targets` are the ones that ran (study() sets them from
+    # the forecasts); the request is kept beside them so a skipped model
+    # is visible.
+    payload["requested"] = {"models": list(models), "targets": list(targets)}
+    payload["device"] = device
     payload["skipped"] = skipped
     payload["grade_note"] = grade_note
     payload["exclusions"] = {t: c.excluded for t, c in cubes.items()}
     payload["sessions_per_ticker"] = {t: len(c) for t, c in cubes.items()}
     payload["asof"] = str(max(c.dates[-1] for c in cubes.values()))
-    path = root / "desk" / FILE
+    path = root / "desk" / out_name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
     if quiet:
