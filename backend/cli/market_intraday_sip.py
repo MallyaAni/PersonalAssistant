@@ -31,13 +31,13 @@ import math
 import sys
 import time
 from collections.abc import Callable
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, TextIO
 from zoneinfo import ZoneInfo
 
 from backend.config.settings import settings
-from backend.market import alpaca, intraday_sip
+from backend.market import alpaca, calendar, intraday_sip
 from backend.market.store import MarketStore
 from backend.market.universe import book_sides, build_universe
 
@@ -47,6 +47,10 @@ DEFAULT_MAX_REQUESTS = 2000
 # Bars a session contributes to a paged SIP fetch: 04:00-20:00 extended
 # hours at fifteen minutes. Used only to estimate requests for a dry run.
 BARS_PER_SESSION_ESTIMATE = 64
+# Minutes after the close before today's bars are treated as final: the
+# delayed SIP feed is fifteen minutes behind, and the closing bar needs
+# to have ended.
+FINAL_BARS_LAG_MINUTES = 30
 
 
 class RequestCapReachedError(RuntimeError):
@@ -115,12 +119,18 @@ def select_tickers(spec: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys([*book, *BENCHMARKS]))
 
 
-# The last session the store should hold: yesterday's, or today's after
-# the close, on the New York calendar, never the UTC date.
+# The last session the store should hold: today on the New York calendar
+# once its bars are final (the calendar close plus the delayed feed's
+# lag), otherwise yesterday, so a run during the session never stores a
+# partial day that a later run would then leave alone. Never the UTC date.
 def default_until(now: datetime | None = None) -> date:
     """Return the newest session date a refresh should ask for."""
     local = (now or datetime.now(tz=NEW_YORK)).astimezone(NEW_YORK)
-    return local.date()
+    today = local.date()
+    final = datetime.combine(
+        today, calendar.session_close(today), NEW_YORK
+    ) + timedelta(minutes=FINAL_BARS_LAG_MINUTES)
+    return today if local >= final else today - timedelta(days=1)
 
 
 # A rough request count for fetching `sessions` sessions in one run: one

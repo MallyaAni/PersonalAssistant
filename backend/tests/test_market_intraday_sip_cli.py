@@ -304,3 +304,29 @@ def test_main_runs_report_by_default_and_dry_run_needs_no_keys(tmp_path, monkeyp
     )
     assert "would fetch     5 sessions" in out.getvalue()
     assert "would make about 1 requests (cap 2000)" in out.getvalue()
+
+
+# The default --until is today in New York once the session's bars are
+# final, yesterday before that, and it follows the early close.
+def test_default_until_waits_for_the_close():
+    ny = cli.NEW_YORK
+    assert cli.default_until(datetime(2025, 12, 1, 15, 0, tzinfo=ny)) == date(
+        2025, 11, 30
+    )
+    assert cli.default_until(datetime(2025, 12, 1, 16, 29, tzinfo=ny)) == date(
+        2025, 11, 30
+    )
+    assert cli.default_until(datetime(2025, 12, 1, 16, 30, tzinfo=ny)) == date(
+        2025, 12, 1
+    )
+    # 22:00 UTC on Dec 1 is 17:00 New York: still Dec 1, not the UTC date.
+    assert cli.default_until(datetime(2025, 12, 2, 3, 0, tzinfo=UTC)) == date(
+        2025, 12, 1
+    )
+    # The early close on Nov 28 is final at 13:30.
+    assert cli.default_until(datetime(2025, 11, 28, 13, 31, tzinfo=ny)) == date(
+        2025, 11, 28
+    )
+    assert cli.default_until(datetime(2025, 11, 28, 13, 29, tzinfo=ny)) == date(
+        2025, 11, 27
+    )
