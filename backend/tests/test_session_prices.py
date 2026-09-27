@@ -49,7 +49,7 @@ def quote(now, **overrides):
     return {"bp": 100, "ap": 102, "bs": 10, "as": 20, "t": now.isoformat(), **overrides}
 
 
-# Invalid, future or expired data never yields a current price.
+# Invalid or future data never yields a price; expired data is never fresh.
 @pytest.mark.parametrize(
     ("overrides", "status"),
     [
@@ -66,8 +66,22 @@ def test_invalid_quotes(overrides, status):
     now = instant("2026-09-25T03:00:00+00:00")
     row = prices.describe(quote(now, **overrides), "overnight", now)
     assert row["status"] == status
-    assert row["price"] is None
+    assert row["price"] == (101 if status == "stale" else None)
     json.dumps(row, allow_nan=False)
+
+
+# An expired quote keeps its last midpoint, dated by its own observation time.
+def test_expired_quote_keeps_last_observed_price_and_time():
+    observed = instant("2026-09-25T16:59:58-04:00")
+    now = instant("2026-09-26T11:00:00-04:00")
+    row = prices.describe(quote(observed), "iex", now)
+    assert row["status"] == "stale"
+    assert row["reason"] == "Quote expired"
+    assert (row["price"], row["bid"], row["ask"]) == (101, 100, 102)
+    assert instant(row["at"]) == observed
+    assert instant(row["valid_until"]) == observed + timedelta(seconds=60)
+    assert row["session"] == "post-market"
+    assert row["feed"] == "iex"
 
 
 # Keep the original phase and full age deadline across a schedule boundary.

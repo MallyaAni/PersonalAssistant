@@ -192,7 +192,8 @@ async def test_lifespan_collects_before_http_and_drains_publication(
             root, ["AAA"], now=now + timedelta(seconds=61)
         )
         assert expired["quotes"]["AAA"]["status"] == "stale"
-        assert expired["quotes"]["AAA"]["price"] is None
+        assert expired["quotes"]["AAA"]["reason"] == "Quote expired"
+        assert expired["quotes"]["AAA"]["price"] == 101
         assert expired["as_of"] == published["as_of"]
         assert expired["quotes"]["AAA"]["at"] == published["quotes"]["AAA"]["at"]
         assert grade_path.read_bytes() == original_grade

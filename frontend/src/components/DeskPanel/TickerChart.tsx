@@ -259,6 +259,7 @@ export const TickerChart = ({
   personalHistory = false,
   personalReceiptId,
   tall = false,
+  close,
 }: {
   userId: string
   ticker: string
@@ -269,6 +270,8 @@ export const TickerChart = ({
   personalHistory?: boolean
   personalReceiptId?: string
   tall?: boolean
+  // The name's last close, so the session price can fall back to it when no dated quote exists.
+  close?: number | null
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   const [showSignals, setShowSignals] = useState(true)
@@ -532,7 +535,7 @@ export const TickerChart = ({
 
   return (
     <section className="mb-4" aria-label={`${ticker} price chart`}>
-      {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} /></div>}
+      {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} /></div>}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-xs font-medium text-[#1d1d1f]">
           Price, indicators and grade history

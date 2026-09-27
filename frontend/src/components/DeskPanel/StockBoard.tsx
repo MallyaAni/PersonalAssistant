@@ -57,7 +57,9 @@ const quoteTime = (observed: number, now: number): string | null => {
     ...(!sameDay ? {month: 'short', day: 'numeric', ...(!sameYear ? {year: 'numeric'} : {})} as const : {})})
 }
 
-// Explain current or missing display quotes plainly without changing execution or candle evidence.
+// Show the current midpoint, or the last observed one dated by its own time, or the
+// last close; never a stale price styled or worded as current, and never nothing when
+// a dated price exists. Execution and candle evidence are untouched.
 export const SessionPrice = ({live, ticker, now, compact = false, close}: {live: DeskLive; ticker: string; now: number; compact?: boolean; close?: number | null}) => {
   const {quote, state, observed, session, currentSchedule, previousSession, unrecordedSession} = sessionPrice(live, ticker, now)
   const regular = live.quotes[ticker]
@@ -67,9 +69,15 @@ export const SessionPrice = ({live, ticker, now, compact = false, close}: {live:
   const qualification = previousSession ? ' · previous-session observation' : unrecordedSession ? ' · session unrecorded' : ''
   const displayReason = quote?.status === 'unavailable' && quote.reason
     ? quote.reason === 'No fresh quote from available feeds' ? 'No usable bid/ask midpoint was returned for this display.' : `Price-data detail: ${quote.reason}` : null
-  return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}`}>
+  // A stale row carries what was last observed; the price is shown only with its own time.
+  const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
+  const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
+  const staleCaveat = state === 'stale' ? ' Last observed price; not a current quote.' : ''
+  return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
     {state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
-      : <><span className="text-[#9a6700]">{state === 'stale' ? `No recent quote to display${at ? ` · Last quote: ${at} ET` : ''}${session ? ` · ${session}` : ''} · ${source}${qualification}` : 'No recent quote to display'}</span>
+      : <><span className="text-[#9a6700]">{lastPrice !== null
+          ? `$${lastPrice.toFixed(2)} last ${session ?? 'quote'} · ${source}${at ? ` · ${at} ET` : ''}${qualification}`
+          : lastClose !== null ? `$${lastClose.toFixed(2)} last close` : 'No price to display'}</span>
         {compact && <div>{regular && Number.isFinite(regular.last) ? <>Regular bar ${regular.last.toFixed(2)}<ChangeMark last={regular.last} close={close} /></> : 'Regular bar unavailable'}</div>}</>}
     {!compact && <p className="text-[11px] text-[#6e6e73]">Price signals use regular-session candles.</p>}
   </div>

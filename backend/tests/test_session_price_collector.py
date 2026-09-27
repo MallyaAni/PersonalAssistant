@@ -88,8 +88,10 @@ async def test_background_collection_persists_without_a_browser_and_expires(tmp_
     )
     assert expired["as_of"] == stored["as_of"]
     assert expired["quotes"]["AAA"]["at"] == stored["quotes"]["AAA"]["at"]
-    assert expired["quotes"]["AAA"]["price"] is None
-    assert expired["quotes"]["AAA"]["status"] != "fresh"
+    # Expiry keeps the last observed price under a stale status, never fresh.
+    assert expired["quotes"]["AAA"]["price"] == 101
+    assert expired["quotes"]["AAA"]["status"] == "stale"
+    assert expired["quotes"]["AAA"]["reason"] == "Quote expired"
     assert first["as_of"] <= stored["as_of"]
     stopped_count = len(calls)
     await asyncio.sleep(0.08)

@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-09-27 — The board always shows the last observed price when the market is closed
+
+The operator's request: "when market is closed I'd like to always see the
+last price; overnight, premarket and postmarket should work." Until now a
+session-price row whose bid/ask midpoint was older than 60 s lost its price
+at both boundaries — `session_prices.describe` returned the expired quote
+as `stale` with `price: None`, and `session_price_snapshot._row` stripped
+the price again when a stored row expired — so the board read "No recent
+quote to display" every evening from 17:00 ET, every morning until 08:00
+ET, and all weekend.
+
+What changed:
+
+- **Backend.** A stale row now keeps what was last observed — `price`,
+  `bid`, `ask`, `at`, `session`, `feed`, `indicative` — with
+  `status: "stale"`, `reason: "Quote expired"` and `valid_until` as before.
+  `at` stays the observation time; nothing is restamped. Only a row that
+  never had a price is `unavailable` with no price. The `latest.json`
+  format `collect` writes is unchanged (same fields; a stale row's price
+  fields are now numbers rather than null). A stale row whose stored price
+  fails the geometry checks is still invalid and never served.
+- **Board and chart** (`SessionPrice`). A fresh quote renders exactly as
+  before. A stale quote with a price renders the price in normal weight
+  (not the fresh bold) followed by `last <session> · <FEED> · <time> ET`
+  in the muted amber, e.g. `$336.13 last post-market · IEX · Sep 25,
+  4:59:58 PM ET`, with the date whenever the observation is not today and
+  the existing `previous-session observation` qualification when the
+  observed session differs from the current schedule. The tooltip keeps
+  every caveat and adds `Last observed price; not a current quote.` A
+  stale row without a price, or an unavailable one, falls back to the
+  name's last close as `$<close> last close`; with no close either it
+  reads `No price to display`. The ticker chart's session price now
+  receives the name's last close from the personal board row.
+
+What was kept: a stale price is never styled or worded as current — no
+bold, never the word "fresh", never the current time beside it; the
+midpoint is not a trade, and the tooltip says so; signals still use
+regular-session candles, and neither execution, paper accounts nor
+receipts read this path.
+
+Feed coverage on this account: IEX quotes exist 08:00–17:00 ET and the
+indicative overnight feed 20:00–04:00 ET, so from 17:00–20:00, 04:00–08:00
+and all weekend the board shows the last observation with its own time
+rather than nothing.
+
+Tests: `test_session_price_snapshot.py` (expired row carries the last
+price with its original `at`, `session` and `feed`; an unavailable row has
+none; collected stale evidence persists and reads back with its price;
+stale rows with invalid geometry stay unavailable),
+`test_session_prices.py` (an expired provider quote keeps its midpoint and
+time), and the assertions in `test_session_price_availability.py`,
+`test_session_price_collector.py` and `test_session_price_startup.py`
+updated to the new contract. Playwright: every `No recent quote to display`
+assertion updated in `session-price-availability`, `extended-prices`,
+`independent-session-prices`, `background-session-prices` and
+`desk-execution-evidence`; new cases for a Saturday view of Friday's
+4:59:58 PM ET post-market IEX quote and for the last-close fallback.
+
 ## 2026-09-27 — Cap sweep for the graded equal-weight arm, with concentration read off the target book
 
 The `/4` candidate's 20% hold cap was the plan's limit, not a measured

@@ -1,4 +1,12 @@
-"""One bounded, public display-price snapshot shared independently of browsers."""
+"""One bounded, public display-price snapshot shared independently of browsers.
+
+Contract: a row is ``fresh`` only inside its sixty-second freshness window; past
+it the row is ``stale`` and keeps what was last observed (``price``, ``bid``,
+``ask``, ``at``, ``session``, ``feed``, ``indicative``) with ``reason`` set to
+``Quote expired``, so the board can show the last price with its own time
+rather than nothing. ``at`` is always the observation time and is never
+restamped. Only a row that never had a price is ``unavailable`` with no price.
+"""
 
 import json
 import math
@@ -154,7 +162,8 @@ def _deadline(raw, stamp):
     return deadline if _instant(raw.get("valid_until")) == deadline else None
 
 
-# Validate a stored row and expire its price without changing source evidence.
+# Validate a stored row and expire its freshness, keeping the last observed price
+# and its original observation time so nothing looks newer than it is.
 def _row(raw, captured, now, capture_stale):
     if not isinstance(raw, dict):
         return _unavailable()
@@ -165,7 +174,7 @@ def _row(raw, captured, now, capture_stale):
         or type(raw.get("indicative")) is not bool
         or raw["indicative"] != (raw["feed"] == "overnight")
         or not _known(raw.get("status"), STATUSES)
-        or (raw["status"] != "fresh" and raw.get("price") is not None)
+        or (raw["status"] == "unavailable" and raw.get("price") is not None)
     ):
         return result
     stamp = _instant(raw.get("at"))
@@ -185,13 +194,15 @@ def _row(raw, captured, now, capture_stale):
     if deadline is None:
         return result
     result["valid_until"] = raw["valid_until"]
-    if raw["status"] == "stale":
-        return {**result, "status": "stale", "reason": "Quote expired"}
+    expired = {**result, "status": "stale", "reason": "Quote expired"}
+    # A row recorded stale without a price (older collections) stays priceless.
+    if raw["status"] == "stale" and raw.get("price") is None:
+        return expired
     prices = _prices(raw)
     if prices is None:
         return result
-    if capture_stale or now >= deadline:
-        return {**result, "status": "stale", "reason": "Quote expired"}
+    if raw["status"] == "stale" or capture_stale or now >= deadline:
+        return {**expired, **prices}
     return {
         **result,
         **prices,
@@ -369,7 +380,7 @@ def collect(
             os.close(fd)
 
 
-# Read persisted evidence, filter symbols and expire prices without writing.
+# Read persisted evidence, filter symbols and expire freshness without writing.
 def read(root, symbols, now=None):
     symbols = _symbols(symbols)
     if not supported():

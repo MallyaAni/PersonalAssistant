@@ -136,7 +136,7 @@ def test_missing_store_has_no_invented_capture_or_writes(tmp_path):
     assert list(tmp_path.iterdir()) == []
 
 
-# Preserve capture time and expire prices at the original 60-second boundary.
+# Preserve capture time and expire freshness, not the price, at the original 60-second boundary.
 @pytest.mark.parametrize(
     ("elapsed", "expected"),
     [(0, "fresh"), (58.999, "fresh"), (59, "stale"), (60, "stale"), (3600, "stale")],
@@ -150,10 +150,95 @@ def test_read_ages_original_observation_without_restamping(tmp_path, elapsed, ex
     assert read["as_of"] == payload["snapshot"]["as_of"]
     assert row["at"] == payload["snapshot"]["quotes"]["AAA"]["at"]
     assert row["status"] == expected
-    assert row["price"] == (100.0 if expected == "fresh" else None)
+    assert row["price"] == 100.0
+    assert row["reason"] == ("Quoted midpoint" if expected == "fresh" else "Quote expired")
     assert row["feed"] == "iex"
     assert row["valid_until"] == payload["snapshot"]["quotes"]["AAA"]["valid_until"]
     assert latest.read_bytes() == original
+
+
+# An expired row keeps the last observed price, bid, ask and its own observation
+# time, session and feed; a row that never had a price stays priceless.
+@pytest.mark.parametrize(
+    ("feed", "session"), [("iex", "post-market"), ("overnight", "overnight")]
+)
+def test_expired_row_carries_last_observed_price_with_original_evidence(
+    tmp_path, feed, session
+):
+    captured = datetime(2026, 9, 25, 20, 59, 59, tzinfo=UTC)
+    payload = _wrapper(("AAA", "BBB"), captured)
+    payload["snapshot"] = _capture(["AAA", "BBB"], captured, feed, session, 336.13)
+    payload["snapshot"]["quotes"]["BBB"].update(
+        price=None,
+        bid=None,
+        ask=None,
+        at=None,
+        valid_until=None,
+        status="unavailable",
+        reason="No fresh quote from available feeds",
+    )
+    _persist(tmp_path, payload)
+    weekend = datetime(2026, 9, 26, 15, tzinfo=UTC)
+    read = store.read(tmp_path, ["AAA", "BBB"], now=weekend)
+    row = read["quotes"]["AAA"]
+    assert read["as_of"] == captured.isoformat()
+    assert row["status"] == "stale"
+    assert row["reason"] == "Quote expired"
+    assert (row["price"], row["bid"], row["ask"]) == (336.13, 335.63, 336.63)
+    assert row["at"] == (captured - timedelta(seconds=1)).isoformat()
+    assert row["valid_until"] == (captured + timedelta(seconds=59)).isoformat()
+    assert (row["session"], row["feed"], row["indicative"]) == (
+        session,
+        feed,
+        feed == "overnight",
+    )
+    missing = read["quotes"]["BBB"]
+    assert missing["status"] == "unavailable"
+    assert missing["price"] is None
+    assert "bid" not in missing and "ask" not in missing
+
+
+# A collection whose provider evidence was already expired persists that last
+# price as stale, and a later read serves it unchanged rather than empty.
+def test_collected_stale_evidence_persists_and_reads_with_its_price(tmp_path):
+    observed = datetime(2026, 9, 25, 20, 59, 58, tzinfo=UTC)
+    collected = datetime(2026, 9, 26, 15, tzinfo=UTC)
+    captured = _capture(["AAA"], collected, "iex", "post-market", 336.13)
+    captured["session"] = "closed"
+    captured["quotes"]["AAA"].update(
+        at=observed.isoformat(),
+        valid_until=(observed + timedelta(seconds=60)).isoformat(),
+        status="stale",
+        reason="Quote expired",
+    )
+    outcome = store.collect(
+        tmp_path, ["AAA"], fetch=lambda symbols: captured, clock=lambda: collected
+    )
+    assert outcome["status"] == "collected"
+    stored = json.loads((tmp_path / "desk/session-prices/latest.json").read_text())
+    assert stored["snapshot"]["quotes"]["AAA"]["price"] == 336.13
+    assert stored["snapshot"]["quotes"]["AAA"]["status"] == "stale"
+    read = store.read(tmp_path, ["AAA"], now=collected + timedelta(hours=20))
+    row = read["quotes"]["AAA"]
+    assert read["session"] == "closed"
+    assert (row["status"], row["reason"]) == ("stale", "Quote expired")
+    assert row["price"] == 336.13
+    assert row["at"] == observed.isoformat()
+    assert (row["session"], row["feed"]) == ("post-market", "iex")
+
+
+# A stale row whose stored price fails geometry checks is invalid, never served.
+@pytest.mark.parametrize(
+    "changes",
+    [{"price": 500}, {"bid": 101, "ask": 99}, {"price": float("nan")}, {"ask": -1}],
+)
+def test_stale_row_with_invalid_price_is_unavailable(tmp_path, changes):
+    payload = _wrapper()
+    payload["snapshot"]["quotes"]["AAA"].update(status="stale", **changes)
+    _persist(tmp_path, payload)
+    row = store.read(tmp_path, ["AAA"], now=NOW)["quotes"]["AAA"]
+    assert row["price"] is None
+    assert row["status"] == "unavailable"
 
 
 # Retain source-session evidence, including unknown, without calendar recomputation.
@@ -279,7 +364,6 @@ def test_malformed_unhashable_row_fields_remain_unavailable(tmp_path, field, val
         {"at": (NOW + timedelta(seconds=1)).isoformat()},
         {"valid_until": (NOW + timedelta(seconds=60)).isoformat()},
         {"indicative": True},
-        {"status": "stale"},
         {"status": "unavailable"},
         {"feed": "private source"},
     ],
@@ -293,7 +377,7 @@ def test_invalid_row_values_do_not_expose_prices(tmp_path, changes):
     assert row["status"] == "unavailable"
 
 
-# Nonfresh results keep valid source evidence but no current price.
+# Nonfresh rows stored without a price keep their source evidence and gain none.
 @pytest.mark.parametrize("status", ["stale", "unavailable"])
 def test_nonfresh_provider_evidence_is_not_revived(tmp_path, status):
     payload = _wrapper()

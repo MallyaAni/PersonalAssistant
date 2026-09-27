@@ -64,7 +64,8 @@ def session_window(now):
     )
 
 
-# Date observations independently of the schedule and reject expired prices.
+# Date observations independently of the schedule; an expired quote keeps its
+# last observed midpoint and original time as stale, never as fresh.
 def describe(raw, feed, now):
     try:
         stamp = desk_freshness.timestamp(raw.get("t"))
@@ -94,13 +95,11 @@ def describe(raw, feed, now):
         return {**result, "reason": "Missing or future quote timestamp"}
     deadline = stamp + timedelta(seconds=MAX_AGE_SECONDS)
     result["valid_until"] = deadline.isoformat()
+    observed = {**result, "price": bid / 2 + ask / 2, "bid": bid, "ask": ask}
     if now >= deadline:
-        return {**result, "status": "stale", "reason": "Quote expired"}
+        return {**observed, "status": "stale", "reason": "Quote expired"}
     return {
-        **result,
-        "price": bid / 2 + ask / 2,
-        "bid": bid,
-        "ask": ask,
+        **observed,
         "status": "fresh",
         "reason": "Indicative midpoint" if feed == "overnight" else "Quoted midpoint",
     }

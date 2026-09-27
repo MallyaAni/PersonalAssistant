@@ -245,7 +245,7 @@ for (const failure of ['generic unavailable', 'missing envelope', 'missing quote
       await testInfo.attach('display-and-execution-before-assertions', {body: JSON.stringify({displaySnapshot, execution: fixture.source.row.quote,
         readings: await Promise.all(readings.map(reading => reading.innerText()))}, null, 2), contentType: 'application/json'})
       for (const reading of readings) {
-        await expect(reading).toContainText('No recent quote to display')
+        await expect(reading).toContainText('No price to display')
         await expect(reading).not.toContainText('No fresh quote from available feeds')
         await expect(reading).toHaveAttribute('title', /For display only; execution checks are separate/)
         await expect(reading).toHaveAttribute('title', /Midpoint is not a trade or guaranteed fill/)
@@ -260,7 +260,7 @@ for (const failure of ['generic unavailable', 'missing envelope', 'missing quote
       await panel.getByRole('button', {name: 'Close', exact: true}).click()
       if (failure === 'generic unavailable') await board.screenshot({path: testInfo.outputPath('display-unavailable-execution-eligible-board.png')})
       await page.reload()
-      await expect(board.getByLabel('S11 session price', {exact: true})).toContainText('No recent quote to display')
+      await expect(board.getByLabel('S11 session price', {exact: true})).toContainText('No price to display')
       await expect(board.getByLabel('S11 strategy intent', {exact: true})).toHaveText('BUY')
       await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3% of account')
       await page.getByRole('button', {name: 'details for S11', exact: true}).click()

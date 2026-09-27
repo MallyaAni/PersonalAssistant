@@ -284,7 +284,7 @@ for (const outcome of ['network failure', 'invalid envelope', 'invalid JSON', 'H
     await settle(page, state)
     for (const reading of [page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price'),
       page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price')]) {
-      await expect.soft(reading).toContainText('No recent quote to display')
+      await expect.soft(reading).toContainText('No price to display')
       await expect.soft(reading).not.toContainText('$102.00')
       await expect.soft(reading).not.toContainText('stale')
       await expect.soft(reading).toHaveAttribute('title', /Regular-session bar \$100\.00/)
@@ -306,7 +306,7 @@ test('optional failure removes the old midpoint before a held regular response c
   await settle(page, state, true)
   expect(pending.completed).toBe(false)
   for (const surface of [page.getByRole('table', {name: 'Ranked stocks and cash'}), page.getByRole('region', {name: 'AAPL price chart'})]) {
-    await expect.soft(surface.getByLabel('AAPL session price')).toContainText('No recent quote to display')
+    await expect.soft(surface.getByLabel('AAPL session price')).toContainText('No price to display')
     await expect.soft(surface.getByLabel('AAPL session price')).not.toContainText('$102.00')
   }
   gate.release()
@@ -392,16 +392,19 @@ for (const session of ['pre-market', 'overnight'] as const) {
   })
 }
 
-// Expired evidence must remain distinguishable from an absent or failed optional response.
+// Expired evidence keeps its last price, dated by its own time, and stays distinguishable from an absent or failed response.
 test('expired midpoint becomes stale without changing the regular signal price', async ({page, scenario: state}) => {
   state.validForMs = 20_000
   await openDesk(page, state)
   await page.clock.fastForward(21_000)
   await settle(page, state)
   for (const surface of [page.getByRole('table', {name: 'Ranked stocks and cash'}), page.getByRole('region', {name: 'AAPL price chart'})]) {
-    await expect(surface.getByLabel('AAPL session price')).toContainText('No recent quote to display · Last quote: 6:00:00 PM ET · post-market · IEX')
-    await expect(surface.getByLabel('AAPL session price')).not.toContainText('$102.00')
-    await expect(surface.getByLabel('AAPL session price')).not.toContainText('unavailable')
+    const reading = surface.getByLabel('AAPL session price')
+    await expect(reading).toContainText('$102.00 last post-market · IEX · 6:00:00 PM ET')
+    await expect(reading).not.toContainText('No recent quote')
+    await expect(reading).not.toContainText('unavailable')
+    await expect(reading.locator('span').first()).not.toHaveClass(/font-medium/)
+    await expect(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
   }
   await expect(page.getByRole('region', {name: 'AAPL price chart'}).locator('dl')).toContainText('$100.00')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')

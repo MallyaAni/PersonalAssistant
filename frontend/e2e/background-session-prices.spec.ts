@@ -174,11 +174,26 @@ async function expectFresh(page: Page, observed = OBSERVED, price = '$102.00', t
 }
 
 // Require absent current midpoints on board and chart while keeping the regular bar explicitly labelled.
-async function expectAbsent(page: Page, text = 'No recent quote to display') {
+async function expectAbsent(page: Page, text = 'No price to display') {
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
     await expect(reading).toContainText(text)
     await expect(reading).not.toContainText('$102.00')
     await expect(reading).not.toContainText('$103.75')
+    await expect(reading).not.toContainText('No recent quote')
+  }
+  await expect(page.getByLabel('AAPL session price', {exact: true})).toHaveCount(2)
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')).toContainText('Regular bar $100.00')
+  await expectBoundary(page)
+}
+
+// Require the expired midpoint on board and chart as a last observation dated by the provider timestamp, never as current.
+async function expectLast(page: Page, price = '$102.00', time = '5:59:55 PM') {
+  for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
+    await expect(reading).toContainText(`${price} last post-market · IEX · ${time} ET`)
+    await expect(reading).not.toContainText('No recent quote')
+    await expect(reading).not.toContainText('fresh')
+    await expect(reading.locator('span').first()).not.toHaveClass(/font-medium/)
+    await expect(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
   }
   await expect(page.getByLabel('AAPL session price', {exact: true})).toHaveCount(2)
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')).toContainText('Regular bar $100.00')
@@ -210,18 +225,18 @@ test('repeated Refresh keeps original capture and source timestamps', async ({pa
   expect(new Set(state.reads.map(read => read.browserAt)).size).toBeGreaterThan(1)
 })
 
-// Local expiry must reject an unchanged saved fresh status before another quote request and after repeated old responses.
+// Local expiry must demote an unchanged saved fresh status to a dated last observation before another quote request and after repeated old responses.
 test('stopped collection expires locally and repeated old snapshots cannot revive the midpoint', async ({page, scenario: state}) => {
   await openDesk(page, state)
   await expectFresh(page)
   const reads = state.reads.length
   await page.clock.runFor(40_001)
-  await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:55 PM ET · post-market · IEX')
+  await expectLast(page)
   expect(state.reads).toHaveLength(reads)
   expect(state.snapshot.quotes.AAPL.status).toBe('fresh')
   for (let attempt = 0; attempt < 2; attempt += 1) {
     await refresh(page, state)
-    await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:55 PM ET · post-market · IEX')
+    await expectLast(page)
   }
   for (const read of state.reads) {
     expect(read.snapshot.as_of).toBe(CAPTURED)
@@ -261,9 +276,9 @@ test('a fresh later snapshot recovers from the saved unavailable attempt', async
 test('a new collection timestamp cannot make old source evidence fresh', async ({page, scenario: state}) => {
   state.snapshot = snapshot('2026-09-24T22:00:10Z', '2026-09-24T21:59:00Z')
   await openDesk(page, state)
-  await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:00 PM ET · post-market · IEX')
+  await expectLast(page, '$102.00', '5:59:00 PM')
   await refresh(page, state)
-  await expectAbsent(page, 'No recent quote to display · Last quote: 5:59:00 PM ET · post-market · IEX')
+  await expectLast(page, '$102.00', '5:59:00 PM')
 })
 
 // Missing collection evidence cannot authorize a midpoint even when a malformed row advertises a fresh price.

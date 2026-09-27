@@ -319,7 +319,8 @@ def test_cache_read_revalidates_age_and_does_not_refresh_quote_time():
     row = expired["quotes"]["AAA"]
     assert read.calls == [("sip", ("AAA",)), ("iex", ("AAA",))]
     assert row["status"] == "stale"
-    assert row["price"] is None
+    assert row["reason"] == "Quote expired"
+    assert row["price"] == 101
     assert instant(row["at"]) == observed
     assert row["feed"] == "sip"
 
@@ -347,7 +348,7 @@ def test_cached_primary_expiry_recovers_from_fresh_fallback():
     assert instant(row["at"]) == later
 
 
-# When both feeds are old, retain the newest valid source/time without a current price.
+# When both feeds are old, retain the newest valid source/time with its last price, never as current.
 @pytest.mark.parametrize(
     ("primary_age", "fallback_age", "selected"),
     [(61, 80, "boats"), (80, 61, "overnight")],
@@ -366,7 +367,8 @@ def test_stale_diagnostic_retains_the_newest_observation(
     assert read.calls == [("boats", ("AAA",)), ("overnight", ("AAA",))]
     row = result["quotes"]["AAA"]
     assert row["status"] == "stale"
-    assert row["price"] is None
+    assert row["reason"] == "Quote expired"
+    assert row["price"] == (101 if selected == "boats" else 201)
     assert row["feed"] == selected
     assert row["indicative"] is (selected == "overnight")
     assert instant(row["at"]) == max(primary_at, fallback_at)

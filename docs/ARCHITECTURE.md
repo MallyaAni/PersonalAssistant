@@ -624,7 +624,10 @@ The authenticated session-price API only reads that snapshot, filters it to the
 current graded universe and revalidates its age; it never calls a provider, even
 when collection is disabled or the snapshot is absent. Original quote `at` and
 capture `as_of` times are not advanced by reads. Missing or corrupt evidence has
-no invented capture time, and expired evidence has no current midpoint. This
+no invented capture time; expired evidence keeps its last observed midpoint and
+time under a `stale` status, never as a current midpoint, so the board shows the
+last price with its own time whenever the feeds are quiet (after 17:00 ET, before
+08:00 ET, and all weekend on this account). This
 display path changes neither regular-session candles nor execution, paper
 accounts or personal receipts. The source implementation is not yet deployed;
 a running collector cannot establish fresh all-hours provider coverage.

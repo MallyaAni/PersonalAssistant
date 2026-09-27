@@ -8,7 +8,7 @@ type Session = 'pre-market' | 'post-market' | 'overnight' | 'regular' | 'closed'
 type Quote = {price: number | null; bid?: number; ask?: number; at: string | null; feed: string | null;
   indicative: boolean; status: 'fresh' | 'stale' | 'unavailable'; valid_until: string | null; reason: string; session?: Session}
 type Scenario = {stamp: string; captured: string; schedule: Session; marketStamp: string; marketOpen: boolean;
-  marketPhase: string; quote: Quote | null; malformedEnvelope: boolean; pending: Set<Request>; changed: number;
+  marketPhase: string; quote: Quote | null; malformedEnvelope: boolean; lastClose: number | null; pending: Set<Request>; changed: number;
   requests: {path: string; method: string; body?: unknown}[]; errors: string[]}
 
 // Supply fresh quote evidence with its own timestamp and observation schedule, independent of market status.
@@ -17,10 +17,18 @@ function quote(at = INITIAL, session: Session = 'post-market'): Quote {
     valid_until: new Date(Date.parse(at) + 60_000).toISOString(), reason: 'Quoted midpoint'}
 }
 
+// Supply the personal board row that carries a name's last close, without any live grade or trade.
+function mineRow(lastClose: number) {
+  return {ticker: 'AAPL', grade_live: 'A', score_live: 1, technical_now: .2, technical_close: .293, stances_live: {}, ranks_live: {},
+    grade: 'A', grade_source: 'evening', action: 'hold', in_book: false, score: 1, rank: 1, stances: {}, ranks: {}, target_weight: 0,
+    current_weight: 0, delta_weight: 0, shares: 0, entry_price: null, entry_date: null, last: 100, last_close: lastClose, pl_pct: null,
+    until_rebalance: null, rebalance_due: false}
+}
+
 // Isolate each case's schedule, quote and complete read-only request audit.
 function scenario(): Scenario {
   return {stamp: INITIAL, captured: INITIAL, schedule: 'post-market', marketStamp: INITIAL, marketOpen: false,
-    marketPhase: 'post-market', quote: quote(), malformedEnvelope: false, pending: new Set(), changed: Date.now(), requests: [], errors: []}
+    marketPhase: 'post-market', quote: quote(), malformedEnvelope: false, lastClose: null, pending: new Set(), changed: Date.now(), requests: [], errors: []}
 }
 
 // Route only documented fixture reads and reject all external requests or persistence operations.
@@ -62,7 +70,7 @@ async function install(page: Page, state: Scenario, baseURL: string) {
       quotes: {AAPL: {last: 100, open: 99, high: 101, low: 98, bar: BAR}}, technical: {}, technical_detail: {}}
     else if (endpoint === '/session-prices') json = state.malformedEnvelope ? {} : {session: state.schedule, as_of: state.captured,
       signal_scope: 'regular-session', quotes: state.quote ? {AAPL: state.quote} : {}}
-    else if (endpoint === '/mine') json = {session: '2026-09-24', market_status: market, rows: [], grades_live: {},
+    else if (endpoint === '/mine') json = {session: '2026-09-24', market_status: market, rows: state.lastClose === null ? [] : [mineRow(state.lastClose)], grades_live: {},
       history_receipt: {status: 'not_requested'}, decisions: {session: '2026-09-24', written: '2026-09-24T07:00:00Z', rows: {AAPL: {
         action: 'Hold', strategy_action: 'Hold', move_weight: 0, executable: false, reason: 'Regular-session execution policy unchanged',
       }}}}
@@ -214,31 +222,54 @@ for (const failure of ['missing', 'invalid envelope', 'future timestamp', 'missi
     else if (failure === 'missing feed') state.quote!.feed = null
     else state.quote!.price = -1
     await openDesk(page, state)
-    await expectReading(page, 'No recent quote to display', false)
+    await expectReading(page, 'No price to display', false)
     const reading = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')
     await expect(reading).toContainText('Regular bar $100.00')
     await expect(reading).not.toContainText('market closed')
+    await expect(reading).not.toContainText('No recent quote')
   })
 }
 
 for (const oldDay of [false, true]) {
-  // Stale evidence retains the original source and a visible date when a time alone could imply today.
-  test(`${oldDay ? 'previous-day' : 'same-day'} stale evidence retains dated source without a current price`, async ({page, scenario: state}) => {
-    state.quote = {...quote(oldDay ? '2026-09-23T22:00:00Z' : '2026-09-24T21:58:00Z'), price: null, status: 'stale', valid_until: null}
+  // Stale evidence shows its last price with the original source and a visible date when a time alone could imply today.
+  test(`${oldDay ? 'previous-day' : 'same-day'} stale evidence shows its last price with dated source, never as current`, async ({page, scenario: state}) => {
+    state.quote = {...quote(oldDay ? '2026-09-23T22:00:00Z' : '2026-09-24T21:58:00Z'), status: 'stale', reason: 'Quote expired'}
     await openDesk(page, state)
-    await expectReading(page, oldDay ? 'No recent quote to display · Last quote: Sep 23, 6:00:00 PM ET · post-market · IEX' : 'No recent quote to display · Last quote: 5:58:00 PM ET · post-market · IEX', false)
-    await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')).toHaveAttribute('title', new RegExp(state.quote.at!))
+    await expectReading(page, oldDay ? '$102.00 last post-market · IEX · Sep 23, 6:00:00 PM ET' : '$102.00 last post-market · IEX · 5:58:00 PM ET')
+    for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
+      await expect(reading).not.toContainText('No recent quote')
+      await expect(reading).not.toContainText('fresh')
+      // The current time (6:00:00 PM today) never appears beside a stale price.
+      if (!oldDay) await expect(reading).not.toContainText('6:00:00 PM')
+      await expect(reading.locator('span').first()).not.toHaveClass(/font-medium/)
+      await expect(reading).toHaveAttribute('title', new RegExp(state.quote!.at!))
+      await expect(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
+    }
   })
 }
 
-// Explain an expired after-hours quote plainly without displaying its price as current.
+for (const knownClose of [false, true]) {
+  // A stale row recorded without a price (an older collection) falls back to the last close, or to nothing, never to the old wording.
+  test(`stale evidence without a price falls back to ${knownClose ? 'the last close' : 'no price'}`, async ({page, scenario: state}) => {
+    state.lastClose = knownClose ? 330.5 : null
+    state.quote = {...quote('2026-09-24T21:58:00Z'), price: null, status: 'stale', valid_until: null}
+    await openDesk(page, state)
+    await expectReading(page, knownClose ? '$330.50 last close' : 'No price to display', false)
+    const reading = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')
+    await expect(reading).not.toContainText('No recent quote')
+    await expect(reading).toHaveAttribute('title', /2026-09-24T21:58:00Z/)
+  })
+}
+
+// Explain an expired after-hours quote plainly: its last price with its own time, never worded as current.
 test('old after-hours quote uses plain wording on the board and chart', async ({page, scenario: state}, info) => {
-  state.quote = {...quote('2026-09-24T20:00:05Z'), price: null, status: 'stale', valid_until: null}
+  state.quote = {...quote('2026-09-24T20:00:05Z'), status: 'stale', reason: 'Quote expired'}
   await openDesk(page, state)
-  await expectReading(page, 'No recent quote to display · Last quote: 4:00:05 PM ET · post-market · IEX', false)
+  await expectReading(page, '$102.00 last post-market · IEX · 4:00:05 PM ET')
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
     await expect(reading).not.toContainText('stale')
     await expect(reading).not.toContainText('snapshot')
+    await expect(reading).not.toContainText('No recent quote')
     await expect(reading).toHaveAttribute('title', /2026-09-24T20:00:05Z/)
     await expect(reading).toHaveAttribute('title', /For display only; execution checks are separate/)
   }
@@ -246,11 +277,56 @@ test('old after-hours quote uses plain wording on the board and chart', async ({
   await page.screenshot({path: info.outputPath('plain-price-labels.png'), fullPage: true})
 })
 
+// A closed market still shows the last observed price, dated by its own session and time.
+test('shows the last observed price with its session and time when the market is closed', async ({page, scenario: state}) => {
+  // Saturday 11:00 ET; the collector last ran moments ago and still holds Friday's 4:59:58 PM ET post-market IEX quote.
+  state.stamp = state.marketStamp = '2026-09-26T15:00:00Z'
+  state.captured = '2026-09-26T14:59:50Z'
+  state.schedule = 'closed'
+  state.marketPhase = 'closed'
+  state.quote = {price: 336.13, bid: 336.12, ask: 336.14, at: '2026-09-25T20:59:58Z', feed: 'iex', indicative: false, status: 'stale',
+    session: 'post-market', valid_until: '2026-09-25T21:00:58Z', reason: 'Quote expired'}
+  await openDesk(page, state)
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  const chart = page.getByRole('region', {name: 'AAPL price chart'})
+  for (const surface of [board, chart]) {
+    const reading = surface.getByLabel('AAPL session price')
+    await expect.soft(reading).toContainText('$336.13')
+    await expect.soft(reading).toContainText('last post-market')
+    await expect.soft(reading).toContainText('IEX')
+    await expect.soft(reading).toContainText('Sep 25, 4:59:58 PM ET')
+    await expect.soft(reading).not.toContainText('No recent quote')
+    await expect.soft(reading).not.toContainText('fresh')
+    await expect.soft(reading).not.toContainText('11:00:00 AM')
+    await expect.soft(reading.locator('span').first()).not.toHaveClass(/font-medium/)
+    await expect.soft(reading).toHaveAttribute('title', /Midpoint is not a trade or guaranteed fill/)
+    await expect.soft(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
+    await expect.soft(reading).toHaveAttribute('title', /2026-09-25T20:59:58Z/)
+  }
+  await expect(board.getByLabel('AAPL session price')).toContainText('Regular bar $100.00')
+  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')
+  await expect(chart.locator('dl')).not.toContainText('$336.13')
+})
+
+// With no dated quote at all, the row still carries the last close rather than nothing.
+test('unavailable quote falls back to the last close', async ({page, scenario: state}) => {
+  state.lastClose = 330.5
+  state.quote = {...quote(), price: null, status: 'unavailable', reason: 'No fresh quote from available feeds'}
+  await openDesk(page, state)
+  await expectReading(page, '$330.50 last close', false)
+  for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
+    await expect(reading).not.toContainText('No recent quote')
+    await expect(reading).not.toContainText('No price to display')
+    await expect(reading).toHaveAttribute('title', /No usable bid\/ask midpoint was returned for this display\./)
+  }
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')).toContainText('Regular bar $100.00')
+})
+
 // Keep collection diagnostics available on hover instead of repeating them in the chart.
 test('missing quote explains the display limit without internal snapshot jargon', async ({page, scenario: state}) => {
   state.quote = {...quote(), price: null, status: 'unavailable', reason: 'Missing or future quote timestamp'}
   await openDesk(page, state)
-  await expectReading(page, 'No recent quote to display', false)
+  await expectReading(page, 'No price to display', false)
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
     await expect(reading).not.toContainText('snapshot')
     await expect(reading).not.toContainText('Missing or future quote timestamp')
