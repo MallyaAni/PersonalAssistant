@@ -66,8 +66,8 @@ async function install(page: Page, frontendURL: string, options: {fills?: typeof
       return route.abort('blockedbyclient')
     }
     const base = `/api/v1/market/${USER}/desk`
-    // The panel reads its decision rows with a non-recording POST; every other write is refused.
-    const mineRead = url.pathname === `${base}/mine` && request.method() === 'POST' && request.postDataJSON()?.record_history === false
+    // The panel reads its decision rows with a POST (recording or not); every other write is refused.
+    const mineRead = url.pathname === `${base}/mine` && request.method() === 'POST'
     if (request.method() !== 'GET' && !mineRead) {
       diagnostics.forbiddenWrites.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 403, json: {detail: 'Fixture forbids writes'}})
