@@ -265,6 +265,23 @@ strategy that changes only when untouched sessions say so.
   on the Spark (280 simulator runs), record the note, and change the
   executor only if the verdict names a stop.
 
+- 2026-09-27, night: volatility sizing on the `/4` book, BUILT and not run
+  ([research/vol-sizing-plan-2026-09-27.md](research/vol-sizing-plan-2026-09-27.md)):
+  the CNN's next-session volatility forecast (R² 0.27 against trailing)
+  as the sizing input for the graded equal-weight book, in six registered
+  variants and the control - inverse volatility, a no-leverage volatility
+  target and the hybrid, each fed the forecast and fed trailing volatility
+  as its twin - priced under plain and under live options
+  (`market/vol_forecast.py`, `market/vol_sizing.py`, `python -m
+  backend.cli.market_vol_forecast`, `python -m
+  backend.cli.market_vol_sizing`). ADOPT (registered) only with a point
+  over the control at t >= 2 under live options, drawdown not worse, not
+  worse on 2024-2026, and half a point over the trailing twin; a gain the
+  trailing twin matches is recorded as inverse vol, not the forecast.
+  Prior: 0-2 points either way, the forecast adding little over trailing.
+  Next: export the forecasts on the RTX from the stage-1 dataset, run the
+  trial on the Spark (560 simulator runs), record the note.
+
 - 2026-09-27, night: the execution ablation, RUN and RECORDED
   ([research/execution-ablation-2026-09-27.md](research/execution-ablation-2026-09-27.md)):
   the whole 4.3-point gap is `live_midcycle` (removing it: 27.8% against

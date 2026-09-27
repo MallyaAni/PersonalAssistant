@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-09-27 — Volatility sizing on the /4 book: built, not run
+
+The registered trial the deep-intraday study left behind: the CNN's
+next-session volatility forecast (out-of-sample R² 0.27 against trailing
+volatility) as the sizing input for the graded equal-weight book, against
+the book without it and against the same sizing fed trailing volatility.
+`backend/market/vol_forecast.py` runs the stage-1 walk-forward
+(`deep_intraday.walk_forward`, unchanged: refit 63, first fit 500, purge 5)
+on the volatility target alone and writes the out-of-sample forecast per
+(name, session) row with the trailing baseline and the realized value to
+one npz (`export_forecasts`; `python -m backend.cli.market_vol_forecast
+--dataset --out --device`), and aligns that file to a panel with the row
+dated t at decision t (`align`; the row targets t + 1, asserted against
+the cube's bars, and the no-lookahead test shifts the matrix by a session
+and asserts it differs). `backend/market/vol_sizing.py` wraps
+`policy_v4.allocator(mask)` - the control's weights, rescaled, never a
+different set of names - in seven fixed variants: `ew` (the control),
+inverse volatility (1 / sigma over the held names, the control's total,
+cap 0.20 by water-filling), a volatility target (exposure scaled to
+min(1, target / predicted), the target the median of the control's own
+realized book volatility on 2016-2023 measured once before the run and
+recorded, no leverage) and the hybrid, each fed the CNN forecast and fed
+the trailing baseline. A held name with no sigma keeps the control's
+weight and the fallback share is reported. Every variant is priced under
+plain fills AND under the live execution policy on the pit scorecard's
+offsets and costs; `verdict` reads live at 25 bp: ADOPT (registered) only
+with >= 1.0 CAGR point over the control at paired HAC t >= 2.0, drawdown
+not worse, not worse on 2024-2026, and >= 0.5 point over the trailing
+twin - a variant that clears everything but the twin is RECORD labelled
+"inverse vol, not the forecast". `python -m backend.cli.market_vol_sizing
+--root --membership --forecasts --offsets --costs --json` writes
+`<root>/desk/vol_sizing.json`. Pre-registration with the prior (inverse
+vol on an eleven-name equal-weight book of similar-vol names is worth 0-2
+points; the forecast adds little over trailing vol) and the kill criteria:
+`docs/research/vol-sizing-plan-2026-09-27.md`. Tests:
+`backend/tests/test_vol_forecast.py` (round trip, row t targets t + 1
+from the bars, alignment and the shift, the ridge export equals
+`walk_forward` values, the CLI; the CNN export under importorskip) and
+`backend/tests/test_vol_sizing.py` (the variant set, water-filling, each
+scheme's weights on hand-built inputs, the control equal to `policy_v4`
+element for element under both option sets, the sizer reading only row t,
+the target measurement, the payload, the verdict rules on hand-built
+payloads, the CLI end to end on the pit fixture with a synthetic forecast
+file). 14 pass, 1 skipped (torch absent). Not run against the store or
+the dataset export: the forecast file comes from the RTX, the trial from
+the Spark.
+
 ## 2026-09-27 — Grade parity: the board, the record and the replay asserted equal every night
 
 `backend/market/grade_parity.py` and `python -m backend.cli.market_grade_parity`
