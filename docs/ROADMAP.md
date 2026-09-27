@@ -251,14 +251,15 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   the plan's kill floors applied unchanged. The first run on the Spark's SIP
   store decides whether any convention or price gate is adopted; until then
   the executor fills at the next open as before.
-- The execution ablation is `SCAFFOLDED` (built, not run): `market_execution_ablation`
+- The execution ablation is `DONE` (run 2026-09-27, every option KEEP; the
+  catastrophe stop likewise, every stop RECORD - `docs/research/`): `market_execution_ablation`
   prices the `/4` policy under the live execution policy with each of its
   options removed one at a time (and the two additive variants from plain),
   every variant a registered trial, with the removal floors and the
   reconstruction check fixed in `execution_ablation` before the run. The
   fill-timing trial found the band gate on buys neutral; this measurement
   says which of the other live conventions the 4.4 CAGR points belong to.
-  Until it runs, the executor keeps every live option.
+  It ran: the gap is the mid-cycle entries at t 0.5, and the executor keeps every live option.
 - Trading research remains `IN PROGRESS`: the optional account journal and
   independent replay are verified on synthetic accounting paths (292 tests;
   five archive/CLI journeys), not qualified market performance. Source-complete

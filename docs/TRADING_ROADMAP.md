@@ -237,8 +237,15 @@ strategy that changes only when untouched sessions say so.
   INSUFFICIENT EVIDENCE for returns; RL sizing does not start; the
   volatility head goes to a sizing trial on the graded book.
 
-- 2026-09-27, night: the catastrophe stop, BUILT and not run
-  (`market/catastrophe_stop.py`, `python -m
+- 2026-09-27, night: the catastrophe stop, RUN and RECORDED
+  ([research/catastrophe-stop-2026-09-27.md](research/catastrophe-stop-2026-09-27.md)):
+  a stop 50% below entry fired zero times in ten point-in-time years, 60%
+  below the peak zero times; the stops that did fire (2020-03-18, spring
+  2022, CRWD's 2024 outage) were all false alarms and cost 0.1-1.4 CAGR
+  points. Worst single-name day -2.7% of equity (2016-2023), -3.6%
+  (2024-2026). Every stop RECORD; the universe, the equal-weight cap and
+  the grade rotation are the protection, and they are sufficient. Built
+  as (`market/catastrophe_stop.py`, `python -m
   backend.cli.market_catastrophe_stop`;
   [research/catastrophe-stop-plan-2026-09-27.md](research/catastrophe-stop-plan-2026-09-27.md)).
   The operator asked how the graded equal-weight book avoids a Lucid-type
@@ -258,7 +265,12 @@ strategy that changes only when untouched sessions say so.
   on the Spark (280 simulator runs), record the note, and change the
   executor only if the verdict names a stop.
 
-- 2026-09-27, night: the execution ablation, BUILT and not run
+- 2026-09-27, night: the execution ablation, RUN and RECORDED
+  ([research/execution-ablation-2026-09-27.md](research/execution-ablation-2026-09-27.md)):
+  the whole 4.3-point gap is `live_midcycle` (removing it: 27.8% against
+  23.2% on 2016-2023) but at paired t 0.5 - a difference of paths, not an
+  edge - and on 2024-2026 the same option earns 5 points and 10 points of
+  drawdown. Every option KEEP; the executor is unchanged. Built as
   (`market/execution_ablation.py`, `python -m
   backend.cli.market_execution_ablation`). The fill-timing trial
   ([research/execution-timing-2026-09-27.md](research/execution-timing-2026-09-27.md))

@@ -43,7 +43,12 @@ next Playwright run. On a mismatch: do not trade from the board; run the
 CLI; inspect `membership_history.csv` for the named tickers and the store's
 latest partition dates against the record's session.
 
-## 2026-09-27 — Catastrophe stop on the /4 book, built and not run
+## 2026-09-27 — Catastrophe stop on the /4 book, built and run: every stop RECORD
+
+Run on spark1 the same night; results in
+`docs/research/catastrophe-stop-2026-09-27.md`. Zero triggers at 50% below
+entry in ten years; every trigger a false alarm; every stop RECORD.
+
 
 `backend/market/catastrophe_stop.py` and `python -m
 backend.cli.market_catastrophe_stop` price a single-name stop on
@@ -91,7 +96,13 @@ and the command end to end. Pre-registration in
 `docs/research/catastrophe-stop-plan-2026-09-27.md`. Not yet run on the
 Spark; no number in this entry is a result.
 
-## 2026-09-27 — Execution ablation on the /4 book, built and not run
+## 2026-09-27 — Execution ablation on the /4 book, built and run: every option KEEP
+
+Run on spark1 the same night; results in
+`docs/research/execution-ablation-2026-09-27.md`. The 4.3-point gap is
+`live_midcycle` alone at paired t 0.5, reversed on 2024-2026; nothing
+changes on the executor.
+
 
 `backend/market/execution_ablation.py` and `python -m
 backend.cli.market_execution_ablation` price `graded-equal-weight/4` on the
