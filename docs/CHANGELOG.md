@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-09-26 — Consolidated SIP fifteen-minute history on a raw basis, and early closes in the intraday readers
+
+The IEX cache (`bars_15m`) cannot carry the fifteen-minute engine: its
+volume is one venue's share, thin names lose whole sessions, and it was
+fetched with `adjustment=all`, which rescales history on every corporate
+action (AVGO's cached closes were about ten times the daily close before its
+2024-07-15 split) and so can never be appended to. Volatile-book item P0.3
+(`docs/TRADING_VOLATILE_BOOK_ARCHITECTURE.md` on `trading/volatile-book-15m`)
+is BUILT here and not yet run; P0.2(f) early closes are handled in the
+readers this change owns. Branch `trading/sip-15m-store`.
+
+- `alpaca.fetch_bars` gains keyword-only `feed`, `adjustment` and
+  `timeframe`, and a multi-symbol form `fetch_bars_multi`. The defaults
+  reproduce the live IEX request byte for byte: `bars_query` pins the
+  parameter dict and a test pins the URL string, since `live_quotes` and
+  `market_pick_audit` (which rewrites `feed=iex` in that URL) depend on it.
+- `backend/market/intraday_sip.py`: store kind `bars_15m_sip`, raw prices,
+  one partition per ticker per New York session date, regular hours bounded
+  by `calendar.session_close` (26 bars, 14 on a 13:00 early close), schema
+  metadata carrying `feed`, `adjustment=raw`, `timeframe`, `fetched_at`
+  (UTC), `source_revision` (git SHA), `session_close`, `bars_expected`,
+  `bar_count` and `complete`. `append_missing` fetches only sessions without
+  a partition, one paged request per contiguous run, and never overwrites a
+  complete partition. `reconcile` is the acceptance gate: the session's
+  first open, last close, high, low and summed volume against the daily
+  store's bar after undoing splits dated after the session (the daily
+  store's close is split-adjusted as of its fetch). Tolerances are defaults
+  frozen before any run: |log(close_sip/close_daily)| ≤ 0.5%, volume within
+  20% (`DEFAULT_CLOSE_TOLERANCE`, `DEFAULT_VOLUME_TOLERANCE`).
+- `python -m backend.cli.market_intraday_sip --refresh|--reconcile|--report`
+  over the book plus SPY, QQQ, SMH and IGV (98 names), with `--max-requests`
+  (default 2000, 429 retries count) so a run cannot exceed the free plan,
+  `--dry-run` that makes no request, and `--since/--until`. For years the
+  reviewed calendar lacks (2016-2018) the sessions asked for are the daily
+  store's session dates per ticker. Not yet run against Alpaca: expect about
+  18 pages a name over 2016-2026 (about 2,700 sessions at 64 extended-hours
+  bars, 10,000 a page), about 1,800 requests for the 98 names.
+- Early closes: `intraday.sessions_from`, `intraday.episodes_from`,
+  `tape.session_tape` and `alpaca.sessions` end the regular window at
+  `calendar.session_close(day)` and treat 14 slots as complete there, so an
+  after-hours print can no longer stand as an early-close day's close.
+  `episodes_from` keeps its 26-wide arrays: an early-close session is left
+  out by default or padded with NaN after its close (`early_closes="pad"`).
+  Normal days are unchanged and the previously pinned outputs still pass.
+- `market_intraday --refresh` labels the IEX cache partition by the New
+  York date rather than the UTC one (after 20:00 Eastern it named tomorrow).
+
+Sandbox evidence (no network, pyarrow stand-in): 48 tests across
+`test_market_alpaca`, `test_market_intraday`, `test_market_early_close`,
+`test_intraday_sip`, `test_market_intraday_sip_cli` and
+`test_market_intraday_cli_partition` pass, with `test_market_live_quotes`
+and `test_market_pick_audit` unchanged. The refresh itself, the reconcile
+pass rate and the SIP entitlement over the full span are UNVERIFIED until
+the command runs on the machine with the keys.
+
 ## 2026-09-26 — `graded-equal-weight/4`: the candidate as a named policy, on a dry-run shadow ledger
 
 The 2026-09-26 arm verdicts (`docs/research/pit-arms-2026-09-26.md`) named
