@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-09-27, morning, addendum — The candidate priced under the live execution policy
+
+The operator asked why the candidate is in a shadow rather than live when
+it can be backtested. It can, further than it had been: the simulator
+carries the live executor's conventions (`simulate.LIVE_POLICY`: band
+entries, green-day skip, sells at the close, deferred buys, plus the FOMC
+lifecycle), and the arm lines had only ever been priced plain. Run on
+spark1 from `974853a` (`~/scratch/live_policy_check.py`, log
+`/tmp/live_policy_check.log`), point-in-time book, offsets 0/5/10/15,
+medians:
+
+| 25 bp | 2016-2023 | 2024-2026 |
+|---|---|---|
+| rule `/3`, live policy | 14.6% | 36.7% |
+| `/4` plain | 27.7% | 42.5% |
+| `/4` under the live policy | **23.3%** | 54.1% |
+
+(10 bp: 15.7 / 29.4 / 25.2 and 38.3 / 44.2 / 56.2.) The executor's
+conventions cost the candidate about 4.4 CAGR points on the choosing
+window - they were built for a concentrated book - and it still beats the
+incumbent by about 9 points under identical execution rules, ahead in
+every offset. This is the backtest that answers "why the gap": most of it
+is now measured. What remains for the shadow is not a returns question
+but whether the simulator's model of the executor is the executor -
+real paper fills, whole shares, the band logic on live prints, cash as
+the broker sees it - which no backtest can settle. TODO: register this as
+`--arm ... --live-execution` in the scorecard so it is one recorded trial
+with the full 20 offsets, and re-derive the band/deferral conventions for
+an equal-weight book (the 4.4 points are the price of not having done
+so).
+
 ## 2026-09-27, later — The cap priced; the board always shows the last price
 
 **VERIFIED on spark1
