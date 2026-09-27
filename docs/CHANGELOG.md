@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-27 — Cap sweep for the graded equal-weight arm, with concentration read off the target book
+
+The `/4` candidate's 20% hold cap was the plan's limit, not a measured
+choice, and the uncapped arm scored higher (29.9% against 28.3% on
+2016-2023). The cap is a risk limit, so the question is what each limit
+costs and what it buys, never which one scores best. `market_pit_scorecard
+--graded-cap X` scores every A/A+ name at equal weight under cap X on the
+usual six lines, 20 offsets and both costs, writes
+`pit_scorecard_ew_graded_cap<percent>.json`, and attaches `concentration`:
+per window, the share of sessions invested, the median and largest single
+weight, the median and minimum effective number of names, the median and
+maximum idle cash, and the worst single-name day (largest weight times
+the name's worst held return). Every cap scored is one registered trial
+against the result.
+
 ## 2026-09-27 — Session-anatomy cubes build in a process pool
 
 The first run on the Spark assembled cubes at about a name a minute

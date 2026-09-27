@@ -95,6 +95,60 @@ ARMS = {
 }
 
 
+# The graded equal-weight arm at any hold cap, for the cap sweep. The cap is
+# a risk limit, not a parameter to fit: the sweep measures what each limit
+# costs and what it buys, and every cap scored is one registered trial.
+def graded_arm(cap: float):
+    """Return an ARMS-style factory for every A/A+ name at equal weight under `cap`."""
+    return lambda report, mask: point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=grading.ORDINAL[grading.A], cap=cap, gross=1.0
+    )
+
+
+# What a cap buys, read off the target book the arm asks for on every
+# session of the restricted report (before fills, so a property of the
+# rule and not of the simulator): the largest single weight, the effective
+# number of names (1 / sum of squared weights), the cash left idle, and
+# the worst single-name contribution on any session (largest weight times
+# that name's worst close-to-close return while held). Per-window medians
+# and extremes across sessions.
+def concentration(restricted, mask: np.ndarray, allocator, windows=None) -> dict:
+    """Return per-window concentration statistics of the arm's target book."""
+    panel = restricted.panel
+    dates = panel.dates
+    weights = np.zeros((len(dates), len(panel.tickers)))
+    for t in range(len(dates)):
+        weights[t] = allocator(restricted, panel, None, t)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        rets = np.diff(np.log(panel.adj_close), axis=0)
+    rets = np.vstack([np.full((1, rets.shape[1]), np.nan), rets])
+    largest = weights.max(axis=1)
+    sq = (weights**2).sum(axis=1)
+    effective = np.where(sq > 0, 1.0 / np.where(sq > 0, sq, 1.0), 0.0)
+    cash = 1.0 - weights.sum(axis=1)
+    contribution = np.nan_to_num(weights * rets, nan=0.0)
+    worst_name = contribution.min(axis=1)
+    out = {}
+    for name, (start, end) in (windows or WINDOWS).items():
+        w = point_in_time.window(dates, start, end)
+        held = w & (weights.sum(axis=1) > 0)
+        if not held.any():
+            out[name] = {"sessions": 0}
+            continue
+        out[name] = {
+            "sessions": int(w.sum()),
+            "invested_share": float(held.sum() / w.sum()),
+            "largest_weight_median": float(np.median(largest[held])),
+            "largest_weight_max": float(largest[held].max()),
+            "effective_names_median": float(np.median(effective[held])),
+            "effective_names_min": float(effective[held].min()),
+            "cash_median": float(np.median(cash[held])),
+            "cash_max": float(cash[held].max()),
+            "worst_single_name_day": float(worst_name[w].min()),
+        }
+    return out
+
+
 @dataclass(frozen=True)
 class Curve:
     """One strategy's daily returns on its executable sessions."""
@@ -379,6 +433,13 @@ def main(argv: list[str] | None = None) -> int:
         help="score an allocation arm on the two rule lines instead of the "
         "frozen rule; writes pit_scorecard_<arm>.json",
     )
+    parser.add_argument(
+        "--graded-cap",
+        type=float,
+        help="score every A/A+ name at equal weight under this hold cap "
+        "(0 < cap <= 1) with its concentration statistics; writes "
+        "pit_scorecard_ew_graded_cap<percent>.json",
+    )
     args = parser.parse_args(argv)
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
@@ -389,8 +450,26 @@ def main(argv: list[str] | None = None) -> int:
         store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
     )
     arm = ARMS[args.arm] if args.arm else None
+    cap_tag = None
+    if args.graded_cap is not None:
+        if not 0 < args.graded_cap <= 1.0:
+            parser.error("--graded-cap must be in (0, 1]")
+        arm = graded_arm(args.graded_cap)
+        cap_tag = f"ew_graded_cap{round(args.graded_cap * 100):02d}"
     payload = build(report, store, args.offsets, tuple(args.costs), arm=arm)
-    tags = [t for t, on in (("signed_rotation", args.signed_rotation), (args.arm, args.arm)) if on]
+    if args.graded_cap is not None:
+        restricted, mask = point_in_time.point_in_time(report)
+        payload["cap"] = args.graded_cap
+        payload["concentration"] = concentration(restricted, mask, arm(restricted, mask))
+    tags = [
+        t
+        for t, on in (
+            ("signed_rotation", args.signed_rotation),
+            (args.arm, args.arm),
+            (cap_tag, cap_tag),
+        )
+        if on
+    ]
     payload["arm"] = " + ".join(tags) if tags else "frozen rule"
     name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
     target = root / "desk" / name

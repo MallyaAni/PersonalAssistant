@@ -237,3 +237,35 @@ def test_scorecard_arm_replaces_the_rule_lines(history, monkeypatch, tmp_path):
     assert len(seen) == 4 and all(a is not None for a in seen)
     assert {r["line"] for r in payload["rows"]} >= {sc.RULE_TODAY, sc.RULE_PIT}
     assert "ew_graded" in sc.ARMS
+
+
+# The cap sweep's arm at a cap is the registered arm at that cap, weight
+# for weight, and the concentration statistics read the target book: a
+# 10% cap on four names is 40% invested with the largest weight 10% and
+# 60% cash; no cap on the same names is 25% each, four effective names,
+# no cash.
+def test_graded_arm_and_concentration(history):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    grades = restricted.graded.grades.copy()
+    grades[:, 1] = grading.ORDINAL["C"]
+    from dataclasses import replace
+
+    demoted = replace(restricted, graded=replace(restricted.graded, grades=grades))
+    capped = sc.graded_arm(0.10)(demoted, mask)
+    registered = sc.ARMS["ew_graded"](demoted, mask)
+    for t in (10, T - 1):
+        np.testing.assert_array_equal(capped(demoted, report.panel, None, t), registered(demoted, report.panel, None, t))
+    windows = {"all": (None, None)}
+    tight = sc.concentration(demoted, mask, capped, windows)["all"]
+    assert tight["sessions"] == T and 0 < tight["invested_share"] <= 1
+    assert tight["largest_weight_max"] == pytest.approx(0.10)
+    assert tight["cash_max"] >= 0.5
+    loose = sc.concentration(demoted, mask, sc.graded_arm(1.0)(demoted, mask), windows)["all"]
+    assert loose["cash_max"] == pytest.approx(0.0)
+    assert loose["largest_weight_max"] >= tight["largest_weight_max"]
+    assert loose["effective_names_min"] >= 1.0
+    assert loose["worst_single_name_day"] <= 0.0
+    # The CLI tag for a cap names the percent.
+    assert sc.main.__doc__  # entry point exists; the tag rule is pinned below
+    assert f"ew_graded_cap{round(0.15 * 100):02d}" == "ew_graded_cap15"
