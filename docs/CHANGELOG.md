@@ -1,5 +1,59 @@
 # Changelog
 
+## 2026-09-27 — The policy's buy/sell/hold and size, back in time, on the ticker chart
+
+The operator's request: for each stock, plot the buy/sell/hold
+recommendation with its position size back in time, beside the grade
+markers already on the chart, so an entry or an exit can be checked
+against the price that followed. Display only; nothing here trades.
+
+- **`desk/decision_history.py`.** `target_matrix(report)` replays
+  `policy_v4.targets` over every session of the report on the point-in-time
+  membership mask (`point_in_time.eligibility`), so a decision is made
+  from the names the book could have held that day and a name has no
+  decision before it joined. `series(report, ticker)` turns one column
+  into `{date, target_weight, previous_weight, delta_weight, action}`
+  with `buy` (0 -> w), `sell` (w -> 0), `add`/`trim` (a move of at least
+  `ADD_TRIM_MIN` = 2.5 points) and `hold` (anything smaller: an
+  equal-weight reshuffle when the count of names changes is not an
+  order). A decision is dated to the close it was made at; the fill it
+  implies is the next session's open, and the file says so. `fills(root,
+  ticker)` reads the paper account's real fills out of the nightly
+  records' `paper.settled` rows, defensively (pruned records, fields that
+  may be absent, a partial re-read replaces its earlier reading).
+- **History files.** `market_daily.write_history` joins the series onto
+  each row as `target_weight`, `delta_weight`, `action`, and the file
+  carries `policy` (`graded-equal-weight/4`), `decision_note` and
+  `fills`. A replay that cannot run costs the three columns and says so
+  in the note, never the file. `HistoryRow` is unchanged.
+- **`market_daily --history-only`.** Runs the desk as the nightly does
+  (same as-of, `FUNDAMENTALS_CURRENT`) and rewrites the history files,
+  then exits: no observation, no record, no trade, no prune, no prose.
+  For backfilling every name's chart on the Spark.
+- **Chart.** `TickerChart` draws the decisions as markers on the decision's
+  own candle (`Buy 14%`, `Add →20%`, `Trim →12%`, `Sell`; green up from
+  below, red down from above) under a "Policy buy/sell" switch, and the
+  paper fills as blue circles (`Filled 63 @ 224.81`) under a "Paper
+  fills" switch that appears only when there are fills; a caption names
+  the policy and the close/next-open convention. Because markers are
+  canvas, the same decisions are written as text under the chart
+  (`aria-label="<TICKER> decisions"`): `Now: Hold 0%` from the newest
+  row, then the last twelve sessions the policy would have traded on,
+  newest first, with the close they were decided at from the loaded
+  daily candles, and the fills likewise.
+
+Tests: `backend/tests/test_decision_history.py` (9: the A crossing reads
+buy/hold/sell on the right sessions, sub-threshold reshuffles are holds,
+targets equal `policy_v4.targets` on the PIT mask, a name outside the
+membership history has no decision, fills from a tmp record tree with
+dead, malformed and unreadable rows) and four in `test_market_daily.py`
+(the file's new fields and `policy`, a failed replay, `--history-only`
+writes histories and no record). 53 passed across the two modules.
+Browser: `frontend/e2e/chart-decision-history.spec.ts` (the list, the
+caption, the canvas draws, the switches leave the list in place); it and
+`tsc` have not run in the sandbox - UNVERIFIED until the next deploy's
+Playwright run.
+
 ## 2026-09-27 — The session-quote feed pair follows the exchange calendar
 
 Verified live after the last-price change: at 03:13 New York on a Saturday

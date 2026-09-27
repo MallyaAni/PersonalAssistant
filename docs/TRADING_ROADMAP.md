@@ -164,6 +164,22 @@ strategy that changes only when untouched sessions say so.
   region; the candidate stays there for the shadow and the limit is the
   operator's to move before the shadow's verdict, not after.
 
+- 2026-09-27, evening: the policy's decisions on the ticker chart, BUILT
+  (`desk/decision_history.py`, the history files' `target_weight` /
+  `delta_weight` / `action` columns, `policy`, `decision_note` and
+  `fills`, `market_daily --history-only`, decision and fill markers plus a
+  text list in `TickerChart`). The operator asked to see, for each stock,
+  the buy/sell/hold recommendation with its size back in time beside the
+  grade markers, to check entries and exits against price. The series is
+  `policy_v4.targets` replayed on the point-in-time membership mask (a
+  name has no decision before it joined), dated to the close it was
+  decided at; the paper account's real fills come out of the nightly
+  records. Display only, nothing trades. Backend tests pass (13 new); the
+  browser spec (`chart-decision-history.spec.ts`) and `tsc` have not run
+  in the sandbox: UNVERIFIED until the next deploy. Open: backfill on the
+  Spark with `python -m backend.cli.market_daily --history-only
+  --data-dir data/market` before the nightly next rewrites the files.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

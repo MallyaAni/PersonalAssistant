@@ -2002,12 +2002,31 @@ export interface DeskHistoryRow {
   // True when published grade/votes/stances replace the replay's values.
   // Outcomes, exposure, confidence and earnings markers remain replay-derived.
   said?: boolean;
+  // What the live policy would have done at this session's close, replayed
+  // on the names the book could have held then: the target weight of
+  // equity, its change from the session before, and the action that move
+  // amounts to. Absent on files written before the replay existed.
+  target_weight?: number;
+  delta_weight?: number;
+  action?: 'buy' | 'sell' | 'add' | 'trim' | 'hold';
+}
+// One real fill of the paper account in this name, read from the nightly records.
+export interface DeskHistoryFill {
+  date: string;
+  side: 'buy' | 'sell';
+  qty: number;
+  price: number;
 }
 export interface DeskHistory {
   ticker: string;
   asof: string;
   horizon: number;
   rows: DeskHistoryRow[];
+  // The policy the rows' decisions were replayed under, and the note that
+  // dates a decision to the close and its fill to the next open.
+  policy?: string;
+  decision_note?: string;
+  fills?: DeskHistoryFill[];
   recommendations?: DeskRecommendationHistory;
   backtest: {
     min_grade: string;

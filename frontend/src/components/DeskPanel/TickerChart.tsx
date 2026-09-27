@@ -13,7 +13,7 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts'
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, type DeskPersonalReceipt, type DeskChart, type DeskChartBar } from '../../services/api'
-import type { DeskHistory, DeskLive } from '../../services/api'
+import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 
 // The picture behind the grade. The board says what the desk concluded; this
@@ -248,6 +248,109 @@ const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], ti
   return out
 }
 
+// The chart's own marker shape, shared by every layer drawn on the candles.
+type ChartMarker = {
+  time: UTCTimestamp
+  position: 'aboveBar' | 'belowBar'
+  color: string
+  shape: 'arrowUp' | 'arrowDown' | 'circle'
+  text: string
+  size: number
+}
+
+const DECISION_BUY = '#15803d'
+const DECISION_SELL = '#b42318'
+const FILL_BLUE = '#0b5cad'
+const DECISION_NOTE = 'decisions at the close, filled at the next open; sizes are % of equity'
+
+// A target weight as the whole percent of equity a trader reads it as.
+const percentOfEquity = (weight: number | undefined) => Math.round((weight ?? 0) * 100)
+
+// Capitalise a policy action for the eye: buy -> Buy.
+const titled = (action: string) => action ? action[0].toUpperCase() + action.slice(1) : action
+
+// The words on a decision marker: what to do and the size it leads to. A hold
+// is no marker at all, so it returns nothing.
+const decisionText = (row: DeskHistoryRow) => {
+  const pct = percentOfEquity(row.target_weight)
+  switch (row.action) {
+    case 'buy': return `Buy ${pct}%`
+    case 'add': return `Add →${pct}%`
+    case 'trim': return `Trim →${pct}%`
+    case 'sell': return 'Sell'
+    default: return null
+  }
+}
+
+// The rows on which the replayed policy would have traded, oldest first.
+const decisionRows = (history: DeskHistory | undefined) =>
+  (history?.rows ?? []).filter(row => row.action && row.action !== 'hold')
+
+// Mark the sessions the live policy would have bought, added, trimmed or sold on,
+// on the candle of the decision's own session (the close it was made at, not the
+// next open it fills at). Buys and adds point up from below in green; trims and
+// sells point down from above in red; the label carries the size it leads to.
+const decisionMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] =>
+  decisionRows(history).flatMap(row => {
+    const text = decisionText(row)
+    const candle = markerCandle(row.date, bars, timeframe)
+    if (!text || !candle) return []
+    const up = row.action === 'buy' || row.action === 'add'
+    return [{
+      time: stamp(candle.date),
+      position: up ? 'belowBar' as const : 'aboveBar' as const,
+      color: up ? DECISION_BUY : DECISION_SELL,
+      shape: up ? 'arrowUp' as const : 'arrowDown' as const,
+      text, size: 2,
+    }]
+  })
+
+// Only a fill with a date, a side, a quantity and a price is drawable or listable.
+const drawableFill = (fill: DeskHistoryFill) =>
+  Boolean(fill) && typeof fill.date === 'string' && (fill.side === 'buy' || fill.side === 'sell')
+  && typeof fill.qty === 'number' && Number.isFinite(fill.qty)
+  && typeof fill.price === 'number' && Number.isFinite(fill.price)
+
+// The paper account's real fills, oldest first, malformed rows left out.
+const fillRows = (history: DeskHistory | undefined): DeskHistoryFill[] => {
+  const raw: unknown = history?.fills
+  return (Array.isArray(raw) ? raw as DeskHistoryFill[] : []).filter(drawableFill)
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
+// Mark the paper account's real fills as blue circles on the session they filled,
+// below the candle for a buy and above it for a sell, so a decision and the fill
+// it led to sit a candle apart on the same picture.
+const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] =>
+  fillRows(history).flatMap(fill => {
+    const candle = markerCandle(fill.date, bars, timeframe)
+    return candle ? [{
+      time: stamp(candle.date),
+      position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
+      color: FILL_BLUE,
+      shape: 'circle' as const,
+      text: `Filled ${fill.qty} @ ${fill.price.toFixed(2)}`,
+      size: 2,
+    }] : []
+  })
+
+// A session as a trader writes it: the month and day, with the year only when
+// it is not the year of the newest row, so a list spanning years stays honest.
+const sessionLabel = (session: string, currentYear: string) => {
+  const day = new Date(`${session}T00:00:00Z`)
+  if (!Number.isFinite(day.getTime())) return session
+  const sameYear = session.slice(0, 4) === currentYear
+  return new Intl.DateTimeFormat('en-US', {timeZone: 'UTC', month: 'short', day: 'numeric', ...(sameYear ? {} : {year: 'numeric'})}).format(day)
+}
+
+// The close on the decision's own session, from the loaded daily candles; a
+// weekly candle is a week's close and not the decision's, so it is left out.
+const closeOn = (session: string, bars: DeskChartBar[], timeframe: Timeframe) => {
+  if (timeframe !== 'daily') return null
+  const bar = bars.find(candle => candle.date === session)
+  return bar && typeof bar.close === 'number' && Number.isFinite(bar.close) ? bar.close : null
+}
+
 // Render price indicators and their evidence without implying account execution.
 export const TickerChart = ({
   userId,
@@ -276,6 +379,8 @@ export const TickerChart = ({
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   const [showSignals, setShowSignals] = useState(true)
   const [showRecommendations, setShowRecommendations] = useState(true)
+  const [showDecisions, setShowDecisions] = useState(true)
+  const [showFills, setShowFills] = useState(true)
   const [receipts, setReceipts] = useState<ChartReceipt[]>([])
   const [receiptCursor, setReceiptCursor] = useState<string | null>(null)
   const [receiptError, setReceiptError] = useState('')
@@ -399,6 +504,9 @@ export const TickerChart = ({
   const events = useMemo(() => recommendationEvents(receipts), [receipts])
   const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
+  const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
+  const fillMarks = useMemo(() => fillMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
+  const fills = useMemo(() => fillRows(history), [history])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -507,10 +615,14 @@ export const TickerChart = ({
   // Update markers in place so receipt-only changes preserve the user's chart position and zoom.
   useEffect(() => {
     // Series points require uniqueness, but distinct markers on the same date must survive.
-    const markers = [...(personalHistory && showRecommendations ? actionMarkers : []), ...(showSignals ? changes : [])]
-      .filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
+    const markers = [
+      ...(personalHistory && showRecommendations ? actionMarkers : []),
+      ...(showSignals ? changes : []),
+      ...(showDecisions ? decisions : []),
+      ...(showFills ? fillMarks : []),
+    ].filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     markersRef.current?.setMarkers(markers)
-  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, actionMarkers, changes, personalHistory])
+  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, actionMarkers, changes, decisions, fillMarks, personalHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
@@ -532,6 +644,11 @@ export const TickerChart = ({
 
   const groups = useMemo(() => recordedGroups(history, merged.bars, timeframe), [history, merged, timeframe])
   const observations = history?.recommendations?.observations ?? []
+  // The policy's stance on the newest session that carries one, and the last
+  // twelve sessions it would have traded on, newest first.
+  const latestDecision = useMemo(() => [...(history?.rows ?? [])].reverse().find(row => row.action), [history])
+  const recentDecisions = useMemo(() => decisionRows(history).slice(-12).reverse(), [history])
+  const currentYear = (latestDecision?.date ?? history?.asof ?? '').slice(0, 4)
 
   return (
     <section className="mb-4" aria-label={`${ticker} price chart`}>
@@ -553,6 +670,14 @@ export const TickerChart = ({
             <input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />
             Grade changes
           </label>
+          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+            <input type="checkbox" checked={showDecisions} onChange={event => setShowDecisions(event.target.checked)} />
+            Policy buy/sell
+          </label>
+          {fills.length > 0 && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+            <input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />
+            Paper fills
+          </label>}
           <div className="flex gap-1" role="group" aria-label="Chart timeframe">
           {(['daily', 'weekly'] as Timeframe[]).map((frame) => (
             <button
@@ -613,6 +738,30 @@ export const TickerChart = ({
           {showSignals && <p className="mt-1 text-[11px] text-[#6e6e73]" title="Dates identify trading sessions, not publication times. A or A+ meets only the grade requirement for entry; other checks still apply.">
             Saved grades use nightly records; recalculated grades use historical data. Grade changes are not trades.
           </p>}
+          {history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
+            {history.policy}: {history.decision_note || DECISION_NOTE}
+          </p>}
+
+          {/* The markers are canvas, so the same decisions are written out here:
+              the policy's stance today, then the sessions it would have traded
+              on, newest first. This list is the decisions, not the markers, so
+              the marker checkbox leaves it in place. */}
+          {latestDecision && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
+            <p className="font-medium text-[#1d1d1f]">Now: {titled(latestDecision.action ?? 'hold')} {percentOfEquity(latestDecision.target_weight)}%</p>
+            {recentDecisions.length === 0
+              ? <p>No policy buy or sell in the loaded history.</p>
+              : <ul className="mt-0.5">
+                {recentDecisions.map(row => {
+                  const price = closeOn(row.date, merged.bars, timeframe)
+                  return <li key={row.date}>{sessionLabel(row.date, currentYear)} · {decisionText(row)}{price !== null ? ` · close $${price.toFixed(2)}` : ''}</li>
+                })}
+              </ul>}
+            {fills.length > 0 && <ul className="mt-1" aria-label={`${ticker} paper fills`}>
+              {[...fills].reverse().slice(0, 12).map((fill, index) => (
+                <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)} · Filled {fill.side} {fill.qty} @ ${fill.price.toFixed(2)}</li>
+              ))}
+            </ul>}
+          </div>}
 
           {personalHistory && showRecommendations && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Saved recommendation history">
             <p aria-label="Buy and Sell markers">{actionMarkers.length

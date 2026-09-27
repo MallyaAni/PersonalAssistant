@@ -3,6 +3,7 @@
     python -m backend.cli.market_daily --refresh            # data, then the desk
     python -m backend.cli.market_daily                      # the desk on stored data
     python -m backend.cli.market_daily --refresh --brief SNDK CRWV
+    python -m backend.cli.market_daily --history-only       # the history files only
 
 `--refresh` pulls daily bars for all tracked stocks, benchmarks and the
 macro series, EDGAR events and facts for all tracked stocks, and scores any
@@ -123,6 +124,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=0,
         help="drop bar and filing partitions older than this many days (0 keeps all)",
+    )
+    parser.add_argument(
+        "--history-only",
+        action="store_true",
+        help="run the desk on stored data and rewrite the per-name history "
+        "files (the chart's decision and fill markers), then exit: no record, "
+        "no trade, no prune, no prose",
     )
     return parser
 
@@ -1557,29 +1565,91 @@ def _backtest_dict(bt) -> dict:
     }
 
 
+# The live policy's decision on every session of the report, one (T, N)
+# matrix computed once for every name's file. A failure here (a missing
+# membership history, say) costs the decision columns and says so in the
+# note; it never costs the history files, which the drill-down reads for
+# the grades whatever the chart can draw.
+def _decision_targets(report):
+    """Return (target matrix or None, the note the files carry)."""
+    from backend.agents.trading.desk import decision_history
+
+    try:
+        return decision_history.target_matrix(report), decision_history.DECISION_NOTE
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        print(f"\nhistory: decisions not replayed ({type(exc).__name__}: {exc})")
+        return None, f"decisions not replayed ({type(exc).__name__})"
+
+
+# The paper account's fills in one name, or an empty list when the records
+# cannot be read: a fill marker is a convenience, the file is not.
+def _decision_fills(root: Path, ticker: str) -> list[dict]:
+    """Return the name's paper fills, or [] when they cannot be read."""
+    from backend.agents.trading.desk import decision_history
+
+    try:
+        return decision_history.fills(root, ticker)
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        print(f"\nhistory: {ticker} fills not read ({type(exc).__name__}: {exc})")
+        return []
+
+
 # One history file per book name, so the drill-down reads a single name's
-# file rather than rebuilding the whole desk to answer one question.
+# file rather than rebuilding the whole desk to answer one question. Each
+# row also carries what the live policy would have done that session
+# (target weight, change and action), and the file carries the policy's
+# name, the note that dates a decision to the close and its fill to the
+# next open, and the paper account's real fills, so the chart can draw the
+# decisions and the fills beside the grade changes.
 def write_history(store, report, horizon: int = 20) -> int:
     """Write the per-name history files; return how many were written."""
+    from backend.agents.trading.desk import decision_history
+
     base = Path(store.root) / "history"
     base.mkdir(parents=True, exist_ok=True)
+    targets, note = _decision_targets(report)
     count = 0
     for ticker in sorted(report.sides):
         rows = trading_desk.history(report, ticker, horizon)
         backtest = trading_desk.name_backtest(report, ticker)
+        decided: dict[str, dict] = {}
+        if targets is not None:
+            decided = {
+                d["date"]: d
+                for d in decision_history.series(report, ticker, targets=targets)
+            }
         payload = {
             "ticker": ticker,
             "asof": str(report.panel.dates[-1]),
             "horizon": horizon,
             "fundamentals_source": getattr(report, "fundamentals_source", "") or "",
-            "rows": [_history_row(r) for r in rows],
+            "policy": decision_history.POLICY,
+            "decision_note": note,
+            "rows": [
+                {**_history_row(r), **_decision_fields(decided.get(str(r.date)))}
+                for r in rows
+            ],
             "backtest": _backtest_dict(backtest),
+            "fills": _decision_fills(Path(store.root), ticker),
         }
         (base / f"{ticker}.json").write_text(
             json.dumps(payload, indent=1), encoding="utf-8"
         )
         count += 1
     return count
+
+
+# The three decision columns a history row carries, or nothing when the
+# session has no replayed decision (the row then reads as it always did).
+def _decision_fields(decision: dict | None) -> dict:
+    """Return {target_weight, delta_weight, action} for a row, or {}."""
+    if not decision:
+        return {}
+    return {
+        "target_weight": decision["target_weight"],
+        "delta_weight": decision["delta_weight"],
+        "action": decision["action"],
+    }
 
 
 # The prose job: the evidence text (and grade, for a brief) of every name
@@ -1682,10 +1752,31 @@ def _nightly_asof(now: datetime | None = None) -> date:
     return moment.astimezone(NEW_YORK).date()
 
 
+# `--history-only`: the desk on the stored data, exactly as the nightly
+# runs it (same as-of, same fundamentals policy), and the per-name history
+# files rewritten from it. Nothing else the nightly does happens here: no
+# ML observation, no record, no trade, no prune, no prose. It exists so
+# the chart's decision and fill markers can be backfilled for every name
+# without re-deciding a day, and it runs before the observer because the
+# observer writes a ledger.
+def _history_only(args, store: MarketStore) -> None:
+    """Rewrite the history files from a desk run and say how many."""
+    report = trading_desk.run(
+        store, args.asof, fundamentals=trading_desk.FUNDAMENTALS_CURRENT
+    )
+    panel = report.panel
+    print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
+    written = write_history(store, report)
+    print(f"history: {written} names written (history only; no record written)")
+
+
 # Run the nightly writer with explicitly versioned inputs and existing execution guards.
 def _run(args, store: MarketStore) -> None:  # noqa: C901
     asof = args.asof or _nightly_asof()
     current = args.asof is None
+    if args.history_only:
+        _history_only(args, store)
+        return
     observed: dict = {}
     if args.refresh:
         refresh(

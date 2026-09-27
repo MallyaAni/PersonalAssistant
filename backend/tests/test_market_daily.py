@@ -810,6 +810,130 @@ def test_write_history_writes_one_file_per_book_name(tmp_path):
     assert payload["backtest"]["ticker"] == "SNDK"
 
 
+# The fixture moved to sessions after SNDK and IREN joined the membership
+# history (2026-09-04), so the point-in-time replay can decide on them.
+def _member_report() -> DeskReport:
+    report = _report()
+    dates = np.array(
+        [date(2026, 9, 8) + timedelta(days=i) for i in range(3)], dtype="datetime64[D]"
+    )
+    return replace(report, panel=replace(report.panel, dates=dates))
+
+
+# Each row carries what the live policy would have done that session, and
+# the file names the policy, dates a decision to the close and its fill to
+# the next open, and carries the paper account's fills from the records.
+def test_write_history_carries_the_policy_decisions_and_fills(tmp_path):
+    from backend.agents.trading.desk import decision_history, policy_v4
+
+    folder = tmp_path / "desk" / "asof=2026-09-09"
+    folder.mkdir(parents=True)
+    (folder / "desk.json").write_text(
+        json.dumps(
+            {
+                "session": "2026-09-09",
+                "paper": {
+                    "settled": [
+                        {
+                            "symbol": "SNDK",
+                            "side": "buy",
+                            "qty": 63,
+                            "status": "filled",
+                            "filled": 63,
+                            "filled_price": 224.81,
+                            "client_order_id": "anios-2026-09-08-buy-sndk-0",
+                        }
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    count = market_daily.write_history(MarketStore(tmp_path), _member_report())
+    assert count == 2
+    payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
+    assert payload["policy"] == decision_history.POLICY == policy_v4.POLICY_VERSION
+    assert payload["decision_note"] == decision_history.DECISION_NOTE
+    rows = payload["rows"]
+    assert [r["date"] for r in rows] == ["2026-09-08", "2026-09-09", "2026-09-10"]
+    # SNDK is the one A+ name: bought at the cap on the first session, held after.
+    assert rows[0]["action"] == "buy"
+    assert rows[0]["target_weight"] == pytest.approx(policy_v4.HOLD_CAP)
+    assert rows[0]["delta_weight"] == pytest.approx(policy_v4.HOLD_CAP)
+    assert [r["action"] for r in rows[1:]] == ["hold", "hold"]
+    assert all(r["delta_weight"] == 0 for r in rows[1:])
+    # The grade columns are as they were.
+    assert rows[0]["grade"] == "A+"
+    assert "forward_residual" in rows[0]
+    assert payload["fills"] == [
+        {"date": "2026-09-09", "side": "buy", "qty": 63, "price": 224.81}
+    ]
+    # IREN is graded C: never held, no fills.
+    other = json.loads((tmp_path / "history" / "IREN.json").read_text())
+    assert {r["action"] for r in other["rows"]} == {"hold"}
+    assert all(r["target_weight"] == 0 for r in other["rows"])
+    assert other["fills"] == []
+
+
+# A replay that cannot run costs the decision columns, never the file.
+def test_write_history_survives_a_failed_replay(tmp_path, monkeypatch, capsys):
+    from backend.agents.trading.desk import decision_history
+
+    def boom(report, history_path=None):
+        raise ValueError("historical membership is empty")
+
+    monkeypatch.setattr(decision_history, "target_matrix", boom)
+    count = market_daily.write_history(MarketStore(tmp_path), _member_report())
+    assert count == 2
+    payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
+    assert payload["policy"] == decision_history.POLICY
+    assert "not replayed" in payload["decision_note"]
+    assert "action" not in payload["rows"][0]
+    assert payload["rows"][0]["grade"] == "A+"
+    assert "decisions not replayed" in capsys.readouterr().out
+
+
+# `--history-only` runs the desk as the nightly does and writes the history
+# files, and nothing else: no record, no trade, no observation, no prose.
+def test_history_only_writes_histories_and_no_record(tmp_path, monkeypatch, capsys):
+    seen_fundamentals = []
+    forbidden = []
+
+    def fake_run(store, asof=None, fundamentals="corrected"):
+        seen_fundamentals.append((asof, fundamentals))
+        return _member_report()
+
+    def forbid(name):
+        def call(*args, **kwargs):
+            forbidden.append(name)
+            return {}
+
+        return call
+
+    monkeypatch.setattr(market_daily.trading_desk, "run", fake_run)
+    monkeypatch.setattr(market_daily, "paper_trade", forbid("paper_trade"))
+    monkeypatch.setattr(market_daily, "observe_ml_forward", forbid("observe"))
+    monkeypatch.setattr(market_daily, "save", forbid("save"))
+    monkeypatch.setattr(market_daily, "prune", forbid("prune"))
+    monkeypatch.setattr(market_daily, "enrich_prose", forbid("prose"))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["market_daily", "--data-dir", str(tmp_path), "--history-only"]
+        + ["--paper-trade"],
+    )
+    market_daily.main()
+    out = capsys.readouterr().out
+    assert "history: 2 names written" in out
+    assert seen_fundamentals == [(None, "current")]
+    assert forbidden == []
+    assert (tmp_path / "history" / "SNDK.json").exists()
+    assert (tmp_path / "history" / "IREN.json").exists()
+    assert not list(tmp_path.glob("desk/asof=*"))
+    payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
+    assert payload["rows"][0]["action"] == "buy"
+
+
 # A curve that cannot be drawn is a missing block, never a lost record.
 def test_curves_never_raise(monkeypatch, tmp_path):
     from backend.agents.trading.desk import paper
