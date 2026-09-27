@@ -38,10 +38,15 @@ first-hour VWAP is within a basis point of the open (H4: the open fill is
 not a headwind). Also recorded: the book's return on 2024-2026 came
 overnight (gap +7.6 bp a session, open-to-close -0.4 bp).
 
-**Not done, next in order.** (1) Install the nightly SIP append: `crontab
--e` on spark1, `45 16 * * 1-5 /home/animallya96/desk_sip.sh` (drafted at
-`~/desk_sip.sh`; appends the last ten sessions and reconciles them; one
-request a name). (2) Monday 2026-09-28, 19:30 ET: the first `/4` shadow
+**Nightly SIP append installed** on spark1 at 06:15Z: `45 16 * * 1-5
+/home/animallya96/desk_sip.sh` (crontab backed up to
+`~/crontab.backup.2026-09-27`); the script appends the last ten sessions
+from the deployed checkout and reconciles them into `~/desk_sip.log`,
+printing only the names below 100%. Its first manual run made 0 requests
+(the store was current) and flagged the expected residuals.
+
+**Not done, next in order.** (1) First cron run Monday 16:45 ET: check
+`~/desk_sip.log` for the 2026-09-28 session. (2) Monday 2026-09-28, 19:30 ET: the first `/4` shadow
 receipt (`record["policy_shadows"]`), the point-in-time line and the new
 candidate line on the dashboard. (3) The anatomy tables conditioned on
 the desk's own state (grade, regime) rather than pooled, and the
