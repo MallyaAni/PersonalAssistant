@@ -45,12 +45,18 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, date, datetime, time
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import numpy as np
 
 from backend.market import calendar
-from backend.market.alpaca import IntradayBar, bars_expected, bars_frame, bars_from_frame
+from backend.market.alpaca import (
+    IntradayBar,
+    bars_expected,
+    bars_frame,
+    bars_from_frame,
+)
 from backend.market.store import MarketStore
 from backend.market.yahoo import TickerHistory
 
@@ -140,7 +146,9 @@ def source_revision(root: Path = _REPO_ROOT) -> str:
 
 
 # A Provenance for a fetch happening now, with the current source revision.
-def provenance_now(clock: Callable[[], datetime] = lambda: datetime.now(UTC)) -> Provenance:
+def provenance_now(
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+) -> Provenance:
     """Return the provenance of a fetch made at ``clock()`` by this checkout."""
     return Provenance(
         fetched_at=clock().astimezone(UTC).isoformat(),
@@ -330,12 +338,20 @@ def append_missing(
     wanted = [
         d
         for d in ordered
-        if d not in have or (include_incomplete and stored is not None and not stored[d])
+        if d not in have
+        or (include_incomplete and stored is not None and not stored[d])
     ]
     ranges = tuple(_runs(wanted, ordered))
     if dry_run or not wanted:
         return AppendResult(
-            ticker, len(ordered), len(ordered) - len(wanted), tuple(wanted), ranges, (), (), ()
+            ticker,
+            len(ordered),
+            len(ordered) - len(wanted),
+            tuple(wanted),
+            ranges,
+            (),
+            (),
+            (),
         )
     meta = meta or provenance_now()
     written: list[date] = []
@@ -405,8 +421,21 @@ def reconcile(
     stored = read_session(store, ticker, session)
     if stored is None:
         return Reconciliation(
-            ticker, session, False, False, False, 1.0, nan, nan, nan, nan, nan,
-            close_tolerance, volume_tolerance, False, "session not stored",
+            ticker,
+            session,
+            False,
+            False,
+            False,
+            1.0,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            close_tolerance,
+            volume_tolerance,
+            False,
+            "session not stored",
         )
     bars, metadata = stored
     complete = metadata.get("complete") == "true"
@@ -416,8 +445,21 @@ def reconcile(
         row = next((b for b in history.bars if b.session_date == session), None)
     if history is None or row is None:
         return Reconciliation(
-            ticker, session, True, complete, False, 1.0, nan, nan, nan, nan, nan,
-            close_tolerance, volume_tolerance, False, "no daily bar for the session",
+            ticker,
+            session,
+            True,
+            complete,
+            False,
+            1.0,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+            close_tolerance,
+            volume_tolerance,
+            False,
+            "no daily bar for the session",
         )
     factor = split_factor(history, session)
     daily_open = row.open * factor if row.open is not None else None
@@ -432,7 +474,9 @@ def reconcile(
         high_diff = _log_diff(max(b.high for b in bars), daily_high)
         low_diff = _log_diff(min(b.low for b in bars), daily_low)
         volume_diff = (
-            sip_volume / daily_volume - 1.0 if daily_volume and daily_volume > 0 else nan
+            sip_volume / daily_volume - 1.0
+            if daily_volume and daily_volume > 0
+            else nan
         )
     else:
         open_diff = close_diff = high_diff = low_diff = volume_diff = nan
@@ -465,7 +509,7 @@ def reconcile(
 
 
 # A reconciliation as a JSON-ready dict.
-def reconciliation_record(record: Reconciliation) -> dict:
+def reconciliation_record(record: Reconciliation) -> dict[str, Any]:
     """Return the reconciliation as plain JSON-serialisable values."""
     out = asdict(record)
     out["session"] = record.session.isoformat()
@@ -483,7 +527,9 @@ def calendar_sessions(since: date, until: date) -> tuple[list[date], list[int]]:
     unreviewed = [y for y in range(since.year, until.year + 1) if y not in years]
     if since > until:
         return [], unreviewed
-    days = np.arange(np.datetime64(since), np.datetime64(until) + 1, dtype="datetime64[D]")
+    days = np.arange(
+        np.datetime64(since), np.datetime64(until) + 1, dtype="datetime64[D]"
+    )
     sessions = days[np.is_busday(days, busdaycal=busdays)]
     return [d for d in sessions.astype(object) if d.year in years], unreviewed
 
@@ -498,7 +544,7 @@ def coverage(
     until: date,
     *,
     reconcile_sessions: bool = True,
-) -> dict:
+) -> dict[str, Any]:
     """Return the coverage summary of ``ticker`` over [since, until]."""
     expected, unreviewed = calendar_sessions(since, until)
     flags = {
@@ -526,7 +572,9 @@ def coverage(
         "complete_share": (complete / len(stored)) if stored else None,
         "reconciled": passed + failed,
         "reconcile_passed": passed,
-        "reconcile_pass_rate": (passed / (passed + failed)) if passed + failed else None,
+        "reconcile_pass_rate": (
+            (passed / (passed + failed)) if passed + failed else None
+        ),
         "first_session": stored[0].isoformat() if stored else None,
         "last_session": stored[-1].isoformat() if stored else None,
     }

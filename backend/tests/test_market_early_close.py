@@ -100,10 +100,11 @@ def test_episodes_drop_or_pad_an_early_close_session():
     )
     assert days.astype(str).tolist() == [EARLY.isoformat(), NORMAL.isoformat()]
     assert close.shape == (2, intraday.BARS)
-    assert np.isfinite(close[0, :14]).all() and np.isnan(close[0, 14:]).all()
+    assert np.isfinite(close[0, :14]).all()
+    assert np.isnan(close[0, 14:]).all()
     assert np.isfinite(close[1]).all()
     assert volume[0, :14].sum() == 1400.0
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="early_closes"):
         intraday.episodes_from(*parts, early_closes="keep")
 
 
@@ -122,7 +123,8 @@ def test_fourteen_bars_complete_an_early_close_session():
 # the 12:45 close with zero volume, and the sparsity floor is 7 of 14.
 def test_session_tape_ends_at_the_early_close():
     t = tape.session_tape(_bars(EARLY, 100.0))
-    assert t is not None and t.shape == (26, 5)
+    assert t is not None
+    assert t.shape == (26, 5)
     assert t[13, 3] == pytest.approx(np.log(113.0 / 100.0), abs=1e-6)
     assert (t[14:, 3] == t[13, 3]).all()  # flat after the close
     assert (t[14:, 4] == 0.0).all()  # no after-hours volume in the session

@@ -22,13 +22,19 @@ EARLY = date(2025, 11, 28)  # 13:00 close
 MON = date(2025, 12, 1)
 TUE = date(2025, 12, 2)
 WED = date(2025, 12, 3)
-PROVENANCE = sip.Provenance(fetched_at="2026-09-26T01:00:00+00:00", source_revision="abc123")
+PROVENANCE = sip.Provenance(
+    fetched_at="2026-09-26T01:00:00+00:00", source_revision="abc123"
+)
 
 
 # Winter bars for one New York day: `count` bars from 09:30 EST (14:30
 # UTC) at fifteen-minute steps, optionally with pre-market bars in front.
 def _bars(
-    day: date, base: float = 100.0, count: int = 26, pre_market: int = 0, volume: float = 100.0
+    day: date,
+    base: float = 100.0,
+    count: int = 26,
+    pre_market: int = 0,
+    volume: float = 100.0,
 ) -> list[IntradayBar]:
     start = datetime(day.year, day.month, day.day, 14, 30, tzinfo=UTC)
     out = []
@@ -36,7 +42,12 @@ def _bars(
         price = base + i
         out.append(
             IntradayBar(
-                start + timedelta(minutes=15 * i), price, price + 0.5, price - 0.5, price, volume
+                start + timedelta(minutes=15 * i),
+                price,
+                price + 0.5,
+                price - 0.5,
+                price,
+                volume,
             )
         )
     return out
@@ -46,7 +57,9 @@ def _bars(
 # `base`, close `base + 25`, high `base + 25.5`, low `base - 0.5`, volume
 # 2600, with an optional split after the sessions that scales the stored
 # (split-adjusted) values the way the daily store holds them.
-def _daily(days: list[date], bases: list[float], split: tuple[date, float] | None = None):
+def _daily(
+    days: list[date], bases: list[float], split: tuple[date, float] | None = None
+):
     factor = split[1] if split else 1.0
     bars = tuple(
         DailyBar(
@@ -78,7 +91,8 @@ def test_write_and_read_a_session_with_provenance(tmp_path):
     assert (tmp_path / "bars_15m_sip" / "asof=2025-12-01" / "AVGO.parquet").exists()
     bars, meta = sip.read_session(store, "AVGO", MON)
     assert len(bars) == 26
-    assert bars[0].open == 100.0 and bars[-1].close == 125.0
+    assert bars[0].open == 100.0
+    assert bars[-1].close == 125.0
     assert meta["feed"] == "sip"
     assert meta["adjustment"] == "raw"
     assert meta["timeframe"] == "15Min"
@@ -154,7 +168,8 @@ def test_append_missing_fetches_only_the_gaps_in_contiguous_runs(tmp_path):
     calls.clear()
     again = sip.append_missing(store, "AVGO", sessions, fetch, PROVENANCE)
     assert calls == [("AVGO", WED, WED)]
-    assert again.written == () and again.already_stored == 3
+    assert again.written == ()
+    assert again.already_stored == 3
 
 
 # Only with `include_incomplete` is a short partition fetched again.
@@ -172,7 +187,8 @@ def test_append_refetches_incomplete_sessions_only_on_request(tmp_path):
     result = sip.append_missing(
         store, "AVGO", [MON], fetch, PROVENANCE, include_incomplete=True
     )
-    assert calls == [(MON, MON)] and result.written == (MON,)
+    assert calls == [(MON, MON)]
+    assert result.written == (MON,)
     assert sip.completeness(store, "AVGO") == {MON: True}
 
 
@@ -183,16 +199,25 @@ def test_reconcile_passes_a_matching_session(tmp_path):
     sip.write_session(store, "AVGO", MON, _bars(MON), PROVENANCE)
     store.write(date(2026, 9, 26), _daily([MON], [100.0]))
     record = sip.reconcile(store, "AVGO", MON)
-    assert record.passed and record.reason == ""
-    assert record.stored and record.complete and record.daily_found
+    assert record.passed
+    assert record.reason == ""
+    assert record.stored
+    assert record.complete
+    assert record.daily_found
     assert record.split_factor == 1.0
-    for diff in (record.open_diff, record.close_diff, record.high_diff, record.low_diff):
+    for diff in (
+        record.open_diff,
+        record.close_diff,
+        record.high_diff,
+        record.low_diff,
+    ):
         assert abs(diff) < 1e-9
     assert abs(record.volume_diff) < 1e-9
     assert record.close_tolerance == sip.DEFAULT_CLOSE_TOLERANCE == 0.005
     assert record.volume_tolerance == sip.DEFAULT_VOLUME_TOLERANCE == 0.20
     as_json = sip.reconciliation_record(record)
-    assert as_json["session"] == "2025-12-01" and as_json["passed"] is True
+    assert as_json["session"] == "2025-12-01"
+    assert as_json["passed"] is True
 
 
 # The daily store's close is split-adjusted as of its fetch; the raw SIP
@@ -205,7 +230,8 @@ def test_reconcile_undoes_a_later_split(tmp_path):
     record = sip.reconcile(store, "AVGO", MON)
     assert record.split_factor == 10.0
     assert record.passed, record.reason
-    assert abs(record.close_diff) < 1e-9 and abs(record.volume_diff) < 1e-9
+    assert abs(record.close_diff) < 1e-9
+    assert abs(record.volume_diff) < 1e-9
 
 
 # A close outside the tolerance, a volume outside its tolerance, an
@@ -217,10 +243,12 @@ def test_reconcile_fails_with_a_reason(tmp_path):
     sip.write_session(store, "AVGO", WED, _bars(WED, count=20), PROVENANCE)
     store.write(date(2026, 9, 26), _daily([MON, TUE, WED], [101.0, 100.0, 100.0]))
     close = sip.reconcile(store, "AVGO", MON)
-    assert not close.passed and close.reason.startswith("close differs")
+    assert not close.passed
+    assert close.reason.startswith("close differs")
     assert abs(close.close_diff) > sip.DEFAULT_CLOSE_TOLERANCE
     volume = sip.reconcile(store, "AVGO", TUE)
-    assert not volume.passed and volume.reason.startswith("volume differs")
+    assert not volume.passed
+    assert volume.reason.startswith("volume differs")
     assert volume.volume_diff == pytest.approx(1.0)
     assert sip.reconcile(store, "AVGO", WED).reason == "session incomplete"
     assert sip.reconcile(store, "AVGO", EARLY).reason == "session not stored"
@@ -237,7 +265,9 @@ def test_coverage_report(tmp_path):
     for day in (EARLY, MON, TUE):
         sip.write_session(store, "AVGO", day, _bars(day), PROVENANCE)
     sip.write_session(store, "AVGO", WED, _bars(WED, count=20), PROVENANCE)
-    store.write(date(2026, 9, 26), _daily([EARLY, MON, TUE, WED], [100.0, 100.0, 100.0, 100.0]))
+    store.write(
+        date(2026, 9, 26), _daily([EARLY, MON, TUE, WED], [100.0, 100.0, 100.0, 100.0])
+    )
     report = sip.coverage(store, "AVGO", EARLY, date(2025, 12, 5))
     assert report["sessions_in_calendar"] == 6  # Fri 28, Mon 1 .. Fri 5
     assert report["sessions_stored"] == 4
@@ -259,4 +289,5 @@ def test_source_revision_is_a_sha_or_empty(tmp_path):
     assert sip.source_revision(tmp_path) == ""
     meta = sip.provenance_now(lambda: datetime(2026, 9, 26, 1, tzinfo=UTC))
     assert meta.fetched_at == "2026-09-26T01:00:00+00:00"
-    assert meta.feed == "sip" and meta.adjustment == "raw"
+    assert meta.feed == "sip"
+    assert meta.adjustment == "raw"

@@ -151,7 +151,12 @@ def test_default_fetch_request_is_byte_identical_to_the_live_request():
         return 200, b'{"bars": {"SNDK": []}, "next_page_token": null}'
 
     alpaca.fetch_bars(
-        "SNDK", date(2025, 6, 3), date(2025, 6, 3), transport, {"h": "1"}, sleep=lambda s: None
+        "SNDK",
+        date(2025, 6, 3),
+        date(2025, 6, 3),
+        transport,
+        {"h": "1"},
+        sleep=lambda s: None,
     )
     assert seen == [LIVE_URL]
     assert alpaca.bars_query("SNDK", date(2025, 6, 3), date(2025, 6, 3)) == {
@@ -246,5 +251,8 @@ def test_sessions_end_at_the_calendar_close_on_an_early_close():
     bars, _ = alpaca.parse_bars_page({"bars": {"SNDK": rows}}, "SNDK")
     grouped = alpaca.sessions(bars)
     assert len(grouped[early]) == 14
-    assert grouped[early][-1].start.astimezone(alpaca._NEW_YORK).strftime("%H:%M") == "12:45"
+    assert (
+        grouped[early][-1].start.astimezone(alpaca._NEW_YORK).strftime("%H:%M")
+        == "12:45"
+    )
     assert len(grouped[normal]) == 26
