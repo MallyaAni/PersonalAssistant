@@ -653,7 +653,13 @@ def _paper_trade(
     force: bool = False,
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
-    from backend.agents.trading.desk import actions, event_execution, event_risk, paper
+    from backend.agents.trading.desk import (
+        actions,
+        event_execution,
+        event_risk,
+        live_policy,
+        paper,
+    )
     from backend.market import alpaca_trading
 
     client = alpaca_trading.client_from_env()
@@ -666,13 +672,23 @@ def _paper_trade(
         for column, ticker in enumerate(panel.tickers)
         if panel.close[last, column] == panel.close[last, column]
     }
-    targets = {s.position.ticker: s.weight for s in report.book}
+    # The account runs `live_policy.ACTIVE`; `report.book` is the desk's
+    # `/3` sizing and is recorded, not traded (live_policy.py says why).
+    targets = live_policy.targets(report)
     grades = {
         ticker: report.graded.letter(last, column)
         for column, ticker in enumerate(panel.tickers)
         if ticker != panel.benchmark
     }
     state = paper.load_state(store_root)
+    # A state planned under another policy rebalances into the active one
+    # tonight, once; the stamp on the new state stops it recurring.
+    if live_policy.needs_rebalance(state.policy_version):
+        print(
+            f"  policy change: {state.policy_version or 'unstamped (/3 era)'} -> "
+            f"{live_policy.ACTIVE}; rebalancing into the new targets tonight"
+        )
+        rebalance_now = True
     # What became of the last session's orders, before planning this one.
     # An accepted order is not a filled one, and a rebalance whose orders
     # did not fill has not happened - so this runs first and can put the
@@ -720,8 +736,10 @@ def _paper_trade(
             entries=_price_entries(report),
             cash=account.cash,
         )
+    new_state.policy_version = live_policy.ACTIVE
     print(
-        f"\npaper book ({what}{', forced tonight' if rebalance_now else ''}), "
+        f"\npaper book ({live_policy.ACTIVE}; {what}"
+        f"{', forced tonight' if rebalance_now else ''}), "
         f"equity {account.equity:,.0f}:"
     )
     held_back = sum(
