@@ -210,6 +210,15 @@ strategy that changes only when untouched sessions say so.
   only. Backend tests pass (10 new); `chart-15m.spec.ts` and `tsc` have
   not run in the sandbox: UNVERIFIED until the next deploy.
 
+- 2026-09-27, evening: stage 1 of the deep-intraday plan run
+  ([research/deep-intraday-stage1-2026-09-27.md](research/deep-intraday-stage1-2026-09-27.md)):
+  ridge, temporal CNN, PatchTST and a frozen Chronos-Bolt encoder all find
+  the same thing on the fifteen-minute bars - a cross-sectional return
+  signal of IC 0.01 that loses 6-13 bp a day after costs, and a
+  volatility forecast that beats trailing volatility (CNN R² 0.27).
+  INSUFFICIENT EVIDENCE for returns; RL sizing does not start; the
+  volatility head goes to a sizing trial on the graded book.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

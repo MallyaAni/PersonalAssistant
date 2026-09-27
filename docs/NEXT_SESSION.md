@@ -1,5 +1,30 @@
 # Next session
 
+## 2026-09-27, evening — Stage 1 verdict: no return signal in the fifteen-minute bars from any of four model families; volatility is forecastable
+
+**VERIFIED on spark1** from `448b7535`
+([research/deep-intraday-stage1-2026-09-27.md](research/deep-intraday-stage1-2026-09-27.md)):
+ridge, a temporal CNN, PatchTST and a frozen Chronos-Bolt encoder with a
+ridge head, on the last five sessions of bars for 94 names, 81,612 rows,
+walk-forward with a purge. Return head on 2016-2023: IC +0.011 to +0.013,
+t 1.7 to 2.3 - real, tiny, and worth less than it costs to trade: the
+top-quintile book loses 6-13 bp a day to the equal-weight hurdle at 10 bp,
+adds nothing to the grade, and the IC is zero or negative on 2024-2026.
+**Every family: INSUFFICIENT EVIDENCE. Stage 2 (RL sizing) does not
+start.** Transfer learning (Chronos) reproduced ridge; more capacity
+(PatchTST) was the weakest head. The volatility head works in every
+family; the CNN's R² against trailing volatility is 0.27 in both windows.
+
+**Next registered trial:** the CNN's next-session volatility forecast as
+the sizing input for the graded equal-weight book on the point-in-time
+scorecard, against the same book without it - a different claim, its own
+kill criterion, written before the run.
+
+**Compute:** GPU jobs on the Sparks one at a time (two torch trainers
+overflow the memory the model server leaves free; Chronos ran on CPU);
+`HF_HOME=~/scratch/hf` (the default cache is root-owned). The desktop's
+RTX 5080 needs an SSH server before this session can reach it.
+
 ## 2026-09-27, afternoon — The account is on `/4`; the chart shows decisions at fifteen minutes; stage 1 ridge is a clean negative
 
 **Deployed `0d7c91da` (13:46Z) and `1c5ea640` (14:21Z)**, gates 7,602 and
