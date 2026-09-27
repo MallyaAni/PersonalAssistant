@@ -1,0 +1,70 @@
+"""Check tonight's live grades and targets against the point-in-time replay.
+
+    python -m backend.cli.market_grade_parity --root data/market [--date 2026-09-26]
+
+Loads the desk record for the date (the latest when none is given), rebuilds
+the desk report from the store exactly as the nightly does, replays the
+point-in-time grade for the record's session, recomputes the active policy's
+targets, and writes the result to `<root>/desk/grade_parity.json`
+(`backend.market.grade_parity` says precisely what is compared). Prints the
+verdict line and every mismatch.
+
+Exit codes: 0 when live and replay agree; 1 on any mismatch (do not trade
+from the board until it is understood: inspect membership_history.csv and
+the store's latest partition dates); 2 when the check could not run (no
+record for the date, the store unreadable).
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from backend.market import grade_parity
+
+OK, MISMATCH, UNAVAILABLE = 0, 1, 2
+
+
+# The argument parser, separate so a test can drive `main` with a list.
+def build_parser() -> argparse.ArgumentParser:
+    """Return the CLI parser."""
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    parser.add_argument("--root", default="data/market", help="the market data root")
+    parser.add_argument(
+        "--date", default=None, help="the record's session (default: latest)"
+    )
+    parser.add_argument(
+        "--membership",
+        default=None,
+        help="membership_history.csv to replay with (default: the universe's)",
+    )
+    return parser
+
+
+# Run the check and turn the result into an exit code: the verdict line and
+# each mismatch on stdout; a check that could not run says why on stderr.
+def main(argv: list[str] | None = None) -> int:
+    """Entry point; returns the exit code."""
+    args = build_parser().parse_args(argv)
+    try:
+        result = grade_parity.run(
+            Path(args.root),
+            args.date,
+            history_path=Path(args.membership) if args.membership else None,
+        )
+    except Exception as exc:  # noqa: BLE001 - the exit code is the report
+        print(
+            f"grade parity: not checked ({type(exc).__name__}: {exc})", file=sys.stderr
+        )
+        return UNAVAILABLE
+    print(grade_parity.line(result))
+    for m in result["mismatches"]:
+        who = f"{m['ticker']}: " if m.get("ticker") else ""
+        print(f"  {m['kind']}: {who}{m.get('detail', '')}")
+    print(f"written: {grade_parity.path(Path(args.root))}")
+    return OK if result["ok"] else MISMATCH
+
+
+if __name__ == "__main__":
+    sys.exit(main())

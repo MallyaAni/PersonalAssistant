@@ -1784,6 +1784,38 @@ def _nightly_asof(now: datetime | None = None) -> date:
     return moment.astimezone(NEW_YORK).date()
 
 
+# The desk exactly as the nightly runs it: the live inputs and the
+# reporting-period fundamentals (`FUNDAMENTALS_CURRENT`, source `/3`),
+# which this writer opts into explicitly while the generic `desk.run`
+# default stays pinned for research callers. The nightly, `--history-only`
+# and the grade parity check (`backend.market.grade_parity`) all build
+# their report here, so a replay of tonight's grades cannot drift from the
+# record by calling the desk with different arguments.
+def desk_report(store: MarketStore, asof: date | None):
+    """Return the DeskReport the nightly decides from, for `asof` (latest if None)."""
+    return trading_desk.run(store, asof, fundamentals=trading_desk.FUNDAMENTALS_CURRENT)
+
+
+# The grade parity check, after the record is decided and before it is
+# saved: tonight's live grades and targets against the point-in-time replay
+# the backtest machinery would assign for the same session. It never raises
+# - the nightly must still end with a record - but its result rides on the
+# record so the board can refuse to be traded from when the two disagree,
+# and the mismatch line lands in the nightly's log beside the shadow's.
+def _grade_parity(root: Path, report, core: dict) -> dict:
+    """Return the parity result for `core`, having written and printed it."""
+    from backend.market import grade_parity
+
+    try:
+        result = grade_parity.run(root, core["session"], report=report, record=core)
+    except Exception as exc:  # noqa: BLE001 - parity never loses the record
+        result = grade_parity.unavailable(core["session"], exc)
+        print(f"\ngrade parity: not checked ({result['note']})")
+        return result
+    print("\n" + grade_parity.line(result))
+    return result
+
+
 # `--history-only`: the desk on the stored data, exactly as the nightly
 # runs it (same as-of, same fundamentals policy), and the per-name history
 # files rewritten from it. Nothing else the nightly does happens here: no
@@ -1793,9 +1825,7 @@ def _nightly_asof(now: datetime | None = None) -> date:
 # observer writes a ledger.
 def _history_only(args, store: MarketStore) -> None:
     """Rewrite the history files from a desk run and say how many."""
-    report = trading_desk.run(
-        store, args.asof, fundamentals=trading_desk.FUNDAMENTALS_CURRENT
-    )
+    report = desk_report(store, args.asof)
     panel = report.panel
     print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
     written = write_history(store, report)
@@ -1827,11 +1857,7 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         )
     else:
         observed["row"] = observe_ml_forward(Path(store.root), current)
-    # Opt this writer into the reporting-period safeguard explicitly; the
-    # generic desk.run default stays pinned for pre-existing research callers.
-    report = trading_desk.run(
-        store, args.asof, fundamentals=trading_desk.FUNDAMENTALS_CURRENT
-    )
+    report = desk_report(store, args.asof)
     panel = report.panel
     print(f"\ndesk as of {panel.dates[-1]} on {len(panel.tickers) - 1} names")
     _print_regime(report.regime.today())
@@ -1885,6 +1911,10 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         revisions=revisions,
         policy_shadows=policy_shadows,
     )
+    # Tonight's grades and targets against the point-in-time replay, on the
+    # record before it is saved so the board reads the verdict with the
+    # decision it applies to.
+    core["grade_parity"] = _grade_parity(Path(store.root), report, core)
 
     # The prose, after the record: model-written briefs and reads under one
     # total budget, stored beside the decision and never inside it.

@@ -126,6 +126,24 @@ generic `desk.run` and `market_desk` defaults stay on `/2`; use
 read-only comparison. Do not relabel existing research results or rewrite saved
 records as `/3`.
 
+After the record, the nightly runs the grade parity check
+(`backend/market/grade_parity.py`): every name's live grade against the
+point-in-time replay of the same report on the same session, membership both
+ways against `membership_history.csv`, and the record's targets against
+`live_policy.targets`. The verdict is one line in the nightly log (`grade
+parity: OK (n names)` or `GRADE PARITY MISMATCH: ...`), a row in
+`<root>/desk/grade_parity.json`, `record["grade_parity"]`, and a red banner
+above the board when it failed. On a mismatch do not trade from the board.
+Run `python -m backend.cli.market_grade_parity --root data/market` (exit 1 on
+a mismatch, 2 when it could not check) to see each row; a `membership` row
+means the named ticker is on the board but not a member in
+`membership_history.csv` that day (or the reverse) - fix the history, never
+the record; a `session` row means the store's newest partition is later than
+the record's session, so the replay is not the same evening's evidence - check
+the store's `asof=` dates; a `grade` or `targets` row with neither of those is
+a code-path drift between `market_daily.record`, `point_in_time` and
+`live_policy` and needs the commit found before the next session.
+
 Run `test_fundamental_period_eligibility.py`, `test_opinion_persistence_resets.py`,
 `test_fundamental_current_path.py` and `test_fundamental_current_review.py` with
 the existing fundamental/desk/daily suites. They cover valid-period exclusion,

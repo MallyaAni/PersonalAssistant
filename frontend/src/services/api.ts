@@ -2164,12 +2164,36 @@ export interface NeuralStudyEvidence {
   tables: Partial<Record<'10' | '25', NeuralStudyScorecard>>;
 }
 
+// One disagreement between the board and the replay: a grade flip, a name
+// on one side of the membership file only, a target weight, or the store
+// having moved on since the record (`kind: 'session'`, no ticker).
+export interface GradeParityMismatch {
+  kind: string;
+  ticker?: string;
+  live?: string | number | null;
+  replay?: string | number | null;
+  detail?: string;
+}
+
+// The nightly's grade parity verdict for one session.
+export interface GradeParity {
+  ok: boolean;
+  date: string | null;
+  names?: number;
+  mismatches: GradeParityMismatch[];
+  note?: string;
+}
+
 export interface DeskPayload {
   // The backend's active rule version, used to label archived curves honestly.
   current_policy?: string;
   coverage?: {tracked: number; graded: number};
   // The last completed session and whether its record and ML observation exist.
   record_status?: {expected: string; due_at: string; record: {session: string | null; status: DeskStanding}; ml_forward: {session: string | null; status: DeskStanding}};
+  // Whether the live grades and targets for the shown session agree with the
+  // point-in-time replay the backtest uses. Absent on records from before the
+  // check; `ok: false` means the board must not be traded from.
+  grade_parity?: GradeParity | null;
   // The FOMC overlay priced against the book that never traded it, and the gate's standing.
   fomc_gate?: DeskFomcGate | null;
   // Candidate rules and the indices, split by regime. Evidence, not policy.

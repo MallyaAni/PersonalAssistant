@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-09-27 — Grade parity: the board, the record and the replay asserted equal every night
+
+`backend/market/grade_parity.py` and `python -m backend.cli.market_grade_parity`
+assert, after every nightly record, that the live grade the board shows for
+each name is the grade the backtest machinery assigns the same name on the
+same date, and that the record's targets are what `live_policy.targets`
+computes from the same report. The replay grade for the record's session is
+the letter of `point_in_time.point_in_time` applied to the nightly's own
+report (`market_daily.desk_report`: live inputs, `fundamentals="current"`),
+at the record's row - the restricted report `market_pit_scorecard.build`
+prices, so its last row is the grade matrix the backtest uses for that
+session, computable from the same store the same night with no lookahead.
+`compare` names every disagreement: a grade flip (both letters), a name on
+the board that `membership_history.csv` does not have as a member that day
+(the replay grades it C) or a member the board does not grade, a target
+weight off by more than 1e-9 either way, and a rebuilt report whose last
+session is not the record's (the store moved on; targets then not
+compared). `run` writes `<root>/desk/grade_parity.json` (one row per date,
+replaced on re-check, 90 days kept). The nightly calls it between
+`record()` and `save()` so the verdict rides on the record as
+`record["grade_parity"]`, prints `grade parity: OK (n names)` or `GRADE
+PARITY MISMATCH: ...` into the same log the shadow ledger's receipt goes
+to, and never raises on it. `/desk` returns `grade_parity` (the stored row
+for the shown session, else the record's); `DeskPanel` paints a red
+`Grade parity` alert above the board - "Grade parity failed for <date>: N
+names — do not trade from this board" - hidden when ok or absent. The CLI
+exits 0/1/2 (agree / mismatch / could not check). `market_daily` now builds
+its report through `desk_report`, shared by the nightly, `--history-only`
+and the parity replay, so the replay cannot call the desk with different
+arguments. Deliberately not replayed: the scorecard CLI's own
+`fundamentals="corrected"` default (`/2`), which would fail every night the
+reporting-period safeguard reset a vote. Tests:
+`backend/tests/test_grade_parity.py` (parity on the pit fixture with a
+record built by `market_daily.record`; a flipped grade, both membership
+directions, a target off by 1e-6 but not 1e-12, a moved-on store; the file's
+replace-and-keep-90-days; CLI exit codes; the hook never raising; the
+nightly path end to end through `main()` recording a mismatch);
+`frontend/e2e/desk-grade-parity.spec.ts` (banner shown with the names,
+hidden when passed or absent) - not run in the sandbox, UNVERIFIED until the
+next Playwright run. On a mismatch: do not trade from the board; run the
+CLI; inspect `membership_history.csv` for the named tickers and the store's
+latest partition dates against the record's session.
+
 ## 2026-09-27 — Catastrophe stop on the /4 book, built and not run
 
 `backend/market/catastrophe_stop.py` and `python -m

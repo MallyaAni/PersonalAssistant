@@ -129,6 +129,24 @@ strategy that changes only when untouched sessions say so.
   (`desk-candidate-line.spec.ts`) has not run in the sandbox: UNVERIFIED
   until the next deploy's Playwright run.
 
+- 2026-09-27: grade parity, BUILT (`backend/market/grade_parity.py`,
+  `backend.cli.market_grade_parity`, the nightly's `_grade_parity` hook,
+  `record["grade_parity"]`, `/desk` `grade_parity`, the red `Grade parity`
+  alert above the board). Every night after the record: each name's live
+  grade against the point-in-time replay of the same report on the same
+  session, membership both ways against `membership_history.csv`, and the
+  record's targets against `live_policy.targets` to 1e-9; a mismatch is
+  written to `desk/grade_parity.json`, printed as `GRADE PARITY MISMATCH`
+  into the nightly log, put on the record and shown on the board with the
+  names and "do not trade from this board". The nightly never raises on it.
+  The rule for the operator: a red parity banner means the board is not
+  evidence tonight - run `python -m backend.cli.market_grade_parity --root
+  data/market`, read which names and which kind (grade, membership,
+  targets, session), and look at `membership_history.csv` for those names
+  and at the store's newest partition dates against the record's session
+  before anything is sized. Open: the first live run on the Spark; the
+  browser spec (`desk-grade-parity.spec.ts`) has not run in the sandbox.
+
 - 2026-09-27: session anatomy, the first fifteen-minute study, BUILT and
   not run (`market/sip_cube.py`, `market/session_anatomy.py`,
   `cli/market_session_anatomy.py`). Session cubes from the SIP store with

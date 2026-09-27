@@ -189,7 +189,23 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "sessions": deskrecord.sessions(_root()),
         # The track-record curve the record carries; absent on older records.
         "curve": _curve_for_display((latest or {}).get("curve")),
+        # Whether tonight's live grades and targets agree with the
+        # point-in-time replay. The board refuses to be traded from when
+        # they do not; None on records written before the check existed.
+        "grade_parity": _grade_parity_for(latest),
     }
+
+
+# The parity verdict the board shows for the record it displays: the row
+# most recently checked for that session (a CLI re-run after the nightly
+# supersedes the nightly's own), else the one the record carries.
+def _grade_parity_for(record: dict | None) -> dict | None:
+    from backend.market import grade_parity
+
+    if not record:
+        return None
+    stored = grade_parity.for_session(_root(), record.get("session"))
+    return stored if stored is not None else record.get("grade_parity")
 
 
 # Withhold unvalidated historical NAV while preserving the immutable source record.

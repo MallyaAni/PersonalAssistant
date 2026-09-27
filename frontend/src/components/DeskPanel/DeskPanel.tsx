@@ -665,6 +665,22 @@ function RecordStatus({status, prose, session}: {status?: DeskPayload['record_st
   </div>
 }
 
+// The board is what the operator sizes real positions from, so when the
+// nightly's parity check found its grades or targets disagreeing with the
+// point-in-time replay, say so in red where the board is read, with the
+// names, and say not to trade from it. Nothing is rendered when the check
+// passed or when the record predates the check.
+function GradeParityBanner({parity}: {parity?: DeskPayload['grade_parity']}) {
+  if (!parity || parity.ok) return null
+  const names = [...new Set(parity.mismatches.map(m => m.ticker).filter((t): t is string => !!t))].sort()
+  const others = parity.mismatches.filter(m => !m.ticker)
+  return <div role="alert" aria-label="Grade parity" className="border-b border-[#b42318]/30 bg-[#fef2f2] px-3 py-2 text-sm text-[#b42318]">
+    <p className="font-semibold">Grade parity failed for {parity.date ?? 'this session'}: {names.length} {names.length === 1 ? 'name' : 'names'} — do not trade from this board</p>
+    {names.length > 0 && <p className="text-xs">{parity.mismatches.filter(m => m.ticker).map(m => `${m.ticker} (${m.kind}: live ${m.live ?? '—'}, replay ${m.replay ?? '—'})`).join(' · ')}</p>}
+    {others.map(m => <p key={`${m.kind}:${m.detail}`} className="text-xs">{m.kind}: {m.detail}</p>)}
+  </div>
+}
+
 // A small dependency-free SVG line chart of the track record: the desk's
 // rules, SPY and QQQ on the same sessions, and the paper account's live
 // equity normalized to the same start. Hovering shows the values on one
@@ -1469,6 +1485,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
       {mineError && <p role="alert" className="border-b border-black/[0.06] bg-red-50 px-3 py-2 text-xs text-[#b42318]">Personal guidance unavailable: {mineError} No trade is shown as executable.</p>}
+      <GradeParityBanner parity={payload.grade_parity} />
 
       <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
       holdings={holdingsReady ? holdings : null} broker={paperLive} event={boardEvent} now={now}
