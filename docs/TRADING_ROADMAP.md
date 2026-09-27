@@ -265,7 +265,15 @@ strategy that changes only when untouched sessions say so.
   on the Spark (280 simulator runs), record the note, and change the
   executor only if the verdict names a stop.
 
-- 2026-09-27, night: volatility sizing on the `/4` book, BUILT and not run
+- 2026-09-27, night: volatility sizing on the `/4` book, RUN and RECORDED
+  ([research/vol-sizing-2026-09-27.md](research/vol-sizing-2026-09-27.md)):
+  every variant loses to equal weight under live execution (inverse-vol
+  tilts -0.3 pt, t -1.8; vol targets -0.5 pt on 2016-2023 and -6 to -10 pt
+  on 2024-2026 for 2-3 pt of drawdown). The forecast beats trailing
+  volatility everywhere and still loses to not sizing at all: on a book
+  whose return is in its volatility, volatility is not the thing to size
+  by. The forecast's home is execution, not the allocator. Every variant
+  RECORD. Plan:
   ([research/vol-sizing-plan-2026-09-27.md](research/vol-sizing-plan-2026-09-27.md)):
   the CNN's next-session volatility forecast (R² 0.27 against trailing)
   as the sizing input for the graded equal-weight book, in six registered

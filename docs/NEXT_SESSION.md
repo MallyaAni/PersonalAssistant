@@ -76,8 +76,21 @@ parity: OK", "policy change: ..." and the rebalance orders; the record's
 If the banner is red on Tuesday morning, nobody trades from it until the
 CLI (`market_grade_parity --root data/market`) says why.
 
-**Trials still queued (pre-register before running):** the CNN volatility
-forecast as the sizing input for the graded book; the structure-learning
+**Volatility sizing, VERIFIED** later the same night from `0e06d400`
+([research/vol-sizing-2026-09-27.md](research/vol-sizing-2026-09-27.md)):
+CNN volatility forecasts trained on the RTX 5080 in 3 m 22 s (R² 0.271 /
+0.260, stage 1 reproduced; `market_vol_forecast --device cuda`, npz moved
+through the Cowork VM with sha256 checks), six sizing variants on the pit
+scorecard under plain and live execution. **Every variant loses to equal
+weight**: inverse-vol tilts -0.3 pt (t -1.8), volatility targets -0.5 pt
+on 2016-2023 and -6 to -10 pt on 2024-2026 (exposure falls to 0.6-0.7 in
+the book's best run) for 2-3 pt of drawdown. The forecast beats its
+trailing twin in every row and still loses to not sizing at all. **Every
+variant RECORD.** Training belongs on the RTX (operator's standing
+instruction: prefer the RTX when it gets there faster without losing
+accuracy); the store-bound scorecard stays on the Spark.
+
+**Trials still queued (pre-register before running):** the structure-learning
 second look (longer context, market context, drawdown/vol targets,
 self-supervised pretraining) on the RTX; a mid-cycle entry rule sized for
 the equal-weight book.

@@ -1,6 +1,15 @@
 # Changelog
 
-## 2026-09-27 — Volatility sizing on the /4 book: built, not run
+## 2026-09-27 — Volatility sizing on the /4 book: built and run, every variant RECORD
+
+Run the same night (CNN forecasts on the RTX 5080 in 3 m 22 s, R² 0.271 /
+0.260 reproducing stage 1; 560 simulator runs on spark1). Every variant
+loses to equal weight under both execution sets and in both windows; the
+vol targets give up 6-10 CAGR points on 2024-2026 for 2-3 points of
+drawdown. The forecast beats trailing volatility everywhere and still
+loses to not sizing at all. Results in
+`docs/research/vol-sizing-2026-09-27.md`.
+
 
 The registered trial the deep-intraday study left behind: the CNN's
 next-session volatility forecast (out-of-sample R² 0.27 against trailing
