@@ -130,3 +130,121 @@ def test_intraday_features_align_to_the_panel():
     # The frame round-trips.
     rebuilt = alpaca.bars_from_frame(alpaca.bars_frame(bars))
     assert rebuilt == bars
+
+
+# The request the live loop has always sent, pinned byte for byte: the
+# default keyword parameters must not change what `feed=iex` callers get,
+# and `market_pick_audit` rewrites the literal `feed=iex` in this URL.
+LIVE_URL = (
+    "https://data.alpaca.markets/v2/stocks/bars?symbols=SNDK&timeframe=15Min"
+    "&feed=iex&adjustment=all&limit=10000&sort=asc"
+    "&start=2025-06-03T00:00:00Z&end=2025-06-03T23:59:59Z"
+)
+
+
+# The default fetch builds exactly the live request, params and URL alike.
+def test_default_fetch_request_is_byte_identical_to_the_live_request():
+    seen: list[str] = []
+
+    def transport(url, headers):
+        seen.append(url)
+        return 200, b'{"bars": {"SNDK": []}, "next_page_token": null}'
+
+    alpaca.fetch_bars(
+        "SNDK", date(2025, 6, 3), date(2025, 6, 3), transport, {"h": "1"}, sleep=lambda s: None
+    )
+    assert seen == [LIVE_URL]
+    assert alpaca.bars_query("SNDK", date(2025, 6, 3), date(2025, 6, 3)) == {
+        "symbols": "SNDK",
+        "timeframe": "15Min",
+        "feed": "iex",
+        "adjustment": "all",
+        "limit": "10000",
+        "sort": "asc",
+        "start": "2025-06-03T00:00:00Z",
+        "end": "2025-06-03T23:59:59Z",
+    }
+
+
+# Asking for the consolidated raw history puts feed=sip and adjustment=raw
+# in the request, and a page token is appended on the second page.
+def test_sip_raw_parameters_reach_the_request_and_pages_carry_the_token():
+    seen: list[str] = []
+    pages = [
+        b'{"bars": {"SNDK": []}, "next_page_token": "p2"}',
+        b'{"bars": {"SNDK": []}, "next_page_token": null}',
+    ]
+
+    def transport(url, headers):
+        seen.append(url)
+        return 200, pages[len(seen) - 1]
+
+    alpaca.fetch_bars(
+        "SNDK",
+        date(2025, 6, 3),
+        date(2025, 6, 3),
+        transport,
+        {"h": "1"},
+        sleep=lambda s: None,
+        feed="sip",
+        adjustment="raw",
+    )
+    assert len(seen) == 2
+    assert "&feed=sip&adjustment=raw&" in seen[0]
+    assert "feed=iex" not in seen[0]
+    assert seen[1] == seen[0] + "&page_token=p2"
+
+
+# The multi-symbol form asks for the symbols in one request and returns
+# every symbol asked for, empty where the feed had nothing.
+def test_multi_symbol_fetch_groups_bars_by_symbol():
+    session = date(2025, 6, 3)
+    payload = {
+        "bars": {"SNDK": _day(session, [100.0, 101.0]), "SPY": _day(session, [500.0])},
+        "next_page_token": None,
+    }
+    seen: list[str] = []
+
+    def transport(url, headers):
+        seen.append(url)
+        import json
+
+        return 200, json.dumps(payload).encode()
+
+    got = alpaca.fetch_bars_multi(
+        ["SNDK", "spy", "QQQ"],
+        session,
+        session,
+        transport,
+        {"h": "1"},
+        sleep=lambda s: None,
+        feed="sip",
+        adjustment="raw",
+    )
+    assert seen[0].startswith(
+        "https://data.alpaca.markets/v2/stocks/bars?symbols=SNDK,SPY,QQQ&"
+    )
+    assert [len(got[s]) for s in ("SNDK", "SPY", "QQQ")] == [3, 2, 0]
+
+
+# On a 13:00 early close the regular session is 14 bars; the afternoon
+# prints are after-hours and are left out of the session's bars, while a
+# normal day still keeps all 26.
+def test_sessions_end_at_the_calendar_close_on_an_early_close():
+    early = date(2025, 11, 28)  # the day after Thanksgiving, closes 13:00
+    normal = date(2025, 12, 1)
+    assert alpaca.bars_expected(early) == 14
+    assert alpaca.bars_expected(normal) == 26
+    # November is EST: 09:30 New York is 14:30 UTC, an hour after `_day`'s
+    # summer base, so shift every bar by an hour.
+    rows = _day(early, [100.0] * 26) + _day(normal, [100.0] * 26)
+    for row in rows:
+        shifted = datetime.fromisoformat(row["t"].replace("Z", "+00:00")) + timedelta(
+            hours=1
+        )
+        row["t"] = shifted.isoformat().replace("+00:00", "Z")
+    bars, _ = alpaca.parse_bars_page({"bars": {"SNDK": rows}}, "SNDK")
+    grouped = alpaca.sessions(bars)
+    assert len(grouped[early]) == 14
+    assert grouped[early][-1].start.astimezone(alpaca._NEW_YORK).strftime("%H:%M") == "12:45"
+    assert len(grouped[normal]) == 26

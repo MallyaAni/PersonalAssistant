@@ -13,6 +13,12 @@ Fetch: `/v2/stocks/bars` with `timeframe=15Min`, `feed=iex`,
 (`APCA_API_KEY_ID`, `APCA_API_SECRET_KEY`). Stored as immutable frames
 (kind `bars_15m`) per ticker per as-of day, like everything else.
 
+`fetch_bars` takes `feed`, `adjustment` and `timeframe` as keyword-only
+parameters whose defaults reproduce that live request byte for byte (the
+live quote loop and `market_pick_audit`, which rewrites `feed=iex` in the
+URL, depend on it). The consolidated raw-basis history in
+`intraday_sip.py` asks for `feed="sip", adjustment="raw"` explicitly.
+
 Features per (session, name), all from the session's own bars and so
 known at its close:
 
@@ -42,17 +48,25 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from functools import lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
 
 import numpy as np
 
+from backend.market import calendar
 from backend.market.panel import Panel
 
 _BARS_URL = "https://data.alpaca.markets/v2/stocks/bars"
 _NEW_YORK = ZoneInfo("America/New_York")
 BARS_KIND = "bars_15m"
 MIN_BARS_PER_SESSION = 8
+# The live request's parameters. Changing any of these changes what the
+# live quote loop asks for; the SIP history passes its own explicitly.
+DEFAULT_FEED = "iex"
+DEFAULT_ADJUSTMENT = "all"
+DEFAULT_TIMEFRAME = "15Min"
+PAGE_LIMIT = 10_000
 
 FEATURE_NAMES: tuple[str, ...] = (
     "intraday_trend",
@@ -136,7 +150,90 @@ def parse_bars_page(
     return bars, payload.get("next_page_token")
 
 
-# Fetch every 15-minute bar for a symbol between two dates, paged.
+# Pure: the query parameters of one bars request, in the order the URL
+# carries them. The defaults are the live IEX request; a test pins them.
+def bars_query(
+    symbols: str,
+    start: date,
+    end: date,
+    *,
+    feed: str = DEFAULT_FEED,
+    adjustment: str = DEFAULT_ADJUSTMENT,
+    timeframe: str = DEFAULT_TIMEFRAME,
+    page_token: str | None = None,
+) -> dict[str, str]:
+    """Return the bars endpoint's query parameters for one page."""
+    query = {
+        "symbols": symbols,
+        "timeframe": timeframe,
+        "feed": feed,
+        "adjustment": adjustment,
+        "limit": str(PAGE_LIMIT),
+        "sort": "asc",
+        "start": f"{start.isoformat()}T00:00:00Z",
+        "end": f"{end.isoformat()}T23:59:59Z",
+    }
+    if page_token:
+        query["page_token"] = page_token
+    return query
+
+
+# Pure: the URL of one bars request. No encoding is applied, so the string
+# is exactly what the live loop sent before the parameters were exposed.
+def bars_url(query: dict[str, str]) -> str:
+    """Return the bars endpoint URL for a query built by `bars_query`."""
+    return _BARS_URL + "?" + "&".join(f"{k}={v}" for k, v in query.items())
+
+
+# Page through the bars endpoint for one or more symbols, honouring the
+# rate limit, and return the pages' bars grouped by symbol.
+def _fetch_pages(
+    symbols: tuple[str, ...],
+    start: date,
+    end: date,
+    transport: Transport,
+    headers: dict[str, str],
+    sleep: Callable[[float], None],
+    feed: str,
+    adjustment: str,
+    timeframe: str,
+) -> dict[str, list[IntradayBar]]:
+    """Return {symbol: bars over [start, end], oldest first} for the symbols."""
+    label = ",".join(symbols)
+    out: dict[str, list[IntradayBar]] = {s: [] for s in symbols}
+    token: str | None = None
+    for _ in range(10_000):
+        url = bars_url(
+            bars_query(
+                label,
+                start,
+                end,
+                feed=feed,
+                adjustment=adjustment,
+                timeframe=timeframe,
+                page_token=token,
+            )
+        )
+        status, body = transport(url, headers)
+        if status == 429:
+            sleep(5.0)
+            continue
+        if status != 200:
+            raise AlpacaUnavailableError(f"{label}: Alpaca returned HTTP {status}")
+        payload = json.loads(body)
+        for symbol in symbols:
+            page, token = parse_bars_page(payload, symbol)
+            out[symbol].extend(page)
+        if not token:
+            break
+        # Basic plan: 200 requests a minute.
+        sleep(0.35)
+    return out
+
+
+# Fetch every 15-minute bar for a symbol between two dates, paged. The
+# keyword parameters default to the live IEX request; pass feed="sip",
+# adjustment="raw" for the consolidated raw-basis history.
 def fetch_bars(
     symbol: str,
     start: date,
@@ -144,32 +241,42 @@ def fetch_bars(
     transport: Transport = alpaca_transport,
     headers: dict[str, str] | None = None,
     sleep: Callable[[float], None] = time.sleep,
+    *,
+    feed: str = DEFAULT_FEED,
+    adjustment: str = DEFAULT_ADJUSTMENT,
+    timeframe: str = DEFAULT_TIMEFRAME,
 ) -> list[IntradayBar]:
-    """Return the symbol's 15-minute bars over [start, end], oldest first."""
+    """Return the symbol's bars over [start, end], oldest first."""
     headers = headers or credentials()
-    bars: list[IntradayBar] = []
-    token: str | None = None
-    for _ in range(10_000):
-        url = (
-            f"{_BARS_URL}?symbols={symbol}&timeframe=15Min&feed=iex&adjustment=all"
-            f"&limit=10000&sort=asc&start={start.isoformat()}T00:00:00Z"
-            f"&end={end.isoformat()}T23:59:59Z"
-        )
-        if token:
-            url += f"&page_token={token}"
-        status, body = transport(url, headers)
-        if status == 429:
-            sleep(5.0)
-            continue
-        if status != 200:
-            raise AlpacaUnavailableError(f"{symbol}: Alpaca returned HTTP {status}")
-        page, token = parse_bars_page(json.loads(body), symbol)
-        bars.extend(page)
-        if not token:
-            break
-        # Basic plan: 200 requests a minute.
-        sleep(0.35)
-    return bars
+    return _fetch_pages(
+        (symbol,), start, end, transport, headers, sleep, feed, adjustment, timeframe
+    )[symbol]
+
+
+# The multi-symbol form: one paged request for several symbols at once,
+# returning each symbol's bars. Alpaca pages across symbols, so a page may
+# hold bars for several of them; every symbol asked for is in the result,
+# with an empty list where the feed had nothing.
+def fetch_bars_multi(
+    symbols: list[str] | tuple[str, ...],
+    start: date,
+    end: date,
+    transport: Transport = alpaca_transport,
+    headers: dict[str, str] | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+    *,
+    feed: str = DEFAULT_FEED,
+    adjustment: str = DEFAULT_ADJUSTMENT,
+    timeframe: str = DEFAULT_TIMEFRAME,
+) -> dict[str, list[IntradayBar]]:
+    """Return {symbol: bars over [start, end], oldest first} for the symbols."""
+    wanted = tuple(dict.fromkeys(s.strip().upper() for s in symbols if s.strip()))
+    if not wanted:
+        return {}
+    headers = headers or credentials()
+    return _fetch_pages(
+        wanted, start, end, transport, headers, sleep, feed, adjustment, timeframe
+    )
 
 
 # Serialise bars for the store's frames.
@@ -201,14 +308,33 @@ def bars_from_frame(columns: dict[str, list]) -> list[IntradayBar]:
     ]
 
 
-# Group bars by New York session date, regular hours only.
+# Minutes after New York midnight at which the regular session closes on a
+# day: 13:00 on a published early close, 16:00 otherwise. Cached per day
+# because the readers below ask once per bar.
+@lru_cache(maxsize=4096)
+def close_minutes(day: date) -> int:
+    """Return the scheduled close on ``day`` as minutes after midnight."""
+    close = calendar.session_close(day)
+    return close.hour * 60 + close.minute
+
+
+# How many fifteen-minute bars the regular session holds on a day: 26 on
+# a normal day, 14 on a 13:00 early close.
+def bars_expected(day: date) -> int:
+    """Return the number of regular-session bars scheduled on ``day``."""
+    return (close_minutes(day) - (9 * 60 + 30)) // 15
+
+
+# Group bars by New York session date, regular hours only. The window ends
+# at the calendar's close for the day, so on a 13:00 early close the
+# afternoon prints are after-hours and left out.
 def sessions(bars: list[IntradayBar]) -> dict[date, list[IntradayBar]]:
     """Return {session date: bars in regular hours, in order}."""
     out: dict[date, list[IntradayBar]] = {}
     for bar in bars:
         local = bar.start.astimezone(_NEW_YORK)
         minutes = local.hour * 60 + local.minute
-        if minutes < 9 * 60 + 30 or minutes >= 16 * 60:
+        if minutes < 9 * 60 + 30 or minutes >= close_minutes(local.date()):
             continue
         out.setdefault(local.date(), []).append(bar)
     return out
