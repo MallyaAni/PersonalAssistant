@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-09-27, late — The RTX 5080 is a training worker; the fill-timing trial is pre-registered
+
+**Desktop GPU reachable and working.** `ssh rtx` from the Cowork VM
+(`~/.ssh/config`: host 172.16.8.6, user "Ani Mallya", key
+`~/.ssh/claude_rtx`; the key is in
+`C:\ProgramData\ssh\administrators_authorized_keys` because the user is an
+administrator). On the desktop: `E:\AgentWorkspace\rtx-venv` (Python
+3.14, torch 2.14.0+cu130, numpy, pyarrow, pydantic-settings,
+chronos-forecasting), a clean clone at `E:\AgentWorkspace\rtx-train`, data
+under `E:\AgentWorkspace\rtx-data`. Traps: the shell is cmd (no `py`,
+`git` is at `C:\Program Files\Git\bin\git.exe`, PowerShell by full
+path); `scp`/`sftp` to the desktop fail (no scp.exe; sftp-server closes) -
+transfer with `ssh rtx python -c "open(...).write(sys.stdin.buffer.read())"
+< file` and check the sha256; processes started in an ssh session die when
+it ends - run long jobs through `schtasks /create ... /sc once` + `schtasks
+/run` (task `claude-rtx-cnn` is the template, script
+`E:\AgentWorkspace\rtx-data\run_cnn.cmd`); the repo's Settings need
+`SECRET_KEY` and `MARKET_DATA_ROOT` in the environment.
+
+**Dataset export** (`85deee5`): `market_deep_intraday --export <npz>`
+on the Spark (needs the store and the desk; run from `~/dspark-commit`
+with `. ~/deploy/anios/.env` exported), `--dataset <npz>` on the desktop.
+Stage 1's 81,612 rows are at
+`E:\AgentWorkspace\rtx-data\stage1_dataset.npz` (122 MB, sha256
+8510f3e7...). The CNN walk-forward (66 fits) took 6 m 40 s on the 5080
+against 14.5 minutes on the shared GB10. **Same seed, same data, IC
+0.0081 (t 1.4) on the 5080 against 0.0125 (t 2.3) on the GB10** - GPU
+kernel nondeterminism alone moves the return head by that much, which
+says what the return signal is; the volatility head is stable (R² 0.2715
+against 0.2682). Recorded in the stage-1 note's terms: INSUFFICIENT
+EVIDENCE stands.
+
+**Pre-registered next:**
+[research/execution-timing-plan-2026-09-27.md](research/execution-timing-plan-2026-09-27.md)
+- seven fill conventions for the `/4` policy's own orders (next open, first-hour
+VWAP, session VWAP, next close, dip-or-close, late day, the executor's
+band gate isolated), kill criterion 5 bp a session with t >= 2.5 on
+2016-2023 and not worse on 2024-2026. This answers the operator's
+question about filling on price and structure rather than the clock with
+a measurement instead of an assertion.
+
 ## 2026-09-27, evening — Stage 1 verdict: no return signal in the fifteen-minute bars from any of four model families; volatility is forecastable
 
 **VERIFIED on spark1** from `448b7535`

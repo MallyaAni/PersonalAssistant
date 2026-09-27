@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-27 — Pre-registration of the fill-timing trial; the RTX 5080 as a training worker
+
+`docs/research/execution-timing-plan-2026-09-27.md` fixes seven fill
+conventions for the `/4` policy's orders and the kill criterion before any
+run. The desktop GPU is reachable over SSH from the Cowork VM and ran the
+stage-1 CNN walk-forward in under seven minutes from the exported dataset;
+NEXT_SESSION carries the setup and its traps.
+
 ## 2026-09-27 — The deep-intraday dataset travels: build on the Spark, train on the desktop GPU
 
 The operator's desktop (RTX 5080, 16 GB) is now reachable from this
