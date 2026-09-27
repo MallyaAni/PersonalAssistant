@@ -263,6 +263,32 @@ strategy that changes only when untouched sessions say so.
   it on the Spark (240 simulator runs, about 25 minutes), record the
   note, and change the executor only for a variant the verdict names.
 
+- 2026-09-27, night: the mid-cycle study RUN on the store (every variant
+  RECORD) and trials 7-10 BUILT, not run
+  ([research/midcycle-ew-plan-2026-09-27.md](research/midcycle-ew-plan-2026-09-27.md),
+  addendum): the first six found the live book holding 22% cash on
+  2016-2023 (32% on 2024-2026) against `mc-off`'s 7% (12%) - the 32
+  exits a year leave their proceeds in a cash-bounded, band-gated buy
+  path with one retry - and the sweep lifting both windows (25.3%, 56.4%;
+  above live on 20/20 and 18/20 offsets) at t 0.66 while still holding
+  18%. Four follow-on variants appended, the six kept: `mc-redeploy`
+  (cash beyond a 2% buffer back to the allocator's targets every
+  session, no gate, no deferral), `mc-redeploy-nobuffer`,
+  `mc-redeploy-no-exits` (no rotation sells between resets),
+  `reset-full-invest` (`mc-off` with the reset completing itself the
+  session after; `mc-off`'s 7% is the reset's own leak: buys paid at the
+  open from cash on hand, trims at the close, one retry under the
+  mid-cycle gates and the 15% paper cap, then dropped). Floors unchanged
+  plus a pre-registered exposure reading (live's CAGR scaled to the
+  variant's invested fraction) and a per-offset sign test (>= 18/20 with
+  >= 2 pt is "CONSISTENT, floor not cleared by daily t", never ADOPT).
+  `--only`/`--merge` on the command. 15 tests pass; not run against the
+  store. Next: `python -m backend.cli.market_midcycle_ew --root
+  data/market --offsets 20 --costs 10 25 --only mc-redeploy
+  mc-redeploy-nobuffer mc-redeploy-no-exits reset-full-invest --merge
+  data/market/desk/midcycle_ew.json` on the Spark (240 runs, about 25
+  minutes), then the note.
+
 - 2026-09-27, night: the catastrophe stop, RUN and RECORDED
   ([research/catastrophe-stop-2026-09-27.md](research/catastrophe-stop-2026-09-27.md)):
   a stop 50% below entry fired zero times in ten point-in-time years, 60%

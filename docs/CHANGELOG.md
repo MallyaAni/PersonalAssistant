@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-09-27 — Mid-cycle study, trials 7-10: the redeploy variants and the reset top-up, built after the first six ran
+
+The first six ran on the store (every variant RECORD; the table is in the
+plan note's addendum). The lead was cash: the live book holds 22% of
+equity in cash on 2016-2023 and 32% on 2024-2026 against 7% and 12% for
+`mc-off`, because the mid-cycle exits (32 a year) put their proceeds in
+cash that is retried once through the cash-bounded, band-gated buy path
+and then waits for a breakout that mostly never comes before the reset.
+The sweep lifted both windows (25.3% and 56.4%, above live on 20/20 and
+18/20 offsets) at paired t 0.66 and still held 18%. The entry leg's size
+recovered nothing; the book lacks exposure, not selection.
+
+Four variants appended to `midcycle_ew.VARIANTS` as `FOLLOW_ON`, the six
+kept unchanged, each a new `simulate.run` keyword whose default is
+byte-identical with or without a journal (tested): `mc-redeploy`
+(`midcycle_redeploy=True`: on every mid-cycle session, cash beyond a 2%
+buffer goes back to the allocator's row-t targets pro rata to each held
+A/A+ name's shortfall and to names graded in since the reset, each up to
+its target, no band gate, nothing deferred or dropped; sells unchanged),
+`mc-redeploy-nobuffer` (`redeploy_buffer=0.0`), `mc-redeploy-no-exits`
+(`midcycle_exits=False`: no rotation sells between resets, so the pair
+separates the exits' drawdown from the idle cash's cost), and
+`reset-full-invest` (`reset_topup=True` on a book without the rule: the
+session after a rebalance, once the deferred retry has placed what its
+gates allow, the rest of the reset's proceeds go back to today's
+targets). The last exists because `mc-off`'s 7% is a mechanical leak of
+the executor, read from the code and reproduced on the synthetic book:
+reset buys are paid at the open from cash on hand while the trims fill
+at the close, the one retry is `paper._deferred_orders` with the
+mid-cycle entry's gates (the band blocker, the 15% paper cap under the
+policy's 20% hold cap - with six or fewer names a held name can never be
+topped up - and the trade floor) and is then dropped, and a name blocked
+at the reset is never bought at all; the FOMC path is 1.0 before
+2026-06-18 and is none of it. New diagnostics say where a book's cash is:
+`cash_share_unpaused`, `idle_target_share`, `idle_target_at_reset` (the
+policy's own cap), `cash_share_post_reset`.
+
+The verdict floors are unchanged. Beside them, pre-registered for this
+exposure claim: the exposure-adjusted comparison (live's CAGR scaled to
+the variant's mean invested fraction, and the variant's CAGR less that)
+and a per-offset sign test - a RECORD above live on at least 90% of the
+offsets by at least 2 CAGR points is read as "CONSISTENT, floor not
+cleared by daily t", stated as such and never as ADOPT. The command
+gained `--only <variants>` (the anchors are always priced, so every
+pairing is on the same sessions) and `--merge <path>`, which folds the
+run into an earlier payload of the same study keeping the earlier rows
+of every line not repriced (`midcycle_ew.merge_payload`; refuses another
+study, offset count or cost set), and prints a "where the cash is" table
+and an "exposure reading" table. Plan note addendum dated today, saying
+these were added after the first six were seen and are trials 7-10:
+`docs/research/midcycle-ew-plan-2026-09-27.md`. Tests:
+`backend/tests/test_midcycle_ew.py` (15, including the redeploy by hand,
+byte identity of the four new defaults, refusals, the follow-on on the
+flicker book, `--only`/`merge_payload`, the second reading, the CLI with
+`--merge`); 207 simulator-adjacent tests pass. Not run against the store.
+
 ## 2026-09-27 — The mid-cycle rule redesigned for the /4 book: built, not run
 
 The candidate the execution ablation left behind. `live_midcycle` was the

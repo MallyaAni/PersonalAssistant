@@ -29,6 +29,7 @@ from backend.agents.trading.desk import (
 from backend.cli import market_midcycle_ew as cli
 from backend.cli import market_pit_scorecard as sc
 from backend.market import midcycle_ew as me
+from backend.market.session_anatomy import json_ready
 from backend.tests.test_market_pit_scorecard import (  # noqa: F401 - fixture
     _report,
     history,
@@ -57,31 +58,69 @@ def _book(history):
     return report, restricted, mask, sc._since(report.panel, 1)
 
 
-# Six named variants: the two anchors first, mc-off with the rule off, and
-# four modifications of the entry leg whose modes the simulator knows.
+# Ten named variants: the two anchors first, mc-off with the rule off, four
+# modifications of the entry leg whose modes the simulator knows, then the
+# four follow-on trials - three redeploy variants with the rule on and the
+# reset top-up with it off - appended after the first six, which are
+# unchanged.
 def test_variants_are_registered_and_named():
     names = [v.name for v in me.VARIANTS]
-    assert len(names) == len(set(names)) == 6
+    assert len(names) == len(set(names)) == 10
     assert names[:2] == [me.MC_OFF, me.LIVE]
     assert me.variant(me.MC_OFF).live_midcycle is False
     assert me.variant(me.LIVE) == me.Variant(me.LIVE, note=me.variant(me.LIVE).note)
-    for v in me.VARIANTS[2:]:
+    for v in me.VARIANTS[2:6]:
         assert v.live_midcycle is True
         assert v.entries in simulate.MIDCYCLE_ENTRIES
         assert v.entries != simulate.MIDCYCLE_BREAKOUT or v.sweep
+        assert not v.redeploy and v.exits and not v.reset_topup
     assert {v.entries for v in me.VARIANTS} == set(simulate.MIDCYCLE_ENTRIES)
+    assert (
+        names[6:]
+        == [v.name for v in me.FOLLOW_ON]
+        == [
+            "mc-redeploy",
+            "mc-redeploy-nobuffer",
+            "mc-redeploy-no-exits",
+            "reset-full-invest",
+        ]
+    )
+    redeploy = me.variant("mc-redeploy")
+    assert redeploy.redeploy and redeploy.buffer == simulate.REDEPLOY_BUFFER == 0.02
+    assert redeploy.exits and redeploy.entries == simulate.MIDCYCLE_BREAKOUT
+    assert me.variant("mc-redeploy-nobuffer").buffer == 0.0
+    assert me.variant("mc-redeploy-no-exits").exits is False
+    full = me.variant("reset-full-invest")
+    assert full.live_midcycle is False and full.reset_topup and full.buffer == 0.0
     with pytest.raises(KeyError):
         me.variant("nothing")
+    # `selected` adds the anchors to a `--only` list and refuses an unknown name.
+    assert [v.name for v in me.selected(["mc-redeploy"])] == [
+        me.MC_OFF,
+        me.LIVE,
+        "mc-redeploy",
+    ]
+    assert me.selected(None) == me.VARIANTS
+    with pytest.raises(KeyError):
+        me.selected(["mc-redeploy", "nothing"])
 
 
 # "live" is `_live_options` plus the mid-cycle defaults; mc-off turns the
-# rule off and carries no mid-cycle keys; every other variant changes
-# exactly its own mid-cycle key.
+# rule off and carries no mid-cycle keys; every other variant with the rule
+# on changes exactly its own mid-cycle keys; reset-full-invest is mc-off
+# plus the top-up and its buffer.
 def test_options_are_the_live_policy_with_the_midcycle_keys_alone_changed():
     panel = _report().panel
     expected = sc._live_options(panel)
     live = me.options_for(me.variant(me.LIVE), panel)
-    assert set(live) == set(expected) | {"midcycle_entries", "midcycle_sweep"}
+    midcycle_keys = {
+        "midcycle_entries",
+        "midcycle_sweep",
+        "midcycle_redeploy",
+        "redeploy_buffer",
+        "midcycle_exits",
+    }
+    assert set(live) == set(expected) | midcycle_keys
     for key, value in expected.items():
         if key == "event_exposure":
             np.testing.assert_array_equal(live[key], value)
@@ -89,8 +128,11 @@ def test_options_are_the_live_policy_with_the_midcycle_keys_alone_changed():
             assert live[key] == value, key
     assert live["midcycle_entries"] == simulate.MIDCYCLE_BREAKOUT
     assert live["midcycle_sweep"] is False
+    assert live["midcycle_redeploy"] is False and live["midcycle_exits"] is True
+    assert live["redeploy_buffer"] == simulate.REDEPLOY_BUFFER
     off = me.options_for(me.variant(me.MC_OFF), panel)
-    assert off["live_midcycle"] is False and "midcycle_entries" not in off
+    assert off["live_midcycle"] is False and not (midcycle_keys & set(off))
+    assert "reset_topup" not in off
     assert {
         k
         for k in expected
@@ -98,17 +140,30 @@ def test_options_are_the_live_policy_with_the_midcycle_keys_alone_changed():
         and not isinstance(expected[k], np.ndarray)
         and off[k] != expected[k]
     } == set()
+    changes = {
+        "mc-target-size": {"midcycle_entries"},
+        "mc-no-idle-cash": {"midcycle_sweep"},
+        "mc-new-grades-only": {"midcycle_entries"},
+        "mc-exit-only": {"midcycle_entries"},
+        "mc-redeploy": {"midcycle_redeploy"},
+        "mc-redeploy-nobuffer": {"midcycle_redeploy", "redeploy_buffer"},
+        "mc-redeploy-no-exits": {"midcycle_redeploy", "midcycle_exits"},
+    }
     for v in me.VARIANTS[2:]:
+        if not v.live_midcycle:
+            continue
         options = me.options_for(v, panel)
         changed = {
             k
             for k in live
             if not isinstance(live[k], np.ndarray) and options[k] != live[k]
         }
-        assert changed == ({"midcycle_sweep"} if v.sweep else {"midcycle_entries"}), (
-            v.name
-        )
+        assert changed == changes[v.name], v.name
         assert options["live_midcycle"] is True
+    full = me.options_for(me.variant("reset-full-invest"), panel)
+    assert full["live_midcycle"] is False and full["reset_topup"] is True
+    assert full["redeploy_buffer"] == 0.0
+    assert not (midcycle_keys - {"redeploy_buffer"}) & set(full)
     described = me._describe(live)
     assert described["event_exposure"] == "event_risk.live_path(panel)"
 
@@ -132,6 +187,10 @@ def test_defaults_and_ledger_are_byte_identical(history):
         allocator=policy_v4.allocator(mask),
         midcycle_entries=simulate.MIDCYCLE_BREAKOUT,
         midcycle_sweep=False,
+        midcycle_redeploy=False,
+        redeploy_buffer=simulate.REDEPLOY_BUFFER,
+        midcycle_exits=True,
+        reset_topup=False,
         **live,
     )
     np.testing.assert_array_equal(plain.returns, named.returns)
@@ -139,6 +198,26 @@ def test_defaults_and_ledger_are_byte_identical(history):
     priced = me.price(restricted, mask, me.variant(me.LIVE), since, 25.0)
     np.testing.assert_array_equal(plain.returns, priced.curve.daily)
     assert priced.diagnostics["all"]["exits_per_year"] > 0
+    # The same with the rule off: naming the top-up's default changes nothing.
+    off = {**live, "live_midcycle": False}
+    plain_off = simulate.run(
+        restricted,
+        since=since,
+        cost_bps=25.0,
+        allocator=policy_v4.allocator(mask),
+        **off,
+    )
+    named_off = simulate.run(
+        restricted,
+        since=since,
+        cost_bps=25.0,
+        allocator=policy_v4.allocator(mask),
+        reset_topup=False,
+        redeploy_buffer=0.0,
+        **off,
+    )
+    np.testing.assert_array_equal(plain_off.returns, named_off.returns)
+    assert plain_off.traded == named_off.traded
 
 
 # The simulator refuses an unknown mode and a variant without the rule it modifies.
@@ -153,6 +232,18 @@ def test_simulator_refuses_bad_midcycle_options(history):
         simulate.run(restricted, midcycle_entries="target", **base)
     with pytest.raises(ValueError, match="require live_midcycle"):
         simulate.run(restricted, midcycle_sweep=True, **base)
+    with pytest.raises(ValueError, match="require live_midcycle"):
+        simulate.run(restricted, midcycle_redeploy=True, **base)
+    with pytest.raises(ValueError, match="require live_midcycle"):
+        simulate.run(restricted, midcycle_exits=False, **base)
+    with pytest.raises(ValueError, match="reset_topup is for a book without"):
+        simulate.run(
+            restricted, live_midcycle=True, exit_at_close=True, reset_topup=True, **base
+        )
+    with pytest.raises(ValueError, match="redeploy_buffer"):
+        simulate.run(restricted, redeploy_buffer=1.0, **base)
+    with pytest.raises(ValueError, match="redeploy_buffer"):
+        simulate.run(restricted, redeploy_buffer=float("nan"), **base)
 
 
 # The entry modes by hand. Prices 100 everywhere, equity 1000, AAA held at
@@ -295,6 +386,143 @@ def test_sweep_orders_by_hand():
     assert {(o.symbol, round(o.qty, 6)) for o in less} == {("BBB", round(3 / 7, 6))}
 
 
+# The redeploy by hand: equity 1000, AAA held at 10% and BBB at 30%, both
+# targeted at 40% today, cash 600. Beyond the 2% buffer 580 is spare; the
+# shortfalls are 300 and 100, so both are filled in full (400 spare needed)
+# and 180 stays in cash. With cash 220 the 200 spare is split pro rata to
+# the shortfall, 150 and 50. A buffer of 0 spends the last dollar. A name
+# graded in since the reset (CCC, target 40% today, none at the reset,
+# unheld) is a taker; a downgraded or rotating name, or one held at the
+# reset and unheld now, is not. A planned buy counts toward the name's
+# target and is not spent twice; there is no band gate and no 15% cap.
+def test_redeploy_orders_by_hand():
+    prices = {"AAA": 100.0, "BBB": 100.0, "CCC": 100.0}
+    reserved = {"AAA": 1.0, "BBB": 3.0}
+    grades = {"AAA": "A+", "BBB": "A+", "CCC": "A+"}
+    today = {"AAA": 0.4, "BBB": 0.4}
+    args = (prices, 1000.0, grades, {}, today, {}, 600.0, 0.02, "s")
+    full = simulate._redeploy_orders([], reserved, *args, paper.PaperState())
+    assert {(o.symbol, round(o.qty, 6)) for o in full} == {("AAA", 3.0), ("BBB", 1.0)}
+    part = simulate._redeploy_orders(
+        [],
+        reserved,
+        prices,
+        1000.0,
+        grades,
+        {},
+        today,
+        {},
+        220.0,
+        0.02,
+        "s",
+        paper.PaperState(),
+    )
+    assert {(o.symbol, round(o.qty, 6)) for o in part} == {("AAA", 1.5), ("BBB", 0.5)}
+    none = simulate._redeploy_orders(
+        [],
+        reserved,
+        prices,
+        1000.0,
+        grades,
+        {},
+        today,
+        {},
+        20.0,
+        0.02,
+        "s",
+        paper.PaperState(),
+    )
+    assert none == []
+    last_dollar = simulate._redeploy_orders(
+        [],
+        reserved,
+        prices,
+        1000.0,
+        grades,
+        {},
+        today,
+        {},
+        20.0,
+        0.0,
+        "s",
+        paper.PaperState(),
+    )
+    assert {(o.symbol, round(o.qty, 6)) for o in last_dollar} == {
+        ("AAA", 0.15),
+        ("BBB", 0.05),
+    }
+    # A name graded in since the reset enters toward its target; at 45% above
+    # the 15% paper cap it is still filled (no cap but the target's own).
+    new = simulate._redeploy_orders(
+        [],
+        reserved,
+        prices,
+        1000.0,
+        grades,
+        {},
+        {**today, "CCC": 0.45},
+        {"AAA": 0.4},
+        1000.0,
+        0.0,
+        "s",
+        paper.PaperState(),
+    )
+    assert {(o.symbol, round(o.qty, 6)) for o in new} == {
+        ("AAA", 3.0),
+        ("BBB", 1.0),
+        ("CCC", 4.5),
+    }
+    # Held at the reset, unheld now and not in the book: not a taker.
+    held_then = simulate._redeploy_orders(
+        [],
+        reserved,
+        prices,
+        1000.0,
+        grades,
+        {},
+        {**today, "CCC": 0.4},
+        {"CCC": 0.4},
+        1000.0,
+        0.0,
+        "s",
+        paper.PaperState(),
+    )
+    assert {o.symbol for o in held_then} == {"AAA", "BBB"}
+    downgraded = simulate._redeploy_orders(
+        [],
+        reserved,
+        prices,
+        1000.0,
+        {**grades, "AAA": "B"},
+        {"BBB": "grade rotation"},
+        today,
+        {},
+        600.0,
+        0.02,
+        "s",
+        paper.PaperState(),
+    )
+    assert downgraded == []
+    planned = [paper.PaperOrder("AAA", "buy", 2.0, "x")]
+    after = simulate._redeploy_orders(
+        planned,
+        reserved,
+        prices,
+        1000.0,
+        grades,
+        {},
+        today,
+        {},
+        600.0,
+        0.02,
+        "s",
+        paper.PaperState(),
+    )
+    # 380 spare after the planned 200; shortfalls 100 (AAA) and 100 (BBB).
+    assert {(o.symbol, round(o.qty, 6)) for o in after} == {("AAA", 1.0), ("BBB", 1.0)}
+    assert all(o.reason.startswith("redeploy") for o in after)
+
+
 # The variants on the flicker book: exit-only opens nothing between
 # rebalances yet still rotates out of downgrades; new-grades-only opens CCC
 # on a mid-cycle fill once it is graded A+ (session 70, between the resets
@@ -317,6 +545,38 @@ def test_variants_behave_on_the_flicker_book(history):
     assert 0.1 < d["mc-new-grades-only"]["entry_weight"] <= policy_v4.HOLD_CAP + 1e-9
     assert d["mc-no-idle-cash"]["cash_share"] <= d[me.LIVE]["cash_share"]
     assert d["mc-no-idle-cash"]["midcycle_turnover"] > d[me.LIVE]["midcycle_turnover"]
+    # The redeploy holds less cash than live and than the sweep, and beyond
+    # the allocator's own idle share (the 20% cap on four names) it holds
+    # nothing but its buffer once the cash it found is placed; without the
+    # buffer less still; the no-exits variant never exits between resets
+    # while the redeploy variants exit as often as live.
+    idle = d[me.MC_OFF]["idle_target_share"]
+    assert 0.05 < idle < 0.25
+    assert d["mc-redeploy"]["cash_share"] < d["mc-no-idle-cash"]["cash_share"]
+    assert d["mc-redeploy"]["cash_share"] < d[me.LIVE]["cash_share"]
+    assert d["mc-redeploy-nobuffer"]["cash_share"] <= d["mc-redeploy"]["cash_share"]
+    assert d["mc-redeploy-nobuffer"]["cash_share"] < idle + 0.03
+    assert d["mc-redeploy-no-exits"]["exits_per_year"] == 0
+    assert d["mc-redeploy"]["exits_per_year"] == d[me.LIVE]["exits_per_year"]
+    assert d["mc-redeploy"]["midcycle_turnover"] > d[me.LIVE]["midcycle_turnover"]
+    # The reset top-up: no mid-cycle entries or exits, like mc-off; less cash
+    # than mc-off after the reset, and its trades count as the rebalance's.
+    full = d["reset-full-invest"]
+    assert full["exits_per_year"] == 0 and full["entries_per_year"] == 0
+    assert full["cash_share_post_reset"] < d[me.MC_OFF]["cash_share_post_reset"]
+    # With the top-up the post-reset cash is at most the allocator's own
+    # idle share at the reset (the 20% cap on four names, none on five),
+    # give or take the drift between the close the order was sized at and
+    # the fills; without it mc-off holds more - the retry's 15% cap under a
+    # 20% target and the buy-at-open, sell-at-close reset leave the rest idle.
+    assert full["cash_share_post_reset"] <= full["idle_target_at_reset"] + 0.01
+    assert d[me.MC_OFF]["cash_share_post_reset"] > full["cash_share_post_reset"] + 0.01
+    assert full["cash_share"] < d[me.MC_OFF]["cash_share"]
+    assert full["midcycle_turnover"] == 0
+    assert full["rebalance_turnover"] > d[me.MC_OFF]["rebalance_turnover"]
+    # The FOMC path is 1 throughout this synthetic history, so the unpaused
+    # cash share is the cash share.
+    assert d[me.LIVE]["cash_share_unpaused"] == pytest.approx(d[me.LIVE]["cash_share"])
     # CCC (column 2) is opened between the rebalances at 61 and 81 under
     # new-grades-only: the ledger shows it unheld at 70 and held by 81.
     ledger = me.Ledger()
@@ -397,12 +657,14 @@ def test_run_variants_payload(history):
     report, restricted, mask, _since = _book(history)
     payload = me.run_variants(report, restricted, mask, None, 2, (10.0, 25.0))
     names = {v.name for v in me.VARIANTS}
-    assert payload["study"] == me.STUDY and payload["trials"] == 6
+    assert payload["study"] == me.STUDY and payload["trials"] == 10
     assert payload["refused"] == {} and payload["ran"] == [v.name for v in me.VARIANTS]
+    assert payload["selected"] == payload["ran"]
+    assert payload["follow_on"] == [v.name for v in me.FOLLOW_ON]
     assert payload["policy"] == policy_v4.POLICY_VERSION
     assert payload["diagnostics"] == list(me.DIAGNOSTICS)
     assert {r["line"] for r in payload["rows"]} == names
-    assert len(payload["rows"]) == 6 * len(sc.WINDOWS) * 2
+    assert len(payload["rows"]) == 10 * len(sc.WINDOWS) * 2
     for row in payload["rows"]:
         assert row["offsets"] == 2
         assert {
@@ -430,6 +692,77 @@ def test_run_variants_payload(history):
     assert (
         described[me.LIVE]["options"]["event_exposure"] == "event_risk.live_path(panel)"
     )
+    assert described["mc-redeploy"]["follow_on"] is True
+    assert described["mc-redeploy"]["options"]["midcycle_redeploy"] is True
+    assert described["mc-redeploy"]["buffer"] == 0.02
+    assert described["mc-redeploy-no-exits"]["options"]["midcycle_exits"] is False
+    assert described["reset-full-invest"]["options"]["reset_topup"] is True
+    assert described["reset-full-invest"]["redeploy"] is None
+    assert described[me.LIVE]["follow_on"] is False
+    assert described[me.LIVE]["buffer"] is None
+
+
+# `only` prices the named variants and the anchors alone; `merge_payload`
+# folds that run into an earlier full payload, keeping the earlier rows of
+# the lines it did not price and replacing those it did, and the merged
+# verdict reads every variant. A payload from another study, or another
+# offset count, is refused.
+def test_only_and_merge(history):
+    report, restricted, mask, _since = _book(history)
+    earlier = me.run_variants(
+        report,
+        restricted,
+        mask,
+        None,
+        2,
+        (25.0,),
+        only=[v.name for v in me.VARIANTS[:6]],
+    )
+    assert earlier["ran"] == [v.name for v in me.VARIANTS[:6]]
+    assert {r["line"] for r in earlier["rows"]} == set(earlier["ran"])
+    later = me.run_variants(
+        report,
+        restricted,
+        mask,
+        None,
+        2,
+        (25.0,),
+        only=["mc-redeploy", "reset-full-invest"],
+    )
+    assert later["ran"] == [me.MC_OFF, me.LIVE, "mc-redeploy", "reset-full-invest"]
+    assert later["selected"] == later["ran"]
+    assert {p["line"] for p in later["paired"]} == {
+        me.MC_OFF,
+        me.LIVE,
+        "mc-redeploy",
+        "reset-full-invest",
+    }
+    merged = me.merge_payload(json.loads(json.dumps(json_ready(earlier))), later)
+    assert merged["ran"] == [v.name for v in me.VARIANTS[:6]] + [
+        "mc-redeploy",
+        "reset-full-invest",
+    ]
+    assert {r["line"] for r in merged["rows"]} == set(merged["ran"])
+    assert len(merged["rows"]) == 8 * len(sc.WINDOWS)
+    assert merged["merged"]["kept"] == [v.name for v in me.VARIANTS[2:6]]
+    assert merged["merged"]["repriced"] == later["ran"]
+    # The anchors' rows are this run's and agree with the earlier run's.
+    for line in me.ANCHORS:
+        old = [r for r in earlier["rows"] if r["line"] == line]
+        new = [r for r in merged["rows"] if r["line"] == line]
+        assert [r["median_cagr"] for r in old] == pytest.approx(
+            [r["median_cagr"] for r in new]
+        )
+    assert len([r for r in merged["rows"] if r["line"] == me.LIVE]) == len(sc.WINDOWS)
+    verdict = me.verdict(merged)
+    assert set(verdict["variants"]) == {v.name for v in me.VARIANTS} - {me.LIVE}
+    assert verdict["variants"]["mc-target-size"]["measured"] is True
+    assert verdict["variants"]["mc-redeploy"]["measured"] is True
+    assert verdict["variants"]["mc-redeploy-nobuffer"]["measured"] is False
+    with pytest.raises(ValueError, match="cannot merge: offsets"):
+        me.merge_payload({**earlier, "offsets": 3}, later)
+    with pytest.raises(ValueError, match="cannot merge: study"):
+        me.merge_payload({**earlier, "study": "other"}, later)
 
 
 # A variant `simulate.run` refuses is recorded with its reason and left out
@@ -456,7 +789,7 @@ def test_refused_variant_is_recorded(history, monkeypatch):
     monkeypatch.setattr(me, "options_for", options_for)
     monkeypatch.setattr(me, "VARIANTS", me.VARIANTS + (broken,))
     payload = me.run_variants(report, restricted, mask, None, 1, (10.0,))
-    assert payload["trials"] == 7
+    assert payload["trials"] == 11
     assert "require live_midcycle" in payload["refused"]["mc-broken"]
     assert "mc-broken" not in {r["line"] for r in payload["rows"]}
     assert "mc-broken" not in payload["ran"] and me.LIVE in payload["ran"]
@@ -467,7 +800,16 @@ def test_refused_variant_is_recorded(history, monkeypatch):
 
 # A payload with the given per-variant CAGRs and drawdowns per window, t
 # statistics and reported differences at 25 bp.
-def _payload(choosing, reported, t, reported_bp, dd_choosing=None, dd_reported=None):
+def _payload(
+    choosing,
+    reported,
+    t,
+    reported_bp,
+    dd_choosing=None,
+    dd_reported=None,
+    above=None,
+    cash=None,
+):
     rows, paired = [], []
     for name, cagr in choosing.items():
         rows.append(
@@ -477,6 +819,9 @@ def _payload(choosing, reported, t, reported_bp, dd_choosing=None, dd_reported=N
                 "window": me.CHOOSING,
                 "median_cagr": cagr,
                 "median_drawdown": (dd_choosing or {}).get(name, -0.30),
+                "offsets": 20,
+                "offsets_above_live": (above or {}).get(name, 10),
+                "cash_share": (cash or {}).get(name, 0.2),
             }
         )
         rows.append(
@@ -486,6 +831,9 @@ def _payload(choosing, reported, t, reported_bp, dd_choosing=None, dd_reported=N
                 "window": me.REPORTED,
                 "median_cagr": reported.get(name, 0.4),
                 "median_drawdown": (dd_reported or {}).get(name, -0.20),
+                "offsets": 20,
+                "offsets_above_live": (above or {}).get(name, 10),
+                "cash_share": (cash or {}).get(name, 0.2),
             }
         )
         if name != me.LIVE:
@@ -536,14 +884,18 @@ def test_verdict_floors():
     reported_bp["mc-exit-only"] = -0.5
     verdict = me.verdict(_payload(choosing, {}, t, reported_bp))
     decisions = {k: v["decision"] for k, v in verdict["variants"].items()}
+    follow_on = {v.name: me.RECORD for v in me.FOLLOW_ON}
     assert decisions == {
         "mc-target-size": me.ADOPT,
         "mc-no-idle-cash": me.RECORD,
         "mc-new-grades-only": me.RECORD,
         "mc-exit-only": me.RECORD,
         me.MC_OFF: me.RECORD,
+        **follow_on,
     }
-    assert verdict["adopt"] == ["mc-target-size"] and len(verdict["record"]) == 4
+    assert verdict["adopt"] == ["mc-target-size"] and len(verdict["record"]) == 8
+    assert verdict["consistent"] == []
+    assert verdict["variants"]["mc-redeploy"]["follow_on"] is True
     assert verdict["variants"]["mc-exit-only"]["passes_choosing"] is True
     assert verdict["variants"]["mc-exit-only"]["not_worse_reported"] is False
     assert verdict["variants"][me.MC_OFF]["anchor"] is True
@@ -579,6 +931,51 @@ def test_verdict_floors():
     assert empty["cost_bps"] == 10.0 and empty["text"].startswith("not measured")
 
 
+# The second reading. Live earns 23.2% holding 22% cash (78% invested);
+# mc-redeploy earns 25.3% holding 8% cash (92% invested). Live scaled to
+# 92% invested would earn 23.2 x 92/78 = 27.4%, so the exposure-adjusted
+# gain is -2.1 pt: the variant earned less than its extra exposure alone
+# explains. On the sign test, +2.1 pt on 18 of 20 offsets at t 0.7 is
+# CONSISTENT, floor not cleared by daily t - still a RECORD, never an ADOPT;
+# on 17 offsets, or at +1.9 pt, it is a plain RECORD; an ADOPT is read as
+# ADOPT whatever the offsets say.
+def test_verdict_exposure_reading_and_sign_test():
+    names = [v.name for v in me.VARIANTS if v.name != me.LIVE]
+    choosing = {me.LIVE: 0.232, **{n: 0.232 for n in names}}
+    choosing["mc-redeploy"] = 0.253
+    choosing["mc-redeploy-nobuffer"] = 0.253
+    choosing["mc-redeploy-no-exits"] = 0.251
+    choosing["mc-target-size"] = 0.247
+    t = {"mc-redeploy": 0.7, "mc-target-size": 2.5}
+    above = {"mc-redeploy": 18, "mc-redeploy-nobuffer": 17, "mc-redeploy-no-exits": 18}
+    cash = {me.LIVE: 0.22, "mc-redeploy": 0.08, "mc-redeploy-no-exits": 0.22}
+    verdict = me.verdict(
+        _payload(choosing, {}, t, {n: 0.5 for n in names}, above=above, cash=cash)
+    )
+    info = verdict["variants"]["mc-redeploy"]
+    assert info["decision"] == me.RECORD and info["consistent"] is True
+    assert info["reading"] == me.CONSISTENT
+    assert info["invested_share"] == pytest.approx(0.92)
+    assert info["live_invested_share"] == pytest.approx(0.78)
+    assert info["exposure_adjusted_live_cagr"] == pytest.approx(0.232 * 0.92 / 0.78)
+    assert info["exposure_adjusted_points"] == pytest.approx(
+        (0.253 - 0.232 * 0.92 / 0.78) * 100
+    )
+    assert info["offsets_above_live"] == 18 and info["offsets"] == 20
+    assert verdict["variants"]["mc-redeploy-nobuffer"]["reading"] == me.RECORD
+    assert verdict["variants"]["mc-redeploy-no-exits"]["reading"] == me.RECORD
+    assert verdict["variants"]["mc-target-size"]["reading"] == me.ADOPT
+    assert verdict["variants"]["mc-target-size"]["consistent"] is False
+    assert verdict["consistent"] == ["mc-redeploy"]
+    assert verdict["floors"]["consistent_share"] == 0.9
+    assert me.CONSISTENT in verdict["text"]
+    assert "18/20 offsets above live" in verdict["text"]
+    assert "exposure-adjusted" in verdict["text"]
+    # A variant with the same cash share as live has no exposure adjustment.
+    same = verdict["variants"]["mc-redeploy-no-exits"]
+    assert same["exposure_adjusted_points"] == pytest.approx(same["choosing_points"])
+
+
 # The command end to end on the flicker book: the file, the payload shape,
 # the trial count, the diagnostics table and the verdict; `--json` prints it.
 def test_cli_end_to_end(history, tmp_path):
@@ -609,9 +1006,9 @@ def test_cli_end_to_end(history, tmp_path):
     assert (
         payload["study"] == me.STUDY and payload["policy"] == policy_v4.POLICY_VERSION
     )
-    assert payload["trials"] == 6 and len(payload["variants"]) == 6
+    assert payload["trials"] == 10 and len(payload["variants"]) == 10
     assert payload["offsets"] == 2 and payload["costs_bps"] == [25.0]
-    assert len(payload["rows"]) == 6 * 3 and payload["refused"] == {}
+    assert len(payload["rows"]) == 10 * 3 and payload["refused"] == {}
     assert payload["membership_history"] == str(history)
     verdict = payload["verdict"]
     assert verdict["cost_bps"] == 25.0
@@ -621,10 +1018,54 @@ def test_cli_end_to_end(history, tmp_path):
     )
     text = out.getvalue()
     assert "mid-cycle rule study for graded-equal-weight/4" in text
-    assert "6 registered variants" in text
+    assert "10 registered variants" in text
     assert "mc-new-grades-only" in text and "vs mc-off" in text
     assert "diagnostics" in text and "held@rb" in text
+    assert "where the cash is" in text and "idle tgt" in text
+    assert "exposure reading" in text and "exp-adj pt" in text
+    assert "reset-full-invest" in text
     assert "verdict:" in text
+    # `--only` with `--merge` folds the follow-on into the file just written:
+    # the earlier rows of the lines not repriced are kept, the file is the
+    # merged payload, and the text says what was kept and repriced.
+    out = io.StringIO()
+    args = cli.build_parser().parse_args(
+        [
+            "--root",
+            str(tmp_path),
+            "--membership",
+            str(history),
+            "--offsets",
+            "2",
+            "--costs",
+            "25",
+            "--only",
+            "mc-redeploy",
+            "--merge",
+            str(target),
+        ]
+    )
+    assert cli.run(args, out, desk_run=fake_desk) == 0
+    merged = json.loads(target.read_text(encoding="utf-8"))
+    assert merged["ran"] == [v.name for v in me.VARIANTS]
+    assert merged["selected"] == [me.MC_OFF, me.LIVE, "mc-redeploy"]
+    assert merged["merged"]["repriced"] == [me.MC_OFF, me.LIVE, "mc-redeploy"]
+    assert len(merged["merged"]["kept"]) == 7
+    assert len(merged["rows"]) == 10 * 3
+    assert set(merged["verdict"]["variants"]) == {v.name for v in me.VARIANTS} - {
+        me.LIVE
+    }
+    text = out.getvalue()
+    assert "merged with the earlier payload" in text
+    assert "repriced mc-off, live, mc-redeploy" in text
+    # A foreign payload is refused before anything is priced.
+    foreign = tmp_path / "other.json"
+    foreign.write_text(json.dumps({"study": "other"}), encoding="utf-8")
+    args = cli.build_parser().parse_args(
+        ["--root", str(tmp_path), "--membership", str(history), "--merge", str(foreign)]
+    )
+    with pytest.raises(SystemExit):
+        cli.run(args, io.StringIO(), desk_run=fake_desk)
     out = io.StringIO()
     args = cli.build_parser().parse_args(
         [

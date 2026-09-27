@@ -2,6 +2,8 @@
 
     python -m backend.cli.market_midcycle_ew --root data/market
     python -m backend.cli.market_midcycle_ew --offsets 20 --costs 10 25 --json
+    python -m backend.cli.market_midcycle_ew --only mc-redeploy reset-full-invest \
+        --merge data/market/desk/midcycle_ew.json
 
 Runs the desk, restricts the report to the point-in-time book
 (`point_in_time.point_in_time` on the dated membership file) and prices
@@ -13,9 +15,14 @@ window: median CAGR, median worst drawdown, bp a day against live and its
 Newey-West t, the same against mc-off, offsets above live), the
 diagnostics read off each run's ledger (mid-cycle turnover, cash share,
 entries and exits a year, entry weight, entries still held at the next
-rebalance, exits the rebalance buys back) and the verdict under the floors
-`midcycle_ew` fixes. Writes `<root>/desk/midcycle_ew.json`. Nothing here
-trades or changes the executor.
+rebalance, exits the rebalance buys back; where the cash comes from) and
+the verdict under the floors `midcycle_ew` fixes, with the exposure-adjusted
+reading and the per-offset sign test beside it. `--only` prices the named
+variants and the two anchors alone; `--merge <path>` folds that run into an
+earlier payload of the same study, keeping the earlier rows of every line
+this run did not price, and the verdict is recomputed on the merged rows.
+Writes `<root>/desk/midcycle_ew.json`. Nothing here trades or changes the
+executor.
 """
 
 from __future__ import annotations
@@ -55,6 +62,19 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="+",
         default=[10.0, 25.0],
         help="one-way costs in basis points; the verdict reads 25",
+    )
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        default=None,
+        metavar="VARIANT",
+        help="price only these variants (the anchors live and mc-off always are)",
+    )
+    parser.add_argument(
+        "--merge",
+        type=Path,
+        default=None,
+        help="an earlier payload of this study to fold this run into",
     )
     parser.add_argument("--json", action="store_true", help="print the payload as JSON")
     return parser
@@ -143,11 +163,47 @@ def render(payload: dict[str, Any]) -> str:
                     f"{_plain(row.get('exits_per_year')):>7}"
                     f"{_pct(row.get('exits_rebought_at_rebalance')):>9}"
                 )
+            lines.append(
+                f"  {'where the cash is':<20}{'cash':>8}{'unpaused':>9}{'idle tgt':>9}"
+                f"{'idle@rst':>9}{'post-rst':>9}{'invested':>9}"
+            )
+            for row in rows:
+                cash = row.get("cash_share")
+                invested = None if cash is None or cash != cash else 1.0 - cash
+                lines.append(
+                    f"  {row['line']:<20}{_pct(cash):>8}"
+                    f"{_pct(row.get('cash_share_unpaused')):>9}"
+                    f"{_pct(row.get('idle_target_share')):>9}"
+                    f"{_pct(row.get('idle_target_at_reset')):>9}"
+                    f"{_pct(row.get('cash_share_post_reset')):>9}"
+                    f"{_pct(invested):>9}"
+                )
     if payload.get("refused"):
         lines.append("\nrefused:")
         for name, reason in payload["refused"].items():
             lines.append(f"  {name}: {reason}")
-    lines.append(f"\nverdict: {payload['verdict']['text']}")
+    if payload.get("merged"):
+        merged = payload["merged"]
+        lines.append(
+            f"\nmerged with the earlier payload (as of {merged.get('earlier_asof')}): "
+            f"kept {', '.join(merged.get('kept', [])) or 'nothing'}; "
+            f"repriced {', '.join(merged.get('repriced', [])) or 'nothing'}"
+        )
+    verdict = payload["verdict"]
+    lines.append(
+        f"\n{'exposure reading':<22}{'CAGR pt':>9}{'exp-adj pt':>11}{'invested':>10}"
+        f"{'>live':>7}{'later >live':>12}  reading"
+    )
+    for name, info in verdict.get("variants", {}).items():
+        lines.append(
+            f"{name:<22}{_num(info.get('choosing_points'), 1):>9}"
+            f"{_num(info.get('exposure_adjusted_points'), 1):>11}"
+            f"{_pct(info.get('invested_share')):>10}"
+            f"{info.get('offsets_above_live', 0)}/{info.get('offsets', 0):<4}"
+            f"{info.get('reported_offsets_above_live', 0)}/{info.get('offsets', 0):<9}"
+            f"{info.get('reading', '')}"
+        )
+    lines.append(f"\nverdict: {verdict['text']}")
     return "\n".join(lines)
 
 
@@ -162,6 +218,15 @@ def run(
     store = MarketStore(root)
     report = (desk_run or default_desk)(store)
     restricted, mask = point_in_time.point_in_time(report, args.membership)
+    only = getattr(args, "only", None)
+    merge = getattr(args, "merge", None)
+    earlier = None
+    if merge is not None:
+        # Read the earlier payload before the run, so a missing or foreign
+        # file refuses in seconds rather than after hours of pricing.
+        earlier = json.loads(Path(merge).read_text(encoding="utf-8"))
+        if earlier.get("study") != midcycle_ew.STUDY:
+            raise SystemExit(f"{merge} is not a {midcycle_ew.STUDY} payload")
     payload = midcycle_ew.run_variants(
         report,
         restricted,
@@ -169,7 +234,10 @@ def run(
         store,
         max(1, args.offsets),
         tuple(float(c) for c in args.costs),
+        only=only,
     )
+    if earlier is not None:
+        payload = midcycle_ew.merge_payload(earlier, payload)
     payload["verdict"] = midcycle_ew.verdict(payload)
     payload["root"] = str(root)
     payload["membership_history"] = str(args.membership)

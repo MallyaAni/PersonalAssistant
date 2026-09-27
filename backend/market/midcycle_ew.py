@@ -51,6 +51,25 @@ next rebalance and the share of exits the next rebalance buys back.
 
 `verdict` reads the choosing window (2016-2023) at 25 bp against live.
 Nothing here trades or changes the executor.
+
+Trials 7-10 (`FOLLOW_ON`, added 2026-09-27 after the first six had run, and
+said so in the plan note's addendum) act on what the diagnostics found: the
+live book holds 22% cash on 2016-2023 because mid-cycle exits leave their
+proceeds waiting for a band breakout that mostly never comes before the
+reset, and the sweep still held 18% because it goes through the
+cash-bounded, band-gated buy path. "mc-redeploy" puts cash beyond a 2%
+buffer back to the allocator's targets every session with no gate and no
+deferral (`simulate.run(midcycle_redeploy=True)`); "mc-redeploy-nobuffer"
+does it with no buffer; "mc-redeploy-no-exits" redeploys but never rotates
+out between resets (`midcycle_exits=False`), so the pair separates what the
+exits earn in drawdown from what the idle cash costs in return;
+"reset-full-invest" is mc-off with the reset topping itself up the session
+after (`reset_topup=True`), for the cash even mc-off holds. Because the
+claim is about exposure rather than selection, `verdict` also gives, per
+variant, live's CAGR scaled to the variant's mean invested fraction and a
+per-offset sign test (offsets above live): >= `CONSISTENT_SHARE` of the
+offsets with >= `CONSISTENT_POINTS` CAGR points is "CONSISTENT, floor not
+cleared by daily t", stated as such and never as ADOPT.
 """
 
 from __future__ import annotations
@@ -82,6 +101,13 @@ ADOPT_T = 2.0
 DRAWDOWN_POINTS = 3.0
 ADOPT = "ADOPT (registered)"
 RECORD = "RECORD"
+# The second, pre-registered reading for the follow-on's exposure claim: a
+# RECORD variant whose CAGR beats live's on at least this share of the
+# offsets, by at least this many points, is CONSISTENT (the floor is still
+# not cleared by the daily t, and the reading says so).
+CONSISTENT_SHARE = 0.9
+CONSISTENT_POINTS = 2.0
+CONSISTENT = "CONSISTENT, floor not cleared by daily t"
 STUDY = "midcycle_ew"
 
 
@@ -94,6 +120,10 @@ class Variant:
     entries: str = simulate.MIDCYCLE_BREAKOUT
     sweep: bool = False
     note: str = ""
+    redeploy: bool = False
+    buffer: float = simulate.REDEPLOY_BUFFER
+    exits: bool = True
+    reset_topup: bool = False
 
 
 # Fixed before the run and named in the payload. Two anchors and four
@@ -141,6 +171,53 @@ VARIANTS: tuple[Variant, ...] = (
     ),
 )
 
+# Trials 7-10, appended 2026-09-27 after the first six had run on the store
+# (the plan note's addendum says so). The six above are kept as they were so
+# the payloads compare row for row.
+FOLLOW_ON: tuple[Variant, ...] = (
+    Variant(
+        "mc-redeploy",
+        redeploy=True,
+        note=(
+            "the live rule plus the reset's own buy semantics whenever cash "
+            "accumulates: on every mid-cycle session cash beyond a 2% buffer goes "
+            "back to the allocator's targets pro rata to each held A/A+ name's "
+            "shortfall (and to names graded in since the reset), no band gate, "
+            "nothing deferred or dropped; sells unchanged"
+        ),
+    ),
+    Variant(
+        "mc-redeploy-nobuffer",
+        redeploy=True,
+        buffer=0.0,
+        note="mc-redeploy with no cash buffer: what the 2% buffer costs",
+    ),
+    Variant(
+        "mc-redeploy-no-exits",
+        redeploy=True,
+        exits=False,
+        note=(
+            "mc-redeploy without the rotation sells: no name leaves between "
+            "resets, only the reset rotates; against mc-redeploy this separates "
+            "what the exits earn in drawdown from what the idle cash costs"
+        ),
+    ),
+    Variant(
+        "reset-full-invest",
+        live_midcycle=False,
+        reset_topup=True,
+        buffer=0.0,
+        note=(
+            "mc-off with the reset topping itself up the session after: the cash "
+            "the reset's sells delivered at the close and the deferred retry could "
+            "not place (band gate, the 15% retry cap under a 20% target, the trade "
+            "floor) goes back to today's targets; the cash mc-off holds beyond the "
+            "allocator's own cap is this leak"
+        ),
+    ),
+)
+VARIANTS = VARIANTS + FOLLOW_ON
+
 
 # The variant by name, or KeyError.
 def variant(name: str) -> Variant:
@@ -152,7 +229,10 @@ def variant(name: str) -> Variant:
 
 
 # The `simulate.run` options of a variant: the live policy, exactly as the
-# scorecard prices the account, with the mid-cycle keys alone changed.
+# scorecard prices the account, with the mid-cycle keys alone changed. A
+# variant with the rule on names every mid-cycle key (the defaults are
+# byte-identical to live); one with it off names only the reset top-up
+# when it has one.
 def options_for(variant_: Variant, panel) -> dict[str, Any]:
     """Return the keyword options `simulate.run` receives for `variant_`."""
     options = scorecard._live_options(panel)
@@ -160,6 +240,12 @@ def options_for(variant_: Variant, panel) -> dict[str, Any]:
     if variant_.live_midcycle:
         options["midcycle_entries"] = variant_.entries
         options["midcycle_sweep"] = bool(variant_.sweep)
+        options["midcycle_redeploy"] = bool(variant_.redeploy)
+        options["redeploy_buffer"] = float(variant_.buffer)
+        options["midcycle_exits"] = bool(variant_.exits)
+    elif variant_.reset_topup:
+        options["reset_topup"] = True
+        options["redeploy_buffer"] = float(variant_.buffer)
     return options
 
 
@@ -178,6 +264,10 @@ def _describe(options: dict[str, Any]) -> dict[str, Any]:
 REBALANCE = "rebalance"
 MIDCYCLE = "midcycle"
 EVENT = "event"
+# The reset top-up's session (`reset_topup`): the reset's own completion, so
+# its turnover is counted with the rebalance's and it never reads as a
+# mid-cycle entry or exit.
+TOPUP = "topup"
 
 
 # A passive observer for `simulate.run(journal=...)`: it keeps each
@@ -190,11 +280,17 @@ class Ledger:
     """Decisions by kind and closing marks, recorded through the journal hook."""
 
     # Start empty; the calendar and closes arrive with `assert_inputs`.
+    # `exposure` (the FOMC ceiling per session) and `idle` (the share the
+    # allocator itself leaves in cash per session) are set by the caller
+    # that knows them, `price`; both are None on a bare ledger and the
+    # diagnostics that need them are NaN.
     def __init__(self) -> None:
         self.dates: np.ndarray | None = None
         self.closes: np.ndarray | None = None
         self.kinds: dict[int, str] = {}
         self.marks: dict[int, tuple[float, np.ndarray, float, float]] = {}
+        self.exposure: np.ndarray | None = None
+        self.idle: np.ndarray | None = None
 
     # Keep the calendar and the closes the marks will be valued against.
     def assert_inputs(self, sessions, symbols, opens, closes, cost_bps) -> None:
@@ -212,6 +308,8 @@ class Ledger:
             kind = EVENT
         elif meta.get("scheduled"):
             kind = REBALANCE
+        elif meta.get("topup"):
+            kind = TOPUP
         else:
             kind = MIDCYCLE
         self.kinds[int(session)] = kind
@@ -250,6 +348,20 @@ DIAGNOSTICS: tuple[str, ...] = (
     "entries_held_at_rebalance",
     "exits_per_year",
     "exits_rebought_at_rebalance",
+    # Added with trials 7-10, to say where a book's cash comes from: the
+    # cash share on sessions the FOMC ceiling is not holding the book down;
+    # the share the allocator itself leaves idle (1 - the sum of its row-t
+    # targets: the hold cap with few names), averaged over every session
+    # and over the reset sessions alone; and the cash share at the mark two
+    # sessions after each reset, once the reset's fill and the deferred
+    # retry have both happened. A book without the mid-cycle rule follows
+    # the targets only at the reset, so its post-reset cash against the idle
+    # share at the reset is the executor's leak, exactly; the per-session
+    # idle share is the comparison for a book that redeploys every session.
+    "cash_share_unpaused",
+    "idle_target_share",
+    "idle_target_at_reset",
+    "cash_share_post_reset",
 )
 
 
@@ -260,7 +372,8 @@ DIAGNOSTICS: tuple[str, ...] = (
 # decision session (before its own fill); "rebought" reads the mark after
 # that rebalance's fill. Entries and exits whose next rebalance is outside
 # the run are left out of the two shares. Turnover is notional traded over
-# the mean NAV a year, split by the kind of decision that traded.
+# the mean NAV a year, split by the kind of decision that traded; the reset
+# top-up's trades count with the rebalance's.
 def diagnostics(ledger: Ledger, start, end) -> dict[str, float]:  # noqa: C901 - one pass over the marks
     """Return the diagnostics over the fill sessions in [start, end)."""
     out = {k: math.nan for k in DIAGNOSTICS}
@@ -270,7 +383,8 @@ def diagnostics(ledger: Ledger, start, end) -> dict[str, float]:  # noqa: C901 -
     keep = point_in_time.window(ledger.dates, start, end)
     sessions = sorted(ledger.marks)
     rebalances = sorted(s for s, k in ledger.kinds.items() if k == REBALANCE)
-    navs, cash_shares, mid_cash = [], [], []
+    navs, cash_shares, mid_cash, unpaused_cash = [], [], [], []
+    idle, idle_at_reset, post_reset = [], [], []
     mid_traded = reb_traded = 0.0
     entries: list[tuple[int, int]] = []
     exits: list[tuple[int, int]] = []
@@ -286,9 +400,17 @@ def diagnostics(ledger: Ledger, start, end) -> dict[str, float]:  # noqa: C901 -
             cash_shares.append(cash / nav)
             if kind == MIDCYCLE:
                 mid_cash.append(cash / nav)
+            if ledger.exposure is not None and float(ledger.exposure[s]) >= 1.0:
+                unpaused_cash.append(cash / nav)
+            if (s - 2) in ledger.kinds and ledger.kinds[s - 2] == REBALANCE:
+                post_reset.append(cash / nav)
+        if ledger.idle is not None:
+            idle.append(float(ledger.idle[s]))
+            if (s - 2) in ledger.kinds and ledger.kinds[s - 2] == REBALANCE:
+                idle_at_reset.append(float(ledger.idle[s - 2]))
         if kind == MIDCYCLE:
             mid_traded += traded - traded_before
-        elif kind == REBALANCE:
+        elif kind in (REBALANCE, TOPUP):
             reb_traded += traded - traded_before
         if kind != MIDCYCLE:
             continue
@@ -313,6 +435,16 @@ def diagnostics(ledger: Ledger, start, end) -> dict[str, float]:  # noqa: C901 -
     )
     out["cash_share"] = float(np.mean(cash_shares)) if cash_shares else math.nan
     out["midcycle_cash_share"] = float(np.mean(mid_cash)) if mid_cash else math.nan
+    out["cash_share_unpaused"] = (
+        float(np.mean(unpaused_cash)) if unpaused_cash else math.nan
+    )
+    out["idle_target_share"] = float(np.mean(idle)) if idle else math.nan
+    out["idle_target_at_reset"] = (
+        float(np.mean(idle_at_reset)) if idle_at_reset else math.nan
+    )
+    out["cash_share_post_reset"] = (
+        float(np.mean(post_reset)) if post_reset else math.nan
+    )
     out["entries_per_year"] = len(entries) / years
     out["exits_per_year"] = len(exits) / years
     out["entry_weight"] = float(np.mean(weights)) if weights else math.nan
@@ -349,22 +481,40 @@ class Priced:
     diagnostics: dict[str, dict[str, float]] = field(default_factory=dict)
 
 
+# The share of equity the allocator itself leaves in cash on each session:
+# one minus the sum of its row-t targets (the hold cap with few names).
+def idle_target_path(restricted, mask: np.ndarray) -> np.ndarray:
+    """Return (T,) idle shares of `policy_v4.allocator(mask)` per session."""
+    panel = restricted.panel
+    allocate = policy_v4.allocator(mask)
+    return np.array(
+        [
+            max(0.0, 1.0 - float(np.nansum(allocate(restricted, panel, None, t))))
+            for t in range(len(panel.dates))
+        ]
+    )
+
+
 # Price one variant from one offset at one cost: `simulate.run` on the
 # restricted report with the policy's allocator, the variant's options and
-# a fresh Ledger, then the diagnostics per window.
+# a fresh Ledger, then the diagnostics per window. `idle`, when given, is
+# `idle_target_path` computed once for every variant and offset.
 def price(
-    restricted, mask: np.ndarray, variant_: Variant, since, cost_bps: float
+    restricted, mask: np.ndarray, variant_: Variant, since, cost_bps: float, idle=None
 ) -> Priced:
     """Return the variant's Priced result from `since` at `cost_bps`."""
     panel = restricted.panel
     ledger = Ledger()
+    options = options_for(variant_, panel)
+    ledger.exposure = options.get("event_exposure")
+    ledger.idle = idle_target_path(restricted, mask) if idle is None else idle
     result = simulate.run(
         restricted,
         since=since,
         cost_bps=cost_bps,
         allocator=policy_v4.allocator(mask),
         journal=ledger,
-        **options_for(variant_, panel),
+        **options,
     )
     return Priced(
         Curve(variant_.name, result.dates, result.returns),
@@ -487,15 +637,37 @@ def paired(priced: list[dict[str, Priced]], cost_bps: float) -> list[dict[str, A
     return out
 
 
-# Run every variant at every offset and cost and assemble the payload.
-# `store` is accepted for the scorecard's call shape and is not read. A
-# variant `simulate.run` refuses is recorded under `refused` with the
-# reason and left out of the rows - never silently skipped.
+# The variants a run prices: all of them, or the named ones plus the two
+# anchors, which every pairing, sign test and exposure reading needs on the
+# same sessions as the variant. An unknown name is a KeyError.
+def selected(only) -> tuple[Variant, ...]:
+    """Return the variants to price for `only` (None means every one)."""
+    if only is None:
+        return VARIANTS
+    names = set(ANCHORS) | set(only)
+    for name in names:
+        variant(name)
+    return tuple(v for v in VARIANTS if v.name in names)
+
+
+# Run every variant (or the selected ones and the anchors) at every offset
+# and cost and assemble the payload. `store` is accepted for the
+# scorecard's call shape and is not read. A variant `simulate.run` refuses
+# is recorded under `refused` with the reason and left out of the rows -
+# never silently skipped.
 def run_variants(
-    report, restricted, mask: np.ndarray, store, offsets: int, costs: tuple[float, ...]
+    report,
+    restricted,
+    mask: np.ndarray,
+    store,
+    offsets: int,
+    costs: tuple[float, ...],
+    only=None,
 ) -> dict[str, Any]:
     """Return the study payload for the policy on the restricted report."""
     panel = restricted.panel
+    chosen = selected(only)
+    idle = idle_target_path(restricted, mask)
     refused: dict[str, str] = {}
     payload: dict[str, Any] = {
         "study": STUDY,
@@ -508,12 +680,19 @@ def run_variants(
             for k, (s, e) in WINDOWS.items()
         },
         "trials": len(VARIANTS),
+        "follow_on": [v.name for v in FOLLOW_ON],
+        "selected": [v.name for v in chosen],
         "variants": [
             {
                 "name": v.name,
                 "live_midcycle": v.live_midcycle,
                 "entries": v.entries if v.live_midcycle else None,
                 "sweep": v.sweep if v.live_midcycle else None,
+                "redeploy": v.redeploy if v.live_midcycle else None,
+                "buffer": v.buffer if (v.redeploy or v.reset_topup) else None,
+                "exits": v.exits if v.live_midcycle else None,
+                "reset_topup": v.reset_topup,
+                "follow_on": v in FOLLOW_ON,
                 "note": v.note,
                 "options": _describe(options_for(v, panel)),
             }
@@ -539,11 +718,13 @@ def run_variants(
         for k in range(int(offsets)):
             since = _since(panel, k)
             offset: dict[str, Priced] = {}
-            for v in VARIANTS:
+            for v in chosen:
                 if v.name in refused:
                     continue
                 try:
-                    offset[v.name] = price(restricted, mask, v, since, float(cost))
+                    offset[v.name] = price(
+                        restricted, mask, v, since, float(cost), idle=idle
+                    )
                 except ValueError as exc:
                     refused[v.name] = f"simulate.run refused: {exc}"
             priced.append(offset)
@@ -553,8 +734,53 @@ def run_variants(
                     del offset[name]
         payload["rows"].extend(summarise(priced, float(cost)))
         payload["paired"].extend(paired(priced, float(cost)))
-    payload["ran"] = [v.name for v in VARIANTS if v.name not in refused]
+    payload["ran"] = [v.name for v in chosen if v.name not in refused]
     return payload
+
+
+# Fold a run of some variants into an earlier payload of the same study:
+# the earlier rows and pairs of every line this run did not price are kept,
+# those of the lines it did price are replaced (the anchors are repriced
+# each run and are deterministic, so their rows agree), refusals and `ran`
+# are merged, and the variant list and trial count are this run's, which
+# knows every registered variant. The verdict is not merged; the caller
+# recomputes it on the merged rows. The earlier payload has to be this
+# study's, on the same offsets and costs, or the rows would not be comparable
+# and the merge refuses.
+def merge_payload(earlier: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+    """Return `current` with the earlier payload's rows for lines it did not run."""
+    for key in ("study", "policy", "offsets", "costs_bps", "windows"):
+        if earlier.get(key) != current.get(key):
+            raise ValueError(
+                f"cannot merge: {key} differs "
+                f"({earlier.get(key)!r} vs {current.get(key)!r})"
+            )
+    priced_now = set(current.get("ran", [])) | set(current.get("refused", {}))
+    merged = dict(current)
+    merged["rows"] = [
+        r for r in earlier.get("rows", []) if r["line"] not in priced_now
+    ] + list(current.get("rows", []))
+    merged["paired"] = [
+        p for p in earlier.get("paired", []) if p["line"] not in priced_now
+    ] + list(current.get("paired", []))
+    refused = {
+        k: v for k, v in earlier.get("refused", {}).items() if k not in priced_now
+    }
+    refused.update(current.get("refused", {}))
+    merged["refused"] = refused
+    ran = set(earlier.get("ran", [])) - set(refused) | set(current.get("ran", []))
+    merged["ran"] = [v.name for v in VARIANTS if v.name in ran]
+    merged["merged"] = {
+        "earlier_asof": earlier.get("asof"),
+        "earlier_ran": list(earlier.get("ran", [])),
+        "kept": [
+            v.name
+            for v in VARIANTS
+            if v.name in set(earlier.get("ran", [])) and v.name not in priced_now
+        ],
+        "repriced": [v.name for v in VARIANTS if v.name in priced_now],
+    }
+    return merged
 
 
 # The row for a line and window at a cost, or None.
@@ -590,12 +816,21 @@ def _signed(x: float, digits: int = 2) -> str:
     return "n/a" if not np.isfinite(x) else f"{x:+.{digits}f}"
 
 
+# A fraction as a percentage to one decimal, "n/a" for NaN.
+def _pct(x: float) -> str:
+    return "n/a" if not np.isfinite(x) else f"{x * 100:.1f}%"
+
+
 # The verdict: every variant other than live is read against live at 25 bp -
 # the CAGR points on the choosing window, the paired t there, the paired
 # bp/d on the reported window, and the drawdown gap on both windows. ADOPT
 # (registered) only when all four floors hold; else RECORD. mc-off is
 # assessed the same way, as the anchor: an ADOPT there would repeat the
 # ablation's removal question, which the ablation already answered KEEP.
+# Beside the decision, each variant carries the exposure-adjusted reading
+# (live's CAGR scaled to the variant's invested share) and the per-offset
+# sign test; a RECORD above live on >= CONSISTENT_SHARE of the offsets by
+# >= CONSISTENT_POINTS is read as CONSISTENT, floor not cleared by daily t.
 def verdict(payload: dict[str, Any]) -> dict[str, Any]:
     """Return the verdict block for the payload."""
     costs = [float(c) for c in payload.get("costs_bps", [])]
@@ -640,8 +875,34 @@ def verdict(payload: dict[str, Any]) -> dict[str, Any]:
             all(np.isfinite(g) and g >= -DRAWDOWN_POINTS for g in dd_gap.values())
         )
         decision = ADOPT if passes and not_worse and drawdown_ok else RECORD
+        # The second reading, for a claim about exposure rather than
+        # selection: live's CAGR scaled to the variant's mean invested
+        # fraction (what live would have earned invested as much as the
+        # variant, to first order), and the count of offsets whose CAGR beats
+        # live's. CONSISTENT is a RECORD whose gain is on nearly every offset.
+        live_invested = 1.0 - _f(live_choose.get("cash_share"))
+        invested = 1.0 - _f(row.get("cash_share"))
+        adjusted_live = (
+            live_cagr * invested / live_invested
+            if np.isfinite(live_invested)
+            and live_invested > 0
+            and np.isfinite(invested)
+            else math.nan
+        )
+        adjusted_points = (_f(row.get("median_cagr")) - adjusted_live) * 100.0
+        offsets = int(row.get("offsets") or 0)
+        above = int(row.get("offsets_above_live") or 0) if offsets else 0
+        needed = int(math.ceil(CONSISTENT_SHARE * offsets)) if offsets else 0
+        consistent = bool(
+            decision == RECORD
+            and measured
+            and offsets > 0
+            and above >= needed
+            and points >= CONSISTENT_POINTS
+        )
         variants[v.name] = {
             "anchor": v.name in ANCHORS,
+            "follow_on": v in FOLLOW_ON,
             "measured": measured,
             "refused": payload.get("refused", {}).get(v.name),
             "choosing_points": points,
@@ -653,6 +914,15 @@ def verdict(payload: dict[str, Any]) -> dict[str, Any]:
             "passes_choosing": passes,
             "not_worse_reported": not_worse,
             "drawdown_within": drawdown_ok,
+            "invested_share": invested,
+            "live_invested_share": live_invested,
+            "exposure_adjusted_live_cagr": adjusted_live,
+            "exposure_adjusted_points": adjusted_points,
+            "offsets_above_live": above,
+            "offsets": offsets,
+            "reported_offsets_above_live": int(later.get("offsets_above_live") or 0),
+            "consistent": consistent,
+            "reading": CONSISTENT if consistent else decision,
             "decision": decision,
         }
         (adopt if decision == ADOPT else record).append(v.name)
@@ -667,12 +937,16 @@ def verdict(payload: dict[str, Any]) -> dict[str, Any]:
             f"(t {_signed(info['choosing_t_vs_live'])}, "
             f"{REPORTED} {_signed(info['reported_bp_vs_live'], 1)} bp/d, "
             f"DD {_signed(info['drawdown_gap_points'][CHOOSING], 1)}/"
-            f"{_signed(info['drawdown_gap_points'][REPORTED], 1)} pt) "
-            f"{info['decision']}"
+            f"{_signed(info['drawdown_gap_points'][REPORTED], 1)} pt; "
+            f"exposure-adjusted {_signed(info['exposure_adjusted_points'], 1)} pt, "
+            f"{info['offsets_above_live']}/{info['offsets']} offsets above live) "
+            f"{info['reading']}"
             for name, info in variants.items()
         ]
+        consistent = [n for n, i in variants.items() if i["consistent"]]
         text = (
-            f"{CHOOSING} at {cost:g} bp: live {live_cagr * 100:.1f}%. "
+            f"{CHOOSING} at {cost:g} bp: live {live_cagr * 100:.1f}% "
+            f"invested {_pct(1.0 - _f(live_choose.get('cash_share')))}. "
             "Variants against live: "
             + "; ".join(parts)
             + ". "
@@ -685,6 +959,14 @@ def verdict(payload: dict[str, Any]) -> dict[str, Any]:
                     f"{DRAWDOWN_POINTS:g} pt; every variant is RECORD."
                 )
             )
+            + (
+                f" {CONSISTENT}: {', '.join(consistent)} (above live on at least "
+                f"{CONSISTENT_SHARE:.0%} of the offsets with "
+                f">= {CONSISTENT_POINTS:g} pt; "
+                "this is a reading, not an adoption)."
+                if consistent
+                else ""
+            )
         )
     return {
         "cost_bps": cost,
@@ -694,10 +976,13 @@ def verdict(payload: dict[str, Any]) -> dict[str, Any]:
             "points": ADOPT_POINTS,
             "hac_t": ADOPT_T,
             "drawdown_points": DRAWDOWN_POINTS,
+            "consistent_share": CONSISTENT_SHARE,
+            "consistent_points": CONSISTENT_POINTS,
         },
         "live_cagr": live_cagr,
         "variants": variants,
         "adopt": adopt,
         "record": record,
+        "consistent": [n for n, i in variants.items() if i["consistent"]],
         "text": text,
     }

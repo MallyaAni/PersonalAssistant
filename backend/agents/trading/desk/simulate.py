@@ -92,6 +92,26 @@ LIVE_POLICY: dict[str, bool] = {
 #                proceeds are still redeployed
 MIDCYCLE_ENTRIES: tuple[str, ...] = ("breakout", "target", "new-grade", "none")
 MIDCYCLE_BREAKOUT = "breakout"
+# The share of equity `midcycle_redeploy` leaves in cash before it puts the
+# rest back to work: a small float for the next session's costs and a
+# rotation's timing, the way a live book never runs to the last dollar.
+REDEPLOY_BUFFER = 0.02
+
+
+# The mid-cycle rule's research knobs for one session, carried as one value
+# instead of a growing tuple: the entry mode, the sweep, the redeploy buffer
+# (None when the redeploy is off), whether rotation exits fire, and the
+# allocator's weights per symbol for this session and for the last reset.
+@dataclass(frozen=True)
+class MidcycleVariant:
+    """The entry mode, sweep, redeploy, exits and targets of one mid-cycle plan."""
+
+    entries: str = MIDCYCLE_BREAKOUT
+    sweep: bool = False
+    redeploy: float | None = None
+    exits: bool = True
+    today: dict[str, float] = field(default_factory=dict)
+    at_rebalance: dict[str, float] = field(default_factory=dict)
 
 
 # The session's inputs to the shared paper planner, read from the book and
@@ -256,20 +276,94 @@ def _sweep_orders(
     return out
 
 
+# The redeploy of the "mc-redeploy" variants and the reset top-up: the reset's
+# own buy semantics applied whenever cash has accumulated. Cash on hand
+# beyond what tonight's plan already spends and beyond `buffer` of equity is
+# put to work in the names the allocator would hold today - the names the
+# book holds (or buys tonight) that are graded A or better and not rotating
+# out, plus any name the allocator gives weight today that it gave none at
+# the last reset (newly graded in since) - each filled toward its own target
+# weight today, pro rata to the shortfall, never beyond the target (the
+# allocator's cap, HOLD_CAP under `policy_v4`, is inside the target). There
+# is no band gate and nothing is deferred or dropped: what does not fit
+# tonight is simply cash again tomorrow, when the same rule runs. The only
+# bound is the cash on hand, which is the budget itself.
+def _redeploy_orders(  # noqa: C901 - the takers, their room and the fill in one pass
+    orders, reserved, prices, equity, grades, finished, today, at_rebalance, cash,
+    buffer, session, state,
+) -> list:
+    """Return the buys that put tonight's cash beyond `buffer` back to its targets."""
+    from backend.agents.trading.desk import paper
+
+    if equity <= 0:
+        return []
+    planned = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    spare = max(0.0, cash - planned - float(buffer) * equity)
+    if spare < paper.MIN_TRADE * equity:
+        return []
+    projected = dict(reserved)
+    for order in orders:
+        if order.side == "buy":
+            projected[order.symbol] = projected.get(order.symbol, 0.0) + order.qty
+    candidates = {s for s, q in projected.items() if q > 0} | {
+        s
+        for s, w in today.items()
+        if w > 0 and float(at_rebalance.get(s, 0.0)) <= 0
+    }
+    room: dict[str, float] = {}
+    for symbol in sorted(candidates):
+        price = float(prices.get(symbol) or 0.0)
+        if (
+            price <= 0
+            or symbol in finished
+            or grades.get(symbol) not in paper.ENTRY_MIN_GRADE
+        ):
+            continue
+        current = float(projected.get(symbol, 0.0)) * price / equity
+        short = float(today.get(symbol, 0.0)) - current
+        if short > 0:
+            room[symbol] = short * equity
+    total = sum(room.values())
+    if total <= 0:
+        return []
+    fill = min(1.0, spare / total)
+    out = []
+    for symbol, value in sorted(room.items()):
+        price = float(prices[symbol])
+        want = value * fill
+        qty = want / price
+        if qty <= 0 or want < paper.MIN_TRADE * equity:
+            continue
+        seq = state.order_seq
+        state.order_seq += 1
+        out.append(
+            paper.PaperOrder(
+                symbol,
+                "buy",
+                qty,
+                "redeploy: cash beyond the buffer put back to its target weights",
+                client_order_id=paper.order_id(session, symbol, "buy", seq),
+            )
+        )
+    return out
+
+
 # `paper.midcycle_orders` with the entry leg replaced by a research variant
-# and an optional cash sweep: the rotation out of downgraded names, the
-# joint reservation of name capacity and the cash bound are the paper
-# planner's own functions, called in the same order.
+# and an optional cash sweep or redeploy: the rotation out of downgraded
+# names (unless the variant turns the exits off), the joint reservation of
+# name capacity and the cash bound are the paper planner's own functions,
+# called in the same order.
 def _variant_midcycle_orders(
     session, equity, held, prices, grades, finished, entries, excluded, cash,
-    mode, sweep, today, at_rebalance, unfunded=None,
+    mode, sweep, today, at_rebalance, unfunded=None, redeploy=None, exits=True,
 ) -> list:
     """Return tonight's funded mid-cycle orders under the variant."""
     from backend.agents.trading.desk import paper
 
     state = paper.PaperState()
     orders = paper._rotation_orders(
-        finished, held, prices, equity, session, state, excluded, whole_shares=False
+        finished if exits else {},
+        held, prices, equity, session, state, excluded, whole_shares=False,
     )
     projected = dict(held)
     for order in orders:
@@ -295,6 +389,11 @@ def _variant_midcycle_orders(
             orders, held, prices, equity, grades, finished, excluded, today,
             max(0.0, cash), session, state,
         )
+    if redeploy is not None:
+        orders += _redeploy_orders(
+            orders, held, prices, equity, grades, finished, today, at_rebalance,
+            max(0.0, cash), redeploy, session, state,
+        )
     funded, unpaid = paper._fund_buys(orders, max(0.0, cash), prices, False)
     if unfunded is not None:
         for symbol, qty in unpaid.items():
@@ -306,9 +405,10 @@ def _variant_midcycle_orders(
 # `deferred`, when given, is the previous session's unpaid buy shares per
 # symbol, retried first from the cash on hand exactly as `paper.plan` does;
 # `unfunded`, when a dict is given, receives tonight's unpaid buy shares.
-# `variant`, when given, is (entry mode, sweep, today's allocator weights,
-# the last rebalance's allocator weights) and routes the plan through
-# `_variant_midcycle_orders`; None is the live rule, byte for byte.
+# `variant`, when given, is a `MidcycleVariant` (entry mode, sweep, redeploy
+# buffer, exits, today's allocator weights, the last rebalance's allocator
+# weights) and routes the plan through `_variant_midcycle_orders`; None is
+# the live rule, byte for byte.
 def _live_midcycle(
     book, report, t, bands, blocked, deferred=None, unfunded=None, variant=None
 ):
@@ -360,7 +460,6 @@ def _live_midcycle(
             unfunded=unfunded,
         )
     else:
-        mode, sweep, today, at_rebalance = variant
         planned = _variant_midcycle_orders(
             session,
             equity,
@@ -371,11 +470,13 @@ def _live_midcycle(
             entries,
             excluded,
             book.cash - spent,
-            mode,
-            sweep,
-            today,
-            at_rebalance,
+            variant.entries,
+            variant.sweep,
+            variant.today,
+            variant.at_rebalance,
             unfunded=unfunded,
+            redeploy=variant.redeploy,
+            exits=variant.exits,
         )
     orders = retry + planned
     wanted = book.shares.copy()
@@ -432,6 +533,39 @@ def _deferred_leg(book, report, t, blocked, deferred, order) -> np.ndarray:
     )
     wanted = np.array(order, dtype=float)
     for o in retry:
+        wanted[panel.index(o.symbol)] += o.qty
+    return wanted
+
+
+# The reset's top-up (`reset_topup`): on the session after a rebalance, once
+# the deferred retry has taken what its gates allow, the cash the reset's
+# sells delivered at the close and the retry could not place - refused by
+# the band gate, capped at the paper's 15% name cap under a 20% target, or
+# under the trade floor - is put back to the allocator's targets for today
+# through `_redeploy_orders`, with `buffer` of equity kept in cash. `order`
+# is the session's plan with the retry already added; the top-up is paid from
+# the cash the retry leaves.
+def _topup_leg(book, report, t, order, today, at_rebalance, buffer) -> np.ndarray:
+    """Return `order` with the reset top-up's shares added."""
+    from backend.agents.trading.desk import paper
+
+    panel = report.panel
+    prices, held, grades, finished, _excluded = _paper_inputs(book, report, t, None)
+    equity = book.equity(panel.adj_close[t])
+    priced = np.isfinite(panel.adj_close[t]) & (panel.adj_close[t] > 0)
+    buys = np.where(priced, np.maximum(np.asarray(order) - book.shares, 0.0), 0.0)
+    spent = float((buys * np.where(priced, panel.adj_close[t], 0.0)).sum())
+    reserved = {
+        s: float(book.shares[j] + buys[j])
+        for j, s in enumerate(panel.tickers)
+        if book.shares[j] + buys[j] > 0
+    }
+    topup = _redeploy_orders(
+        [], reserved, prices, equity, grades, finished, today, at_rebalance,
+        max(0.0, book.cash - spent), buffer, str(panel.dates[t]), paper.PaperState(),
+    )
+    wanted = np.array(order, dtype=float)
+    for o in topup:
         wanted[panel.index(o.symbol)] += o.qty
     return wanted
 
@@ -893,6 +1027,10 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     weight_filter=None,
     midcycle_entries: str = MIDCYCLE_BREAKOUT,
     midcycle_sweep: bool = False,
+    midcycle_redeploy: bool = False,
+    redeploy_buffer: float = REDEPLOY_BUFFER,
+    midcycle_exits: bool = True,
+    reset_topup: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -1045,6 +1183,27 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     out of downgraded names, the deferred retry, the cash bound, the buy
     gates, the fills - is unchanged, so a variant measures the entry rule
     and nothing else. The defaults leave every result byte-identical.
+
+    `midcycle_redeploy` (requires `live_midcycle`) is the reset's own buy
+    semantics applied whenever cash accumulates: on every mid-cycle session,
+    after the rotation, the retry and the entries have planned their buys,
+    the cash on hand beyond `redeploy_buffer` of equity is put back to the
+    allocator's row-t targets - pro rata to each name's shortfall over the
+    held A/A+ names and any name graded in since the reset, each up to its
+    own target weight (the allocator's cap is inside the target), with no
+    band gate, nothing deferred and nothing dropped; a rotation's proceeds
+    therefore go back to work the session after the close delivers them
+    rather than waiting for a breakout or the reset. Sells are unchanged.
+    `midcycle_exits=False` (requires `live_midcycle`) turns the rotation
+    sells off: no name leaves between resets, only the reset rotates; the
+    grade still gates every buy, so a downgraded name is held, not added to.
+    `reset_topup` (refused with `live_midcycle`, which has the redeploy for
+    the same purpose) is the one-session version for a book without the
+    mid-cycle rule: on the session after a rebalance, once the deferred
+    retry has placed what its gates allow, the cash the reset's sells
+    delivered and the retry could not place is put back to today's targets
+    through the same redeploy, with `redeploy_buffer` kept in cash. The
+    defaults of all four leave every result byte-identical.
     """
     decide = allocator or _targets
     if midcycle_entries not in MIDCYCLE_ENTRIES:
@@ -1052,9 +1211,23 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             "midcycle_entries must be one of "
             f"{MIDCYCLE_ENTRIES}, got {midcycle_entries!r}"
         )
-    midcycle_variant = midcycle_entries != MIDCYCLE_BREAKOUT or bool(midcycle_sweep)
+    if not (np.isfinite(redeploy_buffer) and 0.0 <= float(redeploy_buffer) < 1.0):
+        raise ValueError("redeploy_buffer must be a finite share of equity in [0, 1)")
+    midcycle_variant = (
+        midcycle_entries != MIDCYCLE_BREAKOUT
+        or bool(midcycle_sweep)
+        or bool(midcycle_redeploy)
+        or not midcycle_exits
+    )
     if midcycle_variant and not live_midcycle:
-        raise ValueError("midcycle_entries and midcycle_sweep require live_midcycle")
+        raise ValueError(
+            "midcycle_entries, midcycle_sweep, midcycle_redeploy and midcycle_exits "
+            "require live_midcycle"
+        )
+    if reset_topup and live_midcycle:
+        raise ValueError(
+            "reset_topup is for a book without live_midcycle; use midcycle_redeploy"
+        )
     fired, blocked, trend_up, dips = _signals_for(
         report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
     )
@@ -1183,6 +1356,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     # The allocator's weights at the last rebalance, per symbol, for the
     # mid-cycle entry variants that ask what the rebalance would have held.
     rebalance_weights: dict[str, float] = {}
+    # The last rebalance's decision session, for the reset top-up's one session.
+    last_rebalance = -1
     for t in range(start, rows - 1):
         if funded_allocation:
             # An explicit company exit, named for this decision date, removes
@@ -1391,7 +1566,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         if rebalanced:
             next_rebalance = t + rebalance
             target = decide(report, panel, config, t)
-            if midcycle_variant:
+            last_rebalance = t
+            if midcycle_variant or reset_topup:
                 rebalance_weights = _weights_by_symbol(target, panel.tickers)
             if fired is not None or blocked is not None:
                 total = book.equity(closes[t])
@@ -1468,9 +1644,11 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             if midcycle_variant:
                 # The variant asks the allocator what it would hold today,
                 # from row t alone, and remembers what it held at the reset.
-                variant = (
+                variant = MidcycleVariant(
                     midcycle_entries,
                     bool(midcycle_sweep),
+                    float(redeploy_buffer) if midcycle_redeploy else None,
+                    bool(midcycle_exits),
                     _weights_by_symbol(decide(report, panel, config, t), panel.tickers),
                     rebalance_weights,
                 )
@@ -1491,6 +1669,28 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             reason = "shared paper rotation and entry policy"
         elif carried:
             order = _deferred_leg(book, report, t, blocked, carried, order)
+        topped_up = False
+        if (
+            reset_topup
+            and not rebalanced
+            and t == last_rebalance + 1
+            and not event_changed
+            and not reduced
+        ):
+            # The reset's top-up: the session after the rebalance, once the
+            # retry has placed what its gates allow, the rest of the cash the
+            # reset's sells delivered goes back to today's targets.
+            order = _topup_leg(
+                book,
+                report,
+                t,
+                order,
+                _weights_by_symbol(decide(report, panel, config, t), panel.tickers),
+                rebalance_weights,
+                float(redeploy_buffer),
+            )
+            topped_up = True
+            reason = "reset top-up"
         if event_paused:
             # Live FOMC execution owns the cycle and cannot add positions.
             order = np.minimum(order, book.shares)
@@ -1511,6 +1711,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             reason=reason,
             metadata={
                 "scheduled": bool(rebalanced),
+                "topup": topped_up,
                 "event_changed": bool(event_changed),
                 "braked": bool(braked),
                 "sell_at_close": bool(exit_at_close and not event_changed),

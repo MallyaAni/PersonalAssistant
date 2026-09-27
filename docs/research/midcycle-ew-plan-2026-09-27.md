@@ -139,3 +139,125 @@ question closes.
 
 An ADOPT authorises a registered change to the executor, built with tests
 and gated, not a same-night edit.
+
+## Addendum, 2026-09-27, after the first six had run: trials 7-10
+
+Written after seeing the six results on the store, and stated as such:
+these four are a follow-on, not part of the pre-registration above, and
+are counted as trials 7-10. The six rows already run are kept unchanged
+in `VARIANTS` and in the payload so the two runs compare row for row.
+
+### What the first run found (2016-2023, 25 bp, medians over 20 offsets)
+
+| variant | CAGR | maxDD | vs live bp/d (t) | cash |
+|---|---|---|---|---|
+| `mc-off` | 27.8% | -43.3% | +0.6 (0.50) | 7.1% |
+| `live` | 23.2% | -36.0% | - | 22.3% |
+| `mc-target-size` | 23.3% | -37.8% | -0.4 (-1.31) | 19.9% |
+| `mc-no-idle-cash` | 25.3% | -36.9% | +0.2 (0.66) | 18.3% |
+| `mc-new-grades-only` | 23.5% | -41.4% | -0.2 | 12.0% |
+| `mc-exit-only` | 23.0% | -35.8% | -0.1 | 23.8% |
+
+2024-2026: `mc-off` 47.7% / -27.7% at 11.6% cash; `live` 52.6% / -17.2%
+at 32.4%; `mc-no-idle-cash` 56.4% / -17.7% at 28.1%; `mc-exit-only`
+52.7% / -17.6% at 33.8%. Every variant RECORD. Diagnostics: live makes
+9.5 entries a year at 2.6% weight and 32.7 exits a year, 22.7% of them
+bought back at the next reset.
+
+The lead is the cash. The live book holds 22% of equity in cash on
+2016-2023 and 32% on 2024-2026 against 7% and 12% for `mc-off`, and
+`mc-exit-only` holds the most of all: the mid-cycle exits (32 a year) put
+their proceeds in cash, the pro-rata redeploy is planned from tonight's
+cash (nothing) and retried once, and after that the cash waits for a band
+breakout that mostly never comes before the reset. The sweep
+(`mc-no-idle-cash`) lifted both windows and was above live on 20/20 and
+18/20 offsets, but its paired daily t was 0.66 and it still held 18%,
+because it goes through the same cash-bounded, band-gated buy path with
+the one deferred retry. The prior above was wrong in its target: the
+entry leg's *size* (`mc-target-size`) recovered nothing; what the book
+lacks is exposure, not selection.
+
+### Where `mc-off`'s 7% comes from (read from the code, checked on the synthetic book)
+
+The FOMC path is 1.0 before 2026-06-18 (`event_risk.live_path`), so none
+of it is the event ceiling on 2016-2023. Part is the policy's own:
+`policy_v4` caps a name at 20%, so with four or fewer A/A+ names the
+allocator itself leaves 20% or more idle (the new `idle_target_share` /
+`idle_target_at_reset` diagnostics measure exactly this). The rest is the
+reset's mechanics, three channels:
+
+1. Buys fill at the next open and are paid from the cash on hand at that
+   open; the trims and sells of the same reset fill at the close
+   (`exit_at_close`). On a fully invested book every reset's buys
+   therefore go unpaid and depend on the one deferred retry
+   (`deferred_buys`, `paper._deferred_orders`) the session after.
+2. That retry is the *mid-cycle entry's* gate set, not the reset's: a
+   name rejecting its band (`block_overbought`) is skipped, a name is
+   filled only to `paper.ENTRY_NAME_CAP` (15%), below the policy's 20%
+   `HOLD_CAP`, and a remainder under `MIN_TRADE` is dropped. With six or
+   fewer A/A+ names the 15% cap means a held name can never be topped up
+   at all. Seen on the synthetic book: at one reset the book had 0 cash,
+   trimmed two names at the close, bought nothing at the open, and the
+   retry placed nothing because every under-weight name was already above
+   15%; the 5.5% of proceeds sat for the whole cycle. Whatever the retry
+   refuses waits nineteen sessions.
+3. `_gated_targets` at the reset: a name rejecting its band is not bought
+   at all, and there is no retry for a buy that was never planned.
+
+So it is a mechanical leak of the executor's conventions, not the cap
+alone, and `reset-full-invest` is added to measure it. A fourth
+convention cuts the other way: `green_day_skip` holds back a sell on a
+green open and `mc-off` never re-issues it until the next reset, so a
+downgraded name can stay held a full cycle (also seen on the synthetic
+book).
+
+### The four variants added
+
+| variant | `simulate.run` | what it does |
+|---|---|---|
+| `mc-redeploy` | `midcycle_redeploy=True`, `redeploy_buffer=0.02` | the live rule (rotation exits, retry, breakout entries) plus the reset's own buy semantics whenever cash accumulates: on every mid-cycle session, cash beyond a 2% buffer goes to the allocator's row-t targets pro rata to each name's shortfall, over the held A/A+ names and any name graded in since the reset, each up to its own target (HOLD_CAP is inside the target); no band gate, nothing deferred or dropped; sells unchanged |
+| `mc-redeploy-nobuffer` | `redeploy_buffer=0.0` | the same with no buffer: the buffer's cost |
+| `mc-redeploy-no-exits` | `midcycle_exits=False` | the redeploy on, the rotation sells off: no name leaves between resets, only the reset rotates (the grade still gates every buy). Against `mc-redeploy` this separates what the exits earn in drawdown from what the idle cash costs |
+| `reset-full-invest` | `live_midcycle=False`, `reset_topup=True`, `redeploy_buffer=0.0` | `mc-off` with the reset completing itself: on the session after a rebalance, once the deferred retry has placed what its gates allow, the rest of the cash the reset's sells delivered goes back to today's targets through the same redeploy |
+
+All four defaults are byte-identical to the live rule with or without a
+journal (tested). The redeploy is `simulate._redeploy_orders`; the top-up
+is `simulate._topup_leg`, and its session is recorded as `topup` in the
+ledger so its turnover counts with the rebalance's and never as a
+mid-cycle entry or exit.
+
+### The second reading, fixed before this run
+
+The floors above are unchanged. Because the claim being tested is "the
+book is under-invested" - exposure, not selection - each variant also
+carries, at 25 bp on 2016-2023:
+
+* the exposure-adjusted comparison: live's CAGR scaled to the variant's
+  mean invested fraction (1 - cash share), `23.2% x invested_variant /
+  invested_live`, and the variant's CAGR less that. Near zero means the
+  gain is exposure alone; positive means the redeployed cash earned more
+  than live's book did per unit invested; negative, less.
+* the per-offset sign test: offsets whose CAGR beats live's out of 20. A
+  RECORD that is above live on at least 18 of 20 (`CONSISTENT_SHARE`
+  0.9) with a CAGR gain of at least 2 points (`CONSISTENT_POINTS`) is
+  read as **CONSISTENT, floor not cleared by daily t**, and is stated
+  exactly that way - a reading, never an adoption. The daily t on a book
+  of eleven names moved by exposure is not expected to clear 2.0
+  (`mc-no-idle-cash` was +2.1 pt on 20/20 offsets at t 0.66), and this
+  says so in advance rather than after.
+
+Prior for these four: `mc-redeploy` lands between `mc-no-idle-cash` and
+`mc-off` on return (25.5-27.5%) with cash near the buffer plus the cap's
+idle share, and keeps most of live's 2024-2026 drawdown because the
+exits are untouched; `mc-redeploy-no-exits` lands near `mc-off` on both
+return and drawdown, which is the test of "the exits are worth 10 points
+of drawdown"; `reset-full-invest` earns 1-2 points over `mc-off` on
+2016-2023 and more on 2024-2026 where its cash was 11.6%. If
+`mc-redeploy` does not beat `mc-no-idle-cash`, the sweep's remaining 18%
+was not the gated buy path but the exits' own timing, and the redeploy
+is not the fix.
+
+Run: `--only mc-redeploy mc-redeploy-nobuffer mc-redeploy-no-exits
+reset-full-invest --merge <root>/desk/midcycle_ew.json` prices the four
+and the two anchors on the same offsets and costs and folds them into the
+first run's payload, keeping its six rows.
