@@ -855,6 +855,12 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
           </div>
         ))}
       </div>
+      {/* The nightly's reason when the point-in-time line could not be drawn;
+          without it the second line's absence reads as if the names never
+          differed. */}
+      {backtest.point_in_time_note && (
+        <p aria-label="Point-in-time note" className="mb-3 text-xs text-[#6e6e73]">{backtest.point_in_time_note}</p>
+      )}
       <CurveChart backtest={backtest} paper={curve?.paper} />
       {backtest.evaluation_periods?.map((period) => (
         <p key={period.label} className="mt-3 text-xs text-[#6e6e73]">
