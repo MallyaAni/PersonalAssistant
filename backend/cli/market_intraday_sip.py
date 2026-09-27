@@ -18,9 +18,13 @@ the free plan's allowance. A dry run prints what would be fetched and how
 many requests that is likely to take, and makes no request at all.
 
 The default tickers are the book (`universe.book_sides`) plus SPY, QQQ, SMH
-and IGV: 98 names. Over 2016-2026 a full history is about 18 pages per
-name (about 2,700 sessions at 64 extended-hours bars a day, 10,000 bars a
-page), about 1,800 requests in all.
+and IGV: 98 names. Over 2016-2026 a full history is about 2,700 sessions a
+name at up to 64 extended-hours bars a day; Alpaca pages the SIP feed at
+about 1,000 bars whatever `limit` asks for (observed 2026-09-27: 999 bars
+a page with `limit=10000`), so a liquid name is about 170 requests, a thin
+name about 100, and the whole book about 15,000. The default cap suits the
+nightly append (one request a name); a backfill passes `--max-requests`
+explicitly.
 """
 
 from __future__ import annotations
@@ -47,6 +51,11 @@ DEFAULT_MAX_REQUESTS = 2000
 # Bars a session contributes to a paged SIP fetch: 04:00-20:00 extended
 # hours at fifteen minutes. Used only to estimate requests for a dry run.
 BARS_PER_SESSION_ESTIMATE = 64
+# Bars Alpaca actually returns a page on the SIP feed, whatever `limit`
+# asks for (observed 2026-09-27 on this account: 999 with limit=10000).
+# The estimate uses this, not `alpaca.PAGE_LIMIT`, so a dry run's count
+# is the count the run will make.
+SIP_PAGE_BARS_OBSERVED = 1000
 # Minutes after the close before today's bars are treated as final: the
 # delayed SIP feed is fifteen minutes behind, and the closing bar needs
 # to have ended.
@@ -134,12 +143,13 @@ def default_until(now: datetime | None = None) -> date:
 
 
 # A rough request count for fetching `sessions` sessions in one run: one
-# page per 10,000 bars, at least one request.
+# page per `SIP_PAGE_BARS_OBSERVED` bars, at least one request. An upper
+# bound: thin names carry fewer extended-hours bars and page in fewer.
 def estimate_requests(sessions: int) -> int:
     """Return the likely number of paged requests for a contiguous run."""
     if sessions <= 0:
         return 0
-    return max(1, math.ceil(sessions * BARS_PER_SESSION_ESTIMATE / alpaca.PAGE_LIMIT))
+    return max(1, math.ceil(sessions * BARS_PER_SESSION_ESTIMATE / SIP_PAGE_BARS_OBSERVED))
 
 
 # The sessions to hold for one ticker over [since, until]: the reviewed

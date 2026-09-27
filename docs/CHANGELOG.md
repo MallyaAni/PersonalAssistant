@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-09-27 — Deployed `1fc59696`; the SIP backfill's real request count; the 2016-2018 exchange calendar
+
+Three branches built in parallel landed on main in order and were deployed
+together: `trading/v4-policy-shadow` (`02e9666`, the `/4` policy and its
+shadow ledger), `trading/sip-15m-store` (`dcf34dd`, the consolidated
+fifteen-minute store) and `trading/dashboard-e2e-pit` (`1fc5969`, the
+browser test for the point-in-time line). `scripts/deploy.sh` from
+`~/deploy/anios`: unit gate 7,543 passed / 55 skipped / 5 xfailed, routing
+gate 100 passed, post-deploy checks green (`2026-09-27T02:04:43Z 1fc59696
+ok (cheap)`). The model servers were not touched. Then, from the first
+backfill against Alpaca:
+
+- `market_intraday_sip`: the dry run said 1,633 requests for 98 names and
+  the run needed about 95 for a thin name (AAOI) and about 190 for a liquid
+  one (AAPL), because Alpaca pages the SIP feed at about 1,000 bars whatever
+  `limit` asks for (observed: 999 bars with `limit=10000`). At the default
+  cap of 2,000 the run would have stopped after twenty names. The estimate
+  now divides by `SIP_PAGE_BARS_OBSERVED = 1000` (so a dry run's count is
+  the count the run will make: 173 a full name, about 15,000 for the book),
+  the docstring says so, and the default cap is documented as sized for the
+  nightly append; a backfill passes `--max-requests` explicitly. Test
+  `test_estimate_requests_uses_the_observed_page_size`.
+- `nyse_historical_sessions.json` now covers 2016-2018, each date from an
+  official NYSE Group press release: 2016 (one early close, 2016-11-25),
+  2017 (2017-07-03, 2017-11-24), 2018 (2018-07-03, 2018-11-23, 2018-12-24,
+  and the unscheduled 2018-12-05 full closure for the National Day of
+  Mourning, from the exchange's own announcement). Before this the SIP
+  refresh took those years' sessions from the daily store and expected 26
+  bars on an early close, so the six half days per name were written as
+  incomplete with `bars_expected=26`; after it, `calendar_sessions` owns
+  2016 onward and the incomplete partitions are rewritten by
+  `--refresh --include-incomplete --until 2018-12-31`. The two tests that
+  used 2018 as the unreviewed year now use 2015. The historical file is a
+  policy input of the intraday research digest, so that digest changes.
+- `docs/diagrams/agent-trading-desk.svg` and `docs/architecture.html`
+  re-rendered from the updated source (the `/4` shadow hook). Rendering
+  needs a browser with a usable sandbox: on the Spark it runs in the
+  Playwright image as a non-root user with `--security-opt
+  seccomp=unconfined --cap-add=SYS_ADMIN`; as root, or without those,
+  Chromium refuses to start ("No usable sandbox"). Only the desk SVG's
+  fingerprint changed; the other 32 renders differ by bytes only across
+  environments and were not committed.
+
 ## 2026-09-26 — Consolidated SIP fifteen-minute history on a raw basis, and early closes in the intraday readers
 
 The IEX cache (`bars_15m`) cannot carry the fifteen-minute engine: its

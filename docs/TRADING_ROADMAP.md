@@ -110,6 +110,14 @@ strategy that changes only when untouched sessions say so.
   that branch lands, and `agent-trading-desk.svg` needs re-rendering
   (source updated, no browser in the sandbox).
 
+- 2026-09-27: `1fc59696` deployed - the `/4` shadow, the SIP fifteen-minute
+  store and the point-in-time browser test together (gates 7,543 / 100
+  passed). First shadow receipt due Monday 2026-09-28. The SIP backfill is
+  running on spark1 (about 15,000 requests, not the estimated 1,633: Alpaca
+  pages at about 1,000 bars; estimator fixed) and the 2016-2018 exchange
+  calendar is now reviewed from the official releases. Open: the reconcile
+  verdict, the nightly SIP append, the candidate line on the dashboard.
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

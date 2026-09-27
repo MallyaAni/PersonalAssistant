@@ -277,9 +277,9 @@ def test_coverage_report(tmp_path):
     assert report["reconciled"] == 4
     assert report["reconcile_passed"] == 2  # the early close has a 14-bar volume
     assert report["calendar_unreviewed_years"] == []
-    sessions, unreviewed = sip.calendar_sessions(date(2018, 12, 28), date(2019, 1, 3))
-    assert unreviewed == [2018]
-    assert sessions == [date(2019, 1, 2), date(2019, 1, 3)]
+    sessions, unreviewed = sip.calendar_sessions(date(2015, 12, 30), date(2016, 1, 5))
+    assert unreviewed == [2015]
+    assert sessions == [date(2016, 1, 4), date(2016, 1, 5)]
 
 
 # The source revision is a git SHA here, and "" where git cannot answer.

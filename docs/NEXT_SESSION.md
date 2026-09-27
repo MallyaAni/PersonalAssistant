@@ -1,5 +1,67 @@
 # Next session
 
+## 2026-09-27 — Deployed `1fc59696` (`/4` shadow, SIP store, PIT browser test); the SIP backfill is running
+
+**Deployed `1fc59696`** from `~/deploy/anios` via `scripts/deploy.sh` (over
+SSH, key `claude-cowork-trading`): unit gate 7,543 passed / 55 skipped / 5
+xfailed, routing gate 100 passed, backup mirrored, migrations applied,
+backend restarted, cheap post-deploy checks green
+(`data/.post-deploy-status`: `2026-09-27T02:04:43Z 1fc59696 ok (cheap)`).
+Model servers untouched. The three streams were built by three agents in
+parallel on `trading/v4-policy-shadow` (`02e9666`), `trading/sip-15m-store`
+(`dcf34dd`) and `trading/dashboard-e2e-pit` (`1fc5969`), merged in that
+order, branches deleted on origin.
+
+**VERIFIED.**
+- `desk/policy_v4.py` reproduces the scorecard's `ew_graded_20` arm return
+  for return in the simulator (asserted at four offsets and both costs);
+  `desk/shadow_ledger.py` is append-only under
+  `data/market/desk/shadow/graded-equal-weight-4/`; the nightly writes
+  `record["policy_shadows"]["graded-equal-weight/4"]`. **The first receipt
+  is expected Monday 2026-09-28 at the 19:30 ET nightly** - check the
+  record and the ledger directory; a `note` instead of a receipt is the
+  hook explaining why it could not observe.
+- `frontend/e2e/desk-point-in-time-line.spec.ts`: 2 passed on spark1 in
+  `mcr.microsoft.com/playwright:v1.61.1-noble` (the desktop VM lacks the
+  browser libraries; the Windows `node_modules` cannot be reused there).
+- SIP store, first backfill (log `/tmp/sip-refresh.log` on spark1, script
+  `/tmp/sip-refresh.sh`, started 02:13Z, about a name a minute): the dry
+  run's 1,633 requests was wrong by a factor of nine - Alpaca pages the SIP
+  feed at about 1,000 bars whatever `limit` says - and the first attempt
+  would have stopped at the 2,000 cap after twenty names. Restarted with
+  `--max-requests 20000`; partitions already written are kept, not
+  refetched. Estimator fixed in this change. Each liquid name so far: 2,698
+  sessions written, 8-11 incomplete (the 2016-2018 early closes the
+  calendar did not know, plus a few to inspect), 0 empty; AAOI 127
+  incomplete (thin, pre-2018 extended-hours bars); ALAB 632 written and
+  1,312 empty (sessions before its 2024 listing). **The reconcile verdict
+  is not in yet**: the script writes it to
+  `/tmp/sip-15m-reconcile-2026-09-26.json` and the next entry carries it.
+
+**Caveats the streams left, and what this change did about them.**
+(a) `docs/TRADING_VOLATILE_BOOK_ARCHITECTURE.md` exists only on
+`trading/volatile-book-15m` (`b9c2e37`); its P0.3 status row should read
+BUILT, backfill in progress. (b) `agent-trading-desk.svg` re-rendered here
+(see CHANGELOG for the Docker incantation). (c) 2016-2018 exchange calendar
+added here from the official releases; after deploying, run `--refresh
+--include-incomplete --since 2016-01-01 --until 2018-12-31` so the six
+early closes a name are rewritten with `bars_expected=14`. (d) No nightly
+SIP append yet: add `market_intraday_sip --refresh` after the daily bars
+step in `desk_daily.sh` once the reconcile passes (one request a name; the
+default cap suits it). (e) The shadow ledger holds raw share counts and does
+not adjust for splits; a split in a held name shows as a tracking break
+until handled.
+
+**Next, in order.** (1) Read the reconcile report; every name outside the
+tolerances is a data question before an engine question. (2) Deploy this
+change, rewrite the 2016-2018 early closes, nightly SIP append in
+`desk_daily.sh`. (3) Monday: the first shadow receipt and the point-in-time
+line on the dashboard. (4) `ew_graded_20` on the dashboard curve as the
+candidate line. (5) With the store accepted, the fifteen-minute layer's
+first study - how the session's 26 bars build the daily bar for the
+point-in-time book (open drive, midday, close), measured before any rule is
+written.
+
 ## 2026-09-26, evening — Deployed `9331209`; six arms and the day-type study scored on the Spark
 
 **Deployed `9331209e`** from `~/deploy/anios` via `scripts/deploy.sh

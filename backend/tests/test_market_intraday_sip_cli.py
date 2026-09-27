@@ -211,11 +211,11 @@ def test_default_tickers_are_the_book_plus_the_benchmarks():
 # from the daily store's session dates; for reviewed years, the calendar.
 def test_sessions_for_uses_the_daily_store_before_the_calendar_coverage(tmp_path):
     store = MarketStore(tmp_path)
-    old = date(2018, 12, 31)
-    store.write(date(2026, 9, 26), _daily("AVGO", {old: 50.0, date(2019, 1, 2): 60.0}))
-    sessions = cli.sessions_for(store, "AVGO", date(2018, 12, 28), date(2019, 1, 3))
-    assert sessions == [old, date(2019, 1, 2), date(2019, 1, 3)]
-    assert cli.sessions_for(store, "NOPE", date(2018, 12, 28), date(2018, 12, 31)) == []
+    old = date(2015, 12, 31)
+    store.write(date(2026, 9, 26), _daily("AVGO", {old: 50.0, date(2016, 1, 4): 60.0}))
+    sessions = cli.sessions_for(store, "AVGO", date(2015, 12, 30), date(2016, 1, 5))
+    assert sessions == [old, date(2016, 1, 4), date(2016, 1, 5)]
+    assert cli.sessions_for(store, "NOPE", date(2015, 12, 30), date(2015, 12, 31)) == []
 
 
 # Reconcile prints a failure line with its reason and a pass rate per
@@ -330,3 +330,16 @@ def test_default_until_waits_for_the_close():
     assert cli.default_until(datetime(2025, 11, 28, 13, 29, tzinfo=ny)) == date(
         2025, 11, 27
     )
+
+
+# The request estimate uses the page size Alpaca actually serves on the
+# SIP feed (about 1,000 bars), not the 10,000 the query asks for: the
+# first backfill (2026-09-27) was estimated at 1,633 requests and needed
+# about 95 for a thin name and 190 for a liquid one, and stopped at the
+# default cap after twenty names.
+def test_estimate_requests_uses_the_observed_page_size():
+    assert cli.SIP_PAGE_BARS_OBSERVED == 1000
+    assert cli.estimate_requests(0) == 0
+    assert cli.estimate_requests(1) == 1
+    assert cli.estimate_requests(2698) == 173
+    assert cli.estimate_requests(2698) * 98 > cli.DEFAULT_MAX_REQUESTS
