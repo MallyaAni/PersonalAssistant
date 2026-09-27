@@ -19,18 +19,26 @@ This store holds what the tape printed, and nothing derived:
 - **One partition per ticker per New York session date.** The label is
   the session the bars belong to, never the UTC date of the fetch (the
   IEX cache labels by UTC date, which after 20:00 Eastern is tomorrow).
-- **Regular hours only, bounded by the calendar.** Bars from 09:30 up to
-  `calendar.session_close(day)` by start time: 26 on a normal day, 14 on
-  a 13:00 early close. After-hours prints are left out, so an early
-  close can never hold an afternoon "close".
+- **Regular hours, bounded by the calendar, plus the closing auction.**
+  Bars from 09:30 up to `calendar.session_close(day)` by start time: 26
+  on a normal day, 14 on a 13:00 early close. After-hours prints are
+  left out, so an early close can never hold an afternoon "close". The
+  one exception is the bar that starts at the close, kept after the
+  regular slots (schema 2): the tape stamps the closing cross at 16:00,
+  so that bar's first print is the official close and its volume is the
+  cross - a quarter of a liquid name's day, half on a rebalance Friday.
+  `read_session` returns the regular slots; `read_closing_auction` the
+  cross. Without it the first backfill (2026-09-27) failed the volume
+  gate on 30% of sessions, all by the size of the auction.
 - **Provenance in the schema metadata**: feed, adjustment, timeframe,
   fetched_at (UTC), source_revision (git SHA when available), the
   session date and its scheduled close, the bar count, the count the
   calendar expects, and `complete`.
 
-`reconcile` is the acceptance gate: the session's first open, last close,
-high, low and summed volume against the daily store's bar for the same
-session, on the raw basis. The daily store's close is split-adjusted as of
+`reconcile` is the acceptance gate: the session's first open, the closing
+cross's first print (the last regular close when there is no cross), the
+high, the low and the summed volume including the cross against the daily
+store's bar for the same session, on the raw basis. The daily store's close is split-adjusted as of
 its fetch (Yahoo returns no unadjusted series), so the daily close is
 multiplied, and its volume divided, by the product of the split ratios
 dated after the session before the comparison. The tolerances are
@@ -68,6 +76,10 @@ SOURCE = "alpaca-sip"
 NEW_YORK = ZoneInfo("America/New_York")
 REGULAR_OPEN = time(9, 30)
 BAR_MINUTES = 15
+# The partition layout. "2" keeps the closing-auction bar (the bar that
+# starts at the session close) after the regular slots; partitions with
+# no schema tag were written before it existed and are stale.
+SCHEMA_VERSION = "2"
 
 # Acceptance-gate tolerances. Defaults: chosen round and frozen on
 # 2026-09-26 before any SIP session was fetched, not measured.
@@ -188,6 +200,23 @@ def regular_bars(bars: Iterable[IntradayBar], day: date) -> list[IntradayBar]:
     return [by_slot[s] for s in sorted(by_slot)]
 
 
+# The closing-auction bar of one New York day: the bar that starts at
+# the session close (16:00, or 13:00 on a half day). The consolidated
+# tape stamps the closing cross at the close, so that bar's first print
+# is the official closing price and its volume is the cross - a quarter
+# of a liquid name's day, half on a rebalance Friday (AAPL 2026-09-18:
+# 49.8M of 86.6M shares). The daily bar's close and volume include it;
+# the regular slots do not. None when the feed had no such bar.
+def closing_auction(bars: Iterable[IntradayBar], day: date) -> IntradayBar | None:
+    """Return ``day``'s bar starting at the session close, if any."""
+    close = calendar.session_close(day)
+    for bar in bars:
+        local = bar.start.astimezone(NEW_YORK)
+        if local.date() == day and (local.hour, local.minute) == (close.hour, close.minute):
+            return bar
+    return None
+
+
 # Whether a session's regular bars fill every slot the calendar schedules:
 # 26 on a normal day, 14 on a 13:00 early close.
 def is_complete(bars: Sequence[IntradayBar], day: date) -> bool:
@@ -220,7 +249,9 @@ def write_session(
     meta: Provenance,
 ) -> bool:
     """Store ``session``'s regular bars for ``ticker``; True when written."""
+    bars = list(bars)
     regular = regular_bars(bars, session)
+    auction = closing_auction(bars, session)
     complete = is_complete(regular, session)
     path = _partition_path(store, ticker, session)
     if path.exists():
@@ -248,17 +279,44 @@ def write_session(
         "bars_expected": str(bars_expected(session)),
         "bar_count": str(len(regular)),
         "complete": "true" if complete else "false",
+        "auction_bar": "true" if auction is not None else "false",
+        "schema": SCHEMA_VERSION,
     }
-    return store.write_frame(KIND, session, ticker, bars_frame(regular), metadata)
+    rows = regular + ([auction] if auction is not None else [])
+    return store.write_frame(KIND, session, ticker, bars_frame(rows), metadata)
 
 
-# Read exactly one session's partition: the bars and their metadata, or
-# None when that session is not stored. Never falls back to an earlier
-# session the way the store's newest-on-or-before lookup would.
+# Read exactly one session's partition: the regular-session bars in slot
+# order and the metadata, or None when that session is not stored. Never
+# falls back to an earlier session the way the store's newest-on-or-before
+# lookup would. The closing-auction row, when the partition has one, is
+# left out here (`read_closing_auction` returns it) so every reader of
+# the 26 slots stays a reader of the 26 slots.
 def read_session(
     store: MarketStore, ticker: str, session: date
 ) -> tuple[list[IntradayBar], dict[str, str]] | None:
-    """Return (bars, metadata) of ``ticker``'s partition for ``session``."""
+    """Return (regular bars, metadata) of ``ticker``'s partition for ``session``."""
+    rows = _read_rows(store, ticker, session)
+    if rows is None:
+        return None
+    bars, metadata = rows
+    return regular_bars(bars, session), metadata
+
+
+# The closing-auction bar stored with a session, or None when the
+# partition predates the auction row or the feed had none.
+def read_closing_auction(store: MarketStore, ticker: str, session: date) -> IntradayBar | None:
+    """Return the stored bar starting at ``session``'s close, if any."""
+    rows = _read_rows(store, ticker, session)
+    if rows is None:
+        return None
+    return closing_auction(rows[0], session)
+
+
+# Every stored row of a session's partition with its metadata.
+def _read_rows(
+    store: MarketStore, ticker: str, session: date
+) -> tuple[list[IntradayBar], dict[str, str]] | None:
     if not store.has_frame(KIND, session, ticker):
         return None
     frame = store.read_frame(KIND, ticker, session)
@@ -310,7 +368,9 @@ def completeness(store: MarketStore, ticker: str) -> dict[date, bool]:
 # was taken as 16:00, and on the six 13:00 half days the after-hours
 # prints of a liquid name filled slots 14-25 and the partition was marked
 # complete. Such a partition is wrong, not merely short, and the refresh
-# rewrites it (`append_missing(include_incomplete=True)`).
+# rewrites it (`append_missing(include_incomplete=True)`). A partition
+# written under an older layout (no `schema` tag: no closing-auction row)
+# is stale for the same reason and is rewritten the same way.
 def calendar_stale(store: MarketStore, ticker: str) -> list[date]:
     """Return the sessions whose stored close disagrees with the calendar."""
     return [
@@ -321,11 +381,16 @@ def calendar_stale(store: MarketStore, ticker: str) -> list[date]:
 
 
 # Whether a partition's recorded close or expected bar count disagrees
-# with the calendar as reviewed now.
+# with the calendar as reviewed now, or its layout predates the current
+# schema (no closing-auction row).
 def _stale(meta: dict[str, str], session: date) -> bool:
     close = calendar.session_close(session).isoformat()
     expected = str(bars_expected(session))
-    return meta.get("session_close") != close or meta.get("bars_expected") != expected
+    return (
+        meta.get("session_close") != close
+        or meta.get("bars_expected") != expected
+        or meta.get("schema") != SCHEMA_VERSION
+    )
 
 
 # Every stored session's metadata for the ticker, decoded, oldest first.
@@ -401,11 +466,15 @@ def append_missing(
         for day in wanted:
             if not first <= day <= last:
                 continue
-            bars = regular_bars(grouped.get(day, ()), day)
+            # The session's every bar goes to the writer, which keeps the
+            # regular slots and the closing-auction bar; "nothing" means
+            # no regular bar at all.
+            day_bars = grouped.get(day, ())
+            bars = regular_bars(day_bars, day)
             if not bars:
                 no_bars.append(day)
                 continue
-            write_session(store, ticker, day, bars, meta)
+            write_session(store, ticker, day, day_bars, meta)
             written.append(day)
             if not is_complete(bars, day):
                 incomplete.append(day)
@@ -478,6 +547,7 @@ def reconcile(
         )
     bars, metadata = stored
     complete = metadata.get("complete") == "true"
+    auction = read_closing_auction(store, ticker, session)
     history = daily if daily is not None else store.read(ticker)
     row = None
     if history is not None:
@@ -507,9 +577,20 @@ def reconcile(
     daily_low = row.low * factor if row.low is not None else None
     daily_volume = row.volume / factor if row.volume else None
     if bars:
+        # The daily bar's close is the closing cross and its volume
+        # includes it, so the comparison uses the auction bar when the
+        # partition holds one: its first print for the close, its volume
+        # added to the regular slots'. Without it (an older partition, or
+        # a name with no cross) the last regular close and the regular
+        # volume stand in, and a liquid name fails the volume gate by
+        # the size of its closing auction.
         sip_volume = float(sum(b.volume for b in bars))
+        sip_close = bars[-1].close
+        if auction is not None:
+            sip_volume += float(auction.volume)
+            sip_close = auction.open
         open_diff = _log_diff(bars[0].open, daily_open)
-        close_diff = _log_diff(bars[-1].close, daily_close)
+        close_diff = _log_diff(sip_close, daily_close)
         high_diff = _log_diff(max(b.high for b in bars), daily_high)
         low_diff = _log_diff(min(b.low for b in bars), daily_low)
         volume_diff = (

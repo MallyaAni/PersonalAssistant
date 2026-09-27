@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-27 — The SIP store keeps the closing auction; the first reconcile explained
+
+The first backfill's reconcile (98 names, 224,992 sessions, 2016-01-04 to
+2026-09-25) passed 70.1%. Nearly every failure was the volume gate, worst
+on the third Fridays (2026-09-18: 55 names), and the price gate held: no
+close differed by more than 5%, 86 by 1-5% (low-priced names, where the
+0.5% tolerance is a tick), and the rest by under 1%. The cause is in the
+tape, not the data: the consolidated feed stamps the closing cross at
+16:00, so it lands in the bar that starts at the close, which the store
+dropped as after-hours. AAPL 2026-09-18: 49.8M of the day's 86.6M shares
+in that bar; on an ordinary day about a quarter. The daily bar's close and
+volume include the cross, and the desk's "fill at the close" is the cross.
+
+- Partition schema 2: `write_session` keeps the bar starting at the
+  session close after the regular slots (`closing_auction`), tags the
+  partition `schema=2` and `auction_bar`; `read_session` still returns
+  the regular slots only, `read_closing_auction` the cross;
+  `append_missing` hands the writer the whole session. A partition with
+  no schema tag is stale (`calendar_stale`, `completeness`) and is
+  rewritten by `--refresh --include-incomplete`, which is the repair for
+  the whole store: about 9,000 requests, the same as the backfill.
+- `reconcile` compares the daily close to the cross's first print and
+  adds the cross's volume to the regular slots' when the partition has
+  the row; without it the old comparison stands and a liquid name fails
+  by the size of its auction (tests pin both).
+- Not changed: `sip_cube` and the session-anatomy study read the 26
+  regular slots; the cross enters the cube in a follow-up as the
+  session's official close (`CUBE_VERSION` bump), which is what the
+  execution table (D) should price a "close" fill at.
+- Also seen in the reconcile, recorded and not acted on: CORZ has 426
+  SIP sessions in 2021-2022 with no daily bar (the SPAC-era listing is
+  absent from the daily store); the `--report` step re-reconciles every
+  session and costs as much as `--reconcile` (about 45 minutes for the
+  book), so the two should share records.
+
 ## 2026-09-27 — A SIP partition cut under a wrong calendar close is stale, and is rewritten
 
 The first backfill ran while 2016-2018 were unreviewed, so every close in

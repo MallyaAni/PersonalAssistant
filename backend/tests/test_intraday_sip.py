@@ -334,3 +334,76 @@ def test_partition_cut_under_a_wrong_calendar_close_is_stale_and_rewritten(tmp_p
     assert len(bars) == 14 and meta["complete"] == "true" and meta["session_close"] == "13:00:00"
     assert sip.calendar_stale(store, "AVGO") == []
     assert sip.completeness(store, "AVGO") == {EARLY: True, MON: True}
+
+
+# A bar that starts at the session close, carrying the closing cross.
+def _auction(day: date, price: float, volume: float) -> IntradayBar:
+    close = sip.calendar.session_close(day)
+    start = datetime(day.year, day.month, day.day, close.hour, close.minute, tzinfo=sip.NEW_YORK).astimezone(UTC)
+    return IntradayBar(start, price, price + 0.1, price - 0.1, price + 0.05, volume)
+
+
+# The closing-auction bar is the one starting at the close - 16:00 on an
+# ordinary day, 13:00 on a half day - and never a regular slot; the
+# partition keeps it after the regular slots, `read_session` still
+# returns only the regular slots, and `read_closing_auction` returns it.
+def test_closing_auction_bar_is_kept_beside_the_regular_slots(tmp_path):
+    store = MarketStore(tmp_path)
+    bars = _bars(MON) + [_auction(MON, 125.0, 900.0)]
+    assert sip.closing_auction(bars, MON) == bars[-1]
+    assert sip.closing_auction(_bars(MON), MON) is None
+    early = _bars(EARLY)  # 26 bars from 09:30: the 13:00 bar is the auction on a half day
+    assert sip.closing_auction(early, EARLY) == early[14]
+    assert len(sip.regular_bars(early, EARLY)) == 14
+    assert sip.write_session(store, "AVGO", MON, bars, PROVENANCE)
+    regular, meta = sip.read_session(store, "AVGO", MON)
+    assert len(regular) == 26 and regular[-1].close == 125.0
+    assert meta["auction_bar"] == "true" and meta["schema"] == sip.SCHEMA_VERSION == "2"
+    assert sip.read_closing_auction(store, "AVGO", MON) == bars[-1]
+    assert sip.write_session(store, "AVGO", TUE, _bars(TUE), PROVENANCE)
+    assert sip.read_closing_auction(store, "AVGO", TUE) is None
+    _, meta = sip.read_session(store, "AVGO", TUE)
+    assert meta["auction_bar"] == "false"
+    assert sip.completeness(store, "AVGO") == {MON: True, TUE: True}
+
+
+# A partition written under the previous layout (no schema tag, no
+# auction row) is stale: reported incomplete, named, and rewritten by the
+# refresh even though it was complete.
+def test_partition_without_the_auction_row_is_stale_and_rewritten(tmp_path, monkeypatch):
+    store = MarketStore(tmp_path)
+    monkeypatch.setattr(sip, "SCHEMA_VERSION", "1")
+    assert sip.write_session(store, "AVGO", MON, _bars(MON), PROVENANCE)
+    monkeypatch.undo()
+    assert sip.calendar_stale(store, "AVGO") == [MON]
+    assert sip.completeness(store, "AVGO") == {MON: False}
+    result = sip.append_missing(
+        store, "AVGO", [MON], lambda t, a, b: _bars(MON) + [_auction(MON, 125.0, 900.0)], PROVENANCE, include_incomplete=True
+    )
+    assert result.written == (MON,)
+    assert sip.calendar_stale(store, "AVGO") == []
+    assert sip.read_closing_auction(store, "AVGO", MON).volume == 900.0
+
+
+# The daily bar's close is the closing cross and its volume includes it,
+# so with the auction row the reconcile compares the cross's first print
+# to the daily close and adds the cross's volume to the regular slots'.
+def test_reconcile_counts_the_closing_auction(tmp_path):
+    store = MarketStore(tmp_path)
+    # Regular slots: 26 x 100 shares; the cross: 900; the daily bar: 2600 + 900.
+    sip.write_session(store, "AVGO", MON, _bars(MON) + [_auction(MON, 125.0, 900.0)], PROVENANCE)
+    from dataclasses import replace
+
+    daily = _daily([MON, TUE], [100.0, 100.0])
+    daily = replace(daily, bars=tuple(replace(b, volume=3500) for b in daily.bars))
+    store.write(date(2026, 9, 26), daily)
+    record = sip.reconcile(store, "AVGO", MON)
+    assert record.passed, record.reason
+    assert abs(record.volume_diff) < 1e-9
+    assert abs(record.close_diff) < 1e-9
+    # The same session without the auction row fails the volume gate by
+    # the size of the cross, which is what the first backfill showed.
+    sip.write_session(store, "AVGO", TUE, _bars(TUE), PROVENANCE)
+    record = sip.reconcile(store, "AVGO", TUE)
+    assert record.reason.startswith("volume differs")
+    assert record.volume_diff == pytest.approx(2600 / 3500 - 1)
