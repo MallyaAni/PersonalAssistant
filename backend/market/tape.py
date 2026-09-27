@@ -18,7 +18,7 @@ from collections.abc import Mapping
 
 import numpy as np
 
-from backend.market.alpaca import IntradayBar, sessions
+from backend.market.alpaca import IntradayBar, bars_expected, sessions
 from backend.market.panel import Panel
 
 BARS_PER_SESSION = 26
@@ -33,20 +33,32 @@ MIN_SLOTS = 13
 # and a thin name in 2016 has many such slots. A missing slot is a flat bar
 # at the previous close with zero volume, which is what the tape showed.
 # A session with fewer than `MIN_SLOTS` real bars is treated as absent.
+#
+# The session's day is the New York date of its first bar, and the regular
+# window ends at that day's calendar close: on a 13:00 early close only
+# slots 0..13 are the session, the afternoon prints are after-hours and
+# ignored, the sparsity floor scales to the shorter day (7 of 14), and the
+# slots after the close stay flat at the last close with zero volume so the
+# tensor keeps its (26, 5) shape.
 def session_tape(bars: list[IntradayBar]) -> np.ndarray | None:
     """Return the session's bars as (26, 5) relative to the session's open."""
-    if len(bars) < MIN_SLOTS:
+    if not bars:
         return None
     from zoneinfo import ZoneInfo
 
     zone = ZoneInfo("America/New_York")
+    day = bars[0].start.astimezone(zone).date()
+    session_slots = bars_expected(day)
+    min_slots = -(-MIN_SLOTS * session_slots // BARS_PER_SESSION)  # ceiling
+    if len(bars) < min_slots:
+        return None
     slots: dict[int, IntradayBar] = {}
     for bar in bars:
         local = bar.start.astimezone(zone)
         slot = (local.hour * 60 + local.minute - 9 * 60 - 30) // 15
-        if 0 <= slot < BARS_PER_SESSION and slot not in slots:
+        if 0 <= slot < session_slots and slot not in slots:
             slots[slot] = bar
-    if len(slots) < MIN_SLOTS:
+    if len(slots) < min_slots:
         return None
     first = slots[min(slots)]
     open0 = first.open
