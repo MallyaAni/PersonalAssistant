@@ -66,7 +66,9 @@ async function install(page: Page, frontendURL: string, options: {fills?: typeof
       return route.abort('blockedbyclient')
     }
     const base = `/api/v1/market/${USER}/desk`
-    if (request.method() !== 'GET') {
+    // The panel reads its decision rows with a non-recording POST; every other write is refused.
+    const mineRead = url.pathname === `${base}/mine` && request.method() === 'POST' && request.postDataJSON()?.record_history === false
+    if (request.method() !== 'GET' && !mineRead) {
       diagnostics.forbiddenWrites.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 403, json: {detail: 'Fixture forbids writes'}})
     }
@@ -76,6 +78,8 @@ async function install(page: Page, frontendURL: string, options: {fills?: typeof
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest: {session: '2026-09-24', written: '2026-09-24T00:00:00Z', regime: {exposure: 1, flags: []}, grades: {AAPL: {grade: 'B', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: [], briefs: {}}, sessions: ['2026-09-24']}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
+    else if (url.pathname === `${base}/mine`) json = {session: '2026-09-24', rows: [], grades_live: {}, history_receipt: {status: 'not_requested'},
+      decisions: {session: '2026-09-24', written: '2026-09-24T00:00:00Z', rows: {AAPL: {action: 'Hold', strategy_action: 'Hold', move_weight: 0, executable: false, reason: 'Waiting'}}}}
     else if (url.pathname === `${base}/live`) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last: 110, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}}
     else if (url.pathname === `${base}/session-prices`) json = {as_of: '2026-09-24T14:00:00Z', session: 'regular', signal_scope: 'regular-session', quotes: {}}
     else if (url.pathname === `${base}/mine`) json = {rows: [], grades_live: {}, decisions: {rows: {AAPL: {action: 'Hold', strategy_action: 'Hold', move_weight: 0, reason: 'Waiting'}}}}
