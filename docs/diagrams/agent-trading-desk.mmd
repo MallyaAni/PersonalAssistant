@@ -35,13 +35,15 @@ flowchart TB
     Store --> Frozen
     Frozen --> MLForward[(Independent prospective accounts<br/>ML, rules, SPY, USD; delayed fills)]
     MLForward --> View
+    Grades --> PolicyShadow[(Dry-run policy shadow ledgers<br/>the /4 candidate; whole shares, next-open fills, never traded)]
+    PolicyShadow -->|receipt per session| Records
 
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
-    class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot data;
+    class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot,PolicyShadow data;
     class Providers,Broker,Quotes external;
     class Models model;
     class View interface;

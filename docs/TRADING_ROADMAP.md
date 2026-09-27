@@ -94,6 +94,22 @@ strategy that changes only when untouched sessions say so.
   rankers and the day-type classifier: insufficient evidence; the price
   ranker fails outright.
 
+- 2026-09-26, late: `graded-equal-weight/4` policy + shadow ledger, BUILT
+  (`desk/policy_v4.py`, `desk/shadow_ledger.py`, the nightly's
+  `_policy_shadows` hook and `record["policy_shadows"]`). The policy
+  reproduces the scorecard's `ew_graded_20` arm return for return in the
+  simulator (asserted at four offsets and both costs); the nightly now
+  observes a dry-run ledger for it beside the live `/3` book every session
+  - whole shares, next-open fills at 10 bp, cash never negative, the
+  arm's 20-session reset clock - and writes its receipt into the record,
+  or a note when it could not. It never places an order. Open: the first
+  live observation on the Spark (the code has not run against the store),
+  then the 4-6 week fidelity judgment (order agreement with a simulator
+  replay, tracking, negative-cash sessions, fills per order class); the
+  status row belongs in the volatile-book architecture doc's table when
+  that branch lands, and `agent-trading-desk.svg` needs re-rendering
+  (source updated, no browser in the sandbox).
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

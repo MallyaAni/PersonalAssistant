@@ -1,5 +1,59 @@
 # Changelog
 
+## 2026-09-26 — `graded-equal-weight/4`: the candidate as a named policy, on a dry-run shadow ledger
+
+The 2026-09-26 arm verdicts (`docs/research/pit-arms-2026-09-26.md`) named
+`ew_graded_20` - every A/A+ member at equal weight under the operator's 20%
+hold limit, fully invested, no volatility target or regime multiplier - as
+the `/4` release-train candidate, and the roadmap's next step for it is the
+4-6 week fidelity shadow, not the paper account. It existed only as a lambda
+in the scorecard's `ARMS`. Now:
+
+- `desk/policy_v4.py`: `POLICY_VERSION = "graded-equal-weight/4"` with the
+  frozen constants `HOLD_CAP = 0.20`, `MIN_GRADE = A`, `GROSS = 1.0` and
+  their provenance; `targets(...)` for one session and `allocator(mask)` for
+  `simulate.run`, reading only the decision row. `test_policy_v4` asserts
+  `np.array_equal` on the simulator's daily returns, equity and invested
+  fraction against `point_in_time.graded_equal_weight_allocator(mask,
+  min_grade=A, cap=0.20, gross=1.0)` and the registered `ARMS["ew_graded_20"]`
+  at offsets 0, 7, 13 and 19 and at 10 and 25 bp on a 300-session synthetic
+  report with churning grades, a membership mask and an unpriced name.
+- `desk/shadow_ledger.py`: one append-only, identity-hashed JSON ledger per
+  policy under `<root>/desk/shadow/<policy-slug>/NNNNNNNN.json`, written the
+  `opportunity_shadow` way (tempfile, fsync, `os.link`; a row is never
+  overwritten and a malformed one never resets the account). `observe()`
+  fills the previous close's pending whole-share orders at today's open
+  (sells first, then buys from cash plus net proceeds, 10 bp a side, scaled
+  down together when short, cash never negative, the unpaid remainder
+  written down), marks at the close, records `return_1d`, and re-decides
+  targets from `policy_v4` on the arm's 20-session reset clock, writing the
+  policy's would-be targets every session. A missed nightly cancels the
+  pending intent rather than filling at an open that has passed; a held
+  name without a close fails closed. The code identity (sha256 of
+  `policy_v4.py` + `shadow_ledger.py`) refuses to continue a ledger unless a
+  continuation is declared in `shadow_ledger_migrations.json` beside it.
+  Start cash 100,000. Never places an order.
+- `market_daily._policy_shadows`: after the live paper account and before
+  the record, in its own try/except, the nightly observes the ledger on
+  tonight's report and raw open/close and writes
+  `record["policy_shadows"]["graded-equal-weight/4"]` = the receipt
+  (`sequence`, `session`, `equity`, `return_1d`, `orders_decided`, `fills`,
+  `refusals`, `note`) or `{"note": "shadow not observed: <exc>"}`. A
+  historical `--asof` run is not an observation. No existing record key, the
+  live book or an order is touched.
+- `docs/diagrams/agent-trading-desk.mmd` gains the ledger as a store feeding
+  the records; the SVG could not be re-rendered here (no browser) and needs
+  `npm run docs:diagram` from `frontend/`.
+
+Sandbox evidence: `test_policy_v4` (11), `test_shadow_ledger` (10) and
+`test_market_daily` (38, three new: the receipt lands, an exception becomes a
+note, the whole nightly with data steps stubbed writes the ledger under the
+store and its receipt into the saved record) pass; `test_market_pit_scorecard`,
+`test_opportunity_shadow` and `test_trading_simulate` unchanged and passing
+(103 in the run). Not run against the Spark's store: the first live
+observation is the next nightly's. Diagram impact: UPDATED —
+agent-trading-desk (source; SVG pending render).
+
 ## 2026-09-26 — Point-in-time membership, the honest scorecard and the gate's statistics
 
 Every backtest so far graded 2016-2026 on today's book (this year's
