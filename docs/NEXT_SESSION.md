@@ -1,5 +1,60 @@
 # Next session
 
+## 2026-09-27, afternoon — The account is on `/4`; the chart shows decisions at fifteen minutes; stage 1 ridge is a clean negative
+
+**Deployed `0d7c91da` (13:46Z) and `1c5ea640` (14:21Z)**, gates 7,602 and
+7,626, routing gates green, post-deploy `ok (cheap)`. The operator raised
+this session's permissions for the trading path and instructed that the
+paper account execute as a live one would.
+
+**The paper account, the record and the board follow
+`graded-equal-weight/4`** (`live_policy.py`; CHANGELOG has the contract).
+Verified against the real paper state with a non-submitting dry run
+(`~/scratch/preview_plan.py`): the state is unstamped (`/3` era), the
+policy change is detected and a forced rebalance queued, and tonight's
+plan correctly did nothing because five of Friday's orders await broker
+settlement ("FOMC waiting for broker settlement"). Today's `/4` book is
+twelve A/A+ names at 8.3% each: AAOI, COHR, CRM, HPE, LITE, MDB, MU, NTAP,
+SMCI, SNDK, SNOW, STX; three reject their upper band tonight, so those
+buys would be held back by the executor's convention. **Monday 2026-09-28,
+19:30 ET:** the nightly settles Friday's orders, then rebalances the seven
+`/3` positions into the `/4` book at Tuesday's open; the state is stamped
+only when that rebalance is planned, so an event-cycle night forces it
+again. Check `~/desk_daily.log` Monday for "policy change" and the order
+list, and `record["targets"]` / `record["paper"]` Tuesday. The shadow
+ledger keeps running: its plain-fill curve against the account's fills is
+the executor's measured cost.
+
+**Fifteen-minute chart** (`1c5ea640`): `/desk/chart/{ticker}?timeframe=15m&sessions=N`
+from the SIP store (raw prices, the closing-auction bar flagged), with the
+policy's decisions on the 15:45 bar of the decision day ("Buy 14% decided
+at the close"), where they fill on the next session (09:30 bar for buys,
+last bar for sells), and the paper account's real fills. tsc clean, 46
+browser tests.
+
+**Stage 1 of the deep-intraday plan** (`c13a82f`, pre-registration in
+[research/deep-intraday-plan-2026-09-27.md](research/deep-intraday-plan-2026-09-27.md)),
+ridge half, run from `~/deploy/anios` (`/tmp/deep_intraday_ridge.txt`,
+`data/market/desk/deep_intraday_ridge.json`): 81,612 rows, 94 names,
+2016-02-01..2026-09-24; 33 walk-forward fits. 2016-2023: rank IC +0.0132,
+t 2.11 (floor 2.0); top-quintile portfolio against the equal-weight
+hurdle -13.1 bp/d, t -10.2 (daily quintile turnover at 10 bp one way
+consumes a signal this small many times over); residual IC after the
+volatility control t 1.53; volatility head R² +0.13 against trailing
+volatility (2024-2026: +0.21). **Verdict: INSUFFICIENT EVIDENCE** for the
+return signal, as the literature led us to expect. The CNN half is
+training on CPU (`~/scratch/stage1.sh`, `/tmp/deep_intraday_full.txt`,
+2-5 hours); its verdict goes in the next entry. If it also fails, stage 2
+(RL sizing) does not start, and the deep work moves to the volatility
+head's one clear result: a better next-session volatility forecast is
+useful for sizing even when returns are unforecastable.
+
+**Next, in order.** (1) Monday: the `/4` rebalance, the shadow receipt,
+the board sizes, the SIP append. (2) Read the CNN verdict. (3) Re-derive
+the executor's band-entry and deferred-buy conventions for an equal-weight
+book (the 4.4 points a year). (4) The dashboard's "candidate /4" label
+now names the live policy; rename when the e2e pins are next touched.
+
 ## 2026-09-27, midday — The policy's buy/sell/hold and sizes drawn on every ticker chart
 
 **Deployed `544c73f1`** (unit gate 7,596, routing gate green, post-deploy
