@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-09-27, evening — Fill timing measured on the /4 policy's own orders: the clock does not matter; the band gate is not the 4.4 points
+
+**VERIFIED on spark1** from `8ebbd4e`
+([research/execution-timing-2026-09-27.md](research/execution-timing-2026-09-27.md)):
+seven fill conventions for `graded-equal-weight/4`'s orders, 20 offsets,
+10 bp, the engine reproducing `simulate.run` on the real store to 0.09 bp
+a day. Every convention is within ±0.2 bp a day of the next open on
+2016-2023 (29.2-29.8% CAGR across all seven); `dip_or_close` earns +1.0
+bp a day on 2024-2026 (t 2.2) - reported, below the 5 bp floor.
+**Verdict: RECORDED, NOT ACTED ON.** The isolated band gate on buys is
+neutral (+0.08 bp/d), so the 4.4 CAGR points the full live execution
+policy costs the `/4` book come from the other live conventions
+(mid-cycle band entries, the deferred-buy leg, green-day skip, sells at
+the close). **Next registered trial:** the live policy's options switched
+off one at a time on the `/4` book (`simulate.LIVE_POLICY` keys), same
+lines, same costs - each a trial - to find which of them pays and which
+does not, before the executor is changed.
+
+A first run of the trial read 13.6% for the control: raw SIP fills were
+scaled by `adj_close / close`, which does not undo splits. Fixed
+(`8ebbd4e`, a 10:1 split test to 1e-10) and rerun; the first numbers are
+discarded.
+
 ## 2026-09-27, late — The RTX 5080 is a training worker; the fill-timing trial is pre-registered
 
 **Desktop GPU reachable and working.** `ssh rtx` from the Cowork VM
