@@ -1153,3 +1153,54 @@ def test_cli_out_and_targets(tmp_path, monkeypatch):
     assert "ridge/vol fit 1: train through" in text
     assert "ridge/rank" not in text
     assert "trials 1 run of 8; device cpu" in text
+
+
+# The dataset round-trips through the export file with every array intact,
+# and the CLI can build-and-export on one machine and train from the file
+# on another (no store, no cubes, no desk) with the same result.
+def test_dataset_export_and_training_from_the_file(tmp_path, monkeypatch):
+    from backend.cli import market_deep_intraday as cli
+
+    monkeypatch.setattr(di, "_ANNOUNCED", set())
+    store = MarketStore(tmp_path)
+    sessions = _exchange_sessions(di.MIN_TRAIN + 45)
+    for i, ticker in enumerate(("AAA", "BBB", "CCC")):
+        _write(store, ticker, sessions, 20 + i)
+    membership = tmp_path / "membership.csv"
+    membership.write_text(
+        "ticker,entered,entry_announced,exited,exit_announced,source,rule\n"
+        + "".join(
+            f"{t},2015-01-02,2015-01-02,,,test,test\n" for t in ("AAA", "BBB", "CCC")
+        ),
+        encoding="utf-8",
+    )
+    export = tmp_path / "export" / "stage1.npz"
+    common = ["--root", str(tmp_path), "--tickers", "AAA,BBB,CCC", "--membership", str(membership), "--device", "cpu", "--workers", "1"]
+    out = io.StringIO()
+    args = cli.build_parser().parse_args([*common, "--models", "none", "--export", str(export)])
+    assert cli.run(args, out, desk_run=lambda s_: (_ for _ in ()).throw(RuntimeError("no desk"))) == 0
+    assert export.exists() and "wrote dataset" in out.getvalue()
+    assert not (tmp_path / "desk" / "deep_intraday.json").exists()
+    ds, keep = di.load_dataset(export)
+    assert len(ds) > 0 and keep is None  # the desk failed, so no A/A+ rows
+    assert ds.dates.dtype == np.dtype("datetime64[D]") and ds.tickers.dtype.kind in "U"
+    # Training from the file, in a directory with no store at all.
+    elsewhere = tmp_path / "desktop"
+    elsewhere.mkdir()
+    out = io.StringIO()
+    args = cli.build_parser().parse_args(
+        ["--root", str(elsewhere), "--dataset", str(export), "--models", "ridge", "--targets", "vol", "--device", "cpu", "--out", "from_file.json"]
+    )
+    assert cli.run(args, out) == 0
+    payload = json.loads((elsewhere / "desk" / "from_file.json").read_text(encoding="utf-8"))
+    assert payload["targets"] == ["vol"] and list(payload["fits"]) == ["ridge/vol"]
+    assert "dataset from" in out.getvalue()
+    # Round trip with a mask keeps it.
+    keep_a = np.zeros(len(ds), dtype=bool)
+    keep_a[::3] = True
+    di.save_dataset(export, ds, keep_a)
+    ds2, keep2 = di.load_dataset(export)
+    np.testing.assert_array_equal(keep2, keep_a)
+    np.testing.assert_array_equal(ds2.x_seq, ds.x_seq)
+    np.testing.assert_array_equal(ds2.dates, ds.dates)
+    assert cli.parse_models("none") == ()

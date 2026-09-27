@@ -98,13 +98,27 @@ def build_parser() -> argparse.ArgumentParser:
         default=FILE,
         help=f"basename of the payload under <root>/desk/ (default {FILE})",
     )
+    parser.add_argument(
+        "--export",
+        default=None,
+        help="write the assembled dataset (and the A/A+ row mask) to this npz; "
+        "with --models none, exit after writing",
+    )
+    parser.add_argument(
+        "--dataset",
+        default=None,
+        help="train on a dataset written by --export instead of building one "
+        "from the store (no cubes, no desk run)",
+    )
     parser.add_argument("--json", action="store_true", help="print the payload as JSON")
     return parser
 
 
 # The requested models, validated.
 def parse_models(spec: str) -> tuple[str, ...]:
-    """Return the model names in `spec`, in order, each once."""
+    """Return the model names in `spec`, in order, each once; "none" is empty."""
+    if spec.strip().lower() == "none":
+        return ()
     return _parse_names(spec, deep_intraday.MODELS, "--models")
 
 
@@ -336,28 +350,51 @@ def run(
         if not quiet:
             print(text, file=out)
 
-    cubes, lines = load_cubes(store, tickers, workers=max(1, args.workers))
-    say(f"cubes from {root} ({len(tickers)} tickers requested):")
-    for line in lines:
-        say(line)
-    if not cubes:
-        print("no complete sessions in the store; nothing to study", file=out)
-        return 1
-    mask = membership_mask(cubes, args.membership)
-    began = time.perf_counter()
-    ds = deep_intraday.dataset(cubes, mask)
-    say(
-        f"dataset: {len(ds):,} rows,"
-        f" {len(np.unique(ds.tickers)) if len(ds) else 0} names,"
-        f" {len(ds.sessions):,} sessions, {time.perf_counter() - began:.1f} s"
-    )
-    if len(ds) == 0:
-        print(
-            "no rows after the membership and completeness rules; nothing to study",
-            file=out,
+    dataset_file = getattr(args, "dataset", None)
+    export_file = getattr(args, "export", None)
+    cubes: dict = {}
+    if dataset_file:
+        # A dataset assembled elsewhere (the Spark) and trained here (the
+        # desktop GPU): no store, no cubes, no desk run.
+        ds, keep_a = deep_intraday.load_dataset(Path(dataset_file))
+        grade_note = (
+            f"A/A+ rows from the export {dataset_file}"
+            if keep_a is not None
+            else "the export carries no A/A+ rows; the A-only line is not scored"
         )
-        return 1
-    keep_a, grade_note = graded_rows(ds, store, desk_run or default_desk, say)
+        say(
+            f"dataset from {dataset_file}: {len(ds):,} rows,"
+            f" {len(np.unique(ds.tickers)) if len(ds) else 0} names,"
+            f" {len(ds.sessions):,} sessions"
+        )
+    else:
+        cubes, lines = load_cubes(store, tickers, workers=max(1, args.workers))
+        say(f"cubes from {root} ({len(tickers)} tickers requested):")
+        for line in lines:
+            say(line)
+        if not cubes:
+            print("no complete sessions in the store; nothing to study", file=out)
+            return 1
+        mask = membership_mask(cubes, args.membership)
+        began = time.perf_counter()
+        ds = deep_intraday.dataset(cubes, mask)
+        say(
+            f"dataset: {len(ds):,} rows,"
+            f" {len(np.unique(ds.tickers)) if len(ds) else 0} names,"
+            f" {len(ds.sessions):,} sessions, {time.perf_counter() - began:.1f} s"
+        )
+        if len(ds) == 0:
+            print(
+                "no rows after the membership and completeness rules; nothing to study",
+                file=out,
+            )
+            return 1
+        keep_a, grade_note = graded_rows(ds, store, desk_run or default_desk, say)
+    if export_file:
+        written = deep_intraday.save_dataset(Path(export_file), ds, keep_a)
+        print(f"wrote dataset {written} ({len(ds):,} rows)", file=out)
+        if not models:
+            return 0
     deep_intraday.announce_device(device, say)
     forecasts, skipped = forecast_all(
         ds, models, say, targets, device, root / EMBEDDING_CACHE
@@ -374,7 +411,10 @@ def run(
     payload["grade_note"] = grade_note
     payload["exclusions"] = {t: c.excluded for t, c in cubes.items()}
     payload["sessions_per_ticker"] = {t: len(c) for t, c in cubes.items()}
-    payload["asof"] = str(max(c.dates[-1] for c in cubes.values()))
+    payload["asof"] = str(
+        max(c.dates[-1] for c in cubes.values()) if cubes else ds.sessions[-1]
+    )
+    payload["dataset_file"] = str(dataset_file) if dataset_file else None
     path = root / "desk" / out_name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")

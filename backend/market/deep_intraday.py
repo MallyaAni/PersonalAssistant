@@ -213,6 +213,53 @@ class Dataset:
         )
 
 
+# The arrays a dataset is made of, in a fixed order, for the export file.
+DATASET_FIELDS = (
+    "dates",
+    "tickers",
+    "x_seq",
+    "x_scalar",
+    "y_return",
+    "y_rank",
+    "y_vol",
+    "trailing_vol",
+    "sessions",
+    "session_index",
+)
+
+
+# Write a dataset (and the A/A+ row mask beside it) to one compressed npz,
+# so a machine without the market store - the desktop GPU - can train on
+# exactly the rows the Spark assembled. `keep_a` may be None.
+def save_dataset(path: Path, ds: Dataset, keep_a: np.ndarray | None) -> Path:
+    """Write `ds` and `keep_a` to `path` (npz) and return the path."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    arrays = {name: getattr(ds, name) for name in DATASET_FIELDS}
+    arrays["dates"] = arrays["dates"].astype("datetime64[D]").astype("int64")
+    arrays["sessions"] = arrays["sessions"].astype("datetime64[D]").astype("int64")
+    arrays["tickers"] = arrays["tickers"].astype(str)
+    arrays["keep_a"] = (
+        np.asarray(keep_a, dtype=bool) if keep_a is not None else np.zeros(0, dtype=bool)
+    )
+    np.savez_compressed(path, **arrays)
+    return path
+
+
+# Read a dataset written by `save_dataset`; the second value is the A/A+
+# row mask, or None when the file carried none.
+def load_dataset(path: Path) -> tuple[Dataset, np.ndarray | None]:
+    """Return (dataset, keep_a) from an export file."""
+    with np.load(Path(path), allow_pickle=False) as data:
+        fields = {name: data[name] for name in DATASET_FIELDS}
+        fields["dates"] = fields["dates"].astype("datetime64[D]")
+        fields["sessions"] = fields["sessions"].astype("datetime64[D]")
+        fields["tickers"] = fields["tickers"].astype(str)
+        keep = data["keep_a"]
+    ds = Dataset(**fields)
+    return ds, (keep.astype(bool) if len(keep) == len(ds) and len(ds) else None)
+
+
 # The exchange session calendar the dataset checks adjacency against:
 # the reviewed historical closures plus the current ones.
 def default_calendar() -> np.busdaycalendar:

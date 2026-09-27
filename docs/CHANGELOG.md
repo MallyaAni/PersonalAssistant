@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-27 — The deep-intraday dataset travels: build on the Spark, train on the desktop GPU
+
+The operator's desktop (RTX 5080, 16 GB) is now reachable from this
+session over SSH, but it has neither the market store nor the model
+servers. `market_deep_intraday --export <npz>` writes the assembled dataset
+and the A/A+ row mask (`deep_intraday.save_dataset`); `--dataset <npz>`
+trains from that file with no store, cubes or desk run
+(`load_dataset`); `--models none` with `--export` only writes. A test
+round-trips every array and trains from the file in a directory with no
+store. First use: stage 1's 81,612 rows built once on spark1 and trained
+on the 5080.
+
 ## 2026-09-27 — Stage 1 of the deep-intraday plan on the GPU, in parallel, with PatchTST and a frozen Chronos-Bolt encoder
 
 Stage 1 was written for one evening on the CPUs. This change lets its
