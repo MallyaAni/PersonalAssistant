@@ -11,13 +11,16 @@ in today's partition; tickers already present are skipped.
 
 import argparse
 import time
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from backend.config.settings import settings
 from backend.market import alpaca
 from backend.market.store import MarketStore
 from backend.market.universe import build_universe, tickers_with_role
+
+NEW_YORK = ZoneInfo("America/New_York")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -35,6 +38,16 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# The partition label of a refresh run now: the New York date, not the
+# UTC one. From 20:00 to midnight Eastern the UTC date has already rolled
+# to tomorrow, and a partition labelled with a session that has not
+# happened misleads every reader that picks "the newest partition on or
+# before" a date.
+def default_asof(now: datetime | None = None) -> date:
+    """Return today's date in New York, the label of a refresh made now."""
+    return (now or datetime.now(tz=NEW_YORK)).astimezone(NEW_YORK).date()
+
+
 # The tickers a run applies to.
 def _select(args: argparse.Namespace) -> tuple[str, ...]:
     if args.tickers:
@@ -49,7 +62,7 @@ def main() -> None:
     args = build_parser().parse_args()
     tickers = _select(args)
     store = MarketStore(args.data_dir)
-    asof = args.asof or datetime.now(tz=UTC).date()
+    asof = args.asof or default_asof()
     if args.refresh:
         headers = alpaca.credentials()
         started = time.time()
