@@ -672,6 +672,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     brake_scale: float = 0.5,
     brake_path_override: np.ndarray | None = None,
     journal=None,
+    weight_filter=None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -795,6 +796,18 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     ceiling on the same calendar. It is mutually exclusive with the fixed
     trend brake and uses the identical fill, cash and FOMC composition path.
     Supplying None leaves the incumbent behavior unchanged.
+
+    `weight_filter` is an optional research hook on the incumbent path:
+    `weight_filter(t, target, prices) -> target`, called once per decision
+    session with the session index, the target weights the rules decided
+    (the allocator's on a rebalance, the held book between rebalances, after
+    any dip add) and that session's adjusted closes, before the FOMC and
+    brake ceilings and the order plan. It exists so a path-dependent rule
+    that the allocator cannot express - a per-name stop that needs the
+    price path since the book bought the name, which the allocator never
+    sees because it is only called on rebalance sessions - can be priced
+    inside the same book. None leaves every result byte-identical;
+    `funded_allocation` refuses it.
     """
     decide = allocator or _targets
     fired, blocked, trend_up, dips = _signals_for(
@@ -831,6 +844,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             # The shared allocation path carries its own trend ceiling; a
             # second one on top would measure neither.
             incompatible.append("trend_brake")
+        if weight_filter is not None:
+            incompatible.append("weight_filter")
         if incompatible:
             raise ValueError(
                 "funded_allocation cannot be combined with: " + ", ".join(incompatible)
@@ -1152,6 +1167,13 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 if added:
                     reason = "dip add"
                     dip_adds += added
+        if weight_filter is not None:
+            # The research hook reads t's close and the decided target, and
+            # may only return a target of the same shape; the fill below is
+            # then the desk's own.
+            target = np.asarray(weight_filter(t, target, closes[t]), dtype=float)
+            if target.shape != (names,):
+                raise ValueError("weight_filter must return one weight per name")
         # The quantity is decided from what the decision could see - t's
         # close - and only then filled at t + 1's open. Buys and sells can
         # fill at different prices (the paper account sells on the close

@@ -219,6 +219,27 @@ strategy that changes only when untouched sessions say so.
   INSUFFICIENT EVIDENCE for returns; RL sizing does not start; the
   volatility head goes to a sizing trial on the graded book.
 
+- 2026-09-27, night: the catastrophe stop, BUILT and not run
+  (`market/catastrophe_stop.py`, `python -m
+  backend.cli.market_catastrophe_stop`;
+  [research/catastrophe-stop-plan-2026-09-27.md](research/catastrophe-stop-plan-2026-09-27.md)).
+  The operator asked how the graded equal-weight book avoids a Lucid-type
+  collapse; today only the grade rotation and the equal-weight cap bound
+  a single name's loss. Seven variants fixed before the run - the control
+  and a sale on the first close 40, 50 or 60% below the entry close or
+  below the peak close since entry - each a registered trial on the pit
+  scorecard's offsets and costs under plain fills, with a cooldown that
+  keeps a stopped name out until the mask has excluded it for a cycle.
+  Reports the worst single-name day, triggers a year and the false-alarm
+  rate beside the usual medians. A stop is ADOPT (registered) only within
+  0.5 CAGR points of the control while saving 3 drawdown points or 25% of
+  the worst single-name day and not worse on 2024-2026; else RECORD, with
+  the insurance premium priced. `simulate.run` gained the optional
+  `weight_filter` hook (None is byte-identical). Ten tests pass on the
+  synthetic book; the command has not run against the store. Next: run it
+  on the Spark (280 simulator runs), record the note, and change the
+  executor only if the verdict names a stop.
+
 - 2026-09-27, night: the execution ablation, BUILT and not run
   (`market/execution_ablation.py`, `python -m
   backend.cli.market_execution_ablation`). The fill-timing trial

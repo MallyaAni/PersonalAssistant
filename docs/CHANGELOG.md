@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-09-27 — Catastrophe stop on the /4 book, built and not run
+
+`backend/market/catastrophe_stop.py` and `python -m
+backend.cli.market_catastrophe_stop` price a single-name stop on
+`graded-equal-weight/4` on the point-in-time book, prompted by the
+operator's question of how the equal-weight book avoids a Lucid-type
+collapse when only the grade rotation and the equal-weight cap bound the
+loss today. Seven variants fixed in `VARIANTS` before any run, each one
+registered trial: `none` (control: plain next-open fills, no stop), a sale
+on the first close 40, 50 or 60% below the entry close (`entry-40/50/60`)
+and the same below the running peak close since entry (`peak-40/50/60`).
+`CatastropheStop` wraps the policy's allocator: it tracks each held name's
+entry (the decision session its target first became positive, at that
+session's adjusted close) and peak, forces the target to zero on the first
+close through the threshold, holds the proceeds as cash to the next
+rebalance (`redeploy=False`), and keeps the name out until the allocator's
+mask has excluded it at a rebalance and then wants it back - the cooldown
+against re-buying the same name at the same grade on the next reset. Every
+trigger is recorded (ticker, entry date and price, peak, trigger date and
+price, drawdown from the reference, from entry and from peak) and read
+afterwards for recovery above the trigger price within 60 sessions.
+`simulate.run` gains one optional research hook, `weight_filter(t, target,
+prices) -> target`, called on the incumbent path once per decision session
+after the rules decide and before the ceilings and the order plan, because
+the allocator is only called on rebalance sessions and a stop must read the
+path between them; None leaves every run byte-identical (proved on the pit
+fixture under the plain, live and exit-analyst option sets, on returns,
+equity, invested, top weight and the trade log), and `funded_allocation`
+refuses it. Per window across the scorecard's offsets: median CAGR and
+worst drawdown, the worst single-name day (weight-times-return, min over
+the window, median across offsets), triggers a year, the pooled false-alarm
+rate, the paired difference against the control at the median offset
+(Newey-West lag 20) and offsets above the control. `verdict` reads
+2016-2023 at 25 bp: ADOPT (registered) only when a stop is within 0.5 CAGR
+points of the control, saves at least 3 drawdown points or 25% of the worst
+single-name day, and is not worse on 2024-2026 by paired bp a day; else
+RECORD; the insurance premium (CAGR points given up per drawdown point
+saved) is reported either way. Writes `<root>/desk/catastrophe_stop.json`;
+prints the table, the verdict and the twenty deepest triggers. Ten tests:
+the variant set, the threshold firing strictly below and not at the line,
+the cooldown, trailing against entry on a run-up-then-fall, the stop
+inside `simulate.run` on a collapsing name, the control reproducing
+`simulate.run` under the plain options element for element, the hook's
+None identity, the payload, the verdict's floors on hand-built payloads
+and the command end to end. Pre-registration in
+`docs/research/catastrophe-stop-plan-2026-09-27.md`. Not yet run on the
+Spark; no number in this entry is a result.
+
 ## 2026-09-27 — Execution ablation on the /4 book, built and not run
 
 `backend/market/execution_ablation.py` and `python -m
