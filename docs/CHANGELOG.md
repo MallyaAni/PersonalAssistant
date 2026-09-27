@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-27 — Mid-cycle study on the /4 book run: the book is 78% invested; every variant RECORD, exposure is the operator's call
+
+Ten variants ran on spark1 (`docs/research/midcycle-ew-2026-09-27.md`).
+The live executor holds 22% cash on average (32% on 2024-2026) on a policy
+meant to be fully invested: downgrade proceeds wait for band breakouts that
+rarely come, and the reset's own buys go partly unpaid. Exposure-adjusted,
+the 4.3-point gap to plain fills is +0.0: it is exposure, not selection.
+The downgrade exits are the one mid-cycle leg with evidence (about 10
+points of drawdown and 5-11 of return on 2024-2026); the entries are worth
+nothing. `mc-redeploy` (exits kept, cash above 2% back to targets at the
+next open) reads 24.8% / 60.2% against live 23.2% / 52.6% with drawdowns
+-43% / -21% against -36% / -17%. Registered verdict RECORD everywhere (the
+daily t of an exposure change is small); the exposure reading is
+CONSISTENT. Nothing on the live path changes without the operator's
+decision on exposure.
+
 ## 2026-09-27 — Mid-cycle study, trials 7-10: the redeploy variants and the reset top-up, built after the first six ran
 
 The first six ran on the store (every variant RECORD; the table is in the

@@ -110,6 +110,16 @@ strategy that changes only when untouched sessions say so.
   that branch lands, and `agent-trading-desk.svg` needs re-rendering
   (source updated, no browser in the sandbox).
 
+- 2026-09-27, late night: the mid-cycle study RAN
+  ([research/midcycle-ew-2026-09-27.md](research/midcycle-ew-2026-09-27.md)):
+  the live `/4` book is 78% invested (68% on 2024-2026) by accident of an
+  executor built for concentrated `/3` sizes; exposure-adjusted the plain
+  book's 4.3-point lead is zero. Downgrade exits earn their place; band
+  entries do not. `mc-redeploy` (exits kept, idle cash back to targets)
+  24.8% / 60.2% vs live 23.2% / 52.6%, drawdown -43% / -21% vs -36% /
+  -17%. Every variant RECORD under the registered floors; CONSISTENT under
+  the exposure reading. The choice is exposure and belongs to the operator;
+  if taken, it is a registered executor change after Monday's rebalance.
 - 2026-09-27: `1fc59696` deployed - the `/4` shadow, the SIP fifteen-minute
   store and the point-in-time browser test together (gates 7,543 / 100
   passed). First shadow receipt due Monday 2026-09-28. The SIP backfill is
