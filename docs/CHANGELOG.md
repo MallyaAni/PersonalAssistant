@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-09-27 — A SIP partition cut under a wrong calendar close is stale, and is rewritten
+
+The first backfill ran while 2016-2018 were unreviewed, so every close in
+those years was taken as 16:00. On the six 13:00 half days a liquid name
+has after-hours prints, they filled slots 14-25, and the partition was
+written as "complete" with 26 bars (SPY 2016-11-25: last "regular" bar at
+15:45 with 7,239 shares). The store refuses to overwrite a complete
+partition, so the calendar fix alone could not repair them.
+
+- `intraday_sip.calendar_stale(store, ticker)` names the stored sessions
+  whose `session_close` or `bars_expected` metadata disagrees with the
+  reviewed calendar now; `completeness` reports such a session as
+  incomplete whatever its flag says; `write_session` allows the one case
+  of replacing a complete partition - a stale one - and still refuses
+  otherwise; `--include-incomplete` therefore refetches them. Test:
+  `test_partition_cut_under_a_wrong_calendar_close_is_stale_and_rewritten`
+  (the repair leaves 14 correctly bounded bars). Repair command after
+  deploying: `market_intraday_sip --refresh --include-incomplete --since
+  2016-01-01 --until 2018-12-31`.
+
 ## 2026-09-27 — Session anatomy: the first fifteen-minute study, BUILT and not run
 
 The consolidated SIP store now has its first study: how the 26

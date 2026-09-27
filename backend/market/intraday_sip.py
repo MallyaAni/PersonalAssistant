@@ -208,8 +208,10 @@ def by_session(bars: Iterable[IntradayBar]) -> dict[date, list[IntradayBar]]:
 
 # Write one session's bars as one immutable partition with provenance.
 # Only the regular-session bars are kept. An existing complete partition
-# is never overwritten (SipStoreError); an existing incomplete one is
-# replaced, since a fuller fetch of the same raw bars supersedes it.
+# is never overwritten (SipStoreError) unless it was cut under a calendar
+# close the reviewed calendar no longer gives (`calendar_stale`); an
+# existing incomplete or stale one is replaced, since a fuller fetch of
+# the same raw bars, or a correctly bounded one, supersedes it.
 def write_session(
     store: MarketStore,
     ticker: str,
@@ -223,7 +225,11 @@ def write_session(
     path = _partition_path(store, ticker, session)
     if path.exists():
         existing = read_session(store, ticker, session)
-        if existing is not None and existing[1].get("complete") == "true":
+        if (
+            existing is not None
+            and existing[1].get("complete") == "true"
+            and not _stale(existing[1], session)
+        ):
             raise SipStoreError(
                 f"{ticker} {session}: refusing to overwrite a complete partition"
             )
@@ -287,16 +293,49 @@ def sessions_available(store: MarketStore, ticker: str) -> list[date]:
 
 
 # The sessions the store holds and whether each is complete, read from
-# the partitions' metadata only.
+# the partitions' metadata only. A partition cut under a calendar close
+# the reviewed calendar no longer gives (see `calendar_stale`) is reported
+# as incomplete whatever its flag says: its slots were bounded wrongly.
 def completeness(store: MarketStore, ticker: str) -> dict[date, bool]:
     """Return {stored session: complete flag} for ``ticker``."""
+    out: dict[date, bool] = {}
+    for session, meta in _partition_metadata(store, ticker).items():
+        out[session] = meta.get("complete") == "true" and not _stale(meta, session)
+    return out
+
+
+# The stored sessions whose partition was written under a session close
+# that differs from what the reviewed calendar says now. This happened to
+# the first backfill (2026-09-27): 2016-2018 were unreviewed, every close
+# was taken as 16:00, and on the six 13:00 half days the after-hours
+# prints of a liquid name filled slots 14-25 and the partition was marked
+# complete. Such a partition is wrong, not merely short, and the refresh
+# rewrites it (`append_missing(include_incomplete=True)`).
+def calendar_stale(store: MarketStore, ticker: str) -> list[date]:
+    """Return the sessions whose stored close disagrees with the calendar."""
+    return [
+        session
+        for session, meta in _partition_metadata(store, ticker).items()
+        if _stale(meta, session)
+    ]
+
+
+# Whether a partition's recorded close or expected bar count disagrees
+# with the calendar as reviewed now.
+def _stale(meta: dict[str, str], session: date) -> bool:
+    close = calendar.session_close(session).isoformat()
+    expected = str(bars_expected(session))
+    return meta.get("session_close") != close or meta.get("bars_expected") != expected
+
+
+# Every stored session's metadata for the ticker, decoded, oldest first.
+def _partition_metadata(store: MarketStore, ticker: str) -> dict[date, dict[str, str]]:
     import pyarrow.parquet as pq
 
-    out: dict[date, bool] = {}
+    out: dict[date, dict[str, str]] = {}
     for session in sessions_available(store, ticker):
-        meta = pq.read_table(_partition_path(store, ticker, session)).schema.metadata
-        flag = (meta or {}).get(b"complete", b"false").decode()
-        out[session] = flag == "true"
+        raw = pq.read_table(_partition_path(store, ticker, session)).schema.metadata or {}
+        out[session] = {k.decode(): v.decode() for k, v in raw.items()}
     return out
 
 

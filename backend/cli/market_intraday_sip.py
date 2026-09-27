@@ -108,7 +108,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--include-incomplete",
         action="store_true",
-        help="also fetch again the sessions stored incomplete",
+        help=(
+            "also fetch again the sessions stored incomplete, and those cut "
+            "under a session close the reviewed calendar no longer gives"
+        ),
     )
     parser.add_argument(
         "--data-dir", type=Path, default=Path(settings.MARKET_DATA_ROOT)

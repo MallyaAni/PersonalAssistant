@@ -9,10 +9,11 @@ partition; and the reconcile gate compares the session with the daily
 store's bar on the raw basis, undoing the daily store's split adjustment.
 """
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 import pytest
 
+from backend.market import alpaca
 from backend.market import intraday_sip as sip
 from backend.market.alpaca import IntradayBar
 from backend.market.store import MarketStore
@@ -291,3 +292,45 @@ def test_source_revision_is_a_sha_or_empty(tmp_path):
     assert meta.fetched_at == "2026-09-26T01:00:00+00:00"
     assert meta.feed == "sip"
     assert meta.adjustment == "raw"
+
+
+# A partition written while the calendar took a half day for a full one
+# (the first backfill, before 2016-2018 were reviewed) holds after-hours
+# prints in slots 14-25 and says "complete". Once the calendar knows the
+# 13:00 close, that partition is stale: completeness reports it
+# incomplete, `calendar_stale` names it, the refresh wants it again, and
+# the rewrite - the one case a complete partition may be replaced -
+# leaves 14 correctly bounded bars.
+def test_partition_cut_under_a_wrong_calendar_close_is_stale_and_rewritten(tmp_path, monkeypatch):
+    store = MarketStore(tmp_path)
+    monkeypatch.setattr(sip.calendar, "session_close", lambda day: time(16, 0))
+    alpaca.close_minutes.cache_clear()
+    assert sip.write_session(store, "AVGO", EARLY, _bars(EARLY), PROVENANCE)
+    bars, meta = sip.read_session(store, "AVGO", EARLY)
+    assert len(bars) == 26 and meta["complete"] == "true" and meta["session_close"] == "16:00:00"
+    monkeypatch.undo()
+    # `alpaca.close_minutes` caches the close per day; the patched value
+    # would otherwise outlive the patch in this process (it never changes
+    # in a real one).
+    alpaca.close_minutes.cache_clear()
+    assert sip.calendar.session_close(EARLY) == time(13, 0)
+    assert sip.calendar_stale(store, "AVGO") == [EARLY]
+    assert sip.completeness(store, "AVGO") == {EARLY: False}
+    # A correctly bounded complete partition is still never overwritten.
+    assert sip.write_session(store, "AVGO", MON, _bars(MON), PROVENANCE)
+    assert sip.calendar_stale(store, "AVGO") == [EARLY]
+    with pytest.raises(sip.SipStoreError):
+        sip.write_session(store, "AVGO", MON, _bars(MON), PROVENANCE)
+    fetched = []
+
+    def fetch(ticker, first, last):
+        fetched.append((first, last))
+        return _bars(EARLY)
+
+    result = sip.append_missing(store, "AVGO", [EARLY, MON], fetch, PROVENANCE, include_incomplete=True)
+    assert fetched == [(EARLY, EARLY)]
+    assert result.written == (EARLY,) and result.incomplete == ()
+    bars, meta = sip.read_session(store, "AVGO", EARLY)
+    assert len(bars) == 14 and meta["complete"] == "true" and meta["session_close"] == "13:00:00"
+    assert sip.calendar_stale(store, "AVGO") == []
+    assert sip.completeness(store, "AVGO") == {EARLY: True, MON: True}
