@@ -1,5 +1,60 @@
 # Next session
 
+## 2026-09-28, early — Live executor redeploys idle cash (/4); board made consistent; five more trials recorded
+
+**Deployed** (`508c66c9`, 03:14Z; earlier `cf9b43e8` 02:04Z; post-deploy ok): the
+operator chose `mc-redeploy` from the mid-cycle study
+([research/midcycle-ew-2026-09-27.md](research/midcycle-ew-2026-09-27.md)) -
+`paper._redeploy_orders` mirrors `simulate._redeploy_orders` (parity test to
+1e-9): on every non-reset session cash above 2% of equity goes to the policy's
+targets at the next open, no band gate, no 15% cap; execution policy is now
+`cash-bounded-breakout-rotation/4` (`paper_rules.REDEPLOY_IDLE_CASH`). Monday
+2026-09-28 19:30 ET is the forced `/4` reset (unchanged path; it waits on
+Friday's five open orders settling); the redeploy leg fires from Tuesday.
+Turn off: `REDEPLOY_IDLE_CASH = False` + deploy. `PaperState.rebalance_targets`
+is new (None on the old state until Monday writes it).
+
+**Board (operator's requirements, all live):** action cell = BUY / Hold /
+SELL / TRIM + size only (sentences on hover); board sizes toward the `/4`
+targets (`decision_view._sizes_toward_targets`; the `/3` "not a standing
+order" rule is `/3`-only); TRIM only on reset days; price row = `$X
+<session>` / `$X close`; summary strip headline = `rules_point_in_time` (the
+`/4` book under the live executor with redeploy, names known at the time,
+10 bp: **31.8% CAGR, 24.2x, -41% DD** since 2015) labelled as such - the
+hindsight `rules` curve (44%, `universe: hindsight`) is chart-only; the
+strip recognises the policy via `latest.targets.policy`, not the execution
+string. Chart markers under `/4`: BUY on entry, SELL on exit, "Rebalance
+±x%" on reset sessions (`decision_history.reset_sessions` from the paper
+state's clock + records with `plan == "rebalance"`), denominator drift =
+hold; redeploy fills purple. **The 2026-09-25 record was re-recorded twice**
+(originals `desk.json.879abc56`, `desk.json.954c39da`), paper receipt
+spliced back each time, parity OK; `~/scratch/splice.py`.
+
+**Trials recorded tonight (all pre-registered; all RECORD/INSUFFICIENT):**
+vol sizing ([research/vol-sizing-2026-09-27.md](research/vol-sizing-2026-09-27.md)):
+every variant loses to equal weight; mid-cycle study: the book was 78%
+invested by accident (fixed above); profit-taking
+([research/profit-taking-2026-09-27.md](research/profit-taking-2026-09-27.md)):
+every trim rule loses, 52-63% sold too early, dip-add +0.2 bp/d; deep
+stage 2 ([research/deep-stage2-2026-09-27.md](research/deep-stage2-2026-09-27.md)):
+60 sessions + market + desk inputs on the RTX - drawdown20 IC 0.09-0.15
+(t 5-9), downgrade AUC 0.6, both untradable as sell rules; ridge baseline
+still running on spark1 (`~/scratch/s2ridge.log`, writes
+`data/market/desk/deep_stage2_ridge.json`) - copy to scorecards when done.
+RTX payloads `E:\AgentWorkspace\rtx-data\desk\deep_stage2_{cnn,ptp,patchtst,dd}.json`
+not yet copied into `docs/research/scorecards` (do it; ~30 KB each).
+
+**Next registered trial:** the conditional dip entry as the BUY gate - grade
+intact, price under EMA21, and the CNN drawdown20 forecast in the benign
+half - priced against `ew-redeploy` on the pit scorecard; ADOPT only at
+>= +1.0 pt, t >= 2, not worse 2024-2026. The operator wants BUY to mean
+"good stock at a good level"; until a gate passes, BUY means "entered the
+graded book, buy at the next open" and the board says so on hover.
+
+**Monday check (scheduled 00:40Z Tue):** `~/desk_daily.log` for "grade
+parity: OK", "policy change", the reset orders, `redeploy:` line (Tuesday),
+`state.policy_version`, `rebalance_targets`, `idle_cash_share` on the record.
+
 ## 2026-09-27, night — Three registered trials landed; the board was re-graded on the deployed code; grade parity now runs every night
 
 **Execution ablation, VERIFIED on spark1** from `01a661de`
