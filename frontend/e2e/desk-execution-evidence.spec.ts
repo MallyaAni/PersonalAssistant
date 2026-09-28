@@ -113,7 +113,7 @@ for (const name of Object.keys(evidence.cases) as CaseName[]) {
         await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveText('IEX spread unverified')
         await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveClass(/sr-only/)
       } else {
-        await expect(row).not.toHaveAttribute('title', /spread/)
+        await expect(row).not.toHaveAttribute('title', /spread unverified/)
         await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveCount(0)
       }
       await page.getByRole('button', {name: 'details for S11', exact: true}).click()

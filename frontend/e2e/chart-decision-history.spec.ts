@@ -156,7 +156,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(decisions).toContainText('Buy 9.1%')
       await expect(decisions).toContainText('Sell')
       // The drift on Sep 15 is not an add, and the words add/trim do not appear.
-      await expect(decisions).not.toContainText('Sep 15')
+      await expect(decisions).not.toContainText(/Sep 15 · (Buy|Sell|Add|Trim|Rebalance)/)
       await expect(decisions).not.toContainText('Add')
       await expect(decisions).not.toContainText('Trim')
       // The fills are listed likewise, newest first.

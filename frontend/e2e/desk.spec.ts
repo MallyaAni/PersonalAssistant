@@ -1679,7 +1679,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   const record = page.getByText('The desk’s track record')
   await expect(record).toBeVisible()
   await expect(page.getByRole('img', { name: "The desk's track record against SPY and QQQ" })).toBeVisible()
-  await expect(page.getByText('CAGR')).toBeVisible()
+  await expect(page.getByText('CAGR', { exact: true })).toBeVisible()
   await expect(page.getByText('31.0%', { exact: true })).toBeVisible()
 
   // The regime leads the board, in plain words, and says what it is doing
@@ -2983,9 +2983,9 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   expect(order).toBe('chart first')
   await expect(chart.getByTestId('ticker-chart-canvas').locator('canvas').first()).toBeVisible()
 
-  // Only the two scored timeframes are on offer.
+  // The two scored timeframes plus the fifteen-minute view are on offer.
   const frames = chart.getByRole('group', {name: 'Chart timeframe'})
-  await expect(frames.getByRole('button')).toHaveCount(2)
+  await expect(frames.getByRole('button')).toHaveCount(3)
   await expect(frames.getByRole('button', {name: 'D'})).toHaveAttribute('aria-pressed', 'true')
   await expect(chart).toContainText('30 sessions loaded; pan or zoom for history.')
 

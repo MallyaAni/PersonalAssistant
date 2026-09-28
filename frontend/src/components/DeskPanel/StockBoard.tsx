@@ -73,11 +73,18 @@ export const SessionPrice = ({live, ticker, now, compact = false, close}: {live:
   const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
   const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
   const staleCaveat = state === 'stale' ? ' Last observed price; not a current quote.' : ''
+  // The board row's fallback when no fresh midpoint exists: the freshest dated
+  // price among the last observed midpoint and the latest completed regular
+  // 15-minute bar (end = start + 15 min), never an older close over a newer bar.
+  const barEnd = regular && Number.isFinite(regular.last) && regular.last > 0 ? Date.parse(regular.bar) + 15 * 60_000 : NaN
+  const regularNewer = Number.isFinite(barEnd) && (lastPrice === null || !Number.isFinite(observed) || barEnd > observed)
+  const regularCurrent = regularNewer && now - barEnd < 20 * 60_000
   return <div aria-label={`${ticker} session price`} title={`${quote?.at ? `Last observed ${at} ET. ` : ''}${source}. ${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
     {compact
       // The board row: the price and one word for the session it belongs to;
       // the provenance (feed, time, regular bar, caveats) is the hover text.
       ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{" "}{(session ?? "quote").toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} /></>
+        : regularNewer ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${regular!.last.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}regular</span><ChangeMark last={regular!.last} close={close} /></>
         : <span className="text-[#9a6700]">{lastPrice !== null ? `$${lastPrice.toFixed(2)} ${(session ?? 'quote').toLowerCase()}`
           : lastClose !== null ? `$${lastClose.toFixed(2)} close` : 'No price to display'}</span>
       : state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
