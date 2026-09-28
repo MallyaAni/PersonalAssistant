@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-27 — Profit-taking and deep stage 2 run: every trim loses; the models learn drawdown and it is not tradable
+
+Profit-taking (`docs/research/profit-taking-2026-09-27.md`): run-up, RSI
+and band trims lose 0.9-1.6 CAGR points; 52-63% of trims were sold too
+early (the name closed higher 20 sessions later). The CNN drawdown-forecast
+trims lose most (-3.4 pt, t -2.8, 0/20 offsets). Dip-add is the one rule
+that does not lose (+0.2 bp/d, t 2.0) and is worth nothing exposure
+adjusted. Every variant RECORD; the board's BUY keeps its tested meaning
+(entered the graded book, buy at the next open); TRIM appears only on
+reset days. Deep stage 2 (`docs/research/deep-stage2-2026-09-27.md`): with
+60 sessions, market context and desk evidence, the CNN and PatchTST
+forecast 20-session drawdown at IC 0.09-0.15 (t 5-9) and downgrades at AUC
+0.58-0.63; acting on either costs 1.6-2.3 bp/session. INSUFFICIENT
+EVIDENCE on every target; ridge baseline pending on the Spark.
+
 ## 2026-09-27 — Profit-taking and dip-buying rules on the `/4` book: BUILT, not run
 
 The operator's reading of the live policy is that it is bad at taking

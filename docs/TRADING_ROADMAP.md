@@ -110,6 +110,14 @@ strategy that changes only when untouched sessions say so.
   that branch lands, and `agent-trading-desk.svg` needs re-rendering
   (source updated, no browser in the sandbox).
 
+- 2026-09-27, late night: profit-taking RAN
+  ([research/profit-taking-2026-09-27.md](research/profit-taking-2026-09-27.md))
+  - every trim rule, price- or model-based, loses (sold too early 52-63% of
+  the time); dip-add +0.2 bp/d, below the floor. Deep stage 2 RAN on the
+  RTX ([research/deep-stage2-2026-09-27.md](research/deep-stage2-2026-09-27.md))
+  - drawdown forecast IC 0.09-0.15 (t 5-9), downgrade AUC 0.6, both
+  untradable as sell rules on this book. Next registered: a conditional
+  dip rule (forecast expects recovery, price under EMA) as the BUY gate.
 - 2026-09-27, late night: profit-taking and dip-buying rules on the `/4`
   book, BUILT and not run
   ([research/profit-taking-plan-2026-09-27.md](research/profit-taking-plan-2026-09-27.md);
