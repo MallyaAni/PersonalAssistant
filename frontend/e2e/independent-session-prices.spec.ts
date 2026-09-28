@@ -291,9 +291,10 @@ for (const outcome of ['network failure', 'invalid envelope', 'invalid JSON', 'H
       : outcome === 'invalid JSON' ? {raw: '{'} : {status: 503, body: {detail: 'Unavailable'}})
     await manualRefresh(page)
     await settle(page, state)
-    for (const reading of [page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price'),
-      page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price')]) {
-      await expect.soft(reading).toContainText('No price to display')
+    // The board row shows the latest regular bar (the last real price); the chart says no midpoint.
+    for (const [reading, shown] of [[page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price'), /^\$100\.00\s?regular/],
+      [page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price'), 'No price to display']] as const) {
+      await expect.soft(reading).toContainText(shown)
       await expect.soft(reading).not.toContainText('$102.00')
       await expect.soft(reading).not.toContainText('stale')
       await expect.soft(reading).toHaveAttribute('title', /Regular-session bar \$100\.00/)
@@ -314,8 +315,9 @@ test('optional failure removes the old midpoint before a held regular response c
   const pending = await refreshHeld(page, state, '/live')
   await settle(page, state, true)
   expect(pending.completed).toBe(false)
-  for (const surface of [page.getByRole('table', {name: 'Ranked stocks and cash'}), page.getByRole('region', {name: 'AAPL price chart'})]) {
-    await expect.soft(surface.getByLabel('AAPL session price')).toContainText('No price to display')
+  for (const [surface, shown] of [[page.getByRole('table', {name: 'Ranked stocks and cash'}), /^\$100\.00\s?regular/],
+    [page.getByRole('region', {name: 'AAPL price chart'}), 'No price to display']] as const) {
+    await expect.soft(surface.getByLabel('AAPL session price')).toContainText(shown)
     await expect.soft(surface.getByLabel('AAPL session price')).not.toContainText('$102.00')
   }
   gate.release()

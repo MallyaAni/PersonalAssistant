@@ -187,8 +187,11 @@ async function expectFresh(page: Page, observed = OBSERVED, price = '$102.00', t
 
 // Require absent current midpoints on board and chart while keeping the regular bar explicitly labelled.
 async function expectAbsent(page: Page, text = 'No price to display') {
+  // The chart says no midpoint; the board row shows the latest regular bar, the last real price.
+  const boardReading = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')
+  await expect(boardReading).toContainText(/^\$100\.00\s?regular/)
+  await expect(page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price')).toContainText(text)
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
-    await expect(reading).toContainText(text)
     await expect(reading).not.toContainText('$102.00')
     await expect(reading).not.toContainText('$103.75')
     await expect(reading).not.toContainText('No recent quote')

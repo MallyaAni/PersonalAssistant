@@ -78,7 +78,8 @@ test('failed optional feed does not preserve its previous session price', async 
   await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /^Last observed 5:59:59\sPM ET\. Indicative · OVERNIGHT\. /)
   replace({})
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(board.getByLabel('AAPL session price')).toContainText('No price to display')
+  // The old midpoint is gone; the board row shows the latest regular bar, the last real price.
+  await expect(board.getByLabel('AAPL session price')).toContainText(/^\$100\.00\s?regular/)
   await expect(board.getByLabel('AAPL session price')).not.toContainText('$102.00')
   await expect(board.getByLabel('AAPL displayed grade')).toContainText('A')
   expect(errors).toEqual([])
