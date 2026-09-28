@@ -97,16 +97,25 @@ for (const name of Object.keys(evidence.cases) as CaseName[]) {
       await board.screenshot({path: testInfo.outputPath(`${name}-collapsed.png`)})
       if (source.row.executable) await expect(today).toContainText('1 executable signal.')
       else await expect(today).not.toContainText('1 executable signal.')
+      // The collapsed row is the word and the size; the blocker and the
+      // spread caveat read on the row's hover and stay in the accessibility tree.
+      const row = board.getByRole('row').filter({has: page.getByRole('button', {name: 'S11', exact: true})})
+      await expect(row).toHaveAttribute('title', new RegExp(`^${source.row.strategy_action.toUpperCase()}: `))
       if (name.endsWith('clock')) {
+        await expect(row).toHaveAttribute('title', new RegExp(CLOCK.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
         const readiness = board.getByLabel('S11 execution readiness', {exact: true})
         await expect(readiness).toHaveText('Regular-session execution blocked')
         await expect(readiness).toHaveAttribute('title', CLOCK)
+        await expect(readiness).toHaveClass(/sr-only/)
       }
       if (name === 'wide_iex') {
-        const caveat = board.getByLabel('S11 spread verification', {exact: true})
-        await expect(caveat).toHaveText('IEX spread unverified')
-        await expect(caveat).toBeVisible()
-      } else await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveCount(0)
+        await expect(row).toHaveAttribute('title', /IEX spread unverified/)
+        await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveText('IEX spread unverified')
+        await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveClass(/sr-only/)
+      } else {
+        await expect(row).not.toHaveAttribute('title', /spread/)
+        await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveCount(0)
+      }
       await page.getByRole('button', {name: 'details for S11', exact: true}).click()
       const detail = page.getByRole('region', {name: 'S11 decision details', exact: true})
       const intent = detail.getByLabel('S11 strategy intent', {exact: true})

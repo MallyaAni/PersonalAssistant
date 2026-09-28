@@ -87,8 +87,13 @@ test('regular-session restriction is explicit and shows the intended size, not a
   await expect(board.getByLabel('AAPL size')).toHaveText('2.0%')
   await expect(board.getByLabel('AAPL size')).not.toContainText('of account')
   for (const ticker of ['AAPL', 'NVDA']) {
+    // The row shows the word and the size; the blocker reads on the row's
+    // hover, and stays in the accessibility tree under its label.
+    const row = board.getByRole('row').filter({has: page.getByRole('button', {name: ticker, exact: true})})
+    await expect(row).toHaveAttribute('title', /Regular-session execution is blocked; the session is closed or its clock is unavailable/)
     const readiness = board.getByLabel(`${ticker} execution readiness`, {exact: true})
     await expect(readiness).toHaveText('Regular-session execution blocked')
+    await expect(readiness).toHaveClass(/sr-only/)
     await expect(readiness).toHaveAttribute('title', 'Regular-session execution is blocked; the session is closed or its clock is unavailable')
   }
   await expect(board).not.toContainText('Market closed')
@@ -116,7 +121,12 @@ test('Hold explains missing entry evidence without manufacturing a buy or size',
   const {errors} = await setup(page, true, true)
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('Hold')
-  await expect(board).toContainText('Data missing')
+  // "Data missing" is the row's hover and its accessible readiness, not a
+  // line printed under the word.
+  const msftRow = board.getByRole('row').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
+  await expect(msftRow).toHaveAttribute('title', /Data missing/)
+  await expect(board.getByLabel('MSFT execution readiness', {exact: true})).toHaveText('Data missing')
+  await expect(board.getByLabel('MSFT execution readiness', {exact: true})).toHaveClass(/sr-only/)
   await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
   await expect(board).toContainText('Entry data unavailable · Missing 20-session reference')
   await expect(board.getByLabel('MSFT size')).toHaveText('—')
@@ -129,7 +139,9 @@ test('strategy details start collapsed while active trading restrictions remain 
   const details = page.locator('details[aria-label="Strategy details"]')
   await expect(details).not.toHaveAttribute('open', '')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})).toContainText('FOMC pause')
+  await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})).toHaveAttribute('title', /FOMC pause/)
+  await expect(board.getByLabel('AAPL execution readiness', {exact: true})).toHaveText('FOMC pause')
+  await expect(board.getByLabel('AAPL execution readiness', {exact: true})).toHaveClass(/sr-only/)
   await expect(board.getByLabel('AAPL size')).toHaveText('—')
   await details.locator(':scope > summary').click()
   await expect(page.getByLabel('FOMC exposure policy')).toContainText('reduction pending')
@@ -233,6 +245,8 @@ test('a /4 target buy shows its size with the market closed', async ({page}) => 
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toHaveText('9.1%')
+  const aaplRow = board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})
+  await expect(aaplRow).toHaveAttribute('title', /Regular-session execution is blocked; the session is closed or its clock is unavailable/)
   const readiness = board.getByLabel('AAPL execution readiness', {exact: true})
   await expect(readiness).toHaveText('Regular-session execution blocked')
   await expect(readiness).toHaveAttribute('title', 'Regular-session execution is blocked; the session is closed or its clock is unavailable')
@@ -248,5 +262,41 @@ test('a /4 target buy shows its size with the market closed', async ({page}) => 
   await expect(board.getByLabel('AAPL move', {exact: true})).toHaveText('+9.1%')
   await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
   await expect(board.getByLabel('MSFT decision reason', {exact: true})).toContainText('trimmed at the next reset')
+  expect(errors).toEqual([])
+})
+
+// A Sell that keeps a positive target is a trim, and the row says so: the
+// word is TRIM, the size is the reduction, and the decision's "Trim to"
+// sentence reads on the row's hover rather than beneath the word. A Sell to
+// zero stays SELL.
+test('a trim reads as TRIM with its reason on hover, an exit stays SELL', async ({page}) => {
+  const {errors} = await setup(page, true, false, false, async () => {
+    await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))
+    await page.route('**/desk/mine', route => route.fulfill({json: {
+      session, rows: [], grades_live: {},
+      decisions: {session, written, equity: 100000, holdings: {}, rows: {
+        MSFT: {action: 'Sell', strategy_action: 'Sell', executable: true, blocker: null,
+          reason: 'Trim to 9.1% target (policy graded-equal-weight/4); holding 14.0%',
+          move_weight: -.0491, strategy_move_weight: -.0491, target_weight: .0909, current_weight: .14, valid_until: until,
+          quote: {feed: 'sip', at, bid: 99.9, ask: 100.1, spread_verified: true, eligible: true, reason: 'ok', valid_until: until}},
+        NVDA: {action: 'Sell', strategy_action: 'Sell', executable: true, blocker: null, reason: 'Exit condition confirmed',
+          move_weight: -.05, strategy_move_weight: -.05, target_weight: 0, current_weight: .05, valid_until: until,
+          quote: {feed: 'sip', at, bid: 99.9, ask: 100.1, spread_verified: true, eligible: true, reason: 'ok', valid_until: until}},
+        AAPL: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'No entry instruction.', move_weight: 0, strategy_move_weight: 0, target_weight: 0, current_weight: 0, valid_until: null},
+      }},
+    }}))
+  })
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.getByLabel('MSFT strategy intent')).toHaveText('TRIM')
+  await expect(board.getByLabel('MSFT size')).toHaveText('4.9% of account')
+  const msftRow = board.getByRole('row').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
+  await expect(msftRow).toHaveAttribute('title', /^TRIM: Trim to 9\.1% target \(policy graded-equal-weight\/4\); holding 14\.0%$/)
+  // The collapsed row carries no sentence: the reason is in the details only.
+  await expect(board.getByLabel('MSFT decision reason', {exact: true})).toHaveCount(0)
+  await expect(board.getByLabel('MSFT execution readiness', {exact: true})).toHaveCount(0)
+  await expect(board.getByLabel('NVDA strategy intent')).toHaveText('SELL')
+  await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'NVDA', exact: true})})).toHaveAttribute('title', /^SELL: Exit condition confirmed$/)
+  await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
+  await expect(board.getByLabel('MSFT decision reason', {exact: true})).toContainText('Trim to 9.1% target')
   expect(errors).toEqual([])
 })

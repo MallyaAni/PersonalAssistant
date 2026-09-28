@@ -403,17 +403,48 @@ const describeSimulationFunding = (source: unknown) => {
   return {summary, assumptions: `${summary} These results do not establish the performance of a cash-only account or the current FOMC policy.`}
 }
 
-// Distinguish known earlier execution from missing or unrecognized policy tags.
-const describeSimulationPolicy = (source: unknown, current: string) => {
-  if (typeof source === 'string' && source !== '' && source === current) return {current: true, label: '', note: ''}
-  if (current === 'cash-bounded-breakout-rotation/3' && source === 'cash-bounded-breakout-rotation/2') return {
-    current: false, label: 'Older policy simulation',
-    note: 'Uses an earlier recorded strategy policy; not measured with the current execution policy.',
+// Every strategy policy a record has carried, so a simulation of an
+// earlier one reads as "older" and a string the page has never seen reads
+// as "unrecognized". The first two are the executor's version strings,
+// which records wrote into `strategy_policy` before the allocation policy
+// had its own name.
+const KNOWN_STRATEGY_POLICIES = [
+  'cash-bounded-breakout-rotation/2',
+  'cash-bounded-breakout-rotation/3',
+  'graded-equal-weight/3',
+  'graded-equal-weight/4',
+]
+
+// Say whether a stored simulation is of the strategy the account runs.
+// `active` is the record's own `targets.policy` (`live_policy.ACTIVE`), the
+// allocation policy; it is never the execution policy string, which is a
+// different versioned thing (the executor's conventions) and never equals a
+// strategy name - comparing with it is how a `/4` record read
+// "Unrecognized policy simulation" on the live board.
+const describeSimulationPolicy = (source: unknown, active: unknown) => {
+  if (source === undefined || source === null || source === '') return {
+    current: false, label: 'Policy not recorded',
+    note: 'Strategy policy was not recorded; alignment with the active strategy is unverified.',
   }
-  return source === undefined || source === null || source === ''
-    ? {current: false, label: 'Policy not recorded', note: 'Strategy policy was not recorded; current execution-policy alignment is unverified.'}
-    : {current: false, label: 'Unrecognized policy simulation', note: 'Recorded strategy policy is not recognized; current execution-policy alignment is unverified.'}
+  if (typeof source !== 'string' || !KNOWN_STRATEGY_POLICIES.includes(source)) return {
+    current: false, label: 'Unrecognized policy simulation',
+    note: 'Recorded strategy policy is not recognized; alignment with the active strategy is unverified.',
+  }
+  if (typeof active !== 'string' || active === '') return {
+    current: false, label: 'Recorded policy simulation',
+    note: `Simulation of ${source}; the record does not name the active strategy, so alignment is unverified.`,
+  }
+  if (source === active) return {current: true, label: 'Policy simulation', note: ''}
+  return {
+    current: false, label: 'Older policy simulation',
+    note: `Uses an earlier recorded strategy policy (${source}); not the active strategy (${active}).`,
+  }
 }
+
+// The strip's label for a simulation of the active strategy: the point-in-
+// time line is the number shown, so the label says which names and which
+// executor priced it. Fixed here so a test can pin the exact wording.
+const POLICY_SIMULATION_LABEL = 'Policy simulation · names known at the time · live executor'
 
 // One number to read at a glance: the paper account's worth, its return
 // since the desk started trading it, today's move, the rules' track record
@@ -424,12 +455,10 @@ const SummaryStrip = ({
   latest,
   paperLive,
   curve,
-  currentPolicyVersion,
 }: {
   latest: DeskRecord
   paperLive: DeskPaperLive | null
   curve: DeskCurve | undefined
-  currentPolicyVersion?: string
 }) => {
   const paper = latest.paper
   const brokerCurrent = paperLive !== null && paperLive.reason === undefined
@@ -442,21 +471,30 @@ const SummaryStrip = ({
   const dayPct = brokerCurrent ? paperLive.day_pl_pct : undefined
   const dayPl = brokerCurrent ? paperLive.day_pl : undefined
   const backtest = curve?.backtest
-  const simulationPolicy = describeSimulationPolicy(backtest?.strategy_policy, currentPolicyVersion ?? 'cash-bounded-breakout-rotation/3')
+  // The simulation is compared with the strategy the record says the
+  // account runs (`targets.policy`), never with the execution policy string.
+  const simulationPolicy = describeSimulationPolicy(backtest?.strategy_policy, latest.targets?.policy)
   // A historical curve keeps its own source, independently of today's record or execution policy.
   const simulationFundamentals = describeFundamentalSource(backtest?.fundamentals_source)
   const curveLabel = simulationPolicy.current
     ? simulationFundamentals.current
-      ? 'Current policy simulation'
+      ? POLICY_SIMULATION_LABEL
       : simulationFundamentals.known
-        ? 'Current policy, older fundamental inputs'
-        : 'Current policy, fundamental inputs unverified'
+        ? `${POLICY_SIMULATION_LABEL} · older fundamental inputs`
+        : `${POLICY_SIMULATION_LABEL} · fundamental inputs unverified`
     : simulationPolicy.label
   // Policy alignment, funding limits and fundamental provenance are independent recorded properties.
   const simulationNote = [simulationPolicy.note, describeSimulationFunding(backtest?.funding_model).summary,
     simulationFundamentals.simulationNote].filter(Boolean).join(' ')
   const last = (arr?: number[]) => (arr && arr.length ? arr[arr.length - 1] : null)
-  const rulesTotal = last(backtest?.rules)
+  // The headline is the point-in-time line: the strategy on the names the
+  // book could have held on each session. The hindsight `rules` total (today's
+  // names back-cast, 85.8x on the live record) is not an expectation and is
+  // never the strip's number; it stays on the chart under its hindsight label.
+  // Without a point-in-time line the cell is absent rather than filled with
+  // the hindsight figure.
+  const pitTotal = last(backtest?.rules_point_in_time)
+  const pitCagr = backtest?.stats_point_in_time?.cagr
   const spyTotal = last(backtest?.spy)
   const qqqTotal = last(backtest?.qqq)
   // The share of the account actually at work, read live from the paper
@@ -508,15 +546,18 @@ const SummaryStrip = ({
     },
     // The forward track has no numbers until it has a run of sessions, so
     // the cell is not shown empty: a "—" with a cryptic note reads as broken.
-    ...(rulesTotal !== null
+    ...(pitTotal !== null
       ? [
           {
             label: curveLabel,
             title: `Recorded simulation fundamental source: ${backtest?.fundamentals_source || 'not recorded'}.`,
             value: (
               <>
-                <Trend value={rulesTotal * 100} />
+                <Trend value={pitTotal * 100} />
                 <span className="ml-2 text-xs font-normal text-[#6e6e73]">
+                  {typeof pitCagr === 'number' && Number.isFinite(pitCagr) && (
+                    <span aria-label="Policy simulation CAGR">CAGR {(pitCagr * 100).toFixed(1)}% · </span>
+                  )}
                   {spyTotal !== null && <>vs SPY <Trend value={spyTotal * 100} /></>}
                   {qqqTotal !== null && (
                     <>
@@ -724,7 +765,9 @@ const CurveChart = ({
   }
   const series: { label: string; color: string; values: number[] }[] = []
   if (backtest) {
-    series.push({ label: 'stored simulation', color: '#1e7a3a', values: align(btDates, backtest.rules) })
+    // A record that names its universe says so in the legend: the stored
+    // line is today's names back-cast, not a return anyone could have earned.
+    series.push({ label: backtest.universe === 'hindsight' ? 'stored simulation · hindsight universe' : 'stored simulation', color: '#1e7a3a', values: align(btDates, backtest.rules) })
     if (backtest.rules_point_in_time && backtest.rules_point_in_time.length) {
       series.push({ label: 'same rules, names known at the time', color: '#b45309', values: align(btDates, backtest.rules_point_in_time) })
     }
@@ -1586,7 +1629,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">simulated funds · the desk's paper book, not your money</span>
           </summary>
           <div className="space-y-3 px-4 pb-4">
-            <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} currentPolicyVersion={payload.current_policy} />
+            <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} />
             {paperLive && paperLive.reason === undefined && paperLive.equity !== undefined && <LivePositions paper={paperLive} equity={paperLive.equity} />}
             <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
               <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>

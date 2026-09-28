@@ -94,6 +94,18 @@ export const SessionPrice = ({live, ticker, now, compact = false, close}: {live:
 export const PLAN_ACTIONS = ['Buy', 'Sell', 'Hold'] as const
 export type PlanAction = (typeof PLAN_ACTIONS)[number]
 
+// The one word a board row shows for its plan: BUY, SELL, Hold, or TRIM for
+// a Sell that keeps a positive target (the decision view writes "Trim to
+// <target>" for that case and leaves `target_weight` above zero), so a
+// partial reduction never reads as an exit. Casing follows the board's
+// convention: the two trading words in capitals, Hold as written.
+export const actionWord = (plan: PlanAction, decision?: {strategy_action?: string; target_weight?: number | null; reason?: string | null}): string => {
+  if (plan === 'Hold') return 'Hold'
+  if (plan === 'Sell' && decision?.strategy_action === 'Sell'
+    && ((decision.target_weight ?? 0) > 0 || /^Trim to /.test(decision.reason ?? ''))) return 'TRIM'
+  return plan.toUpperCase()
+}
+
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
 type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight' | 'size'
 // The natural first direction for each column: a name list reads A to Z, a
@@ -599,7 +611,23 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           // fill) when the read answers for this name; a name the plan feed
           // did not answer keeps the bare action word as before.
           const tradeNode = trade ? trade(row.ticker) : null
-          return <Fragment key={row.ticker}><tr className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
+          // The word the row shows. A Sell that leaves a positive target is a
+          // trim (the decision reads "Trim to ..."), and the operator asked to
+          // see that word rather than a Sell that reads as an exit.
+          const word = isCash ? 'HOLD' : actionWord(plan, decision)
+          // Why the spread line is drawn, when it is; the row's hover carries it.
+          const spreadNote = isCash ? null : decision?.quote?.spread_verified === false
+            ? `${decision.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`
+            : decision?.quote?.eligible && decision.quote.spread_verified !== true ? 'Spread verification unrecorded' : null
+          // Everything the row used to print beneath the action and the size
+          // - the decision's reason, the readiness blocker, the spread caveat
+          // - now reads on hover, so the row itself is the word and the size.
+          const rowTitle = isCash ? undefined : [
+            `${word}: ${reason}`,
+            readiness ? clockRestriction?.full ?? readiness : null,
+            spreadNote,
+          ].filter(Boolean).join(' · ')
+          return <Fragment key={row.ticker}><tr title={rowTitle} className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
@@ -609,12 +637,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
               {!isCash && <><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#1e7a3a]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span>
                 <div className="text-[10px] text-[#6e6e73]">{row.grade ? grades[row.ticker] ? 'Intraday' : 'Close' : 'Unrated'}</div></>}
             </td>
-            <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{isCash ? 'HOLD' : plan === 'Hold' ? 'Hold' : plan.toUpperCase()}</span>
-              {readiness && <div aria-label={`${row.ticker} execution readiness`} title={clockRestriction?.full ?? readiness} className="text-[11px] text-[#9a6700]">{clockRestriction?.short ?? readiness}</div>}
-              {!isCash && (decision?.quote?.spread_verified === false || decision?.quote?.eligible && decision.quote.spread_verified !== true) &&
-                <div aria-label={`${row.ticker} spread verification`} className="text-[11px] text-[#9a6700]">{decision.quote.spread_verified === false
-                  ? `${decision.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`
-                  : 'Spread verification unrecorded'}</div>}</td>
+            <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{word}</span>
+              {/* The readiness and spread caveats are off the visible row (they read on the row's hover) but stay in the accessibility tree, since a screen reader has no hover. */}
+              {readiness && <span aria-label={`${row.ticker} execution readiness`} title={clockRestriction?.full ?? readiness} className="sr-only">{clockRestriction?.short ?? readiness}</span>}
+              {spreadNote && <span aria-label={`${row.ticker} spread verification`} className="sr-only">{spreadNote}</span>}</td>
             <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : !isCash && intended !== null ? percentage(intended) : '—'}</td>
 
           </tr>

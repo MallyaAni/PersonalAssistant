@@ -501,8 +501,14 @@ test('single board keeps cash and wait actions during FOMC', async ({page}) => {
   await expect(page.getByText('FOMC cycle in progress · sizes paused until the policy status is current')).toBeVisible()
   await expect(board.locator('tbody tr').first()).toContainText('Hold available cash')
   await expect(board.locator('tbody tr').first()).not.toContainText('100.0%')
-  await expect(board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^AAPL/})})).toContainText('FOMC pause')
-  await expect(board.locator('tbody tr').filter({has: page.getByRole('button', {name: /^NVDA/})})).toContainText('FOMC pause')
+  // The pause is the row's hover and its accessible readiness; the row itself shows only the word.
+  for (const name of [/^AAPL/, /^NVDA/]) {
+    const row = board.locator('tbody tr').filter({has: page.getByRole('button', {name})})
+    await expect(row).toHaveAttribute('title', /FOMC pause/)
+    await expect(row.getByLabel(/execution readiness$/)).toHaveText('FOMC pause')
+    await expect(row.getByLabel(/execution readiness$/)).toHaveClass(/sr-only/)
+    await expect(row.getByLabel(/strategy intent$/)).toHaveText('Hold')
+  }
   await expect(board.locator('tbody tr')).toHaveCount(4)
   await page.goto('/?deskDetails=1#desk')
   await expect(page.getByRole('heading', {name: 'Stock rankings', exact: true})).toBeVisible()
@@ -1237,6 +1243,11 @@ function deskRecord() {
         asof: '2026-09-08',
         dates: ['2026-01-02', '2026-03-02', '2026-05-01', '2026-07-01', '2026-09-08'],
         rules: [1.0, 1.06, 1.12, 1.19, 1.27],
+        // The point-in-time line the strip reads its number from, far from
+        // the stored (hindsight) line so a test cannot pass by reading one
+        // figure for the other.
+        rules_point_in_time: [0, 0.02, 0.03, 0.05, 0.08],
+        stats_point_in_time: { cagr: 0.08, volatility: 0.2, drawdown: -0.12, total: 0.08 },
         spy: [1.0, 1.02, 1.01, 1.05, 1.09],
         qqq: [1.0, 1.03, 1.04, 1.08, 1.13],
         stats: { cagr: 0.31, volatility: 0.22, drawdown: -0.11, total: 0.27 },
@@ -1654,7 +1665,12 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(glance.getByText(/\+\$31[23]/)).toBeVisible()
   await expect(glance.getByText(/\+0\.3%/)).toBeVisible()
   await expect(glance.getByText('Policy not recorded', { exact: true })).toBeVisible()
-  await expect(glance.getByText('Strategy policy was not recorded; current execution-policy alignment is unverified.', { exact: false })).toBeVisible()
+  await expect(glance.getByText('Strategy policy was not recorded; alignment with the active strategy is unverified.', { exact: false })).toBeVisible()
+  // The strip's number is the point-in-time line's total with its CAGR, not
+  // the stored hindsight line's (127% here), which stays on the chart.
+  await expect(glance.getByText('+8.0%', { exact: false })).toBeVisible()
+  await expect(glance.getByLabel('Policy simulation CAGR')).toHaveText('CAGR 8.0% · ')
+  await expect(glance).not.toContainText('127.0%')
   await expect(glance.getByText('vs SPY', { exact: false })).toBeVisible()
   await expect(glance.getByText('6% invested')).toBeVisible()  // 6,120 of 104,200 live
 
@@ -1707,11 +1723,14 @@ test('names the fundamental data source and flags older fundamental-input curves
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
   latest.provenance = { data: { fundamentals: 'fundamentals-features/3' } }
+  // The simulation is of the strategy the record says the account runs
+  // (`targets.policy`), so it reads as the policy simulation.
+  latest.targets = { policy: 'graded-equal-weight/4', weights: { AAPL: 0.06 } }
   latest.curve = {
     ...latest.curve!,
     backtest: {
       ...latest.curve!.backtest,
-      strategy_policy: 'cash-bounded-breakout-rotation/3',
+      strategy_policy: 'graded-equal-weight/4',
       fundamentals_source: 'fundamentals-features/3',
     },
   }
@@ -1730,7 +1749,7 @@ test('names the fundamental data source and flags older fundamental-input curves
   await page.locator('summary', { hasText: 'Practice account' }).click()
   const glance = page.getByLabel('The desk at a glance')
   await expect(glance).toContainText('stored filing versions; reporting-period safeguard applied')
-  await expect(glance.getByText('Current policy simulation', { exact: true })).toBeVisible()
+  await expect(glance.getByText('Policy simulation · names known at the time · live executor', { exact: true })).toBeVisible()
 
   // Same execution policy version, a record whose analyst read the frozen
   // EDGAR snapshot: the board's label switches to the legacy source and the
@@ -1744,7 +1763,7 @@ test('names the fundamental data source and flags older fundamental-input curves
   await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('frozen EDGAR snapshot')
   await page.locator('summary', { hasText: 'Practice account' }).click()
   const glance2 = page.getByLabel('The desk at a glance')
-  await expect(glance2.getByText('Current policy, older fundamental inputs', { exact: true })).toBeVisible()
+  await expect(glance2.getByText('Policy simulation · names known at the time · live executor · older fundamental inputs', { exact: true })).toBeVisible()
   await expect(glance2).toContainText('frozen EDGAR snapshot')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })

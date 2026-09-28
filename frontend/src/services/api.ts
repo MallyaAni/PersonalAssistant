@@ -1933,6 +1933,11 @@ export interface DeskRecord {
   book: { ticker: string; grade: string; weight: number; engine_weight: number; volatility: number; exposure: number }[];
   briefs: Record<string, DeskBrief>;
   paper: DeskPaper | null;
+  // The active allocation policy's targets for the night: `policy` is the
+  // strategy the account runs (`live_policy.ACTIVE`), the thing a stored
+  // simulation's `strategy_policy` is compared with. Absent on records
+  // written before the policy was carried into the record.
+  targets?: {policy?: string; weights?: Record<string, number>};
   // Absent on records written before the board existed.
   actions?: DeskAction[];
   // The track-record curve the nightly run wrote: the desk's rules walked
@@ -1962,6 +1967,16 @@ export interface DeskCurve {
     rules_point_in_time?: number[];
     stats_point_in_time?: Record<string, number | null>;
     point_in_time_note?: string;
+    // Which names the `rules` line could choose from ("hindsight": today's
+    // panel back-cast to the first session) and the record's own wording
+    // for the two rules lines. Absent on records written before 2026-09-27.
+    universe?: string;
+    rules_label?: string;
+    point_in_time_label?: string;
+    // The `simulate.run` options the rules lines were priced with, and
+    // whether the executor's idle-cash redeploy was among them.
+    execution_options?: Record<string, boolean | number>;
+    redeploy_priced?: boolean;
     // The `/4` candidate policy on the same point-in-time book, priced
     // plain (next-open fills, no live executor): the scorecard's measured
     // arm, not a live record. Empty, with a note, when it could not be drawn.
