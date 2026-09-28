@@ -130,12 +130,16 @@ def apply_personal_account_plan(
     record,
     *,
     target_buys=None,
+    close_grades=False,
 ):
     """Apply the desk's mid-cycle plan against the person's own account.
 
     `target_buys` maps a name to (weight to add, sentence) for buys the board
     sized from the active policy's targets; they share the cash bound with
     the band entries, as the executor's redeploy leg shares it with its own.
+    `close_grades` (the `/4` board) decides exits and eligibility on the
+    record's close grades, as the executor does, instead of re-grading at the
+    candle; False keeps the `/3` board exactly as it was.
     """
     if cash is not None:
         _validate_cash(cash, equity)
@@ -175,13 +179,14 @@ def apply_personal_account_plan(
     from backend.agents.trading.desk import paper
 
     grades = {s: r.get("grade", "") for s, r in (record.get("grades") or {}).items()}
-    technical, value = desk_freshness.grade_inputs(snapshot, record, now)
-    grades.update(
-        {
-            s: r["grade_live"]
-            for s, r in holdings.live_grades(record, technical, value).items()
-        }
-    )
+    if not close_grades:
+        technical, value = desk_freshness.grade_inputs(snapshot, record, now)
+        grades.update(
+            {
+                s: r["grade_live"]
+                for s, r in holdings.live_grades(record, technical, value).items()
+            }
+        )
     # Only a name the desk actually covers and has turned against is an exit.
     # A name without coverage has no grade behind a sale - it is a Hold for
     # review, never a liquidation - and a name whose evidence is unusable
@@ -912,6 +917,208 @@ def _target_intent(toward_targets, strategy_action, entry, reason, blocker):
     return reason.removesuffix(f" ({blocker})") if blocker else reason
 
 
+# The executor's structure gate for one name, read from the nightly record.
+#
+# The live executor holds back every buy-side order (reset buys, entries,
+# rotation buys, deferred buys) for a name in `entry_blocked`, which
+# `market_daily._band_blocked` fills from `exit.evidence(panel).signalled()`
+# on the decision session - the same predicate `simulate.run(
+# block_overbought=True)` reads: a bearish reversal candle with the close at
+# or above 95% of its 20-day band, or the band in the top decile of its year
+# with the close in its upper fifth. The nightly writes that very flag on
+# every graded name as `levels[T]["rejecting_band"]` (and on the paper
+# block's action rows), so the board reads the executor's verdict rather
+# than re-deriving it. REJECTING / CLEAR, or UNRECORDED when the record
+# carries no flag for the name (a record from before the stamp): that is
+# treated as not blocked and said so, never guessed.
+REJECTING = "rejecting"
+CLEAR = "clear"
+UNRECORDED = "unrecorded"
+BAND_BLOCKER = "rejecting its upper band (executor's gate)"
+BAND_BLOCK = f"Buy blocked: {BAND_BLOCKER}"
+
+
+# Return REJECTING, CLEAR or UNRECORDED for `symbol` on `record`: the levels
+# block first, then the action rows, as `holdings.board` merges them.
+def _structure_gate(record, symbol) -> str:
+    """Return the record's band-gate answer for `symbol`."""
+    level = (record.get("levels") or {}).get(symbol)
+    if isinstance(level, dict) and "rejecting_band" in level:
+        return REJECTING if level["rejecting_band"] else CLEAR
+    for row in record.get("actions") or []:
+        if (
+            isinstance(row, dict)
+            and row.get("ticker") == symbol
+            and "rejecting_band" in row
+        ):
+            return REJECTING if row["rejecting_band"] else CLEAR
+    return UNRECORDED
+
+
+# The board row the `/4` intent is decided from: the same row with its grade
+# set to the record's close grade. The executor decides exits and eligibility
+# on the nightly close grades and the measured timing rule prices orders
+# decided at the close, so under the active policy the intent does not move
+# with the intraday re-grade (which is kept, and shown, as `grade_intraday`).
+def _at_the_close(row):
+    """Return `row` with `grade_live` replaced by its close grade, or None."""
+    return {**row, "grade_live": row.get("grade", "")} if row else row
+
+
+# Which side of the timing rule a row's decision is on: its action when it
+# is a Buy or a Sell, else its strategy intent; None when neither trades.
+def _timed_side(row) -> str | None:
+    """Return "buy", "sell" or None for the row."""
+    said = row["action"] if row["action"] is not Action.HOLD else row["strategy_action"]
+    if said is Action.BUY:
+        return "buy"
+    if said is Action.SELL:
+        return "sell"
+    return None
+
+
+# The word the board prints for a timed row: a sell that keeps a positive
+# target is a trim (the page's `actionWord` reads it the same way).
+def _timed_word(row, side) -> str:
+    """Return "Buy", "Sell" or "Trim"."""
+    if side == "buy":
+        return "Buy"
+    return "Trim" if (row.get("target_weight") or 0) > 0 else "Sell"
+
+
+# The measured level and the executor's band gate, applied to the `/4` board
+# after the intent is sized and funded.
+#
+# The operator trades his own account from this board, so a BUY, SELL or
+# TRIM must mean "act now". Each row keeps its intent (`strategy_action`,
+# `strategy_move_weight`, read by the charts) and gets:
+#   - `structure_gate`: the executor's band gate for the name; a Buy intent
+#     on a REJECTING name is a Hold whatever else is true.
+#   - `timing`: `entry_timing.timing` for its side - a Buy or Sell stands only
+#     when triggered (a 15-minute close reached the level today) or in the
+#     close window; otherwise it becomes a Hold of size 0 whose reason says
+#     what is planned and at what price.
+#   - `grade` (the record's close grade, the one the intent read) and
+#     `grade_intraday` (the candle's re-grade, None without a fresh read).
+# A row already Hold (stale evidence, an unusable quote, no cash, a pause)
+# keeps its reason and blocker: the timing only ever holds a trade back,
+# never creates one.
+def _time_the_board(result, record, snapshot, readings, intents, latch, now):
+    """Apply the level and the band gate to every `/4` row in place."""
+    from backend.market import entry_timing
+
+    session = now.astimezone(desk_freshness.NEW_YORK).date()
+    quotes = (snapshot or {}).get("quotes") or {}
+    grades = record.get("grades") or {}
+    for symbol, row in result.items():
+        gate = _structure_gate(record, symbol)
+        row["structure_gate"] = gate
+        row["grade"] = (grades.get(symbol) or {}).get("grade")
+        row["grade_intraday"] = (readings.get(symbol) or {}).get("grade_live")
+        side = _timed_side(row)
+        if side is None:
+            row["timing"] = None
+            continue
+        timed = entry_timing.timing(
+            entry_timing.row_for(latch, symbol, session),
+            quotes.get(symbol),
+            side,
+            now,
+            session,
+        )
+        row["timing"] = timed
+        if side == "buy" and gate == REJECTING:
+            intent = intents.get(symbol)
+            row.update(
+                action=Action.HOLD,
+                move_weight=0.0,
+                executable=False,
+                blocker=BAND_BLOCKER,
+                reason=f"{BAND_BLOCK}; {intent}" if intent else BAND_BLOCK,
+            )
+            continue
+        if row["action"] is Action.HOLD:
+            continue
+        word = _timed_word(row, side)
+        if timed["state"] in entry_timing.ACTING:
+            row["reason"] = f"{entry_timing.acting(word, timed)}; {row['reason']}"
+            continue
+        size = abs(row["move_weight"])
+        row["reason"] = f"{entry_timing.planned(word, size, timed)}; {row['reason']}"
+        row["action"] = Action.HOLD
+        row["move_weight"] = 0.0
+
+
+# Fund the person's board from their cash and, under the active policy, time
+# it. `intents` are the target sentences of the target-sized buys (None for
+# other rows); they are funded beside the band entries. Under the active
+# policy a name the executor's band gate blocks is never bought today, so it
+# takes no share of the cash bound, and the funded board is then held to the
+# measured level (`_time_the_board`). Without the active policy this is the
+# `/3` board's funding call exactly as it was.
+def _plan_personal_board(
+    result,
+    held,
+    equity,
+    cash,
+    snapshot,
+    open_entries,
+    paused,
+    now,
+    record,
+    intents,
+    *,
+    toward_targets,
+    readings,
+    timing_latch,
+):
+    """Fund the personal rows in place and time them on the `/4` board."""
+    blocked = (
+        {s for s in intents if _structure_gate(record, s) == REJECTING}
+        if toward_targets
+        else set()
+    )
+    apply_personal_account_plan(
+        result,
+        held,
+        equity,
+        cash,
+        snapshot,
+        open_entries,
+        paused,
+        now,
+        record,
+        target_buys={
+            symbol: (result[symbol]["strategy_move_weight"], intent)
+            for symbol, intent in intents.items()
+            if intent is not None and symbol not in blocked
+        },
+        close_grades=bool(toward_targets),
+    )
+    if toward_targets:
+        _time_the_board(result, record, snapshot, readings, intents, timing_latch, now)
+
+
+# The board-wide half of the timing, for the page: the rule, the level, the
+# session it is timing and its close window, and whether today's latch was
+# on file when the board was built.
+def _timing_summary(latch, now) -> dict:
+    """Return the `/4` board's timing summary."""
+    from backend.market import entry_timing
+
+    session = now.astimezone(desk_freshness.NEW_YORK).date()
+    clock = entry_timing.session_clock(session)
+    return {
+        "rule": entry_timing.RULE,
+        "level": entry_timing.LEVEL,
+        "session": session.isoformat(),
+        "close_cutoff": clock["cutoff"].isoformat(),
+        "moc_deadline": clock["moc"].isoformat(),
+        "latched": isinstance(latch, dict)
+        and latch.get("session") == session.isoformat(),
+    }
+
+
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
 def build(
     record,
@@ -928,7 +1135,10 @@ def build(
     pending=None,
     risk_budget_pct=None,
     entry_readings=None,
+    timing_latch=None,
 ):
+    # `timing_latch` is today's `entry_timing` latch document (or None); only
+    # the `/4` board reads it, through `_time_the_board`.
     now = now or datetime.now(UTC)
     # A personal cash figure that cannot bound a plan is a caller error, not a
     # reason to fall back to the per-row opinions (which would silently claim
@@ -1023,6 +1233,10 @@ def build(
     # a row that says so, because the exit question is the person's own.
     for symbol in sorted(set(record.get("grades") or {}) | set(book)):
         row = rows.get(symbol)
+        # Under the active policy the intent reads the record's close grade,
+        # the one the executor and the timing study decide on; the `/3`
+        # board keeps its re-grade at the candle.
+        intent_row = _at_the_close(row) if toward_targets else row
         quote = execution_quotes.describe(
             (quoted.get("quotes") or {}).get(symbol, {}),
             quoted.get("feed"),
@@ -1038,9 +1252,13 @@ def build(
         # A stale Buy opinion can otherwise suppress a current downgrade exit.
         entry = _unless_taken(
             entry_action(
-                row,
+                intent_row,
                 (entries or {}).get(symbol),
-                (readings.get(symbol) or {}).get("grade_live")
+                (
+                    None
+                    if toward_targets
+                    else (readings.get(symbol) or {}).get("grade_live")
+                )
                 or (record.get("grades") or {}).get(symbol, {}).get("grade"),
                 current,
             ),
@@ -1049,7 +1267,7 @@ def build(
         )
         deadline = desk_freshness.timestamp(expiries.get(symbol))
         action, move, reason = action_for_row(
-            row,
+            intent_row,
             quote,
             deadline,
             paused,
@@ -1156,7 +1374,7 @@ def build(
             personal=targets is None,
         )
     if targets is None:
-        apply_personal_account_plan(
+        _plan_personal_board(
             result,
             held,
             equity,
@@ -1166,11 +1384,10 @@ def build(
             paused,
             now,
             record,
-            target_buys={
-                symbol: (result[symbol]["strategy_move_weight"], intent)
-                for symbol, intent in intents.items()
-                if intent is not None
-            },
+            intents,
+            toward_targets=toward_targets,
+            readings=readings,
+            timing_latch=timing_latch,
         )
     return {
         "version": VERSION,
@@ -1182,6 +1399,9 @@ def build(
         "policy": (
             "Experimental targets; adopted gates; manual execution"
             if targets is not None
+            else "Nightly targets timed by the measured level (dip-or-close); "
+            "personal execution is manual"
+            if toward_targets
             else "Scheduled next-open strategy; personal execution is manual"
         ),
         # The optional funded-allocation metadata, shown as an explicit preview
@@ -1194,4 +1414,11 @@ def build(
             expected_account=expected_account,
         ),
         "rows": result,
+        # The `/4` board's actions are timed by the measured level; the key is
+        # absent on every other board so their payloads are unchanged.
+        **(
+            {"timing": _timing_summary(timing_latch, now)}
+            if toward_targets and targets is None
+            else {}
+        ),
     }

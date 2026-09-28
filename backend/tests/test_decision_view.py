@@ -548,6 +548,30 @@ def _shares(snapshot, weight, symbol="S11"):
     return weight * 100000 / snapshot["quotes"][symbol]["last"]
 
 
+# A test double of today's entry-timing latch in which every name's level
+# triggered on the snapshot's bar, on both sides. Since 2026-09-28 the `/4`
+# board says Buy or Sell only once the measured level has triggered (or in
+# the close window); the tests below are about sizing, funding and
+# precedence, so they read the board after a trigger, where it sizes
+# exactly as it did before the timing existed. `test_board_level_gate`
+# covers every timing state itself.
+def _triggered(snapshot, now):
+    from backend.market import entry_timing
+
+    session = now.astimezone(entry_timing.NEW_YORK).date().isoformat()
+    return {
+        "session": session,
+        "symbols": {
+            name: {
+                "open": quote["last"],
+                "buy_trigger": {"bar": quote["bar"], "price": quote["last"]},
+                "sell_trigger": {"bar": quote["bar"], "price": quote["last"]},
+            }
+            for name, quote in snapshot["quotes"].items()
+        },
+    }
+
+
 # The policy the board sizes toward is the live one, read from one place.
 def test_the_board_sizes_toward_the_active_policy():
     from backend.agents.trading.desk import live_policy
@@ -555,14 +579,21 @@ def test_the_board_sizes_toward_the_active_policy():
     assert live_policy.ACTIVE == POLICY
 
 
-# Nothing held, targets present, market open with cash: Buy to the target,
-# and the reason says the target and the policy.
+# Nothing held, targets present, market open with cash, the level triggered:
+# Buy to the target, and the reason says the target and the policy.
 def test_v4_targets_with_no_holdings_buy_to_the_target():
     record, snapshot, quoted, now = setup()
     _v4(record)
-    row = decision_view.build(record, [], 100000, snapshot, quoted, now, cash=100000)[
-        "rows"
-    ]["S11"]
+    row = decision_view.build(
+        record,
+        [],
+        100000,
+        snapshot,
+        quoted,
+        now,
+        cash=100000,
+        timing_latch=_triggered(snapshot, now),
+    )["rows"]["S11"]
     assert row["strategy_action"] == "Buy"
     assert row["strategy_move_weight"] == pytest.approx(1 / 11)
     assert row["action"] == "Buy"
@@ -667,9 +698,16 @@ def test_v4_held_under_target_adds_the_gap():
     _v4(record)
     held = [Holding("S11", _shares(snapshot, 0.04), 100.0, "2026-08-01")]
     # Cash for every target buy on the board, so the add is not scaled.
-    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=100000)[
-        "rows"
-    ]["S11"]
+    row = decision_view.build(
+        record,
+        held,
+        100000,
+        snapshot,
+        quoted,
+        now,
+        cash=100000,
+        timing_latch=_triggered(snapshot, now),
+    )["rows"]["S11"]
     assert row["strategy_action"] == "Buy"
     assert row["strategy_move_weight"] == pytest.approx(1 / 11 - 0.04)
     assert row["action"] == "Buy"
@@ -735,14 +773,25 @@ def test_v4_without_a_clock_never_prints_a_trim():
 
 # A held name the desk has downgraded is the whole-position exit, before any
 # target sizing: the target branch never reaches a name the desk no longer rates.
+# The downgrade is the record's close grade (the one the executor rotates
+# on, and whose policy target is then zero); an intraday re-grade alone is
+# not a `/4` exit (`test_board_level_gate`).
 def test_v4_held_and_downgraded_is_the_exit():
     record, snapshot, quoted, now = setup()
     _v4(record)
-    snapshot["technical"]["S11"] = {"now": 0.01, "close": 0.7, "stance": -1}
+    record["grades"]["S11"]["grade"] = "B"
+    record["targets"]["weights"]["S11"] = 0.0
     held = [Holding("S11", _shares(snapshot, 0.05), 100.0, "2026-08-01")]
-    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=50000)[
-        "rows"
-    ]["S11"]
+    row = decision_view.build(
+        record,
+        held,
+        100000,
+        snapshot,
+        quoted,
+        now,
+        cash=50000,
+        timing_latch=_triggered(snapshot, now),
+    )["rows"]["S11"]
     assert row["strategy_action"] == "Sell"
     assert row["strategy_move_weight"] == pytest.approx(-0.05)
     assert row["action"] == "Sell"
@@ -759,14 +808,21 @@ def test_v4_target_buys_share_the_cash_bound():
     _v4(record)
     wanted = sum(record["targets"]["weights"].values()) * 100000
     rows = decision_view.build(
-        record, [], 100000, snapshot, quoted, now, cash=wanted / 3
+        record,
+        [],
+        100000,
+        snapshot,
+        quoted,
+        now,
+        cash=wanted / 3,
+        timing_latch=_triggered(snapshot, now),
     )["rows"]
     funded = {s: r for s, r in rows.items() if r["action"] == "Buy"}
     assert set(funded) == {n for n in record["grades"] if n != "S0"}
     for row in funded.values():
         assert row["strategy_move_weight"] == pytest.approx(1 / 11)
         assert row["move_weight"] == pytest.approx(1 / 33, abs=1e-6)
-        assert row["reason"].startswith("Buy to 9.1% target")
+        assert "Buy to 9.1% target" in row["reason"]
     assert sum(r["move_weight"] for r in funded.values()) * 100000 == pytest.approx(
         wanted / 3, rel=1e-6
     )
@@ -778,12 +834,20 @@ def test_v4_a_firing_entry_still_answers_before_the_target():
     record, snapshot, quoted, now = setup()
     _v4(record)
     rows = decision_view.build(
-        record, [], 100000, snapshot, quoted, now, entries=FIRING, cash=100000
+        record,
+        [],
+        100000,
+        snapshot,
+        quoted,
+        now,
+        entries=FIRING,
+        cash=100000,
+        timing_latch=_triggered(snapshot, now),
     )["rows"]
     assert rows["S11"]["strategy_action"] == "Buy"
     assert "breakout" in rows["S11"]["reason"].lower()
     assert "target" not in rows["S11"]["reason"]
-    assert rows["S10"]["reason"].startswith("Buy to 9.1% target")
+    assert "Buy to 9.1% target" in rows["S10"]["reason"]
 
 
 # On a session every name carries a band reading, most of them below the
@@ -799,7 +863,15 @@ def test_v4_a_band_reading_below_the_trigger_does_not_starve_the_target_buy():
     _v4(record)
     quiet = {n: paper.ENTRY_BAND_Z / 2 for n in record["grades"]}
     rows = decision_view.build(
-        record, [], 100000, snapshot, quoted, now, entries=quiet, cash=100000
+        record,
+        [],
+        100000,
+        snapshot,
+        quoted,
+        now,
+        entries=quiet,
+        cash=100000,
+        timing_latch=_triggered(snapshot, now),
     )["rows"]
     for name in record["grades"]:
         if name == "S0":
@@ -807,7 +879,7 @@ def test_v4_a_band_reading_below_the_trigger_does_not_starve_the_target_buy():
         assert rows[name]["action"] == "Buy", rows[name]
         assert rows[name]["executable"] is True
         assert rows[name]["move_weight"] == pytest.approx(1 / 11, abs=1e-6)
-        assert rows[name]["reason"].startswith("Buy to 9.1% target")
+        assert "Buy to 9.1% target" in rows[name]["reason"]
 
 
 # Targets stamped with another policy, or none, change nothing: the `/3`

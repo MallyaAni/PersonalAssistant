@@ -211,6 +211,21 @@ def _green_day_skip_locked(
             print(f"  - {note}")
 
 
+# Record the candle just written into today's entry-timing latch
+# (`entry_timing.update`): the session's open and the first 15-minute close
+# at or through the measured level on each side, which the board's timed
+# actions read. The board stands without it, so a failure is printed to the
+# cron log and never stops the balancer.
+def _latch_entry_timing(data_dir: Path, live: dict) -> None:
+    """Latch the snapshot's opens and level crossings; never raise."""
+    try:
+        from backend.market import entry_timing
+
+        entry_timing.update(data_dir, live, datetime.now(UTC))
+    except Exception as exc:  # noqa: BLE001 - the latch never stops the balancer
+        print(f"Entry timing latch unavailable ({type(exc).__name__}: {exc})")
+
+
 # Keep a failed synthetic-account write separate from successfully published research.
 def _observe_paper(data_dir, record, snapshot, research):
     from backend.market import board_paper
@@ -319,6 +334,9 @@ def run(data_dir: Path, equity: float) -> Path:
         (data_dir / "desk" / LIVE_FILE).write_text(
             json.dumps(live, indent=2), encoding="utf-8"
         )
+        # Latch today's open and first level crossings from the same candle,
+        # so the board's timed BUY/SELL survives the price moving back.
+        _latch_entry_timing(data_dir, live)
         # Keep automatic candidate sizing separate from paper account operations.
         from backend.market import intraday_research
 

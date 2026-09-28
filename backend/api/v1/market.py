@@ -699,11 +699,16 @@ async def _desk_mine_payload(
     latest = event_status.for_planning(latest, _root())
     latest = _with_active_targets(latest)
     snap = _live_snapshot()
-    from backend.market import decision_view, execution_quotes
+    from backend.market import decision_view, entry_timing, execution_quotes
 
     quoted = await asyncio.to_thread(
         execution_quotes.fetch, list(latest.get("grades") or {})
     )
+    # Today's latch of the measured entry level, written by the balancer on
+    # every candle (None before the session's first one). Only the `/4`
+    # board reads it: a BUY/SELL there stands only once a 15-minute close has
+    # reached the level today, or in the close window.
+    latch = entry_timing.load(_root(), now.astimezone(entry_timing.NEW_YORK).date())
     # Experimental allocations remain on the research surface; never substitute
     # them for the adopted strategy's targets in the decision endpoint.
     # Each name's position on its own 20-day band at the live price, which is
@@ -748,6 +753,7 @@ async def _desk_mine_payload(
         pending=pending_buys,
         risk_budget_pct=risk_budget_pct,
         entry_readings=reads,
+        timing_latch=latch,
     )
     if history_context is not None:
         from backend.market import personal_history

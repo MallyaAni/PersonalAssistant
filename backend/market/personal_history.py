@@ -99,6 +99,9 @@ def source_fingerprint() -> dict[str, str]:
         "backend/api/v1/market.py",
         "backend/market/personal_history.py",
         "backend/market/decision_view.py",
+        # The `/4` board's timing and the measured level it reuses.
+        "backend/market/entry_timing.py",
+        "backend/market/fill_timing.py",
         "backend/market/personal_risk.py",
         "backend/market/holdings.py",
         "backend/market/desk_freshness.py",

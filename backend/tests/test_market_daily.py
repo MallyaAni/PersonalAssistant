@@ -242,6 +242,39 @@ def test_record_and_save(tmp_path):
     assert json.loads(path.read_text(encoding="utf-8"))["session"] == "2026-09-03"
 
 
+# Every graded name carries the executor's band-gate flag on the record: the
+# value `_band_blocked` hands `paper.plan(entry_blocked=...)` in the nightly,
+# which is `exit.evidence(panel).signalled()` on the decision session (the
+# predicate `simulate.run(block_overbought=True)` reads). The `/4` board's
+# structure gate reads exactly this flag (`decision_view._structure_gate`).
+def test_record_carries_the_executors_band_gate_for_every_name(monkeypatch):
+    from types import SimpleNamespace
+
+    from backend.agents.trading.desk import exit as exit_analyst
+    from backend.market import decision_view
+
+    report = _report()
+    signal = np.zeros(report.panel.adj_close.shape, dtype=bool)
+    signal[-1, report.panel.index("IREN")] = True
+    signal[0, report.panel.index("SNDK")] = True  # an earlier session: ignored
+    monkeypatch.setattr(
+        exit_analyst,
+        "evidence",
+        lambda panel: SimpleNamespace(signalled=lambda: signal),
+    )
+    data = market_daily.record(report)
+    blocked, flags = market_daily._band_blocked(report)
+    assert blocked == {"IREN"}
+    assert set(data["grades"]) <= set(data["levels"])
+    for ticker in data["grades"]:
+        assert data["levels"][ticker]["rejecting_band"] is flags[ticker]
+        assert decision_view._structure_gate(data, ticker) == (
+            decision_view.REJECTING if flags[ticker] else decision_view.CLEAR
+        )
+    assert data["levels"]["IREN"]["rejecting_band"] is True
+    assert data["levels"]["SNDK"]["rejecting_band"] is False
+
+
 # Persist each recorded source unchanged alongside its cited fiscal dates;
 # a new calculation version must not relabel an older saved decision.
 @pytest.mark.parametrize(
