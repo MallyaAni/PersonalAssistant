@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-28 — ML entry level run: the model's level is no better than trailing volatility; the board keeps dip-or-close
+
+`docs/research/ml-entry-level-2026-09-28.md`: four registered levels set by
+the CNN's next-session volatility forecast (or trailing volatility) against
+the board's `dip_or_close`, on the /4 policy's own orders. Every convention
+RECORD: none beats the board's rule by 2 bp a session with t >= 2 on
+2016-2023; the model equals its trailing-volatility twin (-0.02 bp/d, t
+-0.28). A dip fill was 9 bp worse than the close on 2016-2023 and 36 bp
+better on 2024-2026: the rule is neutral over the span, safe to show, not
+an edge.
+
 ## 2026-09-28 — The model's volatility forecast as the entry level: BUILT, not run
 
 The operator asked whether a machine-learning model can set a better

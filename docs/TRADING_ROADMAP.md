@@ -69,6 +69,12 @@ strategy that changes only when untouched sessions say so.
   of the fundamentals switch after a week of blocks; the FOMC verdict
   after six meetings; nothing on strategy.
 
+- 2026-09-28: ML entry level RAN
+  ([research/ml-entry-level-2026-09-28.md](research/ml-entry-level-2026-09-28.md))
+  - a level scaled by the CNN's volatility forecast is no better than
+  trailing volatility and no better than the fixed 1% (every convention
+  RECORD); the board keeps `dip_or_close`. Next: the late-day index flow as
+  a close-vs-dip switch.
 - 2026-09-26: the first point-in-time scorecard
   ([pit-scorecard-2026-09-26.md](research/pit-scorecard-2026-09-26.md)).
   On the names the desk could have known about (dated membership file,
