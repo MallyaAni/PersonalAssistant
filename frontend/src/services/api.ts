@@ -2631,13 +2631,50 @@ export interface DeskOpportunity {
   missing: string[]; method: string;
 }
 
+// One `/4` row's timing (`backend/market/entry_timing.timing`): a BUY, SELL or
+// TRIM stands only when `state` is `triggered` (a 15-minute close reached the
+// level today) or `close` (the close window); `reason` is the sentence for
+// the hover. `level` is `open` x (1 - 1%) for a buy and x (1 + 1%) for a sell.
+export interface DeskRowTiming {
+  rule: string;
+  side: 'buy' | 'sell';
+  state: 'pre-open' | 'waiting' | 'triggered' | 'close' | 'closed';
+  level_fraction: number;
+  session: string;
+  trading_day: boolean;
+  open: number | null;
+  level: number | null;
+  trigger_bar: string | null;
+  trigger_price: number | null;
+  close_cutoff: string;
+  moc_deadline: string;
+  reason: string;
+}
+
+// Present only on the `/4` board: its actions are timed by the measured level.
+export interface DeskTiming {
+  rule: string;
+  level: number;
+  session: string;
+  close_cutoff: string;
+  moc_deadline: string;
+  latched: boolean;
+}
+
 export interface DeskDecisions {
   as_of: string;
   session: string;
   written?: string;
   equity: number;
   holdings: Record<string, number>;
+  timing?: DeskTiming;
   rows: Record<string, {
+    // `/4` only: the timing of the row's trade, the executor's band gate,
+    // the close grade the action is based on and the candle's re-grade.
+    timing?: DeskRowTiming | null;
+    structure_gate?: 'rejecting' | 'clear' | 'unrecorded';
+    grade?: string | null;
+    grade_intraday?: string | null;
     opportunity?: DeskOpportunity;
     entry_status?: 'available' | 'unavailable';
     entry_reason?: string | null;

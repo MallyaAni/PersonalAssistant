@@ -219,39 +219,48 @@ test('default ranking follows grade action size and reranks expired intraday gra
   expect(errors).toEqual([])
 })
 
-// A record stamped with the active `/4` policy sizes toward its targets: with
-// nothing held and the market shut, a name the policy wants reads Buy with the
-// target-sized weight beside it and the readiness restriction beneath, so the
-// operator can execute it himself at the next open. Nothing is claimed executable.
-test('a /4 target buy shows its size with the market closed', async ({page}) => {
+// A record stamped with the active `/4` policy sizes toward its targets, and
+// since 2026-09-28 its board is TIMED (`decisions.timing`): the action cell
+// says BUY only when the measured level has triggered today or the close
+// window is open, because the operator acts on a BUY in his own account at
+// once. With the market shut the policy's target buy is therefore a Hold with
+// no size; the plan - the target sentence, the blocker and the timing - reads
+// on the row's hover, and the intended change stays in the details.
+test('a /4 target buy with the market closed is a Hold with the plan on hover', async ({page}) => {
   const {errors} = await setup(page, false, false, false, async () => {
     await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))
+    const timing = {rule: 'dip_or_close', side: 'buy', state: 'pre-open', level_fraction: .01, session: '2026-09-27', trading_day: false,
+      open: null, level: null, trigger_bar: null, trigger_price: null, close_cutoff: '2026-09-27T15:30:00-04:00', moc_deadline: '2026-09-27T15:50:00-04:00',
+      reason: "No regular session on 2026-09-27; the next session's first 15-minute bar sets its open and the level 1% under it"}
     await page.route('**/desk/mine', route => route.fulfill({json: {
       session, rows: [], grades_live: {},
-      decisions: {session, written, equity: 100000, holdings: {}, rows: {
+      decisions: {session, written, equity: 100000, holdings: {},
+        timing: {rule: 'dip_or_close', level: .01, session: '2026-09-27', close_cutoff: '2026-09-27T15:30:00-04:00', moc_deadline: '2026-09-27T15:50:00-04:00', latched: false},
+        rows: {
         AAPL: {action: 'Hold', strategy_action: 'Buy', executable: false, blocker: 'market closed or clock unavailable',
           reason: 'Buy to 9.1% target (policy graded-equal-weight/4); buy not executable: market closed or clock unavailable',
           move_weight: 0, strategy_move_weight: .0909, target_weight: .0909, current_weight: 0, valid_until: null,
-          entry_status: 'unavailable', entry_reason: 'Entry data unavailable: 2026-09-27 is not an exchange session'},
+          entry_status: 'unavailable', entry_reason: 'Entry data unavailable: 2026-09-27 is not an exchange session',
+          timing, structure_gate: 'clear', grade: 'A', grade_intraday: null},
         NVDA: {action: 'Hold', strategy_action: 'Hold', executable: false, blocker: 'market closed or clock unavailable',
           reason: 'Maintain position (9.1% of account) (market closed or clock unavailable)', move_weight: 0, strategy_move_weight: 0,
-          target_weight: .0909, current_weight: .0909, valid_until: null},
+          target_weight: .0909, current_weight: .0909, valid_until: null, timing: null, structure_gate: 'clear', grade: 'A', grade_intraday: null},
         MSFT: {action: 'Hold', strategy_action: 'Hold', executable: false, blocker: 'market closed or clock unavailable',
           reason: 'Above target (9.1%; holding 14.0%); trimmed at the next reset (market closed or clock unavailable)',
-          move_weight: 0, strategy_move_weight: 0, target_weight: .0909, current_weight: .14, valid_until: null},
+          move_weight: 0, strategy_move_weight: 0, target_weight: .0909, current_weight: .14, valid_until: null,
+          timing: null, structure_gate: 'clear', grade: 'A', grade_intraday: null},
       }},
     }}))
   })
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
-  await expect(board.getByLabel('AAPL size')).toHaveText('9.1%')
+  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL size')).toHaveText('—')
   const aaplRow = board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})
-  await expect(aaplRow).toHaveAttribute('title', /Regular-session execution is blocked; the session is closed or its clock is unavailable/)
-  const readiness = board.getByLabel('AAPL execution readiness', {exact: true})
-  await expect(readiness).toHaveText('Regular-session execution blocked')
-  await expect(readiness).toHaveAttribute('title', 'Regular-session execution is blocked; the session is closed or its clock is unavailable')
-  // A non-session entry read does not turn a target-sized Buy into "Data missing".
-  await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})).not.toContainText('Data missing')
+  await expect(aaplRow).toHaveAttribute('title', /^Hold: Buy to 9\.1% target \(policy graded-equal-weight\/4\); buy not executable: market closed or clock unavailable/)
+  await expect(aaplRow).toHaveAttribute('title', /Timing · before the level is set: No regular session on 2026-09-27/)
+  // A non-session entry read does not turn a planned Buy into "Data missing".
+  await expect(aaplRow).not.toHaveAttribute('title', /Data missing/)
+  await expect(board.getByLabel('AAPL execution readiness', {exact: true})).toHaveCount(0)
   await expect(page.getByLabel('Today', {exact: true})).not.toContainText('1 executable signal.')
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('Hold')
   await expect(board.getByLabel('NVDA size')).toHaveText('—')

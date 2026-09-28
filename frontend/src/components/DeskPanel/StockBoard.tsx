@@ -106,6 +106,36 @@ export const actionWord = (plan: PlanAction, decision?: {strategy_action?: strin
   return plan.toUpperCase()
 }
 
+// Whether the decisions on screen are the `/4` board's timed ones for the
+// record on screen (the backend sends `decisions.timing` only there). Shared
+// by the plan column, the size, the grade and the executable-signal count so
+// they cannot disagree about which board it is.
+export const timedBoard = (decisions: DeskDecisions | undefined, latest: DeskRecord | null | undefined): boolean =>
+  !!decisions?.timing && !!latest && decisions.session === latest.session && decisions.written === latest.written
+
+// The timing states in the operator's words, for the hover.
+const TIMING_STATE: Record<string, string> = {
+  'pre-open': 'before the level is set',
+  waiting: 'waiting for the level',
+  triggered: 'level reached today',
+  close: 'close window',
+  closed: 'session closed',
+}
+
+// The lines a timed `/4` row adds to its hover under the word and reason: the
+// timing state with its sentence, the executor's band gate, and the grade the
+// action is based on beside the candle's re-grade. Everything else about the
+// row stays off the cell, which shows only the word and the size.
+export const timedHover = (decision: DeskDecisions['rows'][string], session: string): string[] => {
+  const lines: string[] = []
+  if (decision.timing) lines.push(`Timing · ${TIMING_STATE[decision.timing.state] ?? decision.timing.state}: ${decision.timing.reason}`)
+  lines.push(decision.structure_gate === 'rejecting' ? "Structure · rejecting its upper band (executor's gate): no buy today"
+    : decision.structure_gate === 'clear' ? "Structure · not rejecting its upper band (executor's gate)"
+    : 'Structure · band gate not recorded on this decision; not treated as a block')
+  lines.push(`Grade ${decision.grade || '—'} at the ${session} close (the one the action uses)${decision.grade_intraday ? ` · intraday reading ${decision.grade_intraday}` : ' · no intraday reading'}`)
+  return lines
+}
+
 const ORDER: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
 type SortColumn = 'ticker' | 'grade' | 'opportunity' | 'plan' | 'weight' | 'size'
 // The natural first direction for each column: a name list reads A to Z, a
@@ -437,8 +467,11 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
     return !paused && planOf(ticker) !== 'Hold' && Number.isFinite(move) && move !== 0
       ? Math.abs(move as number) : null
   }
+  // The `/4` board's actions are timed and based on the record's close grade,
+  // so its grade column shows that grade; the candle's re-grade is on hover.
+  const timed = timedBoard(decisions, latest)
   const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
-    ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
+    ticker, grade: timed ? grade.grade : grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
     opportunity: opportunity(ticker),
     narrow: narrow(ticker),
@@ -548,7 +581,9 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
         <p>{sizingLine}</p>
         <p aria-label="Intraday grade coverage">{freshGradeCount}/{graded.length} fresh intraday grades{freshGradeCount < graded.length ? ` · other grades: ${latest.session} close` : ''}. Grades are not entry signals.</p>
         {coverage && <p>{coverage.graded} graded · {coverage.tracked} tracked</p>}
-        <p>Action is the strategy recommendation. Blocked recommendations have no trade size. Size is a change in your account allocation, not a profit target.</p>
+        {timed
+          ? <p aria-label="Timed actions">Action is BUY, SELL or TRIM only when it is due now: a 15-minute close {`${+((decisions?.timing?.level ?? 0) * 100).toFixed(2)}%`} through today&apos;s open, else the close window (market-on-close); otherwise Hold, with the planned size and level on the row&apos;s hover. Size is a change in your account allocation, not a profit target.</p>
+          : <p>Action is the strategy recommendation. Blocked recommendations have no trade size. Size is a change in your account allocation, not a profit target.</p>}
       </details>
     </div>
     {toolbar}
@@ -597,7 +632,12 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const canSize = executableSize(row.ticker) !== null
           const intended = intendedSize(row.ticker)
           const plan = paused ? 'Hold' : planOf(row.ticker)
-          const readiness = paused ? 'FOMC pause' : plan === 'Hold' ? decision?.entry_status === 'unavailable' ? 'Data missing' : null : decision?.executable === false
+          // What the desk wants, as opposed to the word shown. They are the
+          // same except on the timed `/4` board, where a planned Buy waiting
+          // for its level shows Hold: missing entry data speaks only for a
+          // Hold intent, never over a planned trade's own sentence.
+          const intentPlan = timed && !paused ? decision?.strategy_action ?? decision?.action ?? 'Hold' : plan
+          const readiness = paused ? 'FOMC pause' : plan === 'Hold' ? intentPlan === 'Hold' && decision?.entry_status === 'unavailable' ? 'Data missing' : null : decision?.executable === false
             ? decision.blocker || (marketClosed ? 'Market closed' : 'Blocked now')
             : marketClosed ? 'Market closed'
             : !Number.isFinite(deadline) || deadline <= now ? 'Price check needed' : null
@@ -605,7 +645,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const position = brokerPositions.find(p => p.symbol === row.ticker)
           const reason = paused ? 'FOMC cycle: regular trading paused'
             : !(row.ticker in latest.grades) ? 'Outside current coverage; review manually'
-            : plan === 'Hold' && decision?.entry_status === 'unavailable' ? decision.entry_reason || 'Entry data unavailable'
+            : plan === 'Hold' && intentPlan === 'Hold' && decision?.entry_status === 'unavailable' ? decision.entry_reason || 'Entry data unavailable'
             : decision?.reason || decision?.blocker || 'No current strategy decision'
           // The plan cell is the full trade affordance (eligibility, record
           // fill) when the read answers for this name; a name the plan feed
@@ -624,24 +664,35 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           // - now reads on hover, so the row itself is the word and the size.
           const rowTitle = isCash ? undefined : [
             `${word}: ${reason}`,
+            // The timed `/4` row also says when it acts, whether the band
+            // gate allows a buy, and which grade the action read.
+            ...(timed && decision ? timedHover(decision, latest.session) : []),
             readiness ? clockRestriction?.full ?? readiness : null,
             spreadNote,
           ].filter(Boolean).join(' · ')
+          // The timed `/4` size is the size of the timed trade itself, and
+          // only while the word is BUY, SELL or TRIM; a Hold shows none.
+          const timedSize = timed && !isCash && plan !== 'Hold' && decision && Number.isFinite(decision.move_weight) && decision.move_weight !== 0
+            ? Math.abs(decision.move_weight) : null
           return <Fragment key={row.ticker}><tr title={rowTitle} className={`border-t border-black/[0.05] ${isCash ? 'bg-[#0071e3]/10' : ''}`}>
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
               <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} />{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
-            <td className="text-xs" aria-label={`${row.ticker} displayed grade`} title={isCash ? undefined : grades[row.ticker] ? 'Current intraday grade' : `Recorded grade at the ${latest.session} close`}>
+            <td className="text-xs" aria-label={`${row.ticker} displayed grade`} title={isCash ? undefined : timed
+              ? `Grade at the ${latest.session} close, the one the action uses${(decision?.grade_intraday ?? grades[row.ticker]?.grade_live) ? ` · intraday reading ${decision?.grade_intraday ?? grades[row.ticker]?.grade_live}` : ''}`
+              : grades[row.ticker] ? 'Current intraday grade' : `Recorded grade at the ${latest.session} close`}>
               {!isCash && <><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#1e7a3a]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span>
-                <div className="text-[10px] text-[#6e6e73]">{row.grade ? grades[row.ticker] ? 'Intraday' : 'Close' : 'Unrated'}</div></>}
+                <div className="text-[10px] text-[#6e6e73]">{row.grade ? !timed && grades[row.ticker] ? 'Intraday' : 'Close' : 'Unrated'}</div></>}
             </td>
             <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{word}</span>
               {/* The readiness and spread caveats are off the visible row (they read on the row's hover) but stay in the accessibility tree, since a screen reader has no hover. */}
               {readiness && <span aria-label={`${row.ticker} execution readiness`} title={clockRestriction?.full ?? readiness} className="sr-only">{clockRestriction?.short ?? readiness}</span>}
               {spreadNote && <span aria-label={`${row.ticker} spread verification`} className="sr-only">{spreadNote}</span>}</td>
-            <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : !isCash && intended !== null ? percentage(intended) : '—'}</td>
+            <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated`
+              : timed && !isCash ? timedSize !== null ? <>{percentage(timedSize)}<span className="hidden sm:inline"> of account</span></> : '—'
+              : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : !isCash && intended !== null ? percentage(intended) : '—'}</td>
 
           </tr>
           {/* Details follow the visible board width, not the horizontally scrollable table. */}
@@ -649,10 +700,10 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <p aria-label={`${row.ticker} decision reason`} className="mb-2 text-xs">{reason}</p>
             <dl aria-label={`${row.ticker} allocation and evidence`} className="mb-3 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
               <div><dt className="text-[#6e6e73]">Regular-session signal price</dt><dd>{quote && Number.isFinite(quote.last) ? `$${quote.last.toFixed(2)} · ${quote.bar}` : 'Unavailable'}</dd></div>
-              <div><dt className="text-[#6e6e73]">Combined grade · not an entry signal</dt><dd aria-label={`${row.ticker} grade`}>{row.grade || 'Unavailable'} · {grades[row.ticker] ? 'intraday' : `${latest.session} close`}</dd></div>
+              <div><dt className="text-[#6e6e73]">Combined grade · not an entry signal</dt><dd aria-label={`${row.ticker} grade`}>{row.grade || 'Unavailable'} · {!timed && grades[row.ticker] ? 'intraday' : `${latest.session} close`}{timed && (decision?.grade_intraday ?? grades[row.ticker]?.grade_live) ? ` · intraday reading ${decision?.grade_intraday ?? grades[row.ticker]?.grade_live}` : ''}</dd></div>
               <div><dt className="text-[#6e6e73]">Analyst conviction · not a return forecast</dt><dd aria-label={`${row.ticker} opportunity`}>{row.opportunity !== null ? `${row.opportunity.toFixed(1)}/10` : 'Unavailable'}{row.narrow.length > 0 && ` · missing ${row.narrow.map(analystLabel).join(', ')}`}</dd></div>
               <div><dt className="text-[#6e6e73]">{showSizes ? 'Experimental research allocation' : 'Strategy target at reset'}</dt><dd aria-label={`${row.ticker} target allocation`}>{row.weight !== null ? percentage(row.weight) : 'Unavailable'}</dd></div>
-              <div><dt className="text-[#6e6e73]">Intended allocation change · before readiness checks</dt><dd aria-label={`${row.ticker} move`}>{plan === 'Hold' || strategyMove === undefined ? '—' : `${strategyMove > 0 ? '+' : ''}${percentage(strategyMove)}`}</dd></div>
+              <div><dt className="text-[#6e6e73]">Intended allocation change · before readiness checks</dt><dd aria-label={`${row.ticker} move`}>{intentPlan === 'Hold' || strategyMove === undefined ? '—' : `${strategyMove > 0 ? '+' : ''}${percentage(strategyMove)}`}</dd></div>
               <div><dt className="text-[#6e6e73]">Recorded personal position</dt><dd aria-label={`${row.ticker} recorded personal position`}>{holdings === null ? 'Unavailable' : held ? <>{held.shares.toLocaleString()} shares · entry ${held.entry_price.toFixed(2)}{quote && Number.isFinite(quote.last) && <div>P/L {((quote.last - held.entry_price) * held.shares).toLocaleString('en-US', {style: 'currency', currency: 'USD'})}</div>}</> : 'None recorded'}</dd></div>
               <div><dt className="text-[#6e6e73]">Separate paper position · {brokerCurrent ? 'broker snapshot' : latest.paper ? `saved ${latest.paper.session}` : broker == null ? 'loading' : 'unavailable'}</dt><dd aria-label={`${row.ticker} paper position`}>{!paperAvailable ? 'Unavailable' : position ? <>{position.qty.toLocaleString()} shares<div>{Number.isFinite(position.unrealized_pl) ? `P/L ${position.unrealized_pl.toLocaleString('en-US', {style: 'currency', currency: 'USD'})}` : 'P/L unavailable'}</div></> : 'None'}</dd></div>
             </dl>

@@ -4,7 +4,7 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, StockBoard, type BoardEvent, type PlanAction } from './StockBoard'
+import { BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, StockBoard, timedBoard, type BoardEvent, type PlanAction } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { TickerChart } from './TickerChart'
@@ -1228,6 +1228,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       if (!current()) return
       setLive((previous) => ({ ...previous, stale: true, reason: 'Regular-session data refresh failed; showing last known regular data.' }))
     }
+    // Always re-read the personal plan after the candle: whenever `/desk/live`
+    // carries a new `as_of`, the timed `/4` actions may have changed with it.
     await refreshMine(current)
     if (!current()) return
     try {
@@ -1329,6 +1331,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions, live.extended_hours])
 
   // Refresh quote eligibility between candle updates and ignore obsolete account requests.
+  //
+  // The timed `/4` board depends on this: the backend re-reads the balancer's
+  // live.json and today's entry-timing latch on every `/desk/mine` request, so
+  // a level trigger the balancer latched reaches the page within 15 seconds
+  // while it is visible. A hidden tab skips these, and the minute `poll`
+  // (which reads `/desk/live` and then always re-reads `/desk/mine`, so a new
+  // `as_of` is followed by a fresh plan at once) keeps it within a minute;
+  // returning to the tab polls immediately.
   useEffect(() => {
     let stopped = false
     let busy = false
@@ -1388,9 +1398,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // Count only decisions the backend marks executable while XNYS is open;
   // blocked strategy intent remains visible in the board but never inflates
   // the number described as actionable now.
+  const timed = timedBoard(decisions, latest)
   const eligibleNow = decisions && decisions.session === latest?.session && decisions.written === latest?.written && !eventPaused && exchange.open
     ? Object.values(decisions.rows).filter(row => {
-      const intent = row.strategy_action ?? row.action
+      // On the timed `/4` board only a timed Buy/Sell is a signal to act on.
+      const intent = timed ? row.action : row.strategy_action ?? row.action
       const deadline = row.valid_until ? Date.parse(row.valid_until) : Number.NaN
       return (intent === 'Buy' || intent === 'Sell')
         && row.executable !== false
@@ -2295,7 +2307,13 @@ const planFor = (
   // No readable decision, so there is nothing to do: Hold, and say why on
   // hover. "Wait" was a fourth action pretending the page knew something.
   if (!row) return {action: 'Hold', reason: 'No current decision for this account. Refresh to re-read it.', blocked: false, blocker: null}
-  const intent = row.strategy_action ?? row.action
+  // The `/4` board (the backend sends `decisions.timing`) shows the TIMED
+  // decision, not the intent: `action` is BUY/SELL only once the measured
+  // level has triggered today or the close window is open, and the operator
+  // acts on it in his own account at once. Every other board keeps showing
+  // the intent with its readiness beneath, as before.
+  const timed = timedBoard(decisions, latest)
+  const intent = timed ? row.action : row.strategy_action ?? row.action
   if (!PLAN_ACTIONS.includes(intent as PlanAction)) return {action: 'Hold', reason: 'Unrecognized decision; refresh before acting.', blocked: false, blocker: null}
   const deadline = row.valid_until ? Date.parse(row.valid_until) : Number.NaN
   const deadlineMissing = !Number.isFinite(deadline)
@@ -2307,7 +2325,9 @@ const planFor = (
     : 'price evidence has expired'
   return {
     row,
-    action: intent as PlanAction,
+    // A timed trade whose evidence has lapsed on the page is a Hold until
+    // the next refresh confirms it: a BUY must never outlive its evidence.
+    action: timed && blocked ? 'Hold' : intent as PlanAction,
     reason: row.reason,
     blocked,
     blocker,
@@ -2344,7 +2364,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
     <div className="font-medium">{action.toUpperCase()}</div>
     {executionStatus}
     {spreadCaveat}
-    {terse && !blocked && <p aria-label={`${ticker} decision reason`} className="text-xs font-normal text-[#6e6e73]">{action === 'Hold' && row.entry_status === 'unavailable' ? row.entry_reason ?? 'Entry data unavailable' : reason}</p>}
+    {terse && !blocked && <p aria-label={`${ticker} decision reason`} className="text-xs font-normal text-[#6e6e73]">{action === 'Hold' && (row.strategy_action ?? row.action) === 'Hold' && row.entry_status === 'unavailable' ? row.entry_reason ?? 'Entry data unavailable' : reason}</p>}
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Recorded allocation & execution quote</summary>
       <div>Recorded personal allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)} at the next reset</div>
       {row.quote ? <>
