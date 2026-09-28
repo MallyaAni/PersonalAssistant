@@ -1044,6 +1044,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     redeploy_buffer: float = REDEPLOY_BUFFER,
     midcycle_exits: bool = True,
     reset_topup: bool = False,
+    midcycle_trims: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -1217,6 +1218,20 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     delivered and the retry could not place is put back to today's targets
     through the same redeploy, with `redeploy_buffer` kept in cash. The
     defaults of all four leave every result byte-identical.
+
+    `midcycle_trims` (requires `live_midcycle` and a `weight_filter`) lets
+    the research hook sell between resets under the live rule. Without it
+    the live mid-cycle plan replaces the target the hook returned, so a
+    hook can only act on rebalance sessions (the catastrophe stop priced
+    itself under plain fills for that reason). With it, on a mid-cycle
+    session, every name whose filtered target is below the target the hook
+    received (the held book's weight) is sold down to the filtered weight
+    - the plan's order for the name is capped at the shares the shared
+    planner sizes for that target - on top of the live plan's rotation
+    sells, entries and redeploy; a name the hook left alone or raised is
+    untouched (a raise is expressed through the allocator's targets, which
+    the redeploy buys toward). The sale fills as every live sell does, at
+    the close, held back on a green open. Off, every result is byte-identical.
     """
     decide = allocator or _targets
     if midcycle_entries not in MIDCYCLE_ENTRIES:
@@ -1241,6 +1256,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         raise ValueError(
             "reset_topup is for a book without live_midcycle; use midcycle_redeploy"
         )
+    if midcycle_trims and (not live_midcycle or weight_filter is None):
+        raise ValueError("midcycle_trims requires live_midcycle and a weight_filter")
     fired, blocked, trend_up, dips = _signals_for(
         report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
     )
@@ -1606,13 +1623,19 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 if added:
                     reason = "dip add"
                     dip_adds += added
+        trimmed = None
         if weight_filter is not None:
             # The research hook reads t's close and the decided target, and
             # may only return a target of the same shape; the fill below is
             # then the desk's own.
+            before_filter = np.asarray(target, dtype=float)
             target = np.asarray(weight_filter(t, target, closes[t]), dtype=float)
             if target.shape != (names,):
                 raise ValueError("weight_filter must return one weight per name")
+            if midcycle_trims and not rebalanced:
+                # The names the hook cut below what the book holds: the live
+                # plan below is capped to the filtered weight for them.
+                trimmed = target < before_filter - 1e-12
         # The quantity is decided from what the decision could see - t's
         # close - and only then filled at t + 1's open. Buys and sells can
         # fill at different prices (the paper account sells on the close
@@ -1675,11 +1698,17 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 unfunded=unfunded if deferred_buys and not reduced else None,
                 variant=variant,
             )
+            reason = "shared paper rotation and entry policy"
+            if trimmed is not None and trimmed.any():
+                # The research trim: sold down to the filtered weight, sized
+                # by the shared planner at t's close like every other order.
+                cap = book.plan(target, closes[t])
+                order = np.where(trimmed, np.minimum(order, cap), order)
+                reason = "shared paper rotation and entry policy; research trim"
             if reduced:
                 order = np.minimum(order, book.shares)
             else:
                 pending_deferred = unfunded
-            reason = "shared paper rotation and entry policy"
         elif carried:
             order = _deferred_leg(book, report, t, blocked, carried, order)
         topped_up = False

@@ -24,6 +24,14 @@ the plan fixes, and writes `<root>/desk/<--out>` (default
 without the store; `--models none` with `--export` exits after writing.
 `--benchmarks` names the market channels wanted (default SPY,QQQ,SMH);
 the ones the store holds are used and the payload says which.
+`--export-forecasts <npz>` writes the out-of-sample ``drawdown20`` forecast
+of the first requested model that produced one (the CNN when it is among
+them) per (ticker, date) through `drawdown_forecast.save_forecasts`, for
+the profit-taking study's `--drawdown-forecasts`:
+
+    python -m backend.cli.market_deep_stage2 --dataset deep_stage2.npz \
+        --models cnn --targets drawdown20 --device cuda \
+        --export-forecasts drawdown_forecasts.npz --out deep_stage2_dd.json
 
 The protocol and the kill criteria are the pre-registration
 `docs/research/deep-stage2-plan-2026-09-27.md`, implemented in
@@ -50,7 +58,13 @@ from backend.cli.market_session_anatomy import (
     load_cubes,
     membership_mask,
 )
-from backend.market import deep_intraday, deep_stage2, session_anatomy, universe
+from backend.market import (
+    deep_intraday,
+    deep_stage2,
+    drawdown_forecast,
+    session_anatomy,
+    universe,
+)
 from backend.market.deep_stage2 import Dataset2
 from backend.market.store import MarketStore
 
@@ -120,6 +134,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--dataset",
         default=None,
         help="train on a dataset written by --export (no store, no cubes, no desk)",
+    )
+    parser.add_argument(
+        "--export-forecasts",
+        default=None,
+        help=(
+            "write the OOS drawdown20 forecast per (ticker, date) to this npz "
+            "(the CNN's when requested, else the first model that produced one)"
+        ),
     )
     parser.add_argument("--json", action="store_true", help="print the payload as JSON")
     return parser
@@ -376,6 +398,16 @@ def run(
         max(c.dates[-1] for c in cubes.values()) if cubes else ds.sessions[-1]
     )
     payload["dataset_file"] = str(args.dataset) if args.dataset else None
+    export_forecasts = getattr(args, "export_forecasts", None)
+    if export_forecasts:
+        payload["forecast_export"] = write_forecasts(
+            ds,
+            forecasts,
+            Path(export_forecasts),
+            device,
+            str(args.dataset) if args.dataset else str(root),
+            say,
+        )
     path = root / "desk" / out_name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
@@ -385,6 +417,56 @@ def run(
         print(render(payload), file=out)
         print(f"\nwrote {path}", file=out)
     return 0
+
+
+# Write the drawdown20 forecast of one model to `path` for the
+# profit-taking study: the CNN's when it ran, else the first model in
+# request order that produced one. Returns the export's summary, or a note
+# saying why nothing was written (no model ran on drawdown20).
+def write_forecasts(
+    ds: Dataset2,
+    forecasts: dict[tuple[str, str], deep_intraday.Forecast],
+    path: Path,
+    device: str,
+    dataset: str,
+    say: Callable[[str], None],
+) -> dict[str, Any]:
+    """Write the drawdown20 forecast npz and return its summary or a note."""
+    target = drawdown_forecast.TARGET
+    candidates = [m for (m, t) in forecasts if t == target]
+    if not candidates:
+        note = f"nothing to export: no model produced a {target} forecast"
+        say(note)
+        return {"written": None, "note": note}
+    model = (
+        drawdown_forecast.MODEL
+        if drawdown_forecast.MODEL in candidates
+        else candidates[0]
+    )
+    forecast = forecasts[(model, target)]
+    meta = drawdown_forecast.summary(
+        ds,
+        forecast,
+        model,
+        device,
+        dataset,
+        float(sum(f["seconds"] for f in forecast.fits)),
+    )
+    drawdown_forecast.save_forecasts(
+        path,
+        drawdown_forecast.Forecasts(
+            dates=ds.dates,
+            tickers=ds.tickers,
+            forecast=forecast.values,
+            realized=ds.y_drawdown20,
+            meta=meta,
+        ),
+    )
+    say(
+        f"wrote {model} {target} forecasts to {path}: {len(ds):,} rows,"
+        f" {meta['scored_rows']:,} scored"
+    )
+    return session_anatomy.json_ready({"written": str(path), **meta})
 
 
 # Entry point.

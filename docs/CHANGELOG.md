@@ -1,5 +1,74 @@
 # Changelog
 
+## 2026-09-27 — Profit-taking and dip-buying rules on the `/4` book: BUILT, not run
+
+The operator's reading of the live policy is that it is bad at taking
+profits and at buying dips and should lead the market rather than wait for
+its reset. Pre-registration first, with the prior stated (every related
+trim has cost return on this momentum-graded book; the dip add is the one
+rule with a plausible positive prior, and the session-anatomy finding that
+dips continue slightly cuts against it) and the floors fixed:
+`docs/research/profit-taking-plan-2026-09-27.md`.
+
+`backend/market/profit_taking.py` prices seven registered trials on the
+pit scorecard's offsets and costs under the live executor with the
+redeploy of idle cash as the control ("ew-redeploy": `_live_options` +
+`midcycle_redeploy=True`): `trim-runup-20` (a held name at 1.5x its target
+is trimmed back to target mid-cycle), `trim-rsi` (RSI(14) > 80 halves the
+name until < 60), `trim-band` (a close one sigma above the upper 20-day
+band, z > 3 in sigma units, halves it until back inside), `dip-add` (8%
+under the 21-session EMA raises the target to 1.5x under the 20% hold
+limit, paid from cash and pro-rata trims of the others, restored at the
+reset), and with `--drawdown-forecasts` two trims on the stage-2 CNN's
+20-session drawdown forecast (the worst decile of the day's A/A+ book by
+rank halved until it leaves the decile; the stop variant exits 15% below
+the trim close). Each rule is an allocator wrapper (the policy's targets
+with the rule's state applied) plus the `weight_filter` hook; the restore
+is the executor's own redeploy or reset. Statistics as the other studies
+(20 offsets, 10/25 bp, the windows, paired Newey-West t at lag 20 against
+the control, offsets above the control, the ledger's exposure reading)
+plus trims and adds a year, mean trim size, the "sold too early" share
+(the name's close 20 sessions later above the trim close), the median
+forward return after a trim and the bp of equity the sold slice would have
+earned. ADOPT (registered) at >= +1.0 pt on 2016-2023 at 25 bp with paired
+t >= 2.0, not worse on 2024-2026 and drawdown within 3 pt; else RECORD;
+CONSISTENT per the offsets sign test as the mid-cycle study reads it;
+SKIPPED for a model rule without the file. `python -m
+backend.cli.market_profit_taking` writes `<root>/desk/profit_taking.json`
+with the table, the trim statistics, the largest trims of the median
+offset and the verdict.
+
+`simulate.run` gained `midcycle_trims` (default off, byte-identical):
+under `live_midcycle` the mid-cycle plan replaces the target the
+`weight_filter` hook returned, so a hook could only act on rebalance
+sessions; with the option on, a name the hook cut below the held weight
+is sold down to it on top of the live plan, sized by the shared planner
+and filled as every live sell is (at the close, held on a green open).
+It requires `live_midcycle` and a hook, and is refused otherwise.
+
+`backend/market/drawdown_forecast.py` mirrors `vol_forecast`: the CNN's
+out-of-sample `drawdown20` forecast per (ticker, date) written to one npz
+(`export_forecasts` runs `deep_stage2.walk_forward` on that target alone;
+the ridge where torch is absent), the round trip, and `align` onto a
+panel with row (name, t) at the position of date t. `market_deep_stage2
+--export-forecasts <npz>` writes the same file from the study's own run
+(the CNN's when it ran, else the first model that produced one), so the
+RTX produces it with `--dataset deep_stage2.npz --models cnn --targets
+drawdown20 --device cuda --export-forecasts drawdown_forecasts.npz`.
+
+Tests: `backend/tests/test_profit_taking.py` (14: the variant set, the
+control's options, the control identical to `simulate.run` under the live
+options with the redeploy, the hook's default byte-identical and its
+refusals, a mid-cycle trim actually sold at the next fill, the indicators
+by hand, each rule on hand-built paths - the run-up at the threshold and
+not below, the RSI and band trims firing and restoring, the dip add capped
+at the hold limit and paid by the others, the forecast decile and the
+stop - every rule priced on the fixture, the trim statistics, the verdict
+floors, skips and sign test, the command with the price rules alone and
+with a synthetic forecast file) and `backend/tests/test_drawdown_forecast.py`
+(5: the round trip, alignment without lookahead, the ridge export, the
+stage-2 flag, the CNN export under importorskip). 18 pass, 1 skips
+without torch; the command has not run against the store.
 ## 2026-09-27 — Chart markers show what /4 does: entries, exits, resets; denominator drift no longer reads as add/trim
 
 The per-ticker chart's historical buy/add/trim/sell markers

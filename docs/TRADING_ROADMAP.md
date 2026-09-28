@@ -110,6 +110,30 @@ strategy that changes only when untouched sessions say so.
   that branch lands, and `agent-trading-desk.svg` needs re-rendering
   (source updated, no browser in the sandbox).
 
+- 2026-09-27, late night: profit-taking and dip-buying rules on the `/4`
+  book, BUILT and not run
+  ([research/profit-taking-plan-2026-09-27.md](research/profit-taking-plan-2026-09-27.md);
+  `market/profit_taking.py`, `market/drawdown_forecast.py`, `python -m
+  backend.cli.market_profit_taking`). The operator's reading - the policy
+  is bad at taking profits and buying dips and should lead the market -
+  priced as seven registered trials under the live executor with the
+  redeploy as the control: a run-up trim at 1.5x target, an RSI(14) > 80
+  trim to half, a band trim (one sigma above the upper band) to half, a
+  dip add to 1.5x under the hold cap at 8% under the 21-session EMA, and
+  two trims on the stage-2 CNN's drawdown forecast (worst decile halved;
+  plus a 15% stop) that need the forecast file the RTX writes with
+  `market_deep_stage2 --export-forecasts`. The trims sell between resets
+  through `simulate.run(midcycle_trims=True)` (new, byte-identical off)
+  and the executor's own redeploy restores them. Reports trims a year,
+  trim size, the "sold too early" share and the forward return after a
+  trim beside the usual medians; ADOPT (registered) at >= +1.0 pt, t >=
+  2.0, not worse on 2024-2026, drawdown within 3 pt; else RECORD, with
+  the sign-test CONSISTENT reading. Prior stated in the plan: every trim
+  costs 0.5-2 pt and saves 1-3 pt of drawdown; the dip add is the one
+  plausible positive, with the session-anatomy "dips continue slightly"
+  finding against it. 19 tests (one skips without torch). Next: the price
+  rules on the Spark (200 simulator runs), the forecast file on the RTX,
+  the model rules, the note.
 - 2026-09-27, night: the ticker chart's markers show what `/4` does, BUILT
   (`decision_history.classify(..., reset)`, `reset_sessions`; the history
   file's `rebalance` flag and `rebalance_note`): buy on entering the A/A+
