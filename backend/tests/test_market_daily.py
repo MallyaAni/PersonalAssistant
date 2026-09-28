@@ -1668,13 +1668,17 @@ def test_the_redeploy_switch_off_plans_nothing(tmp_path, monkeypatch, capsys):
     assert entry["redeploy"]["orders"] == 0
 
 
-# The published curve says which flags it ran and that the redeploy is not
-# among them: the record labels the executor /4 (`execution_policy`) and
-# says in the same block that this line was not priced with the redeploy.
-def test_curve_block_says_the_redeploy_is_not_priced(monkeypatch):
-    from backend.agents.trading.desk import paper
+# The published curve says which flags it ran. Under the active `/4` policy
+# the executor's redeploy of idle cash is among them - passed explicitly,
+# never through `LIVE_POLICY` (which every study's control is priced from) -
+# and the record says so (`redeploy_priced` True, the option and its buffer
+# in `execution_options`). The record labels the executor /4 in the same
+# block.
+def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
+    from backend.agents.trading.desk import live_policy, paper, policy_v4
     from backend.agents.trading.desk import simulate as sim_module
 
+    assert live_policy.ACTIVE == policy_v4.POLICY_VERSION
     report = _report()
     sim = sim_module.SimResult(
         dates=report.panel.dates,
@@ -1694,10 +1698,152 @@ def test_curve_block_says_the_redeploy_is_not_priced(monkeypatch):
     block = market_daily.curve_block(report, None)
     assert block["execution_policy"] == paper.POLICY_VERSION
     assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/4"
+    assert block["execution_options"] == {
+        **sim_module.LIVE_POLICY,
+        "midcycle_redeploy": True,
+        "redeploy_buffer": paper.REDEPLOY_BUFFER,
+    }
+    assert block["redeploy_priced"] is True
+    assert seen["midcycle_redeploy"] is True
+    assert seen["redeploy_buffer"] == paper.REDEPLOY_BUFFER
+    assert callable(seen["allocator"])
+    assert "midcycle_redeploy" not in sim_module.LIVE_POLICY
+
+
+# Under a policy other than `/4` (the `/3` book, monkeypatched active) the
+# published curve is priced exactly as it was before the `/4` allocator was
+# wired in: the simulator's built-in targets, the live flags, no redeploy.
+# The keyword set is pinned in full so a `/3` record cannot change by a byte.
+def test_curve_block_keeps_the_v3_call_unchanged(monkeypatch):
+    from backend.agents.trading.desk import event_risk, live_policy, paper
+    from backend.agents.trading.desk import simulate as sim_module
+
+    monkeypatch.setattr(live_policy, "ACTIVE", "graded-equal-weight/3")
+    report = _report()
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 0.1]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    calls: list[dict] = []
+
+    def fake_run(report, **kwargs):
+        calls.append(kwargs)
+        return sim
+
+    monkeypatch.setattr(sim_module, "run", fake_run)
+    monkeypatch.setattr(
+        market_daily, "_candidate_curve", lambda report, sessions: ([], {}, "off")
+    )
+    block = market_daily.curve_block(report, None)
+    assert block["strategy_policy"] == "graded-equal-weight/3"
     assert block["execution_options"] == sim_module.LIVE_POLICY
     assert block["redeploy_priced"] is False
-    assert "midcycle_redeploy" not in seen
-    assert "midcycle_redeploy" not in sim_module.LIVE_POLICY
+    hindsight, pit = calls
+    expected = dict(
+        use_exits=False,
+        rebalance=paper.REBALANCE_EVERY,
+        event_lifecycle=True,
+        **sim_module.LIVE_POLICY,
+    )
+    for call in (hindsight, pit):
+        exposure = call.pop("event_exposure")
+        np.testing.assert_array_equal(exposure, event_risk.live_path(report.panel))
+    assert hindsight == expected
+    assert pit == {**expected, "since": report.panel.dates[0].astype(object)}
+
+
+# The record names both rules lines for what they are: the hindsight line
+# is today's names back-cast and is not an expectation; the point-in-time
+# line is the names known at the time under the live executor.
+def test_curve_block_labels_the_hindsight_and_point_in_time_lines(monkeypatch):
+    from backend.agents.trading.desk import simulate as sim_module
+
+    report = _report()
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 0.1]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
+    block = market_daily.curve_block(report, None)
+    assert block["universe"] == "hindsight"
+    assert block["rules_label"] == market_daily.HINDSIGHT_RULES_LABEL
+    assert block["rules_label"] == (
+        "today's names back-cast to 2015 (hindsight universe); not an expectation"
+    )
+    assert block["point_in_time_label"] == market_daily.POINT_IN_TIME_LABEL
+    assert block["point_in_time_label"] == "names known at the time, live executor"
+
+
+# The guarantee behind the `/4` rules lines: element for element, both the
+# hindsight `rules` curve and `rules_point_in_time` are `simulate.run` with
+# `policy_v4.allocator` on the matching book under the live options plus
+# the redeploy - the same call the mid-cycle study prices `mc-redeploy`
+# with - and their stats are those runs' stats. Before this, a record
+# labelled `/4` carried the `/3` book's curve under the `/4` name.
+def test_rules_lines_are_the_v4_policy_under_the_live_executor(monkeypatch, tmp_path):
+    from backend.agents.trading.desk import (
+        event_risk,
+        live_policy,
+        paper,
+        point_in_time,
+        policy_v4,
+        simulate,
+    )
+
+    assert live_policy.ACTIVE == policy_v4.POLICY_VERSION
+    history = _walk_history(tmp_path)
+    _use_history(monkeypatch, history)
+    report = _walk_report()
+    block = market_daily.curve_block(report, None)
+    assert block["point_in_time_note"] == ""
+    assert block["strategy_policy"] == policy_v4.POLICY_VERSION
+    live = dict(
+        use_exits=False,
+        rebalance=paper.REBALANCE_EVERY,
+        event_exposure=event_risk.live_path(report.panel),
+        event_lifecycle=True,
+        midcycle_redeploy=True,
+        redeploy_buffer=paper.REDEPLOY_BUFFER,
+        **simulate.LIVE_POLICY,
+    )
+    everyone = np.ones((len(report.panel.dates), len(report.panel.tickers)), bool)
+    everyone[:, report.panel.index(report.panel.benchmark)] = False
+    hindsight = simulate.run(report, allocator=policy_v4.allocator(everyone), **live)
+    assert [str(d) for d in hindsight.dates] == block["dates"]
+    np.testing.assert_allclose(
+        block["rules"], hindsight.equity / hindsight.equity[0] - 1.0, rtol=0, atol=1e-12
+    )
+    restricted, mask = point_in_time.point_in_time(report, history_path=history)
+    pit = simulate.run(
+        restricted,
+        since=date.fromisoformat(block["dates"][0]),
+        allocator=policy_v4.allocator(mask),
+        **live,
+    )
+    np.testing.assert_allclose(
+        block["rules_point_in_time"], pit.equity / pit.equity[0] - 1.0, rtol=0, atol=1e-12
+    )
+    # Not a vacuous match: both books traded, and the restriction changed
+    # the line (GGG enters late, FFF leaves early in the walk history).
+    assert hindsight.rebalances > 1 and pit.rebalances > 1
+    assert np.abs(block["rules"]).max() > 0
+    assert block["rules"] != block["rules_point_in_time"]
+    for key, value in hindsight.stats().items():
+        assert block["stats"][key] == (None if value != value else pytest.approx(value))
+    for key, value in pit.stats().items():
+        assert block["stats_point_in_time"][key] == (
+            None if value != value else pytest.approx(value)
+        )
+    # And neither is the plainly-priced candidate line: the executor differs.
+    assert block["rules_point_in_time"] != block["candidate_point_in_time"]
 
 
 # The idle cash share is what the plan leaves: cash less the buys plus the

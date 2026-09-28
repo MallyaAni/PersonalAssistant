@@ -1384,14 +1384,15 @@ def curve_block(report, store) -> dict | None:
         # the book: measured across start phases, the same rules at 20 earn
         # about 38% a year at Sharpe 1.44 and at the live 120 about 29% at
         # 1.13. The page was showing the better one.
-        sim = simulate.run(
-            report,
-            use_exits=False,
-            rebalance=paper_rules.REBALANCE_EVERY,
-            event_exposure=event_risk.live_path(panel),
-            event_lifecycle=True,
-            **simulate.LIVE_POLICY,
-        )
+        #
+        # And the account's own allocation policy. Until 2026-09-27 this call
+        # ran the simulator's built-in `/3` targets whatever `live_policy.
+        # ACTIVE` said, so a record labelled `graded-equal-weight/4` carried a
+        # `/3` curve (85.8x hindsight, 18.7% CAGR point in time) beside a `/4`
+        # candidate line at 30.6%: the operator was reading one policy's
+        # number under another's name. `_live_rules_run` picks the allocator
+        # from `ACTIVE`, so the line is the policy the label says.
+        sim = _live_rules_run(report, _hindsight_mask(panel))
     except Exception:
         return None
     if len(sim.dates) < 2 or sim.equity is None or not np.isfinite(sim.equity[0]):
@@ -1416,6 +1417,7 @@ def curve_block(report, store) -> dict | None:
         report, sim.dates
     )
     stats = sim.stats()
+    execution_options = _live_rules_options(panel, describe=True)
     return {
         "label": "historical simulation with cash-limited fills; not a live record",
         "funding_model": simulate.FUNDING_MODEL,
@@ -1424,15 +1426,23 @@ def curve_block(report, store) -> dict | None:
         # The executor's conventions, separate from the allocation policy
         # above: the same executor runs whichever targets it is given.
         "execution_policy": paper_rules.POLICY_VERSION,
-        # The `simulate.run` flags this line was actually priced with. The
-        # executor's redeploy of idle cash (`paper.REDEPLOY_IDLE_CASH`, /4)
-        # is not among them: it is a planner leg outside `LIVE_POLICY`, kept
-        # out so every registered study's `live` control keeps its meaning
-        # and this line keeps its once-a-reset allocator call. Its effect is
-        # measured in docs/research/midcycle-ew-2026-09-27.md (`mc-redeploy`)
-        # and lived in the paper curve; it is not in this line.
-        "execution_options": dict(simulate.LIVE_POLICY),
-        "redeploy_priced": False,
+        # The `simulate.run` flags this line was actually priced with. Under
+        # `/4` they are `LIVE_POLICY` plus the executor's redeploy of idle
+        # cash (`paper.REDEPLOY_IDLE_CASH`, the `midcycle_redeploy` option),
+        # because that is what the account runs since d20cb963. The redeploy
+        # stays out of `LIVE_POLICY` itself (the comment there says why: every
+        # registered study's `live` control is priced from that dict), so it
+        # is passed here explicitly and recorded here explicitly.
+        "execution_options": execution_options,
+        "redeploy_priced": bool(execution_options.get("midcycle_redeploy", False)),
+        # Which names the `rules` line could choose from. "hindsight" is the
+        # panel as it stands today, back-cast to the first session: a name
+        # is in the universe for its whole history because it is in the book
+        # now. That is not a return anyone could have earned, and the label
+        # says so; the point-in-time line below is the expectation.
+        "universe": "hindsight",
+        "rules_label": HINDSIGHT_RULES_LABEL,
+        "point_in_time_label": POINT_IN_TIME_LABEL,
         # The data source the simulation's analysts read, kept separate from
         # the execution policy above, so the curve is never presented as
         # measured under corrected inputs when it predates them.
@@ -1475,26 +1485,96 @@ def curve_block(report, store) -> dict | None:
     }
 
 
-# The rules' curve on the point-in-time book, aligned to the published
-# simulation's sessions, with its headline stats; an empty curve carries
-# the reason (no membership file, or the restricted run failed).
-def _point_in_time_curve(report, sessions) -> tuple[list[float], dict, str]:
-    """Return (cumulative return per session, stats, note)."""
-    from backend.agents.trading.desk import event_risk, point_in_time, simulate
+# What the record says the two rules lines are, fixed here rather than in
+# the page so a record read later still says which one is an expectation.
+HINDSIGHT_RULES_LABEL = (
+    "today's names back-cast to 2015 (hindsight universe); not an expectation"
+)
+POINT_IN_TIME_LABEL = "names known at the time, live executor"
+
+
+# The membership mask of the hindsight universe: every name in today's
+# panel eligible on every session, the benchmark never. It is the
+# scorecard's `everyone` (`market_pit_scorecard.price_offset`), built here
+# so the hindsight `rules` line and the scorecard's `rule_today` line hand
+# the policy's allocator the same book.
+def _hindsight_mask(panel) -> np.ndarray:
+    """Return a (sessions, names) bool mask with only the benchmark False."""
+    mask = np.ones((len(panel.dates), len(panel.tickers)), dtype=bool)
+    mask[:, panel.index(panel.benchmark)] = False
+    return mask
+
+
+# The `simulate.run` keyword options the published rules lines are priced
+# with. Always the live execution policy on the account's reset clock with
+# the FOMC lifecycle (`market_pit_scorecard._live_options`, spelled out here
+# so this module's guarantee does not depend on the scorecard's). When the
+# active allocation policy is `/4`, also the executor's redeploy of idle
+# cash - `midcycle_redeploy=True` at `paper.REDEPLOY_BUFFER` - because the
+# account has run it since d20cb963 and a `/4` line without it would be a
+# book nobody trades. Under any other policy the options are exactly the
+# ones this module passed before 2026-09-27, so a `/3` record is unchanged
+# byte for byte. `describe=True` returns the JSON-safe form for the record:
+# the FOMC path and the non-policy fixed arguments are left out, the way
+# `execution_options` has always been written.
+def _live_rules_options(panel, describe: bool = False) -> dict:
+    """Return the keyword options for `simulate.run`, or their record form."""
+    from backend.agents.trading.desk import event_risk, live_policy, policy_v4, simulate
     from backend.agents.trading.desk import paper as paper_rules
 
+    policy_options: dict = dict(simulate.LIVE_POLICY)
+    if live_policy.ACTIVE == policy_v4.POLICY_VERSION:
+        policy_options["midcycle_redeploy"] = True
+        policy_options["redeploy_buffer"] = float(paper_rules.REDEPLOY_BUFFER)
+    if describe:
+        return policy_options
+    return dict(
+        use_exits=False,
+        rebalance=paper_rules.REBALANCE_EVERY,
+        event_exposure=event_risk.live_path(panel),
+        event_lifecycle=True,
+        **policy_options,
+    )
+
+
+# One published rules line: the active allocation policy's targets on
+# `mask`, priced by the live executor (`_live_rules_options`). Under `/4`
+# the targets are `policy_v4.allocator(mask)` - the same callable the
+# scorecard's `graded_arm` and the mid-cycle study hand `simulate.run` - so
+# the line is the policy the record's `strategy_policy` names. Under any
+# other policy the simulator's built-in targets run, as before, and `mask`
+# is not consulted. `since` is passed through only when given, so the call
+# `curve_block` made before this helper existed is reproduced exactly.
+def _live_rules_run(report, mask: np.ndarray, since=None):
+    """Return the SimResult of the active policy under the live executor."""
+    from backend.agents.trading.desk import live_policy, policy_v4, simulate
+
+    options = _live_rules_options(report.panel)
+    if live_policy.ACTIVE == policy_v4.POLICY_VERSION:
+        options["allocator"] = policy_v4.allocator(mask)
+    if since is not None:
+        options["since"] = since
+    return simulate.run(report, **options)
+
+
+# The rules' curve on the point-in-time book, aligned to the published
+# simulation's sessions, with its headline stats; an empty curve carries
+# the reason (no membership file, or the restricted run failed). The same
+# policy and the same executor as the hindsight `rules` line, on the names
+# the book could have held on each session, so the gap between the two
+# lines is the hindsight choice of names and nothing else.
+def _point_in_time_curve(report, sessions) -> tuple[list[float], dict, str]:
+    """Return (cumulative return per session, stats, note)."""
+    from backend.agents.trading.desk import point_in_time
+
     try:
-        restricted, _mask = point_in_time.point_in_time(report)
-        sim = simulate.run(
+        restricted, mask = point_in_time.point_in_time(report)
+        sim = _live_rules_run(
             restricted,
+            mask,
             since=sessions[0].astype("datetime64[D]").astype(object)
             if hasattr(sessions[0], "astype")
             else sessions[0],
-            use_exits=False,
-            rebalance=paper_rules.REBALANCE_EVERY,
-            event_exposure=event_risk.live_path(report.panel),
-            event_lifecycle=True,
-            **simulate.LIVE_POLICY,
         )
     except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
         return [], {}, f"point-in-time line not drawn: {type(exc).__name__}: {exc}"

@@ -77,9 +77,11 @@ VALUATION_MODEL = "complete-held-marks-v1"
 # execution ablation prices its `live` control from this dict, and the
 # mid-cycle study's `mc-redeploy` row is `live` plus that option; putting
 # it here would turn every control into the new executor and re-run the
-# allocator on every mid-cycle session of the published curve. The record
-# says so (`curve_block["redeploy_priced"]` is False), and the parity test
-# in test_trading_paper holds the live leg to `_redeploy_orders` instead.
+# allocator on every mid-cycle session of every study's control. The
+# published `/4` curve passes the option explicitly instead
+# (`market_daily._live_rules_options`, recorded in `execution_options` with
+# `redeploy_priced` True), and the parity test in test_trading_paper holds
+# the live leg to `_redeploy_orders`.
 LIVE_POLICY: dict[str, bool] = {
     "block_overbought": True,
     "exit_at_close": True,
