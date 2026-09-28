@@ -460,6 +460,13 @@ strategy that changes only when untouched sessions say so.
   (about 400 simulator runs), record the note, and change the executor
   only for options the verdict names.
 
+- 2026-09-28: the operator's board acts only at the measured level, BUILT
+  (`market/entry_timing.py`; CHANGELOG same date): on the `/4` board BUY
+  means a 15-minute close 1% under today's open (else the close window),
+  SELL/TRIM the mirror, the executor's band gate blocks buys, Hold
+  otherwise; the paper executor still fills at the next open (moving it is
+  a separate registered change).
+
 ## What is not on the list
 
 No new model without a specific hypothesis and an agreed evaluation

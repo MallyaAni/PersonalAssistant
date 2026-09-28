@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-09-28 — Board acts only at the measured level: BUY on a 15-minute close 1% under the open, else at the close; SELL/TRIM mirrored; the executor's band gate applies; Hold otherwise
+
+The operator acts on a BUY in his own account at once, so on the `/4`
+board (`decision_view._sizes_toward_targets`) the action cell now shows the
+TIMED decision. The rule is the `dip_or_close` convention measured in
+[research/execution-timing-2026-09-27.md](research/execution-timing-2026-09-27.md)
+on the `/4` policy's own orders (-0.1 bp/d, t -0.2 on 2016-2023; +1.0 bp/d,
+t 2.2 on 2024-2026 against the next open: a price gate that costs nothing),
+with its level reused from `fill_timing.DIP`, not restated.
+
+- `backend/market/entry_timing.py` (new): `update(root, snapshot, now)`
+  latches, per session, each name's open and the FIRST 15-minute bar whose
+  close is at or under open x 0.99 (`buy_trigger`) and at or over
+  open x 1.01 (`sell_trigger`) in `data/market/desk/entry-timing/<session>.json`
+  (atomic, idempotent, under a lock, never un-set, 30 sessions kept);
+  `timing(latch_row, quote, side, now, session)` gives `pre-open` /
+  `waiting` / `triggered` / `close` (from session close - 30 minutes: 15:30
+  ET, 12:30 ET on an early close; market-on-close before close - 10
+  minutes) / `closed` (after the close, and the session's decisions are
+  over). `market_balancer` calls `update` right after it writes `live.json`
+  and logs, never raises, on a failure.
+- `decision_view`, `/4` path only: after the intent is sized and funded, a
+  Buy or Sell/Trim stands only when `triggered` or `close`; otherwise it is
+  a Hold of size 0 whose reason reads e.g. "Buy 9.1% planned: on a
+  15-minute close at or under $178.20 (1% under today's open $180.00),
+  else at the close". A Buy on a name whose daily rejects its upper band -
+  the executor's gate, `exit.evidence(panel).signalled()` on the decision
+  session, which the nightly already writes on every graded name as
+  `levels[T]["rejecting_band"]` - is a Hold ("Buy blocked: rejecting its
+  upper band (executor's gate)") and takes no share of the cash; a record
+  without the flag is not blocked and says `structure_gate: "unrecorded"`.
+  `strategy_action`/`strategy_move_weight` keep the intent for the charts;
+  the quote/staleness blockers are unchanged (timing only holds back).
+- Deliberate: on the `/4` board the intent now reads the record's CLOSE
+  grade (exits, buy eligibility, funding), the grade the executor and the
+  timing study decide on; before, an intraday re-grade could print a SELL
+  the executor would not place. The candle's re-grade is `grade_intraday`,
+  shown on hover; the grade column shows the close grade. The `/3` board is
+  unchanged: its output on ten scenarios equals `main`'s (f31346ed) golden
+  (`test_board_level_gate`).
+- The page (`StockBoard`, `DeskPanel`): on a timed board the cell is BUY /
+  SELL / TRIM / Hold and a size only beside a trade; the hover carries the
+  planned level, the timing state, the band gate and the intraday grade.
+  The plan is re-read every 15 s while the page is visible and after every
+  `/desk/live` read (each minute), so a trigger shows within a minute.
+
+**The paper executor still fills at the next open this week** (the
+measured-equivalent timing: the study found no convention better than the
+next open for the book); moving it to dip-or-close is a separate registered
+change. Only the operator's board is timed.
+
+Verified here: 34 `entry_timing` tests, 16 `/4`-board tests (every state,
+the band gate, the cash bound, the unusable-quote blocker, the `/3` golden)
+and the record's gate flag; `test_decision_view` updated where it pinned a
+`/4` BUY outside a trigger. UNVERIFIED here: the API test
+(`test_board_level_gate_api.py` needs fastapi), `tsc`, and the Playwright
+specs (`desk-level-gate.spec.ts`, the updated `simple-actions` `/4` pin) -
+no node in this sandbox.
+
 ## 2026-09-27 — Profit-taking and deep stage 2 run: every trim loses; the models learn drawdown and it is not tradable
 
 Profit-taking (`docs/research/profit-taking-2026-09-27.md`): run-up, RSI

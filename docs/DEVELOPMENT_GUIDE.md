@@ -300,6 +300,39 @@ already recorded it refuses (and `--force` would rewrite that record):
 use it only on a copy of the store (`--data-dir <copy>`) or before the
 nightly has run.
 
+### The board's timed actions: the entry-timing latch
+
+Since 2026-09-28 the `/4` board says BUY only when a 15-minute bar has
+CLOSED at or under 1% below today's open (`fill_timing.DIP`), SELL/TRIM only
+on a close at or over 1% above it, and either in the close window (from
+the session close - 30 minutes: 15:30 ET, 12:30 ET on an early close;
+market-on-close before close - 10 minutes); otherwise Hold, with the
+planned size and level on the row's hover. A buy on a name whose record
+flags `levels[T]["rejecting_band"]` (the executor's band gate) is always a
+Hold. The balancer (`market_balancer`, cron `*/15 9-16 * * 1-5`) latches
+each candle right after writing `live.json`, into
+`data/market/desk/entry-timing/<YYYY-MM-DD>.json` (New York session date;
+the 30 newest are kept). Per symbol it holds `open` (the 09:30 bar's open,
+first seen), `buy_level`/`sell_level`, the latest `bar`/`last`, and
+`buy_trigger` / `sell_trigger`: `{bar, price, seen_at}` or null. Read a
+trigger as: `bar` is the START of the 15-minute bar in UTC (it closed 15
+minutes later - the time the hover names), `price` that bar's close, and
+`seen_at` the balancer snapshot that latched it. A trigger is never
+cleared, and only an earlier crossing replaces it. To look at today's:
+
+```sh
+cd ~/deploy/anios  # `data` links to the shared checkout's
+python3 -m json.tool data/market/desk/entry-timing/$(TZ=America/New_York date +%F).json | less
+```
+
+If a BUY does not appear when the price clearly traded through the level:
+`/desk/mine` → `decisions.timing.latched` says whether the API found
+today's file; the cron log says `Entry timing latch unavailable (...)` when
+a write failed; and the snapshot carries one bar per balancer run, so a run
+that was skipped (or a feed that was a bar late) can miss a bar that
+crossed and recovered inside it - the close window still acts. The paper
+executor does not read the latch: it still fills at the next open.
+
 ### Verification instruments
 
 The instruments, in the order a change meets them. None of them is optional
