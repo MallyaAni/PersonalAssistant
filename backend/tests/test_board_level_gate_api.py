@@ -17,6 +17,7 @@ from httpx import ASGITransport, AsyncClient  # noqa: E402
 from backend.api.v1 import market  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.market import entry_timing  # noqa: E402
+from backend.core.auth import issue_user_token  # noqa: E402
 from backend.tests.test_personal_guidance_api import (  # noqa: E402
     personal_context as personal_context,
 )
@@ -25,10 +26,15 @@ POLICY = "graded-equal-weight/4"
 
 
 # Post the page's own request for the personal board and return its JSON.
+# A POST is a write to the route's scope rules (the page's token carries
+# memory:write), so the request is made with the page's scopes, not the
+# read-only token the shared fixture issues for GETs.
 async def _mine(auth):
     """Return the /desk/mine POST response body."""
+    token = issue_user_token("desk_user", scopes=["memory:read", "memory:write"])
+    headers = {**auth, "Authorization": f"Bearer {token}"}
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test", headers=auth
+        transport=ASGITransport(app=app), base_url="http://test", headers=headers
     ) as client:
         response = await client.post(
             "/api/v1/market/desk_user/desk/mine",
