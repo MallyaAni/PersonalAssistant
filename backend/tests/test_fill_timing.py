@@ -527,12 +527,12 @@ def _bars(day: date, open0: float, returns: np.ndarray) -> list[IntradayBar]:
     return out
 
 
-# The command end to end on a temporary SIP store with three names and a
-# benchmark: cubes from the store, the mask from the membership file, the
-# report from the desk hook on the store's own sessions, the payload at
-# <root>/desk/fill_timing.json with every row and the verdict, and the
-# table and verdict in the text.
-def test_cli_end_to_end(tmp_path):
+# A temporary SIP store with three names and a benchmark over seventy full
+# exchange sessions, the membership file listing the three, and a desk
+# hook returning a churning report on the store's own sessions. Returns
+# (membership path, the hook, the sessions, the names, the roots the hook
+# was called with).
+def _sip_store(tmp_path):
     store = MarketStore(tmp_path)
     rng = np.random.default_rng(9)
     # Seventy full exchange sessions from the reviewed calendar, so every
@@ -578,10 +578,21 @@ def test_cli_end_to_end(tmp_path):
     grades = _grades(rng, len(dates), 4)
     calls: list[str] = []
 
+    # The desk hook: the churning report on the store's sessions, recorded.
     def fake_desk(store_):
         calls.append(str(store_.root))
         return _report(dates, opens, closes, grades)
 
+    return membership, fake_desk, sessions, names, calls
+
+
+# The command end to end on a temporary SIP store with three names and a
+# benchmark: cubes from the store, the mask from the membership file, the
+# report from the desk hook on the store's own sessions, the payload at
+# <root>/desk/fill_timing.json with every row and the verdict, and the
+# table and verdict in the text.
+def test_cli_end_to_end(tmp_path):
+    membership, fake_desk, sessions, names, calls = _sip_store(tmp_path)
     out = io.StringIO()
     args = cli.build_parser().parse_args(
         [

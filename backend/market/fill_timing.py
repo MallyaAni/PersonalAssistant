@@ -78,14 +78,54 @@ least ADOPT_BP a session with t >= ADOPT_T on the choosing window and is not
 worse on the reported window; anything else is RECORDED, NOT ACTED ON. The
 `breakout_gate` line against `next_open` is stated separately because the
 plan already names what follows from it.
+
+The entry-level trial
+---------------------
+`docs/research/ml-entry-level-plan-2026-09-28.md` registers four more
+conventions (`LEVEL_CONVENTIONS`, described by `LEVELS`) that ask whether
+the CNN's next-session volatility forecast sets a better buy/sell level
+than the board's fixed 1% (`dip_or_close`). Each reads sigma = exp(F / 2),
+F the forecast in the file's row (name, t) - made at t's close, for
+session t + 1's log realized variance, put at the panel's row of t by
+`vol_forecast.align` - and the order decided at t's close fills in session
+t + 1, so the fill on session s reads panel row s - 1 (`fill_sigma`):
+
+  vol_dip_0.5    a buy fills at the first bar close at or below
+                 open * exp(-0.5 sigma), else the official close; a sell
+                 at the first bar close at or above open * exp(+0.5 sigma)
+  vol_dip_1.0    the same at k = 1.0
+  vol_limit_0.5  a resting limit at open * exp(-0.5 sigma), filled at the
+                 limit price when some bar's low is strictly below it,
+                 else the official close; a sell mirrors on the highs
+  trail_dip      vol_dip_0.5 with sigma from the file's trailing baseline
+                 (the log mean realized variance of the 20 sessions
+                 through t), on exactly the cells the forecast covers: the
+                 twin that separates "the model" from "vol-scaling"
+
+Where sigma is missing (before the first fit, or a cell the dataset has
+no row for) the order fills as `dip_or_close` and is counted. With a
+level convention priced, every row gains the paired difference against
+`dip_or_close` and against `trail_dip`, the offsets above `dip_or_close`,
+and from the median offset's orders in the window the dip fill rate (the
+share filled at the level before the close), the gain over that session's
+official close per dip fill and per order, and the sigma fallbacks.
+`level_verdict` applies the plan's criteria: REPLACES the board's rule only
+at >= REPLACE_BP a session over `dip_or_close` with t >= REPLACE_T on the
+choosing window, not worse on the reported window, and above `trail_dip`
+on the choosing window; passing the floors without the last is RECORD
+(vol-scaling, not the model), as is `trail_dip` passing them; anything else
+RECORD. LEVEL_TRIALS = 4. `study(conventions=...)` prices a subset (the CLI's
+`--only`); the fill-timing verdict is judged only when all seven of its
+conventions were priced.
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -93,6 +133,11 @@ from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import paper, policy_v4, simulate
 from backend.market import candidate_stats, session_anatomy
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
+from backend.market.vol_forecast import Aligned, sigma
+
+if TYPE_CHECKING:
+    from backend.agents.trading.desk.desk import DeskReport
+    from backend.market.panel import Panel
 
 CONVENTIONS = (
     "next_open",
@@ -132,8 +177,57 @@ ADOPTED = "ADOPTED"
 RECORDED = "RECORDED, NOT ACTED ON"
 BP = 1e4
 
+# The entry-level trial (docs/research/ml-entry-level-plan-2026-09-28.md),
+# fixed before any run: four conventions whose level is k * sigma from the
+# open, sigma a next-session volatility, judged against the board's rule.
+LEVEL_CONVENTIONS = ("vol_dip_0.5", "vol_dip_1.0", "vol_limit_0.5", "trail_dip")
+# The board's rule: what a level convention has to beat to replace it.
+LEVEL_CONTROL = "dip_or_close"
+# The same rule as vol_dip_0.5 fed trailing volatility: "the model" or
+# merely "vol-scaling".
+LEVEL_TWIN = "trail_dip"
+# Every convention `price_book` knows, in registered order.
+ALL_CONVENTIONS = CONVENTIONS + LEVEL_CONVENTIONS
+# Where a level convention's sigma comes from, and how it fills.
+FORECAST = "forecast"
+TRAILING = "trailing"
+DIP_RULE = "dip"
+LIMIT_RULE = "limit"
+# The plan's floors for replacing the board's rule: bp a session over
+# dip_or_close and its HAC t, on the choosing window.
+REPLACE_BP = 2.0
+REPLACE_T = 2.0
+# Four level conventions were registered, so the best is deflated against four.
+LEVEL_TRIALS = len(LEVEL_CONVENTIONS)
+REPLACES = "REPLACES"
+RECORD = "RECORD"
+VOL_SCALING = "RECORD (vol-scaling, not the model)"
+
 assert FIRST_HOUR_SLOTS == 4
 assert all(0 <= s < FULL_SESSION_SLOTS for s in LATE_SLOTS)
+
+
+@dataclass(frozen=True)
+class Level:
+    """One registered entry-level convention: how it fills, k, and sigma's source."""
+
+    rule: str  # DIP_RULE: first bar close past the level; LIMIT_RULE: resting limit
+    k: float  # the level sits k * sigma (in log terms) from the session's open
+    source: str  # FORECAST: the CNN's forecast; TRAILING: the file's trailing baseline
+
+
+LEVELS: dict[str, Level] = {
+    "vol_dip_0.5": Level(DIP_RULE, 0.5, FORECAST),
+    "vol_dip_1.0": Level(DIP_RULE, 1.0, FORECAST),
+    "vol_limit_0.5": Level(LIMIT_RULE, 0.5, FORECAST),
+    "trail_dip": Level(DIP_RULE, 0.5, TRAILING),
+}
+# The conventions that wait for a price, and so have a dip fill rate.
+WAITING = (LEVEL_CONTROL, *LEVEL_CONVENTIONS)
+
+assert tuple(LEVELS) == LEVEL_CONVENTIONS
+assert LEVELS[LEVEL_TWIN] == Level(DIP_RULE, 0.5, TRAILING)
+assert not set(CONVENTIONS) & set(LEVEL_CONVENTIONS)
 
 
 @dataclass(frozen=True)
@@ -146,6 +240,17 @@ class TargetPath:
 
 
 @dataclass(frozen=True)
+class WaitDetail:
+    """Per (session, name), for a convention that waits for a price: how it filled."""
+
+    buy_hit: np.ndarray  # (T, N) bool: a buy filled at its level before the close
+    sell_hit: np.ndarray  # (T, N) bool: a sell filled at its level before the close
+    buy_gain_bp: np.ndarray  # (T, N) (close - fill) / close in bp, NaN off the cube
+    sell_gain_bp: np.ndarray  # (T, N) (fill - close) / close in bp
+    no_sigma: np.ndarray  # (T, N) bool: sigma missing, filled as dip_or_close
+
+
+@dataclass(frozen=True)
 class FillPrices:
     """One convention's raw-basis fill prices aligned to the panel, per side."""
 
@@ -153,6 +258,18 @@ class FillPrices:
     buy: np.ndarray  # (T, N) raw price, NaN where the cube has no session
     sell: np.ndarray  # (T, N)
     available: np.ndarray  # (T, N) True where the cube has the session
+    detail: WaitDetail | None = None  # for the WAITING conventions only
+
+
+@dataclass(frozen=True)
+class OrderLog:
+    """A waiting convention's cube-priced orders from one offset, one per order."""
+
+    session: np.ndarray  # (M,) the fill session's panel row
+    buy: np.ndarray  # (M,) bool, True for a buy
+    hit: np.ndarray  # (M,) bool: filled at its level before the close
+    gain_bp: np.ndarray  # (M,) gain over that session's official close, bp
+    no_sigma: np.ndarray  # (M,) bool: sigma missing, filled as dip_or_close
 
 
 @dataclass(frozen=True)
@@ -165,6 +282,7 @@ class Priced:
     fills: int  # orders filled
     deferrals: int  # sessions gated buys waited, summed over orders
     fallbacks: int  # fills priced at the panel's open for want of a cube session
+    waits: OrderLog | None = None  # the WAITING conventions' orders, else None
 
 
 # The simulator's decision schedule on the plain arm and the policy's
@@ -209,30 +327,122 @@ def _official_close(cube: SessionCube) -> np.ndarray:
     return np.where(np.isfinite(auction), auction, last)
 
 
+# The first bar close at or past a per-session level, else the official
+# close: a buy waits for a close at or below `level`, a sell for one at or
+# above it. Returns the price and whether the level was reached (the dip
+# fill) for every session. Every order fills.
+def _first_close_past(
+    cube: SessionCube, side: str, level: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return ((N,) fill price, (N,) reached) for a close-triggered level."""
+    if side == "buy":
+        hit = cube.close <= level[:, None]
+    else:
+        hit = cube.close >= level[:, None]
+    any_hit = hit.any(axis=1)
+    first = np.argmax(hit, axis=1)
+    picked = cube.close[np.arange(len(cube)), first]
+    return np.where(any_hit, picked, _official_close(cube)), any_hit
+
+
+# The dip-or-close fill and whether the dip was reached: buys wait for a
+# close at or below open * (1 - DIP), sells for one at or above
+# open * (1 + DIP), else the official close.
+def _dip_or_close_fill(cube: SessionCube, side: str) -> tuple[np.ndarray, np.ndarray]:
+    """Return ((N,) fill price, (N,) reached) for dip_or_close."""
+    open0 = cube.open[:, 0]
+    level = open0 * (1.0 - DIP) if side == "buy" else open0 * (1.0 + DIP)
+    return _first_close_past(cube, side, level)
+
+
 # The first bar close at or past the dip threshold per session, else the
 # official close. Buys wait for a fall below open * (1 - DIP); sells for a
 # rise above open * (1 + DIP). Every order fills.
 def _dip_or_close(cube: SessionCube, side: str) -> np.ndarray:
     """Return (N,) the dip-or-close fill price for `side`."""
-    open0 = cube.open[:, 0][:, None]
+    return _dip_or_close_fill(cube, side)[0]
+
+
+# A resting limit at a per-session level, placed at the open: a buy fills
+# at the limit price when some bar's low is strictly below it (strict, so a
+# bare touch is not a fill), a sell when some bar's high is strictly above
+# it; otherwise the order fills at the official close.
+def _resting_limit(
+    cube: SessionCube, side: str, level: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return ((N,) fill price, (N,) crossed) for a resting limit at `level`."""
     if side == "buy":
-        hit = cube.close <= open0 * (1.0 - DIP)
+        hit = (cube.low < level[:, None]).any(axis=1)
     else:
-        hit = cube.close >= open0 * (1.0 + DIP)
-    any_hit = hit.any(axis=1)
-    first = np.argmax(hit, axis=1)
-    picked = cube.close[np.arange(len(cube)), first]
-    return np.where(any_hit, picked, _official_close(cube))
+        hit = (cube.high > level[:, None]).any(axis=1)
+    return np.where(hit, level, _official_close(cube)), hit
+
+
+# The price a level convention waits for: open * exp(-k * sigma) for a buy,
+# open * exp(+k * sigma) for a sell. One expression, so a test's bar can
+# sit exactly on it.
+def entry_level(
+    open0: np.ndarray | float, sig: np.ndarray | float, k: float, side: str
+) -> np.ndarray:
+    """Return the level k * sigma (log terms) below (buy) or above (sell) the open."""
+    if side not in ("buy", "sell"):
+        raise ValueError(f"side must be buy or sell, not {side!r}")
+    sign = -1.0 if side == "buy" else 1.0
+    return np.asarray(open0, dtype=float) * np.exp(
+        sign * k * np.asarray(sig, dtype=float)
+    )
+
+
+# The fill of a convention that waits for a price (dip_or_close or a level
+# convention) for every session of a cube, with whether the order filled at
+# its level before the close and whether it had no sigma. `sig` is (N,) per
+# cube session for a level convention; a session whose sigma is missing,
+# not finite or not positive fills exactly as dip_or_close.
+def waiting_fills(
+    cube: SessionCube, convention: str, side: str, sig: np.ndarray | None = None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return ((N,) price, (N,) reached, (N,) no sigma) for a WAITING convention."""
+    if side not in ("buy", "sell"):
+        raise ValueError(f"side must be buy or sell, not {side!r}")
+    base_price, base_hit = _dip_or_close_fill(cube, side)
+    if convention == LEVEL_CONTROL:
+        return base_price, base_hit, np.zeros(len(cube), dtype=bool)
+    if convention not in LEVELS:
+        raise ValueError(f"{convention!r} does not wait for a price")
+    if sig is None:
+        raise ValueError(f"{convention} needs a sigma for every session")
+    sig = np.asarray(sig, dtype=float)
+    if sig.shape != (len(cube),):
+        raise ValueError(
+            f"sigma has shape {sig.shape}; the cube has {len(cube)} sessions"
+        )
+    spec = LEVELS[convention]
+    no_sigma = ~(np.isfinite(sig) & (sig > 0))
+    level = entry_level(cube.open[:, 0], np.where(no_sigma, 0.0, sig), spec.k, side)
+    if spec.rule == DIP_RULE:
+        price, hit = _first_close_past(cube, side, level)
+    else:
+        price, hit = _resting_limit(cube, side, level)
+    return (
+        np.where(no_sigma, base_price, price),
+        np.where(no_sigma, base_hit, hit),
+        no_sigma,
+    )
 
 
 # One convention's fill price for every session of a cube, on the raw
-# basis, for one side. The single place each convention's arithmetic lives.
-def session_prices(cube: SessionCube, convention: str, side: str) -> np.ndarray:
+# basis, for one side. The single place each convention's arithmetic lives
+# (a level convention's in `waiting_fills`, with `sig` per cube session).
+def session_prices(
+    cube: SessionCube, convention: str, side: str, sig: np.ndarray | None = None
+) -> np.ndarray:
     """Return (N,) raw-basis fill prices for `convention` and `side`."""
     if side not in ("buy", "sell"):
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if len(cube) == 0:
         return np.zeros(0)
+    if convention in LEVELS:
+        return waiting_fills(cube, convention, side, sig)[0]
     if convention in ("next_open", "breakout_gate"):
         return np.asarray(cube.open[:, 0], dtype=float)
     if convention == "first_hour_vwap":
@@ -255,9 +465,14 @@ def session_prices(cube: SessionCube, convention: str, side: str) -> np.ndarray:
 # `row` holds the session's `open`, `high`, `low`, `close`, `volume` (26,)
 # and `auction_open` (a float, NaN when absent). For `breakout_gate`,
 # `blocked` says whether the daily was rejecting its band on the decision
-# date: a blocked buy is deferred and the price is NaN.
+# date: a blocked buy is deferred and the price is NaN. For a level
+# convention, `sig` is the volatility the order reads (NaN: dip_or_close).
 def fill_price(
-    row: dict[str, Any], convention: str, side: str, blocked: bool = False
+    row: dict[str, Any],
+    convention: str,
+    side: str,
+    blocked: bool = False,
+    sig: float = math.nan,
 ) -> float:
     """Return the fill price for one session, NaN when the order is deferred."""
     if convention == "breakout_gate" and side == "buy" and blocked:
@@ -275,18 +490,48 @@ def fill_price(
         auction_open=np.array([float(row.get("auction_open", math.nan))]),
         auction_volume=np.array([math.nan]),
     )
-    return float(session_prices(cube, convention, side)[0])
+    per_session = np.array([sig], dtype=float) if convention in LEVELS else None
+    return float(session_prices(cube, convention, side, per_session)[0])
+
+
+# A level convention needs the (sessions, names) sigma grid, on the panel's
+# shape; the other conventions read none.
+def _check_sigma_grid(
+    convention: str, sig: np.ndarray | None, shape: tuple[int, int]
+) -> None:
+    """Raise ValueError when a level convention's sigma grid is absent or misshapen."""
+    if convention not in LEVELS:
+        return
+    if sig is None:
+        raise ValueError(f"{convention} needs the (sessions, names) sigma grid")
+    if np.shape(sig) != shape:
+        raise ValueError(f"sigma grid {np.shape(sig)} is not the panel's {shape}")
 
 
 # Every name's fill prices for one convention on the panel's calendar, raw
-# basis, NaN where the name has no complete cube session that day.
-def cube_prices(cubes: dict[str, SessionCube], panel, convention: str) -> FillPrices:
+# basis, NaN where the name has no complete cube session that day. A level
+# convention needs `sig`, the (T, N) volatility each fill session's order
+# reads (`fill_sigma`). A WAITING convention's result carries, per cell,
+# whether the order filled at its level before the close, its gain over
+# the session's official close in bp, and whether it had no sigma.
+def cube_prices(
+    cubes: dict[str, SessionCube],
+    panel,
+    convention: str,
+    sig: np.ndarray | None = None,
+) -> FillPrices:
     """Return the FillPrices of `convention` aligned to `panel.dates`."""
     dates = np.asarray(panel.dates, dtype="datetime64[D]")
     rows, names = panel.adj_close.shape
     buy = np.full((rows, names), np.nan)
     sell = np.full((rows, names), np.nan)
     available = np.zeros((rows, names), dtype=bool)
+    waiting = convention in WAITING
+    _check_sigma_grid(convention, sig, (rows, names))
+    if waiting:
+        hits = {side: np.zeros((rows, names), dtype=bool) for side in ("buy", "sell")}
+        gains = {side: np.full((rows, names), np.nan) for side in ("buy", "sell")}
+        no_sigma = np.zeros((rows, names), dtype=bool)
     for j, ticker in enumerate(panel.tickers):
         cube = cubes.get(ticker)
         if cube is None or len(cube) == 0:
@@ -307,10 +552,78 @@ def cube_prices(cubes: dict[str, SessionCube], panel, convention: str) -> FillPr
         )
         with np.errstate(all="ignore"):
             scale = np.where(official > 0, panel.adj_close[pos[ok], j] / official[ok], np.nan)
-        buy[pos[ok], j] = session_prices(cube, convention, "buy")[ok] * scale
-        sell[pos[ok], j] = session_prices(cube, convention, "sell")[ok] * scale
+        if not waiting:
+            buy[pos[ok], j] = session_prices(cube, convention, "buy")[ok] * scale
+            sell[pos[ok], j] = session_prices(cube, convention, "sell")[ok] * scale
+            available[pos[ok], j] = np.isfinite(scale)
+            continue
+        cube_sig = None
+        if convention in LEVELS:
+            # The fill session's sigma, from the panel's grid onto the cube's sessions.
+            cube_sig = np.full(len(cube), np.nan)
+            cube_sig[ok] = np.asarray(sig, dtype=float)[pos[ok], j]
+        close = _official_close(cube)
+        for side, out in (("buy", buy), ("sell", sell)):
+            price, hit, missing = waiting_fills(cube, convention, side, cube_sig)
+            out[pos[ok], j] = price[ok] * scale
+            hits[side][pos[ok], j] = hit[ok]
+            with np.errstate(all="ignore"):
+                better = (close - price) if side == "buy" else (price - close)
+                gain = np.where(close > 0, better / close * BP, np.nan)
+            gains[side][pos[ok], j] = gain[ok]
+            no_sigma[pos[ok], j] |= missing[ok]
         available[pos[ok], j] = np.isfinite(scale)
-    return FillPrices(convention, buy, sell, available)
+    if not waiting:
+        return FillPrices(convention, buy, sell, available)
+    detail = WaitDetail(
+        hits["buy"], hits["sell"], gains["buy"], gains["sell"], no_sigma
+    )
+    return FillPrices(convention, buy, sell, available, detail)
+
+
+# The forecasts must sit on the report's own grid - the panel's dates and
+# names, in order - or every sigma would be read from the wrong cell.
+def check_grid(aligned: Aligned, panel: Panel) -> None:
+    """Raise ValueError unless `aligned` is on `panel`'s (dates, tickers) grid."""
+    dates = np.asarray(panel.dates, dtype="datetime64[D]")
+    own = np.asarray(aligned.dates, dtype="datetime64[D]")
+    shape = (len(dates), len(panel.tickers))
+    if (
+        own.shape != dates.shape
+        or not (own == dates).all()
+        or tuple(aligned.tickers) != tuple(panel.tickers)
+        or np.shape(aligned.forecast) != shape
+        or np.shape(aligned.baseline) != shape
+    ):
+        raise ValueError(
+            "the forecasts are not on the report's panel grid; align them with "
+            "vol_forecast.aligned_to_panel(path, report.panel)"
+        )
+
+
+# The volatility each order of a level convention reads, on its fill
+# session's row: sigma = exp(F / 2) of the forecast row dated s - 1 for an
+# order filling on session s. That row is the decision session's: the
+# forecast was made at its close and targets the next session, and
+# `vol_forecast.align` puts row (name, t) at the panel's row of t. Nothing
+# dated s or later is read. `trail_dip` reads the trailing baseline on
+# exactly the cells where the forecast exists, so it differs from
+# vol_dip_0.5 only in where sigma comes from. NaN where there is nothing to
+# read (the order then fills as dip_or_close); row 0 has no decision before it.
+def fill_sigma(aligned: Aligned, convention: str) -> np.ndarray:
+    """Return the (T, N) sigma a `convention` order filling on each session reads."""
+    if convention not in LEVELS:
+        raise ValueError(f"{convention!r} is not a level convention")
+    forecast = np.asarray(aligned.forecast, dtype=float)
+    if LEVELS[convention].source == FORECAST:
+        decision = forecast
+    else:
+        baseline = np.asarray(aligned.baseline, dtype=float)
+        decision = np.where(np.isfinite(forecast), baseline, np.nan)
+    at_decision = sigma(decision)
+    out = np.full(at_decision.shape, np.nan)
+    out[1:] = at_decision[:-1]
+    return out
 
 
 # The session a gated buy decided on `t` fills on: the first session after
@@ -331,7 +644,10 @@ def _gated_fill_session(blocked: np.ndarray, t: int, j: int) -> tuple[int, int]:
 
 # Hold the policy's targets in the simulator's ledger, filling every share
 # order at the convention's price on its fill session and marking at the
-# panel's adjusted close. Returns daily returns aligned to the panel.
+# panel's adjusted close. Returns daily returns aligned to the panel; for a
+# WAITING convention also the log of its cube-priced orders (session, side,
+# filled at the level, gain over the close, no sigma), read and never fed
+# back into a price.
 def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
     targets: TargetPath,
     report,
@@ -341,7 +657,7 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
     blocked: np.ndarray | None = None,
 ) -> Priced:
     """Return the Priced series of `convention` for the targets."""
-    if convention not in CONVENTIONS:
+    if convention not in ALL_CONVENTIONS:
         raise ValueError(f"unknown convention {convention!r}")
     if convention == "breakout_gate" and blocked is None:
         raise ValueError("breakout_gate needs the band-rejection flags")
@@ -358,6 +674,10 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
     # Orders waiting to fill: session -> list of (column, share delta).
     pending: dict[int, list[tuple[int, float]]] = {}
     fills = deferrals = fallbacks = 0
+    detail = prices.detail
+    # One entry per cube-priced order of a waiting convention:
+    # (session, buy, filled at the level, gain bp, no sigma).
+    log: list[tuple[int, bool, bool, float, bool]] = []
     equity[start] = book.equity(closes[start])
 
     # Queue the share moves a decision on `t` asks for, each on its fill session.
@@ -390,6 +710,14 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
             # `prices` are already on the panel's adjusted basis (cube_prices).
             if prices.available[s, j] and np.isfinite(raw) and raw > 0:
                 price[j] = raw
+                if detail is not None:
+                    buying = delta > 0
+                    hit = detail.buy_hit if buying else detail.sell_hit
+                    gain = detail.buy_gain_bp if buying else detail.sell_gain_bp
+                    missing = bool(detail.no_sigma[s, j])
+                    log.append(
+                        (s, buying, bool(hit[s, j]), float(gain[s, j]), missing)
+                    )
             else:
                 price[j] = opens[s, j]
                 fallbacks += 1
@@ -404,7 +732,16 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
         returns[s] = equity[s] / equity[s - 1] - 1.0 if equity[s - 1] > 0 else np.nan
         if s in decisions:
             decide(s)
-    return Priced(convention, start, returns, fills, deferrals, fallbacks)
+    waits = None
+    if detail is not None:
+        waits = OrderLog(
+            session=np.array([e[0] for e in log], dtype=int),
+            buy=np.array([e[1] for e in log], dtype=bool),
+            hit=np.array([e[2] for e in log], dtype=bool),
+            gain_bp=np.array([e[3] for e in log], dtype=float),
+            no_sigma=np.array([e[4] for e in log], dtype=bool),
+        )
+    return Priced(convention, start, returns, fills, deferrals, fallbacks, waits)
 
 
 # The k-th panel session as a date, the scorecard's `_since`.
@@ -443,6 +780,117 @@ def _excess(a: np.ndarray, b: np.ndarray, keep: np.ndarray) -> np.ndarray:
     return diff[np.isfinite(diff)]
 
 
+# Mean over finite entries, NaN when there are none.
+def _finite_mean(x: np.ndarray) -> float:
+    v = np.asarray(x, dtype=float)
+    v = v[np.isfinite(v)]
+    return float(v.mean()) if len(v) else math.nan
+
+
+# Whether a payload number is a finite float (None, as JSON writes NaN, is not).
+def _finite(x: Any) -> bool:
+    return x is not None and math.isfinite(float(x))
+
+
+# The conventions a run prices, in registered order. By default the seven
+# fill-timing conventions, and the four level conventions too when
+# forecasts are given. With `only`, the names given plus the controls the
+# verdicts read: next_open always; dip_or_close and trail_dip whenever a
+# level convention is named. An unknown name, or a level convention without
+# forecasts, is refused.
+def select_conventions(
+    only: Iterable[str] | None, have_forecasts: bool
+) -> tuple[str, ...]:
+    """Return the conventions to price, in ALL_CONVENTIONS order."""
+    if only is None:
+        names = set(CONVENTIONS) | (set(LEVEL_CONVENTIONS) if have_forecasts else set())
+    else:
+        names = {str(c).strip() for c in only if str(c).strip()}
+        unknown = sorted(names - set(ALL_CONVENTIONS))
+        if unknown:
+            raise ValueError(
+                f"unknown convention(s) {', '.join(unknown)}; registered: "
+                f"{', '.join(ALL_CONVENTIONS)}"
+            )
+        names.add(CONTROL)
+        if names & set(LEVEL_CONVENTIONS):
+            names |= {LEVEL_CONTROL, LEVEL_TWIN}
+    if names & set(LEVEL_CONVENTIONS) and not have_forecasts:
+        raise ValueError(
+            "the level conventions need the volatility forecasts (--forecasts <npz>)"
+        )
+    return tuple(c for c in ALL_CONVENTIONS if c in names)
+
+
+# From a waiting convention's orders that fill inside the window: how many
+# there were, the share filled at the level before the close (the dip fill
+# rate), the mean gain over that session's official close per dip fill and
+# per order (an order filled at the close gains nothing), and how many had
+# no sigma and filled as dip_or_close. Rates are NaN for a convention that
+# does not wait.
+def _wait_fields(log: OrderLog | None, keep: np.ndarray) -> dict[str, Any]:
+    """Return the dip fill and sigma fallback fields of one row."""
+    if log is None:
+        return {
+            "dip_orders": 0,
+            "dip_fills": 0,
+            "dip_fill_rate": math.nan,
+            "gain_bp_per_dip_fill": math.nan,
+            "gain_bp_per_order": math.nan,
+            "sigma_fallbacks": 0,
+            "sigma_fallback_share": math.nan,
+        }
+    inside = keep[log.session]
+    orders = int(inside.sum())
+    hit = log.hit & inside
+    missing = log.no_sigma & inside
+    return {
+        "dip_orders": orders,
+        "dip_fills": int(hit.sum()),
+        "dip_fill_rate": float(hit.sum() / orders) if orders else math.nan,
+        "gain_bp_per_dip_fill": _finite_mean(log.gain_bp[hit]),
+        "gain_bp_per_order": _finite_mean(log.gain_bp[inside]),
+        "sigma_fallbacks": int(missing.sum()),
+        "sigma_fallback_share": float(missing.sum() / orders) if orders else math.nan,
+    }
+
+
+# The entry-level trial's fields for one convention's row on one window:
+# at the median offset the paired daily difference against dip_or_close and
+# against trail_dip (bp, HAC t), across offsets the median CAGR difference
+# and the count above dip_or_close, and the median offset's order fields.
+# Also returns the difference against dip_or_close, for the deflated best.
+def _level_fields(
+    priced: dict[str, list[Priced]],
+    convention: str,
+    median: int,
+    keep: np.ndarray,
+    cagrs: dict[str, np.ndarray],
+) -> tuple[dict[str, Any], np.ndarray]:
+    """Return (row fields, paired difference against dip_or_close)."""
+    at = priced[convention][median]
+    vs_dip = _excess(at.returns, priced[LEVEL_CONTROL][median].returns, keep)
+    vs_twin = _excess(at.returns, priced[LEVEL_TWIN][median].returns, keep)
+    fields: dict[str, Any] = {
+        "median_cagr_vs_dip": _nanmedian(cagrs[convention] - cagrs[LEVEL_CONTROL]),
+        "offsets_above_dip": int(np.nansum(cagrs[convention] > cagrs[LEVEL_CONTROL])),
+        "mean_daily_bp_vs_dip": float(vs_dip.mean() * BP)
+        if len(vs_dip)
+        else math.nan,
+        "hac_t_vs_dip": candidate_stats.hac_t(vs_dip, HAC_LAG)
+        if len(vs_dip) > 2
+        else math.nan,
+        "mean_daily_bp_vs_twin": float(vs_twin.mean() * BP)
+        if len(vs_twin)
+        else math.nan,
+        "hac_t_vs_twin": candidate_stats.hac_t(vs_twin, HAC_LAG)
+        if len(vs_twin) > 2
+        else math.nan,
+    }
+    fields.update(_wait_fields(at.waits, keep))
+    return fields, vs_dip
+
+
 # How far this engine's `next_open` sits from the simulator it stands in
 # for, at one offset: the simulator's own returns against the control's,
 # in basis points a day. Zero on a store whose bar-0 opens are the panel's
@@ -471,71 +919,123 @@ def simulator_gap(report, mask: np.ndarray, control: Priced, cost_bps: float) ->
     }
 
 
+# Every chosen convention priced from each of the first `offsets` start
+# sessions: its fill prices once (a level convention's at the sigma its
+# orders read), then one ledger walk per offset. The band flags are read
+# only when breakout_gate is priced.
+def _price_all(
+    report: DeskReport,
+    cubes: dict[str, SessionCube],
+    mask: np.ndarray,
+    chosen: tuple[str, ...],
+    forecasts: Aligned | None,
+    offsets: int,
+    cost: float,
+) -> dict[str, list[Priced]]:
+    """Return {convention: [Priced per offset]} for the chosen conventions."""
+    panel = report.panel
+    blocked = band_rejecting(panel) if "breakout_gate" in chosen else None
+    prices: dict[str, FillPrices] = {}
+    for c in chosen:
+        sig = None
+        if c in LEVELS:
+            if forecasts is None:
+                raise ValueError(f"{c} needs the volatility forecasts")
+            sig = fill_sigma(forecasts, c)
+        prices[c] = cube_prices(cubes, panel, c, sig)
+    priced: dict[str, list[Priced]] = {c: [] for c in chosen}
+    for k in range(offsets):
+        targets = target_path(report, mask, since_offset(panel, k))
+        for c in chosen:
+            priced[c].append(price_book(targets, report, prices[c], c, cost, blocked))
+    return priced
+
+
 # Price every convention from every offset, then score them per window.
+# `conventions` narrows the set (`select_conventions`: the controls the
+# verdicts read are always added); `forecasts`, the volatility forecasts on
+# the report's panel grid (`vol_forecast.aligned_to_panel`), is what the
+# level conventions read. Without either, this is the fill-timing trial
+# exactly as registered. With a level convention priced, every row gains
+# the entry-level fields and the payload a "level" block with its verdict.
 def study(
     report,
     cubes: dict[str, SessionCube],
     mask: np.ndarray,
     offsets: int = 20,
     cost: float = COST_BPS[0],
+    conventions: Iterable[str] | None = None,
+    forecasts: Aligned | None = None,
 ) -> dict[str, Any]:
     """Return the trial payload: rows per (convention, window), best, verdict."""
     if offsets < 1:
         raise ValueError("offsets must be at least 1")
+    chosen = select_conventions(conventions, forecasts is not None)
     panel = report.panel
-    blocked = band_rejecting(panel)
-    prices = {c: cube_prices(cubes, panel, c) for c in CONVENTIONS}
-    priced: dict[str, list[Priced]] = {c: [] for c in CONVENTIONS}
-    for k in range(offsets):
-        targets = target_path(report, mask, since_offset(panel, k))
-        for c in CONVENTIONS:
-            priced[c].append(price_book(targets, report, prices[c], c, cost, blocked))
+    if forecasts is not None:
+        check_grid(forecasts, panel)
+    level_on = any(c in LEVELS for c in chosen)
+    priced = _price_all(report, cubes, mask, chosen, forecasts, offsets, cost)
     median = offsets // 2
     rows: list[dict[str, Any]] = []
     best: dict[str, dict[str, Any]] = {}
+    level_best: dict[str, dict[str, Any]] = {}
     for window, (lo, hi) in WINDOWS.items():
         keep = _window(panel.dates, lo, hi)
         cagrs = {
             c: np.array([_cagr(p.returns[keep]) for p in priced[c]])
-            for c in CONVENTIONS
+            for c in chosen
         }
         control = priced[CONTROL][median].returns
+        # The fill-timing trial's excess moments (its own seven conventions
+        # only) and the entry-level trial's (the level conventions against
+        # dip_or_close): each best is deflated against its own trials.
         moments: dict[str, candidate_stats.Moments] = {}
-        for c in CONVENTIONS:
+        level_moments: dict[str, candidate_stats.Moments] = {}
+        for c in chosen:
             at_median = priced[c][median]
             diff = _excess(at_median.returns, control, keep)
-            moments[c] = candidate_stats.moments(diff)
-            rows.append(
-                {
-                    "convention": c,
-                    "window": window,
-                    "cost_bps": cost,
-                    "offsets": offsets,
-                    "median_cagr": _nanmedian(cagrs[c]),
-                    "worst_cagr": float(np.nanmin(cagrs[c]))
-                    if np.isfinite(cagrs[c]).any()
-                    else math.nan,
-                    "best_cagr": float(np.nanmax(cagrs[c]))
-                    if np.isfinite(cagrs[c]).any()
-                    else math.nan,
-                    "median_cagr_vs_open": _nanmedian(cagrs[c] - cagrs[CONTROL]),
-                    "offsets_above_open": int(np.nansum(cagrs[c] > cagrs[CONTROL])),
-                    "sessions": int(len(diff)),
-                    "mean_daily_bp_vs_open": float(diff.mean() * BP)
-                    if len(diff)
-                    else math.nan,
-                    "hac_t_vs_open": candidate_stats.hac_t(diff, HAC_LAG)
-                    if len(diff) > 2
-                    else math.nan,
-                    "fills": int(at_median.fills),
-                    "deferrals": int(at_median.deferrals),
-                    "fallbacks": int(at_median.fallbacks),
-                }
-            )
+            if c in CONVENTIONS:
+                moments[c] = candidate_stats.moments(diff)
+            row: dict[str, Any] = {
+                "convention": c,
+                "window": window,
+                "cost_bps": cost,
+                "offsets": offsets,
+                "median_cagr": _nanmedian(cagrs[c]),
+                "worst_cagr": float(np.nanmin(cagrs[c]))
+                if np.isfinite(cagrs[c]).any()
+                else math.nan,
+                "best_cagr": float(np.nanmax(cagrs[c]))
+                if np.isfinite(cagrs[c]).any()
+                else math.nan,
+                "median_cagr_vs_open": _nanmedian(cagrs[c] - cagrs[CONTROL]),
+                "offsets_above_open": int(np.nansum(cagrs[c] > cagrs[CONTROL])),
+                "sessions": int(len(diff)),
+                "mean_daily_bp_vs_open": float(diff.mean() * BP)
+                if len(diff)
+                else math.nan,
+                "hac_t_vs_open": candidate_stats.hac_t(diff, HAC_LAG)
+                if len(diff) > 2
+                else math.nan,
+                "fills": int(at_median.fills),
+                "deferrals": int(at_median.deferrals),
+                "fallbacks": int(at_median.fallbacks),
+            }
+            if level_on:
+                extra, vs_dip = _level_fields(priced, c, median, keep, cagrs)
+                row.update(extra)
+                if c in LEVELS:
+                    level_moments[c] = candidate_stats.moments(vs_dip)
+            rows.append(row)
         best[window] = _best(rows, window, moments)
+        if level_on:
+            level_best[window] = _best(
+                rows, window, level_moments, LEVEL_CONTROL, LEVEL_TRIALS, "dip"
+            )
     payload: dict[str, Any] = {
         "policy": policy_v4.POLICY_VERSION,
-        "conventions": list(CONVENTIONS),
+        "conventions": list(chosen),
         "control": CONTROL,
         "cost_bps": cost,
         "offsets": offsets,
@@ -572,47 +1072,127 @@ def study(
             "is counted as a fallback. Costs are one way on every fill."
         ),
     }
-    payload.update(verdict(payload))
+    payload.update(_fill_timing_verdict(payload, chosen))
+    if level_on:
+        assert forecasts is not None  # select_conventions refuses levels without them
+        payload["level"] = _level_block(forecasts, chosen, level_best)
+        payload["level"].update(level_verdict(payload))
     return payload
 
 
+# The fill-timing verdict's fields: `verdict` when all seven of its
+# conventions were priced; when `--only` left some unpriced, a NOT JUDGED
+# line, since that trial is judged on its whole registered set or not at all.
+def _fill_timing_verdict(
+    payload: dict[str, Any], chosen: tuple[str, ...]
+) -> dict[str, Any]:
+    """Return the fill-timing trial's verdict fields for the conventions priced."""
+    if set(CONVENTIONS) <= set(chosen):
+        return verdict(payload)
+    priced = [c for c in CONVENTIONS if c in chosen]
+    return {
+        "verdict": (
+            f"NOT JUDGED: {len(priced)} of the {len(CONVENTIONS)} fill-timing "
+            f"conventions priced ({', '.join(priced)})"
+        ),
+        "adopted": [],
+        "criteria": {},
+        "breakout_gate": "breakout_gate: not priced in this run",
+    }
+
+
+# The entry-level trial's registration as the payload records it: the
+# conventions priced and how each fills, the control and the twin, the
+# floors, the deflated best per window, and the first session any forecast
+# exists. The verdict is merged in by `study`.
+def _level_block(
+    forecasts: Aligned, chosen: tuple[str, ...], level_best: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    """Return the payload's "level" block, before its verdict."""
+    finite = np.isfinite(np.asarray(forecasts.forecast, dtype=float)).any(axis=1)
+    first = str(forecasts.dates[np.argmax(finite)]) if finite.any() else None
+    return {
+        "plan": "docs/research/ml-entry-level-plan-2026-09-28.md",
+        "conventions": [c for c in chosen if c in LEVELS],
+        "control": LEVEL_CONTROL,
+        "twin": LEVEL_TWIN,
+        "levels": {
+            c: {"rule": LEVELS[c].rule, "k": LEVELS[c].k, "source": LEVELS[c].source}
+            for c in chosen
+            if c in LEVELS
+        },
+        "constants": {
+            "REPLACE_BP": REPLACE_BP,
+            "REPLACE_T": REPLACE_T,
+            "LEVEL_TRIALS": LEVEL_TRIALS,
+            "HAC_LAG": HAC_LAG,
+            "DIP": DIP,
+        },
+        "best": level_best,
+        "first_forecast_session": first,
+        "note": (
+            "sigma = exp(F / 2), F the file's forecast of the next session's log "
+            "realized variance, read from the decision session's row: an order "
+            "decided at t's close fills in t + 1 and reads row t. trail_dip reads "
+            "the file's trailing baseline on exactly the cells the forecast "
+            "covers. A missing sigma fills as dip_or_close and is counted "
+            "(sigma_fallbacks). Gains are against that session's official close, "
+            "in bp, positive when better for the trader; the order fields are the "
+            "median offset's orders filling in the window."
+        ),
+    }
+
+
 # The convention whose excess over the control is largest on the window,
-# with its deflated Sharpe against TRIALS trials from the excess series'
-# own moments. The trial variance is the spread of the per-period excess
-# Sharpes across the conventions scored; the control's own excess is
-# identically zero and has no Sharpe, so it drops out of the spread.
+# with its deflated Sharpe against `trials` trials from the excess series'
+# own moments. Candidates are the conventions `moments` holds (one trial's
+# own), other than the control. The trial variance is the spread of the
+# per-period excess Sharpes across the conventions scored; the control's
+# own excess is identically zero and has no Sharpe, so it drops out of the
+# spread. `versus` names the row fields read: "open" for the fill-timing
+# trial against next_open, "dip" for the entry-level trial against
+# dip_or_close.
 def _best(
-    rows: list[dict], window: str, moments: dict[str, candidate_stats.Moments]
+    rows: list[dict],
+    window: str,
+    moments: dict[str, candidate_stats.Moments],
+    control: str = CONTROL,
+    trials: int = TRIALS,
+    versus: str = "open",
 ) -> dict[str, Any]:
     """Return the window's best convention against the control, deflated."""
+    bp_key, t_key = f"mean_daily_bp_vs_{versus}", f"hac_t_vs_{versus}"
     candidates = [
         r
         for r in rows
         if r["window"] == window
-        and r["convention"] != CONTROL
-        and np.isfinite(r["mean_daily_bp_vs_open"])
+        and r["convention"] in moments
+        and r["convention"] != control
+        and np.isfinite(r[bp_key])
     ]
     if not candidates:
-        return {"convention": None, "deflated_sharpe": math.nan, "trials": TRIALS}
-    top = max(candidates, key=lambda r: r["mean_daily_bp_vs_open"])
+        return {"convention": None, "deflated_sharpe": math.nan, "trials": trials}
+    top = max(candidates, key=lambda r: r[bp_key])
     sharpes = np.array([m.sharpe for m in moments.values() if np.isfinite(m.sharpe)])
     variance = float(sharpes.var(ddof=1)) if len(sharpes) > 1 else 0.0
     mom = moments[top["convention"]]
     return {
         "convention": top["convention"],
-        "mean_daily_bp_vs_open": top["mean_daily_bp_vs_open"],
-        "hac_t_vs_open": top["hac_t_vs_open"],
+        bp_key: top[bp_key],
+        t_key: top[t_key],
         "excess_sharpe": mom.sharpe,
         "trial_variance": variance,
-        "trials": TRIALS,
+        "trials": trials,
         "deflated_sharpe": candidate_stats.deflated_sharpe(
-            mom.sharpe, mom.length, mom.skew, mom.kurtosis, TRIALS, variance
+            mom.sharpe, mom.length, mom.skew, mom.kurtosis, trials, variance
         ),
     }
 
 
 # The plan's kill criteria on the payload's rows, and the separate
 # statement about the band gate. Returns the fields `study` merges in.
+# Only the fill-timing trial's own conventions are judged here; the level
+# conventions have their own plan and `level_verdict`.
 def verdict(payload: dict[str, Any]) -> dict[str, Any]:
     """Return {"verdict", "adopted", "criteria", "breakout_gate"} for the payload."""
     rows = payload["rows"]
@@ -626,7 +1206,7 @@ def verdict(payload: dict[str, Any]) -> dict[str, Any]:
     adopted: list[str] = []
     criteria: dict[str, dict[str, Any]] = {}
     for c in payload["conventions"]:
-        if c == payload.get("control", CONTROL):
+        if c == payload.get("control", CONTROL) or c not in CONVENTIONS:
             continue
         choose = row(c, CHOOSING) or {}
         report = row(c, REPORTED) or {}
@@ -682,3 +1262,110 @@ def verdict(payload: dict[str, Any]) -> dict[str, Any]:
         "criteria": criteria,
         "breakout_gate": gate_line,
     }
+
+
+# The entry-level plan's criteria on the payload's rows, fixed before the
+# run. A level convention REPLACES the board's rule only when (1) it beats
+# dip_or_close by REPLACE_BP a session with t >= REPLACE_T on the choosing
+# window, (2) its paired difference against dip_or_close on the reported
+# window is not negative, and (3) its paired difference against trail_dip
+# on the choosing window is above zero. (1) and (2) without (3) is
+# VOL_SCALING; so is trail_dip passing (1) and (2), since it cannot beat
+# itself and the question is the model's. Anything else is RECORD. Also
+# states the model against trailing volatility at the same rule
+# (vol_dip_0.5 - trail_dip). Returns the fields `study` merges into the
+# payload's "level" block.
+def level_verdict(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return {"verdict", "replaces", "criteria", "twin_line"} for the payload."""
+    rows: list[dict[str, Any]] = payload["rows"]
+
+    # The payload's row for a convention and window, empty when absent.
+    def row(convention: str, window: str) -> dict[str, Any]:
+        for r in rows:
+            if r["convention"] == convention and r["window"] == window:
+                return r
+        return {}
+
+    criteria: dict[str, dict[str, Any]] = {
+        c: _level_criteria(c, row(c, CHOOSING), row(c, REPORTED))
+        for c in payload["conventions"]
+        if c in LEVELS
+    }
+    replaces = [c for c, v in criteria.items() if v["label"] == REPLACES]
+    scaling = [c for c, v in criteria.items() if v["label"] == VOL_SCALING]
+    if replaces:
+        text = (
+            f"{REPLACES}: {', '.join(replaces)} beat {LEVEL_CONTROL} by at least "
+            f"{REPLACE_BP:g} bp a session with t >= {REPLACE_T:g} on {CHOOSING}, are "
+            f"not worse on {REPORTED} and beat {LEVEL_TWIN}; the board's rule changes "
+            f"only as a separate, registered change"
+        )
+    elif scaling:
+        text = (
+            f"{RECORD}: no model convention clears every criterion; vol-scaling, "
+            f"not the model, clears the floors against {LEVEL_CONTROL}: "
+            f"{', '.join(scaling)}"
+        )
+    else:
+        text = (
+            f"{RECORD}: no level convention beats {LEVEL_CONTROL} by {REPLACE_BP:g} bp "
+            f"a session with t >= {REPLACE_T:g} on {CHOOSING} while not worse on "
+            f"{REPORTED}; the board keeps {LEVEL_CONTROL}"
+        )
+    model, twin = "vol_dip_0.5", LEVEL_TWIN
+    if model in payload["conventions"] and twin in payload["conventions"]:
+        a, b = row(model, CHOOSING), row(model, REPORTED)
+        twin_line = (
+            f"the model against trailing volatility at the same rule ({model} - "
+            f"{twin}): {_signed(a.get('mean_daily_bp_vs_twin'))} bp/session "
+            f"(t {_signed(a.get('hac_t_vs_twin'))}) on {CHOOSING}, "
+            f"{_signed(b.get('mean_daily_bp_vs_twin'))} "
+            f"(t {_signed(b.get('hac_t_vs_twin'))}) on {REPORTED}"
+        )
+    else:
+        twin_line = f"{model} against {twin}: not priced in this run"
+    return {
+        "verdict": text,
+        "replaces": replaces,
+        "criteria": criteria,
+        "twin_line": twin_line,
+    }
+
+
+# One level convention against the plan's three criteria, from its rows on
+# the choosing and reported windows, with the label they give: REPLACES
+# when all three hold, VOL_SCALING when the floors and the reported window
+# hold without the twin (always so for trail_dip), else RECORD. A missing
+# number (NaN, or None as JSON writes it) passes nothing.
+def _level_criteria(
+    convention: str, choose: dict[str, Any], later_row: dict[str, Any]
+) -> dict[str, Any]:
+    """Return the criteria record, label included, for one level convention."""
+    bp = choose.get("mean_daily_bp_vs_dip", math.nan)
+    t = choose.get("hac_t_vs_dip", math.nan)
+    later = later_row.get("mean_daily_bp_vs_dip", math.nan)
+    is_twin = convention == LEVEL_TWIN
+    twin_bp = math.nan if is_twin else choose.get("mean_daily_bp_vs_twin", math.nan)
+    passes_choosing = bool(
+        _finite(bp) and _finite(t) and bp >= REPLACE_BP and t >= REPLACE_T
+    )
+    not_worse = bool(_finite(later) and later >= 0.0)
+    beats_twin = bool(not is_twin and _finite(twin_bp) and twin_bp > 0.0)
+    label = RECORD
+    if passes_choosing and not_worse:
+        label = REPLACES if beats_twin else VOL_SCALING
+    return {
+        "label": label,
+        "choosing_bp_vs_dip": bp,
+        "choosing_t_vs_dip": t,
+        "reported_bp_vs_dip": later,
+        "choosing_bp_vs_twin": twin_bp,
+        "passes_choosing": passes_choosing,
+        "not_worse_reported": not_worse,
+        "beats_twin": beats_twin,
+    }
+
+
+# A signed number to two decimals for a verdict line, "n/a" when absent.
+def _signed(x: Any) -> str:
+    return f"{float(x):+.2f}" if _finite(x) else "n/a"

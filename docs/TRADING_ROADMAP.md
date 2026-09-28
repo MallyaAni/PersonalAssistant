@@ -110,6 +110,25 @@ strategy that changes only when untouched sessions say so.
   that branch lands, and `agent-trading-desk.svg` needs re-rendering
   (source updated, no browser in the sandbox).
 
+- 2026-09-28: the model's volatility forecast as the entry level, BUILT
+  and not run
+  ([research/ml-entry-level-plan-2026-09-28.md](research/ml-entry-level-plan-2026-09-28.md);
+  `market/fill_timing.py`, `python -m backend.cli.market_fill_timing
+  --forecasts <npz> --only ...`). The operator's question - can a model
+  set a better buy/sell level than the board's fixed 1% (`dip_or_close`)?
+  - as four registered trials on the `/4` policy's own orders. Levels sit
+  k·σ̂ from the open, with σ̂ the CNN's forecast of the next session's
+  volatility read from the decision session's row: `vol_dip_0.5`,
+  `vol_dip_1.0`, `vol_limit_0.5` (a strict resting limit), and
+  `trail_dip`, the same rule on trailing volatility, which separates "the
+  model" from "vol-scaling". A missing forecast (before 2018-02) fills as
+  `dip_or_close`, counted. REPLACES the board's rule only at >= 2 bp a
+  session over `dip_or_close` with t >= 2.0 on 2016-2023, not worse on
+  2024-2026 and above `trail_dip`; else RECORD. Prior: at most 1 bp a
+  session. Fifteen tests; the controls are byte-identical to before. Next:
+  run it on the Spark (six conventions, 120 ledger walks), record the note,
+  and change the board only if the verdict says REPLACES.
+
 - 2026-09-27, late night: profit-taking RAN
   ([research/profit-taking-2026-09-27.md](research/profit-taking-2026-09-27.md))
   - every trim rule, price- or model-based, loses (sold too early 52-63% of

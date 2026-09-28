@@ -1,5 +1,103 @@
 # Changelog
 
+## 2026-09-28 — The model's volatility forecast as the entry level: BUILT, not run
+
+The operator asked whether a machine-learning model can set a better
+buy/sell level than a fixed rule. The live board's rule is `dip_or_close`
+(buy at the first fifteen-minute close 1% under the open, else the
+close). The CNN's next-session volatility forecast (R² 0.27 against
+trailing) lost as a sizing input and its note says it belongs in
+execution. The pre-registration, with the prior (at most 1 bp a session,
+below the floor) and what would make it wrong, is
+`docs/research/ml-entry-level-plan-2026-09-28.md`.
+
+`backend/market/fill_timing.py` is extended, not forked, with four
+conventions registered before any run (`LEVEL_CONVENTIONS`, `LEVELS`).
+Each uses σ̂ = exp(F/2):
+
+- `vol_dip_0.5` and `vol_dip_1.0`: the first bar close at or below
+  open·exp(−k·σ̂), else the official close; sells mirror.
+- `vol_limit_0.5`: a resting limit filled at the limit price only when a
+  bar's low is strictly below it; sells mirror on the highs.
+- `trail_dip`: `vol_dip_0.5` fed the file's trailing 20-session baseline
+  instead of the model.
+
+**Alignment.** `fill_sigma` reads the forecast row dated s − 1 for an
+order filling on session s. That is the decision session:
+`vol_forecast.align` puts row (name, t) at t, and the order decided at
+t's close fills in t + 1.
+
+**Fallback.** A missing σ̂ fills as `dip_or_close` and is counted:
+before the 2018-02-21 first fit, or on a cell the dataset has no row for.
+`trail_dip` falls back on exactly the model's cells, so the two differ
+only in where σ̂ comes from.
+
+**Engine internals.** `waiting_fills`, `entry_level`, `WaitDetail` and
+`OrderLog` record, per order, whether it filled at its level before the
+close and its gain over that session's close. None of it feeds back into
+a price.
+
+**Statistics.** With a level convention priced, every row gains:
+
+- the paired daily difference against `dip_or_close` and against
+  `trail_dip` (bp, Newey-West t at lag 20);
+- the median CAGR difference and the offsets above `dip_or_close`;
+- from the median offset's orders in the window: the dip fill rate, the
+  gain per dip fill and per order over the session's close, and the σ̂
+  fallback share.
+
+The best level convention is deflated against four trials.
+
+**Verdict.** `level_verdict` gives REPLACES only at ≥ 2 bp a session over
+`dip_or_close` with t ≥ 2.0 on 2016-2023, not worse on 2024-2026, and
+above `trail_dip` on 2016-2023. The floors without the twin, or
+`trail_dip` itself clearing them, are RECORD (vol-scaling, not the
+model). Anything else is RECORD.
+
+**Command.** `python -m backend.cli.market_fill_timing` gains:
+
+- `--forecasts <npz>`. The payload records the file's path, sha256 and
+  metadata.
+- `--only <conventions>`, which always adds the controls the verdicts
+  read.
+
+A run with a level convention writes `<root>/desk/ml_entry_level.json`
+and prints the entry-level table and verdict. The fill-timing trial is
+judged only when all seven of its conventions are priced (else NOT
+JUDGED), and its verdict never reads a level convention.
+
+**Controls unchanged, VERIFIED locally.** A run without the new flags
+produces a payload byte-identical to `f31346e` on three synthetic worlds.
+388 sha256s also match that commit: every original convention's fill
+prices, per-offset returns and counts, and per-cube session prices.
+
+**Tests.** Fifteen, in `backend/tests/test_fill_timing_levels.py`, on the
+synthetic cube fixtures of `test_fill_timing.py`:
+
+- each convention's price on hand-built bars (a close exactly on the
+  level fills, one ulp short does not; a low exactly on the limit does
+  not; a missing σ̂ is `dip_or_close`);
+- the decision-row read;
+- a one-session misalignment of the file changing the result;
+- forecast rows altered from s on leaving every return through s
+  bit-identical;
+- the fallback counted, with `trail_dip` on the same cells;
+- `dip_or_close` byte-identical to a frozen copy of the pre-change code,
+  and the fill-timing rows, best and verdict unchanged beside the level
+  trial;
+- a world where the forecast knows each session's dip depth REPLACES,
+  and an uninformative one RECORDS;
+- the criteria at each edge;
+- the command end to end from a synthetic forecasts npz, including its
+  refusals.
+
+Seven planted defects are each caught: reading the fill row, a
+two-session lag, a touch filling the limit, a strict dip boundary,
+`trail_dip` off common support, no fallback, and a non-strict twin
+edge. The CLI test's store fixture moved into `_sip_store` in
+`test_fill_timing.py`.
+
+Not yet run on the Spark; no number in this entry is a result.
 ## 2026-09-28 — Board acts only at the measured level: BUY on a 15-minute close 1% under the open, else at the close; SELL/TRIM mirrored; the executor's band gate applies; Hold otherwise
 
 The operator acts on a BUY in his own account at once, so on the `/4`
