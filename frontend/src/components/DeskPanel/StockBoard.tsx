@@ -77,7 +77,7 @@ export const SessionPrice = ({live, ticker, now, compact = false, close}: {live:
     {compact
       // The board row: the price and one word for the session it belongs to;
       // the provenance (feed, time, regular bar, caveats) is the hover text.
-      ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{(session ?? 'quote').toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} /></>
+      ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{" "}{(session ?? "quote").toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} /></>
         : <span className="text-[#9a6700]">{lastPrice !== null ? `$${lastPrice.toFixed(2)} ${(session ?? 'quote').toLowerCase()}`
           : lastClose !== null ? `$${lastClose.toFixed(2)} close` : 'No price to display'}</span>
       : state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
