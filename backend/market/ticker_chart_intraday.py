@@ -137,20 +137,48 @@ def _data_status(
     return "complete", None, [], expected
 
 
+# The allocation policy whose add and trim are the reset's rebalance
+# rather than a sizing change: the equal-weight book (`policy_v4`), where
+# a held name's target drifts with the count of A/A+ names and only the
+# reset trades it (`decision_history` says why).
+EQUAL_WEIGHT_POLICY = "graded-equal-weight/4"
+
+
+# A weight as the percent of equity a trader reads it as: whole when it
+# is whole ("14%"), else to one decimal ("9.1%", "2.5%"), the way the
+# board writes its BUY 9.1%.
+def percent_text(weight: float | None) -> str:
+    """Return `weight` as "14%" or "9.1%"."""
+    pct = round((weight or 0.0) * 100, 1)
+    return f"{int(pct)}%" if pct == int(pct) else f"{pct}%"
+
+
 # The words on a decision marker, the way the daily chart writes them:
-# the action and the size it leads to. None for a hold or an unknown action.
-def decision_text(action: str, target_weight: float | None) -> str | None:
-    """Return "Buy 14%", "Add →20%", "Trim →20%" or "Sell", or None."""
-    pct = round((target_weight or 0.0) * 100)
+# the action and the size it leads to. Under the equal-weight policy an
+# add or a trim is the reset's rebalance and is written as the move it
+# places ("Rebalance +2.5%"); under a sizing policy it is the level it
+# leads to ("Add →20%"). None for a hold or an unknown action.
+def decision_text(
+    action: str,
+    target_weight: float | None,
+    delta_weight: float | None = None,
+    policy: str | None = None,
+) -> str | None:
+    """Return "Buy 14%", "Rebalance +2.5%", "Add →20%", "Sell" or None."""
     if action == "buy":
-        return f"Buy {pct}%"
-    if action == "add":
-        return f"Add →{pct}%"
-    if action == "trim":
-        return f"Trim →{pct}%"
+        return f"Buy {percent_text(target_weight)}"
     if action == "sell":
         return "Sell"
-    return None
+    if action not in ("add", "trim"):
+        return None
+    if policy == EQUAL_WEIGHT_POLICY:
+        delta = delta_weight
+        if not isinstance(delta, (int, float)):
+            return f"Rebalance →{percent_text(target_weight)}"
+        sign = "+" if delta >= 0 else "\u2212"
+        return f"Rebalance {sign}{percent_text(abs(float(delta)))}"
+    arrow = "Add" if action == "add" else "Trim"
+    return f"{arrow} →{percent_text(target_weight)}"
 
 
 # The session VWAP for every drawn bar: closes weighted by volume since
@@ -216,6 +244,8 @@ def _decision_markers(
     next_of = {d: order[i + 1] for i, d in enumerate(order[:-1])}
     decisions: list[dict[str, Any]] = []
     fills_at: list[dict[str, Any]] = []
+    policy = (history or {}).get("policy")
+    policy = policy if isinstance(policy, str) else None
     for row in (history or {}).get("rows") or []:
         if not isinstance(row, dict):
             continue
@@ -225,9 +255,15 @@ def _decision_markers(
             continue
         weight = row.get("target_weight")
         weight = float(weight) if isinstance(weight, (int, float)) else None
-        text = decision_text(action, weight)
+        delta = row.get("delta_weight")
+        delta = float(delta) if isinstance(delta, (int, float)) else None
+        text = decision_text(action, weight, delta, policy)
         if text is None:
             continue
+        # Whether the session was a reset, when the file says; a row from
+        # before the flag existed carries nothing and the chart draws it as
+        # it did.
+        reset = {"rebalance": bool(row["rebalance"])} if "rebalance" in row else {}
         regular, _auction = by_date[session]
         decisions.append(
             {
@@ -236,6 +272,7 @@ def _decision_markers(
                 "action": action,
                 "target_weight": weight,
                 "label": f"{text} decided at the close",
+                **reset,
             }
         )
         following = next_of.get(session)
@@ -252,6 +289,7 @@ def _decision_markers(
                 "action": action,
                 "target_weight": weight,
                 "label": f"{text} fills at the {'open' if at_open else 'close'}",
+                **reset,
             }
         )
     return decisions, fills_at
@@ -285,6 +323,11 @@ def _fill_markers(
         bar = _bar_containing(instant, regular, auction) if instant else None
         if bar is None:
             bar = regular[0] if side == "buy" else regular[-1]
+        # The plan leg the fill belongs to ("redeploy" on a redeploy buy),
+        # carried through so the chart can tell it from an entry or a
+        # rotation; absent on a fill that names none.
+        kind = fill.get("kind")
+        leg = {"kind": kind} if isinstance(kind, str) and kind else {}
         out.append(
             {
                 "time": _iso_new_york(bar.start),
@@ -292,7 +335,9 @@ def _fill_markers(
                 "side": side,
                 "qty": qty,
                 "price": price,
-                "label": f"Filled {side} {qty} @ {price:.2f}",
+                "label": f"Filled {side} {qty} @ {price:.2f}"
+                + (f" ({kind})" if leg else ""),
+                **leg,
             }
         )
     return out
@@ -348,9 +393,17 @@ def payload(
                 }
             )
     decisions, fills_at = _decision_markers(history, per_session, expected)
+    # The policy the decisions were replayed under and how its reset
+    # sessions were found, straight from the history file, so the chart
+    # can label a /4 add as the reset's rebalance and say when no reset is
+    # known; None where the file carries neither.
+    policy = (history or {}).get("policy")
+    rebalance_note = (history or {}).get("rebalance_note")
     return {
         "ticker": ticker,
         "timeframe": TIMEFRAME,
+        "policy": policy if isinstance(policy, str) else None,
+        "rebalance_note": rebalance_note if isinstance(rebalance_note, str) else None,
         "last_bar_complete": True,
         "quote_bar": None,
         "data_status": status,

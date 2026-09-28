@@ -345,3 +345,204 @@ def test_fills_carry_the_plan_leg_when_the_record_names_one(tmp_path):
             "kind": "redeploy",
         },
     ]
+
+
+# The /4 reading, on hand-built moves. Entering and leaving the book are a
+# buy and a sell on any session; a held name's move is a hold on a
+# non-reset session however large (the executor does not follow the
+# denominator), and on a reset session it is the add or trim the
+# rebalance places when it reaches ADD_TRIM_MIN, else a hold.
+def test_classify_under_the_reset_schedule():
+    classify = decision_history.classify
+    # Membership changes trade on any session.
+    assert classify(0.0, 1 / 11, reset=False) == "buy"
+    assert classify(1 / 11, 0.0, reset=False) == "sell"
+    assert classify(0.0, 1 / 11, reset=True) == "buy"
+    # Drift between resets is a hold, whatever its size (AAOI's 10 -> 12.5).
+    assert classify(0.10, 0.125, reset=False) == "hold"
+    assert classify(0.125, 0.10, reset=False) == "hold"
+    assert classify(1 / 6, 1 / 9, reset=False) == "hold"
+    # The reset trades a move at or above the threshold, and not one below it.
+    assert classify(0.10, 0.125, reset=True) == "add"
+    assert classify(0.125, 0.10, reset=True) == "trim"
+    assert classify(1 / 6, 1 / 7, reset=True) == "hold"
+    assert classify(0.0, 0.0, reset=True) == "hold"
+
+
+# A /3-style call (no schedule) reads exactly as it did: the same rows,
+# no `rebalance` key, so a history written for a sizing policy is unchanged.
+def test_series_without_a_schedule_is_the_weight_move_reading(membership):
+    report = _report(_crossing())
+    rows = decision_history.series(report, "AAA", history_path=membership)
+    assert all("rebalance" not in r for r in rows)
+    assert set(rows[0]) == {
+        "date",
+        "target_weight",
+        "previous_weight",
+        "delta_weight",
+        "action",
+    }
+    assert [r["action"] for r in rows] == [
+        decision_history.classify(r["previous_weight"], r["target_weight"])
+        for r in rows
+    ]
+
+
+# A report of eight member names whose count of A/A+ names changes while
+# one of them stays A+, so that name's equal-weight target drifts without
+# it ever leaving the book (the cap binds below five names, so the drift
+# needs six or more). Returns (report, membership history path).
+def _drifting(tmp_path: Path):
+    names = tuple(f"N{i}" for i in range(8))
+    path = tmp_path / "membership_history.csv"
+    path.write_text(
+        "ticker,entered,entry_announced,exited,exit_announced,source,rule\n"
+        + "".join(f"{n},2020-01-02,2020-01-02,,,test,test\n" for n in names),
+        encoding="utf-8",
+    )
+    n = len(names)
+    close = np.full((T, n + 1), 100.0)
+    panel = Panel(
+        dates=_dates(),
+        tickers=names + ("SPY",),
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1e6),
+        themes={t: (AI_COMPUTE,) for t in names},
+        benchmark="SPY",
+    )
+    grades = np.full((T, n + 1), C, dtype=int)
+    # N0 is A+ throughout; N1..N5 are A throughout (six names, 1/6 each);
+    # N6 joins on sessions 4-9 (seven names, 1/7) and N7 joins on 6-7
+    # (eight, 1/8), so N0's target drifts 1/6 -> 1/7 -> 1/8 -> 1/7 -> 1/6
+    # without N0 ever leaving the book. N0 is downgraded on session 15.
+    grades[:, 0:6] = A
+    grades[4:10, 6] = A
+    grades[6:8, 7] = A
+    grades[15:, 0] = C
+    conviction = grades.astype(float)
+    graded = grading.Graded(grades, conviction.copy(), {}, conviction)
+    state = regime.RegimeState(
+        0.0, 0.0, 0.5, 0.0, 0.0, 0.0, "ai", 0.1, 0.0, 1.0, 1.0, (), 0.0, False
+    )
+    view = regime.RegimeView(
+        [state] * T, Opinion("rotation", np.full((T, n + 1), np.nan))
+    )
+    report = DeskReport(
+        panel, {t: "ai" for t in names}, {}, view, graded, graded.as_scores(), []
+    )
+    return report, path
+
+
+# A name A+ every session with a drifting target reads buy on its entry,
+# hold through every drift on a non-reset session, add/trim only on the
+# reset session where the move reaches the threshold, and sell on the
+# session it leaves the book; every row says whether it was a reset.
+def test_series_under_the_schedule_marks_entries_exits_and_resets(tmp_path):
+    report, membership = _drifting(tmp_path)
+    dates = [str(d) for d in report.panel.dates]
+    targets = decision_history.target_matrix(report, membership)
+    # Every drift here is under the threshold (1/6 -> 1/7 is 2.4 points,
+    # 1/7 -> 1/8 is 1.8), so a reset on session 6 is a hold too: the
+    # rebalance would not bother. The resets on sessions 0 and 15 show
+    # the flag beside an entry and an exit.
+    resets = {dates[0], dates[6], dates[15]}
+    rows = decision_history.series(report, "N0", targets=targets, resets=resets)
+    actions = [r["action"] for r in rows]
+    assert actions[0] == "buy"
+    assert rows[0]["rebalance"] is True
+    assert rows[0]["target_weight"] == pytest.approx(1 / 6, abs=1e-6)
+    # Drift on sessions 4 (1/6 -> 1/7), 8 (1/8 -> 1/7), 10 (1/7 -> 1/6): holds.
+    assert rows[4]["target_weight"] == pytest.approx(1 / 7, abs=1e-6)
+    assert rows[6]["target_weight"] == pytest.approx(1 / 8, abs=1e-6)
+    assert rows[10]["target_weight"] == pytest.approx(1 / 6, abs=1e-6)
+    assert actions[1:15] == ["hold"] * 14
+    assert [r["rebalance"] for r in rows[1:15]] == [d in resets for d in dates[1:15]]
+    assert actions[15] == "sell"
+    assert rows[15]["rebalance"] is True
+    assert set(actions[16:]) == {"hold"}
+
+
+# The same drift with a large move on a reset session is the add or trim
+# the rebalance places. Built by hand on the classify boundary through
+# `series`: a two-column matrix whose second column drifts by 5 points.
+def test_series_on_a_reset_session_reads_the_rebalance_as_add_or_trim(membership):
+    report = _report(_crossing())
+    dates = [str(d) for d in report.panel.dates]
+    targets = np.zeros((T, len(NAMES) + 1))
+    targets[:, 0] = 0.15
+    targets[5:10, 0] = 0.20  # +5 points on session 5, -5 on session 10
+    rows = decision_history.series(
+        report, "AAA", targets=targets, resets={dates[5], dates[10]}
+    )
+    actions = [r["action"] for r in rows]
+    assert actions[0] == "buy"
+    assert actions[5] == "add"
+    assert actions[10] == "trim"
+    assert set(actions[1:5] + actions[6:10] + actions[11:]) == {"hold"}
+    # The same moves off the schedule are holds.
+    off = decision_history.series(report, "AAA", targets=targets, resets=set())
+    assert [r["action"] for r in off][1:] == ["hold"] * (T - 1)
+    assert all(r["rebalance"] is False for r in off)
+
+
+# The paper state's json, written the way `paper.save_state` does.
+def _state(root: Path, **fields):
+    from backend.agents.trading.desk import paper
+
+    paper.save_state(root, paper.PaperState(**fields))
+
+
+# A record with a paper block, written the way the nightly does.
+def _record(root: Path, session: str, paper_block: dict | None):
+    folder = root / "desk" / f"asof={session}"
+    folder.mkdir(parents=True, exist_ok=True)
+    record = {"session": session, "grades": {}, "book": []}
+    if paper_block is not None:
+        record["paper"] = paper_block
+    (folder / "desk.json").write_text(json.dumps(record), encoding="utf-8")
+
+
+# The reset sessions are the state's last and previous rebalance plus
+# every record whose plan was a rebalance the clock accepted; a refused
+# rebalance (clock not restarted) and a mid-cycle plan are not resets.
+def test_reset_sessions_come_from_the_state_and_the_records(tmp_path):
+    from backend.agents.trading.desk import paper
+
+    _state(
+        tmp_path,
+        last_rebalance="2026-09-27",
+        previous_rebalance="2026-08-28",
+        sessions_since_rebalance=0,
+    )
+    _record(tmp_path, "2026-08-28", {"plan": "rebalance", "until_rebalance": 20})
+    _record(tmp_path, "2026-09-10", {"plan": "hold", "until_rebalance": 11})
+    # A refused rebalance: the clock stayed where it was.
+    _record(tmp_path, "2026-09-15", {"plan": "rebalance", "until_rebalance": 8})
+    _record(
+        tmp_path,
+        "2026-07-30",
+        {"plan": "rebalance", "until_rebalance": paper.REBALANCE_EVERY},
+    )
+    _record(tmp_path, "2026-09-16", None)
+    found, note = decision_history.reset_sessions(tmp_path)
+    assert found == {"2026-07-30", "2026-08-28", "2026-09-27"}
+    assert note == decision_history.RESETS_FROM_CLOCK
+
+
+# No state, or a state that never rebalanced, is no clock: nothing is a
+# reset and the note says so, so the chart shows entries and exits only.
+def test_reset_sessions_without_a_clock_are_none_and_say_so(tmp_path):
+    assert decision_history.reset_sessions(tmp_path) == (
+        set(),
+        decision_history.RESETS_UNKNOWN,
+    )
+    _state(tmp_path, last_rebalance=None)
+    _record(tmp_path, "2026-08-28", {"plan": "rebalance", "until_rebalance": 20})
+    assert decision_history.reset_sessions(tmp_path) == (
+        set(),
+        decision_history.RESETS_UNKNOWN,
+    )

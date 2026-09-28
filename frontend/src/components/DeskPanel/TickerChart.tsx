@@ -318,23 +318,46 @@ type ChartMarker = {
 const DECISION_BUY = '#15803d'
 const DECISION_SELL = '#b42318'
 const FILL_BLUE = '#0b5cad'
+// A redeploy fill (idle cash sent back to the targets mid-cycle) in its own
+// colour, so the legend can tell it from an entry or a rotation fill.
+const FILL_REDEPLOY = '#6d28d9'
 const DECISION_NOTE = 'decisions at the close, filled at the next open; sizes are % of equity'
+// The equal-weight policy, whose add and trim are the reset's rebalance rather
+// than a sizing change: a held name's target drifts with the count of A/A+
+// names and only the twenty-session reset trades it, so the markers show
+// entries, exits and resets, and the drift between resets is not a trade.
+const EQUAL_WEIGHT_POLICY = 'graded-equal-weight/4'
+const EQUAL_WEIGHT_LEGEND = 'Buy = enters the A/A+ book at its target; Sell = leaves it; Rebalance ±% = the reset trades it. Target drift between resets is not traded and not marked. Circles are paper fills: blue an entry or rotation, purple a redeploy of idle cash.'
 
-// A target weight as the whole percent of equity a trader reads it as.
-const percentOfEquity = (weight: number | undefined) => Math.round((weight ?? 0) * 100)
+// A target weight as the percent of equity a trader reads it as: whole when it
+// is whole ("14%"), else to one decimal ("9.1%"), the way the board writes BUY 9.1%.
+const percentText = (weight: number | undefined) => {
+  const pct = Math.round((weight ?? 0) * 1000) / 10
+  return Number.isInteger(pct) ? `${pct}%` : `${pct.toFixed(1)}%`
+}
 
 // Capitalise a policy action for the eye: buy -> Buy.
 const titled = (action: string) => action ? action[0].toUpperCase() + action.slice(1) : action
 
-// The words on a decision marker: what to do and the size it leads to. A hold
-// is no marker at all, so it returns nothing.
-const decisionText = (row: DeskHistoryRow) => {
-  const pct = percentOfEquity(row.target_weight)
+// Whether a history's decisions are the equal-weight policy's, whose add/trim
+// mean a rebalance at the reset.
+const isEqualWeight = (policy: string | null | undefined) => policy === EQUAL_WEIGHT_POLICY
+
+// The words on a decision marker: what to do and the size it leads to. Under the
+// equal-weight policy an add or a trim is the reset's rebalance and is written
+// as the move it places ("Rebalance +2.5%"); under a sizing policy it is the
+// level it leads to ("Add →20%"). A hold is no marker at all, so it returns nothing.
+const decisionText = (row: DeskHistoryRow, policy?: string | null) => {
   switch (row.action) {
-    case 'buy': return `Buy ${pct}%`
-    case 'add': return `Add →${pct}%`
-    case 'trim': return `Trim →${pct}%`
+    case 'buy': return `Buy ${percentText(row.target_weight)}`
     case 'sell': return 'Sell'
+    case 'add':
+    case 'trim': {
+      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'Add' : 'Trim'} →${percentText(row.target_weight)}`
+      const delta = row.delta_weight
+      if (typeof delta !== 'number' || !Number.isFinite(delta)) return `Rebalance →${percentText(row.target_weight)}`
+      return `Rebalance ${delta >= 0 ? '+' : '−'}${percentText(Math.abs(delta))}`
+    }
     default: return null
   }
 }
@@ -349,7 +372,7 @@ const decisionRows = (history: DeskHistory | undefined) =>
 // sells point down from above in red; the label carries the size it leads to.
 const decisionMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] =>
   decisionRows(history).flatMap(row => {
-    const text = decisionText(row)
+    const text = decisionText(row, history?.policy)
     const candle = markerCandle(row.date, bars, timeframe)
     if (!text || !candle) return []
     const up = row.action === 'buy' || row.action === 'add'
@@ -375,18 +398,23 @@ const fillRows = (history: DeskHistory | undefined): DeskHistoryFill[] => {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// Mark the paper account's real fills as blue circles on the session they filled,
+// Whether a fill is the executor's redeploy of idle cash rather than an entry
+// or a rotation, as the record names it.
+const isRedeploy = (fill: {kind?: string}) => fill.kind === 'redeploy'
+
+// Mark the paper account's real fills as circles on the session they filled,
 // below the candle for a buy and above it for a sell, so a decision and the fill
-// it led to sit a candle apart on the same picture.
+// it led to sit a candle apart on the same picture. A redeploy fill is purple
+// and says so; every other fill is blue.
 const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] =>
   fillRows(history).flatMap(fill => {
     const candle = markerCandle(fill.date, bars, timeframe)
     return candle ? [{
       time: stamp(candle.date),
       position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
-      color: FILL_BLUE,
+      color: isRedeploy(fill) ? FILL_REDEPLOY : FILL_BLUE,
       shape: 'circle' as const,
-      text: `Filled ${fill.qty} @ ${fill.price.toFixed(2)}`,
+      text: `Filled ${fill.qty} @ ${fill.price.toFixed(2)}${isRedeploy(fill) ? ' (redeploy)' : ''}`,
       size: 2,
     }] : []
   })
@@ -433,13 +461,14 @@ const drawableTimedFill = (fill: DeskChartFill) =>
   Boolean(fill) && typeof fill.time === 'string' && Number.isFinite(Date.parse(fill.time))
   && (fill.side === 'buy' || fill.side === 'sell') && typeof fill.label === 'string' && fill.label.length > 0
 
-// The paper account's real fills on the bar they filled in, as blue circles,
-// below for a buy and above for a sell, labelled "Filled buy 63 @ 224.81".
+// The paper account's real fills on the bar they filled in, as circles (blue,
+// or purple for a redeploy), below for a buy and above for a sell, labelled
+// "Filled buy 63 @ 224.81" by the server.
 const intradayFillMarkers = (data: DeskChart | null): ChartMarker[] =>
   (data?.timeframe === '15m' && Array.isArray(data.fills) ? data.fills : []).filter(drawableTimedFill).map(fill => ({
     time: instantStamp(fill.time),
     position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
-    color: FILL_BLUE,
+    color: isRedeploy(fill) ? FILL_REDEPLOY : FILL_BLUE,
     shape: 'circle' as const,
     text: fill.label, size: 2,
   }))
@@ -806,7 +835,7 @@ export const TickerChart = ({
           </label>
           {fills.length > 0 && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />
-            Paper fills
+            Paper fills{fills.some(isRedeploy) ? ' (purple: redeploy)' : ''}
           </label>}
           {timeframe === '15m' && <div className="flex gap-1" role="group" aria-label="Chart sessions">
           {INTRADAY_SESSIONS.map((count) => (
@@ -896,25 +925,31 @@ export const TickerChart = ({
           {history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {history.decision_note || DECISION_NOTE}
           </p>}
+          {/* What the markers mean under the equal-weight policy, and how the
+              reset sessions were found: without a clock on file no session is
+              a reset, and the chart says so rather than guessing one. */}
+          {isEqualWeight(history?.policy) && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy marker legend">
+            {EQUAL_WEIGHT_LEGEND}{history?.rebalance_note ? ` ${history.rebalance_note[0].toUpperCase()}${history.rebalance_note.slice(1)}.` : ''}
+          </p>}
 
           {/* The markers are canvas, so the same decisions are written out here:
               the policy's stance today, then the sessions it would have traded
               on, newest first. This list is the decisions, not the markers, so
               the marker checkbox leaves it in place. */}
           {latestDecision && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
-            <p className="font-medium text-[#1d1d1f]">Now: {titled(latestDecision.action ?? 'hold')} {percentOfEquity(latestDecision.target_weight)}%</p>
+            <p className="font-medium text-[#1d1d1f]">Now: {titled(latestDecision.action ?? 'hold')} {percentText(latestDecision.target_weight)}</p>
             {recentDecisions.length === 0
               ? <p>No policy buy or sell in the loaded history.</p>
               : <ul className="mt-0.5">
                 {recentDecisions.map(row => {
                   const price = closeOn(row.date, merged.bars, timeframe)
                   // On 15m the list says when in the session the decision is made, since that is what the view is for.
-                  return <li key={row.date}>{sessionLabel(row.date, currentYear)} · {decisionText(row)}{price !== null ? ` · close $${price.toFixed(2)}` : ''}{timeframe === '15m' ? ' · decided at the close' : ''}</li>
+                  return <li key={row.date}>{sessionLabel(row.date, currentYear)} · {decisionText(row, history?.policy)}{price !== null ? ` · close $${price.toFixed(2)}` : ''}{timeframe === '15m' ? ' · decided at the close' : ''}</li>
                 })}
               </ul>}
             {fills.length > 0 && <ul className="mt-1" aria-label={`${ticker} paper fills`}>
               {[...fills].reverse().slice(0, 12).map((fill, index) => (
-                <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)} · Filled {fill.side} {fill.qty} @ ${fill.price.toFixed(2)}</li>
+                <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)} · Filled {fill.side} {fill.qty} @ ${fill.price.toFixed(2)}{isRedeploy(fill) ? ' · redeploy' : ''}</li>
               ))}
             </ul>}
           </div>}

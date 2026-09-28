@@ -2009,6 +2009,11 @@ export interface DeskHistoryRow {
   target_weight?: number;
   delta_weight?: number;
   action?: 'buy' | 'sell' | 'add' | 'trim' | 'hold';
+  // Under the equal-weight policy: whether the session was a rebalance
+  // reset on the paper account's clock. An add or a trim is only ever on
+  // a reset; a target drift between resets is a hold. Absent on files
+  // written before the schedule was known, or for another policy.
+  rebalance?: boolean;
 }
 // One real fill of the paper account in this name, read from the nightly records.
 export interface DeskHistoryFill {
@@ -2016,6 +2021,9 @@ export interface DeskHistoryFill {
   side: 'buy' | 'sell';
   qty: number;
   price: number;
+  // The plan leg the fill belongs to when the record names one:
+  // 'redeploy' on a redeploy buy (idle cash back to the targets).
+  kind?: string;
 }
 export interface DeskHistory {
   ticker: string;
@@ -2026,6 +2034,10 @@ export interface DeskHistory {
   // dates a decision to the close and its fill to the next open.
   policy?: string;
   decision_note?: string;
+  // How the reset sessions were found (the paper clock and the records, or
+  // none known), and which they were.
+  rebalance_note?: string;
+  reset_sessions?: string[];
   fills?: DeskHistoryFill[];
   recommendations?: DeskRecommendationHistory;
   backtest: {
@@ -2944,6 +2956,8 @@ export interface DeskChartDecision {
   action: 'buy' | 'sell' | 'add' | 'trim';
   target_weight: number | null;
   label: string;
+  // Whether the decision's session was a rebalance reset, when the history says.
+  rebalance?: boolean;
 }
 
 // A paper-account fill placed on the fifteen-minute bar it filled in.
@@ -2954,6 +2968,8 @@ export interface DeskChartFill {
   qty: number;
   price: number;
   label: string;
+  // The plan leg when the record names one ('redeploy' on a redeploy buy).
+  kind?: string;
 }
 
 export interface DeskChart {
@@ -2987,6 +3003,10 @@ export interface DeskChart {
   decisions?: DeskChartDecision[];
   fills_at?: DeskChartDecision[];
   fills?: DeskChartFill[];
+  // 15m only: the policy the decisions were replayed under and how its
+  // reset sessions were found, from the history file.
+  policy?: string | null;
+  rebalance_note?: string | null;
 }
 
 // How many sessions each timeframe loads unless the caller says otherwise:

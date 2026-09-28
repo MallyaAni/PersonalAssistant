@@ -875,6 +875,60 @@ def test_write_history_carries_the_policy_decisions_and_fills(tmp_path):
     assert other["fills"] == []
 
 
+# With no paper state on file there is no rebalance clock: no row is a
+# reset, the note says so, and the buy and the holds read as before.
+def test_write_history_says_when_no_reset_is_known(tmp_path):
+    from backend.agents.trading.desk import decision_history
+
+    market_daily.write_history(MarketStore(tmp_path), _member_report())
+    payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
+    assert payload["rebalance_note"] == decision_history.RESETS_UNKNOWN
+    assert payload["reset_sessions"] == []
+    assert [r["rebalance"] for r in payload["rows"]] == [False, False, False]
+    assert [r["action"] for r in payload["rows"]] == ["buy", "hold", "hold"]
+
+
+# The reset flag on each row comes from the paper state's clock: the
+# session the book last rebalanced on is flagged, the others are not, and
+# the file lists the resets it found.
+def test_write_history_flags_the_reset_sessions_from_the_paper_clock(tmp_path):
+    from backend.agents.trading.desk import decision_history, paper
+
+    paper.save_state(
+        tmp_path,
+        paper.PaperState(
+            last_rebalance="2026-09-09", sessions_since_rebalance=1
+        ),
+    )
+    market_daily.write_history(MarketStore(tmp_path), _member_report())
+    payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
+    assert payload["rebalance_note"] == decision_history.RESETS_FROM_CLOCK
+    assert payload["reset_sessions"] == ["2026-09-09"]
+    assert [(r["date"], r["rebalance"]) for r in payload["rows"]] == [
+        ("2026-09-08", False),
+        ("2026-09-09", True),
+        ("2026-09-10", False),
+    ]
+    # SNDK's target does not move, so the reset places nothing: a hold.
+    assert [r["action"] for r in payload["rows"]] == ["buy", "hold", "hold"]
+
+
+# A replay of a policy other than the account's keeps the weight-move
+# reading: no reset flag on the rows, and the note says why.
+def test_write_history_keeps_the_sizing_reading_for_another_policy(
+    tmp_path, monkeypatch
+):
+    from backend.agents.trading.desk import live_policy
+
+    monkeypatch.setattr(live_policy, "ACTIVE", "some-other-policy/3")
+    market_daily.write_history(MarketStore(tmp_path), _member_report())
+    payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
+    assert "not the account's" in payload["rebalance_note"]
+    assert payload["reset_sessions"] == []
+    assert all("rebalance" not in r for r in payload["rows"])
+    assert [r["action"] for r in payload["rows"]] == ["buy", "hold", "hold"]
+
+
 # A replay that cannot run costs the decision columns, never the file.
 def test_write_history_survives_a_failed_replay(tmp_path, monkeypatch, capsys):
     from backend.agents.trading.desk import decision_history

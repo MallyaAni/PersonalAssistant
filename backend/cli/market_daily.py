@@ -1683,13 +1683,34 @@ def _decision_fills(root: Path, ticker: str) -> list[dict]:
         return []
 
 
+# The reset sessions the history's /4 classification needs, from the
+# paper state's clock and the records, or None when the replayed policy is
+# not the one the account runs: a replay of another policy keeps the
+# weight-move reading, since its every target change would be an order.
+# A failure reading the state costs the schedule, never the files.
+def _reset_sessions(root: Path) -> tuple[set[str] | None, str]:
+    """Return (reset session dates or None, the note the files carry)."""
+    from backend.agents.trading.desk import decision_history, live_policy
+
+    if decision_history.POLICY != live_policy.ACTIVE:
+        return None, (
+            "replayed policy is not the account's; every move is read as an order"
+        )
+    try:
+        return decision_history.reset_sessions(root)
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        print(f"\nhistory: reset sessions not read ({type(exc).__name__}: {exc})")
+        return set(), f"reset sessions not read ({type(exc).__name__})"
+
+
 # One history file per book name, so the drill-down reads a single name's
 # file rather than rebuilding the whole desk to answer one question. Each
 # row also carries what the live policy would have done that session
-# (target weight, change and action), and the file carries the policy's
-# name, the note that dates a decision to the close and its fill to the
-# next open, and the paper account's real fills, so the chart can draw the
-# decisions and the fills beside the grade changes.
+# (target weight, change and action, and whether the session was a reset),
+# and the file carries the policy's name, the note that dates a decision
+# to the close and its fill to the next open, the note saying how the
+# reset sessions were found, and the paper account's real fills, so the
+# chart can draw the decisions and the fills beside the grade changes.
 def write_history(store, report, horizon: int = 20) -> int:
     """Write the per-name history files; return how many were written."""
     from backend.agents.trading.desk import decision_history
@@ -1697,6 +1718,7 @@ def write_history(store, report, horizon: int = 20) -> int:
     base = Path(store.root) / "history"
     base.mkdir(parents=True, exist_ok=True)
     targets, note = _decision_targets(report)
+    resets, reset_note = _reset_sessions(Path(store.root))
     count = 0
     for ticker in sorted(report.sides):
         rows = trading_desk.history(report, ticker, horizon)
@@ -1705,7 +1727,9 @@ def write_history(store, report, horizon: int = 20) -> int:
         if targets is not None:
             decided = {
                 d["date"]: d
-                for d in decision_history.series(report, ticker, targets=targets)
+                for d in decision_history.series(
+                    report, ticker, targets=targets, resets=resets
+                )
             }
         payload = {
             "ticker": ticker,
@@ -1714,6 +1738,8 @@ def write_history(store, report, horizon: int = 20) -> int:
             "fundamentals_source": getattr(report, "fundamentals_source", "") or "",
             "policy": decision_history.POLICY,
             "decision_note": note,
+            "rebalance_note": reset_note,
+            "reset_sessions": sorted(resets or ()),
             "rows": [
                 {**_history_row(r), **_decision_fields(decided.get(str(r.date)))}
                 for r in rows
@@ -1728,17 +1754,22 @@ def write_history(store, report, horizon: int = 20) -> int:
     return count
 
 
-# The three decision columns a history row carries, or nothing when the
-# session has no replayed decision (the row then reads as it always did).
+# The decision columns a history row carries - the target, its change,
+# the action, and whether the session was a reset when the series knows -
+# or nothing when the session has no replayed decision (the row then reads
+# as it always did).
 def _decision_fields(decision: dict | None) -> dict:
-    """Return {target_weight, delta_weight, action} for a row, or {}."""
+    """Return {target_weight, delta_weight, action[, rebalance]} for a row, or {}."""
     if not decision:
         return {}
-    return {
+    fields = {
         "target_weight": decision["target_weight"],
         "delta_weight": decision["delta_weight"],
         "action": decision["action"],
     }
+    if "rebalance" in decision:
+        fields["rebalance"] = bool(decision["rebalance"])
+    return fields
 
 
 # The prose job: the evidence text (and grade, for a brief) of every name

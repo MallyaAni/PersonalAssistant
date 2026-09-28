@@ -110,6 +110,14 @@ strategy that changes only when untouched sessions say so.
   that branch lands, and `agent-trading-desk.svg` needs re-rendering
   (source updated, no browser in the sandbox).
 
+- 2026-09-27, night: the ticker chart's markers show what `/4` does, BUILT
+  (`decision_history.classify(..., reset)`, `reset_sessions`; the history
+  file's `rebalance` flag and `rebalance_note`): buy on entering the A/A+
+  book, sell on leaving, "Rebalance ±%" on the paper clock's reset sessions
+  only; the denominator drift between resets (AAOI 8.3 → 12.5 → 9.1% while
+  A+ throughout) is a hold, and redeploy fills are labelled. Browser specs
+  updated, UNVERIFIED (no node in the sandbox).
+
 - 2026-09-27, late night: the mid-cycle study RAN
   ([research/midcycle-ew-2026-09-27.md](research/midcycle-ew-2026-09-27.md)):
   the live `/4` book is 78% invested (68% on 2024-2026) by accident of an

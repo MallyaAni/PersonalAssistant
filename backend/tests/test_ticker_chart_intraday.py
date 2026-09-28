@@ -220,6 +220,86 @@ def test_fills_follow_the_side_convention_or_an_explicit_instant(tmp_path):
     assert [f["time"] for f in out["fills"]] == ["2025-12-01T10:45:00-05:00"]
 
 
+# The payload names the policy and the reset note the history carries,
+# and a decision carries its session's reset flag when the row has one.
+def test_payload_carries_the_policy_and_the_reset_flags(tmp_path):
+    store = _store(tmp_path)
+    history = _history(tmp_path, rebalance_note="reset sessions from the clock")
+    history["rows"][0]["rebalance"] = True
+    history["rows"][1]["rebalance"] = False
+    out = chart.payload(store, tmp_path, "AAPL", 10, history)
+    assert out["policy"] == "graded-equal-weight/4"
+    assert out["rebalance_note"] == "reset sessions from the clock"
+    assert [d["rebalance"] for d in out["decisions"]] == [True, False]
+    assert [d["rebalance"] for d in out["fills_at"]] == [True, False]
+    # A file from before the flag existed carries none, and neither does the marker.
+    plain = chart.payload(store, tmp_path, "AAPL", 10, _history(tmp_path))
+    assert plain["policy"] == "graded-equal-weight/4"
+    assert plain["rebalance_note"] is None
+    assert all("rebalance" not in d for d in plain["decisions"])
+    assert chart.payload(store, tmp_path, "AAPL", 10, {"rows": []})["policy"] is None
+
+
+# Under the equal-weight policy an add or a trim is the reset's rebalance,
+# labelled as the move it places; under a sizing policy it is the level
+# it leads to, as before. Sizes are whole percents, or one decimal when
+# they are not whole, the way the board writes BUY 9.1%.
+def test_decision_text_is_policy_aware():
+    text = chart.decision_text
+    assert text("buy", 0.0909) == "Buy 9.1%"
+    assert text("buy", 0.14) == "Buy 14%"
+    assert text("sell", 0.0) == "Sell"
+    assert text("hold", 0.1) is None
+    v4 = chart.EQUAL_WEIGHT_POLICY
+    assert text("add", 0.125, 0.025, v4) == "Rebalance +2.5%"
+    assert text("trim", 0.10, -0.025, v4) == "Rebalance \u22122.5%"
+    assert text("add", 0.20, None, v4) == "Rebalance \u219220%"
+    assert text("add", 0.20, 0.06, "some-sizing/3") == "Add \u219220%"
+    assert text("trim", 0.20, -0.06, None) == "Trim \u219220%"
+
+
+# A reset-day add in a /4 history is drawn as the rebalance it is.
+def test_a_reset_add_is_labelled_as_a_rebalance(tmp_path):
+    store = _store(tmp_path)
+    history = _history(tmp_path)
+    history["rows"][0] = {
+        "date": EARLY.isoformat(),
+        "grade": "A",
+        "action": "add",
+        "target_weight": 0.125,
+        "delta_weight": 0.025,
+        "rebalance": True,
+    }
+    out = chart.payload(store, tmp_path, "AAPL", 10, history)
+    assert out["decisions"][0]["label"] == "Rebalance +2.5% decided at the close"
+    assert out["decisions"][0]["rebalance"] is True
+    assert out["fills_at"][0]["label"] == "Rebalance +2.5% fills at the open"
+
+
+# A fill that names its plan leg carries it and says so in its label, so
+# a redeploy buy can be told from an entry; a fill without one is as before.
+def test_a_redeploy_fill_carries_its_kind(tmp_path):
+    store = _store(tmp_path)
+    history = _history(
+        tmp_path,
+        fills=[
+            {
+                "date": MON.isoformat(),
+                "side": "buy",
+                "qty": 7,
+                "price": 91.0,
+                "kind": "redeploy",
+            },
+            {"date": TUE.isoformat(), "side": "buy", "qty": 3, "price": 90, "kind": 7},
+        ],
+    )
+    out = chart.payload(store, tmp_path, "AAPL", 10, history)
+    assert out["fills"][0]["kind"] == "redeploy"
+    assert out["fills"][0]["label"] == "Filled buy 7 @ 91.00 (redeploy)"
+    assert "kind" not in out["fills"][1]
+    assert out["fills"][1]["label"] == "Filled buy 3 @ 90.00"
+
+
 # When the history is not handed in, it is read from <root>/history.
 def test_payload_reads_the_history_file_from_the_root(tmp_path):
     store = _store(tmp_path)

@@ -16,6 +16,25 @@ the close it was made at; the fill is the next session's open, which is
 where the simulator prices it and where the paper account sends its buys.
 The chart draws the decision on its own session, and the caption says so.
 
+WHAT THE MARKERS MEAN UNDER `graded-equal-weight/4` (2026-09-27). A name's
+target under /4 is 1/(number of A/A+ names) capped at HOLD_CAP, so it
+drifts a little every session the count changes - AAOI was A+ every day
+from Sep 8 to Sep 25 and its target went 8.3 -> 7.7 -> 9.1 -> 10 -> 12.5
+-> 10 -> 9.1% - and the executor trades none of that drift: it brings the
+book to the targets at the reset every `paper.REBALANCE_EVERY` sessions,
+sells a name the desk downgrades mid-cycle, buys one that enters, and
+(since the executor's /4) redeploys idle cash into names below target.
+Read as weight moves, the drift produced an "add 2.5%" and a "trim 2.5%"
+the account never traded, while the board said BUY 9.1%. So when the
+replay is the active policy the series is classified by membership and
+by the reset schedule: `buy` when the target goes 0 -> >0 (the name
+enters the A/A+ book), `sell` when it goes >0 -> 0 (it leaves), `add` or
+`trim` only on a reset session and only when the move is at least
+ADD_TRIM_MIN (the rebalance really trades it), and `hold` for every other
+target change, whatever its size. The reset sessions come from the paper
+state's clock (`reset_sessions`); a history written with no clock on file
+marks none and says so.
+
 Nothing here trades. The series is display data written into the
 per-name history file; the paper account and the record are read, never
 written.
@@ -62,15 +81,22 @@ def target_matrix(
 
 
 # The action a weight move amounts to: entering is a buy and leaving is a
-# sell whatever the size; between the two, a move under ADD_TRIM_MIN is a
-# hold (an equal-weight reshuffle, not an order) and a larger one an add
-# or a trim.
-def classify(previous: float, target: float) -> str:
+# sell whatever the size. Between the two it depends on who is asked.
+# With `reset` None (a sizing policy whose every target move is an order,
+# the /3 reading) a move under ADD_TRIM_MIN is a hold and a larger one an
+# add or a trim. With `reset` given (the /4 reading, membership and
+# schedule) a held name is traded only at the reset: on a reset session a
+# move of at least ADD_TRIM_MIN is the add or trim the rebalance places,
+# and on any other session every move is a hold, because the executor
+# does not follow the denominator between resets.
+def classify(previous: float, target: float, reset: bool | None = None) -> str:
     """Return one of ACTIONS for a move from `previous` to `target`."""
     if previous <= 0.0 < target:
         return "buy"
     if target <= 0.0 < previous:
         return "sell"
+    if reset is False:
+        return "hold"
     delta = target - previous
     # The threshold is inclusive; the epsilon keeps 0.10 -> 0.125 an add
     # whatever floating point makes of the subtraction.
@@ -85,15 +111,20 @@ def classify(previous: float, target: float) -> str:
 # the weight the session before, the change and the action it amounts to.
 # The decision is made at the close of `date`; the fill it implies is the
 # next session's open. `targets` accepts a precomputed `target_matrix` so
-# a caller writing every name's file computes the matrix once.
+# a caller writing every name's file computes the matrix once. `resets`,
+# when given (a set of session dates, possibly empty), switches the
+# classification to the /4 reading - membership and the reset schedule -
+# and every row then also says whether its session was a reset; left None
+# the rows read exactly as they did before the schedule was known.
 def series(
     report,
     ticker: str,
     since: date | None = None,
     targets: np.ndarray | None = None,
     history_path: Path = universe.MEMBERSHIP_HISTORY_PATH,
+    resets: set[str] | None = None,
 ) -> list[dict]:
-    """Return [{date, target_weight, previous_weight, delta_weight, action}]."""
+    """Return [{date, target_weight, previous_weight, delta_weight, action, ...}]."""
     panel = report.panel
     column = panel.index(ticker)
     if targets is None:
@@ -105,17 +136,72 @@ def series(
     for t, day in enumerate(panel.dates):
         target = float(weights[t])
         if day >= start:
-            rows.append(
-                {
-                    "date": str(day),
-                    "target_weight": round(target, 6),
-                    "previous_weight": round(previous, 6),
-                    "delta_weight": round(target - previous, 6),
-                    "action": classify(previous, target),
-                }
-            )
+            reset = None if resets is None else str(day) in resets
+            row = {
+                "date": str(day),
+                "target_weight": round(target, 6),
+                "previous_weight": round(previous, 6),
+                "delta_weight": round(target - previous, 6),
+                "action": classify(previous, target, reset),
+            }
+            if reset is not None:
+                row["rebalance"] = reset
+            rows.append(row)
         previous = target
     return rows
+
+
+# What the history file says about how its reset sessions were found.
+RESETS_FROM_CLOCK = (
+    "reset sessions from the paper state's rebalance clock and the nightly "
+    "records; add/trim markers only on those, target drift between resets is "
+    "not traded"
+)
+RESETS_UNKNOWN = (
+    "no rebalance clock on file: no session is marked as a reset, so the "
+    "series shows entries and exits only"
+)
+
+
+# The sessions the paper book was brought to its targets on, as the
+# account's own bookkeeping records them: the state's `last_rebalance`
+# and `previous_rebalance` (the two the clock keeps), plus every nightly
+# record whose paper block planned a rebalance that the clock accepted
+# (`plan == "rebalance"` with the clock restarted, `until_rebalance` equal
+# to the full cycle; a refused rebalance leaves the clock where it was and
+# is not a reset). The clock is not projected backward from the last reset
+# in twenty-session steps: a forced rebalance (the move to /4) and a
+# refused one both move it, so a projected date would be a guess where the
+# state and the records are evidence. The note says which case applied.
+def reset_sessions(root: Path) -> tuple[set[str], str]:
+    """Return ({session dates the book rebalanced on}, the note for the file)."""
+    from backend.agents.trading.desk import paper
+
+    found: set[str] = set()
+    try:
+        state = paper.load_state(Path(root))
+    except (OSError, ValueError, TypeError):
+        state = None
+    if state is None or not state.last_rebalance:
+        return found, RESETS_UNKNOWN
+    for stamp in (state.last_rebalance, state.previous_rebalance):
+        if isinstance(stamp, str) and stamp:
+            found.add(stamp[:10])
+    for session in deskrecord.sessions(Path(root)):
+        try:
+            record = deskrecord.load(Path(root), session)
+        except (OSError, ValueError):
+            continue
+        block = record.get("paper") if isinstance(record, dict) else None
+        if not isinstance(block, dict) or block.get("plan") != "rebalance":
+            continue
+        try:
+            until = int(block.get("until_rebalance", paper.REBALANCE_EVERY))
+        except (TypeError, ValueError):
+            continue
+        if until >= paper.REBALANCE_EVERY:
+            found.add(str(record.get("session") or session)[:10])
+    return found, RESETS_FROM_CLOCK
 
 
 # The plan leg a settled row names, as the one-key dict to add to its fill:

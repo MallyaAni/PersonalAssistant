@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-09-27 — Chart markers show what /4 does: entries, exits, resets; denominator drift no longer reads as add/trim
+
+The per-ticker chart's historical buy/add/trim/sell markers
+(`decision_history.series` on the nightly's per-name history, and the
+15:45-bar decisions of `ticker_chart_intraday`) classified every target
+move of at least 2.5 points as an add or a trim. Under
+`graded-equal-weight/4` a held name's target is 1/(number of A/A+ names)
+capped at 20% and drifts every session the count changes: AAOI, A+ every
+day from Sep 8 to Sep 25, went 8.3 → 7.7 → 9.1 → 10 → 12.5 → 10 → 9.1%
+and the chart drew "Add →12%" on Sep 18 and "Trim →10%" on Sep 23, two
+trades the executor never places - it rebalances at the reset every
+twenty sessions, exits a downgrade mid-cycle and redeploys idle cash
+toward the targets - while the board said BUY 9.1%.
+
+- When the replayed policy is the account's (`decision_history.POLICY ==
+  live_policy.ACTIVE`) the series is classified by membership and by the
+  reset schedule: `buy` when the target goes 0 → >0 (the name enters the
+  A/A+ book, size the target), `sell` when >0 → 0 (it leaves), `add`/`trim`
+  only on a reset session and only for a move of at least ADD_TRIM_MIN,
+  `hold` for every other move whatever its size (`classify(previous,
+  target, reset)`; `reset=None` is the weight-move reading, byte for byte
+  as before, and stays the reading for any other policy).
+- Reset sessions come from the paper account's own bookkeeping
+  (`decision_history.reset_sessions`): the state's `last_rebalance` and
+  `previous_rebalance`, plus every nightly record whose paper block
+  planned a rebalance the clock accepted (`plan == "rebalance"` with
+  `until_rebalance` at the full cycle; a refused rebalance is not a
+  reset). The clock is not projected backward in twenty-session steps -
+  the forced move to /4 and a refused rebalance both move it. With no
+  clock on file (no state, or one that never rebalanced) no session is a
+  reset and the file says so.
+- The history file carries `rebalance: bool` on every decided row,
+  `rebalance_note` (how the resets were found) and `reset_sessions`; the
+  15m payload carries `policy`, `rebalance_note` and the flag on each
+  decision. Labels: "Buy 9.1%" (one decimal when not whole, as the board
+  writes it), "Sell", "Rebalance +2.5%" / "Rebalance −2.5%" on a reset;
+  "Add →20%" / "Trim →20%" stay for a history of another policy. A fill
+  row's `kind` ("redeploy") reaches both chart payloads and the marker's
+  label; the chart draws a redeploy fill purple, lists it as "· redeploy",
+  and the fills switch says so.
+- `TickerChart.tsx`: the legend under the policy note says what a marker
+  means under /4 and repeats the file's reset note; the /3 rendering is
+  unchanged for a history whose `policy` is not the equal-weight one.
+- Tests: `test_decision_history` (classify under the schedule; a drifting
+  A+ name reads buy, holds, sell with the flag on every row; a reset add
+  and trim; the no-schedule reading unchanged; reset sessions from the
+  state and the records; none without a clock), `test_market_daily`
+  (`write_history` flags the reset from the paper clock, says when none is
+  known, keeps the sizing reading for another policy), and
+  `test_ticker_chart_intraday` (payload carries policy and flags;
+  policy-aware labels; a reset add is a rebalance; a redeploy fill carries
+  its kind). The e2e specs `chart-decision-history` and `chart-15m` carry
+  a /4 fixture (entry → Buy 9.1%, drift → nothing, reset → Rebalance
+  +2.5%, downgrade → Sell), a /3 fixture (Add →20% kept, no legend) and a
+  redeploy fill; UNVERIFIED in the browser - no node in the sandbox.
+
 ## 2026-09-27 — Board sizes toward the /4 targets; the /3-era "targets are not a standing order" rule applies only to /3 records
 
 The desk board printed Hold with no size on every name of the `/4` book
