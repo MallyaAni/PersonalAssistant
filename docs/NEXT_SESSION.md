@@ -1,5 +1,44 @@
 # Next session
 
+## Model handoff protocol (2026-09-28; operator: "we should not sacrifice quality of work")
+
+**Checkpoint:** tag `checkpoint-2026-09-28` = `main` `d417ff20`. The deployed
+code is `80b58819`; every later commit is docs or payloads, so the tag and the
+running system are the same code. Every trial of 2026-09-27/28 is recorded in
+`docs/research/`, the live changes in CHANGELOG, the state in the entries below.
+
+**Rollback** (from `~/deploy/anios` on spark1; `deploy.sh --no-pull` deploys the
+checkout as it stands, and the gate still runs):
+
+- to the checkpoint: `git fetch --tags && git checkout checkpoint-2026-09-28 && bash scripts/deploy.sh --no-pull && git checkout main`
+- to the board before the level gate (BUY at the /4 target, no dip timing): the same with `508c66c9`
+- to before the idle-cash redeploy and the /4 board sizing: the same with `954c39da`
+
+**Rules for whichever model or tool continues** (Claude on another model,
+OpenCode, a person):
+
+1. **The live path is frozen at the checkpoint.** No change to
+   `backend/agents/trading/desk/{paper,paper_rules,simulate,live_policy,policy_v4}.py`,
+   `backend/market/{decision_view,entry_timing,grade_parity}.py`,
+   `backend/cli/market_daily.py` or the board components
+   (`frontend/src/components/DeskPanel/`) is deployed without the operator's
+   explicit go-ahead in chat. Research runs on branches only.
+2. **A problem during market hours is reported, not hot-fixed.** Tell the
+   operator which rows are wrong and why, and that he should not trade them;
+   prepare the fix on a branch with tests; roll back to a tag above if the
+   board is unsafe. Never deploy between 09:00 and 16:15 ET.
+3. **No result without its pre-registration.** A trial's note (question,
+   variants, kill criteria) is committed before the run; floors are not
+   moved afterwards; RECORD results are written up as plainly as ADOPT ones.
+4. **Every change passes the full gate before merge:** the unit suite in the
+   functional-tests container, `tsc --noEmit`, the Playwright specs the change
+   touches plus the desk specs (the 10 known harness failures on the aborted
+   `/api/v1/conversations/...` request are baseline - compare against `main`
+   before calling anything a regression), then `scripts/deploy.sh`.
+5. **Verification is read-only.** The scheduled check-ins (13:50Z and 19:35Z
+   on 09-28, 00:40Z on 09-29) compare the latch, the payload and the log with
+   what the rules say; they change nothing.
+
 ## 2026-09-28, pre-open — The board acts only at the measured level; ML entry level recorded
 
 **Deployed** `80b58819` (05:04Z, post-deploy ok; main now `eb74a6d`). The
