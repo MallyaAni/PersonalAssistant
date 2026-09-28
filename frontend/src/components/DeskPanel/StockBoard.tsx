@@ -73,12 +73,17 @@ export const SessionPrice = ({live, ticker, now, compact = false, close}: {live:
   const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
   const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
   const staleCaveat = state === 'stale' ? ' Last observed price; not a current quote.' : ''
-  return <div aria-label={`${ticker} session price`} title={`${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
-    {state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
-      : <><span className="text-[#9a6700]">{lastPrice !== null
+  return <div aria-label={`${ticker} session price`} title={`${quote?.at ? `Last observed ${at} ET. ` : ''}${source}. ${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
+    {compact
+      // The board row: the price and one word for the session it belongs to;
+      // the provenance (feed, time, regular bar, caveats) is the hover text.
+      ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{(session ?? 'quote').toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} /></>
+        : <span className="text-[#9a6700]">{lastPrice !== null ? `$${lastPrice.toFixed(2)} ${(session ?? 'quote').toLowerCase()}`
+          : lastClose !== null ? `$${lastClose.toFixed(2)} close` : 'No price to display'}</span>
+      : state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
+      : <span className="text-[#9a6700]">{lastPrice !== null
           ? `$${lastPrice.toFixed(2)} last ${session ?? 'quote'} · ${source}${at ? ` · ${at} ET` : ''}${qualification}`
-          : lastClose !== null ? `$${lastClose.toFixed(2)} last close` : 'No price to display'}</span>
-        {compact && <div>{regular && Number.isFinite(regular.last) ? <>Regular bar ${regular.last.toFixed(2)}<ChangeMark last={regular.last} close={close} /></> : 'Regular bar unavailable'}</div>}</>}
+          : lastClose !== null ? `$${lastClose.toFixed(2)} last close` : 'No price to display'}</span>}
     {!compact && <p className="text-[11px] text-[#6e6e73]">Price signals use regular-session candles.</p>}
   </div>
 }
