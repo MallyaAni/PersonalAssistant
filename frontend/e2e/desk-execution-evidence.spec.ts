@@ -136,9 +136,10 @@ for (const name of Object.keys(evidence.cases) as CaseName[]) {
         await expect(intent).not.toContainText('market closed or clock unavailable')
         await expect(detail).toContainText(CLOCK)
         await expect(intent).not.toHaveAttribute('title', /Quote unavailable/)
+        // The board row: the price and its session word; the feed is its hover text.
         const midpoint = page.getByLabel('S11 session price', {exact: true}).first()
-        await expect(midpoint).toContainText('$100.00')
-        await expect(midpoint).toContainText('overnight · BOATS')
+        await expect(midpoint).toContainText(/^\$100\.00\s?overnight/)
+        await expect(midpoint).toHaveAttribute('title', /^Last observed .* ET\. BOATS\. /)
         await expect(midpoint).toHaveAttribute('title', /Signal: regular session\. Midpoint is not a trade or guaranteed fill/)
         await expect(midpoint).toHaveAttribute('title', /not proof of venue availability/)
       } else if (name === 'stale_quote') {
@@ -252,7 +253,7 @@ for (const failure of ['generic unavailable', 'missing envelope', 'missing quote
         await expect(reading).toHaveAttribute('title', /For display only; execution checks are separate/)
         await expect(reading).toHaveAttribute('title', /Midpoint is not a trade or guaranteed fill/)
       }
-      await expect(readings[0]).toContainText('Regular bar $108.96')
+      await expect(readings[0]).toHaveAttribute('title', /Regular-session bar \$108\.96/)
       await expect(readings[1]).toContainText('Price signals use regular-session candles.')
       if (failure === 'generic unavailable') await expect(readings[1]).toHaveAttribute('title', /No usable bid\/ask midpoint was returned for this display\./)
       if (failure === 'specific recorded reason') await expect(readings[1]).toHaveAttribute('title', /Price-data detail: Missing or future quote timestamp/)

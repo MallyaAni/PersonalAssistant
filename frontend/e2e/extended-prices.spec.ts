@@ -43,8 +43,9 @@ async function setup(page: Page, session = 'post-market', transition = false) {
 // Current session midpoints never replace regular chart candles, grades or trade sizes.
 test('extended midpoint is separate from regular signal price on board and chart', async ({page}) => {
   const {board, errors, writes} = await setup(page)
-  await expect(board.getByLabel('AAPL session price')).toContainText('post-market · IEX')
-  await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /Regular-session bar \$100\.00.*Signal: regular session/)
+  // The board row: the price and its session word; the source, time and regular bar are its hover text.
+  await expect(board.getByLabel('AAPL session price')).toContainText(/^\$102\.00\s?post-market/)
+  await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /^Last observed 5:59:59\sPM ET\. IEX\. Regular-session bar \$100\.00.*Signal: regular session/)
   await expect(board.getByLabel('AAPL displayed grade')).toContainText('A')
   await expect(board.getByLabel('AAPL size')).toHaveText('—')
   await expect(board.getByLabel('MSFT session price')).toContainText('No price to display')
@@ -56,10 +57,13 @@ test('extended midpoint is separate from regular signal price on board and chart
   await expect(chart.locator('dl')).not.toContainText('$102.00')
   // Once the midpoint expires it stays visible as the last observation with its own time, not as current.
   await page.clock.fastForward(21_000)
+  await expect(chart.getByLabel('AAPL session price')).toContainText('$102.00 last post-market · IEX · 5:59:59 PM ET')
+  await expect(board.getByLabel('AAPL session price')).toContainText(/^\$102\.00\s?post-market/)
+  await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /^Last observed 5:59:59\sPM ET\. IEX\. /)
   for (const reading of [chart.getByLabel('AAPL session price'), board.getByLabel('AAPL session price')]) {
-    await expect(reading).toContainText('$102.00 last post-market · IEX · 5:59:59 PM ET')
     await expect(reading).not.toContainText('No recent quote')
     await expect(reading.locator('span').first()).not.toHaveClass(/font-medium/)
+    await expect(reading.locator('span').first()).toHaveClass(/text-\[#9a6700\]/)
     await expect(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
   }
   await expect(chart.locator('dl')).not.toContainText('$102.00')
@@ -70,7 +74,8 @@ test('extended midpoint is separate from regular signal price on board and chart
 // Optional feed failure clears the old midpoint while regular data remains available.
 test('failed optional feed does not preserve its previous session price', async ({page}) => {
   const {board, errors, writes, replace} = await setup(page, 'overnight')
-  await expect(board.getByLabel('AAPL session price')).toContainText('Indicative')
+  await expect(board.getByLabel('AAPL session price')).toContainText(/^\$102\.00\s?overnight/)
+  await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /^Last observed 5:59:59\sPM ET\. Indicative · OVERNIGHT\. /)
   replace({})
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect(board.getByLabel('AAPL session price')).toContainText('No price to display')
@@ -87,12 +92,12 @@ test('regular transition qualifies rather than relabels a fresh legacy premarket
   await page.clock.setFixedTime(new Date('2026-09-25T13:30:10Z'))
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   const reading = board.getByLabel('AAPL session price')
-  await expect(reading).toContainText('$102.00')
-  await expect(reading).toContainText('pre-market · IEX · 9:29:45 AM ET')
-  await expect(reading).toContainText('previous-session observation')
-  await expect(reading).not.toContainText('regular · IEX')
-  await expect(reading).not.toContainText('9:30:10 AM')
-  await expect(reading).toHaveAttribute('title', /Regular-session bar \$100\.00.*2026-09-25T13:29:45Z/)
+  // The board row keeps the observed pre-market word and its own time against the regular schedule its hover text expects.
+  await expect(reading).toContainText(/^\$102\.00\s?pre-market/)
+  await expect(reading).toHaveAttribute('title', /^Last observed 9:29:45\sAM ET\. IEX\. /)
+  await expect(reading).not.toContainText('regular')
+  await expect(reading).not.toHaveAttribute('title', /Last observed 9:30:10/)
+  await expect(reading).toHaveAttribute('title', /Regular-session bar \$100\.00.*2026-09-25T13:29:45Z.*Expected schedule: regular/)
   expect(errors).toEqual([])
   expect(writes).toEqual([])
 })

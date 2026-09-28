@@ -1889,11 +1889,19 @@ test('the board opens with top names, pages on request, and a search finds a tic
 // A held position must never fall below the paged fold, and each name's
 // move against its last close reads beside the price.
 test("held positions stay past the fold and rows show the day's move", async ({ page }) => {
-  // This verifies regular-session movement; extended quotes have their own provenance.
   await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
     as_of: '2026-09-09T14:00:00Z', market_status: {open: true, phase: 'open'},
     quotes: {AAPL: {last: 102, bar: '2026-09-09T13:45:00Z'}, HOLDME: {last: 82, bar: '2026-09-09T13:45:00Z'}},
   }}))
+  // The board row prints the move beside a current session price, so the row needs one: a
+  // regular-session midpoint observed as the page loads (the desk's clock is real time here).
+  await page.route(`**/market/${USER}/desk/session-prices`, route => {
+    const at = new Date().toISOString()
+    return route.fulfill({json: {session: 'regular', as_of: at, signal_scope: 'regular-session', quotes: {
+      AAPL: {price: 102, bid: 101.9, ask: 102.1, at, feed: 'iex', indicative: false, session: 'regular', status: 'fresh',
+        valid_until: new Date(Date.parse(at) + 60_000).toISOString(), reason: 'Quoted midpoint'},
+    }}})
+  })
   const latest = deskRecord()
   for (let i = 0; i < 12; i += 1) {
     const t = `T${String(i).padStart(2, '0')}`
@@ -1931,7 +1939,8 @@ test("held positions stay past the fold and rows show the day's move", async ({ 
   ]}}))
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  // AAPL (held, live 102 against a 100 close) reads its move beside the price.
+  // AAPL (held, quoted at 102 against a 100 close) reads its move beside the price.
+  await expect(board.locator('tr', {hasText: 'AAPL'}).first()).toContainText(/\$102\.00\s?regular/)
   await expect(board.locator('tr', {hasText: 'AAPL'}).first()).toContainText('↑ +2.0%')
   // HOLDME is a held C-grade name sorted below the first page, yet visible
   // without Show more; a non-held B name below the fold stays hidden.

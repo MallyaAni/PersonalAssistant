@@ -209,16 +209,25 @@ async function manualRefresh(page: Page) {
   await openChart(page)
 }
 
+// Escape a literal for use inside a RegExp source.
+const literal = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 // Assert the exact independent source/time, explicit midpoint meaning and unchanged signal price/action.
+// The chart reading spells the source and time out; the board row shows the price and its session word
+// and carries the same provenance in its hover text, whose whole content is pinned here.
 async function expectPrice(page: Page, state: Scenario, price = state.price, time = '6:00:00 PM') {
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
+  const source = state.session === 'overnight' ? 'Indicative · OVERNIGHT' : 'IEX'
+  // The title is matched raw: the time's spaces accept the narrow no-break space newer ICU puts before AM/PM.
+  const title = new RegExp(`^Last observed ${literal(time).replace(/ /g, '\\s')} ET\\. ${literal(source)}\\. Regular-session bar \\$100\\.00 · ${literal(REGULAR_BAR)}\\. Signal: regular session\\. Midpoint is not a trade or guaranteed fill\\. Reported quote timestamp: ${literal(state.stamp)}\\. Expected schedule: ${state.session}; not proof of venue availability\\. For display only; execution checks are separate\\.$`)
   for (const surface of [board, chart]) {
     const reading = surface.getByLabel('AAPL session price')
     await expect.soft(reading).toContainText(`$${price.toFixed(2)}`)
-    await expect.soft(reading).toContainText(`${state.session} · ${state.session === 'overnight' ? 'Indicative · OVERNIGHT' : 'IEX'} · ${time} ET`)
+    if (surface === chart) await expect.soft(reading).toContainText(`${state.session} · ${source} · ${time} ET`)
+    else await expect.soft(reading).toContainText(new RegExp(`^\\$${price.toFixed(2).replace('.', '\\.')}\\s?${state.session}`))
     await expect.soft(reading).not.toContainText('stale')
-    await expect.soft(reading).toHaveAttribute('title', `Regular-session bar $100.00 · ${REGULAR_BAR}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${state.stamp}. Expected schedule: ${state.session}; not proof of venue availability. For display only; execution checks are separate.`)
+    await expect.soft(reading).toHaveAttribute('title', title)
   }
   await expect.soft(chart.getByLabel('AAPL session price')).toContainText('Price signals use regular-session candles.')
   await expect.soft(chart.locator('dl')).toContainText('$100.00')
@@ -398,12 +407,18 @@ test('expired midpoint becomes stale without changing the regular signal price',
   await openDesk(page, state)
   await page.clock.fastForward(21_000)
   await settle(page, state)
-  for (const surface of [page.getByRole('table', {name: 'Ranked stocks and cash'}), page.getByRole('region', {name: 'AAPL price chart'})]) {
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  const chart = page.getByRole('region', {name: 'AAPL price chart'})
+  // The chart dates the last price in its text; the board row shows it with its session word and dates it in the hover text.
+  await expect(chart.getByLabel('AAPL session price')).toContainText('$102.00 last post-market · IEX · 6:00:00 PM ET')
+  await expect(board.getByLabel('AAPL session price')).toContainText(/^\$102\.00\s?post-market/)
+  await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /^Last observed 6:00:00\sPM ET\. IEX\. /)
+  for (const surface of [board, chart]) {
     const reading = surface.getByLabel('AAPL session price')
-    await expect(reading).toContainText('$102.00 last post-market · IEX · 6:00:00 PM ET')
     await expect(reading).not.toContainText('No recent quote')
     await expect(reading).not.toContainText('unavailable')
     await expect(reading.locator('span').first()).not.toHaveClass(/font-medium/)
+    await expect(reading.locator('span').first()).toHaveClass(/text-\[#9a6700\]/)
     await expect(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
   }
   await expect(page.getByRole('region', {name: 'AAPL price chart'}).locator('dl')).toContainText('$100.00')

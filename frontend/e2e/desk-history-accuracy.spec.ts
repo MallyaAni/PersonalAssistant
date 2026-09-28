@@ -160,9 +160,8 @@ test('keeps clock uncertainty and blocked Sell alongside a fresh overnight quote
   try {
     await page.goto('/#desk')
     const quote = page.getByLabel('AAOI session price', {exact: true}).first()
-    await expect(quote).toContainText('$99.50')
-    await expect(quote).toContainText('overnight')
-    await expect(quote).toContainText('BOATS')
+    await expect(quote).toContainText(/^\$99\.50\s?overnight/)
+    await expect(quote).toHaveAttribute('title', /^Last observed .* ET\. BOATS\. /)
     await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
     const expansion = page.getByRole('region', {name: 'AAOI decision details', exact: true})
     const intent = expansion.getByLabel('AAOI strategy intent', {exact: true})
