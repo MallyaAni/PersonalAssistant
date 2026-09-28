@@ -610,7 +610,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 <div aria-label={`${row.ticker} spread verification`} className="text-[11px] text-[#9a6700]">{decision.quote.spread_verified === false
                   ? `${decision.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`
                   : 'Spread verification unrecorded'}</div>}</td>
-            <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : !isCash && intended !== null ? <>{percentage(intended)}<span className="hidden sm:inline"> intended</span></> : '—'}</td>
+            <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : !isCash && intended !== null ? percentage(intended) : '—'}</td>
 
           </tr>
           {/* Details follow the visible board width, not the horizontally scrollable table. */}

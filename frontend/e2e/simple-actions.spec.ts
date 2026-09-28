@@ -84,7 +84,7 @@ test('regular-session restriction is explicit and shows the intended size, not a
   const {errors} = await setup(page, false)
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
-  await expect(board.getByLabel('AAPL size')).toHaveText('2.0% intended')
+  await expect(board.getByLabel('AAPL size')).toHaveText('2.0%')
   await expect(board.getByLabel('AAPL size')).not.toContainText('of account')
   for (const ticker of ['AAPL', 'NVDA']) {
     const readiness = board.getByLabel(`${ticker} execution readiness`, {exact: true})
@@ -203,7 +203,7 @@ test('default ranking follows grade action size and reranks expired intraday gra
   await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('BClose')
   expect(await order()).toEqual(['AAPL', 'MSFT', 'AMZN', 'AMD', 'NVDA'])
   // The quote has expired, so the size is the intended one, not an executable one.
-  await expect(board.getByLabel('NVDA size', {exact: true})).toHaveText('4.0% intended')
+  await expect(board.getByLabel('NVDA size', {exact: true})).toHaveText('4.0%')
   expect(errors).toEqual([])
 })
 
@@ -232,7 +232,7 @@ test('a /4 target buy shows its size with the market closed', async ({page}) => 
   })
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
-  await expect(board.getByLabel('AAPL size')).toHaveText('9.1% intended')
+  await expect(board.getByLabel('AAPL size')).toHaveText('9.1%')
   const readiness = board.getByLabel('AAPL execution readiness', {exact: true})
   await expect(readiness).toHaveText('Regular-session execution blocked')
   await expect(readiness).toHaveAttribute('title', 'Regular-session execution is blocked; the session is closed or its clock is unavailable')

@@ -3162,7 +3162,7 @@ test('blocked execution preserves strategy intent and names the blocker', async 
   await expect(board.getByLabel('AAPL strategy intent', { exact: true })).toContainText('BUY')
   await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})).toContainText('available cash is unknown')
   // The intended size stays visible beside the blocked intent, labelled as intended.
-  await expect(board.getByLabel('AAPL size', {exact: true})).toHaveText('2.0% intended')
+  await expect(board.getByLabel('AAPL size', {exact: true})).toHaveText('2.0%')
   await stockDetails(page, 'AAPL')
   await expect(board.getByLabel('AAPL move', { exact: true })).toHaveText('+2.0%')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })

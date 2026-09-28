@@ -13,7 +13,18 @@ import pytest
 from backend.market import nested_market_study as study
 from backend.market.research_journal import _encode
 from backend.market.research_journal_replay import verify_archive, verify_snapshot
-from backend.tests.test_nested_market_study import _case
+from backend.agents.trading.desk import paper
+from backend.tests.test_nested_market_study import FROZEN_EXECUTION_POLICY, _case
+
+
+# The frozen protocol refuses the live /4 executor label by design (see
+# test_nested_market_study); these serialization tests exercise the archive
+# machinery, so they run under the label the protocol was frozen on.
+@pytest.fixture(scope="module", autouse=True)
+def _frozen_executor():
+    with pytest.MonkeyPatch.context() as pin:
+        pin.setattr(paper, "POLICY_VERSION", FROZEN_EXECUTION_POLICY)
+        yield
 
 CHUNK_BYTES = 65536
 

@@ -92,7 +92,7 @@ for (const name of Object.keys(evidence.cases) as CaseName[]) {
       const today = page.getByLabel('Today', {exact: true})
       await expect(board.getByLabel('S11 strategy intent', {exact: true})).toHaveText(source.row.strategy_action.toUpperCase())
       // Executable: the funded amount "of account". Otherwise the strategy's intended size, labelled so.
-      await expect(board.getByLabel('S11 size', {exact: true})).toHaveText(source.row.executable ? `${(100 * Math.abs(source.row.move_weight)).toFixed(1)}% of account` : `${(100 * Math.abs(source.row.strategy_move_weight)).toFixed(1)}% intended`)
+      await expect(board.getByLabel('S11 size', {exact: true})).toHaveText(source.row.executable ? `${(100 * Math.abs(source.row.move_weight)).toFixed(1)}% of account` : `${(100 * Math.abs(source.row.strategy_move_weight)).toFixed(1)}%`)
       await testInfo.attach('collapsed-original-observation', {body: await board.innerText(), contentType: 'text/plain'})
       await board.screenshot({path: testInfo.outputPath(`${name}-collapsed.png`)})
       if (source.row.executable) await expect(today).toContainText('1 executable signal.')
@@ -216,7 +216,7 @@ test('execution quote expiration withdraws the executable size with an unverifie
     const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
     await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3% of account')
     await page.clock.runFor(31_000)
-    await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3% intended')
+    await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3%')
     await expect(board.getByLabel('S11 strategy intent', {exact: true})).toHaveText('BUY')
     await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveText('IEX spread unverified')
     await expect(page.getByLabel('Today', {exact: true})).not.toContainText('1 executable signal.')
