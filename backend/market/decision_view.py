@@ -119,9 +119,24 @@ def _validate_cash(cash, equity):
 
 # Fund eligible personal entries from explicit cash without borrowing paper state.
 def apply_personal_account_plan(
-    result, held, equity, cash, snapshot, entries, paused, now, record
+    result,
+    held,
+    equity,
+    cash,
+    snapshot,
+    entries,
+    paused,
+    now,
+    record,
+    *,
+    target_buys=None,
 ):
-    """Apply the desk's mid-cycle plan against the person's own account."""
+    """Apply the desk's mid-cycle plan against the person's own account.
+
+    `target_buys` maps a name to (weight to add, sentence) for buys the board
+    sized from the active policy's targets; they share the cash bound with
+    the band entries, as the executor's redeploy leg shares it with its own.
+    """
     if cash is not None:
         _validate_cash(cash, equity)
     if paused or not math.isfinite(equity) or equity <= 0:
@@ -192,6 +207,19 @@ def apply_personal_account_plan(
         and s not in blocked
         and result.get(s, {}).get("executable")
     }
+    # A buy toward the policy's target passes the same filters as an entry,
+    # except the band: the executor's redeploy leg has no band gate either.
+    # A name can carry a band reading below the trigger AND a target buy -
+    # on a session every name has a reading - so membership in `entries` is
+    # not what excludes it; a firing entry already owns its row's Buy and
+    # never appears in `target_buys`.
+    eligible_targets = {
+        s: want
+        for s, want in (target_buys or {}).items()
+        if grades.get(s) in paper.ENTRY_MIN_GRADE
+        and s not in finished
+        and result.get(s, {}).get("executable")
+    }
     orders = _personal_midcycle_orders(
         equity,
         shares,
@@ -204,6 +232,7 @@ def apply_personal_account_plan(
             for symbol, row in result.items()
             if (row.get("risk_plan") or {}).get("risk_budget_pct") is not None
         },
+        target_buys=eligible_targets,
     )
     _fold_personal_orders(result, orders, prices, equity, shares)
     _enforce_personal_readiness(result)
@@ -233,14 +262,89 @@ def _enforce_personal_readiness(result):
 # it right now. Used both when the evidence is unusable and when the funding
 # behind a buy is unknown or absent, so the blocker is never hidden in the
 # reason text alone - it is also reflected in `action` and `executable`.
-def _not_executable_reason(strategy_action, strategy_move_weight, blocker):
+# `said`, when given, is the sized target sentence the row would otherwise
+# have carried ("Buy to 9.1% target ..."); it is kept in front of the blocker
+# so a board read with the market shut still says where the policy wants the
+# name. Rows without it (every `/3`-era record) read exactly as before.
+def _not_executable_reason(strategy_action, strategy_move_weight, blocker, said=None):
     """Return the reason an actionable Hold cannot be executed right now."""
     why = blocker or "evidence unusable"
     if strategy_action is Action.BUY:
-        return f"Buy not executable: {why}"
-    if strategy_action is Action.SELL:
-        return f"Exit not executable: {why}"
-    return f"Not executable: {why}"
+        why = f"Buy not executable: {why}"
+    elif strategy_action is Action.SELL:
+        why = f"Exit not executable: {why}"
+    else:
+        why = f"Not executable: {why}"
+    return f"{said}; {why[0].lower()}{why[1:]}" if said else why
+
+
+# Whether the record's targets are the active allocation policy's, so the
+# board sizes toward them. `record["targets"]` is written by the nightly from
+# `live_policy.record_targets`; a record from before the stamp, or one stamped
+# with another policy, has no standing order behind its weights and keeps the
+# `/3`-era rules (a live entry, a covered exit, otherwise Hold).
+def _sizes_toward_targets(record) -> bool:
+    """Return True when `record["targets"]` carries the active policy's weights."""
+    from backend.agents.trading.desk import live_policy
+
+    targets = record.get("targets") or {}
+    weights = targets.get("weights")
+    return (
+        targets.get("policy") == live_policy.ACTIVE
+        and isinstance(weights, dict)
+        and bool(weights)
+    )
+
+
+# The book the board sizes against when the record carries the active
+# policy's targets: every name the policy wants, at its weight. Identical to
+# the API's swap (`market._with_active_targets`) so a caller that has already
+# swapped sees no change, and a caller that has not cannot size a `/4` label
+# against the `/3` book that stays on the record for reference.
+def _targets_book(record) -> list[dict]:
+    """Return `[{ticker, weight}]` from the record's targets, positive weights only."""
+    weights = (record.get("targets") or {}).get("weights") or {}
+    return [
+        {"ticker": ticker, "weight": float(weight)}
+        for ticker, weight in weights.items()
+        if isinstance(weight, (int, float)) and math.isfinite(weight) and weight > 0
+    ]
+
+
+# The move from the person's weight to the active policy's target, classified
+# exactly as `decision_history.classify` classifies the charts: entering is a
+# Buy whatever the size, a shortfall of ADD_TRIM_MIN or more is an add (Buy,
+# sized to the gap), an excess of that much is a trim - which the executor
+# only takes at the reset, so mid-cycle it is a Hold that says so rather than
+# a Sell the book will not place - and anything smaller is a Hold on the
+# existing reasons (None here). The downgrade exit is decided before this is
+# reached, so a held name the desk no longer rates never arrives.
+def _target_move(row, target, current, policy):
+    """Return (action, move, reason) toward `target`, or None for an ordinary Hold."""
+    from backend.agents.trading.desk import decision_history
+
+    minimum = decision_history.ADD_TRIM_MIN - 1e-9
+    label = f"{target:.1%} target (policy {policy})"
+    if target <= 0:
+        return None
+    if current <= 0:
+        return Action.BUY, target, f"Buy to {label}"
+    delta = target - current
+    if delta >= minimum:
+        return Action.BUY, delta, f"Add to {label}; holding {current:.1%}"
+    if -delta >= minimum:
+        # `rebalance_due` reads None as due (a record with no clock); a Sell
+        # printed off a missing clock is the one thing this must never do.
+        due = bool(row.get("rebalance_due")) and row.get("until_rebalance") is not None
+        if due:
+            return Action.SELL, delta, f"Trim to {label}; holding {current:.1%}"
+        return (
+            Action.HOLD,
+            0.0,
+            f"Above target ({target:.1%}; holding {current:.1%}); "
+            "trimmed at the next reset",
+        )
+    return None
 
 
 # Size the person's own mid-cycle basket. A covered downgrade is an explicit
@@ -253,9 +357,23 @@ def _not_executable_reason(strategy_action, strategy_move_weight, blocker):
 # fund a stale read, and the buys share one account-wide cash bound rather than
 # each sizing alone.
 def _personal_midcycle_orders(
-    equity, shares, prices, finished, entries, cash, *, max_add_weights=None
+    equity,
+    shares,
+    prices,
+    finished,
+    entries,
+    cash,
+    *,
+    max_add_weights=None,
+    target_buys=None,
 ):
-    """Return the person's mid-cycle orders: covered exits and cash-bounded entries."""
+    """Return the person's mid-cycle orders: covered exits and cash-bounded entries.
+
+    `target_buys` ({symbol: (weight to add, reason)}) are the buys toward the
+    active policy's targets; they are bounded by the target itself (the gap
+    is the size), by a risk budget when one is set, and share the one cash
+    bound with the band entries.
+    """
     from backend.agents.trading.desk import paper
 
     orders: list[paper.PaperOrder] = []
@@ -264,7 +382,8 @@ def _personal_midcycle_orders(
         price = prices.get(symbol) or 0.0
         if qty > 0 and price > 0:
             orders.append(paper.PaperOrder(symbol, "sell", qty, finished[symbol]))
-    buys: list[tuple[str, float, float]] = []
+    entry_reason = "price entry: breakout through its own 20-day band"
+    buys: list[tuple[str, float, float, str]] = []
     for symbol in sorted(entries):
         price = prices.get(symbol) or 0.0
         if not math.isfinite(price) or price <= 0:
@@ -276,25 +395,43 @@ def _personal_midcycle_orders(
             want = min(want, max_add_weights[symbol])
         if want < paper.MIN_TRADE:
             continue
-        buys.append((symbol, want * equity / price, want * equity))
+        buys.append((symbol, want * equity / price, want * equity, entry_reason))
+    buys += _target_buy_legs(target_buys or {}, prices, equity, max_add_weights)
     if buys:
-        total = sum(value for _, _, value in buys)
+        total = sum(value for _, _, value, _ in buys)
         scale = min(1.0, max(0.0, cash) / total) if total else 1.0
-        for symbol, qty, _ in buys:
+        for symbol, qty, _, reason in buys:
             scaled = qty * scale
             # Cash is shared before this final floor, so small residual balances
             # cannot create an actionable buy below the policy's minimum.
             if scaled <= 0 or scaled * prices[symbol] < paper.MIN_TRADE * equity:
                 continue
-            orders.append(
-                paper.PaperOrder(
-                    symbol,
-                    "buy",
-                    scaled,
-                    "price entry: breakout through its own 20-day band",
-                )
-            )
+            orders.append(paper.PaperOrder(symbol, "buy", scaled, reason))
     return orders
+
+
+# The buy legs toward the active policy's targets, in the shape the cash
+# bound shares out: (symbol, shares, dollars, reason). A name without a
+# usable price cannot be sized, a risk budget caps the add when one is set,
+# and a gap under MIN_TRADE is not an order - the same floors the entry legs
+# apply. (A firing entry owns its row's Buy and is never in `target_buys`.)
+def _target_buy_legs(target_buys, prices, equity, max_add_weights):
+    """Return [(symbol, qty, value, reason)] for the target buys worth placing."""
+    from backend.agents.trading.desk import paper
+
+    legs: list[tuple[str, float, float, str]] = []
+    for symbol in sorted(target_buys):
+        price = prices.get(symbol) or 0.0
+        if not math.isfinite(price) or price <= 0:
+            continue
+        want, reason = target_buys[symbol]
+        want = float(want or 0.0)
+        if max_add_weights is not None and symbol in max_add_weights:
+            want = min(want, max_add_weights[symbol])
+        if not math.isfinite(want) or want < paper.MIN_TRADE:
+            continue
+        legs.append((symbol, want * equity / price, want * equity, reason))
+    return legs
 
 
 # Write one person's mid-cycle order basket onto the decision rows, so the
@@ -433,9 +570,24 @@ def _execution_readiness(paused, current_decision, quote, deadline, now):
 # states in which the answer to "what do I do" is nothing. The reason says
 # which, on hover.
 def action_for_row(
-    row, quote, deadline, paused, current_decision, target, current, now, entry=None
+    row,
+    quote,
+    deadline,
+    paused,
+    current_decision,
+    target,
+    current,
+    now,
+    entry=None,
+    *,
+    toward_targets=None,
 ):
-    """Return (action, weight, reason): Buy, Sell or Hold, and the weight to move."""
+    """Return (action, weight, reason): Buy, Sell or Hold, and the weight to move.
+
+    `toward_targets` names the active policy when the record's targets are its
+    standing order (`_sizes_toward_targets`); then the gap to the target is
+    sized as `_target_move` says. None keeps the `/3`-era rules below.
+    """
     # Two different questions, and they used to be one.
     #
     # "What does the desk want done with this name" is answered by the record:
@@ -515,17 +667,28 @@ def action_for_row(
             f"Exit position: grade {row['grade_live']}",
         )
 
+    # Under the active policy the targets ARE the standing order. The
+    # `graded-equal-weight/4` executor holds every A/A+ name at equal weight,
+    # exits on a downgrade (the branch above) and, since the redeploy leg,
+    # puts idle cash back to the targets mid-cycle; trimming waits for the
+    # reset. So the gap between what the person holds and the policy's weight
+    # is the trade, classified as the charts classify it.
+    if toward_targets:
+        sized = _target_move(row, target, current, toward_targets)
+        if sized is not None:
+            return said(*sized)
+
     # Everything else is a Hold, and the reason says which kind.
     #
-    # There was briefly a fourth branch here that compared the position to the
-    # target weight and called the difference a Buy or a Sell. It is deleted,
-    # because the targets are a fresh sizing computed every night, not a
-    # standing order: on the live record the book holds 43% of its equity
-    # against targets summing to 22%, so reading the difference as an
-    # instruction printed Sell on eight names the desk has no intention of
-    # selling. The book only acts on those weights at a reset, and no backtest
-    # supports trading toward them in between - the two rules above are the
-    # ones that were measured.
+    # For a record without the active policy's targets (every `/3`-era
+    # record) there is deliberately no branch that compares the position to
+    # the target weight: the `/3` targets were a fresh sizing computed every
+    # night, not a standing order - on the live record the book held 43% of
+    # its equity against targets summing to 22%, so reading the difference as
+    # an instruction printed Sell on eight names the desk had no intention of
+    # selling. That book only acted on its weights at a reset, and no backtest
+    # supported trading toward them in between. The rule applies to `/3`
+    # records only; `/4` records take the branch above.
     #
     # So a Hold says what the account being guided is holding rather than only
     # that nothing is due. That is what the column owes a reader who records no
@@ -719,6 +882,36 @@ def _apply_entry_reason(row, readings, paused):
         row["reason"] = row["entry_reason"]
 
 
+# Which policy the board sizes toward, and the record it sizes against. The
+# personal board against a record stamped with the active policy sizes toward
+# that policy's weights: the book becomes the targets (the API already swaps
+# it; doing it here too means a caller that did not cannot size a `/4` label
+# against the `/3` book), and `action_for_row` trades the gap. The
+# explicit-targets research path (`targets` given) is a different question
+# and keeps its own book, as does every record without the stamp.
+def _toward_targets(record, targets):
+    """Return (policy or None, record) for the board to size against."""
+    if targets is not None or not _sizes_toward_targets(record):
+        return None, record
+    from backend.agents.trading.desk import live_policy
+
+    return live_policy.ACTIVE, {**record, "book": _targets_book(record)}
+
+
+# The target sentence a Buy sized from the policy's targets carries through
+# every blocker, or None for any other row: a Buy from a firing band entry is
+# the entry leg's and keeps its own wording, and a record without the active
+# policy's targets never has one. `action_for_row` appended the blocker as an
+# advisory; it is stripped here so the not-executable sentence names it once.
+def _target_intent(toward_targets, strategy_action, entry, reason, blocker):
+    """Return the target sentence of a target-sized Buy, else None."""
+    if not toward_targets or strategy_action is not Action.BUY:
+        return None
+    if entry is not None and entry[0] is Action.BUY:
+        return None
+    return reason.removesuffix(f" ({blocker})") if blocker else reason
+
+
 # Combine existing strategy gates and quote evidence into one dated, reviewable row.
 def build(
     record,
@@ -756,6 +949,13 @@ def build(
                 {"ticker": name, "weight": weight} for name, weight in targets.items()
             ],
         }
+    # The personal board against a record stamped with the active policy sizes
+    # toward that policy's weights: the book is the targets (the API already
+    # swaps it; doing it here too means a caller that did not cannot size a
+    # `/4` label against the `/3` book), and `action_for_row` trades the gap.
+    # The explicit-targets research path above is a different question and
+    # keeps its own book.
+    toward_targets, record = _toward_targets(record, targets)
     technical, value = desk_freshness.grade_inputs(snapshot, record, now)
     prices = _account_prices(held, snapshot, record)
     # The person's own weight in each name, from their supplied holdings at the
@@ -813,6 +1013,11 @@ def build(
     # candidate, or the funded basket would fold the Buy straight back in.
     taken = _entries_taken(held, now, pending, targets is None)
     open_entries = {s: b for s, b in (entries or {}).items() if s not in taken}
+    # The target sentence of every Buy sized from the policy's targets rather
+    # than a band entry (None for other rows): the personal plan funds those
+    # buys from cash beside the entries, and keeps the sentence so a funded
+    # row still says its target.
+    intents: dict[str, str | None] = {}
     # The person's universe: what the desk grades, plus anything the person
     # actually holds. A name the person holds but the desk does not cover gets
     # a row that says so, because the exit question is the person's own.
@@ -853,6 +1058,7 @@ def build(
             current,
             now,
             entry,
+            toward_targets=toward_targets,
         )
         # Whether the row can be acted on right now, distinct from what the
         # desk wants done. Opinion and readiness are two questions, and the
@@ -866,6 +1072,10 @@ def build(
         # Investment intent is preserved as data for a future reviewed UI.
         strategy_action = action
         strategy_move_weight = move
+        # A Buy that came from the targets (not from a firing band entry) is
+        # the policy's standing order; its sentence survives every blocker.
+        intent = _target_intent(toward_targets, strategy_action, entry, reason, blocker)
+        intents[symbol] = intent
         # For a personal buy, unknown cash is not demonstrated funding and a
         # zero cash bound leaves nothing to fund a buy: either way the opinion
         # stands (a strategy Buy) but nothing is claimed executable.
@@ -885,7 +1095,7 @@ def build(
         if not executable:
             if strategy_action is Action.BUY or strategy_action is Action.SELL:
                 reason = _not_executable_reason(
-                    strategy_action, strategy_move_weight, blocker
+                    strategy_action, strategy_move_weight, blocker, intent
                 )
             action = Action.HOLD
             move = 0.0
@@ -947,7 +1157,20 @@ def build(
         )
     if targets is None:
         apply_personal_account_plan(
-            result, held, equity, cash, snapshot, open_entries, paused, now, record
+            result,
+            held,
+            equity,
+            cash,
+            snapshot,
+            open_entries,
+            paused,
+            now,
+            record,
+            target_buys={
+                symbol: (result[symbol]["strategy_move_weight"], intent)
+                for symbol, intent in intents.items()
+                if intent is not None
+            },
         )
     return {
         "version": VERSION,

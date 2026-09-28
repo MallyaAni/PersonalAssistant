@@ -137,6 +137,12 @@ strategy that changes only when untouched sessions say so.
   block; the published curve is not re-priced with it (`redeploy_priced:
   false` on the curve block) and the nested market study refuses until
   re-registered against /4.
+- 2026-09-27, evening: the desk board sizes toward the `/4` targets
+  (`decision_view._target_move`: Buy/Add the gap, exit on downgrade, trim
+  only at the reset, otherwise Hold saying so; strategy fields and the
+  "N% intended" size survive a closed market) - the `/3`-era "targets are
+  not a standing order" rule now applies to `/3` records only. BUILT,
+  backend tests pass; the e2e specs are updated but UNVERIFIED here.
 - 2026-09-27: `1fc59696` deployed - the `/4` shadow, the SIP fifteen-minute
   store and the point-in-time browser test together (gates 7,543 / 100
   passed). First shadow receipt due Monday 2026-09-28. The SIP backfill is

@@ -515,3 +515,368 @@ def test_the_board_can_only_ever_say_one_of_three_things():
                     assert row["reason"], row
     assert said <= {a.value for a in decision_view.Action}, said
     assert said <= {"Buy", "Sell", "Hold"}, said
+
+
+# ---------------------------------------------------------------------------
+# The active policy's targets are a standing order.
+#
+# Since 2026-09-27 the paper account runs `graded-equal-weight/4`: every A/A+
+# name at equal weight, exits on a downgrade, idle cash redeployed toward the
+# targets mid-cycle, trims at the reset. The nightly stamps the record with
+# `targets = {"policy": live_policy.ACTIVE, "weights": {...}}`, and for such a
+# record the board trades the gap between what the person holds and the
+# policy's weight - the `/3`-era "targets are not a standing order" rule is a
+# fact about `/3` records, which keep it
+# (`test_the_distance_to_a_target_weight_is_not_a_trade`).
+# ---------------------------------------------------------------------------
+
+POLICY = "graded-equal-weight/4"
+
+
+# A `/4` record: eleven of the twelve graded names at 1/11 each, S0 at zero.
+def _v4(record, *, until_rebalance=10):
+    record["targets"] = {
+        "policy": POLICY,
+        "weights": {n: (0.0 if n == "S0" else 1 / 11) for n in record["grades"]},
+    }
+    record["paper"] = {"until_rebalance": until_rebalance}
+    return record
+
+
+# Shares of S11 worth `weight` of a 100,000 account at the snapshot's price.
+def _shares(snapshot, weight, symbol="S11"):
+    return weight * 100000 / snapshot["quotes"][symbol]["last"]
+
+
+# The policy the board sizes toward is the live one, read from one place.
+def test_the_board_sizes_toward_the_active_policy():
+    from backend.agents.trading.desk import live_policy
+
+    assert live_policy.ACTIVE == POLICY
+
+
+# Nothing held, targets present, market open with cash: Buy to the target,
+# and the reason says the target and the policy.
+def test_v4_targets_with_no_holdings_buy_to_the_target():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    row = decision_view.build(record, [], 100000, snapshot, quoted, now, cash=100000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Buy"
+    assert row["strategy_move_weight"] == pytest.approx(1 / 11)
+    assert row["action"] == "Buy"
+    assert row["executable"] is True
+    assert row["move_weight"] == pytest.approx(1 / 11, abs=1e-6)
+    assert row["target_weight"] == pytest.approx(1 / 11)
+    assert "Buy to 9.1% target (policy graded-equal-weight/4)" in row["reason"]
+    # A name the policy sizes at zero is not a buy.
+    zero = decision_view.build(record, [], 100000, snapshot, quoted, now, cash=100000)[
+        "rows"
+    ]["S0"]
+    assert zero["strategy_action"] == "Hold"
+    assert zero["reason"].startswith("Entry criteria not met")
+
+
+# The operator's holdings file absent entirely and no cash figure: the intent
+# is still a Buy to the target, but nothing is claimed executable, and the
+# blocker says why.
+def test_v4_targets_with_unknown_cash_keep_the_intent_and_name_the_blocker():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    row = decision_view.build(record, [], 100000, snapshot, quoted, now)["rows"]["S11"]
+    assert row["strategy_action"] == "Buy"
+    assert row["strategy_move_weight"] == pytest.approx(1 / 11)
+    assert row["action"] == "Hold"
+    assert row["move_weight"] == 0.0
+    assert row["executable"] is False
+    assert row["blocker"] == "available cash is unknown"
+    assert row["reason"].startswith("Buy to 9.1% target (policy graded-equal-weight/4)")
+    assert "not executable: available cash is unknown" in row["reason"]
+
+
+# A closed market blocks execution and nothing else: the strategy fields carry
+# the sized Buy, the reason keeps the target sentence and names the blocker.
+def test_v4_targets_survive_a_closed_market_as_strategy_intent():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    quoted["market_open"] = False
+    row = decision_view.build(record, [], 100000, snapshot, quoted, now, cash=100000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Buy"
+    assert row["strategy_move_weight"] == pytest.approx(1 / 11)
+    assert row["action"] == "Hold"
+    assert row["executable"] is False
+    assert row["blocker"] == "market closed or clock unavailable"
+    assert row["reason"] == (
+        "Buy to 9.1% target (policy graded-equal-weight/4); "
+        "buy not executable: market closed or clock unavailable"
+    )
+
+
+# A non-session entry read ("2026-09-27 is not an exchange session") must not
+# replace a target-sized Buy's reason: `_apply_entry_reason` only speaks for a
+# Hold, so the row keeps its target sentence and its entry fields say what
+# the reader lacks.
+def test_a_non_session_entry_read_does_not_overwrite_a_target_buy():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    quoted["market_open"] = False
+    readings = {
+        n: {
+            "band_z": None,
+            "entry_status": "unavailable",
+            "entry_reason": (
+                "Entry data unavailable: 2026-09-27 is not an exchange session"
+            ),
+        }
+        for n in record["grades"]
+    }
+    rows = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entry_readings=readings
+    )["rows"]
+    assert rows["S11"]["strategy_action"] == "Buy"
+    assert rows["S11"]["entry_status"] == "unavailable"
+    assert rows["S11"]["reason"].startswith("Buy to 9.1% target")
+    # A Hold still surfaces the missing reading, as before.
+    assert rows["S0"]["strategy_action"] == "Hold"
+    assert rows["S0"]["reason"] == readings["S0"]["entry_reason"]
+
+
+# Held at the target: a Hold that names the position, no move.
+def test_v4_held_at_target_is_a_hold():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    held = [Holding("S11", _shares(snapshot, 1 / 11), 100.0, "2026-08-01")]
+    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=50000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Hold"
+    assert row["action"] == "Hold"
+    assert row["move_weight"] == 0.0
+    assert row["reason"].startswith("Maintain position (9.1% of account)")
+
+
+# Held well under the target: an add, sized to the gap, classified as the
+# charts classify it (ADD_TRIM_MIN).
+def test_v4_held_under_target_adds_the_gap():
+    from backend.agents.trading.desk import decision_history
+
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    held = [Holding("S11", _shares(snapshot, 0.04), 100.0, "2026-08-01")]
+    # Cash for every target buy on the board, so the add is not scaled.
+    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=100000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Buy"
+    assert row["strategy_move_weight"] == pytest.approx(1 / 11 - 0.04)
+    assert row["action"] == "Buy"
+    assert row["move_weight"] == pytest.approx(1 / 11 - 0.04, abs=1e-6)
+    assert (
+        "Add to 9.1% target (policy graded-equal-weight/4); holding 4.0%"
+        in row["reason"]
+    )
+    # A shortfall under the threshold is a reshuffle, not an order.
+    close = 1 / 11 - decision_history.ADD_TRIM_MIN / 2
+    held = [Holding("S11", _shares(snapshot, close), 100.0, "2026-08-01")]
+    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=50000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Hold"
+
+
+# Held above the target mid-cycle: the executor trims only at the reset, so
+# the row is a Hold that says so - never a Sell the book will not place.
+def test_v4_over_target_mid_cycle_is_a_hold_with_the_trim_note():
+    record, snapshot, quoted, now = setup()
+    _v4(record, until_rebalance=10)
+    held = [Holding("S11", _shares(snapshot, 0.14), 100.0, "2026-08-01")]
+    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=50000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Hold"
+    assert row["action"] == "Hold"
+    assert row["move_weight"] == 0.0
+    assert row["reason"].startswith(
+        "Above target (9.1%; holding 14.0%); trimmed at the next reset"
+    )
+
+
+# On the reset session the same excess is a trim to the target.
+def test_v4_over_target_at_the_reset_trims_to_the_target():
+    record, snapshot, quoted, now = setup()
+    _v4(record, until_rebalance=0)
+    held = [Holding("S11", _shares(snapshot, 0.14), 100.0, "2026-08-01")]
+    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=50000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Sell"
+    assert row["strategy_move_weight"] == pytest.approx(1 / 11 - 0.14)
+    assert (
+        "Trim to 9.1% target (policy graded-equal-weight/4); holding 14.0%"
+        in row["reason"]
+    )
+
+
+# A record with targets but no rebalance clock at all never prints a trim.
+def test_v4_without_a_clock_never_prints_a_trim():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    record["paper"] = {}
+    held = [Holding("S11", _shares(snapshot, 0.14), 100.0, "2026-08-01")]
+    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=50000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Hold"
+    assert "trimmed at the next reset" in row["reason"]
+
+
+# A held name the desk has downgraded is the whole-position exit, before any
+# target sizing: the target branch never reaches a name the desk no longer rates.
+def test_v4_held_and_downgraded_is_the_exit():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    snapshot["technical"]["S11"] = {"now": 0.01, "close": 0.7, "stance": -1}
+    held = [Holding("S11", _shares(snapshot, 0.05), 100.0, "2026-08-01")]
+    row = decision_view.build(record, held, 100000, snapshot, quoted, now, cash=50000)[
+        "rows"
+    ]["S11"]
+    assert row["strategy_action"] == "Sell"
+    assert row["strategy_move_weight"] == pytest.approx(-0.05)
+    assert row["action"] == "Sell"
+    assert row["move_weight"] == pytest.approx(-0.05)
+    # The funded personal plan words the exit as before; no target sentence.
+    assert "grade below A; close position" in row["reason"]
+    assert "target" not in row["reason"]
+
+
+# Target buys share one cash bound: with cash for a third of the wants, every
+# funded buy is scaled to a third while the intent keeps the full gap.
+def test_v4_target_buys_share_the_cash_bound():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    wanted = sum(record["targets"]["weights"].values()) * 100000
+    rows = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, cash=wanted / 3
+    )["rows"]
+    funded = {s: r for s, r in rows.items() if r["action"] == "Buy"}
+    assert set(funded) == {n for n in record["grades"] if n != "S0"}
+    for row in funded.values():
+        assert row["strategy_move_weight"] == pytest.approx(1 / 11)
+        assert row["move_weight"] == pytest.approx(1 / 33, abs=1e-6)
+        assert row["reason"].startswith("Buy to 9.1% target")
+    assert sum(r["move_weight"] for r in funded.values()) * 100000 == pytest.approx(
+        wanted / 3, rel=1e-6
+    )
+
+
+# A firing band entry still answers first, sized as the executor's entry leg
+# sizes it; the target branch takes the names without a signal.
+def test_v4_a_firing_entry_still_answers_before_the_target():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    rows = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entries=FIRING, cash=100000
+    )["rows"]
+    assert rows["S11"]["strategy_action"] == "Buy"
+    assert "breakout" in rows["S11"]["reason"].lower()
+    assert "target" not in rows["S11"]["reason"]
+    assert rows["S10"]["reason"].startswith("Buy to 9.1% target")
+
+
+# On a session every name carries a band reading, most of them below the
+# trigger. A reading that does not fire is not an entry and must not consume
+# the name's target buy: the row stays a funded Buy to the target. (The
+# first cut excluded any name with a reading from the target legs, which on
+# a weekday would have knocked every target buy on the board to "no funded
+# entry under account limits".)
+def test_v4_a_band_reading_below_the_trigger_does_not_starve_the_target_buy():
+    from backend.agents.trading.desk import paper
+
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    quiet = {n: paper.ENTRY_BAND_Z / 2 for n in record["grades"]}
+    rows = decision_view.build(
+        record, [], 100000, snapshot, quoted, now, entries=quiet, cash=100000
+    )["rows"]
+    for name in record["grades"]:
+        if name == "S0":
+            continue
+        assert rows[name]["action"] == "Buy", rows[name]
+        assert rows[name]["executable"] is True
+        assert rows[name]["move_weight"] == pytest.approx(1 / 11, abs=1e-6)
+        assert rows[name]["reason"].startswith("Buy to 9.1% target")
+
+
+# Targets stamped with another policy, or none, change nothing: the `/3`
+# rules produce the same rows byte for byte.
+@pytest.mark.parametrize("stamp", [None, "some-other-policy/9"])
+def test_records_without_the_active_policy_are_unchanged(stamp):
+    record, snapshot, quoted, now = setup()
+    record["paper"] = {"until_rebalance": 10}
+    before = decision_view.build(record, [], 100000, snapshot, quoted, now, cash=100000)
+    if stamp is not None:
+        record["targets"] = {
+            "policy": stamp,
+            "weights": {n: 1 / 12 for n in record["grades"]},
+        }
+    after = decision_view.build(record, [], 100000, snapshot, quoted, now, cash=100000)
+    assert json.dumps(before["rows"], sort_keys=True, default=str) == json.dumps(
+        after["rows"], sort_keys=True, default=str
+    )
+    assert after["rows"]["S11"]["action"] == "Hold"
+    assert "reset target 10%" in after["rows"]["S11"]["reason"]
+
+
+# The board with the API's swap already applied (`_with_active_targets`) is
+# the same board: the swap is idempotent.
+def test_the_api_swap_is_idempotent_with_the_boards_own():
+    pytest.importorskip("fastapi")
+    from backend.api.v1 import market
+
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    plain = decision_view.build(record, [], 100000, snapshot, quoted, now, cash=100000)
+    swapped = decision_view.build(
+        market._with_active_targets(record),
+        [],
+        100000,
+        snapshot,
+        quoted,
+        now,
+        cash=100000,
+    )
+    assert json.dumps(plain["rows"], sort_keys=True, default=str) == json.dumps(
+        swapped["rows"], sort_keys=True, default=str
+    )
+
+
+# The three-word guard holds for `/4` records too, across every path.
+def test_the_v4_board_can_only_ever_say_one_of_three_things():
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    said = set()
+    for held in ([], [Holding("S11", _shares(snapshot, 0.14), 100.0, "2026-08-01")]):
+        for until in (0, 10, None):
+            record["paper"] = {"until_rebalance": until} if until is not None else {}
+            for open_ in (True, False):
+                quoted["market_open"] = open_
+                for cash in (None, 0, 100000):
+                    built = decision_view.build(
+                        record, held, 100000, snapshot, quoted, now, cash=cash
+                    )
+                    for row in built["rows"].values():
+                        said.add(row["action"])
+                        said.add(row["strategy_action"])
+                        if row["action"] == "Hold":
+                            assert row["move_weight"] == 0.0, row
+                        else:
+                            assert row["move_weight"] != 0.0, row
+                        if row["strategy_action"] == "Hold":
+                            assert row["strategy_move_weight"] == 0.0, row
+                        else:
+                            assert row["strategy_move_weight"] != 0.0, row
+                        assert row["reason"], row
+    assert said <= {"Buy", "Sell", "Hold"}, said

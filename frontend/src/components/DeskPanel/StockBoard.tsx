@@ -406,6 +406,20 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       && Date.parse(row.valid_until ?? '') > now && Number.isFinite(row.move_weight)
       ? Math.abs(row.move_weight) : null
   }
+  // The size the strategy intends for a Buy or Sell that cannot be executed
+  // right now: the desk's own move, before readiness. The operator reads the
+  // board with the market shut and executes at the next open himself, so a
+  // sized signal with "Market closed" beneath it is the answer he needs; a
+  // dash there hid every target-sized buy all weekend. It is labelled
+  // "intended", never "of account", so it cannot be mistaken for a size the
+  // evidence supports trading this minute.
+  const intendedSize = (ticker: string): number | null => {
+    const row = decisions?.session === latest.session && decisions.written === latest.written
+      ? decisions.rows[ticker] : undefined
+    const move = row?.strategy_move_weight ?? row?.move_weight
+    return !paused && planOf(ticker) !== 'Hold' && Number.isFinite(move) && move !== 0
+      ? Math.abs(move as number) : null
+  }
   const stocks = [...Object.entries(latest.grades).map(([ticker, grade]) => ({
     ticker, grade: grades[ticker]?.grade_live ?? grade.grade,
     score: grades[ticker]?.score_live ?? grade.score,
@@ -564,6 +578,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           const strategyMove = decision?.strategy_move_weight ?? decision?.move_weight
           const deadline = Date.parse(decision?.valid_until ?? '')
           const canSize = executableSize(row.ticker) !== null
+          const intended = intendedSize(row.ticker)
           const plan = paused ? 'Hold' : planOf(row.ticker)
           const readiness = paused ? 'FOMC pause' : plan === 'Hold' ? decision?.entry_status === 'unavailable' ? 'Data missing' : null : decision?.executable === false
             ? decision.blocker || (marketClosed ? 'Market closed' : 'Blocked now')
@@ -595,7 +610,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 <div aria-label={`${row.ticker} spread verification`} className="text-[11px] text-[#9a6700]">{decision.quote.spread_verified === false
                   ? `${decision.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`
                   : 'Spread verification unrecorded'}</div>}</td>
-            <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : '—'}</td>
+            <td className="text-xs" aria-label={`${row.ticker} size`}>{isCash && row.weight !== null ? `${percentage(row.weight)} unallocated` : !isCash && canSize ? <>{percentage(Math.abs(decision!.move_weight))}<span className="hidden sm:inline"> of account</span></> : !isCash && intended !== null ? <>{percentage(intended)}<span className="hidden sm:inline"> intended</span></> : '—'}</td>
 
           </tr>
           {/* Details follow the visible board width, not the horizontally scrollable table. */}

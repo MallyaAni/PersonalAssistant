@@ -91,7 +91,8 @@ for (const name of Object.keys(evidence.cases) as CaseName[]) {
       const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
       const today = page.getByLabel('Today', {exact: true})
       await expect(board.getByLabel('S11 strategy intent', {exact: true})).toHaveText(source.row.strategy_action.toUpperCase())
-      await expect(board.getByLabel('S11 size', {exact: true})).toHaveText(source.row.executable ? `${(100 * Math.abs(source.row.move_weight)).toFixed(1)}% of account` : '—')
+      // Executable: the funded amount "of account". Otherwise the strategy's intended size, labelled so.
+      await expect(board.getByLabel('S11 size', {exact: true})).toHaveText(source.row.executable ? `${(100 * Math.abs(source.row.move_weight)).toFixed(1)}% of account` : `${(100 * Math.abs(source.row.strategy_move_weight)).toFixed(1)}% intended`)
       await testInfo.attach('collapsed-original-observation', {body: await board.innerText(), contentType: 'text/plain'})
       await board.screenshot({path: testInfo.outputPath(`${name}-collapsed.png`)})
       if (source.row.executable) await expect(today).toContainText('1 executable signal.')
@@ -206,15 +207,16 @@ test('execution caveat survives full-panel navigation, refresh and reload', asyn
   }
 })
 
-// The spread caveat never bypasses the existing deadline guard or extends a quote's life.
-test('execution quote expiration still withholds size with an unverified spread', async ({page, baseURL}, testInfo) => {
+// The spread caveat never bypasses the existing deadline guard or extends a quote's life:
+// once the quote expires the size is the intended one, no longer an executable amount.
+test('execution quote expiration withdraws the executable size with an unverified spread', async ({page, baseURL}, testInfo) => {
   const fixture = await install(page, baseURL!, 'wide_iex')
   try {
     await page.goto('/#desk')
     const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
     await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3% of account')
     await page.clock.runFor(31_000)
-    await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('—')
+    await expect(board.getByLabel('S11 size', {exact: true})).toHaveText('3.3% intended')
     await expect(board.getByLabel('S11 strategy intent', {exact: true})).toHaveText('BUY')
     await expect(board.getByLabel('S11 spread verification', {exact: true})).toHaveText('IEX spread unverified')
     await expect(page.getByLabel('Today', {exact: true})).not.toContainText('1 executable signal.')

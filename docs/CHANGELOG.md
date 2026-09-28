@@ -1,5 +1,67 @@
 # Changelog
 
+## 2026-09-27 — Board sizes toward the /4 targets; the /3-era "targets are not a standing order" rule applies only to /3 records
+
+The desk board printed Hold with no size on every name of the `/4` book
+(MU, SWKS, AAOI: "No entry signal; reset target 9%") while the operator
+traded his real account from it. `decision_view.action_for_row` had no
+branch that sized toward the record's targets: it was deleted for the `/3`
+policy, whose targets were a nightly sizing the book only acted on at a
+reset. Under `graded-equal-weight/4` (`live_policy.ACTIVE`, stamped on the
+record as `targets = {"policy", "weights"}`) the targets ARE the strategy:
+the executor holds every A/A+ name at equal weight, exits on a downgrade
+and, since the redeploy leg, buys toward the targets from idle cash
+mid-cycle; it trims only at the reset.
+
+- For a record whose `targets.policy` is the active policy
+  (`decision_view._sizes_toward_targets`), the board sizes the gap between
+  the person's weight and the policy's target, classified exactly as
+  `decision_history.classify` classifies the charts (ADD_TRIM_MIN 0.025):
+  Buy the target when nothing is held ("Buy to 9.1% target (policy
+  graded-equal-weight/4)"); Buy the gap when 2.5 points or more short
+  ("Add to 9.1% target ...; holding 4.0%"); the covered downgrade exit as
+  before, and first; over the target by 2.5 points or more: Sell the excess
+  on the reset session only ("Trim to ..."), otherwise a Hold that says
+  "Above target (9.1%; holding 14.0%); trimmed at the next reset" - no Sell
+  the executor will not place; a smaller gap is the existing Hold. The
+  `Action` enum keeps its three words; the size beside Buy/Sell is the gap.
+- Readiness is unchanged: a closed market, a stale decision or an unusable
+  quote still make the row not executable, `action` Hold, blocker named.
+  The strategy fields (`strategy_action`, `strategy_move_weight`) carry the
+  intent regardless, and the reason keeps the target sentence in front of
+  the blocker ("Buy to 9.1% target (...); buy not executable: market
+  closed or clock unavailable"). Unknown cash keeps the intent with blocker
+  "available cash is unknown". With cash and an open market the target buys
+  are funded beside the band entries under the one cash bound
+  (`_personal_midcycle_orders(target_buys=...)`), pro rata when cash is
+  short, like the executor's redeploy. A firing band entry still answers
+  first, sized as the entry leg sizes it.
+- A record with no `targets`, or one stamped with another policy, is byte
+  for byte as before (pinned by
+  `test_records_without_the_active_policy_are_unchanged`); the `/3`
+  reasoning stays in the code comment, scoped to `/3` records. The board's
+  book swap is idempotent with the API's `_with_active_targets`.
+- A non-session entry read ("2026-09-27 is not an exchange session") does
+  not overwrite a target-sized Buy: `_apply_entry_reason` speaks only for a
+  Hold (pinned).
+- Board (`StockBoard.tsx`): the Action word already read the strategy
+  intent; the Size column now shows the intended size ("9.1% intended")
+  for a Buy or Sell that is not executable, with the readiness line
+  ("Regular-session execution blocked", the blocker) beneath, so the
+  operator sees signal and size with the market shut and executes at the
+  next open himself. An executable size still reads "of account". E2E
+  specs that pinned the dash on a blocked intent are updated and a `/4`
+  case added (`simple-actions.spec.ts`: no holdings, market closed -> BUY,
+  9.1% intended, restriction beneath, no "Data missing"); the e2e suite was
+  not run in this session (no browser toolchain here) - UNVERIFIED until the
+  deploy runs it.
+- Tests: `test_decision_view.py` (targets/no holdings -> Buy target; unknown
+  cash; closed market; held at target -> Hold; under target -> add; over
+  target mid-cycle -> Hold with trim note; at the reset -> trim; no clock
+  -> never a trim; downgraded -> exit; cash shared pro rata; entry before
+  target; /3 unchanged; three-word guard over every `/4` path). The API
+  idempotency test skips without fastapi.
+
 ## 2026-09-27 — Live executor redeploys idle cash (execution policy /4): operator's decision after the mid-cycle study
 
 The operator chose exposure: the paper executor now runs the mid-cycle

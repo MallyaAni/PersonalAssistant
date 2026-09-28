@@ -78,12 +78,14 @@ test('visible grades and concise actions expose diagnostics only on request', as
   expect(errors).toEqual([])
 })
 
-// A regular-session restriction retains intent and never implies all venues are closed.
-test('regular-session restriction is explicit and cannot advertise a trade size', async ({page}) => {
+// A regular-session restriction retains intent and the intended size, labelled
+// as intended rather than as an executable amount, and never implies all venues are closed.
+test('regular-session restriction is explicit and shows the intended size, not an executable one', async ({page}) => {
   const {errors} = await setup(page, false)
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
-  await expect(board.getByLabel('AAPL size')).toHaveText('—')
+  await expect(board.getByLabel('AAPL size')).toHaveText('2.0% intended')
+  await expect(board.getByLabel('AAPL size')).not.toContainText('of account')
   for (const ticker of ['AAPL', 'NVDA']) {
     const readiness = board.getByLabel(`${ticker} execution readiness`, {exact: true})
     await expect(readiness).toHaveText('Regular-session execution blocked')
@@ -200,6 +202,51 @@ test('default ranking follows grade action size and reranks expired intraday gra
   await page.clock.fastForward(16 * 60 * 1000)
   await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('BClose')
   expect(await order()).toEqual(['AAPL', 'MSFT', 'AMZN', 'AMD', 'NVDA'])
-  await expect(board.getByLabel('NVDA size', {exact: true})).toHaveText('—')
+  // The quote has expired, so the size is the intended one, not an executable one.
+  await expect(board.getByLabel('NVDA size', {exact: true})).toHaveText('4.0% intended')
+  expect(errors).toEqual([])
+})
+
+// A record stamped with the active `/4` policy sizes toward its targets: with
+// nothing held and the market shut, a name the policy wants reads Buy with the
+// target-sized weight beside it and the readiness restriction beneath, so the
+// operator can execute it himself at the next open. Nothing is claimed executable.
+test('a /4 target buy shows its size with the market closed', async ({page}) => {
+  const {errors} = await setup(page, false, false, false, async () => {
+    await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))
+    await page.route('**/desk/mine', route => route.fulfill({json: {
+      session, rows: [], grades_live: {},
+      decisions: {session, written, equity: 100000, holdings: {}, rows: {
+        AAPL: {action: 'Hold', strategy_action: 'Buy', executable: false, blocker: 'market closed or clock unavailable',
+          reason: 'Buy to 9.1% target (policy graded-equal-weight/4); buy not executable: market closed or clock unavailable',
+          move_weight: 0, strategy_move_weight: .0909, target_weight: .0909, current_weight: 0, valid_until: null,
+          entry_status: 'unavailable', entry_reason: 'Entry data unavailable: 2026-09-27 is not an exchange session'},
+        NVDA: {action: 'Hold', strategy_action: 'Hold', executable: false, blocker: 'market closed or clock unavailable',
+          reason: 'Maintain position (9.1% of account) (market closed or clock unavailable)', move_weight: 0, strategy_move_weight: 0,
+          target_weight: .0909, current_weight: .0909, valid_until: null},
+        MSFT: {action: 'Hold', strategy_action: 'Hold', executable: false, blocker: 'market closed or clock unavailable',
+          reason: 'Above target (9.1%; holding 14.0%); trimmed at the next reset (market closed or clock unavailable)',
+          move_weight: 0, strategy_move_weight: 0, target_weight: .0909, current_weight: .14, valid_until: null},
+      }},
+    }}))
+  })
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
+  await expect(board.getByLabel('AAPL size')).toHaveText('9.1% intended')
+  const readiness = board.getByLabel('AAPL execution readiness', {exact: true})
+  await expect(readiness).toHaveText('Regular-session execution blocked')
+  await expect(readiness).toHaveAttribute('title', 'Regular-session execution is blocked; the session is closed or its clock is unavailable')
+  // A non-session entry read does not turn a target-sized Buy into "Data missing".
+  await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})).not.toContainText('Data missing')
+  await expect(page.getByLabel('Today', {exact: true})).not.toContainText('1 executable signal.')
+  await expect(board.getByLabel('NVDA strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('NVDA size')).toHaveText('—')
+  await expect(board.getByLabel('MSFT strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('MSFT size')).toHaveText('—')
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  await expect(board.getByLabel('AAPL decision reason', {exact: true})).toContainText('Buy to 9.1% target (policy graded-equal-weight/4)')
+  await expect(board.getByLabel('AAPL move', {exact: true})).toHaveText('+9.1%')
+  await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
+  await expect(board.getByLabel('MSFT decision reason', {exact: true})).toContainText('trimmed at the next reset')
   expect(errors).toEqual([])
 })
