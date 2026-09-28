@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-09-28, pre-open — The board acts only at the measured level; ML entry level recorded
+
+**Deployed** `80b58819` (05:04Z, post-deploy ok; main now `eb74a6d`). The
+operator's rule: the board shows BUY / SELL / TRIM only when level and
+structure justify it, Hold otherwise, in real time. Implemented with the
+one timing rule that is measured (`dip_or_close`, execution-timing note:
+neutral on 2016-2023, +1.0 bp/d t 2.2 on 2024-2026): **BUY lights on a
+completed 15-minute bar closing >= 1% under the session open, or from the
+close cutoff (15:30 ET; 12:30 on early closes; MOC before 15:50) for the
+close**; SELL/TRIM mirror (1% pop else close); the executor's band gate
+(`exit.evidence(...).signalled()`, recorded as `levels[T]["rejecting_band"]`)
+blocks buys. Pre-open / waiting / after the close = Hold with the plan on
+hover. `backend/market/entry_timing.py`: the latch
+`data/market/desk/entry-timing/<session>.json`, written by
+`market_balancer` every 15 minutes (cron `*/15 9-16`); `decision_view`
+computes the timed `action` on the /4 path only (`strategy_action` keeps the
+intent for charts); the /4 row's grade is the record's close grade (the
+intraday reading is on hover). The page re-reads `/desk/mine` every 15 s.
+Board row price = the freshest dated price among the last midpoint, a
+later-session regular bar and the official close (`boardFallback`).
+**The paper executor still fills at the next open** (measured equivalent);
+moving it to dip-or-close is a separate registered change.
+
+Known harness flake (not regressions; identical on main): 10 Playwright
+tests fail on an aborted `/api/v1/conversations/...` request caught by the
+specs' `failedRequests` diagnostic (desk-execution-evidence 190/240,
+desk.spec personal-history 3568, background-session-prices failed-attempt
+pair). e2e on spark1: `docker run ... -v ~/scratch/pw-node-modules:/work/node_modules
+mcr.microsoft.com/playwright:v1.61.1-noble` with `-e VITE_API_URL=`.
+
+**ML entry level** ([research/ml-entry-level-2026-09-28.md](research/ml-entry-level-2026-09-28.md)):
+a level scaled by the CNN's volatility forecast is no better than trailing
+volatility (-0.02 bp/d, t -0.28) or the fixed 1%; every convention RECORD.
+A dip fill was 9 bp worse than the close on 2016-2023 and 36 bp better on
+2024-2026. Next registered ML question: the late-day index flow as a
+close-vs-dip switch.
+
+**Scheduled check-ins:** 13:50Z (latch + board at the open), 19:35Z (the
+close window's BUYs), 00:40Z Tue (first /4 reset night). The operator has
+no saved holdings on the board: BUY sizes assume he holds nothing.
+
 ## 2026-09-28, early — Live executor redeploys idle cash (/4); board made consistent; five more trials recorded
 
 **Deployed** (`508c66c9`, 03:14Z; earlier `cf9b43e8` 02:04Z; post-deploy ok): the
