@@ -1,5 +1,66 @@
 # Changelog
 
+## 2026-09-27 — Live executor redeploys idle cash (execution policy /4): operator's decision after the mid-cycle study
+
+The operator chose exposure: the paper executor now runs the mid-cycle
+study's `mc-redeploy` variant exactly. On every non-rebalance session,
+after the deferred retry, the rotation out of downgraded names and the
+band entries have planned their buys, `paper.plan` puts the cash on hand
+beyond a 2% buffer of equity (`paper.REDEPLOY_BUFFER`) back to the
+policy's targets (`live_policy.targets`): the takers are the held or
+bought-tonight A/A+ names not rotating out plus any name the policy wants
+tonight that it did not want at the last reset (newly graded in), each
+filled pro rata to its shortfall to its own target weight, never beyond
+it - no band gate, no 15% entry cap (the policy's 20% cap is inside the
+target), nothing deferred; what does not fit is cash again tomorrow. Sells
+are unchanged. Orders are next-open market buys carrying `kind:
+"redeploy"`. `paper.REDEPLOY_IDLE_CASH = True` is the switch (False and a
+redeploy turns it off; the planner is then the /3 planner byte for byte,
+pinned by test), and `paper.POLICY_VERSION` is
+`cash-bounded-breakout-rotation/4`.
+
+- `paper._redeploy_orders` is `simulate._redeploy_orders` line for line,
+  with the broker's whole shares (floored); the parity test
+  (`test_the_live_redeploy_matches_the_simulator_to_1e_9`) runs both on
+  the same synthetic panel, state and `live_policy.targets` and holds the
+  dollars per name equal to 1e-9, and equal to shortfall x equity x the
+  one fill ratio. MIN_TRADE applies on both sides (the simulator already
+  had the floor), so the only divergence is the whole-share floor.
+- `PaperState.rebalance_targets`: the policy's targets as planned at the
+  last reset, written by every rebalance plan, restored when the broker
+  refuses a rebalance; None on a state from before (then no unheld name
+  is a taker until the next reset writes it - conservative, tested).
+- `bound_orders` lets a redeploy buy through the 15% entry cap and
+  reserves nothing against the other legs, so the retry, rotation and
+  entry legs are capped exactly as before.
+- The day after a reset is an ordinary session, so the reset's own leak
+  (buys paid only from cash on hand while its sells fill at the close;
+  the reset's buys also capped at 15% by `bound_orders`) is closed the
+  next night: the retry takes what its gates allow and the redeploy takes
+  the rest to the 20% targets (tested end to end).
+- Record: the paper block carries `idle_cash_share` (cash after the
+  planned orders over equity) and a `redeploy` block (enabled, buffer,
+  orders, notional); submitted rows, pending rows, the journal and the
+  settled rows carry `kind`, and `decision_history.fills` passes it to the
+  chart. `--paper-dry-run` plans and prints the redeploy orders
+  (`[dry run]`) and submits nothing (tested against a fake broker; the
+  state file is untouched).
+- The published curve (`curve_block`) is NOT re-priced with the redeploy:
+  `simulate.LIVE_POLICY` is unchanged so every registered study's `live`
+  control keeps its meaning, and the block says so (`execution_options`
+  = the flags it ran, `redeploy_priced: false`). The nested market study
+  (`nested_market_study._configuration`) was frozen on the /3 executor
+  string and now refuses by design until re-registered; its tests pin the
+  frozen label.
+- Not changed: `policy_v4.py`, `live_quotes.py`, `market_pick_audit.py`,
+  `timing_research.py`, the shadow ledger (it hashes `policy_v4.py` and
+  itself only).
+- Tests: `test_trading_paper` 34 (9 new), `test_market_daily` 49 (5 new),
+  `test_decision_history` 10 (1 new), `test_nested_market_study` +1
+  refusal case; `test_live_policy`, `test_shadow_ledger`,
+  `test_midcycle_ew`, `test_trading_simulate`, `test_execution_ablation`,
+  `test_policy_v4` unchanged and green.
+
 ## 2026-09-27 — Mid-cycle study on the /4 book run: the book is 78% invested; every variant RECORD, exposure is the operator's call
 
 Ten variants ran on spark1 (`docs/research/midcycle-ew-2026-09-27.md`).

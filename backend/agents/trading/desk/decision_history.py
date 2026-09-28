@@ -118,6 +118,17 @@ def series(
     return rows
 
 
+# The plan leg a settled row names, as the one-key dict to add to its fill:
+# {"kind": "redeploy"} on a redeploy buy (the executor's /4, 2026-09-27), so
+# the chart can tell a redeploy fill from a rotation or an entry; empty for a
+# row written before the field existed or carrying anything but a string, so
+# those fills read exactly as before.
+def _plan_leg(row: dict) -> dict:
+    """Return {"kind": leg} when `row` names its plan leg, else {}."""
+    kind = row.get("kind")
+    return {"kind": kind} if isinstance(kind, str) and kind else {}
+
+
 # The paper account's real fills in one name, read from the nightly
 # records' `paper.settled` rows. A row counts when the broker filled some
 # of it; the fill is dated to the session the broker completed it on when
@@ -128,7 +139,7 @@ def series(
 # skipped rather than fatal. A partial that settles again in a later
 # record replaces its earlier reading, keyed on the order id.
 def fills(root: Path, ticker: str) -> list[dict]:
-    """Return [{date, side, qty, price}] for `ticker`, oldest first."""
+    """Return [{date, side, qty, price[, kind]}] for `ticker`, oldest first."""
     found: dict[str, dict] = {}
     for session in deskrecord.sessions(root):
         try:
@@ -162,4 +173,5 @@ def fills(root: Path, ticker: str) -> list[dict]:
                 "qty": qty,
                 "price": round(price, 4),
             }
+            found[key].update(_plan_leg(row))
     return sorted(found.values(), key=lambda f: (f["date"], f["side"], f["qty"]))

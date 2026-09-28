@@ -92,6 +92,22 @@ def _case():
     return report, inputs, protocol
 
 
+# The executor version the frozen protocol was registered against. The live
+# executor moved to `cash-bounded-breakout-rotation/4` on 2026-09-27 (the
+# redeploy of idle cash), and `study._configuration` refuses the changed
+# production configuration by design (`test_frozen_configuration_refusals`
+# proves it); the study's machinery is exercised here under the frozen label.
+FROZEN_EXECUTION_POLICY = "cash-bounded-breakout-rotation/3"
+
+
+# Pin the executor label to the frozen one for every test in this module.
+@pytest.fixture(scope="module", autouse=True)
+def _frozen_executor():
+    with pytest.MonkeyPatch.context() as pin:
+        pin.setattr(paper, "POLICY_VERSION", FROZEN_EXECUTION_POLICY)
+        yield
+
+
 # Share one real-fit synthetic study and its inputs for exact comparator parity.
 @pytest.fixture(scope="module")
 def completed():
@@ -570,10 +586,16 @@ def test_actual_pipeline_future_prefix_noninterference():
 
 
 # The declared production configuration cannot drift behind a retained protocol title.
-@pytest.mark.parametrize("field", ["sizing", "flags", "era", "basket_config"])
+@pytest.mark.parametrize(
+    "field", ["sizing", "flags", "era", "basket_config", "execution_policy"]
+)
 def test_frozen_configuration_refusals(monkeypatch, field):
     report, inputs, protocol = _case()
-    if field == "sizing":
+    if field == "execution_policy":
+        # The live executor's own version (/4, the redeploy of idle cash):
+        # the protocol was frozen on /3 and must refuse to run under it.
+        monkeypatch.setattr(paper, "POLICY_VERSION", "cash-bounded-breakout-rotation/4")
+    elif field == "sizing":
         monkeypatch.setattr(
             risk, "BOOK_CONFIG", replace(risk.BOOK_CONFIG, name_cap=0.2)
         )
@@ -588,7 +610,7 @@ def test_frozen_configuration_refusals(monkeypatch, field):
         )
     else:
         inputs.audit["book_config"]["speed"] = 0.9
-    with pytest.raises(ValueError, match="configuration|binding"):
+    with pytest.raises(ValueError, match="configuration|binding|unchanged /3"):
         study.run(report, inputs, protocol=protocol)
 
 

@@ -294,3 +294,54 @@ def test_fills_skip_an_unreadable_record(tmp_path):
     assert decision_history.fills(root, "AAA") == [
         {"date": "2026-09-14", "side": "sell", "qty": 40, "price": 230.5},
     ]
+
+
+# A settled row that names its plan leg (`kind`, "redeploy" since the
+# executor's /4) carries it into the fill; a row without one, or with a
+# malformed one, reads exactly as before.
+def test_fills_carry_the_plan_leg_when_the_record_names_one(tmp_path):
+    root = tmp_path
+    folder = root / "desk" / "asof=2026-09-29"
+    folder.mkdir(parents=True)
+    (folder / "desk.json").write_text(
+        json.dumps(
+            {
+                "session": "2026-09-29",
+                "paper": {
+                    "settled": [
+                        {
+                            "symbol": "AAA",
+                            "side": "buy",
+                            "qty": 7,
+                            "status": "filled",
+                            "filled": 7,
+                            "filled_price": 91.0,
+                            "kind": "redeploy",
+                            "client_order_id": "anios-2026-09-28-buy-aaa-2",
+                        },
+                        {
+                            "symbol": "AAA",
+                            "side": "buy",
+                            "qty": 3,
+                            "status": "filled",
+                            "filled": 3,
+                            "filled_price": 90.0,
+                            "kind": 7,
+                            "client_order_id": "anios-2026-09-28-buy-aaa-1",
+                        },
+                    ]
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert decision_history.fills(root, "AAA") == [
+        {"date": "2026-09-29", "side": "buy", "qty": 3, "price": 90.0},
+        {
+            "date": "2026-09-29",
+            "side": "buy",
+            "qty": 7,
+            "price": 91.0,
+            "kind": "redeploy",
+        },
+    ]

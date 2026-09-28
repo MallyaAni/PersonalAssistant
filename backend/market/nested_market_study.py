@@ -68,6 +68,10 @@ def _source_hashes():
 
 
 # Preserve the exact incumbent configuration rather than infer it from its report.
+# The protocol was registered against the /3 executor; since 2026-09-27 the
+# live executor is /4 (the redeploy of idle cash, `paper.REDEPLOY_IDLE_CASH`),
+# so this refuses by design until the study is re-registered against it. The
+# 2026-09-24 results stand as /3 results.
 def _configuration():
     if (
         paper.POLICY_VERSION != "cash-bounded-breakout-rotation/3"

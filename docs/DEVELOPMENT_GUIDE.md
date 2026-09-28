@@ -256,6 +256,50 @@ options/date/isolation regressions. These real synthetic CLI/Parquet checks
 do not prove provider completeness or recover previously omitted rows.
 See the [collection contract](research/options-collection-contract-2026-09-25.md).
 
+### The nightly's paper executor: what it does with idle cash
+
+The nightly (`~/desk_daily.sh` on spark1, `market_daily --paper-trade`)
+plans the paper book once a session. On a rebalance session it brings the
+book to `live_policy.targets`. On every other session it retries last
+night's unpaid buys, rotates out of names graded below A, enters band
+breakouts, and since 2026-09-27 (execution policy
+`cash-bounded-breakout-rotation/4`) **redeploys idle cash**: cash on hand
+beyond 2% of equity (`paper.REDEPLOY_BUFFER`), after the other legs have
+planned their buys, goes back to the policy's targets pro rata to each held
+or newly graded A/A+ name's shortfall, never beyond a name's target, with
+no band gate and nothing deferred. Sells are unchanged. The orders are
+next-open market buys with `kind: "redeploy"`; the nightly log prints
+`redeploy: N buys put X of idle cash back to the targets`, and the record's
+paper block carries `idle_cash_share` and a `redeploy` block. To turn it
+off, set `REDEPLOY_IDLE_CASH = False` in `backend/agents/trading/desk/paper.py`
+and redeploy: the planner is then the /3 planner byte for byte (pinned by
+`test_the_planner_with_the_redeploy_off_is_the_v3_planner`).
+
+To see what tonight's plan would be without submitting, run the dry-run
+planner against the real paper account from the deploy clone, with the
+`.env` exported and the Alpaca paper keys in the environment as
+`~/desk_daily.sh` sets them. It reads positions and cash, plans, prints
+each order with `[dry run]`, and writes nothing (no state, no record):
+
+```sh
+cd ~/deploy/anios && set -a && . ./.env 2>/dev/null; set +a
+CUDA_VISIBLE_DEVICES= ~/research-venv/bin/python - <<'EOF'
+from pathlib import Path
+from backend.cli import market_daily
+from backend.config.settings import settings
+from backend.market.store import MarketStore
+store = MarketStore(settings.MARKET_DATA_ROOT)  # the nightly's --data-dir default
+report = market_daily.desk_report(store, None)
+market_daily.paper_trade(report, Path(store.root), str(report.panel.dates[-1]), live=False)
+EOF
+```
+
+`market_daily --paper-dry-run` is the same planner through the CLI, but
+it also writes the session's record, so on a session the nightly has
+already recorded it refuses (and `--force` would rewrite that record):
+use it only on a copy of the store (`--data-dir <copy>`) or before the
+nightly has run.
+
 ### Verification instruments
 
 The instruments, in the order a change meets them. None of them is optional

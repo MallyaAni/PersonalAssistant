@@ -50,6 +50,8 @@ CONSISTENT for `mc-off`, `mc-no-idle-cash`, `mc-redeploy-no-exits` and
 
 ## Reading it
 
+**Decision (2026-09-27, operator): `mc-redeploy` adopted for the live executor (`paper.REDEPLOY_IDLE_CASH`, execution policy `cash-bounded-breakout-rotation/4`); see CHANGELOG.**
+
 1. **The 4.3 points are exposure, not selection.** Scale live's CAGR to
    mc-off's invested fraction and the gap is +0.0 points. The live
    executor is not choosing worse names than the plain book; it is

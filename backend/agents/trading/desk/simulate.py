@@ -69,6 +69,17 @@ VALUATION_MODEL = "complete-held-marks-v1"
 # the fill (sells at the close, holds a sell on a name up at the open).
 # Any change to how the live book executes edits this dict and nothing
 # else, so a backtest cannot drift from the account it is measured against.
+#
+# The one deliberate exception (2026-09-27): the live planner's redeploy of
+# idle cash (`paper.REDEPLOY_IDLE_CASH`, execution policy /4) is the
+# `midcycle_redeploy=True, redeploy_buffer=paper.REDEPLOY_BUFFER` option of
+# `run`, and it is NOT in this dict. Every registered study since the
+# execution ablation prices its `live` control from this dict, and the
+# mid-cycle study's `mc-redeploy` row is `live` plus that option; putting
+# it here would turn every control into the new executor and re-run the
+# allocator on every mid-cycle session of the published curve. The record
+# says so (`curve_block["redeploy_priced"]` is False), and the parity test
+# in test_trading_paper holds the live leg to `_redeploy_orders` instead.
 LIVE_POLICY: dict[str, bool] = {
     "block_overbought": True,
     "exit_at_close": True,

@@ -367,6 +367,9 @@ def _settled_rows(settled, panel) -> list[dict]:
                 "filled": s.filled_qty,
                 "filled_price": s.filled_price,
                 "client_order_id": s.client_order_id,
+                # The plan leg ("redeploy" on a redeploy buy, else None), so
+                # the fills history can tell the legs apart.
+                "kind": s.kind,
                 "execution": s.execution,
                 "completion_session": completed,
                 "decision_shortfall_bps": execution_evidence.decision_shortfall_bps(
@@ -468,6 +471,7 @@ def _submit(
                     "side": order.side,
                     "qty": order.qty,
                     "reason": order.reason,
+                    "kind": order.kind,
                     "client_order_id": order.client_order_id
                     or paper.order_id(session, order.symbol, order.side),
                     "execution": execution_evidence.broker_evidence(response),
@@ -497,6 +501,7 @@ def _pending_orders(orders, session, prices, reference_session):
             "event_id": order.event_id,
             "priority": order.priority,
             "execution_timing": order.execution_timing,
+            "kind": order.kind,
             "execution": {
                 "decision_at": decision_at,
                 "reference_price": prices.get(order.symbol),
@@ -622,6 +627,38 @@ def _band_blocked(report) -> tuple[set[str], dict[str, bool]]:
         if flag:
             blocked.add(ticker)
     return blocked, flags
+
+
+# Say what tonight's redeploy leg does, when it does anything, and return
+# its orders: how many buys, the cash they put back to the targets at the
+# decision prices, and the buffer the rule keeps.
+def _print_redeploy(orders, prices) -> list:
+    """Print the redeploy line when there are redeploy orders; return them."""
+    from backend.agents.trading.desk import paper
+
+    redeployed = [o for o in orders if o.kind == paper.REDEPLOY_KIND]
+    if redeployed:
+        print(
+            f"  redeploy: {len(redeployed)} buys put "
+            f"{sum(o.qty * prices[o.symbol] for o in redeployed):,.0f} of idle cash "
+            f"back to the targets (buffer {paper.REDEPLOY_BUFFER:.0%} of equity)"
+        )
+    return redeployed
+
+
+# The share of equity the book would hold in cash once tonight's plan has
+# filled at the decision prices: the cash on hand less the planned buys plus
+# the planned sells (which fill at the close and deliver their cash a
+# session late, but are part of the same plan), over equity, in [0, 1].
+# Written on the paper block as `idle_cash_share` so the board can show
+# whether the book is invested; None when the account reports no equity.
+def _idle_cash_share(orders, prices, cash, equity) -> float | None:
+    """Return (cash - planned buys + planned sells) / equity, or None."""
+    if not equity or equity <= 0:
+        return None
+    buys = sum(o.qty * prices.get(o.symbol, 0.0) for o in orders if o.side == "buy")
+    sells = sum(o.qty * prices.get(o.symbol, 0.0) for o in orders if o.side == "sell")
+    return float(min(1.0, max(0.0, (cash - buys + sells) / equity)))
 
 
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
@@ -761,6 +798,7 @@ def _paper_trade(
             f"  buys blocked where the daily rejects its upper Bollinger band "
             f"({len(blocked)} names rejecting tonight)"
         )
+    redeployed = _print_redeploy(orders, prices)
     # The plan is written down before a single order is sent, with the id
     # each one will carry. A crash between sending and recording then
     # leaves a record the next session can ask the broker about, rather
@@ -785,6 +823,7 @@ def _paper_trade(
         new_state.last_rebalance = state.last_rebalance
         new_state.sessions_since_rebalance = state.sessions_since_rebalance
         new_state.policy_version = state.policy_version
+        new_state.rebalance_targets = state.rebalance_targets
         print(
             f"  {len(refused)} of {len(orders)} orders refused: the rebalance "
             f"clock is not advanced, so the next session tries again"
@@ -814,6 +853,15 @@ def _paper_trade(
     entry["until_rebalance"] = max(
         actions.REBALANCE - int(new_state.sessions_since_rebalance), 0
     )
+    entry["idle_cash_share"] = _idle_cash_share(
+        orders, prices, account.cash, account.equity
+    )
+    entry["redeploy"] = {
+        "enabled": bool(paper.REDEPLOY_IDLE_CASH),
+        "buffer": float(paper.REDEPLOY_BUFFER),
+        "orders": len(redeployed),
+        "notional": float(sum(o.qty * prices[o.symbol] for o in redeployed)),
+    }
     holdings = {
         p["symbol"]: actions.Holding(
             weight=float(p["market_value"]) / account.equity if account.equity else 0.0,
@@ -1376,6 +1424,15 @@ def curve_block(report, store) -> dict | None:
         # The executor's conventions, separate from the allocation policy
         # above: the same executor runs whichever targets it is given.
         "execution_policy": paper_rules.POLICY_VERSION,
+        # The `simulate.run` flags this line was actually priced with. The
+        # executor's redeploy of idle cash (`paper.REDEPLOY_IDLE_CASH`, /4)
+        # is not among them: it is a planner leg outside `LIVE_POLICY`, kept
+        # out so every registered study's `live` control keeps its meaning
+        # and this line keeps its once-a-reset allocator call. Its effect is
+        # measured in docs/research/midcycle-ew-2026-09-27.md (`mc-redeploy`)
+        # and lived in the paper curve; it is not in this line.
+        "execution_options": dict(simulate.LIVE_POLICY),
+        "redeploy_priced": False,
         # The data source the simulation's analysts read, kept separate from
         # the execution policy above, so the curve is never presented as
         # measured under corrected inputs when it predates them.

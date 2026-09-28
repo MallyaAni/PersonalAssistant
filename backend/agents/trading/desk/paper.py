@@ -18,6 +18,13 @@ The rules are the ones that measured best, and nothing else:
   worse than none on every name, and no band exit, because that cost 3.0%
   a year when it was finally measured inside these rules rather than per
   trade. The note at the top of `desk/exit.py` has the numbers.
+* Since 2026-09-27 (`REDEPLOY_IDLE_CASH`) a fourth thing trades between
+  rebalances: cash on hand beyond `REDEPLOY_BUFFER` of equity, after the
+  three legs above have planned their buys, goes back to the policy's
+  targets pro rata to each held (or newly graded) name's shortfall
+  (`_redeploy_orders`, the simulator's `mc-redeploy` variant exactly). It
+  is what makes the reset's unpaid buys and a rotation's proceeds work
+  again the session after the close delivers the cash.
 * The plan for a session is made once. Running the day twice submits
   nothing the second time.
 
@@ -166,7 +173,35 @@ ENTRY_BAND_Z = 1.10
 ENTRY_ADD = 0.023
 ENTRY_NAME_CAP = 0.15
 ENTRY_MIN_GRADE = ("A", "A+")
-POLICY_VERSION = "cash-bounded-breakout-rotation/3"
+# The redeploy of idle cash (2026-09-27, the operator's decision after the
+# mid-cycle study, docs/research/midcycle-ew-2026-09-27.md). Under the
+# graded equal-weight policy the book is meant to be fully invested, and the
+# executor left it 78% invested (68% on 2024-2026): a rotation's proceeds
+# waited for a band breakout that mostly never came before the reset, and
+# the reset's own buys went partly unpaid because its sells fill at the
+# close. On every non-rebalance session the planner now puts the cash on
+# hand beyond `REDEPLOY_BUFFER` of equity (after tonight's planned buys)
+# back to the policy's targets - the held A/A+ names not rotating out and
+# any name graded in since the reset, pro rata to each name's shortfall,
+# never beyond its target, no band gate, no name cap but the target's own,
+# nothing deferred: what does not fit tonight is cash again tomorrow. It
+# is `simulate._redeploy_orders` (the study's `mc-redeploy` variant)
+# semantics for semantics, asserted equal to 1e-9 by test_trading_paper;
+# the one difference is the broker's whole shares. Measured at 25 bp on
+# the point-in-time book: 24.8% / 60.2% CAGR against 23.2% / 52.6% for
+# the executor without it (2016-2023 / 2024-2026), drawdown -43% / -21%
+# against -36% / -17% - the same book at 91% invested instead of 78%. To
+# switch it off, set REDEPLOY_IDLE_CASH to False and redeploy.
+REDEPLOY_IDLE_CASH = True
+REDEPLOY_BUFFER = 0.02
+REDEPLOY_KIND = "redeploy"
+# The execution policy version, written on every record and the board's
+# curve block as `execution_policy`. /4 (2026-09-27): the redeploy of idle
+# cash above. /3 was the cash-bounded book: rotation out of downgraded
+# names with the proceeds pro rata into the held names, band-breakout
+# entries paid from cash, one deferred retry of unpaid buys, sells at the
+# close - all of which /4 keeps unchanged.
+POLICY_VERSION = "cash-bounded-breakout-rotation/4"
 # The band reading the size curve is anchored to: the trigger the sizing was
 # measured at, kept as its own constant so the trigger can move without
 # reshaping the curve. `entry_size` explains why.
@@ -236,6 +271,14 @@ class PaperState:
     # the next mid-cycle plan, and then cleared whether or not it filled.
     # Absent in old state files, which load with nothing deferred.
     deferred_buys: dict[str, float] = field(default_factory=dict)
+    # The policy's target weights on the last rebalance session, as it was
+    # planned ({symbol: weight}, the names it wanted), so the redeploy can
+    # tell a name graded in since the reset (a taker at its target) from one
+    # the reset wanted and the book does not hold. Written by every
+    # rebalance plan (an empty dict when the policy wanted nothing); None in
+    # state files from before the redeploy existed, which until their next
+    # reset redeploy into the held names alone (`_redeploy_orders` says why).
+    rebalance_targets: dict[str, float] | None = None
     # The optional funded-allocation state, untouched on the incumbent path.
     # Holds the desk's stable stock composition (exposure 1) - kept separately
     # from the reduced executable target and the actual held shares, so a
@@ -266,6 +309,11 @@ class PaperOrder:
     # Optional funded plans execute both sides at the next open; legacy orders
     # retain their existing auction policy when this field is absent.
     execution_timing: str | None = None
+    # Which leg of the plan the order belongs to when it matters downstream:
+    # `REDEPLOY_KIND` on a redeploy buy, carried onto the pending row, the
+    # journal, the settled rows and the fills history so the board can tell
+    # a redeploy from a rotation or an entry. None on every other order.
+    kind: str | None = None
 
 
 # Serialize paper writers across the nightly and intraday processes.
@@ -609,9 +657,110 @@ def _deferred_orders(
     return orders
 
 
+# The redeploy of idle cash: the reset's own buy semantics applied whenever
+# cash has accumulated between resets. `cash` on hand beyond what tonight's
+# `orders` already spend on buys and beyond `buffer` of equity is put to
+# work in the names the policy would hold today - the names the book holds
+# or buys tonight (`reserved` plus the buys in `orders`) that are graded A
+# or better and not rotating out, plus any name `targets` gives weight that
+# `at_rebalance` (the policy's targets on the last reset) gave none, which
+# is a name graded in since - each filled toward its own target weight, pro
+# rata to the shortfall, never beyond the target (the policy's cap is inside
+# the target, so there is no ENTRY_NAME_CAP here). There is no band gate
+# and nothing is deferred: what does not fit tonight is cash again tomorrow,
+# when the same rule runs. A leg under MIN_TRADE of equity is not sent, and
+# neither is the whole redeploy when the spare cash is under it. This is
+# `simulate._redeploy_orders` line for line, with the broker's whole shares
+# (floored, so a leg is never a share over what the cash pays for); the
+# parity test in test_trading_paper holds the two equal to 1e-9 in dollars.
+#
+# `at_rebalance` None means the state predates the field (no reset has been
+# planned since the redeploy existed), so which names are new cannot be
+# told: then no unheld name is a taker and the cash goes to the held names
+# alone, the conservative reading, and the next reset both opens the new
+# names and writes the field. An empty dict is a reset that wanted nothing,
+# and then every name the policy wants today is new, as in the simulator.
+def _redeploy_orders(  # noqa: C901 - the takers, their room and the fill in one pass
+    orders: list["PaperOrder"],
+    reserved: dict[str, float],
+    prices: dict[str, float],
+    equity: float,
+    grades: dict[str, str],
+    finished: dict[str, str],
+    targets: dict[str, float],
+    at_rebalance: dict[str, float] | None,
+    cash: float,
+    buffer: float,
+    session: str,
+    state: "PaperState",
+    whole_shares: bool = True,
+) -> list["PaperOrder"]:
+    """Return the buys that put tonight's cash beyond `buffer` back to its targets."""
+    if equity <= 0:
+        return []
+    planned = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    spare = max(0.0, cash - planned - float(buffer) * equity)
+    if spare < MIN_TRADE * equity:
+        return []
+    projected = dict(reserved)
+    for order in orders:
+        if order.side == "buy":
+            projected[order.symbol] = projected.get(order.symbol, 0.0) + order.qty
+    candidates = {s for s, q in projected.items() if q > 0}
+    if at_rebalance is not None:
+        candidates |= {
+            s
+            for s, w in targets.items()
+            if w > 0 and float(at_rebalance.get(s, 0.0)) <= 0
+        }
+    room: dict[str, float] = {}
+    for symbol in sorted(candidates):
+        price = float(prices.get(symbol) or 0.0)
+        if (
+            price <= 0
+            or symbol in finished
+            or grades.get(symbol) not in ENTRY_MIN_GRADE
+        ):
+            continue
+        current = float(projected.get(symbol, 0.0)) * price / equity
+        short = float(targets.get(symbol, 0.0)) - current
+        if short > 0:
+            room[symbol] = short * equity
+    total = sum(room.values())
+    if total <= 0:
+        return []
+    fill = min(1.0, spare / total)
+    out: list[PaperOrder] = []
+    for symbol, value in sorted(room.items()):
+        price = float(prices[symbol])
+        want = value * fill
+        qty = math.floor(want / price + 1e-10) if whole_shares else want / price
+        if qty <= 0 or want < MIN_TRADE * equity:
+            continue
+        seq = state.order_seq
+        state.order_seq += 1
+        out.append(
+            PaperOrder(
+                symbol,
+                "buy",
+                qty,
+                "redeploy: cash beyond the buffer put back to its target weights",
+                client_order_id=order_id(session, symbol, "buy", seq),
+                kind=REDEPLOY_KIND,
+            )
+        )
+        state.opened.setdefault(symbol, session)
+    return out
+
+
 # Reserve name capacity jointly and fund opening buys only from existing cash.
 # `unfunded`, when a dict is given, receives the buy shares the cash could
 # not pay for, per symbol, so the caller can carry them to the next session.
+# `redeploy`, when a buffer (a share of equity) is given, adds the redeploy
+# leg after the rotation and the entries: the cash beyond the buffer back to
+# `targets`, with `at_rebalance` telling a newly graded name from one the
+# reset wanted (`_redeploy_orders`). None, the default, plans exactly what
+# it always did.
 def midcycle_orders(
     session,
     state,
@@ -625,6 +774,9 @@ def midcycle_orders(
     cash=None,
     whole_shares=True,
     unfunded=None,
+    targets=None,
+    at_rebalance=None,
+    redeploy=None,
 ):
     eligible = {
         s: b
@@ -650,6 +802,22 @@ def midcycle_orders(
             else equity - sum(q * prices.get(s, 0) for s, q in held.items())
         ),
     )
+    if redeploy is not None:
+        orders += _redeploy_orders(
+            orders,
+            held,
+            prices,
+            equity,
+            grades,
+            finished,
+            targets or {},
+            at_rebalance,
+            budget,
+            redeploy,
+            session,
+            state,
+            whole_shares,
+        )
     funded, unpaid = _fund_buys(orders, budget, prices, whole_shares)
     if unfunded is not None:
         for symbol, qty in unpaid.items():
@@ -773,6 +941,9 @@ def plan(
             session,
             new,
         )
+        # What the policy wanted at this reset, before the band gate, so the
+        # redeploy can later tell a name graded in since from one wanted here.
+        new.rebalance_targets = dict(target_map)
         what = "rebalance"
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
@@ -810,6 +981,9 @@ def plan(
         # A name the desk has turned against is sold and the money follows the
         # names it still wants. The sale alone was what this used to do, and a
         # sale alone is the variant that loses 24 points of CAGR.
+        # Then the redeploy of whatever cash the three legs leave beyond the
+        # buffer, back to tonight's targets (`_redeploy_orders`), when the
+        # rule is on; sells are unchanged either way.
         orders = retry + midcycle_orders(
             session,
             new,
@@ -822,6 +996,9 @@ def plan(
             entry_blocked,
             cash - spent if cash is not None else None,
             unfunded=unfunded,
+            targets=targets,
+            at_rebalance=state.rebalance_targets,
+            redeploy=REDEPLOY_BUFFER if REDEPLOY_IDLE_CASH else None,
         )
         what = (
             "hold"
@@ -831,6 +1008,8 @@ def plan(
             else "exits"
             if done
             else "deferred buys"
+            if retry
+            else "redeploy"
         )
     # Sells first, so the buys have the cash.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))
@@ -843,7 +1022,15 @@ def plan(
 # Keep the combined whole-share order basket within cash and decision-price caps.
 # The cap is applied first, so the shares it removes are not a cash shortfall;
 # `unfunded`, when a dict is given, receives only the buy shares the cash
-# could not pay for, per symbol, for the next session to retry.
+# could not pay for, per symbol, for the next session to retry. A redeploy
+# buy is bounded by its own target weight already (`_redeploy_orders`, which
+# counted every other buy of the plan toward the name), the policy's cap
+# included, so it passes the ENTRY_NAME_CAP here and reserves nothing
+# against the other legs: the 15% is the entry leg's cap, a redeploy to a
+# 20% target must not be cut to 15% on the way out (the reset's leak it
+# exists to close), and the retry, rotation and entry legs must be capped
+# exactly as they were without it, or a redeploy sorted ahead of them would
+# push them out of their own room and leave the name short of its target.
 def bound_orders(orders, held, prices, equity, cash, unfunded=None):
     if not math.isfinite(equity) or equity <= 0 or not math.isfinite(cash):
         raise ValueError("A finite account equity and cash balance are required")
@@ -851,7 +1038,7 @@ def bound_orders(orders, held, prices, equity, cash, unfunded=None):
     capped = []
     for order in orders:
         qty = order.qty
-        if order.side == "buy":
+        if order.side == "buy" and order.kind != REDEPLOY_KIND:
             price = prices[order.symbol]
             room = max(
                 0, ENTRY_NAME_CAP * equity / price - reserved.get(order.symbol, 0)
@@ -925,6 +1112,9 @@ class Settled:
     # pending for an answer that can never arrive.
     terminal: bool = False
     execution: dict = field(default_factory=dict)
+    # The plan leg the order came from (`PaperOrder.kind`), read off the
+    # pending row so the settled rows and the fills history keep it.
+    kind: str | None = None
 
 
 # Pure: match what was written down against what the broker reports.
@@ -980,6 +1170,7 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
                     **row.get("execution", {}),
                     **execution_evidence.broker_evidence(order),
                 },
+                kind=row.get("kind") or None,
             )
         )
     return out
@@ -1035,6 +1226,7 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
             "filled_price": s.filled_price,
             "terminal": s.terminal,
             "event_id": prior.get("event_id"),
+            "kind": s.kind or prior.get("kind"),
             "execution": {
                 **journal.get(s.client_order_id, {}).get("execution", {}),
                 **prior.get("execution", {}),

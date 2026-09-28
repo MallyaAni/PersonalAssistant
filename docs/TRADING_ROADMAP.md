@@ -120,6 +120,23 @@ strategy that changes only when untouched sessions say so.
   -17%. Every variant RECORD under the registered floors; CONSISTENT under
   the exposure reading. The choice is exposure and belongs to the operator;
   if taken, it is a registered executor change after Monday's rebalance.
+
+- 2026-09-27, decision: the operator adopted `mc-redeploy` for the live
+  executor, BUILT (`paper.REDEPLOY_IDLE_CASH`, `paper._redeploy_orders`,
+  execution policy `cash-bounded-breakout-rotation/4`; CHANGELOG has the
+  detail). On every non-rebalance session cash beyond 2% of equity goes
+  back to `live_policy.targets` pro rata to each held or newly graded
+  A/A+ name's shortfall, no band gate, no 15% cap, nothing deferred; the
+  parity test holds the live leg to `simulate._redeploy_orders` at 1e-9
+  in dollars. Rebalance nights are unchanged; the session after a reset
+  redeploys the reset's unpaid buys. The record's paper block carries
+  `idle_cash_share` and every redeploy order carries `kind: "redeploy"`.
+  Switch off: `REDEPLOY_IDLE_CASH = False` and redeploy. Open: the first
+  live session (Tuesday 2026-09-29 if Monday's forced `/4` rebalance fires
+  as expected), read from `~/desk_daily.log` and the record's `redeploy`
+  block; the published curve is not re-priced with it (`redeploy_priced:
+  false` on the curve block) and the nested market study refuses until
+  re-registered against /4.
 - 2026-09-27: `1fc59696` deployed - the `/4` shadow, the SIP fifteen-minute
   store and the point-in-time browser test together (gates 7,543 / 100
   passed). First shadow receipt due Monday 2026-09-28. The SIP backfill is

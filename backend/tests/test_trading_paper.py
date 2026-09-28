@@ -720,7 +720,14 @@ def test_a_downgraded_or_blocked_remainder_is_dropped():
     # the SNDK buy is the retry plus the rotation's share, inside the cap.
     assert ("MU", "sell") in by_symbol
     assert ("MU", "buy") not in by_symbol
-    assert ("PANW", "buy") not in by_symbol
+    retried = [o for o in orders if o.reason.startswith("deferred")]
+    assert [o.symbol for o in retried] == ["SNDK"]
+    # PANW's only buy tonight is the /4 redeploy of the idle cash, which has
+    # no band gate by design (the simulator's `mc-redeploy` has none): it is
+    # brought to its 15% target, not retried.
+    panw = [o for o in orders if o.symbol == "PANW" and o.side == "buy"]
+    assert [o.kind for o in panw] == [paper.REDEPLOY_KIND]
+    assert by_symbol[("PANW", "buy")] == 50
     assert 50 <= by_symbol[("SNDK", "buy")] <= 150 - 100
     assert after.deferred_buys == {}
 
@@ -795,3 +802,426 @@ def test_state_files_without_deferred_buys_still_load(tmp_path):
     paper.save_state(tmp_path, loaded)
     assert paper.load_state(tmp_path).deferred_buys == {"SNDK": 50.0}
     assert "deferred_buys" in json.loads(path.read_text(encoding="utf-8"))
+
+
+# ---------------------------------------------------------------------------
+# The redeploy of idle cash (execution policy /4, 2026-09-27).
+# ---------------------------------------------------------------------------
+
+
+# The scorecard's synthetic report on its last session, read the way the
+# nightly reads the account: prices at the close, every name graded, the
+# policy's targets from `live_policy.targets`, a book of held shares and
+# the cash beside it. Returns everything both planners take.
+def _redeploy_inputs(held_weights: dict[str, float], cash_share: float):
+    from backend.agents.trading.desk import live_policy
+    from backend.tests.test_market_pit_scorecard import _report
+
+    report = _report()
+    panel = report.panel
+    last = len(panel.dates) - 1
+    prices = {t: float(panel.close[last, j]) for j, t in enumerate(panel.tickers)}
+    grades = {
+        t: report.graded.letter(last, j)
+        for j, t in enumerate(panel.tickers)
+        if t != panel.benchmark
+    }
+    targets = live_policy.targets(report)
+    equity = 250_000.0
+    held = {s: w * equity / prices[s] for s, w in held_weights.items()}
+    cash = cash_share * equity
+    assert abs(sum(held_weights.values()) + cash_share - 1.0) < 1e-12
+    return report, str(panel.dates[last]), prices, grades, targets, equity, held, cash
+
+
+# The parity test: the live planner's redeploy leg and the simulator's
+# `_redeploy_orders` (the `mc-redeploy` variant) on the same inputs - the
+# policy's targets from `live_policy.targets`, six A+ names at 1/6 each
+# (above the entry leg's 15% cap), four held under weight, one rotating out,
+# one graded in since the reset and unheld, a planned rotation buy and a
+# planned entry to account for - put the same dollars into the same names to
+# 1e-9, and those dollars are each name's shortfall to its target weight
+# times equity, scaled by the one fill ratio. Then with whole shares, on a
+# session with nothing else to buy, the live plan's redeploy is the
+# simulator's leg floored to shares, name for name.
+def test_the_live_redeploy_matches_the_simulator_to_1e_9():
+    from backend.agents.trading.desk import simulate
+
+    report, session, prices, grades, targets, equity, held, cash = _redeploy_inputs(
+        {"AAA": 0.12, "BBB": 0.10, "CCC": 0.14, "DDD": 0.09, "FFF": 0.16}, 0.39
+    )
+    assert set(targets) == {"AAA", "BBB", "CCC", "DDD", "EEE", "FFF"}
+    assert all(abs(w - 1 / 6) < 1e-12 for w in targets.values())
+    # FFF is rotating out tonight; EEE was not wanted at the reset (graded in
+    # since) and is not held; the others were wanted at the reset.
+    finished = {"FFF": "graded B; the desk wants the money elsewhere"}
+    at_rebalance = {s: w for s, w in targets.items() if s != "EEE"}
+    planned = [
+        paper.PaperOrder("FFF", "sell", held["FFF"], finished["FFF"]),
+        paper.PaperOrder(
+            "AAA", "buy", 2_000.0 / prices["AAA"], "redeploying a downgraded name"
+        ),
+        paper.PaperOrder(
+            "BBB", "buy", 3_000.0 / prices["BBB"], "price entry: breakout"
+        ),
+    ]
+    sim = simulate._redeploy_orders(
+        planned, held, prices, equity, grades, finished, targets, at_rebalance,
+        cash, simulate.REDEPLOY_BUFFER, session, paper.PaperState(),
+    )
+    live = paper._redeploy_orders(
+        planned, held, prices, equity, grades, finished, targets, at_rebalance,
+        cash, paper.REDEPLOY_BUFFER, session, paper.PaperState(), whole_shares=False,
+    )
+    assert paper.REDEPLOY_BUFFER == simulate.REDEPLOY_BUFFER == 0.02
+    sim_dollars = {o.symbol: o.qty * prices[o.symbol] for o in sim}
+    live_dollars = {o.symbol: o.qty * prices[o.symbol] for o in live}
+    assert set(sim_dollars) == set(live_dollars) == {"AAA", "BBB", "CCC", "DDD", "EEE"}
+    for symbol in sim_dollars:
+        assert abs(sim_dollars[symbol] - live_dollars[symbol]) < 1e-9, symbol
+    # Translate: the shortfall of each taker to its target, in dollars, after
+    # the planned buys count toward the name; the spare cash is the cash less
+    # the planned buys less the buffer; every taker is filled by the same ratio.
+    projected = dict(held)
+    projected["AAA"] += planned[1].qty
+    projected["BBB"] += planned[2].qty
+    shortfall = {
+        s: (targets[s] - projected.get(s, 0.0) * prices[s] / equity) * equity
+        for s in ("AAA", "BBB", "CCC", "DDD", "EEE")
+    }
+    spare = cash - 5_000.0 - 0.02 * equity
+    fill = min(1.0, spare / sum(shortfall.values()))
+    assert 0 < fill < 1  # the cash is short of the whole shortfall tonight
+    for symbol, want in shortfall.items():
+        assert abs(live_dollars[symbol] - want * fill) < 1e-9, symbol
+    assert abs(sum(live_dollars.values()) - spare) < 1e-9
+    assert all(o.kind == paper.REDEPLOY_KIND and o.side == "buy" for o in live)
+    assert all(o.reason == sim[0].reason for o in live)
+
+    # Whole shares through `plan`: no rotation, no entry, no retry tonight,
+    # so the live redeploy is the simulator's leg floored to shares.
+    quiet = paper.PaperState(
+        last_rebalance="2026-01-02",
+        sessions_since_rebalance=4,
+        policy_version="graded-equal-weight/4",
+        rebalance_targets=at_rebalance,
+    )
+    orders, after, what = paper.plan(
+        session, quiet, equity, held, prices, targets, grades,
+        finished={}, entry_blocked=set(), entries={}, cash=cash,
+    )
+    assert what == "redeploy"
+    sim_plain = simulate._redeploy_orders(
+        [], held, prices, equity, grades, {}, targets, at_rebalance,
+        cash, simulate.REDEPLOY_BUFFER, session, paper.PaperState(),
+    )
+    import math
+
+    assert {o.symbol: o.qty for o in orders} == {
+        o.symbol: math.floor(o.qty + 1e-10) for o in sim_plain
+    }
+    assert all(o.kind == paper.REDEPLOY_KIND for o in orders)
+    assert sum(o.qty * prices[o.symbol] for o in orders) <= cash - 0.02 * equity
+    assert after.deferred_buys == {}
+
+
+# With the rule off the planner is the /3 planner byte for byte: the orders,
+# their ids, reasons and sequence, the state after, on a session with idle
+# cash, a rotation, a blocked name, a band entry and a deferred retry all at
+# once. The expected values were read off the planner before the redeploy
+# existed (commit 8b4ec386) and are pinned here. With the rule on, the same
+# session plans the same orders plus redeploy buys and nothing else changes.
+def test_the_planner_with_the_redeploy_off_is_the_v3_planner(monkeypatch):
+    prices = {"AAA": 100.0, "BBB": 50.0, "CCC": 20.0, "DDD": 80.0, "EEE": 40.0}
+    grades = {"AAA": "A+", "BBB": "A", "CCC": "B", "DDD": "A+", "EEE": "A"}
+    targets = {"AAA": 0.2, "BBB": 0.2, "DDD": 0.2, "EEE": 0.2}
+    held = {"AAA": 120.0, "BBB": 200.0, "CCC": 500.0, "DDD": 100.0}
+    leaving = "graded B; the desk wants the money elsewhere"
+
+    def run():
+        state = paper.PaperState(
+            last_rebalance="2026-09-04",
+            sessions_since_rebalance=3,
+            policy_version="graded-equal-weight/4",
+            deferred_buys={"DDD": 30.0},
+            rebalance_targets=dict(targets),
+        )
+        return paper.plan(
+            "2026-09-09", state, 100_000.0, held, prices, targets, grades,
+            finished={"CCC": leaving},
+            entry_blocked={"BBB"}, entries={"AAA": 1.3, "EEE": 1.2}, cash=40_000.0,
+        )
+
+    rotation = "redeploying a downgraded name"
+    entry = "price entry: breakout through its own 20-day band"
+    deferred = "deferred buy: the remainder cash could not pay for last session"
+    v3 = [
+        ("CCC", "sell", 500, leaving, "sell-ccc-1"),
+        ("DDD", "buy", 57, rotation, "buy-ddd-3"),
+        ("EEE", "buy", 52, entry, "buy-eee-4"),
+        ("DDD", "buy", 30, deferred, "buy-ddd-0"),
+        ("AAA", "buy", 30, rotation, "buy-aaa-2"),
+    ]
+    v3 = [(*row[:4], f"anios-2026-09-09-{row[4]}") for row in v3]
+
+    def rows(orders):
+        return [(o.symbol, o.side, o.qty, o.reason, o.client_order_id) for o in orders]
+
+    monkeypatch.setattr(paper, "REDEPLOY_IDLE_CASH", False)
+    orders, after, what = run()
+    assert what == "entries"
+    assert rows(orders) == v3
+    assert all(o.kind is None for o in orders)
+    assert after.deferred_buys == {}
+    assert after.order_seq == 5
+    assert after.opened == {"DDD": "2026-09-09", "EEE": "2026-09-09"}
+    assert after.sessions_since_rebalance == 4
+
+    monkeypatch.setattr(paper, "REDEPLOY_IDLE_CASH", True)
+    orders_on, after_on, what_on = run()
+    plain = [o for o in orders_on if o.kind != paper.REDEPLOY_KIND]
+    assert rows(plain) == v3
+    redeploy = [o for o in orders_on if o.kind == paper.REDEPLOY_KIND]
+    assert redeploy
+    assert all(o.side == "buy" for o in redeploy)
+    assert what_on == "entries"  # the entries still name the day
+    # 40,000 cash: 3,000 retry, 5,700 + 3,000 rotation buys, 2,080 entry,
+    # 2,000 buffer leave 24,220 spare; the takers are the A/A+ names held or
+    # bought tonight, each short of 20%, and CCC (rotating out) is never one.
+    assert {o.symbol for o in redeploy} <= {"AAA", "BBB", "DDD", "EEE"}
+    assert "CCC" not in {o.symbol for o in redeploy}
+    bought = sum(o.qty * prices[o.symbol] for o in orders_on if o.side == "buy")
+    assert bought <= 40_000.0
+    assert after_on.sessions_since_rebalance == 4
+    assert after_on.deferred_buys == {}
+
+
+# The redeploy never buys a name rotating out or graded below A, never
+# spends past the cash on hand, keeps the buffer, sends no leg under
+# MIN_TRADE, and does nothing when the spare cash is under the floor.
+def test_the_redeploy_respects_the_rotation_the_cash_and_the_buffer():
+    prices = {"AAA": 100.0, "BBB": 100.0, "CCC": 100.0, "DDD": 100.0}
+    grades = {"AAA": "A+", "BBB": "A", "CCC": "B", "DDD": "A+"}
+    targets = {"AAA": 0.2, "BBB": 0.2, "DDD": 0.2}
+    held = {"AAA": 100.0, "BBB": 100.0, "CCC": 300.0, "DDD": 100.0}
+    finished = {"CCC": "graded B; the desk wants the money elsewhere"}
+    state = paper.PaperState(
+        last_rebalance="2026-09-04", sessions_since_rebalance=2,
+        policy_version="graded-equal-weight/4", rebalance_targets=dict(targets),
+    )
+    # 100,000 of equity, 40,000 in cash. CCC's sale delivers at the close and
+    # pays for nothing tonight; its 30,000 is redeployed pro rata by the
+    # rotation into the held names under the 15% cap (5,000 each), and the
+    # redeploy then fills the rest of each shortfall from what the cash allows.
+    orders, after, what = paper.plan(
+        "2026-09-08", state, 100_000.0, held, prices, targets, grades,
+        finished=finished, entry_blocked=set(), entries={}, cash=40_000.0,
+    )
+    assert what == "exits"
+    buys = [o for o in orders if o.side == "buy"]
+    assert "CCC" not in {o.symbol for o in buys}
+    assert sum(o.qty * prices[o.symbol] for o in buys) <= 40_000.0 - 2_000.0
+    redeploy = [o for o in buys if o.kind == paper.REDEPLOY_KIND]
+    assert {o.symbol for o in redeploy} == {"AAA", "BBB", "DDD"}
+    for o in redeploy:
+        assert o.qty * prices[o.symbol] >= paper.MIN_TRADE * 100_000.0
+    # No name ends above its 20% target: 100 held + 50 rotation + redeploy.
+    final = dict(held)
+    for o in buys:
+        final[o.symbol] += o.qty
+    for symbol in ("AAA", "BBB", "DDD"):
+        assert final[symbol] * prices[symbol] <= 0.2 * 100_000.0 + 1e-9
+    # The buffer is what stays: spare = 40,000 - 15,000 rotation buys - 2,000.
+    spent = sum(o.qty * prices[o.symbol] for o in buys)
+    assert 40_000.0 - spent >= 2_000.0
+
+    # Spare cash under MIN_TRADE of equity: nothing is sent.
+    quiet, _, what2 = paper.plan(
+        "2026-09-09", after, 100_000.0,
+        {"AAA": 190.0, "BBB": 190.0, "DDD": 190.0}, prices, targets, grades,
+        finished={}, entry_blocked=set(), entries={}, cash=2_400.0,
+    )
+    assert quiet == []
+    assert what2 == "hold"
+    # Cash exactly at the buffer: nothing is sent either.
+    quiet2, _, _ = paper.plan(
+        "2026-09-10", after, 100_000.0,
+        {"AAA": 190.0, "BBB": 190.0, "DDD": 190.0}, prices, targets, grades,
+        finished={}, entry_blocked=set(), entries={}, cash=2_000.0,
+    )
+    assert quiet2 == []
+
+
+# A name graded in since the reset - the policy wants it tonight, the reset
+# wanted none of it, the book holds none - is a taker at its full target,
+# above the 15% entry cap and with no band gate; a name the reset wanted
+# that the book does not hold (its buy was band-blocked at the reset) is
+# not. When the state predates the field (None), no unheld name is a taker
+# and the held names take the cash; an empty dict (a reset that wanted
+# nothing) makes every wanted name new, as in the simulator.
+def test_a_name_graded_in_since_the_reset_is_a_taker_at_its_target():
+    prices = {"AAA": 100.0, "BBB": 100.0, "NEW": 50.0, "SKIP": 100.0}
+    grades = {"AAA": "A+", "BBB": "A+", "NEW": "A", "SKIP": "A+"}
+    targets = {"AAA": 0.2, "BBB": 0.2, "NEW": 0.2, "SKIP": 0.2}
+    held = {"AAA": 200.0, "BBB": 200.0}
+    common = dict(finished={}, entry_blocked={"NEW"}, entries={}, cash=60_000.0)
+
+    def state(at_rebalance):
+        return paper.PaperState(
+            last_rebalance="2026-09-04", sessions_since_rebalance=1,
+            policy_version="graded-equal-weight/4", rebalance_targets=at_rebalance,
+        )
+
+    orders, _, what = paper.plan(
+        "2026-09-05", state({"AAA": 0.2, "BBB": 0.2, "SKIP": 0.2}),
+        100_000.0, held, prices, targets, grades, **common,
+    )
+    assert what == "redeploy"
+    assert [(o.symbol, o.qty, o.kind) for o in orders] == [
+        ("NEW", 400, paper.REDEPLOY_KIND)
+    ]
+    # Predating the field: the held names are at target already, so nothing.
+    none, _, what_none = paper.plan(
+        "2026-09-05", state(None), 100_000.0, held, prices, targets, grades, **common
+    )
+    assert none == []
+    assert what_none == "hold"
+    # A reset that wanted nothing: every wanted unheld name is new.
+    every, _, _ = paper.plan(
+        "2026-09-05", state({}), 100_000.0, held, prices, targets, grades, **common
+    )
+    assert sorted((o.symbol, o.qty) for o in every) == [("NEW", 400), ("SKIP", 200)]
+
+
+# The day after a reset. The reset's sells fill at the close and its buys at
+# the open are paid only from the cash on hand, so on an invested book the
+# buys go partly unpaid and are deferred. The next session is an ordinary
+# one: the deferred retry takes what its gates allow (band gate, 15% cap),
+# and the redeploy then puts the rest of the cash the sells delivered into
+# the shortfall names, up to their 20% targets, leaving the buffer. Before
+# the redeploy the book sat 25% in cash for the rest of the cycle.
+def test_the_session_after_a_reset_redeploys_the_unpaid_buys():
+    prices = {"OLD": 100.0, "AAA": 100.0, "BBB": 100.0, "CCC": 100.0, "DDD": 100.0}
+    grades = {"OLD": "C", "AAA": "A+", "BBB": "A+", "CCC": "A+", "DDD": "A+"}
+    targets = {"AAA": 0.2, "BBB": 0.2, "CCC": 0.2, "DDD": 0.2}
+    # A 100,000 book: 800 OLD (80,000) and 20,000 cash. The reset sells OLD
+    # and asks for 200 of each name, which `bound_orders` cuts to 150 (the
+    # 15% entry cap, the leak's second channel); the cash pays for a third.
+    reset, after_reset, what = paper.plan(
+        "2026-09-04", paper.PaperState(), 100_000.0, {"OLD": 800.0}, prices,
+        targets, grades, finished={}, entry_blocked=set(), entries={}, cash=20_000.0,
+    )
+    assert what == "rebalance"
+    assert not any(o.kind == paper.REDEPLOY_KIND for o in reset)
+    assert after_reset.rebalance_targets == targets
+    assert {(o.symbol, o.side, o.qty) for o in reset} == {
+        ("OLD", "sell", 800), ("AAA", "buy", 50), ("BBB", "buy", 50),
+        ("CCC", "buy", 50), ("DDD", "buy", 50),
+    }
+    assert after_reset.deferred_buys == {s: 100.0 for s in targets}
+    # The next session: OLD's 80,000 has arrived, the book holds 50 of each.
+    # The retry is capped at 15% (150 shares a name, 100 more each) and
+    # band-blocked on DDD; the redeploy takes the rest to 20% - AAA, BBB and
+    # CCC 50 more each, DDD (no band gate) 150 - and the buffer stays.
+    held = {s: 50.0 for s in targets}
+    orders, after, what2 = paper.plan(
+        "2026-09-05", after_reset, 100_000.0, held, prices, targets, grades,
+        finished={}, entry_blocked={"DDD"}, entries={}, cash=80_000.0,
+    )
+    assert what2 == "deferred buys"
+    retried = {o.symbol: o.qty for o in orders if o.reason.startswith("deferred")}
+    assert retried == {"AAA": 100, "BBB": 100, "CCC": 100}
+    redeployed = {o.symbol: o.qty for o in orders if o.kind == paper.REDEPLOY_KIND}
+    assert redeployed == {"AAA": 50, "BBB": 50, "CCC": 50, "DDD": 150}
+    final = {s: held[s] + retried.get(s, 0) + redeployed.get(s, 0) for s in targets}
+    assert final == {s: 200.0 for s in targets}  # every name at its 20% target
+    spent = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    assert spent == 60_000.0
+    assert 80_000.0 - spent == 20_000.0  # the 20% the policy's cap leaves
+    assert after.deferred_buys == {}
+    # At the targets the next session sends nothing: the 20% the policy's cap
+    # leaves is not idle cash the redeploy may spend.
+    quiet, _, what3 = paper.plan(
+        "2026-09-08", after, 100_000.0, {s: 200.0 for s in targets}, prices,
+        targets, grades, finished={}, entry_blocked=set(), entries={}, cash=20_000.0,
+    )
+    assert quiet == []
+    assert what3 == "hold"
+
+
+# `bound_orders` caps an entry or a rotation buy at the 15% entry cap and
+# lets a redeploy buy through to its own target (20% here): the redeploy is
+# bounded by the target already, and cutting it to 15% on the way out
+# would reopen the reset's leak it exists to close.
+def test_bound_orders_do_not_cap_a_redeploy_at_the_entry_cap():
+    prices = {"AAA": 100.0, "BBB": 100.0}
+    held = {"AAA": 100.0, "BBB": 100.0}
+    entry = paper.PaperOrder("AAA", "buy", 100, "price entry")
+    redeploy = paper.PaperOrder(
+        "BBB", "buy", 100, "redeploy", kind=paper.REDEPLOY_KIND
+    )
+    bounded = paper.bound_orders(
+        [entry, redeploy], held, prices, 100_000.0, 50_000.0
+    )
+    assert {o.symbol: o.qty for o in bounded} == {"AAA": 50, "BBB": 100}
+
+
+# A redeploy order's kind travels through settlement into the journal, so
+# the record's settled rows and the fills history can name the leg.
+def test_a_redeploy_carries_its_kind_through_settlement():
+    pending = [
+        {
+            "client_order_id": "anios-2026-09-08-buy-aaa-0", "symbol": "AAA",
+            "side": "buy", "qty": 10, "session": "2026-09-08",
+            "reason": "redeploy: cash beyond the buffer put back to its target weights",
+            "kind": paper.REDEPLOY_KIND, "execution": {},
+        },
+        {
+            "client_order_id": "anios-2026-09-08-buy-bbb-1", "symbol": "BBB",
+            "side": "buy", "qty": 5, "session": "2026-09-08",
+            "reason": "price entry", "execution": {},
+        },
+    ]
+    broker = [
+        {"client_order_id": "anios-2026-09-08-buy-aaa-0", "status": "filled",
+         "filled_qty": 10, "filled_avg_price": 101.0},
+        {"client_order_id": "anios-2026-09-08-buy-bbb-1", "status": "filled",
+         "filled_qty": 5, "filled_avg_price": 50.0},
+    ]
+    settled = paper.settle(pending, broker)
+    assert [s.kind for s in settled] == [paper.REDEPLOY_KIND, None]
+    state = paper.apply_settlements(paper.PaperState(pending=pending), settled)
+    assert {row["symbol"]: row.get("kind") for row in state.journal} == {
+        "AAA": paper.REDEPLOY_KIND, "BBB": None,
+    }
+
+
+# A state file from before the redeploy existed loads with no reset targets
+# on record (None, not an empty dict, so the planner can tell "unknown" from
+# "the reset wanted nothing"), and the field round-trips through the file.
+def test_state_files_without_rebalance_targets_still_load(tmp_path):
+    from dataclasses import asdict
+
+    path = paper.state_path(tmp_path)
+    path.parent.mkdir(parents=True)
+    old = {
+        k: v for k, v in asdict(paper.PaperState()).items() if k != "rebalance_targets"
+    }
+    old["last_rebalance"] = "2026-09-04"
+    path.write_text(json.dumps(old), encoding="utf-8")
+    loaded = paper.load_state(tmp_path)
+    assert loaded.rebalance_targets is None
+    loaded.rebalance_targets = {"SNDK": 0.2}
+    paper.save_state(tmp_path, loaded)
+    assert paper.load_state(tmp_path).rebalance_targets == {"SNDK": 0.2}
+
+
+# The rule is on, its buffer is the simulator's, and the execution policy
+# version says so: /4 is the redeploy, and a record or a board reading /3
+# was written by an executor without it.
+def test_the_redeploy_is_on_and_the_execution_policy_is_v4():
+    from backend.agents.trading.desk import simulate
+
+    assert paper.REDEPLOY_IDLE_CASH is True
+    assert paper.REDEPLOY_BUFFER == simulate.REDEPLOY_BUFFER == 0.02
+    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/4"

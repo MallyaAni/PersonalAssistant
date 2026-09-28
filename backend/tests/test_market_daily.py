@@ -1438,3 +1438,226 @@ def test_the_nightly_writes_the_shadow_ledger_and_its_receipt(tmp_path, monkeypa
     last = json.loads(rows[-1].read_text())
     assert last["pending"]["orders"] == {"SNDK": 200}
     assert last["session"] == "2026-09-03"
+
+
+# ---------------------------------------------------------------------------
+# The redeploy of idle cash on the nightly (execution policy /4).
+# ---------------------------------------------------------------------------
+
+
+# A paper broker with a book: positions and cash as given, whole-share
+# fills at 100, every order accepted and reported filled on the next read.
+class _Broker:
+    def __init__(self, cash: float, positions: dict[str, int]):
+        self.cash = cash
+        self.held = dict(positions)
+        self.orders: list[dict] = []
+        self.sent: list[tuple] = []
+
+    def account(self):
+        equity = self.cash + 100.0 * sum(self.held.values())
+        return SimpleNamespace(equity=equity, cash=self.cash)
+
+    def positions(self):
+        return [
+            SimpleNamespace(
+                symbol=s, qty=q, market_value=100.0 * q, avg_entry_price=100.0,
+                current_price=100.0, unrealized_pl=0.0,
+            )
+            for s, q in self.held.items()
+            if q > 0
+        ]
+
+    def clock(self):
+        return {"is_open": False}
+
+    def _accept(self, symbol, qty, side, client_order_id):
+        self.sent.append((side, symbol, qty))
+        self.orders.append(
+            {
+                "client_order_id": client_order_id, "symbol": symbol, "qty": qty,
+                "side": side, "status": "filled", "filled_qty": qty,
+                "filled_avg_price": 100.0,
+            }
+        )
+        return {"submitted_at": "2026-09-04T00:01:02Z", "time_in_force": "day"}
+
+    def submit_market_on_open(self, symbol, qty, side, client_order_id):
+        return self._accept(symbol, qty, side, client_order_id)
+
+    def submit_market_on_close(self, symbol, qty, side, client_order_id):
+        return self._accept(symbol, qty, side, client_order_id)
+
+    def orders_since(self, since):
+        return self.orders
+
+    def cancel_orders(self, ids):
+        return None
+
+
+# The ordinary-session setup: the broker in place, no FOMC cycle, and a
+# state stamped with the active policy two sessions after a reset that
+# wanted SNDK, so tonight is a plain mid-cycle session.
+def _midcycle_state(tmp_path, monkeypatch, broker):
+    from backend.agents.trading.desk import event_risk, live_policy, paper
+    from backend.market import alpaca_trading
+
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: broker)
+    monkeypatch.setattr(
+        event_risk, "decision",
+        lambda panel: {
+            "calendar_known": True, "factor": 1.0, "decision_date": "2026-09-16"
+        },
+    )
+    paper.save_state(
+        tmp_path,
+        paper.PaperState(
+            last_rebalance="2026-09-01", sessions_since_rebalance=1,
+            policy_version=live_policy.ACTIVE, rebalance_targets={"SNDK": 0.2},
+        ),
+    )
+
+
+# A dry run plans the redeploy and submits nothing: SNDK (the one A+ name,
+# target 20%) is held at 10% with 90% of the book in cash, so the redeploy
+# wants 100 more shares; the dry run prints that order with its reason and
+# "[dry run]", sends nothing to the broker, saves no state, and the entry
+# it returns carries the idle cash share and the redeploy block.
+def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, capsys):
+    from backend.agents.trading.desk import paper
+
+    broker = _Broker(cash=90_000.0, positions={"SNDK": 100})
+    _midcycle_state(tmp_path, monkeypatch, broker)
+    before = paper.state_path(tmp_path).read_text()
+    entry = market_daily.paper_trade(_report(), tmp_path, "2026-09-03", False)
+    out = capsys.readouterr().out
+    assert "paper book (graded-equal-weight/4; redeploy)" in out
+    assert (
+        "redeploy: 1 buys put 10,000 of idle cash back to the targets "
+        "(buffer 2% of equity)"
+    ) in out
+    assert (
+        "buy    100 SNDK   redeploy: cash beyond the buffer put back to its "
+        "target weights  [dry run]"
+    ) in out
+    assert broker.sent == []
+    assert paper.state_path(tmp_path).read_text() == before
+    assert entry["orders"] == []
+    assert entry["refused"] == []
+    assert entry["plan"] == "redeploy"
+    assert entry["idle_cash_share"] == pytest.approx(0.8)
+    assert entry["redeploy"] == {
+        "enabled": True, "buffer": 0.02, "orders": 1, "notional": 10_000.0
+    }
+
+
+# A live session submits the redeploy as a next-open buy carrying its kind,
+# on the record's orders and the state's pending rows; the session after,
+# once the broker reports it filled, the settled row carries the kind too,
+# the fills history reads it, and the book reads fully invested but for the
+# policy's own idle share (SNDK at its 20% cap; nothing else is graded).
+def test_a_live_redeploy_carries_its_kind_to_the_record_and_the_fills(
+    tmp_path, monkeypatch, capsys
+):
+    from backend.agents.trading.desk import decision_history, paper
+
+    broker = _Broker(cash=90_000.0, positions={"SNDK": 100})
+    _midcycle_state(tmp_path, monkeypatch, broker)
+    report = _report()
+    entry = market_daily.paper_trade(report, tmp_path, "2026-09-03", True)
+    assert broker.sent == [("buy", "SNDK", 100)]
+    assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["orders"]] == [
+        ("SNDK", 100, paper.REDEPLOY_KIND)
+    ]
+    state = paper.load_state(tmp_path)
+    assert [row["kind"] for row in state.pending] == [paper.REDEPLOY_KIND]
+    assert entry["idle_cash_share"] == pytest.approx(0.8)
+    # Filled overnight: the book holds 200 SNDK and 80,000 cash.
+    broker.held["SNDK"] = 200
+    broker.cash = 80_000.0
+    later = market_daily.paper_trade(report, tmp_path, "2026-09-04", True)
+    assert [(r["symbol"], r["status"], r["kind"]) for r in later["settled"]] == [
+        ("SNDK", "filled", paper.REDEPLOY_KIND)
+    ]
+    # SNDK is at its 20% cap, so nothing is bought and the idle share is the
+    # policy's own 80%, not the executor's.
+    assert later["orders"] == []
+    assert later["plan"] == "hold"
+    assert later["idle_cash_share"] == pytest.approx(0.8)
+    assert later["redeploy"]["orders"] == 0
+    journal = {row["symbol"]: row for row in paper.load_state(tmp_path).journal}
+    assert journal["SNDK"]["kind"] == paper.REDEPLOY_KIND
+    # The record's fills history names the leg (dated to the record's
+    # session, which on this fixed fixture is the panel's last date).
+    market_daily.save(Path(tmp_path), market_daily.record(report, paper=later))
+    assert decision_history.fills(tmp_path, "SNDK") == [
+        {"date": "2026-09-03", "side": "buy", "qty": 100, "price": 100.0,
+         "kind": paper.REDEPLOY_KIND},
+    ]
+
+
+# With the rule switched off the same session plans nothing, prints no
+# redeploy line and says so on the entry, so the operator can read the
+# switch off the record.
+def test_the_redeploy_switch_off_plans_nothing(tmp_path, monkeypatch, capsys):
+    from backend.agents.trading.desk import paper
+
+    monkeypatch.setattr(paper, "REDEPLOY_IDLE_CASH", False)
+    broker = _Broker(cash=90_000.0, positions={"SNDK": 100})
+    _midcycle_state(tmp_path, monkeypatch, broker)
+    entry = market_daily.paper_trade(_report(), tmp_path, "2026-09-03", False)
+    out = capsys.readouterr().out
+    assert "redeploy:" not in out
+    assert entry["plan"] == "hold"
+    assert entry["idle_cash_share"] == pytest.approx(0.9)
+    assert entry["redeploy"]["enabled"] is False
+    assert entry["redeploy"]["orders"] == 0
+
+
+# The published curve says which flags it ran and that the redeploy is not
+# among them: the record labels the executor /4 (`execution_policy`) and
+# says in the same block that this line was not priced with the redeploy.
+def test_curve_block_says_the_redeploy_is_not_priced(monkeypatch):
+    from backend.agents.trading.desk import paper
+    from backend.agents.trading.desk import simulate as sim_module
+
+    report = _report()
+    sim = sim_module.SimResult(
+        dates=report.panel.dates,
+        returns=np.array([0.0, 0.05, 0.1]),
+        invested=np.zeros(3),
+        trades=[],
+        rebalances=0,
+        equity=np.array([1.0, 1.05, 1.1]),
+    )
+    seen: dict[str, object] = {}
+
+    def fake_run(report, **kwargs):
+        seen.update(kwargs)
+        return sim
+
+    monkeypatch.setattr(sim_module, "run", fake_run)
+    block = market_daily.curve_block(report, None)
+    assert block["execution_policy"] == paper.POLICY_VERSION
+    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/4"
+    assert block["execution_options"] == sim_module.LIVE_POLICY
+    assert block["redeploy_priced"] is False
+    assert "midcycle_redeploy" not in seen
+    assert "midcycle_redeploy" not in sim_module.LIVE_POLICY
+
+
+# The idle cash share is what the plan leaves: cash less the buys plus the
+# sells over equity, clipped to [0, 1], None without equity.
+def test_idle_cash_share_reads_the_plan():
+    from backend.agents.trading.desk import paper
+
+    prices = {"AAA": 100.0, "BBB": 50.0}
+    orders = [
+        paper.PaperOrder("AAA", "buy", 100, "x"),
+        paper.PaperOrder("BBB", "sell", 200, "y"),
+    ]
+    share = market_daily._idle_cash_share
+    assert share(orders, prices, 20_000.0, 100_000.0) == pytest.approx(0.2)
+    assert share([], prices, 5_000.0, 100_000.0) == pytest.approx(0.05)
+    assert share(orders, prices, 0.0, 100_000.0) == 0.0
+    assert share([], prices, 1.0, 0.0) is None
