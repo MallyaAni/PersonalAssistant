@@ -57,10 +57,48 @@ const quoteTime = (observed: number, now: number): string | null => {
     ...(!sameDay ? {month: 'short', day: 'numeric', ...(!sameYear ? {year: 'numeric'} : {})} as const : {})})
 }
 
+// The UTC instant of a New York wall-clock hour on a given session day
+// (16:00 ET is 20:00Z in summer and 21:00Z in winter).
+const newYorkHour = (day: string, hour: number): number => {
+  const guess = Date.parse(`${day}T${String(hour).padStart(2, '0')}:00:00Z`)
+  if (!Number.isFinite(guess)) return NaN
+  const seen = Number(new Date(guess).toLocaleString('en-US', {timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23'}))
+  return guess + (((hour - seen) % 24 + 24) % 24) * 3_600_000
+}
+
+// The New York calendar day of an instant, as YYYY-MM-DD.
+const newYorkDay = (at: number): string => new Date(at).toLocaleDateString('en-CA', {timeZone: 'America/New_York'})
+
+// The board row's price when no fresh midpoint exists: the freshest dated price
+// among the last observed midpoint, the latest completed regular 15-minute bar
+// and the recorded close. The close is the official print of its session, so it
+// wins over a bar of that same session (its time is that bar's end, which is the
+// close even on an early-close day); a bar from a later session wins over it.
+export const boardFallback = ({lastPrice, observed, word, regular, lastClose, closeSession}: {
+  lastPrice: number | null; observed: number; word: string
+  regular?: {last: number; bar: string} | null; lastClose: number | null; closeSession?: string | null
+}): {kind: 'midpoint' | 'regular' | 'close'; price: number; at: number; word: string} | null => {
+  const barStart = regular && Number.isFinite(regular.last) && regular.last > 0 ? Date.parse(regular.bar) : NaN
+  const barEnd = Number.isFinite(barStart) ? barStart + 15 * 60_000 : NaN
+  const barDay = Number.isFinite(barStart) ? newYorkDay(barStart) : null
+  const closeAt = lastClose === null ? NaN
+    : closeSession && barDay === closeSession ? barEnd
+    : closeSession ? newYorkHour(closeSession, 16) : -Infinity
+  const candidates: {kind: 'midpoint' | 'regular' | 'close'; price: number; at: number; word: string; rank: number}[] = []
+  if (lastPrice !== null && Number.isFinite(observed)) candidates.push({kind: 'midpoint', price: lastPrice, at: observed, word, rank: 1})
+  if (Number.isFinite(barEnd) && !(lastClose !== null && closeSession && barDay !== null && barDay <= closeSession))
+    candidates.push({kind: 'regular', price: regular!.last, at: barEnd, word: 'regular', rank: 0})
+  if (lastClose !== null) candidates.push({kind: 'close', price: lastClose, at: closeAt, word: 'close', rank: 2})
+  if (!candidates.length) return null
+  candidates.sort((a, b) => (b.at - a.at) || (b.rank - a.rank))
+  const {kind, price, at, word: label} = candidates[0]
+  return {kind, price, at, word: label}
+}
+
 // Show the current midpoint, or the last observed one dated by its own time, or the
 // last close; never a stale price styled or worded as current, and never nothing when
 // a dated price exists. Execution and candle evidence are untouched.
-export const SessionPrice = ({live, ticker, now, compact = false, close}: {live: DeskLive; ticker: string; now: number; compact?: boolean; close?: number | null}) => {
+export const SessionPrice = ({live, ticker, now, compact = false, close, closeSession}: {live: DeskLive; ticker: string; now: number; compact?: boolean; close?: number | null; closeSession?: string | null}) => {
   const {quote, state, observed, session, currentSchedule, previousSession, unrecordedSession} = sessionPrice(live, ticker, now)
   const regular = live.quotes[ticker]
   const at = quoteTime(observed, now)
@@ -73,20 +111,15 @@ export const SessionPrice = ({live, ticker, now, compact = false, close}: {live:
   const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
   const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
   const staleCaveat = state === 'stale' ? ' Last observed price; not a current quote.' : ''
-  // The board row's fallback when no fresh midpoint exists: the freshest dated
-  // price among the last observed midpoint and the latest completed regular
-  // 15-minute bar (end = start + 15 min), never an older close over a newer bar.
-  const barEnd = regular && Number.isFinite(regular.last) && regular.last > 0 ? Date.parse(regular.bar) + 15 * 60_000 : NaN
-  const regularNewer = Number.isFinite(barEnd) && (lastPrice === null || !Number.isFinite(observed) || barEnd > observed)
-  const regularCurrent = regularNewer && now - barEnd < 20 * 60_000
+  const fallback = compact ? boardFallback({lastPrice, observed, word: (session ?? 'quote').toLowerCase(), regular, lastClose, closeSession}) : null
+  const regularCurrent = fallback?.kind === 'regular' && now - fallback.at < 20 * 60_000
   return <div aria-label={`${ticker} session price`} title={`${quote?.at ? `Last observed ${at} ET. ` : ''}${source}. ${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
     {compact
       // The board row: the price and one word for the session it belongs to;
       // the provenance (feed, time, regular bar, caveats) is the hover text.
       ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{" "}{(session ?? "quote").toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} /></>
-        : regularNewer ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${regular!.last.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}regular</span><ChangeMark last={regular!.last} close={close} /></>
-        : <span className="text-[#9a6700]">{lastPrice !== null ? `$${lastPrice.toFixed(2)} ${(session ?? 'quote').toLowerCase()}`
-          : lastClose !== null ? `$${lastClose.toFixed(2)} close` : 'No price to display'}</span>
+        : fallback?.kind === 'regular' ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${fallback.price.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}regular</span><ChangeMark last={fallback.price} close={close} /></>
+        : <span className="text-[#9a6700]">{fallback ? `$${fallback.price.toFixed(2)} ${fallback.word}` : 'No price to display'}</span>
       : state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
       : <span className="text-[#9a6700]">{lastPrice !== null
           ? `$${lastPrice.toFixed(2)} last ${session ?? 'quote'} · ${source}${at ? ` · ${at} ET` : ''}${qualification}`
@@ -685,7 +718,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
             <td className="w-7 text-xs text-[#6e6e73]">{isCash || !expand ? index + 1 : <button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button>}</td>
             <td className="py-2">
               {isCash ? <span className="font-semibold">USD</span> : <button className="font-semibold hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>}
-              <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} />{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
+              <div className="text-[11px] text-[#6e6e73]">{isCash ? paused ? hidden ? 'Hold available cash' : 'Cash held through FOMC' : 'Uninvested allocation' : <><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} />{held ? ` · ${held.shares.toLocaleString()} held` : ''}</>}</div>
             </td>
             <td className="text-xs" aria-label={`${row.ticker} displayed grade`} title={isCash ? undefined : timed
               ? `Grade at the ${latest.session} close, the one the action uses${(decision?.grade_intraday ?? grades[row.ticker]?.grade_live) ? ` · intraday reading ${decision?.grade_intraday ?? grades[row.ticker]?.grade_live}` : ''}`
