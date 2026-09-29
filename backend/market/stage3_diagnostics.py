@@ -5,8 +5,9 @@ after the eight registered verdicts of
 `docs/research/stage3-results-2026-09-29.md`, and after their 2024-2026
 readings had been seen, to ask why the T-S1 overlay turned the sequence
 model's forecast - the most informative of the four - into almost nothing.
-Its numbers are evidence a later registration may start from, and every
-statistic it reports counts as a look in that registration's tally.
+Its numbers are evidence a later registration may start from. Every drop
+rule it scores counts as a trial in that registration's tally; its ICs
+and correlations are descriptive.
 
 It reads the T-S1 export (`stage3_io.Stage3Data`, kind ``s1``): one row per
 graded member at each decision date t, with `extra["r"]`, the 20-session
