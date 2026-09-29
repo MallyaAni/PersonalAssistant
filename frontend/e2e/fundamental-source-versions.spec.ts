@@ -4,10 +4,8 @@ const USER = 'fundamental-source-fixture'
 const CURRENT = 'fundamentals-features/3'
 const PRIOR = 'fundamentals-features/2'
 // The strategy the record says the account runs (`targets.policy`), and
-// the strip's label for a simulation of it. `/5` is the same rule under a 25%
-// hold cap, the account's policy since 2026-09-29.
+// the strip's label for a simulation of it.
 const POLICY = 'graded-equal-weight/4'
-const POLICY_V5 = 'graded-equal-weight/5'
 const LABEL = 'Policy simulation · names known at the time · live executor'
 const OLDER_INPUTS = `${LABEL} · older fundamental inputs`
 const UNVERIFIED_INPUTS = `${LABEL} · fundamental inputs unverified`
@@ -20,17 +18,16 @@ const ABSENT_NOTICE = 'Fundamentals: data source not tagged.'
 const UNKNOWN_FUNDING = 'Recorded funding model is not recognized; cash-only funding is unverified.'
 const ABSENT_FUNDING = 'Funding model was not recorded; cash-only funding is unverified.'
 const PRIOR_POLICY = 'Uses an earlier recorded strategy policy (cash-bounded-breakout-rotation/2); not the active strategy (graded-equal-weight/4).'
-const V4_BESIDE_V5 = 'Uses an earlier recorded strategy policy (graded-equal-weight/4); not the active strategy (graded-equal-weight/5).'
 const UNKNOWN_POLICY = 'Recorded strategy policy is not recognized; alignment with the active strategy is unverified.'
 const ABSENT_POLICY = 'Strategy policy was not recorded; alignment with the active strategy is unverified.'
-type Case = {name: string; record?: string; backtest?: string; notice: string; curveLabel: string; curveNote: string; active?: string; policy?: string | null; funding?: string | null; fundingNote?: string; cashCapped?: boolean; phone?: boolean}
+type Case = {name: string; record?: string; backtest?: string; notice: string; curveLabel: string; curveNote: string; policy?: string | null; funding?: string | null; fundingNote?: string; cashCapped?: boolean; phone?: boolean}
 
 // Keep the latest recorded input source independent of the immutable historical simulation source.
 async function install(page: Page, frontendURL: string, scenario: Case) {
   const latest = {
     session: '2026-09-24', written: '2026-09-24T00:00:00Z', provenance: {data: {fundamentals: scenario.record}},
     regime: {exposure: 1, flags: []}, grades: {AAPL: {grade: 'A', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: [], briefs: {},
-    targets: {policy: scenario.active ?? POLICY, weights: {AAPL: .2}},
+    targets: {policy: POLICY, weights: {AAPL: .2}},
     // The stored (hindsight) line ends at +3%, the point-in-time line at +2%: the strip must show the latter.
     curve: {backtest: {label: 'Saved simulation', asof: '2026-09-23', dates: ['2026-09-22', '2026-09-23'], rules: [0, .03], rules_point_in_time: [0, .02], stats_point_in_time: {cagr: .1, volatility: .2, drawdown: -.01, total: .02}, spy: [0, .01], qqq: [0, .015], stats: {cagr: .15, volatility: .2, drawdown: -.01, total: .03}, strategy_policy: scenario.policy === null ? undefined : scenario.policy ?? POLICY, fundamentals_source: scenario.backtest, funding_model: scenario.funding === null ? undefined : scenario.funding ?? 'cash-at-fill-v1'}},
   }
@@ -117,10 +114,6 @@ const cases: Case[] = [
   {name: 'prior fundamental inputs retain unknown funding warning', record: CURRENT, backtest: PRIOR, funding: 'unrecognized-funding', fundingNote: UNKNOWN_FUNDING, cashCapped: false, notice: CURRENT_NOTICE, curveLabel: OLDER_INPUTS, curveNote: PRIOR_NOTE},
   {name: 'older execution policy keeps its independent prior fundamental warning', record: CURRENT, backtest: PRIOR, policy: 'cash-bounded-breakout-rotation/2', notice: CURRENT_NOTICE, curveLabel: 'Older policy simulation', curveNote: PRIOR_NOTE},
   {name: 'phone keeps prior simulation distinct after reload', record: CURRENT, backtest: PRIOR, notice: CURRENT_NOTICE, curveLabel: OLDER_INPUTS, curveNote: PRIOR_NOTE, phone: true},
-  // The `/5` release: a `/5` record's own `/5` simulation is the policy simulation, and a `/4`
-  // simulation beside a `/5` record is recognised but reads as the earlier policy.
-  {name: 'a /5 record and simulation read as the policy simulation', record: CURRENT, backtest: CURRENT, active: POLICY_V5, policy: POLICY_V5, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
-  {name: 'a /4 simulation beside a /5 record is the older policy', record: CURRENT, backtest: CURRENT, active: POLICY_V5, policy: POLICY, notice: CURRENT_NOTICE, curveLabel: 'Older policy simulation', curveNote: V4_BESIDE_V5},
 ]
 
 for (const scenario of cases) {
