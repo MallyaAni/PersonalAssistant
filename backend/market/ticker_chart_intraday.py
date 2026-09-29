@@ -35,6 +35,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from backend.agents.trading.desk import live_policy
 from backend.market import intraday_sip
 from backend.market.alpaca import IntradayBar
 from backend.market.store import MarketStore
@@ -137,11 +138,14 @@ def _data_status(
     return "complete", None, [], expected
 
 
-# The allocation policy whose add and trim are the reset's rebalance
-# rather than a sizing change: the equal-weight book (`policy_v4`), where
-# a held name's target drifts with the count of A/A+ names and only the
-# reset trades it (`decision_history` says why).
-EQUAL_WEIGHT_POLICY = "graded-equal-weight/4"
+# The allocation policies whose add and trim are the reset's rebalance
+# rather than a sizing change: the graded equal-weight book
+# (`live_policy.EQUAL_WEIGHT`: `/4`, and `/5` since 2026-09-29, which
+# differ only in the hold cap), where a held name's target drifts with the
+# count of A/A+ names and only the reset trades it (`decision_history`
+# says why). Named versions, never a prefix: a history of a version this
+# code has not seen keeps the sizing reading.
+EQUAL_WEIGHT_POLICIES = live_policy.EQUAL_WEIGHT
 
 
 # A weight as the percent of equity a trader reads it as: whole when it
@@ -171,7 +175,7 @@ def decision_text(
         return "Sell"
     if action not in ("add", "trim"):
         return None
-    if policy == EQUAL_WEIGHT_POLICY:
+    if policy in EQUAL_WEIGHT_POLICIES:
         delta = delta_weight
         if not isinstance(delta, (int, float)):
             return f"Rebalance →{percent_text(target_weight)}"

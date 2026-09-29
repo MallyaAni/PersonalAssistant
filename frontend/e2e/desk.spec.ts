@@ -1783,6 +1783,45 @@ test('names the fundamental data source and flags older fundamental-input curves
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// The `/5` release (2026-09-29; `/4` under a 25% hold cap): a record whose targets are `/5`'s,
+// beside its own `/5` simulation, reads as the current policy simulation - never "Unrecognized".
+// The same record beside a `/4` simulation reads as the earlier policy, named as such.
+test('a /5 record reads its /5 simulation as the policy simulation', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  latest.provenance = { data: { fundamentals: 'fundamentals-features/3' } }
+  latest.targets = { policy: 'graded-equal-weight/5', weights: { AAPL: 0.25 } }
+  latest.curve = {
+    ...latest.curve!,
+    backtest: {
+      ...latest.curve!.backtest,
+      strategy_policy: 'graded-equal-weight/5',
+      fundamentals_source: 'fundamentals-features/3',
+    },
+  }
+  await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.goto('/?deskDetails=1#desk')
+  await simulationDetails(page)
+  const glance = page.getByLabel('Historical simulation summary')
+  await expect(glance.getByText('Policy simulation · names known at the time · live executor', { exact: true })).toBeVisible()
+  await expect(glance).not.toContainText('Unrecognized policy simulation')
+  await expect(glance).not.toContainText('Older policy simulation')
+  await strategyDetails(page)
+  await expect(page.getByLabel('Recorded allocation policy')).toContainText('Allocation policy: graded-equal-weight/5')
+
+  // The same `/5` record beside a `/4` simulation: recognised, and the earlier policy.
+  latest.curve = { ...latest.curve!, backtest: { ...latest.curve!.backtest, strategy_policy: 'graded-equal-weight/4' } }
+  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
+  await page.reload()
+  await simulationDetails(page)
+  const older = page.getByLabel('Historical simulation summary')
+  await expect(older.getByText('Older policy simulation', { exact: true })).toBeVisible()
+  await expect(older).toContainText('Uses an earlier recorded strategy policy (graded-equal-weight/4); not the active strategy (graded-equal-weight/5).')
+  await expect(older).not.toContainText('Unrecognized policy simulation')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Zero is not an up move: a flat day P/L keeps a neutral mark rather than
 // drawing a green up arrow beside +$0.
 test('a zero day P/L reads flat, not as an up move', async ({ page }) => {

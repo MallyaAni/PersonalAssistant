@@ -5,8 +5,9 @@ name crosses into A at session 5 and out at session 12, so its series
 must read buy, hold..., sell on exactly those sessions; the equal-weight
 reshuffles that happen when another name joins or leaves must read as
 holds, and a shift above ADD_TRIM_MIN as an add or a trim. The targets are
-asserted equal to `policy_v4.targets` on the point-in-time mask, a name
-outside the membership history gets no decision at all, and the fills are
+asserted equal to the live policy's (`live_policy.POLICY.targets`, `/5`
+since 2026-09-29) on the point-in-time mask, a name outside the
+membership history gets no decision at all, and the fills are
 read out of a record tree written to a tmp path with the shape the nightly
 writes.
 """
@@ -21,8 +22,10 @@ import pytest
 from backend.agents.trading.desk import (
     decision_history,
     grading,
+    live_policy,
     point_in_time,
     policy_v4,
+    policy_v5,
     regime,
 )
 from backend.agents.trading.desk.desk import DeskReport
@@ -100,9 +103,11 @@ def _crossing() -> np.ndarray:
     return grades
 
 
-# The constants come from the policy module and the threshold is stated.
+# The constants come from the policy module and the threshold is stated:
+# the history replays the policy the account runs, `/5`.
 def test_the_policy_is_the_live_one():
-    assert decision_history.POLICY == policy_v4.POLICY_VERSION
+    assert decision_history.POLICY == live_policy.ACTIVE == policy_v5.POLICY_VERSION
+    assert live_policy.POLICY is policy_v5
     assert decision_history.ADD_TRIM_MIN == 0.025
     assert "next open" in decision_history.DECISION_NOTE
 
@@ -121,10 +126,10 @@ def test_a_grade_crossing_reads_buy_hold_sell(membership):
     assert set(actions[13:]) == {"hold"}
     assert rows[5]["date"] == str(report.panel.dates[5])
     assert rows[5]["previous_weight"] == 0
-    assert rows[5]["target_weight"] == pytest.approx(policy_v4.HOLD_CAP)
-    assert rows[5]["delta_weight"] == pytest.approx(policy_v4.HOLD_CAP)
+    assert rows[5]["target_weight"] == pytest.approx(live_policy.POLICY.HOLD_CAP)
+    assert rows[5]["delta_weight"] == pytest.approx(live_policy.POLICY.HOLD_CAP)
     assert rows[12]["target_weight"] == 0
-    assert rows[12]["delta_weight"] == pytest.approx(-policy_v4.HOLD_CAP)
+    assert rows[12]["delta_weight"] == pytest.approx(-live_policy.POLICY.HOLD_CAP)
 
 
 # `since` keeps the rows from that date on, with the earlier weight still
@@ -135,13 +140,13 @@ def test_since_trims_the_rows_without_forgetting_the_position(membership):
     rows = decision_history.series(report, "AAA", since=since, history_path=membership)
     assert rows[0]["date"] == str(report.panel.dates[7])
     assert rows[0]["action"] == "hold"
-    assert rows[0]["previous_weight"] == pytest.approx(policy_v4.HOLD_CAP)
+    assert rows[0]["previous_weight"] == pytest.approx(live_policy.POLICY.HOLD_CAP)
 
 
 # An equal-weight reshuffle smaller than ADD_TRIM_MIN is a hold; one above
-# it is an add or a trim. Below the cap (which is 1/5) the weights are
-# 1/count, so 1/6 -> 1/7 (2.4 points) is a hold while 1/6 -> 1/9 (5.6
-# points) is a trim and back is an add.
+# it is an add or a trim. Below the cap (1/5 under `/4`, 1/4 under `/5`)
+# the weights are 1/count, so 1/6 -> 1/7 (2.4 points) is a hold while
+# 1/6 -> 1/9 (5.6 points) is a trim and back is an add.
 def test_equal_weight_shifts_under_the_threshold_are_holds():
     assert decision_history.classify(1 / 6, 1 / 7) == "hold"
     assert decision_history.classify(1 / 7, 1 / 6) == "hold"
@@ -156,8 +161,9 @@ def test_equal_weight_shifts_under_the_threshold_are_holds():
     assert decision_history.classify(0.10, 0.10 - step) == "trim"
 
 
-# The matrix is `policy_v4.targets` session by session on the point-in-time
-# mask; the benchmark column is always zero.
+# The matrix is the live policy's `targets` session by session on the
+# point-in-time mask; the benchmark column is always zero. With two names
+# qualifying the cap binds, so the replay is `/5`'s quarter, not `/4`'s fifth.
 def test_targets_equal_the_policy_on_the_point_in_time_mask(membership):
     report = _report(_crossing())
     targets = decision_history.target_matrix(report, membership)
@@ -165,15 +171,16 @@ def test_targets_equal_the_policy_on_the_point_in_time_mask(membership):
     mask = point_in_time.eligibility(panel.dates, tuple(panel.tickers), membership)
     bench = panel.index("SPY")
     for t in range(T):
-        expected = policy_v4.targets(
+        expected = live_policy.POLICY.targets(
             report.graded.grades[t], panel.close[t], mask[t], bench
         )
         assert np.array_equal(targets[t], expected)
     assert (targets[:, bench] == 0).all()
     # Session 5: AAA and BBB both A, two names -> the cap each.
-    assert targets[5, 0] == targets[5, 1] == pytest.approx(policy_v4.HOLD_CAP)
+    assert targets[5, 0] == targets[5, 1] == pytest.approx(live_policy.POLICY.HOLD_CAP)
+    assert targets[5, 0] == 0.25 != policy_v4.HOLD_CAP
     # Session 0: BBB alone -> the cap, not 100%.
-    assert targets[0, 1] == pytest.approx(policy_v4.HOLD_CAP)
+    assert targets[0, 1] == pytest.approx(live_policy.POLICY.HOLD_CAP)
     assert targets[0, 0] == 0
 
 
@@ -390,8 +397,9 @@ def test_series_without_a_schedule_is_the_weight_move_reading(membership):
 
 # A report of eight member names whose count of A/A+ names changes while
 # one of them stays A+, so that name's equal-weight target drifts without
-# it ever leaving the book (the cap binds below five names, so the drift
-# needs six or more). Returns (report, membership history path).
+# it ever leaving the book (the cap binds below five names under `/4` and
+# below four under `/5`, so the drift needs six or more). Returns (report,
+# membership history path).
 def _drifting(tmp_path: Path):
     names = tuple(f"N{i}" for i in range(8))
     path = tmp_path / "membership_history.csv"
