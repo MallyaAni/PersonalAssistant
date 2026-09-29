@@ -1,5 +1,53 @@
 # Next session
 
+## 2026-09-29 — Selective ML action-value experiment completed; keep /4
+
+User approved implementing and backtesting a selective holdings-aware overlay,
+preserving /4's 20-session cadence. This is now implemented and actually run,
+not a scaffold. Branch `research/selective-actions-20260929`; preregistration
+`75a04af`, public-input preparation `0e1d84d`, actual run source **`91e0946`**.
+The protocol and code were pushed to Spark and then GitHub from Spark before
+the historical run. No live changes, model activation, merge or deployment.
+
+**Both ridge and boosted trees DO_NOT_PROMOTE.** At 25 bp per side, median
+CAGR across offsets 0/5/10/15: /4 **30.61%**, ridge **29.89%**, trees **29.78%**,
+SPY **16.88%**, QQQ **22.62%**. Median drawdowns respectively -45.03%, -46.32%,
+-45.55%, -33.72%, -35.12%. Ridge beat /4 at 0/4 offsets; trees at 1/4.
+Action-value MSE also lost to the past-only action mean. Do not retune this
+failed grid or promote a favorable single offset.
+
+Evidence: 6,622 candidate rows (6,553 mature), eight purged annual folds,
+16 actual saved models, 56 funded accounts. **446 focused tests passed**;
+Ruff/diff checks clean. Independent saved data/model audit passed all label
+rows; four separate full-prefix Buy/Add/Trim/Sell replays matched with zero
+error. Six reopened accounts reconciled 11,625 closing marks, 15,490
+intermediate states and 181 selected actions from their own holdings/cash.
+All 24 /4 and index control curves match the earlier immutable study exactly.
+
+Run output `/home/animallya96/scratch/selective-actions-91e0946-20260929`, log
+same path plus `.log`, code `/home/animallya96/scratch/selective-actions-code.daPM9f`.
+The SSH client disconnected, but the remote process completed and all final
+artifacts were reopened; source remains clean at the exact run revision.
+Full metrics, annual/regime splits, hashes, limitations and audit scope:
+[results](research/selective-actions-results-2026-09-29.md).
+[Frozen protocol](research/selective-actions-plan-2026-09-29.md).
+
+Current-account feature inference, one intervention per actual cycle,
+persistent reduction ceilings, cash funding, trade floors, events and cancelled
+sells are exercised—not inferred from model MSE. This learns among bounded
+Buy/Add/Trim/Sell alternatives; it is not unrestricted position optimization,
+DL or RL. Reused historical data and reconstructed membership/grades still
+prevent a pristine final-test or survivorship-free claim.
+
+GitHub main independently advanced to **`511297f`** (Fable stage-4 research)
+during this run; its /4 source is unchanged. Spark shared-checkout main was
+still `2262333` at final readback. Neither main was overwritten or moved by
+this experiment. Keep research results isolated; reconcile latest main before
+any separately authorized future production change.
+
+Diagram impact: NONE — same existing offline market/model/simulator/journal
+boundaries; no production component or deployment flow changed.
+
 ## 2026-09-29 — Daily ML action experiment completed; neither candidate promoted
 
 Branch `research/daily-actions-20260929` starts from main `2262333`. The new

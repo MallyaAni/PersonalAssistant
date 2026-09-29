@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-29 — Selective holdings-aware ML backtest completed; neither model promoted
+
+Research-only source `91e0946` adds exact stateful /4 counterfactual forks,
+33-column daily/account/action features, purged annual ridge/tree training,
+and a one-intervention-per-reset controller. No live policy or dashboard change.
+The implementation was preregistered, tested and pushed before fitting.
+
+Actual run: 6,622 candidate rows, 16 fitted models, 56 funded outer accounts.
+At 25 bp/side, median CAGR: /4 30.61%, ridge 29.89%, trees 29.78%; SPY 16.88%,
+QQQ 22.62%. Both learned candidates **DO_NOT_PROMOTE**, without post-result
+retuning. Passing implementation checks is not a profitable-strategy claim.
+
+446 focused tests passed; independent actual-run audits checked all saved
+labels/models, four full-prefix action paths and six saved account journals.
+Detailed findings and limitations are in
+[the results](research/selective-actions-results-2026-09-29.md).
+
+Diagram impact: NONE — existing offline research and accounting boundaries.
+
 ## 2026-09-29 — Stock-action wording and recorded paper-account history
 
 Implementation checkpoint `f9618b1`, not deployed. The current personal board
