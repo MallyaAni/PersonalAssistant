@@ -162,3 +162,33 @@ The book has at least three names on about nine sessions in ten.
 - **The model is retrained on a different machine or library.** Training
   runs once per refit on the RTX. Inference runs on spark1's CPU, checked
   by the parity rule above.
+
+## Addendum 1 (2026-09-29, before the model was trained and before any forward date)
+
+These are the build's decisions where the note above was silent. The first
+concerns when a date counts as available:
+
+- **A forward date with no cube session is not yet available.** The
+  sequence tensor has no cube session for d when the SIP append has not
+  run for anyone. Such a date is not forecast that night; the job says it
+  is waiting and forecasts it the first night the tensor has d.
+- **A partial cube is still available.** When d is in the tensor but some
+  book names lack their own session, the date is forecast and recorded as
+  unclean. This is "the first night d is available" read as "the first
+  export whose tensor has session d".
+- **The first night is chosen by schedule.** The job runs well after the
+  append: 23:30 ET, since the 2026-09-28 append took about 70 minutes. A
+  partial append is then rare.
+
+The rest fix details of the build:
+
+- **The frozen model stays with the registered code.** It lives in
+  `backend/market/stage3_final.py`, which calls `stage3_nn`'s own task,
+  scaling, training and prediction functions. The registered module is not
+  edited.
+- **Forward dates follow the saved model.** They are the export's dates
+  after the saved model's own last training session (`meta.fold.last_session`),
+  so a refit continues the ledger where its predecessor stopped.
+- **The ledger stores the book in the export's row order.** That is
+  ticker order, so the tie rule ("the first ticker") is the book's first
+  entry.
