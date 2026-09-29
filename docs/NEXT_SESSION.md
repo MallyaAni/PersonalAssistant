@@ -107,6 +107,142 @@ check line by line, with a test that fails without it:
    point-in-time universe, with its pre-registration committed first. No
    new infrastructure without a strategy question it answers.
 
+## 2026-09-29 — Stage 3: level-aware, multi-timeframe models on the board's decisions. Every candidate RECORD; one post-hoc lead
+
+**What the operator asked, and what was done.**
+- **His claims.** The structure models failed because they:
+  - never saw multi-timeframe support/resistance, EMAs, Bollinger bands,
+    trend on every timeframe or the day-trading toolkit;
+  - were trained with the wrong hyperparameters and epochs.
+- **Research first.**
+  [research/feature-research-2026-09-29.md](research/feature-research-2026-09-29.md),
+  126 sources, surveyed 22 strategies. It found:
+  - he was **right about the 09-27/28 sequence models**: no gaps, no
+    relative volume, no levels, a 29-bar receptive field, fixed 20 epochs
+    at 1e-3, one seed;
+  - he was **wrong that the daily technicals were never tried**:
+    September's trees and the chart CNN had them, with IC 0.010-0.019.
+- **The support/resistance study.**
+  [research/sr-levels-2026-09-29.md](research/sr-levels-2026-09-29.md)
+  found the primary hypothesis NOT SUPPORTED; both fill conventions are
+  RECORD. Isolated levels bounce intraday but give it back, and VWAP acts
+  as a momentum pivot.
+- **Stage 3.** It was pre-registered in
+  [research/stage3-plan-2026-09-29.md](research/stage3-plan-2026-09-29.md),
+  with two addenda before any run:
+  - about 250 point-in-time columns, each tamper-tested for no
+    look-ahead;
+  - T-I, "act at this 15-minute bar or wait for the close", and T-S1,
+    "which graded names to hold";
+  - LightGBM, the JKX chart CNN as published, and a gap- and level-aware
+    causal TCN;
+  - nested validation, early stopping and 5-seed ensembles.
+
+**Results.** See
+[research/stage3-results-2026-09-29.md](research/stage3-results-2026-09-29.md).
+
+- **All 8 outer candidates are RECORD** (`market_stage3_verdict` over all
+  42 payloads, none missing).
+  - T-I: `lgbm_filter` −0.6 bp/d (t −1.9), `lgbm_free` −0.6, `seq_filter`
+    −0.2, `seq_free` −0.1. The `free` rules lose 1.5 bp/d on 2024-2026
+    (t −3.0).
+  - T-S1 overlays: `lgbm` +0.3 (t 0.7), `cnn_i5` −0.4, `cnn_i20` −0.2,
+    `seq` +0.3 (t 0.7). `seq` is above the control at 20 of 20 offsets
+    with a 2.1-point smaller drawdown, but −0.02 on 2024-2026, and 3 of 5
+    single-seed runs flip sign.
+  - Deflated Sharpe ≤ 0.27 at N = 8.
+- **An independent verification** found no leak. It recomputed every
+  label and re-implemented every T-I fill.
+- **What the models learned.**
+  - Timing: market-level inputs (VIX change, breadth, regime, the
+    index's first half hour).
+  - Selection: filings and tone.
+  - The sequence model's T-S1 forecast has the most information: IC
+    +0.038 on 2016-2023 (t 2.3) and +0.040 on 2024+, positive in 8 of 9
+    years.
+- **The post-hoc lead (not a registered result).** It was run after the
+  verdicts and after 2024-2026 was seen. `market_stage3_diagnostics`,
+  tested, made 126 looks, and the cumulative count is now 408.
+  - **What it found.** The sequence model's lowest-forecast A/A+ name
+    lags its book by 1.1% over the next 20 sessions on 2016-2023
+    (t −2.85) and by 3.3% on 2024-2026 (t −3.45). No one-feature chart
+    rule does this.
+  - **Why the overlay missed it.** The overlay kept +0.33 of the +0.78
+    bp/session the drop is worth frictionless on 2016-2023. It acts only
+    on books of five or more; at exactly five names the 20% cap turns the
+    drop into cash; and the breakout entry buys dropped names back.
+  - **The ceiling.** Even whole, +0.78 is below the +2 bp floor on the
+    window the floor is judged on.
+- **Withdrawn.** The one-month reversal tilt. The reversal holds across
+  graded names, but inside the A/A+ book stretched names did not lag:
+  dropping the most stretched one would have cost 4.5% per 20 sessions
+  on 2024-2026.
+- **Late-day SPY momentum** is absent on our bars (t ≤ 0.8).
+
+**Nothing live changed.** The board keeps `dip_or_close`, and the live
+path stays frozen at `checkpoint-2026-09-28`.
+
+**Where things are.**
+- **Code.** Main now carries these, merged at `2539e2c`. The unit gate
+  on `ecb7e81`, the merged tree: 8,046 passed, 67 skipped, 6 xfailed,
+  exit 0. Nothing deployed.
+  - the modules `stage3_io` (the frozen registration),
+    `stage3_features`, `stage3_intraday`, `stage3_export`,
+    `stage3_trees`, `stage3_nn`, `stage3_overlay`, `stage3_verdict` and
+    `stage3_diagnostics`;
+  - the T-I conventions in `fill_timing`;
+  - six CLIs.
+- **The live path at the next deploy.** The frozen `entry_timing` imports
+  only `DIP` from `fill_timing`, still 0.01. `fill_timing` now also
+  imports `stage3_io` and `stage3_verdict`, both numpy-only. The board's
+  behaviour does not change. The personal receipt's `code_fingerprint`
+  hashes `fill_timing.py`, so new receipts will record a new hash.
+- **Data on spark1**, under `data/market/research/stage3/`:
+  - the datasets, with a copy on the RTX in
+    `E:\AgentWorkspace\rtx-data\stage3\`;
+  - the six forecast files, in `forecasts/`;
+  - all 42 decision payloads, the verdicts and the book diagnostics, in
+    `decisions/`.
+- **In git**, in `docs/research/scorecards/stage3/`: the ensemble
+  payloads, `verdicts.json` (with every seed run), the tree diagnostics,
+  the export summary and `book_diagnostics.json`.
+- **No network weights were saved.** The trainers keep forecasts only.
+
+**RTX workflow learned.** The Cowork VM runs on the RTX desktop, so
+files committed to `E:\AgentWorkspace\PersonalAssistant\.claude-bundles`
+are directly on the RTX's disk.
+
+- Code goes over as a `git archive` tar, extracted with Windows `tar`,
+  because git is not installed there.
+- Large files stream spark → RTX with
+  `ssh spark 'cat f' | ssh rtx python -c copyfileobj`, in halves, since
+  each call is limited to 180 s (about 13 MB/s).
+- Background processes do not survive a device_bash call. Detach on
+  spark with `setsid nohup`, and on the RTX run jobs as scheduled tasks:
+  `claude-rtx-s3cpu` and `claude-rtx-s3gpu`, "Interactive only", as Ani
+  Mallya.
+
+**Next registered candidates (not started):**
+- **A forward shadow of the sequence model's A/A+ laggard.** It is
+  recorded nightly, changes nothing the board shows, and is judged on
+  unseen sessions against criteria committed before the first one. It
+  needs:
+  - a final model with saved weights;
+  - the nightly export;
+  - its own pre-registration.
+- **Gating the executor's mid-cycle breakout entry** on the allocator's
+  targets, so that any selection overlay can hold. It is on the frozen
+  live path, so it needs the operator's go-ahead.
+
+**Pending verification.** The first idle-cash redeploy leg after the
+09-29 19:30 ET nightly: `idle_cash_share` should fall from about 0.38
+to about 0.02, redeploy orders should be present and parity OK. It is
+read-only, with a check-in scheduled at 23:50Z.
+
+The operator's open questions are unchanged:
+- group-3 live changes;
+- the cap moving from 20% to 25% (policy /5).
+
 ## 2026-09-28, pre-open — The board acts only at the measured level; ML entry level recorded
 
 **Deployed** `80b58819` (05:04Z, post-deploy ok; main now `eb74a6d`). The
