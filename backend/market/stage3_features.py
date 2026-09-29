@@ -537,7 +537,12 @@ def daily_levels_block(panel, close: np.ndarray, atr_fraction: np.ndarray) -> di
     width = np.full(daily.width.shape, np.nan)
     levels[:-1] = daily.levels[1:]
     width[:-1] = daily.width[1:]
-    kinds = sr_levels.DAILY_KINDS
+    # At t's close the "prior day close" level of session t+1 is the close
+    # itself: never strictly above or below it, always inside its own zone.
+    # It carries no information here, so it is left out of this block.
+    kinds = tuple(k for k in sr_levels.DAILY_KINDS if k != "prior_day_close")
+    keep = [sr_levels.DAILY_KINDS.index(k) for k in kinds]
+    levels = levels[:, :, keep]
     group_of = {k: g for g, fams in DS_GROUPS.items() for k in kinds if sr_levels.FAMILY_OF[k] in fams}
     price = close[:, :, None]
     with np.errstate(invalid="ignore"):

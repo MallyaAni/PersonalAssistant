@@ -203,6 +203,16 @@ def test_the_daily_block_never_reads_after_its_row(world):
     assert not np.array_equal(np.nan_to_num(block.values[t0 + 5 :]), np.nan_to_num(other.values[t0 + 5 :]))
 
 
+def test_no_daily_column_is_constant(world):
+    _, block, _ = world
+    values = block.values[150:]
+    constant = [
+        name for f, name in enumerate(block.names)
+        if np.isfinite(values[:, :, f]).any() and np.nanstd(values[:, :, f]) == 0
+    ]
+    assert not constant, constant
+
+
 def test_daily_formulas_on_known_values(world):
     inputs, block, internals = world
     panel = inputs.panel
