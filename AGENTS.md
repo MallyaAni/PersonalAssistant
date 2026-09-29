@@ -170,6 +170,15 @@ If functional validation cannot be performed, do not label the behavior verified
   from a container carrying the new tree, or deploy the migration in its own
   step first. `--skip-gate` is the last resort and is the operator's decision.
 
+- **The daily store is split-adjusted; the SIP cubes are raw.** The store's
+  `close`, `high` and `low` are already split-adjusted, so `adj_close /
+  close` is a dividend factor only. Scaling a raw cube price by it compares
+  a pre-split bar with an adjusted level. Scale every cube price by
+  `fill_timing.session_scale` (the panel's adjusted close over the cube's
+  own official close that session). This bit twice: stage 3's
+  `fill_timing` (`8ebbd4e6`, 2026-09-27), and stage 4's first labels on
+  2026-09-29 (NVDA 2024-06-04 read +23,152 bp; fixed in `3842c6a`).
+
 Each of these has cost real time or real data here. They are recorded because
 they are not discoverable from the code alone.
 

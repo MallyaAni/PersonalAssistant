@@ -1,5 +1,93 @@
 # Next session
 
+## 2026-09-29, afternoon — Stage 4: multi-day timing of the executor's orders. Every candidate RECORD; the board keeps `dip_or_close`
+
+**Nothing live changed.** The live path is still frozen at
+`checkpoint-2026-09-28`. `research/stage4` is merged here, and the notes
+are:
+
+- [the plan](research/stage4-plan-2026-09-29.md), with Addendum 1 (the
+  build's choices) and Addendum 2 (a defect found and fixed before any
+  result was read);
+- [the results](research/stage4-results-2026-09-29.md);
+- the payload and the training logs under `research/scorecards/stage4/`.
+
+**The question** was the operator's: "are you sure you used ML to try and
+predict the right thing?" No earlier model was trained on the gain of
+waiting.
+
+- **Labels.** Every graded name-day (88,063) is labelled with the bp
+  gained by resting at a one-sigma level for up to five sessions instead
+  of the board's `dip_or_close`, per side.
+- **Models.** M1 (LightGBM), M2 (the JKX I20 CNN) and M3 (the sequence
+  model) were trained on those labels and applied to the live executor's
+  own orders.
+- **Rules beside them.** The level always (D0), the literature's
+  news/stress condition (D1), the operator's structural turn (D2) and the
+  squeeze breakout (D3).
+
+**The result:**
+
+- **Buys.** Waiting lost or was flat: D0 −0.90 bp/session, positive at 0
+  of 20 offsets. The turn rule lost 1.37 bp/session on 2024-2026 (t −2.2).
+  The trees and the sequence model learned to hold back only 5% and 2% of
+  buys.
+- **Sells.** Holding for a bounce gained +1.6 bp/session on 2018-2023,
+  positive at 20 of 20 offsets. It fails anyway:
+  - it is under the +2 floor;
+  - a third of it is drift;
+  - it made −2.2 to −3.0 bp/session on 2024-2026.
+
+  The gain was mostly names downgraded to B in stressed markets.
+- **The models.** None tells a good wait from a bad one: every hit rate is
+  within 0.3 points of its base rate or below it.
+- **Trials.** The cumulative count is 451.
+
+**What the build caught (read before trusting anything here):**
+
+- **The split trap came back.** Stage 4's first labels scaled raw SIP
+  cube prices by `adj_close / close`. That is a dividend-only factor,
+  because the store's close is already split-adjusted. An independent
+  check on real data found it before any result was read.
+  - It had corrupted the labels of ten split names; NVDA 2024-06-04
+    showed +23,152 bp.
+  - The fix is `3842c6a`: `fill_timing.session_scale`, stage 3's rule.
+    Tests pin it, and the trap is now in AGENTS.md.
+  - The first labels, training and smoke run are void; Addendum 2 lists
+    them.
+- **RTX: `schtasks /create /sc once /st 23:59` without a past `/sd` fires
+  that night.** The stage-3 tasks `claude-rtx-s3cpu`, `-s3gpu` and
+  `-shadowfit` were set to re-run all of stage 3 at 23:59 tonight, and are
+  now disabled. Create tasks with `/sd 01/01/2026 /st 00:00` and start
+  them with `schtasks /run`.
+- **RTX: never run two trainings on the 5080 at once.** Two sequence
+  models sharing it filled 15.8 of 16 GB and ran about 30 times slower,
+  because memory spilled to system RAM. Chain GPU jobs, as
+  `E:\AgentWorkspace\rtx-data\stage4\s4_gpu_a_after.cmd` does.
+- **The Cowork VM lost its LAN for about 90 minutes** while the computer
+  link re-authorised: only `lo` and a proxy, so ssh to spark and the RTX
+  failed. It came back on its own, and the RTX jobs kept running.
+
+**Where things are:**
+
+- **RTX.** The stage-4 worktree is `E:\AgentWorkspace\rtx-s4` at
+  `dabd3f5`. Data and forecasts are under
+  `E:\AgentWorkspace\rtx-data\stage4\`; the void first run is in
+  `out_void_1ad8e15f`.
+- **spark1.** `data/market/research/stage4/` holds `stage4_labels.npz`
+  (`5e52e1f0`), `forecasts/` (six files) and `stage4_decisions.json`
+  (`34caeced`). The void labels are kept as
+  `stage4_labels_void_1ad8e15f.npz`.
+
+**Still waiting on the operator**, unchanged:
+
+- the laggard shadow's nightly cron;
+- the group-3 live changes;
+- the cap moving from 20% to 25%.
+
+The scheduled read-only check-ins at 23:50Z (the first redeploy leg) and
+03:40Z on 09-30 (the shadow's first night) still stand.
+
 ## 2026-09-29 — Published checkpoint and next alignment boundary
 
 Dashboard code `f9618b1` and its validation note `b59531e` are on Spark main
