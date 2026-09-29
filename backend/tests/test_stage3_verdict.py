@@ -484,3 +484,26 @@ def test_outer_excess_gathers_both_parts():
     assert excess["s1_cnn_i20"]["sharpe"] == pytest.approx(0.02)
     assert sv.ti_excess(runs[2])["seq_free"]["length"] == 1500
     assert sv.s1_excess(_s1_payload(costs=(10.0,))) == {}
+
+
+def test_the_verdict_command_reads_a_directory_of_payloads(tmp_path):
+    import io as stdio
+
+    from backend.cli import market_stage3_verdict as cli
+
+    runs, next_bar, seeds = _ti_runs()
+    for payload in runs:
+        cost = int(payload["stage3_ti"]["cost_bps"])
+        (tmp_path / f"ti_{cost}.json").write_text(json.dumps(payload))
+    (tmp_path / "ti_nextbar.json").write_text(json.dumps(next_bar[0]))
+    for k, payload in enumerate(seeds):
+        (tmp_path / f"ti_seed{k}.json").write_text(json.dumps(payload))
+    printed = stdio.StringIO()
+    out = tmp_path / "verdicts.json"
+    code = cli.run(cli.build_parser().parse_args(["--dir", str(tmp_path), "--out", str(out)]), out=printed)
+    assert code == 0
+    record = json.loads(out.read_text())
+    assert record["ti"] is not None
+    # No overlay payloads were written: every S1 family is reported missing.
+    assert any(name.startswith("s1_") for name in record["missing"])
+    assert "missing payloads" in printed.getvalue()
