@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-09-29 — Published checkpoint and next alignment boundary
+
+Dashboard code `f9618b1` and its validation note `b59531e` are on Spark main
+and GitHub main (pushed to GitHub from Spark). **Not deployed.** Full Spark
+unit gate: 8,073 passed / 68 skipped / 6 expected failures; 141 controlled-API
+browser cases and TypeScript/Vite build passed. No experimental simulator code
+was merged.
+
+The shared-input prerequisite is already implemented at `e7a59e2` on separate
+branch `fix/shared-strategy-inputs-20260929`: a small dispatcher used by the
+nightly path, exact market-only input recording, independent state and version
+checks. Root independently ran 239 offline tests, all passing. Do not redo this
+work or merge it as completed personal alignment. Its branch research note lists
+the event-only input limitation and remaining enrollment/fill-state work.
+That additional refactor has not run the full-repository gate or been deployed.
+
+The live personal board still differs from paper execution. An explicit starting
+state must be confirmed; no personal account has been initialized, and no
+browser acknowledgement has been treated as a trade. Continue with independent
+personal execution state and actual planner/timing integration, not another copy
+of the rules. No order was submitted or cancelled by this work.
+
 ## 2026-09-29 — Dashboard/account audit; shared-strategy request
 
 The operator uses **Stock rankings** to trade his real account and found Hold
