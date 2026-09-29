@@ -32,6 +32,11 @@ duplicated here, and the values written are exactly `Forecast.values`, NaN
 before the first fit. torch is imported only inside the CNN family, so
 this module loads where it is absent and `export_forecasts(model="ridge")`
 runs there.
+
+Version 2 exports retain the dataset's declared row-selection convention and
+separate finite predictions from predictions with observed labels. Missing old
+declarations remain ``legacy-unrecorded``; a declaration is not causal or
+historical-provenance qualification, and no saved forecast file is upgraded.
 """
 
 from __future__ import annotations
@@ -53,8 +58,8 @@ OPTIONAL_FIELDS = ("realized",)
 # The forecast head this module exports by default.
 MODEL = "cnn"
 TARGET = "vol"
-# File format version.
-VERSION = 1
+# New exports declare row selection and distinguish predictions from observed labels.
+VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -71,6 +76,15 @@ class Forecasts:
     # Rows in the file.
     def __len__(self) -> int:
         return int(len(self.dates))
+
+    # Read declared row selection without upgrading metadata absent from old files.
+    @property
+    def row_selection(self) -> str:
+        if self.meta is None or "row_selection" not in self.meta:
+            return deep_intraday.LEGACY_ROW_SELECTION
+        return deep_intraday.load_row_selection(
+            {"row_selection": np.asarray(self.meta["row_selection"])}
+        )
 
 
 @dataclass(frozen=True)
@@ -104,6 +118,7 @@ def sigma(log_variance: np.ndarray | float) -> np.ndarray:
 # model name (the CNN by default; the ridge runs without torch). Returns a
 # summary: the rows, the scored rows, the fits and the out-of-sample R²
 # against the baseline per window.
+# Retain the dataset's row-selection declaration and distinct label coverage.
 def export_forecasts(
     dataset_npz: Path,
     out_npz: Path,
@@ -127,14 +142,22 @@ def export_forecasts(
         )
         for name, (start, end) in deep_intraday.WINDOWS.items()
     }
+    finite = np.isfinite(forecast.values)
+    observed = np.isfinite(ds.y_vol)
     meta = {
         "version": VERSION,
+        "row_selection": ds.row_selection,
         "model": model,
         "target": TARGET,
         "device": resolved,
         "dataset": str(dataset_npz),
         "rows": len(ds),
-        "scored_rows": int(np.isfinite(forecast.values).sum()),
+        # Retain the legacy alias; observed-label counts below are distinct.
+        "scored_rows": int(finite.sum()),
+        "finite_forecast_rows": int(finite.sum()),
+        "observed_label_rows": int(observed.sum()),
+        "forecast_with_observed_label_rows": int((finite & observed).sum()),
+        "forecast_without_observed_label_rows": int((finite & ~observed).sum()),
         "fits": forecast.fits,
         "parameters": forecast.parameters,
         "seconds": seconds,
@@ -160,7 +183,8 @@ def export_forecasts(
     if log is not None:
         scored = meta["scored_rows"]
         log(
-            f"wrote {out_npz}: {len(ds):,} rows, {scored:,} scored,"
+            f"wrote {out_npz}: {len(ds):,} rows, {scored:,} finite forecasts,"
+            f" {meta['forecast_with_observed_label_rows']:,} with observed labels,"
             f" {len(forecast.fits)} fits, {seconds:.0f} s"
         )
     return meta

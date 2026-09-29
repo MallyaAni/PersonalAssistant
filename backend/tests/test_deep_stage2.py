@@ -137,8 +137,8 @@ def _world(
 
 
 # The dataset's rows follow the plan's rule and carry what the plan says:
-# one row per graded member (name, t) with K sessions of bars behind it
-# and a complete next session; the market channels are the benchmarks'
+# one row per graded member (name, t) with K sessions of bars behind it,
+# independently of future labels; the market channels are the benchmarks'
 # bar returns on the same sessions, in order, and a benchmark the store
 # lacks is left out; the scalars are the fixed ones then the stances; the
 # grade one-hot, the band z, the breadth and the horizon targets equal
@@ -154,7 +154,7 @@ def test_dataset_shape_and_inputs():
     cubes, mask, report, book = _world(n=120, grades=grades)
     ds = s2.dataset(cubes, mask, report, ("SPY", "QQQ", "SMH"), CAL, k=K)
     first_row = stage1.TRAILING - 1
-    per_name = 120 - first_row - 1
+    per_name = 120 - first_row
     assert len(ds) == 3 * per_name
     assert ds.benchmarks == ("SPY", "QQQ")  # SMH has no cube here
     assert ds.x_seq.shape == (len(ds), K * SLOTS, 5)
@@ -175,7 +175,9 @@ def test_dataset_shape_and_inputs():
     for name in book:
         rows = ds.tickers == name
         assert ds.dates[rows][0] == dates[first_row]
-        assert ds.dates[rows][-1] == dates[-2]
+        assert ds.dates[rows][-1] == dates[-1]
+        assert np.isnan(ds.y_return[rows][-1])
+        assert np.isnan(ds.y_rank[rows][-1])
     # The name's own channels are stage 1's; the market channels are the
     # benchmarks' bar returns on the same sessions.
     t = 40
@@ -252,7 +254,7 @@ def test_dataset_shape_and_inputs():
     full = s2.dataset(cubes, mask, report, ("SPY", "QQQ", "SMH"), CAL)
     assert full.x_seq.shape[1:] == (60 * SLOTS, 6)
     assert full.k == s2.K_SESSIONS == 60
-    assert len(full) == 3 * (120 - 60)
+    assert len(full) == 3 * (120 - 60 + 1)
 
 
 # The window tolerates a hole the size of the slack (early closes are not
@@ -290,9 +292,11 @@ def test_window_slack_desk_join_and_benchmark_fill():
         ds.dates[ds.tickers == "N00"].astype(str)
     )
     dates = cubes["N00"].dates
-    # Only the hole and the session before it (its next session is gone);
-    # the windows spanning the hole are kept, unlike stage 1's.
-    assert lost == {str(dates[hole - 1]), str(dates[hole])}
+    # Only the hole disappears; the prior decision has a missing label.
+    # Windows spanning the hole fit the slack, unlike stage 1's rule.
+    assert lost == {str(dates[hole])}
+    prior = (ds.tickers == "N00") & (ds.dates == dates[hole - 1])
+    assert np.isnan(ds.y_return[prior]).all()
     wide = without(cubes["N00"], list(range(hole, hole + s2.WINDOW_SLACK + 1)))
     holed["N00"] = wide
     ds = s2.dataset(holed, mask, report, ("SPY",), CAL, k=K)

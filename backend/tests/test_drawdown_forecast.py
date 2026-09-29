@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import io
 import json
+from dataclasses import replace
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -79,6 +81,7 @@ def test_save_and_load_round_trip(tmp_path):
     np.testing.assert_array_equal(back.forecast, forecasts.forecast)
     np.testing.assert_array_equal(back.realized, forecasts.realized)
     assert back.meta == {"model": "cnn", "fits": [{"n": 1}]}
+    assert back.row_selection == stage1.LEGACY_ROW_SELECTION
     assert len(back) == 3
     with np.load(path) as data:
         assert set(data.files) == {"ticker", "date", "forecast", "realized", "meta"}
@@ -88,6 +91,7 @@ def test_save_and_load_round_trip(tmp_path):
         df.Forecasts(dates, forecasts.tickers, forecasts.forecast),
     )
     assert df.load_forecasts(bare).realized is None
+    assert df.load_forecasts(bare).row_selection == stage1.LEGACY_ROW_SELECTION
     np.savez(tmp_path / "wrong.npz", ticker=np.array(["A"]), date=np.array([0]))
     with pytest.raises(ValueError, match="lacks forecast arrays"):
         df.load_forecasts(tmp_path / "wrong.npz")
@@ -103,6 +107,20 @@ def test_save_and_load_round_trip(tmp_path):
         df.save_forecasts(
             tmp_path / "bad.npz", df.Forecasts(dates, forecasts.tickers, np.zeros(2))
         )
+
+
+# Invalid explicit declarations cannot silently acquire a valid producer meaning.
+@pytest.mark.parametrize("selection", ["future-provenance", 1, []])
+def test_invalid_forecast_row_selection_is_rejected(selection):
+    values = np.zeros(1)
+    forecasts = df.Forecasts(
+        np.array(["2026-09-21"], dtype="datetime64[D]"),
+        np.array(["AAA"]),
+        values,
+        meta={"row_selection": selection},
+    )
+    with pytest.raises(ValueError, match="row_selection"):
+        _ = forecasts.row_selection
 
 
 # Alignment: row (name, t) lands at the panel position of date t; a name or
@@ -164,8 +182,10 @@ def test_align_puts_row_t_at_t_and_a_shift_differs():
 # them; the summary carries the run's shape and the IC per window; the file
 # aligns onto a panel of the dataset's own sessions with every scored row
 # in place.
+# Row-selection provenance and pending-label coverage survive the same real export.
 def test_export_forecasts_with_the_ridge(tmp_path):
-    ds = _dataset()
+    ds = replace(_dataset(), row_selection=stage1.ROW_SELECTION)
+    ds.y_drawdown20[-1] = np.nan
     dataset_file = s2.save_dataset(tmp_path / "stage2.npz", ds)
     out = tmp_path / "dd.npz"
     lines: list[str] = []
@@ -192,6 +212,13 @@ def test_export_forecasts_with_the_ridge(tmp_path):
     assert np.isnan(back.forecast[before]).all()
     assert np.isfinite(back.forecast[~before]).all()
     assert meta["scored_rows"] == int((~before).sum())
+    assert meta["version"] == 2
+    assert meta["row_selection"] == stage1.ROW_SELECTION
+    assert meta["finite_forecast_rows"] == meta["scored_rows"]
+    assert meta["observed_label_rows"] == len(ds) - 1
+    assert meta["forecast_with_observed_label_rows"] == meta["scored_rows"] - 1
+    assert meta["forecast_without_observed_label_rows"] == 1
+    assert back.row_selection == stage1.ROW_SELECTION
     assert back.meta["scored_rows"] == meta["scored_rows"]
     grid = df.align(back, ds.sessions, tuple(np.unique(ds.tickers)) + ("SPY",))
     assert grid.shape == (len(ds.sessions), 4)
@@ -203,6 +230,21 @@ def test_export_forecasts_with_the_ridge(tmp_path):
             (ds.session_index == stage1.MIN_TRAIN) & (ds.tickers == "N00")
         ][0]
     )
+
+
+# The committed version-1 forecast file the profit-taking study reads still
+# loads, reads as legacy-unrecorded and is not refused.
+def test_committed_version_one_forecasts_still_load():
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "docs/research/scorecards/drawdown_forecasts.npz"
+    )
+    back = df.load_forecasts(path)
+    assert back.meta["version"] == 1
+    assert "row_selection" not in back.meta
+    assert back.row_selection == stage1.LEGACY_ROW_SELECTION
+    assert len(back) == back.meta["rows"] > 0
+    assert np.isfinite(back.forecast).sum() == back.meta["scored_rows"]
 
 
 # `market_deep_stage2 --export-forecasts` writes the drawdown20 forecast of
@@ -247,6 +289,7 @@ def test_stage2_cli_export_forecasts(tmp_path):
     ]
     np.testing.assert_array_equal(back.forecast, direct.values)
     assert back.meta["model"] == "ridge"
+    assert back.row_selection == stage1.LEGACY_ROW_SELECTION
     # Without the target nothing is written.
     out = io.StringIO()
     args = cli.build_parser().parse_args(

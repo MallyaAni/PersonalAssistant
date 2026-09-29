@@ -27,6 +27,11 @@ NaN before the first fit. `deep_stage2` is imported inside
 `export_forecasts` only, so this module and the profit-taking study load
 without the stage-2 stack, and torch is imported only inside the CNN family,
 so `export_forecasts(model="ridge")` runs where torch is absent.
+
+Version 2 exports retain the dataset's declared row-selection convention and
+separate finite predictions from predictions with observed labels. Missing old
+declarations remain ``legacy-unrecorded``; this metadata does not qualify their
+causality or historical provenance, and existing archives are never upgraded.
 """
 
 from __future__ import annotations
@@ -46,8 +51,8 @@ OPTIONAL_FIELDS = ("realized",)
 # The head this module exports by default, and the target.
 MODEL = "cnn"
 TARGET = "drawdown20"
-# File format version.
-VERSION = 1
+# New exports declare row selection and distinguish predictions from observed labels.
+VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -64,12 +69,24 @@ class Forecasts:
     def __len__(self) -> int:
         return int(len(self.dates))
 
+    # Read declared row selection without upgrading metadata absent from old files.
+    @property
+    def row_selection(self) -> str:
+        from backend.market import deep_intraday
+
+        if self.meta is None or "row_selection" not in self.meta:
+            return deep_intraday.LEGACY_ROW_SELECTION
+        return deep_intraday.load_row_selection(
+            {"row_selection": np.asarray(self.meta["row_selection"])}
+        )
+
 
 # Run the stage-2 walk-forward on the drawdown target only and write the
 # out-of-sample forecast per row, with the realized target beside it, to
 # `out_npz`. `model` is a `deep_stage2` model name (the CNN by default; the
 # ridge runs without torch). Returns a summary: rows, scored rows, fits,
 # seconds and the daily IC against the realized drawdown per window.
+# Retain the dataset's row-selection declaration and distinct label coverage.
 def export_forecasts(
     dataset_npz: Path,
     out_npz: Path,
@@ -102,7 +119,9 @@ def export_forecasts(
     )
     if log is not None:
         log(
-            f"wrote {out_npz}: {len(ds):,} rows, {meta['scored_rows']:,} scored,"
+            f"wrote {out_npz}: {len(ds):,} rows,"
+            f" {meta['finite_forecast_rows']:,} finite forecasts,"
+            f" {meta['forecast_with_observed_label_rows']:,} with observed labels,"
             f" {len(forecast.fits)} fits, {seconds:.0f} s"
         )
     return meta
@@ -110,6 +129,7 @@ def export_forecasts(
 
 # The metadata written beside the forecasts: the run's shape and the daily
 # IC of the forecast against the realized drawdown per window.
+# Record row-selection provenance and separate predictions from observed labels.
 def summary(
     ds, forecast, model: str, device: str, dataset: str, seconds: float
 ) -> dict:
@@ -121,14 +141,22 @@ def summary(
         rows = deep_intraday.window_rows(ds, start, end)
         series = deep_stage2.daily_spearman(ds, forecast, ds.y_drawdown20, rows)
         ic[name] = series.summary()
+    finite = np.isfinite(forecast.values)
+    observed = np.isfinite(ds.y_drawdown20)
     return {
         "version": VERSION,
+        "row_selection": ds.row_selection,
         "model": model,
         "target": TARGET,
         "device": device,
         "dataset": dataset,
         "rows": len(ds),
-        "scored_rows": int(np.isfinite(forecast.values).sum()),
+        # Retain the legacy alias; observed-label counts below are distinct.
+        "scored_rows": int(finite.sum()),
+        "finite_forecast_rows": int(finite.sum()),
+        "observed_label_rows": int(observed.sum()),
+        "forecast_with_observed_label_rows": int((finite & observed).sum()),
+        "forecast_without_observed_label_rows": int((finite & ~observed).sum()),
         "fits": forecast.fits,
         "parameters": forecast.parameters,
         "seconds": seconds,

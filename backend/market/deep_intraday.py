@@ -2,14 +2,17 @@
 sessions of fifteen-minute bars carry out-of-sample information about the
 next session that the grade does not already have?
 
-This module implements exactly the stage-1 protocol of the pre-registration
+The dataset and models implement the stage-1 pre-registration
 `docs/research/deep-intraday-plan-2026-09-27.md`, written before any model
-was trained. Nothing here trades, ranks the live book or sizes anything.
+was trained. Version 2 separates decision-input eligibility from future
+label availability; it does not regenerate or reinterpret the saved
+version-1 results. Nothing here trades, ranks the live book or sizes anything.
 
 The dataset. One row per (name, session t) where the name is a book member
 on t (`point_in_time.eligibility`, passed in as the anatomy's mask), the
 `K_SESSIONS` sessions ending at t are consecutive complete 26-slot sessions
-in the cube, and t+1 is the next exchange session and is complete. The
+in the cube, and all current inputs are finite. Future observations never
+decide which input rows exist. The
 inputs are the K sessions' bars as a `K * 26`-step sequence with three
 channels (bar log return, bar volume share of the session, bar range over
 close) and three scalars (the session's gap, the name's trailing 20-session
@@ -19,7 +22,8 @@ future and asserts X unchanged. The targets are the next session's
 open-to-close log return (rank-normalized within the date's eligible names
 for the ranking question) and the log of the next session's realized
 variance (the volatility question, kept apart so the ranking result cannot
-be credited with it).
+be credited with it). Labels stay NaN when the next exchange session is
+absent or its outcome is nonfinite, including at the latest observed close.
 
 The models. Ridge on the flattened inputs (numpy closed form with an L2
 term on standardized features), a temporal CNN (`deep_intraday_cnn`), a
@@ -79,8 +83,11 @@ from backend.market.session_anatomy import (
 )
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 
-# Study version, carried in the payload.
-STUDY_VERSION = 1
+# Version 2 corrects input-row selection; saved version-1 results are not reruns.
+STUDY_VERSION = 2
+# This records the producer's row rule, not complete historical provenance.
+ROW_SELECTION = "decision-inputs-only/1"
+LEGACY_ROW_SELECTION = "legacy-unrecorded"
 # The plan this implements.
 PLAN = "docs/research/deep-intraday-plan-2026-09-27.md"
 # Sessions of bars in one input row, and the slots per session.
@@ -191,6 +198,7 @@ class Dataset:
     trailing_vol: np.ndarray  # (M,) log trailing mean realized variance
     sessions: np.ndarray  # (S,) distinct dates, ascending
     session_index: np.ndarray  # (M,) index into `sessions`
+    row_selection: str = LEGACY_ROW_SELECTION
 
     # Rows in the dataset.
     def __len__(self) -> int:
@@ -239,8 +247,11 @@ def save_dataset(path: Path, ds: Dataset, keep_a: np.ndarray | None) -> Path:
     arrays["dates"] = arrays["dates"].astype("datetime64[D]").astype("int64")
     arrays["sessions"] = arrays["sessions"].astype("datetime64[D]").astype("int64")
     arrays["tickers"] = arrays["tickers"].astype(str)
+    arrays["row_selection"] = np.asarray(ds.row_selection, dtype=str)
     arrays["keep_a"] = (
-        np.asarray(keep_a, dtype=bool) if keep_a is not None else np.zeros(0, dtype=bool)
+        np.asarray(keep_a, dtype=bool)
+        if keep_a is not None
+        else np.zeros(0, dtype=bool)
     )
     np.savez_compressed(path, **arrays)
     return path
@@ -255,9 +266,23 @@ def load_dataset(path: Path) -> tuple[Dataset, np.ndarray | None]:
         fields["dates"] = fields["dates"].astype("datetime64[D]")
         fields["sessions"] = fields["sessions"].astype("datetime64[D]")
         fields["tickers"] = fields["tickers"].astype(str)
+        fields["row_selection"] = load_row_selection(data)
         keep = data["keep_a"]
     ds = Dataset(**fields)
     return ds, (keep.astype(bool) if len(keep) == len(ds) and len(ds) else None)
+
+
+# Preserve absent legacy row provenance and reject malformed producer declarations.
+def load_row_selection(data: Mapping[str, Any]) -> str:
+    if "row_selection" not in data:
+        return LEGACY_ROW_SELECTION
+    value = data["row_selection"]
+    if value.shape != () or value.dtype.kind != "U":
+        raise ValueError("row_selection must be a scalar Unicode declaration")
+    selection = str(value.item())
+    if selection not in (ROW_SELECTION, LEGACY_ROW_SELECTION):
+        raise ValueError("unrecognized dataset row_selection")
+    return selection
 
 
 # The exchange session calendar the dataset checks adjacency against:
@@ -279,15 +304,19 @@ def _trailing_sum(values: np.ndarray, n: int) -> np.ndarray:
     return out
 
 
-# Everything one cube contributes: the rows on which the name is a member,
-# the K-session window is consecutive and complete, the trailing scalars
-# are full and t+1 is the next exchange session in the cube. Returns None
-# when the cube is too short to hold a row.
+# Align finite outcomes to the prior decision only across adjacent exchange sessions.
+def next_session_labels(values: np.ndarray, next_ok: np.ndarray) -> np.ndarray:
+    labels = np.full(len(values), np.nan)
+    labels[:-1] = np.where(next_ok[:-1] & np.isfinite(values[1:]), values[1:], np.nan)
+    return labels
+
+
+# Select member rows with complete current inputs; future labels never select rows.
 def _cube_rows(
     cube: SessionCube, member: np.ndarray, calendar: np.busdaycalendar
 ) -> dict[str, np.ndarray] | None:
     n = len(cube)
-    if n < max(K_SESSIONS, TRAILING) + 1:
+    if n < max(K_SESSIONS, TRAILING):
         return None
     returns = bar_returns(cube)
     total_volume = cube.volume.sum(axis=1)
@@ -312,7 +341,7 @@ def _cube_rows(
     for j in range(1, K_SESSIONS):
         window_ok[j:] &= next_ok[:-j]
     window_ok[: K_SESSIONS - 1] = False
-    keep = np.asarray(member, dtype=bool) & next_ok & window_ok
+    keep = np.asarray(member, dtype=bool) & window_ok
     keep[: TRAILING - 1] = False
     idx = np.nonzero(keep)[0]
     if len(idx) == 0:
@@ -324,15 +353,13 @@ def _cube_rows(
         "dates": days[idx],
         "x_seq": x_seq.astype(np.float32),
         "x_scalar": x_scalar,
-        "y_return": session_return[idx + 1],
-        "y_vol": log_realized[idx + 1],
+        "y_return": next_session_labels(session_return, next_ok)[idx],
+        "y_vol": next_session_labels(log_realized, next_ok)[idx],
         "trailing_vol": trailing_vol[idx],
     }
     finite = (
         np.isfinite(rows["x_seq"]).all(axis=(1, 2))
         & np.isfinite(x_scalar).all(axis=1)
-        & np.isfinite(rows["y_return"])
-        & np.isfinite(rows["y_vol"])
         & np.isfinite(rows["trailing_vol"])
     )
     if not finite.any():
@@ -358,8 +385,7 @@ def _ranks(values: np.ndarray) -> np.ndarray:
     return ranks
 
 
-# The rank of each value in [0, 1] within its group (0 the lowest, 1 the
-# highest, ties averaged; a group of one gets 0.5).
+# Rank finite outcomes within each group; missing labels stay missing, not top-ranked.
 def rank_within(values: np.ndarray, groups: np.ndarray) -> np.ndarray:
     """Return the (M,) within-group rank of `values`, scaled to [0, 1]."""
     values = np.asarray(values, dtype=float)
@@ -372,6 +398,9 @@ def rank_within(values: np.ndarray, groups: np.ndarray) -> np.ndarray:
     )
     for lo, hi in zip(edges[:-1], edges[1:], strict=True):
         rows = order[lo:hi]
+        rows = rows[np.isfinite(values[rows])]
+        if not len(rows):
+            continue
         if len(rows) == 1:
             out[rows] = 0.5
             continue
@@ -419,6 +448,7 @@ def dataset(
         trailing_vol=pooled["trailing_vol"],
         sessions=sessions,
         session_index=session_index.astype(int),
+        row_selection=ROW_SELECTION,
     )
 
 
@@ -435,6 +465,7 @@ def _empty_dataset() -> Dataset:
         trailing_vol=np.zeros(0),
         sessions=np.zeros(0, dtype="datetime64[D]"),
         session_index=np.zeros(0, dtype=int),
+        row_selection=ROW_SELECTION,
     )
 
 
@@ -1032,6 +1063,9 @@ def study(
         "targets": sorted({t for _, t in forecasts}, key=TARGETS.index),
         "dataset": {
             "rows": len(ds),
+            "row_selection": ds.row_selection,
+            "observed_return_rows": int(np.isfinite(ds.y_return).sum()),
+            "observed_vol_rows": int(np.isfinite(ds.y_vol).sum()),
             "names": int(len(np.unique(ds.tickers))) if len(ds) else 0,
             "sessions": int(len(ds.sessions)),
             "first": str(ds.sessions[0]) if len(ds.sessions) else None,

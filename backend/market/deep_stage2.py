@@ -14,8 +14,10 @@ a book member on t (`point_in_time.eligibility` through the anatomy's
 mask), the `K_SESSIONS = 60` most recent complete sessions in the cube end
 at t and span at most `K_SESSIONS + WINDOW_SLACK` exchange sessions (early
 closes are excluded from the cubes, so stage 1's strictly consecutive
-window would rarely exist at sixty), t + 1 is the next exchange session
-and complete, and the desk graded the name on t. The sequence has six
+window would rarely exist at sixty), and the desk graded the name on t.
+Version 2 retains input-eligible rows regardless of future label availability;
+an absent or nonfinite next-session outcome leaves a NaN label, not a missing
+decision row. Earlier exports/results are not rewritten. The sequence has six
 channels: the name's bar log return, volume share and range over close
 (stage 1's), and the same-session bar log returns of the benchmarks the
 store holds among `BENCHMARKS` (a benchmark session the store lacks is a
@@ -104,7 +106,7 @@ from backend.market.session_anatomy import (
 from backend.market.sip_cube import SessionCube
 
 # Study version, carried in the payload.
-STUDY_VERSION = 1
+STUDY_VERSION = 2
 # The plan this implements.
 PLAN = "docs/research/deep-stage2-plan-2026-09-27.md"
 # Sessions of bars in one input row, and the exchange sessions the window
@@ -194,6 +196,7 @@ class Dataset2:
     k: int  # sessions of bars per row
     benchmarks: tuple[str, ...]  # the market channels, in channel order
     benchmark_fill: int  # benchmark (session, bar-row) pairs zero-filled
+    row_selection: str = stage1.LEGACY_ROW_SELECTION
 
     # Rows in the dataset.
     def __len__(self) -> int:
@@ -270,6 +273,7 @@ def save_dataset(path: Path, ds: Dataset2) -> Path:
     arrays["x_seq"] = arrays["x_seq"].astype(np.float16)
     arrays["scalar_names"] = np.asarray(ds.scalar_names, dtype=str)
     arrays["benchmarks"] = np.asarray(ds.benchmarks, dtype=str)
+    arrays["row_selection"] = np.asarray(ds.row_selection, dtype=str)
     arrays["meta"] = np.asarray(
         [ds.k, ds.benchmark_fill, STUDY_VERSION], dtype=np.int64
     )
@@ -288,6 +292,7 @@ def load_dataset(path: Path) -> Dataset2:
         fields["x_seq"] = fields["x_seq"].astype(np.float32)
         fields["scalar_names"] = tuple(str(s) for s in data["scalar_names"])
         fields["benchmarks"] = tuple(str(b) for b in data["benchmarks"])
+        fields["row_selection"] = stage1.load_row_selection(data)
         meta = data["meta"]
     return Dataset2(**fields, k=int(meta[0]), benchmark_fill=int(meta[1]))
 
@@ -298,17 +303,13 @@ def default_calendar() -> np.busdaycalendar:
     return stage1.default_calendar()
 
 
-# Everything one name's cube contributes before the desk is joined: the
-# row indices `idx` (member, window rule, trailing scalars full, t + 1 the
-# next exchange session), the (M, k) window of cube rows behind each, the
-# name's (M, k * SLOTS, 3) sequence, the three cube scalars and the
-# next-session return. None when the cube holds no row.
+# Build member input windows before joining the desk; future labels never select rows.
 def cube_rows(
     cube: SessionCube, member: np.ndarray, calendar: np.busdaycalendar, k: int
 ) -> dict[str, np.ndarray] | None:
     """Return the name's rows keyed by array name, or None."""
     n = len(cube)
-    if n < max(k, TRAILING) + 1:
+    if n < max(k, TRAILING):
         return None
     returns = bar_returns(cube)
     total_volume = cube.volume.sum(axis=1)
@@ -332,7 +333,7 @@ def cube_rows(
     if n >= k:
         spans = np.busday_count(days[: n - k + 1], days[k - 1 :], busdaycal=calendar)
         window_ok[k - 1 :] = spans <= k - 1 + WINDOW_SLACK
-    keep = np.asarray(member, dtype=bool) & next_ok & window_ok
+    keep = np.asarray(member, dtype=bool) & window_ok
     keep[: TRAILING - 1] = False
     idx = np.nonzero(keep)[0]
     if len(idx) == 0:
@@ -346,7 +347,7 @@ def cube_rows(
         "gap": gap[idx],
         "trailing_return_20": trailing_return[idx],
         "trailing_vol_20": trailing_vol[idx],
-        "y_return": session_return[idx + 1],
+        "y_return": stage1.next_session_labels(session_return, next_ok)[idx],
     }
 
 
@@ -590,13 +591,9 @@ def dataset(
             "fwd20": features["fwd"][p, j],
             "grade": grade,
         }
-        # The inputs and the anchor target must be finite; the horizon
-        # targets may be NaN (their heads skip those rows).
-        finite = (
-            np.isfinite(x_seq).all(axis=(1, 2))
-            & np.isfinite(x_scalar).all(axis=1)
-            & np.isfinite(part["y_return"])
-        )
+        # Only current inputs select decision rows; each head trains and
+        # scores on its own finite labels without removing inference inputs.
+        finite = np.isfinite(x_seq).all(axis=(1, 2)) & np.isfinite(x_scalar).all(axis=1)
         if not finite.any():
             continue
         part = {name: values[finite] for name, values in part.items()}
@@ -628,6 +625,7 @@ def dataset(
         k=int(k),
         benchmarks=found,
         benchmark_fill=int(fill),
+        row_selection=stage1.ROW_SELECTION,
     )
 
 
@@ -656,6 +654,7 @@ def _empty(
         k=int(k),
         benchmarks=benchmarks,
         benchmark_fill=fill,
+        row_selection=stage1.ROW_SELECTION,
     )
 
 
@@ -1112,6 +1111,8 @@ def study(
         "targets": sorted({t for _, t in forecasts}, key=TARGETS.index),
         "dataset": {
             "rows": len(ds),
+            "row_selection": ds.row_selection,
+            "observed_return_rows": int(np.isfinite(ds.y_return).sum()),
             "names": int(len(np.unique(ds.tickers))) if len(ds) else 0,
             "sessions": int(len(ds.sessions)),
             "first": str(ds.sessions[0]) if len(ds.sessions) else None,

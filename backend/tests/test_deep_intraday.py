@@ -126,15 +126,12 @@ def _book(
     return cubes, mask
 
 
-# The dataset's rows follow the plan's rule: one per member (name, t) with
-# K consecutive complete sessions ending at t, full trailing scalars and a
-# complete next session; shapes as declared; the last row of each name is
-# the session before the cube's last.
+# Input eligibility includes the latest complete close even without its next label.
 def test_dataset_shape_and_row_rule():
     cubes, mask = _book("noise", names=3, n=60, seed=1)
     ds = di.dataset(cubes, mask, CAL)
     first_row = di.TRAILING - 1
-    per_name = 60 - first_row - 1
+    per_name = 60 - first_row
     assert len(ds) == 3 * per_name
     assert ds.x_seq.shape == (len(ds), di.SEQ_LEN, len(di.CHANNELS))
     assert ds.x_scalar.shape == (len(ds), len(di.SCALARS))
@@ -143,7 +140,10 @@ def test_dataset_shape_and_row_rule():
     for name in cubes:
         rows = ds.tickers == name
         assert ds.dates[rows][0] == dates[first_row]
-        assert ds.dates[rows][-1] == dates[-2]
+        assert ds.dates[rows][-1] == dates[-1]
+        assert np.isnan(ds.y_return[rows][-1])
+        assert np.isnan(ds.y_rank[rows][-1])
+        assert np.isnan(ds.y_vol[rows][-1])
     assert np.isfinite(ds.flat()).all()
     assert ds.flat().shape == (len(ds), di.SEQ_LEN * len(di.CHANNELS) + len(di.SCALARS))
     # Sorted by session then ticker; the bounds slice sessions.
@@ -178,8 +178,7 @@ def test_dataset_shape_and_row_rule():
     ).sum()
 
 
-# A gap in the cube (a missing session) drops the rows whose K-window or
-# next session spans it, and nothing else.
+# A missing session drops only itself and subsequent incomplete input windows.
 def test_dataset_requires_consecutive_sessions():
     cubes, mask = _book("noise", names=1, n=60, seed=2)
     cube = cubes["N00"]
@@ -200,12 +199,13 @@ def test_dataset_requires_consecutive_sessions():
     )
     ds = di.dataset({"N00": holed}, mask, CAL)
     lost = set(full.dates.astype(str)) - set(ds.dates.astype(str))
-    # Row hole-1 loses its next session; rows hole+1 .. hole+K-1 lack a
-    # consecutive window; the hole itself is gone.
-    expected = {str(cube.dates[hole - 1]), str(cube.dates[hole])} | {
+    # Row hole-1 remains scoreable with a missing label; subsequent
+    # windows spanning the hole are incomplete.
+    expected = {str(cube.dates[hole])} | {
         str(cube.dates[hole + j]) for j in range(1, di.K_SESSIONS)
     }
     assert lost == expected
+    assert np.isnan(ds.y_return[ds.dates == cube.dates[hole - 1]]).all()
 
 
 # Nothing in X looks past the close of t: tampering every session after
@@ -268,6 +268,9 @@ def test_rank_normalization_within_date():
         rows = slice(bounds[s], bounds[s + 1])
         y = ds.y_return[rows]
         r = ds.y_rank[rows]
+        if not np.isfinite(y).any():
+            assert np.isnan(r).all()
+            continue
         assert r.min() == 0.0
         assert r.max() == 1.0
         assert np.array_equal(np.argsort(y), np.argsort(r))

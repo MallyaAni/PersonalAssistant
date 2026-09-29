@@ -12,8 +12,9 @@ them; the CLI wraps it.
 import io
 import json
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -89,6 +90,7 @@ def test_save_and_load_round_trip(tmp_path):
     np.testing.assert_array_equal(back.baseline, fc.baseline)
     np.testing.assert_array_equal(back.realized, fc.realized)
     assert back.meta == {"model": "cnn", "fits": [{"n_train": 3}]}
+    assert back.row_selection == di.LEGACY_ROW_SELECTION
     # Without the realized column and metadata (a file written elsewhere).
     bare = tmp_path / "bare.npz"
     np.savez(
@@ -100,6 +102,7 @@ def test_save_and_load_round_trip(tmp_path):
     )
     loaded = vf.load_forecasts(bare)
     assert loaded.realized is None and loaded.meta is None
+    assert loaded.row_selection == di.LEGACY_ROW_SELECTION
     np.savez(tmp_path / "short.npz", ticker=fc.tickers, date=fc.dates.astype("int64"))
     with pytest.raises(ValueError, match="lacks forecast arrays"):
         vf.load_forecasts(tmp_path / "short.npz")
@@ -110,6 +113,21 @@ def test_save_and_load_round_trip(tmp_path):
         )
     np.testing.assert_allclose(vf.sigma(np.log(0.0004)), 0.02)
     assert np.isnan(vf.sigma(np.nan))
+
+
+# Invalid explicit declarations cannot silently acquire a valid producer meaning.
+@pytest.mark.parametrize("selection", ["future-provenance", 1, []])
+def test_invalid_forecast_row_selection_is_rejected(selection):
+    values = np.zeros(1)
+    forecasts = vf.Forecasts(
+        _dates(1),
+        np.array(["AAA"]),
+        values,
+        values,
+        meta={"row_selection": selection},
+    )
+    with pytest.raises(ValueError, match="row_selection"):
+        _ = forecasts.row_selection
 
 
 # The dataset's row (name, t) targets the realized variance of the cube's
@@ -192,8 +210,13 @@ def test_align_puts_row_t_at_t_and_a_shift_differs():
 # exactly `Forecast.values` (NaN before the first fit), the dataset's
 # trailing baseline and its realized target, with the fits and the R² in
 # the metadata; `aligned_to_panel` then reads the file onto a panel.
+# Row-selection provenance and pending-label coverage survive the same real export.
 def test_export_forecasts_with_the_ridge(tmp_path):
-    ds = _dataset(di.MIN_TRAIN + di.REFIT + 7, names=3, seed=1)
+    ds = replace(
+        _dataset(di.MIN_TRAIN + di.REFIT + 7, names=3, seed=1),
+        row_selection=di.ROW_SELECTION,
+    )
+    ds.y_vol[-1] = np.nan
     dataset_file = di.save_dataset(tmp_path / "stage1.npz", ds, None)
     out = tmp_path / "vol" / "forecasts.npz"
     lines: list[str] = []
@@ -203,10 +226,17 @@ def test_export_forecasts_with_the_ridge(tmp_path):
     assert meta["rows"] == len(ds)
     assert len(meta["fits"]) == 2
     assert meta["scored_rows"] == int((ds.session_index >= di.MIN_TRAIN).sum())
+    assert meta["version"] == 2
+    assert meta["row_selection"] == di.ROW_SELECTION
+    assert meta["finite_forecast_rows"] == meta["scored_rows"]
+    assert meta["observed_label_rows"] == len(ds) - 1
+    assert meta["forecast_with_observed_label_rows"] == meta["scored_rows"] - 1
+    assert meta["forecast_without_observed_label_rows"] == 1
     assert set(meta["vol_r2"]) == set(di.WINDOWS)
     assert any("wrote" in line for line in lines)
     fc = vf.load_forecasts(out)
     assert len(fc) == len(ds)
+    assert fc.row_selection == di.ROW_SELECTION
     np.testing.assert_array_equal(fc.dates, ds.dates)
     np.testing.assert_array_equal(fc.tickers, ds.tickers)
     np.testing.assert_array_equal(fc.baseline, ds.trailing_vol)
@@ -224,6 +254,21 @@ def test_export_forecasts_with_the_ridge(tmp_path):
     assert aligned.forecast[first, 1] == fc.forecast[row]
     assert np.isnan(aligned.forecast[:, 2]).all()
     assert np.isnan(aligned.forecast[first - 1]).all()
+
+
+# The committed version-1 forecast file the vol-sizing and ML entry-level
+# studies read still loads, reads as legacy-unrecorded and is not refused.
+def test_committed_version_one_forecasts_still_load():
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "docs/research/scorecards/vol_forecasts.npz"
+    )
+    fc = vf.load_forecasts(path)
+    assert fc.meta["version"] == 1
+    assert "row_selection" not in fc.meta
+    assert fc.row_selection == di.LEGACY_ROW_SELECTION
+    assert len(fc) == fc.meta["rows"] > 0
+    assert np.isfinite(fc.forecast).sum() == fc.meta["scored_rows"]
 
 
 # The CLI writes the file and prints the R² lines; `--json` prints the
@@ -246,6 +291,7 @@ def test_cli(tmp_path):
     assert cli.run(args, out) == 0
     printed = json.loads(out.getvalue())
     assert printed["model"] == "ridge" and printed["rows"] == len(ds)
+    assert printed["row_selection"] == di.LEGACY_ROW_SELECTION
     out = io.StringIO()
     args = cli.build_parser().parse_args(
         ["--dataset", str(tmp_path / "missing.npz"), "--out", str(out_file)]
