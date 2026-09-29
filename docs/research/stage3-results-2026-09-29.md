@@ -85,9 +85,9 @@ own orders, over 20 offsets:
 | Candidate | Model window, bp/session (t) at 10 / 16 / 25 bp | Next-bar run | 2024-2026 bp/session (t) | Per differing order, bp (t) | Seeds | Verdict |
 |---|---|---|---|---|---|---|
 | `lgbm_filter` | −0.6 (−1.94) at all three | −0.6 (−1.94) | −0.2 (−1.08) | −40.0 (−1.94) | stable | RECORD |
-| `lgbm_free` | −0.6 (−1.55) at all three | −0.6 (−1.54) | −1.5 (−2.96) | −18.5 (−1.41) | stable | RECORD |
+| `lgbm_free` | −0.6 (−1.55) / −0.6 (−1.54) / −0.6 (−1.54) | −0.6 (−1.54) | −1.5 (−2.96) | −18.5 (−1.41) | stable | RECORD |
 | `seq_filter` | −0.2 (−0.57) at all three | −0.2 (−0.58) | −0.4 (−1.60) | +14.8 (+0.60) | 2 sign changes | RECORD |
-| `seq_free` | −0.1 (−0.19) at all three | −0.1 (−0.20) | −1.5 (−2.97) | −6.3 (−0.38) | 3 sign changes | RECORD |
+| `seq_free` | −0.1 (−0.19) / −0.1 (−0.18) / −0.1 (−0.19) | −0.1 (−0.20) | −1.5 (−2.97) | −6.3 (−0.38) | 3 sign changes | RECORD |
 
 Deflated Sharpe at N = 8: 0.00-0.06, against the 0.95 floor. What the
 rules did:
@@ -117,7 +117,7 @@ floor.
 `seq` is the only overlay above the control at all 20 offsets, with the
 smaller drawdown. It still fails four criteria:
 
-- **The floor.** It earns about a seventh of the +2.0 bp it needs.
+- **The floor.** It earns about a sixth of the +2.0 bp it needs.
 - **2024-2026.** It is −0.02 bp/session there, and the criterion asks
   for zero or more.
 - **The deflated Sharpe.** It reaches 0.27.
@@ -126,10 +126,11 @@ smaller drawdown. It still fails four criteria:
   The small edge belongs to the average of five networks, not to any one
   of them.
 
-The overlay changes little by construction. It drops one name, and only
-from a book of at least five. The A/A+ book with a forecast averages 6.4
-names on 2016-2023 and 4.8 on 2024-2026, and it had five or more on 81%
-and 56% of those sessions (`book_diagnostics.json`).
+The overlay changes little by construction. It drops one name (two from a
+book of eleven or more), and only from a book of at least five. The A/A+
+book with a forecast averages 6.4 names on 2016-2023 and 4.8 on 2024-2026,
+and it had five or more on 81% and 56% of those sessions
+(`book_diagnostics.json`).
 
 It also leaks. The live executor's breakout entry does not read the
 allocator's targets (addendum). So after a reset dropped a name, the book
@@ -153,7 +154,7 @@ IC. The choosing window is 2016-2023 (from each model's first forecast);
 | M3 T-S1 (sequence) | +0.038 | +0.040 |
 
 - **M1 T-S1 by year.** −0.120 in 2018, −0.054 in 2019, then +0.021,
-  +0.066, +0.070 and +0.128 for 2020-2023, then −0.013, +0.007 and −0.076
+  +0.066, +0.070 and +0.128 for 2020-2023, then −0.012, +0.007 and −0.076
   for 2024-2026.
 - **M1 T-S1 significance.** The Newey-West t of the choosing-window IC is
   0.93. The naive 3.2 ignores the 20-session overlap.
@@ -161,7 +162,8 @@ IC. The choosing window is 2016-2023 (from each model's first forecast);
   +0.033, +0.091 and +0.076 for 2020-2023, then +0.035, +0.063 and +0.013
   for 2024-2026 (2026 through August): positive in 8 of 9 years. Its
   Newey-West t is 2.27 on the choosing window and 1.63 on 2024+. It is
-  the only stage-3 forecast whose IC held its level after 2023.
+  the only stage-3 forecast with a material IC that held its level after
+  2023.
 - **Validation versus test.** Each fold's chosen configuration is the
   best of eight on one validation block, so its validation IC is biased
   up.
@@ -170,7 +172,7 @@ IC. The choosing window is 2016-2023 (from each model's first forecast);
   - **M3 T-S1.** Validation IC 0.053 (−0.002 to 0.091 over nine folds);
     the test blocks delivered 0.038.
 
-  The sequence model's gap is about a quarter of the trees'.
+  The sequence model's gap is under a third of the trees'.
 
 **Late-day index momentum on our own bars** (the registered diagnostic).
 It regresses SPY's last half hour (15:30 to the close) on its first half
@@ -195,17 +197,19 @@ nothing.
 - **The command.** `market_stage3_diagnostics`
   (`backend/market/stage3_diagnostics.py`, tested). Its output is
   `scorecards/stage3/book_diagnostics.json`.
-- **The trial count.** It made 126 looks, and they count in any later
-  registration's tally:
+- **The trial count.** It scored 126 drop rules, and they count as
+  trials in any later registration's tally:
   - 4 forecasts × 3 book minimums × dropping the lowest or the highest
     name;
   - 17 chart features × 2 directions × 3 minimums.
 
-  The book's cumulative count goes from 282 to 408.
+  The book's cumulative count goes from 282 to 408. The ICs and
+  correlations it also reports are descriptive.
 
 It reads each forecast inside the A/A+ book, the names the policy
 actually holds, on dates when the book has at least five names. Each cell
-is 2016-2023 / 2024-2026:
+is 2016-2023 / 2024-2026; the first window starts at each model's first
+forecast, late in 2017:
 
 | Forecast | IC inside the book (t) | Lowest-forecast name vs the book, bp per 20 sessions (t) | Frictionless drop, bp/session (t) |
 |---|---|---|---|
@@ -235,7 +239,7 @@ What it shows:
   - **Smaller books.** The reading holds with books of three or four
     names: −94 and −104 bp on 2016-2023, −283 and −281 on 2024-2026.
   - **The top name.** Its highest-forecast name is weaker: +36 bp (t 0.7)
-    and +252 bp (t 1.9).
+    and +252 bp (t 1.8).
   - **The other forecasts.** They show nothing on 2016-2023. `cnn_i20`
     finds a laggard on 2024-2026 only.
 - **It is not a chart rule.**
@@ -246,10 +250,14 @@ What it shows:
     from stretch: −0.27 to −0.34 with RSI, Keltner and Bollinger
     position, the distance above the 20-day average and closeness to the
     52-week high.
-  - **What the features do alone.** Dropping the book's weakest name by
-    any one of seventeen chart features moves the book between −0.9% and
-    +1.1% per 20 sessions (books of five; −1.2% to +0.8% with books of
-    three or four). No rule's |t| exceeds 1.2.
+  - **What the features do alone.** Take the book's weakest name by any
+    one of seventeen chart features. Over the next 20 sessions it did
+    between 0.9% worse and 1.1% better than the book (books of five; 1.2%
+    worse to 0.8% better with books of three or four). No such rule's |t|
+    exceeds 1.2 in either window.
+  - **The strongest name instead.** Picking it by one feature reaches |t|
+    1.7 on 2016-2023, in both directions. On 2024-2026 it reaches 2.8,
+    with the strongest names winning.
   - **Stretched names kept winning.** Dropping the most stretched name
     by 20-day return would have cost 4.5% per 20 sessions on 2024-2026
     (t +2.4).
@@ -263,9 +271,9 @@ What it shows:
     2024-2026.
   - **The executor bought dropped names back.** It did so on 53% of the
     sessions after a reset drop (above).
-  - **Net.** After costs the overlay kept +0.33 bp/session of the +0.78
-    available before them on 2016-2023, and none of the +1.64 on
-    2024-2026.
+  - **Net.** On the model window, after costs, the overlay kept +0.33
+    bp/session of the +0.78 available before them. It kept none of the
+    +1.64 on 2024-2026.
 - **The ceiling is below the floor.**
   - **2016-2023.** Even captured whole, the drop is worth +0.78 bp a
     session (t 2.80), less than half the +2.0 bp the plan set for a
