@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-09-29 — Laggard run active; portfolio-asymmetry implementation tested
+
+Clean source `2f3562d` passed 278 offline tests and is running the registered
+200-account laggard comparison on Spark, under
+`/home/animallya96/scratch/earnings-events.QfGDif/tilt-run-code`, writing
+`tilt-results/`. Do not restart it or select an offset from partial results.
+The three offset-zero/10-bp saved stock accounts passed an additional no-AniOS
+signed-fill audit: 8,853 marks. All aggregate performance remains unread.
+
+The separately [registered portfolio-asymmetry gate](
+research/portfolio-asymmetry-plan-2026-09-29.md) is implemented, with actual
+synthetic annual fits/reloads, future-price/label invariance, journal binding
+and CLI output checks. Combined offline regression: 296 passed, no skips.
+Run it from clean committed source after the laggard baseline
+`journal-v4-10-25.json.gz` exists; it must be the exact pinned `2f3562d`
+account. No historical portfolio-asymmetry labels or models have been read yet.
+It is not a cash or index trading rule and has no live integration.
+
 ## 2026-09-29 — Partial laggard implementation ready for its registered run
 
 The research-only `market_laggard_tilt` CLI implements the frozen

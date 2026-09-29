@@ -60,7 +60,8 @@ show mean daily returns, not fictional standalone compounded portfolios.
 
 Every stock account has a saved cash/fill/mark journal independently replayed
 before its statistics are accepted. Report actual turnover/exposure and verify
-all-zero/missing forecasts reproduce `/4`. Preserve all curves and metadata.
+all-zero targets or all-missing forecasts reproduce `/4`. Preserve all curves
+and metadata.
 
 Call the result RESEARCH_PROMISING, never PROMOTE, only if at 25 bp the
 sequence tilt gains at least one CAGR percentage point over `/4` on 2018–2023,
@@ -75,3 +76,10 @@ These are advancement screens, not multiplicity-adjusted proof after hundreds
 of trials. All history is development evidence. A promising result still needs
 independent evidence and live integration review; any failed criterion ends this
 rule without a cap/size/threshold sweep. No automatic deployment.
+
+Pre-result clarification: the validation shorthand originally said
+"all-zero/missing forecasts", conflicting with the precise finite-score/tie
+rule above. All-zero **targets** and missing forecasts are no-ops. Finite equal
+scores, including zero, still select the first eligible column. The implemented
+rule and running account code are unchanged; this clarification precedes reading
+any historical return statistics.

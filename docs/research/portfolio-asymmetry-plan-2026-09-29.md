@@ -58,7 +58,7 @@ seed 7 and two threads. At most 300 trees/head; early stopping after 30 rounds
 on validation head MSE, then refit to all eligible history with that tree count.
 No grid. Minimum fit 504 rows, validation 126. Each head's forecast is clipped
 at zero, never the observed labels. Training-only median/IQR normalization,
-1st/99th percentile feature clipping and missing indicators reuse the existing
+0.5th/99.5th percentile feature clipping and missing indicators reuse the existing
 tested financial-study transform. No random k-folds across dates.
 
 Archive every input, target endpoint, prediction, fitted scaler/model and tree
@@ -91,3 +91,7 @@ threshold, horizon, architecture or regime search.
 
 Diagram impact: NONE — existing offline cache, model and research-journal
 boundaries; no live data flow, deployment or account integration changes.
+
+Pre-implementation correction: the referenced existing transform uses the
+0.5th/99.5th percentiles, not 1st/99th. Corrected before extracting any labels
+or fitting any portfolio-asymmetry model; the helper itself is unchanged.
