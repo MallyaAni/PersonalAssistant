@@ -1,5 +1,21 @@
 # Next session
 
+## 2026-09-29 — Partial laggard implementation ready for its registered run
+
+The research-only `market_laggard_tilt` CLI implements the frozen
+[cash-neutral partial redistribution](research/laggard-tilt-plan-2026-09-29.md).
+Fifteen focused checks plus simulator/journal/overlay regressions passed:
+237 tests total. They exercise a real changed funded account, exact missing-score
+fallback, independent journal replay, ties/caps, causal regimes, aggregation and
+every advancement gate. The pinned real cache loads: 2,951 sessions, 95 columns,
+75,681 aligned finite sequence forecasts. The historical comparison has not yet
+been scored; run from a clean committed checkout, preserving every account.
+
+Read-only CPU parity at pinned shadow revision `901c682` passed 10,980 rows,
+maximum difference 6.59e-05 within 1e-04, identical reload and zero missing rows.
+This proves prediction parity, not forward profitability or a completed nightly.
+No live policy, dashboard, broker operation or deployment changed.
+
 ## 2026-09-29 — Source-qualified filing expectations tested; both models rejected
 
 Research branch `research/earnings-events-20260929` starts from Fable main
