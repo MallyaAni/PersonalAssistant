@@ -5,9 +5,11 @@
 
 The directory holds the payloads the two decision tests write, by name:
 
-* T-I (`market_fill_timing --stage3-forecast ...`): `ti_10.json`,
-  `ti_16.json`, `ti_25.json` (cost runs), `ti_nextbar.json` (the
-  `--next-bar` run), `ti_seed0.json`..`ti_seed4.json` (single-seed runs);
+* T-I (`market_fill_timing --stage3-forecast ...`), one set per tag (the
+  families priced together, e.g. `lgbm`, `seq` or `lgbm-seq`):
+  `ti_<tag>_10.json`, `ti_<tag>_16.json`, `ti_<tag>_25.json` (cost runs),
+  `ti_<tag>_nextbar.json` (the `--next-bar` run) and
+  `ti_<tag>_seed0.json`..`ti_<tag>_seed4.json` (single-seed runs);
 * T-S1 (`market_stage3_overlay`): `s1_<family>.json` (the ensemble at 10, 16
   and 25 bp) and `s1_<family>_seed0.json`..`_seed4.json`.
 
@@ -57,9 +59,15 @@ def run(args: argparse.Namespace, out: TextIO = sys.stdout) -> int:
             missing.append(name)
         return payload
 
-    ti_runs = [p for p in (need(f"ti_{c}.json") for c in (10, 16, 25)) if p is not None]
-    ti_next = [p for p in (need("ti_nextbar.json"),) if p is not None]
-    ti_seeds = [p for p in (need(f"ti_seed{s}.json") for s in io.SEEDS) if p is not None]
+    tags = sorted(p.name[len("ti_") : -len("_25.json")] for p in folder.glob("ti_*_25.json"))
+    ti_sets: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for tag in tags:
+        ti_sets[tag] = {
+            "runs": [p for p in (need(f"ti_{tag}_{c}.json") for c in (10, 16, 25)) if p is not None],
+            "next": [p for p in (need(f"ti_{tag}_nextbar.json"),) if p is not None],
+            "seeds": [p for p in (need(f"ti_{tag}_seed{s}.json") for s in io.SEEDS) if p is not None],
+        }
+    ti_runs = [p for runs in ti_sets.values() for p in runs["runs"]]
     s1_runs: dict[str, dict[str, Any]] = {}
     s1_seeds: dict[str, list[dict[str, Any]]] = {}
     for family in S1_FAMILIES:
@@ -68,10 +76,12 @@ def run(args: argparse.Namespace, out: TextIO = sys.stdout) -> int:
             s1_runs[family] = payload
             s1_seeds[family] = [p for p in (need(f"s1_{family}_seed{s}.json") for s in io.SEEDS) if p is not None]
     excess = sv.outer_excess(ti_runs=ti_runs, s1_runs=list(s1_runs.values()))
-    record: dict[str, Any] = {"plan": io.PLAN, "missing": missing, "ti": None, "s1": {}}
-    if ti_runs:
-        verdict = sv.ti_verdict(ti_runs, next_bar=ti_next, seeds=ti_seeds, others=excess)
-        record["ti"] = verdict
+    record: dict[str, Any] = {"plan": io.PLAN, "missing": missing, "ti": {}, "s1": {}}
+    for tag, runs in ti_sets.items():
+        if not runs["runs"]:
+            continue
+        verdict = sv.ti_verdict(runs["runs"], next_bar=runs["next"], seeds=runs["seeds"], others=excess)
+        record["ti"][tag] = verdict
         print(verdict.get("text", json.dumps(verdict, default=str)[:2000]), file=out)
     for family, payload in s1_runs.items():
         verdict = sv.s1_verdict(payload, seeds=s1_seeds.get(family, []), others=excess)

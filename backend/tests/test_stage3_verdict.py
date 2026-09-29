@@ -494,16 +494,16 @@ def test_the_verdict_command_reads_a_directory_of_payloads(tmp_path):
     runs, next_bar, seeds = _ti_runs()
     for payload in runs:
         cost = int(payload["stage3_ti"]["cost_bps"])
-        (tmp_path / f"ti_{cost}.json").write_text(json.dumps(payload))
-    (tmp_path / "ti_nextbar.json").write_text(json.dumps(next_bar[0]))
+        (tmp_path / f"ti_lgbm_{cost}.json").write_text(json.dumps(payload))
+    (tmp_path / "ti_lgbm_nextbar.json").write_text(json.dumps(next_bar[0]))
     for k, payload in enumerate(seeds):
-        (tmp_path / f"ti_seed{k}.json").write_text(json.dumps(payload))
+        (tmp_path / f"ti_lgbm_seed{k}.json").write_text(json.dumps(payload))
     printed = stdio.StringIO()
     out = tmp_path / "verdicts.json"
     code = cli.run(cli.build_parser().parse_args(["--dir", str(tmp_path), "--out", str(out)]), out=printed)
     assert code == 0
     record = json.loads(out.read_text())
-    assert record["ti"] is not None
+    assert set(record["ti"]) == {"lgbm"}
     # No overlay payloads were written: every S1 family is reported missing.
     assert any(name.startswith("s1_") for name in record["missing"])
     assert "missing payloads" in printed.getvalue()
