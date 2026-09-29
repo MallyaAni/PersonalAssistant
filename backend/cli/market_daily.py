@@ -692,9 +692,9 @@ def _paper_trade(
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import (
         actions,
-        event_execution,
         event_risk,
         live_policy,
+        nightly_plan,
         paper,
     )
     from backend.market import alpaca_trading
@@ -704,19 +704,11 @@ def _paper_trade(
     held = {p.symbol: p.qty for p in client.positions()}
     panel = report.panel
     last = len(panel.dates) - 1
-    prices = {
-        ticker: float(panel.close[last, column])
-        for column, ticker in enumerate(panel.tickers)
-        if panel.close[last, column] == panel.close[last, column]
-    }
+    planner_inputs = nightly_plan.build(report, session)
+    prices = planner_inputs["prices"]
     # The account runs `live_policy.ACTIVE`; `report.book` is the desk's
     # `/3` sizing and is recorded, not traded (live_policy.py says why).
-    targets = live_policy.targets(report)
-    grades = {
-        ticker: report.graded.letter(last, column)
-        for column, ticker in enumerate(panel.tickers)
-        if ticker != panel.benchmark
-    }
+    targets = planner_inputs["targets"]
     state = paper.load_state(store_root)
     # A state planned under another policy rebalances into the active one
     # tonight, once; the stamp on the new state stops it recurring.
@@ -753,26 +745,29 @@ def _paper_trade(
     # measured 24 points of CAGR a year worse than holding. See the table at
     # the top of `desk/exit.py`.
     blocked, blocking_flags = _band_blocked(report)
-    event_active = bool(state.event_cycle) or policy.get("factor") == event_risk.REDUCED
-    if state.pending or event_active or not policy["calendar_known"]:
-        orders, new_state, what = event_execution.plan(
-            session, state, held, prices, account.cash, policy
-        )
-    else:
-        orders, new_state, what = paper.plan(
-            session,
-            state,
-            account.equity,
-            held,
-            prices,
-            targets,
-            grades,
-            finished=_downgraded(report, held),
-            force_rebalance=rebalance_now,
-            entry_blocked=blocked,
-            entries=_price_entries(report),
-            cash=account.cash,
-        )
+    ordinary = not nightly_plan.uses_event_plan(state, policy)
+    # Keep event protection independent of entry calculation. Downgrades are
+    # frozen for every covered name and filtered by each account's holdings.
+    downgrades = (
+        _downgraded(report, dict.fromkeys(planner_inputs["grades"], 1))
+        if ordinary
+        else None
+    )
+    planner_inputs = nightly_plan.complete(
+        planner_inputs,
+        policy,
+        blocking_flags,
+        downgrades=downgrades,
+        entries=_price_entries(report) if ordinary else None,
+    )
+    orders, new_state, what = nightly_plan.plan(
+        planner_inputs,
+        state,
+        account.equity,
+        held,
+        account.cash,
+        force_rebalance=rebalance_now,
+    )
     # The stamp says "this state's book is the active policy's". It is
     # written when the book already was, or when tonight's plan rebalanced
     # into it; a session that could not rebalance (an event cycle, pending
@@ -886,7 +881,9 @@ def _paper_trade(
         f"  equity {entry['equity']:,.0f}, P/L since the start "
         f"{entry['pl']:+,.0f} ({entry['pl_pct'] * 100:+.1f}%)"
     )
-    return entry
+    # Carry the exact market inputs to the desk record without duplicating
+    # them inside the paper account's historical balance observations.
+    return {**entry, "planner_inputs": planner_inputs}
 
 
 # The frozen ML observer, gated on the data it needs: today's bars for
@@ -1088,13 +1085,17 @@ def record(
     policy_shadows: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
-    from backend.agents.trading.desk import event_risk, live_policy
+    from backend.agents.trading.desk import event_risk, live_policy, nightly_plan
 
     panel = report.panel
     last = len(panel.dates) - 1
     state = report.regime.today()
     grades = {}
-    _, blocking_flags = _band_blocked(report)
+    planner_inputs = nightly_plan.recorded(paper, str(panel.dates[last]))
+    if planner_inputs is None:
+        _, blocking_flags = _band_blocked(report)
+    else:
+        blocking_flags = planner_inputs["blocking_flags"]
     # Every name carries its own reason, written from the same evidence the
     # grade came from. The model's brief covers only the names held, so
     # without this the view answers "what" for ninety names and "why" for
@@ -1175,7 +1176,14 @@ def record(
         # What the account trades and the dashboard sizes against: the active
         # policy's weight for every graded name (`live_policy`). `book` below
         # is the desk's `/3` sizing, kept on the record for reference.
-        "targets": live_policy.record_targets(report),
+        "targets": (
+            nightly_plan.record_targets(planner_inputs)
+            if planner_inputs is not None
+            else live_policy.record_targets(report)
+        ),
+        # None for legacy/no completed planner calls; never reconstructed as
+        # evidence of what an account used. Personal execution is not enabled.
+        "planner_inputs": planner_inputs,
         "book": [
             {
                 "ticker": s.position.ticker,
@@ -1188,9 +1196,17 @@ def record(
             for s in report.book
         ],
         "briefs": briefs or {},
-        "paper": paper,
+        "paper": (
+            {k: v for k, v in paper.items() if k != "planner_inputs"}
+            if paper is not None
+            else None
+        ),
         "event_risk": {
-            **event_risk.decision(panel),
+            **(
+                planner_inputs["event_policy"]
+                if planner_inputs is not None
+                else event_risk.decision(panel)
+            ),
             "outcome": ((paper or {}).get("event_risk") or {}).get("outcome"),
             "execution_pending": bool(
                 ((paper or {}).get("event_risk") or {}).get("cycle")

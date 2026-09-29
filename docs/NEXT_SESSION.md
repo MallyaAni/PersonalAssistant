@@ -1,5 +1,18 @@
 # Next session
 
+## 2026-09-29 — Shared-input prerequisite on a separate branch
+
+`fix/shared-strategy-inputs-20260929` factors the current nightly dispatcher and
+records its exact market-only inputs. **239 offline tests passed**; the ordinary
+and event rules are unchanged. See [scope, evidence and remaining boundaries](
+research/shared-planner-inputs-2026-09-29.md). This is not on main, not deployed,
+and does not connect personal Stock rankings to the shared planner yet.
+
+Next: explicit independent personal enrollment and confirmed-execution state,
+then use the shared inputs/planner and identical timing. Event-only input blocks
+currently omit ordinary entries; do not use them for another account's ordinary
+plan or claim full parity. No personal account state has been initialized.
+
 ## 2026-09-29 — Dashboard/account audit; shared-strategy request
 
 The operator uses **Stock rankings** to trade his real account and found Hold
