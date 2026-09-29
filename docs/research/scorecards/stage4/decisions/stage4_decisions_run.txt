@@ -1,0 +1,54 @@
+=== stage4 decisions dabd3f5 docs(research): stage-4 addendum 2 - the split-basis 2026-09-29T19:27:13Z
+5e52e1f09b0944c50ad70402b304932d844f2e9409aa14b51c751623a2d93648  /home/animallya96/deploy/anios/data/market/research/stage4/stage4_labels.npz
+b3504862d54bd635b2e80570252c9323ed4dfd232834eb22db17b02ca561a652  /home/animallya96/deploy/anios/data/market/research/stage4/forecasts/stage4_cnn_i20_buy.npz
+56483400fce73d0e218bdf6e69cfe88f4350b57d7508af25d70f93bc280bab69  /home/animallya96/deploy/anios/data/market/research/stage4/forecasts/stage4_cnn_i20_sell.npz
+489e6f0caa656ce4e68bc20a2fa4f9b9a7703d1f1f8d96f033dbd78c19b8c95b  /home/animallya96/deploy/anios/data/market/research/stage4/forecasts/stage4_lgbm_buy.npz
+5abd1ddae94129187b3fe92a7a6634e2b0744749acaf4001185fc7bda5f3e478  /home/animallya96/deploy/anios/data/market/research/stage4/forecasts/stage4_lgbm_sell.npz
+2c9e55507396377a3c289e4a2f3f1c9591e2a7d8437a8a3f8780219b00807431  /home/animallya96/deploy/anios/data/market/research/stage4/forecasts/stage4_seq_buy.npz
+091de895af7249f7ec4bacfb13cb26a375eb96f7bf6f5abdb991f40bec2f24e5  /home/animallya96/deploy/anios/data/market/research/stage4/forecasts/stage4_seq_sell.npz
+[      5 s] export: 88,063 T-S1 rows; forecasts: lgbm_buy, lgbm_sell, cnn_i20_buy, cnn_i20_sell, seq_buy, seq_sell
+[    272 s] desk: 2951 sessions x 95 names
+[    272 s] cubes: 94 of 94 names
+[    273 s] edgar: 94 names (268 s)
+[    276 s] fills: 94 names with a cube
+[    280 s]   offset 0: 2536 orders from session 0
+[    285 s]   offset 1: 2524 orders from session 1
+[    289 s]   offset 2: 2521 orders from session 2
+[    293 s]   offset 3: 2542 orders from session 3
+[    298 s]   offset 4: 2541 orders from session 4
+[    302 s]   offset 5: 2546 orders from session 5
+[    306 s]   offset 6: 2579 orders from session 6
+[    310 s]   offset 7: 2500 orders from session 7
+[    314 s]   offset 8: 2621 orders from session 8
+[    328 s]   offset 9: 2597 orders from session 9
+[    336 s]   offset 10: 2523 orders from session 10
+[    348 s]   offset 11: 2604 orders from session 11
+[    353 s]   offset 12: 2597 orders from session 12
+[    358 s]   offset 13: 2636 orders from session 13
+[    363 s]   offset 14: 2525 orders from session 14
+[    368 s]   offset 15: 2621 orders from session 15
+[    373 s]   offset 16: 2600 orders from session 16
+[    377 s]   offset 17: 2505 orders from session 17
+[    382 s]   offset 18: 2561 orders from session 18
+[    387 s]   offset 19: 2522 orders from session 19
+stage-4 decision test (docs/research/stage4-plan-2026-09-29.md) as of 2026-09-28: 14 candidates on the executed orders of ew-redeploy against dip_or_close; 20 of 20 offsets, statistics at offset 10; model window 2017-12-27..2023-12-29 (forecasts); Newey-West lag 20
+orders at the median offset: model 1433 (1058 buys, 375 sells); 2024-2026 551 (392 buys, 159 sells)
+drift: model +8.07 bp/session over 9741 A/A+ name-days; 2024-2026 +17.69 bp/session over 3407 A/A+ name-days
+
+RECORD: no candidate clears every criterion; the board keeps dip_or_close
+  D0_buy (always): model window -0.9 bp/session (t -1.54); next-bar -0.9 (t -1.54) fails; 2024-2026 +0.5 bp/session; deflated Sharpe +0.00 at N = 14; seeds n/a (a rule); drift-adjusted -0.3 (t -0.60); per re-timed order -39.7 bp (t -1.83) over 932 of 1058 orders; waited 73% (mean +3.2 sessions) - RECORD
+  D0_sell (always): model window +1.6 bp/session (t +2.04); next-bar +1.6 (t +2.04) fails; 2024-2026 -2.9 bp/session; deflated Sharpe +0.32 at N = 14; seeds n/a (a rule); drift-adjusted +1.1 (t +1.33); per re-timed order +63.6 bp (t +1.98) over 351 of 375 orders; waited 83% (mean +3.0 sessions) - RECORD
+  D1_buy (news_and_stress): model window -0.7 bp/session (t -1.41); next-bar -0.7 (t -1.40) fails; 2024-2026 +0.6 bp/session; deflated Sharpe +0.00 at N = 14; seeds n/a (a rule); drift-adjusted -0.3 (t -0.59); per re-timed order -18.5 bp (t -1.12) over 648 of 1058 orders; waited 50% (mean +3.2 sessions) - RECORD
+  D1_sell (news_and_stress): model window +1.6 bp/session (t +2.06); next-bar +1.6 (t +2.06) fails; 2024-2026 -3.0 bp/session; deflated Sharpe +0.34 at N = 14; seeds n/a (a rule); drift-adjusted +1.1 (t +1.42); per re-timed order +75.3 bp (t +2.20) over 310 of 375 orders; waited 75% (mean +3.0 sessions) - RECORD
+  D2_buy (turn): model window -0.3 bp/session (t -1.04); next-bar -0.3 (t -1.04) fails; 2024-2026 -1.4 bp/session; deflated Sharpe +0.00 at N = 14; seeds n/a (a rule); drift-adjusted -0.2 (t -0.61); per re-timed order -44.9 bp (t -1.19) over 319 of 1058 orders; waited 28% (mean +2.6 sessions) - RECORD
+  D2_sell (turn): model window +0.4 bp/session (t +0.84); next-bar +0.4 (t +0.84) fails; 2024-2026 -0.7 bp/session; deflated Sharpe +0.03 at N = 14; seeds n/a (a rule); drift-adjusted +0.2 (t +0.35); per re-timed order +16.2 bp (t +0.49) over 160 of 375 orders; waited 40% (mean +2.8 sessions) - RECORD
+  D3_buy (squeeze): model window +0.1 bp/session (t +0.44); next-bar +0.1 (t +0.44) fails; 2024-2026 -0.4 bp/session; deflated Sharpe +0.01 at N = 14; seeds n/a (a rule); drift-adjusted +0.2 (t +0.80); per re-timed order +35.2 bp (t +0.66) over 85 of 1058 orders; waited 8% (mean +3.7 sessions) - RECORD
+  D3_sell (squeeze): model window -0.1 bp/session (t -0.38); next-bar -0.1 (t -0.39) fails; 2024-2026 -0.6 bp/session; deflated Sharpe +0.00 at N = 14; seeds n/a (a rule); drift-adjusted -0.2 (t -0.72); per re-timed order -24.0 bp (t -0.32) over 37 of 375 orders; waited 10% (mean +3.6 sessions) - RECORD
+  D4_buy (m1_lgbm): model window -0.1 bp/session (t -0.85); next-bar -0.1 (t -0.87) fails; 2024-2026 +0.2 bp/session; deflated Sharpe +0.00 at N = 14; seeds stable (1 sign changes of 5); drift-adjusted -0.0 (t -0.45); per re-timed order -56.3 bp (t -0.97) over 55 of 1058 orders; waited 5% (mean +3.4 sessions) - RECORD
+  D4_sell (m1_lgbm): model window +1.6 bp/session (t +2.02); next-bar +1.6 (t +2.01) fails; 2024-2026 -2.3 bp/session; deflated Sharpe +0.33 at N = 14; seeds stable (0 sign changes of 5); drift-adjusted +1.1 (t +1.33); per re-timed order +68.2 bp (t +2.07) over 334 of 375 orders; waited 79% (mean +3.0 sessions) - RECORD
+  D5_buy (m2_cnn_i20): model window -0.4 bp/session (t -1.23); next-bar -0.4 (t -1.20) fails; 2024-2026 +0.2 bp/session; deflated Sharpe +0.00 at N = 14; seeds stable (0 sign changes of 5); drift-adjusted -0.2 (t -0.52); per re-timed order -43.9 bp (t -2.01) over 368 of 1058 orders; waited 28% (mean +3.2 sessions) - RECORD
+  D5_sell (m2_cnn_i20): model window +0.9 bp/session (t +1.38); next-bar +0.9 (t +1.38) fails; 2024-2026 -2.2 bp/session; deflated Sharpe +0.12 at N = 14; seeds stable (0 sign changes of 5); drift-adjusted +0.5 (t +0.74); per re-timed order +65.8 bp (t +1.82) over 244 of 375 orders; waited 57% (mean +3.1 sessions) - RECORD
+  D6_buy (m3_seq): model window +0.1 bp/session (t +1.68); next-bar +0.1 (t +1.68) fails; 2024-2026 -0.1 bp/session; deflated Sharpe +0.09 at N = 14; seeds stable (0 sign changes of 5); drift-adjusted +0.1 (t +1.86); per re-timed order +86.4 bp (t +0.86) over 23 of 1058 orders; waited 2% (mean +3.2 sessions) - RECORD
+  D6_sell (m3_seq): model window +1.5 bp/session (t +1.82); next-bar +1.5 (t +1.81) fails; 2024-2026 -3.0 bp/session; deflated Sharpe +0.26 at N = 14; seeds stable (0 sign changes of 5); drift-adjusted +0.9 (t +1.15); per re-timed order +58.5 bp (t +1.73) over 332 of 375 orders; waited 78% (mean +3.0 sessions) - RECORD
+wrote /home/animallya96/deploy/anios/data/market/research/stage4/stage4_decisions.json
+=== exit 0 2026-09-29T19:33:42Z
