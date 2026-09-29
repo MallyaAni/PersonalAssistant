@@ -76,3 +76,8 @@ The unrelated forward shadow remains unchanged and is not scheduled here.
 
 Diagram impact: NONE — an optional simulator eligibility condition and a
 research comparison using the existing data and execution paths.
+
+Pre-run clarification: rebuilding the existing desk calls its historical
+expectations-gap fitting routine. That routine is unchanged and shared by
+every account. "No new model fits" above means no selection-model training
+or search for this ablation, not that the inherited desk has no fitting.

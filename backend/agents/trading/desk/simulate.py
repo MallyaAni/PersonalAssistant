@@ -125,6 +125,7 @@ class MidcycleVariant:
     exits: bool = True
     today: dict[str, float] = field(default_factory=dict)
     at_rebalance: dict[str, float] = field(default_factory=dict)
+    target_gate: bool = False
 
 
 # The session's inputs to the shared paper planner, read from the book and
@@ -369,6 +370,7 @@ def _redeploy_orders(  # noqa: C901 - the takers, their room and the fill in one
 def _variant_midcycle_orders(
     session, equity, held, prices, grades, finished, entries, excluded, cash,
     mode, sweep, today, at_rebalance, unfunded=None, redeploy=None, exits=True,
+    *, target_gate=False,
 ) -> list:
     """Return tonight's funded mid-cycle orders under the variant."""
     from backend.agents.trading.desk import paper
@@ -388,6 +390,11 @@ def _variant_midcycle_orders(
             for s, b in entries.items()
             if grades.get(s) in paper.ENTRY_MIN_GRADE and s not in finished
         }
+        if target_gate:
+            eligible = {
+                s: b for s, b in eligible.items()
+                if np.isfinite(today.get(s, 0.0)) and today.get(s, 0.0) > 0
+            }
         orders += paper._entry_orders(
             eligible, projected, prices, equity, session, state, excluded,
             whole_shares=False,
@@ -490,6 +497,7 @@ def _live_midcycle(
             unfunded=unfunded,
             redeploy=variant.redeploy,
             exits=variant.exits,
+            target_gate=variant.target_gate,
         )
     orders = retry + planned
     wanted = book.shares.copy()
@@ -1045,6 +1053,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     midcycle_exits: bool = True,
     reset_topup: bool = False,
     midcycle_trims: bool = False,
+    midcycle_target_gate: bool = False,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -1055,6 +1064,11 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     `market_daily.curve_block` draws - `use_exits=False`, the live reset
     cadence, the FOMC lifecycle and `**LIVE_POLICY` - and a measurement
     meant to describe the account has to be made the same way.
+
+    `midcycle_target_gate` is an offline, default-off breakout-eligibility
+    ablation. Only new breakout buys require a positive current allocator
+    target. Sizes, exits, deferred retries and all other legs are unchanged;
+    this does not liquidate excluded holdings or modify the paper planner.
 
     `allocator(report, panel, config, t)` replaces the rule's targets on
     rebalance sessions when given; everything else - fills, costs, the
@@ -1246,12 +1260,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         or bool(midcycle_sweep)
         or bool(midcycle_redeploy)
         or not midcycle_exits
+        or bool(midcycle_target_gate)
     )
     if midcycle_variant and not live_midcycle:
         raise ValueError(
-            "midcycle_entries, midcycle_sweep, midcycle_redeploy and midcycle_exits "
+            "midcycle_entries, midcycle_sweep, midcycle_redeploy, midcycle_exits "
+            "and midcycle_target_gate "
             "require live_midcycle"
         )
+    if midcycle_target_gate and midcycle_entries != MIDCYCLE_BREAKOUT:
+        raise ValueError("midcycle_target_gate requires breakout entries")
     if reset_topup and live_midcycle:
         raise ValueError(
             "reset_topup is for a book without live_midcycle; use midcycle_redeploy"
@@ -1687,6 +1705,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                     bool(midcycle_exits),
                     _weights_by_symbol(decide(report, panel, config, t), panel.tickers),
                     rebalance_weights,
+                    target_gate=bool(midcycle_target_gate),
                 )
             order = _live_midcycle(
                 book,
