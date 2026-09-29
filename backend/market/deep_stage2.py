@@ -755,6 +755,8 @@ def _fitter(
 # first fit once `MIN_TRAIN` sessions exist, a refit every `REFIT`
 # sessions on every row whose session is more than `PURGE` sessions
 # before the test block's first session, predictions on the block only.
+# Each head remains missing until its own purged labels meet MIN_NAMES;
+# fit receipts retain the per-head counts rather than only their union.
 # Returns {target: Forecast}; `log` receives one line per fit.
 def walk_forward(
     ds: Dataset2,
@@ -785,14 +787,27 @@ def walk_forward(
         test = (s >= start) & (s < end)
         if train.sum() < MIN_NAMES or not test.any():
             continue
+        head_counts = np.isfinite(y[train]).sum(axis=0)
         began = time.perf_counter()
-        values[test], parameters = fit_predict(train, test)
+        prediction, parameters = fit_predict(train, test)
+        prediction = np.array(prediction, dtype=float, copy=True)
+        prediction[:, head_counts < MIN_NAMES] = np.nan
+        values[test] = prediction
         seconds = time.perf_counter() - began
         record = {
             "train_through": str(ds.sessions[start - PURGE - 1]),
             "test_start": str(ds.sessions[start]),
             "test_end": str(ds.sessions[end - 1]),
             "n_train": int(train.sum()),
+            "n_train_by_target": {
+                target: int(count)
+                for target, count in zip(targets, head_counts, strict=True)
+            },
+            "supervised_targets": [
+                target
+                for target, count in zip(targets, head_counts, strict=True)
+                if count >= MIN_NAMES
+            ],
             "n_test": int(test.sum()),
             "seconds": seconds,
         }

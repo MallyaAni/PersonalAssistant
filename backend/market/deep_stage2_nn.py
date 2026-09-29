@@ -44,7 +44,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from backend.market.deep_intraday import announce_device, resolve_device
+from backend.market.deep_intraday import MIN_NAMES, announce_device, resolve_device
 from backend.market.deep_intraday_cnn import (
     TemporalCNN,
     _standardizer,
@@ -146,7 +146,8 @@ def _loss(out: torch.Tensor, y: torch.Tensor, kinds: tuple[str, ...]) -> torch.T
 # targets `y_train` (n, H) with loss kinds `kinds` (H,) under the fixed
 # configuration and return (the (m, H) test predictions - probabilities
 # for a bce head, the target's scale for an mse head - and the parameter
-# count). `device` is "auto", "cpu" or "cuda".
+# count). Heads below the existing minimum observed-label count stay NaN.
+# `device` is "auto", "cpu" or "cuda".
 def fit_predict(
     family: str,
     seq_train: np.ndarray,
@@ -208,6 +209,8 @@ def fit_predict(
             predicted[:, h] = 1.0 / (1.0 + np.exp(-predicted[:, h]))
         else:
             predicted[:, h] = predicted[:, h] * scales[h] + means[h]
+    # Other supervised heads can train shared layers without teaching this output.
+    predicted[:, np.isfinite(y_train).sum(axis=0) < MIN_NAMES] = np.nan
     return predicted, parameter_count(model)
 
 
