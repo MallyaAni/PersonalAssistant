@@ -145,13 +145,67 @@ that session's official close. `sr_verdict` applies the plan's criteria:
 REPLACES the board's rule only at >= REPLACE_BP a session over
 `dip_or_close` with t >= REPLACE_T on the choosing window and not worse on
 the reported window; anything else RECORD. SR_TRIALS = 2.
+
+The stage-3 T-I trial
+---------------------
+`docs/research/stage3-plan-2026-09-29.md` ("The two questions", T-I) asks
+whether a model of "now or the close" beats the board's rule. A T-I
+forecast (`stage3_io.Stage3Forecast`, kind "ti") holds, per (name, fill
+session s, slot k = 0..23), y-hat of y = 1e4 * ln(official close / bar k's
+close) in bp: above zero, buying at bar k's close beats waiting for the
+close; below zero, selling now does. `stage3_io.ti_lookup` gives each
+(name, fill session) its (24,) vector. Four conventions (`TI_RULES`), each
+one of the plan's eight outer candidates, priced only when named:
+
+  <family>_filter  the board's trigger with a model veto: a buy at the first
+                   bar close at or below open * (1 - DIP) (slot k*, exactly
+                   dip_or_close's) fills there when y-hat(k*) > 0 and at the
+                   official close otherwise; a trigger at slot 24 or 25
+                   (after 15:30) has no forecast and fills as dip_or_close
+                   (counted, a "late trigger"); no trigger fills at the
+                   close. A sell mirrors on the 1% pop and y-hat(k*) < 0.
+  <family>_free    the model picks the moment: a buy fills at the close of
+                   the first slot 0..23 with y-hat > 0, else the official
+                   close; a sell at the first with y-hat < 0.
+
+`<family>` is `lgbm` (M1) or `seq` (M3). An order whose (name, fill
+session) has no vector, or an all-NaN one, fills exactly as dip_or_close
+and is counted ("no forecast", carried in the detail's `no_sigma`). A NaN
+slot inside a vector that has forecasts is no veto for the filter (the
+board's fill stands) and is skipped by the free rule; the forecast files
+carry all 24 slots of a name-session or none, so this is recorded
+(`partial_vectors`) rather than expected.
+
+`next_bar=True` (the CLI's `--next-bar`, the plan's robustness run) moves
+every fill made at a bar close - dip_or_close, the dip-rule level
+conventions (vol_dip_0.5, vol_dip_1.0, trail_dip), the SR pair and the four
+T-I conventions, candidate and control alike - to the next bar's open: a
+fill at close[k] becomes open[k + 1], and a fill at slot 25 goes to the
+official close. The open, the VWAPs, the official close and the resting
+limit are not bar-close fills and do not move. Off, every price is
+byte-identical to the engine before this trial.
+
+With a T-I convention priced the payload gains a "stage3_ti" block
+(`_ti_block`): per convention and window - the model window (from the
+family's first forecast session through 2023-12-29), 2016-2023 and
+2024-2026 - the paired daily difference against dip_or_close at the median
+offset (bp, Newey-West t at `stage3_io.HAC_LAG`), the median CAGRs and the
+offsets above dip_or_close, the excess series' moments (for the deflated
+Sharpe), and from the median offset's orders in the window, per side (all,
+buy, sell): the share filled before the close, the gain per such fill and
+per order over the session's official close, the no-forecast and
+late-trigger counts, and candidate minus control in bp per order over the
+orders the two fill differently, with a t clustered by fill session. The
+REPLACES / RECORD verdict needs several runs (10, 16 and 25 bp, a
+`--next-bar` run, five single-seed runs) and lives in `stage3_verdict`;
+the block carries only this run's reading.
 """
 
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
@@ -159,7 +213,13 @@ import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import paper, policy_v4, simulate
-from backend.market import candidate_stats, session_anatomy, sr_levels
+from backend.market import (
+    candidate_stats,
+    session_anatomy,
+    sr_levels,
+    stage3_io,
+    stage3_verdict,
+)
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 from backend.market.vol_forecast import Aligned, sigma
 
@@ -261,18 +321,63 @@ SR_MIN_CONFLUENCE: dict[str, int] = {"level_dip": 1, "level_dip_confluence": 2}
 # Two SR conventions were registered, so the best is deflated against two.
 SR_TRIALS = len(SR_CONVENTIONS)
 SR_PLAN = "docs/research/sr-levels-plan-2026-09-29.md"
-# Every convention `price_book` knows, in registered order: the fill-timing
-# and entry-level trials' (ALL_CONVENTIONS, the default sets) and the SR
-# trial's, which are priced only when named.
+# The fill-timing, entry-level and SR trials' conventions, in registered
+# order: the fill-timing and entry-level trials' (ALL_CONVENTIONS, the
+# default sets) and the SR trial's, which are priced only when named.
 KNOWN_CONVENTIONS = ALL_CONVENTIONS + SR_CONVENTIONS
+
+
+# The stage-3 T-I trial (docs/research/stage3-plan-2026-09-29.md), fixed
+# before any run: a family's forecast of 1e4 * ln(official close / bar k's
+# close) either vetoes the board's 1% trigger ("filter") or picks the slot
+# itself ("free"). Priced only when named, each with its family's forecast.
+TI_FILTER = "filter"
+TI_FREE = "free"
+
+
+@dataclass(frozen=True)
+class TiRule:
+    """One stage-3 T-I convention: the family whose forecast it reads, its rule."""
+
+    family: str  # stage3_io.LGBM (M1) or stage3_io.SEQ (M3)
+    rule: str  # TI_FILTER: veto the board's trigger; TI_FREE: the model picks the slot
+
+
+TI_RULES: dict[str, TiRule] = {
+    "lgbm_filter": TiRule(stage3_io.LGBM, TI_FILTER),
+    "lgbm_free": TiRule(stage3_io.LGBM, TI_FREE),
+    "seq_filter": TiRule(stage3_io.SEQ, TI_FILTER),
+    "seq_free": TiRule(stage3_io.SEQ, TI_FREE),
+}
+TI_CONVENTIONS = tuple(TI_RULES)
+# The T-I families, as stage3_io registers them.
+TI_FAMILIES = stage3_io.FAMILIES[stage3_io.TI]
+# The plan that registered them.
+STAGE3_PLAN = stage3_io.PLAN
+# What a T-I convention has to beat: the board's rule.
+TI_CONTROL = LEVEL_CONTROL
+# The T-I block's windows: the model window runs from the family's first
+# forecast session up to (not including) TI_MODEL_END, i.e. through the
+# last session of 2023; the other two are the choosing and reported windows.
+TI_MODEL = "model"
+TI_MODEL_END = date(2024, 1, 1)
+TI_WINDOWS = (TI_MODEL, "2016-2023", "2024-2026")
+# Every convention `price_book` knows, in registered order.
+PRICEABLE = KNOWN_CONVENTIONS + TI_CONVENTIONS
 # The conventions that wait for a price, and so have a dip fill rate.
-WAITING = (LEVEL_CONTROL, *LEVEL_CONVENTIONS, *SR_CONVENTIONS)
+WAITING = (LEVEL_CONTROL, *LEVEL_CONVENTIONS, *SR_CONVENTIONS, *TI_CONVENTIONS)
 
 assert tuple(LEVELS) == LEVEL_CONVENTIONS
 assert LEVELS[LEVEL_TWIN] == Level(DIP_RULE, 0.5, TRAILING)
 assert not set(CONVENTIONS) & set(LEVEL_CONVENTIONS)
 assert not set(ALL_CONVENTIONS) & set(SR_CONVENTIONS)
 assert tuple(SR_MIN_CONFLUENCE) == SR_CONVENTIONS
+assert not set(KNOWN_CONVENTIONS) & set(TI_CONVENTIONS)
+assert {r.family for r in TI_RULES.values()} == set(TI_FAMILIES)
+assert TI_CONVENTIONS == stage3_verdict.TI_CANDIDATES
+assert all(f"{r.family}_{r.rule}" == c for c, r in TI_RULES.items())
+assert stage3_io.TI_SLOTS < FULL_SESSION_SLOTS
+assert TI_WINDOWS[1:] == ("2016-2023", "2024-2026")
 
 
 @dataclass(frozen=True)
@@ -292,7 +397,12 @@ class WaitDetail:
     sell_hit: np.ndarray  # (T, N) bool: a sell filled at its level before the close
     buy_gain_bp: np.ndarray  # (T, N) (close - fill) / close in bp, NaN off the cube
     sell_gain_bp: np.ndarray  # (T, N) (fill - close) / close in bp
-    no_sigma: np.ndarray  # (T, N) bool: sigma missing, filled as dip_or_close
+    # (T, N) bool: sigma (or a T-I forecast) missing, filled as dip_or_close
+    no_sigma: np.ndarray
+    # The T-I filter conventions only (None elsewhere): the order's 1%
+    # trigger came at slot 24 or 25, after the last forecast slot.
+    buy_late: np.ndarray | None = None
+    sell_late: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -315,6 +425,8 @@ class OrderLog:
     hit: np.ndarray  # (M,) bool: filled at its level before the close
     gain_bp: np.ndarray  # (M,) gain over that session's official close, bp
     no_sigma: np.ndarray  # (M,) bool: sigma missing, filled as dip_or_close
+    column: np.ndarray | None = None  # (M,) the name's panel column
+    late: np.ndarray | None = None  # (M,) bool: a T-I filter's trigger after slot 23
 
 
 @dataclass(frozen=True)
@@ -372,40 +484,93 @@ def _official_close(cube: SessionCube) -> np.ndarray:
     return np.where(np.isfinite(auction), auction, last)
 
 
-# The first bar close at or past a per-session level, else the official
-# close: a buy waits for a close at or below `level`, a sell for one at or
-# above it. Returns the price and whether the level was reached (the dip
-# fill) for every session. Every order fills.
-def _first_close_past(
+# The price of a fill made at bar `first` of each session: that bar's close,
+# or with `next_bar` the next bar's open - what a person acting after the
+# bar has closed can get - and the official close for a fill at the last
+# bar. Off, exactly the close the engine has always read.
+def _bar_price(
+    cube: SessionCube, first: np.ndarray, next_bar: bool = False
+) -> np.ndarray:
+    """Return (N,) close[first], or open[first + 1] (past the last bar: the close)."""
+    rows = np.arange(len(cube))
+    if not next_bar:
+        return cube.close[rows, first]
+    later = np.asarray(first) + 1
+    return np.where(
+        later < FULL_SESSION_SLOTS,
+        cube.open[rows, np.minimum(later, FULL_SESSION_SLOTS - 1)],
+        _official_close(cube),
+    )
+
+
+# Whether a fill made at bar `first` happened before the official close:
+# every such fill does, except that with `next_bar` a fill at the last bar
+# moves to the official close itself.
+def _filled_at_bar(
+    reached: np.ndarray, first: np.ndarray, next_bar: bool = False
+) -> np.ndarray:
+    """Return (N,) True where the order filled at a bar rather than the close."""
+    if not next_bar:
+        return reached
+    return reached & (np.asarray(first) + 1 < FULL_SESSION_SLOTS)
+
+
+# The first bar close at or past a per-session level: a buy's close at or
+# below it, a sell's at or above it. Returns whether any close got there
+# and the first slot that did (0 where none did).
+def _first_past(
     cube: SessionCube, side: str, level: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return ((N,) fill price, (N,) reached) for a close-triggered level."""
+    """Return ((N,) reached, (N,) first slot) for a close-triggered level."""
     if side == "buy":
         hit = cube.close <= level[:, None]
     else:
         hit = cube.close >= level[:, None]
-    any_hit = hit.any(axis=1)
-    first = np.argmax(hit, axis=1)
-    picked = cube.close[np.arange(len(cube)), first]
-    return np.where(any_hit, picked, _official_close(cube)), any_hit
+    return hit.any(axis=1), np.argmax(hit, axis=1)
+
+
+# The first bar close at or past a per-session level, else the official
+# close: a buy waits for a close at or below `level`, a sell for one at or
+# above it. Returns the price and whether the level was reached (the dip
+# fill) for every session. Every order fills. With `next_bar` the fill
+# moves to the next bar's open (`_bar_price`).
+def _first_close_past(
+    cube: SessionCube, side: str, level: np.ndarray, next_bar: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return ((N,) fill price, (N,) reached) for a close-triggered level."""
+    any_hit, first = _first_past(cube, side, level)
+    picked = _bar_price(cube, first, next_bar)
+    return (
+        np.where(any_hit, picked, _official_close(cube)),
+        _filled_at_bar(any_hit, first, next_bar),
+    )
+
+
+# The board's 1% level per session: open * (1 - DIP) for a buy, open *
+# (1 + DIP) for a sell. One expression, shared by dip_or_close and the T-I
+# filter's trigger.
+def _dip_level(cube: SessionCube, side: str) -> np.ndarray:
+    """Return (N,) the dip (buy) or pop (sell) level of every session."""
+    open0 = cube.open[:, 0]
+    return open0 * (1.0 - DIP) if side == "buy" else open0 * (1.0 + DIP)
 
 
 # The dip-or-close fill and whether the dip was reached: buys wait for a
 # close at or below open * (1 - DIP), sells for one at or above
 # open * (1 + DIP), else the official close.
-def _dip_or_close_fill(cube: SessionCube, side: str) -> tuple[np.ndarray, np.ndarray]:
+def _dip_or_close_fill(
+    cube: SessionCube, side: str, next_bar: bool = False
+) -> tuple[np.ndarray, np.ndarray]:
     """Return ((N,) fill price, (N,) reached) for dip_or_close."""
-    open0 = cube.open[:, 0]
-    level = open0 * (1.0 - DIP) if side == "buy" else open0 * (1.0 + DIP)
-    return _first_close_past(cube, side, level)
+    return _first_close_past(cube, side, _dip_level(cube, side), next_bar)
 
 
 # The first bar close at or past the dip threshold per session, else the
 # official close. Buys wait for a fall below open * (1 - DIP); sells for a
 # rise above open * (1 + DIP). Every order fills.
-def _dip_or_close(cube: SessionCube, side: str) -> np.ndarray:
+def _dip_or_close(cube: SessionCube, side: str, next_bar: bool = False) -> np.ndarray:
     """Return (N,) the dip-or-close fill price for `side`."""
-    return _dip_or_close_fill(cube, side)[0]
+    return _dip_or_close_fill(cube, side, next_bar)[0]
 
 
 # A resting limit at a per-session level, placed at the open: a buy fills
@@ -444,12 +609,14 @@ def entry_level(
 # largest confluence of a zone holding that close, among levels below the
 # prior bar's close) reaches the convention's minimum while the close is
 # below the session's open; a sell mirrors it on `zones.resistance` above
-# the open. Otherwise the order fills at the official close.
+# the open. Otherwise the order fills at the official close. With
+# `next_bar` the fill moves to the next bar's open (`_bar_price`).
 def sr_fills(
     cube: SessionCube,
     convention: str,
     side: str,
     zones: sr_levels.CloseZones | None,
+    next_bar: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ((N,) fill price, (N,) filled at a level) for an SR convention."""
     if side not in ("buy", "sell"):
@@ -470,31 +637,111 @@ def sr_fills(
     hit = (grid >= SR_MIN_CONFLUENCE[convention]) & beyond & late_enough[None, :]
     any_hit = hit.any(axis=1)
     first = np.argmax(hit, axis=1)
-    picked = cube.close[np.arange(len(cube)), first]
-    return np.where(any_hit, picked, _official_close(cube)), any_hit
+    picked = _bar_price(cube, first, next_bar)
+    return (
+        np.where(any_hit, picked, _official_close(cube)),
+        _filled_at_bar(any_hit, first, next_bar),
+    )
+
+
+@dataclass(frozen=True)
+class TiFills:
+    """A T-I convention's fill for every session of a cube, one side."""
+
+    price: np.ndarray  # (N,) raw fill price
+    hit: np.ndarray  # (N,) filled at a bar, before the official close
+    no_forecast: np.ndarray  # (N,) no forecast for the (name, session): dip_or_close
+    late: np.ndarray  # (N,) the filter's trigger at slot 24 or 25: dip_or_close's fill
+
+
+# The fill of a T-I convention for every session of a cube, one side, from
+# `yhat`, the (sessions, 24) forecast vectors of the cube's sessions (NaN
+# where a slot has none). The filter takes dip_or_close's trigger k* (the
+# first close at or past the 1% level, `_first_past` on `_dip_level`): at
+# k* <= 23 with a finite forecast it fills at close[k*] when the forecast
+# agrees (above zero for a buy, below zero for a sell) and at the official
+# close when it does not; at k* 24 or 25 it fills at close[k*] as
+# dip_or_close does (a late trigger); no trigger fills at the close. The
+# free rule fills at the close of the first slot 0..23 whose forecast
+# agrees, else at the official close. A session with no finite forecast
+# fills exactly as dip_or_close; a NaN forecast at k* is no veto. With
+# `next_bar` every bar fill moves to the next bar's open (`_bar_price`).
+def ti_fills(
+    cube: SessionCube,
+    convention: str,
+    side: str,
+    yhat: np.ndarray | None,
+    next_bar: bool = False,
+) -> TiFills:
+    """Return the TiFills of a T-I convention on every session of `cube`."""
+    if side not in ("buy", "sell"):
+        raise ValueError(f"side must be buy or sell, not {side!r}")
+    if convention not in TI_RULES:
+        raise ValueError(f"{convention!r} is not a stage-3 T-I convention")
+    if yhat is None:
+        raise ValueError(f"{convention} needs the T-I forecast vector of every session")
+    yhat = np.asarray(yhat, dtype=float)
+    if yhat.shape != (len(cube), stage3_io.TI_SLOTS):
+        raise ValueError(
+            f"forecast vectors have shape {yhat.shape}; expected "
+            f"({len(cube)}, {stage3_io.TI_SLOTS})"
+        )
+    base_price, base_hit = _dip_or_close_fill(cube, side, next_bar)
+    no_forecast = ~np.isfinite(yhat).any(axis=1)
+    rows = np.arange(len(cube))
+    with np.errstate(invalid="ignore"):
+        if TI_RULES[convention].rule == TI_FILTER:
+            reached, first = _first_past(cube, side, _dip_level(cube, side))
+            modelled = reached & (first < stage3_io.TI_SLOTS)
+            at = yhat[rows, np.minimum(first, stage3_io.TI_SLOTS - 1)]
+            agrees = at > 0.0 if side == "buy" else at < 0.0
+            veto = modelled & np.isfinite(at) & ~agrees
+            filled = reached & ~veto
+            late = reached & (first >= stage3_io.TI_SLOTS)
+        else:
+            agrees = yhat > 0.0 if side == "buy" else yhat < 0.0
+            filled = agrees.any(axis=1)
+            first = np.argmax(agrees, axis=1)
+            late = np.zeros(len(cube), dtype=bool)
+    price = np.where(filled, _bar_price(cube, first, next_bar), _official_close(cube))
+    hit = _filled_at_bar(filled, first, next_bar)
+    return TiFills(
+        price=np.where(no_forecast, base_price, price),
+        hit=np.where(no_forecast, base_hit, hit),
+        no_forecast=no_forecast,
+        late=late & ~no_forecast,
+    )
 
 
 # The fill of a convention that waits for a price (dip_or_close, a level
-# convention or an SR convention) for every session of a cube, with whether
-# the order filled at its level before the close and whether it had no
-# sigma. `sig` is (N,) per cube session for a level convention; a session
-# whose sigma is missing, not finite or not positive fills exactly as
-# dip_or_close. `zones` is the cube's CloseZones for an SR convention,
-# which never lacks a sigma.
+# convention, an SR convention or a T-I convention) for every session of a
+# cube, with whether the order filled at its level before the close and
+# whether it had no sigma (for a T-I convention: no forecast). `sig` is
+# (N,) per cube session for a level convention; a session whose sigma is
+# missing, not finite or not positive fills exactly as dip_or_close.
+# `zones` is the cube's CloseZones for an SR convention, which never lacks
+# a sigma. `yhat` is the (N, 24) T-I forecast vectors for a T-I convention
+# (`ti_fills`). `next_bar` moves every bar-close fill to the next bar's
+# open; the resting limit is not a bar-close fill and does not move.
 def waiting_fills(
     cube: SessionCube,
     convention: str,
     side: str,
     sig: np.ndarray | None = None,
     zones: sr_levels.CloseZones | None = None,
+    yhat: np.ndarray | None = None,
+    next_bar: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return ((N,) price, (N,) reached, (N,) no sigma) for a WAITING convention."""
     if side not in ("buy", "sell"):
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if convention in SR_CONVENTIONS:
-        price, hit = sr_fills(cube, convention, side, zones)
+        price, hit = sr_fills(cube, convention, side, zones, next_bar)
         return price, hit, np.zeros(len(cube), dtype=bool)
-    base_price, base_hit = _dip_or_close_fill(cube, side)
+    if convention in TI_RULES:
+        fills = ti_fills(cube, convention, side, yhat, next_bar)
+        return fills.price, fills.hit, fills.no_forecast
+    base_price, base_hit = _dip_or_close_fill(cube, side, next_bar)
     if convention == LEVEL_CONTROL:
         return base_price, base_hit, np.zeros(len(cube), dtype=bool)
     if convention not in LEVELS:
@@ -510,7 +757,7 @@ def waiting_fills(
     no_sigma = ~(np.isfinite(sig) & (sig > 0))
     level = entry_level(cube.open[:, 0], np.where(no_sigma, 0.0, sig), spec.k, side)
     if spec.rule == DIP_RULE:
-        price, hit = _first_close_past(cube, side, level)
+        price, hit = _first_close_past(cube, side, level, next_bar)
     else:
         price, hit = _resting_limit(cube, side, level)
     return (
@@ -523,21 +770,26 @@ def waiting_fills(
 # One convention's fill price for every session of a cube, on the raw
 # basis, for one side. The single place each convention's arithmetic lives
 # (a level convention's in `waiting_fills`, with `sig` per cube session; an
-# SR convention's in `sr_fills`, with the cube's `zones`).
+# SR convention's in `sr_fills`, with the cube's `zones`; a T-I
+# convention's in `ti_fills`, with the (N, 24) forecast vectors `yhat`).
+# `next_bar` moves the bar-close fills (dip_or_close and the waiting
+# conventions) to the next bar's open; the other conventions ignore it.
 def session_prices(
     cube: SessionCube,
     convention: str,
     side: str,
     sig: np.ndarray | None = None,
     zones: sr_levels.CloseZones | None = None,
+    yhat: np.ndarray | None = None,
+    next_bar: bool = False,
 ) -> np.ndarray:
     """Return (N,) raw-basis fill prices for `convention` and `side`."""
     if side not in ("buy", "sell"):
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if len(cube) == 0:
         return np.zeros(0)
-    if convention in LEVELS or convention in SR_CONVENTIONS:
-        return waiting_fills(cube, convention, side, sig, zones)[0]
+    if convention in LEVELS or convention in SR_CONVENTIONS or convention in TI_RULES:
+        return waiting_fills(cube, convention, side, sig, zones, yhat, next_bar)[0]
     if convention in ("next_open", "breakout_gate"):
         return np.asarray(cube.open[:, 0], dtype=float)
     if convention == "first_hour_vwap":
@@ -549,7 +801,7 @@ def session_prices(
     if convention == "next_close":
         return _official_close(cube)
     if convention == "dip_or_close":
-        return _dip_or_close(cube, side)
+        return _dip_or_close(cube, side, next_bar)
     if convention == "late_day":
         slots = list(LATE_SLOTS)
         return session_anatomy._vwap(cube.close[:, slots], cube.volume[:, slots])
@@ -563,7 +815,9 @@ def session_prices(
 # date: a blocked buy is deferred and the price is NaN. For a level
 # convention, `sig` is the volatility the order reads (NaN: dip_or_close).
 # For an SR convention, `zones` holds the session's (26,) support and
-# resistance confluence at each bar close.
+# resistance confluence at each bar close. For a T-I convention, `yhat` is
+# the session's (24,) forecast vector (all NaN: no forecast). `next_bar`
+# moves a bar-close fill to the next bar's open.
 def fill_price(
     row: dict[str, Any],
     convention: str,
@@ -571,6 +825,8 @@ def fill_price(
     blocked: bool = False,
     sig: float = math.nan,
     zones: sr_levels.CloseZones | None = None,
+    yhat: np.ndarray | None = None,
+    next_bar: bool = False,
 ) -> float:
     """Return the fill price for one session, NaN when the order is deferred."""
     if convention == "breakout_gate" and side == "buy" and blocked:
@@ -595,7 +851,12 @@ def fill_price(
             support=np.asarray(zones.support).reshape(1, FULL_SESSION_SLOTS),
             resistance=np.asarray(zones.resistance).reshape(1, FULL_SESSION_SLOTS),
         )
-    return float(session_prices(cube, convention, side, per_session, one)[0])
+    vector = None
+    if yhat is not None:
+        vector = np.asarray(yhat, dtype=float).reshape(1, stage3_io.TI_SLOTS)
+    return float(
+        session_prices(cube, convention, side, per_session, one, vector, next_bar)[0]
+    )
 
 
 # A level convention needs the (sessions, names) sigma grid, on the panel's
@@ -620,6 +881,116 @@ def _check_zones(
     """Raise ValueError when an SR convention has no close zones."""
     if convention in SR_CONVENTIONS and zones is None:
         raise ValueError(f"{convention} needs the close zones (fill_timing.sr_zones)")
+
+
+# A T-I convention needs its family's forecast lookup
+# (`stage3_io.ti_lookup`); the other conventions read none.
+def _check_ti(convention: str, ti: Mapping[Any, Any] | None) -> None:
+    """Raise ValueError when a T-I convention has no forecast lookup."""
+    if convention in TI_RULES and ti is None:
+        family = TI_RULES[convention].family
+        raise ValueError(f"{convention} needs the {family} T-I forecast lookup")
+
+
+@dataclass(frozen=True)
+class TiForecast:
+    """One family's T-I forecast as the engine reads it: the lookup, its origin."""
+
+    family: str
+    lookup: dict[tuple[str, np.datetime64], np.ndarray]
+    identity: dict[str, Any] = field(default_factory=dict)
+
+
+# A T-I forecast file's rows as the engine reads them: the family's
+# (ticker, fill session) -> (24,) lookup from `stage3_io.ti_lookup`, of the
+# seed ensemble or, with `seed_column`, of that single seed's column of
+# `yhat_seeds` (the seed-stability runs). `identity` (the file and its
+# sha256) is carried into the payload beside the seed column.
+def ti_forecast(
+    forecast: stage3_io.Stage3Forecast,
+    seed_column: int | None = None,
+    identity: dict[str, Any] | None = None,
+) -> TiForecast:
+    """Return the TiForecast of a T-I Stage3Forecast."""
+    if forecast.kind != stage3_io.TI:
+        raise ValueError(f"a T-I forecast is needed; this one is {forecast.kind!r}")
+    if forecast.family not in TI_FAMILIES:
+        raise ValueError(
+            f"T-I family {forecast.family!r} is not one of {', '.join(TI_FAMILIES)}"
+        )
+    column = None
+    if seed_column is not None:
+        seeds = np.asarray(forecast.yhat_seeds)
+        if seeds.ndim != 2 or not 0 <= int(seed_column) < seeds.shape[1]:
+            raise ValueError(
+                f"seed column {seed_column} is outside the file's "
+                f"{seeds.shape[1] if seeds.ndim == 2 else 0} seed columns"
+            )
+        column = seeds[:, int(seed_column)]
+    return TiForecast(
+        family=forecast.family,
+        lookup=stage3_io.ti_lookup(forecast, column),
+        identity={
+            **(identity or {}),
+            "family": forecast.family,
+            "seed_column": None if seed_column is None else int(seed_column),
+        },
+    )
+
+
+# The first fill session any slot of a lookup forecasts, as a date; None
+# when the lookup holds no finite forecast at all.
+def ti_first_session(
+    lookup: Mapping[tuple[str, np.datetime64], np.ndarray],
+) -> date | None:
+    """Return the earliest session whose vector has a finite forecast."""
+    days = [
+        np.datetime64(key[1], "D")
+        for key, vector in lookup.items()
+        if np.isfinite(np.asarray(vector, dtype=float)).any()
+    ]
+    if not days:
+        return None
+    first: date = min(days).astype(object)
+    return first
+
+
+# What a lookup covers: its (name, session) vectors, those with a forecast,
+# those with a forecast in some slots and NaN in others (never expected: a
+# name-session's 24 rows are predicted together), and the first and last
+# forecast sessions.
+def ti_coverage(
+    lookup: Mapping[tuple[str, np.datetime64], np.ndarray],
+) -> dict[str, Any]:
+    """Return the coverage record of a T-I lookup."""
+    finite = {key: np.isfinite(np.asarray(v, dtype=float)) for key, v in lookup.items()}
+    covered = [key for key, f in finite.items() if f.any()]
+    days = sorted(np.datetime64(key[1], "D") for key in covered)
+    return {
+        "vectors": len(lookup),
+        "vectors_with_forecast": len(covered),
+        "partial_vectors": sum(1 for f in finite.values() if f.any() and not f.all()),
+        "first_forecast_session": str(days[0]) if days else None,
+        "last_forecast_session": str(days[-1]) if days else None,
+    }
+
+
+# One ticker's forecast vectors on its cube's sessions, from a family's
+# lookup keyed by (ticker, fill session): (sessions, 24), NaN where the
+# lookup has no vector for that session.
+def ti_grid(
+    lookup: Mapping[tuple[str, np.datetime64], np.ndarray],
+    ticker: str,
+    dates: np.ndarray,
+) -> np.ndarray:
+    """Return the (len(dates), 24) forecast vectors of `ticker` on `dates`."""
+    days = np.asarray(dates, dtype="datetime64[D]")
+    out = np.full((len(days), stage3_io.TI_SLOTS), np.nan)
+    for i, day in enumerate(days):
+        vector = lookup.get((str(ticker), np.datetime64(day, "D")))
+        if vector is not None:
+            out[i] = np.asarray(vector, dtype=float)
+    return out
 
 
 # Where each cube session sits on the panel's calendar, and the ratio that
@@ -678,16 +1049,21 @@ def sr_zones(
 # basis, NaN where the name has no complete cube session that day. A level
 # convention needs `sig`, the (T, N) volatility each fill session's order
 # reads (`fill_sigma`); an SR convention needs `zones`, each name's close
-# zones on its cube's sessions (`sr_zones`). A WAITING convention's result
-# carries, per cell, whether the order filled at its level before the
-# close, its gain over the session's official close in bp, and whether it
-# had no sigma.
-def cube_prices(
+# zones on its cube's sessions (`sr_zones`); a T-I convention needs `ti`,
+# its family's (ticker, fill session) -> (24,) lookup. A WAITING
+# convention's result carries, per cell, whether the order filled at its
+# level before the close, its gain over the session's official close in
+# bp, and whether it had no sigma (for a T-I convention: no forecast; a
+# T-I filter's also whether its trigger came late). `next_bar` moves every
+# bar-close fill to the next bar's open.
+def cube_prices(  # noqa: C901 - one pass per name: scale, price, detail
     cubes: dict[str, SessionCube],
     panel,
     convention: str,
     sig: np.ndarray | None = None,
     zones: dict[str, sr_levels.CloseZones] | None = None,
+    ti: Mapping[tuple[str, np.datetime64], np.ndarray] | None = None,
+    next_bar: bool = False,
 ) -> FillPrices:
     """Return the FillPrices of `convention` aligned to `panel.dates`."""
     dates = np.asarray(panel.dates, dtype="datetime64[D]")
@@ -696,12 +1072,15 @@ def cube_prices(
     sell = np.full((rows, names), np.nan)
     available = np.zeros((rows, names), dtype=bool)
     waiting = convention in WAITING
+    ti_on = convention in TI_RULES
     _check_sigma_grid(convention, sig, (rows, names))
     _check_zones(convention, zones)
+    _check_ti(convention, ti)
     if waiting:
         hits = {side: np.zeros((rows, names), dtype=bool) for side in ("buy", "sell")}
         gains = {side: np.full((rows, names), np.nan) for side in ("buy", "sell")}
         no_sigma = np.zeros((rows, names), dtype=bool)
+        late = {side: np.zeros((rows, names), dtype=bool) for side in ("buy", "sell")}
     for j, ticker in enumerate(panel.tickers):
         cube = cubes.get(ticker)
         if cube is None or len(cube) == 0:
@@ -709,8 +1088,12 @@ def cube_prices(
         pos, ok, per_session = session_scale(cube, dates, panel.adj_close[:, j])
         scale = per_session[ok]
         if not waiting:
-            buy[pos[ok], j] = session_prices(cube, convention, "buy")[ok] * scale
-            sell[pos[ok], j] = session_prices(cube, convention, "sell")[ok] * scale
+            buy[pos[ok], j] = (
+                session_prices(cube, convention, "buy", next_bar=next_bar)[ok] * scale
+            )
+            sell[pos[ok], j] = (
+                session_prices(cube, convention, "sell", next_bar=next_bar)[ok] * scale
+            )
             available[pos[ok], j] = np.isfinite(scale)
             continue
         cube_sig = None
@@ -724,11 +1107,20 @@ def cube_prices(
             cube_zones = zones.get(ticker)
             if cube_zones is None:
                 raise ValueError(f"{convention}: no close zones for {ticker}")
+        cube_yhat = None
+        if ti_on:
+            assert ti is not None  # _check_ti refused a run without it
+            cube_yhat = ti_grid(ti, ticker, cube.dates)
         close = _official_close(cube)
         for side, out in (("buy", buy), ("sell", sell)):
-            price, hit, missing = waiting_fills(
-                cube, convention, side, cube_sig, cube_zones
-            )
+            if ti_on:
+                fills = ti_fills(cube, convention, side, cube_yhat, next_bar)
+                price, hit, missing = fills.price, fills.hit, fills.no_forecast
+                late[side][pos[ok], j] = fills.late[ok]
+            else:
+                price, hit, missing = waiting_fills(
+                    cube, convention, side, cube_sig, cube_zones, next_bar=next_bar
+                )
             out[pos[ok], j] = price[ok] * scale
             hits[side][pos[ok], j] = hit[ok]
             with np.errstate(all="ignore"):
@@ -740,7 +1132,13 @@ def cube_prices(
     if not waiting:
         return FillPrices(convention, buy, sell, available)
     detail = WaitDetail(
-        hits["buy"], hits["sell"], gains["buy"], gains["sell"], no_sigma
+        hits["buy"],
+        hits["sell"],
+        gains["buy"],
+        gains["sell"],
+        no_sigma,
+        late["buy"] if ti_on else None,
+        late["sell"] if ti_on else None,
     )
     return FillPrices(convention, buy, sell, available, detail)
 
@@ -821,7 +1219,7 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
     blocked: np.ndarray | None = None,
 ) -> Priced:
     """Return the Priced series of `convention` for the targets."""
-    if convention not in KNOWN_CONVENTIONS:
+    if convention not in PRICEABLE:
         raise ValueError(f"unknown convention {convention!r}")
     if convention == "breakout_gate" and blocked is None:
         raise ValueError("breakout_gate needs the band-rejection flags")
@@ -839,9 +1237,9 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
     pending: dict[int, list[tuple[int, float]]] = {}
     fills = deferrals = fallbacks = 0
     detail = prices.detail
-    # One entry per cube-priced order of a waiting convention:
-    # (session, buy, filled at the level, gain bp, no sigma).
-    log: list[tuple[int, bool, bool, float, bool]] = []
+    # One entry per cube-priced order of a waiting convention: (session,
+    # buy, filled at the level, gain bp, no sigma, column, late trigger).
+    log: list[tuple[int, bool, bool, float, bool, int, bool]] = []
     equity[start] = book.equity(closes[start])
 
     # Queue the share moves a decision on `t` asks for, each on its fill session.
@@ -879,8 +1277,18 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
                     hit = detail.buy_hit if buying else detail.sell_hit
                     gain = detail.buy_gain_bp if buying else detail.sell_gain_bp
                     missing = bool(detail.no_sigma[s, j])
+                    lates = detail.buy_late if buying else detail.sell_late
+                    late = bool(lates[s, j]) if lates is not None else False
                     log.append(
-                        (s, buying, bool(hit[s, j]), float(gain[s, j]), missing)
+                        (
+                            s,
+                            buying,
+                            bool(hit[s, j]),
+                            float(gain[s, j]),
+                            missing,
+                            int(j),
+                            late,
+                        )
                     )
             else:
                 price[j] = opens[s, j]
@@ -904,6 +1312,8 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
             hit=np.array([e[2] for e in log], dtype=bool),
             gain_bp=np.array([e[3] for e in log], dtype=float),
             no_sigma=np.array([e[4] for e in log], dtype=bool),
+            column=np.array([e[5] for e in log], dtype=int),
+            late=np.array([e[6] for e in log], dtype=bool),
         )
     return Priced(convention, start, returns, fills, deferrals, fallbacks, waits)
 
@@ -957,36 +1367,66 @@ def _finite(x: Any) -> bool:
 
 
 # The conventions a run prices, in registered order. By default the seven
-# fill-timing conventions, and the four level conventions too when
-# forecasts are given; the SR conventions only when named. With `only`,
-# the names given plus the controls the verdicts read: next_open always;
-# dip_or_close and trail_dip whenever a level convention is named;
-# dip_or_close whenever an SR convention is. An unknown name, or a level
-# convention without forecasts, is refused.
+# fill-timing conventions, the four level conventions too when forecasts
+# are given, and the T-I conventions of every family in `ti_families` (the
+# families whose T-I forecast is given); the SR conventions only when
+# named. With `only`, the names given plus the controls the verdicts read:
+# next_open always; dip_or_close and trail_dip whenever a level convention
+# is named; dip_or_close whenever an SR or T-I convention is. Refused: an
+# unknown name or family, a level convention without forecasts, a T-I
+# convention without its family's forecast, and a family's forecast none of
+# whose conventions is priced.
 def select_conventions(
-    only: Iterable[str] | None, have_forecasts: bool
+    only: Iterable[str] | None,
+    have_forecasts: bool,
+    ti_families: Iterable[str] = (),
 ) -> tuple[str, ...]:
-    """Return the conventions to price, in KNOWN_CONVENTIONS order."""
+    """Return the conventions to price, in PRICEABLE order."""
+    families = {str(f).strip() for f in ti_families if str(f).strip()}
+    strange = sorted(families - set(TI_FAMILIES))
+    if strange:
+        raise ValueError(
+            f"unknown T-I family {', '.join(strange)}; registered: "
+            f"{', '.join(TI_FAMILIES)}"
+        )
     if only is None:
         names = set(CONVENTIONS) | (set(LEVEL_CONVENTIONS) if have_forecasts else set())
+        names |= {c for c, rule in TI_RULES.items() if rule.family in families}
     else:
         names = {str(c).strip() for c in only if str(c).strip()}
-        unknown = sorted(names - set(KNOWN_CONVENTIONS))
+        unknown = sorted(names - set(PRICEABLE))
         if unknown:
             raise ValueError(
                 f"unknown convention(s) {', '.join(unknown)}; registered: "
-                f"{', '.join(KNOWN_CONVENTIONS)}"
+                f"{', '.join(PRICEABLE)}"
             )
         names.add(CONTROL)
         if names & set(LEVEL_CONVENTIONS):
             names |= {LEVEL_CONTROL, LEVEL_TWIN}
         if names & set(SR_CONVENTIONS):
             names.add(LEVEL_CONTROL)
+        if names & set(TI_CONVENTIONS):
+            names.add(TI_CONTROL)
     if names & set(LEVEL_CONVENTIONS) and not have_forecasts:
         raise ValueError(
             "the level conventions need the volatility forecasts (--forecasts <npz>)"
         )
-    return tuple(c for c in KNOWN_CONVENTIONS if c in names)
+    without = sorted(
+        c for c in names & set(TI_CONVENTIONS) if TI_RULES[c].family not in families
+    )
+    if without:
+        raise ValueError(
+            f"the T-I convention(s) {', '.join(without)} need their family's forecast "
+            "(--stage3-forecast <family>=<npz>)"
+        )
+    priced = {TI_RULES[c].family for c in names & set(TI_RULES)}
+    unused = sorted(families - priced)
+    if unused:
+        raise ValueError(
+            f"a T-I forecast was given for {', '.join(unused)} but none of its "
+            "conventions is priced"
+        )
+    return tuple(c for c in PRICEABLE if c in names)
 
 
 # From a waiting convention's orders that fill inside the window: how many
@@ -1123,8 +1563,10 @@ def simulator_gap(report, mask: np.ndarray, control: Priced, cost_bps: float) ->
 # Every chosen convention priced from each of the first `offsets` start
 # sessions: its fill prices once (a level convention's at the sigma its
 # orders read, an SR convention's on the close zones, built here once
-# unless given), then one ledger walk per offset. The band flags are read
-# only when breakout_gate is priced.
+# unless given, a T-I convention's on its family's forecast in `ti`), then
+# one ledger walk per offset. The band flags are read only when
+# breakout_gate is priced. `next_bar` moves every bar-close fill to the
+# next bar's open. Returns the priced series and the fill prices they used.
 def _price_all(
     report: DeskReport,
     cubes: dict[str, SessionCube],
@@ -1134,8 +1576,10 @@ def _price_all(
     offsets: int,
     cost: float,
     zones: dict[str, sr_levels.CloseZones] | None = None,
-) -> dict[str, list[Priced]]:
-    """Return {convention: [Priced per offset]} for the chosen conventions."""
+    ti: Mapping[str, TiForecast] | None = None,
+    next_bar: bool = False,
+) -> tuple[dict[str, list[Priced]], dict[str, FillPrices]]:
+    """Return ({convention: [Priced per offset]}, {convention: FillPrices})."""
     panel = report.panel
     blocked = band_rejecting(panel) if "breakout_gate" in chosen else None
     if zones is None and any(c in SR_CONVENTIONS for c in chosen):
@@ -1148,22 +1592,32 @@ def _price_all(
                 raise ValueError(f"{c} needs the volatility forecasts")
             sig = fill_sigma(forecasts, c)
         own_zones = zones if c in SR_CONVENTIONS else None
-        prices[c] = cube_prices(cubes, panel, c, sig, own_zones)
+        own_ti = None
+        if c in TI_RULES:
+            family = TI_RULES[c].family
+            if ti is None or family not in ti:
+                raise ValueError(f"{c} needs the {family} T-I forecast")
+            own_ti = ti[family].lookup
+        prices[c] = cube_prices(cubes, panel, c, sig, own_zones, own_ti, next_bar)
     priced: dict[str, list[Priced]] = {c: [] for c in chosen}
     for k in range(offsets):
         targets = target_path(report, mask, since_offset(panel, k))
         for c in chosen:
             priced[c].append(price_book(targets, report, prices[c], c, cost, blocked))
-    return priced
+    return priced, prices
 
 
 # Price every convention from every offset, then score them per window.
 # `conventions` narrows the set (`select_conventions`: the controls the
 # verdicts read are always added); `forecasts`, the volatility forecasts on
 # the report's panel grid (`vol_forecast.aligned_to_panel`), is what the
-# level conventions read. Without either, this is the fill-timing trial
+# level conventions read; `ti_forecasts`, {family: TiForecast}, is what the
+# stage-3 T-I conventions read. Without any, this is the fill-timing trial
 # exactly as registered. With a level convention priced, every row gains
-# the entry-level fields and the payload a "level" block with its verdict.
+# the entry-level fields and the payload a "level" block with its verdict;
+# with a T-I convention, the payload gains the "stage3_ti" block.
+# `next_bar` is the stage-3 robustness run: every bar-close fill moves to
+# the next bar's open, and the payload says so.
 def study(
     report,
     cubes: dict[str, SessionCube],
@@ -1173,17 +1627,31 @@ def study(
     conventions: Iterable[str] | None = None,
     forecasts: Aligned | None = None,
     zones: dict[str, sr_levels.CloseZones] | None = None,
+    ti_forecasts: Mapping[str, TiForecast] | None = None,
+    next_bar: bool = False,
 ) -> dict[str, Any]:
     """Return the trial payload: rows per (convention, window), best, verdict."""
     if offsets < 1:
         raise ValueError("offsets must be at least 1")
-    chosen = select_conventions(conventions, forecasts is not None)
+    ti_forecasts = _checked_ti_forecasts(ti_forecasts)
+    chosen = select_conventions(conventions, forecasts is not None, tuple(ti_forecasts))
     panel = report.panel
     if forecasts is not None:
         check_grid(forecasts, panel)
     level_on = any(c in LEVELS for c in chosen)
     sr_on = any(c in SR_CONVENTIONS for c in chosen)
-    priced = _price_all(report, cubes, mask, chosen, forecasts, offsets, cost, zones)
+    priced, prices = _price_all(
+        report,
+        cubes,
+        mask,
+        chosen,
+        forecasts,
+        offsets,
+        cost,
+        zones,
+        ti_forecasts,
+        next_bar,
+    )
     median = offsets // 2
     rows: list[dict[str, Any]] = []
     best: dict[str, dict[str, Any]] = {}
@@ -1286,9 +1754,39 @@ def study(
             "is counted as a fallback. Costs are one way on every fill."
         ),
     }
+    _mark_fill_mode(payload, next_bar, bool(ti_forecasts))
     payload.update(_fill_timing_verdict(payload, chosen))
     _add_trial_blocks(payload, chosen, forecasts, level_best, sr_best)
+    if ti_forecasts:
+        # select_conventions priced a T-I convention for every family given.
+        payload["stage3_ti"] = _ti_block(
+            panel, priced, prices, chosen, ti_forecasts, offsets, median, cost, next_bar
+        )
     return payload
+
+
+# Record the fill mode on a run that has one to record: a next-bar run, or a
+# run pricing the T-I conventions (whose verdict reads it); a registered
+# fill-timing, level or SR run's payload is left as it always was.
+def _mark_fill_mode(payload: dict[str, Any], next_bar: bool, stage3: bool) -> None:
+    """Set payload["next_bar"] for a next-bar or stage-3 T-I run."""
+    if next_bar or stage3:
+        payload["next_bar"] = bool(next_bar)
+
+
+# The T-I forecasts of one run, checked: each in its own family's slot, and
+# all read at the same seed column (the ensemble, or one seed).
+def _checked_ti_forecasts(
+    ti_forecasts: Mapping[str, TiForecast] | None,
+) -> dict[str, TiForecast]:
+    """Return {family: TiForecast}, refusing a misfiled forecast or mixed seeds."""
+    out = dict(ti_forecasts or {})
+    for family, forecast in out.items():
+        if forecast.family != family:
+            raise ValueError(f"the {family} slot holds a {forecast.family} forecast")
+    if len({f.identity.get("seed_column") for f in out.values()}) > 1:
+        raise ValueError("the T-I forecasts of one run must read the same seed column")
+    return out
 
 
 # The entry-level and SR trials' fields for one row: the level fields
@@ -1330,18 +1828,45 @@ def _add_trial_blocks(
         assert forecasts is not None  # select_conventions refuses levels without them
         payload["level"] = _level_block(forecasts, chosen, level_best)
         payload["level"].update(level_verdict(payload))
+        _mark_next_bar(payload, payload["level"])
     if any(c in SR_CONVENTIONS for c in chosen):
         payload["sr_level"] = _sr_block(chosen, sr_best, payload["rows"])
         payload["sr_level"].update(sr_verdict(payload))
+        _mark_next_bar(payload, payload["sr_level"])
+
+
+# The prefix a verdict read off a `--next-bar` run carries: its fills are
+# the robustness run's, not the ones the trial registered.
+NEXT_BAR_READING = "next-bar robustness reading, not the registered fills: "
+
+
+# In a `--next-bar` run, say so on a trial block and its verdict line; a
+# run at the registered fills is left exactly as it was.
+def _mark_next_bar(payload: dict[str, Any], block: dict[str, Any]) -> None:
+    """Flag `block` and prefix its verdict when the payload is a next-bar run."""
+    if payload.get("next_bar"):
+        block["next_bar"] = True
+        block["verdict"] = NEXT_BAR_READING + str(block["verdict"])
 
 
 # The fill-timing verdict's fields: `verdict` when all seven of its
-# conventions were priced; when `--only` left some unpriced, a NOT JUDGED
-# line, since that trial is judged on its whole registered set or not at all.
+# conventions were priced at the registered fills; when `--only` left some
+# unpriced, or the run is a `--next-bar` one, a NOT JUDGED line, since that
+# trial is judged on its whole registered set at its own fills or not at all.
 def _fill_timing_verdict(
     payload: dict[str, Any], chosen: tuple[str, ...]
 ) -> dict[str, Any]:
     """Return the fill-timing trial's verdict fields for the conventions priced."""
+    if payload.get("next_bar"):
+        return {
+            "verdict": (
+                "NOT JUDGED: a --next-bar robustness run moves every bar-close fill "
+                "to the next bar's open"
+            ),
+            "adopted": [],
+            "criteria": {},
+            "breakout_gate": "breakout_gate: not judged in a --next-bar run",
+        }
     if set(CONVENTIONS) <= set(chosen):
         return verdict(payload)
     priced = [c for c in CONVENTIONS if c in chosen]
@@ -1740,3 +2265,320 @@ def _sr_criteria(choose: dict[str, Any], later_row: dict[str, Any]) -> dict[str,
 # A signed number to two decimals for a verdict line, "n/a" when absent.
 def _signed(x: Any) -> str:
     return f"{float(x):+.2f}" if _finite(x) else "n/a"
+
+
+# The t statistic of the mean of `values` with its variance clustered by
+# `clusters` (here: the fill session, so the orders of one day, which share
+# that day's market move, count as one draw): the sandwich variance of a
+# mean, sum over clusters of the squared sum of residuals over n^2, with the
+# G / (G - 1) small-sample factor. NaN under two finite values or two
+# clusters. One order per cluster is the ordinary t.
+def clustered_t(values: np.ndarray, clusters: np.ndarray) -> float:
+    """Return mean(values) / its cluster-robust standard error; NaN when undefined."""
+    v = np.asarray(values, dtype=float)
+    c = np.asarray(clusters)
+    keep = np.isfinite(v)
+    v, c = v[keep], c[keep]
+    n = len(v)
+    if n < 2:
+        return math.nan
+    _, group = np.unique(c, return_inverse=True)
+    group = np.asarray(group).ravel()
+    count = int(group.max()) + 1
+    if count < 2:
+        return math.nan
+    residual = v - v.mean()
+    sums = np.bincount(group, weights=residual, minlength=count)
+    variance = count / (count - 1.0) * float(sums @ sums) / (n * n)
+    if not variance > 0:
+        return math.nan
+    return float(v.mean() / math.sqrt(variance))
+
+
+# A window bound as the payload writes it: the date, or None when unbounded.
+def _day(bound: date | None) -> str | None:
+    """Return `bound` as an ISO date string, None for None."""
+    return str(bound) if bound is not None else None
+
+
+# The T-I block's windows for a family whose first forecast session is
+# `first`: the model window from it through 2023 (the plan's choosing
+# window for a model decision), and 2016-2023 and 2024-2026 beside it.
+def ti_windows(first: date | None) -> dict[str, tuple[date | None, date | None]]:
+    """Return {window: (start, end)} of the T-I block."""
+    return {
+        TI_MODEL: (first, TI_MODEL_END),
+        "2016-2023": WINDOWS["2016-2023"],
+        "2024-2026": WINDOWS["2024-2026"],
+    }
+
+
+# A T-I window as a mask over the panel's sessions; the model window of a
+# family with no forecast at all is empty rather than unbounded.
+def _ti_keep(
+    dates: np.ndarray, window: str, bounds: tuple[date | None, date | None]
+) -> np.ndarray:
+    """Return the (T,) session mask of one T-I window."""
+    lo, hi = bounds
+    if window == TI_MODEL and lo is None:
+        return np.zeros(len(dates), dtype=bool)
+    return _window(dates, lo, hi)
+
+
+# What one convention's orders did inside a window, per side (all, buy,
+# sell), from the median offset's order log: the orders, how many filled
+# at a bar before the official close and that share, the mean gain over
+# the session's official close per such fill and per order (an order
+# filled at the close gains nothing), and the no-forecast and late-trigger
+# counts.
+def _ti_order_fields(
+    log: OrderLog | None, keep: np.ndarray
+) -> dict[str, dict[str, Any]]:
+    """Return {side: order fields} for a waiting convention's log in the window."""
+    out: dict[str, dict[str, Any]] = {}
+    for side in ("all", "buy", "sell"):
+        if log is None:
+            out[side] = {
+                "orders": 0,
+                "filled_before_close": 0,
+                "before_close_share": math.nan,
+                "gain_bp_per_fill": math.nan,
+                "gain_bp_per_order": math.nan,
+                "no_forecast": 0,
+                "late_triggers": 0,
+            }
+            continue
+        inside = keep[log.session]
+        if side != "all":
+            inside = inside & (log.buy if side == "buy" else ~log.buy)
+        orders = int(inside.sum())
+        filled = log.hit & inside
+        late = log.late if log.late is not None else np.zeros(len(inside), dtype=bool)
+        out[side] = {
+            "orders": orders,
+            "filled_before_close": int(filled.sum()),
+            "before_close_share": float(filled.sum() / orders) if orders else math.nan,
+            "gain_bp_per_fill": _finite_mean(log.gain_bp[filled]),
+            "gain_bp_per_order": _finite_mean(log.gain_bp[inside]),
+            "no_forecast": int((log.no_sigma & inside).sum()),
+            "late_triggers": int((late & inside).sum()),
+        }
+    return out
+
+
+# Candidate minus control per order, per side, over the candidate's orders
+# in the window at the median offset: each order's gain over the session's
+# official close minus what the control's fill of the same (session, name,
+# side) would have gained, in bp - so positive is a cheaper buy or a dearer
+# sell than dip_or_close's. Read over the orders the two fill differently
+# (the plan's "per order where the two differ"), with the t clustered by
+# fill session, and over every order beside it.
+def _ti_versus(
+    log: OrderLog | None,
+    candidate: FillPrices,
+    control: FillPrices,
+    keep: np.ndarray,
+) -> dict[str, dict[str, Any]]:
+    """Return {side: per-order difference fields} against the control's fills."""
+    empty = {
+        "orders": 0,
+        "differing": 0,
+        "differing_share": math.nan,
+        "differing_sessions": 0,
+        "bp_per_differing_order": math.nan,
+        "clustered_t": math.nan,
+        "bp_per_order": math.nan,
+    }
+    if (
+        log is None
+        or log.column is None
+        or candidate.detail is None
+        or control.detail is None
+    ):
+        return {side: dict(empty) for side in ("all", "buy", "sell")}
+    s, j, buying = log.session, log.column, log.buy
+    ours = np.where(buying, candidate.buy[s, j], candidate.sell[s, j])
+    theirs = np.where(buying, control.buy[s, j], control.sell[s, j])
+    gain = np.where(
+        buying, candidate.detail.buy_gain_bp[s, j], candidate.detail.sell_gain_bp[s, j]
+    )
+    base = np.where(
+        buying, control.detail.buy_gain_bp[s, j], control.detail.sell_gain_bp[s, j]
+    )
+    diff = gain - base
+    valid = np.isfinite(diff) & np.isfinite(ours) & np.isfinite(theirs)
+    differs = valid & (ours != theirs)
+    out: dict[str, dict[str, Any]] = {}
+    for side in ("all", "buy", "sell"):
+        inside = keep[s] & valid
+        if side != "all":
+            inside = inside & (buying if side == "buy" else ~buying)
+        chosen = inside & differs
+        orders = int(inside.sum())
+        out[side] = {
+            "orders": orders,
+            "differing": int(chosen.sum()),
+            "differing_share": float(chosen.sum() / orders) if orders else math.nan,
+            "differing_sessions": int(len(np.unique(s[chosen]))),
+            "bp_per_differing_order": _finite_mean(diff[chosen]),
+            "clustered_t": clustered_t(diff[chosen], s[chosen]),
+            "bp_per_order": _finite_mean(diff[inside]),
+        }
+    return out
+
+
+# One T-I convention's row on one window: at the median offset the paired
+# daily difference against dip_or_close (bp, Newey-West t at the plan's
+# lag) and the excess series' moments; across offsets the median CAGRs,
+# the count of offsets above dip_or_close and the spread of the per-offset
+# paired means; and the median offset's order fields, for the candidate,
+# for the control, and candidate minus control per order.
+def _ti_row(
+    convention: str,
+    window: str,
+    bounds: tuple[date | None, date | None],
+    keep: np.ndarray,
+    priced: dict[str, list[Priced]],
+    prices: dict[str, FillPrices],
+    median: int,
+    cost: float,
+    next_bar: bool,
+) -> dict[str, Any]:
+    """Return the stage-3 T-I row of `convention` on `window`."""
+    rule = TI_RULES[convention]
+    at = priced[convention][median]
+    base = priced[TI_CONTROL][median]
+    diff = _excess(at.returns, base.returns, keep)
+    mom = candidate_stats.moments(diff)
+    ours = np.array([_cagr(p.returns[keep]) for p in priced[convention]])
+    theirs = np.array([_cagr(p.returns[keep]) for p in priced[TI_CONTROL]])
+    by_offset = np.array(
+        [
+            _finite_mean(_excess(a.returns, b.returns, keep)) * BP
+            for a, b in zip(priced[convention], priced[TI_CONTROL], strict=True)
+        ]
+    )
+    lo, hi = bounds
+    finite_offsets = by_offset[np.isfinite(by_offset)]
+    return {
+        "convention": convention,
+        "family": rule.family,
+        "rule": rule.rule,
+        "window": window,
+        "start": str(lo) if lo is not None else None,
+        "end": str(hi) if hi is not None else None,
+        "cost_bps": cost,
+        "next_bar": bool(next_bar),
+        "sessions": int(len(diff)),
+        "median_cagr": _nanmedian(ours),
+        "control_median_cagr": _nanmedian(theirs),
+        "median_cagr_vs_dip": _nanmedian(ours - theirs),
+        "offsets_above_dip": int(np.nansum(ours > theirs)),
+        "mean_daily_bp_vs_dip": float(diff.mean() * BP) if len(diff) else math.nan,
+        "hac_t_vs_dip": candidate_stats.hac_t(diff, stage3_io.HAC_LAG)
+        if len(diff) > 2
+        else math.nan,
+        "bp_vs_dip_across_offsets": {
+            "offsets": int(len(finite_offsets)),
+            "positive": int((finite_offsets > 0).sum()),
+            "median": _nanmedian(by_offset),
+            "min": float(finite_offsets.min()) if len(finite_offsets) else math.nan,
+            "max": float(finite_offsets.max()) if len(finite_offsets) else math.nan,
+        },
+        "excess": {
+            "sharpe": mom.sharpe,
+            "skew": mom.skew,
+            "kurtosis": mom.kurtosis,
+            "length": mom.length,
+        },
+        "orders": _ti_order_fields(at.waits, keep),
+        "control_orders": _ti_order_fields(base.waits, keep),
+        "versus_control": _ti_versus(
+            at.waits, prices[convention], prices[TI_CONTROL], keep
+        ),
+    }
+
+
+# The payload's "stage3_ti" block: the conventions priced and their rules,
+# the run's cost, fill mode and seed column, each family's forecast (file
+# identity, coverage, first session) and windows, the rows per (convention,
+# window), the deflated Sharpe of each model-window excess at N = 8 against
+# the spread of the candidates priced here, and this run's reading of the
+# floors. The REPLACES verdict reads several runs (`stage3_verdict`).
+def _ti_block(
+    panel: Panel,
+    priced: dict[str, list[Priced]],
+    prices: dict[str, FillPrices],
+    chosen: tuple[str, ...],
+    ti_forecasts: Mapping[str, TiForecast],
+    offsets: int,
+    median: int,
+    cost: float,
+    next_bar: bool,
+) -> dict[str, Any]:
+    """Return the payload's "stage3_ti" block."""
+    dates = np.asarray(panel.dates, dtype="datetime64[D]")
+    conventions = [c for c in chosen if c in TI_RULES]
+    families: dict[str, dict[str, Any]] = {}
+    windows: dict[str, dict[str, tuple[date | None, date | None]]] = {}
+    for family, forecast in ti_forecasts.items():
+        families[family] = {**forecast.identity, **ti_coverage(forecast.lookup)}
+        windows[family] = ti_windows(ti_first_session(forecast.lookup))
+    rows: list[dict[str, Any]] = []
+    for c in conventions:
+        for window, bounds in windows[TI_RULES[c].family].items():
+            keep = _ti_keep(dates, window, bounds)
+            rows.append(
+                _ti_row(c, window, bounds, keep, priced, prices, median, cost, next_bar)
+            )
+    excess = {r["convention"]: r["excess"] for r in rows if r["window"] == TI_MODEL}
+    seeds = {f.identity.get("seed_column") for f in ti_forecasts.values()}
+    return {
+        "plan": STAGE3_PLAN,
+        "conventions": conventions,
+        "control": TI_CONTROL,
+        "rules": {
+            c: {"family": TI_RULES[c].family, "rule": TI_RULES[c].rule}
+            for c in conventions
+        },
+        "cost_bps": cost,
+        "next_bar": bool(next_bar),
+        "seed_column": next(iter(seeds)) if len(seeds) == 1 else None,
+        "offsets": offsets,
+        "median_offset": median,
+        "hac_lag": stage3_io.HAC_LAG,
+        "families": families,
+        "windows": {
+            family: {w: [_day(lo), _day(hi)] for w, (lo, hi) in spans.items()}
+            for family, spans in windows.items()
+        },
+        "constants": {
+            "DIP": DIP,
+            "TI_SLOTS": stage3_io.TI_SLOTS,
+            "FLOOR_BP": stage3_io.FLOOR_BP,
+            "FLOOR_T": stage3_io.FLOOR_T,
+            "HAC_LAG": stage3_io.HAC_LAG,
+            "OUTER_CANDIDATES": stage3_io.OUTER_CANDIDATES,
+            "DEFLATED_SHARPE_GATE": stage3_io.DEFLATED_SHARPE_GATE,
+            "IMMATERIAL_BP_PER_ORDER": stage3_io.IMMATERIAL_BP_PER_ORDER,
+            "IMMATERIAL_T": stage3_io.IMMATERIAL_T,
+        },
+        "rows": rows,
+        "deflated": {c: stage3_verdict.deflated(excess, c) for c in excess},
+        "reading": stage3_verdict.ti_reading(rows),
+        "note": (
+            "Candidates are paired against dip_or_close, the board's rule, on the same "
+            "orders: the /4 policy's plain-simulator orders, filled from the SIP cube "
+            "and marked at the panel's adjusted close. The model window runs from the "
+            "family's first forecast session through 2023-12-29. Order fields are the "
+            "median offset's orders filling in the window; gains are against that "
+            "session's official close in bp, positive when better for the trader; "
+            "versus_control is candidate minus dip_or_close on the same (session, "
+            "name, side), its t clustered by fill session. A (name, session) with no "
+            "forecast fills as dip_or_close (no_forecast); a filter trigger after "
+            "15:30 fills as dip_or_close (late_triggers). deflated is this run's "
+            "reading at N = 8 against the candidates priced here; the verdict "
+            "(stage3_verdict.ti_verdict) reads the 10/16/25 bp runs, the next-bar run "
+            "and five single-seed runs."
+        ),
+    }
