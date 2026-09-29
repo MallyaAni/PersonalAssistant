@@ -4,9 +4,10 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, StockBoard, timedBoard, type BoardEvent, type PlanAction } from './StockBoard'
+import { actionPresentation, BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, StockBoard, timedBoard, type BoardEvent, type PlanAction } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
+import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
@@ -446,19 +447,28 @@ const describeSimulationPolicy = (source: unknown, active: unknown) => {
 // executor priced it. Fixed here so a test can pin the exact wording.
 const POLICY_SIMULATION_LABEL = 'Policy simulation · names known at the time · live executor'
 
-// One number to read at a glance: the paper account's worth, its return
-// since the desk started trading it, today's move, the rules' track record
-// against the market, how much of the book the desk is carrying, and when
-// it next rebalances. Everything here is read from the record or the live
-// broker, nothing is invented.
+// Compute target cash from the active allocator's weights, never from the separate legacy book.
+const PlannedCash = ({record, paused}: {record: DeskRecord; paused: boolean}) => {
+  const legacy = record.targets === undefined || record.targets === null
+  const weights = legacy ? record.book?.map(row => row.weight) : record.targets?.weights
+  const validShape = legacy ? Array.isArray(weights) : weights !== null && typeof weights === 'object' && !Array.isArray(weights)
+  const values = validShape ? Object.values(weights!) : null
+  const sum = values?.reduce((total, value) => total + value, 0)
+  const valid = values !== null && values.every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1)
+    && sum !== undefined && sum <= 1 + 1e-8
+  return <section aria-label="Your planned cash" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
+    <span title="Cash implied by recorded allocation targets, before fees; not actual holdings">{legacy ? 'Legacy planned cash' : 'Planned cash'} <b>{valid ? `${(100 * Math.max(0, 1 - sum!)).toFixed(1)}%` : 'Unavailable'}</b></span>
+    <span className="text-[#6e6e73]">{paused ? 'FOMC overrides the scheduled plan' : legacy ? 'Legacy book · active targets not recorded' : 'Weights apply at the reset'}</span>
+  </section>
+}
+
+// Show actual paper-account balances separately from historical strategy simulations.
 const SummaryStrip = ({
   latest,
   paperLive,
-  curve,
 }: {
   latest: DeskRecord
   paperLive: DeskPaperLive | null
-  curve: DeskCurve | undefined
 }) => {
   const paper = latest.paper
   const brokerCurrent = paperLive !== null && paperLive.reason === undefined
@@ -470,33 +480,6 @@ const SummaryStrip = ({
   const since = brokerCurrent ? paperLive.pl_pct : paper?.pl_pct
   const dayPct = brokerCurrent ? paperLive.day_pl_pct : undefined
   const dayPl = brokerCurrent ? paperLive.day_pl : undefined
-  const backtest = curve?.backtest
-  // The simulation is compared with the strategy the record says the
-  // account runs (`targets.policy`), never with the execution policy string.
-  const simulationPolicy = describeSimulationPolicy(backtest?.strategy_policy, latest.targets?.policy)
-  // A historical curve keeps its own source, independently of today's record or execution policy.
-  const simulationFundamentals = describeFundamentalSource(backtest?.fundamentals_source)
-  const curveLabel = simulationPolicy.current
-    ? simulationFundamentals.current
-      ? POLICY_SIMULATION_LABEL
-      : simulationFundamentals.known
-        ? `${POLICY_SIMULATION_LABEL} · older fundamental inputs`
-        : `${POLICY_SIMULATION_LABEL} · fundamental inputs unverified`
-    : simulationPolicy.label
-  // Policy alignment, funding limits and fundamental provenance are independent recorded properties.
-  const simulationNote = [simulationPolicy.note, describeSimulationFunding(backtest?.funding_model).summary,
-    simulationFundamentals.simulationNote].filter(Boolean).join(' ')
-  const last = (arr?: number[]) => (arr && arr.length ? arr[arr.length - 1] : null)
-  // The headline is the point-in-time line: the strategy on the names the
-  // book could have held on each session. The hindsight `rules` total (today's
-  // names back-cast, 85.8x on the live record) is not an expectation and is
-  // never the strip's number; it stays on the chart under its hindsight label.
-  // Without a point-in-time line the cell is absent rather than filled with
-  // the hindsight figure.
-  const pitTotal = last(backtest?.rules_point_in_time)
-  const pitCagr = backtest?.stats_point_in_time?.cagr
-  const spyTotal = last(backtest?.spy)
-  const qqqTotal = last(backtest?.qqq)
   // The share of the account actually at work, read live from the paper
   // positions; the record's regime exposure only when the broker is not
   // reachable, and never as a claim about what is really invested.
@@ -513,7 +496,7 @@ const SummaryStrip = ({
           <>
             {money(worth)}
             {typeof since === 'number' && Number.isFinite(since) && (
-              <span className="ml-2 text-xs font-normal" title="since the paper book started">
+              <span className="ml-2 text-xs font-normal" title="Account-value change from recorded starting capital; not adjusted for deposits, withdrawals or resets.">
                 <Trend value={since * 100} />
               </span>
             )}
@@ -522,13 +505,13 @@ const SummaryStrip = ({
           '—'
         ),
       note: brokerCurrent
-        ? `live broker snapshot${paperLive?.as_of ? ` fetched ${marketTime(paperLive.as_of)}` : ''} · simulated funds, no real-money orders`
+        ? `Broker value${paperLive?.as_of ? ` · updated ${marketTime(paperLive.as_of)}` : ''}`
         : paper
-          ? `saved paper snapshot · ${paper.session} · broker refresh ${paperLive === null ? 'pending' : 'unavailable'}`
-          : `paper account ${paperLive === null ? 'loading' : 'unavailable'} · no saved snapshot`,
+          ? `Saved ${paper.session} · broker refresh ${paperLive === null ? 'pending' : 'unavailable'}`
+          : `Paper account ${paperLive === null ? 'loading' : 'unavailable'}`,
     },
     {
-      label: 'Broker day P/L',
+      label: 'Change since prior close',
       value:
         typeof dayPl === 'number' && Number.isFinite(dayPl) ? (
           <>
@@ -542,38 +525,15 @@ const SummaryStrip = ({
         ) : (
           '—'
         ),
-      note: 'change from the broker’s prior closing equity; not a calendar-day return',
+      note: 'Account-value change; not adjusted for deposits, withdrawals or resets.',
     },
-    // The forward track has no numbers until it has a run of sessions, so
-    // the cell is not shown empty: a "—" with a cryptic note reads as broken.
-    ...(pitTotal !== null
-      ? [
-          {
-            label: curveLabel,
-            title: `Recorded simulation fundamental source: ${backtest?.fundamentals_source || 'not recorded'}.`,
-            value: (
-              <>
-                <Trend value={pitTotal * 100} />
-                <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-                  {typeof pitCagr === 'number' && Number.isFinite(pitCagr) && (
-                    <span aria-label="Policy simulation CAGR">CAGR {(pitCagr * 100).toFixed(1)}% · </span>
-                  )}
-                  {spyTotal !== null && <>vs SPY <Trend value={spyTotal * 100} /></>}
-                  {qqqTotal !== null && (
-                    <>
-                      {' '}
-                      · QQQ <Trend value={qqqTotal * 100} />
-                    </>
-                  )}
-                </span>
-              </>
-            ),
-            note: simulationNote,
-          },
-        ]
-      : []),
     {
-      label: 'Money at work',
+      label: 'Cash',
+      value: (brokerCurrent ? paperLive.cash : paper?.cash) === undefined ? '—' : money((brokerCurrent ? paperLive.cash : paper?.cash)!),
+      note: brokerCurrent ? 'Broker balance' : 'Saved balance',
+    },
+    {
+      label: 'Invested',
       value:
         liveInvested !== null ? (
           <span>{Math.round(liveInvested * 100)}% invested</span>
@@ -583,23 +543,43 @@ const SummaryStrip = ({
       note: 'share of the practice account in positions',
     },
   ]
-  const fundamentalSource = describeFundamentalSource(latest.provenance?.data?.fundamentals)
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4" aria-label="The desk at a glance">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cells.map((c) => (
           <div key={c.label} className="rounded-2xl border border-black/[0.08] bg-white p-3">
-            <p className="text-xs text-[#6e6e73]" title={c.title}>{c.label}</p>
+            <p className="text-xs text-[#6e6e73]">{c.label}</p>
             <p className="mt-0.5 truncate text-lg font-semibold text-[#1d1d1f]">{c.value}</p>
             <p className="mt-0.5 text-xs text-[#6e6e73]">{c.note}</p>
           </div>
         ))}
       </div>
-      <p aria-label="Summary fundamental data source" title={fundamentalSource.title} className="mt-3 border-t border-black/[0.06] pt-2 text-xs text-[#6e6e73]">
-        {fundamentalSource.notice}
-      </p>
     </section>
   )
+}
+
+// Keep policy alignment, historical inputs and benchmark comparisons beside the simulation only.
+const SimulationSummary = ({latest, backtest}: {latest: DeskRecord; backtest: DeskCurve['backtest']}) => {
+  const policy = describeSimulationPolicy(backtest?.strategy_policy, latest.targets?.policy)
+  const fundamentals = describeFundamentalSource(backtest?.fundamentals_source)
+  const label = policy.current
+    ? `${POLICY_SIMULATION_LABEL}${fundamentals.current ? '' : fundamentals.known ? ' · older fundamental inputs' : ' · fundamental inputs unverified'}`
+    : policy.label
+  // No point-in-time result means no headline; never substitute a hindsight-universe total.
+  const last = (values?: number[]) => values?.length ? values[values.length - 1] : null
+  const total = last(backtest?.rules_point_in_time)
+  if (total === null) return null
+  const cagr = backtest?.stats_point_in_time?.cagr
+  const spy = last(backtest?.spy)
+  const qqq = last(backtest?.qqq)
+  return <section aria-label="Historical simulation summary" className="mb-3 rounded-xl bg-[#f5f5f7] p-3 text-xs">
+    <p title={`Recorded simulation fundamental source: ${backtest?.fundamentals_source || 'not recorded'}.`}>{label}</p>
+    <p className="my-1 text-sm"><Trend value={total * 100} />{' '}
+      {typeof cagr === 'number' && Number.isFinite(cagr) && <span aria-label="Policy simulation CAGR">CAGR {(cagr * 100).toFixed(1)}% · </span>}
+      {spy !== null && <>vs SPY <Trend value={spy * 100} /></>}{qqq !== null && <> · QQQ <Trend value={qqq * 100} /></>}
+    </p>
+    <p className="text-[#6e6e73]">{[policy.note, describeSimulationFunding(backtest?.funding_model).summary, fundamentals.simulationNote].filter(Boolean).join(' ')}</p>
+  </section>
 }
 
 // The regime in front of the board, not at the bottom: the warnings change
@@ -896,15 +876,15 @@ const CurveChart = ({
 
 // The trust anchor: the rules' track record in words and the curve. Absent
 // until the nightly run writes a curve block, with a plain note.
-const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
+const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: DeskRecord }) => {
   const backtest = curve?.backtest
   const stats = backtest?.stats
   if (!backtest || !stats) {
     return (
       <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">The desk’s track record</h3>
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Historical simulation</h3>
         <p className="mt-1 text-sm text-[#6e6e73]">
-          {curve?.backtest_unavailable_reason ?? 'The evening run has not written a curve yet; check back after the next close.'}
+          {curve?.backtest_unavailable_reason ?? 'No historical simulation available.'}
         </p>
       </section>
     )
@@ -927,11 +907,12 @@ const TrackRecord = ({ curve }: { curve: DeskCurve | undefined }) => {
   return (
     <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">The desk’s track record</h3>
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Historical simulation</h3>
         <p className="text-xs text-[#6e6e73]">
-          {backtest.label} · as of {shortDate(backtest.asof)} · the practice account is the only live sample
+          {backtest.label} · as of {shortDate(backtest.asof)} · not paper-account results
         </p>
       </div>
+      <SimulationSummary latest={latest} backtest={backtest} />
       <p aria-label="Simulation funding assumptions" className="mb-3 text-xs text-amber-800">{describeSimulationFunding(backtest.funding_model).assumptions}</p>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {cells.map((c) => (
@@ -1566,6 +1547,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
       </div>}
       {latest && <details aria-label="Strategy details" className="rounded-xl border border-black/[0.08] bg-white p-3 text-xs"><summary className="cursor-pointer font-medium">Strategy details</summary>
+      <p className="mt-2" aria-label="Recorded allocation policy">Allocation policy: {latest.targets?.policy ?? 'Not recorded'} · decision {latest.session}</p>
       <p aria-label="Fundamental data source" title={describeFundamentalSource(latest.provenance?.data?.fundamentals).title} className="border-b border-black/[0.06] px-3 py-1.5 text-[11px] text-[#6e6e73]">
         {describeFundamentalSource(latest.provenance?.data?.fundamentals).notice}
       </p>
@@ -1627,10 +1609,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
 
       {latest && payload.changes && <WhatChanged changes={payload.changes} />}
-      {latest && <section aria-label="Your planned cash" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
-        <span title="Cash implied by the plan's target weights, before fees; not actual holdings">Planned cash <b>{(100 * Math.max(0, 1 - latest.book.reduce((sum, row) => sum + row.weight, 0))).toFixed(1)}%</b></span>
-        <span className="text-[#6e6e73]">{eventPaused ? 'FOMC overrides the scheduled plan' : 'Weights apply at the reset'}</span>
-      </section>}
+      {latest && <PlannedCash record={latest} paused={eventPaused} />}
       </details>}
 
 
@@ -1638,10 +1617,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <details className="rounded-2xl border border-black/[0.08] bg-white" aria-label="Practice account">
           <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#1d1d1f]">
             Practice account
-            <span className="ml-2 text-xs font-normal text-[#6e6e73]">simulated funds · the desk's paper book, not your money</span>
+            <span className="ml-2 text-xs font-normal text-[#6e6e73]">simulated funds</span>
           </summary>
           <div className="space-y-3 px-4 pb-4">
-            <SummaryStrip latest={latest} paperLive={paperLive} curve={curve} />
+            <p aria-label="Paper account execution timing" className="text-xs text-[#6e6e73]">Scheduled paper buys: next open. Ordinary reductions: next eligible close. {timedBoard(decisions, latest) ? 'Stock-ranking actions use a separate intraday timing rule; fills and results can differ.' : 'Personal guidance uses your own recorded positions and confirmed cash.'}</p>
+            <SummaryStrip latest={latest} paperLive={paperLive} />
+            <PaperAccountHistory key={userId} userId={userId} session={latest.session} />
             {paperLive && paperLive.reason === undefined && paperLive.equity !== undefined && <LivePositions paper={paperLive} equity={paperLive.equity} />}
             <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
               <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>
@@ -1650,10 +1631,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
               {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side} {fill.qty} {fill.symbol} at {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
             </section>
-            <TrackRecord curve={curve} />
           </div>
         </details>
       )}
+
+      {latest && <details aria-label="Historical simulation" className="rounded-2xl border border-black/[0.08] bg-white">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">Historical simulation <span className="ml-2 text-xs font-normal text-[#6e6e73]">research · not paper-account results</span></summary>
+        <TrackRecord latest={latest} curve={curve} />
+      </details>}
 
       </>}
 
@@ -1746,12 +1731,12 @@ const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number
           Practice positions
           {paper.as_of && (
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">
-              broker snapshot fetched {marketTime(paper.as_of)}
+              updated {marketTime(paper.as_of)}
             </span>
           )}
         </h3>
         <span className="text-xs text-[#6e6e73]">
-          {money(equity)} in the account · day P/L{' '}
+          {money(equity)} in the account · change since prior close{' '}
           {paper.day_pl !== undefined ? <TrendUsd value={paper.day_pl} /> : '—'}
         </span>
       </div>
@@ -1905,9 +1890,9 @@ const PracticeAccount = ({
         Practice account
         <span className="ml-2 text-xs font-normal text-[#6e6e73]">
           {fromBroker && live.as_of
-            ? `broker snapshot fetched ${marketTime(live.as_of)}`
-            : fromBroker ? 'broker snapshot · fetch time unavailable'
-              : `saved paper snapshot · ${record?.session ?? 'session unavailable'} · broker refresh ${live === null ? 'pending' : 'unavailable'}`}
+            ? `updated ${marketTime(live.as_of)}`
+            : fromBroker ? 'broker value · update time unavailable'
+              : `saved ${record?.session ?? 'session unavailable'} · broker refresh ${live === null ? 'pending' : 'unavailable'}`}
         </span>
       </h3>
       <p className="mb-2 text-xs text-[#6e6e73]">
@@ -1918,7 +1903,7 @@ const PracticeAccount = ({
         Worth {money(equityValue)} · cash {money(cash)}
         {fromBroker && live.day_pl !== undefined && (
           <>
-            {' '}· broker day P/L <TrendUsd value={live.day_pl} />
+            {' '}· change since prior close <TrendUsd value={live.day_pl} />
           </>
         )}
         {!fromBroker && record && (
@@ -2340,7 +2325,8 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   compact?: boolean; terse?: boolean
 }) => {
   const {row, action, reason, blocked, blocker} = planFor(ticker, decisions, latest, now)
-  if (!row) return <span title={reason} className="text-[#6e6e73]" aria-label={`${ticker} strategy intent`}>Hold</span>
+  if (!row) return <span title={reason} className="text-[#6e6e73]" aria-label={`${ticker} strategy intent`}>Unavailable</span>
+  const presentation = actionPresentation(action, row, timedBoard(decisions, latest), now)
   const expired = !!row.valid_until && Number.isFinite(Date.parse(row.valid_until)) && Date.parse(row.valid_until) <= now
   const clockRestriction = executionClockMessage(blocker)
   const executionStatus = blocked ? <span aria-label={`${ticker} execution readiness`} title={clockRestriction?.full ?? undefined} className="block font-normal text-[#b42318]">Blocked now{blocker ? ` · ${clockRestriction?.short ?? blocker}` : ''}</span> : null
@@ -2351,7 +2337,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   if (compact) {
     // Inside a trade row the badge above already carries the action, so this
     // line adds only the count when there is something to trade.
-    if (action === 'Hold') return <span title={actOnIt(reason) ?? reason} aria-label={`${ticker} strategy intent`}>Hold</span>
+    if (action === 'Hold') return <span title={actOnIt(blocker ?? reason) ?? blocker ?? reason} aria-label={`${ticker} strategy intent`}>{presentation.word}{presentation.detail && <span className="block text-[10px]">{presentation.detail}</span>}</span>
     // "Sell 1.9%" beside a Target column reading 0.8% reads as a
     // contradiction. A sell is always the whole position, so it says so, and
     // a buy carries a + because it is an addition rather than a level.
@@ -2361,7 +2347,8 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   // column and the reasoning is a hover: a trader scanning ninety-four rows
   // reads the word, and asks why only for the one row he stops on.
   return <div className="min-w-24" aria-label={`${ticker} strategy intent`} title={actOnIt(blocker ?? reason) ?? blocker ?? reason}>
-    <div className="font-medium">{action.toUpperCase()}</div>
+    <div className="font-medium">{presentation.word === 'Hold' ? 'HOLD' : presentation.word}</div>
+    {presentation.detail && <div className="text-[10px] text-[#6e6e73]">{presentation.detail}</div>}
     {executionStatus}
     {spreadCaveat}
     {terse && !blocked && <p aria-label={`${ticker} decision reason`} className="text-xs font-normal text-[#6e6e73]">{action === 'Hold' && (row.strategy_action ?? row.action) === 'Hold' && row.entry_status === 'unavailable' ? row.entry_reason ?? 'Entry data unavailable' : reason}</p>}

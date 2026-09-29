@@ -139,12 +139,12 @@ async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
   for (const [category, failures] of Object.entries(diagnostics)) expect.soft(failures, `Browser ${category}`).toEqual([])
 }
 
-// Open the practice account and return the track-record section with its chart.
+// Open the separate historical simulation and return its chart.
 async function openTrackRecord(page: Page) {
   await page.goto('/#desk')
-  const account = page.locator('details[aria-label="Practice account"]')
+  const account = page.locator('details[aria-label="Historical simulation"]')
   if ((await account.getAttribute('open')) === null) await account.locator(':scope > summary').click()
-  const record = account.locator('section', {has: page.getByRole('heading', {name: /track record$/})})
+  const record = account.locator('section', {has: page.getByRole('heading', {name: 'Historical simulation', exact: true})})
   const chart = record.getByRole('img', {name: CHART_NAME, exact: true})
   await expect(chart).toBeVisible()
   return {record, chart}

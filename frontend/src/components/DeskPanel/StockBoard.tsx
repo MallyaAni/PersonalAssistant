@@ -153,6 +153,26 @@ export const actionWord = (plan: PlanAction, decision?: {strategy_action?: strin
 export const timedBoard = (decisions: DeskDecisions | undefined, latest: DeskRecord | null | undefined): boolean =>
   !!decisions?.timing && !!latest && decisions.session === latest.session && decisions.written === latest.written
 
+// Separate missing evidence and waiting setups from an actual instruction to keep a position.
+export const actionPresentation = (plan: PlanAction, decision: DeskDecisions['rows'][string] | undefined, timed: boolean, now: number, paused = false): {word: string; detail: string | null} => {
+  if (paused) return {word: 'Paused', detail: 'FOMC'}
+  if (!decision || !PLAN_ACTIONS.includes(decision.action)) return {word: 'Unavailable', detail: 'Refresh guidance'}
+  const intent = decision.strategy_action ?? decision.action
+  if (!PLAN_ACTIONS.includes(intent)) return {word: 'Unavailable', detail: 'Refresh guidance'}
+  if (!timed) return {word: actionWord(plan, decision), detail: null}
+  if (intent === 'Hold') return decision.entry_status === 'unavailable'
+    ? {word: 'Unavailable', detail: 'Entry data missing'}
+    : {word: 'Hold', detail: null}
+  const detail = `Strategy: ${actionWord(intent, decision).toLowerCase()}`
+  if (decision.executable === false) return decision.blocker === 'available cash is unknown'
+    ? {word: 'Cash needed', detail: 'Confirm available cash'}
+    : {word: 'Blocked', detail}
+  const deadline = Date.parse(decision.valid_until ?? '')
+  if (!Number.isFinite(deadline) || deadline <= now) return {word: 'Unavailable', detail: 'Refresh price check'}
+  if (decision.action === 'Hold') return {word: 'Wait', detail}
+  return {word: actionWord(plan, decision), detail: null}
+}
+
 // The timing states in the operator's words, for the hover.
 const TIMING_STATE: Record<string, string> = {
   'pre-open': 'before the level is set',
@@ -325,15 +345,15 @@ const PlanHead = ({sort, onSort, plans, shown, onShown}: {
       {open && (
         <div role="group" aria-label="Show these plans" className="absolute left-0 top-full z-20 mt-1 w-40 rounded-lg border border-black/[0.1] bg-white p-2 shadow-lg">
           {plans.map(({name, count}) => (
-            <label key={name} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 font-normal text-[#1d1d1f] hover:bg-[#f5f5f7]">
+            <label key={name} title={name === 'Hold' ? 'Includes Hold, Wait, Cash needed, Blocked and Unavailable rows.' : undefined} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 font-normal text-[#1d1d1f] hover:bg-[#f5f5f7]">
               <input
                 type="checkbox"
                 className="cursor-pointer accent-[#0071e3]"
                 checked={shown[name]}
-                aria-label={`Show ${name} rows`}
+                aria-label={`Show ${name === 'Hold' ? 'no trade' : name} rows`}
                 onChange={(e) => onShown({...shown, [name]: e.target.checked})}
               />
-              <span className="flex-1">{name}</span>
+              <span className="flex-1">{name === 'Hold' ? 'No trade' : name}</span>
               <span className="tabular-nums text-[#6e6e73]">{count}</span>
             </label>
           ))}
@@ -596,6 +616,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings</h3>
+          {timed && <span aria-label="Personal action timing" title="These actions are calculated for your recorded holdings and confirmed cash, not the paper account. Scheduled paper buys use the next open; scheduled reductions use the next eligible close.">Your account · intraday price triggers</span>}
           {!sort ? <span title="Grades highest first; then Buy, Sell, Hold; then executable size. Ties use grade score, then ticker.">Grade ↓ · Action · Size ↓</span>
             : <button type="button" className="text-[#0071e3] hover:underline" onClick={() => setSort(null)}>Reset ranking</button>}
           {fomcLine && <p>{fomcLine}</p>}
@@ -622,7 +643,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
         <p aria-label="Intraday grade coverage">{freshGradeCount}/{graded.length} fresh intraday grades{freshGradeCount < graded.length ? ` · other grades: ${latest.session} close` : ''}. Grades are not entry signals.</p>
         {coverage && <p>{coverage.graded} graded · {coverage.tracked} tracked</p>}
         {timed
-          ? <p aria-label="Timed actions">Action is BUY, SELL or TRIM only when it is due now: a 15-minute close {`${+((decisions?.timing?.level ?? 0) * 100).toFixed(2)}%`} through today&apos;s open, else the close window (market-on-close); otherwise Hold, with the planned size and level on the row&apos;s hover. Size is a change in your account allocation, not a profit target.</p>
+          ? <p aria-label="Timed actions">BUY, SELL and TRIM require a price trigger or the close window. Wait means a strategy setup has not triggered; Blocked and Unavailable are not Hold recommendations. Scheduled paper buys use the next open and reductions the next eligible close, not this timing rule. Size is a change in your account allocation, not a profit target.</p>
           : <p>Action is the strategy recommendation. Blocked recommendations have no trade size. Size is a change in your account allocation, not a profit target.</p>}
       </details>
     </div>
@@ -694,7 +715,8 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           // The word the row shows. A Sell that leaves a positive target is a
           // trim (the decision reads "Trim to ..."), and the operator asked to
           // see that word rather than a Sell that reads as an exit.
-          const word = isCash ? 'HOLD' : actionWord(plan, decision)
+          const presentation = actionPresentation(plan, decision, timed, now, paused)
+          const word = isCash ? 'HOLD' : presentation.word
           // Why the spread line is drawn, when it is; the row's hover carries it.
           const spreadNote = isCash ? null : decision?.quote?.spread_verified === false
             ? `${decision.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`
@@ -727,6 +749,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
                 <div className="text-[10px] text-[#6e6e73]">{row.grade ? !timed && grades[row.ticker] ? 'Intraday' : 'Close' : 'Unrated'}</div></>}
             </td>
             <td className="text-xs"><span aria-label={isCash ? undefined : `${row.ticker} strategy intent`} className={`font-medium ${plan === 'Buy' ? 'text-[#1e7a3a]' : plan === 'Sell' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{word}</span>
+              {!isCash && presentation.detail && <div aria-label={`${row.ticker} action status`} className="text-[10px] text-[#6e6e73]">{presentation.detail}</div>}
               {/* The readiness and spread caveats are off the visible row (they read on the row's hover) but stay in the accessibility tree, since a screen reader has no hover. */}
               {readiness && <span aria-label={`${row.ticker} execution readiness`} title={clockRestriction?.full ?? readiness} className="sr-only">{clockRestriction?.short ?? readiness}</span>}
               {spreadNote && <span aria-label={`${row.ticker} spread verification`} className="sr-only">{spreadNote}</span>}</td>

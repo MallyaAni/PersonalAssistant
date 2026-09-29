@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-09-29 — Dashboard/account audit; shared-strategy request
+
+The operator uses **Stock rankings** to trade his real account and found Hold
+on every row while the paper account bought at the open. The running code
+really has different execution and sizing paths. See
+[the audit](research/dashboard-account-audit-2026-09-29.md) for broker-fill
+evidence, the unknown-cash reproduction and the required shared-planner work.
+
+This checkpoint corrects the display, **not the trading rules**: missing,
+waiting, cash-blocked and genuine Hold states are distinct; actual paper
+history is visible; account balances and simulations are separated; planned
+cash uses active recorded targets rather than the legacy book. The history
+is recorded broker equity, not certified closing P&L or cash-flow-adjusted
+strategy performance. No order was placed or cancelled for this work.
+
+The user authorized consistent rules across both accounts. Full alignment
+is still open: use `paper.plan` with identical frozen nightly inputs and
+independent personal execution state, including confirmed fills. Do not copy
+the paper account's clock/cash/positions or turn an old opening order into an
+intraday Buy. The user was asked how to initialize the personal account.
+No shared-planner activation or deployment has occurred in this checkpoint.
+
+Validation: **134 backend tests and 141 browser tests passed**, plus TypeScript
+and the Vite production build. Browser APIs are controlled fixtures; deployed
+behavior is not verified. Five unrelated quote-display failures reproduce on
+unchanged Fable main. Exact test/evidence details are in the audit above.
+
+The separate research branch `research/target-consistency-20260929` completed
+its 200-run ablation at `b8b54df`; findings are committed at `7e70fe1` on
+Spark and GitHub. Verdict **DO_NOT_PROMOTE**. Do not merge its unused simulator
+option into production. The earlier execution-validation branch was deleted
+as requested after preserving a temporary recovery bundle outside the repo.
+
 ## Model handoff protocol (2026-09-28; operator: "we should not sacrifice quality of work")
 
 **Checkpoint:** tag `checkpoint-2026-09-28` = `main` `d417ff20`. The deployed

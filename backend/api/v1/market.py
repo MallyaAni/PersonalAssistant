@@ -1137,6 +1137,24 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
     }
 
 
+@router.get("/desk/paper/history")
+async def desk_paper_history(
+    user_id: UserId,
+    response: Response,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 90,
+) -> dict[str, object]:
+    """Read actual saved paper-account values, not the strategy backtest."""
+    _operator_only(user_id)
+    response.headers["Cache-Control"] = "no-store"
+    from backend.market import paper_history
+
+    try:
+        history = await asyncio.to_thread(paper_history.load, _root(), limit=limit)
+    except (OSError, ValueError, TypeError):
+        return {"user_id": user_id, "rows": [], "reason": "Account history unavailable"}
+    return {"user_id": user_id, **history}
+
+
 # Read original recommendations alongside an optional nightly grade replay.
 @router.get("/desk/history/{ticker}")
 async def desk_history(user_id: UserId, ticker: str) -> dict[str, object]:

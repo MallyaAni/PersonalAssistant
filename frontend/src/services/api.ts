@@ -2809,6 +2809,41 @@ export const getDeskPaper = async (userId: string): Promise<DeskPaperLive> => {
   return (await response.json()) as DeskPaperLive;
 };
 
+export interface DeskPaperHistoryRow {
+  session: string;
+  recorded_at: string | null;
+  equity: number | null;
+  cash: number | null;
+  equity_change: number | null;
+  equity_change_pct: number | null;
+  previous_session: string | null;
+  missing_sessions: number | null;
+  chronology_verified: boolean | null;
+}
+
+export interface DeskPaperHistory {
+  user_id: string;
+  source?: 'paper_account_records';
+  total_records?: number;
+  ignored_records?: number;
+  first_session?: string | null;
+  last_session?: string | null;
+  truncated?: boolean;
+  reason?: string;
+  rows: DeskPaperHistoryRow[];
+}
+
+// Read saved paper-account values without recording new marks or requesting broker activity.
+export const getDeskPaperHistory = async (userId: string, limit = 90): Promise<DeskPaperHistory> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/paper/history?limit=${limit}`,
+  );
+  if (!response.ok) throw new Error('Account history could not be loaded.');
+  const history = await response.json() as DeskPaperHistory;
+  if (history.reason) throw new Error(history.reason);
+  return history;
+};
+
 export interface DeskSessionPrices {
   session: 'pre-market' | 'post-market' | 'overnight' | 'closed' | 'regular' | 'unknown';
   as_of: string | null;

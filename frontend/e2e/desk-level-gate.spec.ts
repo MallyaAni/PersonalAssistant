@@ -104,14 +104,15 @@ function rowOf(page: Page, ticker: string) {
   return page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row').filter({has: page.getByRole('button', {name: ticker, exact: true})})
 }
 
-// Waiting for the level: Hold with no size, the planned level on hover, the
+// Waiting for the level: Wait with no size, the planned level on hover, the
 // close grade in the column and the intraday reading only on hover.
-test('a /4 buy waiting for its level is a Hold with the level on hover', async ({page}) => {
+test('a /4 buy waiting for its level shows Wait with its strategy intent', async ({page}) => {
   const {errors, board} = await setup(page, {AAPL: WAITING})
-  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('Wait')
+  await expect(board.getByLabel('AAPL action status')).toHaveText('Strategy: buy')
   await expect(board.getByLabel('AAPL size')).toHaveText('—')
   const title = rowOf(page, 'AAPL')
-  await expect(title).toHaveAttribute('title', /^Hold: Buy 9\.1% planned: on a 15-minute close at or under \$178\.20 \(1% under today's open \$180\.00\), else at the close/)
+  await expect(title).toHaveAttribute('title', /^Wait: Buy 9\.1% planned: on a 15-minute close at or under \$178\.20 \(1% under today's open \$180\.00\), else at the close/)
   await expect(title).toHaveAttribute('title', /Timing · waiting for the level: Waiting for a 15-minute close at or under \$178\.20/)
   await expect(title).toHaveAttribute('title', /Structure · not rejecting its upper band \(executor's gate\)/)
   await expect(title).toHaveAttribute('title', /Grade A at the 2026-09-24 close \(the one the action uses\) · intraday reading B/)
@@ -143,17 +144,17 @@ test('the close window is BUY at the close', async ({page}) => {
 })
 
 // A downgrade exit on a 1% pop is SELL of the whole position; a trim on its
-// level is TRIM; a band-rejecting buy is a Hold that names the gate.
-test('a downgrade on a pop is SELL, a trim is TRIM, a band-blocked buy is Hold', async ({page}) => {
+// level is TRIM; a band-rejecting buy is Blocked, not a Hold recommendation.
+test('a downgrade on a pop is SELL, a trim is TRIM, a band-blocked buy is Blocked', async ({page}) => {
   const {errors, board} = await setup(page, {AMD: EXIT, MSFT: TRIM, NVDA: BLOCKED})
   await expect(board.getByLabel('AMD strategy intent')).toHaveText('SELL')
   await expect(board.getByLabel('AMD size')).toHaveText('5.0% of account')
   await expect(rowOf(page, 'AMD')).toHaveAttribute('title', /^SELL: Sell now: the 10:30 AM ET 15-minute close \$181\.90 is at or over \$181\.80/)
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('TRIM')
   await expect(board.getByLabel('MSFT size')).toHaveText('4.9% of account')
-  await expect(board.getByLabel('NVDA strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('NVDA strategy intent')).toHaveText('Blocked')
   await expect(board.getByLabel('NVDA size')).toHaveText('—')
-  await expect(rowOf(page, 'NVDA')).toHaveAttribute('title', /^Hold: Buy blocked: rejecting its upper band \(executor's gate\)/)
+  await expect(rowOf(page, 'NVDA')).toHaveAttribute('title', /^Blocked: Buy blocked: rejecting its upper band \(executor's gate\)/)
   await expect(rowOf(page, 'NVDA')).toHaveAttribute('title', /Structure · rejecting its upper band \(executor's gate\): no buy today/)
   await expect(page.getByLabel('Today', {exact: true})).toContainText('2 executable signals.')
   expect(errors).toEqual([])
@@ -165,7 +166,7 @@ test('the timed plan refreshes within a minute and after every new candle', asyn
   let candle = at
   const next = '2026-09-24T14:46:00Z'
   const {errors, log, board} = await setup(page, {AAPL: WAITING}, () => candle)
-  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('Wait')
   // Let the page's start-up reads finish before counting.
   await expect.poll(async () => {
     const seen = log.length
