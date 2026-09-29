@@ -528,3 +528,127 @@ def ti_lookup(forecast: Stage3Forecast, column: np.ndarray | None = None) -> dic
         if 0 <= k < TI_SLOTS:
             vector[k] = values[i]
     return out
+
+
+# Column-name prefixes: every daily-block column starts with DAILY_PREFIX,
+# every intraday-block column with INTRADAY_PREFIX. The sequence model's
+# daily branch reads only the daily columns; its intraday information comes
+# from the sequence tensor, not the tabular intraday block.
+DAILY_PREFIX = "d_"
+INTRADAY_PREFIX = "i_"
+
+
+# The indices of the daily-block columns of a dataset.
+def daily_columns(feature_names: tuple[str, ...]) -> np.ndarray:
+    """Return the positions of the columns whose names start with DAILY_PREFIX."""
+    return np.array(
+        [i for i, name in enumerate(feature_names) if name.startswith(DAILY_PREFIX)],
+        dtype=np.int64,
+    )
+
+
+@dataclass(frozen=True)
+class SeqTensor:
+    """Every name's cube sessions as (gap step + 26 bars) x SEQ_CHANNELS."""
+
+    tickers: np.ndarray  # (N,) str
+    sessions: np.ndarray  # (S,) datetime64[D], the union of cube sessions, ascending
+    seq: np.ndarray  # (N, S, STEPS_PER_SESSION, len(SEQ_CHANNELS)) float16
+    valid: np.ndarray  # (N, S) bool: the name has a complete cube session that day
+    meta: dict[str, Any] = field(default_factory=dict)
+
+
+# Write the sequence tensor (.npz, uncompressed so it can be memory-mapped
+# after extraction) with its meta.
+def save_seq(path: Path, tensor: SeqTensor) -> Path:
+    """Write `tensor` to `path` and return the path."""
+    n, s = len(tensor.tickers), len(tensor.sessions)
+    expected = (n, s, STEPS_PER_SESSION, len(SEQ_CHANNELS))
+    if tensor.seq.shape != expected or tensor.valid.shape != (n, s):
+        raise ValueError(f"seq is {tensor.seq.shape}, valid {tensor.valid.shape}; expected {expected}")
+    meta = {**tensor.meta, "plan": PLAN, "format": FORMAT_VERSION, "channels": list(SEQ_CHANNELS)}
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as handle:
+        np.savez(
+            handle,
+            tickers=np.asarray(tensor.tickers, dtype=str),
+            sessions=np.asarray(tensor.sessions, dtype="datetime64[D]"),
+            seq=np.asarray(tensor.seq, dtype=np.float16),
+            valid=np.asarray(tensor.valid, dtype=bool),
+            meta=np.asarray(json.dumps(meta, sort_keys=True, default=str)),
+        )
+    return path
+
+
+# Read a sequence tensor written by `save_seq`.
+def load_seq(path: Path) -> SeqTensor:
+    """Return the SeqTensor stored at `path`."""
+    with np.load(Path(path), allow_pickle=False) as npz:
+        meta = json.loads(str(npz["meta"]))
+        if meta.get("format") != FORMAT_VERSION or tuple(meta.get("channels", ())) != SEQ_CHANNELS:
+            raise ValueError(f"{path}: format or channels differ from this module's")
+        return SeqTensor(
+            tickers=npz["tickers"].astype(str),
+            sessions=npz["sessions"].astype("datetime64[D]"),
+            seq=npz["seq"],
+            valid=npz["valid"].astype(bool),
+            meta=meta,
+        )
+
+
+@dataclass(frozen=True)
+class DailyOHLCV:
+    """The dividend-adjusted daily bars the chart images are drawn from."""
+
+    tickers: np.ndarray  # (N,) str
+    dates: np.ndarray  # (T,) datetime64[D]
+    open: np.ndarray  # (T, N) float32, NaN where missing
+    high: np.ndarray
+    low: np.ndarray
+    close: np.ndarray
+    volume: np.ndarray
+    meta: dict[str, Any] = field(default_factory=dict)
+
+
+# Write the daily bars (.npz) with their meta.
+def save_ohlcv(path: Path, bars: DailyOHLCV) -> Path:
+    """Write `bars` to `path` and return the path."""
+    shape = (len(bars.dates), len(bars.tickers))
+    for name in ("open", "high", "low", "close", "volume"):
+        if getattr(bars, name).shape != shape:
+            raise ValueError(f"{name} is {getattr(bars, name).shape}; expected {shape}")
+    meta = {**bars.meta, "plan": PLAN, "format": FORMAT_VERSION}
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as handle:
+        np.savez(
+            handle,
+            tickers=np.asarray(bars.tickers, dtype=str),
+            dates=np.asarray(bars.dates, dtype="datetime64[D]"),
+            **{
+                name: np.asarray(getattr(bars, name), dtype=np.float32)
+                for name in ("open", "high", "low", "close", "volume")
+            },
+            meta=np.asarray(json.dumps(meta, sort_keys=True, default=str)),
+        )
+    return path
+
+
+# Read daily bars written by `save_ohlcv`.
+def load_ohlcv(path: Path) -> DailyOHLCV:
+    """Return the DailyOHLCV stored at `path`."""
+    with np.load(Path(path), allow_pickle=False) as npz:
+        meta = json.loads(str(npz["meta"]))
+        if meta.get("format") != FORMAT_VERSION:
+            raise ValueError(f"{path}: format {meta.get('format')}, expected {FORMAT_VERSION}")
+        return DailyOHLCV(
+            tickers=npz["tickers"].astype(str),
+            dates=npz["dates"].astype("datetime64[D]"),
+            open=npz["open"],
+            high=npz["high"],
+            low=npz["low"],
+            close=npz["close"],
+            volume=npz["volume"],
+            meta=meta,
+        )

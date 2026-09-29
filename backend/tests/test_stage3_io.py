@@ -139,3 +139,33 @@ def test_forecast_round_trip_and_ti_lookup(tmp_path):
     vector = table[("A", np.datetime64("2020-01-01"))]
     assert vector.shape == (io.TI_SLOTS,)
     assert vector[0] == 1.0 and vector[5] == -2.0 and math.isnan(vector[1])
+
+
+def test_daily_columns_pick_the_prefixed_names():
+    names = ("d_ema9", "i_gap", "d_rsi14", "i_slot")
+    assert io.daily_columns(names).tolist() == [0, 2]
+
+
+def test_seq_and_ohlcv_round_trip(tmp_path):
+    tensor = io.SeqTensor(
+        tickers=np.array(["A", "B"]),
+        sessions=_dates(3),
+        seq=np.ones((2, 3, io.STEPS_PER_SESSION, len(io.SEQ_CHANNELS)), dtype=np.float16),
+        valid=np.array([[True, False, True], [True, True, True]]),
+    )
+    back = io.load_seq(io.save_seq(tmp_path / "s.npz", tensor))
+    assert back.seq.shape == (2, 3, 27, 12) and back.valid[0, 1] == False  # noqa: E712
+    with pytest.raises(ValueError, match="expected"):
+        io.save_seq(tmp_path / "bad.npz", io.SeqTensor(tensor.tickers, tensor.sessions, tensor.seq[:, :, :5], tensor.valid))
+    shape = (3, 2)
+    bars = io.DailyOHLCV(
+        tickers=np.array(["A", "B"]),
+        dates=_dates(3),
+        open=np.ones(shape),
+        high=np.ones(shape) * 2,
+        low=np.ones(shape) * 0.5,
+        close=np.ones(shape),
+        volume=np.ones(shape) * 100,
+    )
+    back_bars = io.load_ohlcv(io.save_ohlcv(tmp_path / "o.npz", bars))
+    assert back_bars.high.dtype == np.float32 and float(back_bars.volume[0, 0]) == 100.0
