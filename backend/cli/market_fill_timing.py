@@ -43,6 +43,28 @@ close. The payload goes to `<root>/desk/sr_level_fill.json`.
     python -m backend.cli.market_fill_timing --root data/market --workers 8 \
         --offsets 20 --cost 10 --only level_dip,level_dip_confluence
 
+`--stage3-forecast <family>=<npz>` (repeatable; `lgbm` or `seq`, each a
+T-I `stage3_io.Stage3Forecast`) prices the stage-3 T-I trial of
+`docs/research/stage3-plan-2026-09-29.md`: `<family>_filter` (the board's
+1% trigger with the model's veto) and `<family>_free` (the model picks the
+slot), each paired against `dip_or_close` (added automatically). The table
+gains the T-I block per window - the model window from the family's first
+forecast session through 2023, 2016-2023 and 2024-2026 - and the payload
+records each file's path and sha256 and this run's reading. `--next-bar`
+is the plan's robustness run (every bar-close fill moves to the next bar's
+open, candidate and control alike); `--seed-column K` prices seed K's
+column of every forecast instead of the ensemble (the seed-stability runs).
+The payload goes to `--out`, or by default to
+`<root>/desk/stage3_ti_fill_<cost>bp[_next_bar][_seed<K>].json`, so the
+runs the verdict reads (10, 16 and 25 bp, the next-bar run and five seeds,
+`stage3_verdict.ti_verdict`) do not overwrite each other.
+
+    python -m backend.cli.market_fill_timing --root data/market --workers 8 \
+        --offsets 20 --cost 10 \
+        --stage3-forecast lgbm=research/stage3/ti_lgbm.npz \
+        --stage3-forecast seq=research/stage3/ti_seq.npz \
+        --only dip_or_close,lgbm_filter,lgbm_free,seq_filter,seq_free
+
 Nothing here trades or changes the executor.
 """
 
@@ -58,7 +80,7 @@ from typing import Any, TextIO
 
 from backend.agents.trading.desk import point_in_time
 from backend.cli.market_session_anatomy import DEFAULT_WORKERS, load_cubes
-from backend.market import fill_timing, universe, vol_forecast
+from backend.market import fill_timing, stage3_io, universe, vol_forecast
 from backend.market.session_anatomy import json_ready
 from backend.market.store import MarketStore
 
@@ -67,6 +89,9 @@ FILE = "fill_timing.json"
 LEVEL_FILE = "ml_entry_level.json"
 # Where a run with an SR convention writes, beside both.
 SR_FILE = "sr_level_fill.json"
+# Where a stage-3 T-I run writes by default: one file per cost, fill mode
+# and seed column, so the runs the verdict reads sit side by side.
+TI_FILE = "stage3_ti_fill_{cost}bp{mode}{seed}.json"
 
 
 # The command-line parser.
@@ -112,12 +137,80 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "comma-separated conventions to price (the controls the verdicts read "
             "are always added); default: the fill-timing seven, plus the level four "
-            "with --forecasts; the SR pair (level_dip, level_dip_confluence) only "
-            "when named"
+            "with --forecasts and the T-I pair of every --stage3-forecast family; "
+            "the SR pair (level_dip, level_dip_confluence) only when named"
         ),
+    )
+    parser.add_argument(
+        "--stage3-forecast",
+        action="append",
+        default=[],
+        metavar="FAMILY=NPZ",
+        help=(
+            "a stage-3 T-I forecast file for a family (lgbm or seq), repeatable: "
+            "adds <family>_filter and <family>_free against dip_or_close"
+        ),
+    )
+    parser.add_argument(
+        "--next-bar",
+        action="store_true",
+        help=(
+            "robustness run: every fill at a bar close moves to the next bar's "
+            "open (a fill at the last bar goes to the official close)"
+        ),
+    )
+    parser.add_argument(
+        "--seed-column",
+        type=int,
+        default=None,
+        help="price seed K's column of every stage-3 forecast instead of the ensemble",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="where to write the payload (default: under <root>/desk/)",
     )
     parser.add_argument("--json", action="store_true", help="print the payload as JSON")
     return parser
+
+
+# The `--stage3-forecast FAMILY=NPZ` values as {family: path}; a malformed
+# value or a family given twice is refused.
+def _stage3_files(values: list[str]) -> dict[str, Path]:
+    """Return {family: forecast path} from the repeated option."""
+    files: dict[str, Path] = {}
+    for value in values or []:
+        family, sep, path = str(value).partition("=")
+        family = family.strip()
+        if not sep or not family or not path.strip():
+            raise ValueError(f"--stage3-forecast wants FAMILY=NPZ, not {value!r}")
+        if family in files:
+            raise ValueError(f"--stage3-forecast gives {family} twice")
+        files[family] = Path(path.strip())
+    return files
+
+
+# The file a run writes: `--out` when given; a stage-3 T-I run's own name
+# by cost, fill mode and seed column; else the trial's file, as before.
+def _target(args: argparse.Namespace, root: Path, payload: dict[str, Any]) -> Path:
+    """Return the payload's destination path."""
+    if getattr(args, "out", None) is not None:
+        return Path(args.out)
+    if "stage3_ti" in payload:
+        seed = payload["stage3_ti"].get("seed_column")
+        return (
+            root
+            / "desk"
+            / TI_FILE.format(
+                cost=f"{float(payload['cost_bps']):g}",
+                mode="_next_bar" if payload.get("next_bar") else "",
+                seed="" if seed is None else f"_seed{int(seed)}",
+            )
+        )
+    if "sr_level" in payload:
+        return root / "desk" / SR_FILE
+    return root / "desk" / (LEVEL_FILE if "level" in payload else FILE)
 
 
 # The `--only` list as convention names, or None when it names none.
@@ -316,14 +409,94 @@ def render(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-# The entry-level and SR blocks' tables, for the blocks the payload has.
+# The stage-3 T-I block: per window, each T-I convention against
+# dip_or_close (bp a day at the median offset, its Newey-West t, offsets
+# above dip_or_close, the median CAGR), what its orders did (the share
+# filled before the close, buys and sells apart, the gain per such fill
+# over the close), candidate minus control per differing order with its
+# date-clustered t, and the no-forecast and late-trigger counts; then this
+# run's reading (the verdict needs the other runs).
+def _render_ti(payload: dict[str, Any]) -> list[str]:
+    """Return the stage-3 T-I block's lines."""
+    block = payload["stage3_ti"]
+    mode = "next-bar robustness run" if block.get("next_bar") else "registered fills"
+    seed = block.get("seed_column")
+    lines = [
+        f"\nstage-3 T-I trial against {block['control']} (the board's rule) at "
+        f"{payload['cost_bps']:g} bp, {mode}, "
+        + ("seed ensemble" if seed is None else f"seed column {seed}")
+    ]
+    for family, info in block["families"].items():
+        lines.append(
+            f"  {family}: {info.get('file', 'forecast')} "
+            f"(sha256 {str(info.get('sha256') or 'n/a')[:12]}), forecasts from "
+            f"{info.get('first_forecast_session') or 'never'}, "
+            f"{info.get('vectors_with_forecast', 0)} name-sessions, "
+            f"{info.get('partial_vectors', 0)} partial"
+        )
+    for window in fill_timing.TI_WINDOWS:
+        lines.append(f"\n{window}")
+        lines.append(
+            f"  {'convention':<13}{'CAGR':>7}{'ctl':>7}{'bp/d':>7}{'t':>8}{'>dip':>6}"
+            f"{'pre%':>7}{'buy%':>7}{'sell%':>7}{'bp/fill':>8}{'bp/diff':>9}{'t':>9}"
+            f"{'diff':>7}{'no-fc':>7}{'late':>6}"
+        )
+        for row in block["rows"]:
+            if row["window"] != window:
+                continue
+            orders = row["orders"]
+            versus = row["versus_control"]["all"]
+            lines.append(
+                f"  {row['convention']:<13}{_pct(row['median_cagr']):>7}"
+                f"{_pct(row['control_median_cagr']):>7}"
+                f"{_num(row['mean_daily_bp_vs_dip'], 1):>7}"
+                f"{_num(row['hac_t_vs_dip']):>8}{row['offsets_above_dip']:>6}"
+                f"{_pct(orders['all']['before_close_share']):>7}"
+                f"{_pct(orders['buy']['before_close_share']):>7}"
+                f"{_pct(orders['sell']['before_close_share']):>7}"
+                f"{_num(orders['all']['gain_bp_per_fill'], 1):>8}"
+                f"{_num(versus['bp_per_differing_order'], 1):>9}"
+                f"{_num(versus['clustered_t']):>9}{versus['differing']:>7}"
+                f"{orders['all']['no_forecast']:>7}{orders['all']['late_triggers']:>6}"
+            )
+    lines.append(
+        "  (bp/d and t: paired daily difference against dip_or_close at the median "
+        "offset, Newey-West; pre%, buy%, sell%: orders filled at a bar before the "
+        "close; bp/fill: gain over that session's close per such fill; bp/diff and "
+        "t: candidate minus dip_or_close per order the two fill differently, t "
+        "clustered by date; diff: those orders; no-fc: orders with no forecast, "
+        "filled as dip_or_close; late: filter triggers after 15:30)"
+    )
+    lines.append(
+        "\nthis run's reading (the verdict reads the 10/16/25 bp, next-bar and "
+        "seed runs):"
+    )
+    for convention, reading in block["reading"].items():
+        deflated = block["deflated"].get(convention, {})
+        lines.append(
+            f"  {convention}: model window {_num(reading['model_bp'], 1)} bp/d "
+            f"(t {_num(reading['model_t'])}), floor "
+            f"{'cleared' if reading['passes_floor'] else 'not cleared'}; 2024-2026 "
+            f"{_num(reading['reported_bp'], 1)}; per differing order "
+            f"{_num(reading['per_order_bp'], 1)} bp (t {_num(reading['per_order_t'])})"
+            + ("; real but immaterial" if reading["real_but_immaterial"] else "")
+            + f"; deflated Sharpe {_num(deflated.get('dsr'))} at N = "
+            f"{deflated.get('trials', 'n/a')}"
+        )
+    return lines
+
+
+# The entry-level, SR and stage-3 T-I blocks' tables, for the blocks the
+# payload has.
 def _trial_tables(payload: dict[str, Any]) -> list[str]:
-    """Return the tables of the payload's level and SR blocks."""
+    """Return the tables of the payload's level, SR and T-I blocks."""
     lines: list[str] = []
     if "level" in payload:
         lines.extend(_render_level(payload))
     if "sr_level" in payload:
         lines.extend(_render_sr(payload))
+    if "stage3_ti" in payload:
+        lines.extend(_render_ti(payload))
     return lines
 
 
@@ -346,6 +519,74 @@ def _trial_verdicts(payload: dict[str, Any]) -> list[str]:
     return lines
 
 
+class _RefusedError(Exception):
+    """A run refused before the desk runs, with the exit code it returns."""
+
+    # The message printed and the exit code: 2 for a bad argument or file,
+    # 1 for a file that is not there.
+    def __init__(self, code: int, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+# The checks a run makes before the desk runs, and the stage-3 T-I
+# forecasts it prices: the convention list against the files given, a seed
+# column only with stage-3 files, every file present, and each T-I file of
+# the family it is given for, read at the seed column asked for. Raises
+# _RefusedError with the exit code.
+def _preflight(
+    args: argparse.Namespace, only: tuple[str, ...] | None, forecasts_file: Path | None
+) -> dict[str, fill_timing.TiForecast]:
+    """Return {family: TiForecast} for the run, or raise _RefusedError."""
+    seed_column = getattr(args, "seed_column", None)
+    try:
+        stage3_files = _stage3_files(getattr(args, "stage3_forecast", []))
+        fill_timing.select_conventions(
+            only, forecasts_file is not None, tuple(stage3_files)
+        )
+        if seed_column is not None and not stage3_files:
+            raise ValueError(
+                "--seed-column picks a column of the --stage3-forecast files"
+            )
+    except ValueError as error:
+        raise _RefusedError(2, str(error)) from error
+    if forecasts_file is not None and not forecasts_file.exists():
+        raise _RefusedError(1, f"forecast file not found: {forecasts_file}")
+    for family, path in stage3_files.items():
+        if not path.exists():
+            raise _RefusedError(1, f"stage-3 {family} forecast file not found: {path}")
+    try:
+        return _load_stage3(stage3_files, seed_column)
+    except ValueError as error:
+        raise _RefusedError(2, str(error)) from error
+
+
+# Read each T-I forecast file for its family, refusing one of another
+# family, as the lookup the engine reads at `seed_column` (None: the
+# ensemble); each file's path and sha256 are taken beside the read the run
+# uses.
+def _load_stage3(
+    files: dict[str, Path], seed_column: int | None
+) -> dict[str, fill_timing.TiForecast]:
+    """Return {family: TiForecast} read from the files."""
+    out: dict[str, fill_timing.TiForecast] = {}
+    for family, path in files.items():
+        loaded = stage3_io.load_forecast(path)
+        if loaded.family != family:
+            raise ValueError(f"{path} holds a {loaded.family} forecast, not {family}")
+        out[family] = fill_timing.ti_forecast(
+            loaded,
+            seed_column,
+            identity={
+                "file": str(path),
+                "sha256": _sha256(path),
+                "meta": loaded.meta,
+                "rows": int(len(loaded.dates)),
+            },
+        )
+    return out
+
+
 # Run the desk, restrict, load the cubes, study, write and print.
 def run(
     args: argparse.Namespace,
@@ -356,15 +597,13 @@ def run(
     root = Path(args.root)
     only = _only(args.only)
     forecasts_file = Path(args.forecasts) if args.forecasts is not None else None
-    # Refuse a bad convention list or a missing file before the desk runs.
+    # Refuse a bad convention list, family, seed column or forecast file, or
+    # a missing file, before the desk runs.
     try:
-        fill_timing.select_conventions(only, forecasts_file is not None)
-    except ValueError as error:
-        print(str(error), file=out)
-        return 2
-    if forecasts_file is not None and not forecasts_file.exists():
-        print(f"forecast file not found: {forecasts_file}", file=out)
-        return 1
+        ti_forecasts = _preflight(args, only, forecasts_file)
+    except _RefusedError as refusal:
+        print(str(refusal), file=out)
+        return refusal.code
     store = MarketStore(root)
     report = (desk_run or default_desk)(store)
     restricted, mask = point_in_time.point_in_time(report, args.membership)
@@ -405,6 +644,8 @@ def run(
         cost=args.cost,
         conventions=only,
         forecasts=aligned,
+        ti_forecasts=ti_forecasts or None,
+        next_bar=bool(getattr(args, "next_bar", False)),
     )
     payload["root"] = str(root)
     payload["membership_history"] = str(args.membership)
@@ -412,11 +653,15 @@ def run(
     payload["sessions_per_ticker"] = {t: len(c) for t, c in cubes.items()}
     payload["asof"] = str(panel.dates[-1])
     payload.update(identity)
+    if ti_forecasts:
+        payload["stage3_forecasts"] = {
+            family: {
+                key: forecast.identity[key] for key in ("file", "sha256", "seed_column")
+            }
+            for family, forecast in ti_forecasts.items()
+        }
     payload = json_ready(payload)
-    if "sr_level" in payload:
-        target = root / "desk" / SR_FILE
-    else:
-        target = root / "desk" / (LEVEL_FILE if "level" in payload else FILE)
+    target = _target(args, root, payload)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
     if args.json:
