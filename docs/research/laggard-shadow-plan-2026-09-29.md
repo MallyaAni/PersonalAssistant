@@ -192,3 +192,46 @@ The rest fix details of the build:
 - **The ledger stores the book in the export's row order.** That is
   ticker order, so the tie rule ("the first ticker") is the book's first
   entry.
+
+## Addendum 2 (2026-09-29): the frozen model, fitted and checked, before any forward date
+
+- **The fit.** `market_laggard_shadow fit` ran on the RTX 5080 from
+  `901c682`, the code the unit gate passed (8,052 passed, 68 skipped, exit
+  0). The research venv also ran the torch tests: 35 passed.
+  - It took 20 minutes and records `registered: true`.
+  - The inputs were the registered export files, sha256 `7fa24f7e` and
+    `e6d1d823`, verified on the RTX before the run.
+- **The fold.** The export has 2,699 T-S1 sessions.
+  - Fit part: sessions [0, 2395), through 2025-07-14, 73,354 rows.
+  - Validation: sessions [2421, 2673), 2025-08-20 to 2026-08-20, 10,980
+    rows.
+  - Last session: 2026-09-28.
+- **The choice.** The validation ICs of the eight configurations with
+  seed 0 were:
+
+  | lr | dropout | width 32 | width 64 |
+  |---|---|---|---|
+  | 3e-4 | 0.1 | +0.012 | **+0.051** |
+  | 3e-4 | 0.3 | +0.004 | +0.038 |
+  | 1e-3 | 0.1 | +0.016 | +0.028 |
+  | 1e-3 | 0.3 | +0.028 | +0.010 |
+
+  The chosen configuration (bold) was trained with seeds 1-4. Every
+  network early-stopped at epoch 1 or 2 of 7-8.
+- **The model id.** It is the file's sha256,
+  `6531915aa9054cc693eac6ea95f1a367502fba688b48a933f46bdbd0ac3aee0d`. The
+  file is kept in two places:
+  - `docs/research/scorecards/laggard_shadow/m3_s1_next.pt`, with its
+    parity record;
+  - `data/market/research/laggard_shadow/models/` on spark1.
+- **Parity.** The check passed. On spark1's CPU the reloaded model gave
+  the fit's own GPU forecasts for all 10,980 validation rows, within
+  6.6e-5 (the tolerance is 1e-4). A second load was identical and no row
+  was missing.
+- **The export path.** The nightly job's export was checked against the
+  registered one:
+  - its call is `--only s1,seq`, with no `.env`, a research-only
+    `SECRET_KEY` and no stage-1/2 forecast files;
+  - run on 2026-09-29 against an unchanged store, it reproduced the
+    registered export exactly: every feature, label, grade, tensor value
+    and validity flag.
