@@ -3620,6 +3620,8 @@ test(`personal history uses plain saved-guidance labels at ${width}px`, async ({
   await expect(history.getByRole('table')).toContainText('$102.00')
   await history.scrollIntoViewIfNeeded()
   await testInfo.attach(`personal-history-${width}`, {body: await page.screenshot(), contentType: 'image/png'})
+  // Reload the desk history without also restoring the unrelated synthetic chat.
+  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
   await page.reload()
   await page.getByRole('button', {name: 'Personal decision history', exact: true}).click()
   await expect(history).toContainText('Dashboard')
