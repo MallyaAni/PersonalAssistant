@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-09-29 — Daily ML action experiment (research branch only)
+
+Branch `research/daily-actions-20260929` starts from main `2262333`. The new
+protocol was committed before fitting at `07bdeec`, pushed to Spark and then
+GitHub from Spark. See [the frozen specification](research/daily-actions-plan-2026-09-29.md).
+
+Implementation adds daily OHLCV features, purged annual ridge/boosted-tree fits,
+forecast-to-position mapping and continuous accounts through unchanged `/4`
+execution. Daily cadence is a deliberate candidate change, with both daily and
+20-session unlearned `/4` controls. The focused offline gate passed **297 tests**,
+including actual synthetic model fits, saved-model reload, future-data tampering,
+direct `/4` parity, all action verbs, funding, cancelled sells and independent
+journal accounting; Ruff and whitespace checks passed. This is not a full
+repository gate or deployed behavior. Real historical training and economic results
+are not yet verified at this implementation checkpoint. No live file, order,
+account state or deployment changes. Never merge this branch as a promoted model.
+
+Run from a clean committed research worktree with the existing Spark CPU venv:
+`python -m backend.cli.market_daily_actions --root <existing-market-store> --output <new-scratch-directory>`.
+It makes no provider requests. Output must be outside the input store. Two
+CPU threads are sufficient for this model family; no model server or GPU changes.
+The run saves inputs, actual fitted models, fold receipts, predictions, all
+cash/fill journals and net comparisons against SPY/QQQ. Missing historical
+constituents and reconstructed grade availability prevent a survivorship-free
+claim. Prior use of the historical period prevents a pristine-test claim.
+
+Diagram impact: NONE — the full-system and market-data views already contain
+the offline model, research account, benchmark and journal boundaries; this
+experiment only composes implementations within those existing boundaries.
+
 ## 2026-09-29 — Published checkpoint and next alignment boundary
 
 Dashboard code `f9618b1` and its validation note `b59531e` are on Spark main
