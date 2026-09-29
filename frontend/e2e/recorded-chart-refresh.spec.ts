@@ -533,7 +533,7 @@ test('pending receipts cannot survive an owner and permission change through sig
     oldPage.release()
     await expect.poll(() => state.requests.filter(entry => entry.held && !entry.completed).length).toBe(0)
     await expect(readonlyChart.getByLabel('Saved recommendation history')).not.toBeVisible()
-    await expect(readonlyChart.getByRole('checkbox', {name: 'Buy / Sell', exact: true})).not.toBeVisible()
+    await expect(readonlyChart.getByRole('checkbox', {name: 'Saved recommendations', exact: true})).not.toBeVisible()
     await expect(page.getByLabel('Personal history recording status')).not.toBeVisible()
     const after = state.requests.slice(boundary)
     expect(after.filter(entry => entry.path.includes('/personal-history'))).toEqual([])

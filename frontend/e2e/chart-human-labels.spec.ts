@@ -208,7 +208,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
           {date: '2026-09-14', grade: 'A', said: unknownFirst ? missing.value : true},
           {date: '2026-09-15', grade: 'B', said: unknownFirst ? true : missing.value},
         ])
-        const label = unknownFirst ? 'Source unverified A → Saved B' : 'Saved A → Source unverified B'
+        const label = unknownFirst ? 'Grade A → Saved B' : 'Saved A → Grade B'
         try {
           await page.goto('/#desk')
           await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
@@ -236,8 +236,8 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      await expect(chart).toContainText('Grades with unverified sources: A→B')
-      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.map(row => row.text))).toContain('Grades with unverified sources: A→B')
+      await expect(chart).toContainText('A→B')
+      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.map(row => row.text))).toContain('A→B')
     } finally {await finish(testInfo, fixture)}
   })
 

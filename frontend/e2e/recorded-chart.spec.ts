@@ -166,7 +166,7 @@ for (const gap of ['all', 'absent'] as const) {
 // Publication dating retains intraday changes, missing states and every original row without writes.
 test('recorded setups preserve original publication and all source readings', async ({page}) => {
   const {chart, errors, writes} = await setup(page)
-  await expect(chart.getByRole('checkbox', {name: 'Buy / Sell'})).toBeChecked()
+  await expect(chart.getByRole('checkbox', {name: 'Saved recommendations'})).toBeChecked()
   await expect(chart.getByRole('checkbox', {name: 'Recorded setups · research'})).toHaveCount(0)
   await expect(chart.getByRole('button', {name: 'Recent', exact: true})).toHaveAttribute('aria-pressed', 'true')
   await expect(chart).toContainText('6 sessions loaded; pan or zoom for history.')
@@ -282,7 +282,7 @@ test('read-only chart does not request personal recommendation history', async (
   const requests: string[] = []
   page.on('request', request => { if (request.url().includes('/personal-history')) requests.push(request.url()) })
   const {chart, errors, writes} = await setup(page, false)
-  await expect(chart.getByRole('checkbox', {name: 'Buy / Sell'})).toHaveCount(0)
+  await expect(chart.getByRole('checkbox', {name: 'Saved recommendations'})).toHaveCount(0)
   await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).toBeChecked()
   expect(requests).toEqual([])
   expect(errors).toEqual([])

@@ -2347,7 +2347,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   // column and the reasoning is a hover: a trader scanning ninety-four rows
   // reads the word, and asks why only for the one row he stops on.
   return <div className="min-w-24" aria-label={`${ticker} strategy intent`} title={actOnIt(blocker ?? reason) ?? blocker ?? reason}>
-    <div className="font-medium">{presentation.word === 'Hold' ? 'HOLD' : presentation.word}</div>
+    <div className="font-medium">{presentation.word}</div>
     {presentation.detail && <div className="text-[10px] text-[#6e6e73]">{presentation.detail}</div>}
     {executionStatus}
     {spreadCaveat}
@@ -2926,6 +2926,15 @@ const NameDetail = ({
   const currentStances = row
     ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
     : liveGrades[ticker]?.stances_live
+  // The live suggestion for this name, worded exactly as the board's Action
+  // column words it (BUY/SELL/TRIM/Hold, or the board's readiness words on the
+  // timed board). The chart's "Now:" line shows it so the panel cannot tell a
+  // different story from the board beside it; when there is no current decision
+  // the chart falls back to the recorded history's latest row.
+  const livePlan = planFor(ticker, decisions, latest, now)
+  const liveSuggestion = livePlan.row
+    ? { word: actionPresentation(livePlan.action, livePlan.row, timedBoard(decisions, latest), now, paused).word, target: livePlan.row.target_weight ?? null }
+    : null
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []
   // The sessions where the grade actually moved, newest first, each with
@@ -2960,7 +2969,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={row?.last_close} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={row?.last_close} suggestion={liveSuggestion} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}

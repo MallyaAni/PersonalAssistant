@@ -716,7 +716,7 @@ export const StockBoard = ({latest, live, grades, research, paper, ml, coverage,
           // trim (the decision reads "Trim to ..."), and the operator asked to
           // see that word rather than a Sell that reads as an exit.
           const presentation = actionPresentation(plan, decision, timed, now, paused)
-          const word = isCash ? 'HOLD' : presentation.word
+          const word = isCash ? 'Hold' : presentation.word
           // Why the spread line is drawn, when it is; the row's hover carries it.
           const spreadNote = isCash ? null : decision?.quote?.spread_verified === false
             ? `${decision.quote.feed?.toUpperCase() ?? 'Quote'} spread unverified`

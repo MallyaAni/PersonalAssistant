@@ -265,7 +265,7 @@ const recommendationMarkers = (events: ReturnType<typeof recommendationEvents>, 
   })
 
 // Describe only explicit source flags; missing or malformed provenance proves neither origin.
-const gradeSource = (said: unknown) => said === true ? 'Saved' : said === false ? 'Recalculated' : 'Source unverified'
+const gradeSource = (said: unknown) => said === true ? 'Saved' : said === false ? 'Recalculated' : null
 
 // Mark available-candle grade changes with each endpoint's source and original day within weekly groups.
 const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe) => {
@@ -297,8 +297,12 @@ const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], ti
       position: up ? 'belowBar' : 'aboveBar',
       color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
-      text: previousSource === nextSource ? `${nextSource === 'Source unverified' ? 'Grades with unverified sources' : `${nextSource} grade`}: ${before}→${now}`
-        : `${previousSource} ${before} → ${nextSource} ${now}`,
+      // Without explicit provenance the change is simply the change: the
+      // saved/recalculated words only appear when the record says which it
+      // was, and a marker never calls its own source unverified.
+      text: previousSource === nextSource
+        ? nextSource ? `${nextSource} grade: ${before}→${now}` : `${before}→${now}`
+        : `${previousSource ?? 'Grade'} ${before} → ${nextSource ?? 'Grade'} ${now}`,
       size: rows[i].said ? 2 : 1,
     })
   }
@@ -414,7 +418,7 @@ const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], tim
       position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
       color: isRedeploy(fill) ? FILL_REDEPLOY : FILL_BLUE,
       shape: 'circle' as const,
-      text: `Filled ${fill.qty} @ ${fill.price.toFixed(2)}${isRedeploy(fill) ? ' (redeploy)' : ''}`,
+      text: `Filled ${fill.side} ${fill.qty} @ ${fill.price.toFixed(2)}${isRedeploy(fill) ? ' (redeploy)' : ''}`,
       size: 2,
     }] : []
   })
@@ -502,6 +506,7 @@ export const TickerChart = ({
   personalReceiptId,
   tall = false,
   close,
+  suggestion,
 }: {
   userId: string
   ticker: string
@@ -514,6 +519,12 @@ export const TickerChart = ({
   tall?: boolean
   // The name's last close, so the session price can fall back to it when no dated quote exists.
   close?: number | null
+  // The live suggestion for this name, worded exactly as the board's Action
+  // column words it, so the chart's "Now:" line cannot disagree with the row
+  // beside it. When absent the chart falls back to the recorded history's
+  // latest decision, which is what the board shows only when no live decision
+  // exists for the record on screen.
+  suggestion?: { word: string; target: number | null } | null
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   // How many sessions of fifteen-minute bars to load; only 15m reads it.
@@ -821,9 +832,9 @@ export const TickerChart = ({
           <button type="button" aria-pressed={!fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(false)}>Recent</button>
           <button type="button" aria-pressed={fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(true)}>Full history</button>
           </div>
-          {personalHistory && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+          {personalHistory && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Your saved personal Buy and Sell recommendations, recorded at generation time; not fills.">
             <input type="checkbox" checked={showRecommendations} onChange={event => setShowRecommendations(event.target.checked)} />
-            Buy / Sell
+            Saved recommendations
           </label>}
           <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />
@@ -936,8 +947,8 @@ export const TickerChart = ({
               the policy's stance today, then the sessions it would have traded
               on, newest first. This list is the decisions, not the markers, so
               the marker checkbox leaves it in place. */}
-          {latestDecision && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
-            <p className="font-medium text-[#1d1d1f]">Now: {titled(latestDecision.action ?? 'hold')} {percentText(latestDecision.target_weight)}</p>
+          {(latestDecision || suggestion) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
+            <p className="font-medium text-[#1d1d1f]">Now: {suggestion ? suggestion.word : titled(latestDecision?.action ?? 'hold')} {percentText(suggestion ? suggestion.target ?? latestDecision?.target_weight : latestDecision?.target_weight)}{suggestion ? ' · live suggestion' : ''}</p>
             {recentDecisions.length === 0
               ? <p>No policy buy or sell in the loaded history.</p>
               : <ul className="mt-0.5">

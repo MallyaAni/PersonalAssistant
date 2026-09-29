@@ -215,6 +215,17 @@ def _plan_leg(row: dict) -> dict:
     return {"kind": kind} if isinstance(kind, str) and kind else {}
 
 
+# The broker's real completion time, when the record kept it, so the
+# fifteen-minute chart can place the fill on the bar it actually filled in
+# rather than the executor's open/close convention. Absent on records written
+# before the field existed.
+def _filled_at(row: dict) -> dict:
+    """Return {"filled_at": when} from the settled row's execution, else {}."""
+    execution = row.get("execution")
+    filled_at = execution.get("filled_at") if isinstance(execution, dict) else None
+    return {"filled_at": filled_at} if isinstance(filled_at, str) and filled_at else {}
+
+
 # The paper account's real fills in one name, read from the nightly
 # records' `paper.settled` rows. A row counts when the broker filled some
 # of it; the fill is dated to the session the broker completed it on when
@@ -258,6 +269,7 @@ def fills(root: Path, ticker: str) -> list[dict]:
                 "side": side,
                 "qty": qty,
                 "price": round(price, 4),
+                **_plan_leg(row),
+                **_filled_at(row),
             }
-            found[key].update(_plan_leg(row))
     return sorted(found.values(), key=lambda f: (f["date"], f["side"], f["qty"]))
