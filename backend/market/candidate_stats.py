@@ -292,9 +292,11 @@ def probability_of_backtest_overfitting(
         test_block = np.concatenate([parts[i] for i in test])
         winner = int(np.argmax(_column_sharpe(train_block)))
         oos = _column_sharpe(test_block)
-        # Relative rank of the winner out of sample, in (0, 1): 1/(N+1) when
-        # it is worst, N/(N+1) when best.
-        rank = (np.sum(oos < oos[winner]) + 0.5 * np.sum(oos == oos[winner])) / (n + 1.0)
+        # One-based average rank for ties, scaled into (0, 1): 1/(N+1)
+        # when uniquely worst, N/(N+1) when uniquely best.
+        rank = (
+            np.sum(oos < oos[winner]) + 0.5 * np.sum(oos == oos[winner]) + 0.5
+        ) / (n + 1.0)
         rank = min(max(rank, 1e-9), 1.0 - 1e-9)
         logits[s] = math.log(rank / (1.0 - rank))
     return OverfitResult(float(np.mean(logits <= 0)), logits, len(every))
@@ -357,7 +359,8 @@ def superior_predictive_ability(
     for b in range(draws):
         sample = d[idx[b]]
         boot = math.sqrt(t) * (sample.mean(axis=0) - recentre) / omega
-        if boot.max() >= statistic:
+        # Apply the same nonnegative truncation as the observed statistic.
+        if max(float(boot.max()), 0.0) >= statistic:
             count += 1
     return SpaResult(statistic, (count + 1.0) / (draws + 1.0), best, draws)
 

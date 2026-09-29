@@ -118,6 +118,51 @@ def test_probability_of_backtest_overfitting_separates_skill_from_noise():
     assert limited.splits == 200
 
 
+# A winner that stays best has the top one-based rank even with only two arms.
+@pytest.mark.parametrize("reverse_columns", [False, True])
+def test_pbo_two_arm_persistent_winner_has_top_rank(reverse_columns):
+    noise = np.tile([-0.01, 0.01], 8)
+    returns = np.column_stack([noise + 0.04, noise])
+    if reverse_columns:
+        returns = returns[:, ::-1]
+    result = cs.probability_of_backtest_overfitting(returns, blocks=4)
+    assert result.splits == math.comb(4, 2)
+    np.testing.assert_allclose(result.logits, math.log(2.0))
+    assert result.pbo == 0.0
+
+
+# Equal arms receive the central midrank; the existing <= 0 convention counts ties.
+@pytest.mark.parametrize("arms", [2, 3, 4])
+def test_pbo_complete_ties_have_zero_logits(arms):
+    noise = np.tile([-0.01, 0.01], 8)
+    result = cs.probability_of_backtest_overfitting(
+        np.tile(noise[:, None], (1, arms)), blocks=4
+    )
+    np.testing.assert_array_equal(result.logits, np.zeros(math.comb(4, 2)))
+    assert result.pbo == 1.0
+
+
+# Two tied winners of three arms share ranks two and three, not ranks one and two.
+def test_pbo_partial_ties_use_average_one_based_rank():
+    noise = np.tile([-0.01, 0.01], 8)
+    result = cs.probability_of_backtest_overfitting(
+        np.column_stack([noise, noise + 0.04, noise + 0.04]), blocks=4
+    )
+    np.testing.assert_allclose(result.logits, math.log(5.0 / 3.0))
+    assert result.pbo == 0.0
+
+
+# A train winner that always becomes the test loser has the bottom one-based rank.
+def test_pbo_reversing_winners_have_bottom_rank():
+    noise = np.tile([-0.01, 0.01], 2)
+    first = np.column_stack([noise + 0.04, noise])
+    result = cs.probability_of_backtest_overfitting(
+        np.vstack([first, first[:, ::-1]]), blocks=2
+    )
+    np.testing.assert_allclose(result.logits, -math.log(2.0))
+    assert result.pbo == 1.0
+
+
 # SPA: a real edge gives a small p-value; a family of zero-mean arms does not
 # reject at anything like the nominal rate, and hopeless arms do not dilute a
 # genuine one (Hansen's recentring).
@@ -145,6 +190,25 @@ def test_superior_predictive_ability_size_and_power():
         if cs.superior_predictive_ability(panel, draws=200, mean_block=5, rng=rng).p_value < 0.05:
             rejections += 1
     assert rejections <= 6  # binomial(40, 0.05) upper tail; 7+ would be ~1.5%
+
+
+# With no positive observed statistic, every truncated bootstrap draw meets it.
+@pytest.mark.parametrize("case", ["strictly_negative", "zero_mean", "zero_arm"])
+def test_spa_nonpositive_observed_statistic_has_unit_p_value(case):
+    if case == "strictly_negative":
+        differences = np.random.default_rng(12).uniform(-0.02, -0.001, (80, 3))
+    else:
+        noise = np.tile([-0.125, 0.125], 40)
+        differences = np.column_stack([noise, noise - 0.5])
+        if case == "zero_arm":
+            differences[:, 0] = 0.0
+    result = cs.superior_predictive_ability(
+        differences, draws=63, mean_block=5, rng=np.random.default_rng(13)
+    )
+    assert result.statistic == 0.0
+    assert result.p_value == 1.0
+    assert result.draws == 63
+    assert 0 <= result.best < differences.shape[1]
 
 
 # The one-call verdict carries every field the gate reads and is consistent
