@@ -167,8 +167,8 @@ check line by line, with a test that fails without it:
     lags its book by 1.1% over the next 20 sessions on 2016-2023
     (t −2.85) and by 3.3% on 2024-2026 (t −3.45). No one-feature chart
     rule does this.
-  - **Why the overlay missed it.** The overlay kept +0.33 of the +0.78
-    bp/session the drop is worth frictionless on 2016-2023. It acts only
+  - **Why the overlay missed it.** On the model window the overlay kept
+    +0.33 of the +0.78 bp/session the drop is worth frictionless. It acts only
     on books of five or more; at exactly five names the 20% cap turns the
     drop into cash; and the breakout entry buys dropped names back.
   - **The ceiling.** Even whole, +0.78 is below the +2 bp floor on the
@@ -183,9 +183,10 @@ check line by line, with a test that fails without it:
 path stays frozen at `checkpoint-2026-09-28`.
 
 **Where things are.**
-- **Code.** Main now carries these, merged at `2539e2c`. The unit gate
-  on `ecb7e81`, the merged tree: 8,046 passed, 67 skipped, 6 xfailed,
-  exit 0. Nothing deployed.
+- **Code.** Main now carries these, merged at `2539e2c` and, with the
+  results corrected after an independent check, at `6210e64`. The unit
+  gate on `6b763f9`, the merged tree: 8,046 passed, 67 skipped, 6
+  xfailed, exit 0. Nothing deployed.
   - the modules `stage3_io` (the frozen registration),
     `stage3_features`, `stage3_intraday`, `stage3_export`,
     `stage3_trees`, `stage3_nn`, `stage3_overlay`, `stage3_verdict` and
