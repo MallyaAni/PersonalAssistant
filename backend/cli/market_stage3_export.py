@@ -127,7 +127,7 @@ def run(
         dd_forecasts=args.dd_forecasts,
         log=say,
     )
-    say(f"inputs: edgar names {inputs.meta['edgar_names']}, tone names {inputs.meta['tone_names']}")
+    say(f"inputs: edgar names {inputs.meta.get('edgar_names', 0)}, tone names {inputs.meta.get('tone_names', 0)}")
     block, internals = export.build_daily(inputs)
     say(f"daily block: {block.values.shape}, {int(block.date_level.sum())} date-level columns")
     summary: dict = {
