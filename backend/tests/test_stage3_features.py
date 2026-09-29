@@ -249,7 +249,15 @@ def test_intraday_rows_use_bars_before_k_and_only_the_close_of_k(world):
     cube = inputs.cubes[ticker]
     _, _, daily = export._daily_at_t(inputs, block, internals, j, cube)
     spy, qqq, side = inputs.cubes["SPY"], inputs.cubes["QQQ"], inputs.cubes["SMH"]
-    base = intraday.name_block(cube, daily, spy, qqq, side, None, None)
+    from backend.market import sr_levels
+
+    levels = sr_levels.daily_levels(inputs.panel)
+    pos = np.searchsorted(np.asarray(inputs.panel.dates), cube.dates)
+    level_block = (levels.levels[pos, j], levels.width[pos, j])
+    eligible = {t: np.ones(len(inputs.cubes[t]), dtype=bool) for t in BOOK}
+    market = intraday.breadth({t: inputs.cubes[t] for t in BOOK}, eligible)
+    base = intraday.name_block(cube, daily, spy, qqq, side, market, level_block)
+    assert np.isfinite(base.values[200:, :, base.names.index("i_is_support_dist")]).any()
     s = 200
     for k in (0, 1, 5, 23):
         high, low, volume = cube.high.copy(), cube.low.copy(), cube.volume.copy()
@@ -261,7 +269,9 @@ def test_intraday_rows_use_bars_before_k_and_only_the_close_of_k(world):
             arr[s, k + 1 :] *= 1.2
         auction[s] *= 1.2
         altered = replace(cube, open=o, high=high, low=low, close=c, volume=volume, auction_open=auction)
-        moved = intraday.name_block(altered, daily, spy, qqq, side, None, None)
+        cubes = {t: inputs.cubes[t] for t in BOOK}
+        cubes[ticker] = altered
+        moved = intraday.name_block(altered, daily, spy, qqq, side, intraday.breadth(cubes, eligible), level_block)
         a, b = base.values[s, k], moved.values[s, k]
         same = (a == b) | (np.isnan(a) & np.isnan(b))
         bad = [base.names[f] for f in np.flatnonzero(~same)]
@@ -366,3 +376,26 @@ def test_the_sequence_tensor_channels(world):
     expected = math.log(cube.close[s, k] / cube.prior_close[s]) / daily["atr"][s]
     got = float(tensor.seq[n, where, k + 1, io.SEQ_CHANNELS.index("prior_close_distance")])
     assert got == pytest.approx(expected, rel=2e-3, abs=2e-3)
+
+
+def test_the_export_command_writes_every_file_and_a_summary(tmp_path):
+    import io as stdio
+    import json
+
+    from backend.cli import market_stage3_export as cli
+
+    inputs = _world(sessions=380)
+    out_dir = tmp_path / "out"
+    args = cli.build_parser().parse_args(["--root", str(tmp_path), "--out-dir", str(out_dir), "--workers", "1"])
+    printed = stdio.StringIO()
+    code = cli.run(args, out=printed, loader=lambda *a, **k: inputs, desk_run=lambda store: None)
+    assert code == 0, printed.getvalue()
+    for name in ("stage3_s1.npz", "stage3_ti.npz", "stage3_seq.npz", "stage3_ohlcv.npz", "stage3_export.json"):
+        assert (out_dir / name).exists(), name
+    summary = json.loads((out_dir / "stage3_export.json").read_text())
+    assert summary["plan"] == io.PLAN
+    assert summary["files"]["ti"]["rows"] % io.TI_SLOTS == 0
+    ti = io.load_data(out_dir / "stage3_ti.npz")
+    assert ti.kind == io.TI and summary["files"]["ti"]["sha256"] == cli.sha256(out_dir / "stage3_ti.npz")
+    seq = io.load_seq(out_dir / "stage3_seq.npz")
+    assert seq.seq.shape[1] == len(seq.sessions)
