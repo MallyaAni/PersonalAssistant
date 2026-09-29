@@ -26,6 +26,12 @@ Validation: **134 backend tests and 141 browser tests passed**, plus TypeScript
 and the Vite production build. Browser APIs are controlled fixtures; deployed
 behavior is not verified. Five unrelated quote-display failures reproduce on
 unchanged Fable main. Exact test/evidence details are in the audit above.
+The clean production candidate is `f9618b1`, cherry-picked directly onto
+Fable main `60b3ac3`; it contains none of the rejected simulator experiment.
+Its full Spark `scripts/gate.sh --unit` run passed: **8,073 passed, 68 skipped,
+6 expected failures**, 387 warnings, 374.35 seconds. Skips/expected failures are
+not counted as passes. The exact tree ran in `/tmp/anios-desk-gate.NDgpBc`
+against the isolated `anios_gate` database; no application deployment occurred.
 
 The separate research branch `research/target-consistency-20260929` completed
 its 200-run ablation at `b8b54df`; findings are committed at `7e70fe1` on

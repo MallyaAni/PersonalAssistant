@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-29 — Stock-action wording and recorded paper-account history
+
+Implementation checkpoint `f9618b1`, not deployed. The current personal board
+and paper executor still use different planning/timing paths; this is a display
+and read-only history correction, not shared-strategy activation.
+
+- Missing, waiting and cash-blocked decisions no longer read as genuine Hold.
+  No blocked row gains a trade size or bypasses existing expiry/funding checks.
+- The actual paper account has its own dated account-value chart/table; absent
+  observations and unknown recording chronology stay explicit. These are saved
+  broker values, not certified daily closes or cash-flow-adjusted returns.
+- Historical simulations are separate and collapsed. Planned cash uses active
+  recorded targets; an old allocation book cannot substitute for invalid ones.
+
+Verified locally: 134 backend tests; 141 browser tests with controlled API
+fixtures; TypeScript/Vite production build; diff checks. The clean release tree
+excludes the rejected target-consistency simulator experiment. Runtime audit,
+known unrelated failures, evidence paths and required shared-planner work are in
+[the reconciliation note](research/dashboard-account-audit-2026-09-29.md).
+The full Spark unit gate also passed on `f9618b1`: 8,073 passed, 68 skipped,
+6 expected failures, 387 warnings in 374.35 seconds, using `anios_gate` rather
+than the application database. No deployed acceptance is claimed.
+
+Diagram impact: NONE — existing journal-to-desk read flow and account boundaries.
+
 ## 2026-09-29 — Support and resistance across timeframes: BUILT, not run
 
 The operator's hypothesis: the neural structure models never saw support

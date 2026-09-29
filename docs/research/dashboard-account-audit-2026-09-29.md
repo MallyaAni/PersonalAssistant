@@ -103,6 +103,10 @@ paper strategy, or establish that `/4` is the best possible future strategy.
 
 ## Validation of the display/history checkpoint
 
+- **VERIFIED:** clean release `f9618b1` passed Spark's full unit gate:
+  8,073 passed, 68 skipped, 6 expected failures and 387 warnings in 374.35 s.
+  `scripts/gate.sh --unit` used `/tmp/anios-desk-gate.NDgpBc` and the isolated
+  `anios_gate` database. Skips and expected failures are not passes.
 - **VERIFIED:** 134 offline backend tests passed for paper history, desk API,
   paper planning, fill activity, personal isolation and the level gate.
 - **VERIFIED:** 141 browser tests passed across `desk.spec.ts`, paper history,
