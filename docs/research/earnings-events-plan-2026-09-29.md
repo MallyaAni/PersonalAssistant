@@ -64,6 +64,9 @@ calendar year; its training ends before that year. Select tree count there,
 then refit on all prior eligible events. Require 300 fit events spanning three
 years and 40 validation events; otherwise omit that model/year explicitly.
 No shuffled K-fold, future-fitted scaling, test-selected epochs or retuning.
+The forecast belongs to its feature-date year: a January 1 disclosure uses
+the prior year's model, since its inputs were fixed on December 31. This
+clarification is written during implementation, before the real export or fit.
 
 Report common-row MSE, MAE, median absolute error and each annual difference
 versus persistence, with issuer counts and calendar coverage. Date-block
