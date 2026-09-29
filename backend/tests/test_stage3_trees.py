@@ -406,6 +406,83 @@ def test_a_test_blocks_own_rows_never_reach_its_model(kind):
     assert not np.array_equal(control.yhat[kept], base.yhat[kept])
 
 
+# An independent re-implementation of the protocol agrees bit for bit:
+# rows by boolean masks, the fit and validation Datasets built on the
+# window's bin mappers with `reference=` rather than as its subsets, the
+# T-I bounds, the raw-label scores, the choice and the refit recomputed
+# here. The labels are heavy-tailed, so T-I clipping changes the labels
+# trained on and a score read from clipped labels would not match.
+@pytest.mark.parametrize("kind", [io.S1, io.TI])
+def test_an_independent_reimplementation_agrees_bit_for_bit(kind):
+    lgb = pytest.importorskip("lightgbm")
+    data, settings = _case(kind)
+    tails = np.random.default_rng(3).random(len(data.y)) < 0.01
+    data = replace(data, y=np.where(tails, 25 * data.y, data.y).astype(np.float32))
+    forecast = trees.walk_forward(data, settings, max_folds=2)
+    index = _index(data)
+    finite = np.isfinite(data.y)
+    raw = data.y.astype(np.float64)
+    threads = settings.num_threads
+    for record in forecast.meta["folds"]:
+        s = record["sessions"]
+        window = finite & (index < s["window_end"])
+        fit = finite & (index < s["fit_end"])
+        validation = finite & (index >= s["val_start"]) & (index < s["window_end"])
+        test = (index >= s["test_start"]) & (index < s["test_end"])
+        label = raw
+        if kind == io.TI:
+            label = np.clip(raw, *np.quantile(raw[fit], io.WINSOR))
+        params = {**trees.DATASET_PARAMS, "num_threads": threads}
+        bins = lgb.Dataset(
+            data.x[window], label=label[window], params=params, free_raw_data=False
+        ).construct()
+        fit_set = lgb.Dataset(
+            data.x[fit], label=label[fit], reference=bins, params=params
+        )
+        val_set = lgb.Dataset(
+            data.x[validation], label=label[validation], reference=bins, params=params
+        )
+        scores, bests = [], []
+        for c, config in enumerate(settings.grid):
+            booster = lgb.train(
+                trees.lgbm_params(kind, config, 0, threads),
+                fit_set,
+                num_boost_round=settings.max_rounds,
+                valid_sets=[val_set],
+                callbacks=[lgb.early_stopping(settings.patience, verbose=False)],
+            )
+            bests.append(booster.best_iteration)
+            fitted = booster.predict(
+                data.x[validation], num_iteration=bests[-1], num_threads=threads
+            )
+            scores.append(
+                io.selection_score(
+                    kind, fitted, raw[validation], data.dates[validation]
+                )
+            )
+            np.testing.assert_array_equal(
+                forecast.yhat_configs[test, c],
+                booster.predict(
+                    data.x[test], num_iteration=bests[-1], num_threads=threads
+                ),
+            )
+        assert [c["best_iter"] for c in record["configs"]] == bests
+        assert [c["score"] for c in record["configs"]] == scores
+        chosen = int(np.argmax(np.nan_to_num(scores, nan=-np.inf)))
+        assert record["chosen"] == chosen
+        rounds = max(1, round(bests[chosen] * window.sum() / fit.sum()))
+        for i, seed in enumerate(settings.seeds):
+            booster = lgb.train(
+                trees.lgbm_params(kind, settings.grid[chosen], seed, threads),
+                bins,
+                num_boost_round=rounds,
+            )
+            np.testing.assert_array_equal(
+                forecast.yhat_seeds[test, i],
+                booster.predict(data.x[test], num_threads=threads),
+            )
+
+
 # T-I winsorization bounds are the fit rows' quantiles: exactly those of
 # the fit labels, unmoved by huge labels in the gap or the validation
 # block, and moved by huge labels in the fit part.
