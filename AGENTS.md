@@ -128,6 +128,15 @@ If functional validation cannot be performed, do not label the behavior verified
   `--ignore` paths must be container paths (`/app/...`): a host path is
   silently not matched, which once ran the entire real-model suite under
   `--unit`.
+- **The free SIP plan refuses any request whose end is recent.** Alpaca
+  answers HTTP 403 `subscription does not permit querying recent SIP data`
+  when a request's `end` is in the future or within the last 15 minutes, and
+  `alpaca.fetch_bars` always asks for a session through `<date>T23:59:59Z`.
+  So a same-day SIP append must run after that instant has passed by 15
+  minutes: the nightly append ran at 16:45 ET on 2026-09-28 and failed for
+  every ticker; it now runs at 20:30 ET (`crontab -l`, `~/desk_sip.sh`), which
+  clears the limit in both EDT and EST. A backfill of past sessions is never
+  affected. The live board's IEX quotes are a different feed and unaffected.
 - **Write cases from real sentences, not imagined ones.** Run
   `python -m backend.cli.real_utterances --days 14` in the backend container
   before adding a matrix case, sweep journey or functional test: every
