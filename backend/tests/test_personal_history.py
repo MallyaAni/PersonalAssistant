@@ -27,8 +27,8 @@ def generated():
     return decisions, record, snapshot, now
 
 
-# Put the board on the active `/4` policy with S11's close grade A and a
-# fresh intraday reading that downgrades it to B.
+# Put the board on the active equal-weight policy (`live_policy.ACTIVE`) with
+# S11's close grade A and a fresh intraday reading that downgrades it to B.
 def close_grade_policy(record, snapshot):
     from backend.agents.trading.desk import live_policy
 

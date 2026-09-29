@@ -250,12 +250,23 @@ def test_decision_text_is_policy_aware():
     assert text("buy", 0.14) == "Buy 14%"
     assert text("sell", 0.0) == "Sell"
     assert text("hold", 0.1) is None
-    v4 = chart.EQUAL_WEIGHT_POLICY
-    assert text("add", 0.125, 0.025, v4) == "Rebalance +2.5%"
-    assert text("trim", 0.10, -0.025, v4) == "Rebalance \u22122.5%"
-    assert text("add", 0.20, None, v4) == "Rebalance \u219220%"
+    # Both equal-weight versions, `/4` and `/5` (the account's since
+    # 2026-09-29), read the reset's rebalance.
+    assert chart.EQUAL_WEIGHT_POLICIES == (
+        "graded-equal-weight/4",
+        "graded-equal-weight/5",
+    )
+    for policy in chart.EQUAL_WEIGHT_POLICIES:
+        assert text("add", 0.125, 0.025, policy) == "Rebalance +2.5%"
+        assert text("trim", 0.10, -0.025, policy) == "Rebalance \u22122.5%"
+        assert text("add", 0.20, None, policy) == "Rebalance \u219220%"
+    assert text("add", 0.25, 0.05, "graded-equal-weight/5") == "Rebalance +5%"
     assert text("add", 0.20, 0.06, "some-sizing/3") == "Add \u219220%"
     assert text("trim", 0.20, -0.06, None) == "Trim \u219220%"
+    # A version outside the family - the `/3` era's, or one sharing only the
+    # prefix - keeps the sizing reading.
+    assert text("add", 0.20, 0.06, "graded-equal-weight/3") == "Add \u219220%"
+    assert text("add", 0.20, 0.06, "graded-equal-weight/40") == "Add \u219220%"
 
 
 # A reset-day add in a /4 history is drawn as the rebalance it is.
@@ -274,6 +285,27 @@ def test_a_reset_add_is_labelled_as_a_rebalance(tmp_path):
     assert out["decisions"][0]["label"] == "Rebalance +2.5% decided at the close"
     assert out["decisions"][0]["rebalance"] is True
     assert out["fills_at"][0]["label"] == "Rebalance +2.5% fills at the open"
+
+
+# The same reset-day add in a `/5` history - the account's policy since
+# 2026-09-29, whose nightly writes that name on every history file - is
+# drawn as the rebalance too, never as "Add →25%".
+def test_a_reset_add_in_a_v5_history_is_labelled_as_a_rebalance(tmp_path):
+    store = _store(tmp_path)
+    history = _history(tmp_path)
+    history["policy"] = "graded-equal-weight/5"
+    history["rows"][0] = {
+        "date": EARLY.isoformat(),
+        "grade": "A",
+        "action": "add",
+        "target_weight": 0.25,
+        "delta_weight": 0.05,
+        "rebalance": True,
+    }
+    out = chart.payload(store, tmp_path, "AAPL", 10, history)
+    assert out["policy"] == "graded-equal-weight/5"
+    assert out["decisions"][0]["label"] == "Rebalance +5% decided at the close"
+    assert out["fills_at"][0]["label"] == "Rebalance +5% fills at the open"
 
 
 # A fill that names its plan leg carries it and says so in its label, so

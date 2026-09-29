@@ -518,16 +518,19 @@ def test_the_board_can_only_ever_say_one_of_three_things():
 
 
 # ---------------------------------------------------------------------------
-# The active policy's targets are a standing order.
+# The equal-weight policy's targets are a standing order.
 #
-# Since 2026-09-27 the paper account runs `graded-equal-weight/4`: every A/A+
-# name at equal weight, exits on a downgrade, idle cash redeployed toward the
-# targets mid-cycle, trims at the reset. The nightly stamps the record with
-# `targets = {"policy": live_policy.ACTIVE, "weights": {...}}`, and for such a
-# record the board trades the gap between what the person holds and the
-# policy's weight - the `/3`-era "targets are not a standing order" rule is a
-# fact about `/3` records, which keep it
-# (`test_the_distance_to_a_target_weight_is_not_a_trade`).
+# Since 2026-09-27 the paper account runs the graded equal-weight policy -
+# `graded-equal-weight/4`, and `/5` (the same rule under a 25% cap) since
+# 2026-09-29: every A/A+ name at equal weight, exits on a downgrade, idle
+# cash redeployed toward the targets mid-cycle, trims at the reset. The
+# nightly stamps the record with `targets = {"policy": live_policy.ACTIVE,
+# "weights": {...}}`, and for such a record the board trades the gap between
+# what the person holds and the policy's weight - the `/3`-era "targets are
+# not a standing order" rule is a fact about `/3` records, which keep it
+# (`test_the_distance_to_a_target_weight_is_not_a_trade`). Most records
+# below are stamped `/4`: a record written before the switch, which the
+# board still sizes toward, under its own name, while `/5` is active.
 # ---------------------------------------------------------------------------
 
 POLICY = "graded-equal-weight/4"
@@ -572,11 +575,82 @@ def _triggered(snapshot, now):
     }
 
 
-# The policy the board sizes toward is the live one, read from one place.
+# The policy the board sizes toward is read from one place: `/5` is active,
+# and the `/4` fixture below is the other member of its equal-weight family
+# (a record from before the switch), not the active version.
 def test_the_board_sizes_toward_the_active_policy():
     from backend.agents.trading.desk import live_policy
 
-    assert live_policy.ACTIVE == POLICY
+    assert live_policy.ACTIVE == "graded-equal-weight/5"
+    assert POLICY in live_policy.EQUAL_WEIGHT
+    assert POLICY != live_policy.ACTIVE
+
+
+# The switch window: a `/4` record written before the release and read while
+# `/5` is active is still the plan the account made for the next session. The
+# board sizes toward its weights - the timed target board, not the `/3`-era
+# one - and names the policy that decided them, `/4`, never the active `/5`.
+def test_a_v4_record_under_v5_sizes_toward_its_own_weights():
+    from backend.agents.trading.desk import live_policy
+
+    assert live_policy.ACTIVE == "graded-equal-weight/5"
+    record, snapshot, quoted, now = setup()
+    _v4(record)
+    built = decision_view.build(
+        record,
+        [],
+        100000,
+        snapshot,
+        quoted,
+        now,
+        cash=100000,
+        timing_latch=_triggered(snapshot, now),
+    )
+    row = built["rows"]["S11"]
+    assert row["strategy_action"] == "Buy"
+    assert row["strategy_move_weight"] == pytest.approx(1 / 11)
+    assert row["action"] == "Buy"
+    assert "Buy to 9.1% target (policy graded-equal-weight/4)" in row["reason"]
+    for other in built["rows"].values():
+        assert "graded-equal-weight/5" not in other["reason"]
+    assert "timing" in built
+    assert built["policy"].startswith("Nightly targets timed by the measured level")
+
+
+# A `/5` record - four A+ names at the new cap, a quarter each, the rest
+# downgraded to B and sized at zero - sizes toward its own weights and says
+# `/5`: a Buy of a quarter of the account, funded from 100,000 of cash.
+def test_a_v5_record_sizes_to_a_quarter_and_says_v5():
+    record, snapshot, quoted, now = setup()
+    quarter = {"S8", "S9", "S10", "S11"}
+    for name, grade in record["grades"].items():
+        if name not in quarter:
+            grade["grade"] = "B"
+    record["targets"] = {
+        "policy": "graded-equal-weight/5",
+        "weights": {n: (0.25 if n in quarter else 0.0) for n in record["grades"]},
+    }
+    record["paper"] = {"until_rebalance": 10}
+    built = decision_view.build(
+        record,
+        [],
+        100000,
+        snapshot,
+        quoted,
+        now,
+        cash=100000,
+        timing_latch=_triggered(snapshot, now),
+    )
+    for name in quarter:
+        row = built["rows"][name]
+        assert row["strategy_action"] == "Buy", name
+        assert row["strategy_move_weight"] == pytest.approx(0.25), name
+        assert row["target_weight"] == pytest.approx(0.25), name
+        assert row["action"] == "Buy", name
+        assert row["move_weight"] == pytest.approx(0.25, abs=1e-6), name
+        assert "Buy to 25.0% target (policy graded-equal-weight/5)" in row["reason"]
+    assert built["rows"]["S0"]["strategy_action"] == "Hold"
+    assert "timing" in built
 
 
 # Nothing held, targets present, market open with cash, the level triggered:
@@ -883,8 +957,18 @@ def test_v4_a_band_reading_below_the_trigger_does_not_starve_the_target_buy():
 
 
 # Targets stamped with another policy, or none, change nothing: the `/3`
-# rules produce the same rows byte for byte.
-@pytest.mark.parametrize("stamp", [None, "some-other-policy/9"])
+# rules produce the same rows byte for byte. That includes the `/3` era's
+# own name and a version that merely shares the equal-weight prefix: the
+# family is `/4` and `/5` by name.
+@pytest.mark.parametrize(
+    "stamp",
+    [
+        None,
+        "some-other-policy/9",
+        "graded-equal-weight/3",
+        "graded-equal-weight/40",
+    ],
+)
 def test_records_without_the_active_policy_are_unchanged(stamp):
     record, snapshot, quoted, now = setup()
     record["paper"] = {"until_rebalance": 10}

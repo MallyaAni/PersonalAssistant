@@ -1,27 +1,45 @@
-"""The /4 shadow ledger: fills, cash, marks, idempotency and the frozen identity.
+"""The policy shadow ledger: fills, cash, marks, idempotency and the frozen identity.
 
-Three sessions on a two-name book whose prices are chosen by hand, so every
-number the ledger writes can be checked with arithmetic: the first close
-decides whole-share targets, the next open fills them at ten basis points
-from cash that never goes negative, the close marks the book and the day's
-return follows. Observing the same session twice appends nothing, and a
-changed code identity without a declared migration refuses to continue.
+The ledger shadows the policy the paper account runs (`live_policy.POLICY`,
+`graded-equal-weight/5` since 2026-09-29: every A/A+ name at equal weight
+under a 25% cap). Three sessions on a two-name book whose prices are chosen
+by hand, so every number the ledger writes can be checked with arithmetic:
+the first close decides whole-share targets, the next open fills them at
+ten basis points from cash that never goes negative, the close marks the
+book and the day's return follows. Observing the same session twice appends
+nothing, a changed code identity without a declared migration refuses to
+continue, and the `/5` ledger lives in its own folder: it never reads or
+writes the `/4` ledger's rows.
 """
 
+import hashlib
 import json
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-from backend.agents.trading.desk import grading, policy_v4, regime, shadow_ledger
+from backend.agents.trading.desk import (
+    grading,
+    live_policy,
+    policy_v4,
+    policy_v5,
+    regime,
+    shadow_ledger,
+)
 from backend.agents.trading.desk.desk import DeskReport
 from backend.agents.trading.desk.opinions import Opinion
 from backend.market.panel import Panel
 from backend.market.universe import AI_COMPUTE
 
 NOW = datetime(2026, 9, 26, 23, 30, tzinfo=UTC)
+# The shadowed policy's cap: two A+ names each get a quarter of the book.
+CAP = 0.25
+# Where the `/5` ledger writes, and where the `/4` ledger wrote.
+V5_FOLDER = "desk/shadow/graded-equal-weight-5"
+V4_FOLDER = "desk/shadow/graded-equal-weight-4"
 # Sessions and the prices the journey is checked against.
 SESSIONS = ("2026-09-24", "2026-09-25", "2026-09-28")
 OPENS = {
@@ -97,6 +115,8 @@ def _observe(root, k: int, grades=None, migrations=None):
 # session 3 holds; every figure is checked by hand and the folder holds one
 # whole row per transition.
 def test_three_session_journey(tmp_path):
+    assert shadow_ledger.shadowed() is live_policy.POLICY is policy_v5
+    assert policy_v5.HOLD_CAP == CAP
     first = _observe(tmp_path, 0)
     assert first["sequence"] == 1
     assert first["session"] == SESSIONS[0]
@@ -104,32 +124,35 @@ def test_three_session_journey(tmp_path):
     assert first["equity"] == 100_000.0
     assert first["return_1d"] is None
     assert first["fills"] == []
-    # Two A+ names: 20% each, the rest cash. Sized at the first close.
-    assert first["targets"] == {"AAA": pytest.approx(0.2), "BBB": pytest.approx(0.2)}
+    # Two A+ names: a quarter each, the rest cash. Sized at the first close.
+    assert first["targets"] == {"AAA": pytest.approx(CAP), "BBB": pytest.approx(CAP)}
     assert first["pending"]["decided"] == SESSIONS[0]
-    assert first["pending"]["orders"] == {"AAA": 200, "BBB": 400}
+    assert first["pending"]["orders"] == {"AAA": 250, "BBB": 500}
 
     second = _observe(tmp_path, 1)
     assert second["sequence"] == 2
-    # Filled at the second open: 200 AAA at 102, 400 BBB at 49, 10 bp each.
-    spent = 200 * 102.0 + 400 * 49.0
+    # Filled at the second open: 250 AAA at 102, 500 BBB at 49, 10 bp each.
+    spent = 250 * 102.0 + 500 * 49.0
     fee = spent * 0.001
+    assert spent == 50_000.0
     assert second["cash"] == pytest.approx(100_000.0 - spent - fee)
-    assert second["shares"] == {"AAA": 200, "BBB": 400}
+    assert second["cash"] == pytest.approx(49_950.0)
+    assert second["shares"] == {"AAA": 250, "BBB": 500}
     by_name = {f["ticker"]: f for f in second["fills"]}
     assert by_name["AAA"] == {
         "ticker": "AAA",
         "side": "buy",
-        "shares": 200,
+        "shares": 250,
         "price": 102.0,
-        "cost": pytest.approx(20.4),
+        "cost": pytest.approx(25.5),
     }
-    assert by_name["BBB"]["shares"] == 400
+    assert by_name["BBB"]["shares"] == 500
     assert by_name["BBB"]["price"] == 49.0
     assert second["refusals"] == []
-    # Marked at the second close: 200 * 104 + 400 * 48.
-    equity = second["cash"] + 200 * 104.0 + 400 * 48.0
+    # Marked at the second close: 250 * 104 + 500 * 48.
+    equity = second["cash"] + 250 * 104.0 + 500 * 48.0
     assert second["equity"] == pytest.approx(equity)
+    assert second["equity"] == pytest.approx(99_950.0)
     assert second["return_1d"] == pytest.approx(equity / 100_000.0 - 1.0)
     # The reset clock has not come round: the book holds, nothing pending.
     assert second["pending"] is None
@@ -139,20 +162,22 @@ def test_three_session_journey(tmp_path):
     third = _observe(tmp_path, 2, grades={"BBB": "B"})
     assert third["sequence"] == 3
     assert third["fills"] == []
-    assert third["shares"] == {"AAA": 200, "BBB": 400}
+    assert third["shares"] == {"AAA": 250, "BBB": 500}
     assert third["cash"] == pytest.approx(second["cash"])
-    assert third["equity"] == pytest.approx(third["cash"] + 200 * 103.0 + 400 * 51.0)
+    assert third["equity"] == pytest.approx(third["cash"] + 250 * 103.0 + 500 * 51.0)
     assert third["return_1d"] == pytest.approx(third["equity"] / second["equity"] - 1.0)
     # The policy's view is still written on a holding session: BBB fell to B.
-    assert third["targets"] == {"AAA": pytest.approx(0.2)}
+    assert third["targets"] == {"AAA": pytest.approx(CAP)}
     assert third["pending"] is None
-    rows = sorted((tmp_path / "desk/shadow/graded-equal-weight-4").glob("*.json"))
+    rows = sorted((tmp_path / V5_FOLDER).glob("*.json"))
     assert [p.name for p in rows] == [f"{i:08d}.json" for i in range(4)]
     for path in rows:
         row = json.loads(path.read_text(encoding="utf-8"))
-        assert row["policy"] == policy_v4.POLICY_VERSION
+        assert row["policy"] == live_policy.ACTIVE == "graded-equal-weight/5"
         assert row["identity"] == shadow_ledger.identity()
         assert row["version"] == shadow_ledger.VERSION
+    # Nothing was written under the `/4` ledger's folder.
+    assert not (tmp_path / V4_FOLDER).exists()
 
 
 # Observing a session already on the ledger returns the row and appends
@@ -160,7 +185,7 @@ def test_three_session_journey(tmp_path):
 def test_observing_the_same_session_twice_appends_nothing(tmp_path):
     _observe(tmp_path, 0)
     second = _observe(tmp_path, 1)
-    folder = tmp_path / "desk/shadow/graded-equal-weight-4"
+    folder = tmp_path / V5_FOLDER
     before = sorted(p.name for p in folder.glob("*.json"))
     again = _observe(tmp_path, 1)
     assert again == second
@@ -238,7 +263,7 @@ def test_a_changed_identity_without_a_declared_migration_raises(tmp_path, monkey
     with pytest.raises(ValueError, match="Frozen experiment changed"):
         _observe(tmp_path, 1, migrations=declared)
     previous = json.loads(
-        (tmp_path / "desk/shadow/graded-equal-weight-4/00000001.json").read_text()
+        (tmp_path / V5_FOLDER / "00000001.json").read_text()
     )["identity"]
     declared.write_text(
         json.dumps([{"from": previous, "to": "changed", "reason": "docstring only"}]),
@@ -249,20 +274,90 @@ def test_a_changed_identity_without_a_declared_migration_raises(tmp_path, monkey
     assert row["identity_from"] == previous
     assert row["migration"] == "docstring only"
     assert row["shares"] == {
-        "AAA": 200,
-        "BBB": 400,
+        "AAA": 250,
+        "BBB": 500,
     }
     # The ledger's own migrations file parses and the current code needs none.
     assert shadow_ledger.migration("x", "y") is None
 
 
-# The identity hashes both source files: a change to either moves it.
+# The identity hashes the shadowed policy's source and this ledger's, as
+# whole files: a change to either moves it. It is `policy_v5.py`'s now, so
+# `/4`'s frozen bytes no longer enter it.
 def test_identity_covers_both_files(monkeypatch, tmp_path):
     before = shadow_ledger.identity()
-    copy = tmp_path / "policy_v4.py"
+    code = b"".join(
+        Path(module.__file__).read_text(encoding="utf-8").replace("\r\n", "\n").encode()
+        for module in (policy_v5, shadow_ledger)
+    )
+    assert before == hashlib.sha256(code).hexdigest()
+    elsewhere = tmp_path / "policy_v4.py"
+    elsewhere.write_text("# changed\n", encoding="utf-8")
+    monkeypatch.setattr(policy_v4, "__file__", str(elsewhere))
+    assert shadow_ledger.identity() == before
+    copy = tmp_path / "policy_v5.py"
     copy.write_text("# changed\n", encoding="utf-8")
-    monkeypatch.setattr(policy_v4, "__file__", str(copy))
+    monkeypatch.setattr(policy_v5, "__file__", str(copy))
     assert shadow_ledger.identity() != before
+
+
+# The `/5` ledger starts fresh in its own folder beside a `/4` ledger that
+# already has rows - here one dated after tonight and holding shares, which
+# a ledger that read it would either refuse or continue from. It does
+# neither: sequence 1 is a fresh 100,000 account, and the `/4` rows are
+# byte for byte what they were.
+def test_a_v4_folder_is_not_read_by_the_v5_ledger(tmp_path):
+    old = tmp_path / V4_FOLDER
+    old.mkdir(parents=True)
+    rows = {
+        "00000000.json": {"sequence": 0, "session": None, "shares": {}},
+        "00000001.json": {"sequence": 1, "session": "2026-09-28", "shares": {"AAA": 7}},
+    }
+    for name, row in rows.items():
+        row = {
+            **row,
+            "version": shadow_ledger.VERSION,
+            "policy": policy_v4.POLICY_VERSION,
+            "identity": "the /4 ledger's identity",
+            "cash": 99_000.0,
+            "equity": 100_000.0,
+        }
+        (old / name).write_text(json.dumps(row, sort_keys=True), encoding="utf-8")
+    before = {p.name: p.read_bytes() for p in old.iterdir()}
+    assert shadow_ledger.folder(tmp_path) == tmp_path / V5_FOLDER
+    assert shadow_ledger.folder(tmp_path, policy_v4.POLICY_VERSION) == old
+    first = _observe(tmp_path, 0)
+    assert first["sequence"] == 1
+    assert first["policy"] == policy_v5.POLICY_VERSION
+    assert first["cash"] == 100_000.0
+    assert first["shares"] == {}
+    assert first["pending"]["orders"] == {"AAA": 250, "BBB": 500}
+    assert sorted(p.name for p in (tmp_path / V5_FOLDER).glob("*.json")) == [
+        "00000000.json",
+        "00000001.json",
+    ]
+    assert {p.name: p.read_bytes() for p in old.iterdir()} == before
+
+
+# A folder whose rows name another policy is not continued: a `/4` row found
+# where the `/5` ledger lives is refused, never re-labelled.
+def test_rows_of_another_policy_are_refused(tmp_path):
+    here = tmp_path / V5_FOLDER
+    here.mkdir(parents=True)
+    (here / "00000000.json").write_text(
+        json.dumps(
+            {
+                "version": shadow_ledger.VERSION,
+                "policy": policy_v4.POLICY_VERSION,
+                "identity": shadow_ledger.identity(),
+                "sequence": 0,
+                "session": None,
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="Frozen experiment changed"):
+        _observe(tmp_path, 0)
 
 
 # The receipt the record carries is small and names the sequence, the
@@ -285,7 +380,7 @@ def test_receipt_shape(tmp_path):
 # `decide` reads the report's last session only and never wants the benchmark.
 def test_decide_reads_the_last_session():
     report = _report(2, grades={"BBB": "C"})
-    assert shadow_ledger.decide(report) == {"AAA": pytest.approx(0.2)}
+    assert shadow_ledger.decide(report) == {"AAA": pytest.approx(CAP)}
     unpriced = replace(report.panel, close=report.panel.close.copy())
     unpriced.close[-1, 0] = np.nan
     assert shadow_ledger.decide(replace(report, panel=unpriced)) == {}

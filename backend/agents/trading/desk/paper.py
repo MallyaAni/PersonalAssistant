@@ -229,8 +229,11 @@ class PaperState:
     sessions_since_rebalance: int = 0
     # The allocation policy the last plan was made under (`live_policy.ACTIVE`
     # at the time). None on a state from before the stamp existed, which
-    # was the `/3` era; a mismatch with the active policy forces one
-    # rebalance into the new targets.
+    # was the `/3` era. A stamp the active policy cannot continue from
+    # (`live_policy.needs_rebalance`: anything but the active version or,
+    # while it is one, another graded equal-weight version) forces one
+    # rebalance into the new targets; within the equal-weight family the
+    # nightly only re-stamps it.
     policy_version: str | None = None
     # When each held name was opened, so the exit analyst can leave a
     # fresh position alone through its grace period.

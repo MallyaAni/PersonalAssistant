@@ -322,11 +322,17 @@ const FILL_BLUE = '#0b5cad'
 // colour, so the legend can tell it from an entry or a rotation fill.
 const FILL_REDEPLOY = '#6d28d9'
 const DECISION_NOTE = 'decisions at the close, filled at the next open; sizes are % of equity'
-// The equal-weight policy, whose add and trim are the reset's rebalance rather
-// than a sizing change: a held name's target drifts with the count of A/A+
-// names and only the twenty-session reset trades it, so the markers show
+// The equal-weight policies, whose add and trim are the reset's rebalance
+// rather than a sizing change: a held name's target drifts with the count of
+// A/A+ names and only the twenty-session reset trades it, so the markers show
 // entries, exits and resets, and the drift between resets is not a trade.
-const EQUAL_WEIGHT_POLICY = 'graded-equal-weight/4'
+// `/4` and `/5` (the account's since 2026-09-29) differ only in the hold cap.
+// Named versions, never a prefix: a history of a version the page has not
+// seen keeps the sizing reading rather than being guessed into this one.
+const EQUAL_WEIGHT_POLICIES: ReadonlySet<string> = new Set([
+  'graded-equal-weight/4',
+  'graded-equal-weight/5',
+])
 const EQUAL_WEIGHT_LEGEND = 'Buy = enters the A/A+ book at its target; Sell = leaves it; Rebalance ±% = the reset trades it. Target drift between resets is not traded and not marked. Circles are paper fills: blue an entry or rotation, purple a redeploy of idle cash.'
 
 // A target weight as the percent of equity a trader reads it as: whole when it
@@ -339,9 +345,10 @@ const percentText = (weight: number | undefined) => {
 // Capitalise a policy action for the eye: buy -> Buy.
 const titled = (action: string) => action ? action[0].toUpperCase() + action.slice(1) : action
 
-// Whether a history's decisions are the equal-weight policy's, whose add/trim
-// mean a rebalance at the reset.
-const isEqualWeight = (policy: string | null | undefined) => policy === EQUAL_WEIGHT_POLICY
+// Whether a history's decisions are an equal-weight policy's (`/4` or `/5`),
+// whose add/trim mean a rebalance at the reset.
+const isEqualWeight = (policy: string | null | undefined) =>
+  typeof policy === 'string' && EQUAL_WEIGHT_POLICIES.has(policy)
 
 // The words on a decision marker: what to do and the size it leads to. Under the
 // equal-weight policy an add or a trim is the reset's rebalance and is written
