@@ -223,17 +223,51 @@ are directly on the RTX's disk.
   `claude-rtx-s3cpu` and `claude-rtx-s3gpu`, "Interactive only", as Ani
   Mallya.
 
-**Next registered candidates (not started):**
-- **A forward shadow of the sequence model's A/A+ laggard.** It is
-  recorded nightly, changes nothing the board shows, and is judged on
-  unseen sessions against criteria committed before the first one. It
-  needs:
-  - a final model with saved weights;
-  - the nightly export;
-  - its own pre-registration.
+**The laggard shadow: registered, built and checked; not yet scheduled.**
+- **The plan.**
+  [research/laggard-shadow-plan-2026-09-29.md](research/laggard-shadow-plan-2026-09-29.md),
+  with two addenda. It was pushed as `research/laggard-shadow` `4d9b7bd`
+  before any code existed.
+  - **Question.** Does the frozen model's lowest-scored A/A+ name lag its
+    book over the next 20 sessions, on dates after 2026-09-28?
+  - **Primary.** The mean laggard-minus-book spread on books of three or
+    more, Newey-West t at lag 20.
+  - **Verdict.** CONFIRMED at t ≤ −2.24 at 250 or 500 primary dates, else
+    NOT CONFIRMED and the lead is closed.
+  - **Power.** About 340 dates at the 2024-2026 effect size, about 1,100
+    at the 2016-2023 size.
+  - **Effect.** Nothing shows on the board or trades.
+- **The model.** Id `6531915a` (sha256).
+  - It is M3 T-S1's next registered refit on the 2026-09-28 export: fit
+    through 2025-07-14, validation 2025-08-20 to 2026-08-20, config lr
+    3e-4, dropout 0.1, width 64, five seeds. It took 20 minutes on the
+    RTX.
+  - Parity on spark1's CPU: within 6.6e-5 of the fit, identical on
+    reload.
+  - The nightly export path reproduced the registered export exactly.
+- **The code.** `stage3_final` (the registered `stage3_nn` is not
+  edited), `laggard_shadow` and `market_laggard_shadow` (`fit`, `parity`,
+  `nightly`). The unit gate on `4c83976`: 8,052 passed, 68 skipped, 6 xfailed, exit 0. The torch tests in the
+  research venv: 35 passed.
+- **Operations on spark1.**
+  - The job is `~/desk_shadow.sh`. It runs from the worktree
+    `~/shadow/anios`, pinned at `901c682`, with a research-only
+    `SECRET_KEY`.
+  - Its data is under `data/market/research/laggard_shadow/`:
+    `ledger.jsonl`, `summary.json`, `scores.json`, `export/` and
+    `models/`.
+  - **It is not in the crontab.** The proposed line
+    `30 23 * * 1-5 /home/animallya96/desk_shadow.sh` waits for the
+    operator's go-ahead, asked 2026-09-29. Until then it is run by hand.
+    A missed night is filled from the next export.
+  - The first forward date is 2026-09-29, with a check-in at 03:40Z on
+    09-30.
+
+**Next registered candidate (not started):**
 - **Gating the executor's mid-cycle breakout entry** on the allocator's
   targets, so that any selection overlay can hold. It is on the frozen
-  live path, so it needs the operator's go-ahead.
+  live path, so it needs the operator's go-ahead. It matters only if the
+  shadow is CONFIRMED.
 
 **Pending verification.** The first idle-cash redeploy leg after the
 09-29 19:30 ET nightly: `idle_cash_share` should fall from about 0.38
