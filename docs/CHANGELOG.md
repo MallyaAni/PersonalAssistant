@@ -14159,3 +14159,11 @@ account cash. Added an isolated opt-in forward paper ledger with delayed simulat
 fills, shared action gates, immutable state and a compact dated dashboard summary.
 Started prospective public feature capture and a read-only RL data readiness audit.
 The old paper account is preserved. No RL model or new live trading policy is promoted.
+# 2026-09-29 — Offline source-qualified filing expectations experiment
+
+Implemented and ran the preregistered first gate (`1ec0b0c`): 1,554 filing
+events from 94 retained original-byte sources; past-only Ridge and LightGBM
+growth forecasts. Both DO_NOT_ADVANCE. Exact source tests: 168 passed, two
+existing xfails; independent raw-source arithmetic and model replay passed.
+See `docs/research/earnings-events-results-2026-09-29.md`. Research branch only;
+no live strategy, dashboard, schedule, account or deployment changes.

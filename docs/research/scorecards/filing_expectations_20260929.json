@@ -1,0 +1,311 @@
+{
+  "eligible_events": 1554,
+  "events_sha256": "f0d8df4a6c60d721e3be5dc840b8547d46396b1ee01106646d5a0e384e88f606",
+  "fits_sha256": "38fc7ad3a2ee3475320935adcbe07d63e6e2a27305893bd05bf6e62ab8f6ca67",
+  "historical_authenticity_verified": false,
+  "live_promotion_authorized": false,
+  "models": {
+    "lightgbm": {
+      "annual": [
+        {
+          "baseline_mae": 0.06810172211066755,
+          "baseline_mse": 0.013578979213772973,
+          "events": 190,
+          "mae": 0.07491374419853053,
+          "mse": 0.01501531897842382,
+          "year": 2022
+        },
+        {
+          "baseline_mae": 0.08519535891897924,
+          "baseline_mse": 0.02868327778836884,
+          "events": 205,
+          "mae": 0.08222841791586613,
+          "mse": 0.027214312339920103,
+          "year": 2023
+        },
+        {
+          "baseline_mae": 0.09523682214413928,
+          "baseline_mse": 0.03950268706551075,
+          "events": 215,
+          "mae": 0.09269335468860661,
+          "mse": 0.03883025095544421,
+          "year": 2024
+        },
+        {
+          "baseline_mae": 0.10436716364202335,
+          "baseline_mse": 0.12373829605303142,
+          "events": 235,
+          "mae": 0.10145078122123004,
+          "mse": 0.12325573422662155,
+          "year": 2025
+        },
+        {
+          "baseline_mae": 0.1339353488908263,
+          "baseline_mse": 0.22862521437347985,
+          "events": 183,
+          "mae": 0.13658821221977904,
+          "mse": 0.225929693835574,
+          "year": 2026
+        }
+      ],
+      "baseline_mae": 0.0971952770849263,
+      "baseline_median_absolute_error": 0.03986915652793677,
+      "baseline_mse": 0.08547672132210749,
+      "events": 1028,
+      "issuers": 71,
+      "mae": 0.09713626921374748,
+      "mae_improvement_pct": 0.06071063630721518,
+      "median_absolute_error": 0.041647872827267396,
+      "mse": 0.08471846313829841,
+      "mse_improvement_pct": 0.8870932016117994,
+      "raw_abs_baseline_error_over_one": 8,
+      "raw_abs_target_over_one": 30,
+      "squared_error_benefit_95pct": [
+        -0.0013477242261535896,
+        0.0036000001444224444
+      ],
+      "verdict": "DO_NOT_ADVANCE",
+      "years_improved_both": 3
+    },
+    "ridge": {
+      "annual": [
+        {
+          "baseline_mae": 0.08160588906311725,
+          "baseline_mse": 0.015859352763157118,
+          "events": 187,
+          "mae": 0.08007635306143791,
+          "mse": 0.01471238915856804,
+          "year": 2021
+        },
+        {
+          "baseline_mae": 0.06810172211066755,
+          "baseline_mse": 0.013578979213772973,
+          "events": 190,
+          "mae": 0.06981399183884593,
+          "mse": 0.013437142906143233,
+          "year": 2022
+        },
+        {
+          "baseline_mae": 0.08519535891897924,
+          "baseline_mse": 0.02868327778836884,
+          "events": 205,
+          "mae": 0.08017652793071496,
+          "mse": 0.025053891216171464,
+          "year": 2023
+        },
+        {
+          "baseline_mae": 0.09523682214413928,
+          "baseline_mse": 0.03950268706551075,
+          "events": 215,
+          "mae": 0.09176333489518487,
+          "mse": 0.037435301591072924,
+          "year": 2024
+        },
+        {
+          "baseline_mae": 0.10436716364202335,
+          "baseline_mse": 0.12373829605303142,
+          "events": 235,
+          "mae": 0.10606800835834068,
+          "mse": 0.13617546459253105,
+          "year": 2025
+        },
+        {
+          "baseline_mae": 0.1339353488908263,
+          "baseline_mse": 0.22862521437347985,
+          "events": 183,
+          "mae": 0.14706086346997768,
+          "mse": 0.2498186867610339,
+          "year": 2026
+        }
+      ],
+      "baseline_mae": 0.09479592271449147,
+      "baseline_median_absolute_error": 0.041254890746120765,
+      "baseline_mse": 0.07476194937105915,
+      "events": 1215,
+      "issuers": 72,
+      "mae": 0.0956727256620139,
+      "mae_improvement_pct": -0.9249374049168813,
+      "median_absolute_error": 0.043861203023186204,
+      "mse": 0.07918268750841914,
+      "mse_improvement_pct": -5.9130857000784465,
+      "raw_abs_baseline_error_over_one": 8,
+      "raw_abs_target_over_one": 30,
+      "squared_error_benefit_95pct": [
+        -0.009900552943204521,
+        0.0004110273860059004
+      ],
+      "verdict": "DO_NOT_ADVANCE",
+      "years_improved_both": 3
+    }
+  },
+  "parameters": {
+    "deterministic": true,
+    "force_col_wise": true,
+    "lambda_l2": 10.0,
+    "learning_rate": 0.03,
+    "metric": "l2",
+    "min_data_in_leaf": 30,
+    "num_leaves": 7,
+    "num_threads": 2,
+    "objective": "regression",
+    "seed": 7,
+    "verbosity": -1
+  },
+  "plan": "docs/research/earnings-events-plan-2026-09-29.md",
+  "predictions_sha256": "1d6bed4eb982c55250767a87657bbb21f6fa5039800a141060e24367d0540971",
+  "price_partitions": {
+    "AAOI": "2026-09-25",
+    "AAPL": "2026-09-25",
+    "ADI": "2026-09-25",
+    "ADSK": "2026-09-25",
+    "ALAB": "2026-09-25",
+    "AMAT": "2026-09-25",
+    "AMD": "2026-09-25",
+    "AMZN": "2026-09-25",
+    "ANET": "2026-09-25",
+    "APLD": "2026-09-25",
+    "ARM": "2026-09-25",
+    "AVGO": "2026-09-25",
+    "BE": "2026-09-25",
+    "CDNS": "2026-09-25",
+    "CEG": "2026-09-25",
+    "COHR": "2026-09-25",
+    "CRDO": "2026-09-25",
+    "CRM": "2026-09-25",
+    "CRWV": "2026-09-25",
+    "CSCO": "2026-09-25",
+    "DDOG": "2026-09-25",
+    "ETN": "2026-09-25",
+    "FFIV": "2026-09-25",
+    "FICO": "2026-09-25",
+    "FTNT": "2026-09-25",
+    "GEN": "2026-09-25",
+    "GLW": "2026-09-25",
+    "GLXY": "2026-09-25",
+    "GOOGL": "2026-09-25",
+    "HUT": "2026-09-25",
+    "INTC": "2026-09-25",
+    "INTU": "2026-09-25",
+    "IREN": "2026-09-25",
+    "KLAC": "2026-09-25",
+    "LITE": "2026-09-25",
+    "LRCX": "2026-09-25",
+    "MCHP": "2026-09-25",
+    "MDB": "2026-09-25",
+    "META": "2026-09-25",
+    "MOD": "2026-09-25",
+    "MPWR": "2026-09-25",
+    "MRVL": "2026-09-25",
+    "MSFT": "2026-09-25",
+    "MSI": "2026-09-25",
+    "MU": "2026-09-25",
+    "NET": "2026-09-25",
+    "NOW": "2026-09-25",
+    "NTAP": "2026-09-25",
+    "NXPI": "2026-09-25",
+    "ON": "2026-09-25",
+    "ORCL": "2026-09-25",
+    "PANW": "2026-09-25",
+    "PLTR": "2026-09-25",
+    "POWL": "2026-09-25",
+    "PTC": "2026-09-25",
+    "Q": "2026-09-25",
+    "QQQ": "2026-09-25",
+    "SMCI": "2026-09-25",
+    "SMR": "2026-09-25",
+    "SNDK": "2026-09-25",
+    "SNOW": "2026-09-25",
+    "SNPS": "2026-09-25",
+    "SPY": "2026-09-25",
+    "STX": "2026-09-25",
+    "SWKS": "2026-09-25",
+    "TEAM": "2026-09-25",
+    "TLN": "2026-09-25",
+    "TRMB": "2026-09-25",
+    "TXN": "2026-09-25",
+    "TYL": "2026-09-25",
+    "VRT": "2026-09-25",
+    "VST": "2026-09-25",
+    "WDAY": "2026-09-25",
+    "WDC": "2026-09-25",
+    "WULF": "2026-09-25",
+    "ZS": "2026-09-25"
+  },
+  "provenance": {
+    "revision": "1ec0b0cfdfd7e15750c55cf11448eab088886209",
+    "sha256": {
+      "backend/cli/market_filing_expectations.py": "eda6f33af66188ff644b7049036ee25717d766deba675f2676eebc874b875e36",
+      "backend/market/filing_expectations.py": "04b6481a5cacf200a3642483df97084d077886417878679d1ebab20a01a8c7d6",
+      "backend/market/fundamental_period_sources.py": "e5fe1a13e56ba351c22a625bee0c69428c1c855d48cea9e208b7fd9527d0f087",
+      "backend/market/fundamental_source_store.py": "3de801a165eb66963f2e3333768d9fa6eb6361fda95aa64e5dbc09e87e9597af",
+      "backend/market/fundamental_unit_sources.py": "3cb4be7ccac3d20fc79f354cc4449ff4bdb4922d0314bcdfde112d2dfe4c7404",
+      "backend/market/qualified_fundamentals.py": "c46d68d17af2fb12bb03b4c62f579dab53d67ff21f6d6d7c436fbf5aaf337c94",
+      "docs/research/earnings-events-plan-2026-09-29.md": "510f221709fd1b08c69cbeb9df4b8b704c2648defece3df08c5365d4e5752b43"
+    }
+  },
+  "returns": {
+    "association": {
+      "lightgbm": {
+        "QQQ": {
+          "events": 1012,
+          "persistence_spearman_same_events": 0.0305092916422372,
+          "spearman": 0.004838843778837256
+        },
+        "SPY": {
+          "events": 1012,
+          "persistence_spearman_same_events": 0.0343803967685636,
+          "spearman": 0.005532388076410355
+        }
+      },
+      "persistence": {
+        "QQQ": {
+          "events": 1538,
+          "persistence_spearman_same_events": 0.03174805064474112,
+          "spearman": 0.03174805064474112
+        },
+        "SPY": {
+          "events": 1538,
+          "persistence_spearman_same_events": 0.02217067836459506,
+          "spearman": 0.02217067836459506
+        }
+      },
+      "ridge": {
+        "QQQ": {
+          "events": 1199,
+          "persistence_spearman_same_events": 0.03311843063432103,
+          "spearman": 0.006749948830480603
+        },
+        "SPY": {
+          "events": 1199,
+          "persistence_spearman_same_events": 0.027882305928284695,
+          "spearman": -0.004472118529492439
+        }
+      }
+    },
+    "basis": "gross_20_session_post_filing_open_returns_not_funded_pnl",
+    "status_counts": {
+      "immature": 16,
+      "priced": 1538
+    }
+  },
+  "source_issuers": 94,
+  "source_rejections": {
+    "baseline:disputed_derivation_component": 53,
+    "baseline:missing_lagged_quarter": 7,
+    "baseline:no_complete_quarter_at_required_end": 35,
+    "baseline:no_declared_concept": 46,
+    "baseline:no_revenue_period": 17,
+    "baseline:nonpositive_growth_input": 1,
+    "baseline:reported_derived_disagreement": 32,
+    "nonconsecutive_prior_quarter": 3,
+    "target:ambiguous_period_at_required_end": 2,
+    "target:disputed_derivation_component": 53,
+    "target:missing_lagged_quarter": 10,
+    "target:no_complete_quarter_at_required_end": 158,
+    "target:no_declared_concept": 2126,
+    "target:no_declared_unit": 8,
+    "target:nonpositive_growth_input": 4,
+    "target:reported_derived_disagreement": 103
+  },
+  "summary_sha256_note": "summary hash is printed after exclusive write"
+}

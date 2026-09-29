@@ -1,5 +1,24 @@
 # Next session
 
+## 2026-09-29 — Source-qualified filing expectations tested; both models rejected
+
+Research branch `research/earnings-events-20260929` starts from Fable main
+`511297f`; no live or shared-main changes. The bounded filing experiment is
+implemented at `1ec0b0c`, with 168 tests passing / two existing xfails and Ruff
+clean. Real 94-source archive: 1,554 events. LightGBM improves MSE 0.89%, MAE
+0.06%; Ridge worsens both. Neither clears its frozen gate; post-filing return
+associations do not improve on persistence. Do not retune this grid or deploy it.
+Full [results and artifact locations](research/earnings-events-results-2026-09-29.md).
+The independent raw-byte/model replay passed every event and saved prediction.
+
+The existing laggard shadow is now **scheduled**, unlike the older handoff:
+read-only Spark check found `30 23 * * 1-5 /home/animallya96/desk_shadow.sh`,
+with an operator-approval comment, clean pinned worktree `901c682`, executable
+syntax-valid script and the registered model hash. No duplicate job installed.
+It has no forward ledger yet; first-night execution remains unverified.
+Next bounded research: partial sequence-laggard redistribution under the
+existing 20% cap, without introducing cash or changing the frozen shadow.
+
 ## 2026-09-29, afternoon — Stage 4: multi-day timing of the executor's orders. Every candidate RECORD; the board keeps `dip_or_close`
 
 **Nothing live changed.** The live path is still frozen at
