@@ -122,7 +122,7 @@ def _diagnostics(  # noqa: C901 - one chronological pass over distinct journal e
             "desired",
             "submitted",
             "executed",
-            "learned_desired",
+            "forecast_covered_desired",
             "fallback_desired",
         )
     }
@@ -184,7 +184,7 @@ def _diagnostics(  # noqa: C901 - one chronological pass over distinct journal e
                 finite = np.isfinite(forecast[t])
                 row["eligible_forecasts"] += int(eligible.sum())
                 row["missing_forecasts"] += int((eligible & ~finite).sum())
-                learned = {
+                covered = {
                     j: a
                     for j, a in desired_actions.items()
                     if eligible[j] and finite[j]
@@ -194,7 +194,7 @@ def _diagnostics(  # noqa: C901 - one chronological pass over distinct journal e
                     for j, a in desired_actions.items()
                     if eligible[j] and not finite[j]
                 }
-                _accumulate(totals["learned_desired"], learned)
+                _accumulate(totals["forecast_covered_desired"], covered)
                 _accumulate(totals["fallback_desired"], fallback)
         elif kind == "adjustment" and event["reason"] == "green-open sell suppression":
             before, submitted = decisions[event["decision_id"]]
@@ -235,6 +235,15 @@ def _diagnostics(  # noqa: C901 - one chronological pass over distinct journal e
             row["desired_submission_differences"] for row in rows
         ),
         "batch_residual_reasons": residual_reasons,
+        "desired_basis": (
+            "Simulator desired weights after incumbent gates, before minimum-trade "
+            "sizing; event-owned decisions can omit these weights."
+        ),
+        "forecast_covered_basis": (
+            "Desired actions with finite supplied forecasts, including control "
+            "forecasts; coverage does not attribute the action to ML."
+        ),
+        "turnover_basis": "Gross traded notional divided by prior closing NAV, summed.",
         "executed_hold_count_note": "No fill is never counted as an executed Hold.",
         "residual_note": (
             "Batch residuals are phase-specific observations, not pending-order counts."

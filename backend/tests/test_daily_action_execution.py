@@ -65,7 +65,10 @@ def test_missing_forecasts_preserve_baseline_and_are_counted():
     missing = _price(report, mask, np.full_like(report.panel.close, np.nan))
     np.testing.assert_array_equal(baseline.result.equity, missing.result.equity)
     assert missing.diagnostics["missing_forecasts"] == len(report.panel.dates) - 1
-    assert sum(missing.diagnostics["action_counts"]["learned_desired"].values()) == 0
+    assert (
+        sum(missing.diagnostics["action_counts"]["forecast_covered_desired"].values())
+        == 0
+    )
     assert missing.diagnostics["action_counts"]["fallback_desired"]["Hold"] > 0
 
 
@@ -199,3 +202,28 @@ def test_learned_non_daily_and_bad_shapes_are_refused():
         _price(report, mask, np.zeros_like(mask, dtype=float), daily=False)
     with pytest.raises(ValueError, match="align"):
         _price(report, mask, np.zeros((1, 1)))
+
+
+# Gap-up buys remain cash-bounded including each registered one-way fee level.
+@pytest.mark.parametrize("cost", [10.0, 25.0])
+def test_gapped_full_investment_accounts_respect_costs_and_cash(cost):
+    report, mask = _book(rows=5)
+    report.graded.grades[:, :5] = 3
+    opens = report.panel.open.copy()
+    opens[1, :5] *= 2
+    report.panel = replace(report.panel, open=opens)
+    priced = execution.price(
+        report, mask, np.zeros_like(opens), report.panel.dates[0].astype(object), cost
+    )
+    assert priced.verification["total_fees"] == pytest.approx(
+        priced.result.traded * cost / 10000
+    )
+    assert all(row["cash"] >= 0 for row in priced.diagnostics["daily"])
+    assert (_positions(priced) >= 0).all()
+    first_buy = next(
+        event
+        for event in priced.journal.snapshot()["events"]
+        if event["type"] == "fill_batch" and event["gross_buys"] > 0
+    )
+    assert first_buy["scale"] < 1
+    assert first_buy["gross_buys"] + first_buy["fee_total"] <= 1 + 1e-12

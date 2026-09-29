@@ -1,6 +1,6 @@
 # Next session
 
-## 2026-09-29 — Daily ML action experiment (research branch only)
+## 2026-09-29 — Daily ML action experiment completed; neither candidate promoted
 
 Branch `research/daily-actions-20260929` starts from main `2262333`. The new
 protocol was committed before fitting at `07bdeec`, pushed to Spark and then
@@ -13,16 +13,26 @@ execution. Daily cadence is a deliberate candidate change, with both daily and
 including actual synthetic model fits, saved-model reload, future-data tampering,
 direct `/4` parity, all action verbs, funding, cancelled sells and independent
 journal accounting; Ruff and whitespace checks passed. This is not a full
-repository gate or deployed behavior. Real historical training and economic results
-are not yet verified at this implementation checkpoint. No live file, order,
-account state or deployment changes. Never merge this branch as a promoted model.
+repository gate or deployed behavior. Final diagnostics/test follow-up passed
+**299 tests**. Actual historical run completed at code `3b89edc`: eight annual
+folds, 16 saved models, 64 funded accounts, independent data/model and saved
+journal checks. Both models **DO_NOT_PROMOTE**, with no post-result retuning.
+At 25 bp/side, median CAGR: original `/4` 30.61%, daily `/4` 27.28%, ridge
+26.55%, trees 25.66%, SPY 16.88%, QQQ 22.62%. Both models beat either control
+at 0/4 offsets. Forecast MSE also lost to the past-only mean. Full evidence,
+regimes, drawdowns, limitations and hashes are in
+[the results](research/daily-actions-results-2026-09-29.md).
+No live file, order, account state or deployment changes. Never merge this
+branch as a promoted model. Do not rerun or tune this failed candidate.
 
 Run from a clean committed research worktree with the existing Spark CPU venv:
 `python -m backend.cli.market_daily_actions --root <existing-market-store> --output <new-scratch-directory>`.
 It makes no provider requests. Output must be outside the input store. Two
 CPU threads are sufficient for this model family; no model server or GPU changes.
-The run saves inputs, actual fitted models, fold receipts, predictions, all
-cash/fill journals and net comparisons against SPY/QQQ. Missing historical
+The completed output is `/home/animallya96/scratch/daily-actions-3b89edc-20260929`,
+with code in `/home/animallya96/scratch/daily-actions-code.zVeWHi`. It saves
+inputs, actual fitted models, fold receipts, predictions, all cash/fill journals
+and net comparisons against SPY/QQQ. Missing historical
 constituents and reconstructed grade availability prevent a survivorship-free
 claim. Prior use of the historical period prevents a pristine-test claim.
 
