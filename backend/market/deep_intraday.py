@@ -40,9 +40,10 @@ names ("auto" is cuda when available, else cpu); the ridge ignores it.
 
 The metrics. Return head: the daily cross-sectional Spearman IC, its mean
 and Newey-West t at `HAC_LAG` over dates; the equal-weight top-quintile
-portfolio by forecast (next-session open to close, one-way cost when a name
-enters or leaves) against equal weight of every eligible name that date,
-paired daily difference with the same HAC t; the same restricted to names
+portfolio by forecast (next-session open to close, the names' simple
+returns averaged, one-way cost when a name enters or leaves) against equal
+weight of every eligible name that date, charged the same way, paired
+daily difference with the same HAC t; the same restricted to names
 the desk graded A or better. Volatility head: out-of-sample R² against the
 trailing 20-session realized volatility, per window. The control: the IC
 of the return forecast after regressing it on the volatility forecast
@@ -83,11 +84,17 @@ from backend.market.session_anatomy import (
 )
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 
-# Version 2 corrects input-row selection; saved version-1 results are not reruns.
-STUDY_VERSION = 2
+# Version 2 corrects input-row selection; version 3 averages the portfolio's
+# simple returns. Saved earlier results are not reruns.
+STUDY_VERSION = 3
 # This records the producer's row rule, not complete historical provenance.
 ROW_SELECTION = "decision-inputs-only/1"
 LEGACY_ROW_SELECTION = "legacy-unrecorded"
+# Carried in every portfolio summary, including the ones stage 2 reuses:
+# version 2 averages the names' simple returns (version 1, unlabelled,
+# averaged log returns); both charge the one-way cost on each book's
+# turnover against its previous session's holdings.
+PORTFOLIO_ACCOUNTING = "simple-mean-turnover-cost/2"
 # The plan this implements.
 PLAN = "docs/research/deep-intraday-plan-2026-09-27.md"
 # Sessions of bars in one input row, and the slots per session.
@@ -817,6 +824,8 @@ class Portfolio:
         diff = self.difference()
         n = len(self.dates)
         return {
+            "accounting": PORTFOLIO_ACCOUNTING,
+            "return_basis": "simple",
             "mean_bp": diff.mean * BP if n else math.nan,
             "t": diff.t,
             "dates": n,
@@ -839,8 +848,9 @@ def _turnover(previous: dict[str, float], current: dict[str, float]) -> float:
 
 
 # Equal weight of the top `TOP_QUANTILE` of eligible names by forecast on
-# each date, earning the next session's open-to-close, charged `cost_bps`
-# one way on every weight change, against equal weight of every eligible
+# each date, earning the mean of the names' simple next-session
+# open-to-close returns, charged `cost_bps` one way on every weight change
+# against the previous date's book, against equal weight of every eligible
 # name that date charged the same way. `keep` restricts the eligible rows
 # (the A/A+ variant); the hurdle is restricted with them.
 def top_quantile_portfolio(
@@ -870,8 +880,10 @@ def top_quantile_portfolio(
         everyone = {ds.tickers[r]: 1.0 / n for r in rows}
         turnover_top = _turnover(held_top, top)
         turnover_all = _turnover(held_all, everyone)
-        gross_top = float(ds.y_return[chosen].mean())
-        gross_all = float(ds.y_return[rows].mean())
+        # An equal-weight book earns the mean of its names' simple returns;
+        # `y_return` is a log return, so it is converted before averaging.
+        gross_top = float(np.expm1(ds.y_return[chosen]).mean())
+        gross_all = float(np.expm1(ds.y_return[rows]).mean())
         dates.append(ds.sessions[session])
         series["top_gross"].append(gross_top)
         series["all_gross"].append(gross_all)

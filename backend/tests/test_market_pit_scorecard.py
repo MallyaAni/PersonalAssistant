@@ -7,7 +7,9 @@ hold exactly the eligible names, and the scorecard must price every line on
 the same sessions and report the windows apart.
 """
 
+import json
 from datetime import date, timedelta
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -173,6 +175,10 @@ def test_scorecard_reports_every_line_per_window(history, monkeypatch):
     assert payload["book"]["names_today"] == 6
     assert payload["book"]["eligible_first_session"] == 5
     assert payload["book"]["eligible_last_session"] == 5
+    assert payload["metrics_version"] == "pit-scorecard-metrics/2"
+    assert "starting NAV" in payload["note"]
+    assert "target weights, not fills" in payload["note"]
+    assert "(lagged-simple/2)" in payload["note"]
     pairs = {(p["line"], p["against"]) for p in payload["paired"]}
     assert (sc.RULE_PIT, sc.EW_PIT) in pairs and (sc.RULE_PIT, "QQQ") in pairs
     text = sc.render(payload)
@@ -187,6 +193,155 @@ def test_window_stats():
     halved = sc.window_stats(np.array([0.0] * 10 + [-0.5] + [0.0] * 10))
     assert halved["drawdown"] == pytest.approx(-0.5)
     assert sc.window_stats(np.array([np.nan, 0.01]))["sessions"] == 1
+
+
+# The first finite return is exposed capital, so its loss belongs in drawdown.
+@pytest.mark.parametrize(
+    ("daily", "expected"),
+    [
+        ([-0.5, 0.0], -0.5),
+        ([np.nan, -0.5, 0.0], -0.5),
+        ([-0.1, -0.2], -0.28),
+        ([-0.5, 1.0, 0.0], -0.5),
+        ([0.5, -0.2], -0.2),
+        ([0.1, 0.2], 0.0),
+        ([-1.0, 0.0], -1.0),
+    ],
+)
+def test_window_drawdown_includes_starting_nav(daily, expected):
+    stats = sc.window_stats(np.asarray(daily))
+    assert stats["drawdown"] == pytest.approx(expected)
+    assert stats["sessions"] == np.isfinite(daily).sum()
+    assert set(stats) == {"cagr", "drawdown", "sharpe", "sessions"}
+
+
+# Construct only the target-book inputs needed for isolated concentration
+# checks; prices are flat at 100 unless `adj_close` is given.
+def _target_concentration(target_weights, windows=None, adj_close=None):
+    weights = np.atleast_2d(np.asarray(target_weights, dtype=float))
+    panel = SimpleNamespace(
+        dates=np.datetime64("2023-01-03") + np.arange(len(weights)),
+        tickers=tuple(f"STOCK{i}" for i in range(weights.shape[1])),
+        adj_close=(
+            np.full(weights.shape, 100.0)
+            if adj_close is None
+            else np.asarray(adj_close, dtype=float)
+        ),
+    )
+    report = SimpleNamespace(panel=panel)
+
+    # Return the declared target for this session without deriving any holdings.
+    def allocate(restricted, panel, unused, t):
+        return weights[t]
+
+    return sc.concentration(
+        report,
+        np.ones(weights.shape, dtype=bool),
+        allocate,
+        windows or {"all": (None, None)},
+    )
+
+
+# Invested-name count depends on relative stock weights, not the cash allocation.
+@pytest.mark.parametrize("gross", [0.07, 0.35, 1.0])
+@pytest.mark.parametrize(
+    ("relative", "effective"),
+    [([1.0], 1.0), ([1.0] * 7, 7.0), ([1.0, 2.0, 3.0], 36.0 / 14.0)],
+)
+def test_concentration_effective_names_normalizes_invested_weights(
+    gross, relative, effective
+):
+    relative = np.asarray(relative)
+    targets = gross * relative / relative.sum()
+    stats = _target_concentration(targets)["all"]
+    assert stats["effective_names_median"] == pytest.approx(effective)
+    assert stats["effective_names_min"] == pytest.approx(effective)
+    assert stats["largest_weight_max"] == pytest.approx(targets.max())
+    assert stats["cash_max"] == pytest.approx(1.0 - gross)
+    # One flat-priced session: no earlier decision, so no single-name loss.
+    assert stats["worst_single_name_day"] == 0.0
+    assert stats["worst_single_name_day_basis"] == "lagged-simple/2"
+
+
+# All-cash sessions remain outside invested-only summaries and cannot add names.
+def test_concentration_keeps_all_cash_and_partly_invested_windows_separate():
+    windows = {
+        "all": (None, None),
+        "cash": (date(2023, 1, 4), date(2023, 1, 5)),
+    }
+    stats = _target_concentration([[0.1, 0.1], [0.0, 0.0], [0.2, 0.2]], windows)
+    assert stats["cash"] == {"sessions": 0}
+    assert stats["all"]["sessions"] == 3
+    assert stats["all"]["invested_share"] == pytest.approx(2.0 / 3.0)
+    assert stats["all"]["effective_names_min"] == pytest.approx(2.0)
+    assert stats["all"]["cash_median"] == pytest.approx(0.7)
+    assert stats["all"]["cash_max"] == pytest.approx(0.8)
+    assert _target_concentration([[0.0, 0.0]])["all"] == {"sessions": 0}
+
+
+# The single-name day charges the weight set at the previous close: a name
+# first bought at the close of its crash day does not count, a name held
+# from the close before does (at the simple return, not the log return),
+# and so does one sold at the close of the crash day.
+@pytest.mark.parametrize(
+    ("targets", "expected"),
+    [
+        ([[0.0, 0.1], [0.5, 0.1], [0.5, 0.1]], 0.0),
+        ([[0.5, 0.1], [0.5, 0.1], [0.5, 0.1]], -0.25),
+        ([[0.5, 0.1], [0.0, 0.1], [0.0, 0.1]], -0.25),
+    ],
+    ids=["bought-at-crash-close", "held-from-prior-close", "sold-at-crash-close"],
+)
+def test_worst_single_name_day_uses_the_previous_close_weight(targets, expected):
+    # STOCK0 halves between close 0 and close 1; STOCK1 is flat.
+    prices = [[100.0, 100.0], [50.0, 100.0], [50.0, 100.0]]
+    stats = _target_concentration(targets, adj_close=prices)["all"]
+    assert stats["worst_single_name_day"] == pytest.approx(expected, abs=1e-15)
+    assert stats["worst_single_name_day_basis"] == "lagged-simple/2"
+
+
+# A price missing on either close contributes nothing rather than a loss.
+def test_worst_single_name_day_ignores_missing_prices():
+    weights = np.array([[0.5, 0.5], [0.5, 0.5]])
+    prices = np.array([[100.0, np.nan], [90.0, 50.0]])
+    np.testing.assert_allclose(sc.worst_name_day(weights, prices), [0.0, -0.05])
+
+
+# The real CLI persists a versioned target-book risk report on a synthetic
+# book, with the single-name day on its lagged basis in every window.
+def test_scorecard_cli_versions_target_book_risk_output(history, monkeypatch, tmp_path):
+    from backend.agents.trading.desk import desk
+
+    report = _report()
+    real_restriction = point_in_time.point_in_time
+    monkeypatch.setattr(desk, "run", lambda *args, **kwargs: report)
+    monkeypatch.setattr(
+        point_in_time,
+        "point_in_time",
+        lambda report, *args, **kwargs: real_restriction(report, history),
+    )
+    monkeypatch.setattr(
+        benchmarks,
+        "load_benchmark",
+        lambda store, symbol, sessions, **kwargs: benchmarks.BenchmarkSeries(
+            symbol,
+            True,
+            np.zeros(len(sessions)),
+            np.ones(len(sessions)),
+            np.asarray(sessions),
+        ),
+    )
+    arguments = ["--root", str(tmp_path), "--graded-cap", "0.10", "--offsets", "1"]
+    assert sc.main([*arguments, "--costs", "10"]) == 0
+    target = tmp_path / "desk" / "pit_scorecard_ew_graded_cap10.json"
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    assert payload["metrics_version"] == "pit-scorecard-metrics/2"
+    assert "(lagged-simple/2)" in payload["note"]
+    assert payload["concentration"]["all"]["effective_names_min"] == pytest.approx(5.0)
+    assert set(payload["concentration"]) == set(sc.WINDOWS)
+    for window in payload["concentration"].values():
+        assert window["worst_single_name_day"] <= 0.0
+        assert window["worst_single_name_day_basis"] == "lagged-simple/2"
 
 
 # The graded equal-weight arm holds every eligible A-or-better name at
@@ -261,11 +416,13 @@ def test_graded_arm_and_concentration(history):
     assert tight["sessions"] == T and 0 < tight["invested_share"] <= 1
     assert tight["largest_weight_max"] == pytest.approx(0.10)
     assert tight["cash_max"] >= 0.5
+    assert tight["effective_names_min"] == pytest.approx(4.0)
     loose = sc.concentration(demoted, mask, sc.graded_arm(1.0)(demoted, mask), windows)["all"]
     assert loose["cash_max"] == pytest.approx(0.0)
     assert loose["largest_weight_max"] >= tight["largest_weight_max"]
     assert loose["effective_names_min"] >= 1.0
     assert loose["worst_single_name_day"] <= 0.0
+    assert loose["worst_single_name_day_basis"] == "lagged-simple/2"
     # The CLI tag for a cap names the percent.
     assert sc.main.__doc__  # entry point exists; the tag rule is pinned below
     assert f"ew_graded_cap{round(0.15 * 100):02d}" == "ew_graded_cap15"

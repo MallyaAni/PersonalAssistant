@@ -65,6 +65,13 @@ RULE_TODAY = "rule / today's book"
 RULE_PIT = "rule / point-in-time"
 EW_PIT = "equal weight / point-in-time"
 EW_TODAY = "equal weight / today's book"
+# Version 2: drawdown includes the starting NAV and effective names
+# normalize the invested weight; version 1 payloads carry no version.
+METRICS_VERSION = "pit-scorecard-metrics/2"
+# Version 2 multiplies the weight set at the previous close by the simple
+# return into the current close; version 1 used the weight set at the same
+# close as the (log) return it was multiplied by, and is withdrawn.
+WORST_NAME_DAY_BASIS = "lagged-simple/2"
 
 # Allocation arms the scorecard can put on the rule lines. Each is a factory
 # taking the report the line runs on and its (T, N) membership mask, and
@@ -105,13 +112,30 @@ def graded_arm(cap: float):
     )
 
 
+# Each session's worst single-name contribution to the book: the weight
+# the arm decided at the previous close times that name's simple
+# close-to-close return into this close, the minimum over names. The first
+# session has no earlier decision, and a missing or nonfinite price
+# contributes nothing (the earlier metric's convention for a missing one).
+def worst_name_day(weights: np.ndarray, adj_close: np.ndarray) -> np.ndarray:
+    """Return the (T,) minimum over names of weights[t-1] * simple return into t."""
+    close = np.asarray(adj_close, dtype=float)
+    held = np.asarray(weights, dtype=float)
+    contribution = np.zeros_like(held)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        lagged = held[:-1] * (close[1:] / close[:-1] - 1.0)
+    contribution[1:] = np.where(np.isfinite(lagged), lagged, 0.0)
+    return contribution.min(axis=1)
+
+
 # What a cap buys, read off the target book the arm asks for on every
 # session of the restricted report (before fills, so a property of the
 # rule and not of the simulator): the largest single weight, the effective
-# number of names (1 / sum of squared weights), the cash left idle, and
-# the worst single-name contribution on any session (largest weight times
-# that name's worst close-to-close return while held). Per-window medians
-# and extremes across sessions.
+# number of invested names (sum(weights)**2 / sum(weights**2)), the cash
+# left idle, and the worst single-name day (`worst_name_day`: the weight
+# set at the previous close times the simple return into the next one;
+# `WORST_NAME_DAY_BASIS`), its minimum over the window's sessions. The
+# other medians and extremes are conditional on a nonzero stock target.
 def concentration(restricted, mask: np.ndarray, allocator, windows=None) -> dict:
     """Return per-window concentration statistics of the arm's target book."""
     panel = restricted.panel
@@ -119,19 +143,16 @@ def concentration(restricted, mask: np.ndarray, allocator, windows=None) -> dict
     weights = np.zeros((len(dates), len(panel.tickers)))
     for t in range(len(dates)):
         weights[t] = allocator(restricted, panel, None, t)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        rets = np.diff(np.log(panel.adj_close), axis=0)
-    rets = np.vstack([np.full((1, rets.shape[1]), np.nan), rets])
     largest = weights.max(axis=1)
+    invested = weights.sum(axis=1)
     sq = (weights**2).sum(axis=1)
-    effective = np.where(sq > 0, 1.0 / np.where(sq > 0, sq, 1.0), 0.0)
-    cash = 1.0 - weights.sum(axis=1)
-    contribution = np.nan_to_num(weights * rets, nan=0.0)
-    worst_name = contribution.min(axis=1)
-    out = {}
+    effective = np.divide(invested**2, sq, out=np.zeros_like(sq), where=sq > 0)
+    cash = 1.0 - invested
+    worst_name = worst_name_day(weights, panel.adj_close)
+    out: dict[str, dict[str, object]] = {}
     for name, (start, end) in (windows or WINDOWS).items():
         w = point_in_time.window(dates, start, end)
-        held = w & (weights.sum(axis=1) > 0)
+        held = w & (invested > 0)
         if not held.any():
             out[name] = {"sessions": 0}
             continue
@@ -145,6 +166,7 @@ def concentration(restricted, mask: np.ndarray, allocator, windows=None) -> dict
             "cash_median": float(np.median(cash[held])),
             "cash_max": float(cash[held].max()),
             "worst_single_name_day": float(worst_name[w].min()),
+            "worst_single_name_day_basis": WORST_NAME_DAY_BASIS,
         }
     return out
 
@@ -158,7 +180,7 @@ class Curve:
     daily: np.ndarray  # NaN before the first fill
 
 
-# Annualised return, worst drawdown and Sharpe of a daily series, or NaNs.
+# Annualised return, drawdown from the starting NAV and Sharpe, or NaNs.
 def window_stats(daily: np.ndarray) -> dict[str, float]:
     """Return {"cagr", "drawdown", "sharpe", "sessions"} for finite entries."""
     r = np.asarray(daily, dtype=float)
@@ -166,7 +188,7 @@ def window_stats(daily: np.ndarray) -> dict[str, float]:
     n = len(r)
     if n < 2:
         return {"cagr": math.nan, "drawdown": math.nan, "sharpe": math.nan, "sessions": n}
-    curve = np.cumprod(1.0 + r)
+    curve = np.concatenate(([1.0], np.cumprod(1.0 + r)))
     cagr = float(curve[-1] ** (252.0 / n) - 1.0)
     peak = np.maximum.accumulate(curve)
     drawdown = float((curve / peak - 1.0).min())
@@ -343,6 +365,7 @@ def build(
     )
     members = mask.sum(axis=1)
     payload: dict[str, object] = {
+        "metrics_version": METRICS_VERSION,
         "asof": str(panel.dates[-1]),
         "offsets": offsets,
         "costs_bps": list(costs),
@@ -359,7 +382,12 @@ def build(
             "Lines priced on identical sessions from each of the first `offsets` "
             "sessions; medians and worsts are across offsets. The point-in-time "
             "book is the dated membership file; names with no bars in the store "
-            "on a session are not held by any line."
+            "on a session are not held by any line. Drawdown includes starting NAV. "
+            "Concentration, when attached, describes target weights, not fills; "
+            "effective names normalizes the invested stock weights and excludes "
+            "cash; worst_single_name_day is the weight targeted at the previous "
+            "close times the name's simple return into the next close "
+            f"({WORST_NAME_DAY_BASIS})."
         ),
     }
     for cost in costs:
