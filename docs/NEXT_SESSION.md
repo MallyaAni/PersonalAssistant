@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-09-29, evening — `graded-equal-weight/5` (25% hold cap) built and gated. **NOT deployed**
+
+The operator approved raising the per-name hold cap from 20% to 25%. The
+release is on branch `trading/policy-v5-cap25`, from `main` `511297fc`. It is
+built and gated on spark1: the numbers and what changed are in the CHANGELOG
+entry of the same date. **Not pushed, not merged, not deployed.**
+
+**Next: Claude deploys it after 16:15 ET on 2026-09-30, before the 19:30 ET
+nightly.** Handoff rule 2 forbids deploying between 09:00 and 16:15 ET.
+
+- Deploy through `scripts/deploy.sh`.
+- The deploy checkout is at `2262333c`. The branch also carries main's 12
+  stage-4 commits, which are research modules and docs only.
+
+**Between the deploy and the nightly**, the board sizes toward the latest
+`/4` record and labels its rows `(policy graded-equal-weight/4)`.
+
+**Read that night's log and record** for:
+
+- `paper book (graded-equal-weight/5; …)` with **no** "policy change" line
+  (the `/4` state is re-stamped, not rebalanced);
+- `state.policy_version == "graded-equal-weight/5"`;
+- `/5` in the record's `targets.policy` and `curve.backtest.strategy_policy`;
+- `policy_shadows["graded-equal-weight/5"]` at sequence 1, under
+  `desk/shadow/graded-equal-weight-5/`, with the `/4` folder unchanged;
+- "grade parity: OK";
+- the candidate line still `/4`.
+
+**Rollback:** redeploy `511297fc`. After a `/5` nightly, that code sees the
+`/5` stamp as another policy and forces one rebalance back into `/4`, which
+trims 25% names to 20%.
+
 ## 2026-09-29, afternoon — Stage 4: multi-day timing of the executor's orders. Every candidate RECORD; the board keeps `dip_or_close`
 
 **Nothing live changed.** The live path is still frozen at
