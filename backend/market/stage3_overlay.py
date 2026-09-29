@@ -25,7 +25,7 @@ an overlay on the live executor as it runs tonight:
   for bit.
 * There are no mid-cycle trims: no `weight_filter`, no `midcycle_trims`. A
   dropped name the book holds leaves at the next reset; between resets the
-  redeploy buys toward the reduced targets (a dropped name is not bought).
+  redeploy buys toward the reduced targets, so it never buys a dropped name.
 * What the plan does not gate, and this module leaves as the executor runs
   it: the live mid-cycle breakout entry (`paper._entry_orders`, a band
   breakout in any A/A+ name, sized by the band, paid from cash before the

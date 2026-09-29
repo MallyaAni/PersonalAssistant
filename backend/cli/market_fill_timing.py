@@ -437,8 +437,8 @@ def _render_ti(payload: dict[str, Any]) -> list[str]:
     for window in fill_timing.TI_WINDOWS:
         lines.append(f"\n{window}")
         lines.append(
-            f"  {'convention':<13}{'CAGR':>7}{'ctl':>7}{'bp/d':>7}{'t':>7}{'>dip':>6}"
-            f"{'pre%':>7}{'buy%':>7}{'sell%':>7}{'bp/fill':>8}{'bp/diff':>9}{'t':>7}"
+            f"  {'convention':<13}{'CAGR':>7}{'ctl':>7}{'bp/d':>7}{'t':>8}{'>dip':>6}"
+            f"{'pre%':>7}{'buy%':>7}{'sell%':>7}{'bp/fill':>8}{'bp/diff':>9}{'t':>9}"
             f"{'diff':>7}{'no-fc':>7}{'late':>6}"
         )
         for row in block["rows"]:
@@ -450,13 +450,13 @@ def _render_ti(payload: dict[str, Any]) -> list[str]:
                 f"  {row['convention']:<13}{_pct(row['median_cagr']):>7}"
                 f"{_pct(row['control_median_cagr']):>7}"
                 f"{_num(row['mean_daily_bp_vs_dip'], 1):>7}"
-                f"{_num(row['hac_t_vs_dip']):>7}{row['offsets_above_dip']:>6}"
+                f"{_num(row['hac_t_vs_dip']):>8}{row['offsets_above_dip']:>6}"
                 f"{_pct(orders['all']['before_close_share']):>7}"
                 f"{_pct(orders['buy']['before_close_share']):>7}"
                 f"{_pct(orders['sell']['before_close_share']):>7}"
                 f"{_num(orders['all']['gain_bp_per_fill'], 1):>8}"
                 f"{_num(versus['bp_per_differing_order'], 1):>9}"
-                f"{_num(versus['clustered_t']):>7}{versus['differing']:>7}"
+                f"{_num(versus['clustered_t']):>9}{versus['differing']:>7}"
                 f"{orders['all']['no_forecast']:>7}{orders['all']['late_triggers']:>6}"
             )
     lines.append(
