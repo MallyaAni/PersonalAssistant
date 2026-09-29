@@ -1,0 +1,309 @@
+{
+ "asof": "2026-09-28",
+ "caps": {
+  "0.05": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.05,
+    "largest_weight_max": 0.05,
+    "effective_names_median": 6.999999999999998,
+    "effective_names_min": 1.0,
+    "cash_median": 0.65,
+    "cash_max": 0.95,
+    "worst_single_name_day": -0.012117185774519063,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.05,
+    "largest_weight_max": 0.05,
+    "effective_names_median": 4.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.75,
+    "cash_max": 0.95,
+    "worst_single_name_day": -0.014220546335427277,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.05,
+    "largest_weight_max": 0.05,
+    "effective_names_median": 6.000000000000001,
+    "effective_names_min": 1.0,
+    "cash_median": 0.7,
+    "cash_max": 0.95,
+    "worst_single_name_day": -0.014220546335427277,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  },
+  "0.10": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.1,
+    "largest_weight_max": 0.1,
+    "effective_names_median": 6.999999999999998,
+    "effective_names_min": 1.0,
+    "cash_median": 0.30000000000000004,
+    "cash_max": 0.9,
+    "worst_single_name_day": -0.024234371549038125,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.1,
+    "largest_weight_max": 0.1,
+    "effective_names_median": 4.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.5,
+    "cash_max": 0.9,
+    "worst_single_name_day": -0.028441092670854554,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.1,
+    "largest_weight_max": 0.1,
+    "effective_names_median": 6.000000000000001,
+    "effective_names_min": 1.0,
+    "cash_median": 0.3999999999999999,
+    "cash_max": 0.9,
+    "worst_single_name_day": -0.028441092670854554,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  },
+  "0.15": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.14285714285714285,
+    "largest_weight_max": 0.15,
+    "effective_names_median": 6.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 1.1102230246251565e-16,
+    "cash_max": 0.85,
+    "worst_single_name_day": -0.024234371549038125,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.15,
+    "largest_weight_max": 0.15,
+    "effective_names_median": 5.0,
+    "effective_names_min": 1.0,
+    "cash_median": 0.25,
+    "cash_max": 0.85,
+    "worst_single_name_day": -0.042661639006281823,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.15,
+    "largest_weight_max": 0.15,
+    "effective_names_median": 5.999999999999998,
+    "effective_names_min": 1.0,
+    "cash_median": 0.10000000000000009,
+    "cash_max": 0.85,
+    "worst_single_name_day": -0.042661639006281823,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  },
+  "0.20": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.14285714285714285,
+    "largest_weight_max": 0.2,
+    "effective_names_median": 6.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.8,
+    "worst_single_name_day": -0.026598167883363888,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.2,
+    "largest_weight_max": 0.2,
+    "effective_names_median": 4.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.8,
+    "worst_single_name_day": -0.047401821118090916,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.16666666666666666,
+    "largest_weight_max": 0.2,
+    "effective_names_median": 6.0,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.8,
+    "worst_single_name_day": -0.047401821118090916,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  },
+  "0.25": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.14285714285714285,
+    "largest_weight_max": 0.25,
+    "effective_names_median": 6.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.75,
+    "worst_single_name_day": -0.03324770985420486,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.2,
+    "largest_weight_max": 0.25,
+    "effective_names_median": 4.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.75,
+    "worst_single_name_day": -0.047401821118090916,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.16666666666666666,
+    "largest_weight_max": 0.25,
+    "effective_names_median": 6.0,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.75,
+    "worst_single_name_day": -0.047401821118090916,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  },
+  "0.33": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.14285714285714285,
+    "largest_weight_max": 0.33,
+    "effective_names_median": 6.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.6699999999999999,
+    "worst_single_name_day": -0.03324770985420486,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.2,
+    "largest_weight_max": 0.33,
+    "effective_names_median": 4.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.6699999999999999,
+    "worst_single_name_day": -0.05599495150055124,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.16666666666666666,
+    "largest_weight_max": 0.33,
+    "effective_names_median": 6.0,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.6699999999999999,
+    "worst_single_name_day": -0.05599495150055124,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  },
+  "0.50": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.14285714285714285,
+    "largest_weight_max": 0.5,
+    "effective_names_median": 6.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.5,
+    "worst_single_name_day": -0.03324770985420486,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.2,
+    "largest_weight_max": 0.5,
+    "effective_names_median": 4.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.5,
+    "worst_single_name_day": -0.05722129340463611,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.16666666666666666,
+    "largest_weight_max": 0.5,
+    "effective_names_median": 6.0,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 0.5,
+    "worst_single_name_day": -0.05722129340463611,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  },
+  "1.00": {
+   "2016-2023": {
+    "sessions": 2012,
+    "invested_share": 1.0,
+    "largest_weight_median": 0.14285714285714285,
+    "largest_weight_max": 1.0,
+    "effective_names_median": 6.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 2.220446049250313e-16,
+    "worst_single_name_day": -0.04907391998882549,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "2024-2026": {
+    "sessions": 687,
+    "invested_share": 0.9941775836972343,
+    "largest_weight_median": 0.2,
+    "largest_weight_max": 1.0,
+    "effective_names_median": 4.999999999999999,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 1.1102230246251565e-16,
+    "worst_single_name_day": -0.08478069448629988,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   },
+   "all": {
+    "sessions": 2951,
+    "invested_share": 0.9132497458488648,
+    "largest_weight_median": 0.16666666666666666,
+    "largest_weight_max": 1.0,
+    "effective_names_median": 6.0,
+    "effective_names_min": 1.0,
+    "cash_median": 0.0,
+    "cash_max": 2.220446049250313e-16,
+    "worst_single_name_day": -0.08478069448629988,
+    "worst_single_name_day_basis": "lagged-simple/2"
+   }
+  }
+ }
+}
