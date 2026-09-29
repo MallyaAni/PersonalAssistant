@@ -1,0 +1,1164 @@
+{
+  "policy": "graded-equal-weight/4",
+  "conventions": [
+    "next_open",
+    "dip_or_close",
+    "level_dip",
+    "level_dip_confluence"
+  ],
+  "control": "next_open",
+  "cost_bps": 10.0,
+  "offsets": 20,
+  "median_offset": 10,
+  "windows": {
+    "2016-2023": [
+      "2016-01-01",
+      "2024-01-01"
+    ],
+    "2024-2026": [
+      "2024-01-01",
+      null
+    ],
+    "all": [
+      null,
+      null
+    ]
+  },
+  "constants": {
+    "DIP": 0.01,
+    "LATE_SLOTS": [
+      22,
+      23,
+      24,
+      25
+    ],
+    "FIRST_HOUR_SLOTS": 4,
+    "MAX_DEFERRALS": 5,
+    "HAC_LAG": 20,
+    "TRIALS": 7,
+    "ADOPT_BP": 5.0,
+    "ADOPT_T": 2.5
+  },
+  "rows": [
+    {
+      "convention": "next_open",
+      "window": "2016-2023",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.2884631417950023,
+      "worst_cagr": 0.2635478111147673,
+      "best_cagr": 0.3141618885035218,
+      "median_cagr_vs_open": 0.0,
+      "offsets_above_open": 0,
+      "sessions": 2012,
+      "mean_daily_bp_vs_open": 0.0,
+      "hac_t_vs_open": null,
+      "fills": 980,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": -0.001014228098647374,
+      "offsets_above_dip": 8,
+      "mean_daily_bp_vs_dip": 0.017631673040506644,
+      "hac_t_vs_dip": 0.06864587499665195,
+      "dip_orders": 0,
+      "dip_fills": 0,
+      "dip_fill_rate": null,
+      "gain_bp_per_dip_fill": null,
+      "gain_bp_per_order": null,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": null
+    },
+    {
+      "convention": "dip_or_close",
+      "window": "2016-2023",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.2835261740198288,
+      "worst_cagr": 0.2640019062262251,
+      "best_cagr": 0.32081328979015633,
+      "median_cagr_vs_open": 0.001014228098647374,
+      "offsets_above_open": 12,
+      "sessions": 2012,
+      "mean_daily_bp_vs_open": -0.017631673040506644,
+      "hac_t_vs_open": -0.06864587499665195,
+      "fills": 978,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.0,
+      "offsets_above_dip": 0,
+      "mean_daily_bp_vs_dip": 0.0,
+      "hac_t_vs_dip": null,
+      "dip_orders": 787,
+      "dip_fills": 326,
+      "dip_fill_rate": 0.4142312579415502,
+      "gain_bp_per_dip_fill": -16.972084191646516,
+      "gain_bp_per_order": -7.030367784595635,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "level_dip",
+      "window": "2016-2023",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.2875103582111087,
+      "worst_cagr": 0.26471037373806316,
+      "best_cagr": 0.3165357225599261,
+      "median_cagr_vs_open": 0.0020069917388152447,
+      "offsets_above_open": 13,
+      "sessions": 2012,
+      "mean_daily_bp_vs_open": 0.006468189242560465,
+      "hac_t_vs_open": 0.029441206559846826,
+      "fills": 982,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.0009203018436123589,
+      "offsets_above_dip": 13,
+      "mean_daily_bp_vs_dip": 0.024099862283067108,
+      "hac_t_vs_dip": 0.1698878651782632,
+      "dip_orders": 791,
+      "dip_fills": 579,
+      "dip_fill_rate": 0.7319848293299621,
+      "gain_bp_per_dip_fill": -11.738381849138426,
+      "gain_bp_per_order": -8.592317434451516,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "level_dip_confluence",
+      "window": "2016-2023",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.2883472244442299,
+      "worst_cagr": 0.26649928039502924,
+      "best_cagr": 0.320122279070878,
+      "median_cagr_vs_open": 0.003039781457913171,
+      "offsets_above_open": 12,
+      "sessions": 2012,
+      "mean_daily_bp_vs_open": -0.004661452238028795,
+      "hac_t_vs_open": -0.020965822097503205,
+      "fills": 979,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.0012607029458401309,
+      "offsets_above_dip": 12,
+      "mean_daily_bp_vs_dip": 0.012970220802477847,
+      "hac_t_vs_dip": 0.09168838384621475,
+      "dip_orders": 788,
+      "dip_fills": 563,
+      "dip_fill_rate": 0.7144670050761421,
+      "gain_bp_per_dip_fill": -10.330356993860473,
+      "gain_bp_per_order": -7.380699222770872,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "next_open",
+      "window": "2024-2026",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.4399246548205431,
+      "worst_cagr": 0.34407266888824384,
+      "best_cagr": 0.5259497195817784,
+      "median_cagr_vs_open": 0.0,
+      "offsets_above_open": 0,
+      "sessions": 687,
+      "mean_daily_bp_vs_open": 0.0,
+      "hac_t_vs_open": null,
+      "fills": 980,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.001907342245568877,
+      "offsets_above_dip": 11,
+      "mean_daily_bp_vs_dip": -0.7984924645446999,
+      "hac_t_vs_dip": -2.7749126830333313,
+      "dip_orders": 0,
+      "dip_fills": 0,
+      "dip_fill_rate": null,
+      "gain_bp_per_dip_fill": null,
+      "gain_bp_per_order": null,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": null
+    },
+    {
+      "convention": "dip_or_close",
+      "window": "2024-2026",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.448099393660904,
+      "worst_cagr": 0.342427743019762,
+      "best_cagr": 0.5014940492074687,
+      "median_cagr_vs_open": -0.001907342245568877,
+      "offsets_above_open": 9,
+      "sessions": 687,
+      "mean_daily_bp_vs_open": 0.7984924645446999,
+      "hac_t_vs_open": 2.7749126830333313,
+      "fills": 978,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.0,
+      "offsets_above_dip": 0,
+      "mean_daily_bp_vs_dip": 0.0,
+      "hac_t_vs_dip": null,
+      "dip_orders": 187,
+      "dip_fills": 90,
+      "dip_fill_rate": 0.48128342245989303,
+      "gain_bp_per_dip_fill": 34.144405348466314,
+      "gain_bp_per_order": 16.433136263967743,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "level_dip",
+      "window": "2024-2026",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.44365874401914496,
+      "worst_cagr": 0.34006978571456514,
+      "best_cagr": 0.5084371094300641,
+      "median_cagr_vs_open": -0.0026703710481310594,
+      "offsets_above_open": 9,
+      "sessions": 687,
+      "mean_daily_bp_vs_open": 0.5471147264513663,
+      "hac_t_vs_open": 2.3399767880921862,
+      "fills": 982,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": -0.0013259093340053374,
+      "offsets_above_dip": 7,
+      "mean_daily_bp_vs_dip": -0.25137773809333364,
+      "hac_t_vs_dip": -1.2504443371339045,
+      "dip_orders": 187,
+      "dip_fills": 141,
+      "dip_fill_rate": 0.7540106951871658,
+      "gain_bp_per_dip_fill": 18.463610944977955,
+      "gain_bp_per_order": 13.921760124288186,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "level_dip_confluence",
+      "window": "2024-2026",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.44063524244300933,
+      "worst_cagr": 0.3398750987026793,
+      "best_cagr": 0.5054859624787023,
+      "median_cagr_vs_open": -0.0019327587603249485,
+      "offsets_above_open": 10,
+      "sessions": 687,
+      "mean_daily_bp_vs_open": 0.5663007930514778,
+      "hac_t_vs_open": 2.436641855924864,
+      "fills": 979,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": -0.0013021256478998877,
+      "offsets_above_dip": 8,
+      "mean_daily_bp_vs_dip": -0.23219167149322206,
+      "hac_t_vs_dip": -1.1633272279633717,
+      "dip_orders": 187,
+      "dip_fills": 138,
+      "dip_fill_rate": 0.7379679144385026,
+      "gain_bp_per_dip_fill": 16.372801791282207,
+      "gain_bp_per_order": 12.08260239142751,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "next_open",
+      "window": "all",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.2977355915080361,
+      "worst_cagr": 0.2714166233766324,
+      "best_cagr": 0.3174866935110303,
+      "median_cagr_vs_open": 0.0,
+      "offsets_above_open": 0,
+      "sessions": 2940,
+      "mean_daily_bp_vs_open": 0.0,
+      "hac_t_vs_open": null,
+      "fills": 980,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.002412278894053266,
+      "offsets_above_dip": 12,
+      "mean_daily_bp_vs_dip": -0.17452020305602362,
+      "hac_t_vs_dip": -0.9169309924554222,
+      "dip_orders": 0,
+      "dip_fills": 0,
+      "dip_fill_rate": null,
+      "gain_bp_per_dip_fill": null,
+      "gain_bp_per_order": null,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": null
+    },
+    {
+      "convention": "dip_or_close",
+      "window": "all",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.2893548900645294,
+      "worst_cagr": 0.2704874165442601,
+      "best_cagr": 0.3254659131855864,
+      "median_cagr_vs_open": -0.002412278894053266,
+      "offsets_above_open": 8,
+      "sessions": 2940,
+      "mean_daily_bp_vs_open": 0.17452020305602362,
+      "hac_t_vs_open": 0.9169309924554222,
+      "fills": 978,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.0,
+      "offsets_above_dip": 0,
+      "mean_daily_bp_vs_dip": 0.0,
+      "hac_t_vs_dip": null,
+      "dip_orders": 974,
+      "dip_fills": 416,
+      "dip_fill_rate": 0.4271047227926078,
+      "gain_bp_per_dip_fill": -5.91322828152595,
+      "gain_bp_per_order": -2.525567725990549,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "level_dip",
+      "window": "all",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.29234896620695094,
+      "worst_cagr": 0.26728459460757903,
+      "best_cagr": 0.32247760153745864,
+      "median_cagr_vs_open": -0.0007938653178520827,
+      "offsets_above_open": 9,
+      "sessions": 2940,
+      "mean_daily_bp_vs_open": 0.13227272579187765,
+      "hac_t_vs_open": 0.821531700186671,
+      "fills": 982,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.00030743004101507765,
+      "offsets_above_dip": 11,
+      "mean_daily_bp_vs_dip": -0.04224747726414598,
+      "hac_t_vs_dip": -0.39010695325281913,
+      "dip_orders": 978,
+      "dip_fills": 720,
+      "dip_fill_rate": 0.7361963190184049,
+      "gain_bp_per_dip_fill": -5.823824926957301,
+      "gain_bp_per_order": -4.287478473833598,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    },
+    {
+      "convention": "level_dip_confluence",
+      "window": "all",
+      "cost_bps": 10.0,
+      "offsets": 20,
+      "median_cagr": 0.2925330302945428,
+      "worst_cagr": 0.2670016227244447,
+      "best_cagr": 0.32479364328163585,
+      "median_cagr_vs_open": -0.0010302762312249802,
+      "offsets_above_open": 9,
+      "sessions": 2940,
+      "mean_daily_bp_vs_open": 0.12913938874947323,
+      "hac_t_vs_open": 0.7938613263937049,
+      "fills": 979,
+      "deferrals": 0,
+      "fallbacks": 4,
+      "median_cagr_vs_dip": 0.00040485409103530046,
+      "offsets_above_dip": 11,
+      "mean_daily_bp_vs_dip": -0.04538081430655039,
+      "hac_t_vs_dip": -0.4208801207035656,
+      "dip_orders": 975,
+      "dip_fills": 701,
+      "dip_fill_rate": 0.718974358974359,
+      "gain_bp_per_dip_fill": -5.073529729452928,
+      "gain_bp_per_order": -3.647737784970772,
+      "sigma_fallbacks": 0,
+      "sigma_fallback_share": 0.0
+    }
+  ],
+  "best": {
+    "2016-2023": {
+      "convention": "dip_or_close",
+      "mean_daily_bp_vs_open": -0.017631673040506644,
+      "hac_t_vs_open": -0.06864587499665195,
+      "excess_sharpe": -0.0015412843514146252,
+      "trial_variance": 0.0,
+      "trials": 7,
+      "deflated_sharpe": 0.47237235428020763
+    },
+    "2024-2026": {
+      "convention": "dip_or_close",
+      "mean_daily_bp_vs_open": 0.7984924645446999,
+      "hac_t_vs_open": 2.7749126830333313,
+      "excess_sharpe": 0.09227333884264637,
+      "trial_variance": 0.0,
+      "trials": 7,
+      "deflated_sharpe": 0.9997301430624088
+    },
+    "all": {
+      "convention": "dip_or_close",
+      "mean_daily_bp_vs_open": 0.17452020305602362,
+      "hac_t_vs_open": 0.9169309924554222,
+      "excess_sharpe": 0.01686038749624437,
+      "trial_variance": 0.0,
+      "trials": 7,
+      "deflated_sharpe": 0.814150080778071
+    }
+  },
+  "simulator_gap": {
+    "offset": 10,
+    "sessions": 2940,
+    "mean_abs_bp": 0.0877605676249722,
+    "max_abs_bp": 29.794250635374333,
+    "mean_bp": -0.011282630724373926,
+    "nan_mismatch": 0
+  },
+  "cube_coverage": {
+    "names_with_cube": 94,
+    "names_in_panel": 95
+  },
+  "note": "Orders are the plain simulator's on the point-in-time report; fills at the convention's SIP price scaled to the panel's adjusted basis; marks at the panel's adjusted daily close for every convention. VWAPs are bar closes weighted by bar volume, a proxy. A name without a complete cube session on its fill day fills at the panel's open and is counted as a fallback. Costs are one way on every fill.",
+  "verdict": "NOT JUDGED: 2 of the 7 fill-timing conventions priced (next_open, dip_or_close)",
+  "adopted": [],
+  "criteria": {},
+  "breakout_gate": "breakout_gate: not priced in this run",
+  "sr_level": {
+    "plan": "docs/research/sr-levels-plan-2026-09-29.md",
+    "conventions": [
+      "level_dip",
+      "level_dip_confluence"
+    ],
+    "control": "dip_or_close",
+    "min_confluence": {
+      "level_dip": 1,
+      "level_dip_confluence": 2
+    },
+    "constants": {
+      "REPLACE_BP": 2.0,
+      "REPLACE_T": 2.0,
+      "SR_TRIALS": 2,
+      "HAC_LAG": 20,
+      "FIRST_SLOT": 2,
+      "ATR_SHARE": 0.25,
+      "ATR_SESSIONS": 14,
+      "MIN_WIDTH": 0.003,
+      "LEVELS": [
+        "swing_low_20",
+        "swing_low_60",
+        "swing_low_250",
+        "swing_high_20",
+        "swing_high_60",
+        "swing_high_250",
+        "sma_50",
+        "sma_200",
+        "wsma_21",
+        "high_52w",
+        "low_52w",
+        "prior_day_high",
+        "prior_day_low",
+        "prior_day_close",
+        "prior_week_high",
+        "prior_week_low",
+        "node_1",
+        "node_2",
+        "node_3",
+        "or_high",
+        "or_low",
+        "vwap"
+      ]
+    },
+    "best": {
+      "2016-2023": {
+        "convention": "level_dip",
+        "mean_daily_bp_vs_dip": 0.024099862283067108,
+        "hac_t_vs_dip": 0.1698878651782632,
+        "excess_sharpe": 0.003672277274406985,
+        "trial_variance": 1.4297637121563457e-06,
+        "trials": 2,
+        "deflated_sharpe": 0.5542520945398651
+      },
+      "2024-2026": {
+        "convention": "level_dip_confluence",
+        "mean_daily_bp_vs_dip": -0.23219167149322206,
+        "hac_t_vs_dip": -1.1633272279633717,
+        "excess_sharpe": -0.04224296332902747,
+        "trial_variance": 5.435038029249037e-06,
+        "trials": 2,
+        "deflated_sharpe": 0.06537336554533452
+      },
+      "all": {
+        "convention": "level_dip",
+        "mean_daily_bp_vs_dip": -0.04224747726414598,
+        "hac_t_vs_dip": -0.39010695325281913,
+        "excess_sharpe": -0.006983792066480723,
+        "trial_variance": 1.454721169908348e-07,
+        "trials": 2,
+        "deflated_sharpe": 0.3468365969799029
+      }
+    },
+    "fills": {
+      "dip_or_close": {
+        "2016-2023": {
+          "orders": 787,
+          "level_fills": 326,
+          "level_fill_rate": 0.4142312579415502,
+          "gain_bp_per_level_fill": -16.972084191646516,
+          "gain_bp_per_order": -7.030367784595635
+        },
+        "2024-2026": {
+          "orders": 187,
+          "level_fills": 90,
+          "level_fill_rate": 0.48128342245989303,
+          "gain_bp_per_level_fill": 34.144405348466314,
+          "gain_bp_per_order": 16.433136263967743
+        },
+        "all": {
+          "orders": 974,
+          "level_fills": 416,
+          "level_fill_rate": 0.4271047227926078,
+          "gain_bp_per_level_fill": -5.91322828152595,
+          "gain_bp_per_order": -2.525567725990549
+        }
+      },
+      "level_dip": {
+        "2016-2023": {
+          "orders": 791,
+          "level_fills": 579,
+          "level_fill_rate": 0.7319848293299621,
+          "gain_bp_per_level_fill": -11.738381849138426,
+          "gain_bp_per_order": -8.592317434451516
+        },
+        "2024-2026": {
+          "orders": 187,
+          "level_fills": 141,
+          "level_fill_rate": 0.7540106951871658,
+          "gain_bp_per_level_fill": 18.463610944977955,
+          "gain_bp_per_order": 13.921760124288186
+        },
+        "all": {
+          "orders": 978,
+          "level_fills": 720,
+          "level_fill_rate": 0.7361963190184049,
+          "gain_bp_per_level_fill": -5.823824926957301,
+          "gain_bp_per_order": -4.287478473833598
+        }
+      },
+      "level_dip_confluence": {
+        "2016-2023": {
+          "orders": 788,
+          "level_fills": 563,
+          "level_fill_rate": 0.7144670050761421,
+          "gain_bp_per_level_fill": -10.330356993860473,
+          "gain_bp_per_order": -7.380699222770872
+        },
+        "2024-2026": {
+          "orders": 187,
+          "level_fills": 138,
+          "level_fill_rate": 0.7379679144385026,
+          "gain_bp_per_level_fill": 16.372801791282207,
+          "gain_bp_per_order": 12.08260239142751
+        },
+        "all": {
+          "orders": 975,
+          "level_fills": 701,
+          "level_fill_rate": 0.718974358974359,
+          "gain_bp_per_level_fill": -5.073529729452928,
+          "gain_bp_per_order": -3.647737784970772
+        }
+      }
+    },
+    "note": "A buy fills at the first bar close from slot 2 (10:15) inside the zone of a level below the prior bar's close while below the session open, else at the official close; sells mirror above the open. Zones are max(0.25 ATR14, 0.3% of the prior close) around 22 point-in-time levels on the fills' own adjusted basis. level_fill_rate is the share of the median offset's orders filled at a level before the close; gains are against that session's official close in bp, positive when better for the trader.",
+    "verdict": "RECORD: no level convention beats dip_or_close by 2 bp a session with t >= 2 on 2016-2023 while not worse on 2024-2026; the board keeps dip_or_close",
+    "replaces": [],
+    "criteria": {
+      "level_dip": {
+        "label": "RECORD",
+        "choosing_bp_vs_dip": 0.024099862283067108,
+        "choosing_t_vs_dip": 0.1698878651782632,
+        "reported_bp_vs_dip": -0.25137773809333364,
+        "passes_choosing": false,
+        "not_worse_reported": false
+      },
+      "level_dip_confluence": {
+        "label": "RECORD",
+        "choosing_bp_vs_dip": 0.012970220802477847,
+        "choosing_t_vs_dip": 0.09168838384621475,
+        "reported_bp_vs_dip": -0.23219167149322206,
+        "passes_choosing": false,
+        "not_worse_reported": false
+      }
+    }
+  },
+  "root": "/home/animallya96/deploy/anios/data/market",
+  "membership_history": "/home/animallya96/scratch/wt-sr/backend/market/data/membership_history.csv",
+  "exclusions": {
+    "AAOI": {
+      "early_close": 21,
+      "incomplete": 120,
+      "no_prior_close": 0
+    },
+    "AAPL": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ACN": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "ADBE": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ADI": {
+      "early_close": 21,
+      "incomplete": 5,
+      "no_prior_close": 0
+    },
+    "ADSK": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "ALAB": {
+      "early_close": 6,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "AMAT": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "AMD": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "AMZN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ANET": {
+      "early_close": 21,
+      "incomplete": 6,
+      "no_prior_close": 0
+    },
+    "APLD": {
+      "early_close": 9,
+      "incomplete": 14,
+      "no_prior_close": 0
+    },
+    "ARM": {
+      "early_close": 7,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "ASML": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "AVGO": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "BE": {
+      "early_close": 17,
+      "incomplete": 8,
+      "no_prior_close": 0
+    },
+    "CDNS": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "CEG": {
+      "early_close": 9,
+      "incomplete": 0,
+      "no_prior_close": 0
+    },
+    "CIEN": {
+      "early_close": 21,
+      "incomplete": 6,
+      "no_prior_close": 0
+    },
+    "CIFR": {
+      "early_close": 11,
+      "incomplete": 154,
+      "no_prior_close": 0
+    },
+    "COHR": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "CORZ": {
+      "early_close": 8,
+      "incomplete": 85,
+      "no_prior_close": 340
+    },
+    "CRDO": {
+      "early_close": 9,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "CRM": {
+      "early_close": 21,
+      "incomplete": 5,
+      "no_prior_close": 0
+    },
+    "CRWD": {
+      "early_close": 15,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "CRWV": {
+      "early_close": 3,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "CSCO": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "DDOG": {
+      "early_close": 14,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "DELL": {
+      "early_close": 15,
+      "incomplete": 8,
+      "no_prior_close": 0
+    },
+    "ETN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "FFIV": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "FICO": {
+      "early_close": 21,
+      "incomplete": 405,
+      "no_prior_close": 0
+    },
+    "FN": {
+      "early_close": 21,
+      "incomplete": 130,
+      "no_prior_close": 0
+    },
+    "FSLR": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "FTNT": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "GEN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "GEV": {
+      "early_close": 6,
+      "incomplete": 0,
+      "no_prior_close": 0
+    },
+    "GLW": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "GLXY": {
+      "early_close": 3,
+      "incomplete": 0,
+      "no_prior_close": 1
+    },
+    "GOOGL": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "HPE": {
+      "early_close": 21,
+      "incomplete": 5,
+      "no_prior_close": 0
+    },
+    "HUT": {
+      "early_close": 10,
+      "incomplete": 1,
+      "no_prior_close": 0
+    },
+    "IBM": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "INTC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "INTU": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "IREN": {
+      "early_close": 10,
+      "incomplete": 80,
+      "no_prior_close": 0
+    },
+    "KLAC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "LITE": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "LRCX": {
+      "early_close": 21,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "MCHP": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MDB": {
+      "early_close": 19,
+      "incomplete": 17,
+      "no_prior_close": 0
+    },
+    "META": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MOD": {
+      "early_close": 21,
+      "incomplete": 72,
+      "no_prior_close": 0
+    },
+    "MPWR": {
+      "early_close": 21,
+      "incomplete": 19,
+      "no_prior_close": 0
+    },
+    "MRVL": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MSFT": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "MSI": {
+      "early_close": 21,
+      "incomplete": 6,
+      "no_prior_close": 0
+    },
+    "MU": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "NBIS": {
+      "early_close": 17,
+      "incomplete": 3,
+      "no_prior_close": 1535
+    },
+    "NET": {
+      "early_close": 14,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "NOW": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "NTAP": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "NVDA": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "NXPI": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "OKLO": {
+      "early_close": 10,
+      "incomplete": 608,
+      "no_prior_close": 0
+    },
+    "ON": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "ORCL": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "PANW": {
+      "early_close": 21,
+      "incomplete": 8,
+      "no_prior_close": 0
+    },
+    "PLTR": {
+      "early_close": 12,
+      "incomplete": 4,
+      "no_prior_close": 0
+    },
+    "POWL": {
+      "early_close": 21,
+      "incomplete": 1553,
+      "no_prior_close": 0
+    },
+    "PTC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "Q": {
+      "early_close": 4,
+      "incomplete": 0,
+      "no_prior_close": 470
+    },
+    "QCOM": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "SIMO": {
+      "early_close": 21,
+      "incomplete": 54,
+      "no_prior_close": 0
+    },
+    "SMCI": {
+      "early_close": 16,
+      "incomplete": 52,
+      "no_prior_close": 0
+    },
+    "SMR": {
+      "early_close": 11,
+      "incomplete": 187,
+      "no_prior_close": 126
+    },
+    "SNDK": {
+      "early_close": 3,
+      "incomplete": 2,
+      "no_prior_close": 0
+    },
+    "SNOW": {
+      "early_close": 14,
+      "incomplete": 46,
+      "no_prior_close": 354
+    },
+    "SNPS": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "STX": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "SWKS": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TEAM": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TER": {
+      "early_close": 21,
+      "incomplete": 0,
+      "no_prior_close": 0
+    },
+    "TLN": {
+      "early_close": 6,
+      "incomplete": 0,
+      "no_prior_close": 233
+    },
+    "TRMB": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TSM": {
+      "early_close": 21,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "TXN": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "TYL": {
+      "early_close": 21,
+      "incomplete": 185,
+      "no_prior_close": 0
+    },
+    "VRT": {
+      "early_close": 16,
+      "incomplete": 324,
+      "no_prior_close": 0
+    },
+    "VST": {
+      "early_close": 20,
+      "incomplete": 7,
+      "no_prior_close": 0
+    },
+    "WDAY": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "WDC": {
+      "early_close": 21,
+      "incomplete": 3,
+      "no_prior_close": 0
+    },
+    "WULF": {
+      "early_close": 17,
+      "incomplete": 1225,
+      "no_prior_close": 0
+    },
+    "ZS": {
+      "early_close": 18,
+      "incomplete": 4,
+      "no_prior_close": 0
+    }
+  },
+  "sessions_per_ticker": {
+    "AAOI": 2558,
+    "AAPL": 2675,
+    "ACN": 2674,
+    "ADBE": 2675,
+    "ADI": 2673,
+    "ADSK": 2674,
+    "ALAB": 626,
+    "AMAT": 2675,
+    "AMD": 2675,
+    "AMZN": 2675,
+    "ANET": 2672,
+    "APLD": 1095,
+    "ARM": 754,
+    "ASML": 2675,
+    "AVGO": 2675,
+    "BE": 2030,
+    "CDNS": 2675,
+    "CEG": 1158,
+    "CIEN": 2671,
+    "CIFR": 1293,
+    "COHR": 2671,
+    "CORZ": 665,
+    "CRDO": 1161,
+    "CRM": 2673,
+    "CRWD": 1818,
+    "CRWV": 373,
+    "CSCO": 2675,
+    "DDOG": 1750,
+    "DELL": 1924,
+    "ETN": 2674,
+    "FFIV": 2671,
+    "FICO": 2273,
+    "FN": 2548,
+    "FSLR": 2675,
+    "FTNT": 2674,
+    "GEN": 2675,
+    "GEV": 619,
+    "GLW": 2674,
+    "GLXY": 339,
+    "GOOGL": 2675,
+    "HPE": 2673,
+    "HUT": 1317,
+    "IBM": 2674,
+    "INTC": 2675,
+    "INTU": 2674,
+    "IREN": 1129,
+    "KLAC": 2675,
+    "LITE": 2675,
+    "LRCX": 2674,
+    "MCHP": 2675,
+    "MDB": 2210,
+    "META": 2675,
+    "MOD": 2606,
+    "MPWR": 2659,
+    "MRVL": 2675,
+    "MSFT": 2675,
+    "MSI": 2672,
+    "MU": 2675,
+    "NBIS": 479,
+    "NET": 1748,
+    "NOW": 2671,
+    "NTAP": 2675,
+    "NVDA": 2675,
+    "NXPI": 2675,
+    "OKLO": 662,
+    "ON": 2675,
+    "ORCL": 2671,
+    "PANW": 2670,
+    "PLTR": 1488,
+    "POWL": 1123,
+    "PTC": 2675,
+    "Q": 224,
+    "QCOM": 2675,
+    "SIMO": 2624,
+    "SMCI": 2282,
+    "SMR": 1132,
+    "SNDK": 402,
+    "SNOW": 1497,
+    "SNPS": 2675,
+    "STX": 2675,
+    "SWKS": 2675,
+    "TEAM": 2675,
+    "TER": 2678,
+    "TLN": 552,
+    "TRMB": 2675,
+    "TSM": 2671,
+    "TXN": 2675,
+    "TYL": 2493,
+    "VRT": 1682,
+    "VST": 2332,
+    "WDAY": 2675,
+    "WDC": 2675,
+    "WULF": 1147,
+    "ZS": 2123
+  },
+  "asof": "2026-09-28"
+}
