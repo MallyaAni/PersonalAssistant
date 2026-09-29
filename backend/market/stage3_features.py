@@ -296,7 +296,8 @@ def period_ends(dates: np.ndarray, kind: str) -> np.ndarray:
     if kind == "month" and len(days):
         # The newest row closes its month only if it is the month's last
         # business day; the calendar says so without a future row.
-        last = np.busday_offset(days[-1].astype("datetime64[M]") + 1, -1, roll="backward")
+        next_month = (days[-1].astype("datetime64[M]") + np.timedelta64(1, "M")).astype("datetime64[D]")
+        last = np.busday_offset(next_month, -1, roll="backward")
         ends[-1] = ends[-1] or bool(days[-1] >= last)
     elif kind == "week" and len(days):
         ends[-1] = ends[-1] or bool(friday[-1])

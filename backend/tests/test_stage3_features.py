@@ -225,9 +225,12 @@ def test_daily_formulas_on_known_values(world):
     implied = close / np.exp(w)
     days = np.asarray(panel.dates)
     ends = features.period_ends(days, "week")
+    checked = 0
     for row in range(260, 300):
-        if not ends[row - 1] and np.isfinite(implied[row, j]) and np.isfinite(implied[row - 1, j]):
+        if not ends[row] and np.isfinite(implied[row, j]) and np.isfinite(implied[row - 1, j]):
+            checked += 1
             assert implied[row, j] == pytest.approx(implied[row - 1, j], rel=1e-4)
+    assert checked > 20
 
 
 def test_period_ends_mark_fridays_and_month_ends():
