@@ -1,0 +1,766 @@
+{
+  "missing": [],
+  "plan": "docs/research/stage3-plan-2026-09-29.md",
+  "s1": {
+    "cnn_i20": {
+      "candidate": "s1_cnn_i20",
+      "deflated": {
+        "candidate": "s1_cnn_i20",
+        "candidates": 8,
+        "dsr": 0.02626122740909731,
+        "dsr_configurations": 0.003242724401563868,
+        "dsr_cumulative": 0.0004887054355603992,
+        "gate": 0.95,
+        "length": 1512,
+        "passes": false,
+        "sharpe": -0.013843616922312051,
+        "trial_variance": 0.0006028485317084277,
+        "trials": 8
+      },
+      "floors": {
+        "DEFLATED_SHARPE_GATE": 0.95,
+        "DRAWDOWN_POINTS": 3.0,
+        "FLOOR_BP": 2.0,
+        "FLOOR_T": 2.0,
+        "HAC_LAG": 20,
+        "IMMATERIAL_BP_PER_ORDER": 25.0,
+        "IMMATERIAL_T": 3.0,
+        "OFFSETS": 20,
+        "OFFSETS_ABOVE": 15,
+        "OUTER_CANDIDATES": 8,
+        "SEED_CHANGES": 2,
+        "expected_best_null_t": {
+          "configurations": 2.27630309342035,
+          "cumulative": 2.8759876089687095,
+          "outer": 1.4590140774418099
+        }
+      },
+      "label": "RECORD",
+      "plan": "docs/research/stage3-plan-2026-09-29.md",
+      "reading": {
+        "cagr_points": 0.3898521196109783,
+        "control_invested_share": 0.8980234438662236,
+        "cost_bps": 25.0,
+        "drawdown_gap_points": 0.0019821308353040745,
+        "exposure_adjusted_points": 0.3930976819819465,
+        "floor": {
+          "10": {
+            "bp": -0.1764007638691669,
+            "passes": false,
+            "priced": true,
+            "t": -0.49084024310848173
+          },
+          "16": {
+            "bp": -0.1931709221028801,
+            "passes": false,
+            "priced": true,
+            "t": -0.5346290043578305
+          },
+          "25": {
+            "bp": -0.21167188045099472,
+            "passes": false,
+            "priced": true,
+            "t": -0.5833450562187107
+          }
+        },
+        "invested_share": 0.8978833643777464,
+        "not_worse_reported": true,
+        "offsets": 20,
+        "offsets_above_control": 11,
+        "passes_drawdown": true,
+        "passes_floor": false,
+        "passes_offsets": false,
+        "reported_bp": 0.7932584785504362
+      },
+      "seeds": {
+        "columns": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "complete": true,
+        "cost_bps": 25.0,
+        "reference": -0.21167188045099472,
+        "seeds": [
+          0.3413351248047029,
+          -0.28216592951422165,
+          -0.04505942144980083,
+          -0.27897057291422833,
+          -0.2951094996267959
+        ],
+        "sign_changes": 1,
+        "stable": true
+      },
+      "text": "RECORD: s1_cnn_i20 against ew-redeploy on the model window: 10 bp -0.2 (t -0.49), 16 bp -0.2 (t -0.53), 25 bp -0.2 (t -0.58); 11/20 offsets above the control (needs 15/20); median worst drawdown +0.0 pt against the control (within 3); 2024-2026 +0.8 bp/session; deflated Sharpe +0.03 at N = 8 over 8 candidates; seeds stable (1 sign changes of 5). Exposure-adjusted +0.4 pt."
+    },
+    "cnn_i5": {
+      "candidate": "s1_cnn_i5",
+      "deflated": {
+        "candidate": "s1_cnn_i5",
+        "candidates": 8,
+        "dsr": 0.006406272012113523,
+        "dsr_configurations": 0.0005074136164697207,
+        "dsr_cumulative": 5.4082002271749197e-05,
+        "gate": 0.95,
+        "length": 1512,
+        "passes": false,
+        "sharpe": -0.02680832569460216,
+        "trial_variance": 0.0006028485317084277,
+        "trials": 8
+      },
+      "floors": {
+        "DEFLATED_SHARPE_GATE": 0.95,
+        "DRAWDOWN_POINTS": 3.0,
+        "FLOOR_BP": 2.0,
+        "FLOOR_T": 2.0,
+        "HAC_LAG": 20,
+        "IMMATERIAL_BP_PER_ORDER": 25.0,
+        "IMMATERIAL_T": 3.0,
+        "OFFSETS": 20,
+        "OFFSETS_ABOVE": 15,
+        "OUTER_CANDIDATES": 8,
+        "SEED_CHANGES": 2,
+        "expected_best_null_t": {
+          "configurations": 2.27630309342035,
+          "cumulative": 2.8759876089687095,
+          "outer": 1.4590140774418099
+        }
+      },
+      "label": "RECORD",
+      "plan": "docs/research/stage3-plan-2026-09-29.md",
+      "reading": {
+        "cagr_points": -0.6470052409321858,
+        "control_invested_share": 0.8980234438662236,
+        "cost_bps": 25.0,
+        "drawdown_gap_points": 0.24911486072674016,
+        "exposure_adjusted_points": -0.650470741086151,
+        "floor": {
+          "10": {
+            "bp": -0.4141819921634323,
+            "passes": false,
+            "priced": true,
+            "t": -0.9145511947249362
+          },
+          "16": {
+            "bp": -0.42483001477453575,
+            "passes": false,
+            "priced": true,
+            "t": -0.932884859446916
+          },
+          "25": {
+            "bp": -0.44301148168688487,
+            "passes": false,
+            "priced": true,
+            "t": -0.9663238539902566
+          }
+        },
+        "invested_share": 0.8981730159383019,
+        "not_worse_reported": true,
+        "offsets": 20,
+        "offsets_above_control": 5,
+        "passes_drawdown": true,
+        "passes_floor": false,
+        "passes_offsets": false,
+        "reported_bp": 0.6833639914762428
+      },
+      "seeds": {
+        "columns": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "complete": true,
+        "cost_bps": 25.0,
+        "reference": -0.44301148168688487,
+        "seeds": [
+          -0.1549782935984466,
+          -0.34910403922421956,
+          -0.4266952556960572,
+          -0.5495265035866009,
+          -0.09314574954310845
+        ],
+        "sign_changes": 0,
+        "stable": true
+      },
+      "text": "RECORD: s1_cnn_i5 against ew-redeploy on the model window: 10 bp -0.4 (t -0.91), 16 bp -0.4 (t -0.93), 25 bp -0.4 (t -0.97); 5/20 offsets above the control (needs 15/20); median worst drawdown +0.2 pt against the control (within 3); 2024-2026 +0.7 bp/session; deflated Sharpe +0.01 at N = 8 over 8 candidates; seeds stable (0 sign changes of 5). Exposure-adjusted -0.7 pt."
+    },
+    "lgbm": {
+      "candidate": "s1_lgbm",
+      "deflated": {
+        "candidate": "s1_lgbm",
+        "candidates": 8,
+        "dsr": 0.24008550193704403,
+        "dsr_configurations": 0.06699735648140548,
+        "dsr_cumulative": 0.018761236406091786,
+        "gate": 0.95,
+        "length": 1512,
+        "passes": false,
+        "sharpe": 0.017945958482003182,
+        "trial_variance": 0.0006028485317084277,
+        "trials": 8
+      },
+      "floors": {
+        "DEFLATED_SHARPE_GATE": 0.95,
+        "DRAWDOWN_POINTS": 3.0,
+        "FLOOR_BP": 2.0,
+        "FLOOR_T": 2.0,
+        "HAC_LAG": 20,
+        "IMMATERIAL_BP_PER_ORDER": 25.0,
+        "IMMATERIAL_T": 3.0,
+        "OFFSETS": 20,
+        "OFFSETS_ABOVE": 15,
+        "OUTER_CANDIDATES": 8,
+        "SEED_CHANGES": 2,
+        "expected_best_null_t": {
+          "configurations": 2.27630309342035,
+          "cumulative": 2.8759876089687095,
+          "outer": 1.4590140774418099
+        }
+      },
+      "label": "RECORD",
+      "plan": "docs/research/stage3-plan-2026-09-29.md",
+      "reading": {
+        "cagr_points": 0.22436812878032786,
+        "control_invested_share": 0.8980234438662236,
+        "cost_bps": 25.0,
+        "drawdown_gap_points": 1.0480580255425753,
+        "exposure_adjusted_points": 0.3015974764328355,
+        "floor": {
+          "10": {
+            "bp": 0.3974855547298428,
+            "passes": false,
+            "priced": true,
+            "t": 0.7939921444398164
+          },
+          "16": {
+            "bp": 0.3651034797615571,
+            "passes": false,
+            "priced": true,
+            "t": 0.7228061499202437
+          },
+          "25": {
+            "bp": 0.34335519123290403,
+            "passes": false,
+            "priced": true,
+            "t": 0.6770665653148443
+          }
+        },
+        "invested_share": 0.8946902010324498,
+        "not_worse_reported": false,
+        "offsets": 20,
+        "offsets_above_control": 11,
+        "passes_drawdown": true,
+        "passes_floor": false,
+        "passes_offsets": false,
+        "reported_bp": -0.7433648218969107
+      },
+      "seeds": {
+        "columns": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "complete": true,
+        "cost_bps": 25.0,
+        "reference": 0.34335519123290403,
+        "seeds": [
+          0.5963135330235558,
+          0.11828447421570427,
+          0.049584669502796754,
+          0.5350843293344955,
+          0.2382350721951857
+        ],
+        "sign_changes": 0,
+        "stable": true
+      },
+      "text": "RECORD: s1_lgbm against ew-redeploy on the model window: 10 bp +0.4 (t +0.79), 16 bp +0.4 (t +0.72), 25 bp +0.3 (t +0.68); 11/20 offsets above the control (needs 15/20); median worst drawdown +1.0 pt against the control (within 3); 2024-2026 -0.7 bp/session; deflated Sharpe +0.24 at N = 8 over 8 candidates; seeds stable (0 sign changes of 5). Exposure-adjusted +0.3 pt."
+    },
+    "seq": {
+      "candidate": "s1_seq",
+      "deflated": {
+        "candidate": "s1_seq",
+        "candidates": 8,
+        "dsr": 0.2665490809234417,
+        "dsr_configurations": 0.08047999420011209,
+        "dsr_cumulative": 0.02424082261562216,
+        "gate": 0.95,
+        "length": 1512,
+        "passes": false,
+        "sharpe": 0.01975854173545399,
+        "trial_variance": 0.0006028485317084277,
+        "trials": 8
+      },
+      "floors": {
+        "DEFLATED_SHARPE_GATE": 0.95,
+        "DRAWDOWN_POINTS": 3.0,
+        "FLOOR_BP": 2.0,
+        "FLOOR_T": 2.0,
+        "HAC_LAG": 20,
+        "IMMATERIAL_BP_PER_ORDER": 25.0,
+        "IMMATERIAL_T": 3.0,
+        "OFFSETS": 20,
+        "OFFSETS_ABOVE": 15,
+        "OUTER_CANDIDATES": 8,
+        "SEED_CHANGES": 2,
+        "expected_best_null_t": {
+          "configurations": 2.27630309342035,
+          "cumulative": 2.8759876089687095,
+          "outer": 1.4590140774418099
+        }
+      },
+      "label": "RECORD",
+      "plan": "docs/research/stage3-plan-2026-09-29.md",
+      "reading": {
+        "cagr_points": 1.9333599347470032,
+        "control_invested_share": 0.8980234438662236,
+        "cost_bps": 25.0,
+        "drawdown_gap_points": 2.108439191863093,
+        "exposure_adjusted_points": 1.9561586071465464,
+        "floor": {
+          "10": {
+            "bp": 0.3347645912462686,
+            "passes": false,
+            "priced": true,
+            "t": 0.7274155561641125
+          },
+          "16": {
+            "bp": 0.3364349968163867,
+            "passes": false,
+            "priced": true,
+            "t": 0.72874412250038
+          },
+          "25": {
+            "bp": 0.33430065714335067,
+            "passes": false,
+            "priced": true,
+            "t": 0.7217494597490539
+          }
+        },
+        "invested_share": 0.8970394460246613,
+        "not_worse_reported": false,
+        "offsets": 20,
+        "offsets_above_control": 20,
+        "passes_drawdown": true,
+        "passes_floor": false,
+        "passes_offsets": true,
+        "reported_bp": -0.023127572395873333
+      },
+      "seeds": {
+        "columns": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "complete": true,
+        "cost_bps": 25.0,
+        "reference": 0.33430065714335067,
+        "seeds": [
+          0.5284759057725198,
+          -0.2204717586540746,
+          0.05122649110225047,
+          -0.17253989533883327,
+          -0.16695091649837918
+        ],
+        "sign_changes": 3,
+        "stable": false
+      },
+      "text": "RECORD: s1_seq against ew-redeploy on the model window: 10 bp +0.3 (t +0.73), 16 bp +0.3 (t +0.73), 25 bp +0.3 (t +0.72); 20/20 offsets above the control (needs 15/20); median worst drawdown +2.1 pt against the control (within 3); 2024-2026 -0.0 bp/session; deflated Sharpe +0.27 at N = 8 over 8 candidates; seeds not stable (3 sign changes of 5). Exposure-adjusted +2.0 pt."
+    }
+  },
+  "ti": {
+    "lgbm": {
+      "candidates": {
+        "lgbm_filter": {
+          "below_cumulative_null_t": true,
+          "deflated": {
+            "candidate": "lgbm_filter",
+            "candidates": 8,
+            "dsr": 1.1472210541152439e-05,
+            "dsr_configurations": 7.993030820552249e-08,
+            "dsr_cumulative": 1.1191901294616002e-09,
+            "gate": 0.95,
+            "length": 1508,
+            "passes": false,
+            "sharpe": -0.048576986735929674,
+            "trial_variance": 0.0006028485317084277,
+            "trials": 8
+          },
+          "floor": {
+            "10": {
+              "bp": -0.555979720650325,
+              "passes": false,
+              "priced": true,
+              "t": -1.9422010723859926
+            },
+            "16": {
+              "bp": -0.5552351588451209,
+              "passes": false,
+              "priced": true,
+              "t": -1.9420192719733866
+            },
+            "25": {
+              "bp": -0.5536952760280877,
+              "passes": false,
+              "priced": true,
+              "t": -1.9403996703968718
+            }
+          },
+          "label": "RECORD",
+          "next_bar": [
+            {
+              "bp": -0.5547280703704054,
+              "cost_bps": 25.0,
+              "passes": false,
+              "priced": true,
+              "t": -1.9372563765305055
+            }
+          ],
+          "not_worse_reported": false,
+          "passes_floor": false,
+          "passes_next_bar": false,
+          "per_order_bp": -40.021065654082484,
+          "per_order_t": -1.9351567907566642,
+          "real_but_immaterial": false,
+          "reported_bp": {
+            "10": -0.2251094020373858,
+            "16": -0.22464803693324145,
+            "25": -0.22407090654814366
+          },
+          "seeds": {
+            "columns": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "complete": true,
+            "cost_bps": 25.0,
+            "reference": -0.5536952760280877,
+            "seeds": [
+              -0.3721333293263407,
+              -0.3780968028585622,
+              -0.48295622819143585,
+              -0.3833426435368573,
+              -0.4614901044765406
+            ],
+            "sign_changes": 0,
+            "stable": true
+          }
+        },
+        "lgbm_free": {
+          "below_cumulative_null_t": true,
+          "deflated": {
+            "candidate": "lgbm_free",
+            "candidates": 8,
+            "dsr": 0.0025599113839225307,
+            "dsr_configurations": 0.00019121576329134138,
+            "dsr_cumulative": 2.029613586490564e-05,
+            "gate": 0.95,
+            "length": 1508,
+            "passes": false,
+            "sharpe": -0.03882591343490098,
+            "trial_variance": 0.0006028485317084277,
+            "trials": 8
+          },
+          "floor": {
+            "10": {
+              "bp": -0.6301593128829638,
+              "passes": false,
+              "priced": true,
+              "t": -1.5498760466976746
+            },
+            "16": {
+              "bp": -0.6248284464486143,
+              "passes": false,
+              "priced": true,
+              "t": -1.5376543204162054
+            },
+            "25": {
+              "bp": -0.6231631727339118,
+              "passes": false,
+              "priced": true,
+              "t": -1.5350923509365821
+            }
+          },
+          "label": "RECORD",
+          "next_bar": [
+            {
+              "bp": -0.6246609296865646,
+              "cost_bps": 25.0,
+              "passes": false,
+              "priced": true,
+              "t": -1.5366087338954413
+            }
+          ],
+          "not_worse_reported": false,
+          "passes_floor": false,
+          "passes_next_bar": false,
+          "per_order_bp": -18.487087139354088,
+          "per_order_t": -1.4111714379884088,
+          "real_but_immaterial": false,
+          "reported_bp": {
+            "10": -1.5132159769640143,
+            "16": -1.5143758394602702,
+            "25": -1.5098820248381601
+          },
+          "seeds": {
+            "columns": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "complete": true,
+            "cost_bps": 25.0,
+            "reference": -0.6231631727339118,
+            "seeds": [
+              -0.3736594297322176,
+              -0.47863457998466336,
+              -0.46229274487136135,
+              -0.5576090839044322,
+              -0.5814664829474857
+            ],
+            "sign_changes": 0,
+            "stable": true
+          }
+        }
+      },
+      "control": "dip_or_close",
+      "costs": [
+        "10",
+        "16",
+        "25"
+      ],
+      "costs_supplied": [
+        "10",
+        "16",
+        "25"
+      ],
+      "floors": {
+        "DEFLATED_SHARPE_GATE": 0.95,
+        "FLOOR_BP": 2.0,
+        "FLOOR_T": 2.0,
+        "HAC_LAG": 20,
+        "IMMATERIAL_BP_PER_ORDER": 25.0,
+        "IMMATERIAL_T": 3.0,
+        "OUTER_CANDIDATES": 8,
+        "SEED_CHANGES": 2,
+        "expected_best_null_t": {
+          "configurations": 2.27630309342035,
+          "cumulative": 2.8759876089687095,
+          "outer": 1.4590140774418099
+        }
+      },
+      "immaterial": [],
+      "next_bar_runs": 1,
+      "plan": "docs/research/stage3-plan-2026-09-29.md",
+      "replaces": [],
+      "seed_runs": 5,
+      "text": "RECORD: no T-I convention clears every criterion against dip_or_close; the board keeps dip_or_close. lgbm_filter: model window 10 bp -0.6 (t -1.94), 16 bp -0.6 (t -1.94), 25 bp -0.6 (t -1.94); next-bar fails; 2024-2026 -0.2 bp/session; deflated Sharpe +0.00 at N = 8; seeds stable (0 sign changes of 5); per differing order -40.0 bp (t -1.94) - RECORD; lgbm_free: model window 10 bp -0.6 (t -1.55), 16 bp -0.6 (t -1.54), 25 bp -0.6 (t -1.54); next-bar fails; 2024-2026 -1.5 bp/session; deflated Sharpe +0.00 at N = 8; seeds stable (0 sign changes of 5); per differing order -18.5 bp (t -1.41) - RECORD",
+      "verdict_cost_bps": 25.0
+    },
+    "seq": {
+      "candidates": {
+        "seq_filter": {
+          "below_cumulative_null_t": true,
+          "deflated": {
+            "candidate": "seq_filter",
+            "candidates": 8,
+            "dsr": 0.017354877398895352,
+            "dsr_configurations": 0.0015636427688900945,
+            "dsr_cumulative": 0.00017602143445533125,
+            "gate": 0.95,
+            "length": 1508,
+            "passes": false,
+            "sharpe": -0.014432013968940416,
+            "trial_variance": 0.0006028485317084277,
+            "trials": 8
+          },
+          "floor": {
+            "10": {
+              "bp": -0.16418771516379876,
+              "passes": false,
+              "priced": true,
+              "t": -0.5689016433042443
+            },
+            "16": {
+              "bp": -0.1636783224610982,
+              "passes": false,
+              "priced": true,
+              "t": -0.5675532807485296
+            },
+            "25": {
+              "bp": -0.16382022415091463,
+              "passes": false,
+              "priced": true,
+              "t": -0.5688337138189156
+            }
+          },
+          "label": "RECORD",
+          "next_bar": [
+            {
+              "bp": -0.1667102664493943,
+              "cost_bps": 25.0,
+              "passes": false,
+              "priced": true,
+              "t": -0.5782122984393564
+            }
+          ],
+          "not_worse_reported": false,
+          "passes_floor": false,
+          "passes_next_bar": false,
+          "per_order_bp": 14.787079755121217,
+          "per_order_t": 0.6030327907722076,
+          "real_but_immaterial": false,
+          "reported_bp": {
+            "10": -0.35702981905361947,
+            "16": -0.356713239837921,
+            "25": -0.3562079916228583
+          },
+          "seeds": {
+            "columns": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "complete": true,
+            "cost_bps": 25.0,
+            "reference": -0.16382022415091463,
+            "seeds": [
+              -0.042322534109207235,
+              0.017644754286743565,
+              -0.27992953953577604,
+              -0.06253179761093919,
+              0.011396958182345084
+            ],
+            "sign_changes": 2,
+            "stable": false
+          }
+        },
+        "seq_free": {
+          "below_cumulative_null_t": true,
+          "deflated": {
+            "candidate": "seq_free",
+            "candidates": 8,
+            "dsr": 0.05861262412761309,
+            "dsr_configurations": 0.00964131564305315,
+            "dsr_cumulative": 0.001821234338093225,
+            "gate": 0.95,
+            "length": 1508,
+            "passes": false,
+            "sharpe": -0.004817510700811763,
+            "trial_variance": 0.0006028485317084277,
+            "trials": 8
+          },
+          "floor": {
+            "10": {
+              "bp": -0.08326756704973289,
+              "passes": false,
+              "priced": true,
+              "t": -0.18774047246365883
+            },
+            "16": {
+              "bp": -0.07953778912486137,
+              "passes": false,
+              "priced": true,
+              "t": -0.17941258279845476
+            },
+            "25": {
+              "bp": -0.08443273237420053,
+              "passes": false,
+              "priced": true,
+              "t": -0.19053269883298954
+            }
+          },
+          "label": "RECORD",
+          "next_bar": [
+            {
+              "bp": -0.089198533160543,
+              "cost_bps": 25.0,
+              "passes": false,
+              "priced": true,
+              "t": -0.20145050853116403
+            }
+          ],
+          "not_worse_reported": false,
+          "passes_floor": false,
+          "passes_next_bar": false,
+          "per_order_bp": -6.295365259744335,
+          "per_order_t": -0.3759158555069997,
+          "real_but_immaterial": false,
+          "reported_bp": {
+            "10": -1.50274039530904,
+            "16": -1.5038162004856839,
+            "25": -1.4995303823516823
+          },
+          "seeds": {
+            "columns": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "complete": true,
+            "cost_bps": 25.0,
+            "reference": -0.08443273237420053,
+            "seeds": [
+              0.1355625312591365,
+              0.12282176840147069,
+              -0.28199285836920784,
+              -0.2108203922449471,
+              0.11503412430376637
+            ],
+            "sign_changes": 3,
+            "stable": false
+          }
+        }
+      },
+      "control": "dip_or_close",
+      "costs": [
+        "10",
+        "16",
+        "25"
+      ],
+      "costs_supplied": [
+        "10",
+        "16",
+        "25"
+      ],
+      "floors": {
+        "DEFLATED_SHARPE_GATE": 0.95,
+        "FLOOR_BP": 2.0,
+        "FLOOR_T": 2.0,
+        "HAC_LAG": 20,
+        "IMMATERIAL_BP_PER_ORDER": 25.0,
+        "IMMATERIAL_T": 3.0,
+        "OUTER_CANDIDATES": 8,
+        "SEED_CHANGES": 2,
+        "expected_best_null_t": {
+          "configurations": 2.27630309342035,
+          "cumulative": 2.8759876089687095,
+          "outer": 1.4590140774418099
+        }
+      },
+      "immaterial": [],
+      "next_bar_runs": 1,
+      "plan": "docs/research/stage3-plan-2026-09-29.md",
+      "replaces": [],
+      "seed_runs": 5,
+      "text": "RECORD: no T-I convention clears every criterion against dip_or_close; the board keeps dip_or_close. seq_filter: model window 10 bp -0.2 (t -0.57), 16 bp -0.2 (t -0.57), 25 bp -0.2 (t -0.57); next-bar fails; 2024-2026 -0.4 bp/session; deflated Sharpe +0.02 at N = 8; seeds not stable (2 sign changes of 5); per differing order +14.8 bp (t +0.60) - RECORD; seq_free: model window 10 bp -0.1 (t -0.19), 16 bp -0.1 (t -0.18), 25 bp -0.1 (t -0.19); next-bar fails; 2024-2026 -1.5 bp/session; deflated Sharpe +0.06 at N = 8; seeds not stable (3 sign changes of 5); per differing order -6.3 bp (t -0.38) - RECORD",
+      "verdict_cost_bps": 25.0
+    }
+  }
+}
