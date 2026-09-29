@@ -3,6 +3,9 @@
 Generation is immutable. An acknowledgement proves only that the dashboard
 reported loading the accepted response, not that a person read or acted on it.
 Account dollar values and share quantities are deliberately not reproducible.
+Version 2 preserves planner-stamped decision grades and dates intraday readings
+separately. Version 1 stored a live-first grade without its basis; existing
+payloads are never upgraded or reinterpreted during reads.
 """
 
 import hashlib
@@ -132,22 +135,50 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
     from backend.market import desk_freshness, holdings
 
     generated = _instant(decisions["as_of"])
-    technical, value = desk_freshness.grade_inputs(snapshot, record, generated)
-    readings = holdings.live_grades(record, technical, value)
+    readings = {}
+    if any("grade" not in row for row in decisions["rows"].values()):
+        technical, value = desk_freshness.grade_inputs(snapshot, record, generated)
+        readings = holdings.live_grades(record, technical, value)
+    expiries = desk_freshness.grade_expiries(snapshot, decisions["rows"])
     rows = {}
     for ticker, decision in decisions["rows"].items():
         quote = decision.get("quote") or {}
         bar = (snapshot.get("quotes") or {}).get(ticker) or {}
+        # `/4` has already chosen its close grade. An explicit missing grade or
+        # intraday reading must remain missing rather than borrow another basis.
+        intraday = (
+            decision.get("grade_intraday")
+            if "grade_intraday" in decision
+            else (readings.get(ticker) or {}).get("grade_live")
+        )
+        close_grade = ((record.get("grades") or {}).get(ticker) or {}).get("grade")
+        grade = (
+            decision.get("grade") if "grade" in decision else intraday or close_grade
+        )
+        basis = (
+            "unavailable"
+            if grade is None
+            else "recorded_close"
+            if "grade" in decision or not intraday
+            else "intraday"
+        )
         rows[ticker] = {
             **{key: decision.get(key) for key in ROW_FIELDS},
             "quote": {key: quote.get(key) for key in QUOTE_FIELDS},
-            "grade": (readings.get(ticker) or {}).get("grade_live")
-            or ((record.get("grades") or {}).get(ticker) or {}).get("grade"),
+            "grade": grade,
+            "grade_basis": basis,
+            "grade_session": record.get("session")
+            if basis == "recorded_close"
+            else None,
+            "grade_intraday": intraday,
+            "grade_intraday_bar_at": bar.get("bar") if intraday else None,
+            "grade_intraday_as_of": snapshot.get("as_of") if intraday else None,
+            "grade_intraday_valid_until": expiries.get(ticker) if intraday else None,
             "band_z": entries.get(ticker),
             "bar": {"at": bar.get("bar"), "price": bar.get("last")},
         }
     payload = {
-        "schema_version": "personal-decision-receipt/1",
+        "schema_version": "personal-decision-receipt/2",
         "policy_version": POLICY_VERSION,
         "decision_version": decisions["version"],
         "decision_policy": decisions["policy"],
