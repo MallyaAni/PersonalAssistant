@@ -30,11 +30,18 @@ are zeros.
   with a learned query over the window's steps, joined with the last step
   and the daily branch, then the head. Loss: MSE on the rank-Gauss label.
 * Network (width W from the grid): Linear(12 -> W) plus a learned embedding
-  of the 27 step types; five residual causal convolutions (kernel 3,
-  dilations 1, 2, 4, 8, 16: receptive field 63 steps), one per dilation; a
-  daily branch, a 2-layer MLP of width W over the daily columns
-  (`daily_columns`: robust z from the fit rows, clipped to +-NET_CLIP, NaN
-  as 0) and their missing indicators; a 2-layer head.
+  of the 27 step types and a learned session-position embedding (K, W),
+  K = SEQ_SESSIONS[kind] (6 for T-I, 60 for T-S1), whose row p is added to
+  every step of the window's session p (0 the oldest, K - 1 the row's own
+  session; padded and invalid sessions get theirs too); five residual causal
+  convolutions (kernel 3, dilations 1, 2, 4, 8, 16: receptive field 63
+  steps), one per dilation; a daily branch, a 2-layer MLP of width W over
+  the daily columns (`daily_columns`: robust z from the fit rows, clipped to
+  +-NET_CLIP, NaN as 0) and their missing indicators; a 2-layer head. The
+  session-position embedding is a registered pre-run amendment (2026-09-29):
+  the research proposal's M3 had "learned slot and session embeddings" and
+  the plan's first draft omitted the second. Without it the T-S1 pooling
+  could not tell which of its sixty sessions a pattern came from.
 
 **M2, the chart CNN** (``cnn_i5``, ``cnn_i20``; T-S1 only), as JKX publish
 it. Images of the 5 or 20 sessions ending at t, 3 pixels a day (open tick
@@ -69,8 +76,11 @@ PBO diagnostic. Runs are deterministic: seeds for python, numpy and torch,
   pre-normed, x + dropout(GELU(conv(LayerNorm(x)))), with a LayerNorm
   after the fifth block - LayerNorm works per step, so the model stays
   causal (batch norm would mix steps);
-* the step embedding is initialized N(0, 0.02^2) and added to the input
-  projection; the TCN's padding is zeros on the left only;
+* the step-type and session-position embeddings are initialized
+  N(0, 0.02^2) and added to the input projection (the position table is
+  broadcast over each session's steps rather than looked up by index: the
+  same values, with a plain sum in the backward); the TCN's padding is zeros
+  on the left only;
 * the daily branch is Linear(2F -> W), GELU, dropout, Linear(W -> W), GELU;
   the head is Linear(in -> W), GELU, dropout, Linear(W -> 1), in = 2W for
   T-I ([step, daily]) and 3W for T-S1 ([pooled, last step, daily]);
@@ -621,10 +631,12 @@ class CausalConvBlock(_Module):  # type: ignore[misc]  # torch is untyped here
 
 
 class SeqNet(_Module):  # type: ignore[misc]  # torch is untyped here
-    """M3: step-type embedding, causal TCN, daily branch, the question's head."""
+    """M3: step-type and session-position embeddings, causal TCN, daily
+    branch, the question's head."""
 
     # Build the network for one question with `channels` sequence channels,
-    # `daily` daily-branch inputs, width `width` and dropout `dropout`.
+    # `daily` daily-branch inputs, width `width` and dropout `dropout`; its
+    # windows are the question's SEQ_SESSIONS sessions.
     def __init__(
         self, kind: str, channels: int, daily: int, width: int, dropout: float
     ) -> None:
@@ -633,9 +645,14 @@ class SeqNet(_Module):  # type: ignore[misc]  # torch is untyped here
             raise ValueError(f"kind must be one of {io.KINDS}, not {kind!r}")
         self.kind = kind
         self.width = width
+        self.sessions = io.SEQ_SESSIONS[kind]
         self.project = nn.Linear(channels, width)
         self.step_type = nn.Parameter(torch.empty(io.STEPS_PER_SESSION, width))
         nn.init.normal_(self.step_type, std=EMBED_STD)
+        # Which session of the window a step is in: row p for position p, 0
+        # the oldest, K - 1 the row's own session (pre-run amendment).
+        self.session_position = nn.Embedding(self.sessions, width)
+        nn.init.normal_(self.session_position.weight, std=EMBED_STD)
         self.blocks = nn.ModuleList(
             CausalConvBlock(width, int(io.SEQ_FIXED["kernel"]), int(d), dropout)
             for d in io.SEQ_FIXED["dilations"]
@@ -661,14 +678,24 @@ class SeqNet(_Module):  # type: ignore[misc]  # torch is untyped here
             nn.Linear(width, 1),
         )
 
-    # The (B, L, W) representation of every step of (B, L, C) windows whose
-    # length is a whole number of sessions.
+    # The (B, L, W) representation of every step of (B, L, C) windows of
+    # exactly the question's sessions. Each step's input projection gets its
+    # step type's embedding and its session's position embedding; the
+    # position table is broadcast over each session's 27 steps (the values an
+    # index lookup gives, with a plain sum in the backward).
     def encode(self, seq: Any) -> Any:
         """Return the TCN's per-step output."""
         sessions, extra = divmod(seq.shape[1], io.STEPS_PER_SESSION)
-        if extra:
-            raise ValueError(f"{seq.shape[1]} steps is not a whole number of sessions")
-        h = self.project(seq) + self.step_type.repeat(sessions, 1)
+        if extra or sessions != self.sessions:
+            raise ValueError(f"{seq.shape[1]} steps are not {self.sessions} sessions")
+        position = self.session_position.weight[:, None, :].expand(
+            -1, io.STEPS_PER_SESSION, -1
+        )
+        h = (
+            self.project(seq)
+            + self.step_type.repeat(sessions, 1)
+            + position.reshape(-1, self.width)
+        )
         for block in self.blocks:
             h = block(h)
         return self.norm(h)
@@ -1153,7 +1180,18 @@ class _SeqTask:
         """Return the M3 architecture record."""
         ti = self.kind == io.TI
         return {
-            "input": "Linear(12 -> W) + learned step-type embedding (27 x W)",
+            "input": (
+                "Linear(12 -> W) + learned step-type embedding (27 x W)"
+                " + session-position embedding (K, W)"
+            ),
+            "session_position_embedding": {
+                "shape": [self.window, "W"],
+                "description": "session-position embedding (K, W): row p added to"
+                " every step of the window's session p (0 oldest, K - 1 the row's"
+                " own session), padded and invalid sessions included",
+                "init": "N(0, 0.02^2)",
+                "registered": "pre-run amendment of the plan, 2026-09-29",
+            },
             "tcn": (
                 "5 residual blocks x + dropout(GELU(causal conv(LayerNorm(x)))), "
                 "kernel 3, dilations 1-2-4-8-16, zero left padding, then LayerNorm"
@@ -1178,7 +1216,7 @@ class _SeqTask:
             "optimizer": "AdamW, torch default betas/eps, decay on every parameter",
             "schedule": "linear warm-up over 5% of planned steps, cosine to 0",
             "precision": "fp32",
-            "init": "torch defaults; step embedding and query N(0, 0.02^2)",
+            "init": "torch defaults; step, session-position and query N(0, 0.02^2)",
         }
 
 

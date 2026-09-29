@@ -480,18 +480,33 @@ def test_lr_factor_warms_up_then_follows_a_cosine():
 # ---------------------------------------------------------------------------
 
 
-# T-I causality: the forecast for slot k is the output at session s's bar k,
-# and perturbing every later step leaves slots 0..k unchanged, while
-# perturbing bar k itself does move slot k.
+# T-I causality, with the session-position embedding in place (and made
+# large, so it matters): the forecast for slot k is the output at session
+# s's bar k, and perturbing every later step leaves slots 0..k unchanged,
+# while perturbing bar k itself does move slot k.
 def test_ti_forecast_at_bar_k_never_reads_a_later_step():
     torch.manual_seed(0)
     model = nn3.SeqNet(io.TI, CHANNELS, daily=4, width=16, dropout=0.1).eval()
+    assert tuple(model.session_position.weight.shape) == (io.SEQ_SESSIONS[io.TI], 16)
+    torch.nn.init.normal_(model.session_position.weight, std=1.0)
     steps = io.SEQ_SESSIONS[io.TI] * STEPS
     assert nn3.TI_FIRST_OUTPUT == 5 * 27 + 1
     seq = torch.randn(3, steps, CHANNELS)
     daily = torch.randn(3, 4)
     with torch.no_grad():
         base = model(seq, daily)
+        # The embedding is wired in: the row's own session's row moves the
+        # forecasts; sessions s-5 and s-4 are outside every forecast's
+        # receptive field, so their rows move nothing. (Random directions:
+        # a shift equal in every dimension is removed by the LayerNorms.)
+        table = model.session_position.weight
+        saved = table.clone()
+        table[-1] += torch.randn(16)
+        assert (model(seq, daily) - base).abs().max() > 1e-3
+        table.copy_(saved)
+        table[:2] += 10.0 * torch.randn(2, 16)
+        torch.testing.assert_close(model(seq, daily), base, rtol=0, atol=1e-5)
+        table.copy_(saved)
         assert tuple(base.shape) == (3, SLOTS)
         for k in (0, 1, 7, 22, 23):
             step = nn3.TI_FIRST_OUTPUT + k
@@ -541,6 +556,30 @@ def test_tcn_receptive_field_is_63_steps():
             rtol=0,
             atol=1e-5,
         )
+
+
+# The sequence model's parameters, counted layer by layer, include the
+# (K, W) session-position embedding: K = 6 sessions for T-I, 60 for T-S1.
+def test_seqnet_parameter_count_includes_the_session_position_embedding():
+    daily = 300
+    for width in (32, 64):
+        shared = (
+            13 * width  # Linear(12 -> W)
+            + 27 * width  # step-type embedding
+            + 5 * (3 * width * width + width + 2 * width)  # conv + LayerNorm, x5
+            + 2 * width  # final LayerNorm
+            + (daily * width + width)
+            + (width * width + width)  # daily branch
+        )
+        ti_head = (2 * width * width + width) + (width + 1)
+        s1_head = width + width * width + (3 * width * width + width) + (width + 1)
+        for kind, head in ((io.TI, ti_head), (io.S1, s1_head)):
+            model = nn3.SeqNet(kind, CHANNELS, daily, width, 0.1)
+            sessions = io.SEQ_SESSIONS[kind]
+            assert tuple(model.session_position.weight.shape) == (sessions, width)
+            assert nn3.parameter_count(model) == shared + sessions * width + head
+    assert nn3.parameter_count(nn3.SeqNet(io.TI, CHANNELS, daily, 64, 0.1)) == 97_217
+    assert nn3.parameter_count(nn3.SeqNet(io.S1, CHANNELS, daily, 64, 0.1)) == 108_929
 
 
 # T-S1: attention reads only the steps marked valid, and a row with none
@@ -666,6 +705,84 @@ def test_seq_s1_learns_a_planted_daily_signal():
     ic = io.selection_score(io.S1, forecast.yhat[test], data.y[test], data.dates[test])
     assert ic > 0.3, ic
     assert forecast.yhat_configs.shape == (len(data), 1)
+
+
+# A T-S1 dataset whose label is WHICH session of the window holds a spike.
+# Each name's rows are sixty sessions apart, so no two windows share a
+# session, and every window's sequence is zero but for one spike session
+# (the return channel at +4 on all its steps) at position 10 or 50 - both
+# far from the window's first and last 63 steps. The label is 1 for
+# position 10; the daily columns are noise. Five names per date. (A zero
+# background, because the robust z would scale any noise back to unit size,
+# and a noisy background lets 530 rows be memorized instead of learned.)
+def _position_data(seed=40):
+    rng = np.random.default_rng(seed)
+    names_n, sessions_n = 300, 300
+    names = np.array([f"P{i:03d}" for i in range(names_n)])
+    dates = _dates(sessions_n)
+    seq = np.zeros((names_n, sessions_n, STEPS, CHANNELS), dtype=np.float16)
+    seq[:, :, 0, -1] = 1
+    pairs = sorted(
+        (s, n) for n in range(names_n) for s in range(59 + n % 60, sessions_n, 60)
+    )
+    at = np.array([s for s, _ in pairs])
+    who = np.array([n for _, n in pairs])
+    early = rng.random(len(pairs)) < 0.5
+    seq[who, at - 59 + np.where(early, 10, 50), :, 0] = 4.0
+    valid = np.ones((names_n, sessions_n), dtype=bool)
+    r = early + 0.01 * rng.normal(size=len(pairs))
+    data = io.Stage3Data(
+        kind=io.S1,
+        dates=dates[at],
+        tickers=names[who],
+        slot=np.zeros(len(pairs), dtype=np.int8),
+        x=rng.normal(size=(len(pairs), 3)).astype(np.float32),
+        feature_names=("d_a", "d_b", "i_c"),
+        y=io.rank_gauss(r, dates[at]).astype(np.float32),
+        extra={"r": r.astype(np.float32)},
+    )
+    return data, io.SeqTensor(names, dates, seq, valid)
+
+
+class _NoSessionPosition(nn3.SeqNet):
+    """The sequence model with its session-position embedding zeroed and frozen."""
+
+    # Build the network, then zero and freeze its session-position table.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        torch.nn.init.zeros_(self.session_position.weight)
+        self.session_position.weight.requires_grad_(False)
+
+
+# T-S1: a label that depends on which session of the window a spike fell in
+# (position 10 or 50, far outside the last 63 steps) is learned out of
+# sample with the session-position embedding, and not at all without it.
+def test_seq_s1_learns_which_session_a_spike_fell_in_only_with_the_embedding(
+    monkeypatch,
+):
+    data, tensor = _position_data()
+    settings = _settings(
+        grid=({"lr": 1e-2, "dropout": 0.0, "width": 8},),
+        max_epochs=20,
+        patience=6,
+        batch=32,
+        max_folds=1,
+        min_train=150,
+        validation=40,
+        gap=2,
+        refit=91,
+    )
+    scores = {}
+    for name, model in (("with", nn3.SeqNet), ("without", _NoSessionPosition)):
+        monkeypatch.setattr(nn3, "SeqNet", model)
+        forecast = nn3.run_seq(data, tensor, settings)
+        test = np.isfinite(forecast.yhat)
+        assert test.sum() == 91 * 5
+        scores[name] = io.selection_score(
+            io.S1, forecast.yhat[test], data.y[test], data.dates[test]
+        )
+    assert scores["with"] > 0.3, scores
+    assert abs(scores["without"]) < 0.15, scores
 
 
 # No label outside a fold's fit part and validation block reaches its
