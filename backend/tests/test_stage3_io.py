@@ -9,7 +9,8 @@ from backend.market import stage3_io as io
 
 
 def _dates(n: int, start: str = "2020-01-01") -> np.ndarray:
-    return np.arange(np.datetime64(start), np.datetime64(start) + n).astype("datetime64[D]")
+    first = np.datetime64(start, "D")
+    return first + np.arange(n).astype("timedelta64[D]")
 
 
 def test_registration_counts_match_the_plan():
@@ -169,3 +170,58 @@ def test_seq_and_ohlcv_round_trip(tmp_path):
     )
     back_bars = io.load_ohlcv(io.save_ohlcv(tmp_path / "o.npz", bars))
     assert back_bars.high.dtype == np.float32 and float(back_bars.volume[0, 0]) == 100.0
+
+
+def test_validate_refuses_duplicate_keys():
+    data = _data()
+    dup = io.Stage3Data(
+        data.kind,
+        np.concatenate([data.dates[:1], data.dates[:1]]),
+        np.array(["A", "A"]),
+        np.zeros(2, dtype=np.int8),
+        np.zeros((2, 3), dtype=np.float32),
+        data.feature_names,
+        np.zeros(2, dtype=np.float32),
+    )
+    with pytest.raises(ValueError, match="duplicate"):
+        io.validate(dup)
+
+
+def test_meta_is_strict_json(tmp_path):
+    data = _data()
+    meta = {"n": np.int64(5), "score": np.float32(float("nan")), "list": (1, np.float64(2.5))}
+    written = io.save_data(tmp_path / "m.npz", io.Stage3Data(
+        data.kind, data.dates, data.tickers, data.slot, data.x, data.feature_names, data.y, meta=meta
+    ))
+    back = io.load_data(written).meta
+    assert back["n"] == 5 and back["score"] is None and back["list"] == [1, 2.5]
+
+
+def test_ti_lookup_refuses_duplicates_and_bad_slots():
+    base = dict(
+        kind=io.TI, family=io.LGBM, yhat_seeds=np.zeros((2, 5), dtype=np.float32),
+        yhat_configs=None, fold=np.zeros(2, dtype=np.int32),
+    )
+    dup = io.Stage3Forecast(
+        dates=np.repeat(_dates(1), 2), tickers=np.array(["A", "A"]),
+        slot=np.array([3, 3], dtype=np.int8), yhat=np.ones(2, dtype=np.float32), **base,
+    )
+    with pytest.raises(ValueError, match="duplicated"):
+        io.ti_lookup(dup)
+    bad = io.Stage3Forecast(
+        dates=np.repeat(_dates(1), 2), tickers=np.array(["A", "B"]),
+        slot=np.array([3, 24], dtype=np.int8), yhat=np.ones(2, dtype=np.float32), **base,
+    )
+    with pytest.raises(ValueError, match="slots"):
+        io.ti_lookup(bad)
+
+
+def test_save_forecast_refuses_misaligned_arrays(tmp_path):
+    good = io.Stage3Forecast(
+        kind=io.S1, family=io.LGBM, dates=_dates(2), tickers=np.array(["A", "B"]),
+        slot=np.zeros(2, dtype=np.int8), yhat=np.zeros(2, dtype=np.float32),
+        yhat_seeds=np.zeros((2, 5), dtype=np.float32), yhat_configs=None,
+        fold=np.zeros(3, dtype=np.int32),
+    )
+    with pytest.raises(ValueError, match="disagree"):
+        io.save_forecast(tmp_path / "x.npz", good)

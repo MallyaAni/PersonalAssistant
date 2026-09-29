@@ -177,6 +177,30 @@ S1_DROP_SHARE = 0.1
 S1_MIN_NAMES = 5
 
 
+# Make a meta dict strictly JSON: numpy scalars become Python numbers,
+# non-finite floats become null, arrays and tuples become lists, dates and
+# paths become strings. A plain `json.dumps` with a string fallback would
+# write a numpy integer as the string "5" and a NaN as a bare, non-standard NaN.
+def clean_json(value: Any) -> Any:
+    """Return `value` with every leaf converted to a strict-JSON type."""
+    if isinstance(value, dict):
+        return {str(k): clean_json(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [clean_json(v) for v in value]
+    if isinstance(value, np.ndarray):
+        return [clean_json(v) for v in value.tolist()]
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if isinstance(value, (int, np.integer)):
+        return int(value)
+    if isinstance(value, (float, np.floating)):
+        number = float(value)
+        return number if math.isfinite(number) else None
+    if value is None or isinstance(value, str):
+        return value
+    return str(value)
+
+
 @dataclass(frozen=True)
 class Stage3Data:
     """One question's rows: features, labels, keys."""
@@ -217,6 +241,13 @@ def validate(data: Stage3Data) -> None:
         order = np.lexsort((data.slot, data.tickers, data.dates))
         if not np.array_equal(order, np.arange(rows)):
             raise ValueError("rows must be sorted by (date, ticker, slot)")
+        same = (
+            (data.dates[1:] == data.dates[:-1])
+            & (data.tickers[1:] == data.tickers[:-1])
+            & (data.slot[1:] == data.slot[:-1])
+        )
+        if same.any():
+            raise ValueError(f"{int(same.sum())} duplicate (date, ticker, slot) rows")
 
 
 # Write a dataset as one .npz: the arrays, the extras under "extra_<name>",
@@ -232,7 +263,7 @@ def save_data(path: Path, data: Stage3Data) -> Path:
         "x": np.asarray(data.x, dtype=np.float32),
         "feature_names": np.asarray(data.feature_names, dtype=str),
         "y": np.asarray(data.y, dtype=np.float32),
-        "meta": np.asarray(json.dumps(meta, sort_keys=True, default=str)),
+        "meta": np.asarray(json.dumps(clean_json(meta), sort_keys=True)),
     }
     for name, array in data.extra.items():
         arrays[f"extra_{name}"] = np.asarray(array)
@@ -258,7 +289,7 @@ def load_data(path: Path) -> Stage3Data:
             dates=npz["dates"].astype("datetime64[D]"),
             tickers=npz["tickers"].astype(str),
             slot=npz["slot"].astype(np.int8),
-            x=npz["x"].astype(np.float32),
+            x=npz["x"].astype(np.float32, copy=False),
             feature_names=tuple(str(n) for n in npz["feature_names"]),
             y=npz["y"].astype(np.float32),
             extra=extra,
@@ -458,8 +489,18 @@ class Stage3Forecast:
 def save_forecast(path: Path, forecast: Stage3Forecast) -> Path:
     """Write `forecast` to `path` and return the path."""
     rows = len(forecast.dates)
-    if forecast.yhat.shape != (rows,) or forecast.yhat_seeds.shape[0] != rows:
-        raise ValueError("forecast arrays disagree with the keys")
+    lengths = {
+        "tickers": len(forecast.tickers),
+        "slot": len(forecast.slot),
+        "fold": len(forecast.fold),
+        "yhat_seeds": forecast.yhat_seeds.shape[0],
+    }
+    if forecast.yhat_configs is not None:
+        lengths["yhat_configs"] = forecast.yhat_configs.shape[0]
+    if forecast.yhat.shape != (rows,) or any(n != rows for n in lengths.values()):
+        raise ValueError(f"forecast arrays disagree with the {rows} keys: {lengths}")
+    if forecast.kind not in KINDS:
+        raise ValueError(f"kind must be one of {KINDS}, not {forecast.kind!r}")
     meta = {
         **forecast.meta,
         "plan": PLAN,
@@ -474,7 +515,7 @@ def save_forecast(path: Path, forecast: Stage3Forecast) -> Path:
         "yhat": np.asarray(forecast.yhat, dtype=np.float32),
         "yhat_seeds": np.asarray(forecast.yhat_seeds, dtype=np.float32),
         "fold": np.asarray(forecast.fold, dtype=np.int32),
-        "meta": np.asarray(json.dumps(meta, sort_keys=True, default=str)),
+        "meta": np.asarray(json.dumps(clean_json(meta), sort_keys=True)),
     }
     if forecast.yhat_configs is not None:
         arrays["yhat_configs"] = np.asarray(forecast.yhat_configs, dtype=np.float32)
@@ -509,7 +550,9 @@ def load_forecast(path: Path) -> Stage3Forecast:
 
 
 # The T-I forecast as a lookup the fill engine reads: for each (ticker,
-# session) the (TI_SLOTS,) forecast vector, NaN where a slot has none.
+# session) the (TI_SLOTS,) forecast vector, NaN where a slot has none. A
+# duplicated (ticker, session, slot) or a slot outside 0..TI_SLOTS-1 is an
+# error: a forecast file is the trainer's output and must be exact.
 def ti_lookup(forecast: Stage3Forecast, column: np.ndarray | None = None) -> dict[
     tuple[str, np.datetime64], np.ndarray
 ]:
@@ -517,17 +560,25 @@ def ti_lookup(forecast: Stage3Forecast, column: np.ndarray | None = None) -> dic
     if forecast.kind != TI:
         raise ValueError("ti_lookup needs a T-I forecast")
     values = forecast.yhat if column is None else np.asarray(column, dtype=float)
-    out: dict[tuple[str, np.datetime64], np.ndarray] = {}
-    for i in range(len(forecast.dates)):
-        key = (str(forecast.tickers[i]), np.datetime64(forecast.dates[i], "D"))
-        vector = out.get(key)
-        if vector is None:
-            vector = np.full(TI_SLOTS, np.nan)
-            out[key] = vector
-        k = int(forecast.slot[i])
-        if 0 <= k < TI_SLOTS:
-            vector[k] = values[i]
-    return out
+    slots = np.asarray(forecast.slot, dtype=np.int64)
+    if len(slots) and (slots.min() < 0 or slots.max() >= TI_SLOTS):
+        raise ValueError(f"slots must lie in 0..{TI_SLOTS - 1}")
+    days = np.asarray(forecast.dates, dtype="datetime64[D]").astype(np.int64)
+    base = int(days.min()) if len(days) else 0
+    tickers = np.asarray(forecast.tickers, dtype=str)
+    names, name_index = np.unique(tickers, return_inverse=True)
+    pair = name_index.astype(np.int64) * (1 << 32) + (days - base)
+    keys, inverse = np.unique(pair, return_inverse=True)
+    counts = np.zeros((len(keys), TI_SLOTS), dtype=np.int64)
+    np.add.at(counts, (inverse, slots), 1)
+    if (counts > 1).any():
+        raise ValueError(f"{int((counts > 1).sum())} duplicated (ticker, session, slot) forecasts")
+    grid = np.full((len(keys), TI_SLOTS), np.nan)
+    grid[inverse, slots] = np.asarray(values, dtype=float)
+    return {
+        (str(names[int(key >> 32)]), np.datetime64(int(key & 0xFFFFFFFF) + base, "D")): grid[i]
+        for i, key in enumerate(keys)
+    }
 
 
 # Column-name prefixes: every daily-block column starts with DAILY_PREFIX,
@@ -576,7 +627,7 @@ def save_seq(path: Path, tensor: SeqTensor) -> Path:
             sessions=np.asarray(tensor.sessions, dtype="datetime64[D]"),
             seq=np.asarray(tensor.seq, dtype=np.float16),
             valid=np.asarray(tensor.valid, dtype=bool),
-            meta=np.asarray(json.dumps(meta, sort_keys=True, default=str)),
+            meta=np.asarray(json.dumps(clean_json(meta), sort_keys=True)),
         )
     return path
 
@@ -630,7 +681,7 @@ def save_ohlcv(path: Path, bars: DailyOHLCV) -> Path:
                 name: np.asarray(getattr(bars, name), dtype=np.float32)
                 for name in ("open", "high", "low", "close", "volume")
             },
-            meta=np.asarray(json.dumps(meta, sort_keys=True, default=str)),
+            meta=np.asarray(json.dumps(clean_json(meta), sort_keys=True)),
         )
     return path
 
