@@ -21,7 +21,29 @@ turnover cost is kept, so any rerun has to be read with the cost caveat
 above. The bp/d figures are withdrawn pending a rerun under the corrected
 aggregation:
 
-CORRECTED NUMBERS: pending the spark rerun
+Rerun 2026-09-28 on the same exported dataset (81,612 rows) under the
+corrected aggregation, study version 3 (ridge and Chronos on spark1's CPU,
+CNN and PatchTST on the RTX 5080; payloads
+`docs/research/scorecards/deep_intraday_*_acct3.json`). Top vs hurdle, bp/d
+(Newey-West t), 10 bp:
+
+| model | 2016-2023 top vs hurdle | A-only | 2024-2026 top vs hurdle | A-only | IC 2016-2023 (t) |
+|---|---|---|---|---|---|
+| ridge | -13.1 (-10.2) | -8.4 (-3.1) | -12.4 (-4.8) | -16.7 (-2.8) | 0.0132 (2.11) |
+| temporal CNN | -5.3 (-3.8) | -6.6 (-2.2) | -12.6 (-5.1) | -8.8 (-1.7) | 0.0147 (2.63) |
+| PatchTST | -6.3 (-4.2) | -9.2 (-3.3) | -6.4 (-2.0) | -9.3 (-1.6) | 0.0144 (2.23) |
+| Chronos-Bolt + ridge | -13.4 (-10.4) | -8.9 (-4.0) | -15.6 (-6.6) | -17.4 (-3.1) | 0.0113 (1.99) |
+
+The corrected aggregation moves ridge, PatchTST and Chronos by at most a
+tenth of a basis point against the originally recorded figures; the CNN
+row moves by more (-5.3 against -6.8 on 2016-2023, IC 0.0147 against
+0.0125) because it was retrained on a different GPU, the run-to-run
+nondeterminism already recorded in NEXT_SESSION (0.0081 to 0.0125 on the
+same seed). Every family still fails the portfolio floor and the verdict
+is unchanged. The cost caveat above still applies to these figures: they
+compare a daily-rotating book against a near-static hurdle; a
+like-for-like day-only comparison would be a gross-signal test that the
+IC already answers.
 
 The IC results and the verdict for the return signal are unaffected: IC
 about 0.012, not significant on 2024-2026. (The kill criteria also read the
