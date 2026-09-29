@@ -227,12 +227,15 @@ def run_record(args: argparse.Namespace, loaded: Loaded) -> dict[str, Any]:
             "first": str(panel.dates[0]),
             "last": str(panel.dates[-1]),
         },
+        # The null test loads no cube (it reads none), so it has no coverage.
         "cubes": {
             "names": len(loaded.cubes),
             "names_without_cube": sorted(
                 str(t) for t in panel.tickers if str(t) not in loaded.cubes
             ),
-        },
+        }
+        if loaded.cubes
+        else "not loaded",
         "edgar_names": len(loaded.edgar),
         "tone_names": len(loaded.tone),
     }

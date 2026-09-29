@@ -535,6 +535,13 @@ def test_tone_cutoff_moves_only_releases_after_the_cutoff():
     assert [m["accession"] for m in moved] == ["b", "c"]
     _, later = s5.tone_cutoff(records, acceptance, time(15, 45))
     assert [m["accession"] for m in later] == ["c"]
+    # Four of the six releases carry a zoned acceptance time.
+    assert s5.tone_coverage(records, acceptance) == {"records": 6, "with_time": 4}
+    # A reaction date stored as text is read as the date it names.
+    text = {"X": (replace(records["X"][2], reaction_date="2025-03-04"),)}
+    moved_text, moved = s5.tone_cutoff(text, acceptance, time(15, 30))
+    assert moved_text["X"][0].reaction_date == day + timedelta(days=1)
+    assert [m["accession"] for m in moved] == ["c"]
 
 
 # --- the control and the planner -------------------------------------------------
@@ -1205,6 +1212,7 @@ def test_cli_null_test_only_and_full_run_with_a_stub_loader(tmp_path):
     assert null["null_test"]["passes"]
     assert null["run"]["inputs"]["membership"]["sha256"]
     assert null["run"]["inputs"]["cubes"] is None
+    assert null["run"]["cubes"] == "not loaded"
     assert "revision" in null["run"]
     assert len(null["null_test"]["journal"]) == 2
     assert "PASSES" in out.getvalue()
@@ -1235,8 +1243,11 @@ def test_cli_null_test_only_and_full_run_with_a_stub_loader(tmp_path):
     assert full["offsets"]["priced"] == 2
     assert full["offsets"]["smoke"]
     assert full["run"]["inputs"]["cubes"]
+    assert full["run"]["cubes"]["names"] == len(w.cubes)
     assert full["run"]["inputs"]["strict_levels"]
     assert full["grids"]["15:30"]["tone_moved"]
+    coverage = full["grids"]["15:30"]["tone_coverage"]
+    assert coverage["records"] == coverage["with_time"] > 0
     assert full["verdict"]["label"] in (
         s5.PASS,
         s5.RECORD,
