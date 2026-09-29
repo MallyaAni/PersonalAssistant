@@ -117,6 +117,34 @@ on the choosing window; passing the floors without the last is RECORD
 RECORD. LEVEL_TRIALS = 4. `study(conventions=...)` prices a subset (the CLI's
 `--only`); the fill-timing verdict is judged only when all seven of its
 conventions were priced.
+
+The support/resistance trial
+----------------------------
+`docs/research/sr-levels-plan-2026-09-29.md` registers two more
+(`SR_CONVENTIONS`) that ask whether waiting for a real level beats the
+board's fixed 1%. The levels are `sr_levels.KINDS`: 22 of them, daily
+structure from the prior close, volume nodes of the prior 20 cube
+sessions, the opening range from 10:00 and the running VWAP through the
+prior bar, each with its zone of half-width max(0.25 ATR14, 0.3% of the
+prior close). They are priced only when named (`--only`), never by default:
+
+  level_dip             a buy fills at the first bar close from slot 2 (the
+                        10:15 close) that lies inside the zone of a level
+                        below the prior bar's close while below the session
+                        open, else the official close; a sell at the first
+                        close inside the zone of a level above the prior
+                        bar's close while above the open, else the close
+  level_dip_confluence  the same, counting only zones whose confluence
+                        (distinct level prices inside) is at least 2
+
+The zones are computed once per run (`sr_zones`) on the panel's adjusted
+basis with the same split-safe scale the fills use (`session_scale`). Rows
+gain the paired difference against `dip_or_close`, and from the median
+offset's orders the fill rate at a level and the gain per level fill over
+that session's official close. `sr_verdict` applies the plan's criteria:
+REPLACES the board's rule only at >= REPLACE_BP a session over
+`dip_or_close` with t >= REPLACE_T on the choosing window and not worse on
+the reported window; anything else RECORD. SR_TRIALS = 2.
 """
 
 from __future__ import annotations
@@ -131,7 +159,7 @@ import numpy as np
 
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import paper, policy_v4, simulate
-from backend.market import candidate_stats, session_anatomy
+from backend.market import candidate_stats, session_anatomy, sr_levels
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 from backend.market.vol_forecast import Aligned, sigma
 
@@ -186,7 +214,8 @@ LEVEL_CONTROL = "dip_or_close"
 # The same rule as vol_dip_0.5 fed trailing volatility: "the model" or
 # merely "vol-scaling".
 LEVEL_TWIN = "trail_dip"
-# Every convention `price_book` knows, in registered order.
+# The fill-timing and entry-level trials' conventions, in registered order:
+# what a run prices by default (the level four only with forecasts).
 ALL_CONVENTIONS = CONVENTIONS + LEVEL_CONVENTIONS
 # Where a level convention's sigma comes from, and how it fills.
 FORECAST = "forecast"
@@ -222,12 +251,28 @@ LEVELS: dict[str, Level] = {
     "vol_limit_0.5": Level(LIMIT_RULE, 0.5, FORECAST),
     "trail_dip": Level(DIP_RULE, 0.5, TRAILING),
 }
+
+# The support/resistance trial (docs/research/sr-levels-plan-2026-09-29.md),
+# fixed before any run: a buy waits for a bar close inside a support zone
+# while below the open, a sell for one inside a resistance zone above it.
+SR_CONVENTIONS = ("level_dip", "level_dip_confluence")
+# The fewest distinct level prices a zone must hold for each to fill there.
+SR_MIN_CONFLUENCE: dict[str, int] = {"level_dip": 1, "level_dip_confluence": 2}
+# Two SR conventions were registered, so the best is deflated against two.
+SR_TRIALS = len(SR_CONVENTIONS)
+SR_PLAN = "docs/research/sr-levels-plan-2026-09-29.md"
+# Every convention `price_book` knows, in registered order: the fill-timing
+# and entry-level trials' (ALL_CONVENTIONS, the default sets) and the SR
+# trial's, which are priced only when named.
+KNOWN_CONVENTIONS = ALL_CONVENTIONS + SR_CONVENTIONS
 # The conventions that wait for a price, and so have a dip fill rate.
-WAITING = (LEVEL_CONTROL, *LEVEL_CONVENTIONS)
+WAITING = (LEVEL_CONTROL, *LEVEL_CONVENTIONS, *SR_CONVENTIONS)
 
 assert tuple(LEVELS) == LEVEL_CONVENTIONS
 assert LEVELS[LEVEL_TWIN] == Level(DIP_RULE, 0.5, TRAILING)
 assert not set(CONVENTIONS) & set(LEVEL_CONVENTIONS)
+assert not set(ALL_CONVENTIONS) & set(SR_CONVENTIONS)
+assert tuple(SR_MIN_CONFLUENCE) == SR_CONVENTIONS
 
 
 @dataclass(frozen=True)
@@ -393,17 +438,62 @@ def entry_level(
     )
 
 
-# The fill of a convention that waits for a price (dip_or_close or a level
-# convention) for every session of a cube, with whether the order filled at
-# its level before the close and whether it had no sigma. `sig` is (N,) per
-# cube session for a level convention; a session whose sigma is missing,
-# not finite or not positive fills exactly as dip_or_close.
+# The fill of an SR convention for every session of a cube, and whether it
+# filled at a level before the close. A buy takes the first bar close from
+# `sr_levels.FIRST_SLOT` on whose support confluence (`zones.support`: the
+# largest confluence of a zone holding that close, among levels below the
+# prior bar's close) reaches the convention's minimum while the close is
+# below the session's open; a sell mirrors it on `zones.resistance` above
+# the open. Otherwise the order fills at the official close.
+def sr_fills(
+    cube: SessionCube,
+    convention: str,
+    side: str,
+    zones: sr_levels.CloseZones | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return ((N,) fill price, (N,) filled at a level) for an SR convention."""
+    if side not in ("buy", "sell"):
+        raise ValueError(f"side must be buy or sell, not {side!r}")
+    if convention not in SR_CONVENTIONS:
+        raise ValueError(f"{convention!r} is not an SR convention")
+    if zones is None:
+        raise ValueError(f"{convention} needs the close zones of every session")
+    grid = np.asarray(zones.support if side == "buy" else zones.resistance)
+    if grid.shape != cube.close.shape:
+        raise ValueError(
+            f"close zones have shape {grid.shape}; "
+            f"the cube's bars are {cube.close.shape}"
+        )
+    open0 = cube.open[:, :1]
+    beyond = cube.close < open0 if side == "buy" else cube.close > open0
+    late_enough = np.arange(FULL_SESSION_SLOTS) >= sr_levels.FIRST_SLOT
+    hit = (grid >= SR_MIN_CONFLUENCE[convention]) & beyond & late_enough[None, :]
+    any_hit = hit.any(axis=1)
+    first = np.argmax(hit, axis=1)
+    picked = cube.close[np.arange(len(cube)), first]
+    return np.where(any_hit, picked, _official_close(cube)), any_hit
+
+
+# The fill of a convention that waits for a price (dip_or_close, a level
+# convention or an SR convention) for every session of a cube, with whether
+# the order filled at its level before the close and whether it had no
+# sigma. `sig` is (N,) per cube session for a level convention; a session
+# whose sigma is missing, not finite or not positive fills exactly as
+# dip_or_close. `zones` is the cube's CloseZones for an SR convention,
+# which never lacks a sigma.
 def waiting_fills(
-    cube: SessionCube, convention: str, side: str, sig: np.ndarray | None = None
+    cube: SessionCube,
+    convention: str,
+    side: str,
+    sig: np.ndarray | None = None,
+    zones: sr_levels.CloseZones | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return ((N,) price, (N,) reached, (N,) no sigma) for a WAITING convention."""
     if side not in ("buy", "sell"):
         raise ValueError(f"side must be buy or sell, not {side!r}")
+    if convention in SR_CONVENTIONS:
+        price, hit = sr_fills(cube, convention, side, zones)
+        return price, hit, np.zeros(len(cube), dtype=bool)
     base_price, base_hit = _dip_or_close_fill(cube, side)
     if convention == LEVEL_CONTROL:
         return base_price, base_hit, np.zeros(len(cube), dtype=bool)
@@ -432,17 +522,22 @@ def waiting_fills(
 
 # One convention's fill price for every session of a cube, on the raw
 # basis, for one side. The single place each convention's arithmetic lives
-# (a level convention's in `waiting_fills`, with `sig` per cube session).
+# (a level convention's in `waiting_fills`, with `sig` per cube session; an
+# SR convention's in `sr_fills`, with the cube's `zones`).
 def session_prices(
-    cube: SessionCube, convention: str, side: str, sig: np.ndarray | None = None
+    cube: SessionCube,
+    convention: str,
+    side: str,
+    sig: np.ndarray | None = None,
+    zones: sr_levels.CloseZones | None = None,
 ) -> np.ndarray:
     """Return (N,) raw-basis fill prices for `convention` and `side`."""
     if side not in ("buy", "sell"):
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if len(cube) == 0:
         return np.zeros(0)
-    if convention in LEVELS:
-        return waiting_fills(cube, convention, side, sig)[0]
+    if convention in LEVELS or convention in SR_CONVENTIONS:
+        return waiting_fills(cube, convention, side, sig, zones)[0]
     if convention in ("next_open", "breakout_gate"):
         return np.asarray(cube.open[:, 0], dtype=float)
     if convention == "first_hour_vwap":
@@ -467,12 +562,15 @@ def session_prices(
 # `blocked` says whether the daily was rejecting its band on the decision
 # date: a blocked buy is deferred and the price is NaN. For a level
 # convention, `sig` is the volatility the order reads (NaN: dip_or_close).
+# For an SR convention, `zones` holds the session's (26,) support and
+# resistance confluence at each bar close.
 def fill_price(
     row: dict[str, Any],
     convention: str,
     side: str,
     blocked: bool = False,
     sig: float = math.nan,
+    zones: sr_levels.CloseZones | None = None,
 ) -> float:
     """Return the fill price for one session, NaN when the order is deferred."""
     if convention == "breakout_gate" and side == "buy" and blocked:
@@ -491,7 +589,13 @@ def fill_price(
         auction_volume=np.array([math.nan]),
     )
     per_session = np.array([sig], dtype=float) if convention in LEVELS else None
-    return float(session_prices(cube, convention, side, per_session)[0])
+    one = None
+    if zones is not None:
+        one = sr_levels.CloseZones(
+            support=np.asarray(zones.support).reshape(1, FULL_SESSION_SLOTS),
+            resistance=np.asarray(zones.resistance).reshape(1, FULL_SESSION_SLOTS),
+        )
+    return float(session_prices(cube, convention, side, per_session, one)[0])
 
 
 # A level convention needs the (sessions, names) sigma grid, on the panel's
@@ -508,17 +612,82 @@ def _check_sigma_grid(
         raise ValueError(f"sigma grid {np.shape(sig)} is not the panel's {shape}")
 
 
+# An SR convention needs the close zones of every name it prices
+# (`sr_zones`); the other conventions read none.
+def _check_zones(
+    convention: str, zones: dict[str, sr_levels.CloseZones] | None
+) -> None:
+    """Raise ValueError when an SR convention has no close zones."""
+    if convention in SR_CONVENTIONS and zones is None:
+        raise ValueError(f"{convention} needs the close zones (fill_timing.sr_zones)")
+
+
+# Where each cube session sits on the panel's calendar, and the ratio that
+# moves its raw tape dollars onto the panel's adjusted basis: the panel's
+# adjusted close over the cube's own official close of the same day (the
+# closing cross, else the last regular print when the partition has no
+# cross). The daily store's `close` is already split-adjusted (its
+# `adj_close / close` undoes dividends only), so scaling by that ratio left
+# a pre-split raw fill against a post-split mark; this ratio carries both
+# splits and dividends, whatever the split calendar. Returns (pos, ok,
+# scale): `scale` has one value per cube session, NaN for a session the
+# panel does not hold (`ok` False) or whose official close is not positive.
+def session_scale(
+    cube: SessionCube, dates: np.ndarray, adj_close: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return ((N,) panel rows, (N,) on the panel, (N,) adjusted/raw scale)."""
+    dates = np.asarray(dates, dtype="datetime64[D]")
+    rows = len(dates)
+    pos = np.searchsorted(dates, cube.dates)
+    ok = (pos < rows) & (dates[np.minimum(pos, rows - 1)] == cube.dates)
+    official = np.where(
+        np.isfinite(cube.auction_open) & (cube.auction_open > 0),
+        cube.auction_open,
+        cube.close[:, -1],
+    )
+    scale = np.full(len(cube), np.nan)
+    with np.errstate(all="ignore"):
+        scale[ok] = np.where(
+            official[ok] > 0, np.asarray(adj_close)[pos[ok]] / official[ok], np.nan
+        )
+    return pos, ok, scale
+
+
+# The close zones of every panel name with a cube, for the SR conventions:
+# the daily structure once for the whole panel, then per name its levels
+# on the cube's sessions at the fills' own basis scale, their confluence,
+# and the largest confluence of a zone holding each bar's close.
+def sr_zones(
+    cubes: dict[str, SessionCube], panel
+) -> dict[str, sr_levels.CloseZones]:
+    """Return {ticker: CloseZones} for every panel name with a cube."""
+    daily = sr_levels.daily_levels(panel)
+    dates = np.asarray(panel.dates, dtype="datetime64[D]")
+    out: dict[str, sr_levels.CloseZones] = {}
+    for j, ticker in enumerate(panel.tickers):
+        cube = cubes.get(ticker)
+        if cube is None or len(cube) == 0:
+            continue
+        pos, ok, scale = session_scale(cube, dates, panel.adj_close[:, j])
+        levels = sr_levels.for_cube(cube, daily, j, pos, ok, scale)
+        out[ticker] = sr_levels.close_zones(levels, sr_levels.confluence(levels))
+    return out
+
+
 # Every name's fill prices for one convention on the panel's calendar, raw
 # basis, NaN where the name has no complete cube session that day. A level
 # convention needs `sig`, the (T, N) volatility each fill session's order
-# reads (`fill_sigma`). A WAITING convention's result carries, per cell,
-# whether the order filled at its level before the close, its gain over
-# the session's official close in bp, and whether it had no sigma.
+# reads (`fill_sigma`); an SR convention needs `zones`, each name's close
+# zones on its cube's sessions (`sr_zones`). A WAITING convention's result
+# carries, per cell, whether the order filled at its level before the
+# close, its gain over the session's official close in bp, and whether it
+# had no sigma.
 def cube_prices(
     cubes: dict[str, SessionCube],
     panel,
     convention: str,
     sig: np.ndarray | None = None,
+    zones: dict[str, sr_levels.CloseZones] | None = None,
 ) -> FillPrices:
     """Return the FillPrices of `convention` aligned to `panel.dates`."""
     dates = np.asarray(panel.dates, dtype="datetime64[D]")
@@ -528,6 +697,7 @@ def cube_prices(
     available = np.zeros((rows, names), dtype=bool)
     waiting = convention in WAITING
     _check_sigma_grid(convention, sig, (rows, names))
+    _check_zones(convention, zones)
     if waiting:
         hits = {side: np.zeros((rows, names), dtype=bool) for side in ("buy", "sell")}
         gains = {side: np.full((rows, names), np.nan) for side in ("buy", "sell")}
@@ -536,22 +706,8 @@ def cube_prices(
         cube = cubes.get(ticker)
         if cube is None or len(cube) == 0:
             continue
-        pos = np.searchsorted(dates, cube.dates)
-        ok = (pos < rows) & (dates[np.minimum(pos, rows - 1)] == cube.dates)
-        # Raw tape dollars onto the panel's adjusted basis by the session's own
-        # official close: the cube's closing cross (last regular print when
-        # the partition has no cross) against the panel's adjusted close of
-        # the same day. The daily store's `close` is already split-adjusted
-        # (its `adj_close / close` undoes dividends only), so scaling by that
-        # ratio left a pre-split raw fill against a post-split mark; this
-        # ratio carries both splits and dividends, whatever the split calendar.
-        official = np.where(
-            np.isfinite(cube.auction_open) & (cube.auction_open > 0),
-            cube.auction_open,
-            cube.close[:, -1],
-        )
-        with np.errstate(all="ignore"):
-            scale = np.where(official > 0, panel.adj_close[pos[ok], j] / official[ok], np.nan)
+        pos, ok, per_session = session_scale(cube, dates, panel.adj_close[:, j])
+        scale = per_session[ok]
         if not waiting:
             buy[pos[ok], j] = session_prices(cube, convention, "buy")[ok] * scale
             sell[pos[ok], j] = session_prices(cube, convention, "sell")[ok] * scale
@@ -562,9 +718,17 @@ def cube_prices(
             # The fill session's sigma, from the panel's grid onto the cube's sessions.
             cube_sig = np.full(len(cube), np.nan)
             cube_sig[ok] = np.asarray(sig, dtype=float)[pos[ok], j]
+        cube_zones = None
+        if convention in SR_CONVENTIONS:
+            assert zones is not None  # _check_zones refused a run without them
+            cube_zones = zones.get(ticker)
+            if cube_zones is None:
+                raise ValueError(f"{convention}: no close zones for {ticker}")
         close = _official_close(cube)
         for side, out in (("buy", buy), ("sell", sell)):
-            price, hit, missing = waiting_fills(cube, convention, side, cube_sig)
+            price, hit, missing = waiting_fills(
+                cube, convention, side, cube_sig, cube_zones
+            )
             out[pos[ok], j] = price[ok] * scale
             hits[side][pos[ok], j] = hit[ok]
             with np.errstate(all="ignore"):
@@ -657,7 +821,7 @@ def price_book(  # noqa: C901 - one ledger walk: queue, fill, mark, decide
     blocked: np.ndarray | None = None,
 ) -> Priced:
     """Return the Priced series of `convention` for the targets."""
-    if convention not in ALL_CONVENTIONS:
+    if convention not in KNOWN_CONVENTIONS:
         raise ValueError(f"unknown convention {convention!r}")
     if convention == "breakout_gate" and blocked is None:
         raise ValueError("breakout_gate needs the band-rejection flags")
@@ -794,32 +958,35 @@ def _finite(x: Any) -> bool:
 
 # The conventions a run prices, in registered order. By default the seven
 # fill-timing conventions, and the four level conventions too when
-# forecasts are given. With `only`, the names given plus the controls the
-# verdicts read: next_open always; dip_or_close and trail_dip whenever a
-# level convention is named. An unknown name, or a level convention without
-# forecasts, is refused.
+# forecasts are given; the SR conventions only when named. With `only`,
+# the names given plus the controls the verdicts read: next_open always;
+# dip_or_close and trail_dip whenever a level convention is named;
+# dip_or_close whenever an SR convention is. An unknown name, or a level
+# convention without forecasts, is refused.
 def select_conventions(
     only: Iterable[str] | None, have_forecasts: bool
 ) -> tuple[str, ...]:
-    """Return the conventions to price, in ALL_CONVENTIONS order."""
+    """Return the conventions to price, in KNOWN_CONVENTIONS order."""
     if only is None:
         names = set(CONVENTIONS) | (set(LEVEL_CONVENTIONS) if have_forecasts else set())
     else:
         names = {str(c).strip() for c in only if str(c).strip()}
-        unknown = sorted(names - set(ALL_CONVENTIONS))
+        unknown = sorted(names - set(KNOWN_CONVENTIONS))
         if unknown:
             raise ValueError(
                 f"unknown convention(s) {', '.join(unknown)}; registered: "
-                f"{', '.join(ALL_CONVENTIONS)}"
+                f"{', '.join(KNOWN_CONVENTIONS)}"
             )
         names.add(CONTROL)
         if names & set(LEVEL_CONVENTIONS):
             names |= {LEVEL_CONTROL, LEVEL_TWIN}
+        if names & set(SR_CONVENTIONS):
+            names.add(LEVEL_CONTROL)
     if names & set(LEVEL_CONVENTIONS) and not have_forecasts:
         raise ValueError(
             "the level conventions need the volatility forecasts (--forecasts <npz>)"
         )
-    return tuple(c for c in ALL_CONVENTIONS if c in names)
+    return tuple(c for c in KNOWN_CONVENTIONS if c in names)
 
 
 # From a waiting convention's orders that fill inside the window: how many
@@ -855,6 +1022,33 @@ def _wait_fields(log: OrderLog | None, keep: np.ndarray) -> dict[str, Any]:
     }
 
 
+# One convention's row against dip_or_close on one window: across offsets
+# the median CAGR difference and the count above dip_or_close, and at the
+# median offset the paired daily difference (bp, HAC t). Also returns that
+# difference, for the deflated best. Shared by the entry-level and SR trials.
+def _vs_dip_fields(
+    priced: dict[str, list[Priced]],
+    convention: str,
+    median: int,
+    keep: np.ndarray,
+    cagrs: dict[str, np.ndarray],
+) -> tuple[dict[str, Any], np.ndarray]:
+    """Return (the vs-dip row fields, paired difference against dip_or_close)."""
+    at = priced[convention][median]
+    vs_dip = _excess(at.returns, priced[LEVEL_CONTROL][median].returns, keep)
+    fields: dict[str, Any] = {
+        "median_cagr_vs_dip": _nanmedian(cagrs[convention] - cagrs[LEVEL_CONTROL]),
+        "offsets_above_dip": int(np.nansum(cagrs[convention] > cagrs[LEVEL_CONTROL])),
+        "mean_daily_bp_vs_dip": float(vs_dip.mean() * BP)
+        if len(vs_dip)
+        else math.nan,
+        "hac_t_vs_dip": candidate_stats.hac_t(vs_dip, HAC_LAG)
+        if len(vs_dip) > 2
+        else math.nan,
+    }
+    return fields, vs_dip
+
+
 # The entry-level trial's fields for one convention's row on one window:
 # at the median offset the paired daily difference against dip_or_close and
 # against trail_dip (bp, HAC t), across offsets the median CAGR difference
@@ -868,26 +1062,33 @@ def _level_fields(
     cagrs: dict[str, np.ndarray],
 ) -> tuple[dict[str, Any], np.ndarray]:
     """Return (row fields, paired difference against dip_or_close)."""
+    fields, vs_dip = _vs_dip_fields(priced, convention, median, keep, cagrs)
     at = priced[convention][median]
-    vs_dip = _excess(at.returns, priced[LEVEL_CONTROL][median].returns, keep)
     vs_twin = _excess(at.returns, priced[LEVEL_TWIN][median].returns, keep)
-    fields: dict[str, Any] = {
-        "median_cagr_vs_dip": _nanmedian(cagrs[convention] - cagrs[LEVEL_CONTROL]),
-        "offsets_above_dip": int(np.nansum(cagrs[convention] > cagrs[LEVEL_CONTROL])),
-        "mean_daily_bp_vs_dip": float(vs_dip.mean() * BP)
-        if len(vs_dip)
-        else math.nan,
-        "hac_t_vs_dip": candidate_stats.hac_t(vs_dip, HAC_LAG)
-        if len(vs_dip) > 2
-        else math.nan,
-        "mean_daily_bp_vs_twin": float(vs_twin.mean() * BP)
-        if len(vs_twin)
-        else math.nan,
-        "hac_t_vs_twin": candidate_stats.hac_t(vs_twin, HAC_LAG)
-        if len(vs_twin) > 2
-        else math.nan,
-    }
+    fields["mean_daily_bp_vs_twin"] = (
+        float(vs_twin.mean() * BP) if len(vs_twin) else math.nan
+    )
+    fields["hac_t_vs_twin"] = (
+        candidate_stats.hac_t(vs_twin, HAC_LAG) if len(vs_twin) > 2 else math.nan
+    )
     fields.update(_wait_fields(at.waits, keep))
+    return fields, vs_dip
+
+
+# The SR trial's fields for one convention's row on one window: the
+# comparison against dip_or_close (`_vs_dip_fields`) and the median
+# offset's order fields, where the "dip" fill is a fill at a level zone.
+# Also returns the difference against dip_or_close, for the deflated best.
+def _sr_fields(
+    priced: dict[str, list[Priced]],
+    convention: str,
+    median: int,
+    keep: np.ndarray,
+    cagrs: dict[str, np.ndarray],
+) -> tuple[dict[str, Any], np.ndarray]:
+    """Return (row fields, paired difference against dip_or_close)."""
+    fields, vs_dip = _vs_dip_fields(priced, convention, median, keep, cagrs)
+    fields.update(_wait_fields(priced[convention][median].waits, keep))
     return fields, vs_dip
 
 
@@ -921,7 +1122,8 @@ def simulator_gap(report, mask: np.ndarray, control: Priced, cost_bps: float) ->
 
 # Every chosen convention priced from each of the first `offsets` start
 # sessions: its fill prices once (a level convention's at the sigma its
-# orders read), then one ledger walk per offset. The band flags are read
+# orders read, an SR convention's on the close zones, built here once
+# unless given), then one ledger walk per offset. The band flags are read
 # only when breakout_gate is priced.
 def _price_all(
     report: DeskReport,
@@ -931,10 +1133,13 @@ def _price_all(
     forecasts: Aligned | None,
     offsets: int,
     cost: float,
+    zones: dict[str, sr_levels.CloseZones] | None = None,
 ) -> dict[str, list[Priced]]:
     """Return {convention: [Priced per offset]} for the chosen conventions."""
     panel = report.panel
     blocked = band_rejecting(panel) if "breakout_gate" in chosen else None
+    if zones is None and any(c in SR_CONVENTIONS for c in chosen):
+        zones = sr_zones(cubes, panel)
     prices: dict[str, FillPrices] = {}
     for c in chosen:
         sig = None
@@ -942,7 +1147,8 @@ def _price_all(
             if forecasts is None:
                 raise ValueError(f"{c} needs the volatility forecasts")
             sig = fill_sigma(forecasts, c)
-        prices[c] = cube_prices(cubes, panel, c, sig)
+        own_zones = zones if c in SR_CONVENTIONS else None
+        prices[c] = cube_prices(cubes, panel, c, sig, own_zones)
     priced: dict[str, list[Priced]] = {c: [] for c in chosen}
     for k in range(offsets):
         targets = target_path(report, mask, since_offset(panel, k))
@@ -966,6 +1172,7 @@ def study(
     cost: float = COST_BPS[0],
     conventions: Iterable[str] | None = None,
     forecasts: Aligned | None = None,
+    zones: dict[str, sr_levels.CloseZones] | None = None,
 ) -> dict[str, Any]:
     """Return the trial payload: rows per (convention, window), best, verdict."""
     if offsets < 1:
@@ -975,11 +1182,13 @@ def study(
     if forecasts is not None:
         check_grid(forecasts, panel)
     level_on = any(c in LEVELS for c in chosen)
-    priced = _price_all(report, cubes, mask, chosen, forecasts, offsets, cost)
+    sr_on = any(c in SR_CONVENTIONS for c in chosen)
+    priced = _price_all(report, cubes, mask, chosen, forecasts, offsets, cost, zones)
     median = offsets // 2
     rows: list[dict[str, Any]] = []
     best: dict[str, dict[str, Any]] = {}
     level_best: dict[str, dict[str, Any]] = {}
+    sr_best: dict[str, dict[str, Any]] = {}
     for window, (lo, hi) in WINDOWS.items():
         keep = _window(panel.dates, lo, hi)
         cagrs = {
@@ -992,6 +1201,7 @@ def study(
         # dip_or_close): each best is deflated against its own trials.
         moments: dict[str, candidate_stats.Moments] = {}
         level_moments: dict[str, candidate_stats.Moments] = {}
+        sr_moments: dict[str, candidate_stats.Moments] = {}
         for c in chosen:
             at_median = priced[c][median]
             diff = _excess(at_median.returns, control, keep)
@@ -1022,16 +1232,20 @@ def study(
                 "deferrals": int(at_median.deferrals),
                 "fallbacks": int(at_median.fallbacks),
             }
-            if level_on:
-                extra, vs_dip = _level_fields(priced, c, median, keep, cagrs)
+            if level_on or sr_on:
+                extra = _trial_fields(
+                    priced, c, median, keep, cagrs, level_on, level_moments, sr_moments
+                )
                 row.update(extra)
-                if c in LEVELS:
-                    level_moments[c] = candidate_stats.moments(vs_dip)
             rows.append(row)
         best[window] = _best(rows, window, moments)
         if level_on:
             level_best[window] = _best(
                 rows, window, level_moments, LEVEL_CONTROL, LEVEL_TRIALS, "dip"
+            )
+        if sr_on:
+            sr_best[window] = _best(
+                rows, window, sr_moments, LEVEL_CONTROL, SR_TRIALS, "dip"
             )
     payload: dict[str, Any] = {
         "policy": policy_v4.POLICY_VERSION,
@@ -1073,11 +1287,52 @@ def study(
         ),
     }
     payload.update(_fill_timing_verdict(payload, chosen))
-    if level_on:
+    _add_trial_blocks(payload, chosen, forecasts, level_best, sr_best)
+    return payload
+
+
+# The entry-level and SR trials' fields for one row: the level fields
+# (which include the comparison against dip_or_close) when a level
+# convention is priced, else the SR fields. Each trial's own conventions
+# also record their excess over dip_or_close into that trial's moments,
+# for its deflated best.
+def _trial_fields(
+    priced: dict[str, list[Priced]],
+    convention: str,
+    median: int,
+    keep: np.ndarray,
+    cagrs: dict[str, np.ndarray],
+    level_on: bool,
+    level_moments: dict[str, candidate_stats.Moments],
+    sr_moments: dict[str, candidate_stats.Moments],
+) -> dict[str, Any]:
+    """Return the row's trial fields, recording the moments of each trial's own."""
+    fields_of = _level_fields if level_on else _sr_fields
+    extra, vs_dip = fields_of(priced, convention, median, keep, cagrs)
+    if convention in LEVELS:
+        level_moments[convention] = candidate_stats.moments(vs_dip)
+    if convention in SR_CONVENTIONS:
+        sr_moments[convention] = candidate_stats.moments(vs_dip)
+    return extra
+
+
+# The payload's entry-level block when a level convention was priced and
+# its SR block when an SR convention was, each with its verdict merged in.
+def _add_trial_blocks(
+    payload: dict[str, Any],
+    chosen: tuple[str, ...],
+    forecasts: Aligned | None,
+    level_best: dict[str, dict[str, Any]],
+    sr_best: dict[str, dict[str, Any]],
+) -> None:
+    """Add the "level" and "sr_level" blocks the chosen conventions call for."""
+    if any(c in LEVELS for c in chosen):
         assert forecasts is not None  # select_conventions refuses levels without them
         payload["level"] = _level_block(forecasts, chosen, level_best)
         payload["level"].update(level_verdict(payload))
-    return payload
+    if any(c in SR_CONVENTIONS for c in chosen):
+        payload["sr_level"] = _sr_block(chosen, sr_best, payload["rows"])
+        payload["sr_level"].update(sr_verdict(payload))
 
 
 # The fill-timing verdict's fields: `verdict` when all seven of its
@@ -1363,6 +1618,122 @@ def _level_criteria(
         "passes_choosing": passes_choosing,
         "not_worse_reported": not_worse,
         "beats_twin": beats_twin,
+    }
+
+
+# The SR trial's registration as the payload records it: the conventions
+# priced and the confluence each needs, the control, the floors, the level
+# rule's constants, the deflated best per window, and per window the order
+# fields of dip_or_close and each SR convention under their own names (the
+# rows call a fill at a level a "dip" fill). The verdict is merged in by
+# `study`.
+def _sr_block(
+    chosen: tuple[str, ...],
+    sr_best: dict[str, dict[str, Any]],
+    rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Return the payload's "sr_level" block, before its verdict."""
+    shown = [c for c in chosen if c == LEVEL_CONTROL or c in SR_CONVENTIONS]
+    fills: dict[str, dict[str, dict[str, Any]]] = {c: {} for c in shown}
+    for r in rows:
+        if r["convention"] in fills:
+            fills[r["convention"]][r["window"]] = {
+                "orders": r.get("dip_orders", 0),
+                "level_fills": r.get("dip_fills", 0),
+                "level_fill_rate": r.get("dip_fill_rate", math.nan),
+                "gain_bp_per_level_fill": r.get("gain_bp_per_dip_fill", math.nan),
+                "gain_bp_per_order": r.get("gain_bp_per_order", math.nan),
+            }
+    return {
+        "plan": SR_PLAN,
+        "conventions": [c for c in chosen if c in SR_CONVENTIONS],
+        "control": LEVEL_CONTROL,
+        "min_confluence": {
+            c: SR_MIN_CONFLUENCE[c] for c in chosen if c in SR_CONVENTIONS
+        },
+        "constants": {
+            "REPLACE_BP": REPLACE_BP,
+            "REPLACE_T": REPLACE_T,
+            "SR_TRIALS": SR_TRIALS,
+            "HAC_LAG": HAC_LAG,
+            "FIRST_SLOT": sr_levels.FIRST_SLOT,
+            "ATR_SHARE": sr_levels.ATR_SHARE,
+            "ATR_SESSIONS": sr_levels.ATR_SESSIONS,
+            "MIN_WIDTH": sr_levels.MIN_WIDTH,
+            "LEVELS": list(sr_levels.KINDS),
+        },
+        "best": sr_best,
+        "fills": fills,
+        "note": (
+            "A buy fills at the first bar close from slot 2 (10:15) inside the "
+            "zone of a level below the prior bar's close while below the session "
+            "open, else at the official close; sells mirror above the open. Zones "
+            "are max(0.25 ATR14, 0.3% of the prior close) around 22 point-in-time "
+            "levels on the fills' own adjusted basis. level_fill_rate is the share "
+            "of the median offset's orders filled at a level before the close; "
+            "gains are against that session's official close in bp, positive when "
+            "better for the trader."
+        ),
+    }
+
+
+# The SR plan's criteria on the payload's rows, fixed before the run: an SR
+# convention REPLACES the board's rule only when it beats dip_or_close by
+# REPLACE_BP a session with t >= REPLACE_T on the choosing window and its
+# paired difference on the reported window is not negative. Anything else
+# is RECORD. Returns the fields `study` merges into the "sr_level" block.
+def sr_verdict(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return {"verdict", "replaces", "criteria"} for the payload."""
+    rows: list[dict[str, Any]] = payload["rows"]
+
+    # The payload's row for a convention and window, empty when absent.
+    def row(convention: str, window: str) -> dict[str, Any]:
+        for r in rows:
+            if r["convention"] == convention and r["window"] == window:
+                return r
+        return {}
+
+    criteria = {
+        c: _sr_criteria(row(c, CHOOSING), row(c, REPORTED))
+        for c in payload["conventions"]
+        if c in SR_CONVENTIONS
+    }
+    replaces = [c for c, v in criteria.items() if v["label"] == REPLACES]
+    if replaces:
+        text = (
+            f"{REPLACES}: {', '.join(replaces)} beat {LEVEL_CONTROL} by at least "
+            f"{REPLACE_BP:g} bp a session with t >= {REPLACE_T:g} on {CHOOSING} and "
+            f"are not worse on {REPORTED}; the board's rule changes only as a "
+            f"separate, registered change"
+        )
+    else:
+        text = (
+            f"{RECORD}: no level convention beats {LEVEL_CONTROL} by {REPLACE_BP:g} bp "
+            f"a session with t >= {REPLACE_T:g} on {CHOOSING} while not worse on "
+            f"{REPORTED}; the board keeps {LEVEL_CONTROL}"
+        )
+    return {"verdict": text, "replaces": replaces, "criteria": criteria}
+
+
+# One SR convention against the plan's two criteria, from its rows on the
+# choosing and reported windows: REPLACES when both hold, else RECORD. A
+# missing number (NaN, or None as JSON writes it) passes nothing.
+def _sr_criteria(choose: dict[str, Any], later_row: dict[str, Any]) -> dict[str, Any]:
+    """Return the criteria record, label included, for one SR convention."""
+    bp = choose.get("mean_daily_bp_vs_dip", math.nan)
+    t = choose.get("hac_t_vs_dip", math.nan)
+    later = later_row.get("mean_daily_bp_vs_dip", math.nan)
+    passes_choosing = bool(
+        _finite(bp) and _finite(t) and bp >= REPLACE_BP and t >= REPLACE_T
+    )
+    not_worse = bool(_finite(later) and later >= 0.0)
+    return {
+        "label": REPLACES if passes_choosing and not_worse else RECORD,
+        "choosing_bp_vs_dip": bp,
+        "choosing_t_vs_dip": t,
+        "reported_bp_vs_dip": later,
+        "passes_choosing": passes_choosing,
+        "not_worse_reported": not_worse,
     }
 
 

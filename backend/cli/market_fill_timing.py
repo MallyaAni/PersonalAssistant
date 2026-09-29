@@ -29,6 +29,20 @@ entry-level block (bp a day against `dip_or_close`, `next_open` and
 dip fill and per order over the session's close, the sigma fallbacks), the
 payload records the forecast file's sha256, and it is written to
 `<root>/desk/ml_entry_level.json` so the fill-timing payload is left alone.
+
+`--only level_dip,level_dip_confluence` prices the support/resistance
+trial of `docs/research/sr-levels-plan-2026-09-29.md`. It needs no forecasts.
+A buy waits for a bar close inside the zone of one of 22 point-in-time levels
+below the prior bar's close while below the session open, else it fills at the
+close. The confluence variant needs at least two distinct levels in the zone.
+Both are judged against `dip_or_close` (added automatically). The table gains
+the SR block: bp a day against `dip_or_close` and `next_open`, the fill rate
+at a level, and the gain per level fill and per order over the session's
+close. The payload goes to `<root>/desk/sr_level_fill.json`.
+
+    python -m backend.cli.market_fill_timing --root data/market --workers 8 \
+        --offsets 20 --cost 10 --only level_dip,level_dip_confluence
+
 Nothing here trades or changes the executor.
 """
 
@@ -51,6 +65,8 @@ from backend.market.store import MarketStore
 FILE = "fill_timing.json"
 # Where a run with a level convention writes, beside the fill-timing payload.
 LEVEL_FILE = "ml_entry_level.json"
+# Where a run with an SR convention writes, beside both.
+SR_FILE = "sr_level_fill.json"
 
 
 # The command-line parser.
@@ -95,7 +111,9 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help=(
             "comma-separated conventions to price (the controls the verdicts read "
-            "are always added); default: every registered one"
+            "are always added); default: the fill-timing seven, plus the level four "
+            "with --forecasts; the SR pair (level_dip, level_dip_confluence) only "
+            "when named"
         ),
     )
     parser.add_argument("--json", action="store_true", help="print the payload as JSON")
@@ -191,6 +209,58 @@ def _render_level(payload: dict[str, Any]) -> list[str]:
     return lines
 
 
+# The SR block: per window, the board's rule and the SR conventions against
+# dip_or_close and the open, with what their orders did at a level; the
+# deflated best; the verdict comes with the other verdict lines.
+def _render_sr(payload: dict[str, Any]) -> list[str]:
+    """Return the SR trial's lines."""
+    block = payload["sr_level"]
+    shown = (fill_timing.CONTROL, block["control"], *block["conventions"])
+    lines = [
+        "\nsupport/resistance trial: a buy at the first 10:15-on close inside a "
+        "level's zone below the open (sells mirror), against "
+        f"{block['control']} (the board's rule)"
+    ]
+    for window in payload["windows"]:
+        lines.append(f"\n{window}")
+        lines.append(
+            f"  {'convention':<22}{'CAGR':>7}{'vs dip':>8}{'bp/d':>7}{'t':>7}"
+            f"{'>dip':>6}{'vs open':>9}{'t':>7}{'at lvl':>8}"
+            f"{'bp/fill':>9}{'bp/ord':>8}"
+        )
+        for row in payload["rows"]:
+            if row["window"] != window or row["convention"] not in shown:
+                continue
+            lines.append(
+                f"  {row['convention']:<22}{_pct(row['median_cagr']):>7}"
+                f"{_pct(row['median_cagr_vs_dip']):>8}"
+                f"{_num(row['mean_daily_bp_vs_dip'], 1):>7}"
+                f"{_num(row['hac_t_vs_dip']):>7}"
+                f"{row['offsets_above_dip']:>6}"
+                f"{_num(row['mean_daily_bp_vs_open'], 1):>9}"
+                f"{_num(row['hac_t_vs_open']):>7}"
+                f"{_pct(row['dip_fill_rate']):>8}"
+                f"{_num(row['gain_bp_per_dip_fill'], 1):>9}"
+                f"{_num(row['gain_bp_per_order'], 1):>8}"
+            )
+        best = block["best"].get(window, {})
+        if best.get("convention"):
+            lines.append(
+                f"  best: {best['convention']} "
+                f"{_num(best['mean_daily_bp_vs_dip'], 1)} bp/d over "
+                f"{block['control']}, t {_num(best['hac_t_vs_dip'])}, deflated "
+                f"Sharpe {_num(best['deflated_sharpe'])} against "
+                f"{best['trials']} trials"
+            )
+    lines.append(
+        "  (bp/d and t: paired daily difference at the median offset, Newey-West; "
+        "at lvl: orders filled at a level (for dip_or_close, at its 1% dip) before "
+        "the close; bp/fill, bp/ord: gain over that session's close per level fill "
+        "and per order)"
+    )
+    return lines
+
+
 # The payload as a table people can read.
 def render(payload: dict[str, Any]) -> str:
     """Return the trial's table, best lines, gap and verdict as text."""
@@ -230,8 +300,7 @@ def render(payload: dict[str, Any]) -> str:
                 f"t {_num(best['hac_t_vs_open'])}, deflated Sharpe "
                 f"{_num(best['deflated_sharpe'])} against {best['trials']} trials"
             )
-    if "level" in payload:
-        lines.extend(_render_level(payload))
+    lines.extend(_trial_tables(payload))
     gap = payload["simulator_gap"]
     lines.append(
         f"\nnext_open against simulate.run at offset {gap['offset']}: mean |gap| "
@@ -243,13 +312,38 @@ def render(payload: dict[str, Any]) -> str:
         lines.append(payload["breakout_gate"])
     else:
         lines.append(f"\nfill-timing verdict: {payload['verdict']}")
+    lines.extend(_trial_verdicts(payload))
+    return "\n".join(lines)
+
+
+# The entry-level and SR blocks' tables, for the blocks the payload has.
+def _trial_tables(payload: dict[str, Any]) -> list[str]:
+    """Return the tables of the payload's level and SR blocks."""
+    lines: list[str] = []
+    if "level" in payload:
+        lines.extend(_render_level(payload))
+    if "sr_level" in payload:
+        lines.extend(_render_sr(payload))
+    return lines
+
+
+# The entry-level and SR verdict lines with each convention's label, for
+# the blocks the payload has.
+def _trial_verdicts(payload: dict[str, Any]) -> list[str]:
+    """Return the verdict lines of the payload's level and SR blocks."""
+    lines: list[str] = []
     if "level" in payload:
         level = payload["level"]
         lines.append(f"\nentry-level verdict: {level['verdict']}")
         lines.append(level["twin_line"])
         for convention, criteria in level["criteria"].items():
             lines.append(f"  {convention}: {criteria['label']}")
-    return "\n".join(lines)
+    if "sr_level" in payload:
+        block = payload["sr_level"]
+        lines.append(f"\nsupport/resistance verdict: {block['verdict']}")
+        for convention, criteria in block["criteria"].items():
+            lines.append(f"  {convention}: {criteria['label']}")
+    return lines
 
 
 # Run the desk, restrict, load the cubes, study, write and print.
@@ -319,7 +413,10 @@ def run(
     payload["asof"] = str(panel.dates[-1])
     payload.update(identity)
     payload = json_ready(payload)
-    target = root / "desk" / (LEVEL_FILE if "level" in payload else FILE)
+    if "sr_level" in payload:
+        target = root / "desk" / SR_FILE
+    else:
+        target = root / "desk" / (LEVEL_FILE if "level" in payload else FILE)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
     if args.json:

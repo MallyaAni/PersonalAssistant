@@ -1,5 +1,111 @@
 # Changelog
 
+## 2026-09-29 — Support and resistance across timeframes: BUILT, not run
+
+The operator's hypothesis: the neural structure models never saw support
+or resistance, and a dip into a real multi-timeframe support zone bounces
+while a dip into nothing continues. The pre-registration,
+`docs/research/sr-levels-plan-2026-09-29.md`, was committed on its own
+(`e0b38353`) before any study code. It holds the prior: RECORD, since dips
+continue on average on this book. Branch `research/sr-levels`, not merged,
+not deployed. Nothing on the live path changed.
+
+**Levels** (`backend/market/sr_levels.py`). There are 22 point-in-time
+levels in 12 families, each in force from a stated moment:
+
+- From the prior close:
+  - the nearest confirmed swing low below and swing high above it, per
+    20/60/250-session horizon (`levels.swing_points` / `_nearest`,
+    reused; a swing is kept once, at its shortest horizon);
+  - SMA 50/200;
+  - the 21-week SMA of completed weeks;
+  - the 52-week high and low;
+  - the prior day's high, low and close;
+  - the completed prior week's high and low;
+  - three volume nodes of the prior 20 cube sessions (0.25% bins).
+- From 10:00: the opening range.
+- Through the prior bar: the running VWAP (a bar-close proxy).
+
+The zone is max(0.25 ATR14, 0.3% of the prior close). Confluence counts
+the distinct level prices in a zone. The basis is `fill_timing`'s
+split-safe scale, now factored out as `fill_timing.session_scale`.
+
+**Event study** (`backend/market/sr_study.py`;
+`python -m backend.cli.market_sr_study --root --workers --json`, which
+writes `<root>/desk/sr_study.json`):
+
+- Support and resistance touches from 10:00 on member sessions.
+- Each touch is matched to non-level dips of the same name, year and slot
+  at the same depth from the open (±0.25 points), with nothing within 2w
+  beneath. A pooled same-year set is the fallback. Match rates are
+  reported.
+- Five outcomes: the return to the close, bounce, break, the next session
+  and five sessions.
+- 640 cells across side × every member / A-A+ at the prior close × window
+  × all / 12 families / confluence 1-2-3+ × outcome. A Bonferroni line of
+  |t| 3.95 and one registered primary cell.
+
+**Decision test** (`fill_timing`, extended, not forked). Two conventions
+are priced only when named: `--only level_dip,level_dip_confluence`.
+
+- A buy fills at the first 10:15-on close inside the zone of a level
+  below the prior bar's close while below the open, else at the close.
+  Sells mirror. The confluence variant needs two levels.
+- Judged against `dip_or_close`: REPLACES only at >= 2 bp a session with
+  t >= 2.0 on 2016-2023 and not worse on 2024-2026, else RECORD.
+- The fill rate at a level and the gain per level fill over the close are
+  reported.
+- The payload goes to `<root>/desk/sr_level_fill.json`.
+
+**Changed before any run (the plan's dated addendum).** On synthetic
+random-walk worlds the registered statistic, a Newey-West t on the daily
+averages, put 26.6% of cells beyond |t| 2 and 193 beyond the Bonferroni
+line. The cause: every touch of a name-year shares the same few control
+bars. The t is now month-clustered on every observation's influence, each
+touch and each control bar in its own month: 8.1% of cells and 2.5% of
+the headline cells beyond |t| 2, and 4 beyond the line across 16 worlds.
+The estimate is unchanged. The registered t stays in every cell as
+`t_daily_hac`. Controls are also matched on the exact slot, not the hour:
+at 10:00-10:15 the opening range leaves no clear bars, so the hourly
+bucket's controls had less time to the close.
+
+**Controls unchanged, VERIFIED locally.**
+
+- 834 sha256s match `8c918c4a` on four synthetic worlds: every original
+  and entry-level convention's fill prices, per-offset returns, counts,
+  order logs, per-cube session prices and study payloads.
+- The fill-timing command's printed text and written JSON are identical
+  for a plain run and a forecasts run.
+- `session_scale` reproduces the old inline arithmetic bit for bit. A cube
+  session the panel lacks now scales to NaN instead of raising a
+  broadcast error.
+
+**Tests.** 34 new, in `test_sr_levels.py`, `test_sr_study.py` and
+`test_fill_timing_sr.py`:
+
+- every level's availability, shown by perturbing everything after the
+  decision point;
+- the zone width;
+- touches on hand-built bars: from above, never from below, never before
+  slot 2;
+- confluence;
+- the match rules by hand;
+- the month-clustered t checked by brute force;
+- the grade read at the prior close;
+- a null world near nominal, and a planted bounce that reads SUPPORTED;
+- both conventions' fills on hand-built paths;
+- a floor-support world that REPLACES, and noise that RECORDS;
+- the criteria at their edges;
+- both commands end to end on a temporary SIP store, including the
+  process pool.
+
+26 planted defects are each caught. The affected suites: 212 passed, 6
+skipped (torch). `test_options_evidence_provenance` (2, the pyarrow shim)
+and `test_functional_coverage_completeness` (sqlalchemy) fail identically
+on `main`.
+
+Not yet run on the Spark; no number in this entry is a market result.
+
 ## 2026-09-28 — Reviewed GPT 6's research branch: its correctness fixes ported to a branch, the rest not
 
 Reviewed GPT 6's research branch: ported the row-selection fix, head guard,

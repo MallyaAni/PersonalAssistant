@@ -329,3 +329,65 @@ The first writes `<root>/desk/sr_study.json`. The second prices
 `next_open`, `dip_or_close` and the two level conventions (80 ledger
 walks) and writes `<root>/desk/sr_level_fill.json`, leaving
 `fill_timing.json` alone.
+
+## Addendum (2026-09-29, before any run on market data): the match slot and the t
+
+The event study was built after this note was committed. Before its first
+run it was checked on synthetic **null worlds**:
+
+- 12 names and 1,600 sessions each;
+- every fifteen-minute bar a pure random walk, and daily bars built from
+  those bars;
+- so no level means anything, and every outcome is unpredictable.
+
+Two registered details failed that check. Both are changed here, before
+any market data is read. Nothing else in this note changes: not the
+levels, the zone, the events, the outcomes, the estimate, the cells, the
+Bonferroni line, the primary test, or the decision test and its criteria.
+
+1. **Controls are matched on the same fifteen-minute slot, not the same
+   hour.** At 10:00-10:15 the opening range comes into force right beside
+   the price. So almost no bar in that slot has 2w of clearance, and the
+   hourly bucket's controls came from its later slots: 0% of controls sat
+   at 10:00-10:15, against 24% of touches. Those controls had less time to
+   the close than their touches. That biases bounce and break, and it
+   would pick up any real time-of-day drift. The same slot gives every
+   control the same time left, and a name has one bar per slot per
+   session, so a same-name control is always from another session. The
+   pooled fallback is by year and slot.
+2. **The t is clustered by calendar month on every observation, not
+   Newey-West on the daily averages of the differences.** Every touch of
+   a name in a year and slot averages the same few control bars, often a
+   handful of trend days. The registered statistic filed that shared noise
+   under each touch's own date, where a lag-10 kernel cannot see it. The
+   estimate stays exactly as registered: the mean over dates of the daily
+   average of touch minus control. That estimate is a weighted sum over
+   every touch and every control bar, and each enters in its own session's
+   month. The month clusters also absorb the same-date cross-section, the
+   same-session pairs and most of `r_5`'s overlap. A t needs at least 30
+   dates and 12 months. The registered t is still written into every cell
+   as `t_daily_hac`, for the record. The primary test and the Bonferroni
+   count read the new t.
+
+On 16 null worlds (5,120 cells of the choosing window):
+
+| statistic | cells beyond \|t\| 2 | headline "all" cells beyond \|t\| 2 | cells beyond 3.95 |
+|---|---|---|---|
+| registered: Newey-West on daily averages, hourly bucket | 26.6% | — | 193 |
+| new: month-clustered, same slot | 8.1% | 2.5% | 4 |
+
+The nominal rate is 5%. The residual excess sits in small subgroup cells,
+where a cluster-robust variance on few months runs low. So a subgroup cell
+near the Bonferroni line is read with that in mind; the primary test is a
+headline cell.
+
+Also found while building: the Brownian-bridge cubes of the fill-timing
+tests pin each session's close to an independent daily close. That makes
+path shape predictive by construction: the primary cell read -7.9 bp
+there, t -3.3 month-clustered and -7.4 registered. So they are not a null
+for this study; its null tests use the random-walk worlds. The real market's intraday path is not a pure random
+walk either. Touches and controls are matched on depth, time and name,
+not on how the price got there. So any intraday momentum or reversal that
+depends on the path, not the level, loads onto the touch-minus-control
+difference. The family and confluence splits are where a level effect
+would show as distinct from it.

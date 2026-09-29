@@ -69,6 +69,24 @@ strategy that changes only when untouched sessions say so.
   of the fundamentals switch after a week of blocks; the FOMC verdict
   after six meetings; nothing on strategy.
 
+- 2026-09-29: support and resistance across timeframes, BUILT and not
+  run ([research/sr-levels-plan-2026-09-29.md](research/sr-levels-plan-2026-09-29.md);
+  `market/sr_levels.py`, `market/sr_study.py`, `python -m
+  backend.cli.market_sr_study`, and `market_fill_timing --only
+  level_dip,level_dip_confluence`). The operator's claim is that a dip
+  into a real multi-timeframe support zone bounces and a dip into nothing
+  continues. The test uses 22 point-in-time levels: daily swings at
+  20/60/250, SMA 50/200, weekly SMA 21, the 52-week range, prior day and
+  week, 20-session volume nodes, the opening range and the running VWAP.
+  Every 10:00-on touch of a zone is matched to non-level dips of the same
+  name, year and slot at the same depth from the open. The decision test
+  is two fill conventions against `dip_or_close` on the `/4` policy's
+  orders, which replace the board's rule only at >= 2 bp a session with
+  t >= 2.0 on 2016-2023 and not worse after. Before any run, the
+  statistic was changed (month-clustered on every observation) after the
+  registered one put 27% of null cells beyond |t| 2. Prior: RECORD.
+  Next: run both on the Spark and write the results note.
+
 - 2026-09-28: ML entry level RAN
   ([research/ml-entry-level-2026-09-28.md](research/ml-entry-level-2026-09-28.md))
   - a level scaled by the CNN's volatility forecast is no better than
