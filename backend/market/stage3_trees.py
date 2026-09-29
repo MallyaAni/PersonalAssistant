@@ -69,9 +69,11 @@ from backend.market import stage3_io as io
 # LightGBM's threads: the plan's num_threads, the RTX desktop's i9-10900K.
 DEFAULT_THREADS = 20
 # The Dataset's own settings: the registered max_bin, and no feature
-# pre-filter. A pre-filter reads min_data_in_leaf, which the grid varies,
-# so without this one binned Dataset could not serve every configuration
-# and a column's presence would depend on the configuration.
+# pre-filter. The Dataset is binned once a fold, before any configuration,
+# and shared by all of them; a pre-filter would drop columns by the
+# Dataset's own min_data_in_leaf (LightGBM's default 20, not a grid value),
+# and a Dataset filtered at one configuration's value refuses a smaller
+# one. Without it every non-constant column is open to every configuration.
 DATASET_PARAMS: dict[str, Any] = {
     "max_bin": io.LGBM_FIXED["max_bin"],
     "feature_pre_filter": False,
