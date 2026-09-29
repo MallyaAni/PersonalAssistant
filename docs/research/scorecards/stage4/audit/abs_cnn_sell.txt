@@ -1,0 +1,21 @@
+stage 4 cnn_i20 (M2) on g_sell: 88,063 rows, 82,632 labelled, 2,699 sessions 2016-01-04..2026-09-28; labels E:\AgentWorkspace\rtx-data\stage4\audit\stage4_labels_abs.npz (46be270b) from E:\AgentWorkspace\rtx-data\stage3\stage3_s1.npz (7fa24f7e)
+M2 cnn_i20 on g_sell: 3 of 9 folds (test blocks of 252 sessions, gap 11); 1 configurations with seed 0 chosen by pooled_spearman, the chosen one with 5 seeds; device cuda; NOT the registered settings
+  fold 1/3 config 1/1 lr=1e-05 seed 0: 3 epochs (best 1), val loss 0.76901, score -0.0045, 3 s
+  fold 1/3 chosen lr=1e-05 seed 1: 3 epochs (best 1), val loss 1.03631, score nan, 2 s
+  fold 1/3 chosen lr=1e-05 seed 2: 3 epochs (best 1), val loss 0.78001, score nan, 2 s
+  fold 1/3 chosen lr=1e-05 seed 3: 3 epochs (best 1), val loss 0.76597, score nan, 2 s
+  fold 1/3 chosen lr=1e-05 seed 4: 3 epochs (best 1), val loss 0.77584, score nan, 2 s
+fold 1/3: test 2017-12-27..2018-12-27 (6,437 rows), fit 4,996 / validation 5,797 units; chose #1 lr=1e-05 (score -0.0045), 5 seeds, 11 s
+  fold 2/3 config 1/1 lr=1e-05 seed 0: 4 epochs (best 2), val loss 2.13813, score +0.0206, 4 s
+  fold 2/3 chosen lr=1e-05 seed 1: 5 epochs (best 3), val loss 2.03733, score nan, 5 s
+  fold 2/3 chosen lr=1e-05 seed 2: 3 epochs (best 1), val loss 2.04485, score nan, 3 s
+  fold 2/3 chosen lr=1e-05 seed 3: 9 epochs (best 7), val loss 1.95992, score nan, 10 s
+  fold 2/3 chosen lr=1e-05 seed 4: 5 epochs (best 3), val loss 2.05752, score nan, 5 s
+fold 2/3: test 2018-12-28..2019-12-27 (6,829 rows), fit 10,748 / validation 6,023 units; chose #1 lr=1e-05 (score +0.0206), 5 seeds, 30 s
+  fold 3/3 config 1/1 lr=1e-05 seed 0: 13 epochs (best 11), val loss 1.29447, score +0.0321, 21 s
+  fold 3/3 chosen lr=1e-05 seed 1: 10 epochs (best 8), val loss 1.32948, score nan, 16 s
+  fold 3/3 chosen lr=1e-05 seed 2: 6 epochs (best 4), val loss 1.38749, score nan, 10 s
+  fold 3/3 chosen lr=1e-05 seed 3: 18 epochs (best 16), val loss 1.24447, score nan, 29 s
+  fold 3/3 chosen lr=1e-05 seed 4: 8 epochs (best 6), val loss 1.33397, score nan, 13 s
+fold 3/3: test 2019-12-30..2020-12-28 (7,257 rows), fit 16,749 / validation 6,378 units; chose #1 lr=1e-05 (score +0.0321), 5 seeds, 91 s
+wrote E:\AgentWorkspace\rtx-data\stage4\audit\abs_cnn_sell.npz: 88,063 rows, 20,523 forecast (2017-12-27..2020-12-28), 3 folds, NOT the registered settings, 136 s

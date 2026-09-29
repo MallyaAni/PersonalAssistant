@@ -1,0 +1,128 @@
+{
+ "lgbm_buy": {
+  "test_rows": 71334,
+  "test_dates": [
+   "2017-12-27",
+   "2026-09-28"
+  ],
+  "abs_target": {
+   "pooled_spearman": 0.2830023140800757,
+   "mean_daily_ic": 0.2721693787338768,
+   "days": 2098
+  },
+  "signed_target_registered": {
+   "pooled_spearman": 0.002497087488907722,
+   "mean_daily_ic": -0.0054489732461168745,
+   "days": 2067
+  },
+  "registered_abs_forecast_vs_abs_label": {
+   "pooled_spearman": -0.02901345826068147,
+   "mean_daily_ic": 0.010637094671164044
+  }
+ },
+ "lgbm_sell": {
+  "test_rows": 71334,
+  "test_dates": [
+   "2017-12-27",
+   "2026-09-28"
+  ],
+  "abs_target": {
+   "pooled_spearman": 0.2566815631974125,
+   "mean_daily_ic": 0.27046559479071536,
+   "days": 2098
+  },
+  "signed_target_registered": {
+   "pooled_spearman": 0.0249633696191791,
+   "mean_daily_ic": 0.013237732453166413,
+   "days": 2085
+  },
+  "registered_abs_forecast_vs_abs_label": {
+   "pooled_spearman": 0.06808146337332041,
+   "mean_daily_ic": 0.0437348053579097
+  }
+ },
+ "cnn_i20_buy": {
+  "test_rows": 19203,
+  "test_dates": [
+   "2017-12-27",
+   "2020-12-28"
+  ],
+  "abs_target": {
+   "pooled_spearman": 0.07716127512606344,
+   "mean_daily_ic": 0.018835451061931425,
+   "days": 710
+  },
+  "signed_target_registered": {
+   "pooled_spearman": 0.015331476815832634,
+   "mean_daily_ic": -0.001125916578990772,
+   "days": 710
+  },
+  "registered_abs_forecast_vs_abs_label": {
+   "pooled_spearman": 0.02110189129103058,
+   "mean_daily_ic": -0.014151045498118024
+  }
+ },
+ "cnn_i20_sell": {
+  "test_rows": 19203,
+  "test_dates": [
+   "2017-12-27",
+   "2020-12-28"
+  ],
+  "abs_target": {
+   "pooled_spearman": 0.06439865407043427,
+   "mean_daily_ic": 0.02722787916786003,
+   "days": 710
+  },
+  "signed_target_registered": {
+   "pooled_spearman": -0.04446534571886857,
+   "mean_daily_ic": -0.004316837028865926,
+   "days": 710
+  },
+  "registered_abs_forecast_vs_abs_label": {
+   "pooled_spearman": 0.020737415519642585,
+   "mean_daily_ic": 0.006037265198386119
+  }
+ },
+ "seq_buy": {
+  "test_rows": 18981,
+  "test_dates": [
+   "2017-12-27",
+   "2020-12-28"
+  ],
+  "abs_target": {
+   "pooled_spearman": 0.2663649333755212,
+   "mean_daily_ic": 0.2018132269771506,
+   "days": 702
+  },
+  "signed_target_registered": {
+   "pooled_spearman": 0.003681853590218002,
+   "mean_daily_ic": 0.006374530319524811,
+   "days": 702
+  },
+  "registered_abs_forecast_vs_abs_label": {
+   "pooled_spearman": -0.04482030618673136,
+   "mean_daily_ic": -0.003503119295981424
+  }
+ },
+ "seq_sell": {
+  "test_rows": 18981,
+  "test_dates": [
+   "2017-12-27",
+   "2020-12-28"
+  ],
+  "abs_target": {
+   "pooled_spearman": 0.2189548622943349,
+   "mean_daily_ic": 0.21939455582068984,
+   "days": 702
+  },
+  "signed_target_registered": {
+   "pooled_spearman": 0.003661615284652974,
+   "mean_daily_ic": 0.01844884441209913,
+   "days": 702
+  },
+  "registered_abs_forecast_vs_abs_label": {
+   "pooled_spearman": -0.03986955585935012,
+   "mean_daily_ic": 0.014245692524333282
+  }
+ }
+}

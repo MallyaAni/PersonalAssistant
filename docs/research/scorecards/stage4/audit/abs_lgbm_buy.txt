@@ -1,0 +1,38 @@
+stage 4 lgbm (M1) on g_buy: 88,063 rows, 82,632 labelled, 2,699 sessions 2016-01-04..2026-09-28; labels E:\AgentWorkspace\rtx-data\stage4\audit\stage4_labels_abs.npz (46be270b) from E:\AgentWorkspace\rtx-data\stage3\stage3_s1.npz (7fa24f7e)
+M1 LightGBM on g_buy: 35 of 35 folds (test blocks of 63 sessions, gap 11); 8 configurations with seed 0 chosen by pooled Spearman, the chosen one refit with 5 seeds; bagging 0.7; 16 threads; registered settings
+fold 0 of 35: test 2017-12-27..2018-03-28 (1,575 rows); chosen #3 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 1000), best_iter 74, validation score +0.2568; refit 163 rounds x 5 seeds; 3.6 s
+fold 1 of 35: test 2018-03-29..2018-06-27 (1,575 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 54, validation score +0.3228; refit 106 rounds x 5 seeds; 5.8 s
+fold 2 of 35: test 2018-06-28..2018-09-26 (1,596 rows); chosen #4 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 200), best_iter 138, validation score +0.3250; refit 245 rounds x 5 seeds; 10.8 s
+fold 3 of 35: test 2018-09-27..2018-12-27 (1,691 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 44, validation score +0.3035; refit 73 rounds x 5 seeds; 7.5 s
+fold 4 of 35: test 2018-12-28..2019-03-29 (1,701 rows); chosen #6 (num_leaves 63, learning_rate 0.05, min_data_in_leaf 200), best_iter 73, validation score +0.3166; refit 116 rounds x 5 seeds; 15.5 s
+fold 5 of 35: test 2019-04-01..2019-06-28 (1,701 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 96, validation score +0.3080; refit 145 rounds x 5 seeds; 14.4 s
+fold 6 of 35: test 2019-07-01..2019-09-27 (1,701 rows); chosen #6 (num_leaves 63, learning_rate 0.05, min_data_in_leaf 200), best_iter 87, validation score +0.3073; refit 128 rounds x 5 seeds; 20.3 s
+fold 7 of 35: test 2019-09-30..2019-12-27 (1,726 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 88, validation score +0.2922; refit 126 rounds x 5 seeds; 16.3 s
+fold 8 of 35: test 2019-12-30..2020-03-30 (1,764 rows); chosen #1 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 1000), best_iter 251, validation score +0.2692; refit 351 rounds x 5 seeds; 25.3 s
+fold 9 of 35: test 2020-03-31..2020-06-29 (1,770 rows); chosen #3 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 1000), best_iter 82, validation score +0.2443; refit 112 rounds x 5 seeds; 20.2 s
+fold 10 of 35: test 2020-06-30..2020-09-28 (1,833 rows); chosen #0 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 200), best_iter 339, validation score +0.3641; refit 454 rounds x 5 seeds; 52.1 s
+fold 11 of 35: test 2020-09-29..2020-12-28 (1,890 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 161, validation score +0.3309; refit 214 rounds x 5 seeds; 53.2 s
+fold 12 of 35: test 2020-12-29..2021-03-30 (1,977 rows); chosen #1 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 1000), best_iter 1004, validation score +0.3145; refit 1314 rounds x 5 seeds; 96.6 s
+fold 13 of 35: test 2021-03-31..2021-06-29 (2,129 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 142, validation score +0.3131; refit 184 rounds x 5 seeds; 48.9 s
+fold 14 of 35: test 2021-06-30..2021-09-28 (2,142 rows); chosen #0 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 200), best_iter 163, validation score +0.2433; refit 211 rounds x 5 seeds; 24.6 s
+fold 15 of 35: test 2021-09-29..2021-12-28 (2,142 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 76, validation score +0.2962; refit 98 rounds x 5 seeds; 22.8 s
+fold 16 of 35: test 2021-12-29..2022-03-29 (2,142 rows); chosen #5 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 1000), best_iter 335, validation score +0.2910; refit 426 rounds x 5 seeds; 42.5 s
+fold 17 of 35: test 2022-03-30..2022-06-29 (2,149 rows); chosen #3 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 1000), best_iter 104, validation score +0.3224; refit 132 rounds x 5 seeds; 30.6 s
+fold 18 of 35: test 2022-06-30..2022-09-28 (2,205 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 41, validation score +0.3044; refit 51 rounds x 5 seeds; 20.2 s
+fold 19 of 35: test 2022-09-29..2022-12-28 (2,212 rows); chosen #0 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 200), best_iter 60, validation score +0.2479; refit 74 rounds x 5 seeds; 20.8 s
+fold 20 of 35: test 2022-12-29..2023-03-30 (2,277 rows); chosen #0 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 200), best_iter 72, validation score +0.2393; refit 89 rounds x 5 seeds; 22.2 s
+fold 21 of 35: test 2023-03-31..2023-06-30 (2,340 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 16, validation score +0.2413; refit 20 rounds x 5 seeds; 19.3 s
+fold 22 of 35: test 2023-07-03..2023-09-29 (2,394 rows); chosen #4 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 200), best_iter 72, validation score +0.2433; refit 88 rounds x 5 seeds; 29.1 s
+fold 23 of 35: test 2023-10-02..2023-12-29 (2,394 rows); chosen #4 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 200), best_iter 110, validation score +0.2564; refit 133 rounds x 5 seeds; 33.5 s
+fold 24 of 35: test 2024-01-02..2024-04-02 (2,394 rows); chosen #4 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 200), best_iter 179, validation score +0.2090; refit 215 rounds x 5 seeds; 45.3 s
+fold 25 of 35: test 2024-04-03..2024-07-02 (2,401 rows); chosen #4 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 200), best_iter 149, validation score +0.2234; refit 177 rounds x 5 seeds; 44.9 s
+fold 26 of 35: test 2024-07-03..2024-10-01 (2,464 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 70, validation score +0.2511; refit 83 rounds x 5 seeds; 37.0 s
+fold 27 of 35: test 2024-10-02..2024-12-31 (2,526 rows); chosen #5 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 1000), best_iter 410, validation score +0.2907; refit 482 rounds x 5 seeds; 76.8 s
+fold 28 of 35: test 2025-01-02..2025-04-03 (2,583 rows); chosen #0 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 200), best_iter 763, validation score +0.3162; refit 893 rounds x 5 seeds; 85.3 s
+fold 29 of 35: test 2025-04-04..2025-07-07 (2,583 rows); chosen #0 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 200), best_iter 545, validation score +0.3213; refit 634 rounds x 5 seeds; 75.5 s
+fold 30 of 35: test 2025-07-08..2025-10-03 (2,645 rows); chosen #0 (num_leaves 15, learning_rate 0.02, min_data_in_leaf 200), best_iter 667, validation score +0.3406; refit 774 rounds x 5 seeds; 89.1 s
+fold 31 of 35: test 2025-10-06..2026-01-05 (2,689 rows); chosen #4 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 200), best_iter 224, validation score +0.2992; refit 259 rounds x 5 seeds; 75.4 s
+fold 32 of 35: test 2026-01-06..2026-04-07 (2,760 rows); chosen #4 (num_leaves 63, learning_rate 0.02, min_data_in_leaf 200), best_iter 322, validation score +0.3037; refit 372 rounds x 5 seeds; 86.0 s
+fold 33 of 35: test 2026-04-08..2026-07-08 (2,847 rows); chosen #2 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 200), best_iter 236, validation score +0.3216; refit 272 rounds x 5 seeds; 70.3 s
+fold 34 of 35: test 2026-07-09..2026-09-28 (3,377 rows); chosen #3 (num_leaves 15, learning_rate 0.05, min_data_in_leaf 1000), best_iter 220, validation score +0.2789; refit 254 rounds x 5 seeds; 73.0 s
+wrote E:\AgentWorkspace\rtx-data\stage4\audit\abs_lgbm_buy.npz: 88,063 rows, 76,295 forecast (2017-12-27..2026-09-28), 35 folds, registered settings, 1417 s

@@ -1,0 +1,266 @@
+{
+ "2018-2023 buy": {
+  "orders": 1042,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": 14.795618010204175,
+   "t_naive": 3.064226994892446,
+   "median_bp": 17.996276729393912,
+   "weighted_mean_bp": 20.27091597789222,
+   "share_against": 0.5700575815738963
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": -1.4594186163709233,
+   "t_naive": -0.47700794370928723,
+   "median_bp": 1.7447007184421965,
+   "weighted_mean_bp": 1.3366054638095766,
+   "share_against": 0.5067178502879078
+  },
+  "decision close -> board's fill": {
+   "mean_bp": 21.421100276763138,
+   "t_naive": 3.1824524075594063,
+   "median_bp": -4.145474960800442,
+   "weighted_mean_bp": 23.592457578940955,
+   "share_against": 0.491362763915547
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": 35.078455922160956,
+   "t_naive": 2.109230717391047,
+   "median_bp": 69.17787402249306,
+   "weighted_mean_bp": 19.50501983766871,
+   "share_against": 0.5595009596928983
+  },
+  "decision close -> close t+5": {
+   "mean_bp": 56.49955619892408,
+   "t_naive": 3.180676757235889,
+   "median_bp": 80.1515711749881,
+   "weighted_mean_bp": 43.09747741660968,
+   "share_against": 0.5700575815738963
+  },
+  "by_detail": {
+   "add": {
+    "orders": 484,
+    "overnight_mean_bp": 10.971196432151453,
+    "close_to_fill_mean_bp": 5.251860307430205,
+    "fill_to_t5_mean_bp": 47.34871069575947
+   },
+   "entry": {
+    "orders": 252,
+    "overnight_mean_bp": 15.930963619569573,
+    "close_to_fill_mean_bp": 18.691465241555086,
+    "fill_to_t5_mean_bp": 11.990733438692205
+   },
+   "retry": {
+    "orders": 306,
+    "overnight_mean_bp": 19.909712618757887,
+    "close_to_fill_mean_bp": 49.24391130300355,
+    "fill_to_t5_mean_bp": 34.68402048233234
+   }
+  },
+  "earnings_after_close": {
+   "orders": 23,
+   "overnight_mean_bp": 25.72316232992666,
+   "overnight_mean_bp_without": 14.548970788071088
+  }
+ },
+ "2018-2023 sell": {
+  "orders": 366,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": 84.38707930215898,
+   "t_naive": 17.58067923002965,
+   "median_bp": 60.84679156997018,
+   "weighted_mean_bp": 84.02507775973477,
+   "share_against": 0.9699453551912568
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": -5.1581730315493886,
+   "t_naive": -0.9698085468747953,
+   "median_bp": -8.824955737902375,
+   "weighted_mean_bp": -6.207713472681377,
+   "share_against": 0.453551912568306
+  },
+  "decision close -> board's fill": {
+   "mean_bp": 69.14688912701689,
+   "t_naive": 7.1806563220659445,
+   "median_bp": 26.63273077704813,
+   "weighted_mean_bp": 73.6719421902034,
+   "share_against": 0.5737704918032787
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": -88.70301708584886,
+   "t_naive": -3.074829082362483,
+   "median_bp": -72.70725151070971,
+   "weighted_mean_bp": -66.97492606718882,
+   "share_against": 0.39617486338797814
+  },
+  "decision close -> close t+5": {
+   "mean_bp": -19.556127958831905,
+   "t_naive": -0.6518843858678313,
+   "median_bp": -35.974284265892244,
+   "weighted_mean_bp": 6.697016123014617,
+   "share_against": 0.4644808743169399
+  },
+  "by_detail": {
+   "reset_exit": {
+    "orders": 20,
+    "overnight_mean_bp": 100.84549337244971,
+    "close_to_fill_mean_bp": 106.37218227021337,
+    "fill_to_t5_mean_bp": 40.62009645599335
+   },
+   "rotation_exit": {
+    "orders": 238,
+    "overnight_mean_bp": 83.79741383474988,
+    "close_to_fill_mean_bp": 72.69582060128133,
+    "fill_to_t5_mean_bp": -82.85609985136875
+   },
+   "trim": {
+    "orders": 108,
+    "overnight_mean_bp": 82.6386728191734,
+    "close_to_fill_mean_bp": 54.43252288869407,
+    "fill_to_t5_mean_bp": -125.53661498069249
+   }
+  },
+  "earnings_after_close": {
+   "orders": 9,
+   "overnight_mean_bp": 238.40011950684317,
+   "overnight_mean_bp_without": 80.50439761632661
+  }
+ },
+ "2024-2026 buy": {
+  "orders": 383,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": 38.56650376151016,
+   "t_naive": 2.784762938046304,
+   "median_bp": 28.252651272114125,
+   "weighted_mean_bp": 2.99868270162071,
+   "share_against": 0.597911227154047
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": -8.88814467221245,
+   "t_naive": -1.2084159224731241,
+   "median_bp": -8.341211627479527,
+   "weighted_mean_bp": -4.47845865849875,
+   "share_against": 0.4490861618798956
+  },
+  "decision close -> board's fill": {
+   "mean_bp": 45.56517940543117,
+   "t_naive": 2.569276859467456,
+   "median_bp": 14.393156175548343,
+   "weighted_mean_bp": 5.097785348930251,
+   "share_against": 0.5248041775456919
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": 27.924061055544403,
+   "t_naive": 0.8336119475609227,
+   "median_bp": 49.56024407542645,
+   "weighted_mean_bp": 60.0023324687088,
+   "share_against": 0.5404699738903395
+  },
+  "decision close -> close t+5": {
+   "mean_bp": 73.4892404609756,
+   "t_naive": 1.9229105206447323,
+   "median_bp": 55.04357345010391,
+   "weighted_mean_bp": 65.10011781763895,
+   "share_against": 0.5352480417754569
+  },
+  "by_detail": {
+   "add": {
+    "orders": 191,
+    "overnight_mean_bp": 41.03540660608996,
+    "close_to_fill_mean_bp": 33.96447143857339,
+    "fill_to_t5_mean_bp": 16.694594157446502
+   },
+   "entry": {
+    "orders": 111,
+    "overnight_mean_bp": -5.7528461866106015,
+    "close_to_fill_mean_bp": 19.08897618082967,
+    "fill_to_t5_mean_bp": 4.582235810388299
+   },
+   "event_buy": {
+    "orders": 17,
+    "overnight_mean_bp": 200.73930960464943,
+    "close_to_fill_mean_bp": 375.2843418940219,
+    "fill_to_t5_mean_bp": 415.7926209126449
+   },
+   "retry": {
+    "orders": 64,
+    "overnight_mean_bp": 64.98759284890544,
+    "close_to_fill_mean_bp": 38.52405467565862,
+    "fill_to_t5_mean_bp": -1.1071067229193794
+   }
+  },
+  "earnings_after_close": {
+   "orders": 7,
+   "overnight_mean_bp": -57.75276607062941,
+   "overnight_mean_bp_without": 40.35968165732127
+  }
+ },
+ "2024-2026 sell": {
+  "orders": 158,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": 99.73212721232946,
+   "t_naive": 5.638092183445538,
+   "median_bp": 61.4244966557047,
+   "weighted_mean_bp": 93.46127701267822,
+   "share_against": 0.8734177215189873
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": -6.230167019928839,
+   "t_naive": -0.5457930960027914,
+   "median_bp": -17.479329484072586,
+   "weighted_mean_bp": 4.374951688298022,
+   "share_against": 0.43670886075949367
+  },
+  "decision close -> board's fill": {
+   "mean_bp": 85.0867408218636,
+   "t_naive": 3.1100529598250692,
+   "median_bp": 22.87190420679378,
+   "weighted_mean_bp": 80.9517960494293,
+   "share_against": 0.5759493670886076
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": 83.83344458368519,
+   "t_naive": 1.815595559572179,
+   "median_bp": 26.5433713956342,
+   "weighted_mean_bp": 91.29620663675426,
+   "share_against": 0.5379746835443038
+  },
+  "decision close -> close t+5": {
+   "mean_bp": 168.92018540554875,
+   "t_naive": 3.045504926636945,
+   "median_bp": 117.8817086615648,
+   "weighted_mean_bp": 172.24800268618353,
+   "share_against": 0.5759493670886076
+  },
+  "by_detail": {
+   "event_sell": {
+    "orders": 17,
+    "overnight_mean_bp": -99.16053404900077,
+    "close_to_fill_mean_bp": -160.82936652442203,
+    "fill_to_t5_mean_bp": -73.03989009951886
+   },
+   "reset_exit": {
+    "orders": 4,
+    "overnight_mean_bp": 79.45802369653467,
+    "close_to_fill_mean_bp": 50.722900106569234,
+    "fill_to_t5_mean_bp": 217.63392504749228
+   },
+   "rotation_exit": {
+    "orders": 109,
+    "overnight_mean_bp": 110.13576412885253,
+    "close_to_fill_mean_bp": 114.65570589427695,
+    "fill_to_t5_mean_bp": 86.70845392715232
+   },
+   "trim": {
+    "orders": 28,
+    "overnight_mean_bp": 182.88481405535734,
+    "close_to_fill_mean_bp": 124.19431206668425,
+    "fill_to_t5_mean_bp": 148.77161420230394
+   }
+  },
+  "earnings_after_close": {
+   "orders": 3,
+   "overnight_mean_bp": 189.13308632270673,
+   "overnight_mean_bp_without": 98.00178606825764
+  }
+ }
+}

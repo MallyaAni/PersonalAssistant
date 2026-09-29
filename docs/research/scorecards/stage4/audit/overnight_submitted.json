@@ -1,0 +1,266 @@
+{
+ "2018-2023 buy": {
+  "orders": 1065,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": 14.552794949314116,
+   "t_naive": 3.0633979078766354,
+   "median_bp": 17.1215962113545,
+   "weighted_mean_bp": 14.924796543971377,
+   "share_against": 0.5671361502347417
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": -1.2154455604640053,
+   "t_naive": -0.40298126086295505,
+   "median_bp": 2.0060520312123873,
+   "weighted_mean_bp": 2.904026851750258,
+   "share_against": 0.5070422535211268
+  },
+  "decision close -> board's fill": {
+   "mean_bp": 22.282829224532357,
+   "t_naive": 3.3578715356577002,
+   "median_bp": -3.5605728677312225,
+   "weighted_mean_bp": 19.492622892840643,
+   "share_against": 0.49295774647887325
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": 31.329904845499563,
+   "t_naive": 1.9079791918380478,
+   "median_bp": 64.85293445200261,
+   "weighted_mean_bp": 9.51634280706701,
+   "share_against": 0.5577464788732395
+  },
+  "decision close -> close t+5": {
+   "mean_bp": 53.61273407003189,
+   "t_naive": 3.0602655703711634,
+   "median_bp": 79.91140898695423,
+   "weighted_mean_bp": 29.008965699907666,
+   "share_against": 0.5671361502347417
+  },
+  "by_detail": {
+   "add": {
+    "orders": 493,
+    "overnight_mean_bp": 11.361560556840073,
+    "close_to_fill_mean_bp": 5.366785006089565,
+    "fill_to_t5_mean_bp": 40.437967914201316
+   },
+   "entry": {
+    "orders": 266,
+    "overnight_mean_bp": 14.304906786306246,
+    "close_to_fill_mean_bp": 22.619365629344806,
+    "fill_to_t5_mean_bp": 10.590677485571725
+   },
+   "retry": {
+    "orders": 306,
+    "overnight_mean_bp": 19.909712618757887,
+    "close_to_fill_mean_bp": 49.24391130300355,
+    "fill_to_t5_mean_bp": 34.68402048233234
+   }
+  },
+  "earnings_after_close": {
+   "orders": 23,
+   "overnight_mean_bp": 25.72316232992666,
+   "overnight_mean_bp_without": 14.306232137649923
+  }
+ },
+ "2018-2023 sell": {
+  "orders": 777,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": -10.490772391320318,
+   "t_naive": -2.1935651167009023,
+   "median_bp": -7.443721108302456,
+   "weighted_mean_bp": -11.533397798231826,
+   "share_against": 0.4646074646074646
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": 0.2964350789507934,
+   "t_naive": 0.08387409091159549,
+   "median_bp": -3.021148059233876,
+   "weighted_mean_bp": -1.1659452128335988,
+   "share_against": 0.47619047619047616
+  },
+  "decision close -> board's fill": {
+   "mean_bp": -15.887218670967847,
+   "t_naive": -2.1339659872211993,
+   "median_bp": -37.55996201678433,
+   "weighted_mean_bp": -15.483283230445899,
+   "share_against": 0.41827541827541825
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": -66.76351921651914,
+   "t_naive": -3.6545085249506717,
+   "median_bp": -77.26222508282459,
+   "weighted_mean_bp": -65.40375323731985,
+   "share_against": 0.4015444015444015
+  },
+  "decision close -> close t+5": {
+   "mean_bp": -82.65073788748698,
+   "t_naive": -4.258063384571067,
+   "median_bp": -95.29140968566068,
+   "weighted_mean_bp": -80.88703646776574,
+   "share_against": 0.40540540540540543
+  },
+  "by_detail": {
+   "reset_exit": {
+    "orders": 30,
+    "overnight_mean_bp": 31.173240709418067,
+    "close_to_fill_mean_bp": 28.704992203571372,
+    "fill_to_t5_mean_bp": 21.849085667104397
+   },
+   "rotation_exit": {
+    "orders": 519,
+    "overnight_mean_bp": -9.646092871503718,
+    "close_to_fill_mean_bp": -12.382709865818654,
+    "fill_to_t5_mean_bp": -69.58000766338422
+   },
+   "trim": {
+    "orders": 228,
+    "overnight_mean_bp": -17.89563670626316,
+    "close_to_fill_mean_bp": -29.73198356618104,
+    "fill_to_t5_mean_bp": -72.01185536821089
+   }
+  },
+  "earnings_after_close": {
+   "orders": 13,
+   "overnight_mean_bp": 71.4119387535704,
+   "overnight_mean_bp_without": -11.884404910801443
+  }
+ },
+ "2024-2026 buy": {
+  "orders": 389,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": 44.09784506549994,
+   "t_naive": 3.1655111013644786,
+   "median_bp": 29.15950398973429,
+   "weighted_mean_bp": 11.99861446763717,
+   "share_against": 0.6041131105398457
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": -7.829583589862626,
+   "t_naive": -1.0698350901402933,
+   "median_bp": -7.887324352552496,
+   "weighted_mean_bp": 0.33835166529863053,
+   "share_against": 0.4524421593830334
+  },
+  "decision close -> board's fill": {
+   "mean_bp": 51.90678127452471,
+   "t_naive": 2.9162661496214177,
+   "median_bp": 22.829446681330257,
+   "weighted_mean_bp": 21.24447736762672,
+   "share_against": 0.532133676092545
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": 22.999059594370134,
+   "t_naive": 0.6941828832149893,
+   "median_bp": 46.93403877444663,
+   "weighted_mean_bp": 51.14394363800624,
+   "share_against": 0.5372750642673522
+  },
+  "decision close -> close t+5": {
+   "mean_bp": 74.90584086889488,
+   "t_naive": 1.9813520831279658,
+   "median_bp": 57.10935701290613,
+   "weighted_mean_bp": 72.38842100563292,
+   "share_against": 0.5372750642673522
+  },
+  "by_detail": {
+   "add": {
+    "orders": 194,
+    "overnight_mean_bp": 45.67004290178804,
+    "close_to_fill_mean_bp": 40.018239515126986,
+    "fill_to_t5_mean_bp": 9.313124236304239
+   },
+   "entry": {
+    "orders": 114,
+    "overnight_mean_bp": 6.335957911610608,
+    "close_to_fill_mean_bp": 31.42829945978031,
+    "fill_to_t5_mean_bp": 1.2479680273582203
+   },
+   "event_buy": {
+    "orders": 17,
+    "overnight_mean_bp": 200.73930960464943,
+    "close_to_fill_mean_bp": 375.2843418940219,
+    "fill_to_t5_mean_bp": 415.7926209126449
+   },
+   "retry": {
+    "orders": 64,
+    "overnight_mean_bp": 64.98759284890544,
+    "close_to_fill_mean_bp": 38.52405467565862,
+    "fill_to_t5_mean_bp": -1.1071067229193794
+   }
+  },
+  "earnings_after_close": {
+   "orders": 7,
+   "overnight_mean_bp": -57.75276607062941,
+   "overnight_mean_bp_without": 45.964217520874044
+  }
+ },
+ "2024-2026 sell": {
+  "orders": 344,
+  "overnight (close t -> open t+1)": {
+   "mean_bp": -40.3223210680598,
+   "t_naive": -3.0539455179754937,
+   "median_bp": -27.201716532915064,
+   "weighted_mean_bp": -40.2418647216787,
+   "share_against": 0.4069767441860465
+  },
+  "first 15 minutes (open -> 09:45 close)": {
+   "mean_bp": 0.33778584932382694,
+   "t_naive": 0.0454472539529035,
+   "median_bp": -6.129991779327007,
+   "weighted_mean_bp": 6.8885936739215285,
+   "share_against": 0.4680232558139535
+  },
+  "decision close -> board's fill": {
+   "mean_bp": -52.37476097374574,
+   "t_naive": -2.910150218700694,
+   "median_bp": -59.48997474363212,
+   "weighted_mean_bp": -49.70248860337857,
+   "share_against": 0.40406976744186046
+  },
+  "board's fill -> close t+5": {
+   "mean_bp": 61.151873242177594,
+   "t_naive": 1.7972450130344466,
+   "median_bp": -14.47494163846023,
+   "weighted_mean_bp": 25.308977949082465,
+   "share_against": 0.49127906976744184
+  },
+  "decision close -> close t+5": {
+   "mean_bp": 8.777112268431786,
+   "t_naive": 0.22663150820792746,
+   "median_bp": -41.69332991160641,
+   "weighted_mean_bp": -24.393510654296154,
+   "share_against": 0.46511627906976744
+  },
+  "by_detail": {
+   "event_sell": {
+    "orders": 17,
+    "overnight_mean_bp": -99.16053404900077,
+    "close_to_fill_mean_bp": -160.82936652442203,
+    "fill_to_t5_mean_bp": -73.03989009951886
+   },
+   "reset_exit": {
+    "orders": 8,
+    "overnight_mean_bp": -26.503010831048297,
+    "close_to_fill_mean_bp": -78.42381672915658,
+    "fill_to_t5_mean_bp": 179.0954281511205
+   },
+   "rotation_exit": {
+    "orders": 238,
+    "overnight_mean_bp": -37.02995156399009,
+    "close_to_fill_mean_bp": -35.2575548602962,
+    "fill_to_t5_mean_bp": 69.41279612172468
+   },
+   "trim": {
+    "orders": 81,
+    "overnight_mean_bp": -39.01230629261149,
+    "close_to_fill_mean_bp": -77.3349376971557,
+    "fill_to_t5_mean_bp": 53.39399536816623
+   }
+  },
+  "earnings_after_close": {
+   "orders": 7,
+   "overnight_mean_bp": -274.92569337199717,
+   "overnight_mean_bp_without": -35.44925398756258
+  }
+ }
+}
