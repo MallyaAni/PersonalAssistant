@@ -6,7 +6,9 @@ What has to hold (backend/market/stage3_diagnostics.py):
   its statistics exist only with `min_names` such rows, the graded IC only
   with `min_names` usable graded rows, and `usable` narrows both.
 - `lowest` / `highest` are 1e4 * (r of the lowest / highest-scored book
-  name - the book's mean r); the ICs are `stage3_io.spearman`.
+  name - the book's mean r); the ICs are `stage3_io.spearman`; `gain` is
+  -lowest / (n - 1) / 20 bp per session where the book acts, 0 where a
+  scored session's book is too small, NaN on unscored sessions.
 - `summarize` splits by window and calendar year, ignores NaN, and its t is
   `candidate_stats.hac_t` at `stage3_io.HAC_LAG`.
 - A forecast whose keys are not the export's rows, a T-I forecast or
@@ -107,6 +109,8 @@ def test_book_series_reads_the_lowest_and_highest_book_names():
     assert series.lowest[0] == pytest.approx(1e4 * (r[2] - centre))  # C, score -0.3
     assert series.highest[0] == pytest.approx(1e4 * (r[1] - centre))  # B, score 0.9
     assert series.lowest[0] == pytest.approx(-340.0, abs=1e-3)
+    assert series.gain[0] == pytest.approx(340.0 / 4 / io.S1_HORIZON, abs=1e-4)
+    assert series.gain[1] == 0.0 and series.gain[2] == 0.0
     assert series.ic_book[0] == pytest.approx(io.spearman(SCORES[book], r[book]))
     assert series.ic_all[0] == pytest.approx(io.spearman(SCORES[:7], r[:7]))
     assert all(math.isnan(v) for v in (series.ic_book[1], series.lowest[1], series.highest[2]))
@@ -125,7 +129,9 @@ def test_usable_narrows_the_book():
     usable = np.ones(len(data), dtype=bool)
     usable[4] = False
     series = diag.book_series(data, SCORES, usable=usable, min_names=5)
-    assert series.book_size[0] == 4 and math.isnan(series.lowest[0])
+    assert series.book_size[0] == 4 and math.isnan(series.lowest[0]) and series.gain[0] == 0.0
+    nothing = diag.book_series(data, SCORES, usable=np.zeros(len(data), dtype=bool), min_names=5)
+    assert np.isnan(nothing.gain).all() and (nothing.graded_size == 0).all()
     with pytest.raises(ValueError, match="one entry per row"):
         diag.book_series(data, SCORES, usable=usable[:3])
 
@@ -162,7 +168,8 @@ def test_book_correlation_reads_inside_the_book():
 
 
 # Refusals: keys that are not the export's rows, T-I inputs, unsorted rows,
-# missing extras, an unknown feature and a rule without its reference.
+# missing extras, an unknown feature, a rule without its reference, scores
+# of the wrong length and a book minimum below two.
 def test_refusals():
     data = _three_sessions()
     good = _forecast(data, SCORES)
@@ -185,6 +192,8 @@ def test_refusals():
         diag.diagnose(data, {"seq": good}, features=("d_zero",), reference="lgbm")
     with pytest.raises(ValueError, match="rows"):
         diag.book_series(data, SCORES[:5])
+    with pytest.raises(ValueError, match="two names"):
+        diag.book_series(data, SCORES, min_names=1)
 
 
 # A synthetic export over late 2023 and early 2024: eight names, six in the
@@ -223,6 +232,8 @@ def test_diagnose_and_the_command_end_to_end(tmp_path):
         assert record["forecasts"]["good"]["lowest"][window]["mean"] < 0
         assert record["forecasts"]["good"]["highest"][window]["mean"] > 0
         assert record["forecasts"]["bad"]["lowest"][window]["mean"] > 0
+        assert record["forecasts"]["good"]["gain"][window]["mean"] > 0
+        assert record["forecasts"]["bad"]["gain"][window]["mean"] < 0
         assert record["forecasts"]["good"]["ic_book"][window]["mean"] > 0.9
         assert record["rules"]["d_r"]["drop_lowest"][window]["mean"] < 0
         assert record["rules"]["d_r"]["correlation_with_reference"][window]["mean"] > 0.9
@@ -242,7 +253,7 @@ def test_diagnose_and_the_command_end_to_end(tmp_path):
     assert cli.run(args, out=text) == 0
     printed = text.getvalue()
     assert "book of at least 3 names" in printed and "book of at least 5 names" in printed
-    assert "rule d_r" in printed and f"wrote {out_path}" in printed
+    assert "rule d_r" in printed and "frictionless drop" in printed and f"wrote {out_path}" in printed
     written = json.loads(out_path.read_text())
     assert set(written["by_min_names"]) == {"3", "5"}
     assert written["by_min_names"]["5"]["forecasts"]["good"]["lowest"]["2024-2026"]["mean"] < 0

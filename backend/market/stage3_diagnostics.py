@@ -23,7 +23,11 @@ finite r, and only when at least `min_names` such rows are there:
   name and spreading its weight equally over the rest buys
   -lowest / (n - 1) before costs, caps and the executor, which is why the
   number is the diagnostic's centre: the registered overlay acted on
-  exactly this name.
+  exactly this name;
+* `gain`: that frictionless drop, -lowest / (n - 1) / 20 in bp per session,
+  and zero on sessions whose book is too small to act on - the average over
+  every scored session is what a drop-the-lowest overlay could earn at
+  best, at any reset phase, before costs, the cap and the executor.
 
 A score is a forecast (`Stage3Forecast.yhat`) or one daily feature column,
 which makes the rule "drop the book's name with the lowest (highest) value
@@ -77,6 +81,7 @@ class BookSeries:
     ic_book: np.ndarray  # (S,) the same inside the book
     lowest: np.ndarray  # (S,) bp: r of the lowest-scored book name - book mean
     highest: np.ndarray  # (S,) bp: the same for the highest-scored name
+    gain: np.ndarray  # (S,) bp/session of the frictionless drop; 0 when too few
 
 
 # The [start, end) row ranges of each session of an export sorted by date.
@@ -115,6 +120,8 @@ def book_series(
 ) -> BookSeries:
     """Return the per-session ICs and book spreads of `scores`."""
     r, grade = _labels(data)
+    if min_names < 2:
+        raise ValueError("a book needs at least two names to drop one")
     scores = np.asarray(scores, dtype=float)
     if scores.shape != (len(data),):
         raise ValueError(f"scores have shape {scores.shape}; the export has {len(data)} rows")
@@ -129,7 +136,7 @@ def book_series(
     count = len(days)
     graded_size = np.zeros(count, dtype=np.int64)
     size = np.zeros(count, dtype=np.int64)
-    ic_all, ic_book, lowest, highest = (np.full(count, np.nan) for _ in range(4))
+    ic_all, ic_book, lowest, highest, gain = (np.full(count, np.nan) for _ in range(5))
     for g, (s, e) in enumerate(zip(starts, ends)):
         rows = np.arange(s, e)
         graded = rows[ok[rows]]
@@ -138,12 +145,15 @@ def book_series(
         size[g] = len(book)
         if len(graded) >= min_names:
             ic_all[g] = io.spearman(scores[graded], r[graded])
+        if len(graded):
+            gain[g] = 0.0
         if len(book) >= min_names:
             ic_book[g] = io.spearman(scores[book], r[book])
             centre = float(r[book].mean())
             lowest[g] = 1e4 * (r[book[int(np.argmin(scores[book]))]] - centre)
             highest[g] = 1e4 * (r[book[int(np.argmax(scores[book]))]] - centre)
-    return BookSeries(days, graded_size, size, ic_all, ic_book, lowest, highest)
+            gain[g] = -lowest[g] / (len(book) - 1) / io.S1_HORIZON
+    return BookSeries(days, graded_size, size, ic_all, ic_book, lowest, highest, gain)
 
 
 # Per session, the Spearman correlation of two scores inside the book (how
@@ -261,7 +271,10 @@ def diagnose(
         "min_names": int(min_names),
         "book_grade": int(book_grade),
         "hac_lag": io.HAC_LAG,
-        "units": "ic: Spearman; lowest/highest: bp of 20-session log return against the book mean",
+        "units": (
+            "ic: Spearman; lowest/highest: bp of 20-session log return against the book mean; "
+            "gain: bp per session of the frictionless drop of the lowest name"
+        ),
         "forecasts": {},
         "rules": {},
     }
@@ -275,6 +288,7 @@ def diagnose(
             "ic_book": summarize(series.dates, series.ic_book),
             "lowest": summarize(series.dates, series.lowest),
             "highest": summarize(series.dates, series.highest),
+            "gain": summarize(series.dates, series.gain),
             "book_sizes": size_shares(series),
         }
     if features:

@@ -8,8 +8,9 @@
 
 Not a registered test (`backend/market/stage3_diagnostics.py` says what it
 reads and why it exists). Per forecast and minimum book size it prints the
-IC across every graded name and inside the A/A+ book, and the lowest- and
-highest-forecast book name's 20-session return against the book mean; per
+IC across every graded name and inside the A/A+ book, the lowest- and
+highest-forecast book name's 20-session return against the book mean, and
+the frictionless gain of dropping the lowest; per
 feature, the same spread for dropping the book's lowest or highest name
 by that feature, on the reference forecast's book.
 """
@@ -75,7 +76,8 @@ def run(args: argparse.Namespace, out: TextIO = sys.stdout) -> int:
         for family, block in result["forecasts"].items():
             print(
                 f"{family}: IC all {_pair(block['ic_all'], '+.3f')}; IC book {_pair(block['ic_book'], '+.3f')}; "
-                f"lowest {_pair(block['lowest'], '+.0f')}; highest {_pair(block['highest'], '+.0f')}",
+                f"lowest {_pair(block['lowest'], '+.0f')}; highest {_pair(block['highest'], '+.0f')}; "
+                f"frictionless drop {_pair(block['gain'], '+.2f')} bp/session",
                 file=out,
             )
         for feature, block in result["rules"].items():
