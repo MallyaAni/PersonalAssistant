@@ -195,9 +195,10 @@ class FillGrid:
     active: dict[tuple[str, str], np.ndarray]
 
 
-# The best 15-minute bar close over sessions t+1..t+W on the adjusted basis,
-# per decision session of one name: the lowest for a buy, the highest for a
-# sell. NaN unless all W sessions are complete cube sessions.
+# The best 15-minute bar close over sessions t+1..t+W on the adjusted basis
+# (`stage4_labels.cube_scale`), per decision session of one name: the lowest
+# for a buy, the highest for a sell. NaN unless all W sessions are complete
+# cube sessions.
 def oracle_prices(
     series: lab.NameSeries, cube: SessionCube, window: int = WINDOW
 ) -> dict[str, np.ndarray]:
@@ -207,11 +208,12 @@ def oracle_prices(
     if not len(cube):
         return out
     rows = lab.cube_rows(series.dates, cube)
+    scale = lab.cube_scale(series, cube)
     ahead = np.full((length, window), -1, dtype=np.int64)
     factor = np.full((length, window), np.nan)
     for j in range(1, window + 1):
         ahead[: length - j, j - 1] = rows[j:]
-        factor[: length - j, j - 1] = series.factor[j:]
+        factor[: length - j, j - 1] = scale[j:]
     idx = np.flatnonzero((ahead >= 0).all(axis=1) & np.isfinite(factor).all(axis=1))
     if len(idx):
         closes = cube.close[ahead[idx]] * factor[idx][:, :, None]

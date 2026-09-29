@@ -13,8 +13,12 @@ What has to hold (docs/research/stage4-plan-2026-09-29.md):
 - D0 rests at C_t·exp(∓σ) through t+1..t+5. It fills at the first bar close
   at or past the level (all 26 bars), else at the official close of t+5.
   With `next_bar`, a bar fill moves to the next bar's open.
-- A split inside the window does not fake a fill: every price is compared
-  on the adjusted basis.
+- Splits: the panel's close, high and low are split-adjusted, as the
+  store's are, and the cube is raw. Every cube price is moved onto the
+  adjusted basis by the session's adjusted close over the cube's own
+  official close (`cube_scale`), so a split inside the window fakes no
+  fill and no gain, and a window wholly before a split fills at its real
+  dips.
 - D2 and D3 act only when their condition holds at t, and fill at the first
   session close past their trigger or at t+5. Inactive orders fill as the
   control.
@@ -66,14 +70,23 @@ def _cube(dates, prices, paths=None, drop=()):
     )
 
 
-# A one-name panel view: flat daily bars at the given closes (raw), with
-# an optional adjustment factor per session.
+# A one-name panel view: flat daily bars at the given closes (split-adjusted,
+# as the store's are), with an optional dividend factor per session.
 def _series(dates, closes, factor=None, high=None, low=None):
     closes = np.asarray(closes, dtype=float)
     factor = np.ones(len(closes)) if factor is None else np.asarray(factor, dtype=float)
     high = closes if high is None else np.asarray(high, dtype=float)
     low = closes if low is None else np.asarray(low, dtype=float)
     return lab.name_series(dates, closes, closes * factor, high, low)
+
+
+# The panel closes that agree with a cube, as the store's and the SIP
+# feed's do: each cube session's official close (its auction print) where
+# the cube has the session, else the given close.
+def _agree(closes, cube, dates):
+    out = np.asarray(closes, dtype=float).copy()
+    out[np.searchsorted(dates, cube.dates)] = cube.auction_open
+    return out
 
 
 # A price path with alternating +-1% returns (sigma well defined), T long.
@@ -137,7 +150,8 @@ def test_level_fills_at_the_first_touch_or_the_fifth_close():
     touch[8] = level * 0.995
     paths[t + 3] = touch
     cube = _cube(dates, closes, paths=paths)
-    series = _series(dates, closes)
+    series = _series(dates, _agree(closes, cube, dates))
+    assert series.sigma[t] == pytest.approx(sigma)
     fills = lab.name_fills(series, cube)
     lv = fills[(lab.LEVEL, "buy")]
     assert lv.price[t] == pytest.approx(level * 0.999) and lv.days[t] == 3 and lv.reached[t]
@@ -145,34 +159,89 @@ def test_level_fills_at_the_first_touch_or_the_fifth_close():
     assert nb.price[t] == pytest.approx(touch[8])  # the next bar's open (= its flat close)
     # No touch: the fifth session's official close.
     cube2 = _cube(dates, closes, paths={t + j: np.full(SLOTS, closes[t] * 1.002) for j in range(1, 6)})
-    lv2 = lab.name_fills(series, cube2)[(lab.LEVEL, "buy")]
+    lv2 = lab.name_fills(_series(dates, _agree(closes, cube2, dates)), cube2)[(lab.LEVEL, "buy")]
     assert lv2.price[t] == pytest.approx(closes[t] * 1.002) and lv2.days[t] == 5 and not lv2.reached[t]
     # Sells mirror above the close.
     up = np.full(SLOTS, closes[t])
     up[2] = closes[t] * math.exp(sigma) * 1.0005
     cube3 = _cube(dates, closes, paths={t + 2: up})
-    sl = lab.name_fills(series, cube3)[(lab.LEVEL, "sell")]
+    sl = lab.name_fills(_series(dates, _agree(closes, cube3, dates)), cube3)[(lab.LEVEL, "sell")]
     assert sl.price[t] == pytest.approx(up[2]) and sl.days[t] == 2
 
 
-# A 2-for-1 split between t+1 and t+2: raw prices halve, the panel factor
-# halves the other way, and nothing fills on the split itself.
+# The store's convention: the panel is split-adjusted and the cube raw. A
+# 2-for-1 split between t+1 and t+2 (raw prices halve from t+2 on) with a
+# flat price: nothing fills on the split, both sides gain nothing, and the
+# fallback is the fifth session's adjusted close. The old dividend-only
+# factor (adj_close / close) would have made this buy gain ln 2.
 def test_split_inside_the_window_does_not_fake_a_fill():
     T = 60
     dates = _dates(T)
-    closes = _zigzag(T)
     t = 40
-    raw = closes.copy()
-    raw[t + 2 :] = raw[t + 2 :] / 2.0
-    factor = np.ones(T)
-    factor[t + 2 :] = 2.0
-    flat = {t + j: np.full(SLOTS, raw[t + 1] if j == 1 else closes[t] / 2.0) for j in range(1, 6)}
-    flat[t + 1] = np.full(SLOTS, closes[t])
-    cube = _cube(dates, raw, paths=flat)
-    series = lab.name_series(dates, raw, raw * factor, raw, raw)
-    lv = lab.name_fills(series, cube)[(lab.LEVEL, "buy")]
-    assert not lv.reached[t] and lv.days[t] == 5
-    assert lv.price[t] == pytest.approx(closes[t])  # the fifth close, back on the adjusted basis
+    adjusted = _zigzag(T)
+    adjusted[t + 1 : t + 6] = adjusted[t]
+    split = np.where(np.arange(T) < t + 2, 2.0, 1.0)
+    cube = _cube(dates, adjusted * split)
+    series = _series(dates, adjusted)
+    scale = lab.cube_scale(series, cube)
+    np.testing.assert_allclose(scale, 1.0 / split)
+    fills = lab.name_fills(series, cube)
+    for side in ("buy", "sell"):
+        lv = fills[(lab.LEVEL, side)]
+        ctrl = fills[(lab.CONTROL, side)]
+        assert not lv.reached[t] and lv.days[t] == 5
+        assert lv.price[t] == pytest.approx(adjusted[t])
+        assert ctrl.price[t] == pytest.approx(adjusted[t])
+        assert lab.gain(ctrl.price[t : t + 1], lv.price[t : t + 1], side)[0] == pytest.approx(0.0, abs=1e-9)
+
+
+# A window wholly before a split: the raw cube is twice the adjusted price.
+# A real dip below the level (in adjusted terms) fills at its adjusted
+# price; without one the buy waits to the fifth close, and a sell is not
+# filled at the first bar just because raw prices are higher.
+def test_window_before_a_split_fills_at_real_dips_only():
+    T = 60
+    dates = _dates(T)
+    t = 30
+    adjusted = _zigzag(T)
+    adjusted[t + 1 : t + 6] = adjusted[t]
+    split = np.where(np.arange(T) < 50, 2.0, 1.0)
+    series = _series(dates, adjusted)
+    sigma = series.sigma[t]
+    level = adjusted[t] * math.exp(-sigma)
+    dip = np.full(SLOTS, adjusted[t] * 2.0)
+    dip[9] = level * 0.998 * 2.0
+    cube = _cube(dates, adjusted * split, paths={t + 3: dip})
+    fills = lab.name_fills(series, cube)
+    lv = fills[(lab.LEVEL, "buy")]
+    assert lv.reached[t] and lv.days[t] == 3 and lv.price[t] == pytest.approx(level * 0.998)
+    sell = fills[(lab.LEVEL, "sell")]
+    assert not sell.reached[t] and sell.days[t] == 5 and sell.price[t] == pytest.approx(adjusted[t])
+    flat = lab.name_fills(series, _cube(dates, adjusted * split))[(lab.LEVEL, "buy")]
+    assert not flat.reached[t] and flat.price[t] == pytest.approx(adjusted[t])
+
+
+# The scale is the session's adjusted close over the cube's official close
+# (the auction print, else the last bar), NaN where the cube has no session;
+# a dividend factor in the panel changes the scale, not the comparison.
+def test_cube_scale_reads_the_sessions_own_official_close():
+    T = 12
+    dates = _dates(T)
+    closes = np.linspace(100.0, 111.0, T)
+    cube = _cube(dates, closes * 3.0, drop=(4,))
+    dividend = np.where(np.arange(T) < 6, 0.99, 1.0)
+    series = _series(dates, closes, factor=dividend)
+    scale = lab.cube_scale(series, cube)
+    assert math.isnan(scale[4])
+    keep = np.arange(T) != 4
+    np.testing.assert_allclose(scale[keep], (closes * dividend / (closes * 3.0))[keep])
+    empty = SessionCube(
+        ticker="T", dates=np.asarray([], dtype="datetime64[D]"), open=np.zeros((0, SLOTS)),
+        high=np.zeros((0, SLOTS)), low=np.zeros((0, SLOTS)), close=np.zeros((0, SLOTS)),
+        volume=np.zeros((0, SLOTS)), prior_close=np.zeros(0), excluded={}, auction_open=np.zeros(0),
+        auction_volume=np.zeros(0),
+    )
+    assert np.isnan(lab.cube_scale(series, empty)).all()
 
 
 # D2: a buy of a name under its EMA10 fills at the first close above the

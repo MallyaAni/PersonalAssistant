@@ -3,11 +3,16 @@
 `docs/research/stage4-plan-2026-09-29.md` registers everything here; this
 module computes nothing the plan did not fix.
 
-**Prices.** Every price is on the panel's adjusted basis. A cube price in
-session s is multiplied by `adj_close[s] / close[s]`, the panel's
-split-and-dividend factor for that session, so a level set at t's close
-compares with a bar five sessions later. The cubes are complete 26-bar
-sessions on the raw basis (`sip_cube.SessionCube`).
+**Prices.** Every price is on the panel's adjusted basis, so a level set at
+t's close compares with a bar five sessions later even across a split. The
+cubes are complete 26-bar sessions on the raw basis
+(`sip_cube.SessionCube`). A cube price in session s is multiplied by
+`cube_scale`: the panel's adjusted close over the cube's own official close
+that session (`fill_timing.session_scale`, stage 3's rule). The daily
+store's `close`, `high` and `low` are already split-adjusted, so
+`adj_close / close` is a dividend factor only: it puts the panel's high and
+low on the adjusted basis, and it must never scale a cube price (a raw
+price before a split would then meet an adjusted level).
 
 **The conventions.** Each applies to an order decided at session t's close
 on one name, a buy or a sell. W is the plan's five sessions.
@@ -94,7 +99,7 @@ class NameSeries:
     """One name's panel columns (adjusted) and indicators, T sessions."""
 
     dates: np.ndarray  # (T,) datetime64[D]
-    factor: np.ndarray  # (T,) adj_close / close
+    factor: np.ndarray  # (T,) adj_close / close: the dividend factor of the panel's high and low
     close: np.ndarray  # (T,) adjusted close
     high: np.ndarray  # (T,) adjusted high
     low: np.ndarray  # (T,) adjusted low
@@ -157,6 +162,20 @@ def squeeze_flag(width: np.ndarray) -> np.ndarray:
     return out
 
 
+# The scale that moves each panel session's cube prices onto the adjusted
+# basis: the panel's adjusted close over the cube's own official close that
+# session (`fill_timing.session_scale`), NaN where the cube has no session.
+# On the adjusted basis a session's official close is its adjusted close.
+def cube_scale(series: NameSeries, cube: SessionCube) -> np.ndarray:
+    """Return the (T,) adjusted/raw scale of each panel session's cube prices."""
+    out = np.full(len(series.dates), np.nan)
+    if not len(cube):
+        return out
+    pos, ok, scale = fill_timing.session_scale(cube, series.dates, series.close)
+    out[pos[ok]] = scale[ok]
+    return out
+
+
 # Each panel session's row in the cube, -1 where the cube has no complete
 # session on that date.
 def cube_rows(dates: np.ndarray, cube: SessionCube) -> np.ndarray:
@@ -198,10 +217,11 @@ def name_fills(
         ahead[: T - j, j - 1] = rows[j:]
     full = (ahead >= 0).all(axis=1)
     first_ok = ahead[:, 0] >= 0
-    factor_ahead = np.full((T, window), np.nan)
+    scale = cube_scale(series, cube)
+    scale_ahead = np.full((T, window), np.nan)
     for j in range(1, window + 1):
-        factor_ahead[: T - j, j - 1] = series.factor[j:]
-    official_ahead = np.where(ahead >= 0, official_raw[np.maximum(ahead, 0)], np.nan) * factor_ahead
+        scale_ahead[: T - j, j - 1] = scale[j:]
+    official_ahead = np.where(ahead >= 0, official_raw[np.maximum(ahead, 0)], np.nan) * scale_ahead
     out: dict[tuple[str, str], Fills] = {}
     t_all = np.arange(T)
     for side in SIDES:
@@ -210,8 +230,8 @@ def name_fills(
         raw, hit = fill_timing._dip_or_close_fill(cube, side, next_bar)
         price = np.full(T, np.nan)
         reached = np.zeros(T, dtype=bool)
-        ok = first_ok & np.isfinite(factor_ahead[:, 0])
-        price[ok] = raw[ahead[ok, 0]] * factor_ahead[ok, 0]
+        ok = first_ok & np.isfinite(scale_ahead[:, 0])
+        price[ok] = raw[ahead[ok, 0]] * scale_ahead[ok, 0]
         reached[ok] = hit[ahead[ok, 0]]
         control = Fills(price, np.where(ok, 1, 0), reached, np.ones(T, dtype=bool))
         out[(CONTROL, side)] = control
@@ -220,20 +240,20 @@ def name_fills(
         lv_price = np.full(T, np.nan)
         lv_days = np.zeros(T, dtype=np.int64)
         lv_reached = np.zeros(T, dtype=bool)
-        valid = full & np.isfinite(level) & np.isfinite(factor_ahead).all(axis=1)
+        valid = full & np.isfinite(level) & np.isfinite(scale_ahead).all(axis=1)
         pending = valid.copy()
         for j in range(window):
             idx = t_all[pending]
             if not len(idx):
                 break
             crow = ahead[idx, j]
-            closes = cube.close[crow] * factor_ahead[idx, j][:, None]
+            closes = cube.close[crow] * scale_ahead[idx, j][:, None]
             touch = closes <= level[idx, None] if side == "buy" else closes >= level[idx, None]
             anyhit = touch.any(axis=1)
             slot = np.argmax(touch, axis=1)
             filled = idx[anyhit]
             lv_price[filled] = (
-                _bar_fill(cube, official_raw, crow[anyhit], slot[anyhit], next_bar) * factor_ahead[filled, j]
+                _bar_fill(cube, official_raw, crow[anyhit], slot[anyhit], next_bar) * scale_ahead[filled, j]
             )
             lv_days[filled] = j + 1
             lv_reached[filled] = True

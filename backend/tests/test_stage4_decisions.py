@@ -476,6 +476,24 @@ def test_next_bar_reads_the_next_bar_fills():
         )
 
 
+# The store's convention: the panel is split-adjusted and the cube raw.
+# With a 2-for-1 split inside the window and a flat price, the oracle is
+# the flat adjusted price on both sides (the raw bars before the split are
+# twice it and must not count as a better sell).
+def test_oracle_reads_the_adjusted_basis_across_a_split():
+    T = 60
+    dates = np.datetime64("2024-01-01", "D") + np.arange(T)
+    t = 40
+    adjusted = _zigzag(T)
+    adjusted[t : t + 6] = adjusted[t]
+    split = np.where(np.arange(T) < t + 3, 2.0, 1.0)
+    cube = _cube(dates, adjusted * split)
+    series = lab.name_series(dates, adjusted, adjusted, adjusted, adjusted)
+    oracle = sd.oracle_prices(series, cube)
+    assert oracle["buy"][t] == pytest.approx(adjusted[t])
+    assert oracle["sell"][t] == pytest.approx(adjusted[t])
+
+
 # The grids are `stage4_labels.name_fills` of each name with a cube, in
 # both fill modes; a name without a cube is unpriced; the oracle is the
 # lowest (buy) or highest (sell) adjusted bar close over t+1..t+5, NaN when
