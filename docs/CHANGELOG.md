@@ -1,5 +1,76 @@
 # Changelog
 
+## 2026-09-28 — Reviewed GPT 6's research branch: its correctness fixes ported to a branch, the rest not
+
+Reviewed GPT 6's research branch: ported the row-selection fix, head guard,
+PBO/SPA fixes, scorecard metric fixes (with the single-name-day lag fixed
+rather than dropped), simple-return aggregation and the receipt grade. The
+source is `research/execution-validation-20260928`, written by GPT 6 via
+Codex. The port went hunk by hunk with tests onto `trading/review-keepers`,
+from `main` `5ca41730`; it is not merged and not deployed.
+
+| Commit | Change |
+|---|---|
+| `32350fb5` | row selection |
+| `3069cd94` | head guard |
+| `85184d01` | PBO/SPA |
+| `15395325` | scorecard metrics and the stage-1 book's simple-return aggregation |
+| `e5aefb7d` | receipt grade |
+| `63dee7b4` | one e2e harness line: clear the synthetic chat key before a reload |
+
+Errata with rerun placeholders:
+`docs/research/cap-sweep-2026-09-27.md` (worst single-name day, effective
+names) and `docs/research/deep-intraday-stage1-2026-09-27.md` (top
+quintile vs hurdle).
+
+Not ported:
+
+- **Nightly parity preflight** (`market_daily`): a live-path gate. It needs
+  the operator's separate go-ahead, and then buys-only if at all.
+- **Personal parity guard** (`api/v1/market.py`,
+  `grade_parity.execution_preflight`): it withholds all personal guidance,
+  exits included. It would need to be mismatch-only and never withhold an
+  exit, with the operator's go-ahead.
+- **Current-quote timing gate** (`entry_timing`, `decision_view`:
+  `actionable_timing`, `TIMED_VERSION`, the 15:50 cutoff): the live path is
+  frozen. Timing v2, if any, is "limit at the level, MOC fallback", after
+  the operator's go-ahead.
+- **Forecast admission and integration** (`forecast_admission`,
+  `forecast_integration` and its CLI): provenance and replay machinery that
+  certifies forecasts which already failed their trials. Not proportionate.
+- **Neural-state replay, fold capture, event lineage and archives**
+  (`deep_neural_state`, `deep_fold_capture`, `market_capture_deep_stage2`,
+  `deep_event_lineage`, `deep_event_archive`, `sip_cube_archive`): the same
+  machinery, not proportionate.
+- **Report-free price study** (`price_study*`): it uses today's 94 names
+  (survivorship) and has no `/4` benchmark.
+- **Gating of legacy forecast files**: existing studies must keep loading
+  `docs/research/scorecards/vol_forecasts.npz` and `drawdown_forecasts.npz`.
+  Tests now pin that.
+- **Day-only cost convention** in the stage-1 book: it charges both legs
+  the same round trip every day regardless of turnover. Main's per-leg
+  turnover cost is kept.
+- **Also not taken**, being parts of the hunks above or source docs: the
+  receipt's timing, parity-guard and structure-gate fields; the frontend
+  receipt display; the `desk-level-gate` e2e changes; the source's research
+  notes and diagram edits.
+
+**VERIFIED on the branch (sandbox, unit level).** The new tests were run
+against the code before each fix and fail there. The exceptions are guards
+meant to hold either way: two input-exclusion cases, the SPA zero-arm case,
+and the per-leg cost test, which fails on the source's day-only code
+instead.
+
+- 20 touched and dependent test files: 332 passed, 11 skipped (10 need
+  torch, one needs fastapi), one strict xfail. The xfail pins the stage-1
+  book substituting a name when a selected outcome is missing.
+- The two personal-history files: 20 passed, run only with a scratch stub
+  of sqlalchemy, which is not installed here.
+
+**UNVERIFIED:** Playwright, `tsc`, the functional-tests container gate,
+the torch-only tests, the DB-gated history HTTP tests, and the Spark
+reruns behind the errata.
+
 ## 2026-09-28 — ML entry level run: the model's level is no better than trailing volatility; the board keeps dip-or-close
 
 `docs/research/ml-entry-level-2026-09-28.md`: four registered levels set by

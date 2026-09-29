@@ -1,5 +1,43 @@
 # Deep sequence models on the fifteen-minute bars, stage 1: results (2026-09-27)
 
+## Erratum (2026-09-28)
+
+The top-quintile-versus-hurdle numbers are withdrawn: the "top vs hurdle
+bp/d" and "A-only bp/d" columns, and the "6-13 bp a day" read from them
+below. Two things were wrong with them:
+
+- **Aggregation.** Each book's day was the mean of its names' log returns.
+  An equal-weight book earns the mean of their simple returns.
+- **Costs.** The top quintile rotates most of itself every day and paid
+  10 bp on that turnover. The equal-weight hurdle is near-static and paid
+  almost nothing. Yet both earned open-to-close returns, so both are in
+  effect bought at the open and sold at the close every day. The cost
+  comparison is inconsistent.
+
+The aggregation is corrected on branch `trading/review-keepers` (commit
+`15395325`): the books average simple returns, and payloads carry
+`accounting: simple-mean-turnover-cost/2` and study version 3. The per-leg
+turnover cost is kept, so any rerun has to be read with the cost caveat
+above. The bp/d figures are withdrawn pending a rerun under the corrected
+aggregation:
+
+CORRECTED NUMBERS: pending the spark rerun
+
+The IC results and the verdict for the return signal are unaffected: IC
+about 0.012, not significant on 2024-2026. (The kill criteria also read the
+portfolio t. If a rerun put it above 2.0 for a head that clears the IC
+floor, the recorded volatility-control t of 0.42 to 1.79, all below 2.0,
+would make the result a volatility result, not a pass.)
+
+Row selection (commit `32350fb5`, study version 2). The dataset used to
+drop a (name, t) row whenever session t+1 was missing or its outcome was
+non-finite, so tomorrow decided whether today's row existed; the latest
+close never had a row. Rows are now selected on their own inputs, and such
+a row keeps a NaN label. This changes roughly 1% of rows; that is an
+estimate until a rerun records `observed_return_rows` beside `rows`. It
+cannot move the recorded verdicts: every downstream study fell back to its
+control (vol sizing, profit taking, the ML entry level).
+
 Pre-registration: [deep-intraday-plan-2026-09-27.md](deep-intraday-plan-2026-09-27.md)
 (hypotheses, kill criteria, and the two model families added before the run:
 PatchTST and a frozen Chronos-Bolt encoder with a ridge head; eight trials

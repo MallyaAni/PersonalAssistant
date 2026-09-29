@@ -39,6 +39,74 @@ OpenCode, a person):
    on 09-28, 00:40Z on 09-29) compare the latch, the payload and the log with
    what the rules say; they change nothing.
 
+## Direction for whichever agent continues (2026-09-28)
+
+**What was ported, and why.** GPT 6 (via Codex) wrote the research branch
+`research/execution-validation-20260928`. A small reviewed set of it was
+ported, hunk by hunk with tests, onto `trading/review-keepers` (from
+`main` `5ca41730`; not merged, not deployed). None of the frozen files in
+rule 1 changed. The receipt fix touches `personal_history.py`, which is on
+the personal board's recording path, so it deploys only with the rest of
+the branch and the operator's go-ahead. Each is a correctness fix to
+something the research or the operator already relies on, small enough to
+check line by line, with a test that fails without it:
+
+- **Row selection** (`32350fb5`): the deep datasets keep a decision row
+  whenever its own inputs are complete. A missing or non-finite next
+  session leaves a NaN label instead of erasing the row: tomorrow no longer
+  decides whether today exists. Old exports load as `legacy-unrecorded`.
+- **Head guard** (`3069cd94`): a stage-2 neural head trained on fewer than
+  three labels is withheld, and fit receipts carry per-target counts.
+- **PBO/SPA** (`85184d01`): PBO uses the one-based rank; before, a two-arm
+  winner that stayed best counted as overfit. SPA floors each bootstrap
+  draw at zero, as it floors the observed statistic.
+- **Scorecard metrics** (`15395325`): drawdown from the starting NAV, and
+  effective names over the invested weight. The worst single-name day is
+  fixed rather than dropped: the previous close's weight times the simple
+  return into the next close. The stage-1 book averages simple returns and
+  keeps main's per-leg turnover cost.
+- **Receipt grade** (`e5aefb7d`): the personal receipt saves the grade the
+  `/4` action used (the close grade), with the intraday reading kept as
+  `grade_intraday`.
+- **E2E harness** (`63dee7b4`): the personal-history spec clears the
+  synthetic chat key before its reload. This is the desk.spec
+  personal-history entry of the ten known failures; not re-run here.
+
+**What was not ported, and why:**
+
+- The provenance, replay and archive machinery was not ported: forecast
+  admission and integration, neural-state capture and replay, fold
+  capture, event lineage, event and SIP-cube archives. It certifies
+  forecasts that already failed their trials, which is not proportionate.
+- The report-free price study was not ported. It runs on today's 94 names
+  (survivorship) and has no `/4` benchmark.
+- The live-path gates need the operator's separate go-ahead, after fixes:
+  - timing v2 as "limit at the level, MOC fallback", not the current-quote
+    gate;
+  - the board parity guard mismatch-only, never withholding an exit;
+  - the nightly gate buys-only, if at all.
+- Also not taken: the refusal of legacy forecast files (the committed
+  `vol_forecasts.npz` and `drawdown_forecasts.npz` must keep loading, and
+  tests pin it), and the stage-1 book's day-only cost convention.
+
+**Open from the port:**
+
+- The errata in `research/cap-sweep-2026-09-27.md` and
+  `research/deep-intraday-stage1-2026-09-27.md` hold placeholders
+  (`CORRECTED TABLE` and `CORRECTED NUMBERS: pending the spark rerun`).
+- Playwright, `tsc` and the functional-tests container gate have not run
+  on the branch.
+
+**Priorities, in order:**
+
+1. Forward tracking of `/4`: the paper account against its simulated twin
+   from the 2026-09-28 reset.
+2. The hold-cap decision, once the corrected single-name risk is
+   recomputed (the cap-sweep rerun).
+3. Any new research must beat graded-equal-weight `/4` on the
+   point-in-time universe, with its pre-registration committed first. No
+   new infrastructure without a strategy question it answers.
+
 ## 2026-09-28, pre-open — The board acts only at the measured level; ML entry level recorded
 
 **Deployed** `80b58819` (05:04Z, post-deploy ok; main now `eb74a6d`). The
