@@ -1,0 +1,120 @@
+stage 4 seq (M3) on g_buy: 88,063 rows, 82,632 labelled, 2,699 sessions 2016-01-04..2026-09-28; labels E:\AgentWorkspace\rtx-data\stage4\stage4_labels.npz (5e52e1f0) from E:\AgentWorkspace\rtx-data\stage3\stage3_s1.npz (7fa24f7e)
+M3 seq on g_buy: 9 of 9 folds (test blocks of 252 sessions, gap 11); 8 configurations with seed 0 chosen by pooled_spearman, the chosen one with 5 seeds; device cuda; registered settings
+  fold 1/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 10 epochs (best 4), val loss 0.74959, score +0.0069, 10 s
+  fold 1/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 9 epochs (best 3), val loss 0.75740, score -0.0233, 14 s
+  fold 1/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 8 epochs (best 2), val loss 0.74938, score +0.0193, 8 s
+  fold 1/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 10 epochs (best 4), val loss 0.75571, score -0.0178, 15 s
+  fold 1/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 0.74927, score +0.0178, 7 s
+  fold 1/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 8 epochs (best 2), val loss 0.75820, score -0.0201, 12 s
+  fold 1/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 9 epochs (best 3), val loss 0.74867, score +0.0049, 9 s
+  fold 1/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 8 epochs (best 2), val loss 0.75582, score -0.0114, 12 s
+  fold 1/9 chosen lr=0.0003 dropout=0.3 width=32 seed 1: 11 epochs (best 5), val loss 0.75169, score nan, 11 s
+  fold 1/9 chosen lr=0.0003 dropout=0.3 width=32 seed 2: 12 epochs (best 6), val loss 0.74941, score nan, 12 s
+  fold 1/9 chosen lr=0.0003 dropout=0.3 width=32 seed 3: 11 epochs (best 5), val loss 0.75156, score nan, 11 s
+  fold 1/9 chosen lr=0.0003 dropout=0.3 width=32 seed 4: 12 epochs (best 6), val loss 0.74923, score nan, 12 s
+fold 1/9: test 2017-12-27..2018-12-27 (6,358 rows), fit 4,996 / validation 5,748 units; chose #3 lr=0.0003 dropout=0.3 width=32 (score +0.0193), 5 seeds, 141 s
+  fold 2/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.33337, score +0.0053, 12 s
+  fold 2/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 9 epochs (best 3), val loss 1.35282, score +0.0091, 24 s
+  fold 2/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 7 epochs (best 1), val loss 1.33245, score +0.0033, 12 s
+  fold 2/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 8 epochs (best 2), val loss 1.34894, score -0.0203, 22 s
+  fold 2/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 8 epochs (best 2), val loss 1.35059, score +0.0067, 14 s
+  fold 2/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.34027, score -0.0117, 19 s
+  fold 2/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 8 epochs (best 2), val loss 1.35136, score -0.0021, 14 s
+  fold 2/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 7 epochs (best 1), val loss 1.34904, score -0.0137, 19 s
+  fold 2/9 chosen lr=0.0003 dropout=0.1 width=64 seed 1: 9 epochs (best 3), val loss 1.33592, score nan, 24 s
+  fold 2/9 chosen lr=0.0003 dropout=0.1 width=64 seed 2: 8 epochs (best 2), val loss 1.34658, score nan, 22 s
+  fold 2/9 chosen lr=0.0003 dropout=0.1 width=64 seed 3: 8 epochs (best 2), val loss 1.33868, score nan, 22 s
+  fold 2/9 chosen lr=0.0003 dropout=0.1 width=64 seed 4: 9 epochs (best 3), val loss 1.33851, score nan, 24 s
+fold 2/9: test 2018-12-28..2019-12-27 (6,746 rows), fit 10,701 / validation 5,971 units; chose #2 lr=0.0003 dropout=0.1 width=64 (score +0.0091), 5 seeds, 236 s
+  fold 3/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.22224, score +0.0358, 17 s
+  fold 3/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.23440, score -0.0405, 27 s
+  fold 3/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 9 epochs (best 3), val loss 1.22197, score +0.0260, 22 s
+  fold 3/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 7 epochs (best 1), val loss 1.23819, score -0.0403, 27 s
+  fold 3/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.22406, score +0.0216, 17 s
+  fold 3/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.23198, score -0.0225, 27 s
+  fold 3/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 7 epochs (best 1), val loss 1.22377, score +0.0291, 17 s
+  fold 3/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 7 epochs (best 1), val loss 1.23113, score -0.0448, 28 s
+  fold 3/9 chosen lr=0.0003 dropout=0.1 width=32 seed 1: 9 epochs (best 3), val loss 1.22511, score nan, 22 s
+  fold 3/9 chosen lr=0.0003 dropout=0.1 width=32 seed 2: 8 epochs (best 2), val loss 1.22800, score nan, 20 s
+  fold 3/9 chosen lr=0.0003 dropout=0.1 width=32 seed 3: 8 epochs (best 2), val loss 1.23079, score nan, 20 s
+  fold 3/9 chosen lr=0.0003 dropout=0.1 width=32 seed 4: 8 epochs (best 2), val loss 1.23457, score nan, 20 s
+fold 3/9: test 2019-12-30..2020-12-28 (7,197 rows), fit 16,625 / validation 6,296 units; chose #1 lr=0.0003 dropout=0.1 width=32 (score +0.0358), 5 seeds, 275 s
+  fold 4/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 9 epochs (best 3), val loss 1.92539, score +0.0280, 30 s
+  fold 4/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 9 epochs (best 3), val loss 1.92455, score +0.0415, 47 s
+  fold 4/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 14 epochs (best 8), val loss 1.91725, score +0.0471, 46 s
+  fold 4/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 12 epochs (best 6), val loss 1.91943, score +0.0544, 63 s
+  fold 4/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.92706, score -0.0080, 23 s
+  fold 4/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.91999, score +0.0381, 37 s
+  fold 4/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 10 epochs (best 4), val loss 1.92026, score +0.0370, 33 s
+  fold 4/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 9 epochs (best 3), val loss 1.91798, score +0.0428, 47 s
+  fold 4/9 chosen lr=0.0003 dropout=0.3 width=64 seed 1: 12 epochs (best 6), val loss 1.91642, score nan, 63 s
+  fold 4/9 chosen lr=0.0003 dropout=0.3 width=64 seed 2: 10 epochs (best 4), val loss 1.92036, score nan, 53 s
+  fold 4/9 chosen lr=0.0003 dropout=0.3 width=64 seed 3: 10 epochs (best 4), val loss 1.92140, score nan, 53 s
+  fold 4/9 chosen lr=0.0003 dropout=0.3 width=64 seed 4: 12 epochs (best 6), val loss 1.91079, score nan, 63 s
+fold 4/9: test 2020-12-29..2021-12-28 (8,356 rows), fit 22,994 / validation 6,839 units; chose #4 lr=0.0003 dropout=0.3 width=64 (score +0.0544), 5 seeds, 570 s
+  fold 5/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 9 epochs (best 3), val loss 0.93441, score +0.0099, 38 s
+  fold 5/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 9 epochs (best 3), val loss 0.93026, score +0.0466, 61 s
+  fold 5/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 12 epochs (best 6), val loss 0.93250, score +0.0270, 50 s
+  fold 5/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 11 epochs (best 5), val loss 0.93162, score +0.0532, 74 s
+  fold 5/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 8 epochs (best 2), val loss 0.93568, score +0.0098, 34 s
+  fold 5/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 8 epochs (best 2), val loss 0.93249, score +0.0491, 54 s
+  fold 5/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 9 epochs (best 3), val loss 0.93323, score +0.0324, 38 s
+  fold 5/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 8 epochs (best 2), val loss 0.93220, score +0.0128, 54 s
+  fold 5/9 chosen lr=0.0003 dropout=0.3 width=64 seed 1: 10 epochs (best 4), val loss 0.93270, score nan, 67 s
+  fold 5/9 chosen lr=0.0003 dropout=0.3 width=64 seed 2: 9 epochs (best 3), val loss 0.93288, score nan, 61 s
+  fold 5/9 chosen lr=0.0003 dropout=0.3 width=64 seed 3: 8 epochs (best 2), val loss 0.93338, score nan, 54 s
+  fold 5/9 chosen lr=0.0003 dropout=0.3 width=64 seed 4: 8 epochs (best 2), val loss 0.93582, score nan, 54 s
+fold 5/9: test 2021-12-29..2022-12-28 (8,673 rows), fit 29,787 / validation 7,828 units; chose #4 lr=0.0003 dropout=0.3 width=64 (score +0.0532), 5 seeds, 651 s
+  fold 6/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 8 epochs (best 2), val loss 1.61230, score +0.0031, 41 s
+  fold 6/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.61981, score +0.0367, 58 s
+  fold 6/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 8 epochs (best 2), val loss 1.61890, score +0.0116, 41 s
+  fold 6/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 8 epochs (best 2), val loss 1.60448, score +0.0180, 67 s
+  fold 6/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.63422, score +0.0146, 36 s
+  fold 6/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.62506, score +0.0103, 58 s
+  fold 6/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 8 epochs (best 2), val loss 1.63235, score +0.0338, 41 s
+  fold 6/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 7 epochs (best 1), val loss 1.62281, score +0.0229, 58 s
+  fold 6/9 chosen lr=0.0003 dropout=0.1 width=64 seed 1: 8 epochs (best 2), val loss 1.61547, score nan, 67 s
+  fold 6/9 chosen lr=0.0003 dropout=0.1 width=64 seed 2: 7 epochs (best 1), val loss 1.61260, score nan, 58 s
+  fold 6/9 chosen lr=0.0003 dropout=0.1 width=64 seed 3: 7 epochs (best 1), val loss 1.62040, score nan, 58 s
+  fold 6/9 chosen lr=0.0003 dropout=0.1 width=64 seed 4: 7 epochs (best 1), val loss 1.60231, score nan, 58 s
+fold 6/9: test 2022-12-29..2023-12-29 (9,329 rows), fit 37,553 / validation 8,344 units; chose #2 lr=0.0003 dropout=0.1 width=64 (score +0.0367), 5 seeds, 660 s
+  fold 7/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.00578, score -0.0335, 44 s
+  fold 7/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.00943, score -0.0254, 70 s
+  fold 7/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 8 epochs (best 2), val loss 1.00319, score -0.0306, 50 s
+  fold 7/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 7 epochs (best 1), val loss 1.00906, score -0.0202, 70 s
+  fold 7/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.00857, score -0.0557, 44 s
+  fold 7/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.01386, score -0.0420, 70 s
+  fold 7/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 7 epochs (best 1), val loss 1.00443, score -0.0452, 44 s
+  fold 7/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 7 epochs (best 1), val loss 1.01516, score -0.0544, 70 s
+  fold 7/9 chosen lr=0.0003 dropout=0.3 width=64 seed 1: 7 epochs (best 1), val loss 1.00322, score nan, 71 s
+  fold 7/9 chosen lr=0.0003 dropout=0.3 width=64 seed 2: 7 epochs (best 1), val loss 1.00389, score nan, 71 s
+  fold 7/9 chosen lr=0.0003 dropout=0.3 width=64 seed 3: 7 epochs (best 1), val loss 1.00828, score nan, 70 s
+  fold 7/9 chosen lr=0.0003 dropout=0.3 width=64 seed 4: 7 epochs (best 1), val loss 1.00950, score nan, 71 s
+fold 7/9: test 2024-01-02..2024-12-31 (9,665 rows), fit 45,844 / validation 8,726 units; chose #4 lr=0.0003 dropout=0.3 width=64 (score -0.0202), 5 seeds, 760 s
+  fold 8/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 8 epochs (best 2), val loss 1.10250, score -0.0097, 59 s
+  fold 8/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.09858, score +0.0192, 83 s
+  fold 8/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 11 epochs (best 5), val loss 1.09651, score +0.0553, 81 s
+  fold 8/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 10 epochs (best 4), val loss 1.09751, score +0.0596, 118 s
+  fold 8/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 8 epochs (best 2), val loss 1.10089, score +0.0235, 59 s
+  fold 8/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.09865, score +0.0161, 83 s
+  fold 8/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 10 epochs (best 4), val loss 1.08855, score +0.0697, 73 s
+  fold 8/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 8 epochs (best 2), val loss 1.09730, score +0.0520, 95 s
+  fold 8/9 chosen lr=0.001 dropout=0.3 width=32 seed 1: 9 epochs (best 3), val loss 1.09404, score nan, 66 s
+  fold 8/9 chosen lr=0.001 dropout=0.3 width=32 seed 2: 10 epochs (best 4), val loss 1.09183, score nan, 73 s
+  fold 8/9 chosen lr=0.001 dropout=0.3 width=32 seed 3: 9 epochs (best 3), val loss 1.09481, score nan, 66 s
+  fold 8/9 chosen lr=0.001 dropout=0.3 width=32 seed 4: 10 epochs (best 4), val loss 1.09145, score nan, 73 s
+fold 8/9: test 2025-01-02..2026-01-05 (10,373 rows), fit 54,549 / validation 8,876 units; chose #7 lr=0.001 dropout=0.3 width=32 (score +0.0697), 5 seeds, 944 s
+  fold 9/9 config 1/8 lr=0.0003 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.43356, score +0.0042, 59 s
+  fold 9/9 config 2/8 lr=0.0003 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.43852, score -0.0209, 96 s
+  fold 9/9 config 3/8 lr=0.0003 dropout=0.3 width=32 seed 0: 8 epochs (best 2), val loss 1.43515, score -0.0068, 68 s
+  fold 9/9 config 4/8 lr=0.0003 dropout=0.3 width=64 seed 0: 8 epochs (best 2), val loss 1.43593, score -0.0111, 110 s
+  fold 9/9 config 5/8 lr=0.001 dropout=0.1 width=32 seed 0: 7 epochs (best 1), val loss 1.43258, score -0.0042, 59 s
+  fold 9/9 config 6/8 lr=0.001 dropout=0.1 width=64 seed 0: 7 epochs (best 1), val loss 1.43932, score -0.0208, 96 s
+  fold 9/9 config 7/8 lr=0.001 dropout=0.3 width=32 seed 0: 7 epochs (best 1), val loss 1.43512, score -0.0004, 59 s
+  fold 9/9 config 8/8 lr=0.001 dropout=0.3 width=64 seed 0: 7 epochs (best 1), val loss 1.43625, score -0.0186, 96 s
+  fold 9/9 chosen lr=0.0003 dropout=0.1 width=32 seed 1: 8 epochs (best 2), val loss 1.43595, score nan, 68 s
+  fold 9/9 chosen lr=0.0003 dropout=0.1 width=32 seed 2: 8 epochs (best 2), val loss 1.43697, score nan, 68 s
+  fold 9/9 chosen lr=0.0003 dropout=0.1 width=32 seed 3: 7 epochs (best 1), val loss 1.43127, score nan, 59 s
+  fold 9/9 chosen lr=0.0003 dropout=0.1 width=32 seed 4: 8 epochs (best 2), val loss 1.43490, score nan, 68 s
+fold 9/9: test 2026-01-06..2026-09-28 (8,984 rows), fit 63,441 / validation 9,359 units; chose #1 lr=0.0003 dropout=0.1 width=32 (score +0.0042), 5 seeds, 920 s
+wrote E:\AgentWorkspace\rtx-data\stage4\out\stage4_seq_buy.npz: 88,063 rows, 75,681 forecast (2017-12-27..2026-09-28), 9 folds, registered settings, 5159 s
