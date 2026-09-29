@@ -88,10 +88,10 @@ def prepare_inputs(store, membership_path, output, *, source_revision):
 # Authenticate explicitly trusted local cache bytes before any pickle deserialization.
 def load_inputs(path, expected_sha256):
     path = Path(path)
-    if len(expected_sha256) != 64 or file_hash(path) != expected_sha256:
+    raw = path.read_bytes()
+    if len(expected_sha256) != 64 or hashlib.sha256(raw).hexdigest() != expected_sha256:
         raise ValueError("Trusted input cache SHA-256 mismatch")
-    with path.open("rb") as stream:
-        bundle = pickle.load(stream)
+    bundle = pickle.loads(raw)
     if not isinstance(bundle, dict) or set(bundle) != {
         "report",
         "membership",
@@ -381,6 +381,49 @@ def verdict(runs):
     return result
 
 
+# Describe selected-state extrapolation without changing the frozen action policy.
+def selected_state_shift(data, selections):
+    windows = {}
+    outside, outside_state, unseen_actions = 0, 0, 0
+    for selection in selections:
+        day = np.datetime64(selection["session"], "D")
+        year = str(day.astype("datetime64[Y]"))
+        if year not in windows:
+            boundary = np.datetime64(f"{year}-01-01")
+            rows = (
+                (data.dates >= np.datetime64("2016-01-01"))
+                & (data.dates < boundary)
+                & np.isfinite(data.labels)
+                & ~np.isnat(data.label_end)
+                & (data.label_end < boundary)
+            )
+            if not rows.any():
+                raise ValueError("No teacher training support for a selected action")
+            windows[year] = (
+                data.features[rows].min(axis=0),
+                data.features[rows].max(axis=0),
+                set(data.actions[rows]),
+            )
+        low, high, actions = windows[year]
+        features = np.asarray(selection["features"], dtype=float)
+        if features.shape != low.shape or not np.isfinite(features).all():
+            raise ValueError("Selected action features cannot be audited")
+        shifted = (features < low - 1e-12) | (features > high + 1e-12)
+        outside += int(shifted.any())
+        outside_state += int(shifted[22:].any())
+        unseen_actions += int(selection["action"] not in actions)
+    return {
+        "selected_actions": len(selections),
+        "outside_any_training_feature_range": outside,
+        "outside_account_action_feature_range": outside_state,
+        "action_absent_from_training": unseen_actions,
+        "scope": (
+            "Selected actions only, compared with that year's matured teacher refit "
+            "rows. Inside marginal ranges does not prove joint-state or policy support."
+        ),
+    }
+
+
 # Train on exact teacher counterfactuals and evaluate seven continuous funded accounts.
 def run(bundle, output, *, source_revision, input_receipt):
     from backend.market import selective_action_execution as execution
@@ -388,6 +431,15 @@ def run(bundle, output, *, source_revision, input_receipt):
 
     output = _new_directory(output)
     report, mask, indexes = bundle["report"], bundle["membership"], bundle["indexes"]
+    save_json(
+        output / "protocol.json",
+        {
+            "source_revision": source_revision,
+            "plan": PLAN,
+            "plan_sha256": file_hash(PLAN),
+            "plan_text": Path(PLAN).read_text(),
+        },
+    )
     panel = report.panel
     options = profit_taking.control_options(panel)
     prepared = simulate.prepare_research(report, **options)
@@ -457,6 +509,9 @@ def run(bundle, output, *, source_revision, input_receipt):
                     for key, value in priced.diagnostics.items()
                     if key not in ("daily", "decisions", "predictions")
                 }
+                accounts[name]["teacher_state_support"] = selected_state_shift(
+                    data, priced.diagnostics.get("selected_interventions", [])
+                )
                 curves[name] = daily
                 priced.journal.archive(output / f"journal-{cost:g}-{offset}-{name}")
                 print(
@@ -465,7 +520,9 @@ def run(bundle, output, *, source_revision, input_receipt):
                     flush=True,
                 )
             for symbol in ("SPY", "QQQ"):
-                index, journal = index_account(indexes, symbol, dates, cost)
+                index, journal = index_account(
+                    indexes, symbol, dates, cost, run_id="selective-actions/1"
+                )
                 curves[symbol] = index.daily
                 accounts[symbol] = account_summary(dates, index.daily, regimes[start:])
                 journal.archive(output / f"journal-{cost:g}-{offset}-{symbol}")

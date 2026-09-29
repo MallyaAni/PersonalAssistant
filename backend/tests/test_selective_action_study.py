@@ -66,7 +66,7 @@ def test_trusted_cache_hash_precedes_deserialization(tmp_path, monkeypatch):
     cache = tmp_path / "cache.pickle"
     cache.write_bytes(b"not a pickle")
     calls = []
-    monkeypatch.setattr(study.pickle, "load", lambda stream: calls.append(stream))
+    monkeypatch.setattr(study.pickle, "loads", lambda raw: calls.append(raw))
     with pytest.raises(ValueError, match="SHA-256 mismatch"):
         study.load_inputs(cache, "0" * 64)
     assert not calls
@@ -83,6 +83,37 @@ def test_input_cache_round_trip_and_invalid_schema(tmp_path):
         study.pickle.dump({"wrong": True}, stream)
     with pytest.raises(ValueError, match="schema"):
         study.load_inputs(cache, study.file_hash(cache))
+
+
+# Compare selected states only to matured training history, never later test support.
+def test_selected_state_range_shift_uses_past_matured_rows():
+    features = np.zeros((3, 33))
+    features[1:, 22] = 100.0
+    data = SimpleNamespace(
+        features=features,
+        dates=np.array(
+            ["2017-01-01", "2018-12-30", "2019-01-01"], dtype="datetime64[D]"
+        ),
+        label_end=np.array(
+            ["2017-02-01", "2019-02-01", "2019-02-02"], dtype="datetime64[D]"
+        ),
+        labels=np.ones(3),
+        actions=np.array(["Sell", "Buy", "Buy"]),
+    )
+    result = study.selected_state_shift(
+        data,
+        [
+            {
+                "session": "2019-06-01",
+                "action": "Buy",
+                "features": features[1],
+            }
+        ],
+    )
+    assert result["outside_any_training_feature_range"] == 1
+    assert result["outside_account_action_feature_range"] == 1
+    assert result["action_absent_from_training"] == 1
+    assert study.selected_state_shift(data, [])["selected_actions"] == 0
 
 
 # Enforce current opportunity timing without using any future label availability.

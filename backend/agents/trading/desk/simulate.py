@@ -50,7 +50,9 @@ import numpy as np
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import funded_execution, grading, planner, risk
 from backend.agents.trading.desk import trend_brake as trend_brake_rule
+from backend.market import simulator_checkpoint as research
 from backend.market.panel import Panel
+from backend.market.simulator_checkpoint import prepare_research as prepare_research
 
 REBALANCE = 20
 # Whether the cash an exit frees goes back to work in the names still held,
@@ -1045,6 +1047,11 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     midcycle_exits: bool = True,
     reset_topup: bool = False,
     midcycle_trims: bool = False,
+    research_hook=None,
+    research_capture=None,
+    research_resume=None,
+    research_stop=None,
+    research_prepared=None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -1232,7 +1239,40 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     untouched (a raise is expressed through the allocator's targets, which
     the redeploy buys toward). The sale fills as every live sell does, at
     the close, held back on a green open. Off, every result is byte-identical.
+    `research_*` are opt-in counterfactual tools on the incumbent execution
+    family, not another fill engine. Capture observes state before planning;
+    the order hook sees only the current close after all ordinary planners.
+    Resume uses that exact state and the same allocator/options. Stop is an
+    inclusive terminal panel index. Market preparation is cached, never orders
+    or allocator outputs. Bounded/resumed runs have no journal because the
+    current journal contract requires complete calendar/account history.
     """
+    research_options = dict(locals()) if any(
+        value is not None for value in (
+            research_hook, research_capture, research_resume,
+            research_stop, research_prepared,
+        )
+    ) else None
+    if research_options is not None:
+        research.validate_options(research_options)
+        if journal is not None and (
+            research_resume is not None or research_stop is not None
+        ):
+            raise ValueError("Bounded or resumed research runs cannot attach a journal")
+        if research_resume is not None and since is not None:
+            raise ValueError("research_resume supplies the start; omit since")
+        if research_prepared is None:
+            research_prepared = prepare_research(
+                report,
+                **{k: v for k, v in research_options.items() if k != "report"},
+            )
+        if not isinstance(research_prepared, research.PreparedResearch):
+            raise ValueError("research_prepared must come from prepare_research")
+        research_prepared.validate(report, research_options)
+        if research_resume is not None:
+            research.validate_resume(
+                research_resume, research_prepared, research_options
+            )
     decide = allocator or _targets
     if midcycle_entries not in MIDCYCLE_ENTRIES:
         raise ValueError(
@@ -1258,9 +1298,15 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         )
     if midcycle_trims and (not live_midcycle or weight_filter is None):
         raise ValueError("midcycle_trims requires live_midcycle and a weight_filter")
-    fired, blocked, trend_up, dips = _signals_for(
-        report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
-    )
+    if research_prepared is None:
+        fired, blocked, trend_up, dips = _signals_for(
+            report, entry_gate, block_overbought, band_dip_buy, trend_gated_exit, dip
+        )
+    else:
+        fired, blocked, trend_up, dips = (
+            research_prepared.fired, research_prepared.blocked,
+            research_prepared.trend_up, research_prepared.dips,
+        )
     panel: Panel = report.panel
     from backend.agents.trading.desk import entry
 
@@ -1328,7 +1374,10 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         # remainder this would record would be one the fill never left.
         raise ValueError("deferred_buys requires exit_at_close")
 
-    live_bands = entry.bollinger_z(panel.adj_close) if live_midcycle else None
+    live_bands = (
+        research_prepared.live_bands if research_prepared is not None
+        else entry.bollinger_z(panel.adj_close) if live_midcycle else None
+    )
     # The previous session's unpaid buy shares per symbol, when the deferred
     # leg is on: written on a rebalance or a live mid-cycle plan, consumed by
     # the very next plan (retried, or superseded by a rebalance), never kept.
@@ -1348,11 +1397,30 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     config = config or risk.BOOK_CONFIG
     rows, names = panel.adj_close.shape
     start = int(np.searchsorted(panel.dates, np.datetime64(since))) if since else 0
+    if research_resume is not None:
+        start = research_resume.t
+    terminal = rows - 1
+    if research_stop is not None:
+        if (
+            isinstance(research_stop, (bool, np.bool_))
+            or not isinstance(research_stop, (int, np.integer))
+            or not start <= int(research_stop) < rows
+        ):
+            raise ValueError(
+                "research_stop must be an inclusive panel index at or after start"
+            )
+        terminal = int(research_stop)
     evidence = exits
     if evidence is None and use_exits:
         evidence = exit_analyst.evidence(panel)
-    stamps = [str(d) for d in panel.dates]
-    opens = adjusted_open(panel)
+    stamps = (
+        research_prepared.stamps if research_prepared is not None
+        else [str(d) for d in panel.dates]
+    )
+    opens = (
+        research_prepared.opens if research_prepared is not None
+        else adjusted_open(panel)
+    )
     closes = panel.adj_close
     if journal is not None:
         journal.assert_inputs(panel.dates, panel.tickers, opens, closes, cost_bps)
@@ -1372,6 +1440,15 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     equity = np.full(rows, np.nan)
     rebalances = 0
     stable_desired: dict[str, float] = {}
+    if research_resume is not None:
+        book.shares = np.array(research_resume.shares, dtype=float)
+        book.cash = research_resume.cash
+        book.traded = research_resume.traded
+        book.opened = dict(research_resume.opened)
+        book.paid = dict(research_resume.paid)
+        book.trades = list(research_resume.trades)
+        rebalances = research_resume.rebalances
+        invested[start] = book.invested(closes[start])
 
     equity[start] = book.equity(closes[start])
     if journal is not None:
@@ -1388,7 +1465,31 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     rebalance_weights: dict[str, float] = {}
     # The last rebalance's decision session, for the reset top-up's one session.
     last_rebalance = -1
-    for t in range(start, rows - 1):
+    if research_resume is not None:
+        next_rebalance = research_resume.next_rebalance
+        last_rebalance = research_resume.last_rebalance
+        rebalance_weights = dict(research_resume.rebalance_weights)
+        pending_deferred = dict(research_resume.pending_deferred)
+        event_baseline = (
+            None if research_resume.event_baseline is None
+            else np.array(research_resume.event_baseline)
+        )
+        event_sold = (
+            None if research_resume.event_sold is None
+            else np.array(research_resume.event_sold)
+        )
+        previous_scale = research_resume.previous_scale
+        previous_brake = research_resume.previous_brake
+        dip_adds = research_resume.dip_adds
+    research_trades = () if research_resume is None else research_resume.trades
+    for t in range(start, terminal):
+        if research_capture is not None:
+            # Reuse immutable history until a new trade closes; never copy it on holds.
+            if len(research_trades) != len(book.trades):
+                research_trades = tuple(book.trades)
+            research_capture(research.capture(
+                research_prepared, research_options, t, book, locals(), research_trades
+            ))
         if funded_allocation:
             # An explicit company exit, named for this decision date, removes
             # the name from the stable composition for this session and every
@@ -1736,8 +1837,48 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         if event_paused:
             # Live FOMC execution owns the cycle and cannot add positions.
             order = np.minimum(order, book.shares)
+        research_metadata = None
+        research_blocked = frozenset()
+        if research_hook is not None and not event_changed and not reduced:
+            current_targets = np.asarray(decide(report, panel, config, t), dtype=float)
+            current_prices = closes[t]
+            buy_allowed = (
+                (current_targets > 0) & np.isfinite(current_prices)
+                & (current_prices > 0)
+            )
+            if blocked is not None:
+                buy_allowed &= ~blocked[t]
+            context = research.ResearchContext(
+                t=t, session=str(panel.dates[t]), symbols=tuple(panel.tickers),
+                prices=research.readonly(current_prices),
+                held_units=research.readonly(book.shares),
+                cash=float(book.cash), nav=book.equity(current_prices),
+                incumbent_units=research.readonly(order),
+                buy_allowed=research.readonly(buy_allowed),
+                current_targets=research.readonly(current_targets),
+                opened=research.readonly(
+                    [book.opened.get(j, -1) for j in range(names)], int
+                ),
+                last_rebalance=last_rebalance, next_rebalance=next_rebalance,
+                rebalanced=bool(rebalanced), cost_bps=float(cost_bps),
+            )
+            proposal = research_hook(context)
+            if proposal is not None:
+                order, pending_deferred, research_metadata, research_blocked = (
+                    research.apply_order(proposal, context, pending_deferred)
+                )
+                target = np.zeros(names)
+                priced = np.isfinite(current_prices) & (current_prices > 0)
+                if context.nav > 0:
+                    target[priced] = (
+                        order[priced] * current_prices[priced] / context.nav
+                    )
         if deferred_buys and rebalanced and not event_changed and not reduced:
             pending_deferred = _unpaid_buys(book, order, closes[t])
+        if research_blocked:
+            pending_deferred = {
+                s: q for s, q in pending_deferred.items() if s not in research_blocked
+            }
         buy_prices = opens[t + 1]
         sell_prices = opens[t + 1]
         if exit_at_close and not event_changed:
@@ -1758,6 +1899,10 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 "braked": bool(braked),
                 "sell_at_close": bool(exit_at_close and not event_changed),
                 "deferred_units": dict(pending_deferred),
+                **(
+                    {"research_order": research_metadata}
+                    if research_metadata is not None else {}
+                ),
             },
         )
         # Event-risk changes are explicitly next-open orders, including a green open.
@@ -1791,7 +1936,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         invested[t + 1] = book.invested(closes[t + 1])
         top[t + 1] = book.top_weight(closes[t + 1])
         book.observe_mark(t + 1, equity[t + 1])
-    book.finish(rows - 1)
+    book.finish(terminal)
     if journal is not None:
         pending = {}
         if pending_deferred or event_baseline is not None:
@@ -1807,19 +1952,19 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 },
                 "retry": False,
             }
-        journal.finish(rows - 1, book.cash, book.shares, book.traded, pending)
+        journal.finish(terminal, book.cash, book.shares, book.traded, pending)
     return SimResult(
-        panel.dates[start:],
-        returns[start:],
-        invested[start:],
+        panel.dates[start:terminal + 1],
+        returns[start:terminal + 1],
+        invested[start:terminal + 1],
         book.trades,
         rebalances,
-        equity[start:],
+        equity[start:terminal + 1],
         dip_adds,
         book.traded,
-        top[start:],
+        top[start:terminal + 1],
         funded_trace if funded_allocation else None,
-        risk_off[start:],
+        risk_off[start:terminal + 1],
     )
 
 

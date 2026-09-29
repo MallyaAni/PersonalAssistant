@@ -31,12 +31,19 @@ At each eligible close enumerate current-information-only alternatives:
   incumbent proposed units. Sell: reduce to zero, only if it changes that plan.
   Never reverse a stronger incumbent reduction. Only currently held names
   qualify; they need not still be A/A+. Ignore changes below /4's 0.5% NAV
-  trade floor.
+  trade floor. Pre-run clarification: require at least 0.5% NAV both versus
+  the incumbent proposal and versus current holdings; cancelling a large
+  planned add does not authorize a tiny below-floor sell.
 - A reduction sets a unit ceiling through the next actual reset. Apply it
   after every ordinary buying path and remove suppressed deferred buys.
   It does not override event execution or force immediate sells when an
   ordinary sell is cancelled. On later ordinary days it retries under the
   same execution rules. Buy/Add is a one-time proposal, not a daily top-up.
+  Pre-run clarification: if an ongoing ceiling changes the incumbent order
+  into a below-0.5%-NAV trade (including a capped buy), keep the lesser of
+  current and incumbent units that day, retaining any incumbent exit plus
+  the ceiling and deferred-buy suppression. The
+  ceiling is an instruction, not a claim that all reductions already filled.
 
 Select the highest predicted advantage strictly above **0.0005 of NAV**
 (5 bp); otherwise accept /4. Ties use symbol then action lexical order.

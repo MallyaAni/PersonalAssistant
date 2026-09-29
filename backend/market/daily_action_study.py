@@ -60,7 +60,7 @@ def index_prices(store, symbol, dates):
 
 
 # Record an all-cash notional index purchase and independently verify every mark.
-def index_account(store, symbol, dates, cost):
+def index_account(store, symbol, dates, cost, *, run_id="daily-actions/1"):
     reference = benchmarks.load_benchmark(store, symbol, dates, cost_bps=cost)
     if not reference.available:
         raise ValueError(reference.reason)
@@ -70,7 +70,7 @@ def index_account(store, symbol, dates, cost):
         (symbol,),
         opens[:, None],
         close[:, None],
-        run_id="daily-actions/1",
+        run_id=run_id,
         account_id=symbol,
         policy_id="buy-and-hold",
         cost_bps=cost,
