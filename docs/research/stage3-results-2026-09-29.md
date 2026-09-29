@@ -282,9 +282,13 @@ What it shows:
   - **2024-2026.** It would have been worth +1.6 to +3.2 bp a session
     (t 2.4-3.0), but that window has now been read twice.
 
-The laggard looks real in both windows. It is small on the window the
-floor is judged on, and the window where it is large is no longer a clean
-test. The honest next step is a forward shadow:
+The laggard looks real in both windows, but its t alone proves nothing.
+At 408 cumulative trials the expected best null t is 2.99 (the plan's
+formula), and the laggard's t of 2.8-3.5 sits at that level. What makes it
+worth a forward test is that it holds in both windows and at every book
+size. It is small on the window the floor is judged on, and the window
+where it is large is no longer a clean test. The honest next step is a
+forward shadow ([laggard-shadow-plan-2026-09-29.md](laggard-shadow-plan-2026-09-29.md)):
 
 - record the model's laggard each night in a shadow ledger;
 - change nothing the board shows;
