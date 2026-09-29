@@ -129,6 +129,11 @@ def _index(data):
     return io.session_index(data.dates)[1]
 
 
+# `n` consecutive calendar days from 2020-01-01, with the unit explicit.
+def _days(n):
+    return np.datetime64("2020-01-01") + np.arange(n, dtype="timedelta64[D]")
+
+
 # Fold records without their timings, which differ run to run.
 def _untimed(records):
     out = []
@@ -216,7 +221,7 @@ def test_fold_rows_are_contiguous_and_count_only_labelled_rows():
 @pytest.mark.parametrize("kind", [io.TI, io.S1])
 def test_fast_score_is_the_contracts_selection_score(kind):
     rng = np.random.default_rng(5)
-    dates = np.repeat(np.datetime64("2020-01-01") + np.arange(150), 20)
+    dates = np.repeat(_days(150), 20)
     yhat = np.round(rng.normal(size=len(dates)), 1)
     y = rng.normal(size=len(dates)) + 0.3 * yhat
     yhat[rng.random(len(dates)) < 0.05] = np.nan
@@ -238,7 +243,7 @@ def test_permutation_drops_find_the_only_column_a_model_reads():
     rng = np.random.default_rng(1)
     x = rng.normal(size=(5000, 3)).astype(np.float32)
     y = x[:, 1] + 0.5 * rng.normal(size=5000)
-    dates = np.repeat(np.datetime64("2020-01-01") + np.arange(250), 20)
+    dates = np.repeat(_days(250), 20)
     before = x.copy()
 
     # A model that reads column 1 only.
@@ -568,7 +573,8 @@ def test_the_cli_writes_a_forecast_the_contract_reads_back(tmp_path):
     assert cli.run(args, out=out) == 0
     text = out.getvalue()
     assert "fold 0 of 1: test" in text
-    assert "registered settings" in text
+    assert "; registered settings" in text
+    assert "NOT the registered" not in text
     forecast = io.load_forecast(tmp_path / "forecast.npz")
     assert forecast.family == io.LGBM
     assert forecast.kind == io.S1
