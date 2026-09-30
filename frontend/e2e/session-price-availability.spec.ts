@@ -268,16 +268,9 @@ for (const oldDay of [false, true]) {
   })
 }
 
-// The ticker panel's price line cannot fall back to the last close since the redesign: NameDetail
-// passes the chart `close={row?.last_close}` from the personal plan (/desk/mine) the page no longer
-// reads, while the board row reads its close from the nightly record. Expected to fail until the
-// panel is given the same close as the board (DeskPanel.tsx); the board half of the check still holds.
-const CHART_CLOSE_FALLBACK = 'product: the ticker panel gets no last close since /desk/mine is not read (DeskPanel NameDetail close={row?.last_close})'
-
 for (const knownClose of [false, true]) {
   // A stale row recorded without a price (an older collection) falls back to the last close, or to nothing, never to the old wording.
   test(`stale evidence without a price falls back to ${knownClose ? 'the last close' : 'no price'}`, async ({page, scenario: state}) => {
-    test.fail(knownClose, CHART_CLOSE_FALLBACK)
     state.lastClose = knownClose ? 330.5 : null
     state.quote = {...quote('2026-09-24T21:58:00Z'), price: null, status: 'stale', valid_until: null}
     await openDesk(page, state)
@@ -343,7 +336,6 @@ test('shows the last observed price with its session and time when the market is
 
 // With no dated quote at all, the row still carries the last close rather than nothing.
 test('unavailable quote falls back to the last close', async ({page, scenario: state}) => {
-  test.fail(true, CHART_CLOSE_FALLBACK)
   state.lastClose = 330.5
   state.quote = {...quote(), price: null, status: 'unavailable', reason: 'No fresh quote from available feeds'}
   await openDesk(page, state)

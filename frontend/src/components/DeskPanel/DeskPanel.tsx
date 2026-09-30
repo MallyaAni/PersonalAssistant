@@ -1660,6 +1660,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           equity={equity}
           latest={latest}
           row={rows.find((r) => r.ticker === openName) ?? null}
+          lastClose={closes[openName] ?? null}
           live={live}
           liveGrades={liveGrades}
           decisions={decisions}
@@ -2878,10 +2879,15 @@ const NameDetail = ({
   historyGeneration = 0,
   personalReceiptId,
   order = null,
+  lastClose = null,
 }: {
   userId: string
   ticker: string
   latest: NonNullable<DeskPayload['latest']>
+  // The name's close on the decision session, the board's own (from the
+  // nightly record), so the chart's price line falls back to it exactly as
+  // the board row does. The personal plan's row is not read any more.
+  lastClose?: number | null
   // The board's row for this name: the paper account's order, position and
   // target, worded exactly as the board words them.
   order?: BoardRow | null
@@ -2959,7 +2965,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={row?.last_close} suggestion={liveSuggestion} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
