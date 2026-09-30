@@ -52,3 +52,71 @@ study. Do not change live grades, trading decisions or portfolio sizing.
 Any subsequent economic test must compare current `/5`, SPY and QQQ with
 chronological validation, costs, drawdown and untouched test data. Modern-model
 historical hindsight is not solved by dating the document correctly.
+
+## Observed v1 result — 2026-09-30 18:00 UTC
+
+Protocol registered at `aba1278`, source-reviewed labels committed at
+`5ee36d8`, comparison implementation `498bcf3`. One Codex source review,
+not independent human adjudication. Twelve releases were retrieved with
+24 paced SEC requests; ten fit the frozen bound and two were excluded.
+No replacement, prompt tuning, label changes or retries. Twenty real calls
+to the existing `deepseek-v4-flash` completed in 142.88 seconds wall time
+(142.83 seconds summed call time; 2,730 completion tokens).
+
+**FAIL: do not promote this extractor.** Only 4/10 eligible documents produced
+fully valid exact-grounded output (4/12 of the original sample). Six were
+rejected because the model decoded entities, removed intervening formatting,
+or otherwise rewrote the purported exact quote. No invalid output became a
+feature. End-to-end correct fields: **10/26**; guidance 3/9, demand 4/8,
+financing risk 3/9. Four predeclared ambiguous fields remain excluded from
+that denominator. An extraction failure counts as incorrect for every known
+field on the failed document; it does not become a missing/neutral success.
+
+The four accepted outputs were ORCL-2026, NVDA-2022, ADBE-2022 and ADBE-2026.
+Oracle's accepted quotation was real but did not support its `raised` label:
+“we now expect” supplied neither the prior same-period target nor an explicit
+raise. Rejected raw outputs also incorrectly called NVDA-2026 and MU-2026
+raised; MU-2026 missed the explicit growing-demand sentence. ADBE-2026's
+explicit raise was correctly extracted. Exact quotation presence is therefore
+necessary but not sufficient for semantic correctness.
+
+The incumbent returned 10/10 parsed outputs; six inputs were clipped at
+24,000 characters. It read AAOI-2026's guidance/demand as +1/+1, while also
+correctly recording a GAAP net loss of $22.8 million. This is an optimistic
+outlook score, not evidence of cheap valuation or a risk-free entry. On the
+four unambiguous strengthening-demand examples its direction was positive
+4/4. On four strict `not_stated` demand labels it gave neutral once and
+positive/negative three times; its broader prompt and lack of a missingness
+field prevent treating these as the same classification task. Its guidance
+score cannot be scored as a guidance-revision classifier.
+
+Raw public answers, source URLs, hashes, clipping, time and usage:
+[real-comparison-v1.json](scorecards/grounded-release/real-comparison-v1.json).
+Frozen annotations:
+[real-labels-v1.json](scorecards/grounded-release/real-labels-v1.json).
+Full immutable input texts remain on Spark at
+`/home/animallya96/scratch/grounded-release.YRPKeN/real-release-corpus-v1.json`;
+its file hash is recorded in the result manifest. No further SEC retrieval is
+needed. Structural/integration acceptance: 164 related backend tests pass,
+eight existing all-NaN fixture warnings; changed Python passes Ruff.
+
+This is a small deliberately selected development diagnostic, not evidence of
+market generalization, economic superiority, or a profitable replacement for
+`/5`. Live policy, scores, model serving and broker state remain unchanged.
+
+## Next bounded ablation — registered before normalized-input inference
+
+Test input hygiene only: decode HTML entities once and canonicalize whitespace
+before inference. Preserve raw and normalized hashes, text lengths, source
+metadata and transformation version. Quotes/offsets must still match the exact
+text sent to the model; do not normalize or repair a model's answer. The frozen
+prompt, schema, 48,000-character/1,200-token limits and labels stay unchanged.
+
+One grounded call for each of the same ten eligible v1 releases, at most ten
+calls; do not rerun the incumbent or tune prompts. The two original oversize
+rows remain unscored, though report their new input-bound eligibility. No new
+labels will be inferred for them. This is an in-sample diagnostic ablation,
+not a fresh test set. Record v1 before this run, retain every failure, and do
+not promote even a perfect in-sample result without independent validation.
+If this does not fix extraction quality, stop this variant rather than stacking
+prompt exceptions or launching a large historical rescore.

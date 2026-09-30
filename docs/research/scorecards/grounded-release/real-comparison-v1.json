@@ -1,0 +1,1077 @@
+{
+  "completed_at": "2026-09-30T18:00:50.315450+00:00",
+  "corpus_sha256": "f8b3497c0dbc31674acced034c72c63a9bfb71efb61caf5d19915fd7973b3ba3",
+  "grounded_version": "grounded_release/1",
+  "incumbent_version": "release_tone/3",
+  "labels_sha256": "653f0339df99fdc4ae7d7e144c25448c9b87cbbc46c9c8f797837ffceacbf2be",
+  "model": "deepseek-v4-flash",
+  "revision": "498bcf3",
+  "rows": [
+    {
+      "accession": "0001683168-22-007251",
+      "cik": 1158114,
+      "cutoff": "2022-12-31",
+      "expected": {
+        "demand": null,
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "filed": "2022-11-03",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"not_comparable\",\n    \"quote\": \"For the fourth quarter of 2022, the company currently expects: Revenue in the range of $58 million to $64 million.\"\n  },\n  \"demand\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 6.550249940250069,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 24878,
+          "input_sha256": "da37a9c7435e08ac6b56580089dc2fdb449a566e508dfd690c67f8c3b8a0b22b",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 103,
+            "prompt_tokens": 8018,
+            "prompt_tokens_details": null,
+            "total_tokens": 8121
+          }
+        }
+      ],
+      "grounded_error": "ValueError",
+      "id": "AAOI-2022",
+      "incumbent": {
+        "capex": 0,
+        "demand": 0.4,
+        "eps_usd": -0.56,
+        "gross_margin_pct": 17.2,
+        "guidance": 0.2,
+        "net_income_usd_m": -15.6,
+        "pricing": 0,
+        "quarter_end": "2022-09-30",
+        "revenue_usd_m": 56.7,
+        "summary": "Q4 revenue guidance of $58-64M is above Q3's $56.7M, driven by continued CATV demand and a 400G ramp, though still a net loss.",
+        "supply_constrained": 0,
+        "truncated": true
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 0.2,\n  \"demand\": 0.4,\n  \"pricing\": 0.0,\n  \"capex\": 0.0,\n  \"supply_constrained\": 0.0,\n  \"summary\": \"Q4 revenue guidance of $58-64M is above Q3's $56.7M, driven by continued CATV demand and a 400G ramp, though still a net loss.\",\n  \"quarter_end\": \"2022-09-30\",\n  \"revenue_usd_m\": 56.7,\n  \"eps_usd\": -0.56,\n  \"net_income_usd_m\": -15.6,\n  \"gross_margin_pct\": 17.2\n}",
+          "elapsed_seconds": 7.698608093895018,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 24000,
+          "input_sha256": "c07ac796dc918950e0738cec08c8bf8db8a8e741fb0cc815887db83b5e30e779",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 165,
+            "prompt_tokens": 8088,
+            "prompt_tokens_details": null,
+            "total_tokens": 8253
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "a1672dcf844a86283f4ceca09a381a5245b5d8c8c6931ef6a82874bbb376130c",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316822007251/0001683168-22-007251-index.html",
+      "published_at": "2022-11-03T20:10:27+00:00",
+      "retrieved_at": "2026-09-30T17:50:11.820899+00:00",
+      "source_chars": 24878,
+      "source_html_sha256": "263517fffc771f85696252d487ad68b77fe667c06a4e0ebfa068232471b18a51",
+      "source_sha256": "da37a9c7435e08ac6b56580089dc2fdb449a566e508dfd690c67f8c3b8a0b22b",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316822007251/applied_ex9901.htm",
+      "status": "ready",
+      "ticker": "AAOI"
+    },
+    {
+      "accession": "0001683168-26-006055",
+      "cik": 1158114,
+      "cutoff": "2026-09-30",
+      "expected": {
+        "demand": null,
+        "financing_risk": "not_stated",
+        "guidance": null
+      },
+      "filed": "2026-08-06",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"not_comparable\",\n    \"quote\": \"For third quarter of 2026, the company currently expects: Revenue in the range of $255 million to $290 million.\"\n  },\n  \"demand\": {\n    \"value\": \"strengthening\",\n    \"quote\": \"Strong demand for high-speed optics alongside high-volume adoption of our 1.8 GHz CATV products generated powerful results during the quarter.\"\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 7.427057559136301,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 27693,
+          "input_sha256": "f5dabc201a48c2f7da7e981a15f7fe38803422117c221b8f605b9a3b1025b86c",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 128,
+            "prompt_tokens": 8919,
+            "prompt_tokens_details": null,
+            "total_tokens": 9047
+          }
+        }
+      ],
+      "grounded_error": "ValueError",
+      "id": "AAOI-2026",
+      "incumbent": {
+        "capex": 1,
+        "demand": 1,
+        "eps_usd": -0.28,
+        "gross_margin_pct": 27.7,
+        "guidance": 1,
+        "net_income_usd_m": -22.8,
+        "pricing": 0,
+        "quarter_end": "2026-06-30",
+        "revenue_usd_m": 191.9,
+        "summary": "AOI guides Q3 2026 revenue of $255-290M, up from $191.9M, with non-GAAP net income of $10.1-24.0M, citing strong demand outpacing capacity through mid-2027 and capacity expansion.",
+        "supply_constrained": 1,
+        "truncated": true
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 1,\n  \"demand\": 1,\n  \"pricing\": 0,\n  \"capex\": 1,\n  \"supply_constrained\": 1,\n  \"summary\": \"AOI guides Q3 2026 revenue of $255-290M, up from $191.9M, with non-GAAP net income of $10.1-24.0M, citing strong demand outpacing capacity through mid-2027 and capacity expansion.\",\n  \"quarter_end\": \"2026-06-30\",\n  \"revenue_usd_m\": 191.9,\n  \"eps_usd\": -0.28,\n  \"net_income_usd_m\": -22.8,\n  \"gross_margin_pct\": 27.7\n}",
+          "elapsed_seconds": 7.509211442898959,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 24000,
+          "input_sha256": "91ef1500c9a9bd7502243daf0073ba825ee581a7c5d5c0cd2bf5d8b32cfe4960",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 171,
+            "prompt_tokens": 7860,
+            "prompt_tokens_details": null,
+            "total_tokens": 8031
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "f1425db5db236d7e3c404e1a96927b75224cdafe3dbd929b03ebe0e98ad6cdbf",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316826006055/0001683168-26-006055-index.html",
+      "published_at": "2026-08-06T20:13:01+00:00",
+      "retrieved_at": "2026-09-30T17:50:12.080552+00:00",
+      "source_chars": 27693,
+      "source_html_sha256": "35c6b238e1d77269e60b532aa7fdd382a001150bce789e61e4e36ff0174ad22f",
+      "source_sha256": "f5dabc201a48c2f7da7e981a15f7fe38803422117c221b8f605b9a3b1025b86c",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316826006055/aaoi_ex9901.htm",
+      "status": "ready",
+      "ticker": "AAOI"
+    },
+    {
+      "accession": "0001564590-22-039236",
+      "cik": 1341439,
+      "cutoff": "2022-12-31",
+      "expected": null,
+      "filed": "2022-12-12",
+      "id": "ORCL-2022",
+      "index_sha256": "c2693b63cf3178e47e8bfa96a6cbcdd129e741f8f5b70103abfe1ab970df02d7",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1341439/000156459022039236/0001564590-22-039236-index.html",
+      "published_at": "2022-12-12T21:11:56+00:00",
+      "retrieved_at": "2026-09-30T17:50:12.524355+00:00",
+      "source_chars": 53524,
+      "source_html_sha256": "47a3a4773975c6ab26177c8040f02d847b0165a725e4837da46e877ac15e56bc",
+      "source_sha256": "b9a9b923e87bb51669e0d69e63044ff3516e416c75b295bfef4fdc5c25a88d0d",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1341439/000156459022039236/orcl-ex991_6.htm",
+      "status": "oversize",
+      "ticker": "ORCL"
+    },
+    {
+      "accession": "0001193125-26-387905",
+      "cik": 1341439,
+      "cutoff": "2026-09-30",
+      "expected": {
+        "demand": "strengthening",
+        "financing_risk": null,
+        "guidance": "not_comparable"
+      },
+      "filed": "2026-09-10",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"raised\",\n    \"quote\": \"For fiscal year 2027, we now expect total revenue to be at least $90 billion, and non-GAAP EPS to be at $8.10.\"\n  },\n  \"demand\": {\n    \"value\": \"strengthening\",\n    \"quote\": \"Customer demand for AI Cloud Training and Inferencing Services continues to grow faster than supply.\"\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 11.169780715368688,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 43798,
+          "input_sha256": "c74688b4102bf787fa136016806d88ab852713be923ef02ffd83a69cc5cf153a",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 123,
+            "prompt_tokens": 14365,
+            "prompt_tokens_details": null,
+            "total_tokens": 14488
+          }
+        }
+      ],
+      "id": "ORCL-2026",
+      "incumbent": {
+        "capex": 1,
+        "demand": 1,
+        "eps_usd": 1.56,
+        "gross_margin_pct": null,
+        "guidance": 1,
+        "net_income_usd_m": 4679,
+        "pricing": 0,
+        "quarter_end": "2026-08-31",
+        "revenue_usd_m": 19345,
+        "summary": "Oracle guides Q2 FY27 revenue growth of 30-34% and non-GAAP EPS growth of 19-25%, with full-year revenue at least $90B, driven by strong AI cloud demand and capacity expansion.",
+        "supply_constrained": 1,
+        "truncated": true
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 1,\n  \"demand\": 1,\n  \"pricing\": 0,\n  \"capex\": 1,\n  \"supply_constrained\": 1,\n  \"summary\": \"Oracle guides Q2 FY27 revenue growth of 30-34% and non-GAAP EPS growth of 19-25%, with full-year revenue at least $90B, driven by strong AI cloud demand and capacity expansion.\",\n  \"quarter_end\": \"2026-08-31\",\n  \"revenue_usd_m\": 19345,\n  \"eps_usd\": 1.56,\n  \"net_income_usd_m\": 4679,\n  \"gross_margin_pct\": null\n}",
+          "elapsed_seconds": 7.463751634117216,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 24000,
+          "input_sha256": "c2f704e66d9d25a481693e8bdec4f8dbe87986f1f2c6200c9a553cfa09929fba",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 156,
+            "prompt_tokens": 8236,
+            "prompt_tokens_details": null,
+            "total_tokens": 8392
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "aae3a263049bd1a93610f62357d0101677e8bee0f94d77d31693b1ee72d5c247",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1341439/000119312526387905/0001193125-26-387905-index.html",
+      "observed": {
+        "demand": "strengthening",
+        "financing_risk": "not_stated",
+        "guidance": "raised"
+      },
+      "published_at": "2026-09-10T20:16:50+00:00",
+      "result": {
+        "elapsed_seconds": 11.17236252501607,
+        "extracted_at": "2026-09-30T17:59:07.803450+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": 2650,
+            "quote": "Customer demand for AI Cloud Training and Inferencing Services continues to grow faster than supply.",
+            "start": 2550,
+            "value": "strengthening"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 4021,
+            "quote": "For fiscal year 2027, we now expect total revenue to be at least $90 billion, and non-GAAP EPS to be at $8.10.",
+            "start": 3911,
+            "value": "raised"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-10T20:16:50+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 43798,
+        "source_sha256": "c74688b4102bf787fa136016806d88ab852713be923ef02ffd83a69cc5cf153a",
+        "truncated": false,
+        "usable_after": "2026-09-30T17:59:07.803450+00:00",
+        "usage": {
+          "completion_tokens": 123,
+          "prompt_tokens": 14365,
+          "prompt_tokens_details": null,
+          "total_tokens": 14488
+        },
+        "version": "grounded_release/1"
+      },
+      "retrieved_at": "2026-09-30T17:50:12.820874+00:00",
+      "source_chars": 43798,
+      "source_html_sha256": "fda680a333380400a48e0153d9df6045a1855e87abe8b3061e500bac0edd9492",
+      "source_sha256": "c74688b4102bf787fa136016806d88ab852713be923ef02ffd83a69cc5cf153a",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1341439/000119312526387905/orcl-ex99_1.htm",
+      "status": "ready",
+      "ticker": "ORCL"
+    },
+    {
+      "accession": "0001045810-22-000163",
+      "cik": 1045810,
+      "cutoff": "2022-12-31",
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "filed": "2022-11-16",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"not_comparable\",\n    \"quote\": \"Revenue is expected to be $6.00 billion, plus or minus 2%.\"\n  },\n  \"demand\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 6.388096435926855,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 27135,
+          "input_sha256": "cfa35c156e4848ee64e95aa760a30819b7c07de7147ad34310835ea82c5c9e90",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 92,
+            "prompt_tokens": 8095,
+            "prompt_tokens_details": null,
+            "total_tokens": 8187
+          }
+        }
+      ],
+      "id": "NVDA-2022",
+      "incumbent": {
+        "capex": 0,
+        "demand": 0.2,
+        "eps_usd": 0.27,
+        "gross_margin_pct": 53.6,
+        "guidance": 0.2,
+        "net_income_usd_m": 680,
+        "pricing": 0,
+        "quarter_end": "2022-10-30",
+        "revenue_usd_m": 5931,
+        "summary": "NVIDIA guides Q4 FY2023 revenue to $6.00B, up from Q3's $5.93B, with gross margin improving to 63.2% GAAP, citing new product ramps and inventory correction.",
+        "supply_constrained": 0,
+        "truncated": true
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 0.2,\n  \"demand\": 0.2,\n  \"pricing\": 0.0,\n  \"capex\": 0.0,\n  \"supply_constrained\": 0.0,\n  \"summary\": \"NVIDIA guides Q4 FY2023 revenue to $6.00B, up from Q3's $5.93B, with gross margin improving to 63.2% GAAP, citing new product ramps and inventory correction.\",\n  \"quarter_end\": \"2022-10-30\",\n  \"revenue_usd_m\": 5931.0,\n  \"eps_usd\": 0.27,\n  \"net_income_usd_m\": 680.0,\n  \"gross_margin_pct\": 53.6\n}",
+          "elapsed_seconds": 7.089881143067032,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 24000,
+          "input_sha256": "7a1c8763f7e7f59c9898a7b7872ee9fe51f20f7b89834e5bab448743f8bae622",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 175,
+            "prompt_tokens": 7413,
+            "prompt_tokens_details": null,
+            "total_tokens": 7588
+          }
+        }
+      ],
+      "incumbent_demand_direction": "neutral",
+      "index_sha256": "5ffff156db39d8ba6010d51dea6d24cbf21cfb03f0179ee18b6846df510cdc0b",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581022000163/0001045810-22-000163-index.html",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "published_at": "2022-11-16T21:21:18+00:00",
+      "result": {
+        "elapsed_seconds": 6.390559364110231,
+        "extracted_at": "2026-09-30T17:59:21.658566+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 2994,
+            "quote": "Revenue is expected to be $6.00 billion, plus or minus 2%.",
+            "start": 2936,
+            "value": "not_comparable"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2022-11-16T21:21:18+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 27135,
+        "source_sha256": "cfa35c156e4848ee64e95aa760a30819b7c07de7147ad34310835ea82c5c9e90",
+        "truncated": false,
+        "usable_after": "2026-09-30T17:59:21.658566+00:00",
+        "usage": {
+          "completion_tokens": 92,
+          "prompt_tokens": 8095,
+          "prompt_tokens_details": null,
+          "total_tokens": 8187
+        },
+        "version": "grounded_release/1"
+      },
+      "retrieved_at": "2026-09-30T17:50:13.150089+00:00",
+      "source_chars": 27135,
+      "source_html_sha256": "0ea7b72117c2b3fcde0ca9536de037a9db2b305d9288a619611bbaa5aad9e472",
+      "source_sha256": "cfa35c156e4848ee64e95aa760a30819b7c07de7147ad34310835ea82c5c9e90",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581022000163/q3fy23pr.htm",
+      "status": "ready",
+      "ticker": "NVDA"
+    },
+    {
+      "accession": "0001045810-26-000073",
+      "cik": 1045810,
+      "cutoff": "2026-09-30",
+      "expected": {
+        "demand": "strengthening",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "filed": "2026-08-26",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"raised\",\n    \"quote\": \"NVIDIA's outlook for the third quarter of fiscal 2027 is as follows: Revenue is expected to be $108.0 billion, plus or minus 2%.\"\n  },\n  \"demand\": {\n    \"value\": \"strengthening\",\n    \"quote\": \"And demand is accelerating.\"\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 6.943328815046698,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 25575,
+          "input_sha256": "74410a311c875bb1bc69df5354b17be9f04a04a96d003ce11ce71b788ad86821",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 111,
+            "prompt_tokens": 7728,
+            "prompt_tokens_details": null,
+            "total_tokens": 7839
+          }
+        }
+      ],
+      "grounded_error": "ValueError",
+      "id": "NVDA-2026",
+      "incumbent": {
+        "capex": 1,
+        "demand": 1,
+        "eps_usd": 2.46,
+        "gross_margin_pct": 75,
+        "guidance": 1,
+        "net_income_usd_m": 59688,
+        "pricing": 0,
+        "quarter_end": "2026-07-26",
+        "revenue_usd_m": 96221,
+        "summary": "NVIDIA expects Q3 FY27 revenue of $108B, up from $96.2B, citing accelerating AI demand and full production of Vera Rubin.",
+        "supply_constrained": 0,
+        "truncated": true
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 1,\n  \"demand\": 1,\n  \"pricing\": 0,\n  \"capex\": 1,\n  \"supply_constrained\": 0,\n  \"summary\": \"NVIDIA expects Q3 FY27 revenue of $108B, up from $96.2B, citing accelerating AI demand and full production of Vera Rubin.\",\n  \"quarter_end\": \"2026-07-26\",\n  \"revenue_usd_m\": 96221,\n  \"eps_usd\": 2.46,\n  \"net_income_usd_m\": 59688,\n  \"gross_margin_pct\": 75.0\n}",
+          "elapsed_seconds": 6.6581025421619415,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 24000,
+          "input_sha256": "c7ba99d6c1ef313efe01a043231bb591d44fe1a9c81915b9bc1476dec87003a1",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 145,
+            "prompt_tokens": 7674,
+            "prompt_tokens_details": null,
+            "total_tokens": 7819
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "62590b389fd4feb908c50110ecaf9acfce9b8449b7d693c208672acd3cbe1e99",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/0001045810-26-000073-index.html",
+      "published_at": "2026-08-26T20:21:19+00:00",
+      "retrieved_at": "2026-09-30T17:50:13.453742+00:00",
+      "source_chars": 25575,
+      "source_html_sha256": "623816b5c1ed33dc0d8acb00b9b88c92a032c767faadaabfe7359b59dc7f16fb",
+      "source_sha256": "74410a311c875bb1bc69df5354b17be9f04a04a96d003ce11ce71b788ad86821",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm",
+      "status": "ready",
+      "ticker": "NVDA"
+    },
+    {
+      "accession": "0000723125-22-000070",
+      "cik": 723125,
+      "cutoff": "2022-12-31",
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "filed": "2022-12-21",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"not_comparable\",\n    \"quote\": \"Revenue $3.80 billion ± $200 million\"\n  },\n  \"demand\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 5.065535445231944,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 18843,
+          "input_sha256": "05d5ec77d99437d875d713b19da6569fcde94cdaff6807dee0873adec14525bc",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 87,
+            "prompt_tokens": 5777,
+            "prompt_tokens_details": null,
+            "total_tokens": 5864
+          }
+        }
+      ],
+      "grounded_error": "ValueError",
+      "id": "MU-2022",
+      "incumbent": {
+        "capex": -0.5,
+        "demand": -0.5,
+        "eps_usd": -0.18,
+        "gross_margin_pct": 21.9,
+        "guidance": -0.8,
+        "net_income_usd_m": -195,
+        "pricing": -0.5,
+        "quarter_end": "2022-12-01",
+        "revenue_usd_m": 4085,
+        "summary": "Micron guides FQ2-23 revenue down to $3.8B with a wider net loss, citing challenging industry conditions and customer inventory adjustments, while cutting supply and expenses.",
+        "supply_constrained": 0,
+        "truncated": false
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": -0.8,\n  \"demand\": -0.5,\n  \"pricing\": -0.5,\n  \"capex\": -0.5,\n  \"supply_constrained\": 0.0,\n  \"summary\": \"Micron guides FQ2-23 revenue down to $3.8B with a wider net loss, citing challenging industry conditions and customer inventory adjustments, while cutting supply and expenses.\",\n  \"quarter_end\": \"2022-12-01\",\n  \"revenue_usd_m\": 4085.0,\n  \"eps_usd\": -0.18,\n  \"net_income_usd_m\": -195.0,\n  \"gross_margin_pct\": 21.9\n}",
+          "elapsed_seconds": 6.418360259383917,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 18843,
+          "input_sha256": "05d5ec77d99437d875d713b19da6569fcde94cdaff6807dee0873adec14525bc",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 163,
+            "prompt_tokens": 6192,
+            "prompt_tokens_details": null,
+            "total_tokens": 6355
+          }
+        }
+      ],
+      "incumbent_demand_direction": "weakening",
+      "index_sha256": "b56607f7ed0921622fdca9f2280bb3e165959a085669f939634925505dd98f27",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312522000070/0000723125-22-000070-index.html",
+      "published_at": "2022-12-21T21:00:43+00:00",
+      "retrieved_at": "2026-09-30T17:50:13.724819+00:00",
+      "source_chars": 18843,
+      "source_html_sha256": "48a8f875c2fe0db6e526ab701613afde2d729b213afd7bf682966e5c806f0558",
+      "source_sha256": "05d5ec77d99437d875d713b19da6569fcde94cdaff6807dee0873adec14525bc",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312522000070/a2023q1ex991-pressrelease.htm",
+      "status": "ready",
+      "ticker": "MU"
+    },
+    {
+      "accession": "0000723125-26-000013",
+      "cik": 723125,
+      "cutoff": "2026-09-30",
+      "expected": {
+        "demand": "strengthening",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "filed": "2026-06-24",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"raised\",\n    \"quote\": \"Micron's record fiscal Q3 financial results and even stronger outlook for Q4 reflect the strategic value of memory in the AI era.\"\n  },\n  \"demand\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 5.715382830239832,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 20262,
+          "input_sha256": "dad8cad921b994db2ca49d2860413d713bdb8bac4b2ff50f515bafbb9ef1ac39",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 101,
+            "prompt_tokens": 6378,
+            "prompt_tokens_details": null,
+            "total_tokens": 6479
+          }
+        }
+      ],
+      "grounded_error": "ValueError",
+      "id": "MU-2026",
+      "incumbent": {
+        "capex": 1,
+        "demand": 1,
+        "eps_usd": 24.67,
+        "gross_margin_pct": 84.6,
+        "guidance": 1,
+        "net_income_usd_m": 28243,
+        "pricing": 0,
+        "quarter_end": "2026-05-28",
+        "revenue_usd_m": 41456,
+        "summary": "Micron reports record Q3 results and guides Q4 revenue to $50B, up from $41.46B, citing strong AI-driven demand and strategic customer agreements.",
+        "supply_constrained": 0,
+        "truncated": false
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 1,\n  \"demand\": 1,\n  \"pricing\": 0,\n  \"capex\": 1,\n  \"supply_constrained\": 0,\n  \"summary\": \"Micron reports record Q3 results and guides Q4 revenue to $50B, up from $41.46B, citing strong AI-driven demand and strategic customer agreements.\",\n  \"quarter_end\": \"2026-05-28\",\n  \"revenue_usd_m\": 41456,\n  \"eps_usd\": 24.67,\n  \"net_income_usd_m\": 28243,\n  \"gross_margin_pct\": 84.6\n}",
+          "elapsed_seconds": 7.119452744722366,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 20262,
+          "input_sha256": "dad8cad921b994db2ca49d2860413d713bdb8bac4b2ff50f515bafbb9ef1ac39",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 148,
+            "prompt_tokens": 6793,
+            "prompt_tokens_details": null,
+            "total_tokens": 6941
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "46a1f468f26acc2ad4253af3e57678e1feeea7a6e62e9388a1fa34bdf0ad6660",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/0000723125-26-000013-index.html",
+      "published_at": "2026-06-24T20:02:01+00:00",
+      "retrieved_at": "2026-09-30T17:50:14.053929+00:00",
+      "source_chars": 20262,
+      "source_html_sha256": "900df96ffcfb411dffd3abfd0c979c95c2e7463bcf04396cc8deaa70efada04d",
+      "source_sha256": "dad8cad921b994db2ca49d2860413d713bdb8bac4b2ff50f515bafbb9ef1ac39",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/a2026q3ex991-pressrelease.htm",
+      "status": "ready",
+      "ticker": "MU"
+    },
+    {
+      "accession": "0000796343-22-000225",
+      "cik": 796343,
+      "cutoff": "2022-12-31",
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "filed": "2022-12-15",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"not_comparable\",\n    \"quote\": \"Adobe is providing fiscal year 2023 targets, as well as Q1 targets, which do not reflect the planned acquisition of Figma that is expected to close during 2023.\"\n  },\n  \"demand\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 6.09680734295398,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 23209,
+          "input_sha256": "d9f0f28d0c8c6ac6283201b90b43cb162a1760e1098f7bcbc9c19613f2646ccf",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 113,
+            "prompt_tokens": 6736,
+            "prompt_tokens_details": null,
+            "total_tokens": 6849
+          }
+        }
+      ],
+      "id": "ADBE-2022",
+      "incumbent": {
+        "capex": 0,
+        "demand": 0.5,
+        "eps_usd": 2.53,
+        "gross_margin_pct": 87.45,
+        "guidance": 0.6,
+        "net_income_usd_m": 1176,
+        "pricing": 0,
+        "quarter_end": "2022-12-02",
+        "revenue_usd_m": 4525,
+        "summary": "Adobe guides fiscal 2023 revenue growth of about 9% (13% constant currency) and higher EPS, citing strong demand and innovation despite a 4% FX headwind.",
+        "supply_constrained": 0,
+        "truncated": false
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 0.6,\n  \"demand\": 0.5,\n  \"pricing\": 0.0,\n  \"capex\": 0.0,\n  \"supply_constrained\": 0.0,\n  \"summary\": \"Adobe guides fiscal 2023 revenue growth of about 9% (13% constant currency) and higher EPS, citing strong demand and innovation despite a 4% FX headwind.\",\n  \"quarter_end\": \"2022-12-02\",\n  \"revenue_usd_m\": 4525.0,\n  \"eps_usd\": 2.53,\n  \"net_income_usd_m\": 1176.0,\n  \"gross_margin_pct\": 87.45\n}",
+          "elapsed_seconds": 7.048867397941649,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 23209,
+          "input_sha256": "d9f0f28d0c8c6ac6283201b90b43cb162a1760e1098f7bcbc9c19613f2646ccf",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 164,
+            "prompt_tokens": 7151,
+            "prompt_tokens_details": null,
+            "total_tokens": 7315
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "2ca58af44248a915b9cbd5f73b480f5fb48f0b764efcd3673cfc3c0992a75564",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634322000225/0000796343-22-000225-index.html",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "published_at": "2022-12-15T21:06:10+00:00",
+      "result": {
+        "elapsed_seconds": 6.1104676141403615,
+        "extracted_at": "2026-09-30T18:00:12.788832+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 4598,
+            "quote": "Adobe is providing fiscal year 2023 targets, as well as Q1 targets, which do not reflect the planned acquisition of Figma that is expected to close during 2023.",
+            "start": 4438,
+            "value": "not_comparable"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2022-12-15T21:06:10+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 23209,
+        "source_sha256": "d9f0f28d0c8c6ac6283201b90b43cb162a1760e1098f7bcbc9c19613f2646ccf",
+        "truncated": false,
+        "usable_after": "2026-09-30T18:00:12.788832+00:00",
+        "usage": {
+          "completion_tokens": 113,
+          "prompt_tokens": 6736,
+          "prompt_tokens_details": null,
+          "total_tokens": 6849
+        },
+        "version": "grounded_release/1"
+      },
+      "retrieved_at": "2026-09-30T17:50:14.374206+00:00",
+      "source_chars": 23209,
+      "source_html_sha256": "aeb522f522c69537e3751b83e680274b954ec10fbbf50cec6c81652fb3fdd5d9",
+      "source_sha256": "d9f0f28d0c8c6ac6283201b90b43cb162a1760e1098f7bcbc9c19613f2646ccf",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634322000225/adbeex991q422.htm",
+      "status": "ready",
+      "ticker": "ADBE"
+    },
+    {
+      "accession": "0000796343-26-000147",
+      "cik": 796343,
+      "cutoff": "2026-09-30",
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "raised"
+      },
+      "filed": "2026-09-10",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"raised\",\n    \"quote\": \"Adobe delivered double-digit revenue and EPS growth in Q3 and we're raising full year revenue and EPS targets\"\n  },\n  \"demand\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 6.197886761743575,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 22258,
+          "input_sha256": "60b91827218d6870e78f77552e23582980d811aa09d31559306c4083675c4865",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 96,
+            "prompt_tokens": 6299,
+            "prompt_tokens_details": null,
+            "total_tokens": 6395
+          }
+        }
+      ],
+      "id": "ADBE-2026",
+      "incumbent": {
+        "capex": 0,
+        "demand": 0.5,
+        "eps_usd": 4.62,
+        "gross_margin_pct": 88.7,
+        "guidance": 0.8,
+        "net_income_usd_m": 1827,
+        "pricing": 0,
+        "quarter_end": "2026-08-28",
+        "revenue_usd_m": 6760,
+        "summary": "Adobe raised full-year revenue and EPS targets after record Q3, citing AI innovation and expanding user base, with Q4 revenue guided to $6.80-$6.85B.",
+        "supply_constrained": 0,
+        "truncated": false
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 0.8,\n  \"demand\": 0.5,\n  \"pricing\": 0.0,\n  \"capex\": 0.0,\n  \"supply_constrained\": 0.0,\n  \"summary\": \"Adobe raised full-year revenue and EPS targets after record Q3, citing AI innovation and expanding user base, with Q4 revenue guided to $6.80-$6.85B.\",\n  \"quarter_end\": \"2026-08-28\",\n  \"revenue_usd_m\": 6760.0,\n  \"eps_usd\": 4.62,\n  \"net_income_usd_m\": 1827.0,\n  \"gross_margin_pct\": 88.7\n}",
+          "elapsed_seconds": 7.687162295915186,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 22258,
+          "input_sha256": "60b91827218d6870e78f77552e23582980d811aa09d31559306c4083675c4865",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 164,
+            "prompt_tokens": 6714,
+            "prompt_tokens_details": null,
+            "total_tokens": 6878
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "5f3b5e4aa07a04c98bdb55a603a29f20a0c24672cc43af6b0bd5bd6e03a9def8",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634326000147/0000796343-26-000147-index.html",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "raised"
+      },
+      "published_at": "2026-09-10T20:06:14+00:00",
+      "result": {
+        "elapsed_seconds": 6.202728603035212,
+        "extracted_at": "2026-09-30T18:00:26.042409+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 1314,
+            "quote": "Adobe delivered double-digit revenue and EPS growth in Q3 and we're raising full year revenue and EPS targets",
+            "start": 1205,
+            "value": "raised"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-10T20:06:14+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 22258,
+        "source_sha256": "60b91827218d6870e78f77552e23582980d811aa09d31559306c4083675c4865",
+        "truncated": false,
+        "usable_after": "2026-09-30T18:00:26.042409+00:00",
+        "usage": {
+          "completion_tokens": 96,
+          "prompt_tokens": 6299,
+          "prompt_tokens_details": null,
+          "total_tokens": 6395
+        },
+        "version": "grounded_release/1"
+      },
+      "retrieved_at": "2026-09-30T17:50:14.627496+00:00",
+      "source_chars": 22258,
+      "source_html_sha256": "987c309a07aeaa63a4787b4f2a77f5df73a0c56215f7bc82fc5528ccfeac5d39",
+      "source_sha256": "60b91827218d6870e78f77552e23582980d811aa09d31559306c4083675c4865",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634326000147/adbeex991q326.htm",
+      "status": "ready",
+      "ticker": "ADBE"
+    },
+    {
+      "accession": "0000050863-22-000037",
+      "cik": 50863,
+      "cutoff": "2022-12-31",
+      "expected": null,
+      "filed": "2022-10-27",
+      "id": "INTC-2022",
+      "index_sha256": "f88379ffcd72a5b41b9a1a7e9600b6967f37e74ef494ba436f480f2821287ee2",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086322000037/0000050863-22-000037-index.html",
+      "published_at": "2022-10-27T20:02:53+00:00",
+      "retrieved_at": "2026-09-30T17:50:14.964852+00:00",
+      "source_chars": 49389,
+      "source_html_sha256": "5c0aa5f0e440de29d2ce0cab965555f95b5e25eec5f00a955b6a2e1d29d67148",
+      "source_sha256": "69c1e58500fd48849dddc20f12e7747f4dbaa9a46c1e0bb7c4796f2cc6fbab64",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086322000037/q322_earningsrelease.htm",
+      "status": "oversize",
+      "ticker": "INTC"
+    },
+    {
+      "accession": "0000050863-26-000155",
+      "cik": 50863,
+      "cutoff": "2026-09-30",
+      "expected": {
+        "demand": "strengthening",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "filed": "2026-07-23",
+      "grounded_calls": [
+        {
+          "content": "{\n  \"guidance\": {\n    \"value\": \"not_comparable\",\n    \"quote\": \"Forecasting third-quarter 2026 revenue of $15.8 billion to $16.8 billion; expecting third-quarter EPS attributable to Intel of $0.31 and non-GAAP EPS attributable to Intel of $0.38.\"\n  },\n  \"demand\": {\n    \"value\": \"strengthening\",\n    \"quote\": \"AI-driven compute continues to strengthen, and to support expected growth this year and next across products and foundry, we are meaningfully increasing our investments in equipment, clean room space, and substrates.\"\n  },\n  \"financing_risk\": {\n    \"value\": \"not_stated\",\n    \"quote\": null\n  }\n}",
+          "elapsed_seconds": 9.907285755034536,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 40199,
+          "input_sha256": "070b50f81f47b147fcac0784d195acfcdfd3df5a6a7f7d9b78066a9f7949d0ca",
+          "max_tokens": 1200,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+          "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 161,
+            "prompt_tokens": 10147,
+            "prompt_tokens_details": null,
+            "total_tokens": 10308
+          }
+        }
+      ],
+      "grounded_error": "ValueError",
+      "id": "INTC-2026",
+      "incumbent": {
+        "capex": 0.8,
+        "demand": 0.8,
+        "eps_usd": -2.16,
+        "gross_margin_pct": 40.4,
+        "guidance": 0.3,
+        "net_income_usd_m": -11033,
+        "pricing": 0,
+        "quarter_end": "2026-06-27",
+        "revenue_usd_m": 16128,
+        "summary": "Intel forecasts Q3 2026 revenue of $15.8-16.8 billion and EPS of $0.31, citing robust AI-driven demand and increased investments in capacity.",
+        "supply_constrained": 0.2,
+        "truncated": true
+      },
+      "incumbent_calls": [
+        {
+          "content": "{\n  \"guidance\": 0.3,\n  \"demand\": 0.8,\n  \"pricing\": 0.0,\n  \"capex\": 0.8,\n  \"supply_constrained\": 0.2,\n  \"summary\": \"Intel forecasts Q3 2026 revenue of $15.8-16.8 billion and EPS of $0.31, citing robust AI-driven demand and increased investments in capacity.\",\n  \"quarter_end\": \"2026-06-27\",\n  \"revenue_usd_m\": 16128.0,\n  \"eps_usd\": -2.16,\n  \"net_income_usd_m\": -11033.0,\n  \"gross_margin_pct\": 40.4\n}",
+          "elapsed_seconds": 6.674322620034218,
+          "finish_reasons": [
+            "stop"
+          ],
+          "input_chars": 24000,
+          "input_sha256": "255a82b99b5eb67c5bc0a4562f08055ffc7a2f87d719553f24640d0eba455db9",
+          "max_tokens": 300,
+          "model": "deepseek-v4-flash",
+          "prompt_sha256": "a2d24627f82421204a2d9c8903a1ec310286415fc99bbfd037e2b19df6a965ab",
+          "schema_sha256": "1e868ce44f015084505051a9737b5b8a1bbfd95a56305d3fd5d292dab5f62587",
+          "temperature": 0,
+          "usage": {
+            "completion_tokens": 164,
+            "prompt_tokens": 6804,
+            "prompt_tokens_details": null,
+            "total_tokens": 6968
+          }
+        }
+      ],
+      "incumbent_demand_direction": "strengthening",
+      "index_sha256": "0af9e7b689408fdfabcbc0947c7cd4922f4a8fec1a6da976b726366593977438",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086326000155/0000050863-26-000155-index.html",
+      "published_at": "2026-07-23T20:09:00+00:00",
+      "retrieved_at": "2026-09-30T17:50:16.220487+00:00",
+      "source_chars": 40199,
+      "source_html_sha256": "d7b8e9db1db21e415f33f264764c6cd0daff02b264532d649fff74aa0dd5523e",
+      "source_sha256": "070b50f81f47b147fcac0784d195acfcdfd3df5a6a7f7d9b78066a9f7949d0ca",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086326000155/q226earningsrelease.htm",
+      "status": "ready",
+      "ticker": "INTC"
+    }
+  ],
+  "scope": "real-release reading diagnostic, not trading performance",
+  "started_at": "2026-09-30T17:58:27.439387+00:00",
+  "summary": {
+    "ambiguous": 4,
+    "correct": 10,
+    "eligible": 10,
+    "fields": {
+      "demand": {
+        "correct": 4,
+        "total": 8
+      },
+      "financing_risk": {
+        "correct": 3,
+        "total": 9
+      },
+      "guidance": {
+        "correct": 3,
+        "total": 9
+      }
+    },
+    "grounded_valid": 4,
+    "incumbent_valid": 10,
+    "model_calls": 20,
+    "selected": 12,
+    "total": 26
+  }
+}
