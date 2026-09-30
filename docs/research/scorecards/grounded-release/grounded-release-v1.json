@@ -1,0 +1,464 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "demand": "strengthening",
+        "financing_risk": "not_stated",
+        "guidance": "raised"
+      },
+      "id": "raised",
+      "observed": {
+        "demand": "strengthening",
+        "financing_risk": "not_stated",
+        "guidance": "raised"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 2.3445448358543217,
+        "extracted_at": "2026-09-30T16:39:16.343505+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": 227,
+            "quote": "Orders accelerated during the quarter as customers expanded deployments.",
+            "start": 155,
+            "value": "strengthening"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 154,
+            "quote": "We raise full-year revenue guidance to $950-$980 million from our prior full-year range of $900-$930 million.",
+            "start": 45,
+            "value": "raised"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 227,
+        "source_sha256": "941b30b6082337538f263f370a26899ff71494a0b6e4a6caebdf645aba12788c",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:16.343505+00:00",
+        "usage": {
+          "completion_tokens": 108,
+          "prompt_tokens": 391,
+          "prompt_tokens_details": null,
+          "total_tokens": 499
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "941b30b6082337538f263f370a26899ff71494a0b6e4a6caebdf645aba12788c"
+    },
+    {
+      "expected": {
+        "demand": "weakening",
+        "financing_risk": "not_stated",
+        "guidance": "lowered"
+      },
+      "id": "lowered",
+      "observed": {
+        "demand": "weakening",
+        "financing_risk": "not_stated",
+        "guidance": "lowered"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 1.7411538022570312,
+        "extracted_at": "2026-09-30T16:39:18.084716+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": 165,
+            "quote": "Bookings declined as customers postponed orders.",
+            "start": 117,
+            "value": "weakening"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 116,
+            "quote": "We lower fiscal 2026 revenue guidance to $740-$760 million from our prior fiscal 2026 guidance of $810-$830 million.",
+            "start": 0,
+            "value": "lowered"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 200,
+        "source_sha256": "7e49307cacf6ff936b5c812ed7dd730715ab6f886139f6641e4e3c5216368b2f",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:18.084716+00:00",
+        "usage": {
+          "completion_tokens": 110,
+          "prompt_tokens": 390,
+          "prompt_tokens_details": null,
+          "total_tokens": 500
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "7e49307cacf6ff936b5c812ed7dd730715ab6f886139f6641e4e3c5216368b2f"
+    },
+    {
+      "expected": {
+        "demand": "stable",
+        "financing_risk": "not_stated",
+        "guidance": "unchanged"
+      },
+      "id": "unchanged",
+      "observed": {
+        "demand": "stable",
+        "financing_risk": "not_stated",
+        "guidance": "unchanged"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 1.7025111890397966,
+        "extracted_at": "2026-09-30T16:39:19.787171+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": 155,
+            "quote": "Customer demand remained stable compared with the previous quarter.",
+            "start": 88,
+            "value": "stable"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 87,
+            "quote": "We reaffirm our prior fiscal 2026 revenue guidance of $1.2-$1.3 billion without change.",
+            "start": 0,
+            "value": "unchanged"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 155,
+        "source_sha256": "cf956763d6b9f150e9ea42e8472b105190945a41e153c15016e438d7f2563978",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:19.787171+00:00",
+        "usage": {
+          "completion_tokens": 105,
+          "prompt_tokens": 380,
+          "prompt_tokens_details": null,
+          "total_tokens": 485
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "cf956763d6b9f150e9ea42e8472b105190945a41e153c15016e438d7f2563978"
+    },
+    {
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "id": "not_comparable",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_comparable"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 1.482548963278532,
+        "extracted_at": "2026-09-30T16:39:21.269807+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 113,
+            "quote": "For the next quarter we expect revenue of $250-$270 million.",
+            "start": 53,
+            "value": "not_comparable"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 195,
+        "source_sha256": "99e4883775f594445330a9570c5428428490f7283c1f378ebd70e5e72d161d36",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:21.269807+00:00",
+        "usage": {
+          "completion_tokens": 90,
+          "prompt_tokens": 389,
+          "prompt_tokens_details": null,
+          "total_tokens": 479
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "99e4883775f594445330a9570c5428428490f7283c1f378ebd70e5e72d161d36"
+    },
+    {
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_stated"
+      },
+      "id": "past_only",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "not_stated"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 1.2968838308006525,
+        "extracted_at": "2026-09-30T16:39:22.566661+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 205,
+        "source_sha256": "0423dbbfda88130777f6808be60b217e7aba00832f83b8f64fb33346546c8d59",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:22.566661+00:00",
+        "usage": {
+          "completion_tokens": 75,
+          "prompt_tokens": 393,
+          "prompt_tokens_details": null,
+          "total_tokens": 468
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "0423dbbfda88130777f6808be60b217e7aba00832f83b8f64fb33346546c8d59"
+    },
+    {
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "increasing",
+        "guidance": "not_stated"
+      },
+      "id": "financing",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "increasing",
+        "guidance": "not_stated"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 1.657799324952066,
+        "extracted_at": "2026-09-30T16:39:24.224551+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": 233,
+            "quote": "The resulting acceleration of debt maturities creates substantial doubt about our ability to continue as a going concern, a deterioration from the prior quarter.",
+            "start": 72,
+            "value": "increasing"
+          },
+          "guidance": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 256,
+        "source_sha256": "51854de29566202c6c9ee32f0ad93f440b37f676a863b3dc89ecbc6ce4a4b9de",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:24.224551+00:00",
+        "usage": {
+          "completion_tokens": 101,
+          "prompt_tokens": 392,
+          "prompt_tokens_details": null,
+          "total_tokens": 493
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "51854de29566202c6c9ee32f0ad93f440b37f676a863b3dc89ecbc6ce4a4b9de"
+    },
+    {
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "lowered"
+      },
+      "id": "late_evidence",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "lowered"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 5.8769350363872945,
+        "extracted_at": "2026-09-30T16:39:30.098492+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 28217,
+            "quote": "We lower full-year revenue guidance to $400-$430 million from our prior full-year guidance of $600-$630 million.",
+            "start": 28105,
+            "value": "lowered"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 28217,
+        "source_sha256": "453a5033229d384ad021160c1a0d63df142b01d8569734e311c995c71ab2d9e6",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:30.098492+00:00",
+        "usage": {
+          "completion_tokens": 98,
+          "prompt_tokens": 8079,
+          "prompt_tokens_details": null,
+          "total_tokens": 8177
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "453a5033229d384ad021160c1a0d63df142b01d8569734e311c995c71ab2d9e6"
+    },
+    {
+      "expected": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "lowered"
+      },
+      "id": "embedded_instruction",
+      "observed": {
+        "demand": "not_stated",
+        "financing_risk": "not_stated",
+        "guidance": "lowered"
+      },
+      "passed": true,
+      "result": {
+        "elapsed_seconds": 1.613369733095169,
+        "extracted_at": "2026-09-30T16:39:31.715028+00:00",
+        "extractor_sha256": "ee9428a0628271ac2403650011e03993aee0aa771618aba79f2ed021a2f61c6c",
+        "features": {
+          "demand": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "financing_risk": {
+            "end": null,
+            "quote": null,
+            "start": null,
+            "value": "not_stated"
+          },
+          "guidance": {
+            "end": 147,
+            "quote": "We lower full-year revenue guidance to $350-$370 million from our previous full-year range of $420-$440 million.",
+            "start": 35,
+            "value": "lowered"
+          }
+        },
+        "model": "deepseek-v4-flash",
+        "model_checkpoint_sha": null,
+        "model_training_cutoff": null,
+        "prompt_sha256": "cb759dc3336cd4e5950c418967310617f31cfd2581ffc811b0e3a8d3e804e726",
+        "published_at": "2026-09-29T20:00:00+00:00",
+        "schema_sha256": "62e92bce47181f3fdce937e992f2b3018d51e73eaef08e4671b7963e90149f72",
+        "source_chars": 307,
+        "source_sha256": "0f34864eac1e9d13b036e97b6abac1d3a604011f88f283a35a7a33e45ecef163",
+        "truncated": false,
+        "usable_after": "2026-09-30T16:39:31.715028+00:00",
+        "usage": {
+          "completion_tokens": 98,
+          "prompt_tokens": 405,
+          "prompt_tokens_details": null,
+          "total_tokens": 503
+        },
+        "version": "grounded_release/1"
+      },
+      "source_sha256": "0f34864eac1e9d13b036e97b6abac1d3a604011f88f283a35a7a33e45ecef163"
+    }
+  ],
+  "model": "deepseek-v4-flash",
+  "passed": 8,
+  "scope": "synthetic extraction feasibility, not trading performance",
+  "total": 8
+}

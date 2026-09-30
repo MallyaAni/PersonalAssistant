@@ -134,9 +134,9 @@ def test_prior_records_check_each_record_version(tmp_path):
         date(2026, 9, 12),
         "AAA",
         language.tone_frame([record("release_tone/2")]),
-        {"prompt_version": market_tone.PROMPT_VERSION},
+        {"prompt_version": market_tone.PROMPT_VERSION, "model": "fixture"},
     )
-    assert market_tone.prior_records(store, "AAA", ASOF) == {}
+    assert market_tone.prior_records(store, "AAA", ASOF, "fixture") == {}
 
 
 # An incompatible same-day frame is reported, never silently kept or overwritten.
@@ -152,3 +152,59 @@ def test_same_day_version_mismatch_is_explicit_and_immutable(tmp_path, monkeypat
     assert store.read_frame(language.TONE_KIND, "AAA", ASOF)[0]["prompt_version"] == [
         "release_tone/2"
     ]
+
+
+# Model changes cannot reuse yesterday's scores just because the prompt is unchanged.
+@pytest.mark.parametrize(
+    ("metadata_model", "record_model"),
+    [
+        ("other", "fixture"),
+        ("fixture", "other"),
+        (None, "fixture"),
+    ],
+)
+def test_prior_records_require_model_in_metadata_and_record(
+    tmp_path, metadata_model, record_model
+):
+    store = MarketStore(tmp_path)
+    store.write_frame(
+        language.TONE_KIND,
+        date(2026, 9, 12),
+        "AAA",
+        language.tone_frame([replace(record(), model=record_model)]),
+        {
+            "prompt_version": market_tone.PROMPT_VERSION,
+            **({"model": metadata_model} if metadata_model else {}),
+        },
+    )
+    assert market_tone.prior_records(store, "AAA", ASOF, "fixture") == {}
+
+
+# A same-day model mismatch fails without overwriting the immutable source partition.
+def test_same_day_model_mismatch_is_explicit_and_immutable(tmp_path, monkeypatch):
+    store = MarketStore(tmp_path)
+    store.write_frame(
+        language.TONE_KIND,
+        ASOF,
+        "AAA",
+        language.tone_frame([record()]),
+        {"prompt_version": market_tone.PROMPT_VERSION, "model": "fixture"},
+    )
+    monkeypatch.setattr(market_tone, "clients", lambda *a: ([], "new-model"))
+    with pytest.raises(RuntimeError, match="new as-of partition"):
+        market_tone.refresh_tickers(store, ("AAA",), ASOF)
+    columns, meta = store.read_frame(language.TONE_KIND, "AAA", ASOF)
+    assert meta["model"] == "fixture"
+    assert columns["model"] == ["fixture"]
+
+
+# Interrupted work from another model is rescored, not mixed into new-model records.
+def test_partial_model_mismatch_is_rescored(tmp_path, monkeypatch):
+    store = store_with_event(tmp_path)
+    partial = language.partial_path(store.root, ASOF, "AAA")
+    language.append_partial(partial, replace(record(), model="other"))
+    monkeypatch.setattr(language, "fetch_release_text", lambda *a, **k: "release")
+    assert refresh(store, SimpleNamespace(**asdict(record())))[0] == 1
+    columns, meta = store.read_frame(language.TONE_KIND, "AAA", ASOF)
+    assert columns["model"] == ["fixture"]
+    assert meta["model"] == "fixture"

@@ -79,6 +79,72 @@ Execution rules, `/5`, live state and serving models are unchanged. Not deployed
 
 Full-system and trading-desk/market-data diagrams assessed: internal display
 corrections only; no component, store, trust boundary or data-flow change.
+## 2026-09-30 — Real SEC comparison finished: reject current extractor candidate
+
+Research branch `research/grounded-release-pilot-20260930` now includes
+Fable/GitHub main `908e683` without rewriting shared main. Protocol `aba1278`,
+source-reviewed labels `5ee36d8`, v1 evaluation `498bcf3`, input-hygiene
+ablation `3937306`. Full results and raw answers:
+`docs/research/grounded-real-releases-2026-09-30.md`.
+
+VERIFIED: 12 SEC releases acquired with 24 paced requests; ten eligible.
+20 model calls compared frozen grounded extraction with incumbent tone.
+FAILED: grounded exact output 4/10, known-label matches 10/26. A registered
+normalization-only follow-up used ten calls: 8/10 valid, 18/26 known labels.
+It still fails exact quotes and interprets new forecasts as guidance raises.
+167 related backend tests pass (eight expected all-NaN fixture warnings).
+No retries, prompt tuning, live data writes, deployment, model swap or broker
+activity. Original and normalized input artifacts remain under Spark
+`/home/animallya96/scratch/grounded-release.YRPKeN/` with hashes in reports.
+
+Decision: stop this extractor variant; no large rescore and no live promotion.
+UNVERIFIED: any economic benefit over current `/5`, SPY or QQQ. Do not call
+this a backtest. A future candidate must use period/metric-scoped guidance
+and code-resolved source references, with independent labels and evaluation.
+Immediate useful follow-up is dashboard wording: legacy tone scores are
+continuous, not proof that a company was silent or that guidance changed.
+
+Dashboard branch checkpoint `7bc85c8` is on Spark and GitHub from Spark:
+20 browser tests, 135 backend tests, TypeScript and Vite build passed after
+reconciling Fable's Levels/opening-bar work. It is not merged or deployed.
+
+Diagram impact: NONE — offline evaluation within the existing trading agent;
+full-system and market-data/trading components and live flows are unchanged.
+
+## 2026-09-30 — Two isolated implementation checkpoints; no live deployment
+
+- `fix/desk-order-evidence-20260930`: implementation `eb0d02d`, handoff
+  `09c70c1`, pushed to Spark and GitHub from Spark. 119 backend tests and
+  nine actual browser tests pass; TypeScript, production Vite build, Ruff
+  and backend-generated fixture check pass. Terminal orders no longer look
+  like fresh BUY instructions; submitted/filled quantities and value agree;
+  late-close wording respects MOC cutoff. Reference sizes are clearly not
+  holdings/cash-aware personal orders. No execution policy changed.
+- `research/grounded-release-pilot-20260930`: protocol `d68d41e`, implementation
+  `d458e82`, pushed to Spark and GitHub from Spark. 194 related unit/integration
+  tests and eight real DeepSeek functional cases pass. Prompt/source hashes,
+  output evidence and usage are committed with the pilot report. Existing
+  model only; no downloads, GPU changes, production data writes or model swap.
+  Cache compatibility now checks prompt AND model, without rewriting history.
+  The broader suite includes grade parity, current fundamentals, history meaning
+  and functional coverage; eight expected all-NaN fixture warnings remain.
+
+The pilot extracts explicit guidance revisions, demand changes and financing
+risk with exact quotes and offsets. It refuses silent truncation; extraction
+time controls earliest availability. **It is not a strategy backtest or a
+demonstrated improvement over current `/5`.** Next: a preregistered labelled
+public-release set and incumbent-reader comparison before economic testing.
+Do not resume superseded `/4` searches or deploy this research as a live feature.
+
+Runtime evidence: Spark `/home/animallya96/scratch/grounded-release.YRPKeN/`,
+`functional-v1.log` and `grounded-release-v1.json`; model calls finished
+2026-09-30 16:39 UTC. Research container exited; serving models were untouched.
+Dashboard branch was served separately on port 5187 for browser checks, not
+through the deployed port 5173 or public gateway. Main/deployed trees unchanged.
+
+Diagram impact assessed for full-system and trading/market-data views: no new
+component, persistent store, dependency, trust boundary or live cross-component
+flow; this is an offline capability inside the existing trading agent.
 
 ## 2026-09-30, morning — Adaptive entry: RECORD ×3; browser specs rewritten for the trade board; universe expansion prepared
 

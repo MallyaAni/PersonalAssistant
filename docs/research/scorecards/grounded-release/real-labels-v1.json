@@ -1,0 +1,322 @@
+{
+  "version": "grounded-real-labels/1",
+  "reviewer": "Single Codex source review, not independently adjudicated human ground truth",
+  "frozen_before_inference": true,
+  "scope": "Small purposive reading-quality diagnostic; not strategy performance",
+  "null_meaning": "Predeclared ambiguous field, excluded from exact-label denominator; whole expected=null means ineligible document",
+  "absence_review": "Eligible release texts reviewed including tables and boilerplate; absence is judged against the strict explicit-change prompt contract, not a word search.",
+  "rows": [
+    {
+      "accession": "0001683168-22-007251",
+      "cik": 1158114,
+      "cutoff": "2022-12-31",
+      "filed": "2022-11-03",
+      "id": "AAOI-2022",
+      "index_sha256": "a1672dcf844a86283f4ceca09a381a5245b5d8c8c6931ef6a82874bbb376130c",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316822007251/0001683168-22-007251-index.html",
+      "published_at": "2022-11-03T20:10:27+00:00",
+      "retrieved_at": "2026-09-30T17:50:11.820899+00:00",
+      "source_chars": 24878,
+      "source_html_sha256": "263517fffc771f85696252d487ad68b77fe667c06a4e0ebfa068232471b18a51",
+      "source_sha256": "da37a9c7435e08ac6b56580089dc2fdb449a566e508dfd690c67f8c3b8a0b22b",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316822007251/applied_ex9901.htm",
+      "status": "ready",
+      "ticker": "AAOI",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": null,
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "For the fourth quarter of 2022, the company currently expects: &nbsp; &middot; Revenue in the range of $58 million to $64 million.",
+        "While our revenue came in below our expectations, primarily due to a faster than expected decline in 40G revenue, we are encouraged by the continued demand in the CATV market and the stronger telecom market,"
+      ],
+      "notes": "New Q4 forecast, no prior same-period target. Mixed segment narrative makes aggregate demand ambiguous. Risk boilerplate and balance sheet do not explicitly establish a financing-risk change."
+    },
+    {
+      "accession": "0001683168-26-006055",
+      "cik": 1158114,
+      "cutoff": "2026-09-30",
+      "filed": "2026-08-06",
+      "id": "AAOI-2026",
+      "index_sha256": "f1425db5db236d7e3c404e1a96927b75224cdafe3dbd929b03ebe0e98ad6cdbf",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316826006055/0001683168-26-006055-index.html",
+      "published_at": "2026-08-06T20:13:01+00:00",
+      "retrieved_at": "2026-09-30T17:50:12.080552+00:00",
+      "source_chars": 27693,
+      "source_html_sha256": "35c6b238e1d77269e60b532aa7fdd382a001150bce789e61e4e36ff0174ad22f",
+      "source_sha256": "f5dabc201a48c2f7da7e981a15f7fe38803422117c221b8f605b9a3b1025b86c",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1158114/000168316826006055/aaoi_ex9901.htm",
+      "status": "ready",
+      "ticker": "AAOI",
+      "expected": {
+        "guidance": null,
+        "demand": null,
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "continue to expect by the end of this year that we will be capable of producing around 650,000 pieces of 800G and 1.6 Tb products per month.",
+        "we forecast that demand will continue to outpace our production capacity through mid-2027.",
+        "For third quarter of 2026, the company currently expects: &nbsp; &middot; Revenue in the range of $255 million to $290 million."
+      ],
+      "notes": "Guidance ambiguous: new quarterly forecast versus reiterated year-end capacity and full-year qualitative growth. Demand above expanding capacity is not an explicit company-wide growth comparison. No explicit financing-risk direction; cash/debt tables alone are insufficient. GAAP loss and non-GAAP profit must not be conflated."
+    },
+    {
+      "accession": "0001564590-22-039236",
+      "cik": 1341439,
+      "cutoff": "2022-12-31",
+      "filed": "2022-12-12",
+      "id": "ORCL-2022",
+      "index_sha256": "c2693b63cf3178e47e8bfa96a6cbcdd129e741f8f5b70103abfe1ab970df02d7",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1341439/000156459022039236/0001564590-22-039236-index.html",
+      "published_at": "2022-12-12T21:11:56+00:00",
+      "retrieved_at": "2026-09-30T17:50:12.524355+00:00",
+      "source_chars": 53524,
+      "source_html_sha256": "47a3a4773975c6ab26177c8040f02d847b0165a725e4837da46e877ac15e56bc",
+      "source_sha256": "b9a9b923e87bb51669e0d69e63044ff3516e416c75b295bfef4fdc5c25a88d0d",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1341439/000156459022039236/orcl-ex991_6.htm",
+      "status": "oversize",
+      "ticker": "ORCL",
+      "expected": null,
+      "quotes": [],
+      "notes": "Excluded before inference: document exceeds frozen 48,000-character limit. No semantic labels; retained in coverage denominator."
+    },
+    {
+      "accession": "0001193125-26-387905",
+      "cik": 1341439,
+      "cutoff": "2026-09-30",
+      "filed": "2026-09-10",
+      "id": "ORCL-2026",
+      "index_sha256": "aae3a263049bd1a93610f62357d0101677e8bee0f94d77d31693b1ee72d5c247",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1341439/000119312526387905/0001193125-26-387905-index.html",
+      "published_at": "2026-09-10T20:16:50+00:00",
+      "retrieved_at": "2026-09-30T17:50:12.820874+00:00",
+      "source_chars": 43798,
+      "source_html_sha256": "fda680a333380400a48e0153d9df6045a1855e87abe8b3061e500bac0edd9492",
+      "source_sha256": "c74688b4102bf787fa136016806d88ab852713be923ef02ffd83a69cc5cf153a",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1341439/000119312526387905/orcl-ex99_1.htm",
+      "status": "ready",
+      "ticker": "ORCL",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": "strengthening",
+        "financing_risk": null
+      },
+      "quotes": [
+        "For fiscal year 2027, we now expect total revenue to be at least $90 billion, and non-GAAP EPS to be at $8.10.",
+        "Customer demand for AI Cloud Training and Inferencing Services continues to grow faster than supply.",
+        "Based on the structuring of those new contracts, the Company confirms there is no incremental impact on its plans to raise capital."
+      ],
+      "notes": "No explicit prior same-period forecast or revision direction in this release. Financing ambiguous: unchanged incremental funding requirement and completed ATM capital raise do not map cleanly to whole-company risk direction."
+    },
+    {
+      "accession": "0001045810-22-000163",
+      "cik": 1045810,
+      "cutoff": "2022-12-31",
+      "filed": "2022-11-16",
+      "id": "NVDA-2022",
+      "index_sha256": "5ffff156db39d8ba6010d51dea6d24cbf21cfb03f0179ee18b6846df510cdc0b",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581022000163/0001045810-22-000163-index.html",
+      "published_at": "2022-11-16T21:21:18+00:00",
+      "retrieved_at": "2026-09-30T17:50:13.150089+00:00",
+      "source_chars": 27135,
+      "source_html_sha256": "0ea7b72117c2b3fcde0ca9536de037a9db2b305d9288a619611bbaa5aad9e472",
+      "source_sha256": "cfa35c156e4848ee64e95aa760a30819b7c07de7147ad34310835ea82c5c9e90",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581022000163/q3fy23pr.htm",
+      "status": "ready",
+      "ticker": "NVDA",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": "not_stated",
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "Outlook NVIDIA&#8217;s outlook for the fourth quarter of fiscal 2023 is as follows&#58; &#8226; Revenue is expected to be $6.00 billion, plus or minus 2%.",
+        "We are quickly adapting to the macro environment, correcting inventory levels and paving the way for new products,"
+      ],
+      "notes": "New Q4 forecast without previous Q4 target. Inventory correction and falling revenue do not explicitly state a demand comparison. Generic AI computing requirements are not company orders. No explicit financing-risk change."
+    },
+    {
+      "accession": "0001045810-26-000073",
+      "cik": 1045810,
+      "cutoff": "2026-09-30",
+      "filed": "2026-08-26",
+      "id": "NVDA-2026",
+      "index_sha256": "62590b389fd4feb908c50110ecaf9acfce9b8449b7d693c208672acd3cbe1e99",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/0001045810-26-000073-index.html",
+      "published_at": "2026-08-26T20:21:19+00:00",
+      "retrieved_at": "2026-09-30T17:50:13.453742+00:00",
+      "source_chars": 25575,
+      "source_html_sha256": "623816b5c1ed33dc0d8acb00b9b88c92a032c767faadaabfe7359b59dc7f16fb",
+      "source_sha256": "74410a311c875bb1bc69df5354b17be9f04a04a96d003ce11ce71b788ad86821",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581026000073/q2fy27pr.htm",
+      "status": "ready",
+      "ticker": "NVDA",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": "strengthening",
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "Outlook NVIDIA&#8217;s outlook for the third quarter of fiscal 2027 is as follows&#58; &#8226; Revenue is expected to be $108.0 billion, plus or minus 2%.",
+        "And demand is accelerating."
+      ],
+      "notes": "New Q3 forecast, no same-period previous forecast. Third-party AI financing platforms are not explicit changes to NVIDIA financing risk; debt table alone is insufficient."
+    },
+    {
+      "accession": "0000723125-22-000070",
+      "cik": 723125,
+      "cutoff": "2022-12-31",
+      "filed": "2022-12-21",
+      "id": "MU-2022",
+      "index_sha256": "b56607f7ed0921622fdca9f2280bb3e165959a085669f939634925505dd98f27",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312522000070/0000723125-22-000070-index.html",
+      "published_at": "2022-12-21T21:00:43+00:00",
+      "retrieved_at": "2026-09-30T17:50:13.724819+00:00",
+      "source_chars": 18843,
+      "source_html_sha256": "48a8f875c2fe0db6e526ab701613afde2d729b213afd7bf682966e5c806f0558",
+      "source_sha256": "05d5ec77d99437d875d713b19da6569fcde94cdaff6807dee0873adec14525bc",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312522000070/a2023q1ex991-pressrelease.htm",
+      "status": "ready",
+      "ticker": "MU",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": "not_stated",
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "Outlook The following table presents Micron&#8217;s guidance for the second quarter of 2023&#58; FQ2-23 GAAP (1) Outlook Non-GAAP (2) Outlook Revenue $3.80 billion &#177; $200 million $3.80 billion &#177; $200 million",
+        "We expect improving customer inventories to enable higher revenue in the fiscal second half, and to deliver strong profitability once we get past this downturn."
+      ],
+      "notes": "New Q2 forecast. Downturn and lower revenue are not explicit demand/orders direction. Reported new loans/notes are financing activity but do not explicitly assert a change in financing risk."
+    },
+    {
+      "accession": "0000723125-26-000013",
+      "cik": 723125,
+      "cutoff": "2026-09-30",
+      "filed": "2026-06-24",
+      "id": "MU-2026",
+      "index_sha256": "46a1f468f26acc2ad4253af3e57678e1feeea7a6e62e9388a1fa34bdf0ad6660",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/0000723125-26-000013-index.html",
+      "published_at": "2026-06-24T20:02:01+00:00",
+      "retrieved_at": "2026-09-30T17:50:14.053929+00:00",
+      "source_chars": 20262,
+      "source_html_sha256": "900df96ffcfb411dffd3abfd0c979c95c2e7463bcf04396cc8deaa70efada04d",
+      "source_sha256": "dad8cad921b994db2ca49d2860413d713bdb8bac4b2ff50f515bafbb9ef1ac39",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/723125/000072312526000013/a2026q3ex991-pressrelease.htm",
+      "status": "ready",
+      "ticker": "MU",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": "strengthening",
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "Outlook The following table presents Micron&#8217;s guidance for the fourth quarter of 2026&#58; FQ4-26 GAAP (1) Outlook Non-GAAP (2) Outlook Revenue $50.0 billion &#177; $1.0 billion $50.0 billion &#177; $1.0 billion",
+        "Micron is investing at record levels in technology, products and supply to address our customers&#8217; rapidly growing demand."
+      ],
+      "notes": "New Q4 forecast, no prior same-period guidance. Cash balances and debt repayments do not alone explicitly establish financing-risk change."
+    },
+    {
+      "accession": "0000796343-22-000225",
+      "cik": 796343,
+      "cutoff": "2022-12-31",
+      "filed": "2022-12-15",
+      "id": "ADBE-2022",
+      "index_sha256": "2ca58af44248a915b9cbd5f73b480f5fb48f0b764efcd3673cfc3c0992a75564",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634322000225/0000796343-22-000225-index.html",
+      "published_at": "2022-12-15T21:06:10+00:00",
+      "retrieved_at": "2026-09-30T17:50:14.374206+00:00",
+      "source_chars": 23209,
+      "source_html_sha256": "aeb522f522c69537e3751b83e680274b954ec10fbbf50cec6c81652fb3fdd5d9",
+      "source_sha256": "d9f0f28d0c8c6ac6283201b90b43cb162a1760e1098f7bcbc9c19613f2646ccf",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634322000225/adbeex991q422.htm",
+      "status": "ready",
+      "ticker": "ADBE",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": "not_stated",
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "Adobe is providing fiscal year 2023 targets, as well as Q1 targets, which do not reflect the planned acquisition of Figma that is expected to close during 2023.",
+        "Strong demand for our offerings, industry-leading innovation and track record of top- and bottom-line growth set us up to capture the massive opportunities in 2023 and beyond."
+      ],
+      "notes": "New FY2023/Q1 targets without prior same-period comparison. Strong demand is a level, not an explicit change or stability comparison; ARR is revenue, not an orders comparison. No explicit financing-risk change."
+    },
+    {
+      "accession": "0000796343-26-000147",
+      "cik": 796343,
+      "cutoff": "2026-09-30",
+      "filed": "2026-09-10",
+      "id": "ADBE-2026",
+      "index_sha256": "5f3b5e4aa07a04c98bdb55a603a29f20a0c24672cc43af6b0bd5bd6e03a9def8",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634326000147/0000796343-26-000147-index.html",
+      "published_at": "2026-09-10T20:06:14+00:00",
+      "retrieved_at": "2026-09-30T17:50:14.627496+00:00",
+      "source_chars": 22258,
+      "source_html_sha256": "987c309a07aeaa63a4787b4f2a77f5df73a0c56215f7bc82fc5528ccfeac5d39",
+      "source_sha256": "60b91827218d6870e78f77552e23582980d811aa09d31559306c4083675c4865",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/796343/000079634326000147/adbeex991q326.htm",
+      "status": "ready",
+      "ticker": "ADBE",
+      "expected": {
+        "guidance": "raised",
+        "demand": "not_stated",
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "Adobe delivered double-digit revenue and EPS growth in Q3 and we're raising full year revenue and EPS targets,",
+        "We are expanding our user base through a freemium strategy and deepening engagement with agentic experiences to deliver long-term durable growth."
+      ],
+      "notes": "Explicit full-year revenue/EPS raise. Freemium users/engagement and reported ARR growth do not explicitly establish paid demand/orders change. No explicit financing-risk change."
+    },
+    {
+      "accession": "0000050863-22-000037",
+      "cik": 50863,
+      "cutoff": "2022-12-31",
+      "filed": "2022-10-27",
+      "id": "INTC-2022",
+      "index_sha256": "f88379ffcd72a5b41b9a1a7e9600b6967f37e74ef494ba436f480f2821287ee2",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086322000037/0000050863-22-000037-index.html",
+      "published_at": "2022-10-27T20:02:53+00:00",
+      "retrieved_at": "2026-09-30T17:50:14.964852+00:00",
+      "source_chars": 49389,
+      "source_html_sha256": "5c0aa5f0e440de29d2ce0cab965555f95b5e25eec5f00a955b6a2e1d29d67148",
+      "source_sha256": "69c1e58500fd48849dddc20f12e7747f4dbaa9a46c1e0bb7c4796f2cc6fbab64",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086322000037/q322_earningsrelease.htm",
+      "status": "oversize",
+      "ticker": "INTC",
+      "expected": null,
+      "quotes": [],
+      "notes": "Excluded before inference: document exceeds frozen 48,000-character limit. No semantic labels; retained in coverage denominator."
+    },
+    {
+      "accession": "0000050863-26-000155",
+      "cik": 50863,
+      "cutoff": "2026-09-30",
+      "filed": "2026-07-23",
+      "id": "INTC-2026",
+      "index_sha256": "0af9e7b689408fdfabcbc0947c7cd4922f4a8fec1a6da976b726366593977438",
+      "index_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086326000155/0000050863-26-000155-index.html",
+      "published_at": "2026-07-23T20:09:00+00:00",
+      "retrieved_at": "2026-09-30T17:50:16.220487+00:00",
+      "source_chars": 40199,
+      "source_html_sha256": "d7b8e9db1db21e415f33f264764c6cd0daff02b264532d649fff74aa0dd5523e",
+      "source_sha256": "070b50f81f47b147fcac0784d195acfcdfd3df5a6a7f7d9b78066a9f7949d0ca",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086326000155/q226earningsrelease.htm",
+      "status": "ready",
+      "ticker": "INTC",
+      "expected": {
+        "guidance": "not_comparable",
+        "demand": "strengthening",
+        "financing_risk": "not_stated"
+      },
+      "quotes": [
+        "Forecasting third-quarter 2026 revenue of $15.8 billion to $16.8 billion",
+        "AI-driven compute continues to strengthen, and to support expected growth this year and next across products and foundry, we are meaningfully increasing our investments in equipment, clean room space, and substrates."
+      ],
+      "notes": "New Q3 forecast without prior same-period target. AI compute strengthening is demand in the surrounding demand discussion. Capital spending increase is distinct from aggregate guidance revision. Hypothetical financing risks in safe harbor and balance sheets do not assert current worsening."
+    }
+  ]
+}

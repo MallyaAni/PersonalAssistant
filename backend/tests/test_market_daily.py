@@ -559,11 +559,11 @@ def test_prior_tone_records_carry_forward(tmp_path):
         language.tone_frame([record]),
         meta,
     )
-    carried = market_tone.prior_records(store, "SNDK", date(2026, 9, 6))
+    carried = market_tone.prior_records(store, "SNDK", date(2026, 9, 6), "m")
     assert list(carried) == ["0001-25-1"]
     assert carried["0001-25-1"].guidance == 1.0
     # The same day's partition is not "prior".
-    assert market_tone.prior_records(store, "SNDK", date(2026, 9, 5)) == {}
+    assert market_tone.prior_records(store, "SNDK", date(2026, 9, 5), "m") == {}
     stale = dict(meta, prompt_version="release_tone/0")
     store.write_frame(
         language.TONE_KIND,
@@ -572,7 +572,7 @@ def test_prior_tone_records_carry_forward(tmp_path):
         language.tone_frame([record]),
         stale,
     )
-    assert market_tone.prior_records(store, "IREN", date(2026, 9, 6)) == {}
+    assert market_tone.prior_records(store, "IREN", date(2026, 9, 6), "m") == {}
 
 
 # The record's curve block: the rules walked forward against SPY and QQQ,
