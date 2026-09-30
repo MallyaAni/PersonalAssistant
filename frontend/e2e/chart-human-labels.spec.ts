@@ -1,8 +1,7 @@
 import {expect, test, type Page, type TestInfo} from '@playwright/test'
 
 const USER = 'chart-wording-fixture'
-const CAPTION = 'Saved grades use nightly records; recalculated grades use historical data. Grade changes are not trades.'
-const HELP = 'Dates identify trading sessions, not publication times. A or A+ meets only the grade requirement for entry; other checks still apply.'
+const LEGEND = 'Arrows are grade changes (up green, down red).'
 type CanvasState = Window & {__gradeDraws: {text: string; timeframe: string | null}[]}
 type GradeRow = {date: string; grade: string; said?: unknown}
 
@@ -40,7 +39,7 @@ async function install(page: Page, frontendURL: string, gradeRows?: GradeRow[]) 
       return fillText.apply(this, args)
     }
   })
-  // Admit only named synthetic reads and the intercepted recommendation request; no request reaches a real account.
+  // Admit only named synthetic reads; no request reaches a real account.
   await page.route('**/*', async route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -50,8 +49,7 @@ async function install(page: Page, frontendURL: string, gradeRows?: GradeRow[]) 
       return route.abort('blockedbyclient')
     }
     const base = `/api/v1/market/${USER}/desk`
-    const recommendation = url.pathname === `${base}/mine` && request.method() === 'POST' && request.postDataJSON()?.record_history === true
-    if (request.method() !== 'GET' && !recommendation) {
+    if (request.method() !== 'GET') {
       diagnostics.forbiddenWrites.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 403, json: {detail: 'Fixture forbids writes'}})
     }
@@ -63,10 +61,6 @@ async function install(page: Page, frontendURL: string, gradeRows?: GradeRow[]) 
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
     else if (url.pathname === `${base}/live`) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last: 110, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}}
     else if (url.pathname === `${base}/session-prices`) json = {as_of: '2026-09-24T14:00:00Z', session: 'regular', signal_scope: 'regular-session', quotes: {}}
-    else if (url.pathname === `${base}/mine`) json = {rows: [], grades_live: {}, decisions: {rows: {AAPL: {action: 'Hold', strategy_action: 'Hold', move_weight: 0, reason: 'Waiting'}}}}
-    else if (url.pathname === `${base}/personal-history`) json = url.searchParams.has('before')
-      ? {items: [{id: 'older', generated_at: '2026-09-14T14:30:00Z', payload: {rows: {AAPL: {action: 'Sell', strategy_action: 'Sell', grade: 'A'}}}}], next_cursor: null}
-      : {items: [{id: 'saved', generated_at: '2026-09-15T14:30:00Z', payload: {rows: {AAPL: {action: 'Buy', strategy_action: 'Buy', grade: 'A'}}}}], next_cursor: 'earlier'}
     else if (url.pathname === `${base}/history/AAPL`) json = history
     else if (url.pathname === `${base}/chart/AAPL`) {
       const weekly = url.searchParams.get('timeframe') === 'weekly'
@@ -77,8 +71,7 @@ async function install(page: Page, frontendURL: string, gradeRows?: GradeRow[]) 
         ? {ema9: series(100), ema21: series(125)}
         : {ema9: series(100), ema21: series(125), ema50: series(110), ema200: series(100), band_upper: series(125), band_lower: series(0)},
       levels: weekly ? {} : {high_52w: series(140), low_52w: series(80)}, entries: [], data_status: 'complete', quote_bar: '2026-09-24T13:45:00Z', last_bar_complete: false}
-    } else if (url.pathname === `${base}/entries` || url.pathname === `${base}/intraday`) json = {rows: [], top_buys: [], changed: []}
-    else if (url.pathname === `${base}/paper`) json = {reason: 'unavailable'}
+    } else if (url.pathname === `${base}/paper`) json = {reason: 'unavailable'}
     else if (url.pathname === `${base}/earnings/AAPL`) json = {symbol: 'AAPL', read: null}
     else if (url.pathname === `${base}/live/read/AAPL`) json = {symbol: 'AAPL', read: null, lines: {short: [], medium: [], long: []}}
     else {
@@ -107,21 +100,21 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      await expect(chart).toContainText('Saved grade: A→B')
-      await expect(chart).toContainText('Saved B → Recalculated A')
-      await expect(chart.getByText(CAPTION, {exact: true})).toHaveAttribute('title', HELP)
+      await expect(chart).toContainText('Saved grade A→B')
+      await expect(chart).toContainText('Grade B (saved)→A (recalculated)')
+      await expect(chart.locator('[aria-label="Chart legend"]')).toContainText(LEGEND)
       await expect(chart).not.toContainText('snapshot')
       await expect(chart).not.toContainText('replay')
       await expect(chart).not.toContainText('below A')
-      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.filter(row => row.timeframe === 'D').map(row => row.text))).toEqual(expect.arrayContaining(['Saved grade: A→B', 'Saved B → Recalculated A']))
+      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.filter(row => row.timeframe === 'D').map(row => row.text))).toEqual(expect.arrayContaining(['Saved grade A→B', 'Grade B (saved)→A (recalculated)']))
       await chart.getByRole('button', {name: 'W', exact: true}).click()
       await expect(chart).toContainText('3 weeks loaded')
-      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.filter(row => row.timeframe === 'W').map(row => row.text))).toEqual(expect.arrayContaining(['Saved grade: A→B', 'Saved B → Recalculated A']))
+      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.filter(row => row.timeframe === 'W').map(row => row.text))).toEqual(expect.arrayContaining(['Saved grade A→B', 'Grade B (saved)→A (recalculated)']))
       await chart.getByRole('checkbox', {name: 'Grade changes'}).uncheck()
-      await expect(chart.getByText(CAPTION, {exact: true})).toHaveCount(0)
-      await expect(chart).not.toContainText('Saved grade:')
+      await expect(chart).not.toContainText('grade changes marked')
+      await expect(chart).not.toContainText('Saved grade')
       await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
-      await expect(chart.getByText(CAPTION, {exact: true})).toBeVisible()
+      await expect(chart).toContainText('2 grade changes marked: Saved grade A→B, Grade B (saved)→A (recalculated).')
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       await chart.screenshot({path: testInfo.outputPath('human-grade-labels.png')})
     } finally {await finish(testInfo, fixture)}
@@ -176,8 +169,8 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
             {date: '2026-09-15', grade: after, said: nextSaved},
           ])
           const label = previousSaved === nextSaved
-            ? `${nextSaved ? 'Saved' : 'Recalculated'} grade: ${before}→${after}`
-            : `${previousSaved ? 'Saved' : 'Recalculated'} ${before} → ${nextSaved ? 'Saved' : 'Recalculated'} ${after}`
+            ? `${nextSaved ? 'Saved' : 'Recalculated'} grade ${before}→${after}`
+            : `Grade ${before} (${previousSaved ? 'saved' : 'recalculated'})→${after} (${nextSaved ? 'saved' : 'recalculated'})`
           try {
             await page.goto('/#desk')
             await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
@@ -208,7 +201,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
           {date: '2026-09-14', grade: 'A', said: unknownFirst ? missing.value : true},
           {date: '2026-09-15', grade: 'B', said: unknownFirst ? true : missing.value},
         ])
-        const label = unknownFirst ? 'Grade A → Saved B' : 'Saved A → Grade B'
+        const label = unknownFirst ? 'Grade A (recorded)→B (saved)' : 'Grade A (saved)→B (recorded)'
         try {
           await page.goto('/#desk')
           await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
@@ -218,8 +211,8 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
             await expect(chart).toContainText(label)
             await expect.poll(() => page.evaluate(selected => (window as unknown as CanvasState).__gradeDraws.filter(row => row.timeframe === selected).map(row => row.text), frame)).toContain(label)
           }
-          await expect(chart).not.toContainText('Recalculated grade:')
-          await expect(chart).not.toContainText('Saved grade:')
+          await expect(chart).not.toContainText('Recalculated grade')
+          await expect(chart).not.toContainText('Saved grade')
         } finally {await finish(testInfo, fixture)}
       })
     }
@@ -236,35 +229,8 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      await expect(chart).toContainText('A→B')
-      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.map(row => row.text))).toContain('A→B')
-    } finally {await finish(testInfo, fixture)}
-  })
-
-  // Saved-record wording must keep pagination, original actions and incomplete-history warnings intact.
-  test(`chart explains saved recommendation records at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
-    await page.setViewportSize(viewport)
-    const fixture = await install(page, baseURL!)
-    try {
-      await page.goto('/#desk')
-      await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
-      const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      await expect(chart.getByText('Saved recommendations (1 saved record)', {exact: true})).toBeVisible()
-      await chart.getByText('Saved recommendations (1 saved record)', {exact: true}).click()
-      await expect(chart).toContainText('Personal recommendations at generation time, not fills.')
-      await expect(chart).toContainText('Partial history. Load earlier saved records to extend coverage.')
-      await expect(chart).toContainText('Loaded saved records may omit receipts from other sessions or retain receipts since deleted or expired. Reload to read current stored history. Older unsaved decisions cannot be reconstructed.')
-      const table = chart.getByRole('table', {name: 'Saved Buy and Sell recommendations'})
-      await expect(table.locator('tbody tr')).toHaveCount(1)
-      await expect(table.locator('tbody tr').first()).toContainText('Buy')
-      await chart.getByRole('button', {name: 'Load earlier recommendations'}).click()
-      await expect(chart.getByText('Saved recommendations (2 saved records)', {exact: true})).toBeVisible()
-      await expect(table.locator('tbody tr')).toHaveCount(2)
-      await expect(table.locator('tbody tr').first()).toContainText('Sell')
-      await expect(chart).toContainText('No earlier saved records were reported by the last history page.')
-      await expect(chart).not.toContainText('snapshots')
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-      await chart.screenshot({path: testInfo.outputPath('saved-records.png')})
+      await expect(chart).toContainText('1 grade change marked: Grade A→B.')
+      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.map(row => row.text))).toContain('Grade A→B')
     } finally {await finish(testInfo, fixture)}
   })
 }
