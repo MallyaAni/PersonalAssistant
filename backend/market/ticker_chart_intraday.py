@@ -168,21 +168,23 @@ def decision_text(
     delta_weight: float | None = None,
     policy: str | None = None,
 ) -> str | None:
-    """Return "Buy 14%", "Rebalance +2.5%", "Add →20%", "Sell" or None."""
+    """Return "BUY signal 14%", "RESET +2.5%", "ADD signal →20%", "SELL signal"."""
+    # The board's vocabulary: the trading words in capitals, and "signal" on
+    # a strategy decision so it never reads as one of the paper account's trades.
     if action == "buy":
-        return f"Buy {percent_text(target_weight)}"
+        return f"BUY signal {percent_text(target_weight)}"
     if action == "sell":
-        return "Sell"
+        return "SELL signal"
     if action not in ("add", "trim"):
         return None
     if policy in EQUAL_WEIGHT_POLICIES:
         delta = delta_weight
         if not isinstance(delta, (int, float)):
-            return f"Rebalance →{percent_text(target_weight)}"
+            return f"RESET →{percent_text(target_weight)}"
         sign = "+" if delta >= 0 else "\u2212"
-        return f"Rebalance {sign}{percent_text(abs(float(delta)))}"
-    arrow = "Add" if action == "add" else "Trim"
-    return f"{arrow} →{percent_text(target_weight)}"
+        return f"RESET {sign}{percent_text(abs(float(delta)))}"
+    arrow = "ADD" if action == "add" else "TRIM"
+    return f"{arrow} signal →{percent_text(target_weight)}"
 
 
 # The session VWAP for every drawn bar: closes weighted by volume since
@@ -275,7 +277,7 @@ def _decision_markers(
                 "date": session,
                 "action": action,
                 "target_weight": weight,
-                "label": f"{text} decided at the close",
+                "label": f"{text} at the close",
                 **reset,
             }
         )

@@ -2,7 +2,7 @@ import {expect, test, type Page, type TestInfo} from '@playwright/test'
 
 const USER = 'chart-decisions-fixture'
 const POLICY = 'graded-equal-weight/4'
-const NOTE = 'decisions at the close, filled at the next open; sizes are % of equity'
+const NOTE = 'signals at each close; sizes are % of the account'
 type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null}[]}
 const REBALANCE_NOTE = 'reset sessions from the paper state\'s rebalance clock and the nightly records; add/trim markers only on those, target drift between resets is not traded'
 type DecisionRow = {date: string; grade: string; action?: string; target_weight?: number; delta_weight?: number; rebalance?: boolean}
@@ -65,7 +65,7 @@ async function install(page: Page, frontendURL: string, options: {fills?: (typeo
     const fillText = CanvasRenderingContext2D.prototype.fillText
     // Preserve every production paint call while recording marker labels and the selected timeframe.
     CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
-      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(Buy |Add |Trim |Rebalance |Sell$|Filled |Saved grade)/.test(args[0])) {
+      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY |SELL |ADD |TRIM |RESET |Grade |Saved grade|Recalculated grade)/.test(args[0])) {
         const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
         state.__markerDraws.push({text: args[0], timeframe})
       }
@@ -135,10 +135,11 @@ const drawn = (page: Page, frame: string) => page.evaluate(selected =>
   (window as unknown as CanvasState).__markerDraws.filter(row => row.timeframe === selected).map(row => row.text), frame)
 
 for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) {
-  // Under the equal-weight policy the markers show what the executor does: the entry as a buy at its
-  // target, the reset as a rebalance of the move it places, the downgrade as a sell; the target drift on
-  // a session that is not a reset draws nothing. The fills are drawn beside them and the legend says so.
-  test(`chart lists and draws the policy decisions and paper fills at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
+  // The chart speaks the board's words: the paper account's trades are BUY/SELL circles, listed newest
+  // first; the strategy's replayed decisions are signals, off by default, and when shown read as the
+  // equal-weight policy places them: the entry as a BUY signal at its target, the reset as a RESET of the
+  // move it places, the downgrade as a SELL signal; the drift on a session that is not a reset draws nothing.
+  test(`chart lists and draws the paper trades and the strategy signals at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!)
     try {
@@ -146,76 +147,76 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       const decisions = chart.locator('[aria-label="AAPL decisions"]')
-      // The stance today comes first, from the newest row, then the trades newest first with the close they were decided at.
-      await expect(decisions).toContainText('Now: Hold 0%')
-      const items = decisions.locator('ul').first().locator('li')
-      await expect(items).toHaveCount(3)
-      await expect(items.nth(0)).toHaveText('Sep 17 · Sell · close $110.00')
-      await expect(items.nth(1)).toHaveText('Sep 16 · Rebalance +2.5% · close $110.00')
-      await expect(items.nth(2)).toHaveText('Sep 14 · Buy 9.1% · close $110.00')
-      await expect(decisions).toContainText('Buy 9.1%')
-      await expect(decisions).toContainText('Sell')
-      // The drift on Sep 15 is not an add, and the words add/trim do not appear.
-      await expect(decisions).not.toContainText(/Sep 15 · (Buy|Sell|Add|Trim|Rebalance)/)
-      await expect(decisions).not.toContainText('Add')
-      await expect(decisions).not.toContainText('Trim')
-      // The fills are listed likewise, newest first.
+      // The Now line is the board's row for the name: no paper order, and why.
+      await expect(chart.locator('[aria-label="AAPL now"]')).toHaveText('Now: No order · Not in the book (grade B)')
+      // The paper trades, newest first, in the board's words.
       const fills = chart.locator('[aria-label="AAPL paper fills"] li')
       await expect(fills).toHaveCount(2)
-      await expect(fills.nth(0)).toHaveText('Sep 18 · Filled sell 63 @ $230.50')
-      await expect(fills.nth(1)).toHaveText('Sep 15 · Filled buy 63 @ $224.81')
-      // The caption names the policy and dates the decision to the close and the fill to the next open,
-      // and the legend says what a marker means and how the reset sessions were found.
+      await expect(fills.nth(0)).toHaveText('Sep 18 · SELL 63 @ $230.50')
+      await expect(fills.nth(1)).toHaveText('Sep 15 · BUY 63 @ $224.81')
+      await expect(chart.locator('[aria-label="Chart legend"]')).toContainText('Circles are the paper account’s trades (BUY green, SELL red)')
+      // Strategy signals are off by default: no list, no note, no legend, no markers.
+      const signalsBox = chart.getByRole('checkbox', {name: 'Strategy signals'})
+      const tradesBox = chart.getByRole('checkbox', {name: 'Paper trades'})
+      await expect(signalsBox).not.toBeChecked()
+      await expect(tradesBox).toBeChecked()
+      await expect(chart.locator('[aria-label="AAPL strategy signals"]')).toHaveCount(0)
+      await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveCount(0)
+      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY 63 @ $224.81', 'SELL 63 @ $230.50', 'Saved grade A+→B']))
+      expect((await drawn(page, 'D')).filter(text => /signal|RESET/.test(text))).toEqual([])
+      // Shown, the signals are listed with the close they were decided at, and drawn.
+      await signalsBox.check()
+      const items = chart.locator('[aria-label="AAPL strategy signals"] li')
+      await expect(items).toHaveCount(3)
+      await expect(items.nth(0)).toHaveText('Sep 17 · SELL signal · close $110.00')
+      await expect(items.nth(1)).toHaveText('Sep 16 · RESET +2.5% · close $110.00')
+      await expect(items.nth(2)).toHaveText('Sep 14 · BUY signal 9.1% · close $110.00')
+      // The drift on Sep 15 is not an add, and the words ADD/TRIM do not appear.
+      const signals = chart.locator('[aria-label="AAPL strategy signals"]')
+      await expect(signals).not.toContainText(/Sep 15 · /)
+      await expect(decisions).not.toContainText('ADD')
+      await expect(decisions).not.toContainText('TRIM')
       await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveText(`${POLICY}: ${NOTE}`)
       const legend = chart.locator('[aria-label="Policy marker legend"]')
-      await expect(legend).toContainText('Buy = enters the A/A+ book')
-      await expect(legend).toContainText('Rebalance ±% = the reset trades it')
-      await expect(legend).toContainText('drift between resets is not traded')
+      await expect(legend).toContainText('BUY = the name enters the A/A+ book at its target')
+      await expect(legend).toContainText('RESET ±% = the 20-session reset moves it back to target')
+      await expect(legend).toContainText('Drift between resets is not a signal')
       await expect(legend).toContainText('Reset sessions from the paper state')
-      // The same words reach the real canvas as markers, beside the grade change; no add or trim is drawn.
-      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['Buy 9.1%', 'Rebalance +2.5%', 'Sell', 'Filled buy 63 @ 224.81', 'Filled sell 63 @ 230.50', 'Saved grade: A+→B']))
-      expect((await drawn(page, 'D')).filter(text => /^(Add|Trim) /.test(text))).toEqual([])
-      // Both layers have their own switch, on by default.
-      const policyBox = chart.getByRole('checkbox', {name: 'Policy buy/sell'})
-      const fillBox = chart.getByRole('checkbox', {name: 'Paper fills'})
-      await expect(policyBox).toBeChecked()
-      await expect(fillBox).toBeChecked()
-      // Unchecking removes the markers and nothing else: the list is the decisions, not the markers.
-      await policyBox.uncheck()
-      await fillBox.uncheck()
+      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY signal 9.1%', 'RESET +2.5%', 'SELL signal', 'BUY 63 @ $224.81', 'SELL 63 @ $230.50', 'Saved grade A+→B']))
+      expect((await drawn(page, 'D')).filter(text => /^(ADD|TRIM) /.test(text))).toEqual([])
+      // Unchecking removes markers and nothing else.
+      await signalsBox.uncheck()
+      await tradesBox.uncheck()
       await page.evaluate(() => {(window as unknown as CanvasState).__markerDraws = []})
       await chart.getByRole('button', {name: 'W', exact: true}).click()
       await expect(chart).toContainText('3 weeks loaded')
-      await expect.poll(() => drawn(page, 'W')).toContain('Saved grade: A+→B')
-      expect(await drawn(page, 'W')).not.toEqual(expect.arrayContaining(['Buy 9.1%']))
-      expect(await drawn(page, 'W')).not.toEqual(expect.arrayContaining(['Filled buy 63 @ 224.81']))
-      await expect(decisions).toContainText('Now: Hold 0%')
-      await expect(decisions).toContainText('Buy 9.1%')
-      await expect(decisions).toContainText('Sell')
-      await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveCount(2)
-      // The close is a daily reading; a weekly candle is not the decision's close, so it is not claimed.
-      await expect(items.nth(2)).toHaveText('Sep 14 · Buy 9.1%')
-      // Checking again draws them on the weekly candles too.
-      await policyBox.check()
-      await expect.poll(() => drawn(page, 'W')).toEqual(expect.arrayContaining(['Buy 9.1%', 'Sell']))
+      await expect.poll(() => drawn(page, 'W')).toContain('Saved grade A+→B')
+      expect(await drawn(page, 'W')).not.toEqual(expect.arrayContaining(['BUY signal 9.1%']))
+      expect(await drawn(page, 'W')).not.toEqual(expect.arrayContaining(['BUY 63 @ $224.81']))
+      await expect(fills).toHaveCount(2)
+      // Checking again draws them on the weekly candles; a weekly candle is not the decision's close.
+      await signalsBox.check()
+      await expect(items.nth(2)).toHaveText('Sep 14 · BUY signal 9.1%')
+      await expect.poll(() => drawn(page, 'W')).toEqual(expect.arrayContaining(['BUY signal 9.1%', 'SELL signal']))
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       await chart.screenshot({path: testInfo.outputPath('decision-history.png')})
     } finally {await finish(testInfo, fixture)}
   })
 
-  // Without fills there is no fill switch and no fill list; the decisions still show.
-  test(`chart hides the paper fills switch when the account has none at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
+  // Without fills there is no trades switch and no trades list; the signals are still one click away.
+  test(`chart hides the paper trades switch when the account has none at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!, {fills: []})
     try {
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      await expect(chart.getByRole('checkbox', {name: 'Policy buy/sell'})).toBeChecked()
-      await expect(chart.getByRole('checkbox', {name: 'Paper fills'})).toHaveCount(0)
+      await expect(chart.getByRole('checkbox', {name: 'Strategy signals'})).not.toBeChecked()
+      await expect(chart.getByRole('checkbox', {name: 'Paper trades'})).toHaveCount(0)
       await expect(chart.locator('[aria-label="AAPL paper fills"]')).toHaveCount(0)
-      await expect(chart.locator('[aria-label="AAPL decisions"]')).toContainText('Buy 9.1%')
-      await expect(chart).not.toContainText('Filled')
+      await chart.getByRole('checkbox', {name: 'Strategy signals'}).check()
+      await expect(chart.locator('[aria-label="AAPL strategy signals"]')).toContainText('BUY signal 9.1%')
+      await expect(chart).not.toContainText('BUY 63')
     } finally {await finish(testInfo, fixture)}
   })
 
@@ -228,21 +229,22 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      const items = chart.locator('[aria-label="AAPL decisions"] ul').first().locator('li')
+      await chart.getByRole('checkbox', {name: 'Strategy signals'}).check()
+      const items = chart.locator('[aria-label="AAPL strategy signals"] li')
       await expect(items).toHaveCount(3)
-      await expect(items.nth(0)).toHaveText('Sep 17 · Sell · close $110.00')
-      await expect(items.nth(1)).toHaveText('Sep 16 · Add →20% · close $110.00')
-      await expect(items.nth(2)).toHaveText('Sep 14 · Buy 14% · close $110.00')
+      await expect(items.nth(0)).toHaveText('Sep 17 · SELL signal · close $110.00')
+      await expect(items.nth(1)).toHaveText('Sep 16 · ADD signal →20% · close $110.00')
+      await expect(items.nth(2)).toHaveText('Sep 14 · BUY signal 14% · close $110.00')
       await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveText(`inverse-volatility/3: ${NOTE}`)
       await expect(chart.locator('[aria-label="Policy marker legend"]')).toHaveCount(0)
-      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['Buy 14%', 'Add →20%', 'Sell']))
-      expect((await drawn(page, 'D')).filter(text => text.startsWith('Rebalance'))).toEqual([])
+      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY signal 14%', 'ADD signal →20%', 'SELL signal']))
+      expect((await drawn(page, 'D')).filter(text => text.startsWith('RESET'))).toEqual([])
     } finally {await finish(testInfo, fixture)}
   })
 
-  // A redeploy fill (idle cash sent back to the targets) is listed and drawn as such, and the fills
-  // switch says the colour that tells it apart; a history with no clock on file says no reset is known.
-  test(`chart tells a redeploy fill apart and says when no reset is known at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
+  // A redeploy fill (idle cash put back to the targets) is a BUY like any other, and the list says
+  // which leg it was; a history with no clock on file says no reset is known.
+  test(`chart names a redeploy fill and says when no reset is known at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!, {
       fills: [...FILLS, {date: '2026-09-16', side: 'buy', qty: 7, price: 91, kind: 'redeploy'}],
@@ -252,39 +254,41 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      await expect(chart.getByRole('checkbox', {name: 'Paper fills (purple: redeploy)'})).toBeChecked()
+      await expect(chart.getByRole('checkbox', {name: 'Paper trades'})).toBeChecked()
       const fills = chart.locator('[aria-label="AAPL paper fills"] li')
       await expect(fills).toHaveCount(3)
-      await expect(fills.nth(1)).toHaveText('Sep 16 · Filled buy 7 @ $91.00 · redeploy')
-      await expect(fills.nth(2)).toHaveText('Sep 15 · Filled buy 63 @ $224.81')
+      await expect(fills.nth(1)).toHaveText('Sep 16 · BUY 7 @ $91.00 · idle cash put to work')
+      await expect(fills.nth(2)).toHaveText('Sep 15 · BUY 63 @ $224.81')
+      await chart.getByRole('checkbox', {name: 'Strategy signals'}).check()
       await expect(chart.locator('[aria-label="Policy marker legend"]')).toContainText('No rebalance clock on file')
-      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['Filled buy 7 @ 91.00 (redeploy)', 'Filled buy 63 @ 224.81']))
+      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY 7 @ $91.00', 'BUY 63 @ $224.81']))
     } finally {await finish(testInfo, fixture)}
   })
 }
 
 // The account's policy since 2026-09-29 is `/5`, the same equal-weight rule under a 25% cap:
-// its history reads exactly as `/4`'s does - the equal-weight legend, the entry as a buy at its
-// target, the reset's move as a rebalance of what it places, the drift between resets unmarked.
-test('chart reads a /5 history with the equal-weight legend and rebalance markers', async ({page, baseURL}, testInfo) => {
+// its history reads exactly as `/4`'s does - the equal-weight legend, the entry as a BUY signal at
+// its target, the reset's move as a RESET of what it places, the drift between resets unmarked.
+test('chart reads a /5 history with the equal-weight legend and reset markers', async ({page, baseURL}, testInfo) => {
   const fixture = await install(page, baseURL!, {policy: 'graded-equal-weight/5'})
   try {
-    await page.goto('/#desk')
-    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
-    const chart = page.getByRole('region', {name: 'AAPL price chart'})
-    const items = chart.locator('[aria-label="AAPL decisions"] ul').first().locator('li')
+      await page.goto('/#desk')
+      await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+      const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    await chart.getByRole('checkbox', {name: 'Strategy signals'}).check()
+    const items = chart.locator('[aria-label="AAPL strategy signals"] li')
     await expect(items).toHaveCount(3)
-    await expect(items.nth(0)).toHaveText('Sep 17 · Sell · close $110.00')
-    await expect(items.nth(1)).toHaveText('Sep 16 · Rebalance +2.5% · close $110.00')
-    await expect(items.nth(2)).toHaveText('Sep 14 · Buy 9.1% · close $110.00')
+    await expect(items.nth(0)).toHaveText('Sep 17 · SELL signal · close $110.00')
+    await expect(items.nth(1)).toHaveText('Sep 16 · RESET +2.5% · close $110.00')
+    await expect(items.nth(2)).toHaveText('Sep 14 · BUY signal 9.1% · close $110.00')
     await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveText(`graded-equal-weight/5: ${NOTE}`)
     const legend = chart.locator('[aria-label="Policy marker legend"]')
-    await expect(legend).toContainText('Buy = enters the A/A+ book')
-    await expect(legend).toContainText('Rebalance ±% = the reset trades it')
-    await expect(legend).toContainText('drift between resets is not traded')
+    await expect(legend).toContainText('BUY = the name enters the A/A+ book at its target')
+    await expect(legend).toContainText('RESET ±% = the 20-session reset moves it back to target')
+    await expect(legend).toContainText('Drift between resets is not a signal')
     await expect(legend).toContainText('Reset sessions from the paper state')
-    await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['Buy 9.1%', 'Rebalance +2.5%', 'Sell']))
-    expect((await drawn(page, 'D')).filter(text => /^(Add|Trim) /.test(text))).toEqual([])
+    await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY signal 9.1%', 'RESET +2.5%', 'SELL signal']))
+    expect((await drawn(page, 'D')).filter(text => /^(ADD|TRIM) /.test(text))).toEqual([])
   } finally {await finish(testInfo, fixture)}
 })
 
@@ -293,15 +297,16 @@ test('chart reads a /5 history with the equal-weight legend and rebalance marker
 test('chart keeps the sizing reading for a version that only shares the equal-weight prefix', async ({page, baseURL}, testInfo) => {
   const fixture = await install(page, baseURL!, {policy: 'graded-equal-weight/3', rows: SIZING_ROWS, rebalanceNote: null})
   try {
-    await page.goto('/#desk')
-    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
-    const chart = page.getByRole('region', {name: 'AAPL price chart'})
-    const items = chart.locator('[aria-label="AAPL decisions"] ul').first().locator('li')
+      await page.goto('/#desk')
+      await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+      const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    await chart.getByRole('checkbox', {name: 'Strategy signals'}).check()
+    const items = chart.locator('[aria-label="AAPL strategy signals"] li')
     await expect(items).toHaveCount(3)
-    await expect(items.nth(1)).toHaveText('Sep 16 · Add →20% · close $110.00')
+    await expect(items.nth(1)).toHaveText('Sep 16 · ADD signal →20% · close $110.00')
     await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveText(`graded-equal-weight/3: ${NOTE}`)
     await expect(chart.locator('[aria-label="Policy marker legend"]')).toHaveCount(0)
-    await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['Buy 14%', 'Add →20%', 'Sell']))
-    expect((await drawn(page, 'D')).filter(text => text.startsWith('Rebalance'))).toEqual([])
+    await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY signal 14%', 'ADD signal →20%', 'SELL signal']))
+    expect((await drawn(page, 'D')).filter(text => text.startsWith('RESET'))).toEqual([])
   } finally {await finish(testInfo, fixture)}
 })

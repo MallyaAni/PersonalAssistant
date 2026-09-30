@@ -10,12 +10,15 @@ the cap: that one keeps its book and clock, fills toward the new targets
 through the redeploy, and is re-stamped `/5`.
 """
 
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
 
 from backend.agents.trading.desk import (
     event_risk,
+    grading,
+    intraday_orders,
     live_policy,
     paper,
     policy_v4,
@@ -172,9 +175,11 @@ class _EmptyBroker:
     def positions(self):
         return []
 
-    # The market is shut, as it is at the nightly.
+    # Closed for the nightly; the intraday leg's session opens it.
+    is_open = False
+
     def clock(self):
-        return {"is_open": False}
+        return {"is_open": self.is_open}
 
     # Accept an order and report it filled at 100.
     def _accept(self, symbol, qty, side, client_order_id):
@@ -206,6 +211,10 @@ class _EmptyBroker:
     # Cancelling is a no-op here.
     def cancel_orders(self, ids):
         return None
+
+    # The intraday leg's in-session market order.
+    def submit_market(self, symbol, qty, side, client_order_id):
+        return self._accept(symbol, qty, side, client_order_id)
 
 
 # The ordinary-session calendar: no FOMC cycle, the calendar known.
@@ -257,17 +266,19 @@ def test_a_v3_era_state_rebalances_once_into_the_active_policy(
     state = paper.load_state(tmp_path)
     assert state.policy_version == live_policy.ACTIVE == "graded-equal-weight/5"
     assert state.last_rebalance == "2026-09-03"
-    # The orders are the active policy's: SNDK is the one A+ name, so the
-    # reset plans it to the 25% cap and nothing else. The executor bounds a
-    # reset buy at its 15% name cap (`paper.bound_orders`, as under `/4`),
-    # so 150 shares at 100 on 100,000 go out tonight and the redeploy leg
-    # takes the name the rest of the way on a later session.
-    bought = [
-        (o["symbol"], o["qty"], o["reason"])
-        for o in entry["orders"]
-        if o["side"] == "buy"
-    ]
-    assert bought == [("SNDK", 150, "rebalance to 0.250")]
+    # The orders are the active policy's: SNDK is the one A+ name, so it is
+    # bought at the cap and nothing else is. They are planned for the next
+    # session on the board's rule and sent then by the intraday leg (here in
+    # its close window), which fills them.
+    bought = {o["symbol"] for o in entry["planned"] if o["side"] == "buy"}
+    assert bought == {"SNDK"}
+    assert entry["orders"] == []
+    broker.is_open = True
+    intraday_orders.send_due(
+        tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+    )
+    broker.is_open = False
+    assert {o["symbol"] for o in broker.orders} == {"SNDK"}
     # Stamped now: the next session is an ordinary day, not a forced rebalance.
     market_daily.paper_trade(report, tmp_path, "2026-09-04", True)
     out = capsys.readouterr().out
@@ -305,10 +316,19 @@ def test_a_v4_state_moves_to_v5_without_a_forced_rebalance(
     assert "forced tonight" not in out
     assert "paper book (graded-equal-weight/5; redeploy)" in out
     assert entry["plan"] == "redeploy"
-    assert broker.sent == [("buy", "SNDK", 50)]
-    assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["orders"]] == [
+    # Planned for the next session on the board's rule, sent by the intraday
+    # leg (here in its close window), nothing sent at night.
+    assert broker.sent == []
+    assert entry["orders"] == []
+    assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["planned"]] == [
         ("SNDK", 50, paper.REDEPLOY_KIND)
     ]
+    broker.is_open = True
+    intraday_orders.send_due(
+        tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+    )
+    broker.is_open = False
+    assert broker.sent == [("buy", "SNDK", 50)]
     state = paper.load_state(tmp_path)
     assert state.policy_version == "graded-equal-weight/5"
     # The reset clock is the account's own: nothing restarted it.

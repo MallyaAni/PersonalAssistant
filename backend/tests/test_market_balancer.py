@@ -355,3 +355,102 @@ def test_an_unconfirmed_cancel_is_not_journaled_as_a_hold(tmp_path: Path, monkey
         and e.get("status") == paper.SKIPPED
         for e in back.journal
     )
+
+
+# A sell on the board's intraday rule is not at the broker at the open, and
+# its own rule (a 1% pop, else the close) replaces the green-open one: the
+# green-day rule must leave it alone even when the name opens up.
+def test_the_green_day_rule_leaves_intraday_sells_alone(tmp_path: Path, monkeypatch):
+    import datetime as dt
+
+    from backend.agents.trading.desk import intraday_orders, paper
+
+    class _FakeDT(dt.datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return dt.datetime(2026, 9, 11, 14, 30, tzinfo=dt.UTC)
+
+    monkeypatch.setattr(market_balancer, "datetime", _FakeDT)
+    _write_record(tmp_path, _record())
+    state = paper.PaperState()
+    state.pending = [
+        {
+            "client_order_id": "anios-2026-09-10-sell-adbe-7",
+            "symbol": "ADBE",
+            "side": "sell",
+            "qty": 33,
+            "session": "2026-09-10",
+            "reason": "leaves the book",
+            "execution_timing": intraday_orders.INTRADAY_TIMING,
+            "execute_on": "2026-09-11",
+        }
+    ]
+    paper.save_state(tmp_path, state)
+    from backend.market import alpaca_trading
+
+    monkeypatch.setattr(
+        alpaca_trading,
+        "client_from_env",
+        lambda: pytest.fail("the green-day rule must not touch the broker"),
+    )
+    record = json.loads(
+        (tmp_path / "desk" / "asof=2026-09-04" / "desk.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    market_balancer._green_day_skip(
+        tmp_path,
+        record,
+        {"ADBE": {"open": 305.0, "bar": "2026-09-11T14:15:00+00:00"}},
+        tmp_path / "intraday.log",
+    )
+    back = paper.load_state(tmp_path)
+    assert back.pending[0]["client_order_id"] == "anios-2026-09-10-sell-adbe-7"
+    assert "hold_requested" not in back.pending[0]
+
+
+# Every candle hands the snapshot it latched to the intraday order leg, and a
+# candle with no quotes still calls it (the close window needs no quote), so
+# a market-on-close order is never missed because a quote fetch failed. A
+# failure inside the leg is logged and never stops the balancer.
+@pytest.mark.parametrize("with_quotes", [True, False])
+def test_every_candle_sends_the_due_paper_orders(
+    tmp_path: Path, monkeypatch, with_quotes
+):
+    from backend.agents.trading.desk import intraday_orders
+
+    _write_record(tmp_path, _record())
+    _no_network(monkeypatch)
+    quote = {
+        "symbol": "ADBE", "last": 301.0, "open": 300.0, "high": 302.0, "low": 299.0,
+        "bar": "2026-09-11T14:00:00+00:00", "as_of": "2026-09-11T14:15:00+00:00",
+    }
+    if with_quotes:
+        monkeypatch.setattr(
+            market_balancer.live_quotes,
+            "quotes",
+            lambda *a, **k: {"ADBE": type("Q", (), quote)()},
+        )
+        monkeypatch.setattr(market_balancer, "_quote_dict", lambda q: dict(quote))
+        monkeypatch.setattr(
+            market_balancer, "_green_day_skip", lambda *a, **k: None
+        )
+        from backend.cli import market_event_recovery
+        from backend.market import intraday_research
+
+        monkeypatch.setattr(market_event_recovery, "run", lambda *a, **k: None)
+        monkeypatch.setattr(intraday_research, "publish", lambda *a, **k: {})
+        monkeypatch.setattr(market_balancer, "_observe_paper", lambda *a, **k: None)
+    seen: list[dict] = []
+
+    # Record the snapshot the leg was handed, then fail, as a broken leg would.
+    def fake_send(root, snapshot, now, client_factory):
+        seen.append(snapshot)
+        raise RuntimeError("broker down")
+
+    monkeypatch.setattr(intraday_orders, "send_due", fake_send)
+    market_balancer.run(tmp_path, 100_000.0)
+    assert len(seen) == 1
+    assert ("ADBE" in (seen[0].get("quotes") or {})) is with_quotes
+    log = (tmp_path / "desk" / market_balancer.INTRADAY_LOG).read_text(encoding="utf-8")
+    assert "paper order: intraday orders unavailable (RuntimeError: broker down)" in log

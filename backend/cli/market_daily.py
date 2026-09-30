@@ -406,6 +406,7 @@ def _submit(
 
     submitted: list[dict] = []
     refused: list[str] = []
+    orders = _hold_for_the_session(orders)
     market_open = False
     clock_known = False
     if live and orders:
@@ -484,11 +485,54 @@ def _submit(
     return submitted, refused
 
 
+# The paper account trades the nightly plan on the board's clock: each
+# ordinary order is marked to be sent in the next session by the balancer, on
+# a 1% dip (a buy) or pop (a sell) on a completed 15-minute bar, else at the
+# close (`intraday_orders`). Event and priority orders keep their own timing.
+# With `intraday_orders.INTRADAY_EXECUTION` off the orders are unchanged.
+def _on_the_boards_clock(orders) -> list:
+    """Return `orders` with the ordinary ones on the intraday rule."""
+    from dataclasses import replace
+
+    from backend.agents.trading.desk import intraday_orders
+
+    if not intraday_orders.INTRADAY_EXECUTION:
+        return list(orders)
+    return [
+        replace(o, execution_timing=intraday_orders.INTRADAY_TIMING)
+        if not o.event_id and not o.priority
+        else o
+        for o in orders
+    ]
+
+
+# The board's orders are sent in the session by the balancer, on the board's
+# own rule (`intraday_orders`); the nightly only writes them down. Print each
+# one as planned and return the orders the nightly itself still sends (the
+# FOMC event orders, which keep their next-open treatment).
+def _hold_for_the_session(orders) -> list:
+    """Print the intraday orders as planned; return the rest."""
+    from backend.agents.trading.desk import intraday_orders
+
+    timing = intraday_orders.INTRADAY_TIMING
+    for order in (o for o in orders if o.execution_timing == timing):
+        rule = intraday_orders.rule_text(order.side)
+        print(
+            f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
+            f"  [planned for the next session: {rule}]"
+        )
+    return [o for o in orders if o.execution_timing != timing]
+
+
 # Preserve execution policy and reference evidence before an order can be sent.
+# An order the balancer sends intraday also carries the session it executes
+# on (the next reviewed session after the decision); a date the calendar does
+# not cover leaves it None, and such a row is never sent (fail closed).
 def _pending_orders(orders, session, prices, reference_session):
-    from backend.agents.trading.desk import paper
+    from backend.agents.trading.desk import intraday_orders, paper
 
     decision_at = datetime.now(tz=UTC).isoformat()
+    upcoming = intraday_orders.next_session(date.fromisoformat(str(session)))
     return [
         {
             "client_order_id": order.client_order_id
@@ -502,6 +546,11 @@ def _pending_orders(orders, session, prices, reference_session):
             "priority": order.priority,
             "execution_timing": order.execution_timing,
             "kind": order.kind,
+            **(
+                {"execute_on": upcoming.isoformat() if upcoming else None}
+                if order.execution_timing == intraday_orders.INTRADAY_TIMING
+                else {}
+            ),
             "execution": {
                 "decision_at": decision_at,
                 "reference_price": prices.get(order.symbol),
@@ -694,6 +743,7 @@ def _paper_trade(
         actions,
         event_execution,
         event_risk,
+        intraday_orders,
         live_policy,
         paper,
     )
@@ -773,6 +823,7 @@ def _paper_trade(
             entries=_price_entries(report),
             cash=account.cash,
         )
+        orders = _on_the_boards_clock(orders)
     # The stamp says "this state's book is the active policy's". It is
     # written when the book already was, or when tonight's plan rebalanced
     # into it; a session that could not rebalance (an event cycle, pending
@@ -841,6 +892,20 @@ def _paper_trade(
     ]
     entry = paper.snapshot(new_state, session, account.equity, account.cash, positions)
     entry["orders"] = submitted
+    # What the balancer sends next session on the board's rule, as planned.
+    entry["planned"] = [
+        {
+            key: row.get(key)
+            for key in ("symbol", "side", "qty", "reason", "kind", "execute_on")
+        }
+        for row in new_state.pending
+        if row.get("execution_timing") == intraday_orders.INTRADAY_TIMING
+    ]
+    entry["execution_rule"] = (
+        intraday_orders.INTRADAY_TIMING
+        if intraday_orders.INTRADAY_EXECUTION
+        else "next_open"
+    )
     entry["refused"] = refused
     entry["plan"] = what
     entry["event_risk"] = {
