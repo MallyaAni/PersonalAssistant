@@ -143,7 +143,12 @@ def _green_day_skip_locked(
     now = datetime.now(UTC).astimezone(NEW_YORK)
     if not (570 <= now.hour * 60 + now.minute < 660) or now.weekday() >= 5:
         return
+    from backend.agents.trading.desk import intraday_orders
+
     state = paper.load_state(data_dir)
+    # Only closing sells the nightly queued itself. A sell on the board's
+    # intraday rule is not at the broker yet at the open, and its own rule
+    # (a 1% pop, else the close) replaces this one.
     pending_sells = [
         p
         for p in state.pending
@@ -151,6 +156,7 @@ def _green_day_skip_locked(
         and not p.get("event_id")
         and not p.get("priority")
         and p.get("execution_timing") != "next_open"
+        and p.get("execution_timing") != intraday_orders.INTRADAY_TIMING
     ]
     action_rows = {r.get("ticker"): r for r in latest.get("actions") or []}
     clients = None
@@ -224,6 +230,33 @@ def _latch_entry_timing(data_dir: Path, live: dict) -> None:
         entry_timing.update(data_dir, live, datetime.now(UTC))
     except Exception as exc:  # noqa: BLE001 - the latch never stops the balancer
         print(f"Entry timing latch unavailable ({type(exc).__name__}: {exc})")
+
+
+# Send the paper account's orders that the board's rule makes due on this
+# candle (`intraday_orders.send_due`): a market order when a 15-minute close
+# reached the 1% level, a market-on-close order in the close window. It runs
+# right after the latch, before anything slower, so the close window's order
+# is in well ahead of the market-on-close cutoff. A failure is printed and
+# logged; it never stops the balancer, and the nightly settles whatever was
+# not sent as missing.
+def _send_paper_orders(data_dir: Path, live: dict, log_path: Path) -> None:
+    """Send the due intraday paper orders; never raise."""
+    try:
+        from backend.agents.trading.desk import intraday_orders
+        from backend.market import alpaca_trading
+
+        lines = intraday_orders.send_due(
+            data_dir, live, datetime.now(UTC), alpaca_trading.client_from_env
+        )
+    except Exception as exc:  # noqa: BLE001 - the orders never stop the balancer
+        lines = [f"intraday orders unavailable ({type(exc).__name__}: {exc})"]
+    if not lines:
+        return
+    stamp = datetime.now(UTC).isoformat(timespec="seconds")
+    with log_path.open("a", encoding="utf-8") as handle:
+        for line in lines:
+            print(f"  paper order: {line}")
+            handle.write(f"{stamp} paper order: {line}\n")
 
 
 # Keep a failed synthetic-account write separate from successfully published research.
@@ -337,6 +370,8 @@ def run(data_dir: Path, equity: float) -> Path:
         # Latch today's open and first level crossings from the same candle,
         # so the board's timed BUY/SELL survives the price moving back.
         _latch_entry_timing(data_dir, live)
+        # The paper account trades what the board says, when it says it.
+        _send_paper_orders(data_dir, live, data_dir / "desk" / INTRADAY_LOG)
         # Keep automatic candidate sizing separate from paper account operations.
         from backend.market import intraday_research
 
@@ -352,6 +387,11 @@ def run(data_dir: Path, equity: float) -> Path:
         from backend.cli import market_event_recovery
 
         market_event_recovery.run(data_dir, latest, live)
+    else:
+        # No quotes this candle: the latch keeps the day's open and triggers
+        # from earlier candles, and the close window needs no quote at all, so
+        # a market-on-close order is still sent on time.
+        _send_paper_orders(data_dir, {}, data_dir / "desk" / INTRADAY_LOG)
     with (data_dir / "desk" / INTRADAY_LOG).open("a", encoding="utf-8") as handle:
         grades = ",".join(
             f"{b['ticker']}={b.get('grade_live') or b.get('grade')}"

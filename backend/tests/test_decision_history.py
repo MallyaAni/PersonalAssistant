@@ -109,7 +109,11 @@ def test_the_policy_is_the_live_one():
     assert decision_history.POLICY == live_policy.ACTIVE == policy_v5.POLICY_VERSION
     assert live_policy.POLICY is policy_v5
     assert decision_history.ADD_TRIM_MIN == 0.025
-    assert "next open" in decision_history.DECISION_NOTE
+    # The note describes the signals, not a fill convention: since 2026-09-30
+    # the paper account trades them on the board's intraday rule, and its own
+    # fills (not a projected open) say when each trade happened.
+    assert decision_history.DECISION_NOTE.startswith("signals at each close")
+    assert "next open" not in decision_history.DECISION_NOTE
 
 
 # Crossing into A is a buy on that session, leaving it a sell, and every

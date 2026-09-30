@@ -1107,6 +1107,7 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
             TypeError,
         ):
             activity = {"reason": "Today's fill history could not be loaded"}
+        positions = client.positions()
         return {
             "activity": activity,
             "equity": equity,
@@ -1114,7 +1115,7 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
             "day_pl": day_pl,
             "day_pl_pct": (day_pl / day_base) if day_base else None,
             "pl_pct": (equity / start - 1.0) if start else None,
-            "positions": [asdict(p) for p in client.positions()],
+            "positions": [asdict(p) for p in positions],
             "orders": [
                 {
                     "symbol": o.get("symbol"),
@@ -1124,6 +1125,7 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
                 }
                 for o in client.open_orders()
             ],
+            "plan": _paper_plan(client, state, positions, equity),
         }
 
     try:
@@ -1134,6 +1136,68 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
         "user_id": user_id,
         "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
         **live,
+    }
+
+
+# The paper account's orders as the board shows them: the nightly plan's
+# orders with their size, why, when (the board's rule) and what has happened
+# to each (planned, waiting, sent, filled, ...), worded once in
+# `intraday_orders` so the board, the ticker panel and the chart cannot
+# disagree. The broker's answer for each order is read by its client order id;
+# when that read fails the orders are still listed, from the state alone.
+def _paper_plan(client, state, positions, equity: float) -> dict[str, object]:
+    """Return {"rule", "orders", "until_rebalance", ...} for the board."""
+    from backend.agents.trading.desk import actions, intraday_orders
+    from backend.market import entry_timing
+
+    now = datetime.now(UTC)
+    today = now.astimezone(entry_timing.NEW_YORK).date()
+    sessions = [str(r.get("session") or "") for r in state.pending if r.get("session")]
+    broker: list[dict] | None = None
+    reason = None
+    if sessions:
+        try:
+            broker = client.orders_since(f"{min(sessions)}T00:00:00Z")
+        except (alpaca_trading.AlpacaTradingError, OSError, ValueError, AttributeError):
+            reason = "The broker's order status could not be read"
+    snapshot = _live_snapshot() or {}
+    quotes = snapshot.get("quotes") or {}
+    prices = {
+        str(symbol): float(q["last"])
+        for symbol, q in quotes.items()
+        if isinstance(q, dict)
+        and isinstance(q.get("last"), int | float)
+        and q["last"] > 0
+    }
+    for p in positions:
+        if p.symbol not in prices and p.current_price:
+            prices[p.symbol] = float(p.current_price)
+    orders = intraday_orders.board_orders(
+        state,
+        broker_orders=broker,
+        latch=entry_timing.load(_root(), today),
+        quotes=quotes,
+        held={p.symbol: float(p.qty) for p in positions},
+        prices=prices,
+        equity=equity,
+        now=now,
+    )
+    return {
+        "rule": intraday_orders.INTRADAY_TIMING
+        if intraday_orders.INTRADAY_EXECUTION
+        else "next_open",
+        "rule_text": {
+            "buy": intraday_orders.rule_text("buy"),
+            "sell": intraday_orders.rule_text("sell"),
+        },
+        "orders": orders,
+        "until_rebalance": max(
+            actions.REBALANCE - int(state.sessions_since_rebalance), 0
+        )
+        if state.last_rebalance
+        else None,
+        "last_rebalance": state.last_rebalance,
+        "reason": reason,
     }
 
 
