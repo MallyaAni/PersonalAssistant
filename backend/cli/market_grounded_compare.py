@@ -95,7 +95,11 @@ def validate_row(row: dict, label: dict) -> None:
     published = datetime.fromisoformat(row["published_at"])
     if published.tzinfo is None or published.utcoffset() is None:
         raise ValueError("Publication instant must include a timezone")
-    expected = label["expected"]
+    validate_expected(label["expected"])
+
+
+# Keep annotation values within the frozen contract while retaining explicit ambiguity.
+def validate_expected(expected: dict) -> None:
     if not isinstance(expected, dict) or set(expected) != set(grounded.VALUES):
         raise ValueError("Eligible annotations require every feature")
     for field, value in expected.items():
