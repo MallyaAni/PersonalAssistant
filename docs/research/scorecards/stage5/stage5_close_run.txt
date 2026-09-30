@@ -1,0 +1,66 @@
+=== stage5 close c395c45 docs(research): stage 5 Addendum 1 - the build's choices and t 2026-09-30T00:31:00Z
+=== 2026-09-30T00:30:01Z sip append since 2026-09-19
+=== refresh exit 0
+=== reconcile exit 0
+[    229 s] desk: 2952 sessions x 95 names
+[    237 s] tone: 94 names; levels read (236 s)
+[    496 s] cubes: 95 of 95 names
+[    504 s] edgar: 94 names (504 s)
+[    509 s] null grid: 2699 sessions from 2016-01-04; reproduces the report
+[    512 s]   offset 0: 2541 orders from session 0
+[    516 s]   offset 1: 2567 orders from session 1
+[    519 s]   offset 2: 2492 orders from session 2
+[    523 s]   offset 3: 2539 orders from session 3
+[    526 s]   offset 4: 2601 orders from session 4
+[    529 s]   offset 5: 2586 orders from session 5
+[    533 s]   offset 6: 2586 orders from session 6
+[    536 s]   offset 7: 2512 orders from session 7
+[    541 s]   offset 8: 2606 orders from session 8
+[    550 s]   offset 9: 2617 orders from session 9
+[    560 s]   offset 10: 2530 orders from session 10
+[    564 s]   offset 11: 2609 orders from session 11
+[    570 s]   offset 12: 2601 orders from session 12
+[    573 s]   offset 13: 2607 orders from session 13
+[    577 s]   offset 14: 2484 orders from session 14
+[    580 s]   offset 15: 2652 orders from session 15
+[    583 s]   offset 16: 2646 orders from session 16
+[    586 s]   offset 17: 2572 orders from session 17
+[    590 s]   offset 18: 2577 orders from session 18
+[    593 s]   offset 19: 2569 orders from session 19
+[    613 s] 15:30 proxy: 3 releases after the tone cutoff
+[    617 s] 15:45 proxy: 2 releases after the tone cutoff
+[    619 s] fills: 95 names with a cube
+[    620 s]   offset 0: 2668 decisions at 15:30
+[    621 s]   offset 1: 2668 decisions at 15:30
+[    622 s]   offset 2: 2668 decisions at 15:30
+[    622 s]   offset 3: 2668 decisions at 15:30
+[    623 s]   offset 4: 2668 decisions at 15:30
+[    624 s]   offset 5: 2668 decisions at 15:30
+[    625 s]   offset 6: 2668 decisions at 15:30
+[    626 s]   offset 7: 2668 decisions at 15:30
+[    626 s]   offset 8: 2668 decisions at 15:30
+[    627 s]   offset 9: 2668 decisions at 15:30
+[    628 s]   offset 10: 2668 decisions at 15:30
+[    629 s]   offset 11: 2668 decisions at 15:30
+[    630 s]   offset 12: 2668 decisions at 15:30
+[    630 s]   offset 13: 2668 decisions at 15:30
+[    631 s]   offset 14: 2668 decisions at 15:30
+[    632 s]   offset 15: 2668 decisions at 15:30
+[    633 s]   offset 16: 2668 decisions at 15:30
+[    634 s]   offset 17: 2668 decisions at 15:30
+[    634 s]   offset 18: 2668 decisions at 15:30
+[    635 s]   offset 19: 2668 decisions at 15:30
+stage-5 close test (docs/research/stage5-plan-2026-09-29.md) as of 2026-09-29: graded-equal-weight/5 under ew-redeploy, executed buys, candidate at t's close on the 15:30 decision against dip_or_close in t + 1; 20 of 20 offsets, statistics at offset 10; deciding window 2016-01-04..2017-12-27; Newey-West lag 20
+
+RECORD: criteria not met (1_deciding_per_buy_and_session); the board keeps buying in the next session
+  null test holds: 0 report cells differ over 2699 sessions; 0 of 53780 journal decisions differ over 20 offsets (criterion 4)
+  deciding 2016-01-04..2017-12-27: g +11.7 bp a buy (clustered t +1.20, 418 buys); +0.56 bp of equity a session (Newey-West t +1.66) - criterion 1 fails
+  2018-2023: g +24.3 bp a buy (clustered t +2.50, 1059 buys); +0.74 bp of equity a session (Newey-West t +1.79); 2024-2026: g +9.9 bp a buy (clustered t +0.52, 370 buys); -0.91 bp of equity a session (Newey-West t -1.58) - criterion 2 holds
+  next_open control, deciding: g +15.1 bp a buy (clustered t +2.39, 418 buys); +0.45 bp of equity a session (Newey-West t +1.69) - criterion 3 holds
+  eligible buys, deciding: 424 of 429 control buys; matched 238, partial 179, missed 7; extra round trips 207 at -35.9 bp after costs (reported)
+  by leg, deciding (reported): reset +57.1 bp (67); retry -9.9 bp (127); rotation -20.3 bp (63); band_entry +13.1 bp (18); redeploy +23.5 bp (143)
+  drift-adjusted, deciding (reported): g -2.2 bp a buy (clustered t -0.22, 418 buys); +0.19 bp of equity a session (Newey-West t +0.58)
+  15:45 decision (reported, decides nothing): deciding g +12.6 bp a buy (clustered t +1.28, 418 buys); +0.61 bp of equity a session (Newey-West t +1.68); 2018-2023 g +23.0; 2024-2026 g +8.6
+  full ledger walk (reported; the simulator's fills, the control walk is the simulator's run): deciding +0.42 bp a session (t +1.64), CAGR +31.9% against +30.6%
+wrote /home/animallya96/deploy/anios/data/market/research/stage5/stage5_close.json
+=== exit 0 2026-09-30T00:41:39Z
