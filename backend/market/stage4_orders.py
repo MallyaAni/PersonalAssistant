@@ -362,14 +362,17 @@ class ControlRun:
 # Run the control executor from `since` exactly as stage 3's T-S1 control
 # line (`stage3_overlay.price` with the control): `simulate.run` on the
 # restricted report under `profit_taking.control_options` with the policy's
-# allocator and an OrderJournal (its FOMC ceiling set as the Ledger's is),
-# at `cost_bps`; then the orders on `basis`.
+# allocator (`policy_v4.allocator(mask)` unless `allocator` names another,
+# such as `policy_v5.allocator(mask)` for the `/5` book) and an
+# OrderJournal (its FOMC ceiling set as the Ledger's is), at `cost_bps`;
+# then the orders on `basis`.
 def run_control(
     restricted: DeskReport,
     mask: np.ndarray,
     since: date | None,
     cost_bps: float = COST_BPS,
     basis: str = EXECUTED,
+    allocator: Callable[..., Any] | None = None,
 ) -> ControlRun:
     """Return the ControlRun of one offset."""
     panel = restricted.panel
@@ -380,7 +383,7 @@ def run_control(
         restricted,
         since=since,
         cost_bps=cost_bps,
-        allocator=policy_v4.allocator(mask),
+        allocator=policy_v4.allocator(mask) if allocator is None else allocator,
         journal=journal,
         **options,
     )
@@ -390,7 +393,8 @@ def run_control(
 
 # The control executor from each of the first `offsets` sessions (the
 # scorecard's start phases, `market_pit_scorecard._since`), as stage 3 ran
-# its offsets; returns each offset's orders.
+# its offsets, under `allocator` (the default policy_v4's); returns each
+# offset's orders.
 def run_offsets(
     restricted: DeskReport,
     mask: np.ndarray,
@@ -398,6 +402,7 @@ def run_offsets(
     cost_bps: float = COST_BPS,
     basis: str = EXECUTED,
     log: Callable[[str], None] | None = None,
+    allocator: Callable[..., Any] | None = None,
 ) -> list[Orders]:
     """Return [Orders per offset]."""
     if offsets < 1:
@@ -405,7 +410,7 @@ def run_offsets(
     out: list[Orders] = []
     for k in range(int(offsets)):
         run = run_control(
-            restricted, mask, _since(restricted.panel, k), cost_bps, basis
+            restricted, mask, _since(restricted.panel, k), cost_bps, basis, allocator
         )
         out.append(run.orders)
         if log is not None:
