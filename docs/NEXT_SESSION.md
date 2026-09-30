@@ -4,6 +4,7 @@
 
 User requested implementation on a branch with concrete results. Branch
 `fix/desk-order-evidence-20260930` starts from GitHub main `0cf5760`.
+Verified implementation checkpoint: `eb0d02d` (source exercised by the checks below).
 Execution rules, `/5`, live state and serving models are unchanged. Not deployed.
 
 - VERIFIED: 119 backend tests (intraday orders, entry timing, `/5`, desk API)
