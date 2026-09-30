@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-09-30, 01:00 ET — Trader board DEPLOYED (`94393800`): the paper account trades the board's orders on the board's clock
+
+The other Cowork session's branch `claude/trader-board-20260930` (`ef3b249`,
+`70eb1e9`, `93dd9ee`; its notes are the project doc
+`claude/trader-board-2026-09-30.md`) was merged onto the `/5` cap as
+`00cd4d7` and fixed up in `94393800`, on the operator's "everything live
+immediately". What changed live:
+
+- `desk/intraday_orders.py`: the balancer sends each pending order when a
+  completed 15-minute close is 1% under the day's open (buys) or over it
+  (sells), else market-on-close from the 15:30 window (`send_due`). The
+  nightly plans orders with `execution_timing = dip_or_close` and
+  `execute_on`, and sends nothing at night; FOMC and priority orders keep
+  next-open timing. Off switch: `intraday_orders.INTRADAY_EXECUTION`.
+- `TradeBoard.tsx` replaces `StockBoard`: the board is the paper account's
+  book, sizes in shares, $ and % (plus a browser-kept "your account size").
+  The chart says BUY/SELL for the account's trades, "BUY signal / RESET /
+  SELL signal" for the strategy (off by default). The personal planner UI is
+  off the page; its API and records are untouched.
+- `market_paper_retime --apply` ran at 01:00 ET: the ten orders the 09-29
+  nightly had queued (NVDA 67 sell, ANET 32 sell, eight small buys) were
+  cancelled at the broker (all confirmed, nothing filled) and re-written
+  onto the board's rule for 2026-09-30.
+
+**Gates.** Unit 8,191 passed on the merge; `deploy.sh` unit 8,191 and
+routing 100/100; tsc clean; the branch's own browser specs pass. **About 240
+older desk/chart Playwright tests fail on this build** because they pin the
+removed screens and words (`Ranked stocks and cash` rows, "Now: Hold 15%",
+personal-planner labels); read as test-only, not runtime errors, but they
+are unverified until rewritten (open task). The 136 chat/fundamental harness
+failures are the same as on main.
+
+**First live session checks (09-30):** `~/desk_intraday.log` shows
+`paper order: … sent` only at a hit level or in the 15:30 window, none before
+09:45; the board moves orders planned → waiting → sent → filled; the nightly
+settles them by id and writes the next plan as planned. **Rollback:** set
+`INTRADAY_EXECUTION = False` and redeploy after 16:15 ET, or redeploy
+`eefe06e9` (loses the `/5` cap too; `0437b5f8` keeps it).
+
+**Branch cleanup (01:00 ET):** 51 stale branches (last touched ≤ 09-18, plus
+the four merged research/trading branches) were removed from
+`refs/heads` and kept as `refs/archive/<name>` on GitHub
+(`git fetch origin refs/archive/<name>:refs/heads/<name>` restores one).
+
 ## 2026-09-30, night — Stage 5: buying at the decision day's close. RECORD; the board keeps buying in the next session
 
 **Nothing live changed.** The registered test
