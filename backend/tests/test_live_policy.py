@@ -175,9 +175,11 @@ class _EmptyBroker:
     def positions(self):
         return []
 
-    # The market is shut, as it is at the nightly.
+    # Closed for the nightly; the intraday leg's session opens it.
+    is_open = False
+
     def clock(self):
-        return {"is_open": False}
+        return {"is_open": self.is_open}
 
     # Accept an order and report it filled at 100.
     def _accept(self, symbol, qty, side, client_order_id):
@@ -193,11 +195,6 @@ class _EmptyBroker:
             }
         )
         return {"submitted_at": "2026-09-04T00:01:02Z", "time_in_force": "day"}
-        # Closed for the nightly; the intraday leg's session opens it.
-        is_open = False
-
-        def clock(self):
-            return {"is_open": self.is_open}
 
     # A next-open order.
     def submit_market_on_open(self, symbol, qty, side, client_order_id):
@@ -214,12 +211,10 @@ class _EmptyBroker:
     # Cancelling is a no-op here.
     def cancel_orders(self, ids):
         return None
-        # The intraday leg's in-session market order.
-        def submit_market(self, symbol, qty, side, client_order_id):
-            return self._accept(symbol, qty, side, client_order_id)
 
-        def orders_since(self, since):
-            return self.orders
+    # The intraday leg's in-session market order.
+    def submit_market(self, symbol, qty, side, client_order_id):
+        return self._accept(symbol, qty, side, client_order_id)
 
 
 # The ordinary-session calendar: no FOMC cycle, the calendar known.
@@ -321,10 +316,19 @@ def test_a_v4_state_moves_to_v5_without_a_forced_rebalance(
     assert "forced tonight" not in out
     assert "paper book (graded-equal-weight/5; redeploy)" in out
     assert entry["plan"] == "redeploy"
-    assert broker.sent == [("buy", "SNDK", 50)]
-    assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["orders"]] == [
+    # Planned for the next session on the board's rule, sent by the intraday
+    # leg (here in its close window), nothing sent at night.
+    assert broker.sent == []
+    assert entry["orders"] == []
+    assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["planned"]] == [
         ("SNDK", 50, paper.REDEPLOY_KIND)
     ]
+    broker.is_open = True
+    intraday_orders.send_due(
+        tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+    )
+    broker.is_open = False
+    assert broker.sent == [("buy", "SNDK", 50)]
     state = paper.load_state(tmp_path)
     assert state.policy_version == "graded-equal-weight/5"
     # The reset clock is the account's own: nothing restarted it.

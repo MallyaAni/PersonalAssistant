@@ -289,7 +289,7 @@ def test_a_reset_add_is_labelled_as_a_rebalance(tmp_path):
 
 # The same reset-day add in a `/5` history - the account's policy since
 # 2026-09-29, whose nightly writes that name on every history file - is
-# drawn as the rebalance too, never as "Add →25%".
+# drawn as the reset too, never as "ADD signal →25%".
 def test_a_reset_add_in_a_v5_history_is_labelled_as_a_rebalance(tmp_path):
     store = _store(tmp_path)
     history = _history(tmp_path)
@@ -304,8 +304,8 @@ def test_a_reset_add_in_a_v5_history_is_labelled_as_a_rebalance(tmp_path):
     }
     out = chart.payload(store, tmp_path, "AAPL", 10, history)
     assert out["policy"] == "graded-equal-weight/5"
-    assert out["decisions"][0]["label"] == "Rebalance +5% decided at the close"
-    assert out["fills_at"][0]["label"] == "Rebalance +5% fills at the open"
+    assert out["decisions"][0]["label"] == "RESET +5% at the close"
+    assert out["fills_at"][0]["label"] == "RESET +5% fills at the open"
 
 
 # A fill that names its plan leg carries it and says so in its label, so
