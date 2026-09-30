@@ -1,4 +1,4 @@
-"""The tone-validity arm runner, on a synthetic book.
+"""The tone-validity arm runner and leak test, on a synthetic book.
 
 What has to hold: every arm is measured on the same cells and the same
 rebalance periods, so IC(B) - IC(A) has a paired t; the plan's criteria
@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 
 from backend.cli import market_tone_validity as tv
-from backend.market import language, release_text
+from backend.market import language, release_text, tone_leak
 from backend.market.panel import panel_from_histories
 from backend.market.yahoo import DailyBar, TickerHistory
 
@@ -144,6 +144,11 @@ def test_masked_noise_reads_as_tone_inflated():
     assert crit["2_incumbent_stands"]["fires"] is False
     assert payload["verdict"] == "TONE INFLATED"
     assert payload["horizons"]["20"]["post_window"]["cells"] > 0
+    # The tone arms alone are also reported on their own, larger cell set.
+    alone = inside["tone_arms_only"]
+    assert set(alone["arms"]) == {tv.ARM_A, tv.ARM_B}
+    assert alone["cells"] > inside["cells"]
+    assert alone["paired_vs_A"][tv.ARM_B]["periods"] > pair["periods"]
     assert json.dumps(payload)  # serialisable as written
 
 
@@ -156,6 +161,7 @@ def test_identical_masked_reread_stands_and_absent_arms_record():
         panel, sides, tone_a, tone_a, None, horizons=(20,), windows=WINDOWS
     )
     assert payload["criteria"]["ic_b_minus_a"] == 0.0
+    assert "tone_arms_only" not in payload["horizons"]["20"]["in_window"]
     assert payload["criteria"]["2_incumbent_stands"]["within_0.010"] is True
     assert payload["verdict"] == "INCUMBENT STANDS"
     alone = tv.evaluate_arms(
@@ -279,14 +285,14 @@ def test_run_mask_and_leak_sample(tmp_path):
     assert "NVIDIA" not in nvda["text"]
     assert "2024" not in nvda["text"]
     assert nvda["residual"] == {"year": 0, "month": 0, "name": 0}
-    sample = tv.sample_leak(rows, names, 2, seed=0)
-    again = tv.sample_leak(rows, names, 2, seed=0)
+    sample = tone_leak.sample_leak(rows, names, 2, seed=0)
+    again = tone_leak.sample_leak(rows, names, 2, seed=0)
     assert [s["accession"] for s in sample] == [s["accession"] for s in again]
     assert len(sample) == 2
     assert sample[0]["prompt"].endswith("{company, quarter, year}.")
     assert sample[0]["truth"]["tickers"] == [sample[0]["ticker"]]
-    assert tv.truth_years(date(2024, 1, 5)) == [2024, 2023]
-    assert tv.truth_years(date(2024, 8, 29)) == [2024]
+    assert tone_leak.truth_years(date(2024, 1, 5)) == [2024, 2023]
+    assert tone_leak.truth_years(date(2024, 8, 29)) == [2024]
 
 
 # The leak score: a company named by any distinctive token or ticker, a
@@ -312,7 +318,7 @@ def test_score_leak():
     }
     for i in range(4, 20):
         answers[f"a{i}"] = {"company": "unknown", "quarter": "", "year": "1999"}
-    result = tv.score_leak(sample, answers)
+    result = tone_leak.score_leak(sample, answers)
     assert result["answered"] == 20
     assert result["company_hits"] == 2
     assert result["year_hits"] == 3
@@ -322,15 +328,15 @@ def test_score_leak():
     for i in range(3):
         answers[f"a{i}"] = {"company": "?", "year": "?"}
     answers["a3"] = {"company": "?", "year": "?"}
-    passed = tv.score_leak(sample, answers)
+    passed = tone_leak.score_leak(sample, answers)
     assert passed["company_hits"] == 0
     assert passed["year_hits"] == 0
     assert passed["pass"] is True
-    assert tv.score_leak(sample, {})["answered"] == 0
-    assert tv.score_leak(sample, {})["pass"] is False
-    assert tv.answer_year("fiscal 2025") == 2025
-    assert tv.answer_year("Q3 '24") == 2024
-    assert tv.answer_year(None) is None
+    assert tone_leak.score_leak(sample, {})["answered"] == 0
+    assert tone_leak.score_leak(sample, {})["pass"] is False
+    assert tone_leak.answer_year("fiscal 2025") == 2025
+    assert tone_leak.answer_year("Q3 '24") == 2024
+    assert tone_leak.answer_year(None) is None
 
 
 # The embed step groups by the checkpoint dated before each release,

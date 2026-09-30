@@ -33,8 +33,6 @@ texts this writes; the leak-test answers come back the same way.
 
 import argparse
 import json
-import random
-import re
 from collections.abc import Callable, Mapping, Sequence
 from datetime import date
 from pathlib import Path
@@ -50,7 +48,13 @@ from backend.cli.market_release_eval import (
     _fitted,
     _ridge,
 )
-from backend.market import chrono_embed, language, release_mask, release_text
+from backend.market import (
+    chrono_embed,
+    language,
+    release_mask,
+    release_text,
+    tone_leak,
+)
 from backend.market.harness import evaluate_scores, walk_forward_folds
 from backend.market.store import MarketStore
 from backend.market.universe import book_sides, build_universe
@@ -74,14 +78,6 @@ C_CEILING = 0.02
 STANDS_DELTA = 0.010
 NOISE_T = 2.0
 HALF_OF_A = 0.5
-# The leak test's ceilings.
-LEAK_COMPANY_MAX = 0.05
-LEAK_YEAR_MAX = 0.10
-LEAK_N = 200
-# A release reports a quarter that ended within about this many days
-# before its reaction date, so the "year" a reader may name is the
-# reaction year or, early in the year, the one before.
-QUARTER_LAG_DAYS = 100
 ARM_A = "A stored tone"
 ARM_B = "B masked tone"
 ARM_C = "C chrono ridge"
@@ -97,7 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("--names", type=Path, default=None, help="JSON {ticker: [names]}")
     s = sub.add_parser("leak-sample", help="sample masked releases for the leak test")
     s.add_argument("--out", required=True, type=Path)
-    s.add_argument("--n", type=int, default=LEAK_N)
+    s.add_argument("--n", type=int, default=tone_leak.LEAK_N)
     s.add_argument("--seed", type=int, default=0)
     k = sub.add_parser("leak-score", help="score the reader's leak answers")
     k.add_argument("--out", required=True, type=Path)
@@ -210,141 +206,6 @@ def read_masked(out: Path) -> list[dict[str, Any]]:
             if line.strip():
                 rows.append(json.loads(line))
     return rows
-
-
-# --- the leak test -----------------------------------------------------------
-
-
-# The years a reader may legitimately name for a release.
-def truth_years(reaction_date: date) -> list[int]:
-    """Return the reaction year and, early in the year, the year before."""
-    years = [reaction_date.year]
-    if reaction_date.timetuple().tm_yday <= QUARTER_LAG_DAYS:
-        years.append(reaction_date.year - 1)
-    return years
-
-
-# A deterministic sample of masked releases with the leak question attached.
-def sample_leak(
-    rows: Sequence[Mapping[str, Any]],
-    names: Mapping[str, str],
-    n: int,
-    seed: int,
-) -> list[dict[str, Any]]:
-    """Return `n` sampled rows with prompt and truth, in a fixed order."""
-    picked = sorted(rows, key=lambda r: (r["ticker"], r["accession"]))
-    random.Random(seed).shuffle(picked)
-    out = []
-    for row in picked[:n]:
-        when = date.fromisoformat(row["reaction_date"])
-        out.append(
-            {
-                "accession": row["accession"],
-                "ticker": row["ticker"],
-                "reaction_date": row["reaction_date"],
-                "prompt": release_mask.leak_prompt(row["text"]),
-                "truth": {
-                    "company": names.get(row["ticker"], ""),
-                    "tickers": [row["ticker"]],
-                    "years": truth_years(when),
-                },
-            }
-        )
-    return out
-
-
-# Whether an answer names the company: any distinctive token of a name
-# variant, or a ticker, anywhere in the answer's company field.
-def company_hit(answer: str, company: str, tickers: Sequence[str]) -> bool:
-    """Return True when `answer` identifies the issuer."""
-    text = answer.lower()
-    tokens = {
-        tok.lower()
-        for variant in release_mask.name_variants(company)
-        for tok in re.findall(r"[A-Za-z][\w-]+", variant)
-        if len(tok) >= release_mask.MIN_VARIANT_CHARS
-        and tok.lower() not in release_mask.GENERIC_WORDS
-        and tok.lower() not in release_mask.SUFFIXES
-    }
-    tokens |= {t.lower() for t in tickers if len(t) >= 2}
-    return any(re.search(rf"(?<!\w){re.escape(tok)}(?!\w)", text) for tok in tokens)
-
-
-# The four-digit year an answer names, or None.
-def answer_year(value: Any) -> int | None:
-    """Return the year in an answer's year field, accepting FY24 forms."""
-    text = str(value or "")
-    four = re.search(r"(?:19|20)\d\d", text)
-    if four:
-        return int(four.group(0))
-    two = re.search(r"(?<!\d)(\d\d)(?!\d)", text)
-    return 2000 + int(two.group(1)) if two else None
-
-
-# The reader's answer as a dict, whether it came as JSON text or an object.
-def parse_answer(value: Any) -> dict[str, Any]:
-    """Return {company, quarter, year} from a raw answer."""
-    if isinstance(value, Mapping):
-        return dict(value)
-    text = str(value or "")
-    match = re.search(r"\{.*\}", text, re.S)
-    if match:
-        try:
-            parsed = json.loads(match.group(0))
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
-            pass
-    return {"company": text, "quarter": "", "year": ""}
-
-
-# Score the answers against the sample's truth.
-def score_leak(
-    sample: Sequence[Mapping[str, Any]], answers: Mapping[str, Any]
-) -> dict[str, Any]:
-    """Return the leak result: shares naming the company and the year, pass."""
-    company = year = answered = 0
-    for row in sample:
-        raw = answers.get(row["accession"])
-        if raw is None:
-            continue
-        answered += 1
-        parsed = parse_answer(raw)
-        truth = row["truth"]
-        if company_hit(
-            str(parsed.get("company", "")), truth["company"], truth["tickers"]
-        ):
-            company += 1
-        if answer_year(parsed.get("year")) in truth["years"]:
-            year += 1
-    company_share = company / answered if answered else float("nan")
-    year_share = year / answered if answered else float("nan")
-    passed = bool(
-        answered and company_share < LEAK_COMPANY_MAX and year_share < LEAK_YEAR_MAX
-    )
-    return {
-        "sampled": len(sample),
-        "answered": answered,
-        "company_hits": company,
-        "company_share": company_share,
-        "year_hits": year,
-        "year_share": year_share,
-        "company_max": LEAK_COMPANY_MAX,
-        "year_max": LEAK_YEAR_MAX,
-        "pass": passed,
-    }
-
-
-# Read the answers file: one JSON object per line with `accession` and
-# `answer` (an object or the model's text).
-def read_answers(path: Path) -> dict[str, Any]:
-    """Return {accession: answer} from a JSONL of the reader's replies."""
-    out: dict[str, Any] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            row = json.loads(line)
-            out[str(row["accession"])] = row.get("answer", row.get("text", ""))
-    return out
 
 
 # --- embedding ---------------------------------------------------------------
@@ -505,30 +366,42 @@ def evaluate_arms(
             }
             fitted = _fitted(vec[2], index, label, folds, models)
             scored.update(fitted)
-        cells = in_book[None, :].repeat(len(panel.dates), axis=0)
-        for scores in scored.values():
-            cells &= np.isfinite(scores)
         per_window: dict[str, Any] = {}
         for name, (start, end) in windows.items():
-            window_cells = cells & window_mask(panel.dates, start, end)[:, None]
-            results = {
-                arm: _arm_result(scores, window_cells, panel, horizon)
-                for arm, scores in scored.items()
-            }
-            pairs = {
-                arm: paired(results[ARM_A]["period_ics"], results[arm]["period_ics"])
-                for arm in results
-                if arm != ARM_A
-            }
-            per_window[name] = {
-                "cells": int(window_cells.sum()),
-                "arms": results,
-                "paired_vs_A": pairs,
-            }
+            inside = window_mask(panel.dates, start, end)[:, None] & in_book[None, :]
+            per_window[name] = _measure_window(scored, inside, panel, horizon)
+            # C's out-of-sample cells begin a training window after the
+            # panel starts, which shortens B against A on the shared cells;
+            # the two tone arms alone are reported on their own cells too.
+            if ARM_B in scored and len(scored) > 2:
+                tone_only = {k: v for k, v in scored.items() if k in (ARM_A, ARM_B)}
+                per_window[name]["tone_arms_only"] = _measure_window(
+                    tone_only, inside, panel, horizon
+                )
         payload["horizons"][str(horizon)] = per_window
     payload["criteria"] = criteria(payload["horizons"][str(PRIMARY_HORIZON)])
     payload["verdict"] = verdict(payload["criteria"])
     return payload
+
+
+# Every arm on the cells all of them score, inside one window: the harness
+# numbers per arm and each arm's paired difference against A.
+def _measure_window(
+    scored: Mapping[str, np.ndarray], inside: np.ndarray, panel, horizon: int
+) -> dict[str, Any]:
+    cells = inside.copy()
+    for scores in scored.values():
+        cells &= np.isfinite(scores)
+    results = {
+        arm: _arm_result(scores, cells, panel, horizon)
+        for arm, scores in scored.items()
+    }
+    pairs = {
+        arm: paired(results[ARM_A]["period_ics"], results[arm]["period_ics"])
+        for arm in results
+        if arm != ARM_A
+    }
+    return {"cells": int(cells.sum()), "arms": results, "paired_vs_A": pairs}
 
 
 # The best ridge arm's name in a window's results, or None.
@@ -619,6 +492,15 @@ def print_verdict(payload: Mapping[str, Any]) -> None:
             )
         for arm, p in window["paired_vs_A"].items():
             print(f"  {arm} - A: {p['delta']:+.4f} (paired t {p['t']:+.2f})")
+        extra = window.get("tone_arms_only")
+        if extra:
+            p = extra["paired_vs_A"][ARM_B]
+            ic_a, ic_b = extra["arms"][ARM_A]["ic"], extra["arms"][ARM_B]["ic"]
+            print(
+                f"  tone arms alone, {extra['cells']:,} cells: A {ic_a:+.4f}, "
+                f"B {ic_b:+.4f}, B - A {p['delta']:+.4f} "
+                f"(paired t {p['t']:+.2f}, {p['periods']} periods)"
+            )
     crit = payload["criteria"]
     print("\n=== criteria ===")
     print(f"1 tone inflated:    {crit['1_tone_inflated']}")
@@ -654,7 +536,9 @@ def main() -> None:  # noqa: C901 - one branch per subcommand
         summary = run_mask(texts, names, args.out, extra)
         print(json.dumps(summary, indent=2))
     elif args.command == "leak-sample":
-        sample = sample_leak(read_masked(args.out), issuer_names(), args.n, args.seed)
+        sample = tone_leak.sample_leak(
+            read_masked(args.out), issuer_names(), args.n, args.seed
+        )
         with (args.out / "leak_sample.jsonl").open("w", encoding="utf-8") as fh:
             for row in sample:
                 fh.write(json.dumps(row) + "\n")
@@ -665,7 +549,7 @@ def main() -> None:  # noqa: C901 - one branch per subcommand
             for line in (args.out / "leak_sample.jsonl").read_text().splitlines()
             if line.strip()
         ]
-        result = score_leak(sample, read_answers(args.answers))
+        result = tone_leak.score_leak(sample, tone_leak.read_answers(args.answers))
         (args.out / "leak_result.json").write_text(json.dumps(result, indent=2))
         print(json.dumps(result, indent=2))
         print("LEAK TEST " + ("PASS" if result["pass"] else "FAIL"))
