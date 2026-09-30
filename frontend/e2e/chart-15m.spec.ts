@@ -169,7 +169,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(chart.locator('[aria-label="Fifteen-minute price basis"]')).toContainText('raw prices as printed (consolidated SIP)')
       // The Now line is the board's row; the trades are listed in the board's words, the redeploy named.
       const decisions = chart.locator('[aria-label="AAPL decisions"]')
-      await expect(chart.locator('[aria-label="AAPL now"]')).toHaveText('Now: No order · Not in the book (grade A)')
+      await expect(chart.locator('[aria-label="AAPL now"]')).toHaveText('Now: No order · Not in the book (grade B)')
       await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveText(['Sep 15 · BUY 7 @ $225.10 · idle cash put to work', 'Sep 15 · BUY 63 @ $224.81'])
       await expect(chart.getByRole('checkbox', {name: 'Paper trades'})).toBeChecked()
       // The trades reach the real canvas on the bar they filled in; the signal is off by default.

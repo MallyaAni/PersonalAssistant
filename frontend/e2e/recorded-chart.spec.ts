@@ -128,7 +128,8 @@ for (const gap of ['all', 'absent'] as const) {
     expect((await markerDraws(page)).filter(row => row.timeframe === 'W')).toEqual([])
     await expect(chart).toContainText('No grade change marked on these candles.')
     await expect(chart.getByLabel('Chart data quality')).toContainText('1 missing session')
-    await expect(chart.getByLabel('Research publication groups')).toContainText(gap === 'absent' ? 'Not recorded · 1' : 'Dip→Wait')
+    // The recorded setups keep their own dates: none is moved onto a candle that is there.
+    await expect(chart.getByLabel('Research publication groups')).toContainText(gap === 'absent' ? 'No recorded setups on the loaded candles.' : 'Dip→Wait')
     await expect(chart).not.toContainText('could not be drawn')
     expect(errors).toEqual([])
     expect(writes).toEqual([])
