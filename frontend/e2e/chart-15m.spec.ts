@@ -2,14 +2,14 @@ import {expect, test, type Page, type TestInfo} from '@playwright/test'
 
 const USER = 'chart-15m-fixture'
 const POLICY = 'graded-equal-weight/4'
-const NOTE = 'decisions at the close, filled at the next open; sizes are % of equity'
+const NOTE = 'signals at each close; sizes are % of the account'
 type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null}[]}
 const REBALANCE_NOTE = 'reset sessions from the paper state\'s rebalance clock and the nightly records; add/trim markers only on those, target drift between resets is not traded'
 type DecisionRow = {date: string; grade: string; action?: string; target_weight?: number; delta_weight?: number; rebalance?: boolean}
 
-// The equal-weight policy's replayed decisions in one name: a buy decided on Monday
+// The equal-weight policy's replayed signals in one name: a buy decided on Monday
 // (the name enters the A/A+ book), then a hold on Tuesday whose target drift is not a
-// trade, with the paper account's entry fill and a redeploy fill at Tuesday's open.
+// trade, with the paper account's entry trade and a redeploy trade at Tuesday's open.
 const ROWS: DecisionRow[] = [
   {date: '2026-09-14', grade: 'A', action: 'buy', target_weight: 0.14, delta_weight: 0.14, rebalance: false},
   {date: '2026-09-15', grade: 'A', action: 'hold', target_weight: 0.15, delta_weight: 0.01, rebalance: false},
@@ -64,7 +64,7 @@ async function install(page: Page, frontendURL: string) {
     const fillText = CanvasRenderingContext2D.prototype.fillText
     // Preserve every production paint call while recording marker labels and the selected timeframe.
     CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
-      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(Buy |Add |Trim |Rebalance |Sell|Filled |Saved grade)/.test(args[0])) {
+      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY |SELL |ADD |TRIM |RESET |Grade |Saved grade|Recalculated grade)/.test(args[0])) {
         const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
         state.__markerDraws.push({text: args[0], timeframe})
       }
@@ -82,8 +82,7 @@ async function install(page: Page, frontendURL: string) {
     }
     const base = `/api/v1/market/${USER}/desk`
     // The panel reads its decision rows with a POST (recording or not); every other write is refused.
-    const mineRead = url.pathname === `${base}/mine` && request.method() === 'POST'
-    if (request.method() !== 'GET' && !mineRead) {
+    if (request.method() !== 'GET') {
       diagnostics.forbiddenWrites.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 403, json: {detail: 'Fixture forbids writes'}})
     }
@@ -93,11 +92,8 @@ async function install(page: Page, frontendURL: string) {
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest: {session: '2026-09-24', written: '2026-09-24T00:00:00Z', regime: {exposure: 1, flags: []}, grades: {AAPL: {grade: 'B', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: [], briefs: {}}, sessions: ['2026-09-24']}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
-    else if (url.pathname === `${base}/mine`) json = {session: '2026-09-24', rows: [], grades_live: {}, history_receipt: {status: 'not_requested'},
-      decisions: {session: '2026-09-24', written: '2026-09-24T00:00:00Z', rows: {AAPL: {action: 'Hold', strategy_action: 'Hold', move_weight: 0, executable: false, reason: 'Waiting'}}}}
     else if (url.pathname === `${base}/live`) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last: 110, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}}
     else if (url.pathname === `${base}/session-prices`) json = {as_of: '2026-09-24T14:00:00Z', session: 'regular', signal_scope: 'regular-session', quotes: {}}
-    else if (url.pathname === `${base}/personal-history`) json = {items: [], next_cursor: null}
     else if (url.pathname === `${base}/history/AAPL`) json = history
     else if (url.pathname === `${base}/chart/AAPL` && url.searchParams.get('timeframe') === '15m') {
       // The last two sessions of raw fifteen-minute bars with the three marker lists the server computes.
@@ -106,8 +102,8 @@ async function install(page: Page, frontendURL: string) {
       json = {ticker: 'AAPL', timeframe: '15m', adjusted: false, basis: 'raw prices as printed (consolidated SIP)', sessions: SESSIONS.length, sessions_requested: sessions,
         policy: POLICY, rebalance_note: REBALANCE_NOTE,
         bars, overlays: {session_vwap: bars.map(bar => bar.close)}, levels: {}, entries: [], data_status: 'complete', data_reason: null, missing_sessions: [], quote_bar: null, last_bar_complete: true,
-        decisions: [{time: '2026-09-14T15:45:00-04:00', date: '2026-09-14', action: 'buy', target_weight: 0.14, label: 'Buy 14% decided at the close', rebalance: false}],
-        fills_at: [{time: '2026-09-15T09:30:00-04:00', date: '2026-09-15', action: 'buy', target_weight: 0.14, label: 'Buy 14% fills at the open', rebalance: false}],
+        decisions: [{time: '2026-09-14T15:45:00-04:00', date: '2026-09-14', action: 'buy', target_weight: 0.14, label: 'BUY signal 14% at the close', rebalance: false}],
+        fills_at: [{time: '2026-09-15T09:30:00-04:00', date: '2026-09-15', action: 'buy', target_weight: 0.14, label: 'BUY signal 14% fills at the open', rebalance: false}],
         fills: [
           {time: '2026-09-15T09:30:00-04:00', date: '2026-09-15', side: 'buy', qty: 63, price: 224.81, label: 'Filled buy 63 @ 224.81'},
           {time: '2026-09-15T09:30:00-04:00', date: '2026-09-15', side: 'buy', qty: 7, price: 225.1, label: 'Filled buy 7 @ 225.10 (redeploy)', kind: 'redeploy'},
@@ -120,8 +116,7 @@ async function install(page: Page, frontendURL: string) {
         ? {ema9: series(100), ema21: series(125)}
         : {ema9: series(100), ema21: series(125), ema50: series(110), ema200: series(100), band_upper: series(125), band_lower: series(0)},
       levels: weekly ? {} : {high_52w: series(140), low_52w: series(80)}, entries: [], data_status: 'complete', quote_bar: '2026-09-24T13:45:00Z', last_bar_complete: false}
-    } else if (url.pathname === `${base}/entries` || url.pathname === `${base}/intraday`) json = {rows: [], top_buys: [], changed: []}
-    else if (url.pathname === `${base}/paper`) json = {reason: 'unavailable'}
+    } else if (url.pathname === `${base}/paper`) json = {reason: 'unavailable'}
     else if (url.pathname === `${base}/earnings/AAPL`) json = {symbol: 'AAPL', read: null}
     else if (url.pathname === `${base}/live/read/AAPL`) json = {symbol: 'AAPL', read: null, lines: {short: [], medium: [], long: []}}
     else {
@@ -150,8 +145,9 @@ const intradayReads = (fixture: Awaited<ReturnType<typeof install>>) =>
   fixture.reads.filter(read => read.startsWith(`/api/v1/market/${USER}/desk/chart/AAPL?`) && read.includes('timeframe=15m'))
 
 for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) {
-  // The 15m view draws the raw fifteen-minute bars with the decision, its fill time and the real fill marked at the bar they happen on.
-  test(`chart shows fifteen-minute bars with the decision and fill times marked at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
+  // The 15m view draws the raw fifteen-minute bars with the paper trades on the bar they filled in and,
+  // when shown, the strategy signal on the last bar before the close it was made at.
+  test(`chart shows fifteen-minute bars with the trades and the signal marked at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!)
     try {
@@ -171,20 +167,27 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(caption).toContainText('2 complete sessions')
       await expect(caption).toContainText('54 bars')
       await expect(chart.locator('[aria-label="Fifteen-minute price basis"]')).toContainText('raw prices as printed (consolidated SIP)')
-      // The decision list stays, now saying when in the session the decision is made.
+      // The Now line is the board's row; the trades are listed in the board's words, the redeploy named.
       const decisions = chart.locator('[aria-label="AAPL decisions"]')
-      await expect(decisions).toContainText('Now: Hold 15%')
-      const listed = decisions.locator('ul').first().locator('li')
+      await expect(chart.locator('[aria-label="AAPL now"]')).toHaveText('Now: No order · Not in the book (grade B)')
+      await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveText(['Sep 15 · BUY 7 @ $225.10 · idle cash put to work', 'Sep 15 · BUY 63 @ $224.81'])
+      await expect(chart.getByRole('checkbox', {name: 'Paper trades'})).toBeChecked()
+      // The trades reach the real canvas on the bar they filled in; the signal is off by default.
+      await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['BUY 63 @ $224.81', 'BUY 7 @ $225.10']))
+      expect((await drawn(page, '15m')).filter(text => /signal/.test(text))).toEqual([])
+      await expect(chart.locator('[aria-label="AAPL strategy signals"]')).toHaveCount(0)
+      // Shown, the signal is listed with the close it was made at and drawn on the 15:45 bar, in the
+      // backend's words; where it fills is the paper account's own trade, never a projected marker.
+      const signalsBox = chart.getByRole('checkbox', {name: 'Strategy signals'})
+      await signalsBox.check()
+      const listed = chart.locator('[aria-label="AAPL strategy signals"] li')
       await expect(listed).toHaveCount(1)
-      await expect(listed.nth(0)).toHaveText('Sep 14 · Buy 14% · decided at the close')
-      // The redeploy fill is listed as such and the fills switch names its colour.
-      await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveText(['Sep 15 · Filled buy 7 @ $225.10 · redeploy', 'Sep 15 · Filled buy 63 @ $224.81'])
-      await expect(chart.getByRole('checkbox', {name: 'Paper fills (purple: redeploy)'})).toBeChecked()
+      await expect(listed.nth(0)).toHaveText('Sep 14 · BUY signal 14%')
       await expect(chart.locator('[aria-label="Policy marker legend"]')).toContainText('Reset sessions from the paper state')
-      // The same words reach the real canvas: the decision on the 15:45 bar, where it fills, and the fills themselves.
-      await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['Buy 14% decided at the close', 'Buy 14% fills at the open', 'Filled buy 63 @ 224.81', 'Filled buy 7 @ 225.10 (redeploy)']))
+      await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['BUY signal 14% at the close']))
+      expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['BUY signal 14% fills at the open']))
       // Grade changes are session readings and are not drawn on the bars.
-      expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['Saved grade: A→B']))
+      expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['Saved grade A→B']))
       await expect(chart).toContainText('not marked on fifteen-minute bars')
       // The sessions selector re-reads the chart with the chosen count.
       const sessions = chart.getByRole('group', {name: 'Chart sessions'})
@@ -194,15 +197,14 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       expect(intradayReads(fixture)[1]).toContain('sessions=20')
       await expect(sessions.getByRole('button', {name: '20', exact: true})).toHaveAttribute('aria-pressed', 'true')
       await expect(caption).toContainText('54 bars')
-      // The policy switch removes the timed decision markers and nothing else.
-      const policyBox = chart.getByRole('checkbox', {name: 'Policy buy/sell'})
-      await policyBox.uncheck()
+      // The signals switch removes the timed signal markers and nothing else.
+      await signalsBox.uncheck()
       await page.evaluate(() => {(window as unknown as CanvasState).__markerDraws = []})
       await sessions.getByRole('button', {name: '5', exact: true}).click()
       await expect.poll(() => intradayReads(fixture)).toHaveLength(3)
-      await expect.poll(() => drawn(page, '15m')).toContain('Filled buy 63 @ 224.81')
-      expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['Buy 14% decided at the close']))
-      await expect(decisions).toContainText('Buy 14%')
+      await expect.poll(() => drawn(page, '15m')).toContain('BUY 63 @ $224.81')
+      expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['BUY signal 14% at the close']))
+      await expect(decisions).toContainText('BUY 63 @ $224.81')
       // Back on daily the sessions selector goes away and the daily markers return.
       await chart.getByRole('button', {name: 'D', exact: true}).click()
       await expect(chart).toContainText('6 sessions loaded')

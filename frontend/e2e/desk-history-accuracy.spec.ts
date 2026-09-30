@@ -18,10 +18,14 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
     grades: {AAOI: {grade: 'A+', votes: 3, stances: STANCES, ranks: {}, score: .82, side: 'ai', headline: 'Recorded headline.', reason: 'Recorded reason.', reads: {}}},
     book: [], briefs: {}, paper: null,
   }
-  const reason = options.overnight ? 'Market closed or clock unavailable' : 'No entry instruction.'
-  const mine = {session: SESSION, market_status: market, grade_valid_until: {}, grades_live: {}, rows: [],
-    decisions: {session: SESSION, written: WRITTEN, as_of: now, rows: {AAOI: {action: 'Hold', strategy_action: options.overnight ? 'Sell' : 'Hold', executable: false, blocker: reason, reason: options.overnight ? `Exit not executable: ${reason}` : reason, valid_until: null, target_weight: 0, current_weight: .1, move_weight: 0, strategy_move_weight: options.overnight ? -.1 : 0,
-      quote: {feed: 'iex', at: now, bid: 98, ask: 98.5, reason, eligible: false}}}}}
+  // Overnight, the paper account's exit is planned for the next session; nothing about a quote sends it.
+  const exit = {client_order_id: 'AAOI-exit', symbol: 'AAOI', side: 'sell', action: 'SELL', qty: 100, price: 98.25, notional: 9825, weight: .09825, leg: 'exit',
+    why: 'Exit: the grade fell to B', reason: null, timing: 'dip_or_close', decided: SESSION, execute_on: '2026-09-25', open: null, level: null,
+    sent_at: null, sent_how: null, filled_qty: null, filled_price: null, filled_at: null,
+    state: 'planned', status: 'Planned', when: 'Fri Sep 25 · 15-min close 1% over the open, else at the close'}
+  const paper = {as_of: now, equity: 100000, cash: 90000, day_pl: 0, pl_pct: 0, day_pl_pct: 0, orders: [], activity: {complete: true, fills: []},
+    positions: options.overnight ? [{symbol: 'AAOI', qty: 100, avg_entry_price: 95, current_price: 98.25, market_value: 9825, unrealized_pl: 325}] : [],
+    plan: {rule: 'dip_or_close', until_rebalance: 7, orders: options.overnight ? [exit] : []}}
   const live = {as_of: now, data_at: bar, stale: Boolean(options.overnight), market_status: market, quotes: {AAOI: {symbol: 'AAOI', last: 98.25, open: 101, high: 102, low: 98, bar, as_of: now}}, technical: {}, technical_detail: {}}
   const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[]}
   // Treat browser errors independently from the semantic assertions.
@@ -35,7 +39,7 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
   await page.clock.install({time: new Date(now)})
   // Keep screenshots independent of the operator's appearance preference.
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
-  // Only the existing non-recording decision preview may use POST; every external request is refused.
+  // Every write and every external request is refused.
   await page.route('**/*', async route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -45,8 +49,7 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
       return route.abort('blockedbyclient')
     }
     const base = `/api/v1/market/${USER}/desk`
-    const preview = url.pathname === `${base}/mine` && request.method() === 'POST' && request.postDataJSON()?.record_history === false
-    if (request.method() !== 'GET' && !preview) {
+    if (request.method() !== 'GET') {
       diagnostics.forbiddenWrites.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 403, json: {detail: 'Fixture forbids persistence'}})
     }
@@ -59,10 +62,7 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
       ? {price: 99.5, at: now, feed: 'boats', indicative: false, session: 'overnight', status: 'fresh', reason: 'Dated overnight quote.', valid_until: '2026-09-25T01:36:00Z'}
       : {price: null, at: null, feed: null, indicative: false, status: 'unavailable', reason: 'No optional quote in this fixture.', valid_until: null}}}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
-    else if (url.pathname === `${base}/mine`) json = mine
-    else if (url.pathname === `${base}/intraday`) json = {session: SESSION, as_of: now, equity: 100000, rows: [], changed: [], top_buys: []}
-    else if (url.pathname === `${base}/paper`) json = {as_of: now, equity: 100000, cash: 100000, day_pl: 0, pl_pct: 0, day_pl_pct: 0, positions: [], orders: [], activity: {complete: true, fills: []}}
-    else if (url.pathname === `${base}/entries`) json = {user_id: USER, session: SESSION, rows: []}
+    else if (url.pathname === `${base}/paper`) json = paper
     else if (url.pathname === `${base}/history/AAOI`) json = {ticker: 'AAOI', asof: SESSION, horizon: 20,
       backtest: {min_grade: 'A', sessions: 60, sessions_in: 41, switches: 3, in_annualised: .41, out_annualised: -.2},
       rows: (options.history ?? []).map(row => ({votes: 3, exposure: 1, confidence: 1, forward_residual: null, earnings: false, said: true, ...row})),
@@ -154,30 +154,28 @@ for (const [name, before, after, transition] of [
   })
 }
 
-// A fresh overnight display quote cannot resolve an unknown regular-session execution clock.
-test('keeps clock uncertainty and blocked Sell alongside a fresh overnight quote', async ({page, baseURL}, testInfo) => {
+// A fresh overnight display quote cannot resolve an unknown regular-session execution clock: the
+// paper account's exit stays planned for the next session, with its rule, beside the overnight price.
+test('keeps a planned Sell on its session clock alongside a fresh overnight quote', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!, {overnight: true})
   try {
     await page.goto('/#desk')
     const quote = page.getByLabel('AAOI session price', {exact: true}).first()
     await expect(quote).toContainText(/^\$99\.50\s?overnight/)
     await expect(quote).toHaveAttribute('title', /^Last observed .* ET\. BOATS\. /)
+    const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+    await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText('SELL')
+    await expect(board.getByLabel('AAOI action status', {exact: true})).toHaveText('Exit: the grade fell to B')
+    await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Planned')
+    await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Fri Sep 25 · 15-min close 1% over the open, else at the close')
+    await expect(board.getByLabel('AAOI order status', {exact: true})).not.toContainText('sending')
+    await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 1 planned.')
     await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
-    const expansion = page.getByRole('region', {name: 'AAOI decision details', exact: true})
-    const intent = expansion.getByLabel('AAOI strategy intent', {exact: true})
-    await expect(intent).toContainText('SELL')
-    await expect(intent).toContainText('Blocked now')
-    await expect(intent).toHaveAttribute('title', /Regular-session execution is blocked; the session is closed or its clock is unavailable/)
-    await expect(intent).not.toHaveAttribute('title', /no executable quote until the open/)
-    await expansion.getByText('Recorded allocation & execution quote', {exact: true}).click()
-    await expect(expansion).toContainText('Regular-session execution is blocked; the session is closed or its clock is unavailable')
-    await expect(expansion).not.toContainText('no executable quote until the open')
+    const orders = page.getByRole('region', {name: 'AAOI orders', exact: true})
+    await expect(orders).toContainText('SELL 100 sh · $9,825 · 9.8% of the account')
+    await expect(orders).toContainText('Planned')
     await expect(quote).toContainText('$99.50')
     await page.screenshot({path: testInfo.outputPath('overnight-quote-clock-unknown.png'), fullPage: true})
-    const clockExplanation = expansion.getByText('Regular-session execution is blocked; the session is closed or its clock is unavailable', {exact: true})
-    await clockExplanation.scrollIntoViewIfNeeded()
-    await expect(clockExplanation).toBeVisible()
-    await clockExplanation.screenshot({path: testInfo.outputPath('clock-explanation-visible.png')})
   } finally {
     await recordDiagnostics(testInfo, diagnostics)
   }

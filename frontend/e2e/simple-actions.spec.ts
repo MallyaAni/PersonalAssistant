@@ -3,16 +3,39 @@ import {expect, test, type Page} from '@playwright/test'
 const session = '2026-09-24'
 const written = '2026-09-24T00:00:00Z'
 const at = '2026-09-24T14:00:00Z'
-const until = '2026-09-24T14:15:00Z'
+const EQUITY = 100000
+const POLICY = 'graded-equal-weight/4'
 
-// Exercise the complete desk with deterministic account, market and recommendation responses.
-async function setup(page: Page, open = true, missingEntry = false, paused = false, beforeNavigate?: () => Promise<void>) {
+type Order = {symbol: string; side: 'buy' | 'sell'; action: 'BUY' | 'SELL' | 'TRIM'; qty: number; price: number; why: string; state: string; status: string; when: string}
+
+// One order as `/desk/paper` lists it, in the backend's own words for its stage.
+function order(symbol: string, side: 'buy' | 'sell', action: 'BUY' | 'SELL' | 'TRIM', qty: number, price: number, why: string,
+  stage: {state: string; status: string; when?: string} = {state: 'waiting', status: `Waiting for $${(price * (side === 'buy' ? .99 : 1.01)).toFixed(2)} or the close (3:30 PM window)`}): Order {
+  return {symbol, side, action, qty, price, why, state: stage.state, status: stage.status,
+    when: stage.when ?? `Today · 15-min close 1% ${side === 'buy' ? 'under' : 'over'} the open, else at the close`}
+}
+
+// The paper account: its money, its positions and the orders the board lists.
+function paper(orders: Order[], held: Record<string, number> = {}, untilReset = 12) {
+  return {user_id: 'ani.mallya', as_of: at, equity: EQUITY, cash: 20000, orders: [], activity: {session, complete: true, fills: []},
+    positions: Object.entries(held).map(([symbol, qty]) => ({symbol, qty, avg_entry_price: 90, current_price: 100, market_value: qty * 100, unrealized_pl: qty * 10})),
+    plan: {rule: 'dip_or_close', rule_text: {buy: '15-min close 1% under the open, else at the close', sell: '15-min close 1% over the open, else at the close'},
+      until_rebalance: untilReset, last_rebalance: '2026-09-10', reason: null,
+      orders: orders.map((o, i) => ({client_order_id: `${o.symbol}-${i}`, symbol: o.symbol, side: o.side, action: o.action, qty: o.qty, price: o.price,
+        notional: o.qty * o.price, weight: o.qty * o.price / EQUITY, leg: o.side === 'buy' ? 'entry' : 'exit', why: o.why, reason: null,
+        timing: 'dip_or_close', decided: '2026-09-23', execute_on: session, open: null, level: null, sent_at: null, sent_how: null,
+        filled_qty: null, filled_price: null, filled_at: null, state: o.state, status: o.status, when: o.when}))}}
+}
+
+// Exercise the complete desk with deterministic record, market and paper-account responses.
+async function setup(page: Page, {open = true, paused = false, account, beforeNavigate}: {
+  open?: boolean; paused?: boolean; account?: ReturnType<typeof paper>; beforeNavigate?: () => Promise<void>} = {}) {
   const errors: string[] = []
-  const requests: Record<string, unknown>[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
   page.on('requestfailed', request => errors.push(request.url()))
   await page.clock.install({time: new Date(at)})
+  const book = account ?? paper([order('AAPL', 'buy', 'BUY', 20, 100, 'Enters the book at 2.0%')])
   await page.route('**/api/v1/**', async route => {
     const url = new URL(route.request().url())
     const path = url.pathname
@@ -21,136 +44,91 @@ async function setup(page: Page, open = true, missingEntry = false, paused = fal
     else if (path.includes('/conversations/')) json = {conversations: [], messages: []}
     else if (path.endsWith('/desk')) json = {latest: {
       session, written, regime: {exposure: 1, flags: []},
-      grades: Object.fromEntries(['AAPL', 'NVDA', 'MSFT'].map(ticker => [ticker, {grade: 'A', score: 1, votes: 3, stances: {}, ranks: {}, headline: '', reason: ''}])),
-      book: [{ticker: 'AAPL', weight: .05, grade: 'A'}], actions: [], briefs: {},
+      grades: Object.fromEntries(['AAPL', 'NVDA', 'MSFT'].map(ticker => [ticker, {grade: 'A', score: 1, votes: 3, stances: {}, ranks: {}, headline: `${ticker}: trend and growth lead`, reason: '+ Technical: above its 50-day average'}])),
+      targets: {policy: POLICY, weights: {AAPL: .0909, NVDA: .0909, MSFT: .0909}},
+      book: [{ticker: 'AAPL', weight: .05, grade: 'A'}], actions: ['AAPL', 'NVDA', 'MSFT'].map(ticker => ({ticker, action: 'hold', grade: 'A', last_close: 100})), briefs: {},
     }, sessions: [session], event_policy: paused ? {enabled: true} : undefined,
       event_status: paused ? {planning_paused: true, active: true, stale: false, status: 'reduction pending'} : undefined}
-    else if (path.endsWith('/holdings')) json = {holdings: [{ticker: 'NVDA', shares: 10, entry_price: 80, entry_date: session}]}
+    else if (path.endsWith('/holdings')) json = {holdings: []}
     else if (path.endsWith('/live')) json = {as_of: at, data_at: at, market_status: {exchange: 'XNYS', as_of: at, session, calendar_known: true, is_session: true, open, phase: open ? 'regular' : 'post-market'}, quotes: {AAPL: {symbol: 'AAPL', last: 100, bar: at, as_of: at}}, technical: {}, technical_detail: {}}
-    else if (path.endsWith('/mine')) {
-      const body = route.request().postDataJSON() as Record<string, unknown>
-      requests.push(body)
-      json = {session, rows: [], grades_live: {}, decisions: {session, written, equity: 100000, holdings: {}, rows: {
-        AAPL: {action: open ? 'Buy' : 'Hold', strategy_action: 'Buy', executable: open, blocker: open ? null : 'Market closed', reason: 'Support holds within the entry zone', move_weight: open ? .02 : 0, strategy_move_weight: .02, target_weight: .05, current_weight: 0, valid_until: open ? until : null, risk_plan: {status: 'available', basis: 'Same completed bar', entry: 100, reference_support: 95, reference_resistance: 110, risk_pct: 5, reward_pct: 10, reward_risk_ratio: 2, risk_budget_pct: body.risk_budget_pct ?? null, max_add_weight: .1, reason: 'Support and resistance bound the entry scenario'}},
-        NVDA: {action: 'Sell', strategy_action: 'Sell', executable: true, reason: 'Exit condition confirmed', move_weight: -.01, strategy_move_weight: -.01, valid_until: until},
-        MSFT: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'Price is above the entry zone', blocker: 'Market closed', entry_status: missingEntry ? 'unavailable' : 'available', entry_reason: missingEntry ? 'Entry data unavailable · Missing 20-session reference' : null, move_weight: 0, valid_until: until},
-      }}}
-    } else if (path.endsWith('/personal-history')) json = {receipts: [], has_more: false}
-    else if (path.endsWith('/entries')) json = {session, rows: []}
-    else if (path.endsWith('/intraday')) json = {session, rows: [], top_buys: [], changed: []}
-    else if (path.endsWith('/paper')) json = {reason: 'unavailable'}
+    else if (path.endsWith('/session-prices')) json = {session: open ? 'regular' : 'post-market', as_of: at, signal_scope: 'regular-session', quotes: {}}
+    else if (path.endsWith('/paper')) json = book
+    else if (path.endsWith('/paper/history')) json = {user_id: 'ani.mallya', rows: []}
     await route.fulfill({json})
   })
   if (beforeNavigate) await beforeNavigate()
   await page.goto('/#desk')
-  return {errors, requests}
+  return {errors}
 }
 
-// Keep the primary board small while preserving evidence, account separation and the reason for waiting.
+// Keep the primary board small while preserving the evidence and the paper position on request.
 test('visible grades and concise actions expose diagnostics only on request', async ({page}) => {
   const {errors} = await setup(page)
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const headers = board.locator('thead tr').last().getByRole('columnheader')
   await expect(page.locator('details[aria-label="Strategy details"]')).not.toHaveAttribute('open', '')
-  await expect(headers).toHaveCount(5)
-  await expect(headers).toHaveText(['#', /Stock/, /Grade/, /Action/, /Size/])
-  await expect(board.getByLabel('AAPL displayed grade', {exact: true})).toHaveText('AClose')
+  await expect(headers).toHaveCount(7)
+  await expect(headers).toHaveText([/Details/, /Stock/, /Grade/, /Position/, /Action/, /Size/, /When \/ status/])
+  await expect(board.getByLabel('AAPL displayed grade', {exact: true})).toHaveText('A')
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
-  await expect(board.getByLabel('AAPL size')).toHaveText('2.0% of account')
+  await expect(board.getByLabel('AAPL size')).toContainText('20 sh')
+  await expect(board.getByLabel('AAPL size')).toContainText('$2,000 · 2.0%')
+  await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
   await expect(board.getByLabel('MSFT size')).toHaveText('—')
-  await expect(board).not.toContainText('Price is above the entry zone')
+  // The grade's evidence and the position are in the details, not on the row.
+  await expect(board).not.toContainText('above its 50-day average')
   await expect(board.getByLabel('AAPL grade', {exact: true})).toHaveCount(0)
   await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
-  await expect(board.getByLabel('AAPL grade', {exact: true})).toContainText('A')
-  await expect(board.getByLabel('AAPL risk and reward')).toContainText('2.00:1')
-  await expect(board.getByLabel('AAPL risk and reward')).toContainText('not forecasts or guaranteed stops')
-  await expect(board.getByLabel('AAPL recorded personal position')).toContainText('None recorded')
-  await expect(board.getByLabel('AAPL paper position')).toContainText('Unavailable')
+  await expect(board.getByLabel('AAPL grade', {exact: true})).toContainText('Grade A')
+  await expect(board.getByLabel('AAPL grade', {exact: true})).toContainText('above its 50-day average')
+  await expect(board.getByLabel('AAPL position', {exact: true}).last()).toContainText('Not held')
+  await expect(board.getByLabel('AAPL position', {exact: true}).last()).toContainText('Target 9.1% (graded-equal-weight/4)')
+  await expect(board.getByLabel('AAPL orders', {exact: true})).toContainText('BUY 20 sh · $2,000 · 2.0% of the account')
   await page.setViewportSize({width: 390, height: 844})
   if (await page.getByRole('button', {name: 'Hide Sidebar'}).isVisible()) await page.mouse.click(380, 500)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   await board.scrollIntoViewIfNeeded()
-  const reason = board.getByLabel('AAPL decision reason', {exact: true})
-  await expect(reason).toBeVisible()
-  await expect(reason).toBeInViewport()
-  await expect(reason).toContainText('Support holds within the entry zone')
+  const why = board.getByLabel('AAPL action status', {exact: true})
+  await expect(why).toBeVisible()
+  await expect(why).toBeInViewport()
+  await expect(why).toContainText('Enters the book at 2.0%')
   await page.screenshot({path: '/tmp/simple-actions-mobile.png', fullPage: true})
   expect(errors).toEqual([])
 })
 
-// A regular-session restriction retains intent and the intended size, labelled
-// as intended rather than as an executable amount, and never implies all venues are closed.
-test('regular-session restriction is explicit and shows the intended size, not an executable one', async ({page}) => {
-  const {errors} = await setup(page, false)
+// With the market shut the order is planned for the next session: the word and the size stay,
+// the status says so, and the row never claims every venue is closed.
+test('a planned order with the market closed keeps its word and size', async ({page}) => {
+  const {errors} = await setup(page, {open: false, account: paper([
+    order('AAPL', 'buy', 'BUY', 20, 100, 'Enters the book at 2.0%', {state: 'planned', status: 'Planned', when: 'Thu Sep 25 · 15-min close 1% under the open, else at the close'}),
+    order('NVDA', 'sell', 'SELL', 10, 100, 'Exit: the grade fell to B', {state: 'planned', status: 'Planned', when: 'Thu Sep 25 · 15-min close 1% over the open, else at the close'}),
+  ], {NVDA: 10})})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
-  await expect(board.getByLabel('AAPL size')).toHaveText('2.0%')
-  await expect(board.getByLabel('AAPL size')).not.toContainText('of account')
-  for (const ticker of ['AAPL', 'NVDA']) {
-    // The row shows the word and the size; the blocker reads on the row's
-    // hover, and stays in the accessibility tree under its label.
-    const row = board.getByRole('row').filter({has: page.getByRole('button', {name: ticker, exact: true})})
-    await expect(row).toHaveAttribute('title', /Regular-session execution is blocked; the session is closed or its clock is unavailable/)
-    const readiness = board.getByLabel(`${ticker} execution readiness`, {exact: true})
-    await expect(readiness).toHaveText('Regular-session execution blocked')
-    await expect(readiness).toHaveClass(/sr-only/)
-    await expect(readiness).toHaveAttribute('title', 'Regular-session execution is blocked; the session is closed or its clock is unavailable')
-  }
+  await expect(board.getByLabel('AAPL size')).toContainText('20 sh')
+  await expect(board.getByLabel('AAPL order status')).toContainText('Planned')
+  await expect(board.getByLabel('AAPL order status')).toContainText('Thu Sep 25 · 15-min close 1% under the open, else at the close')
+  await expect(board.getByLabel('NVDA strategy intent')).toHaveText('SELL')
+  await expect(board.getByLabel('NVDA order status')).toContainText('Thu Sep 25 · 15-min close 1% over the open, else at the close')
+  await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 2 planned.')
   await expect(board).not.toContainText('Market closed')
-  expect(errors).toEqual([])
-})
-
-// Risk is unset until explicitly confirmed and travels only in the personal planning request body.
-test('risk budget is optional and applying it refreshes personal planning', async ({page}) => {
-  const {errors, requests} = await setup(page)
-  await expect.poll(() => requests.length).toBeGreaterThan(0)
-  expect(requests[0]).not.toHaveProperty('risk_budget_pct')
-  await page.getByLabel('Risk per position (%)', {exact: true}).fill('0.5')
-  await page.getByRole('button', {name: 'Apply', exact: true}).click()
-  await expect.poll(() => requests.at(-1)?.risk_budget_pct).toBe(.5)
-  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
-  await expect(page.getByLabel('AAPL risk and reward')).toContainText('Risk budget 0.5%')
-  await page.getByLabel('Risk per position (%)', {exact: true}).fill('')
-  await page.getByRole('button', {name: 'Apply', exact: true}).click()
-  await expect.poll(() => requests.at(-1)?.risk_budget_pct).toBeUndefined()
-  expect(errors).toEqual([])
-})
-
-// Missing entry evidence is visible as unavailable rather than a confident neutral stock opinion.
-test('Hold explains missing entry evidence without manufacturing a buy or size', async ({page}) => {
-  const {errors} = await setup(page, true, true)
-  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.getByLabel('MSFT strategy intent')).toHaveText('Hold')
-  // "Data missing" is the row's hover and its accessible readiness, not a
-  // line printed under the word.
-  const msftRow = board.getByRole('row').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
-  await expect(msftRow).toHaveAttribute('title', /Data missing/)
-  await expect(board.getByLabel('MSFT execution readiness', {exact: true})).toHaveText('Data missing')
-  await expect(board.getByLabel('MSFT execution readiness', {exact: true})).toHaveClass(/sr-only/)
-  await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
-  await expect(board).toContainText('Entry data unavailable · Missing 20-session reference')
-  await expect(board.getByLabel('MSFT size')).toHaveText('—')
   expect(errors).toEqual([])
 })
 
 // Collapsing explanatory sections never conceals a current portfolio pause.
 test('strategy details start collapsed while active trading restrictions remain visible', async ({page}) => {
-  const {errors} = await setup(page, true, false, true)
+  const {errors} = await setup(page, {paused: true})
   const details = page.locator('details[aria-label="Strategy details"]')
   await expect(details).not.toHaveAttribute('open', '')
-  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})).toHaveAttribute('title', /FOMC pause/)
-  await expect(board.getByLabel('AAPL execution readiness', {exact: true})).toHaveText('FOMC pause')
-  await expect(board.getByLabel('AAPL execution readiness', {exact: true})).toHaveClass(/sr-only/)
-  await expect(board.getByLabel('AAPL size')).toHaveText('—')
+  await expect(page.getByLabel('Execution rule')).toContainText('FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.')
   await details.locator(':scope > summary').click()
   await expect(page.getByLabel('FOMC exposure policy')).toContainText('reduction pending')
   expect(errors).toEqual([])
 })
 
-// Missing exchange observations stay visible without drawing a valid band or changing the action.
+// Missing exchange observations stay visible without drawing a valid band or changing the board's word.
 test('ticker panels disclose chart gaps and retain the board decision', async ({page}) => {
-  const {errors} = await setup(page, true, true)
+  const {errors} = await setup(page)
   await page.route('**/desk/history/MSFT', route => route.fulfill({json: {rows: [], ticker: 'MSFT', recommendations: {observations: []}}}))
   await page.route('**/desk/chart/MSFT*', route => {
     const weekly = new URL(route.request().url()).searchParams.get('timeframe') === 'weekly'
@@ -163,8 +141,12 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
       overlays: {band_upper: dates.map(() => null), band_lower: dates.map(() => null)}, levels: {}, entries: [],
     }})
   })
+  await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
+  await expect(page.getByLabel('MSFT action status', {exact: true})).toHaveText('In the book at 9.1% · no order tonight')
   await page.getByRole('button', {name: 'MSFT', exact: true}).click()
-  await expect(page.getByLabel('MSFT decision reason', {exact: true})).toContainText('Entry data unavailable')
+  const card = page.getByRole('region', {name: 'MSFT paper order'})
+  await expect(card).toContainText('In the book at 9.1% · no order tonight')
+  await expect(card).toContainText('Position none · target 9.1%')
   const chart = page.getByLabel('MSFT price chart', {exact: true})
   await expect(chart.getByLabel('Chart data quality')).toContainText('Chart data incomplete · 1 missing session')
   await chart.getByLabel('Chart data quality').locator('summary').click()
@@ -180,132 +162,83 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
   expect(errors).toEqual([])
 })
 
-// Rank valid grades before action and executable size, and revert expired live grades honestly.
-test('default ranking follows grade action size and reranks expired intraday grades', async ({page}) => {
+// The default ranking: orders still to happen first (biggest first), then orders done today,
+// then holdings by weight, then the other graded names by grade; the Size heading re-sorts.
+test('default ranking follows order stage, size, position and grade', async ({page}) => {
   const grades = {
     NVDA: {grade: 'B', score: .99}, AAPL: {grade: 'A+', score: .9},
     MSFT: {grade: 'A+', score: .8}, AMZN: {grade: 'A+', score: .7}, AMD: {grade: 'A', score: 1},
   }
-  const {errors} = await setup(page, true, false, false, async () => {
-  await page.route('**/desk', route => route.fulfill({json: {latest: {
-    session, written, regime: {exposure: 1, flags: []}, grades,
-    book: [{ticker: 'AMZN', weight: .9, grade: 'A+'}], actions: [], briefs: {},
-  }, sessions: [session]}}))
-  await page.route('**/desk/mine', route => route.fulfill({json: {
-    session, rows: [], grade_valid_until: {NVDA: until}, grades_live: {NVDA: {grade_live: 'A+', score_live: .95}},
-    decisions: {session, written, equity: 100000, holdings: {}, rows: {
-      NVDA: {action: 'Buy', strategy_action: 'Buy', executable: true, move_weight: .04, valid_until: until, reason: 'Entry confirmed'},
-      AAPL: {action: 'Buy', strategy_action: 'Buy', executable: true, move_weight: .02, valid_until: until, reason: 'Entry confirmed'},
-      MSFT: {action: 'Sell', strategy_action: 'Sell', executable: true, move_weight: -.08, valid_until: until, reason: 'Exit confirmed'},
-      AMZN: {action: 'Hold', strategy_action: 'Hold', executable: false, move_weight: 0, target_weight: .9, valid_until: until, reason: 'No entry'},
-      AMD: {action: 'Buy', strategy_action: 'Buy', executable: true, move_weight: .5, valid_until: until, reason: 'Entry confirmed'},
-    }},
-  }}))
-  })
+  const {errors} = await setup(page, {account: paper([
+    order('NVDA', 'buy', 'BUY', 40, 100, 'Enters the book at 4.0%'),
+    order('AAPL', 'buy', 'BUY', 20, 100, 'Enters the book at 2.0%'),
+    order('MSFT', 'sell', 'SELL', 80, 100, 'Exit: the grade fell to B', {state: 'filled', status: 'Sold 80 @ $100.00 · 9:46 AM'}),
+  ], {MSFT: 80, AMZN: 900}), beforeNavigate: async () => {
+    await page.route('**/desk', route => route.fulfill({json: {latest: {
+      session, written, regime: {exposure: 1, flags: []}, grades,
+      targets: {policy: POLICY, weights: {AAPL: .0909, MSFT: .0909, AMZN: .0909, AMD: .0909}},
+      book: [{ticker: 'AMZN', weight: .9, grade: 'A+'}], actions: [], briefs: {},
+    }, sessions: [session]}}))
+  }})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  // Read only stock rows so expanded details and the cash footer cannot affect ranking.
-  const order = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
-  await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('A+Intraday')
-  expect(await order()).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
+  // Read only stock rows so expanded details cannot affect ranking.
+  const order_ = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
+  await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('B')
+  // The board opens on the portfolio: the orders and the holdings.
+  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN'])
+  await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
+  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
-  expect(await order()).toEqual(['AMD', 'MSFT', 'NVDA', 'AAPL', 'AMZN'])
-  await page.getByRole('button', {name: 'Reset ranking', exact: true}).click()
-  expect(await order()).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
-  await page.clock.fastForward(16 * 60 * 1000)
-  await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('BClose')
-  expect(await order()).toEqual(['AAPL', 'MSFT', 'AMZN', 'AMD', 'NVDA'])
-  // The quote has expired, so the size is the intended one, not an executable one.
-  await expect(board.getByLabel('NVDA size', {exact: true})).toHaveText('4.0%')
+  await expect.poll(order_).toEqual(['MSFT', 'NVDA', 'AAPL', 'AMZN', 'AMD'])
+  await board.getByRole('button', {name: 'Size', exact: true}).click()
+  await expect.poll(order_).toEqual(['AMZN', 'AMD', 'AAPL', 'NVDA', 'MSFT'])
+  await board.getByRole('button', {name: 'Size', exact: true}).click()
+  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
+  await expect(board.getByLabel('NVDA size', {exact: true})).toContainText('$4,000 · 4.0%')
   expect(errors).toEqual([])
 })
 
-// A record stamped with the active `/4` policy sizes toward its targets, and
-// since 2026-09-28 its board is TIMED (`decisions.timing`): the action cell
-// says BUY only when the measured level has triggered today or the close
-// window is open, because the operator acts on a BUY in his own account at
-// once. With the market shut the policy's target buy is therefore a Hold with
-// no size; the plan - the target sentence, the blocker and the timing - reads
-// on the row's hover, and the intended change stays in the details.
-test('a /4 target buy with the market closed is a Hold with the plan on hover', async ({page}) => {
-  const {errors} = await setup(page, false, false, false, async () => {
-    await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))
-    const timing = {rule: 'dip_or_close', side: 'buy', state: 'pre-open', level_fraction: .01, session: '2026-09-27', trading_day: false,
-      open: null, level: null, trigger_bar: null, trigger_price: null, close_cutoff: '2026-09-27T15:30:00-04:00', moc_deadline: '2026-09-27T15:50:00-04:00',
-      reason: "No regular session on 2026-09-27; the next session's first 15-minute bar sets its open and the level 1% under it"}
-    await page.route('**/desk/mine', route => route.fulfill({json: {
-      session, rows: [], grades_live: {},
-      decisions: {session, written, equity: 100000, holdings: {},
-        timing: {rule: 'dip_or_close', level: .01, session: '2026-09-27', close_cutoff: '2026-09-27T15:30:00-04:00', moc_deadline: '2026-09-27T15:50:00-04:00', latched: false},
-        rows: {
-        AAPL: {action: 'Hold', strategy_action: 'Buy', executable: false, blocker: 'market closed or clock unavailable',
-          reason: 'Buy to 9.1% target (policy graded-equal-weight/4); buy not executable: market closed or clock unavailable',
-          move_weight: 0, strategy_move_weight: .0909, target_weight: .0909, current_weight: 0, valid_until: null,
-          entry_status: 'unavailable', entry_reason: 'Entry data unavailable: 2026-09-27 is not an exchange session',
-          timing, structure_gate: 'clear', grade: 'A', grade_intraday: null},
-        NVDA: {action: 'Hold', strategy_action: 'Hold', executable: false, blocker: 'market closed or clock unavailable',
-          reason: 'Maintain position (9.1% of account) (market closed or clock unavailable)', move_weight: 0, strategy_move_weight: 0,
-          target_weight: .0909, current_weight: .0909, valid_until: null, timing: null, structure_gate: 'clear', grade: 'A', grade_intraday: null},
-        MSFT: {action: 'Hold', strategy_action: 'Hold', executable: false, blocker: 'market closed or clock unavailable',
-          reason: 'Above target (9.1%; holding 14.0%); trimmed at the next reset (market closed or clock unavailable)',
-          move_weight: 0, strategy_move_weight: 0, target_weight: .0909, current_weight: .14, valid_until: null,
-          timing: null, structure_gate: 'clear', grade: 'A', grade_intraday: null},
-      }},
-    }}))
-  })
+// Under the `/4` policy a held name with no order says where it stands against its target and
+// when the reset moves it; a name in the book with no order says so; the plan is in the details.
+test('a held name without an order says where it stands against its target', async ({page}) => {
+  const {errors} = await setup(page, {open: false, account: paper([], {NVDA: 91, MSFT: 140}, 5)})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('Hold')
-  await expect(board.getByLabel('AAPL size')).toHaveText('—')
-  const aaplRow = board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})
-  await expect(aaplRow).toHaveAttribute('title', /^Hold: Buy to 9\.1% target \(policy graded-equal-weight\/4\); buy not executable: market closed or clock unavailable/)
-  await expect(aaplRow).toHaveAttribute('title', /Timing · before the level is set: No regular session on 2026-09-27/)
-  // A non-session entry read does not turn a planned Buy into "Data missing".
-  await expect(aaplRow).not.toHaveAttribute('title', /Data missing/)
-  await expect(board.getByLabel('AAPL execution readiness', {exact: true})).toHaveCount(0)
-  await expect(page.getByLabel('Today', {exact: true})).not.toContainText('1 executable signal.')
-  await expect(board.getByLabel('NVDA strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('NVDA strategy intent')).toHaveText('HOLD')
+  await expect(board.getByLabel('NVDA action status')).toHaveText('Near its 9.1% target')
   await expect(board.getByLabel('NVDA size')).toHaveText('—')
-  await expect(board.getByLabel('MSFT strategy intent')).toHaveText('Hold')
+  await expect(board.getByLabel('NVDA position', {exact: true})).toContainText('91 sh · 9.1%')
+  await expect(board.getByLabel('MSFT strategy intent')).toHaveText('HOLD')
+  await expect(board.getByLabel('MSFT action status')).toHaveText('Above its 9.1% target · trimmed at the reset in 5 sessions')
   await expect(board.getByLabel('MSFT size')).toHaveText('—')
-  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
-  await expect(board.getByLabel('AAPL decision reason', {exact: true})).toContainText('Buy to 9.1% target (policy graded-equal-weight/4)')
-  await expect(board.getByLabel('AAPL move', {exact: true})).toHaveText('+9.1%')
+  await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
+  await expect(board.getByLabel('AAPL strategy intent')).toHaveText('—')
+  await expect(board.getByLabel('AAPL action status')).toHaveText('In the book at 9.1% · no order tonight')
+  await expect(board.getByLabel('AAPL size')).toHaveText('—')
+  await expect(page.getByLabel('Today', {exact: true})).toContainText('No paper orders.')
   await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
-  await expect(board.getByLabel('MSFT decision reason', {exact: true})).toContainText('trimmed at the next reset')
+  await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('No order')
+  await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('trimmed at the reset in 5 sessions')
+  await expect(board.getByLabel('MSFT position', {exact: true}).last()).toContainText('140 sh · $14,000 · 14.0%')
+  await expect(board.getByLabel('MSFT position', {exact: true}).last()).toContainText('Target 9.1%')
   expect(errors).toEqual([])
 })
 
-// A Sell that keeps a positive target is a trim, and the row says so: the
-// word is TRIM, the size is the reduction, and the decision's "Trim to"
-// sentence reads on the row's hover rather than beneath the word. A Sell to
-// zero stays SELL.
-test('a trim reads as TRIM with its reason on hover, an exit stays SELL', async ({page}) => {
-  const {errors} = await setup(page, true, false, false, async () => {
-    await page.route('**/desk/holdings', route => route.fulfill({json: {holdings: []}}))
-    await page.route('**/desk/mine', route => route.fulfill({json: {
-      session, rows: [], grades_live: {},
-      decisions: {session, written, equity: 100000, holdings: {}, rows: {
-        MSFT: {action: 'Sell', strategy_action: 'Sell', executable: true, blocker: null,
-          reason: 'Trim to 9.1% target (policy graded-equal-weight/4); holding 14.0%',
-          move_weight: -.0491, strategy_move_weight: -.0491, target_weight: .0909, current_weight: .14, valid_until: until,
-          quote: {feed: 'sip', at, bid: 99.9, ask: 100.1, spread_verified: true, eligible: true, reason: 'ok', valid_until: until}},
-        NVDA: {action: 'Sell', strategy_action: 'Sell', executable: true, blocker: null, reason: 'Exit condition confirmed',
-          move_weight: -.05, strategy_move_weight: -.05, target_weight: 0, current_weight: .05, valid_until: until,
-          quote: {feed: 'sip', at, bid: 99.9, ask: 100.1, spread_verified: true, eligible: true, reason: 'ok', valid_until: until}},
-        AAPL: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'No entry instruction.', move_weight: 0, strategy_move_weight: 0, target_weight: 0, current_weight: 0, valid_until: null},
-      }},
-    }}))
-  })
+// A sell that keeps a positive target is a trim, and the row says so: the word is TRIM, the
+// size is the reduction, the reason reads under the word. A sell to zero stays SELL.
+test('a trim reads as TRIM with its reason, an exit stays SELL', async ({page}) => {
+  const {errors} = await setup(page, {account: paper([
+    order('MSFT', 'sell', 'TRIM', 49, 100, 'Trim to its 9.1% target'),
+    order('NVDA', 'sell', 'SELL', 50, 100, 'Exit: the grade fell to B'),
+  ], {MSFT: 140, NVDA: 50})})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('TRIM')
-  await expect(board.getByLabel('MSFT size')).toHaveText('4.9% of account')
-  const msftRow = board.getByRole('row').filter({has: page.getByRole('button', {name: 'MSFT', exact: true})})
-  await expect(msftRow).toHaveAttribute('title', /^TRIM: Trim to 9\.1% target \(policy graded-equal-weight\/4\); holding 14\.0%$/)
-  // The collapsed row carries no sentence: the reason is in the details only.
-  await expect(board.getByLabel('MSFT decision reason', {exact: true})).toHaveCount(0)
-  await expect(board.getByLabel('MSFT execution readiness', {exact: true})).toHaveCount(0)
+  await expect(board.getByLabel('MSFT action status')).toHaveText('Trim to its 9.1% target')
+  await expect(board.getByLabel('MSFT size')).toContainText('49 sh')
+  await expect(board.getByLabel('MSFT size')).toContainText('$4,900 · 4.9%')
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('SELL')
-  await expect(board.getByRole('row').filter({has: page.getByRole('button', {name: 'NVDA', exact: true})})).toHaveAttribute('title', /^SELL: Exit condition confirmed$/)
+  await expect(board.getByLabel('NVDA action status')).toHaveText('Exit: the grade fell to B')
   await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
-  await expect(board.getByLabel('MSFT decision reason', {exact: true})).toContainText('Trim to 9.1% target')
+  await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('TRIM 49 sh · $4,900 · 4.9% of the account')
+  await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('Trim to its 9.1% target')
   expect(errors).toEqual([])
 })
