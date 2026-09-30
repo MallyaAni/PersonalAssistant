@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-30 — Adaptive entry study (RECORD ×3); browser specs for the trade board; ticker-panel close fallback
+
+- `backend/market/adaptive_entry.py`, `backend/cli/market_adaptive_entry.py`:
+  the registered test of a volatility-scaled same-session dip (half-σ,
+  one-σ) and a 2σ gap-down guard against the board's fixed 1%
+  `dip_or_close`. All three RECORD; nothing live changed
+  (`docs/research/adaptive-entry-results-2026-09-30.md`).
+- `stage4_orders.run_control` / `run_offsets` take an optional `allocator`
+  (default `policy_v4`, unchanged) so studies can replay `/5`.
+- `frontend/e2e`: 16 desk and chart specs rewritten for the trade board;
+  `desk-execution-evidence.spec.ts` and `recorded-chart-refresh.spec.ts`
+  removed (branch `test/trade-board-specs`).
+- `DeskPanel.tsx`: `NameDetail` receives the board's `lastClose`, so the
+  ticker panel's price line falls back to the board's close when the row
+  has no `last_close`.
+
 ## 2026-09-29 — `graded-equal-weight/5`: the per-name hold cap raised from 20% to 25% (built and gated; not deployed)
 
 Branch `trading/policy-v5-cap25` from `main` `511297fc`: the code is

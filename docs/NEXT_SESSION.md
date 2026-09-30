@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-09-30, morning — Adaptive entry: RECORD ×3; browser specs rewritten for the trade board; universe expansion prepared
+
+**Nothing live changed.** Three branches were built overnight on the
+desktop's sandbox and are being pushed as the link allows:
+
+- **`research/adaptive-entry` (`553b2273`).** The operator's objection to
+  the fixed 1% dip ("stocks can move 5-7% red some days") was registered
+  (`docs/research/adaptive-entry-plan-2026-09-30.md`, `57921bb0`, before
+  any code) and tested at `fe6fa36d` on spark1 (05:25-05:31Z, 20 offsets,
+  independent check "OK"). Results:
+  `docs/research/adaptive-entry-results-2026-09-30.md`, payload
+  `docs/research/scorecards/adaptive-entry/adaptive_entry.json`
+  (sha256 `f05f4ce3`). E1 half-σ dip −0.08 bp of equity a session, E2 one-σ
+  −0.03, E3 gap guard +0.02 (fires on 1% of buys, 5 differing fills):
+  **RECORD, all three**; the board keeps `dip_or_close` at the fixed 1%.
+  The 1% is reached on 41% of buy sessions; widening it on high-σ names
+  cost −192 bp on each of 57 misses. Cumulative trials 457. The build
+  gives `stage4_orders.run_control`/`run_offsets` an optional `allocator`
+  (default unchanged) and adds `backend/market/adaptive_entry.py`.
+- **`test/trade-board-specs` (`dd2ea4e5`, 13 commits).** The ~240 desk and
+  chart Playwright tests that pinned the removed screens were rewritten
+  to the trade board's words (project doc
+  `claude/trader-board-specs-2026-09-30.md`); `desk-execution-evidence`
+  and `recorded-chart-refresh` deleted as their subjects are off the page.
+  One product fix rode along (`dd2ea4e5`): `DeskPanel`'s `NameDetail`
+  takes `lastClose` from the board's closes so the ticker panel's price
+  line no longer blanks when the row's `last_close` is missing; the two
+  `test.fail(CHART_CLOSE_FALLBACK)` markers came out. Compare against
+  spark1's `~/scratch/wt-specs/frontend/test-results/specs.json` (270
+  pass; the 136 chat/fundamental harness failures are main's).
+  **Open:** `OpportunityCard` still reads `/desk/mine`, which nothing on the
+  page reads any more; decide whether to remove it.
+- **`research/universe-expansion` (`bacff384`).** The A study reshaped as
+  registered (`docs/research/universe-expansion-plan-2026-09-30.md`,
+  `ce6b07c0`): 437 companyfacts fetched (531/531 names carry
+  `edgar_facts_versions`), cohort/grouped-rank code
+  (`desk/cohort.py`, `baselines.grouped_percentile_rank`), `market_membership
+  --universe`, and `market_pit_scorecard --universe {sector,flat,tone}
+  --membership --null-test` (the null test bit-exact). **Step 3, the run,
+  has not started.** Merge only after the run and its write-up.
+
+**Order of merge.** `research/adaptive-entry` and `test/trade-board-specs`
+into `main` after the unit gate, tsc and the Playwright comparison; deploy
+(the `DeskPanel` fix only) outside 09:00-16:15 ET. The 6-K tone coverage
+(`trading/tone-6k`, `99ed9b23`) deploys with its backfill at 16:16 ET.
+
 ## 2026-09-30, 01:00 ET — Trader board DEPLOYED (`94393800`): the paper account trades the board's orders on the board's clock
 
 The other Cowork session's branch `claude/trader-board-20260930` (`ef3b249`,
