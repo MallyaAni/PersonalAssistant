@@ -22,6 +22,24 @@ from backend.agents.trading.desk.technical import LOCATION_CITED
 from backend.agents.trading.desk.value import CITED as VALUE_CITED
 
 
+# Continuous tone readings must not be presented as absent or exactly unchanged.
+@pytest.mark.parametrize(
+    ("measure", "value", "expected"),
+    [
+        ("tone_guidance", 0.2, "slightly upbeat on outlook"),
+        ("tone_demand", -0.2, "slightly downbeat on demand"),
+        ("tone_demand", 0.0, "demand: neutral or not stated"),
+        ("tone_guidance_change", 0.1, "outlook tone more upbeat"),
+        ("tone_guidance_change", -0.1, "outlook tone more downbeat"),
+        ("tone_guidance_change", 0.0, "outlook tone unchanged"),
+        ("tone_supply_constrained", 0.0, "supply constraints not indicated"),
+        ("tone_supply_constrained", 0.2, "some supply constraints reported"),
+    ],
+)
+def test_tone_wording_preserves_nonzero_and_missing_meanings(measure, value, expected):
+    assert plainly._figure("sentiment", measure, value, None) == expected
+
+
 # Every measurement an analyst can cite has an English name. Without this
 # a new feature reaches the operator as a bare identifier, which is the
 # defect this module was written to remove.
@@ -84,7 +102,7 @@ def test_a_reading_is_placed_in_the_book_not_quoted():
     assert "-0.31" not in text
     # Tone, states and distances have their own words.
     assert (
-        plainly._figure("sentiment", "tone_guidance", 1.0, None) == "upbeat on guidance"
+        plainly._figure("sentiment", "tone_guidance", 1.0, None) == "upbeat on outlook"
     )
     assert (
         plainly._figure("technical", "weekly_trend", -1.0, None) == "weekly trend down"
@@ -210,9 +228,7 @@ def test_a_reason_cites_the_readings_that_argue_the_stance():
     assert [m for m, _v in bare] == ["tone_guidance", "tone_guidance_change"]
 
 
-# The CRWV case itself: a book that mostly guides up has no spread on the
-# guidance field, and the release that said nothing about guidance is the
-# reading that set the name apart, quoted against the book's middle.
+# A zero tone score differs from an upbeat book without proving an absent disclosure.
 def test_a_reading_of_nothing_is_quoted_against_the_book():
     scale = {
         ("sentiment", "tone_guidance"): (1.0, float("nan"), 1),
@@ -223,7 +239,7 @@ def test_a_reading_of_nothing_is_quoted_against_the_book():
     picked = plainly._notable("sentiment", cited, scale, stance=-1)
     assert picked == [("tone_guidance", 0.0)]
     clause = plainly._clause("sentiment", -1, 0.26, cited, scale)
-    assert clause == "− Sentiment: silent on guidance (book upbeat)"
+    assert clause == "− Sentiment: outlook: neutral or not stated (book upbeat)"
 
 
 # A reason names what the analyst scores. Capital spending is on the
@@ -270,7 +286,7 @@ def test_a_reading_the_book_shares_still_argues_the_stance():
     picked = plainly._notable("sentiment", cited, scale, stance=1)
     assert [m for m, _v in picked] == ["tone_guidance", "tone_demand"]
     clause = plainly._clause("sentiment", 1, 0.85, cited, scale)
-    assert clause == "+ Sentiment: upbeat on guidance; upbeat on demand"
+    assert clause == "+ Sentiment: upbeat on outlook; upbeat on demand"
     # A bearish stance on the same release still names what set it apart.
     against = plainly._notable("sentiment", cited, scale, stance=-1)
     assert [m for m, _v in against] == ["tone_guidance_change"]

@@ -429,6 +429,12 @@
     },
     "until_rebalance": 18
   },
+  "tone_wording": [
+    "slightly upbeat on outlook",
+    "demand: neutral or not stated",
+    "outlook tone more upbeat",
+    "supply constraints not indicated"
+  ],
   "wednesday": {
     "last_rebalance": "2026-09-28",
     "orders": [

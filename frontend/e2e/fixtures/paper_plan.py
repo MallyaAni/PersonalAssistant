@@ -19,7 +19,7 @@ import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from backend.agents.trading.desk import intraday_orders, paper
+from backend.agents.trading.desk import intraday_orders, paper, plainly
 
 DECIDED = "2026-09-30"
 TODAY = date(2026, 10, 1)
@@ -167,6 +167,15 @@ def produce() -> dict:
         "reason": None,
     }
     return {
+        "tone_wording": [
+            plainly._figure("sentiment", field, value, None)
+            for field, value in (
+                ("tone_guidance", 0.2),
+                ("tone_demand", 0.0),
+                ("tone_guidance_change", 0.1),
+                ("tone_supply_constrained", 0.0),
+            )
+        ],
         "equity": EQUITY,
         "cash": CASH,
         "positions": [

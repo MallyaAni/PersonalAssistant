@@ -22,6 +22,7 @@ const record = () => {
   const grades: Record<string, object> = {}
   for (const ticker of BOOK) grades[ticker] = {grade: ticker === 'SNDK' || ticker === 'NTAP' ? 'A+' : 'A', votes: 3, stances: {fundamental: 1, technical: 1, sentiment: 1, value: 0, rotation: 0}, ranks: {}, score: 1, side: 'ai', headline: `${ticker}: growth and trend lead the book`, reason: '+ Fundamental: revenue growth top of book\n+ Technical: 6-month momentum high in book', reads: {}}
   for (const [ticker, grade] of Object.entries(OTHER)) grades[ticker] = {grade, votes: 0, stances: {fundamental: 0, technical: -1}, ranks: {}, score: 0, side: 'ai', headline: `${ticker}: trend turned`, reason: '− Technical: below its 50-day average', reads: {}}
+  grades.HPE = {...grades.HPE, reason: '+ Sentiment: ' + fixture.tone_wording.join('; ')}
   const weights = Object.fromEntries([...BOOK.map(t => [t, 1 / 12]), ...Object.keys(OTHER).map(t => [t, 0])])
   const closes: Record<string, number> = Object.fromEntries(fixture.positions.map((p: {symbol: string; current_price: number}) => [p.symbol, p.current_price]))
   return {
@@ -190,6 +191,13 @@ test('the row details and the ticker panel repeat the board’s words', async ({
   await expect(orders).toContainText("Finish last session's buy (cash was short)")
   await expect(page.getByRole('region', {name: 'HPE position'})).toContainText('61 sh')
   await expect(page.getByRole('region', {name: 'HPE grade'})).toContainText('Grade A')
+  const grade = page.getByRole('region', {name: 'HPE grade'})
+  await expect(grade).toContainText('slightly upbeat on outlook')
+  await expect(grade).toContainText('demand: neutral or not stated')
+  await expect(grade).toContainText('outlook tone more upbeat')
+  await expect(grade).toContainText('supply constraints not indicated')
+  await expect(grade).not.toContainText('silent')
+  await expect(grade).not.toContainText('guidance raised')
   await page.getByRole('region', {name: 'Stocks and cash'}).screenshot({path: testInfo.outputPath('board-details.png')})
   await page.getByRole('button', {name: 'HPE', exact: true}).click()
   const panel = page.getByRole('dialog', {name: 'HPE history'})

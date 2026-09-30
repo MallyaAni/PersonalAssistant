@@ -83,9 +83,9 @@ LABELS: dict[str, str] = {
     "confluence": "how many timeframes agree",
     "residual_momentum_120": "momentum with the market's part removed",
     # sentiment, from the release reader
-    "tone_guidance": "what it said about guidance",
+    "tone_guidance": "management's outlook tone",
     "tone_demand": "what it said about demand",
-    "tone_guidance_change": "how guidance changed from the last release",
+    "tone_guidance_change": "how outlook tone changed from the last release",
     "tone_pricing": "what it said about pricing",
     "tone_capex": "what it said about capital spending",
     "tone_supply_constrained": "whether it called itself supply constrained",
@@ -100,16 +100,15 @@ LABELS: dict[str, str] = {
     "expectations_gap": GROWTH_GAP_LABEL,
 }
 
-# The release reader's fields, as the thing the release spoke about. A
-# reading is -1, 0 or +1: downbeat, silent or upbeat.
+# The release reader returns continuous tone scores; zero can mean no statement.
 TONE_SUBJECT: dict[str, str] = {
-    "tone_guidance": "guidance",
+    "tone_guidance": "outlook",
     "tone_demand": "demand",
     "tone_pricing": "pricing",
     "tone_capex": "capex",
 }
 TONE_CHANGE: dict[str, str] = {
-    "tone_guidance_change": "guidance tone",
+    "tone_guidance_change": "outlook tone",
     "tone_demand_change": "demand tone",
 }
 # Readings that are a state, not a size: -1, 0 or +1.
@@ -395,27 +394,33 @@ def _slope_words(measure: str, value: float, place: float | None) -> str:
     return f"{label} {direction}"
 
 
-# A reading of -1, 0 or +1 as its sign.
+# Preserve the direction of continuous tone readings, ignoring only numeric noise.
 def _sign(value: float) -> int:
-    return 1 if value > 0.5 else -1 if value < -0.5 else 0
+    return 1 if value > QUIET else -1 if value < -QUIET else 0
 
 
-# The release reader's fields in words, or None for any other reading.
+# Describe recorded tone without turning low scores into silence or factual revisions.
 def _tone_words(measure: str, value: float, middle: float | None) -> str | None:
     sign = _sign(value)
     if measure in TONE_SUBJECT:
         subject = TONE_SUBJECT[measure]
         if sign:
-            return f"{'upbeat' if sign > 0 else 'downbeat'} on {subject}"
+            degree = "slightly " if abs(value) <= 0.5 else ""
+            return f"{degree}{'upbeat' if sign > 0 else 'downbeat'} on {subject}"
         book = _sign(middle) if middle is not None else 0
+        description = f"{subject}: neutral or not stated"
         if book:
-            return f"silent on {subject} (book {'upbeat' if book > 0 else 'downbeat'})"
-        return f"silent on {subject}"
+            return f"{description} (book {'upbeat' if book > 0 else 'downbeat'})"
+        return description
     if measure in TONE_CHANGE:
-        change = {1: "improved", -1: "worsened", 0: "unchanged"}[sign]
+        change = {1: "more upbeat", -1: "more downbeat", 0: "unchanged"}[sign]
         return f"{TONE_CHANGE[measure]} {change}"
     if measure == "tone_supply_constrained":
-        return "supply constrained" if sign > 0 else "not supply constrained"
+        if value > 0.5:
+            return "supply constrained"
+        if sign > 0:
+            return "some supply constraints reported"
+        return "supply constraints not indicated"
     return None
 
 
