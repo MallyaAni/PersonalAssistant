@@ -26,7 +26,7 @@ See that branch's `docs/research/grounded-real-releases-2026-09-30.md`.
 Next: release review of the dashboard branch against then-current GitHub main,
 and only a Spark `scripts/deploy.sh` deployment after integration gates. New
 wording is generated from unchanged scores; stored old prose is not rewritten.
-Main/deploy checkout last observed at `9439380` for the deployed revision.
+Deploy checkout last observed at `9439380`; this is not GitHub main's revision.
 
 Diagram impact: NONE — presentation and tests leave the full-system and
 trading/market-data components and flows unchanged.
