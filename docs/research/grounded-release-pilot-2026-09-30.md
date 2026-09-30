@@ -61,3 +61,33 @@ Candidate-model context (primary cards reviewed on 2026-09-30):
 These are comparison candidates, not measured winners here. The current
 served alias is `deepseek-v4-flash`; see `docs/MODEL_EVALUATION.md` for local
 measurement history and serving constraints.
+
+## Observed result — 2026-09-30 16:39 UTC
+
+Registered protocol `d68d41e`; implementation `d458e82`. **8/8 real-model
+functional cases passed**, no skips and no retries, in 18.27 seconds of pytest
+wall time. The eight calls used 785 completion tokens (11,604 total tokens);
+median extraction latency 1.68 seconds, longest 5.88 seconds for the 28,217
+character document. All expected feature values matched. All nonmissing
+features had exact source spans, including the guidance cut at offset 28,105.
+The forecast-versus-revision case correctly returned `not_comparable`; reported
+results alone did not become guidance or demand claims. The embedded command
+did not override the financial disclosure.
+
+Raw answers, usage, hashes, timestamps and expected/observed labels:
+[grounded-release-v1.json](scorecards/grounded-release/grounded-release-v1.json).
+Artifact SHA256: `186180556bb71dd735c76eaf836d9af821785f6fb57361c5f6b2b42ba0649f02`.
+The extractor hash in every answer matches the exact committed implementation.
+
+**Decision: advance to a public-release annotation evaluation, not live trading.**
+This small synthetic set measures a capability, not generalization to real
+filings, resistance to every prompt injection, repeatability or investment
+returns. It does not prove economic superiority over the old tone reader or
+current `/5`. Exact-span presence is verified mechanically; relevance was
+tested by these fixed hand-labelled cases, not established for arbitrary input.
+No live ingestion, strategy feature, score, order, model or deployment changed.
+
+Model-aware cache checks also pass across old frames, same-day immutable
+partitions and interrupted partial work. They identify the recorded model alias,
+not weights silently changed behind that alias. Legacy tone records still lack
+extraction times; no historical data was rewritten to create fake provenance.

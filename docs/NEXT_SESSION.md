@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-09-30 — Two isolated implementation checkpoints; no live deployment
+
+- `fix/desk-order-evidence-20260930`: implementation `eb0d02d`, handoff
+  `09c70c1`, pushed to Spark and GitHub from Spark. 119 backend tests and
+  nine actual browser tests pass; TypeScript, production Vite build, Ruff
+  and backend-generated fixture check pass. Terminal orders no longer look
+  like fresh BUY instructions; submitted/filled quantities and value agree;
+  late-close wording respects MOC cutoff. Reference sizes are clearly not
+  holdings/cash-aware personal orders. No execution policy changed.
+- `research/grounded-release-pilot-20260930`: protocol `d68d41e`, implementation
+  `d458e82`, pushed to Spark and GitHub from Spark. 194 related unit/integration
+  tests and eight real DeepSeek functional cases pass. Prompt/source hashes,
+  output evidence and usage are committed with the pilot report. Existing
+  model only; no downloads, GPU changes, production data writes or model swap.
+  Cache compatibility now checks prompt AND model, without rewriting history.
+  The broader suite includes grade parity, current fundamentals, history meaning
+  and functional coverage; eight expected all-NaN fixture warnings remain.
+
+The pilot extracts explicit guidance revisions, demand changes and financing
+risk with exact quotes and offsets. It refuses silent truncation; extraction
+time controls earliest availability. **It is not a strategy backtest or a
+demonstrated improvement over current `/5`.** Next: a preregistered labelled
+public-release set and incumbent-reader comparison before economic testing.
+Do not resume superseded `/4` searches or deploy this research as a live feature.
+
+Runtime evidence: Spark `/home/animallya96/scratch/grounded-release.YRPKeN/`,
+`functional-v1.log` and `grounded-release-v1.json`; model calls finished
+2026-09-30 16:39 UTC. Research container exited; serving models were untouched.
+Dashboard branch was served separately on port 5187 for browser checks, not
+through the deployed port 5173 or public gateway. Main/deployed trees unchanged.
+
+Diagram impact assessed for full-system and trading/market-data views: no new
+component, persistent store, dependency, trust boundary or live cross-component
+flow; this is an offline capability inside the existing trading agent.
+
 ## 2026-09-30, morning — Adaptive entry: RECORD ×3; browser specs rewritten for the trade board; universe expansion prepared
 
 **Nothing live changed.** Three branches were built overnight on the

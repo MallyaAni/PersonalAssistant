@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-30 — Grounded text extraction pilot (branch verified; research only)
+
+`research/grounded-release-pilot-20260930` adds a bounded, citation-validated
+extractor inside the trading agent. Actual `deepseek-v4-flash` passed all eight
+fixed synthetic cases: guidance revision versus incomparable forecast, demand,
+financing risk, late evidence and an embedded instruction. Outputs retain
+exact spans and source/prompt/schema/code hashes; earliest availability is no
+earlier than extraction. No live caller or strategy change. See
+[protocol and raw results](research/grounded-release-pilot-2026-09-30.md).
+
+Tone refresh compatibility now checks model identity as well as prompt version
+for metadata, individual records and resumable partials. Incompatible same-day
+partitions are refused, never overwritten. Verified with 194 related tests and
+eight real-model functional tests; no model swap, data migration or deployment.
+
 ## 2026-09-30 — Adaptive entry study (RECORD ×3); browser specs for the trade board; ticker-panel close fallback
 
 - `backend/market/adaptive_entry.py`, `backend/cli/market_adaptive_entry.py`:

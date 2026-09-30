@@ -4,14 +4,14 @@ The market research pipeline measured every price-and-volume model at zero
 and found its first real signal in filings. This is the trading agent's
 language capability on top of that: the local model reads each results
 release and scores what the company itself states about its outlook,
-demand, pricing, capital spending and supply. Each score is dated by the
-release's acceptance time, so the pipeline can use it exactly as the
-market could have.
+demand, pricing, capital spending and supply. Scores are aligned to the
+release's reaction date, but historical re-scoring does not establish that
+the model or its output existed at that date.
 
 The boundary is the same as the autopsy's: the model reads one document
 and reports what it states, in a schema with bounded numbers. It never
-sees a price, a ticker's history, or another company's release, so a score
-cannot be a guess about the stock; it can only be a reading of the text.
+sees a supplied price history or another company's release. This limits its
+inputs but does not rule out facts memorized during model training.
 """
 
 import asyncio

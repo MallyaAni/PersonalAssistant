@@ -134,7 +134,7 @@ def test_prior_records_check_each_record_version(tmp_path):
         date(2026, 9, 12),
         "AAA",
         language.tone_frame([record("release_tone/2")]),
-        {"prompt_version": market_tone.PROMPT_VERSION},
+        {"prompt_version": market_tone.PROMPT_VERSION, "model": "fixture"},
     )
     assert market_tone.prior_records(store, "AAA", ASOF, "fixture") == {}
 

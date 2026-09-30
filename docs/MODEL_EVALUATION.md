@@ -1,5 +1,17 @@
 # Comparing candidate models for AniOS
 
+## 2026-09-30: research-only grounded release extraction
+
+The existing `deepseek-v4-flash` endpoint passed 8/8 preregistered synthetic
+release-extraction cases at `d458e82` (18.27 seconds test wall time; median
+call 1.68 seconds; 785 completion tokens total). Exact quotes, missingness,
+forecast-versus-guidance-revision, late evidence and an embedded instruction
+were checked. This verifies the small task set, not trading alpha or real-filing
+generalization. No serving configuration or live caller changed. Model alias
+was checked; checkpoint hash and training cutoff remain unverified. Protocol,
+raw answers and limits are in
+[the pilot record](research/grounded-release-pilot-2026-09-30.md).
+
 ## Current state, 2026-09-03: official FP8 across both Sparks
 
 The deployed reply model is **DeepSeek-V4-Flash-0731 at the official FP8

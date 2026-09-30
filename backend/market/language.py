@@ -8,10 +8,11 @@ release reader, and keeps the scores as an immutable frame per company
 beside the events and facts.
 
 `tone_features` turns the stored scores into per-(session, name) inputs
-with the same point-in-time rule as everything else: a release's scores are
-known from its reaction session onwards, carried forward until the next
-release, with the change against the previous release beside them. Names
-with no scored release get neutral fills and an indicator.
+aligned to the release's reaction session, carried forward until the next
+release, with the change against the previous release beside them. This is
+publication alignment, not proof of model-time availability: legacy records
+do not retain extraction instants or training cutoffs. Names with no scored
+release get neutral fills and an indicator.
 
 A batch run through hundreds of companies takes hours on the local model,
 so scoring is resumable: each finished company becomes a frame, and a
@@ -278,7 +279,7 @@ def tone_features(
     *,
     strict_before_session: bool = False,
 ) -> np.ndarray:
-    """Return point-in-time release-tone features per (session, name)."""
+    """Return publication-aligned tone features, without model-time guarantees."""
     size = len(panel.dates)
     out = np.zeros((size, len(panel.tickers), FEATURE_COUNT), dtype=np.float32)
     calendar = panel.dates.astype("datetime64[D]")
