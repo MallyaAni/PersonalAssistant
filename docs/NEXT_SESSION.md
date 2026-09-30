@@ -1,5 +1,24 @@
 # Next session
 
+## 2026-09-30 — Order-evidence fixes reconciled with Fable's Levels work
+
+Branch `fix/desk-order-evidence-20260930` merged GitHub main `908e683`
+at `3db2206`, preserving the Levels column, price-age metadata, opening-bar
+latch, and both sets of browser tests. Three stale test expectations now
+match the intentional `Paper order` and `planned / current equity` wording.
+
+VERIFIED against the merged source mounted at Spark
+`/home/animallya96/scratch/latest-review.bp3kjq`, served only at port 5187:
+20 browser tests (`desk-trade-board`, `simple-actions`, `chart-15m`), 135
+backend tests (`intraday_orders`, `entry_timing`, `board_structure`,
+`market_desk_api`, `policy_v5`), TypeScript and production Vite build.
+Build reports existing CSS selector and bundle-size warnings. No production
+deploy, main merge, broker write or trading-policy change was performed.
+Next: merge/release review on Spark; the research branch remains separate.
+
+Diagram impact: NONE — order wording/tests and merge reconciliation leave
+full-system and trading data flows unchanged.
+
 ## 2026-09-30 — Branch-only paper-order evidence corrections
 
 User requested implementation on a branch with concrete results. Branch
