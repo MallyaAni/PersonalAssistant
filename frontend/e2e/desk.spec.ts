@@ -334,13 +334,13 @@ test('single board keeps its orders and holdings during FOMC', async ({page}) =>
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(page.getByLabel('Execution rule')).toContainText('FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.')
-  await expect(page.getByLabel('Today')).toContainText('paper FOMC cycle active')
+  await expect(page.getByLabel('Today')).toContainText('paper FOMC target exposure unavailable')
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('NVDA order status')).toContainText('Planned')
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('HOLD')
   await expect(board.locator('tbody tr')).toHaveCount(2)
   await page.goto('/?deskDetails=1#desk')
-  await expect(page.getByRole('heading', {name: 'Stock rankings', exact: true})).toBeVisible()
+  await expect(page.getByRole('heading', {name: /^Stock rankings/})).toBeVisible()
   await expect(board).toBeVisible()
 })
 
@@ -1434,7 +1434,7 @@ test('one stock list preserves per-stock diagnostics and legacy detail links', a
   }}))
   await page.goto('/?deskDetails=1#desk')
   await expect(page.getByLabel('Every grade in detail', {exact: true})).toHaveCount(0)
-  await expect(page.getByRole('heading', {name: 'Stock rankings', exact: true})).toHaveCount(1)
+  await expect(page.getByRole('heading', {name: /^Stock rankings/})).toHaveCount(1)
   await expect(page.getByRole('button', {name: 'AAPL', exact: true})).toHaveCount(1)
   await strategyDetails(page)
   await expect(page.getByRole('region', {name: 'Desk guide', exact: true})).toBeVisible()
@@ -1486,7 +1486,7 @@ test('shows each thing once, not twice', async ({ page }) => {
   // the details' "Practice account" panel keeps its summary but shows the
   // positions table only when the broker is away, because the live section
   // above already shows them.
-  await expect(page.getByText('Stock rankings')).toBeVisible()
+  await expect(page.getByRole('heading', {name: /^Stock rankings/})).toBeVisible()
   // The book first: the order (NVDA), then the holding (AAPL); every other graded name on request.
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.locator('tbody tr td:nth-child(2) button')).toHaveText(['NVDA', 'AAPL'])
@@ -2107,7 +2107,7 @@ test('details splits into plan and research and the simple page carries only dec
   await expect(details.getByLabel('AAPL grade', {exact: true})).toContainText('Grade A · 2026-09-08 close')
   await expect(details.getByLabel('AAPL grade', {exact: true})).toContainText('growing earnings, steady trend')
   await page.goto('/?deskDetails=1#desk')
-  await expect(page.getByText('Stock rankings')).toBeVisible()
+  await expect(page.getByRole('heading', {name: /^Stock rankings/})).toBeVisible()
   await strategyDetails(page)
   await expect(page.getByRole('heading', {name: /^What changed/})).toBeVisible()
   await strategyDetails(page)
@@ -2116,9 +2116,9 @@ test('details splits into plan and research and the simple page carries only dec
   await page.getByRole('button', {name: 'Research', exact: true}).click()
   await expect(page.getByRole('button', {name: 'Show practice account details', exact: true})).toBeVisible()
   await expect(page.getByLabel('What the research accounts are')).toContainText('Simulated accounts, separate from your portfolio')
-  await expect(page.getByText('Stock rankings')).toHaveCount(0)
+  await expect(page.getByRole('heading', {name: /^Stock rankings/})).toHaveCount(0)
   await page.getByRole('button', {name: 'Back to the desk', exact: true}).click()
-  await expect(page.getByText('Stock rankings')).toBeVisible()
+  await expect(page.getByRole('heading', {name: /^Stock rankings/})).toBeVisible()
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
