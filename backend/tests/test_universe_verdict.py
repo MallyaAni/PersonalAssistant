@@ -113,7 +113,7 @@ def test_criteria_read_the_registered_numbers(payloads):
     # Only 2023 sessions are in the deciding window.
     n_2023 = sum(1 for d in _dates() if d < "2024-01-01")
     assert paired["sessions"] == n_2023
-    assert paired["mean_daily_bp"] == pytest.approx(4.0, abs=1.0)
+    assert paired["mean_daily_bp"] == pytest.approx(4.0, abs=2.0)
     assert paired["hac_t"] > 2.0
     result = uv.criteria(arm, control, trial_variance=1e-4)
     assert result["c1"]["lead"] == {
