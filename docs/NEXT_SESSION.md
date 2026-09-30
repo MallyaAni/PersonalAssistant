@@ -37,7 +37,32 @@ files). Proposed first study: an anonymized re-score plus a point-in-time
 model (ChronoBERT, ~6.6 GB to E:), pre-registered, **after the operator's
 OK** for the downloads and one DeepSeek re-score batch.
 
-## 2026-09-29, evening — `graded-equal-weight/5` (25% hold cap) built and gated. **NOT deployed**
+## 2026-09-29, 23:50 ET — `graded-equal-weight/5` (25% hold cap) DEPLOYED (`0437b5f8`)
+
+The operator said "merge into main and /5 deploy right now if it does better
+than /4" (it does: the cap sweep's +1.2 and +2.3 CAGR points). `research/stage5`
+(the `/5` release plus the stage-5 study) was merged into `main` as `0437b5f8`
+and re-gated on the merge: unit 8,164 passed; tsc OK; Playwright 363 passed /
+136 failed against main's 360 / 136 with the same failures (the known
+chat/fundamental harness flakes) and three new `/5` tests passing.
+`scripts/deploy.sh` ran at 23:34-23:50 ET: its own unit gate 8,164, the
+routing gate 100/100, backup, restart; post-deploy cheap checks green.
+
+- The paper state is still stamped `/4` (`data/market/paper/state.json`).
+  **The 2026-09-30 nightly makes the first `/5` record**: read that night's
+  log for `paper book (graded-equal-weight/5; ...)` with **no** "policy
+  change" line, `state.policy_version == "graded-equal-weight/5"`, `/5` in
+  `targets.policy`, the `/5` shadow folder at sequence 1 with the `/4`
+  folder unchanged, "grade parity: OK", the candidate line still `/4`.
+- Until then the board sizes toward the latest `/4` record and labels its
+  rows `(policy graded-equal-weight/4)`.
+- **Rollback:** redeploy `eefe06e9`. After a `/5` nightly that code forces
+  one rebalance back into `/4` (25% names trimmed to 20%).
+
+The laggard shadow's first night (23:30 ET cron) ran clean: 1 date, laggard
+STX of 13, verdict PENDING.
+
+## 2026-09-29, evening — `graded-equal-weight/5` (25% hold cap) built and gated (superseded by the entry above)
 
 The operator approved raising the per-name hold cap from 20% to 25%. The
 release is on branch `trading/policy-v5-cap25`, from `main` `511297fc`. It is
