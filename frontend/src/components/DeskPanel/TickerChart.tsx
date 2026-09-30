@@ -14,8 +14,9 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts'
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_CHART_DEFAULT_SESSIONS, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartFill, type DeskChartTimeframe } from '../../services/api'
-import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive } from '../../services/api'
+import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskStructure } from '../../services/api'
 import { SessionPrice } from './StockBoard'
+import { LEVEL_NAME } from './TradeBoard'
 
 // The picture behind the grade. The board says what the desk concluded; this
 // shows adjusted price indicators beside recorded and replayed grade changes.
@@ -86,6 +87,18 @@ const INTRADAY_LINES: Line[] = [
 
 // How many sessions of fifteen-minute bars the operator can ask for.
 const INTRADAY_SESSIONS = [5, 10, 20, 60]
+
+// The board's two levels, drawn as horizontal lines on every timeframe in
+// the colours the board's 21-EMA series and the 252-session boundary use,
+// so the picture and the row name the same numbers.
+const BOARD_LEVEL_COLOR: Record<'ema_21' | 'high_20', string> = { ema_21: '#0071e3', high_20: '#8e8e93' }
+
+// The board levels a structure carries that can be drawn: a finite positive
+// price for each, in draw order.
+const boardLevels = (structure: Pick<DeskStructure, 'ema_21' | 'high_20'> | null | undefined): Array<{key: 'ema_21' | 'high_20'; price: number}> =>
+  (['ema_21', 'high_20'] as const)
+    .map(key => ({key, price: structure?.[key]}))
+    .filter((level): level is {key: 'ema_21' | 'high_20'; price: number} => typeof level.price === 'number' && Number.isFinite(level.price) && level.price > 0)
 
 // The lines drawn and read out under each timeframe.
 const linesFor = (timeframe: Timeframe): Line[] =>
@@ -518,6 +531,7 @@ export const TickerChart = ({
   tall = false,
   close,
   suggestion,
+  levels = null,
 }: {
   userId: string
   ticker: string
@@ -530,6 +544,9 @@ export const TickerChart = ({
   tall?: boolean
   // The name's last close, so the session price can fall back to it when no dated quote exists.
   close?: number | null
+  // The board's levels for this name (the balancer's structure), drawn as
+  // labelled horizontal lines on every timeframe; nothing when absent.
+  levels?: DeskStructure | null
   // The live suggestion for this name, worded exactly as the board's Action
   // column words it, so the chart's "Now:" line cannot disagree with the row
   // beside it. When absent the chart falls back to the recorded history's
@@ -564,6 +581,9 @@ export const TickerChart = ({
   const holder = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
+  // The candle series of the current chart, so the board's level lines can be
+  // replaced in place when a candle moves them, without redrawing the chart.
+  const candlesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
 
   // Read one owner-scoped page; stale responses cannot cross an account or ticker change.
   const loadReceipts = async (before?: string) => {
@@ -767,6 +787,7 @@ export const TickerChart = ({
     }
 
     markersRef.current = createSeriesMarkers(candles, [])
+    candlesRef.current = candles
     // Give recent candles enough horizontal space; all loaded bars remain available to pan and zoom.
     // On 15m a session is 27 bars, so the recent view holds about two sessions.
     const frameView = () => {
@@ -789,9 +810,38 @@ export const TickerChart = ({
       resize.disconnect()
       chartRef.current = null
       markersRef.current = null
+      candlesRef.current = null
       drawn.length = 0
     }
   }, [data, merged, timeframe, fullHistory])
+
+  // The board's levels as horizontal lines labelled on the price axis, on
+  // every timeframe (the 15m view draws no daily indicator, so this is the
+  // only place the operator sees the 21-EMA and the 20-day high against the
+  // session's bars). Replaced in place when a candle moves them, so the
+  // chart's position and zoom survive; they are shown, never traded on here.
+  const ema21Level = levels?.ema_21 ?? null
+  const high20Level = levels?.high_20 ?? null
+  useEffect(() => {
+    const candles = candlesRef.current
+    if (!candles) return
+    const lines = boardLevels({ema_21: ema21Level, high_20: high20Level}).map(level =>
+      candles.createPriceLine({
+        price: level.price,
+        color: BOARD_LEVEL_COLOR[level.key],
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: `${LEVEL_NAME[level.key]} ${level.price.toFixed(1)}`,
+      }))
+    return () => {
+      // The chart may already be gone when its own effect cleaned up first.
+      if (candlesRef.current !== candles) return
+      for (const line of lines) {
+        try { candles.removePriceLine(line) } catch { /* already removed with the chart */ }
+      }
+    }
+  }, [data, merged, timeframe, fullHistory, ema21Level, high20Level])
 
   // Update markers in place so receipt-only changes preserve the user's chart position and zoom.
   useEffect(() => {
@@ -906,6 +956,12 @@ export const TickerChart = ({
         </p>
       )}
       {!error && !data && <p className="text-xs text-[#6e6e73]">Loading the chart…</p>}
+      {/* The board's level lines are canvas, so the same numbers are written
+          out here, worded as the board's Levels column words them, whether or
+          not the picture has loaded. */}
+      {boardLevels(levels).length > 0 && <p className="text-[11px] text-[#6e6e73]" aria-label={`${ticker} board levels`}>
+        Dashed lines are the board’s levels: {boardLevels(levels).map(level => `${LEVEL_NAME[level.key]} ${level.price.toFixed(1)}`).join(' · ')}.
+      </p>}
 
       {data && (
         <>

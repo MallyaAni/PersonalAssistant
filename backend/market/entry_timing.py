@@ -223,17 +223,34 @@ def _first(existing: dict | None, candidate: dict) -> dict:
     return existing
 
 
+# Whether a bar is the session's opening 15-minute bar (09:30 New York).
+def is_opening_bar(bar: datetime) -> bool:
+    """Return True when `bar` starts at 09:30 New York time."""
+    local = bar.astimezone(NEW_YORK)
+    return local.hour == 9 and local.minute == 30
+
+
 # Fold one completed bar into one name's latch row and return the new row.
 # The open is the first one seen (the session's opening bar, which every
 # quote carries); the last bar only moves forward; a trigger, once set, is
-# only ever replaced by an EARLIER crossing.
+# only ever replaced by an EARLIER crossing. When the bar read IS the
+# opening bar, the quote's session high and last close are that bar's own
+# high and close, and they are kept as `first_bar` for the board's level
+# tags (`structure.level_tag`), which the later candles can no longer show.
 def _merge(
-    row: dict | None, opened: float, last: float, bar: datetime, seen: str
+    row: dict | None,
+    opened: float,
+    last: float,
+    bar: datetime,
+    seen: str,
+    high: float | None = None,
 ) -> dict:
     """Return the latch row after this bar."""
     out = dict(row or {})
     if _price(out.get("open")) is None:
         out["open"] = opened
+    if high is not None and is_opening_bar(bar) and "first_bar" not in out:
+        out["first_bar"] = {"high": high, "close": last, "bar": bar.isoformat()}
     base = float(out["open"])
     out["buy_level"] = level_for(base, "buy")
     out["sell_level"] = level_for(base, "sell")
@@ -264,7 +281,7 @@ def update(root: Path | str, snapshot: dict | None, now: datetime) -> list[Path]
     if now.tzinfo is None:
         raise ValueError("update requires a timezone-aware now")
     seen = str((snapshot or {}).get("as_of") or now.isoformat())
-    by_session: dict[date, dict[str, tuple[float, float, datetime]]] = {}
+    by_session: dict[date, dict[str, tuple[float, float, datetime, float | None]]] = {}
     for symbol, quote in ((snapshot or {}).get("quotes") or {}).items():
         if not isinstance(quote, dict):
             continue
@@ -274,7 +291,12 @@ def update(root: Path | str, snapshot: dict | None, now: datetime) -> list[Path]
         if bar is None or opened is None or last is None or bar + BAR > now:
             continue
         session = bar.astimezone(NEW_YORK).date()
-        by_session.setdefault(session, {})[str(symbol)] = (opened, last, bar)
+        by_session.setdefault(session, {})[str(symbol)] = (
+            opened,
+            last,
+            bar,
+            _price(quote.get("high")),
+        )
     folder = Path(root) / "desk" / LATCH_DIR
     written: list[Path] = []
     if not by_session:
@@ -285,8 +307,10 @@ def update(root: Path | str, snapshot: dict | None, now: datetime) -> list[Path]
             current = load(root, session) or {}
             symbols = dict(current.get("symbols") or {})
             before = json.dumps(symbols, sort_keys=True)
-            for symbol, (opened, last, bar) in names.items():
-                symbols[symbol] = _merge(symbols.get(symbol), opened, last, bar, seen)
+            for symbol, (opened, last, bar, high) in names.items():
+                symbols[symbol] = _merge(
+                    symbols.get(symbol), opened, last, bar, seen, high
+                )
             if json.dumps(symbols, sort_keys=True) == before and current:
                 continue
             _write_atomic(
