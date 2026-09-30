@@ -1632,7 +1632,7 @@ def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, 
     ) in out
     assert (
         "buy    100 SNDK   redeploy: cash beyond the buffer put back to its "
-        "target weights  [planned: sent next session on a 15-min close 1% under "
+        "target weights  [planned for the next session: 15-min close 1% under "
         "the open, else at the close]"
     ) in out
     assert broker.sent == []

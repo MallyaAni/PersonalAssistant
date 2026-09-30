@@ -519,7 +519,7 @@ def _hold_for_the_session(orders) -> list:
         rule = intraday_orders.rule_text(order.side)
         print(
             f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
-            f"  [planned: sent next session {rule}]"
+            f"  [planned for the next session: {rule}]"
         )
     return [o for o in orders if o.execution_timing != timing]
 

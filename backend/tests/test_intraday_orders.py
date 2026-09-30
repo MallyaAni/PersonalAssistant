@@ -349,9 +349,9 @@ def test_the_board_reads_each_order_in_one_vocabulary(tmp_path):
     )
     assert planned["action"] == "BUY"
     assert planned["state"] == "planned"
-    assert planned["status"] == "Planned for Wed Sep 30"
+    assert planned["status"] == "Planned"
     assert planned["when"] == (
-        "Wed Sep 30 · on a 15-min close 1% under the open, else at the close"
+        "Wed Sep 30 · 15-min close 1% under the open, else at the close"
     )
     assert planned["notional"] == pytest.approx(400.0)
     assert planned["weight"] == pytest.approx(0.004)
@@ -369,13 +369,9 @@ def test_the_board_reads_each_order_in_one_vocabulary(tmp_path):
         now=ny(10, 20),
     )
     assert waiting["state"] == "waiting"
-    assert waiting["status"] == (
-        "Waiting for a 15-min close at or under $40.59; "
-        "else market-on-close from 3:30 PM"
-    )
+    assert waiting["status"] == "Waiting for $40.59 or the close (3:30 PM window)"
     assert waiting["when"] == (
-        "Today · on a 15-min close at or under $40.59 (1% under the $41.00 open), "
-        "else at the close"
+        "Today · 15-min close ≤ $40.59 (1% under the $41.00 open), else at the close"
     )
     # Sent at the trigger, then filled.
     sent_row = row(sent={"at": ny(10, 16).isoformat(), "how": "market", "qty": 10})
@@ -496,4 +492,4 @@ def test_board_orders_lists_pending_then_finished():
         ("CCC", "held"),
         ("AAA", "filled"),
     ]
-    assert shown[0]["status"] == "Today · waiting for today's opening price"
+    assert shown[0]["status"] == "Waiting for today's opening price"

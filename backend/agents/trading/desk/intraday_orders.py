@@ -374,16 +374,22 @@ def _level_text(level: float | None, side: str) -> str | None:
 def rule_text(
     side: str, opened: float | None = None, level: float | None = None
 ) -> str:
-    """Return the rule's sentence, with the level once the open is known."""
+    """Return the rule's sentence, with the level once the open is known.
+
+    "15-min close ≤ $40.55 (1% under the $40.96 open), else at the close" for
+    a buy with its open; "15-min close 1% under the open, else at the close"
+    before the open is known. A sell reads ≥ and over.
+    """
     way = "under" if side == "buy" else "over"
+    sign = "≤" if side == "buy" else "≥"
     pct = f"{entry_timing.LEVEL:.0%}"
     shown = _level_text(level, side)
     if opened is not None and shown is not None:
         return (
-            f"on a 15-min close at or {way} {shown} ({pct} {way} the "
-            f"{_money(opened)} open), else at the close"
+            f"15-min close {sign} {shown} ({pct} {way} the {_money(opened)} open), "
+            "else at the close"
         )
-    return f"on a 15-min close {pct} {way} the open, else at the close"
+    return f"15-min close {pct} {way} the open, else at the close"
 
 
 # The broker's view of one order, reduced to what the board says about it.
@@ -520,6 +526,10 @@ def board_row(
         "filled_price": None,
         "filled_at": None,
     }
+    sent = row.get("sent") or {}
+    if sent.get("open") is not None and sent.get("level") is not None:
+        out["open"] = sent["open"]
+        out["level"] = sent["level"]
     state_word, sentence = _status(
         row, out, broker, latch, quote, qty, timing, execute_on, today, now
     )
@@ -568,7 +578,7 @@ def _status(
         return recorded
     if not execute_on or execute_on > today.isoformat():
         day = _day(execute_on) if execute_on else "the next session"
-        return "planned", f"Planned for {day}"
+        return "planned", f"Planned for {day}" if not execute_on else "Planned"
     if execute_on < today.isoformat():
         return "missed", "Not sent: its session ended before the order went out"
     return _clock_status(row, out, latch, quote, today, now)
@@ -638,20 +648,16 @@ def _clock_status(
     clock = entry_timing.session_clock(today)
     if state == entry_timing.PRE_OPEN:
         if now >= clock["open"] + entry_timing.BAR:
-            return "planned", "Today · waiting for today's opening price"
-        return "planned", "Today · the 9:30-9:45 AM bar sets the open and the level"
+            return "planned", "Waiting for today's opening price"
+        return "planned", "Waiting for the 9:30-9:45 AM bar to set the open"
     if state == entry_timing.WAITING:
         shown = _level_text(timed.get("level"), side)
-        way = "under" if side == "buy" else "over"
         cutoff = entry_timing._clock(clock["cutoff"])
-        return "waiting", (
-            f"Waiting for a 15-min close at or {way} {shown}; "
-            f"else market-on-close from {cutoff}"
-        )
+        return "waiting", f"Waiting for {shown} or the close ({cutoff} window)"
     if state == entry_timing.TRIGGERED:
-        return "due", f"Level reached: {_trigger(timed)} · sending on this candle"
+        return "due", f"Level hit: {_trigger(timed)} · sending now"
     if state == entry_timing.CLOSE:
-        return "due", "Close window · sending market-on-close on this candle"
+        return "due", "Close window · sending market-on-close now"
     return "missed", "Not sent: the session closed before the order went out"
 
 
@@ -665,8 +671,8 @@ def _trigger(timed: dict[str, Any]) -> str:
     except (TypeError, ValueError):
         ended = None
     price = timed.get("trigger_price")
-    shown = f" {_money(float(price))}" if price else ""
-    return f"the {ended} 15-min close{shown}" if ended else f"a 15-min close{shown}"
+    shown = f" ({_money(float(price))})" if price else ""
+    return f"the {ended} close{shown}" if ended else f"a 15-min close{shown}"
 
 
 # The rows the board lists: every pending row, and the closing sells of the
