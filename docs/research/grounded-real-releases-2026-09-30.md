@@ -120,3 +120,33 @@ not a fresh test set. Record v1 before this run, retain every failure, and do
 not promote even a perfect in-sample result without independent validation.
 If this does not fix extraction quality, stop this variant rather than stacking
 prompt exceptions or launching a large historical rescore.
+
+## Normalized-input ablation — 2026-09-30 18:04 UTC
+
+Registered at `3908356`; implementation `3937306`. Ten calls, no incumbent
+rerun, 54.59 seconds wall time and 1,136 completion tokens. All twelve sources
+now fit the input bound (the two originally excluded documents remain unscored
+as registered). No financial characters, bullet markers, or model output were
+deleted to force a match; hashes refer to the exact canonical input.
+
+Valid grounded output improved **4/10 → 8/10**; end-to-end known-label matches
+**10/26 → 18/26** (guidance 5/9, demand 6/8, financing risk 7/9). This is the
+same development set, not a new generalization result. MU-2026 still substituted
+a curly apostrophe for a straight one; ADBE-2026 changed the quotation's trailing
+comma into a period. Both outputs were rejected. Oracle and NVIDIA still
+received unsupported `raised` labels despite having valid source quotations.
+AAOI's predeclared ambiguous guidance also changed to `raised`, illustrating
+why ambiguous labels cannot become a convenient after-the-fact success.
+
+**Decision: stop this variant and do not promote.** Input cleanup solves a
+measurable coverage problem but not reliable extraction semantics. No large
+historical rescore, prompt exception list or live feature activation follows.
+The next useful extraction design, if pursued, needs period/metric-scoped
+comparisons and source-span identifiers resolved by code, then a new independently
+labelled development/evaluation split. An economic study remains gated on that;
+this work demonstrates no alpha or improvement over `/5`, SPY or QQQ.
+
+Evidence: [normalized-comparison-v1.json](scorecards/grounded-release/normalized-comparison-v1.json)
+and [normalization-manifest-v1.json](scorecards/grounded-release/normalization-manifest-v1.json).
+167 related backend tests pass on the ablation source, with eight existing
+all-NaN fixture warnings. The frozen extractor prompt was never changed.

@@ -1,0 +1,116 @@
+{
+  "normalization_version": "release-html-entities-whitespace/1",
+  "normalizer_sha256": "61577258aac9a215944dc02883c61c6171bccc92771c37d81a5b7021ee65c8a4",
+  "raw_corpus_sha256": "f8b3497c0dbc31674acced034c72c63a9bfb71efb61caf5d19915fd7973b3ba3",
+  "raw_labels_sha256": "653f0339df99fdc4ae7d7e144c25448c9b87cbbc46c9c8f797837ffceacbf2be",
+  "rows": [
+    {
+      "id": "AAOI-2022",
+      "normalized_within_bound": true,
+      "raw_source_chars": 24878,
+      "raw_source_sha256": "da37a9c7435e08ac6b56580089dc2fdb449a566e508dfd690c67f8c3b8a0b22b",
+      "source_chars": 16627,
+      "source_sha256": "319f195a6521b0a64ea566bb66aeb98fed75993bc553388c2917ef708529ef0b",
+      "status": "ready"
+    },
+    {
+      "id": "AAOI-2026",
+      "normalized_within_bound": true,
+      "raw_source_chars": 27693,
+      "raw_source_sha256": "f5dabc201a48c2f7da7e981a15f7fe38803422117c221b8f605b9a3b1025b86c",
+      "source_chars": 18482,
+      "source_sha256": "6820705b792af728d8748a2abb68f229e0914ed1be9dac17b3124173a31e9d3e",
+      "status": "ready"
+    },
+    {
+      "id": "ORCL-2022",
+      "normalized_within_bound": true,
+      "raw_source_chars": 53524,
+      "raw_source_sha256": "b9a9b923e87bb51669e0d69e63044ff3516e416c75b295bfef4fdc5c25a88d0d",
+      "source_chars": 33920,
+      "source_sha256": "4494b342f3a0c408c593c4b01fe9077d1a2eb9f115a170dbb03c8342169cd0cf",
+      "status": "oversize"
+    },
+    {
+      "id": "ORCL-2026",
+      "normalized_within_bound": true,
+      "raw_source_chars": 43798,
+      "raw_source_sha256": "c74688b4102bf787fa136016806d88ab852713be923ef02ffd83a69cc5cf153a",
+      "source_chars": 29060,
+      "source_sha256": "5acc71f46bdffa56ecaa0b3d0e43467796722382eecd89d20e3e024c6ed8affb",
+      "status": "ready"
+    },
+    {
+      "id": "NVDA-2022",
+      "normalized_within_bound": true,
+      "raw_source_chars": 27135,
+      "raw_source_sha256": "cfa35c156e4848ee64e95aa760a30819b7c07de7147ad34310835ea82c5c9e90",
+      "source_chars": 23872,
+      "source_sha256": "5bd6bac9de2b47b4c665b90ac3b493c9b3af949788e5d858e1149c4fc308dcb3",
+      "status": "ready"
+    },
+    {
+      "id": "NVDA-2026",
+      "normalized_within_bound": true,
+      "raw_source_chars": 25575,
+      "raw_source_sha256": "74410a311c875bb1bc69df5354b17be9f04a04a96d003ce11ce71b788ad86821",
+      "source_chars": 22347,
+      "source_sha256": "3acb62ea626245998641feff48545903fdcab382669a55bed1f4ebff8fd0fa48",
+      "status": "ready"
+    },
+    {
+      "id": "MU-2022",
+      "normalized_within_bound": true,
+      "raw_source_chars": 18843,
+      "raw_source_sha256": "05d5ec77d99437d875d713b19da6569fcde94cdaff6807dee0873adec14525bc",
+      "source_chars": 16741,
+      "source_sha256": "a1763da5dc67e042cc918ffd382dff917b901ba4a2d25af0166842929d3285ce",
+      "status": "ready"
+    },
+    {
+      "id": "MU-2026",
+      "normalized_within_bound": true,
+      "raw_source_chars": 20262,
+      "raw_source_sha256": "dad8cad921b994db2ca49d2860413d713bdb8bac4b2ff50f515bafbb9ef1ac39",
+      "source_chars": 17661,
+      "source_sha256": "99f278ba6085a82a5e98c91464acdc98baf4ce2de76f979e0bf50bfb67f574c7",
+      "status": "ready"
+    },
+    {
+      "id": "ADBE-2022",
+      "normalized_within_bound": true,
+      "raw_source_chars": 23209,
+      "raw_source_sha256": "d9f0f28d0c8c6ac6283201b90b43cb162a1760e1098f7bcbc9c19613f2646ccf",
+      "source_chars": 20564,
+      "source_sha256": "903d7ddee7f83783403d407b6489a096bc58528bfc61d63d8758b595eb3b1542",
+      "status": "ready"
+    },
+    {
+      "id": "ADBE-2026",
+      "normalized_within_bound": true,
+      "raw_source_chars": 22258,
+      "raw_source_sha256": "60b91827218d6870e78f77552e23582980d811aa09d31559306c4083675c4865",
+      "source_chars": 19655,
+      "source_sha256": "9a2f1c8e1c2962873ad7bf7fa1142a57d057bd3ffab9908338bbd71bac550553",
+      "status": "ready"
+    },
+    {
+      "id": "INTC-2022",
+      "normalized_within_bound": true,
+      "raw_source_chars": 49389,
+      "raw_source_sha256": "69c1e58500fd48849dddc20f12e7747f4dbaa9a46c1e0bb7c4796f2cc6fbab64",
+      "source_chars": 46121,
+      "source_sha256": "4f914389b0aea9f6f19305de4657c83354a0ef8655620c1ab725ba65d731955a",
+      "status": "oversize"
+    },
+    {
+      "id": "INTC-2026",
+      "normalized_within_bound": true,
+      "raw_source_chars": 40199,
+      "raw_source_sha256": "070b50f81f47b147fcac0784d195acfcdfd3df5a6a7f7d9b78066a9f7949d0ca",
+      "source_chars": 36932,
+      "source_sha256": "18f7db03110d9a13a545655c08c26b17470bbc452574fb753d7cc55ef1e278ef",
+      "status": "ready"
+    }
+  ]
+}
