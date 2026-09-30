@@ -137,8 +137,16 @@ def summarize(rows: list[dict]) -> dict:
     }
 
 
-# Run each frozen reader once per eligible release and checkpoint every completed pair.
-def compare(corpus: dict, labels: dict, writer, model: str, save_row=None) -> dict:
+# Run the requested frozen readers once per eligible release and checkpoint each row.
+def compare(
+    corpus: dict,
+    labels: dict,
+    writer,
+    model: str,
+    save_row=None,
+    *,
+    include_incumbent: bool = True,
+) -> dict:
     annotations = validate_inputs(corpus, labels)
     rows = []
     for source in corpus["rows"]:
@@ -160,27 +168,30 @@ def compare(corpus: dict, labels: dict, writer, model: str, save_row=None) -> di
             except Exception as exc:
                 row["grounded_error"] = type(exc).__name__
             row["grounded_calls"] = captured.calls
-            incumbent = RecordingWriter(writer)
-            answer = tone.ReleaseToneReader(incumbent).score_sync(source["text"])
-            row["incumbent"] = asdict(answer) if answer else None
-            row["incumbent_calls"] = incumbent.calls
-            if answer:
-                row["incumbent_demand_direction"] = (
-                    "strengthening"
-                    if answer.demand > 0.2
-                    else "weakening"
-                    if answer.demand < -0.2
-                    else "neutral"
-                )
+            if include_incumbent:
+                incumbent = RecordingWriter(writer)
+                answer = tone.ReleaseToneReader(incumbent).score_sync(source["text"])
+                row["incumbent"] = asdict(answer) if answer else None
+                row["incumbent_calls"] = incumbent.calls
+                if answer:
+                    row["incumbent_demand_direction"] = (
+                        "strengthening"
+                        if answer.demand > 0.2
+                        else "weakening"
+                        if answer.demand < -0.2
+                        else "neutral"
+                    )
         rows.append(row)
         if save_row:
             save_row(row)
-        print(f"{row['id']}: {row.get('observed', row['status'])}", flush=True)
+        outcome = row.get("observed", row.get("grounded_error", row["status"]))
+        print(f"{row['id']}: {outcome}", flush=True)
     return {
         "scope": "real-release reading diagnostic, not trading performance",
         "model": model,
         "grounded_version": grounded.VERSION,
         "incumbent_version": tone.PROMPT_VERSION,
+        "include_incumbent": include_incumbent,
         "completed_at": datetime.now(UTC).isoformat(),
         "summary": summarize(rows),
         "rows": rows,
@@ -196,6 +207,7 @@ def main() -> None:
     parser.add_argument("--llm-url", required=True)
     parser.add_argument("--model", required=True)
     parser.add_argument("--revision", required=True)
+    parser.add_argument("--grounded-only", action="store_true")
     args = parser.parse_args()
     corpus_text = args.corpus.read_text(encoding="utf-8")
     labels_text = args.labels.read_text(encoding="utf-8")
@@ -220,7 +232,14 @@ def main() -> None:
         )
         write_report(args.output_dir / f"row-{index:02d}.json", row)
 
-    report = compare(corpus, labels, writer, args.model, save_row)
+    report = compare(
+        corpus,
+        labels,
+        writer,
+        args.model,
+        save_row,
+        include_incumbent=not args.grounded_only,
+    )
     report.update(provenance)
     write_report(args.output_dir / "report.json", report)
     print(json.dumps(report["summary"], sort_keys=True))
