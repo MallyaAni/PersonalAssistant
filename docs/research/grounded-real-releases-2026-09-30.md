@@ -18,7 +18,7 @@ after three consecutive failures; retain missing/oversize rows and do not
 replace them with easier documents. Retain acceptance/filing/retrieval instants,
 source URL and exact body hashes. No production store writes or credentials.
 
-Before inference, read every available complete release and commit human-reviewed
+Before inference, read every available complete release and commit source-reviewed
 labels with supporting excerpts and notes. Mark genuinely ambiguous fields as
 ambiguous rather than tuning a label to either model's output. No unchanged
 or missing label may be inferred simply because a word search found nothing.
