@@ -55,9 +55,9 @@ def test_opinion_groups_make_the_stance_relative_to_the_group():
     groups = np.array([0, 0, 0, 1, 1, 1])
     whole = Opinion("x", scores).stances()
     within = Opinion("x", scores, groups=groups).stances()
-    # Across the whole panel the low sector is all bearish, the high all bullish.
-    assert (whole[-1, :3] == BEARISH).all()
-    assert (whole[-1, 3:] == BULLISH).all()
+    # Across the whole panel the low sector's top name is only neutral and
+    # the high sector's bottom name is never bearish.
+    assert whole[-1].tolist() == [BEARISH, BEARISH, 0, 0, BULLISH, BULLISH]
     # Within the group each sector has its own top and bottom.
     assert within[-1].tolist() == [BEARISH, 0, BULLISH, BEARISH, 0, BULLISH]
     assert np.array_equal(
