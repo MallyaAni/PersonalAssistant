@@ -21,7 +21,7 @@ use `market_intraday_research` for a research-only manual run.
 
 import argparse
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -259,6 +259,80 @@ def _send_paper_orders(data_dir: Path, live: dict, log_path: Path) -> None:
             handle.write(f"{stamp} paper order: {line}\n")
 
 
+# The session the candle belongs to: the New York date of the quotes' bars
+# (they are all one session), else the New York date of the run.
+def _session_of(quotes: dict, now: datetime) -> date:
+    """Return the session date the quotes describe, else today's."""
+    from backend.market import entry_timing
+
+    for quote in (quotes or {}).values():
+        session = entry_timing.quote_session(quote if isinstance(quote, dict) else None)
+        if session is not None:
+            return session
+    return now.astimezone(NEW_YORK).date()
+
+
+# The live snapshot alongside the plan: the same quotes and technical read
+# the plan was built from, so the API's live endpoints serve the candle
+# without a fresh quote fetch or analyst run of their own. A run with no
+# quotes (keys unavailable) returns None and leaves the previous snapshot
+# standing rather than clobbering it with an empty one the API would serve.
+# The candle is latched (`_latch_entry_timing`) here, before the structure
+# is read, so the session's opening bar is on file for the level tags.
+def _snapshot(
+    data_dir: Path,
+    latest: dict,
+    quotes: dict,
+    technical: dict,
+    value: dict,
+    technical_detail: dict,
+    as_of: datetime,
+) -> dict | None:
+    """Return the live snapshot for this candle, latched, or None without quotes."""
+    if not quotes:
+        return None
+    live = {
+        "as_of": as_of.isoformat(timespec="seconds"),
+        "decision_session": latest.get("session"),
+        "quotes": quotes,
+        "technical": technical,
+        "value": value,
+        "technical_detail": technical_detail,
+    }
+    # Latch today's open and first level crossings from the same candle,
+    # so the board's timed BUY/SELL survives the price moving back.
+    _latch_entry_timing(data_dir, live)
+    return live
+
+
+# Add the board's structure fields (`structure.annotate`: the 21-EMA and
+# its slope, the 20-session high, a first-bar tag, the price's age) to the
+# rows and, keyed by name, to the live snapshot the page already polls.
+# Display fields, decided on by nothing. The board stands without them, so
+# a failure is printed to the cron log and never stops the balancer.
+def _structure(
+    rows: list[dict],
+    store: MarketStore,
+    quotes: dict,
+    data_dir: Path,
+    now: datetime,
+    live: dict | None,
+) -> None:
+    """Annotate `rows` (and `live`) with the levels and price age; never raise."""
+    try:
+        from backend.agents.trading.desk import structure
+        from backend.market import entry_timing
+
+        session = _session_of(quotes, now)
+        latch = entry_timing.load(data_dir, session)
+        by_name = structure.annotate(rows, store, quotes, latch, session, now)
+    except Exception as exc:  # noqa: BLE001 - the structure never stops the balancer
+        print(f"Board structure unavailable ({type(exc).__name__}: {exc})")
+        return
+    if live is not None:
+        live["structure"] = by_name
+
+
 # Keep a failed synthetic-account write separate from successfully published research.
 def _observe_paper(data_dir, record, snapshot, research):
     from backend.market import board_paper
@@ -317,6 +391,11 @@ def run(data_dir: Path, equity: float) -> Path:
     except alpaca.AlpacaUnavailableError:
         pass
     rows = holdings.board(latest, held, equity, quotes, technical, value)
+    as_of = datetime.now(UTC)
+    live = _snapshot(
+        data_dir, latest, quotes, technical, value, technical_detail, as_of
+    )
+    _structure(rows, store, quotes, data_dir, as_of, live)
     # Only names the desk is willing to start: a name can earn a target
     # weight and still be rejecting its upper Bollinger band tonight, and
     # buying it then is buying into a move that is already rolling over -
@@ -341,7 +420,7 @@ def run(data_dir: Path, equity: float) -> Path:
         except (json.JSONDecodeError, OSError):
             previous = None
     plan = {
-        "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
+        "as_of": as_of.isoformat(timespec="seconds"),
         "session": latest.get("session"),
         "equity": equity,
         "top_buys": top_buys,
@@ -350,26 +429,10 @@ def run(data_dir: Path, equity: float) -> Path:
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
-    # The live snapshot alongside the plan: the same quotes and technical read
-    # the plan was built from, so the API's live endpoints serve the candle
-    # without a fresh quote fetch or analyst run of their own. A run with no
-    # quotes (keys unavailable) leaves the previous snapshot standing rather
-    # than clobbering it with an empty one the API would serve.
-    if quotes:
-        live = {
-            "as_of": datetime.now(UTC).isoformat(timespec="seconds"),
-            "decision_session": latest.get("session"),
-            "quotes": quotes,
-            "technical": technical,
-            "value": value,
-            "technical_detail": technical_detail,
-        }
+    if live is not None:
         (data_dir / "desk" / LIVE_FILE).write_text(
             json.dumps(live, indent=2), encoding="utf-8"
         )
-        # Latch today's open and first level crossings from the same candle,
-        # so the board's timed BUY/SELL survives the price moving back.
-        _latch_entry_timing(data_dir, live)
         # The paper account trades what the board says, when it says it.
         _send_paper_orders(data_dir, live, data_dir / "desk" / INTRADAY_LOG)
         # Keep automatic candidate sizing separate from paper account operations.
