@@ -133,9 +133,8 @@ def main() -> None:
         parser.error("Refusing to overwrite an existing corpus")
     result = collect(MarketStore(args.data_dir))
     write_report(args.output, result)
-    print(
-        f"{sum(row['status'] == 'ready' for row in result['rows'])}/{len(result['rows'])} ready"
-    )
+    ready = sum(row["status"] == "ready" for row in result["rows"])
+    print(f"{ready}/{len(result['rows'])} ready")
 
 
 if __name__ == "__main__":
