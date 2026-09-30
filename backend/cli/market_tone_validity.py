@@ -57,7 +57,7 @@ from backend.market import (
 )
 from backend.market.harness import evaluate_scores, walk_forward_folds
 from backend.market.store import MarketStore
-from backend.market.universe import book_sides, build_universe
+from backend.market.universe import OVERLAY, book_sides, build_universe
 
 # The plan's windows: the in-window period the criteria are judged on and
 # the post-cutoff period the reader cannot have trained on.
@@ -119,11 +119,22 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # Ticker -> company name for the book, from the universe file.
-def issuer_names(universe: Sequence[Any] | None = None) -> dict[str, str]:
-    """Return {ticker: name} for every book name."""
+def issuer_names(universe: Sequence[Any] | None = None) -> dict[str, tuple[str, ...]]:
+    """Return {ticker: names} for every book name.
+
+    `build_universe` keeps the constituent file's name over the overlay's
+    ("Supermicro" over "Super Micro"), so both are gathered here: a release
+    writes whichever the company uses.
+    """
     members = build_universe() if universe is None else universe
     sides = book_sides(tuple(members))
-    return {m.ticker: m.name for m in members if m.ticker in sides}
+    overlay = {m.ticker: m.name for m in OVERLAY}
+    out: dict[str, tuple[str, ...]] = {}
+    for m in members:
+        if m.ticker in sides:
+            names = [n for n in (m.name, overlay.get(m.ticker, "")) if n]
+            out[m.ticker] = tuple(dict.fromkeys(names))
+    return out
 
 
 # Every stored release text for the book, as (ticker, record) pairs.
@@ -140,23 +151,40 @@ def stored_texts(
     return out
 
 
-# Mask every release and write one JSONL per name plus the summary.
+# Mask every release and write one JSONL per name plus the summary. Two
+# passes: the corpus rule first, over every issuer's texts, then the mask.
 def run_mask(
     texts: Sequence[tuple[str, release_text.ReleaseText]],
-    names: Mapping[str, str],
+    names: Mapping[str, Sequence[str]],
     out: Path,
     extra_names: Mapping[str, Sequence[str]] | None = None,
+    min_issuers: int = release_mask.MIN_ISSUERS,
 ) -> dict[str, Any]:
-    """Write `<out>/masked/<ticker>.jsonl` and return the summary written."""
+    """Write `<out>/masked/<ticker>.jsonl`, `rare_tokens.json` and the summary."""
     extra_names = extra_names or {}
     tickers = sorted({t for t, _ in texts})
     (out / "masked").mkdir(parents=True, exist_ok=True)
+    by_issuer: dict[str, list[str]] = {}
+    for t, record in texts:
+        by_issuer.setdefault(t, []).append(record.text)
+    issuer_counts = release_mask.token_issuer_counts(by_issuer)
+    rare = release_mask.rare_tokens(by_issuer, min_issuers)
+    (out / "rare_tokens.json").write_text(
+        json.dumps(
+            {
+                "min_issuers": min_issuers,
+                "tokens": {k: issuer_counts[k] for k in sorted(rare)},
+            },
+            indent=1,
+        )
+    )
     totals: dict[str, int] = {}
     residual_any = {"year": 0, "month": 0, "name": 0}
     count = 0
+    rare_share = 0.0
     for ticker in tickers:
         issuer = release_mask.MaskIssuer(
-            names=(names.get(ticker, ""), *extra_names.get(ticker, ())),
+            names=(*names.get(ticker, ()), *extra_names.get(ticker, ())),
             tickers=(ticker,),
             other_tickers=tuple(t for t in names if t != ticker),
         )
@@ -164,13 +192,15 @@ def run_mask(
         for t, record in texts:
             if t != ticker:
                 continue
-            masked = release_mask.mask(record.text, issuer)
+            masked = release_mask.mask(record.text, issuer, rare)
             left = release_mask.residuals(masked.text, issuer.names)
+            tokens = release_mask.token_count(release_mask.unescape(record.text))
             for kind, n in masked.counts.items():
                 totals[kind] = totals.get(kind, 0) + n
             for kind, n in left.items():
                 residual_any[kind] += int(n > 0)
             count += 1
+            rare_share += masked.counts["rare"] / tokens if tokens else 0.0
             rows.append(
                 {
                     "accession": record.accession,
@@ -178,7 +208,9 @@ def run_mask(
                     "reaction_date": record.reaction_date.isoformat(),
                     "text": masked.text,
                     "counts": masked.counts,
+                    "tokens": tokens,
                     "residual": left,
+                    "unescaped": True,
                 }
             )
         rows.sort(key=lambda r: (r["reaction_date"], r["accession"]))
@@ -192,6 +224,9 @@ def run_mask(
         "residual_share": {
             k: (v / count if count else 0.0) for k, v in residual_any.items()
         },
+        "min_issuers": min_issuers,
+        "rare_tokens": len(rare),
+        "rare_share_mean": rare_share / count if count else 0.0,
     }
     (out / "mask_summary.json").write_text(json.dumps(summary, indent=2))
     return summary

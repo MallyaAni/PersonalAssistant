@@ -204,3 +204,95 @@ def test_one_line_release_keeps_the_tables():
     assert out.counts["contact"] == 3
     assert release_mask.residuals(out.text, ISSUER.names)["name"] == 0
     assert mask(out.text, ISSUER).text == out.text
+
+
+# The corpus rule: a token in two of twenty issuers is a name and goes; one
+# in sixteen is the language of releases and stays; it is case-sensitive;
+# letters-and-digits tokens count; consecutive names collapse into one.
+def test_corpus_rule():
+    common = "Revenue grew and GAAP margin held; the Blackwell platform shipped. "
+    corpus = {f"I{i}": [common] for i in range(16)}
+    corpus["I0"] = [common + "Jensen Huang and the A100 and 1z node. jensen too."]
+    corpus["I1"] = [common + "Jensen Huang spoke."]
+    for i in range(16, 20):
+        corpus[f"I{i}"] = ["Revenue fell."]
+    rare = release_mask.rare_tokens(corpus, min_issuers=15)
+    assert {"Jensen", "Huang", "A100", "1z"} <= rare
+    assert "jensen" not in rare  # lower case is not considered
+    assert "Blackwell" not in rare  # 16 issuers
+    assert "GAAP" not in rare
+    assert "Revenue" not in rare
+    counts = release_mask.token_issuer_counts(corpus)
+    assert counts["Blackwell"] == 16
+    assert counts["Jensen"] == 2
+    out = release_mask.mask(
+        "Jensen Huang, Jensen's A100 and 1z, said jensen. Blackwell grew 10%.",
+        MaskIssuer(names=(), tickers=()),
+        rare,
+    )
+    assert out.text == "[NAME] and [NAME], said jensen. Blackwell grew 10%."
+    assert out.counts["rare"] == 5
+    # A placeholder is never in the set, so a masked text is never re-masked.
+    assert "COMPANY" not in release_mask.rare_tokens({"I0": ["[COMPANY] grew."]})
+
+
+# The dateline city and the wire tag go, before a date or a dash, in each
+# of the forms the corpus uses.
+def test_dateline_and_wire_tags():
+    issuer = MaskIssuer(names=(), tickers=())
+    cases = {
+        "SAN JOSE, Calif. -- May 4, 2021 (BUSINESS WIRE) -- Super grew.": (
+            "[CITY] [DATE] -- Super grew."
+        ),
+        "SANTA CLARA, Calif.-Nov. 18, 2020- Revenue rose.": (
+            "[CITY] [DATE]- Revenue rose."
+        ),
+        "BOISE, Idaho, Sept. 29, 2020 \u2013 Micron reported.": (
+            "[CITY] [DATE] \u2013 Micron reported."
+        ),
+        "NEW YORK--(GLOBE NEWSWIRE)--The company said.": "[CITY] --The company said.",
+        "Revenue rose 5% in the quarter.": "Revenue rose 5% in the quarter.",
+    }
+    for text, expected in cases.items():
+        out = release_mask.mask(text, issuer)
+        assert out.text == expected, text
+    out = release_mask.mask(cases and next(iter(cases)), issuer)
+    assert out.counts["dateline"] == 1
+    assert out.counts["wire"] == 1
+
+
+# People after "said" or before a title are masked without the corpus.
+def test_people_after_said_or_before_a_title():
+    issuer = MaskIssuer(names=("NVIDIA",), tickers=("NVDA",))
+    out = release_mask.mask(
+        '"Demand is strong," said Jensen Huang, founder and CEO of NVIDIA. '
+        "Colette Kress, executive vice president and CFO, added. "
+        "Sanjay Mehrotra, President and Chief Executive Officer of Micron. "
+        "Results were said to be strong, the company said.",
+        issuer,
+    )
+    assert "said [NAME], founder and CEO of [COMPANY]." in out.text
+    assert "[NAME], executive vice president and CFO, added." in out.text
+    assert "[NAME], President and Chief Executive Officer of Micron." in out.text
+    assert "Results were said to be strong, the company said." in out.text
+    assert out.counts["people"] == 3
+
+
+# HTML entities are decoded so an exchange label is an exchange label, the
+# company's legal tail goes with its short name, and a truncated address
+# is still an address.
+def test_entities_legal_tail_and_emails():
+    issuer = MaskIssuer(names=("Supermicro", "Super Micro"), tickers=("SMCI",))
+    out = release_mask.mask(
+        "EX-99.1 2 exhibit991_20210331.htm Super Micro Computer, Inc. "
+        "(Nasdaq&#58; SMCI) &#8226; Net sales of $896&#160;million. "
+        "Contact farhanahmad&#64; or ir@supermicro.com now.",
+        issuer,
+    )
+    assert "exhibit991" not in out.text
+    assert "[COMPANY] (Nasdaq: [TICKER]) \u2022 Net sales of $896 million." in out.text
+    assert "Contact [EMAIL] or [EMAIL] now." in out.text
+    assert out.counts["email"] == 2
+    assert out.counts["company"] == 2  # the short name, then its legal tail
+    assert "Super" not in out.text
+    assert "Computer" not in out.text

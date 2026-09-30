@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 
 from backend.cli import market_tone_validity as tv
-from backend.market import language, release_text, tone_leak
+from backend.market import language, release_mask, release_text, tone_leak
 from backend.market.panel import panel_from_histories
 from backend.market.yahoo import DailyBar, TickerHistory
 
@@ -271,12 +271,20 @@ def test_run_mask_and_leak_sample(tmp_path):
             ),
         ),
     ]
-    names = {"NVDA": "Nvidia", "MU": "Micron Technology"}
+    names = {"NVDA": ("Nvidia",), "MU": ("Micron Technology", "Micron")}
     summary = tv.run_mask(texts, names, tmp_path, {"NVDA": ["NVIDIA Corporation"]})
     assert summary["releases"] == 3
     assert summary["names"] == 2
     assert summary["residual_share"] == {"year": 0.0, "month": 0.0, "name": 0.0}
     assert summary["replacements"]["company"] == 3
+    assert summary["min_issuers"] == release_mask.MIN_ISSUERS
+    # Two issuers: every considered token is rare, so the share is what the
+    # corpus rule would take from these texts, and the list is written.
+    assert summary["rare_tokens"] > 0
+    assert 0.0 < summary["rare_share_mean"] < 1.0
+    rare = json.loads((tmp_path / "rare_tokens.json").read_text())
+    assert rare["min_issuers"] == release_mask.MIN_ISSUERS
+    assert rare["tokens"]["NASDAQ"] == 1
     rows = tv.read_masked(tmp_path)
     assert [r["accession"] for r in rows] == ["0002-24", "0001-23", "0001-24"]
     nvda = next(r for r in rows if r["accession"] == "0001-24")
@@ -285,12 +293,15 @@ def test_run_mask_and_leak_sample(tmp_path):
     assert "NVIDIA" not in nvda["text"]
     assert "2024" not in nvda["text"]
     assert nvda["residual"] == {"year": 0, "month": 0, "name": 0}
+    assert nvda["unescaped"] is True
+    assert nvda["tokens"] > 0
     sample = tone_leak.sample_leak(rows, names, 2, seed=0)
     again = tone_leak.sample_leak(rows, names, 2, seed=0)
     assert [s["accession"] for s in sample] == [s["accession"] for s in again]
     assert len(sample) == 2
     assert sample[0]["prompt"].endswith("{company, quarter, year}.")
     assert sample[0]["truth"]["tickers"] == [sample[0]["ticker"]]
+    assert sample[0]["truth"]["names"] == list(names[sample[0]["ticker"]])
     assert tone_leak.truth_years(date(2024, 1, 5)) == [2024, 2023]
     assert tone_leak.truth_years(date(2024, 8, 29)) == [2024]
 
@@ -303,7 +314,7 @@ def test_score_leak():
         {
             "accession": f"a{i}",
             "truth": {
-                "company": "Micron Technology",
+                "names": ["Micron Technology", "Micron"],
                 "tickers": ["MU"],
                 "years": [2024],
             },
@@ -401,3 +412,5 @@ def test_issuer_names_cover_the_book():
     assert names["NVDA"]
     assert names["MU"]
     assert "SPY" not in names
+    # Both the constituent file's name and the overlay's are kept.
+    assert set(names["SMCI"]) == {"Supermicro", "Super Micro"}

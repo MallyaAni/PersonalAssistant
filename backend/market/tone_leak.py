@@ -44,7 +44,7 @@ def truth_years(reaction_date: date) -> list[int]:
 # A deterministic sample of masked releases with the leak question attached.
 def sample_leak(
     rows: Sequence[Mapping[str, Any]],
-    names: Mapping[str, str],
+    names: Mapping[str, Sequence[str]],
     n: int,
     seed: int,
 ) -> list[dict[str, Any]]:
@@ -61,7 +61,7 @@ def sample_leak(
                 "reaction_date": row["reaction_date"],
                 "prompt": release_mask.leak_prompt(row["text"]),
                 "truth": {
-                    "company": names.get(row["ticker"], ""),
+                    "names": list(names.get(row["ticker"], ())),
                     "tickers": [row["ticker"]],
                     "years": truth_years(when),
                 },
@@ -72,12 +72,13 @@ def sample_leak(
 
 # Whether an answer names the company: any distinctive token of a name
 # variant, or a ticker, anywhere in the answer's company field.
-def company_hit(answer: str, company: str, tickers: Sequence[str]) -> bool:
+def company_hit(answer: str, names: Sequence[str], tickers: Sequence[str]) -> bool:
     """Return True when `answer` identifies the issuer."""
     text = answer.lower()
     tokens = {
         tok.lower()
-        for variant in release_mask.name_variants(company)
+        for name in names
+        for variant in release_mask.name_variants(name)
         for tok in re.findall(r"[A-Za-z][\w-]+", variant)
         if len(tok) >= release_mask.MIN_VARIANT_CHARS
         and tok.lower() not in release_mask.GENERIC_WORDS
@@ -129,7 +130,7 @@ def score_leak(
         parsed = parse_answer(raw)
         truth = row["truth"]
         if company_hit(
-            str(parsed.get("company", "")), truth["company"], truth["tickers"]
+            str(parsed.get("company", "")), truth["names"], truth["tickers"]
         ):
             company += 1
         if answer_year(parsed.get("year")) in truth["years"]:

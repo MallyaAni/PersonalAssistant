@@ -17,10 +17,26 @@ What goes, and to what:
   a quarter with its year, a fiscal year    [PERIOD]
   a bare quarter label                      [QUARTER]
   a bare four-digit year                    [YEAR]
-  emails, URLs and phone numbers            removed
+  emails                                    [EMAIL]
+  the dateline city and the wire tag        [CITY], removed
+  a name after "said" or before a title     [NAME]
+  any token rare across the corpus          [NAME]
+  URLs, phone numbers, exhibit file names   removed
   the "About the company" boilerplate and
   the contact trailer                       removed, bounded by the
                                             next heading or a cap
+
+The corpus rule is what makes this hold without a dictionary: a token
+with a capital letter, or letters and digits together (A100, 1z), that
+occurs in fewer than MIN_ISSUERS distinct issuers' releases is a name of
+something - a person, a product, a city, a customer - and goes. A token
+in fifteen or more issuers (GAAP, Revenue, Nasdaq, Calif, AI, GPU) is
+the language of releases and stays. `rare_tokens` builds the set from
+the whole corpus; `mask` takes it.
+
+HTML entities in the stored text (`&#58;`, `&#160;`, `&#8226;`) are
+decoded first, so "Nasdaq&#58; SMCI" is a ticker in an exchange label
+and the reader gets clean text.
 
 What stays: every number. Revenue, margins, growth rates, guidance ranges
 are the content the reader is meant to score, and a masked release with
@@ -32,8 +48,9 @@ a substring of another word is left alone. Every placeholder is free of
 digits and month names, which is what makes a second pass a no-op.
 """
 
+import html
 import re
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 COMPANY = "[COMPANY]"
@@ -44,6 +61,24 @@ DATE = "[DATE]"
 PERIOD = "[PERIOD]"
 QUARTER = "[QUARTER]"
 YEAR = "[YEAR]"
+NAME = "[NAME]"
+CITY = "[CITY]"
+EMAIL = "[EMAIL]"
+PLACEHOLDERS: tuple[str, ...] = (
+    COMPANY,
+    TICKER,
+    PERSON,
+    PRODUCT,
+    DATE,
+    PERIOD,
+    QUARTER,
+    YEAR,
+    NAME,
+    CITY,
+    EMAIL,
+)
+# A token in fewer distinct issuers than this is a name of something.
+MIN_ISSUERS = 15
 
 # The question the leak test puts to the reader over a masked release.
 LEAK_QUESTION = (
@@ -176,14 +211,55 @@ _TIME_RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
     ("year", re.compile(rf"{_YEAR}{_POSSESSIVE}"), YEAR),
 )
 
-# A way to reach someone - an email, a URL, a phone number - is removed
-# wherever it stands. The stored text is one line (`edgar.html_to_text`
-# collapses whitespace), so nothing here works by line.
+# A way to reach someone - a URL, a phone number - or an exhibit file
+# name (which carries the filing date) is removed wherever it stands. The
+# stored text is one line (`edgar.html_to_text` collapses whitespace), so
+# nothing here works by line.
 _CONTACT_TOKEN = re.compile(
-    r"[\w.+-]+@[\w-]+\.[\w.-]+"
-    r"|https?://\S+|www\.\S+|\b[\w-]+\.(?:com|net|org|io)\b(?:/\S*)?"
-    r"|\(\d{3}\)\s?\d{3}-\d{4}\b|\b\d{3}-\d{3}-\d{4}\b|\b\d{3}\.\d{3}\.\d{4}\b",
+    r"https?://\S+|www\.\S+|\b[\w-]+\.(?:com|net|org|io)\b(?:/\S*)?"
+    r"|\(\d{3}\)\s?\d{3}-\d{4}\b|\b\d{3}-\d{3}-\d{4}\b|\b\d{3}\.\d{3}\.\d{4}\b"
+    r"|\S+\.(?:htm|html|pdf|txt|xml)\b",
     re.IGNORECASE,
+)
+# Anything holding an @ is an address, even a truncated one ("jdoe@").
+_EMAIL_TOKEN = re.compile(r"[^\s@()<>,;]*@[^\s()<>,;]*")
+# The dateline: a city in capitals, optionally a state, before the (already
+# masked) date, a dash, or a wire-service tag.
+_WIRE_TAGS = (
+    "BUSINESS WIRE|GLOBE NEWSWIRE|GLOBENEWSWIRE|PRNewswire|PR Newswire|"
+    "Business Wire|Globe Newswire|ACCESSWIRE|Marketwired|MARKETWIRED"
+)
+_WIRE_TAG = re.compile(rf"\(\s*(?:{_WIRE_TAGS})\s*\)")
+_DATELINE = re.compile(
+    r"(?<![\w\]])([A-Z][A-Z.']+(?:[ \t][A-Z][A-Z.']+){0,3})"
+    r"(?:,\s*(?:[A-Z][a-z]+\.?(?:\s[A-Z][a-z]+)?|[A-Z]{2})\.?)?"
+    rf"[\s,.\u2013\u2014-]*(?=\[DATE\]|--|\u2013|\u2014|\(\s*(?:{_WIRE_TAGS}))"
+)
+# A person: two or three capitalised tokens right after "said", or right
+# before a comma and a title.
+_CAPITALISED = r"[A-Z][\w.'-]*"
+_SAID_NAME = re.compile(rf"\b(said)\s+((?:{_CAPITALISED}\s+){{1,2}}{_CAPITALISED})")
+_TITLED_NAME = re.compile(
+    rf"(?<![\w\]])((?:{_CAPITALISED}\s+){{1,2}}{_CAPITALISED})(,\s+)"
+    r"(?=(?i:(?:the\s+|our\s+|its\s+)?(?:co-)?(?:founder|president|chief|CEO|CFO|"
+    r"COO|CTO|chairman|chairwoman|executive|officer|director|vice|senior|"
+    r"managing|general|head)\b))"
+)
+# The rest of a legal name after a masked short form: "[COMPANY] Computer,
+# Inc." when the store knows the issuer as "Super Micro".
+_COMPANY_TAIL = re.compile(
+    rf"{re.escape(COMPANY)}(?:\s+[A-Z][\w&-]*){{0,3}},?\s+"
+    r"(?i:Inc|Incorporated|Corp|Corporation|Company|Co|Ltd|Limited|plc|Holdings|"
+    r"N\.V|S\.A|AG|Group)\b\.?"
+)
+# A token the corpus rule considers: letters, digits and hyphens, at least
+# two characters, with a capital letter or letters and digits together.
+_TOKEN = re.compile(r"(?<![\w-])[A-Za-z0-9][A-Za-z0-9-]*(?![\w-])")
+_HAS_UPPER = re.compile(r"[A-Z]")
+_HAS_DIGIT = re.compile(r"\d")
+_HAS_LETTER = re.compile(r"[A-Za-z]")
+_NAME_RUN = re.compile(
+    rf"{re.escape(NAME)}(?:['\u2019]s)?(?:[\s,&]+{re.escape(NAME)}(?:['\u2019]s)?)+"
 )
 # Where the "About the company" boilerplate opens, once the name is masked.
 _ABOUT_OPENER = re.compile(rf"\bAbout\s+(?:the\s+)?{re.escape(COMPANY)}")
@@ -329,22 +405,105 @@ def _remove_spans(
         removed += 1
 
 
-# Remove every email, URL and phone number.
+# Remove every URL, phone number and exhibit file name.
 def _drop_contact_tokens(text: str) -> tuple[str, int]:
     out, hits = _CONTACT_TOKEN.subn("", text)
     return re.sub(r"[ \t]{2,}", " ", out), hits
 
 
-# Mask a release: ways to reach someone first, then the issuer's names,
-# then the boilerplate that opens with the masked name, then the other
-# identities, then the calendar.
-def mask(text: str, issuer: MaskIssuer) -> MaskedText:
+# Decode HTML entities and unify the spaces they hide (`&#160;` is a
+# no-break space, which is not a word boundary to a reader either).
+def unescape(text: str) -> str:
+    """Return the text with entities decoded and unicode spaces as spaces."""
+    out = html.unescape(text.replace("\r\n", "\n"))
+    return re.sub(r"[\u00a0\u2007\u202f\u2009\u200a\u2002\u2003]", " ", out)
+
+
+# Whether a token is one the corpus rule considers: two characters or
+# more, with a capital letter or with digits and letters together.
+def _considered(token: str) -> bool:
+    if len(token) < 2:
+        return False
+    if _HAS_UPPER.search(token):
+        return True
+    return bool(_HAS_DIGIT.search(token) and _HAS_LETTER.search(token))
+
+
+# In how many distinct issuers each considered token occurs.
+def token_issuer_counts(texts_by_issuer: Mapping[str, Sequence[str]]) -> dict[str, int]:
+    """Return {token: number of issuers whose releases contain it}."""
+    counts: dict[str, int] = {}
+    for texts in texts_by_issuer.values():
+        seen: set[str] = set()
+        for text in texts:
+            seen.update(t for t in _TOKEN.findall(unescape(text)) if _considered(t))
+        for token in seen:
+            counts[token] = counts.get(token, 0) + 1
+    return counts
+
+
+# The tokens that name something: those in fewer than `min_issuers`
+# distinct issuers. The placeholders themselves are never in the set, so a
+# masked text is never re-masked.
+def rare_tokens(
+    texts_by_issuer: Mapping[str, Sequence[str]], min_issuers: int = MIN_ISSUERS
+) -> set[str]:
+    """Return the case-sensitive tokens occurring in fewer than `min_issuers`."""
+    protected = {p.strip("[]") for p in PLACEHOLDERS}
+    return {
+        token
+        for token, n in token_issuer_counts(texts_by_issuer).items()
+        if n < min_issuers and token not in protected
+    }
+
+
+# Replace every rare token, whole-word and case-sensitive, and collapse a
+# run of placeholders into one.
+def _mask_rare(text: str, rare: set[str]) -> tuple[str, int]:
+    hits = 0
+
+    def swap(match: re.Match[str]) -> str:
+        nonlocal hits
+        token = match.group(0)
+        if token in rare:
+            hits += 1
+            return NAME
+        return token
+
+    out = _TOKEN.sub(swap, text)
+    out = re.sub(rf"{re.escape(NAME)}['\u2019]s\b", NAME, out)
+    out = _NAME_RUN.sub(NAME, out)
+    return out, hits
+
+
+# The dateline city and the wire-service tag.
+def _mask_dateline(text: str) -> tuple[str, int, int]:
+    out, cities = _DATELINE.subn(f"{CITY} ", text, count=1)
+    out, wires = _WIRE_TAG.subn("", out)
+    return re.sub(r"[ \t]{2,}", " ", out), cities, wires
+
+
+# People named after "said" or before a title.
+def _mask_people(text: str) -> tuple[str, int]:
+    out, said = _SAID_NAME.subn(rf"\g<1> {NAME}", text)
+    out, titled = _TITLED_NAME.subn(rf"{NAME}\g<2>", out)
+    return out, said + titled
+
+
+# Mask a release: entities decoded, ways to reach someone first, then the
+# issuer's names, then the boilerplate that opens with the masked name,
+# then the other identities, the dateline, the calendar, the people, and
+# last the corpus rule over whatever is left.
+def mask(text: str, issuer: MaskIssuer, rare: set[str] | None = None) -> MaskedText:
     """Return the masked text and a count of replacements per kind."""
     counts: dict[str, int] = {}
-    out = text.replace("\r\n", "\n")
+    out = unescape(text)
     out, counts["contact"] = _drop_contact_tokens(out)
+    out, counts["email"] = _EMAIL_TOKEN.subn(EMAIL, out)
     names = [v for name in issuer.names for v in name_variants(name)]
     out, counts["company"] = _apply(out, _phrase_pattern(names), COMPANY)
+    out, tails = _COMPANY_TAIL.subn(COMPANY, out)
+    counts["company"] += tails
     out, counts["about_section"] = _remove_spans(out, _ABOUT_OPENER, ABOUT_MAX_CHARS)
     out, counts["trailer"] = _remove_spans(
         out, _TRAILER_OPENER, TRAILER_MAX_CHARS, TRAILER_FROM
@@ -358,7 +517,16 @@ def mask(text: str, issuer: MaskIssuer) -> MaskedText:
     for kind, pattern, replacement in _TIME_RULES:
         out, hits = pattern.subn(replacement, out)
         counts[kind] = counts.get(kind, 0) + hits
+    out, counts["dateline"], counts["wire"] = _mask_dateline(out)
+    out, counts["people"] = _mask_people(out)
+    out, counts["rare"] = _mask_rare(out, rare or set())
     return MaskedText(text=out, counts=counts)
+
+
+# How many word tokens a text has, the denominator of the rare share.
+def token_count(text: str) -> int:
+    """Return the number of word tokens in `text`."""
+    return len(_TOKEN.findall(text))
 
 
 # What still identifies the release after masking: a four-digit year, a
