@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-09-30 — Tone wording verified without changing any trading score
+
+Implementation checkpoint `81ab2f1` on `fix/desk-order-evidence-20260930`.
+Eight regression cases reproduced the defect before editing: continuous tone
+scores of ±0.2 read as silent; ±0.1 changes read unchanged; a zero supply score
+claimed the name was unconstrained. Fixed descriptions preserve nonzero
+direction, acknowledge neutral-or-unstated zero scores, and distinguish outlook
+tone from a factual guidance revision. No score, grade, sizing, strategy,
+broker action or historical record was changed.
+
+VERIFIED: 225 backend tests, 20 actual browser tests, TypeScript, Vite build,
+Ruff and generated-fixture consistency. Browser tests consume descriptions
+produced by the real backend formatter and inspect the rendered grade details.
+Source mounted at Spark `/home/animallya96/scratch/latest-review.bp3kjq` and
+served only at port 5187. Existing CSS-selector/bundle-size build warnings
+remain. The test container was stopped; no live deploy was performed.
+
+Research is separately published at `81a74ad` on
+`research/grounded-release-pilot-20260930`. Real SEC extraction failed its gate:
+4/10 valid before cleanup, 8/10 after; known-label matches 10/26 then 18/26.
+Do not promote or launch a large rescore. Current `/5` was not beaten or changed.
+See that branch's `docs/research/grounded-real-releases-2026-09-30.md`.
+
+Next: release review of the dashboard branch against then-current GitHub main,
+and only a Spark `scripts/deploy.sh` deployment after integration gates. New
+wording is generated from unchanged scores; stored old prose is not rewritten.
+Main/deploy checkout last observed at `9439380` for the deployed revision.
+
+Diagram impact: NONE — presentation and tests leave the full-system and
+trading/market-data components and flows unchanged.
+
 ## 2026-09-30 — Order-evidence fixes reconciled with Fable's Levels work
 
 Branch `fix/desk-order-evidence-20260930` merged GitHub main `908e683`

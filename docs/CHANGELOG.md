@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-30 — Continuous tone descriptions (branch verified, not deployed)
+
+`81ab2f1`: small positive/negative release scores no longer read as “silent,”
+small tone changes no longer read “unchanged,” and a zero supply score no
+longer claims a company is unconstrained. “Outlook tone” distinguishes the
+legacy score from an explicit same-period guidance revision. Zero tone retains
+neutral/unstated ambiguity. Scores, grades, orders and stored records unchanged.
+
+Eight new cases failed before the fix and passed after it. Verified:
+225 backend tests, 20 browser tests with backend-generated tone descriptions,
+TypeScript, Vite production build, Ruff and fixture consistency. This includes
+the merged Fable Levels/chart/opening-bar work. No deployment or live promotion.
+
 ## 2026-09-30 — Paper-order evidence and outcome labels (branch verified, not deployed)
 
 `fix/desk-order-evidence-20260930`: paper orders expose planned, submitted,
