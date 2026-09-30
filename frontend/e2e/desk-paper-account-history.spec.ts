@@ -6,8 +6,8 @@ const WRITTEN = '2026-09-28T23:45:30Z'
 const NOW = '2026-09-29T15:35:00Z'
 const BAR = '2026-09-29T15:15:00Z'
 
-// Make dated paper history and current personal guidance independently controllable.
-async function scenario(page: Page, options: {historyFailure?: boolean; history?: object; decision?: Record<string, unknown> | null; staleContext?: boolean; targets?: object | null; book?: object[]} = {}) {
+// Make dated paper history and the paper account's current orders independently controllable.
+async function scenario(page: Page, options: {historyFailure?: boolean; history?: object; order?: object | null; targets?: object | null; book?: object[]} = {}) {
   const errors: string[] = []
   const writes: string[] = []
   const historyReads: string[] = []
@@ -21,10 +21,6 @@ async function scenario(page: Page, options: {historyFailure?: boolean; history?
     regime: {ai_participation: .5, software_participation: .5, participation_percentile: .5, ai_vs_software_correlation: 0, correlation_z: 0, novelty_z: 0, rotation_leader: 'none', rotation_spread: 0, ai_drawdown: .1, selection_confidence: .6, exposure: 1, flags: []},
     grades: {AAOI: {grade: 'A+', votes: 3, stances: {}, ranks: {}, score: .82, side: 'ai', headline: '', reason: '', reads: {}}}, book: options.book ?? [], briefs: {}, paper: null,
     ...(options.targets !== undefined ? {targets: options.targets} : {})}
-  const row = {action: 'Hold', strategy_action: 'Buy', executable: true, valid_until: '2026-09-29T15:36:00Z', target_weight: .1, current_weight: 0, delta_weight: .1, move_weight: 0, strategy_move_weight: .1,
-    reason: 'Buy setup awaiting its intraday price level.', blocker: null,
-    timing: {rule: 'dip_or_close', side: 'buy', state: 'waiting', level: 97, open: 98, level_fraction: .01, session: '2026-09-29', trading_day: true, trigger_bar: null, trigger_price: null, close_cutoff: '15:45', moc_deadline: '15:50', reason: 'Waiting for price level'},
-    quote: {feed: 'iex', at: NOW, bid: 98, ask: 98.5, eligible: true, reason: '', valid_until: '2026-09-29T15:36:00Z'}, ...options.decision}
   const history = options.history ?? {user_id: USER, source: 'paper_account_records', total_records: 5, ignored_records: 0, truncated: false, rows: [
     {session: '2026-09-21', recorded_at: '2026-09-21T23:30:00Z', equity: 100000, cash: 20000, equity_change: null, equity_change_pct: null, previous_session: null, missing_sessions: null},
     {session: '2026-09-22', recorded_at: '2026-09-23T14:17:00Z', equity: 101000, cash: 10000, equity_change: 1000, equity_change_pct: .01, previous_session: '2026-09-21', missing_sessions: 0},
@@ -36,7 +32,7 @@ async function scenario(page: Page, options: {historyFailure?: boolean; history?
     const request = route.request()
     const url = new URL(request.url())
     const base = `/api/v1/market/${USER}/desk`
-    if (request.method() !== 'GET' && !(url.pathname === `${base}/mine` && request.postDataJSON()?.record_history === false)) {
+    if (request.method() !== 'GET') {
       writes.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 403, json: {}})
     }
@@ -47,9 +43,8 @@ async function scenario(page: Page, options: {historyFailure?: boolean; history?
     else if (url.pathname === `${base}/live`) json = {as_of: NOW, data_at: BAR, stale: false, market_status: market, quotes: {AAOI: {symbol: 'AAOI', last: 98.25, open: 98, high: 99, low: 98, bar: BAR, as_of: NOW}}, technical: {}, technical_detail: {}}
     else if (url.pathname === `${base}/session-prices`) json = {session: 'regular', as_of: NOW, signal_scope: 'regular-session', quotes: {}}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
-    else if (url.pathname === `${base}/mine`) json = {session: SESSION, market_status: market, grade_valid_until: {}, grades_live: {}, rows: [], decisions: {session: options.staleContext ? '2026-09-25' : SESSION, written: WRITTEN, as_of: NOW, equity: 100000, holdings: {}, timing: {rule: 'dip_or_close', level: .01, session: '2026-09-29', close_cutoff: '15:45', moc_deadline: '15:50', latched: true}, rows: options.decision === null ? {} : {AAOI: row}}}
-    else if (url.pathname === `${base}/intraday`) json = null
-    else if (url.pathname === `${base}/paper`) json = {as_of: NOW, equity: 105000, cash: 15000, day_pl: 100, pl_pct: .05, day_pl_pct: .001, positions: [], orders: [], activity: {session: '2026-09-29', complete: true, fills: [{symbol: 'AAOI', side: 'buy', qty: 2, price: 98.74, filled_at: '2026-09-29T13:30:18Z'}]}}
+    else if (url.pathname === `${base}/paper`) json = {as_of: NOW, equity: 105000, cash: 15000, day_pl: 100, pl_pct: .05, day_pl_pct: .001, positions: [], orders: [], activity: {session: '2026-09-29', complete: true, fills: [{symbol: 'AAOI', side: 'buy', qty: 2, price: 98.74, filled_at: '2026-09-29T13:30:18Z'}]},
+      plan: {rule: 'dip_or_close', until_rebalance: 9, last_rebalance: '2026-09-16', reason: null, orders: options.order ? [options.order] : []}}
     else if (url.pathname === `${base}/paper/history`) {
       historyReads.push(url.searchParams.get('limit') ?? '')
       if (options.historyFailure) return route.fulfill({status: 503, json: {detail: 'Unavailable'}})
@@ -82,8 +77,8 @@ test('shows saved daily account history without manufacturing returns or closing
   const diagnostics = await scenario(page)
   await page.goto('/#desk')
   expect(diagnostics.historyReads).toEqual([])
-  await page.locator('summary', {hasText: 'Practice account'}).click()
-  await expect(page.locator('details[aria-label="Practice account"]')).not.toContainText('CAGR')
+  await page.locator('summary', {hasText: 'Paper account'}).click()
+  await expect(page.locator('details[aria-label="Paper account"]')).not.toContainText('CAGR')
   await expect(page.locator('details[aria-label="Historical simulation"]')).not.toHaveAttribute('open')
   await page.getByRole('button', {name: /Daily account history/}).click()
   const history = page.getByRole('region', {name: 'Paper account history', exact: true})
@@ -105,7 +100,7 @@ test('shows saved daily account history without manufacturing returns or closing
   await history.screenshot({path: testInfo.outputPath('paper-account-history.png')})
   await page.waitForLoadState('networkidle')
   await page.reload()
-  await page.locator('summary', {hasText: 'Practice account'}).click()
+  await page.locator('summary', {hasText: 'Paper account'}).click()
   await page.getByRole('button', {name: /Daily account history/}).click()
   await expect(page.getByRole('table', {name: 'Daily paper account values'})).toContainText('$99,341.51')
   expect(diagnostics.historyReads).toEqual(['90', '90'])
@@ -117,7 +112,7 @@ test('shows saved daily account history without manufacturing returns or closing
 test('distinguishes unavailable paper history from an empty record set', async ({page}) => {
   const diagnostics = await scenario(page, {historyFailure: true})
   await page.goto('/#desk')
-  await page.locator('summary', {hasText: 'Practice account'}).click()
+  await page.locator('summary', {hasText: 'Paper account'}).click()
   await page.getByRole('button', {name: /Daily account history/}).click()
   await expect(page.getByRole('alert')).toContainText('Account history unavailable')
   await expect(page.getByText('No saved paper-account values yet.')).toHaveCount(0)
@@ -125,27 +120,31 @@ test('distinguishes unavailable paper history from an empty record set', async (
   expect(diagnostics.errors).toEqual([])
 })
 
-for (const [name, decision, staleContext, word, detail] of [
-  ['waiting buy', {}, false, 'Wait', 'Strategy: buy'],
-  ['missing decision', null, false, 'Unavailable', 'Refresh guidance'],
-  ['mismatched decision', {}, true, 'Unavailable', 'Refresh guidance'],
-  ['blocked quote', {executable: false, blocker: 'Quote unavailable'}, false, 'Blocked', 'Strategy: buy'],
-  ['unknown cash', {executable: false, blocker: 'available cash is unknown'}, false, 'Cash needed', 'Confirm available cash'],
-  ['expired evidence', {action: 'Buy', move_weight: .1, valid_until: '2026-09-29T15:34:00Z'}, false, 'Unavailable', 'Refresh price check'],
-  ['genuine hold', {strategy_action: 'Hold', action: 'Hold'}, false, 'Hold', null],
-  ['current buy', {action: 'Buy', move_weight: .1}, false, 'BUY', null],
+// The paper account's order for AAOI, filled at the open, as `/desk/paper` lists it.
+const FILLED = {client_order_id: 'AAOI-1', symbol: 'AAOI', side: 'buy', action: 'BUY', qty: 2, price: 98.74, notional: 197.48, weight: 197.48 / 105000, leg: 'entry',
+  why: 'Enters the book at 10.0%', reason: null, timing: 'dip_or_close', decided: SESSION, execute_on: '2026-09-29', open: 98, level: 97.02,
+  sent_at: '2026-09-29T13:30:10Z', sent_how: 'market', filled_qty: 2, filled_price: 98.74, filled_at: '2026-09-29T13:30:18Z',
+  state: 'filled', status: 'Bought 2 @ $98.74 · 9:30 AM', when: 'Today · 15-min close ≤ $97.02 (1% under the $98.00 open), else at the close'}
+
+for (const [name, order, word, detail, size] of [
+  // A fill in the broker's activity is not an order of the plan: the board says nothing for the name.
+  ['no order in the plan', null, '—', 'In the book at 10.0% · no order tonight', '—'],
+  // The plan's own filled order reads as the fill it became.
+  ['the plan\'s filled buy', FILLED, 'BUY', 'Enters the book at 10.0%', '2 sh'],
 ] as const) {
-  // Identical paper fills must never overwrite the current personal decision's readiness.
-  test(`current action distinguishes ${name} from the paper account's opening buy`, async ({page}) => {
-    const diagnostics = await scenario(page, {decision, staleContext})
+  // The board's word for a name comes from the plan's orders alone, never from the broker's fill list.
+  test(`current action with ${name} beside the paper account's opening fill`, async ({page}) => {
+    const diagnostics = await scenario(page, {order})
     await page.goto('/#desk')
     const board = page.getByRole('region', {name: 'Stocks and cash', exact: true})
+    if (!order) await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
     await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText(word)
-    if (detail) await expect(board.getByLabel('AAOI action status', {exact: true})).toHaveText(detail)
-    await expect(board.getByLabel('AAOI size', {exact: true})).toHaveText(word === 'BUY' ? '10.0% of account' : '—')
-    await page.locator('summary', {hasText: 'Practice account'}).click()
-    await expect(page.getByLabel('Paper execution', {exact: true})).toContainText('buy 2 AAOI')
-    await expect(page.getByLabel('Paper account execution timing')).toContainText('Scheduled paper buys: next open')
+    await expect(board.getByLabel('AAOI action status', {exact: true})).toHaveText(detail)
+    await expect(board.getByLabel('AAOI size', {exact: true})).toContainText(size)
+    if (order) await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Bought 2 @ $98.74 · 9:30 AM')
+    await page.locator('summary', {hasText: 'Paper account'}).click()
+    await expect(page.getByLabel('Paper execution', {exact: true})).toContainText('Bought 2 AAOI @ $98.74')
+    await expect(page.getByLabel('Paper account execution timing')).toContainText('a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise market-on-close from 3:30 PM ET')
     await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText(word)
     expect(diagnostics.writes).toEqual([])
     expect(diagnostics.errors).toEqual([])

@@ -5,22 +5,15 @@ const DESK = `/api/v1/market/${OWNER}/desk`
 const SESSION = '2026-09-24'
 const NOW = '2026-09-24T14:00:00Z'
 const WRITTEN = '2026-09-24T00:00:00Z'
-const DEADLINE = '2026-09-24T14:10:00Z'
-const OLD_ACCOUNT = {equity: 200000, available_cash: 100000, risk_budget_pct: 2}
-const NEW_ACCOUNT = {equity: 100000, available_cash: 5000, risk_budget_pct: .5}
-const INITIAL_ACCOUNT = {equity: 100000}
 const LIVE_FAILURE = 'Regular-session data refresh failed; showing last known regular data.'
 
-type Account = {equity: number; available_cash?: number; risk_budget_pct?: number}
 type Gate = {wait: Promise<void>; release: () => void}
 type Reply = {gate?: Gate; body?: unknown; abort?: boolean}
-type Entry = {method: string; path: string; body?: unknown; receiptId?: string;
-  account?: Account; held: boolean; completed: boolean; finished: boolean; aborted: boolean}
+type Entry = {method: string; path: string; body?: unknown; held: boolean; completed: boolean; finished: boolean; aborted: boolean}
 type Diagnostics = {consoleErrors: string[]; pageErrors: string[]; failedRequests: string[];
   badResponses: string[]; unexpectedRequests: string[]; forbiddenWrites: string[]}
 type Scenario = {live: ReturnType<typeof liveSnapshot>; replies: Map<string, Reply[]>; requests: Entry[];
-  gates: Gate[]; diagnostics: Diagnostics; expectedFailedRequests: string[]; expectedConsoleErrors: string[];
-  nextReceipt: number}
+  gates: Gate[]; diagnostics: Diagnostics; expectedFailedRequests: string[]; expectedConsoleErrors: string[]}
 
 // Keep the exchange open and its clock independent of the receipt or request completion time.
 function market() {
@@ -34,30 +27,10 @@ function liveSnapshot(price: number, reason: string) {
     quotes: {AAPL: {last: price, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}, market_status: market()}
 }
 
-// Compare exactly the account fields the browser actually sent, with no inferred or defaulted cash.
-function sameAccount(actual: Account | undefined, expected: Account) {
-  return actual?.equity === expected.equity && actual?.available_cash === expected.available_cash
-    && actual?.risk_budget_pct === expected.risk_budget_pct
-}
-
-// Assign each synthetic guidance response a unique receipt whose acknowledgement can be traced to its inputs.
-function personalGuidance(state: Scenario, account: Account) {
-  const id = `00000000-0000-4000-8000-${(++state.nextReceipt).toString(16).padStart(12, '0')}`
-  const action = sameAccount(account, OLD_ACCOUNT) ? 'Buy' : 'Hold'
-  const move = action === 'Buy' ? .01 : 0
-  return {session: SESSION, market_status: market(), rows: [], grades_live: {},
-    decisions: {session: SESSION, written: WRITTEN, rows: {AAPL: {
-      action, strategy_action: action, grade: 'A', move_weight: move, strategy_move_weight: move,
-      executable: action === 'Buy', blocker: null, reason: `Synthetic ${action} for the submitted account`,
-      valid_until: DEADLINE, current_weight: .01, target_weight: .01 + move, delta_weight: move,
-      quote: {feed: 'sip', at: NOW, bid: 109.99, ask: 110, valid_until: DEADLINE},
-    }}}, history_receipt: {status: 'generated', id, generated_at: NOW, acknowledge_before: DEADLINE}}
-}
-
 // Prepare one isolated response queue and a complete browser/request/write audit for each case.
 function scenario(): Scenario {
   return {live: liveSnapshot(110, 'Initial synthetic market snapshot'), replies: new Map(), requests: [], gates: [],
-    nextReceipt: 0, expectedFailedRequests: [], expectedConsoleErrors: [],
+    expectedFailedRequests: [], expectedConsoleErrors: [],
     diagnostics: {consoleErrors: [], pageErrors: [], failedRequests: [], badResponses: [], unexpectedRequests: [], forbiddenWrites: []}}
 }
 
@@ -71,7 +44,7 @@ function hold(state: Scenario, endpoint: string, reply: Omit<Reply, 'gate'> = {}
   return gate
 }
 
-// Restrict the browser to fixture reads plus synthetic receipt generation and acknowledgement.
+// Restrict the browser to fixture reads; every write is refused and recorded.
 async function install(page: Page, state: Scenario, baseURL: string) {
   const ledger = new Map<Request, Entry>()
   await page.clock.install({time: new Date('2026-09-24T13:59:59Z')})
@@ -100,12 +73,7 @@ async function install(page: Page, state: Scenario, baseURL: string) {
     const entry: Entry = {method, path, body, held: false, completed: false, finished: false, aborted: false}
     ledger.set(request, entry)
     state.requests.push(entry)
-    const receiptId = path.startsWith(`${DESK}/personal-history/`) && path.endsWith('/acknowledge') ? path.split('/')[7] : undefined
-    const generating = method === 'POST' && path === `${DESK}/mine`
-    const acknowledging = method === 'POST' && receiptId !== undefined
-      && state.requests.some(previous => previous.path === `${DESK}/mine` && previous.receiptId === receiptId)
-      && JSON.stringify(body) === JSON.stringify({session: SESSION, written: WRITTEN})
-    if (method !== 'GET' && !generating && !acknowledging) {
+    if (method !== 'GET') {
       state.diagnostics.forbiddenWrites.push(`${method} ${path}`)
       entry.completed = true
       return route.fulfill({status: 418, json: {detail: 'Fixture refuses this mutation'}})
@@ -122,21 +90,6 @@ async function install(page: Page, state: Scenario, baseURL: string) {
     else if (endpoint === '/holdings') json = {holdings: [{ticker: 'AAPL', shares: 10, entry_price: 100, entry_date: '2026-08-28'}]}
     else if (endpoint === '/live') json = state.live
     else if (endpoint === '/session-prices') json = {session: 'regular', as_of: NOW, signal_scope: 'regular-session', quotes: {}}
-    else if (generating) {
-      const {equity, available_cash, risk_budget_pct, record_history, ...extra} = body
-      entry.account = {equity, available_cash, risk_budget_pct}
-      if (record_history !== true || Object.keys(extra).length
-        || ![INITIAL_ACCOUNT, OLD_ACCOUNT, NEW_ACCOUNT].some(account => sameAccount(entry.account, account))) {
-        state.diagnostics.forbiddenWrites.push(`Invalid synthetic mine inputs: ${JSON.stringify(body)}`)
-      }
-      const guidance = personalGuidance(state, entry.account)
-      entry.receiptId = guidance.history_receipt.id
-      json = guidance
-    } else if (acknowledging) {
-      entry.receiptId = receiptId
-      entry.account = state.requests.find(previous => previous.path === `${DESK}/mine` && previous.receiptId === receiptId)?.account
-      json = {id: receiptId, status: 'acknowledged', acknowledged_at: NOW}
-    } else if (endpoint === '/intraday') json = {session: SESSION, as_of: NOW, rows: [], top_buys: [], changed: []}
     else if (endpoint === '/paper') json = {reason: 'unavailable'}
     else {
       state.diagnostics.unexpectedRequests.push(`${method} ${path}`)
@@ -154,7 +107,7 @@ async function install(page: Page, state: Scenario, baseURL: string) {
   })
 }
 
-// Preserve all diagnostics and account/receipt provenance even if a primary race assertion fails.
+// Preserve all diagnostics and request provenance even if a primary race assertion fails.
 async function finish(state: Scenario, info: TestInfo) {
   for (const gate of state.gates) gate.release()
   await expect.soft.poll(() => state.requests.filter(entry => !entry.completed).length).toBe(0)
@@ -187,25 +140,10 @@ async function settle(page: Page, state: Scenario, ignoreHeld = false) {
   await page.clock.runFor(50)
 }
 
-// Apply account fields using the real form and wait until its guidance was accepted and acknowledged.
-async function applyAccount(page: Page, state: Scenario, account: Account) {
-  const before = state.requests.length
-  await page.getByLabel('Personal account equity', {exact: true}).fill(String(account.equity))
-  await page.getByLabel('Personal available cash', {exact: true}).fill(String(account.available_cash ?? ''))
-  await page.getByLabel('Risk per position (%)', {exact: true}).fill(String(account.risk_budget_pct ?? ''))
-  await page.getByRole('button', {name: 'Apply', exact: true}).click()
-  await expect.poll(() => state.requests.slice(before).some(entry => entry.path.endsWith('/acknowledge')
-    && entry.completed && sameAccount(entry.account, account))).toBe(true)
-  await expect(page.getByLabel('AAPL strategy intent', {exact: true})).toHaveText(sameAccount(account, OLD_ACCOUNT) ? 'BUY' : 'Hold')
-  await expect(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard')
-}
-
-// Reach a settled desk with explicit old inputs; no test depends on default or persisted account values.
+// Reach a settled desk: the board and the first poll's read chain complete.
 async function openDesk(page: Page, state: Scenario) {
   await page.goto('/#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
-  await settle(page, state)
-  await applyAccount(page, state, OLD_ACCOUNT)
   await settle(page, state)
 }
 
@@ -217,19 +155,18 @@ async function refreshHeld(page: Page, state: Scenario, endpoint: string) {
   return state.requests.slice(before).find(entry => entry.path === `${DESK}${endpoint}` && entry.held)!
 }
 
-// Inspect one ticker's rendered price without confusing account controls or the separate paper account.
-async function expectCurrentBoard(page: Page, account: Account, price: number, reason: string) {
+// Inspect one ticker's rendered price and the regular feed's status line, which names the snapshot it came from.
+async function expectCurrentBoard(page: Page, price: number, reason: string) {
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const row = board.getByRole('row').filter({has: page.getByRole('button', {name: 'AAPL', exact: true})})
   await expect.soft(row).toContainText(`$${price.toFixed(2)}`)
-  await expect.soft(page.getByLabel('AAPL strategy intent', {exact: true})).toHaveText(sameAccount(account, OLD_ACCOUNT) ? 'BUY' : 'Hold')
-  await expect.soft(page.getByRole('region', {name: 'Stocks and cash', exact: true})).toContainText(reason)
-  await expect.soft(page.getByLabel('Personal history recording status')).toContainText('Guidance loaded into dashboard')
+  await expect.soft(page.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('—')
+  await expect.soft(page.getByLabel('Plan status')).toContainText(reason)
   await expect.soft(page.getByLabel('Today')).toContainText('XNYS regular session scheduled open')
 }
 
-// A current poll must still complete its full read chain using exactly the confirmed account inputs.
-test('current-context successful poll refreshes guidance and completes its read chain', async ({page, scenario: state}) => {
+// A current poll must still complete its full read chain: the candle, then the paper account's orders.
+test('current-context successful poll refreshes the board and completes its read chain', async ({page, scenario: state}) => {
   await openDesk(page, state)
   state.live = liveSnapshot(222, 'Current-context successful market snapshot')
   const gate = hold(state, '/live')
@@ -238,15 +175,13 @@ test('current-context successful poll refreshes guidance and completes its read 
   gate.release()
   await settle(page, state)
   const requests = state.requests.slice(before)
-  expect(requests.filter(entry => entry.path === `${DESK}/mine`).map(entry => entry.body)).toEqual([{...OLD_ACCOUNT, record_history: true}])
-  expect(requests.filter(entry => entry.path.endsWith('/acknowledge'))).toHaveLength(1)
-  expect(requests.filter(entry => entry.path === `${DESK}/intraday`)).toHaveLength(1)
   expect(requests.filter(entry => entry.path === `${DESK}/paper`)).toHaveLength(1)
-  await expectCurrentBoard(page, OLD_ACCOUNT, 222, state.live.reason)
+  expect(requests.map(entry => entry.path).indexOf(`${DESK}/paper`)).toBeGreaterThan(requests.map(entry => entry.path).indexOf(`${DESK}/live`))
+  await expectCurrentBoard(page, 222, state.live.reason)
 })
 
-// A genuinely current live failure keeps the last price visibly stale while still refreshing personal guidance.
-test('current-context network failure retains disclosed fallback and continues current guidance', async ({page, scenario: state}) => {
+// A genuinely current live failure keeps the last price visibly stale while still re-reading the orders.
+test('current-context network failure retains disclosed fallback and continues the read chain', async ({page, scenario: state}) => {
   await openDesk(page, state)
   const gate = hold(state, '/live', {abort: true})
   const before = state.requests.length
@@ -254,39 +189,13 @@ test('current-context network failure retains disclosed fallback and continues c
   gate.release()
   await settle(page, state)
   const requests = state.requests.slice(before)
-  expect(requests.filter(entry => entry.path === `${DESK}/mine`).map(entry => entry.body)).toEqual([{...OLD_ACCOUNT, record_history: true}])
-  expect(requests.filter(entry => entry.path.endsWith('/acknowledge'))).toHaveLength(1)
-  expect(requests.filter(entry => entry.path === `${DESK}/intraday`)).toHaveLength(1)
   expect(requests.filter(entry => entry.path === `${DESK}/paper`)).toHaveLength(1)
-  await expectCurrentBoard(page, OLD_ACCOUNT, 110, LIVE_FAILURE)
-  await expect(page.getByRole('region', {name: 'Stocks and cash', exact: true})).toContainText('regular bar stale')
+  await expectCurrentBoard(page, 110, LIVE_FAILURE)
+  await expect(page.getByLabel('Plan status')).toContainText('not updating')
 })
 
 for (const abort of [false, true]) {
-  // An old live completion cannot adopt the newer generation while retaining the old form values in its closure.
-  test(`account Apply invalidates an older live ${abort ? 'failure' : 'success'} before mine or acknowledgement`, async ({page, scenario: state}) => {
-    await openDesk(page, state)
-    const gate = hold(state, '/live', {body: liveSnapshot(111, 'Obsolete account market snapshot'), abort})
-    await refreshHeld(page, state, '/live')
-    state.live = liveSnapshot(222, 'Newest account market snapshot')
-    await applyAccount(page, state, NEW_ACCOUNT)
-    await settle(page, state, true)
-    await expectCurrentBoard(page, NEW_ACCOUNT, 222, state.live.reason)
-    const afterNew = state.requests.length
-    gate.release()
-    await settle(page, state)
-    expect.soft(state.requests.slice(afterNew).filter(entry => [
-      `${DESK}/mine`, `${DESK}/intraday`, `${DESK}/paper`,
-    ].includes(entry.path) || entry.path.endsWith('/acknowledge')), 'Discarded poll performs no subsequent reads, capture or acknowledgement').toEqual([])
-    await expectCurrentBoard(page, NEW_ACCOUNT, 222, state.live.reason)
-    await expect.soft(page.getByRole('region', {name: 'Stocks and cash', exact: true})).not.toContainText(LIVE_FAILURE)
-    await expect.soft(page.getByRole('region', {name: 'Stocks and cash', exact: true})).not.toContainText('Obsolete account market snapshot')
-    await expect.soft(page.getByLabel('Personal account equity', {exact: true})).toHaveValue('100000')
-    await expect.soft(page.getByLabel('Personal available cash', {exact: true})).toHaveValue('5000')
-    await expect.soft(page.getByLabel('Risk per position (%)', {exact: true})).toHaveValue('0.5')
-  })
-
-  // Later poll starts supersede earlier live results even when the confirmed account values did not change.
+  // Later poll starts supersede earlier live results: the obsolete completion neither repaints nor reads on.
   test(`newest same-context poll survives an older live ${abort ? 'failure' : 'success'}`, async ({page, scenario: state}) => {
     await openDesk(page, state)
     const gate = hold(state, '/live', {body: liveSnapshot(111, 'Obsolete overlapping market snapshot'), abort})
@@ -294,24 +203,21 @@ for (const abort of [false, true]) {
     const beforeNew = state.requests.length
     state.live = liveSnapshot(222, 'Newest overlapping market snapshot')
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
-    await expect.poll(() => state.requests.slice(beforeNew).some(entry => entry.path.endsWith('/acknowledge') && entry.completed)).toBe(true)
     await expect.poll(() => state.requests.slice(beforeNew).some(entry => entry.path === `${DESK}/paper` && entry.completed)).toBe(true)
     await settle(page, state, true)
-    await expectCurrentBoard(page, OLD_ACCOUNT, 222, state.live.reason)
+    await expectCurrentBoard(page, 222, state.live.reason)
     const afterNew = state.requests.length
     gate.release()
     await settle(page, state)
-    expect.soft(state.requests.slice(afterNew).filter(entry => entry.path === `${DESK}/mine`
-      || entry.path === `${DESK}/intraday` || entry.path === `${DESK}/paper`
-      || entry.path.endsWith('/acknowledge')), 'Superseded poll cannot start a later capture or read chain').toEqual([])
-    await expectCurrentBoard(page, OLD_ACCOUNT, 222, state.live.reason)
-    await expect.soft(page.getByRole('region', {name: 'Stocks and cash', exact: true})).not.toContainText(LIVE_FAILURE)
-    await expect.soft(page.getByRole('region', {name: 'Stocks and cash', exact: true})).not.toContainText('Obsolete overlapping market snapshot')
+    expect.soft(state.requests.slice(afterNew).filter(entry => entry.path === `${DESK}/paper`), 'Superseded poll cannot start a later read chain').toEqual([])
+    await expectCurrentBoard(page, 222, state.live.reason)
+    await expect.soft(page.getByLabel('Plan status')).not.toContainText(LIVE_FAILURE)
+    await expect.soft(page.getByLabel('Plan status')).not.toContainText('Obsolete overlapping market snapshot')
   })
 }
 
-// Navigating away invalidates a live read before it can generate private guidance or continue the poll chain.
-test('unmount during live read stops mine, intraday, paper and acknowledgement', async ({page, scenario: state}) => {
+// Navigating away invalidates a live read before it can continue the poll chain.
+test('unmount during live read stops the paper read', async ({page, scenario: state}) => {
   await openDesk(page, state)
   const gate = hold(state, '/live')
   await refreshHeld(page, state, '/live')
@@ -323,19 +229,15 @@ test('unmount during live read stops mine, intraday, paper and acknowledgement',
   expect(state.requests.slice(afterLeave).filter(entry => entry.path.startsWith(DESK)), 'An unmounted poll starts no further desk requests').toEqual([])
 })
 
-// Each later await boundary must stop continuation too, not just the initial live-price request.
-test('unmount during mine or intraday prevents all remaining reads and receipt acknowledgement', async ({page, scenario: state}) => {
-  for (const endpoint of ['/mine', '/intraday']) {
-    await openDesk(page, state)
-    const gate = hold(state, endpoint)
-    const pending = await refreshHeld(page, state, endpoint)
-    await page.getByRole('navigation', {name: 'Primary navigation'}).getByRole('button', {name: 'Conversations', exact: true}).click()
-    await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).not.toBeVisible()
-    const afterLeave = state.requests.length
-    gate.release()
-    await settle(page, state)
-    expect.soft(state.requests.slice(afterLeave).filter(entry => entry.path.startsWith(DESK)), `${endpoint} continuation is discarded after unmount`).toEqual([])
-    if (endpoint === '/mine') expect.soft(state.requests.filter(entry => entry.path.endsWith('/acknowledge')
-      && entry.receiptId === pending.receiptId), 'Unmounted guidance is never acknowledged').toEqual([])
-  }
+// The later await boundary must stop continuation too, not just the initial live-price request.
+test('unmount during the paper read prevents any remaining desk request', async ({page, scenario: state}) => {
+  await openDesk(page, state)
+  const gate = hold(state, '/paper')
+  await refreshHeld(page, state, '/paper')
+  await page.getByRole('navigation', {name: 'Primary navigation'}).getByRole('button', {name: 'Conversations', exact: true}).click()
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).not.toBeVisible()
+  const afterLeave = state.requests.length
+  gate.release()
+  await settle(page, state)
+  expect(state.requests.slice(afterLeave).filter(entry => entry.path.startsWith(DESK)), 'The paper continuation is discarded after unmount').toEqual([])
 })
