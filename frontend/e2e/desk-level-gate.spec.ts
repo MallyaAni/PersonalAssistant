@@ -140,6 +140,8 @@ test('a downgrade on a pop is SELL, a trim is TRIM, a band-blocked buy says so',
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('TRIM')
   await expect(board.getByLabel('MSFT action status')).toHaveText('Trim to its 9.1% target')
   await expect(board.getByLabel('MSFT size')).toContainText('27 sh')
+  // A name the account neither holds nor trades is on the All names view.
+  await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('—')
   await expect(board.getByLabel('NVDA action status')).toHaveText('In the book · no buy while its daily rejects the upper band')
   await expect(board.getByLabel('NVDA size')).toHaveText('—')
