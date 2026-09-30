@@ -9,7 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
-import { TradeBoard, boardRows, dollars, percent, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
+import { TradeBoard, boardRows, dollars, percent, orderWord, quantityLabel, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -2849,11 +2849,12 @@ const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; 
     <h4 className="mb-1 font-medium text-[#6e6e73]">Paper account</h4>
     <p className="text-base">
       <span className={`font-semibold ${WORD_STYLE[row.word]}`}>{row.word}</span>
-      {row.orders.length > 0 && <span className="ml-2 text-[#1d1d1f]">{sharesText(row.qty)}{row.notional !== null ? ` · ${dollars(row.notional)}` : ''}{row.weight !== null ? ` · ${percent(row.weight)} of the account` : ''}</span>}
+      {row.orders.length > 0 && <span className="ml-2 text-[#1d1d1f]">{row.combined ? `${sharesText(row.qty)} ${row.sizeLabel}` : `${row.orders.length} orders · see below`}{row.notional !== null ? ` · ${dollars(row.notional)}` : ''}{row.weight !== null ? ` · ${percent(row.weight)} of current equity` : ''}</span>}
     </p>
     <p className="text-xs text-[#6e6e73]">{row.why}</p>
     {row.orders.map(o => <div key={o.client_order_id} className="mt-2 text-xs">
-      {row.orders.length > 1 && <p className="font-medium text-[#1d1d1f]">{o.action} {sharesText(o.qty)} · {o.why}</p>}
+      {row.orders.length > 1 && <p className="font-medium text-[#1d1d1f]">{orderWord(o)} {sharesText(o.qty)} {quantityLabel(o)} · {o.why}</p>}
+      {o.planned_qty !== undefined && o.planned_qty !== o.qty && <p>Originally planned: {sharesText(o.planned_qty)}</p>}
       <p className="text-[#1d1d1f]">{o.status}</p>
       <p className="text-[#6e6e73]">{o.when}</p>
     </div>)}

@@ -376,7 +376,10 @@ def test_the_board_reads_each_order_in_one_vocabulary(tmp_path):
     # Sent at the trigger, then filled.
     sent_row = row(sent={"at": ny(10, 16).isoformat(), "how": "market", "qty": 10})
     sent = intraday_orders.board_row(sent_row, broker=None, now=ny(10, 17), **common)
-    assert (sent["state"], sent["status"]) == ("sent", "Sent 10:16 AM · market order")
+    assert (sent["state"], sent["status"]) == (
+        "sent",
+        "Sent 10:16 AM · market order · broker status unavailable",
+    )
     filled = intraday_orders.board_row(
         sent_row,
         broker={
@@ -493,3 +496,134 @@ def test_board_orders_lists_pending_then_finished():
         ("AAA", "filled"),
     ]
     assert shown[0]["status"] == "Waiting for today's opening price"
+
+
+# A holdings-clipped order must display the broker quantity and actual fill value.
+def test_clipped_order_displays_five_filled_not_twenty_planned():
+    planned = row(side="sell", qty=20, sent={"qty": 5, "how": "market"})
+    shown = intraday_orders.board_row(
+        planned,
+        broker={
+            "status": "filled",
+            "qty": "5",
+            "filled_qty": "5",
+            "filled_avg_price": "100",
+        },
+        latch=None,
+        quote=None,
+        held=0,
+        price=80,
+        equity=100_000,
+        now=ny(15, 55),
+    )
+    assert (shown["planned_qty"], shown["submitted_qty"], shown["qty"]) == (20, 5, 5)
+    assert (shown["notional"], shown["price"], shown["quantity_basis"]) == (
+        500,
+        100,
+        "filled",
+    )
+    assert shown["terminal"] is True
+    assert shown["remaining_qty"] == 0
+    assert planned["qty"] == 20  # Display must not mutate the execution plan.
+
+
+# A cancelled partial fill has no working remainder; an open partial fill does.
+@pytest.mark.parametrize(
+    ("status", "terminal", "state", "remaining", "qty"),
+    [
+        ("partially_filled", False, "partial", 3, 5),
+        ("canceled", True, "cancelled", 0, 2),
+        ("rejected", True, "rejected", 0, 2),
+    ],
+)
+def test_partial_fill_preserves_terminal_evidence(
+    status, terminal, state, remaining, qty
+):
+    shown = intraday_orders.board_row(
+        row(qty=20, sent={"qty": 5}),
+        broker={
+            "status": status,
+            "qty": "5",
+            "filled_qty": "2",
+            "filled_avg_price": "100",
+        },
+        latch=None,
+        quote=None,
+        held=2,
+        price=80,
+        equity=100_000,
+        now=ny(15, 55),
+    )
+    assert (
+        shown["terminal"],
+        shown["state"],
+        shown["remaining_qty"],
+        shown["qty"],
+    ) == (terminal, state, remaining, qty)
+    assert shown["filled_qty"] == 2
+    assert "of 5" in shown["status"]
+
+
+# A missing broker answer cannot establish fills or a working remainder.
+def test_submitted_order_without_broker_has_unknown_remainder():
+    shown = intraday_orders.board_row(
+        row(qty=20, sent={"qty": 5}),
+        broker=None,
+        latch=None,
+        quote=None,
+        held=0,
+        price=100,
+        equity=100_000,
+        now=ny(15, 55),
+    )
+    assert (shown["qty"], shown["quantity_basis"]) == (5, "submitted")
+    assert shown["remaining_qty"] is None
+    assert shown["terminal"] is None
+    assert shown["filled_qty"] is None
+    assert "broker status unavailable" in shown["status"]
+
+
+# Adopted broker orders may be smaller than the plan even without a saved sent quantity.
+def test_adopted_broker_quantity_overrides_plan():
+    shown = intraday_orders.board_row(
+        row(qty=20, sent={"adopted": True}),
+        broker={"status": "accepted", "qty": "5", "filled_qty": "0"},
+        latch=None,
+        quote=None,
+        held=0,
+        price=100,
+        equity=100_000,
+        now=ny(15, 55),
+    )
+    assert (shown["qty"], shown["remaining_qty"], shown["submitted_qty"]) == (5, 5, 5)
+
+
+# The dashboard uses the same MOC cutoff as execution, including early closes.
+@pytest.mark.parametrize(
+    ("day", "hour", "minute", "how"),
+    [
+        (TODAY, 15, 30, "moc"),
+        (TODAY, 15, 50, "market"),
+        (TODAY, 15, 55, "market"),
+        (date(2026, 11, 27), 12, 30, "moc"),
+        (date(2026, 11, 27), 12, 50, "market"),
+    ],
+)
+def test_close_window_words_match_actual_order_type(day, hour, minute, how):
+    now = ny(hour, minute, day)
+    pending = row(execute_on=day.isoformat())
+    latch_row = {"open": 100.0}
+    verdict = intraday_orders.decide(pending, latch_row, None, now, day)
+    shown = intraday_orders.board_row(
+        pending,
+        broker=None,
+        latch={"session": day.isoformat(), "symbols": {"AAA": latch_row}},
+        quote=None,
+        held=0,
+        price=100,
+        equity=100_000,
+        now=now,
+    )
+    assert verdict["send"] == how
+    order_type = "market-on-close" if how == "moc" else "market order"
+    assert shown["status"] == f"Close window · {order_type} due"

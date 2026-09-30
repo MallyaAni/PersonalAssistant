@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-09-30 — Branch-only paper-order evidence corrections
+
+User requested implementation on a branch with concrete results. Branch
+`fix/desk-order-evidence-20260930` starts from GitHub main `0cf5760`.
+Execution rules, `/5`, live state and serving models are unchanged. Not deployed.
+
+- VERIFIED: 119 backend tests (intraday orders, entry timing, `/5`, desk API)
+  in `anios-functional-tests`, with this worktree mounted at `/app` and no network.
+- VERIFIED: nine Playwright trade-board tests against this branch served at
+  Spark localhost:5187, not the deployed frontend. They assert terminal BUY
+  outcomes, no duplicate reference sizes, board/details/panel agreement,
+  mixed-order separation, persisted reference input and phone overflow.
+- VERIFIED: TypeScript, Vite production build, Ruff and generated-fixture check.
+  Vite retains main's CSS pseudo-class and large-chunk warnings.
+- Fixed: planned/submitted/filled quantity evidence (20 planned, 5 submitted
+  now reads 5); filled value uses fill price, not today's quote; cancelled
+  partial fills have no working remainder; missing broker state is unknown.
+- Fixed: terminal and submitted orders have outcome labels, not fresh BUY/SELL;
+  reference sizes apply only to unsubmitted plans and do not claim to know
+  the viewer's holdings/cash. Mixed states/sides are listed separately.
+- Fixed: after the MOC cutoff the display correctly says market order, including
+  early closes. This does not change when or how an order is sent.
+- Next: model-aware cache checks, then a bounded citation-backed DeepSeek
+  extraction pilot. No live promotion, no serving swap, no old `/4` result
+  presented as beating current `/5`.
+
+Full-system and trading-desk/market-data diagrams assessed: internal display
+corrections only; no component, store, trust boundary or data-flow change.
+
 ## 2026-09-30, morning — Adaptive entry: RECORD ×3; browser specs rewritten for the trade board; universe expansion prepared
 
 **Nothing live changed.** Three branches were built overnight on the

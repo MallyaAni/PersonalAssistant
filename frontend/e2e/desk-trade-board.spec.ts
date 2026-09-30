@@ -34,7 +34,7 @@ const record = () => {
 }
 
 // Route every desk read to the scenario at `now`; any write or unknown read fails the test.
-async function scenario(page: Page, {now, plan}: {now: string; plan: 'thursday' | 'wednesday'}) {
+async function scenario(page: Page, {now, plan, orders}: {now: string; plan: 'thursday' | 'wednesday'; orders?: object[]}) {
   const errors: string[] = []
   const writes: string[] = []
   page.on('pageerror', error => errors.push(error.message))
@@ -45,7 +45,7 @@ async function scenario(page: Page, {now, plan}: {now: string; plan: 'thursday' 
   const market = {exchange: 'XNYS', as_of: now, session: open ? '2026-10-01' : '2026-09-30', calendar_known: true, is_session: true, open, phase: open ? 'open' : 'post-market', opens_at: open ? '2026-10-01T13:30:00Z' : '2026-09-30T13:30:00Z', closes_at: open ? '2026-10-01T20:00:00Z' : '2026-09-30T20:00:00Z'}
   const bar = open ? '2026-10-01T14:00:00Z' : '2026-09-30T19:45:00Z'
   const quotes = Object.fromEntries(fixture.positions.map((p: {symbol: string; current_price: number}) => [p.symbol, {symbol: p.symbol, last: p.current_price, open: p.current_price, high: p.current_price, low: p.current_price, bar, as_of: now}]))
-  const paper = {user_id: USER, as_of: now, equity: fixture.equity, cash: fixture.cash, day_pl: 864, day_pl_pct: .0087, pl_pct: .0002, positions: fixture.positions, orders: [], activity: {session: '2026-10-01', complete: true, fills: []}, plan: fixture[plan]}
+  const paper = {user_id: USER, as_of: now, equity: fixture.equity, cash: fixture.cash, day_pl: 864, day_pl_pct: .0087, pl_pct: .0002, positions: fixture.positions, orders: [], activity: {session: '2026-10-01', complete: true, fills: []}, plan: orders ? {...fixture[plan], orders} : fixture[plan]}
   await page.route('**/api/**', async route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -86,7 +86,7 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   await expect(board).toContainText('the paper account’s orders')
   await expect(page.getByLabel('Paper account summary')).toContainText('$100,018 paper account')
   await expect(page.getByLabel('Paper account summary')).toContainText('10 orders (8 buys, 2 sells)')
-  await expect(page.getByLabel('Execution rule')).toContainText('The paper account sends exactly the orders below.')
+  await expect(page.getByLabel('Execution rule')).toContainText('submitted or completed orders are not new trade instructions.')
   // An exit waiting for its pop.
   await expect(page.getByLabel('NVDA strategy intent')).toHaveText('SELL')
   await expect(page.getByLabel('NVDA action status')).toHaveText('Exit: the grade fell to B')
@@ -102,6 +102,9 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   await expect(page.getByLabel('HPE action status')).toHaveText('Finish last session’s buy (cash was short) + Reinvest an exit’s proceeds'.replaceAll('’', "'"))
   await expect(page.getByLabel('HPE order status')).toContainText('Sent 10:16 AM · market order')
   // A filled exit.
+  await expect(page.getByLabel('ANET strategy intent')).toHaveText('SOLD')
+  await expect(page.getByLabel('ANET size')).toContainText('32 sh filled')
+  await expect(page.getByLabel('ANET size')).toContainText('$6,563')
   await expect(page.getByLabel('ANET order status')).toContainText('Sold 32 @ $205.10 · 9:46 AM')
   // A held name with no order says why.
   await expect(page.getByLabel('NTAP strategy intent')).toHaveText('HOLD')
@@ -150,9 +153,13 @@ test('views, search and your account size', async ({page}) => {
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row')).toHaveCount(2)
   await page.getByLabel('Search the stock list').fill('')
   // Your account at $50,000: NVDA's 15.3% is 33 shares at $229.10.
-  await page.getByLabel('Your account size').fill('50000')
-  await page.getByLabel('Your account size').press('Enter')
-  await expect(page.getByLabel('NVDA size')).toContainText('you 33 sh')
+  await page.getByLabel('Reference account size').fill('50000')
+  await page.getByLabel('Reference account size').press('Enter')
+  await expect(page.getByLabel('NVDA size')).toContainText('ref. 33 sh')
+  await expect(page.getByLabel('ANET size')).not.toContainText('ref.')
+  await expect(page.getByLabel('HPE size')).not.toContainText('ref.')
+  await page.reload()
+  await expect(page.getByLabel('Reference account size')).toHaveValue('50000')
   expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
 })
@@ -164,8 +171,8 @@ test('the row details and the ticker panel repeat the board’s words', async ({
   await page.goto('/#desk')
   await page.getByRole('button', {name: 'details for HPE'}).click()
   const orders = page.getByRole('region', {name: 'HPE orders'})
-  await expect(orders).toContainText('BUY 6 sh')
-  await expect(orders).toContainText('BUY 3 sh')
+  await expect(orders).toContainText('BUY SENT 6 sh submitted')
+  await expect(orders).toContainText('BUY SENT 3 sh submitted')
   await expect(orders).toContainText("Finish last session's buy (cash was short)")
   await expect(page.getByRole('region', {name: 'HPE position'})).toContainText('61 sh')
   await expect(page.getByRole('region', {name: 'HPE grade'})).toContainText('Grade A')
@@ -190,5 +197,49 @@ test('the board on a phone', async ({page}, testInfo) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(1)
   await page.screenshot({path: testInfo.outputPath('phone-thursday.png'), fullPage: false})
+  expect(diagnostics.errors).toEqual([])
+})
+
+// Terminal orders never look like fresh buys or offer a duplicate personal size.
+for (const [state, word] of [['filled', 'BOUGHT'], ['cancelled', 'CANCELLED'], ['rejected', 'REJECTED']] as const) {
+  test(`${state} buy stays historical in the board, details and ticker panel`, async ({page}) => {
+    const order = {...fixture.thursday.orders.find((o: {symbol: string}) => o.symbol === 'AAOI'), state, terminal: true, qty: 5, planned_qty: 20, submitted_qty: 5, remaining_qty: 0, quantity_basis: state === 'filled' ? 'filled' : 'submitted', status: state === 'filled' ? 'Bought 5 @ $100.00' : `Not filled: order ${state}`, filled_qty: state === 'filled' ? 5 : 0, notional: 500, price: 100, weight: .005}
+    const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: [order]})
+    await page.goto('/#desk')
+    await page.getByLabel('Reference account size').fill('50000')
+    await page.getByLabel('Reference account size').press('Enter')
+    await expect(page.getByLabel('AAOI strategy intent')).toHaveText(word)
+    await expect(page.getByLabel('AAOI size')).toContainText('5 sh')
+    await expect(page.getByLabel('AAOI size')).not.toContainText('ref.')
+    await page.getByRole('button', {name: 'details for AAOI'}).click()
+    const details = page.getByRole('region', {name: 'AAOI orders'})
+    await expect(details).toContainText(`${word} 5 sh`)
+    await expect(details).toContainText('Originally planned: 20 sh')
+    await expect(details).not.toContainText('ref.')
+    await page.getByRole('button', {name: 'AAOI', exact: true}).click()
+    const card = page.getByRole('region', {name: 'AAOI paper order'})
+    await expect(card).toContainText(word)
+    await expect(card).toContainText('5 sh')
+    expect(diagnostics.writes).toEqual([])
+    expect(diagnostics.errors).toEqual([])
+  })
+}
+
+// Opposite sides and mixed completed/pending orders must not become a summed buy.
+test('mixed orders stay separate and cannot be scaled together', async ({page}) => {
+  const source = fixture.thursday.orders.find((o: {symbol: string}) => o.symbol === 'AAOI')
+  const orders = [source, {...source, client_order_id: 'second', side: 'sell', action: 'SELL', state: 'filled', qty: 2, filled_qty: 2, quantity_basis: 'filled', status: 'Sold 2 @ $100.00'}]
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders})
+  await page.goto('/#desk')
+  await page.getByLabel('Reference account size').fill('50000')
+  await page.getByLabel('Reference account size').press('Enter')
+  await expect(page.getByLabel('AAOI strategy intent')).toHaveText('ORDERS')
+  await expect(page.getByLabel('AAOI size')).toContainText('2 orders · see details')
+  await expect(page.getByLabel('AAOI size')).not.toContainText('ref.')
+  await page.getByRole('button', {name: 'AAOI', exact: true}).click()
+  const card = page.getByRole('region', {name: 'AAOI paper order'})
+  await expect(card).toContainText('BUY 4 sh planned')
+  await expect(card).toContainText('SOLD 2 sh filled')
+  expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
 })

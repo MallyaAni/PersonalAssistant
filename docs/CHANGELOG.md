@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-30 — Paper-order evidence and outcome labels (branch verified, not deployed)
+
+`fix/desk-order-evidence-20260930`: paper orders expose planned, submitted,
+remaining and filled quantity evidence. Completed values use actual fill
+prices; clipped submissions do not retain the larger planned size. Terminal
+partial fills do not imply a working remainder; an unavailable broker answer
+does not imply zero remaining. Late-close wording matches market execution.
+
+The board and ticker panel distinguish BOUGHT/SOLD, CANCELLED/REJECTED,
+submitted orders and unsent intent. Mixed outcomes/sides are not summed into
+one apparent action. Optional proportional sizes are labelled reference
+examples, only for unsent plans, and do not claim personal cash/holdings checks.
+
+Verified against exact branch source on Spark: 119 backend tests, nine browser
+tests (including terminal states, saved reference size, mixed orders and phone
+layout), TypeScript, production Vite build, Ruff and generated fixture check.
+No execution-policy or live-state changes. No deployment.
+
 ## 2026-09-30 — Adaptive entry study (RECORD ×3); browser specs for the trade board; ticker-panel close fallback
 
 - `backend/market/adaptive_entry.py`, `backend/cli/market_adaptive_entry.py`:

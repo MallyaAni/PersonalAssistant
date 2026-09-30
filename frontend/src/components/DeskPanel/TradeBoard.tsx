@@ -16,7 +16,7 @@ import { SessionPrice } from './StockBoard'
 
 // The four words a row can say, and the dash for a name the account neither
 // holds nor trades.
-export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—'
+export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—' | 'BOUGHT' | 'SOLD' | 'TRIMMED' | 'CANCELLED' | 'REJECTED' | 'MISSED' | 'NOT SENT' | 'BUY SENT' | 'SELL SENT' | 'PART FILLED' | 'ORDERS'
 
 // One name on the board, with everything its row and its details show.
 export type BoardRow = {
@@ -26,6 +26,8 @@ export type BoardRow = {
   why: string
   orders: DeskPaperOrder[]
   qty: number
+  sizeLabel: string
+  combined: boolean
   notional: number | null
   weight: number | null
   held: number
@@ -79,7 +81,7 @@ export const price = (value: number) => `$${value.toLocaleString('en-US', {minim
 export const percent = (weight: number) => weight > 0 && weight < 0.001 ? '<0.1%' : `${(weight * 100).toFixed(1)}%`
 
 // Shares, with the unit: 1,250 sh.
-export const shares = (qty: number) => `${Math.round(qty).toLocaleString('en-US')} sh`
+export const shares = (qty: number) => `${qty.toLocaleString('en-US', {maximumFractionDigits: 6})} sh`
 
 // The colour of each word: green buys, red sells, amber trims, grey holds.
 export const WORD_STYLE: Record<BoardWord, string> = {
@@ -87,6 +89,17 @@ export const WORD_STYLE: Record<BoardWord, string> = {
   SELL: 'text-[#b42318]',
   TRIM: 'text-[#b25e00]',
   HOLD: 'text-[#6e6e73]',
+  BOUGHT: 'text-[#6e6e73]',
+  SOLD: 'text-[#6e6e73]',
+  TRIMMED: 'text-[#6e6e73]',
+  CANCELLED: 'text-[#6e6e73]',
+  REJECTED: 'text-[#b42318]',
+  MISSED: 'text-[#b42318]',
+  'NOT SENT': 'text-[#b42318]',
+  'BUY SENT': 'text-[#0071e3]',
+  'SELL SENT': 'text-[#0071e3]',
+  'PART FILLED': 'text-[#b25e00]',
+  ORDERS: 'text-[#6e6e73]',
   '—': 'text-[#86868b]',
 }
 
@@ -113,13 +126,32 @@ const PROGRESS: Record<string, number> = {
   partial: 5, cancelled: 6, held: 6, filled: 7,
 }
 
-// The one word for a name's orders: its orders' word when they agree, the
-// side's plain word when they do not (a buy and an add read BUY; an exit and
-// a trim on one name read SELL).
+// Describe the order's current state, not a new instruction to repeat a trade.
+export const orderWord = (order: DeskPaperOrder): BoardWord => {
+  if (order.state === 'filled') return order.side === 'buy' ? 'BOUGHT' : order.action === 'TRIM' ? 'TRIMMED' : 'SOLD'
+  if (order.state === 'cancelled') return 'CANCELLED'
+  if (order.state === 'rejected') return 'REJECTED'
+  if (order.state === 'missed') return 'MISSED'
+  if (order.state === 'problem') return 'NOT SENT'
+  if (order.state === 'held') return 'HOLD'
+  if (order.state === 'partial') return 'PART FILLED'
+  if (order.state === 'sent' || order.state === 'queued') return order.side === 'buy' ? 'BUY SENT' : 'SELL SENT'
+  return order.action
+}
+
+// Only unsubmitted plans can have a reference size; this is not a personal trade plan.
+const canScale = (order: DeskPaperOrder) =>
+  ['planned', 'waiting', 'due'].includes(order.state) && !order.sent_at && order.submitted_qty == null
+
+// Label the quantity basis, including older API responses without the new field.
+export const quantityLabel = (order: DeskPaperOrder): string =>
+  order.quantity_basis ?? (order.state === 'filled' ? 'filled' : ['sent', 'queued', 'partial'].includes(order.state) ? 'submitted' : 'planned')
+
+// Aggregate only like order states; mixed outcomes stay visibly separate.
 const wordOf = (orders: DeskPaperOrder[]): BoardWord => {
-  const words = [...new Set(orders.map(o => o.action))]
+  const words = [...new Set(orders.map(orderWord))]
   if (words.length === 1) return words[0]
-  return orders.some(o => o.side === 'sell') ? 'SELL' : 'BUY'
+  return 'ORDERS'
 }
 
 // Several filled orders on one name as one fill: the shares together at their
@@ -167,12 +199,13 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
     const target = ticker in targets ? targets[ticker] : ticker in latest.grades ? 0 : null
     const grade = latest.grades[ticker]?.grade ?? ''
     const lead = [...mine].sort((a, b) => (PROGRESS[a.state] ?? 9) - (PROGRESS[b.state] ?? 9))[0]
+    const combined = new Set(mine.map(o => `${o.side}:${o.state}:${quantityLabel(o)}`)).size <= 1
     const status = !lead ? '' : mine.length < 2 ? lead.status
-      : mine.every(o => o.state === 'filled') ? filledTogether(mine)
+      : combined && mine.every(o => o.state === 'filled') ? filledTogether(mine)
       : mine.every(o => o.state === lead.state) ? lead.status
       : `${lead.status} · ${mine.filter(o => o.state === 'filled').length} of ${mine.length} orders filled`
     const qty = mine.reduce((sum, o) => sum + o.qty, 0)
-    const notional = mine.length && mine.every(o => o.notional !== null) ? mine.reduce((sum, o) => sum + (o.notional ?? 0), 0) : null
+    const notional = combined && mine.length && mine.every(o => o.notional !== null) ? mine.reduce((sum, o) => sum + (o.notional ?? 0), 0) : null
     const word: BoardWord = mine.length ? wordOf(mine) : held > 0 ? 'HOLD' : '—'
     const why = mine.length
       ? [...new Set(mine.map(o => o.why))].join(' + ')
@@ -180,7 +213,8 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : target && target > 0 ? blocked.has(ticker) ? 'In the book · no buy while its daily rejects the upper band' : `In the book at ${percent(target)} · no order tonight`
       : grade ? `Not in the book (grade ${grade})` : 'Not graded'
     return {
-      ticker, grade, word, why, orders: mine, qty, notional,
+      ticker, grade, word, why, orders: mine, qty, notional, combined,
+      sizeLabel: mine.length && combined ? quantityLabel(mine[0]) : '',
       weight: notional !== null && equity ? notional / equity : null,
       held, heldValue, heldWeight,
       avgCost: position?.avg_entry_price ?? null,
@@ -211,8 +245,7 @@ const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) =>
   || (GRADE_RANK[b.grade] ?? -1) - (GRADE_RANK[a.grade] ?? -1)
   || a.ticker.localeCompare(b.ticker))
 
-// The size the viewer would trade in their own account at the same share of
-// the paper account, in whole shares; null without an account size or price.
+// A proportional reference size only; it does not know personal holdings or cash.
 const myShares = (weight: number | null, myAccount: number | null, unit: number | null) =>
   weight !== null && myAccount && unit && unit > 0 ? Math.floor(weight * myAccount / unit) : null
 
@@ -255,9 +288,11 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra}: {row: BoardRow; lat
       <h4 className="font-medium text-[#6e6e73]">{row.orders.length ? `Order${row.orders.length > 1 ? 's' : ''}` : 'No order'}</h4>
       {row.orders.length === 0 && <p>{row.why}</p>}
       {row.orders.map(order => {
-        const mine = myShares(order.weight, myAccount, order.price)
+        const mine = canScale(order) ? myShares(order.weight, myAccount, order.price) : null
+        const word = orderWord(order)
         return <div key={order.client_order_id} className="mb-2">
-          <p><span className={`font-semibold ${WORD_STYLE[order.action]}`}>{order.action}</span> {shares(order.qty)}{order.notional !== null ? ` · ${dollars(order.notional)}` : ''}{order.weight !== null ? ` · ${percent(order.weight)} of the account` : ''}{mine !== null ? ` · you ${shares(mine)}` : ''}</p>
+          <p><span className={`font-semibold ${WORD_STYLE[word]}`}>{word}</span> {shares(order.qty)} {quantityLabel(order)}{order.notional !== null ? ` · ${dollars(order.notional)}` : ''}{order.weight !== null ? ` · ${percent(order.weight)} of current equity` : ''}{mine !== null ? ` · ref. ${shares(mine)}` : ''}</p>
+          {order.planned_qty !== undefined && order.planned_qty !== order.qty && <p className="text-[#6e6e73]">Originally planned: {shares(order.planned_qty)}</p>}
           <p className="text-[#6e6e73]">{order.why}</p>
           <p><span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[order.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{order.status}</p>
           <p className="text-[#6e6e73]">{order.when}</p>
@@ -332,14 +367,14 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
     current?.key !== key ? {key, down: key !== 'ticker'} : current.down === (key !== 'ticker') ? {key, down: !current.down} : null)
   const ruleText = paper?.plan?.rule === 'next_open'
     ? 'Buys go in at the next open and sells at the next close.'
-    : 'Buys go in on a 15-minute close 1% under the day’s open and sells on one 1% over it; otherwise at the close (market-on-close from 3:30 PM ET).'
+    : 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, market-on-close orders are due 30 minutes before the regular close; late orders use market execution before the close.'
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white [container-type:inline-size]">
     <div className="shrink-0 space-y-2 border-b border-black/[0.06] px-3 py-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings <span className="font-normal text-[#6e6e73]">· the paper account’s orders</span></h3>
-        <label className="flex items-center gap-1 text-xs text-[#6e6e73]" title="Scales every size to your own account at the same share. Kept in this browser only.">
-          Your account $
-          <input aria-label="Your account size" inputMode="decimal" value={draft} placeholder="optional"
+        <label className="flex items-center gap-1 text-xs text-[#6e6e73]" title="Scales unsent plans only. Does not check your holdings or available cash. Kept in this browser only.">
+          Reference account $
+          <input aria-label="Reference account size" inputMode="decimal" value={draft} placeholder="optional"
             onChange={e => setDraft(e.target.value)}
             onBlur={() => { const value = Number(draft.replace(/[,$\s]/g, '')); const next = Number.isFinite(value) && value > 0 ? value : null; setMyAccount(next); writeMyAccount(next); setDraft(next ? String(next) : '') }}
             onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
@@ -347,7 +382,8 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
         </label>
       </div>
       <AccountStrip paper={paper} orders={orders} />
-      <p aria-label="Execution rule" className="text-xs text-[#6e6e73]">{paused ? 'FOMC cycle: the paper account follows the FOMC risk rule; its orders say when. ' : ''}{ruleText} The paper account sends exactly the orders below.</p>
+      <p aria-label="Execution rule" className="text-xs text-[#6e6e73]">{paused ? 'FOMC cycle: the paper account follows the FOMC risk rule; its orders say when. ' : ''}{ruleText} Paper order status is shown below; submitted or completed orders are not new trade instructions.</p>
+      {myAccount !== null && <p className="text-xs text-[#6e6e73]">Reference sizes are proportional examples for unsent plans, not adjusted for your holdings or cash.</p>}
       {paper?.plan?.reason && <p className="text-xs text-[#b25e00]">{paper.plan.reason}; statuses may lag.</p>}
       <div className="flex flex-wrap items-center gap-2">
         <div role="group" aria-label="Board view" className="flex gap-1 text-xs">
@@ -369,15 +405,15 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Stock" column="ticker" sort={sort} onSort={onSort} />
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The desk's grade at the last close; A and A+ are in the book." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Paper-account shares and share of the account, against the policy's target." />
-            <Head label="Action" sort={sort} onSort={onSort} title="The paper account's order for the name. HOLD: no order, the position stays." />
-            <Head label="Size" column="size" sort={sort} onSort={onSort} title="Shares, dollars and share of the paper account; 'you' scales it to your account." />
+            <Head label="Paper order" sort={sort} onSort={onSort} title="Order intent or recorded outcome, not a new personal-account instruction." />
+            <Head label="Size" column="size" sort={sort} onSort={onSort} title="Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity." />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
           </tr>
         </thead>
         <tbody>{shown.slice(0, visible).map(row => {
           const open = opened === row.ticker
           const unit = row.orders[0]?.price ?? live.quotes[row.ticker]?.last ?? null
-          const mine = myShares(row.weight, myAccount, unit)
+          const mine = row.orders.length && row.orders.every(canScale) ? myShares(row.weight, myAccount, unit) : null
           return <Fragment key={row.ticker}>
             <tr className="border-t border-black/[0.05] align-top">
               <td className="py-2 text-xs"><button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button></td>
@@ -396,9 +432,9 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {row.orders.length ? <>
-                  <span className="font-medium text-[#1d1d1f]">{shares(row.qty)}</span>
+                  <span className="font-medium text-[#1d1d1f]">{row.combined ? `${shares(row.qty)} ${row.sizeLabel}` : `${row.orders.length} orders · see details`}</span>
                   <div className="text-[10px] text-[#6e6e73]">{row.notional !== null ? dollars(row.notional) : ''}{row.weight !== null ? ` · ${percent(row.weight)}` : ''}</div>
-                  {mine !== null && <div className="text-[10px] text-[#0071e3]">you {shares(mine)}</div>}
+                  {mine !== null && <div className="text-[10px] text-[#0071e3]">ref. {shares(mine)}</div>}
                 </> : '—'}
               </td>
               <td className="max-w-72 whitespace-normal py-2 text-xs" aria-label={`${row.ticker} order status`}>

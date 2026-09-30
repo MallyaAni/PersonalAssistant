@@ -2811,6 +2811,11 @@ export interface DeskPaperOrder {
   side: 'buy' | 'sell';
   action: 'BUY' | 'SELL' | 'TRIM';
   qty: number;
+  planned_qty?: number;
+  submitted_qty?: number | null;
+  remaining_qty?: number | null;
+  quantity_basis?: 'planned' | 'submitted' | 'filled';
+  terminal?: boolean | null;
   price: number | null;
   notional: number | null;
   weight: number | null;

@@ -392,6 +392,15 @@ def rule_text(
     return f"15-min close {pct} {way} the open, else at the close"
 
 
+# Parse nonnegative share quantities without treating missing evidence as zero.
+def _quantity(value: object) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) and number >= 0 else None
+
+
 # The broker's view of one order, reduced to what the board says about it.
 def _broker_state(order: dict | None) -> dict[str, Any] | None:
     """Return {status, filled_qty, filled_price, filled_at, tif} or None."""
@@ -408,6 +417,7 @@ def _broker_state(order: dict | None) -> dict[str, Any] | None:
         filled_price = 0.0
     return {
         "status": status,
+        "qty": _quantity(order.get("qty")),
         "filled_qty": filled_qty,
         "filled_price": filled_price if filled_price > 0 else None,
         "filled_at": order.get("filled_at"),
@@ -427,14 +437,16 @@ def _from_broker(row: dict, broker: dict, qty: int) -> tuple[str, str] | None:
     fill = f" @ {_money(price)}" if price else ""
     when = f" · {at}" if at else ""
     if status == "filled" or (filled >= qty > 0):
-        return "filled", f"{verb} {int(filled):,}{fill}{when}"
+        return "filled", f"{verb} {filled:,.6f}".rstrip("0").rstrip(
+            "."
+        ) + f"{fill}{when}"
     if filled > 0:
         if status in _CANCELLED + _REJECTED:
             return (
-                "partial",
-                f"{verb} {int(filled):,} of {qty:,}{fill}{when}; the rest did not fill",
+                "cancelled" if status in _CANCELLED else "rejected",
+                f"{verb} {filled:g} of {qty:g}{fill}{when}; the rest did not fill",
             )
-        return "partial", f"{verb} {int(filled):,} of {qty:,}{fill} so far"
+        return "partial", f"{verb} {filled:g} of {qty:g}{fill} so far"
     if status in _REJECTED:
         return "rejected", "Not filled: the broker rejected the order"
     if status in _CANCELLED:
@@ -487,6 +499,10 @@ def board_row(
     side = str(row.get("side") or "")
     symbol = str(row.get("symbol") or "")
     qty = int(row.get("qty") or 0)
+    known = _broker_state(broker)
+    submitted = known["qty"] if known else None
+    if submitted is None:
+        submitted = _quantity((row.get("sent") or {}).get("qty"))
     leg, reason = why(row)
     timing = timing_of(row)
     today = now.astimezone(NEW_YORK).date()
@@ -509,6 +525,11 @@ def board_row(
         "side": side,
         "action": action,
         "qty": qty,
+        "planned_qty": qty,
+        "submitted_qty": submitted,
+        "remaining_qty": None,
+        "quantity_basis": "planned",
+        "terminal": None,
         "price": float(shown_price) if shown_price else None,
         "notional": notional,
         "weight": (notional / equity) if notional and equity else None,
@@ -531,10 +552,38 @@ def board_row(
         out["open"] = sent["open"]
         out["level"] = sent["level"]
     state_word, sentence = _status(
-        row, out, broker, latch, quote, qty, timing, execute_on, today, now
+        row,
+        out,
+        broker,
+        latch,
+        quote,
+        submitted if submitted is not None else qty,
+        timing,
+        execute_on,
+        today,
+        now,
     )
     out["state"] = state_word
     out["status"] = sentence
+    # A fill is historical execution value; an unfilled order is only an
+    # estimate at the displayed quote. Never price an old fill at today's quote.
+    terminal = state_word in ("filled", "cancelled", "rejected", "held", "missed")
+    out["terminal"] = terminal if terminal or known or not row.get("sent") else None
+    if terminal:
+        out["remaining_qty"] = 0.0
+    elif known and submitted is not None:
+        out["remaining_qty"] = max(0.0, submitted - known["filled_qty"])
+    if terminal and known and known["filled_qty"] > 0:
+        out["qty"] = known["filled_qty"]
+        out["quantity_basis"] = "filled"
+        out["price"] = known["filled_price"]
+    elif submitted is not None:
+        out["qty"] = submitted
+        out["quantity_basis"] = "submitted"
+    out["notional"] = out["qty"] * out["price"] if out["price"] else None
+    out["weight"] = (
+        out["notional"] / equity if out["notional"] is not None and equity else None
+    )
     out["when"] = _when(side, timing, execute_on, today, out)
     return out
 
@@ -547,7 +596,9 @@ def _when(
     day = (
         "Today"
         if execute_on == today.isoformat()
-        else _day(execute_on) if execute_on else "Next session"
+        else _day(execute_on)
+        if execute_on
+        else "Next session"
     )
     if timing == INTRADAY_TIMING:
         return f"{day} · {rule_text(side, out.get('open'), out.get('level'))}"
@@ -598,10 +649,10 @@ def _recorded_status(
     sent = row.get("sent") or {}
     known = _broker_state(broker)
     if known:
-        out["filled_qty"] = known["filled_qty"] or None
+        out["filled_qty"] = known["filled_qty"]
         out["filled_price"] = known["filled_price"]
         out["filled_at"] = known["filled_at"]
-        answered = _from_broker(row, known, int(sent.get("qty") or qty))
+        answered = _from_broker(row, known, qty)
         if answered:
             return answered
     if row.get("send_error") and not sent:
@@ -622,8 +673,10 @@ def _recorded_status(
     stamp = f" {at}" if at else ""
     how = sent.get("how") or (MOC if known and known.get("tif") == "cls" else MARKET)
     if how == MOC:
-        return "sent", f"Sent{stamp} · market-on-close, fills at the close"
-    return "sent", f"Sent{stamp} · market order"
+        words = f"Sent{stamp} · market-on-close"
+    else:
+        words = f"Sent{stamp} · market order"
+    return "sent", words if known else f"{words} · broker status unavailable"
 
 
 # What the board's clock says about an unsent row executing today, from the
@@ -657,7 +710,8 @@ def _clock_status(
     if state == entry_timing.TRIGGERED:
         return "due", f"Level hit: {_trigger(timed)} · sending now"
     if state == entry_timing.CLOSE:
-        return "due", "Close window · sending market-on-close now"
+        how = "market-on-close" if now < clock["moc"] else "market order"
+        return "due", f"Close window · {how} due"
     return "missed", "Not sent: the session closed before the order went out"
 
 
