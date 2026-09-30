@@ -857,7 +857,7 @@ def _member_report() -> DeskReport:
 # the file names the policy, dates a decision to the close and its fill to
 # the next open, and carries the paper account's fills from the records.
 def test_write_history_carries_the_policy_decisions_and_fills(tmp_path):
-    from backend.agents.trading.desk import decision_history, policy_v4
+    from backend.agents.trading.desk import decision_history, live_policy
 
     folder = tmp_path / "desk" / "asof=2026-09-09"
     folder.mkdir(parents=True)
@@ -885,14 +885,17 @@ def test_write_history_carries_the_policy_decisions_and_fills(tmp_path):
     count = market_daily.write_history(MarketStore(tmp_path), _member_report())
     assert count == 2
     payload = json.loads((tmp_path / "history" / "SNDK.json").read_text())
-    assert payload["policy"] == decision_history.POLICY == policy_v4.POLICY_VERSION
+    assert payload["policy"] == decision_history.POLICY == live_policy.ACTIVE
+    assert payload["policy"] == "graded-equal-weight/5"
     assert payload["decision_note"] == decision_history.DECISION_NOTE
     rows = payload["rows"]
     assert [r["date"] for r in rows] == ["2026-09-08", "2026-09-09", "2026-09-10"]
-    # SNDK is the one A+ name: bought at the cap on the first session, held after.
+    # SNDK is the one A+ name: bought at the cap (a quarter under `/5`) on the
+    # first session, held after.
     assert rows[0]["action"] == "buy"
-    assert rows[0]["target_weight"] == pytest.approx(policy_v4.HOLD_CAP)
-    assert rows[0]["delta_weight"] == pytest.approx(policy_v4.HOLD_CAP)
+    assert rows[0]["target_weight"] == pytest.approx(live_policy.POLICY.HOLD_CAP)
+    assert rows[0]["delta_weight"] == pytest.approx(live_policy.POLICY.HOLD_CAP)
+    assert rows[0]["target_weight"] == pytest.approx(0.25)
     assert [r["action"] for r in rows[1:]] == ["hold", "hold"]
     assert all(r["delta_weight"] == 0 for r in rows[1:])
     # The grade columns are as they were.
@@ -1427,13 +1430,16 @@ def test_record_carries_the_policy_shadows():
     assert market_daily.record(_report())["policy_shadows"] == {}
 
 
-# The /4 shadow is observed on tonight's report and prices, and its receipt
-# lands under the policy version; an exception becomes a note, so the
-# record is still written and says what happened.
+# The active policy's shadow is observed on tonight's report and prices,
+# and its receipt lands under the active version (`/5` since 2026-09-29);
+# an exception becomes a note, so the record is still written and says
+# what happened.
 def test_policy_shadow_receipt_lands_and_a_failure_becomes_a_note(
     tmp_path, monkeypatch, capsys
 ):
-    from backend.agents.trading.desk import shadow_ledger
+    from backend.agents.trading.desk import live_policy, shadow_ledger
+
+    assert live_policy.ACTIVE == "graded-equal-weight/5"
 
     seen = {}
 
@@ -1452,7 +1458,8 @@ def test_policy_shadow_receipt_lands_and_a_failure_becomes_a_note(
 
     monkeypatch.setattr(shadow_ledger, "observe", fake_observe)
     block = market_daily._policy_shadows(tmp_path, _report(), "2026-09-03", True)
-    receipt = block["graded-equal-weight/4"]
+    assert set(block) == {live_policy.ACTIVE}
+    receipt = block["graded-equal-weight/5"]
     assert receipt["sequence"] == 2
     assert receipt["equity"] == 100_500.0
     assert receipt["return_1d"] == 0.005
@@ -1462,7 +1469,7 @@ def test_policy_shadow_receipt_lands_and_a_failure_becomes_a_note(
     assert seen["root"] == tmp_path
     assert seen["closes"] == {"SNDK": 100.0, "IREN": 100.0, "SPY": 100.0}
     assert seen["opens"] == seen["closes"]
-    assert "policy shadow graded-equal-weight/4: sequence 2" in capsys.readouterr().out
+    assert "policy shadow graded-equal-weight/5: sequence 2" in capsys.readouterr().out
 
     def broken(*args, **kwargs):
         raise RuntimeError("ledger folder unwritable")
@@ -1470,7 +1477,7 @@ def test_policy_shadow_receipt_lands_and_a_failure_becomes_a_note(
     monkeypatch.setattr(shadow_ledger, "observe", broken)
     block = market_daily._policy_shadows(tmp_path, _report(), "2026-09-03", True)
     assert block == {
-        "graded-equal-weight/4": {
+        "graded-equal-weight/5": {
             "note": "shadow not observed: RuntimeError: ledger folder unwritable"
         }
     }
@@ -1480,7 +1487,7 @@ def test_policy_shadow_receipt_lands_and_a_failure_becomes_a_note(
     monkeypatch.setattr(shadow_ledger, "observe", lambda *a, **k: calls.append(a))
     block = market_daily._policy_shadows(tmp_path, _report(), "2026-09-03", False)
     assert (
-        block["graded-equal-weight/4"]["note"] == "shadow not observed: historical run"
+        block["graded-equal-weight/5"]["note"] == "shadow not observed: historical run"
     )
     assert calls == []
 
@@ -1514,17 +1521,21 @@ def test_the_nightly_writes_the_shadow_ledger_and_its_receipt(tmp_path, monkeypa
     record = json.loads(
         (Path(tmp_path) / "desk" / "asof=2026-09-03" / "desk.json").read_text()
     )
-    receipt = record["policy_shadows"]["graded-equal-weight/4"]
+    assert set(record["policy_shadows"]) == {"graded-equal-weight/5"}
+    receipt = record["policy_shadows"]["graded-equal-weight/5"]
     assert receipt["sequence"] == 1
     assert receipt["equity"] == 100_000.0
-    # SNDK is the one A+ name at 100: a fifth of the account, 200 shares.
+    # SNDK is the one A+ name at 100: a quarter of the account, 250 shares.
     assert receipt["orders_decided"] == 1
     assert record["paper"] == {"equity": 5.0}
-    rows = sorted((Path(tmp_path) / "desk/shadow/graded-equal-weight-4").glob("*.json"))
+    rows = sorted((Path(tmp_path) / "desk/shadow/graded-equal-weight-5").glob("*.json"))
     assert [p.name for p in rows] == ["00000000.json", "00000001.json"]
     last = json.loads(rows[-1].read_text())
-    assert last["pending"]["orders"] == {"SNDK": 200}
+    assert last["pending"]["orders"] == {"SNDK": 250}
     assert last["session"] == "2026-09-03"
+    assert last["policy"] == "graded-equal-weight/5"
+    # The `/4` ledger's folder is not where tonight's shadow writes.
+    assert not (Path(tmp_path) / "desk/shadow/graded-equal-weight-4").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -1584,7 +1595,8 @@ class _Broker:
 
 # The ordinary-session setup: the broker in place, no FOMC cycle, and a
 # state stamped with the active policy two sessions after a reset that
-# wanted SNDK, so tonight is a plain mid-cycle session.
+# wanted SNDK at the active policy's cap, so tonight is a plain mid-cycle
+# session.
 def _midcycle_state(tmp_path, monkeypatch, broker):
     from backend.agents.trading.desk import event_risk, live_policy, paper
     from backend.market import alpaca_trading
@@ -1600,16 +1612,18 @@ def _midcycle_state(tmp_path, monkeypatch, broker):
         tmp_path,
         paper.PaperState(
             last_rebalance="2026-09-01", sessions_since_rebalance=1,
-            policy_version=live_policy.ACTIVE, rebalance_targets={"SNDK": 0.2},
+            policy_version=live_policy.ACTIVE,
+            rebalance_targets={"SNDK": live_policy.POLICY.HOLD_CAP},
         ),
     )
 
 
 # A dry run plans the redeploy and submits nothing: SNDK (the one A+ name,
-# target 20%) is held at 10% with 90% of the book in cash, so the redeploy
-# wants 100 more shares; the dry run prints that order with its reason and
-# "[dry run]", sends nothing to the broker, saves no state, and the entry
-# it returns carries the idle cash share and the redeploy block.
+# target 25% under `/5`) is held at 10% with 90% of the book in cash, so
+# the redeploy wants 150 more shares; the dry run prints that order with
+# its reason and "[dry run]", sends nothing to the broker, saves no state,
+# and the entry it returns carries the idle cash share and the redeploy
+# block.
 def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, capsys):
     from backend.agents.trading.desk import paper
 
@@ -1618,13 +1632,13 @@ def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, 
     before = paper.state_path(tmp_path).read_text()
     entry = market_daily.paper_trade(_report(), tmp_path, "2026-09-03", False)
     out = capsys.readouterr().out
-    assert "paper book (graded-equal-weight/4; redeploy)" in out
+    assert "paper book (graded-equal-weight/5; redeploy)" in out
     assert (
-        "redeploy: 1 buys put 10,000 of idle cash back to the targets "
+        "redeploy: 1 buys put 15,000 of idle cash back to the targets "
         "(buffer 2% of equity)"
     ) in out
     assert (
-        "buy    100 SNDK   redeploy: cash beyond the buffer put back to its "
+        "buy    150 SNDK   redeploy: cash beyond the buffer put back to its "
         "target weights  [dry run]"
     ) in out
     assert broker.sent == []
@@ -1632,9 +1646,9 @@ def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, 
     assert entry["orders"] == []
     assert entry["refused"] == []
     assert entry["plan"] == "redeploy"
-    assert entry["idle_cash_share"] == pytest.approx(0.8)
+    assert entry["idle_cash_share"] == pytest.approx(0.75)
     assert entry["redeploy"] == {
-        "enabled": True, "buffer": 0.02, "orders": 1, "notional": 10_000.0
+        "enabled": True, "buffer": 0.02, "orders": 1, "notional": 15_000.0
     }
 
 
@@ -1642,7 +1656,7 @@ def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, 
 # on the record's orders and the state's pending rows; the session after,
 # once the broker reports it filled, the settled row carries the kind too,
 # the fills history reads it, and the book reads fully invested but for the
-# policy's own idle share (SNDK at its 20% cap; nothing else is graded).
+# policy's own idle share (SNDK at its 25% cap; nothing else is graded).
 def test_a_live_redeploy_carries_its_kind_to_the_record_and_the_fills(
     tmp_path, monkeypatch, capsys
 ):
@@ -1652,25 +1666,25 @@ def test_a_live_redeploy_carries_its_kind_to_the_record_and_the_fills(
     _midcycle_state(tmp_path, monkeypatch, broker)
     report = _report()
     entry = market_daily.paper_trade(report, tmp_path, "2026-09-03", True)
-    assert broker.sent == [("buy", "SNDK", 100)]
+    assert broker.sent == [("buy", "SNDK", 150)]
     assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["orders"]] == [
-        ("SNDK", 100, paper.REDEPLOY_KIND)
+        ("SNDK", 150, paper.REDEPLOY_KIND)
     ]
     state = paper.load_state(tmp_path)
     assert [row["kind"] for row in state.pending] == [paper.REDEPLOY_KIND]
-    assert entry["idle_cash_share"] == pytest.approx(0.8)
-    # Filled overnight: the book holds 200 SNDK and 80,000 cash.
-    broker.held["SNDK"] = 200
-    broker.cash = 80_000.0
+    assert entry["idle_cash_share"] == pytest.approx(0.75)
+    # Filled overnight: the book holds 250 SNDK and 75,000 cash.
+    broker.held["SNDK"] = 250
+    broker.cash = 75_000.0
     later = market_daily.paper_trade(report, tmp_path, "2026-09-04", True)
     assert [(r["symbol"], r["status"], r["kind"]) for r in later["settled"]] == [
         ("SNDK", "filled", paper.REDEPLOY_KIND)
     ]
-    # SNDK is at its 20% cap, so nothing is bought and the idle share is the
-    # policy's own 80%, not the executor's.
+    # SNDK is at its 25% cap, so nothing is bought and the idle share is the
+    # policy's own 75%, not the executor's.
     assert later["orders"] == []
     assert later["plan"] == "hold"
-    assert later["idle_cash_share"] == pytest.approx(0.8)
+    assert later["idle_cash_share"] == pytest.approx(0.75)
     assert later["redeploy"]["orders"] == 0
     journal = {row["symbol"]: row for row in paper.load_state(tmp_path).journal}
     assert journal["SNDK"]["kind"] == paper.REDEPLOY_KIND
@@ -1678,7 +1692,7 @@ def test_a_live_redeploy_carries_its_kind_to_the_record_and_the_fills(
     # session, which on this fixed fixture is the panel's last date).
     market_daily.save(Path(tmp_path), market_daily.record(report, paper=later))
     assert decision_history.fills(tmp_path, "SNDK") == [
-        {"date": "2026-09-03", "side": "buy", "qty": 100, "price": 100.0,
+        {"date": "2026-09-03", "side": "buy", "qty": 150, "price": 100.0,
          "kind": paper.REDEPLOY_KIND},
     ]
 
@@ -1701,17 +1715,20 @@ def test_the_redeploy_switch_off_plans_nothing(tmp_path, monkeypatch, capsys):
     assert entry["redeploy"]["orders"] == 0
 
 
-# The published curve says which flags it ran. Under the active `/4` policy
-# the executor's redeploy of idle cash is among them - passed explicitly,
-# never through `LIVE_POLICY` (which every study's control is priced from) -
-# and the record says so (`redeploy_priced` True, the option and its buffer
-# in `execution_options`). The record labels the executor /4 in the same
-# block.
+# The published curve says which flags it ran. Under the active graded
+# equal-weight policy (`/5` since 2026-09-29) the executor's redeploy of
+# idle cash is among them - passed explicitly, never through `LIVE_POLICY`
+# (which every study's control is priced from) - and the record says so
+# (`redeploy_priced` True, the option and its buffer in
+# `execution_options`). The record labels the executor /4 in the same
+# block, and the line's allocator is the active policy's: SNDK, the one A+
+# name, at `/5`'s quarter.
 def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
-    from backend.agents.trading.desk import live_policy, paper, policy_v4
+    from backend.agents.trading.desk import live_policy, paper, policy_v5
     from backend.agents.trading.desk import simulate as sim_module
 
-    assert live_policy.ACTIVE == policy_v4.POLICY_VERSION
+    assert live_policy.ACTIVE == policy_v5.POLICY_VERSION
+    assert live_policy.is_equal_weight()
     report = _report()
     sim = sim_module.SimResult(
         dates=report.panel.dates,
@@ -1721,14 +1738,15 @@ def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
         rebalances=0,
         equity=np.array([1.0, 1.05, 1.1]),
     )
-    seen: dict[str, object] = {}
+    calls: list[dict] = []
 
     def fake_run(report, **kwargs):
-        seen.update(kwargs)
+        calls.append(kwargs)
         return sim
 
     monkeypatch.setattr(sim_module, "run", fake_run)
     block = market_daily.curve_block(report, None)
+    assert block["strategy_policy"] == "graded-equal-weight/5"
     assert block["execution_policy"] == paper.POLICY_VERSION
     assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/4"
     assert block["execution_options"] == {
@@ -1737,9 +1755,13 @@ def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
         "redeploy_buffer": paper.REDEPLOY_BUFFER,
     }
     assert block["redeploy_priced"] is True
+    # The first call is the published (hindsight) rules line.
+    seen = calls[0]
     assert seen["midcycle_redeploy"] is True
     assert seen["redeploy_buffer"] == paper.REDEPLOY_BUFFER
     assert callable(seen["allocator"])
+    row = seen["allocator"](report, report.panel, None, len(report.panel.dates) - 1)
+    assert list(row) == [0.25, 0.0, 0.0]
     assert "midcycle_redeploy" not in sim_module.LIVE_POLICY
 
 
@@ -1815,29 +1837,34 @@ def test_curve_block_labels_the_hindsight_and_point_in_time_lines(monkeypatch):
     assert block["point_in_time_label"] == "names known at the time, live executor"
 
 
-# The guarantee behind the `/4` rules lines: element for element, both the
-# hindsight `rules` curve and `rules_point_in_time` are `simulate.run` with
-# `policy_v4.allocator` on the matching book under the live options plus
-# the redeploy - the same call the mid-cycle study prices `mc-redeploy`
-# with - and their stats are those runs' stats. Before this, a record
-# labelled `/4` carried the `/3` book's curve under the `/4` name.
-def test_rules_lines_are_the_v4_policy_under_the_live_executor(monkeypatch, tmp_path):
+# The guarantee behind the published rules lines: element for element, both
+# the hindsight `rules` curve and `rules_point_in_time` are `simulate.run`
+# with the active policy's allocator (`policy_v5.allocator` since
+# 2026-09-29) on the matching book under the live options plus the redeploy
+# - the same call the mid-cycle study prices `mc-redeploy` with - and their
+# stats are those runs' stats. Before 2026-09-27 a record labelled `/4`
+# carried the `/3` book's curve under the `/4` name; the last check here is
+# that the `/5` line is not `/4`'s relabelled either.
+def test_rules_lines_are_the_active_policy_under_the_live_executor(
+    monkeypatch, tmp_path
+):
     from backend.agents.trading.desk import (
         event_risk,
         live_policy,
         paper,
         point_in_time,
         policy_v4,
+        policy_v5,
         simulate,
     )
 
-    assert live_policy.ACTIVE == policy_v4.POLICY_VERSION
+    assert live_policy.POLICY is policy_v5
     history = _walk_history(tmp_path)
     _use_history(monkeypatch, history)
     report = _walk_report()
     block = market_daily.curve_block(report, None)
     assert block["point_in_time_note"] == ""
-    assert block["strategy_policy"] == policy_v4.POLICY_VERSION
+    assert block["strategy_policy"] == policy_v5.POLICY_VERSION
     live = dict(
         use_exits=False,
         rebalance=paper.REBALANCE_EVERY,
@@ -1849,7 +1876,7 @@ def test_rules_lines_are_the_v4_policy_under_the_live_executor(monkeypatch, tmp_
     )
     everyone = np.ones((len(report.panel.dates), len(report.panel.tickers)), bool)
     everyone[:, report.panel.index(report.panel.benchmark)] = False
-    hindsight = simulate.run(report, allocator=policy_v4.allocator(everyone), **live)
+    hindsight = simulate.run(report, allocator=policy_v5.allocator(everyone), **live)
     assert [str(d) for d in hindsight.dates] == block["dates"]
     np.testing.assert_allclose(
         block["rules"], hindsight.equity / hindsight.equity[0] - 1.0, rtol=0, atol=1e-12
@@ -1858,7 +1885,7 @@ def test_rules_lines_are_the_v4_policy_under_the_live_executor(monkeypatch, tmp_
     pit = simulate.run(
         restricted,
         since=date.fromisoformat(block["dates"][0]),
-        allocator=policy_v4.allocator(mask),
+        allocator=policy_v5.allocator(mask),
         **live,
     )
     np.testing.assert_allclose(
@@ -1877,6 +1904,11 @@ def test_rules_lines_are_the_v4_policy_under_the_live_executor(monkeypatch, tmp_
         )
     # And neither is the plainly-priced candidate line: the executor differs.
     assert block["rules_point_in_time"] != block["candidate_point_in_time"]
+    # Nor `/4` relabelled: the same executor on `/4`'s allocator draws a
+    # different line, because the walk report has sessions with fewer than
+    # five A/A+ names, where the two caps disagree.
+    v4 = simulate.run(report, allocator=policy_v4.allocator(everyone), **live)
+    assert not np.allclose(block["rules"], v4.equity / v4.equity[0] - 1.0)
 
 
 # The idle cash share is what the plan leaves: cash less the buys plus the

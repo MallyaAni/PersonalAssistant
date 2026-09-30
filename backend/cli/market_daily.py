@@ -939,8 +939,10 @@ def observe_ml_forward(
 
 
 # The dry-run policy shadows observed tonight, keyed by policy version:
-# tonight `graded-equal-weight/4`, the `/4` candidate on its fidelity
-# shadow. Each value is the ledger's small receipt (sequence, equity, the
+# the policy the account runs (`live_policy.ACTIVE`, `graded-equal-weight/5`
+# since 2026-09-29), on its fidelity shadow in its own ledger folder (the
+# `/4` ledger's rows stay where they are, unobserved since the switch).
+# Each value is the ledger's small receipt (sequence, equity, the
 # day's return, orders decided, a note) or, when the shadow could not be
 # observed, a note saying why. It runs after the live paper account and
 # before the record, inside its own try/except, and it never touches the
@@ -951,9 +953,9 @@ def observe_ml_forward(
 # ledger appends nothing.
 def _policy_shadows(store_root: Path, report, session: str, current: bool) -> dict:
     """Return {policy version: receipt or note} for tonight's record."""
-    from backend.agents.trading.desk import policy_v4, shadow_ledger
+    from backend.agents.trading.desk import live_policy, shadow_ledger
 
-    key = policy_v4.POLICY_VERSION
+    key = live_policy.ACTIVE
     if not current:
         return {key: {"note": "shadow not observed: historical run"}}
     try:
@@ -1210,8 +1212,8 @@ def record(
         "fundamentals_asof": fundamentals,
         # The dry-run policy shadows observed tonight, by policy version:
         # each a receipt from its own ledger, or a note saying why it was
-        # not observed. Never traded; the `/4` fidelity shadow is judged
-        # from these. Empty on records written before this existed.
+        # not observed. Never traded; the active policy's fidelity shadow
+        # is judged from these. Empty on records written before this existed.
         "policy_shadows": policy_shadows or {},
         # The fundamental analyst's data source and each name's cited fiscal
         # period ends on the last session, so a corrected figure can be
@@ -1427,8 +1429,9 @@ def curve_block(report, store) -> dict | None:
         # above: the same executor runs whichever targets it is given.
         "execution_policy": paper_rules.POLICY_VERSION,
         # The `simulate.run` flags this line was actually priced with. Under
-        # `/4` they are `LIVE_POLICY` plus the executor's redeploy of idle
-        # cash (`paper.REDEPLOY_IDLE_CASH`, the `midcycle_redeploy` option),
+        # the graded equal-weight policy (`/4`, `/5` since 2026-09-29) they
+        # are `LIVE_POLICY` plus the executor's redeploy of idle cash
+        # (`paper.REDEPLOY_IDLE_CASH`, the `midcycle_redeploy` option),
         # because that is what the account runs since d20cb963. The redeploy
         # stays out of `LIVE_POLICY` itself (the comment there says why: every
         # registered study's `live` control is priced from that dict), so it
@@ -1509,21 +1512,23 @@ def _hindsight_mask(panel) -> np.ndarray:
 # with. Always the live execution policy on the account's reset clock with
 # the FOMC lifecycle (`market_pit_scorecard._live_options`, spelled out here
 # so this module's guarantee does not depend on the scorecard's). When the
-# active allocation policy is `/4`, also the executor's redeploy of idle
-# cash - `midcycle_redeploy=True` at `paper.REDEPLOY_BUFFER` - because the
-# account has run it since d20cb963 and a `/4` line without it would be a
-# book nobody trades. Under any other policy the options are exactly the
-# ones this module passed before 2026-09-27, so a `/3` record is unchanged
-# byte for byte. `describe=True` returns the JSON-safe form for the record:
+# active allocation policy is a graded equal-weight one (`/4`, and `/5`
+# since 2026-09-29: `live_policy.is_equal_weight()`), also the executor's
+# redeploy of idle cash - `midcycle_redeploy=True` at
+# `paper.REDEPLOY_BUFFER` - because the account has run it since d20cb963
+# and an equal-weight line without it would be a book nobody trades. Under
+# any other policy the options are exactly the ones this module passed
+# before 2026-09-27, so a `/3` record is unchanged byte for byte.
+# `describe=True` returns the JSON-safe form for the record:
 # the FOMC path and the non-policy fixed arguments are left out, the way
 # `execution_options` has always been written.
 def _live_rules_options(panel, describe: bool = False) -> dict:
     """Return the keyword options for `simulate.run`, or their record form."""
-    from backend.agents.trading.desk import event_risk, live_policy, policy_v4, simulate
+    from backend.agents.trading.desk import event_risk, live_policy, simulate
     from backend.agents.trading.desk import paper as paper_rules
 
     policy_options: dict = dict(simulate.LIVE_POLICY)
-    if live_policy.ACTIVE == policy_v4.POLICY_VERSION:
+    if live_policy.is_equal_weight():
         policy_options["midcycle_redeploy"] = True
         policy_options["redeploy_buffer"] = float(paper_rules.REDEPLOY_BUFFER)
     if describe:
@@ -1538,20 +1543,22 @@ def _live_rules_options(panel, describe: bool = False) -> dict:
 
 
 # One published rules line: the active allocation policy's targets on
-# `mask`, priced by the live executor (`_live_rules_options`). Under `/4`
-# the targets are `policy_v4.allocator(mask)` - the same callable the
-# scorecard's `graded_arm` and the mid-cycle study hand `simulate.run` - so
-# the line is the policy the record's `strategy_policy` names. Under any
-# other policy the simulator's built-in targets run, as before, and `mask`
-# is not consulted. `since` is passed through only when given, so the call
-# `curve_block` made before this helper existed is reproduced exactly.
+# `mask`, priced by the live executor (`_live_rules_options`). Under a
+# graded equal-weight policy the targets are `live_policy.allocator(mask)`
+# (`policy_v5.allocator` since 2026-09-29) - the same callable the
+# scorecard's `graded_arm` and the mid-cycle study hand `simulate.run` at
+# the policy's cap - so the line is the policy the record's
+# `strategy_policy` names. Under any other policy the simulator's built-in
+# targets run, as before, and `mask` is not consulted. `since` is passed
+# through only when given, so the call `curve_block` made before this
+# helper existed is reproduced exactly.
 def _live_rules_run(report, mask: np.ndarray, since=None):
     """Return the SimResult of the active policy under the live executor."""
-    from backend.agents.trading.desk import live_policy, policy_v4, simulate
+    from backend.agents.trading.desk import live_policy, simulate
 
     options = _live_rules_options(report.panel)
-    if live_policy.ACTIVE == policy_v4.POLICY_VERSION:
-        options["allocator"] = policy_v4.allocator(mask)
+    if live_policy.is_equal_weight():
+        options["allocator"] = live_policy.allocator(mask)
     if since is not None:
         options["since"] = since
     return simulate.run(report, **options)
@@ -1763,9 +1770,9 @@ def _decision_fills(root: Path, ticker: str) -> list[dict]:
         return []
 
 
-# The reset sessions the history's /4 classification needs, from the
-# paper state's clock and the records, or None when the replayed policy is
-# not the one the account runs: a replay of another policy keeps the
+# The reset sessions the history's equal-weight classification needs, from
+# the paper state's clock and the records, or None when the replayed policy
+# is not the one the account runs: a replay of another policy keeps the
 # weight-move reading, since its every target change would be an order.
 # A failure reading the state costs the schedule, never the files.
 def _reset_sessions(root: Path) -> tuple[set[str] | None, str]:

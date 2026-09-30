@@ -371,6 +371,85 @@ def test_the_nightly_finishes_and_records_a_mismatch(
     assert grade_parity.for_session(tmp_path, LAST)["ok"] is False
 
 
+# The fixture report with only AAA, BBB and CCC graded A+ over its last two
+# sessions: three names qualify, so the two equal-weight caps disagree -
+# `/4` holds a fifth of the book in each, `/5` a quarter.
+def _three_name_report():
+    report = _report()
+    grades = report.graded.grades.copy()
+    grades[-2:, 3:6] = 1  # DDD, EEE and FFF graded B
+    return replace(report, graded=replace(report.graded, grades=grades))
+
+
+# The switch night (`/4` to `/5`, 2026-09-29). Yesterday's record on disk was
+# decided by `/4`: a fifth in each of three names, which the active `/5`
+# replay would call a target mismatch (checked first, so the rest is not
+# vacuous). The nightly never compares that record: it checks tonight's,
+# which the same run built with `/5`'s targets, before saving it - parity OK
+# - and yesterday's stored verdict is left exactly as that night wrote it.
+def test_the_switch_night_checks_tonights_v5_record_not_yesterdays(
+    tmp_path, monkeypatch, capsys, full_history
+):
+    import sys
+
+    from backend.agents.trading.desk import policy_v4
+    from backend.cli import market_economics
+    from backend.market import learned_inputs
+
+    report = _three_name_report()
+    yesterday = str(report.panel.dates[-2])
+    fifths = {t: (0.2 if t in ("AAA", "BBB", "CCC") else 0.0) for t in NAMES}
+    v4_tonight = {
+        **_record(report),
+        "targets": {"policy": policy_v4.POLICY_VERSION, "weights": fifths},
+    }
+    stale = grade_parity.compare(v4_tonight, report, LAST, full_history)
+    assert {m["ticker"] for m in stale["mismatches"]} == {"AAA", "BBB", "CCC"}
+    assert {m["kind"] for m in stale["mismatches"]} == {grade_parity.TARGETS}
+    # Yesterday: the `/4` record and the verdict its own nightly stored.
+    old = market_daily.record_path(tmp_path, yesterday)
+    old.parent.mkdir(parents=True)
+    old.write_text(
+        json.dumps({"session": yesterday, "targets": v4_tonight["targets"]}),
+        encoding="utf-8",
+    )
+    stored = {"version": grade_parity.VERSION, "date": yesterday, "ok": True}
+    grade_parity.write(tmp_path, stored)
+    monkeypatch.setattr(
+        market_daily.trading_desk, "run", lambda store, asof=None, **kw: report
+    )
+    for name in ("_print_regime", "_print_grades", "_print_book"):
+        monkeypatch.setattr(market_daily, name, lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "observe_ml_forward", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "_policy_shadows", lambda *a, **k: {})
+    monkeypatch.setattr(market_daily, "_reversal_shadows", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "_fundamentals_block", lambda *a, **k: None)
+    monkeypatch.setattr(market_daily, "curves", lambda *a, **k: {})
+    monkeypatch.setattr(market_daily, "_tone_revisions", lambda *a, **k: {})
+    monkeypatch.setattr(market_daily, "write_history", lambda *a, **k: 0)
+    monkeypatch.setattr(
+        market_daily, "enrich_prose", lambda *a, **k: ("skipped", "test")
+    )
+    monkeypatch.setattr(learned_inputs, "capture", lambda *a, **k: "skipped")
+    monkeypatch.setattr(market_economics, "refresh_if_current", lambda *a, **k: None)
+    monkeypatch.setattr(grade_parity, "_history", lambda history_path: full_history)
+    monkeypatch.setattr(sys, "argv", ["market_daily", "--data-dir", str(tmp_path)])
+    market_daily.main()
+    out = capsys.readouterr().out
+    assert "grade parity: OK" in out
+    assert "GRADE PARITY MISMATCH" not in out
+    saved = json.loads(market_daily.record_path(tmp_path, LAST).read_text())
+    assert saved["targets"]["policy"] == live_policy.ACTIVE == "graded-equal-weight/5"
+    assert saved["targets"]["weights"] == {
+        t: (0.25 if t in ("AAA", "BBB", "CCC") else 0.0) for t in NAMES
+    }
+    assert saved["grade_parity"]["ok"] is True
+    assert saved["grade_parity"]["mode"] == grade_parity.PARITY
+    assert saved["grade_parity"]["targets_compared"] is True
+    assert grade_parity.for_session(tmp_path, LAST)["ok"] is True
+    assert grade_parity.for_session(tmp_path, yesterday) == stored
+
+
 # The context that says "same code, nothing moved", for tests of parity mode.
 def _same(code="abc1234") -> dict:
     return {"record_code": code, "replay_code": code, "moved_inputs": []}

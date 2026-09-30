@@ -4,9 +4,12 @@ The ticker chart carries the desk's grade changes, which are not trades.
 The operator asked to see the trades beside them: on each session, would
 the policy have bought, added, trimmed, sold or held the name, and at what
 size, so an entry or an exit can be checked against the price that
-followed. This module replays `policy_v4.targets` over the report's
-history to answer that, and reads the paper account's real fills out of
-the nightly records so the two can be drawn on the same candles.
+followed. This module replays the live policy (`live_policy.POLICY`,
+`graded-equal-weight/5` since 2026-09-29) over the report's history to
+answer that, and reads the paper account's real fills out of the nightly
+records so the two can be drawn on the same candles. The markers are the
+active policy's whole history, not the policy of the day: a session
+before the switch is drawn as `/5` would have decided it.
 
 Two things are deliberate. The replay runs on the point-in-time
 membership mask, so a session's decision is made from the names the book
@@ -16,11 +19,12 @@ the close it was made at; the fill is the next session's open, which is
 where the simulator prices it and where the paper account sends its buys.
 The chart draws the decision on its own session, and the caption says so.
 
-WHAT THE MARKERS MEAN UNDER `graded-equal-weight/4` (2026-09-27). A name's
-target under /4 is 1/(number of A/A+ names) capped at HOLD_CAP, so it
-drifts a little every session the count changes - AAOI was A+ every day
-from Sep 8 to Sep 25 and its target went 8.3 -> 7.7 -> 9.1 -> 10 -> 12.5
--> 10 -> 9.1% - and the executor trades none of that drift: it brings the
+WHAT THE MARKERS MEAN UNDER THE GRADED EQUAL-WEIGHT POLICY (`/4` from
+2026-09-27, `/5` from 2026-09-29; they differ only in HOLD_CAP). A name's
+target is 1/(number of A/A+ names) capped at HOLD_CAP, so it drifts a
+little every session the count changes - AAOI was A+ every day from Sep 8
+to Sep 25 and its target went 8.3 -> 7.7 -> 9.1 -> 10 -> 12.5 -> 10 ->
+9.1% - and the executor trades none of that drift: it brings the
 book to the targets at the reset every `paper.REBALANCE_EVERY` sessions,
 sells a name the desk downgrades mid-cycle, buys one that enters, and
 (since the executor's /4) redeploys idle cash into names below target.
@@ -47,10 +51,12 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.agents.trading.desk import point_in_time, policy_v4
+from backend.agents.trading.desk import live_policy, point_in_time
 from backend.market import deskrecord, universe
 
-POLICY = policy_v4.POLICY_VERSION
+# The policy the history replays: the one the account runs, so the chart's
+# markers are the live policy's (`live_policy.ACTIVE`).
+POLICY = live_policy.ACTIVE
 # A weight change smaller than this is a hold. Under equal weight every
 # held name's weight shifts a little whenever the count of qualifying names
 # changes (1/9 to 1/10 is 1.1 points), and none of those shifts is an
@@ -76,7 +82,9 @@ def target_matrix(
     grades = report.graded.grades
     out = np.zeros(grades.shape, dtype=float)
     for t in range(len(panel.dates)):
-        out[t] = policy_v4.targets(grades[t], panel.close[t], mask[t], benchmark)
+        out[t] = live_policy.POLICY.targets(
+            grades[t], panel.close[t], mask[t], benchmark
+        )
     return out
 
 
@@ -84,9 +92,9 @@ def target_matrix(
 # sell whatever the size. Between the two it depends on who is asked.
 # With `reset` None (a sizing policy whose every target move is an order,
 # the /3 reading) a move under ADD_TRIM_MIN is a hold and a larger one an
-# add or a trim. With `reset` given (the /4 reading, membership and
-# schedule) a held name is traded only at the reset: on a reset session a
-# move of at least ADD_TRIM_MIN is the add or trim the rebalance places,
+# add or a trim. With `reset` given (the equal-weight reading, membership
+# and schedule) a held name is traded only at the reset: on a reset session
+# a move of at least ADD_TRIM_MIN is the add or trim the rebalance places,
 # and on any other session every move is a hold, because the executor
 # does not follow the denominator between resets.
 def classify(previous: float, target: float, reset: bool | None = None) -> str:
@@ -113,9 +121,9 @@ def classify(previous: float, target: float, reset: bool | None = None) -> str:
 # next session's open. `targets` accepts a precomputed `target_matrix` so
 # a caller writing every name's file computes the matrix once. `resets`,
 # when given (a set of session dates, possibly empty), switches the
-# classification to the /4 reading - membership and the reset schedule -
-# and every row then also says whether its session was a reset; left None
-# the rows read exactly as they did before the schedule was known.
+# classification to the equal-weight reading - membership and the reset
+# schedule - and every row then also says whether its session was a reset;
+# left None the rows read exactly as they did before the schedule was known.
 def series(
     report,
     ticker: str,

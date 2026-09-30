@@ -262,3 +262,46 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     } finally {await finish(testInfo, fixture)}
   })
 }
+
+// The account's policy since 2026-09-29 is `/5`, the same equal-weight rule under a 25% cap:
+// its history reads exactly as `/4`'s does - the equal-weight legend, the entry as a buy at its
+// target, the reset's move as a rebalance of what it places, the drift between resets unmarked.
+test('chart reads a /5 history with the equal-weight legend and rebalance markers', async ({page, baseURL}, testInfo) => {
+  const fixture = await install(page, baseURL!, {policy: 'graded-equal-weight/5'})
+  try {
+    await page.goto('/#desk')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    const items = chart.locator('[aria-label="AAPL decisions"] ul').first().locator('li')
+    await expect(items).toHaveCount(3)
+    await expect(items.nth(0)).toHaveText('Sep 17 · Sell · close $110.00')
+    await expect(items.nth(1)).toHaveText('Sep 16 · Rebalance +2.5% · close $110.00')
+    await expect(items.nth(2)).toHaveText('Sep 14 · Buy 9.1% · close $110.00')
+    await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveText(`graded-equal-weight/5: ${NOTE}`)
+    const legend = chart.locator('[aria-label="Policy marker legend"]')
+    await expect(legend).toContainText('Buy = enters the A/A+ book')
+    await expect(legend).toContainText('Rebalance ±% = the reset trades it')
+    await expect(legend).toContainText('drift between resets is not traded')
+    await expect(legend).toContainText('Reset sessions from the paper state')
+    await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['Buy 9.1%', 'Rebalance +2.5%', 'Sell']))
+    expect((await drawn(page, 'D')).filter(text => /^(Add|Trim) /.test(text))).toEqual([])
+  } finally {await finish(testInfo, fixture)}
+})
+
+// The equal-weight reading is for the named versions only: `/3`, which shares the prefix but is the
+// sizing era's name, keeps the weight-move reading and gets no equal-weight legend.
+test('chart keeps the sizing reading for a version that only shares the equal-weight prefix', async ({page, baseURL}, testInfo) => {
+  const fixture = await install(page, baseURL!, {policy: 'graded-equal-weight/3', rows: SIZING_ROWS, rebalanceNote: null})
+  try {
+    await page.goto('/#desk')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    const items = chart.locator('[aria-label="AAPL decisions"] ul').first().locator('li')
+    await expect(items).toHaveCount(3)
+    await expect(items.nth(1)).toHaveText('Sep 16 · Add →20% · close $110.00')
+    await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveText(`graded-equal-weight/3: ${NOTE}`)
+    await expect(chart.locator('[aria-label="Policy marker legend"]')).toHaveCount(0)
+    await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['Buy 14%', 'Add →20%', 'Sell']))
+    expect((await drawn(page, 'D')).filter(text => text.startsWith('Rebalance'))).toEqual([])
+  } finally {await finish(testInfo, fixture)}
+})

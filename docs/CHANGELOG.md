@@ -1,5 +1,97 @@
 # Changelog
 
+## 2026-09-29 — `graded-equal-weight/5`: the per-name hold cap raised from 20% to 25% (built and gated; not deployed)
+
+Branch `trading/policy-v5-cap25` from `main` `511297fc`: the code is
+`104d1dee`, the browser test `cefcb2ad`. Not pushed, not merged, not
+deployed.
+
+**Why.** On 2026-09-29 the operator raised the per-name hold limit from 20%
+to 25% of the account. The price list is
+[the cap sweep](research/cap-sweep-2026-09-27.md) with its 2026-09-28
+erratum. At 25 bp:
+
+- CAGR: 28.7% against 27.5% on 2016-2023 (+1.2 points), and 48.5% against
+  46.2% on 2024-2026 (+2.3).
+- The cost is concentration. The corrected worst single-name day is 3.3% of
+  the book against 2.7% on 2016-2023, and the same 4.7% on 2024-2026.
+- The two caps give different books only on a session with fewer than five
+  A/A+ names.
+
+**What changed.**
+
+- `desk/policy_v5.py` is `graded-equal-weight/5`: `/4` with `HOLD_CAP` 0.25
+  and nothing else.
+  - A test checks that its `targets` and `allocator` parse to `/4`'s syntax
+    tree.
+  - It reproduces the sweep's `graded_arm(0.25)` return for return.
+  - `policy_v4.py` is unchanged. The candidate line and the research studies
+    replay it.
+- `live_policy` holds the active policy as a module (`POLICY = policy_v5`),
+  with `allocator(mask)`, `EQUAL_WEIGHT` (`/4` and `/5`, by name) and
+  `is_equal_weight()`. These are now `/5`'s:
+  - the record's `targets`;
+  - the chart markers;
+  - the published rules lines (the live executor with the redeploy).
+- **No forced rebalance.** Between two equal-weight versions
+  `needs_rebalance` is False. A cap change moves the targets, not the book,
+  and a higher cap only raises a target.
+  - Between resets, the redeploy fills held names toward the new targets from
+    the cash beyond the 2% buffer.
+  - The next reset brings the book there on the account's own clock.
+  - The first `/5` nightly re-stamps the paper state.
+  - A state with no stamp, or a `/3`-era stamp, still takes the one forced
+    rebalance.
+- **The shadow restarts in its own folder.** `shadow_ledger` shadows the
+  active policy. Its identity covers `policy_v5.py` and itself, and it writes
+  `desk/shadow/graded-equal-weight-5/` from sequence 0.
+  - The `/4` rows in `graded-equal-weight-4/` are kept as history and never
+    read.
+  - The record's `policy_shadows` key becomes `graded-equal-weight/5`.
+- **The board.**
+  - It still sizes toward a `/4` record written before the switch, labelled
+    `(policy graded-equal-weight/4)`: the policy that decided those weights.
+  - A `/3`-era or unstamped record keeps the `/3` rules.
+  - The daily and 15-minute charts read `/4` and `/5` as equal weight.
+    `DeskPanel` knows `/5`.
+- **The candidate line is unchanged.** It is still the measured `/4` arm,
+  `ew_graded_20` ("candidate /4 … 20% cap").
+- **Grade parity: no code change.** The nightly checks tonight's record,
+  built with `/5`'s targets, before saving it. A test pins this for the
+  switch night.
+
+**Two things the cap does not change.**
+
+- The executor bounds a reset's buys at the entry leg's 15% name cap
+  (`paper.bound_orders`). A name targeted at 25% is bought to 15% at the
+  reset, and the redeploy tops it up on a later session. The same holds for a
+  20% target under `/4`.
+- Running `market_grade_parity` by hand on a pre-switch `/4` record compares
+  its weights with the `/5` recomputation. On a session with fewer than five
+  A/A+ names it reports target mismatches, in drift mode.
+
+**Validation, on spark1.**
+
+- **Unit gate** on `104d1dee`: 8,147 passed, 70 skipped, 6 xfailed, exit 0.
+  Main `511297f` gave 8,113, 70 and 6; the 34 more are this change's new
+  tests.
+- **Types:** `tsc --noEmit` passed.
+- **Browser:** the desk, chart, simple-actions and fundamental-source specs
+  ran on `cefcb2ad`: 283 passed and 37 failed, against 280 and 37 on main.
+  - The failures are the same tests on both branches:
+    `fundamental-source-versions` (25 of 25 on main, all on the
+    "Summary fundamental data source" locator the page no longer has),
+    `desk-execution-evidence` 6, `desk-options-isolation` 3,
+    `desk-options-provenance` 2 and `simple-actions` 1.
+  - The three new browser checks pass: a `/5` history reads the equal-weight
+    legend, `/3` keeps the sizing reading, and a `/5` record reads
+    "Policy simulation".
+- Nothing deployed was exercised, so no live behaviour is verified.
+
+Diagram impact: NONE — a new policy module behind the existing
+`live_policy` seam; no component, store, dependency or data flow is added
+or removed.
+
 ## 2026-09-29 — Stock-action wording and recorded paper-account history
 
 Implementation checkpoint `f9618b1`, not deployed. The current personal board

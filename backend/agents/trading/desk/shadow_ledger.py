@@ -4,9 +4,13 @@ The roadmap's forward step for a passing arm is a 4-6 week fidelity shadow
 on its own dry-run ledger, judged by order-level agreement with a replay
 of the simulator, a tracking difference of at most 5 bp a day, zero
 sessions with negative cash and at least ten fills per new order class.
-This module is that ledger for `policy_v4` (`graded-equal-weight/4`),
-running beside the live `/3` paper book on the same desk report and the
-same prices, with nothing in common with the broker.
+This module is that ledger for the policy the paper account runs
+(`live_policy.POLICY`), on the same desk report and the same prices as the
+live paper book, with nothing in common with the broker: the account, the
+board's sizes and this shadow ask for the same book, so its receipts
+measure the executor alone. It shadowed `graded-equal-weight/4` from
+2026-09-28, and shadows `graded-equal-weight/5` from the first nightly of
+the release that carries the operator's cap change of 2026-09-29.
 
 The account is the simulator's on the arm's own terms: a decision is made
 at the close from what the close could see (the desk's grades, the closing
@@ -29,9 +33,14 @@ to a temporary file, fsynced and hard-linked into place so a row is either
 whole or absent and a sequence number is never overwritten; the latest row
 is the state, and a malformed row stops the account rather than resetting
 it. Each row carries the policy version and an identity hash of this file
-and `policy_v4.py`; when the code changes, the ledger refuses to continue
-unless the continuation is declared in `shadow_ledger_migrations.json`
-beside this module, so a frozen experiment cannot drift without saying so.
+and the shadowed policy's module (`policy_v5.py` for `/5`); when the code
+changes, the ledger refuses to continue unless the continuation is declared
+in `shadow_ledger_migrations.json` beside this module, so a frozen
+experiment cannot drift without saying so. Each policy version has its own
+folder, and a change of policy is a new experiment, not a continuation: the
+`/5` ledger starts at sequence 0 in `graded-equal-weight-5/`, and the `/4`
+rows in `graded-equal-weight-4/` are left as they were, as history, never
+read or written by the `/5` ledger.
 """
 
 from __future__ import annotations
@@ -46,7 +55,7 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.agents.trading.desk import paper, planner, policy_v4
+from backend.agents.trading.desk import live_policy, paper, planner
 
 VERSION = "shadow-ledger/1"
 START_CASH = 100_000.0
@@ -60,26 +69,36 @@ REBALANCE_EVERY = paper.REBALANCE_EVERY
 MIGRATIONS = Path(__file__).parent / "shadow_ledger_migrations.json"
 
 
+# The policy this ledger shadows: the one the paper account runs, read when
+# it is needed rather than bound at import, so the folder, the identity, the
+# row's policy name and the decision always come from the same module.
+def shadowed():
+    """Return the active policy's module (`live_policy.POLICY`)."""
+    return live_policy.POLICY
+
+
 # The folder name a policy version is stored under: the version with its
-# slash made safe for a path ("graded-equal-weight/4" -> "graded-equal-weight-4").
+# slash made safe for a path ("graded-equal-weight/5" -> "graded-equal-weight-5").
 def slug(policy_version: str) -> str:
     """Return the path-safe form of a policy version string."""
     return policy_version.replace("/", "-")
 
 
-# Where one policy's ledger lives under the market data root.
-def folder(root: Path, policy_version: str = policy_v4.POLICY_VERSION) -> Path:
+# Where one policy's ledger lives under the market data root: the shadowed
+# policy's unless another version is named.
+def folder(root: Path, policy_version: str | None = None) -> Path:
     """Return `<root>/desk/shadow/<policy-slug>`."""
-    return Path(root) / "desk" / "shadow" / slug(policy_version)
+    version = policy_version or shadowed().POLICY_VERSION
+    return Path(root) / "desk" / "shadow" / slug(version)
 
 
-# The code identity of the experiment: the policy and this ledger, hashed as
-# whole files, so any edit to either is caught before it can continue a
-# frozen account.
+# The code identity of the experiment: the shadowed policy and this ledger,
+# hashed as whole files, so any edit to either is caught before it can
+# continue a frozen account.
 def identity() -> str:
-    """Return the sha256 of policy_v4.py and shadow_ledger.py."""
+    """Return the sha256 of the shadowed policy's module and shadow_ledger.py."""
     code = b""
-    for path in (Path(policy_v4.__file__), Path(__file__)):
+    for path in (Path(shadowed().__file__), Path(__file__)):
         code += path.read_text(encoding="utf-8").replace("\r\n", "\n").encode()
     return hashlib.sha256(code).hexdigest()
 
@@ -127,9 +146,10 @@ def initialize(
     folder: Path, code_identity: str, now: datetime, migrations: Path | None = None
 ) -> dict:
     """Return the current state row, creating sequence 0 on a fresh folder."""
+    version = shadowed().POLICY_VERSION
     prior = latest(folder)
     if prior:
-        if prior["policy"] != policy_v4.POLICY_VERSION:
+        if prior["policy"] != version:
             raise ValueError("Frozen experiment changed; use a separate run directory")
         if prior["identity"] != code_identity:
             declared = migration(prior["identity"], code_identity, migrations)
@@ -148,7 +168,7 @@ def initialize(
         folder,
         {
             "version": VERSION,
-            "policy": policy_v4.POLICY_VERSION,
+            "policy": version,
             "identity": code_identity,
             "sequence": 0,
             "session": None,
@@ -288,14 +308,16 @@ def _mark(cash: float, shares: dict[str, int], prices: dict[str, float]) -> floa
     return float(cash + sum(q * prices[t] for t, q in shares.items() if q > 0))
 
 
-# The policy's target weights on the report's last session, keyed by ticker
-# and holding only the names it wants.
+# The shadowed policy's target weights on the report's last session, keyed
+# by ticker and holding only the names it wants. The arithmetic lives here,
+# inside the hashed file, rather than in a call to `live_policy.targets`, so
+# a change to how the shadow decides is a change to its identity.
 def decide(report) -> dict[str, float]:
-    """Return {ticker: weight} from `policy_v4.targets` on the last session."""
+    """Return {ticker: weight} from the shadowed policy's `targets`."""
     panel = report.panel
     last = len(panel.dates) - 1
     eligible = np.ones(len(panel.tickers), dtype=bool)
-    weights = policy_v4.targets(
+    weights = shadowed().targets(
         report.graded.grades[last],
         panel.close[last],
         eligible,

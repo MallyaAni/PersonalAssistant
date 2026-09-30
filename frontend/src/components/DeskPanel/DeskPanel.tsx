@@ -408,12 +408,14 @@ const describeSimulationFunding = (source: unknown) => {
 // earlier one reads as "older" and a string the page has never seen reads
 // as "unrecognized". The first two are the executor's version strings,
 // which records wrote into `strategy_policy` before the allocation policy
-// had its own name.
+// had its own name. `/5` is `/4` under a 25% hold cap, the account's policy
+// since 2026-09-29.
 const KNOWN_STRATEGY_POLICIES = [
   'cash-bounded-breakout-rotation/2',
   'cash-bounded-breakout-rotation/3',
   'graded-equal-weight/3',
   'graded-equal-weight/4',
+  'graded-equal-weight/5',
 ]
 
 // Say whether a stored simulation is of the strategy the account runs.

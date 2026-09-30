@@ -283,19 +283,27 @@ def _not_executable_reason(strategy_action, strategy_move_weight, blocker, said=
     return f"{said}; {why[0].lower()}{why[1:]}" if said else why
 
 
-# Whether the record's targets are the active allocation policy's, so the
-# board sizes toward them. `record["targets"]` is written by the nightly from
-# `live_policy.record_targets`; a record from before the stamp, or one stamped
-# with another policy, has no standing order behind its weights and keeps the
-# `/3`-era rules (a live entry, a covered exit, otherwise Hold).
+# Whether the record's targets are a standing order the board sizes toward:
+# the active allocation policy's weights, or another graded equal-weight
+# version's while the active policy is one too (`live_policy.same_book`,
+# the rule that spares the paper book a forced rebalance). A `/4` record
+# written before the switch to `/5` is still the plan the account made for
+# the next session; refusing it would size the board by the `/3`-era rules
+# between a deploy and the next nightly. `record["targets"]` is written by
+# the nightly from `live_policy.record_targets`; a record from before the
+# stamp, or one stamped with any other policy, has no standing order behind
+# its weights and keeps the `/3`-era rules (a live entry, a covered exit,
+# otherwise Hold).
 def _sizes_toward_targets(record) -> bool:
-    """Return True when `record["targets"]` carries the active policy's weights."""
+    """Return True when `record["targets"]` is a standing order for the board."""
     from backend.agents.trading.desk import live_policy
 
     targets = record.get("targets") or {}
     weights = targets.get("weights")
+    policy = targets.get("policy")
     return (
-        targets.get("policy") == live_policy.ACTIVE
+        isinstance(policy, str)
+        and live_policy.same_book(policy)
         and isinstance(weights, dict)
         and bool(weights)
     )
@@ -589,9 +597,10 @@ def action_for_row(
 ):
     """Return (action, weight, reason): Buy, Sell or Hold, and the weight to move.
 
-    `toward_targets` names the active policy when the record's targets are its
-    standing order (`_sizes_toward_targets`); then the gap to the target is
-    sized as `_target_move` says. None keeps the `/3`-era rules below.
+    `toward_targets` names the policy whose targets are the standing order -
+    the record's own `targets.policy`, which `_sizes_toward_targets` has
+    accepted - and then the gap to the target is sized as `_target_move`
+    says. None keeps the `/3`-era rules below.
     """
     # Two different questions, and they used to be one.
     #
@@ -672,9 +681,10 @@ def action_for_row(
             f"Exit position: grade {row['grade_live']}",
         )
 
-    # Under the active policy the targets ARE the standing order. The
-    # `graded-equal-weight/4` executor holds every A/A+ name at equal weight,
-    # exits on a downgrade (the branch above) and, since the redeploy leg,
+    # Under the equal-weight policy the targets ARE the standing order. The
+    # graded equal-weight executor (`/4`, and `/5` since 2026-09-29) holds
+    # every A/A+ name at equal weight under the policy's cap, exits on a
+    # downgrade (the branch above) and, since the redeploy leg,
     # puts idle cash back to the targets mid-cycle; trimming waits for the
     # reset. So the gap between what the person holds and the policy's weight
     # is the trade, classified as the charts classify it.
@@ -693,7 +703,7 @@ def action_for_row(
     # an instruction printed Sell on eight names the desk had no intention of
     # selling. That book only acted on its weights at a reset, and no backtest
     # supported trading toward them in between. The rule applies to `/3`
-    # records only; `/4` records take the branch above.
+    # records only; equal-weight (`/4`, `/5`) records take the branch above.
     #
     # So a Hold says what the account being guided is holding rather than only
     # that nothing is due. That is what the column owes a reader who records no
@@ -888,19 +898,21 @@ def _apply_entry_reason(row, readings, paused):
 
 
 # Which policy the board sizes toward, and the record it sizes against. The
-# personal board against a record stamped with the active policy sizes toward
-# that policy's weights: the book becomes the targets (the API already swaps
-# it; doing it here too means a caller that did not cannot size a `/4` label
-# against the `/3` book), and `action_for_row` trades the gap. The
-# explicit-targets research path (`targets` given) is a different question
-# and keeps its own book, as does every record without the stamp.
+# personal board against a record whose targets are a standing order
+# (`_sizes_toward_targets`: the active policy's, or another equal-weight
+# version's) sizes toward those weights: the book becomes the targets (the
+# API already swaps it; doing it here too means a caller that did not cannot
+# size a `/4` label against the `/3` book), and `action_for_row` trades the
+# gap. The policy named is the record's own `targets.policy` - the policy
+# that decided those weights - never `live_policy.ACTIVE`, so a reason line
+# never says `/5` for a book `/4` sized. The explicit-targets research path
+# (`targets` given) is a different question and keeps its own book, as does
+# every record without the stamp.
 def _toward_targets(record, targets):
     """Return (policy or None, record) for the board to size against."""
     if targets is not None or not _sizes_toward_targets(record):
         return None, record
-    from backend.agents.trading.desk import live_policy
-
-    return live_policy.ACTIVE, {**record, "book": _targets_book(record)}
+    return record["targets"]["policy"], {**record, "book": _targets_book(record)}
 
 
 # The target sentence a Buy sized from the policy's targets carries through
@@ -1159,10 +1171,11 @@ def build(
                 {"ticker": name, "weight": weight} for name, weight in targets.items()
             ],
         }
-    # The personal board against a record stamped with the active policy sizes
-    # toward that policy's weights: the book is the targets (the API already
-    # swaps it; doing it here too means a caller that did not cannot size a
-    # `/4` label against the `/3` book), and `action_for_row` trades the gap.
+    # The personal board against a record whose targets are a standing order
+    # (the active policy's, or another equal-weight version's) sizes toward
+    # those weights: the book is the targets (the API already swaps it; doing
+    # it here too means a caller that did not cannot size a `/4` label
+    # against the `/3` book), and `action_for_row` trades the gap.
     # The explicit-targets research path above is a different question and
     # keeps its own book.
     toward_targets, record = _toward_targets(record, targets)

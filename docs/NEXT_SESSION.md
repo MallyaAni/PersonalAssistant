@@ -1,5 +1,74 @@
 # Next session
 
+## 2026-09-30, night — Stage 5: buying at the decision day's close. RECORD; the board keeps buying in the next session
+
+**Nothing live changed.** The registered test
+(`docs/research/stage5-plan-2026-09-29.md`, Addendum 1;
+`docs/research/stage5-results-2026-09-29.md`) ran at `c395c45` on spark1,
+20 offsets, the store as of 2026-09-29. The payload is
+`docs/research/scorecards/stage5/stage5_close.json`.
+
+- Per buy +11.7 bp on the unexamined 2016-2017 window at clustered t 1.20:
+  criterion 1 fails at the t. 2018-2023 +24.3 bp (t 2.5), 2024-2026 +9.9
+  bp; +15.1 bp against `next_open`; the null test perfect (0 cells over
+  2,699 sessions; 0 of 53,780 decisions).
+- Drift-adjusted, the gain is −2.2 bp a buy: being invested a session
+  earlier, not an execution edge. Notional-weighted, 2024-2026 loses 23 bp a
+  buy and 0.9 bp of equity a session; the full ledger walk agrees (61.2%
+  against 61.6% CAGR).
+- The 15:30 decision itself places 95-98% of buy notional identically to
+  19:30. The forward shadow is not installed (not needed for a RECORD).
+- Cumulative trials: 452. Stages 3, 4 and 5 together: no timing rule,
+  level, ML timing or fill-time change beats `dip_or_close` on this book.
+
+**Branch `research/stage5`** carries the engine (`stage5_close.py`, its CLI
+and tests; unit gate 8,164 passed at `35736dd`) on top of
+`trading/policy-v5-cap25`, because the study runs under `/5`. Merge it into
+`main` together with the `/5` deploy on 2026-09-30, not before.
+
+**RTX, option B (text):** phase 1 (literature and read-only data audit) is
+in the project doc `claude/text-signals-2026-09-29.md`. Main findings: the
+stored release-tone scores are September-2026 re-reads of releases 87%
+inside DeepSeek's reported training window (a possible look-ahead in the
+live grade); an embedding study on 2026-09-07 (`market_release_eval`) added
+nothing; ARM, ASML, NBIS, SIMO and TSM file 6-Ks and have no tone; no
+10-K/10-Q text is stored; release texts exist only on the desktop (3,401
+files). Proposed first study: an anonymized re-score plus a point-in-time
+model (ChronoBERT, ~6.6 GB to E:), pre-registered, **after the operator's
+OK** for the downloads and one DeepSeek re-score batch.
+
+## 2026-09-29, evening — `graded-equal-weight/5` (25% hold cap) built and gated. **NOT deployed**
+
+The operator approved raising the per-name hold cap from 20% to 25%. The
+release is on branch `trading/policy-v5-cap25`, from `main` `511297fc`. It is
+built and gated on spark1: the numbers and what changed are in the CHANGELOG
+entry of the same date. **Not pushed, not merged, not deployed.**
+
+**Next: Claude deploys it after 16:15 ET on 2026-09-30, before the 19:30 ET
+nightly.** Handoff rule 2 forbids deploying between 09:00 and 16:15 ET.
+
+- Deploy through `scripts/deploy.sh`.
+- The deploy checkout is at `2262333c`. The branch also carries main's 12
+  stage-4 commits, which are research modules and docs only.
+
+**Between the deploy and the nightly**, the board sizes toward the latest
+`/4` record and labels its rows `(policy graded-equal-weight/4)`.
+
+**Read that night's log and record** for:
+
+- `paper book (graded-equal-weight/5; …)` with **no** "policy change" line
+  (the `/4` state is re-stamped, not rebalanced);
+- `state.policy_version == "graded-equal-weight/5"`;
+- `/5` in the record's `targets.policy` and `curve.backtest.strategy_policy`;
+- `policy_shadows["graded-equal-weight/5"]` at sequence 1, under
+  `desk/shadow/graded-equal-weight-5/`, with the `/4` folder unchanged;
+- "grade parity: OK";
+- the candidate line still `/4`.
+
+**Rollback:** redeploy `511297fc`. After a `/5` nightly, that code sees the
+`/5` stamp as another policy and forces one rebalance back into `/4`, which
+trims 25% names to 20%.
+
 ## 2026-09-29, afternoon — Stage 4: multi-day timing of the executor's orders. Every candidate RECORD; the board keeps `dip_or_close`
 
 **Nothing live changed.** The live path is still frozen at
