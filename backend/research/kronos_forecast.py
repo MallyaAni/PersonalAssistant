@@ -349,9 +349,10 @@ def run_k1_name(
     batch: int,
     seed: int,
     autocast: bool,
+    context: int = DAILY_CONTEXT,
 ) -> tuple[pd.DataFrame, int]:
     """Return (frame, cells skipped for a short context)."""
-    w = daily_windows(daily, cells["date"].to_numpy(), sessions)
+    w = daily_windows(daily, cells["date"].to_numpy(), sessions, context=context)
     kept = w["kept"]
     skipped = len(cells) - len(kept)
     if not len(kept):
@@ -392,9 +393,12 @@ def run_k2_name(
     batch: int,
     seed: int,
     autocast: bool,
+    context: int = INTRADAY_CONTEXT,
 ) -> tuple[pd.DataFrame, int]:
     """Return (frame, cells skipped for a short context)."""
-    w = intraday_windows(bars, cells["date"].to_numpy(), cells["next_date"].to_numpy())
+    w = intraday_windows(
+        bars, cells["date"].to_numpy(), cells["next_date"].to_numpy(), context=context
+    )
     kept = w["kept"]
     skipped = len(cells) - len(kept)
     if not len(kept):
@@ -451,6 +455,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--limit", type=int, default=0, help="at most this many cells a name (smoke)"
     )
     parser.add_argument("--no-autocast", action="store_true", help="fp32 throughout")
+    parser.add_argument(
+        "--context",
+        type=int,
+        default=0,
+        help="context length (default: 512 for both arms; Addendum 2's K1c40 uses 40)",
+    )
     return parser
 
 
@@ -478,8 +488,10 @@ def main(argv: list[str] | None = None) -> int:
         names = [n for n in names if n in chosen]
     predictor = load_predictor(args.kronos, args.hf, args.device)
     autocast = not args.no_autocast
+    context = args.context or (DAILY_CONTEXT if args.arm == "k1" else INTRADAY_CONTEXT)
     record: dict[str, Any] = {
         "arm": args.arm,
+        "context": context,
         "sampling": SAMPLING,
         "max_context": MAX_CONTEXT,
         "clip": CLIP,
@@ -513,6 +525,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.batch,
                 args.seed + i,
                 autocast,
+                context,
             )
         else:
             frame, skipped = run_k2_name(
@@ -523,6 +536,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.batch,
                 args.seed + i,
                 autocast,
+                context,
             )
         seconds = time.perf_counter() - started
         frame.to_parquet(target, index=False)
