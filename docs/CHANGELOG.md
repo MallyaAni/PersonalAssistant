@@ -1,5 +1,77 @@
 # Changelog
 
+## 2026-09-30 — Form 6-K results releases for the tone reader: BUILT, not deployed
+
+Five book names are foreign private issuers that file Form 6-K instead of
+8-K, so `edgar.parse_submissions_block` (8-K with item 2.02 only) gave them
+no earnings events and the tone reader never scored them: ARM (CIK 1973239),
+ASML (937966), NBIS (1513845 — the Yandex N.V. CIK, not 1662574), SIMO
+(1329394), TSM (1046179). Branch `trading/tone-6k`, built and unit-tested,
+not deployed, not backfilled. Design and EDGAR evidence in the operator's
+spec `6k-tone-spec-2026-09-30.md` (accessions, acceptance times, exhibit
+history per name).
+
+- A 6-K has no item code, so a 6-K is admitted only for a CIK in
+  `edgar.RESULTS_HEADLINES` and only when the head of its press release
+  (EX-99.1, or the 6-K itself for TSMC before 2019-10, where the release
+  lived) matches that issuer's results headline — a test of the document's
+  title, not a judgement of intent. TSMC's monthly revenue notes and its
+  full-statements 6-K a month later, ASML's annual report and buyback
+  notices, SIMO's call-date notices and NBIS's financings are refused.
+  Nebius starts at 2024-10-01 (`EARLIEST_6K`); earlier 6-Ks under that CIK
+  are Yandex's.
+- Each 6-K's decision is cached as `classified_6k` (JSON accession →
+  admitted) on the `edgar_events` frame's metadata and carried into the next
+  refresh, so a nightly reads only the 6-Ks it has not seen. A refused
+  EDGAR page fails the name (it keeps its last partition) rather than
+  caching "not a release". `EarningsEvent.form` and a `form` column are
+  new; frames without the column read as 8-K.
+- `market_tone` stores a non-dollar issuer's release (TSM in NT$, ASML in
+  euro; `edgar.REPORTING_CURRENCY`) with `revenue_usd_m`, `eps_usd`,
+  `net_income_usd_m` and `gross_margin_pct` None, so a figure copied in the
+  wrong currency cannot reach the fundamental layer through
+  `release_facts`; the five tone scores and the summary are kept. No
+  prompt change, no `PROMPT_VERSION` bump, no book-wide re-score.
+- `market_edgar --audit-6k` lists the admitted 6-K releases per name per
+  year from stored frames and exits 1 when a full year lacks four.
+- `edgar.py` is part of the opportunity shadow's hashed identity, so
+  `opportunity_shadow_migrations.json` declares the continuation into the
+  new identity (`e8f98a43`) from the deployed `4b5e7110` and the earlier
+  `19f933ff`, `df47189d` and `dc1d5fa6`; the shadow's reads are unchanged.
+- Reaction dates need no change: TSM, ASML, SIMO and NBIS 6-Ks are accepted
+  06:00–09:20 New York (same session, pre-open), ARM's at 16:02 (next
+  session).
+
+**Once backfilled, the grades of these five names change retroactively.**
+Tone frames are dated by the run that writes them, so a strict replay of a
+past session is unaffected, but the nightly desk report and the stage-3
+exports read the newest partition and recompute the whole history:
+`has_tone` flips to 1 back to 2015 for TSM, ASML and SIMO (2023-11 for ARM,
+2024-10 for NBIS). `grade_parity.moved_inputs` will list the new
+`edgar_events` and `edgar_tone` partitions and every CLI replay of an
+older record reports drift (exit 3, amber), and the laggard shadow's
+`export_sha256` changes. Treat the first nightly with 6-K tone as a
+data-vintage change and record it in the stage-3/4 results; scorecards
+before and after are not comparable for these names. The backfill is
+roughly 1,300 filing-index reads and ~150 exhibit reads at the SEC pacer
+(about four minutes) plus ~150 model calls; run it off-hours, after the
+operator approves the headline table, the NBIS start date and the None
+financials for TSM and ASML.
+
+Tests: `backend/tests/test_market_edgar_6k.py` (23 cases, no network: a
+fake EDGAR serves a synthetic submissions document, index pages and
+exhibit heads; headline admits/refuses per issuer; unlisted CIK admits
+nothing; main-document fallback; refused page raises; cached decisions
+skip the pages; frame round trip and legacy frames; None financials in
+`tone_record` and through `_refresh_ticker`; audit counts). The full Spark
+unit gate passed on tree `aafce2cf` (this entry's final commit differs from
+it only by this paragraph): 8,136 passed, 70 skipped, 6 expected failures,
+387 warnings in 391.62 seconds, using `anios_gate`. Not run against SEC; no
+store, crontab or service touched.
+
+Diagram impact: NONE — the EDGAR layer's boundaries are unchanged; one more
+form reaches the same events frame.
+
 ## 2026-09-29 — Stock-action wording and recorded paper-account history
 
 Implementation checkpoint `f9618b1`, not deployed. The current personal board

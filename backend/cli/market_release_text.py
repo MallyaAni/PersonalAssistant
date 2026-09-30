@@ -23,7 +23,7 @@ Why the text is kept: see `backend/market/release_text.py`.
 
 import argparse
 import time
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 from backend.config.settings import settings
@@ -66,15 +66,7 @@ def _events(store: MarketStore, ticker: str, asof: date, since: date):
         return None, 0
     columns, meta = frame
     cik = int(meta.get("cik", "0"))
-    events = [
-        edgar.EarningsEvent(
-            accepted=datetime.fromisoformat(columns["accepted"][i]),
-            filed=columns["filed"][i],
-            accession=columns["accession"][i],
-            items=columns["items"][i],
-        )
-        for i in range(len(columns.get("accepted", [])))
-    ]
+    events = edgar.events_from_columns(columns)
     return [e for e in events if e.filed >= since], cik
 
 

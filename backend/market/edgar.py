@@ -10,7 +10,14 @@ Three things are read per company:
 
 - **Earnings events** — 8-K filings with item 2.02 (results of operations),
   with their acceptance timestamp. A release accepted after the close
-  moves the next session, which is where the reaction is measured.
+  moves the next session, which is where the reaction is measured. A
+  foreign private issuer files Form 6-K instead, with no item codes, so a
+  6-K is admitted only for a listed issuer and only when the filing's
+  press release opens with that issuer's results headline
+  (`RESULTS_HEADLINES`, `classify_6k`); the many other 6-Ks such issuers
+  file (monthly revenue, full statements a month later, call-date
+  notices, financings) are refused, and each decision is cached so a
+  refresh reads only the filings it has not seen.
 - **Quarterly fundamentals** — revenue, net income, diluted EPS, capital
   expenditure, operating cash flow and gross profit from the company-facts
   API, kept as the *earliest-filed* value for each period so a later
@@ -33,7 +40,7 @@ import json
 import re
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -133,6 +140,69 @@ FEATURE_COUNT = len(FEATURE_NAMES)
 NO_EVENT_SESSIONS = 250
 NO_FACT_SESSIONS = 400
 
+# --- Form 6-K results releases ---------------------------------------------
+#
+# A 6-K carries no item code, so the only way to tell a results release
+# from the rest of an issuer's 6-Ks is the document itself. Each listed
+# issuer's release opens with a fixed headline; the filing is admitted when
+# the head of its press release matches. This is a test of a document's
+# shape (its title), decided per issuer from EDGAR, not a judgement of
+# intent: an unlisted CIK admits nothing. Verified 2026-09-30 against the
+# 2015-2026 filings of each issuer (docs: 6k-tone-spec-2026-09-30).
+RESULTS_HEADLINES: dict[int, tuple[re.Pattern[str], ...]] = {
+    # TSMC: "TSMC Reports Third Quarter EPS of NT$17.44" (0001046179-25-000116).
+    # Monthly revenue 6-Ks open "TSMC ... Revenue for <month>", the full
+    # TIFRS statements a month later carry no headline at all.
+    1046179: (
+        re.compile(r"TSMC Reports (First|Second|Third|Fourth) Quarter EPS", re.I),
+    ),
+    # ASML: "ASML reports €7.5 billion total net sales ... in Q3 2025"
+    # (0001628280-25-045043); annual reports and buyback notices differ.
+    937966: (
+        re.compile(
+            r"ASML reports .{0,160}?(net sales|financial results)"
+            r".{0,120}?Q[1-4] 20\d\d",
+            re.I | re.S,
+        ),
+    ),
+    # Arm: "Arm Holdings plc Reports Results for the Second Quarter of the
+    # Fiscal Year Ending March 31, 2026" (0001973239-25-000042).
+    1973239: (
+        re.compile(r"Arm Holdings plc Reports Results for the .{0,40}?Quarter", re.I),
+    ),
+    # Silicon Motion: "Silicon Motion Announces Results for the Period Ended
+    # September 30, 2025" (0001193125-25-259296); the call-date notice three
+    # weeks earlier says "Announces ... Conference Call" and is refused.
+    1329394: (
+        re.compile(r"Silicon Motion Announces Results for the Period Ended", re.I),
+    ),
+    # Nebius: "Nebius Group Announces Second Quarter 2025 Financial Results"
+    # (0001104659-25-075028); financings say "Announces ... Offering".
+    1513845: (
+        re.compile(
+            r"Nebius Group Announces .{0,60}?(Quarter|Full[- ]Year).{0,60}?Results",
+            re.I | re.S,
+        ),
+    ),
+}
+
+# The first 6-K date admitted per issuer. Nebius reports under the CIK
+# Yandex N.V. used until 2024; Yandex's releases are another business.
+EARLIEST_6K: dict[int, date] = {1513845: date(2024, 10, 1)}
+
+# Issuers whose older 6-Ks carried the release as the main document rather
+# than as EX-99.1: TSMC until its 2019-10-17 filing. Value: the first
+# filing date from which EX-99.1 is used.
+RELEASE_IN_MAIN_DOC_UNTIL: dict[int, date] = {1046179: date(2019, 10, 1)}
+
+# Issuers whose releases state their figures in a currency other than the
+# US dollar. The tone reader's financial fields are dollar amounts, so for
+# these the fields are left unread (the five tone scores are kept).
+REPORTING_CURRENCY: dict[int, str] = {1046179: "TWD", 937966: "EUR"}
+
+# How much of a document's text the headline is looked for in.
+HEADLINE_CHARS = 600
+
 
 class EdgarUnavailableError(RuntimeError):
     """A fetch failed or was refused; the caller must flag, not crash."""
@@ -146,6 +216,9 @@ class EarningsEvent:
     filed: date
     accession: str
     items: str
+    # The form filed: "8-K", or "6-K" for a foreign private issuer's
+    # release (frames stored before the field existed read as 8-K).
+    form: str = "8-K"
 
     # The first session on which the market could react: the acceptance
     # date itself when accepted before the close in New York, else the
@@ -179,6 +252,9 @@ class CompanyRecord:
     events: tuple[EarningsEvent, ...]
     facts: tuple[QuarterFact, ...]
     source_time: datetime
+    # Every 6-K looked at for this issuer, accession -> admitted, so the
+    # next refresh reads only the filings it has not seen.
+    decisions_6k: Mapping[str, bool] = field(default_factory=dict)
 
 
 Transport = Callable[[str], tuple[int, bytes]]
@@ -269,9 +345,15 @@ def parse_cik_map(payload: Mapping[str, Any]) -> dict[str, int]:
     return out
 
 
-# Pure: one submissions block (recent or an older file) into events.
-def parse_submissions_block(block: Mapping[str, Any]) -> list[EarningsEvent]:
-    """Return the 8-K item 2.02 events in one submissions block."""
+# Pure: one submissions block (recent or an older file) into events. An
+# 8-K is an event when it carries item 2.02. A 6-K is a *candidate* only
+# for an issuer in RESULTS_HEADLINES (and not before its EARLIEST_6K date);
+# whether it is a results release is decided later by `classify_6k` from
+# the document itself, since the submissions block has no exhibit titles.
+def parse_submissions_block(
+    block: Mapping[str, Any], cik: int | None = None
+) -> list[EarningsEvent]:
+    """Return the 8-K item 2.02 events (and 6-K candidates) in a block."""
     forms = block.get("form") or []
     items = block.get("items") or []
     accepted = block.get("acceptanceDateTime") or []
@@ -279,17 +361,28 @@ def parse_submissions_block(block: Mapping[str, Any]) -> list[EarningsEvent]:
     accession = block.get("accessionNumber") or []
     events: list[EarningsEvent] = []
     for i, form in enumerate(forms):
-        if form != "8-K" or "2.02" not in (items[i] if i < len(items) else ""):
+        row_items = items[i] if i < len(items) else ""
+        if form == "8-K":
+            if "2.02" not in row_items:
+                continue
+        elif form == "6-K":
+            if cik is None or cik not in RESULTS_HEADLINES:
+                continue
+        else:
             continue
         try:
             stamp = accepted[i].replace("Z", "+00:00")
             when = datetime.fromisoformat(stamp).astimezone(UTC)
+            filed_on = date.fromisoformat(filed[i])
+            if form == "6-K" and filed_on < EARLIEST_6K.get(cik, date.min):
+                continue
             events.append(
                 EarningsEvent(
                     accepted=when,
-                    filed=date.fromisoformat(filed[i]),
+                    filed=filed_on,
                     accession=accession[i],
-                    items=items[i],
+                    items=row_items,
+                    form=form,
                 )
             )
         except (IndexError, ValueError, AttributeError):
@@ -297,29 +390,99 @@ def parse_submissions_block(block: Mapping[str, Any]) -> list[EarningsEvent]:
     return events
 
 
+# Whether an issuer's 6-K of this date carries the release as the main
+# document rather than as an EX-99.1 exhibit.
+def release_in_main_document(cik: int, event: EarningsEvent) -> bool:
+    """Return True when the event's press release is the 6-K itself."""
+    until = RELEASE_IN_MAIN_DOC_UNTIL.get(cik)
+    return event.form == "6-K" and until is not None and event.filed < until
+
+
+# Pure: whether the head of a release's text opens with the issuer's
+# results headline. Only the first HEADLINE_CHARS are read, so a later
+# mention of a past quarter in a monthly-revenue note does not match.
+def is_results_headline(cik: int, text: str) -> bool:
+    """Return True when `text` opens with the issuer's results headline."""
+    head = text[:HEADLINE_CHARS]
+    return any(p.search(head) for p in RESULTS_HEADLINES.get(cik, ()))
+
+
+# Decide whether one 6-K is a results release: read its filing index,
+# take the press-release document (EX-99.1, or the main document for a
+# filer that used to put the release there), and match its head against
+# the issuer's headline. A filing with no such document is refused.
+def classify_6k(
+    cik: int,
+    event: EarningsEvent,
+    transport: Transport = sec_transport,
+    pacer: Pacer | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+) -> bool:
+    """Return True when the 6-K's press release is a results release."""
+    from backend.market import language
+
+    pacer = pacer or Pacer(sleep=sleep)
+    try:
+        text = language.fetch_release_text(cik, event, transport, pacer, sleep)
+    except RuntimeError as exc:
+        # A refused page must not be cached as "not a release": the name
+        # fails this refresh and keeps its last partition.
+        raise EdgarUnavailableError(f"{event.accession}: {exc}") from exc
+    return bool(text) and is_results_headline(cik, text)
+
+
 # Fetch every earnings event for a company: the recent block plus each
-# older block the submissions document points at.
+# older block the submissions document points at. 6-K candidates are
+# classified from their documents unless `decisions` already holds the
+# accession; the decisions made (old and new) are returned beside the
+# events so the caller can store them.
 def fetch_events(
     cik: int,
     transport: Transport = sec_transport,
     pacer: Pacer | None = None,
     sleep: Callable[[float], None] = time.sleep,
+    decisions: Mapping[str, bool] | None = None,
 ) -> tuple[EarningsEvent, ...]:
-    """Return all 8-K item 2.02 events for a CIK, oldest first."""
+    """Return all earnings events for a CIK, oldest first."""
+    events, _decided = fetch_events_with_decisions(
+        cik, transport, pacer, sleep, decisions
+    )
+    return events
+
+
+# `fetch_events` plus the 6-K decisions, for a caller that caches them.
+def fetch_events_with_decisions(
+    cik: int,
+    transport: Transport = sec_transport,
+    pacer: Pacer | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+    decisions: Mapping[str, bool] | None = None,
+) -> tuple[tuple[EarningsEvent, ...], dict[str, bool]]:
+    """Return (events oldest first, {6-K accession: admitted})."""
     pacer = pacer or Pacer(sleep=sleep)
     payload = _get_json(
         _SUBMISSIONS_URL.format(name=f"CIK{cik:010d}.json"), transport, pacer, sleep
     )
     filings = payload.get("filings") or {}
-    events = parse_submissions_block(filings.get("recent") or {})
+    events = parse_submissions_block(filings.get("recent") or {}, cik)
     for older in filings.get("files") or []:
         name = older.get("name")
         if not name:
             continue
         block = _get_json(_SUBMISSIONS_URL.format(name=name), transport, pacer, sleep)
-        events.extend(parse_submissions_block(block))
-    unique = {e.accession: e for e in events}
-    return tuple(sorted(unique.values(), key=lambda e: e.accepted))
+        events.extend(parse_submissions_block(block, cik))
+    decided = dict(decisions or {})
+    kept: dict[str, EarningsEvent] = {}
+    for event in events:
+        if event.form == "6-K":
+            if event.accession not in decided:
+                decided[event.accession] = classify_6k(
+                    cik, event, transport, pacer, sleep
+                )
+            if not decided[event.accession]:
+                continue
+        kept[event.accession] = event
+    return tuple(sorted(kept.values(), key=lambda e: e.accepted)), decided
 
 
 # Six- and nine-month spans of a year-to-date fact, earliest filed.
@@ -547,10 +710,13 @@ def fetch_company(
     pacer: Pacer | None = None,
     sleep: Callable[[float], None] = time.sleep,
     now: datetime | None = None,
+    decisions: Mapping[str, bool] | None = None,
 ) -> CompanyRecord:
     """Return the CompanyRecord for a ticker: events, facts, fetch time."""
     pacer = pacer or Pacer(sleep=sleep)
-    events = fetch_events(cik, transport, pacer, sleep)
+    events, decided = fetch_events_with_decisions(
+        cik, transport, pacer, sleep, decisions
+    )
     facts = fetch_facts(cik, transport, pacer, sleep)
     return CompanyRecord(
         ticker=ticker,
@@ -558,6 +724,32 @@ def fetch_company(
         events=events,
         facts=facts,
         source_time=now or datetime.now(tz=UTC),
+        decisions_6k=decided,
+    )
+
+
+# The 6-K decisions as one metadata string for an events frame, and back.
+# Frame metadata is str -> str, so the map is stored as JSON under the
+# key `classified_6k`; a frame written before the key existed has none.
+def decisions_to_metadata(decisions: Mapping[str, bool]) -> str:
+    """Return the JSON text of {accession: admitted}."""
+    return json.dumps({k: bool(v) for k, v in sorted(decisions.items())})
+
+
+# Read the decisions back from a frame's metadata, tolerating absence.
+def decisions_from_metadata(meta: Mapping[str, str]) -> dict[str, bool]:
+    """Return {accession: admitted} from an events frame's metadata."""
+    raw = meta.get("classified_6k")
+    if not raw:
+        return {}
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return (
+        {str(k): bool(v) for k, v in payload.items()}
+        if isinstance(payload, dict)
+        else {}
     )
 
 
@@ -811,6 +1003,7 @@ def record_frames(record: CompanyRecord) -> tuple[dict[str, list], dict[str, lis
         "filed": [e.filed for e in record.events],
         "accession": [e.accession for e in record.events],
         "items": [e.items for e in record.events],
+        "form": [e.form for e in record.events],
     }
     facts = {
         "name": [f.name for f in record.facts],
@@ -823,6 +1016,23 @@ def record_frames(record: CompanyRecord) -> tuple[dict[str, list], dict[str, lis
     return events, facts
 
 
+# The events a stored frame encodes; a frame written before the `form`
+# column existed holds 8-Ks only.
+def events_from_columns(events: Mapping[str, list]) -> list[EarningsEvent]:
+    """Return the EarningsEvents of an events frame's columns."""
+    forms = events.get("form")
+    return [
+        EarningsEvent(
+            accepted=datetime.fromisoformat(events["accepted"][i]),
+            filed=events["filed"][i],
+            accession=events["accession"][i],
+            items=events["items"][i],
+            form=str(forms[i]) if forms else "8-K",
+        )
+        for i in range(len(events.get("accepted", [])))
+    ]
+
+
 # Rebuild a record from stored frames.
 def record_from_frames(
     ticker: str,
@@ -832,15 +1042,7 @@ def record_from_frames(
     source_time: datetime,
 ) -> CompanyRecord:
     """Return the CompanyRecord encoded by two stored frames."""
-    event_rows = tuple(
-        EarningsEvent(
-            accepted=datetime.fromisoformat(events["accepted"][i]),
-            filed=events["filed"][i],
-            accession=events["accession"][i],
-            items=events["items"][i],
-        )
-        for i in range(len(events.get("accepted", [])))
-    )
+    event_rows = tuple(events_from_columns(events))
     fact_rows = tuple(
         QuarterFact(
             name=facts["name"][i],

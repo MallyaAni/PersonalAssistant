@@ -52,5 +52,29 @@
   "to": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
   "declared": "2026-09-26",
   "reason": "Chains the already-declared 19f933ff -> df47189d (2026-09-23) and 19f933ff -> dc1d5fa6 (2026-09-24) continuations into the current identity. Revision 5bfdf1a (edgar parse_company_facts and _instant_facts prefer the tag still being reported - most recent period end - over the one with most quarters, so the 2018 ASC 606 rename cannot freeze revenue) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which is untouched; trailing_levels, the model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (sequence 7, session 2026-09-25, policy df47189d) continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "to": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "declared": "2026-09-30",
+  "reason": "Revision trading/tone-6k (edgar admits Form 6-K results releases: EarningsEvent.form with default 8-K, parse_submissions_block takes an optional cik and keeps 8-K item 2.02 exactly as before, classify_6k, RESULTS_HEADLINES, events_from_columns, decisions metadata) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which now delegates to events_from_columns and returns the same events for every frame written so far (no form column reads as 8-K); trailing_levels, _known_series, the model, features, execution, price inputs, target construction and funded ledger are unchanged. No 6-K has been fetched or stored; once the five foreign issuers are backfilled their events frames gain rows, which is a data-vintage change recorded in docs/CHANGELOG.md, not a code migration. The deployed ledger continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "to": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "declared": "2026-09-30",
+  "reason": "Chains the already-declared continuations from df47189d (2026-09-23, 2026-09-26) into the current identity. Revision trading/tone-6k (edgar admits Form 6-K results releases: EarningsEvent.form with default 8-K, parse_submissions_block takes an optional cik and keeps 8-K item 2.02 exactly as before, classify_6k, RESULTS_HEADLINES, events_from_columns, decisions metadata) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which now delegates to events_from_columns and returns the same events for every frame written so far (no form column reads as 8-K); trailing_levels, _known_series, the model, features, execution, price inputs, target construction and funded ledger are unchanged. No 6-K has been fetched or stored; once the five foreign issuers are backfilled their events frames gain rows, which is a data-vintage change recorded in docs/CHANGELOG.md, not a code migration. The deployed ledger continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+  "to": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "declared": "2026-09-30",
+  "reason": "Chains the already-declared continuations from dc1d5fa6 (2026-09-24, 2026-09-26) into the current identity. Revision trading/tone-6k (edgar admits Form 6-K results releases: EarningsEvent.form with default 8-K, parse_submissions_block takes an optional cik and keeps 8-K item 2.02 exactly as before, classify_6k, RESULTS_HEADLINES, events_from_columns, decisions metadata) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which now delegates to events_from_columns and returns the same events for every frame written so far (no form column reads as 8-K); trailing_levels, _known_series, the model, features, execution, price inputs, target construction and funded ledger are unchanged. No 6-K has been fetched or stored; once the five foreign issuers are backfilled their events frames gain rows, which is a data-vintage change recorded in docs/CHANGELOG.md, not a code migration. The deployed ledger continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "declared": "2026-09-30",
+  "reason": "Chains the already-declared continuations from 19f933ff (2026-09-23, 2026-09-24, 2026-09-26) into the current identity. Revision trading/tone-6k (edgar admits Form 6-K results releases: EarningsEvent.form with default 8-K, parse_submissions_block takes an optional cik and keeps 8-K item 2.02 exactly as before, classify_6k, RESULTS_HEADLINES, events_from_columns, decisions metadata) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which now delegates to events_from_columns and returns the same events for every frame written so far (no form column reads as 8-K); trailing_levels, _known_series, the model, features, execution, price inputs, target construction and funded ledger are unchanged. No 6-K has been fetched or stored; once the five foreign issuers are backfilled their events frames gain rows, which is a data-vintage change recorded in docs/CHANGELOG.md, not a code migration. The deployed ledger continues; archived transitions are not rewritten."
  }
 ]
