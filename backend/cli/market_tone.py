@@ -92,31 +92,38 @@ def clients(
 
 # The scores already stored for a ticker in the newest partition before
 # `asof`, so a new day scores only the releases it has not seen. A change
-# of prompt version starts over: the old scores are not comparable.
+# of prompt version or model starts over: those scores are not comparable.
 def prior_records(
-    store: MarketStore, ticker: str, asof: date
+    store: MarketStore, ticker: str, asof: date, model: str
 ) -> dict[str, language.ToneRecord]:
     """Return {accession: ToneRecord} carried forward from earlier partitions."""
     frame = store.read_frame(language.TONE_KIND, ticker, asof - timedelta(days=1))
     if frame is None:
         return {}
     columns, meta = frame
-    if meta.get("prompt_version") != PROMPT_VERSION:
+    if meta.get("prompt_version") != PROMPT_VERSION or meta.get("model") != model:
         return {}
     return {
         r.accession: r
         for r in language.records_from_frame(columns)
-        if r.prompt_version == PROMPT_VERSION
+        if r.prompt_version == PROMPT_VERSION and r.model == model
     }
 
 
 # Keep only compatible completed frames; historical partitions are never rewritten.
-def current_frame_exists(store: MarketStore, ticker: str, asof: date) -> bool:
+def current_frame_exists(
+    store: MarketStore, ticker: str, asof: date, model: str
+) -> bool:
     if not store.has_frame(language.TONE_KIND, asof, ticker):
         return False
     columns, metadata = store.read_frame(language.TONE_KIND, ticker, asof)
-    if metadata.get("prompt_version") != PROMPT_VERSION or any(
-        r.prompt_version != PROMPT_VERSION for r in language.records_from_frame(columns)
+    if (
+        metadata.get("prompt_version") != PROMPT_VERSION
+        or metadata.get("model") != model
+        or any(
+            r.prompt_version != PROMPT_VERSION or r.model != model
+            for r in language.records_from_frame(columns)
+        )
     ):
         raise RuntimeError(
             f"{ticker}: incompatible earnings frame at {asof}; "
@@ -158,7 +165,7 @@ def refresh_tickers(
                 flush=True,
             )
             break
-        if current_frame_exists(store, ticker, asof):
+        if current_frame_exists(store, ticker, asof, model):
             continue
         try:
             scored, _missing, stored = _refresh_ticker(
@@ -219,7 +226,7 @@ def _refresh_ticker(  # noqa: C901
     pacer: edgar.Pacer,
     deadline: float | None = None,
 ) -> tuple[int, int, int]:
-    if current_frame_exists(store, ticker, asof):
+    if current_frame_exists(store, ticker, asof, model):
         columns, _meta = store.read_frame(language.TONE_KIND, ticker, asof)
         return 0, 0, len(columns.get("accession", []))
     events_frame = store.read_frame("edgar_events", ticker, asof)
@@ -238,12 +245,12 @@ def _refresh_ticker(  # noqa: C901
     ]
     events = [e for e in events if e.filed >= since]
     partial = language.partial_path(store.root, asof, ticker)
-    done = prior_records(store, ticker, asof)
+    done = prior_records(store, ticker, asof, model)
     done.update(
         {
             key: r
             for key, r in language.read_partial(partial).items()
-            if r.prompt_version == PROMPT_VERSION
+            if r.prompt_version == PROMPT_VERSION and r.model == model
         }
     )
     todo = [e for e in events if e.accession not in done]
@@ -335,7 +342,7 @@ def main() -> None:
         started = time.time()
         total = 0
         for ticker in tickers:
-            if current_frame_exists(store, ticker, asof):
+            if current_frame_exists(store, ticker, asof, model):
                 print(f"{ticker:6} kept", flush=True)
                 continue
             t0 = time.time()
