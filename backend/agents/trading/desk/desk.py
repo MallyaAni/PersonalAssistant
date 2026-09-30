@@ -95,12 +95,18 @@ class DeskReport:
 
 
 # Build the book's panel: the AI-and-software names plus the benchmark.
-def book_panel(store: MarketStore, asof: date | None = None) -> tuple[Panel, dict]:
-    """Return (panel, sides) for the book universe."""
+# `names`, when given, is the panel's stock names instead of the book (a
+# universe cohort); the sides and the themes stay the book's, so the regime
+# analyst reads the same baskets whatever the panel holds (`cohort.py`,
+# choice 1). With `names` None the panel is the book, as ever.
+def book_panel(
+    store: MarketStore, asof: date | None = None, names: tuple[str, ...] | None = None
+) -> tuple[Panel, dict]:
+    """Return (panel, sides) for the book universe, or for `names`."""
     universe = build_universe()
     sides = book_sides(universe)
     themes = {t: g for t, g in theme_map(universe).items() if t in sides}
-    tickers = tuple(sorted(sides))
+    tickers = tuple(sorted(sides)) if names is None else tuple(sorted(names))
     panel = build_panel(store, tickers, MARKET_BENCHMARK, themes, asof=asof)
     return panel, sides
 
@@ -160,12 +166,20 @@ def run(
     fundamentals: str = FUNDAMENTALS_CORRECTED,
     *,
     signed_rotation: bool = False,
+    cohort=None,
 ) -> DeskReport:
     """Return the desk using partitions on/before `asof` (latest if None).
 
     `signed_rotation` is a research arm, never the live default: it makes the
     rotation analyst's stance the sign of the leader-minus-laggard spread on
     every name (`regime.opine`), so the half vote reaches both sides.
+
+    `cohort` (a `cohort.Cohort`) is the universe-expansion research path:
+    the panel holds the cohort's names, the value analyst's peers are the
+    cohort's group map, and when the cohort ranks within its groups every
+    analyst's rank, stance and conviction is taken within the name's group
+    (`Opinion.groups`); the rotation analyst is never grouped. None, the
+    default, is the book, and `cohort.book_cohort()` reproduces it exactly.
 
     This bounds extraction vintages, not row-level publication eligibility or
     historical universe membership. Never infer the cutoff from the last bar:
@@ -215,7 +229,14 @@ def run(
     from backend.market.levels_pit import point_in_time_levels
     from backend.market.model import load_tone_features
 
-    panel, sides = book_panel(store, asof)
+    if cohort is None:
+        panel, sides = book_panel(store, asof)
+        peers = None
+        groups = None
+    else:
+        panel, sides = book_panel(store, asof, names=cohort.names)
+        peers = cohort.peers
+        groups = cohort.groups_for(panel)
     tone = load_tone_features(store, panel, asof)
     view = regime.opine(
         panel, sides, tightening_for(store, panel, asof), signed_rotation=signed_rotation
@@ -224,8 +245,12 @@ def run(
         fundamental.NAME: _fundamental_opinion(store, panel, asof, fundamentals),
         technical.NAME: technical.opine(panel, view.ai_trend),
         sentiment.NAME: sentiment.opine(tone),
-        value.NAME: value.opine(panel, point_in_time_levels(store, panel, asof), sides),
+        value.NAME: value.opine(
+            panel, point_in_time_levels(store, panel, asof), sides, peers=peers
+        ),
     }
+    if groups is not None:
+        opinions = {name: replace(o, groups=groups) for name, o in opinions.items()}
     source = _fundamental_source_id(fundamentals)
     plain = assemble(panel, sides, opinions, view, (), fundamentals_source=source)
     if EXPECTATIONS_GAP not in inputs:

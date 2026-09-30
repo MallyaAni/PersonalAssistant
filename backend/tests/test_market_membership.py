@@ -110,3 +110,64 @@ def test_as_of_reads_the_history():
         assert row.exit_announced == row.exited
     with pytest.raises(FileNotFoundError):
         universe.as_of(D(2020, 1, 1), history_path=mm.OUTPUT_PATH.with_name("missing.csv"))
+
+
+# The universe file (`--universe`) drops the sub-industry filter and keeps
+# everything else: a non-book constituent is dated from its index entry, a
+# reused ticker's earlier company is still out, an exit after the snapshot
+# is classified by the constituent file (the same company), and the book
+# file's index intervals are a subset of the universe file's.
+def test_build_records_universe_wide_keeps_every_index_member():
+    constituents = [
+        universe.UniverseMember("NVDA", universe.MEMBER, sub_industry="Semiconductors"),
+        universe.UniverseMember("Q", universe.MEMBER, sub_industry="Semiconductor Materials & Equipment"),
+        universe.UniverseMember("KO", universe.MEMBER, sub_industry="Soft Drinks & Non-alcoholic Beverages"),
+        universe.UniverseMember("TTD", universe.MEMBER, sub_industry="Advertising"),
+    ]
+    changes = [
+        mm.Change(D(2026, 9, 21), "NEWCO", "TTD"),  # after the snapshot
+        mm.Change(D(2025, 11, 3), "Q", ""),
+        mm.Change(D(2022, 2, 15), "NDSN", "XLNX"),
+        mm.Change(D(2017, 11, 15), "IQV", "Q"),
+        mm.Change(D(2017, 8, 29), "Q", "WFM"),
+    ]
+    overlay = {"CRWV": (D(2026, 9, 4), "b38c64e2"), "NVDA": (D(2026, 9, 4), "b38c64e2")}
+    records, notes = mm.build_records(constituents, changes, overlay, universe_wide=True)
+    by = {}
+    for r in records:
+        by.setdefault(r.ticker, []).append(r)
+    assert [(r.entered, r.exited) for r in by["KO"]] == [(mm.WINDOW_START, None)]
+    assert "Soft Drinks" in by["KO"][0].rule
+    assert [(r.entered, r.exited) for r in by["TTD"]] == [(mm.WINDOW_START, D(2026, 9, 21))]
+    assert "Advertising" in by["TTD"][0].rule
+    assert [(r.entered, r.exited) for r in by["Q"]] == [(D(2025, 11, 3), None)]
+    assert any("Q@2017-11-15" in n for n in notes)
+    # NDSN entered by the table and is in the index today; IQV too. NEWCO
+    # was added after the snapshot and is a member today by the table.
+    assert [(r.entered, r.exited) for r in by["NDSN"]] == [(D(2022, 2, 15), None)]
+    assert [(r.entered, r.exited) for r in by["NEWCO"]] == [(D(2026, 9, 21), None)]
+    assert [(r.entered, r.exited) for r in by["CRWV"]] == [(D(2026, 9, 4), None)]
+    book, _ = mm.build_records(constituents, changes, overlay)
+    book_index = {(r.ticker, r.entered, r.exited) for r in book if "OVERLAY" not in r.source}
+    universe_index = {(r.ticker, r.entered, r.exited) for r in records if "OVERLAY" not in r.source}
+    assert book_index <= universe_index
+    assert all(r.entry_announced == r.entered for r in records)
+
+
+# The committed universe file is what the builder produces, like the book's.
+def test_committed_universe_file_matches_the_rebuild():
+    records, _ = mm.build_records(universe_wide=True)
+    assert mm.UNIVERSE_OUTPUT_PATH.exists(), "run python -m backend.cli.market_membership --universe"
+    assert mm.UNIVERSE_OUTPUT_PATH.read_text(encoding="utf-8") == mm.render(records)
+    listed = {r.ticker for r in records}
+    today = universe.tickers_with_role(universe.build_universe(), universe.FOCUS, universe.MEMBER)
+    assert set(today) <= listed
+
+
+# The CLI's --universe writes the universe file and --check compares it.
+def test_cli_universe_writes_and_checks(tmp_path, capsys):
+    target = tmp_path / "membership_history_sp500.csv"
+    assert mm.main(["--universe", "--output", str(target)]) == 0
+    assert target.read_text(encoding="utf-8") == mm.UNIVERSE_OUTPUT_PATH.read_text(encoding="utf-8")
+    assert mm.main(["--universe", "--check", "--output", str(target)]) == 0
+    assert "today's universe" in capsys.readouterr().out

@@ -1,0 +1,550 @@
+ticker,entered,entry_announced,exited,exit_announced,source,rule
+A,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services; in the index at the window start 2016-01-04
+AAOI,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+AAPL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals; in the index at the window start 2016-01-04"
+ABBV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology; in the index at the window start 2016-01-04
+ABNB,2023-09-18,2023-09-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines"
+ABT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+ACGL,2022-11-01,2022-11-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance
+ACN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in IT Consulting & Other Services; in the index at the window start 2016-01-04
+ADBE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+ADI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+ADM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Agricultural Products & Services; in the index at the window start 2016-01-04
+ADP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Human Resource & Employment Services; in the index at the window start 2016-01-04
+ADSK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+AEE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+AEP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+AES,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Independent Power Producers & Energy Traders; in the index at the window start 2016-01-04
+AFL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life & Health Insurance; in the index at the window start 2016-01-04
+AIG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-line Insurance; in the index at the window start 2016-01-04
+AIZ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-line Insurance; in the index at the window start 2016-01-04
+AJG,2016-05-31,2016-05-31,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Insurance Brokers
+AKAM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Internet Services & Infrastructure; in the index at the window start 2016-01-04
+ALAB,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ALB,2016-07-01,2016-07-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Specialty Chemicals
+ALGN,2017-06-19,2017-06-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Supplies
+ALL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance; in the index at the window start 2016-01-04
+ALLE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products; in the index at the window start 2016-01-04
+AMAT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment; in the index at the window start 2016-01-04
+AMCR,2019-06-11,2019-06-11,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Paper & Plastic Packaging Products & Materials
+AMD,2017-03-20,2017-03-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+AME,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electrical Components & Equipment; in the index at the window start 2016-01-04
+AMGN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology; in the index at the window start 2016-01-04
+AMP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+AMT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Telecom Tower REITs; in the index at the window start 2016-01-04
+AMZN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Broadline Retail; in the index at the window start 2016-01-04
+ANET,2018-08-28,2018-08-28,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment
+ANSS,2017-06-19,2017-06-19,2025-07-18,2025-07-18,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+AON,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Insurance Brokers; in the index at the window start 2016-01-04
+AOS,2017-07-26,2017-07-26,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products
+APA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production; in the index at the window start 2016-01-04
+APD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Gases; in the index at the window start 2016-01-04
+APH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Components; in the index at the window start 2016-01-04
+APLD,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+APO,2024-12-23,2024-12-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks
+APP,2025-09-22,2025-09-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Advertising
+APTV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Automotive Parts & Equipment; in the index at the window start 2016-01-04
+ARE,2017-03-20,2017-03-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Office REITs
+ARES,2025-12-11,2025-12-11,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks
+ARM,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ASML,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ATO,2019-02-15,2019-02-15,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Gas Utilities
+AVGO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+AVY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Paper & Plastic Packaging Products & Materials; in the index at the window start 2016-01-04
+AWK,2016-03-04,2016-03-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Water Utilities
+AXON,2023-05-04,2023-05-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense
+AXP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Finance; in the index at the window start 2016-01-04
+AZO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Automotive Retail; in the index at the window start 2016-01-04
+BA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+BAC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Banks; in the index at the window start 2016-01-04
+BALL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Metal, Glass & Plastic Containers; in the index at the window start 2016-01-04"
+BAX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+BBY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Computer & Electronics Retail; in the index at the window start 2016-01-04
+BDX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+BE,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+BEN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+BF-B,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Distillers & Vintners; in the index at the window start 2016-01-04
+BG,2023-03-15,2023-03-15,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Agricultural Products & Services
+BIIB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology; in the index at the window start 2016-01-04
+BKNG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines; in the index at the window start 2016-01-04"
+BKR,2017-07-07,2017-07-07,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Equipment & Services
+BLDR,2023-12-18,2023-12-18,2026-09-21,2026-09-21,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products
+BLK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+BMY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Pharmaceuticals; in the index at the window start 2016-01-04
+BNY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+BR,2018-06-18,2018-06-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Data Processing & Outsourced Services
+BRCM,2016-01-04,2016-01-04,2016-02-01,2016-02-01,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+BRK-B,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Sector Holdings; in the index at the window start 2016-01-04
+BRO,2021-09-20,2021-09-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Insurance Brokers
+BSX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+BX,2023-09-18,2023-09-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks
+BXP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Office REITs; in the index at the window start 2016-01-04
+C,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Banks; in the index at the window start 2016-01-04
+CA,2016-01-04,2016-01-04,2018-11-06,2018-11-06,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+CAH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Distributors; in the index at the window start 2016-01-04
+CARR,2020-04-03,2020-04-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products
+CASY,2026-04-09,2026-04-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Food Retail
+CAT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction Machinery & Heavy Transportation Equipment; in the index at the window start 2016-01-04
+CB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance; in the index at the window start 2016-01-04
+CBOE,2017-03-01,2017-03-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data
+CBRE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Real Estate Services; in the index at the window start 2016-01-04
+CCI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Telecom Tower REITs; in the index at the window start 2016-01-04
+CCL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines; in the index at the window start 2016-01-04"
+CDAY,2021-09-20,2021-09-20,2024-02-01,2024-02-01,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+CDNS,2017-09-18,2017-09-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+CDW,2019-09-23,2019-09-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Technology Distributors
+CEG,2022-02-02,2022-02-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities
+CF,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Fertilizers & Agricultural Chemicals; in the index at the window start 2016-01-04
+CFG,2016-02-01,2016-02-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Regional Banks
+CHD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Household Products; in the index at the window start 2016-01-04
+CHRW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Air Freight & Logistics; in the index at the window start 2016-01-04
+CHTR,2016-09-08,2016-09-08,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Cable & Satellite
+CI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Services; in the index at the window start 2016-01-04
+CIEN,2026-02-09,2026-02-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment
+CIFR,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+CINF,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance; in the index at the window start 2016-01-04
+CL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Household Products; in the index at the window start 2016-01-04
+CLX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Household Products; in the index at the window start 2016-01-04
+CMCSA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Cable & Satellite; in the index at the window start 2016-01-04
+CME,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data; in the index at the window start 2016-01-04
+CMG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Restaurants; in the index at the window start 2016-01-04
+CMI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction Machinery & Heavy Transportation Equipment; in the index at the window start 2016-01-04
+CMS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+CNC,2016-03-30,2016-03-30,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Managed Health Care
+CNP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+COF,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Finance; in the index at the window start 2016-01-04
+COHR,2026-03-23,2026-03-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Components
+COIN,2025-05-19,2025-05-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data
+COO,2016-09-22,2016-09-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Supplies
+COP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production; in the index at the window start 2016-01-04
+COR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Distributors; in the index at the window start 2016-01-04
+CORZ,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+COST,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Staples Merchandise Retail; in the index at the window start 2016-01-04
+CPAY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services; in the index at the window start 2016-01-04
+CPRT,2018-07-02,2018-07-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Support Services
+CPT,2022-04-04,2022-04-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Family Residential REITs
+CRDO,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+CRH,2025-12-22,2025-12-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction Materials
+CRL,2021-05-14,2021-05-14,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services
+CRM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+CRWD,2024-06-24,2024-06-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+CRWV,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+CSCO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+CSGP,2022-09-19,2022-09-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Real Estate Services
+CSX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Rail Transportation; in the index at the window start 2016-01-04
+CTAS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Support Services; in the index at the window start 2016-01-04
+CTSH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in IT Consulting & Other Services; in the index at the window start 2016-01-04
+CTVA,2019-06-03,2019-06-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Fertilizers & Agricultural Chemicals
+CTXS,2016-01-04,2016-01-04,2022-10-03,2022-10-03,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+CVNA,2025-12-22,2025-12-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Automotive Retail
+CVS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Services; in the index at the window start 2016-01-04
+CVX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Integrated Oil & Gas; in the index at the window start 2016-01-04
+D,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+DAL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Passenger Airlines; in the index at the window start 2016-01-04
+DASH,2025-03-24,2025-03-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Specialized Consumer Services
+DAY,2024-02-01,2024-02-01,2026-02-09,2026-02-09,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+DD,2019-06-03,2019-06-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Conglomerates
+DDOG,2025-07-09,2025-07-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+DE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Agricultural & Farm Machinery; in the index at the window start 2016-01-04
+DECK,2024-03-18,2024-03-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Footwear
+DELL,2024-09-23,2024-09-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals"
+DG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Staples Merchandise Retail; in the index at the window start 2016-01-04
+DGX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Services; in the index at the window start 2016-01-04
+DHI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Homebuilding; in the index at the window start 2016-01-04
+DHR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services; in the index at the window start 2016-01-04
+DIS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Movies & Entertainment; in the index at the window start 2016-01-04
+DLR,2016-05-18,2016-05-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Data Center REITs
+DLTR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Staples Merchandise Retail; in the index at the window start 2016-01-04
+DOC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care REITs; in the index at the window start 2016-01-04
+DOV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+DOW,2019-04-02,2019-04-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Commodity Chemicals
+DPZ,2020-05-12,2020-05-12,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Restaurants
+DRI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Restaurants; in the index at the window start 2016-01-04
+DTE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+DUK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+DVA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Services; in the index at the window start 2016-01-04
+DVN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production; in the index at the window start 2016-01-04
+DXCM,2020-05-12,2020-05-12,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment
+EBAY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Broadline Retail; in the index at the window start 2016-01-04
+ECHO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Wireless Telecommunication Services; in the index at the window start 2016-01-04
+ECL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Specialty Chemicals; in the index at the window start 2016-01-04
+ED,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+EFX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Research & Consulting Services; in the index at the window start 2016-01-04
+EG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Reinsurance; in the index at the window start 2016-01-04
+EIX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+EL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Personal Care Products; in the index at the window start 2016-01-04
+ELV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Managed Health Care; in the index at the window start 2016-01-04
+EME,2025-09-22,2025-09-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction & Engineering
+EMR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electrical Components & Equipment; in the index at the window start 2016-01-04
+ENPH,2021-01-07,2021-01-07,2025-09-22,2025-09-22,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+EOG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production; in the index at the window start 2016-01-04
+EQIX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Data Center REITs; in the index at the window start 2016-01-04
+EQT,2022-10-03,2022-10-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production
+ERIE,2024-09-23,2024-09-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Insurance Brokers
+ES,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+ESS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Family Residential REITs; in the index at the window start 2016-01-04
+ETN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electrical Components & Equipment; in the index at the window start 2016-01-04
+ETR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+EVRG,2018-06-05,2018-06-05,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities
+EW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+EXC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+EXE,2025-03-24,2025-03-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production
+EXPD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Air Freight & Logistics; in the index at the window start 2016-01-04
+EXPE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines; in the index at the window start 2016-01-04"
+EXR,2016-01-19,2016-01-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Self-Storage REITs
+F,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Automobile Manufacturers; in the index at the window start 2016-01-04
+FANG,2018-12-03,2018-12-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production
+FAST,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Trading Companies & Distributors; in the index at the window start 2016-01-04
+FCX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Copper; in the index at the window start 2016-01-04
+FDS,2021-12-20,2021-12-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data
+FDX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Air Freight & Logistics; in the index at the window start 2016-01-04
+FDXF,2026-06-01,2026-06-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Cargo Ground Transportation
+FE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+FERG,2026-08-05,2026-08-05,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Trading Companies & Distributors
+FFIV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+FICO,2023-03-20,2023-03-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+FIS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services; in the index at the window start 2016-01-04
+FISV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services; in the index at the window start 2016-01-04
+FITB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Regional Banks; in the index at the window start 2016-01-04
+FIX,2025-12-22,2025-12-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction & Engineering
+FLEX,2026-06-22,2026-06-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Manufacturing Services
+FN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+FOX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Broadcasting; in the index at the window start 2016-01-04
+FOXA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Broadcasting; in the index at the window start 2016-01-04
+FRT,2016-02-01,2016-02-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Retail REITs
+FSLR,2016-01-04,2016-01-04,2017-03-20,2017-03-20,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+FSLR,2022-12-19,2022-12-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+FTNT,2018-10-11,2018-10-11,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+FTV,2016-07-05,2016-07-05,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components
+GD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+GDDY,2024-06-24,2024-06-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Internet Services & Infrastructure
+GE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+GEHC,2023-01-04,2023-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment
+GEN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+GEV,2024-04-02,2024-04-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Heavy Electrical Equipment
+GILD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology; in the index at the window start 2016-01-04
+GIS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+GL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life & Health Insurance; in the index at the window start 2016-01-04
+GLW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Components; in the index at the window start 2016-01-04
+GLXY,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+GM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Automobile Manufacturers; in the index at the window start 2016-01-04
+GNRC,2021-03-22,2021-03-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Heavy Electrical Equipment
+GOOG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Interactive Media & Services; in the index at the window start 2016-01-04
+GOOGL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Interactive Media & Services; in the index at the window start 2016-01-04
+GPC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Distributors; in the index at the window start 2016-01-04
+GPN,2016-04-25,2016-04-25,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services
+GRMN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Electronics; in the index at the window start 2016-01-04
+GS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Investment Banking & Brokerage; in the index at the window start 2016-01-04
+GWW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+HAL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Equipment & Services; in the index at the window start 2016-01-04
+HAS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Leisure Products; in the index at the window start 2016-01-04
+HBAN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Regional Banks; in the index at the window start 2016-01-04
+HCA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Facilities; in the index at the window start 2016-01-04
+HD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Home Improvement Retail; in the index at the window start 2016-01-04
+HIG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance; in the index at the window start 2016-01-04
+HII,2018-01-03,2018-01-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense
+HLT,2017-06-19,2017-06-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines"
+HON,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Conglomerates; in the index at the window start 2016-01-04
+HONA,2026-06-29,2026-06-29,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense
+HOOD,2025-09-22,2025-09-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Investment Banking & Brokerage
+HPE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals; in the index at the window start 2016-01-04"
+HPQ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals; in the index at the window start 2016-01-04"
+HRL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+HSIC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Distributors; in the index at the window start 2016-01-04
+HST,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Hotel & Resort REITs; in the index at the window start 2016-01-04
+HSY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+HUBB,2023-10-18,2023-10-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components
+HUM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Managed Health Care; in the index at the window start 2016-01-04
+HUT,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+HWM,2020-04-01,2020-04-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense
+IBKR,2025-08-28,2025-08-28,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Investment Banking & Brokerage
+IBM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in IT Consulting & Other Services; in the index at the window start 2016-01-04
+ICE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data; in the index at the window start 2016-01-04
+IDXX,2017-01-05,2017-01-05,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment
+IEX,2019-08-09,2019-08-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components
+IFF,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Specialty Chemicals; in the index at the window start 2016-01-04
+ILMN,2026-09-21,2026-09-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in an unclassified sub-industry
+INCY,2017-02-28,2017-02-28,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology
+INTC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+INTU,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+INVH,2022-09-19,2022-09-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Single-Family Residential REITs
+IP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Paper & Plastic Packaging Products & Materials; in the index at the window start 2016-01-04
+IQV,2017-11-15,2017-11-15,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services
+IR,2020-03-02,2020-03-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components
+IREN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit b38c64e2",listed by hand in universe.py on 2026-09-04
+IRM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Other Specialized REITs; in the index at the window start 2016-01-04
+ISRG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+IT,2017-04-05,2017-04-05,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in IT Consulting & Other Services
+ITW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+IVZ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+J,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction & Engineering; in the index at the window start 2016-01-04
+JBHT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Cargo Ground Transportation; in the index at the window start 2016-01-04
+JBL,2023-12-18,2023-12-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Manufacturing Services
+JCI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products; in the index at the window start 2016-01-04
+JKHY,2018-11-13,2018-11-13,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services
+JNJ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Pharmaceuticals; in the index at the window start 2016-01-04
+JNPR,2016-01-04,2016-01-04,2025-07-09,2025-07-09,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+JPM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Banks; in the index at the window start 2016-01-04
+KDP,2022-06-21,2022-06-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Soft Drinks & Non-alcoholic Beverages
+KEY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Regional Banks; in the index at the window start 2016-01-04
+KEYS,2018-11-06,2018-11-06,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Equipment & Instruments
+KHC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+KIM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Retail REITs; in the index at the window start 2016-01-04
+KKR,2024-06-24,2024-06-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks
+KLAC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment; in the index at the window start 2016-01-04
+KMB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Household Products; in the index at the window start 2016-01-04
+KMI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Storage & Transportation; in the index at the window start 2016-01-04
+KO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Soft Drinks & Non-alcoholic Beverages; in the index at the window start 2016-01-04
+KR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Food Retail; in the index at the window start 2016-01-04
+KVUE,2023-08-25,2023-08-25,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Personal Care Products
+L,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-line Insurance; in the index at the window start 2016-01-04
+LDOS,2019-08-09,2019-08-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Support Services
+LEN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Homebuilding; in the index at the window start 2016-01-04
+LH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Services; in the index at the window start 2016-01-04
+LHX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+LII,2024-12-23,2024-12-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products
+LIN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Gases; in the index at the window start 2016-01-04
+LITE,2026-03-23,2026-03-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment
+LLTC,2016-01-04,2016-01-04,2017-03-13,2017-03-13,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+LLY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Pharmaceuticals; in the index at the window start 2016-01-04
+LMT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+LNT,2016-07-01,2016-07-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities
+LOW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Home Improvement Retail; in the index at the window start 2016-01-04
+LRCX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment; in the index at the window start 2016-01-04
+LULU,2023-10-18,2023-10-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Apparel, Accessories & Luxury Goods"
+LUV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Passenger Airlines; in the index at the window start 2016-01-04
+LVS,2019-10-03,2019-10-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Casinos & Gaming
+LYB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Specialty Chemicals; in the index at the window start 2016-01-04
+LYV,2019-12-23,2019-12-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Movies & Entertainment
+MA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services; in the index at the window start 2016-01-04
+MAA,2016-12-02,2016-12-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Family Residential REITs
+MAR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines; in the index at the window start 2016-01-04"
+MAS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products; in the index at the window start 2016-01-04
+MCD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Restaurants; in the index at the window start 2016-01-04
+MCHP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+MCK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Distributors; in the index at the window start 2016-01-04
+MCO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data; in the index at the window start 2016-01-04
+MDB,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+MDLZ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+MDT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+MET,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life & Health Insurance; in the index at the window start 2016-01-04
+META,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Interactive Media & Services; in the index at the window start 2016-01-04
+MGM,2017-07-26,2017-07-26,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Casinos & Gaming
+MKC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+MLM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction Materials; in the index at the window start 2016-01-04
+MMM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Conglomerates; in the index at the window start 2016-01-04
+MNST,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Soft Drinks & Non-alcoholic Beverages; in the index at the window start 2016-01-04
+MO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Tobacco; in the index at the window start 2016-01-04
+MOD,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+MOS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Fertilizers & Agricultural Chemicals; in the index at the window start 2016-01-04
+MPC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Refining & Marketing; in the index at the window start 2016-01-04
+MPWR,2021-02-12,2021-02-12,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+MRK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Pharmaceuticals; in the index at the window start 2016-01-04
+MRNA,2021-07-21,2021-07-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology
+MRSH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Insurance Brokers; in the index at the window start 2016-01-04
+MRVL,2026-06-22,2026-06-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+MS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Investment Banking & Brokerage; in the index at the window start 2016-01-04
+MSCI,2018-04-04,2018-04-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data
+MSFT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+MSI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Communications Equipment; in the index at the window start 2016-01-04
+MTB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Regional Banks; in the index at the window start 2016-01-04
+MTD,2016-09-06,2016-09-06,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services
+MU,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+MXIM,2018-12-03,2018-12-03,2021-08-30,2021-08-30,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+NBIS,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+NCLH,2017-10-13,2017-10-13,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines"
+NDAQ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data; in the index at the window start 2016-01-04
+NDSN,2022-02-15,2022-02-15,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components
+NEE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+NEM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Gold; in the index at the window start 2016-01-04
+NET,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+NFLX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Movies & Entertainment; in the index at the window start 2016-01-04
+NI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+NKE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Apparel, Accessories & Luxury Goods; in the index at the window start 2016-01-04"
+NOC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+NOW,2019-11-21,2019-11-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+NRG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Independent Power Producers & Energy Traders; in the index at the window start 2016-01-04
+NSC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Rail Transportation; in the index at the window start 2016-01-04
+NTAP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals; in the index at the window start 2016-01-04"
+NTRS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+NUE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Steel; in the index at the window start 2016-01-04
+NVDA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+NVR,2019-09-26,2019-09-26,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Homebuilding
+NWS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Publishing; in the index at the window start 2016-01-04
+NWSA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Publishing; in the index at the window start 2016-01-04
+NXPI,2021-03-22,2021-03-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+O,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Retail REITs; in the index at the window start 2016-01-04
+ODFL,2019-12-09,2019-12-09,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Cargo Ground Transportation
+OKE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Storage & Transportation; in the index at the window start 2016-01-04
+OKLO,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+OMC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Advertising; in the index at the window start 2016-01-04
+ON,2022-06-21,2022-06-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors
+ORCL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software; in the index at the window start 2016-01-04
+ORLY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Automotive Retail; in the index at the window start 2016-01-04
+OTIS,2020-04-03,2020-04-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components
+OXY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production; in the index at the window start 2016-01-04
+P,2026-09-21,2026-09-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in an unclassified sub-industry
+PANW,2023-06-20,2023-06-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software
+PAYC,2020-01-28,2020-01-28,2026-03-23,2026-03-23,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+PAYX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Human Resource & Employment Services; in the index at the window start 2016-01-04
+PCAR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction Machinery & Heavy Transportation Equipment; in the index at the window start 2016-01-04
+PCG,2022-10-03,2022-10-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities
+PEG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+PEP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Soft Drinks & Non-alcoholic Beverages; in the index at the window start 2016-01-04
+PFE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Pharmaceuticals; in the index at the window start 2016-01-04
+PFG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life & Health Insurance; in the index at the window start 2016-01-04
+PG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Personal Care Products; in the index at the window start 2016-01-04
+PGR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance; in the index at the window start 2016-01-04
+PH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+PHM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Homebuilding; in the index at the window start 2016-01-04
+PKG,2017-07-26,2017-07-26,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Paper & Plastic Packaging Products & Materials
+PLD,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial REITs; in the index at the window start 2016-01-04
+PLTR,2024-09-23,2024-09-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+PM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Tobacco; in the index at the window start 2016-01-04
+PNC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Banks; in the index at the window start 2016-01-04
+PNR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+PNW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+PODD,2023-03-15,2023-03-15,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment
+POWL,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+PPG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Specialty Chemicals; in the index at the window start 2016-01-04
+PPL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+PRU,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life & Health Insurance; in the index at the window start 2016-01-04
+PSA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Self-Storage REITs; in the index at the window start 2016-01-04
+PSKY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Movies & Entertainment; in the index at the window start 2016-01-04
+PSX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Refining & Marketing; in the index at the window start 2016-01-04
+PTC,2021-04-20,2021-04-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+PWR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction & Engineering; in the index at the window start 2016-01-04
+PYPL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services; in the index at the window start 2016-01-04
+Q,2025-11-03,2025-11-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+QCOM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+QRVO,2016-01-04,2016-01-04,2024-12-23,2024-12-23,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+RCL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Hotels, Resorts & Cruise Lines; in the index at the window start 2016-01-04"
+RDDT,2026-08-18,2026-08-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Interactive Media & Services
+REG,2017-03-02,2017-03-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Retail REITs
+REGN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology; in the index at the window start 2016-01-04
+RF,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Regional Banks; in the index at the window start 2016-01-04
+RHT,2016-01-04,2016-01-04,2019-07-15,2019-07-15,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Systems Software; in the index at the window start 2016-01-04
+RJF,2017-03-20,2017-03-20,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Investment Banking & Brokerage
+RL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Apparel, Accessories & Luxury Goods; in the index at the window start 2016-01-04"
+RMD,2017-07-26,2017-07-26,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment
+ROK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electrical Components & Equipment; in the index at the window start 2016-01-04
+ROL,2018-10-01,2018-10-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Environmental & Facilities Services
+ROP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Equipment & Instruments; in the index at the window start 2016-01-04
+ROST,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Apparel Retail; in the index at the window start 2016-01-04
+RSG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Environmental & Facilities Services; in the index at the window start 2016-01-04
+RTX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+RVTY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+SBAC,2017-09-01,2017-09-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Telecom Tower REITs
+SBUX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Restaurants; in the index at the window start 2016-01-04
+SCHW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Investment Banking & Brokerage; in the index at the window start 2016-01-04
+SEDG,2021-12-20,2021-12-20,2023-12-18,2023-12-18,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+SHW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Specialty Chemicals; in the index at the window start 2016-01-04
+SIMO,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+SJM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+SLB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Equipment & Services; in the index at the window start 2016-01-04
+SMCI,2024-03-18,2024-03-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals"
+SMR,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+SNA,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+SNDK,2025-11-28,2025-11-28,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals"
+SNOW,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+SNPS,2017-03-16,2017-03-16,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+SO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+SOLV,2024-04-01,2024-04-01,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Technology
+SPG,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Retail REITs; in the index at the window start 2016-01-04
+SPGI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Financial Exchanges & Data; in the index at the window start 2016-01-04
+SRE,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+STE,2019-12-23,2019-12-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment
+STLD,2022-12-22,2022-12-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Steel
+STT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+STX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals; in the index at the window start 2016-01-04"
+STZ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Distillers & Vintners; in the index at the window start 2016-01-04
+SW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Paper & Plastic Packaging Products & Materials; in the index at the window start 2016-01-04
+SWK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+SWKS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+SYF,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Finance; in the index at the window start 2016-01-04
+SYK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+SYY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Food Distributors; in the index at the window start 2016-01-04
+T,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Integrated Telecommunication Services; in the index at the window start 2016-01-04
+TAP,2016-01-04,2016-01-04,2026-09-21,2026-09-21,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Brewers; in the index at the window start 2016-01-04
+TDG,2016-06-03,2016-06-03,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense
+TDY,2020-06-22,2020-06-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Equipment & Instruments
+TEAM,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+TECH,2021-08-30,2021-08-30,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services
+TEL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Manufacturing Services; in the index at the window start 2016-01-04
+TER,2020-09-21,2020-09-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductor Materials & Equipment
+TFC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Banks; in the index at the window start 2016-01-04
+TGT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Staples Merchandise Retail; in the index at the window start 2016-01-04
+TJX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Apparel Retail; in the index at the window start 2016-01-04
+TKO,2025-03-24,2025-03-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Movies & Entertainment
+TLN,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+TMO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services; in the index at the window start 2016-01-04
+TMUS,2019-07-15,2019-07-15,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Wireless Telecommunication Services
+TPL,2024-11-26,2024-11-26,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Exploration & Production
+TPR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Apparel, Accessories & Luxury Goods; in the index at the window start 2016-01-04"
+TRGP,2022-10-12,2022-10-12,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Storage & Transportation
+TRMB,2021-01-21,2021-01-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+TROW,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Asset Management & Custody Banks; in the index at the window start 2016-01-04
+TRV,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance; in the index at the window start 2016-01-04
+TSCO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Other Specialty Retail; in the index at the window start 2016-01-04
+TSLA,2020-12-21,2020-12-21,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Automobile Manufacturers
+TSM,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+TSN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Packaged Foods & Meats; in the index at the window start 2016-01-04
+TT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Building Products; in the index at the window start 2016-01-04
+TTD,2025-07-18,2025-07-18,2026-09-21,2026-09-21,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Advertising
+TTWO,2018-03-19,2018-03-19,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Interactive Home Entertainment
+TXN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+TXT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Aerospace & Defense; in the index at the window start 2016-01-04
+TYL,2020-06-22,2020-06-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+UAL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Passenger Airlines; in the index at the window start 2016-01-04
+UBER,2023-12-18,2023-12-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Passenger Ground Transportation
+UDR,2016-03-07,2016-03-07,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Family Residential REITs
+UHS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Facilities; in the index at the window start 2016-01-04
+ULTA,2016-04-18,2016-04-18,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Other Specialty Retail
+UNH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Managed Health Care; in the index at the window start 2016-01-04
+UNP,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Rail Transportation; in the index at the window start 2016-01-04
+UPS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Air Freight & Logistics; in the index at the window start 2016-01-04
+URI,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Trading Companies & Distributors; in the index at the window start 2016-01-04
+USB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Banks; in the index at the window start 2016-01-04
+V,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services; in the index at the window start 2016-01-04
+VEEV,2026-05-07,2026-05-07,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Technology
+VICI,2022-06-08,2022-06-08,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Hotel & Resort REITs
+VLO,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Refining & Marketing; in the index at the window start 2016-01-04
+VLTO,2023-10-02,2023-10-02,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Environmental & Facilities Services
+VMC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction Materials; in the index at the window start 2016-01-04
+VMRK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Family Residential REITs; in the index at the window start 2016-01-04
+VRSK,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Research & Consulting Services; in the index at the window start 2016-01-04
+VRSN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Internet Services & Infrastructure; in the index at the window start 2016-01-04
+VRT,2026-03-23,2026-03-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electrical Components & Equipment
+VRTX,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Biotechnology; in the index at the window start 2016-01-04
+VST,2024-05-08,2024-05-08,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities
+VTR,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care REITs; in the index at the window start 2016-01-04
+VTRS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Pharmaceuticals; in the index at the window start 2016-01-04
+VZ,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Integrated Telecommunication Services; in the index at the window start 2016-01-04
+WAB,2019-02-27,2019-02-27,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Construction Machinery & Heavy Transportation Equipment
+WAT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Life Sciences Tools & Services; in the index at the window start 2016-01-04
+WBD,2022-04-11,2022-04-11,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Broadcasting
+WDAY,2024-12-23,2024-12-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Application Software
+WDC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),"S&P 500 member in Technology Hardware, Storage & Peripherals; in the index at the window start 2016-01-04"
+WEC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electric Utilities; in the index at the window start 2016-01-04
+WELL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care REITs; in the index at the window start 2016-01-04
+WFC,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Diversified Banks; in the index at the window start 2016-01-04
+WM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Environmental & Facilities Services; in the index at the window start 2016-01-04
+WMB,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Oil & Gas Storage & Transportation; in the index at the window start 2016-01-04
+WMT,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Consumer Staples Merchandise Retail; in the index at the window start 2016-01-04
+WRB,2019-12-05,2019-12-05,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Property & Casualty Insurance
+WSM,2025-03-24,2025-03-24,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Homefurnishing Retail
+WST,2020-05-22,2020-05-22,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Supplies
+WTW,2022-01-10,2022-01-10,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Insurance Brokers
+WULF,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+WY,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Timber REITs; in the index at the window start 2016-01-04
+WYNN,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Casinos & Gaming; in the index at the window start 2016-01-04
+XEL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Multi-Utilities; in the index at the window start 2016-01-04
+XLNX,2016-01-04,2016-01-04,2022-02-15,2022-02-15,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Semiconductors; in the index at the window start 2016-01-04
+XOM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Integrated Oil & Gas; in the index at the window start 2016-01-04
+XYL,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Industrial Machinery & Supplies & Components; in the index at the window start 2016-01-04
+XYZ,2025-07-23,2025-07-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Transaction & Payment Processing Services
+YUM,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Restaurants; in the index at the window start 2016-01-04
+ZBH,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Health Care Equipment; in the index at the window start 2016-01-04
+ZBRA,2019-12-23,2019-12-23,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Electronic Equipment & Instruments
+ZS,2026-09-04,2026-09-04,,,"backend/market/universe.py OVERLAY, commit 1e4970de",listed by hand in universe.py on 2026-09-04
+ZTS,2016-01-04,2016-01-04,,,https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500 (read 2026-09-26),S&P 500 member in Pharmaceuticals; in the index at the window start 2016-01-04

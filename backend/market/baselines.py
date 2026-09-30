@@ -103,6 +103,27 @@ def percentile_rank(scores: np.ndarray) -> np.ndarray:
     return out
 
 
+# The same percentile rank taken inside each group of columns: a name is
+# ranked against the names sharing its group id on the session (a GICS
+# sector, for the universe arms), never against the whole row. A group id
+# below zero belongs to no group and gets NaN. With `groups` None the row
+# is one group and the result is `percentile_rank` exactly, bit for bit.
+def grouped_percentile_rank(
+    scores: np.ndarray, groups: np.ndarray | None
+) -> np.ndarray:
+    """Return (T, N) percentile ranks within each column group per session."""
+    if groups is None:
+        return percentile_rank(scores)
+    ids = np.asarray(groups)
+    if ids.shape != (scores.shape[1],):
+        raise ValueError("groups must be one id per column")
+    out = np.full_like(scores, np.nan)
+    for label in np.unique(ids[ids >= 0]):
+        columns = np.flatnonzero(ids == label)
+        out[:, columns] = percentile_rank(scores[:, columns])
+    return out
+
+
 # Average ranks (0-based) with ties sharing their mean rank.
 def average_rank(values: np.ndarray) -> np.ndarray:
     """Return 0-based average ranks of a 1-D array, ties averaged."""

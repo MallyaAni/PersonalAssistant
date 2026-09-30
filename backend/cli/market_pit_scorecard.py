@@ -30,6 +30,20 @@ reads.
 
 Read-only with respect to the desk and the store; writes
 `<root>/desk/pit_scorecard.json`.
+
+The universe-expansion study (`docs/research/universe-expansion-plan-2026-09-30.md`)
+adds `--universe {sector,flat,tone}`, which grades the registered cohort
+(`desk/cohort.py`) instead of the book, `--membership FILE` for the dated
+membership file the point-in-time mask reads (the universe arms default
+to `membership_history_sp500.csv`), `--output FILE` for where the payload
+goes, and `--null-test`, which runs the book through the cohort path and
+through the plain path and asserts that every line's returns are the same
+to the bit at two offsets: the control must be reproduced before any
+candidate is read.
+
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --null-test
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --universe sector \\
+        --output docs/research/scorecards/universe_sector.json
 """
 
 from __future__ import annotations
@@ -45,6 +59,7 @@ from pathlib import Path
 import numpy as np
 
 from backend.agents.trading.desk import (
+    cohort,
     event_risk,
     grading,
     learned_arm,
@@ -52,7 +67,7 @@ from backend.agents.trading.desk import (
     point_in_time,
     simulate,
 )
-from backend.market import benchmarks, candidate_stats
+from backend.market import benchmarks, candidate_stats, universe
 from backend.market.universe import MARKET_INDICES
 
 FILE = "pit_scorecard.json"
@@ -352,6 +367,85 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
     return out
 
 
+# How many A/A+ candidates the desk had per session among the eligible
+# names: the mechanism the universe study claims (more candidates, so the
+# cap binds less). Per window: the median and the 10th percentile of the
+# count, and the share of sessions with fewer than `few` candidates.
+def candidate_counts(restricted, mask: np.ndarray, windows=None, few: int = 5) -> dict:
+    """Return per-window statistics of the eligible A/A+ count per session."""
+    a_or_better = restricted.graded.grades >= grading.ORDINAL[grading.A]
+    counts = (a_or_better & mask).sum(axis=1)
+    out: dict[str, dict[str, object]] = {}
+    for name, (start, end) in (windows or WINDOWS).items():
+        w = point_in_time.window(restricted.panel.dates, start, end)
+        if not w.any():
+            out[name] = {"sessions": 0}
+            continue
+        c = counts[w]
+        out[name] = {
+            "sessions": int(w.sum()),
+            "median": float(np.median(c)),
+            "p10": float(np.percentile(c, 10)),
+            "share_below": float((c < few).mean()),
+            "below": few,
+        }
+    return out
+
+
+# Two reports priced on the same lines at the same offsets and costs,
+# compared to the bit: the null test of a new desk path is that the book
+# through it reproduces the control exactly. Returns the verdict and, per
+# (cost, offset, line), whether the dates and the returns arrays are equal
+# (NaN equal to NaN); the whole thing is `ok` only when every line is.
+def null_test(
+    report_a, report_b, store, history_path, offsets: int, costs: tuple[float, ...], arm=None
+) -> dict:
+    """Return {"ok", "lines": [{cost, offset, line, dates_equal, returns_equal}]}."""
+    priced = []
+    for report in (report_a, report_b):
+        restricted, mask = point_in_time.point_in_time(report, history_path)
+        priced.append(
+            {
+                (cost, k): price_offset(
+                    report, restricted, mask, store, _since(report.panel, k), cost, arm
+                )
+                for cost in costs
+                for k in range(offsets)
+            }
+        )
+    lines = []
+    for (cost, k), curves in priced[0].items():
+        other = priced[1][(cost, k)]
+        for label, curve in curves.items():
+            a, b = curve, other[label]
+            dates_equal = bool(np.array_equal(a.dates, b.dates))
+            returns_equal = bool(
+                np.array_equal(
+                    np.asarray(a.daily, dtype=float),
+                    np.asarray(b.daily, dtype=float),
+                    equal_nan=True,
+                )
+            )
+            lines.append(
+                {
+                    "cost_bps": cost,
+                    "offset": k,
+                    "line": label,
+                    "dates_equal": dates_equal,
+                    "returns_equal": returns_equal,
+                }
+            )
+    grades_equal = bool(
+        np.array_equal(report_a.graded.grades, report_b.graded.grades)
+        and np.array_equal(report_a.scores, report_b.scores, equal_nan=True)
+    )
+    return {
+        "ok": grades_equal and all(r["dates_equal"] and r["returns_equal"] for r in lines),
+        "grades_and_scores_equal": grades_equal,
+        "lines": lines,
+    }
+
+
 # Run everything and assemble the payload; `report` is the desk's unrestricted report.
 def build(
     report, store, offsets: int, costs: tuple[float, ...], history_path=None, arm=None
@@ -376,6 +470,8 @@ def build(
             "eligible_last_session": int(members[-1]),
             "eligible_median": float(np.median(members)),
         },
+        "membership": str(history_path or universe.MEMBERSHIP_HISTORY_PATH),
+        "candidates": candidate_counts(restricted, mask),
         "rows": [],
         "paired": [],
         "note": (
@@ -468,15 +564,32 @@ def main(argv: list[str] | None = None) -> int:
         "(0 < cap <= 1) with its concentration statistics; writes "
         "pit_scorecard_ew_graded_cap<percent>.json",
     )
+    parser.add_argument(
+        "--universe",
+        choices=cohort.ARMS,
+        help="grade the registered universe cohort instead of the book "
+        "(sector: ranks within GICS sector; flat: one cross-section; tone: "
+        "sector, names with tone only); writes pit_scorecard_universe_<arm>.json",
+    )
+    parser.add_argument(
+        "--membership",
+        type=Path,
+        help="the dated membership file the point-in-time mask reads "
+        "(default: the book's; with --universe, membership_history_sp500.csv)",
+    )
+    parser.add_argument("--output", type=Path, help="where to write the payload")
+    parser.add_argument(
+        "--null-test",
+        action="store_true",
+        help="run the book through the cohort path and the plain path and "
+        "assert every line is reproduced to the bit at two offsets; no payload",
+    )
     args = parser.parse_args(argv)
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
 
     root = Path(args.root)
     store = MarketStore(root)
-    report = desk.run(
-        store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
-    )
     arm = ARMS[args.arm] if args.arm else None
     cap_tag = None
     if args.graded_cap is not None:
@@ -484,28 +597,70 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--graded-cap must be in (0, 1]")
         arm = graded_arm(args.graded_cap)
         cap_tag = f"ew_graded_cap{round(args.graded_cap * 100):02d}"
-    payload = build(report, store, args.offsets, tuple(args.costs), arm=arm)
+    history = args.membership or (
+        universe.MEMBERSHIP_HISTORY_SP500_PATH
+        if args.universe
+        else universe.MEMBERSHIP_HISTORY_PATH
+    )
+    run = dict(inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation)
+    if args.null_test:
+        if args.universe:
+            parser.error("--null-test runs the book; it takes no --universe")
+        plain = desk.run(store, None, **run)
+        through = desk.run(store, None, cohort=cohort.book_cohort(), **run)
+        verdict = null_test(plain, through, store, history, 2, tuple(args.costs), arm)
+        print(render_null_test(verdict))
+        return 0 if verdict["ok"] else 1
+    chosen = cohort.universe_cohort(args.universe, store) if args.universe else None
+    report = desk.run(store, None, cohort=chosen, **run)
+    payload = build(report, store, args.offsets, tuple(args.costs), history_path=history, arm=arm)
     if args.graded_cap is not None:
-        restricted, mask = point_in_time.point_in_time(report)
+        restricted, mask = point_in_time.point_in_time(report, history)
         payload["cap"] = args.graded_cap
         payload["concentration"] = concentration(restricted, mask, arm(restricted, mask))
+    if chosen is not None:
+        payload["universe"] = {
+            "arm": chosen.label,
+            "names": len(chosen.names),
+            "rank_within_peers": chosen.rank_within_peers,
+            "groups": len(set(chosen.peers.values())),
+        }
     tags = [
         t
         for t, on in (
             ("signed_rotation", args.signed_rotation),
             (args.arm, args.arm),
             (cap_tag, cap_tag),
+            (f"universe_{args.universe}", args.universe),
         )
         if on
     ]
     payload["arm"] = " + ".join(tags) if tags else "frozen rule"
     name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
-    target = root / "desk" / name
+    target = args.output or root / "desk" / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")
     print(render(payload))
     print(f"\nwrote {target}")
     return 0
+
+
+# The null test's verdict as text: one line per mismatch, or the all-clear.
+def render_null_test(verdict: dict) -> str:
+    """Return the null test as text."""
+    lines = [
+        "null test: the book through the cohort path against the plain path",
+        f"  grades and scores equal: {verdict['grades_and_scores_equal']}",
+        f"  lines compared: {len(verdict['lines'])}",
+    ]
+    for row in verdict["lines"]:
+        if not (row["dates_equal"] and row["returns_equal"]):
+            lines.append(
+                f"  MISMATCH {row['cost_bps']:g} bp offset {row['offset']} "
+                f"{row['line']}: dates {row['dates_equal']}, returns {row['returns_equal']}"
+            )
+    lines.append("  verdict: " + ("PASS, reproduced to the bit" if verdict["ok"] else "FAIL"))
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":

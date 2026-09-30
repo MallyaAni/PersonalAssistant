@@ -426,3 +426,125 @@ def test_graded_arm_and_concentration(history):
     # The CLI tag for a cap names the percent.
     assert sc.main.__doc__  # entry point exists; the tag rule is pinned below
     assert f"ew_graded_cap{round(0.15 * 100):02d}" == "ew_graded_cap15"
+
+
+# The fake benchmark the scorecard tests price the indexes with.
+def _fake_benchmark(report):
+    def fake_benchmark(store, symbol, sessions, cost_bps=10.0, **kw):
+        idx = np.searchsorted(report.panel.dates, np.asarray(sessions, dtype="datetime64[D]"))
+        prices = report.panel.adj_close[idx, 6]
+        equity = np.full(len(sessions), np.nan)
+        equity[0] = 1.0
+        equity[1:] = prices[1:] / prices[1] / (1 + cost_bps / 1e4)
+        daily = np.full(len(sessions), np.nan)
+        daily[1:] = equity[1:] / np.where(np.isfinite(equity[:-1]), equity[:-1], 1.0) - 1
+        return benchmarks.BenchmarkSeries(symbol, True, daily, equity, np.asarray(sessions))
+
+    return fake_benchmark
+
+
+# The null test passes for two identical reports on every line at every
+# offset and cost, and fails as soon as one grade differs.
+def test_null_test_compares_every_line_to_the_bit(history, monkeypatch):
+    report = _report()
+    monkeypatch.setattr(benchmarks, "load_benchmark", _fake_benchmark(report))
+    arm = sc.graded_arm(0.25)
+    verdict = sc.null_test(report, _report(), object(), history, 2, (10.0, 25.0), arm)
+    assert verdict["ok"] and verdict["grades_and_scores_equal"]
+    assert len(verdict["lines"]) == 2 * 2 * 6
+    assert {r["line"] for r in verdict["lines"]} == {
+        sc.RULE_TODAY, sc.RULE_PIT, sc.EW_PIT, sc.EW_TODAY, "SPY", "QQQ"
+    }
+    assert "PASS" in sc.render_null_test(verdict)
+    # One name graded B on the second half: the rule lines move, the
+    # equal-weight lines and the indexes do not.
+    from dataclasses import replace
+
+    grades = report.graded.grades.copy()
+    grades[T // 2 :, 0] = grading.ORDINAL["B"]
+    other = replace(report, graded=replace(report.graded, grades=grades))
+    verdict = sc.null_test(report, other, object(), history, 2, (10.0,), arm)
+    assert not verdict["ok"] and not verdict["grades_and_scores_equal"]
+    moved = {r["line"] for r in verdict["lines"] if not r["returns_equal"]}
+    assert moved == {sc.RULE_TODAY, sc.RULE_PIT}
+    assert all(r["dates_equal"] for r in verdict["lines"])
+    assert "MISMATCH" in sc.render_null_test(verdict) and "FAIL" in sc.render_null_test(verdict)
+
+
+# The candidate block counts eligible A/A+ names per session: every
+# eligible name is A+ here, so the count is the eligible count, and the
+# share below five follows the membership.
+def test_candidate_counts_follow_eligibility(history):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    counts = sc.candidate_counts(restricted, mask, windows={"all": (None, None)}, few=6)
+    assert counts["all"]["median"] == 5.0 and counts["all"]["p10"] == 5.0
+    assert counts["all"]["share_below"] == 1.0 and counts["all"]["below"] == 6
+    # Downgrade one name to B: it is no longer a candidate.
+    from dataclasses import replace
+
+    grades = restricted.graded.grades.copy()
+    grades[:, 0] = grading.ORDINAL["B"]
+    fewer = replace(restricted, graded=replace(restricted.graded, grades=grades))
+    assert sc.candidate_counts(fewer, mask, windows={"all": (None, None)})["all"]["median"] == 4.0
+    empty = sc.candidate_counts(restricted, mask, windows={"none": (date(2030, 1, 1), None)})
+    assert empty["none"] == {"sessions": 0}
+
+
+# `build` carries the membership file and the candidate block in the payload.
+def test_build_records_membership_and_candidates(history, monkeypatch):
+    report = _report()
+    monkeypatch.setattr(benchmarks, "load_benchmark", _fake_benchmark(report))
+    payload = sc.build(report, object(), offsets=2, costs=(10.0,), history_path=history)
+    assert payload["membership"] == str(history)
+    assert set(payload["candidates"]) == set(sc.WINDOWS)
+    assert payload["candidates"]["all"]["median"] == 5.0
+
+
+# The CLI's --null-test runs the desk twice, once through the book cohort,
+# and exits 0 when the lines match and 1 when they do not; --universe and
+# --membership reach the desk and the mask.
+def test_cli_null_test_and_universe_wiring(history, monkeypatch, tmp_path, capsys):
+    from backend.agents.trading.desk import cohort as cohort_module
+    from backend.agents.trading.desk import desk
+
+    report = _report()
+    monkeypatch.setattr(benchmarks, "load_benchmark", _fake_benchmark(report))
+    runs = []
+
+    def fake_run(store, asof, inputs=(), fundamentals=None, *, signed_rotation=False, cohort=None):
+        runs.append(cohort)
+        return report
+
+    monkeypatch.setattr(desk, "run", fake_run)
+    monkeypatch.setattr("backend.market.store.MarketStore", lambda root: object())
+    code = sc.main(["--graded-cap", "0.25", "--null-test", "--membership", str(history), "--root", str(tmp_path)])
+    assert code == 0
+    assert runs[0] is None and runs[1].label == cohort_module.BOOK
+    assert "PASS" in capsys.readouterr().out
+    # A desk that answers differently on the second call fails the null test.
+    from dataclasses import replace
+
+    grades = report.graded.grades.copy()
+    grades[:, 0] = grading.ORDINAL["B"]
+    other = replace(report, graded=replace(report.graded, grades=grades))
+    answers = iter([report, other])
+    monkeypatch.setattr(desk, "run", lambda *a, **k: next(answers))
+    assert sc.main(["--graded-cap", "0.25", "--null-test", "--membership", str(history), "--root", str(tmp_path)]) == 1
+    # --universe builds the cohort, reads the universe file by default, and
+    # writes where --output says with the arm named.
+    runs.clear()
+    monkeypatch.setattr(desk, "run", fake_run)
+    fake = cohort_module.Cohort("sector", ("AAA",), {"AAA": "X"}, True)
+    monkeypatch.setattr(cohort_module, "universe_cohort", lambda arm, store=None, asof=None, universe=None: fake)
+    out = tmp_path / "universe_sector.json"
+    code = sc.main(["--graded-cap", "0.25", "--universe", "sector", "--membership", str(history), "--offsets", "2", "--costs", "10", "--output", str(out), "--root", str(tmp_path)])
+    assert code == 0 and runs == [fake]
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["universe"] == {"arm": "sector", "names": 1, "rank_within_peers": True, "groups": 1}
+    assert payload["arm"] == "ew_graded_cap25 + universe_sector"
+    assert payload["membership"] == str(history)
+    assert "candidates" in payload and "concentration" in payload
+    # --null-test with --universe is refused.
+    with pytest.raises(SystemExit):
+        sc.main(["--null-test", "--universe", "sector"])

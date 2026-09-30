@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from backend.market.baselines import percentile_rank
+from backend.market.baselines import grouped_percentile_rank, percentile_rank
 
 BULLISH = 1
 NEUTRAL = 0
@@ -69,12 +69,21 @@ class Opinion:
     # Off by default: the live policy is frozen and this is measured as an
     # arm before it is adopted.
     signed: bool = False
+    # Optional (N,) integer group id per column. When set, the rank that
+    # makes the stance and the conviction is taken within the name's group
+    # (its GICS sector, in the universe arms) rather than across the whole
+    # panel, so "top 30%" means top 30% of its peers. A negative id is no
+    # group: no rank, no stance. None, the default, is the whole-panel rank
+    # the live desk uses; `signed` ignores groups because a sign needs none.
+    groups: np.ndarray | None = None
 
     # Ranks in [0, 1] across the names with a score on each session.
     def ranks(self) -> np.ndarray:
         """Return (T, N) percentile ranks of the scores per session."""
         if self.signed:
             return signed_ranks(self.scores)
+        if self.groups is not None:
+            return grouped_percentile_rank(self.scores, self.groups)
         return percentile_rank(self.scores)
 
     # Persist rank stances per name, honoring explicit input-validity resets.

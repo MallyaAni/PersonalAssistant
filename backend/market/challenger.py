@@ -98,9 +98,15 @@ def with_gap(opinions: dict, gap: np.ndarray) -> dict:
     out = dict(opinions)
     value = out["value"]
     # A name the gap does not cover keeps the plain valuation rank: a NaN
-    # here erased the value stance, and with it the bearish veto.
+    # here erased the value stance, and with it the bearish veto. When the
+    # analyst ranks within groups (the universe arms' sectors) both ranks
+    # are taken within the same groups; with none this is `percentile_rank`.
+    groups = getattr(value, "groups", None)
     ranked = np.stack(
-        [baselines.percentile_rank(value.scores), baselines.percentile_rank(gap)]
+        [
+            baselines.grouped_percentile_rank(value.scores, groups),
+            baselines.grouped_percentile_rank(gap, groups),
+        ]
     )
     with np.errstate(all="ignore"), warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)

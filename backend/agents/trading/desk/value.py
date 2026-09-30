@@ -30,12 +30,16 @@ CITED = ("price_sales", "price_earnings", "price_book", "price_sales_growth")
 
 
 # Score every name by how cheap it is against its side of the book; no view
-# where the filings give no multiple.
+# where the filings give no multiple. `peers`, when given, replaces the
+# sides as the peer map ({ticker: group}): the universe arms pass the GICS
+# sector, so a name is cheap or dear against its sector and not against a
+# side it does not have. Left None, the sides are the peers, as ever.
 def opine(
     panel: Panel,
     levels: dict[str, np.ndarray],
     sides: dict[str, str],
     size_neutral: bool = True,
+    peers: dict[str, str] | None = None,
 ) -> Opinion:
     """Return the valuation analyst's Opinion."""
     ratios = valuation.multiples(
@@ -46,8 +50,9 @@ def opine(
         levels["shares"],
         levels["revenue_growth"],
     )
-    peers = valuation.groups_from(panel, sides)
-    eligible = np.array([t in sides for t in panel.tickers])
+    peer_map = sides if peers is None else peers
+    peers = valuation.groups_from(panel, peer_map)
+    eligible = np.array([t in peer_map for t in panel.tickers])
     scores = valuation.cheapness(
         ratios.get(SCORED),
         peers,

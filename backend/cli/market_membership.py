@@ -49,6 +49,7 @@ from backend.market import membership, universe
 DATA = Path(universe.__file__).parent / "data"
 CHANGES_PATH = DATA / "sp500_changes_wikipedia.csv"
 OUTPUT_PATH = universe.MEMBERSHIP_HISTORY_PATH
+UNIVERSE_OUTPUT_PATH = universe.MEMBERSHIP_HISTORY_SP500_PATH
 # The first session the desk's panels cover; nothing earlier is dated.
 WINDOW_START = date(2016, 1, 4)
 # The constituent file's own date, from its header comment.
@@ -212,11 +213,18 @@ def _merge(rows: list[tuple[date, date | None]]) -> list[tuple[date, date | None
 
 # The book's membership records: index members in book sub-industries plus
 # overlay names from their commit dates, with a source and a rule on each.
+# With `universe_wide` the sub-industry filter is removed (the
+# universe-expansion registration's rule): every current constituent from
+# max(start, its index entry) to its exit if any, announced = effective,
+# overlay names as today. A closed interval is still classified only by the
+# curated exit table, so a reused ticker's earlier company (Q, DAY) stays
+# out of both files; the universe file is a superset of the book's.
 def build_records(
     constituents: list[universe.UniverseMember] | None = None,
     changes: list[Change] | None = None,
     overlay_added: dict[str, tuple[date, str]] | None = None,
     start: date = WINDOW_START,
+    universe_wide: bool = False,
 ) -> tuple[list[membership.MembershipRecord], list[str]]:
     """Return (records, notes)."""
     constituents = constituents if constituents is not None else universe.load_constituents()
@@ -232,16 +240,21 @@ def build_records(
             # A closed interval is classified only by the curated table: the
             # constituent file describes today's company, and a ticker can
             # have belonged to another one (Q in 2017).
-            if exited is None:
+            # In the universe file a removal after the snapshot is of the
+            # company the snapshot describes (BLDR, TAP, TTD left on
+            # 2026-09-21), so the constituent file classifies it too.
+            if exited is None or (
+                universe_wide and exited > CONSTITUENTS_ASOF and ticker in sub_industry
+            ):
                 industry = sub_industry.get(ticker)
             else:
                 industry = EXITED_BOOK_SUB_INDUSTRY.get((ticker, exited))
                 if industry is None:
                     unclassified.append(f"{ticker}@{exited}")
                     continue
-            if industry not in universe.BOOK_SUB_INDUSTRIES:
+            if not universe_wide and industry not in universe.BOOK_SUB_INDUSTRIES:
                 continue
-            rule = f"S&P 500 member in {industry}"
+            rule = f"S&P 500 member in {industry or 'an unclassified sub-industry'}"
             if entered == start:
                 rule += f"; in the index at the window start {start}"
             per_ticker.setdefault(ticker, []).append(
@@ -312,15 +325,29 @@ def main(argv: list[str] | None = None) -> int:
     """Entry point."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--check", action="store_true", help="diff against the committed file")
-    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument(
+        "--universe",
+        action="store_true",
+        help="the whole index, no sub-industry filter; writes "
+        f"{UNIVERSE_OUTPUT_PATH.name} unless --output is given",
+    )
+    parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args(argv)
-    records, notes = build_records()
+    if args.output is None:
+        args.output = UNIVERSE_OUTPUT_PATH if args.universe else OUTPUT_PATH
+    records, notes = build_records(universe_wide=args.universe)
     text = render(records)
-    today = universe.book_sides(universe.build_universe())
+    full = universe.build_universe()
+    today = (
+        universe.tickers_with_role(full, universe.FOCUS, universe.MEMBER)
+        if args.universe
+        else universe.book_sides(full)
+    )
     listed = {r.ticker for r in records}
     missing = sorted(set(today) - listed)
     print(f"{len(records)} intervals over {len(listed)} names")
-    print(f"today's book: {len(today)} names, {len(missing)} not covered: {missing}")
+    what = "today's universe" if args.universe else "today's book"
+    print(f"{what}: {len(today)} names, {len(missing)} not covered: {missing}")
     for note in notes:
         print("note:", note)
     if args.check:

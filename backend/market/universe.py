@@ -80,6 +80,11 @@ STALE_AFTER_DAYS = 7
 # The committed constituent file, produced by `backend.cli.market_universe`.
 CONSTITUENTS_PATH = Path(__file__).parent / "data" / "constituents.csv"
 MEMBERSHIP_HISTORY_PATH = Path(__file__).parent / "data" / "membership_history.csv"
+# The same history without the book's sub-industry filter: every index
+# member, for the universe-expansion study (`market_membership --universe`).
+MEMBERSHIP_HISTORY_SP500_PATH = (
+    Path(__file__).parent / "data" / "membership_history_sp500.csv"
+)
 
 
 # Historical research must load a dated membership archive explicitly and
