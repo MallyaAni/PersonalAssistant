@@ -102,3 +102,43 @@ anyone hosts a "specialised model" for this desk.
 inference script and the two evaluation adapters with tests. 4. Run; read
 no number before both forecast files are complete. 5. Write-up,
 independent check, report.
+
+## Addendum 1 (2026-09-30, before any download): the data cutoff
+
+Read before any weight was downloaded or any forecast made.
+
+- **Paper** (arXiv 2508.02739v1, HTML, appendix "Task Implementation
+  Details / Forecasting Task Setup"): "The pre-training data for Kronos
+  extends up to June 2024. Consequently, our test period for all tasks
+  begins in July 2024 to ensure a strict temporal separation between
+  training and evaluation." The corpus table lists the Nasdaq Stock
+  Exchange (8,725 assets, 2,478,662,459 observations, timeframes T, 5T,
+  15T, 30T, H, D, W, start 2000/1/1) and the New York Stock Exchange
+  (7,073 assets, 2,133,143,549 observations, the same timeframes, start
+  2000/1/1). NASDAQ (XNAS) is named an "in-distribution" exchange for the
+  evaluation. So both this book's daily bars and its 15-minute bars up to
+  June 2024 may be in the corpus.
+- **Model card** (`NeoQuasar/Kronos-base`, README on the Hub, read the
+  same day): repeats "over 12 billion K-line records from 45 global
+  exchanges" and states no cutoff. It gives the Model Zoo (Kronos-base:
+  Kronos-Tokenizer-base, context 512, 102.3M) and the `KronosPredictor`
+  API; the checkpoint's `config.json` carries no date.
+- **Cutoff recorded: 2024-06-30.** In-window = 2018-01-02..2024-06-30
+  (contaminated; reported, never deciding). Post-cutoff = 2024-07-01
+  onwards (the paper's own test convention), which decides.
+- **Arithmetic consequence, stated now:** the post-cutoff window holds
+  about 565 sessions through 2026-09, so `harness.evaluate_scores` at
+  20 sessions has about 28 non-overlapping periods there, under the 60
+  the K1 IC criterion requires. **K1 is RECORD by construction** on the
+  IC floor, as the criteria section foresaw; its post-cutoff IC and t
+  are still computed and reported, and the book gate is still run so
+  the number is on record. K2's model window (post-cutoff sessions) is
+  about 565 sessions, enough for the S1 fill criteria, which are judged
+  as registered.
+- Sampling defaults, from the repository README's `predict` example
+  (recorded here so the run cannot choose them): `T=1.0`, `top_p=0.9`,
+  `sample_count=1`, `top_k=0`; the model samples (`sample_from_logits`
+  with `sample_logits=True`, `torch.multinomial`), so the run fixes a
+  seed. The paper's Table 6 uses T 0.6, top-p 0.90, N 10 for price
+  forecasting; this study uses the README's defaults as its instruction
+  says, and reports that the paper's setting is different.
