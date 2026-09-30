@@ -9,10 +9,10 @@ const HEADLINE = 'Own: 3 analysts for, none against'
 const REASON = '+ Fundamental: revenue growth high in book\n+ Sentiment: upbeat on guidance; upbeat on demand\n+ Value: relative valuation high in book'
 const STANCES = {fundamental: 1, technical: 0, sentiment: 1, value: 1, rotation: 0}
 const RANKS = {fundamental: .875, technical: .293, sentiment: .881, value: .786, rotation: .5}
-type EvidenceState = 'current' | 'expired' | 'missing'
 
-// Supply the same recorded decision with a current, expired or missing intraday update.
-function evidenceFixture(withRow: boolean, state: EvidenceState) {
+// Supply the recorded decision with a live candle beside it. The board reads no intraday grade
+// since the redesign, so the latest available grade is the recorded one, dated to its close.
+function evidenceFixture() {
   const latest = {
     session: SESSION, written: WRITTEN,
     regime: {ai_participation: .5, software_participation: .5, participation_percentile: .5, ai_vs_software_correlation: 0, correlation_z: 0, novelty_z: 0, rotation_leader: 'none', rotation_spread: 0, ai_drawdown: .1, selection_confidence: .6, exposure: 1, flags: []},
@@ -20,21 +20,13 @@ function evidenceFixture(withRow: boolean, state: EvidenceState) {
     book: [], briefs: {}, paper: null,
   }
   const market = {exchange: 'XNYS', as_of: NOW, session: '2026-09-24', calendar_known: true, is_session: true, open: true, phase: 'open', opens_at: '2026-09-24T09:30:00-04:00', closes_at: '2026-09-24T16:00:00-04:00'}
-  const current = {grade_live: 'B', score_live: .4, technical_now: .2, technical_close: .293, stances_live: {...STANCES, technical: -1}, ranks_live: {...RANKS, technical: .2}}
-  const mine = {
-    session: SESSION, market_status: market,
-    grade_valid_until: state === 'missing' ? {} : {AAOI: state === 'expired' ? '2026-09-24T15:30:00Z' : '2026-09-24T15:45:00Z'},
-    grades_live: state === 'missing' ? {} : {AAOI: current},
-    rows: withRow ? [{ticker: 'AAOI', ...current, grade: 'A+', grade_source: 'intraday', action: 'hold', in_book: false, score: .82, rank: 1, stances: STANCES, ranks: RANKS, target_weight: 0, current_weight: 0, delta_weight: 0, shares: 0, entry_price: null, entry_date: null, last: 98.25, last_close: 101, pl_pct: null, until_rebalance: null, rebalance_due: false}] : [],
-    decisions: {session: SESSION, written: WRITTEN, as_of: NOW, rows: {AAOI: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'No entry instruction.', valid_until: '2026-09-24T15:45:00Z', target_weight: 0, current_weight: 0, move_weight: 0}}},
-  }
   const live = {as_of: NOW, data_at: BAR, stale: false, market_status: market, quotes: {AAOI: {symbol: 'AAOI', last: 98.25, open: 101, high: 102, low: 98, bar: BAR, as_of: NOW}}, technical: {AAOI: {now: .2, close: .293}}, technical_detail: {AAOI: {now: .2, short: {}, medium: {}, long: {}}}}
-  return {latest, mine, live}
+  return {latest, live}
 }
 
 // Keep the complete browser journey local and fail on errors, unhandled requests or writes.
-async function installEvidenceFixture(page: Page, withRow: boolean, state: EvidenceState, frontendURL: string) {
-  const fixture = evidenceFixture(withRow, state)
+async function installEvidenceFixture(page: Page, frontendURL: string) {
+  const fixture = evidenceFixture()
   const frontendOrigin = new URL(frontendURL).origin
   const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[]}
   // Record browser failures independently of the rendered-content assertions.
@@ -58,8 +50,7 @@ async function installEvidenceFixture(page: Page, withRow: boolean, state: Evide
       return route.abort('blockedbyclient')
     }
     const base = `/api/v1/market/${USER}/desk`
-    const readOnlyPost = url.pathname === `${base}/mine` && request.method() === 'POST' && request.postDataJSON()?.record_history === false
-    if (request.method() !== 'GET' && !readOnlyPost) {
+    if (request.method() !== 'GET') {
       diagnostics.forbiddenWrites.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 403, json: {detail: 'Fixture forbids persistence'}})
     }
@@ -72,10 +63,7 @@ async function installEvidenceFixture(page: Page, withRow: boolean, state: Evide
       price: null, at: null, feed: null, indicative: false, status: 'unavailable', reason: 'No optional session-price evidence in this fixture.', valid_until: null,
     }}}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
-    else if (url.pathname === `${base}/mine`) json = fixture.mine
-    else if (url.pathname === `${base}/intraday`) json = {session: SESSION, as_of: NOW, equity: 100000, rows: [], changed: [], top_buys: []}
-    else if (url.pathname === `${base}/paper`) json = {as_of: NOW, equity: 100000, cash: 100000, day_pl: 0, pl_pct: 0, day_pl_pct: 0, positions: [], orders: [], activity: {complete: true, fills: []}}
-    else if (url.pathname === `${base}/entries`) json = {user_id: USER, session: SESSION, rows: []}
+    else if (url.pathname === `${base}/paper`) json = {as_of: NOW, equity: 100000, cash: 100000, day_pl: 0, pl_pct: 0, day_pl_pct: 0, positions: [], orders: [], activity: {complete: true, fills: []}, plan: {rule: 'dip_or_close', orders: [], until_rebalance: 7}}
     else if (url.pathname === `${base}/history/AAOI`) json = {ticker: 'AAOI', asof: SESSION, horizon: 20, backtest: null, rows: [], recommendations: {observations: [], invalid_archives: 0, older_records_not_shown: false}}
     else if (url.pathname === `${base}/earnings/AAOI`) json = {user_id: USER, symbol: 'AAOI', read: null}
     else if (url.pathname === `${base}/chart/AAOI`) json = {user_id: USER, ticker: 'AAOI', timeframe: 'daily', timeframes: ['daily', 'weekly'], adjusted: true, last_bar_complete: true, basis: 'deterministic fixture', sessions: 0, bars: [], overlays: {}, levels: {}, entries: []}
@@ -89,25 +77,35 @@ async function installEvidenceFixture(page: Page, withRow: boolean, state: Evide
   return {fixture, diagnostics}
 }
 
-// Check the same dated separation and preserved original headline in both detail surfaces.
-async function expectSeparatedEvidence(surface: ReturnType<Page['getByRole']>, current: boolean) {
-  const latest = surface.getByRole('region', {name: 'Latest available grade', exact: true})
-  const evening = surface.getByRole('region', {name: 'Evening analysis', exact: true})
-  await expect(latest.getByLabel('Latest grade value', {exact: true})).toHaveText(current ? 'B' : 'A+')
-  await expect(latest).toContainText(current ? 'intraday' : `at the ${SESSION} close`)
+// The latest available grade is dated to its close and never repeats the recorded headline; the
+// evening analysis keeps the recorded grade, votes and reasons, with the original wording folded.
+async function expectSeparatedEvidence(dialog: ReturnType<Page['getByRole']>) {
+  const latest = dialog.getByRole('region', {name: 'Latest available grade', exact: true})
+  const evening = dialog.getByRole('region', {name: 'Evening analysis', exact: true})
+  await expect(latest.getByLabel('Latest grade value', {exact: true})).toHaveText('A+')
+  await expect(latest).toContainText(`at the ${SESSION} close`)
   await expect(latest).not.toContainText(HEADLINE)
+  await expect(latest).not.toContainText('Since evening:')
   await expect(evening).toContainText(`Evening analysis · ${SESSION}`)
   await expect(evening).toContainText('Recorded grade A+')
   await expect(evening).toContainText('F+ T· S+ V+ R·')
-  await expect(evening).toContainText('Not a current trade instruction.')
   for (const line of REASON.split('\n')) await expect(evening).toContainText(line)
   await expect(evening.getByText(HEADLINE, {exact: true})).not.toBeVisible()
   await evening.getByText('Original recorded wording', {exact: true}).click()
   await expect(evening.getByText(HEADLINE, {exact: true})).toHaveText(HEADLINE)
   await expect(evening.getByText(HEADLINE, {exact: true})).toBeVisible()
   await evening.getByText('Original recorded wording', {exact: true}).click()
-  if (current) await expect(latest).toContainText('Since evening: T no view → against.')
-  else await expect(latest).not.toContainText('Since evening:')
+}
+
+// The row's details carry the recorded grade and its reasons; the full panel opens from them.
+async function openPanelFromRow(page: Page) {
+  await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
+  const grade = page.getByRole('region', {name: 'AAOI grade', exact: true})
+  await expect(grade).toContainText(`Grade A+ · ${SESSION} close`)
+  await expect(grade).toContainText(HEADLINE)
+  for (const line of REASON.split('\n')) await expect(grade).toContainText(line)
+  await grade.getByRole('button', {name: 'Chart and full history'}).click()
+  return page.getByRole('dialog', {name: 'AAOI history'})
 }
 
 // Fail on every browser-error category without replacing an earlier content assertion failure.
@@ -116,51 +114,26 @@ async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
   for (const [category, errors] of Object.entries(diagnostics)) expect.soft(errors, `Browser ${category}`).toEqual([])
 }
 
-for (const withRow of [false, true]) {
-  for (const state of ['current', 'expired', 'missing'] as const) {
-    // Neither a personal row nor missing fresh evidence may disguise the evening recommendation.
-    test(`separates ${state} grade from recorded wording ${withRow ? 'with' : 'without'} a personal row`, async ({page, baseURL}, testInfo) => {
-      const {fixture, diagnostics} = await installEvidenceFixture(page, withRow, state, baseURL!)
-      try {
-        await page.goto('/#desk')
-        await expect(page.getByLabel('AAOI displayed grade', {exact: true})).toContainText(state === 'current' ? 'B' : 'A+')
-        await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
-        const expansion = page.getByRole('region', {name: 'AAOI decision details', exact: true})
-        await expectSeparatedEvidence(expansion, state === 'current')
-        await expect(expansion).toContainText('F88+')
-        await expect(expansion).toContainText('S88+')
-        await expansion.getByRole('button', {name: 'Open the full panel'}).click()
-        const dialog = page.getByRole('dialog', {name: 'AAOI history'})
-        await expectSeparatedEvidence(dialog, state === 'current')
-        await expect(dialog.getByRole('region', {name: 'Latest available grade', exact: true})).toContainText('Sep 24, 11:15 AM ET')
-        await expect(dialog.getByRole('region', {name: 'Evening analysis', exact: true})).not.toContainText('$98.25')
-        await page.screenshot({path: testInfo.outputPath('dated-detail.png'), fullPage: true})
-        expect(fixture.latest.grades.AAOI.headline).toBe(HEADLINE)
-        expect(fixture.latest.grades.AAOI.grade).toBe('A+')
-      } finally {
-        await recordDiagnostics(testInfo, diagnostics)
-      }
-    })
+// A live candle beside the recorded decision may not disguise the evening recommendation.
+test('separates the latest grade from the recorded wording', async ({page, baseURL}, testInfo) => {
+  const {fixture, diagnostics} = await installEvidenceFixture(page, baseURL!)
+  try {
+    await page.goto('/#desk')
+    await expect(page.getByLabel('AAOI displayed grade', {exact: true})).toHaveText('A+')
+    const dialog = await openPanelFromRow(page)
+    await expectSeparatedEvidence(dialog)
+    const latest = dialog.getByRole('region', {name: 'Latest available grade', exact: true})
+    await expect(latest).toContainText('F88+')
+    await expect(latest).toContainText('S88+')
+    await expect(latest).toContainText('Sep 24, 11:15 AM ET')
+    await expect(dialog.getByRole('region', {name: 'Evening analysis', exact: true})).not.toContainText('$98.25')
+    await page.screenshot({path: testInfo.outputPath('dated-detail.png'), fullPage: true})
+    expect(fixture.latest.grades.AAOI.headline).toBe(HEADLINE)
+    expect(fixture.latest.grades.AAOI.grade).toBe('A+')
+  } finally {
+    await recordDiagnostics(testInfo, diagnostics)
   }
-
-  // The existing expiry clock must remove live vote changes while the dialog remains open.
-  test(`expires live detail without rewriting evening evidence ${withRow ? 'with' : 'without'} a personal row`, async ({page, baseURL}, testInfo) => {
-    const {diagnostics} = await installEvidenceFixture(page, withRow, 'current', baseURL!)
-    try {
-      await page.goto('/#desk')
-      await page.getByRole('button', {name: 'AAOI', exact: true}).click()
-      const dialog = page.getByRole('dialog', {name: 'AAOI history'})
-      await expectSeparatedEvidence(dialog, true)
-      await page.clock.fastForward('11:00')
-      await expectSeparatedEvidence(dialog, false)
-      await dialog.getByRole('button', {name: 'Close', exact: true}).click()
-      await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
-      await expectSeparatedEvidence(page.getByRole('region', {name: 'AAOI decision details', exact: true}), false)
-    } finally {
-      await recordDiagnostics(testInfo, diagnostics)
-    }
-  })
-}
+})
 
 // Center both measured grade regions in their native scrollport without changing fit criteria.
 async function alignGradeEvidenceInScrollport(dialog: ReturnType<Page['getByRole']>) {
@@ -184,25 +157,25 @@ async function alignGradeEvidenceInScrollport(dialog: ReturnType<Page['getByRole
 }
 
 // Dated grade sections and the original-wording controls remain usable without mobile panning.
-test('dated evening and intraday details fit a phone with usable archive controls', async ({page, baseURL}, testInfo) => {
-  const {diagnostics} = await installEvidenceFixture(page, false, 'current', baseURL!)
+test('dated evening details fit a phone with usable archive controls', async ({page, baseURL}, testInfo) => {
+  const {diagnostics} = await installEvidenceFixture(page, baseURL!)
   try {
     await page.setViewportSize({width: 390, height: 844})
     await page.goto('/#desk')
     if (await page.getByRole('button', {name: 'Hide Sidebar'}).isVisible()) await page.mouse.click(380, 500)
     await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
-    const expansion = page.getByRole('region', {name: 'AAOI decision details', exact: true})
-    await expectSeparatedEvidence(expansion, true)
+    const grade = page.getByRole('region', {name: 'AAOI grade', exact: true})
+    await expect(grade).toContainText(HEADLINE)
     // The expanded board must not make the document wider than the phone.
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-    await expansion.scrollIntoViewIfNeeded()
+    await grade.scrollIntoViewIfNeeded()
     await page.screenshot({path: testInfo.outputPath('mobile-expansion.png'), fullPage: true})
-    await expansion.getByRole('button', {name: 'Open the full panel'}).click()
+    await grade.getByRole('button', {name: 'Chart and full history'}).click()
     const dialog = page.getByRole('dialog', {name: 'AAOI history'})
-    await expectSeparatedEvidence(dialog, true)
+    await expectSeparatedEvidence(dialog)
     // Check the actual dialog's horizontal content, not only the document width.
     expect(await dialog.evaluate(element => element.scrollWidth <= window.innerWidth)).toBe(true)
-    await dialog.getByRole('heading', {name: 'AAOI', exact: true}).scrollIntoViewIfNeeded()
+    await dialog.getByRole('heading', {name: /^AAOI/}).scrollIntoViewIfNeeded()
     await page.screenshot({path: testInfo.outputPath('mobile-detail.png'), fullPage: true})
     const evening = dialog.getByRole('region', {name: 'Evening analysis', exact: true})
     await evening.scrollIntoViewIfNeeded()
@@ -212,7 +185,7 @@ test('dated evening and intraday details fit a phone with usable archive control
     await page.screenshot({path: testInfo.outputPath('mobile-detail-evidence.png'), fullPage: true})
     await dialog.getByRole('button', {name: 'Close', exact: true}).click()
     await expect(dialog).not.toBeVisible()
-    await expect(expansion.getByRole('button', {name: 'Open the full panel'})).toBeVisible()
+    await expect(grade.getByRole('button', {name: 'Chart and full history'})).toBeVisible()
   } finally {
     await recordDiagnostics(testInfo, diagnostics)
   }
