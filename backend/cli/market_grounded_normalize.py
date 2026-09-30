@@ -13,7 +13,7 @@ from backend.cli.market_grounded_release import write_report
 VERSION = "release-html-entities-whitespace/1"
 
 
-# Decode entities once and collapse whitespace without deleting bullets or financial text.
+# Decode entities once and collapse whitespace, preserving bullets and financial text.
 def normalize_text(text: str) -> str:
     return " ".join(html.unescape(text).split())
 
@@ -41,7 +41,7 @@ def normalize_inputs(corpus: dict, labels: dict) -> tuple[dict, dict]:
         label = by_id[row["id"]]
         label.update(metadata)
         label["quotes"] = [normalize_text(quote) for quote in label["quotes"]]
-        # Original eligibility stays fixed: newly fitting documents lack semantic labels.
+        # Keep eligibility fixed: newly fitting documents still lack semantic labels.
     provenance = {
         "normalization_version": VERSION,
         "normalizer_sha256": text_hash(Path(__file__).read_text(encoding="utf-8")),

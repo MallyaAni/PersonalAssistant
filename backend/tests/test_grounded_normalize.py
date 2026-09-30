@@ -14,7 +14,7 @@ def test_normalization_preserves_financial_meaning():
     assert normalize_text(raw) == "Loss ($22.8M) ± 2% • 2026 <system> &lt;"
 
 
-# Canonical input is a new artifact; original text, expected labels and exclusion stay fixed.
+# Canonical input is separate; original text, labels and exclusions stay fixed.
 def test_normalization_keeps_frozen_labels_and_raw_provenance():
     corpus, labels = sample()
     raw = "Revenue&nbsp; $3.80 billion &#177; $200 million"
@@ -33,7 +33,7 @@ def test_normalization_keeps_frozen_labels_and_raw_provenance():
     assert normalized_labels["rows"][1]["expected"] is None
 
 
-# A single-reader ablation does not quietly rerun the incumbent or change its denominator.
+# A single-reader ablation never reruns the incumbent or changes its denominator.
 def test_grounded_only_ablation_makes_one_call_per_eligible_source():
     corpus, labels = sample()
     report = compare(
