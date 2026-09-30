@@ -1,0 +1,1105 @@
+{
+  "cost_bps": 25.0,
+  "trial_variance": 9.606524566057701e-06,
+  "control": {
+    "book": {
+      "names_today": 94,
+      "eligible_first_session": 0,
+      "eligible_last_session": 94,
+      "eligible_median": 30.0
+    },
+    "arm": "ew_graded_cap25",
+    "2016-2023": {
+      "lines": {
+        "rule / point-in-time": {
+          "median_cagr": 0.2795814056957031,
+          "worst_cagr": 0.26211653388644307,
+          "median_drawdown": -0.42854233188706353,
+          "worst_drawdown": -0.4789669408044789,
+          "median_sharpe": 0.9813325083890181,
+          "offsets_above_ew_pit": 13,
+          "offsets_above_qqq": 20
+        },
+        "equal weight / point-in-time": {
+          "median_cagr": 0.2773193381619158,
+          "worst_cagr": 0.2662307822516552,
+          "median_drawdown": -0.3788305790967743,
+          "worst_drawdown": -0.3828711412232555,
+          "median_sharpe": 1.0518709437452058,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 20
+        },
+        "SPY": {
+          "median_cagr": 0.13165460779992633,
+          "worst_cagr": 0.13165460779992588,
+          "median_drawdown": -0.3371726378600284,
+          "worst_drawdown": -0.3371726378600286,
+          "median_sharpe": 0.7647692726381011,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 0
+        },
+        "QQQ": {
+          "median_cagr": 0.18558982588499418,
+          "worst_cagr": 0.1855898258849935,
+          "median_drawdown": -0.3511872767702524,
+          "worst_drawdown": -0.35118727677025363,
+          "median_sharpe": 0.8643982610943599,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 0
+        }
+      },
+      "concentration": {
+        "sessions": 2012,
+        "invested_share": 1.0,
+        "largest_weight_median": 0.14285714285714285,
+        "largest_weight_max": 0.25,
+        "effective_names_median": 6.999999999999999,
+        "effective_names_min": 1.0,
+        "cash_median": 0.0,
+        "cash_max": 0.75,
+        "worst_single_name_day": -0.03324770985420486,
+        "worst_single_name_day_basis": "lagged-simple/2"
+      },
+      "candidates": {
+        "sessions": 2012,
+        "median": 7.0,
+        "p10": 4.0,
+        "share_below": 0.17296222664015903,
+        "below": 5
+      }
+    },
+    "2024-2026": {
+      "lines": {
+        "rule / point-in-time": {
+          "median_cagr": 0.476071449469307,
+          "worst_cagr": 0.35303113010335574,
+          "median_drawdown": -0.24504209509643382,
+          "worst_drawdown": -0.31985034055230044,
+          "median_sharpe": 1.2967562494608198,
+          "offsets_above_ew_pit": 20,
+          "offsets_above_qqq": 20
+        },
+        "equal weight / point-in-time": {
+          "median_cagr": 0.29745128558077294,
+          "worst_cagr": 0.2802141185632583,
+          "median_drawdown": -0.2589668623708772,
+          "worst_drawdown": -0.26287460308689947,
+          "median_sharpe": 1.1255646740686633,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 20
+        },
+        "SPY": {
+          "median_cagr": 0.20409305180303594,
+          "worst_cagr": 0.20409305180303483,
+          "median_drawdown": -0.18755245583150443,
+          "worst_drawdown": -0.18755245583150493,
+          "median_sharpe": 1.270878423048412,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 0
+        },
+        "QQQ": {
+          "median_cagr": 0.24726951033194844,
+          "worst_cagr": 0.24726951033194688,
+          "median_drawdown": -0.22768307643968805,
+          "worst_drawdown": -0.22768307643968855,
+          "median_sharpe": 1.162681787252342,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 0
+        }
+      },
+      "concentration": {
+        "sessions": 688,
+        "invested_share": 0.9854651162790697,
+        "largest_weight_median": 0.2,
+        "largest_weight_max": 0.25,
+        "effective_names_median": 4.999999999999999,
+        "effective_names_min": 1.0,
+        "cash_median": 0.0,
+        "cash_max": 0.75,
+        "worst_single_name_day": -0.047401821118090916,
+        "worst_single_name_day_basis": "lagged-simple/2"
+      },
+      "candidates": {
+        "sessions": 688,
+        "median": 5.0,
+        "p10": 2.0,
+        "share_below": 0.42877906976744184,
+        "below": 5
+      }
+    },
+    "all": {
+      "lines": {
+        "rule / point-in-time": {
+          "median_cagr": 0.2960201614833854,
+          "worst_cagr": 0.26595985255853494,
+          "median_drawdown": -0.42854233188706353,
+          "worst_drawdown": -0.4789669408044789,
+          "median_sharpe": 1.0201986681620068,
+          "offsets_above_ew_pit": 20,
+          "offsets_above_qqq": 20
+        },
+        "equal weight / point-in-time": {
+          "median_cagr": 0.25713208697999235,
+          "worst_cagr": 0.2457035386592572,
+          "median_drawdown": -0.3788305790967743,
+          "worst_drawdown": -0.3828711412232555,
+          "median_sharpe": 1.0270394091577613,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 20
+        },
+        "SPY": {
+          "median_cagr": 0.13891236349869296,
+          "worst_cagr": 0.1368691838936531,
+          "median_drawdown": -0.3371726378600285,
+          "worst_drawdown": -0.3371726378600288,
+          "median_sharpe": 0.8298299737526145,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 0
+        },
+        "QQQ": {
+          "median_cagr": 0.19310303407474338,
+          "worst_cagr": 0.19124979314721724,
+          "median_drawdown": -0.3511872767702521,
+          "worst_drawdown": -0.3511872767702535,
+          "median_sharpe": 0.9159589657298445,
+          "offsets_above_ew_pit": 0,
+          "offsets_above_qqq": 0
+        }
+      },
+      "concentration": {
+        "sessions": 2952,
+        "invested_share": 0.9112466124661247,
+        "largest_weight_median": 0.16666666666666666,
+        "largest_weight_max": 0.25,
+        "effective_names_median": 6.0,
+        "effective_names_min": 1.0,
+        "cash_median": 0.0,
+        "cash_max": 0.75,
+        "worst_single_name_day": -0.047401821118090916,
+        "worst_single_name_day_basis": "lagged-simple/2"
+      },
+      "candidates": {
+        "sessions": 2952,
+        "median": 6.0,
+        "p10": 2.0,
+        "share_below": 0.3031842818428184,
+        "below": 5
+      }
+    },
+    "paired_within_run": [
+      {
+        "cost_bps": 25.0,
+        "window": "2016-2023",
+        "line": "rule / point-in-time",
+        "against": "equal weight / point-in-time",
+        "sessions": 2012,
+        "mean_daily_bp": 0.6272252443704789,
+        "hac_t": 0.44991302062072047,
+        "psr": 0.6616476679701937
+      },
+      {
+        "cost_bps": 25.0,
+        "window": "2024-2026",
+        "line": "rule / point-in-time",
+        "against": "equal weight / point-in-time",
+        "sessions": 688,
+        "mean_daily_bp": 4.2377626910672905,
+        "hac_t": 1.0087679250719117,
+        "psr": 0.7927936362119442
+      },
+      {
+        "cost_bps": 25.0,
+        "window": "all",
+        "line": "rule / point-in-time",
+        "against": "equal weight / point-in-time",
+        "sessions": 2941,
+        "mean_daily_bp": 1.4204549211586874,
+        "hac_t": 1.0368962625335156,
+        "psr": 0.8141755072729693
+      }
+    ]
+  },
+  "arms": {
+    "sector": {
+      "summary": {
+        "book": {
+          "names_today": 531,
+          "eligible_first_session": 0,
+          "eligible_last_session": 528,
+          "eligible_median": 416.0
+        },
+        "arm": "ew_graded_cap25 + universe_sector",
+        "2016-2023": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.14872948134498132,
+              "worst_cagr": 0.13542968548122114,
+              "median_drawdown": -0.3707312666502876,
+              "worst_drawdown": -0.38556954218007355,
+              "median_sharpe": 0.8271598828439962,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.0,
+              "worst_cagr": 0.0,
+              "median_drawdown": 0.0,
+              "worst_drawdown": 0.0,
+              "median_sharpe": NaN,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.13165460779992633,
+              "worst_cagr": 0.13165460779992588,
+              "median_drawdown": -0.3371726378600284,
+              "worst_drawdown": -0.3371726378600286,
+              "median_sharpe": 0.7647692726381011,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.18558982588499418,
+              "worst_cagr": 0.1855898258849935,
+              "median_drawdown": -0.3511872767702524,
+              "worst_drawdown": -0.35118727677025363,
+              "median_sharpe": 0.8643982610943599,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 2012,
+            "invested_share": 1.0,
+            "largest_weight_median": 0.017241379310344827,
+            "largest_weight_max": 0.03333333333333333,
+            "effective_names_median": 57.999999999999986,
+            "effective_names_min": 30.000000000000007,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.009813927860306739,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 2012,
+            "median": 58.0,
+            "p10": 44.0,
+            "share_below": 0.0,
+            "below": 5
+          }
+        },
+        "2024-2026": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.19494629633536564,
+              "worst_cagr": 0.1749062123883347,
+              "median_drawdown": -0.18317038626644366,
+              "worst_drawdown": -0.20016485257688554,
+              "median_sharpe": 1.3152789171745771,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.0,
+              "worst_cagr": 0.0,
+              "median_drawdown": 0.0,
+              "worst_drawdown": 0.0,
+              "median_sharpe": NaN,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.20409305180303594,
+              "worst_cagr": 0.20409305180303483,
+              "median_drawdown": -0.18755245583150443,
+              "worst_drawdown": -0.18755245583150493,
+              "median_sharpe": 1.270878423048412,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.24726951033194844,
+              "worst_cagr": 0.24726951033194688,
+              "median_drawdown": -0.22768307643968805,
+              "worst_drawdown": -0.22768307643968855,
+              "median_sharpe": 1.162681787252342,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 688,
+            "invested_share": 1.0,
+            "largest_weight_median": 0.014492753623188406,
+            "largest_weight_max": 0.01818181818181818,
+            "effective_names_median": 68.99999999999997,
+            "effective_names_min": 54.99999999999999,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.005308148828540823,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 688,
+            "median": 69.0,
+            "p10": 62.0,
+            "share_below": 0.0,
+            "below": 5
+          }
+        },
+        "all": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.1453278315736698,
+              "worst_cagr": 0.13421004416921067,
+              "median_drawdown": -0.3707312666502876,
+              "worst_drawdown": -0.38556954218007355,
+              "median_sharpe": 0.8771605539977307,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.0,
+              "worst_cagr": 0.0,
+              "median_drawdown": 0.0,
+              "worst_drawdown": 0.0,
+              "median_sharpe": NaN,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.13891236349869296,
+              "worst_cagr": 0.1368691838936531,
+              "median_drawdown": -0.3371726378600285,
+              "worst_drawdown": -0.3371726378600288,
+              "median_sharpe": 0.8298299737526145,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.19310303407474338,
+              "worst_cagr": 0.19124979314721724,
+              "median_drawdown": -0.3511872767702521,
+              "worst_drawdown": -0.3511872767702535,
+              "median_sharpe": 0.9159589657298445,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 2952,
+            "invested_share": 0.9146341463414634,
+            "largest_weight_median": 0.016129032258064516,
+            "largest_weight_max": 0.03333333333333333,
+            "effective_names_median": 61.999999999999986,
+            "effective_names_min": 30.000000000000007,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.009813927860306739,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 2952,
+            "median": 60.0,
+            "p10": 38.0,
+            "share_below": 0.08536585365853659,
+            "below": 5
+          }
+        },
+        "paired_within_run": [
+          {
+            "cost_bps": 25.0,
+            "window": "2016-2023",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 2012,
+            "mean_daily_bp": 6.236356227885043,
+            "hac_t": 2.6402415288698204,
+            "psr": 0.9891928816557397
+          },
+          {
+            "cost_bps": 25.0,
+            "window": "2024-2026",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 688,
+            "mean_daily_bp": 6.940128166308273,
+            "hac_t": 2.3633132356370705,
+            "psr": 0.9773030309042181
+          },
+          {
+            "cost_bps": 25.0,
+            "window": "all",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 2941,
+            "mean_daily_bp": 5.88995474631921,
+            "hac_t": 3.34299511909327,
+            "psr": 0.9981230608804803
+          }
+        ]
+      },
+      "criteria": {
+        "c1": {
+          "name": "median CAGR lead >= 2.0% on both windows",
+          "lead": {
+            "2016-2023": -0.1308519243507218,
+            "2024-2026": -0.2811251531339414
+          },
+          "ok": false
+        },
+        "c2": {
+          "name": "paired daily difference NW t >= 2.0 on 2016-2023",
+          "paired": {
+            "window": "2016-2023",
+            "sessions": 2012,
+            "mean_daily_bp": -5.557025110148223,
+            "hac_t": -2.443611289529499,
+            "sharpe": -0.04708646044987026,
+            "skew": 0.023304859270444813,
+            "kurtosis": 6.143061863211997,
+            "length": 2012,
+            "psr": 0.01754156952054514,
+            "annualised_sharpe": -0.7474743868118114
+          },
+          "ok": false
+        },
+        "c3": {
+          "name": "above the control on >= 15 of 20 offsets",
+          "above": 0,
+          "offsets": 20,
+          "ok": false
+        },
+        "c4": {
+          "name": "worst drawdown not worse by > 3%; worst single-name day not worse on either window",
+          "worst_drawdown": {
+            "arm": -0.38556954218007355,
+            "control": -0.4789669408044789
+          },
+          "worst_single_name_day": {
+            "2016-2023": {
+              "arm": -0.009813927860306739,
+              "control": -0.03324770985420486
+            },
+            "2024-2026": {
+              "arm": -0.005308148828540823,
+              "control": -0.047401821118090916
+            }
+          },
+          "ok": true
+        },
+        "c5": {
+          "name": "sessions with fewer than five A/A+ names < 5% on both windows",
+          "share_below_five": {
+            "2016-2023": 0.0,
+            "2024-2026": 0.0
+          },
+          "control": {
+            "2016-2023": 0.17296222664015903,
+            "2024-2026": 0.42877906976744184
+          },
+          "ok": true
+        },
+        "c6": {
+          "name": "deflated Sharpe of the paired difference at 457 trials >= 0.95",
+          "dsr": 0.005750857198864923,
+          "trials": 457,
+          "trial_variance": 9.606524566057701e-06,
+          "ok": false
+        },
+        "pass": false
+      }
+    },
+    "flat": {
+      "summary": {
+        "book": {
+          "names_today": 531,
+          "eligible_first_session": 0,
+          "eligible_last_session": 528,
+          "eligible_median": 416.0
+        },
+        "arm": "ew_graded_cap25 + universe_flat",
+        "2016-2023": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.15755407167853464,
+              "worst_cagr": 0.14218468239356374,
+              "median_drawdown": -0.34033542784151294,
+              "worst_drawdown": -0.37697708709690414,
+              "median_sharpe": 0.8701225635678456,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.0,
+              "worst_cagr": 0.0,
+              "median_drawdown": 0.0,
+              "worst_drawdown": 0.0,
+              "median_sharpe": NaN,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.13165460779992633,
+              "worst_cagr": 0.13165460779992588,
+              "median_drawdown": -0.3371726378600284,
+              "worst_drawdown": -0.3371726378600286,
+              "median_sharpe": 0.7647692726381011,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.18558982588499418,
+              "worst_cagr": 0.1855898258849935,
+              "median_drawdown": -0.3511872767702524,
+              "worst_drawdown": -0.35118727677025363,
+              "median_sharpe": 0.8643982610943599,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 2012,
+            "invested_share": 1.0,
+            "largest_weight_median": 0.017857142857142856,
+            "largest_weight_max": 0.034482758620689655,
+            "effective_names_median": 55.99999999999999,
+            "effective_names_min": 29.0,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.004619414486923556,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 2012,
+            "median": 56.0,
+            "p10": 41.0,
+            "share_below": 0.0,
+            "below": 5
+          }
+        },
+        "2024-2026": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.23155430060835502,
+              "worst_cagr": 0.20463110005368912,
+              "median_drawdown": -0.1835380837102566,
+              "worst_drawdown": -0.19449121056206797,
+              "median_sharpe": 1.4086624520949624,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 4
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.0,
+              "worst_cagr": 0.0,
+              "median_drawdown": 0.0,
+              "worst_drawdown": 0.0,
+              "median_sharpe": NaN,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.20409305180303594,
+              "worst_cagr": 0.20409305180303483,
+              "median_drawdown": -0.18755245583150443,
+              "worst_drawdown": -0.18755245583150493,
+              "median_sharpe": 1.270878423048412,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.24726951033194844,
+              "worst_cagr": 0.24726951033194688,
+              "median_drawdown": -0.22768307643968805,
+              "worst_drawdown": -0.22768307643968855,
+              "median_sharpe": 1.162681787252342,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 688,
+            "invested_share": 1.0,
+            "largest_weight_median": 0.014925373134328358,
+            "largest_weight_max": 0.0196078431372549,
+            "effective_names_median": 67.0,
+            "effective_names_min": 51.0,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.004157599327723016,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 688,
+            "median": 67.0,
+            "p10": 57.0,
+            "share_below": 0.0,
+            "below": 5
+          }
+        },
+        "all": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.16034918111655005,
+              "worst_cagr": 0.15429295072700833,
+              "median_drawdown": -0.34033542784151294,
+              "worst_drawdown": -0.37697708709690414,
+              "median_sharpe": 0.9465960833817317,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.0,
+              "worst_cagr": 0.0,
+              "median_drawdown": 0.0,
+              "worst_drawdown": 0.0,
+              "median_sharpe": NaN,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.13891236349869296,
+              "worst_cagr": 0.1368691838936531,
+              "median_drawdown": -0.3371726378600285,
+              "worst_drawdown": -0.3371726378600288,
+              "median_sharpe": 0.8298299737526145,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.19310303407474338,
+              "worst_cagr": 0.19124979314721724,
+              "median_drawdown": -0.3511872767702521,
+              "worst_drawdown": -0.3511872767702535,
+              "median_sharpe": 0.9159589657298445,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 2952,
+            "invested_share": 0.9146341463414634,
+            "largest_weight_median": 0.01694915254237288,
+            "largest_weight_max": 0.034482758620689655,
+            "effective_names_median": 58.999999999999986,
+            "effective_names_min": 29.0,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.004619414486923556,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 2952,
+            "median": 58.0,
+            "p10": 37.0,
+            "share_below": 0.08536585365853659,
+            "below": 5
+          }
+        },
+        "paired_within_run": [
+          {
+            "cost_bps": 25.0,
+            "window": "2016-2023",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 2012,
+            "mean_daily_bp": 6.805574732796671,
+            "hac_t": 2.9322653123677997,
+            "psr": 0.9933132095522763
+          },
+          {
+            "cost_bps": 25.0,
+            "window": "2024-2026",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 688,
+            "mean_daily_bp": 7.876137865661496,
+            "hac_t": 2.464255825601218,
+            "psr": 0.9806772614644826
+          },
+          {
+            "cost_bps": 25.0,
+            "window": "all",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 2941,
+            "mean_daily_bp": 6.49833363276505,
+            "hac_t": 3.6874336943279418,
+            "psr": 0.9990797558459217
+          }
+        ]
+      },
+      "criteria": {
+        "c1": {
+          "name": "median CAGR lead >= 2.0% on both windows",
+          "lead": {
+            "2016-2023": -0.12202733401716848,
+            "2024-2026": -0.244517148860952
+          },
+          "ok": false
+        },
+        "c2": {
+          "name": "paired daily difference NW t >= 2.0 on 2016-2023",
+          "paired": {
+            "window": "2016-2023",
+            "sessions": 2012,
+            "mean_daily_bp": -4.987806605236596,
+            "hac_t": -2.2468807740167867,
+            "sharpe": -0.04395166877092457,
+            "skew": 0.010905439692784067,
+            "kurtosis": 6.065665831005344,
+            "length": 2012,
+            "psr": 0.024528302782025613,
+            "annualised_sharpe": -0.6977111116449018
+          },
+          "ok": false
+        },
+        "c3": {
+          "name": "above the control on >= 15 of 20 offsets",
+          "above": 0,
+          "offsets": 20,
+          "ok": false
+        },
+        "c4": {
+          "name": "worst drawdown not worse by > 3%; worst single-name day not worse on either window",
+          "worst_drawdown": {
+            "arm": -0.37697708709690414,
+            "control": -0.4789669408044789
+          },
+          "worst_single_name_day": {
+            "2016-2023": {
+              "arm": -0.004619414486923556,
+              "control": -0.03324770985420486
+            },
+            "2024-2026": {
+              "arm": -0.004157599327723016,
+              "control": -0.047401821118090916
+            }
+          },
+          "ok": true
+        },
+        "c5": {
+          "name": "sessions with fewer than five A/A+ names < 5% on both windows",
+          "share_below_five": {
+            "2016-2023": 0.0,
+            "2024-2026": 0.0
+          },
+          "control": {
+            "2016-2023": 0.17296222664015903,
+            "2024-2026": 0.42877906976744184
+          },
+          "ok": true
+        },
+        "c6": {
+          "name": "deflated Sharpe of the paired difference at 457 trials >= 0.95",
+          "dsr": 0.008470399149015373,
+          "trials": 457,
+          "trial_variance": 9.606524566057701e-06,
+          "ok": false
+        },
+        "pass": false
+      }
+    },
+    "tone": {
+      "summary": {
+        "book": {
+          "names_today": 267,
+          "eligible_first_session": 0,
+          "eligible_last_session": 266,
+          "eligible_median": 188.0
+        },
+        "arm": "ew_graded_cap25 + universe_tone",
+        "2016-2023": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.16879281005470048,
+              "worst_cagr": 0.148867122653924,
+              "median_drawdown": -0.3450675013831548,
+              "worst_drawdown": -0.37047604287925273,
+              "median_sharpe": 0.9012021837536004,
+              "offsets_above_ew_pit": 16,
+              "offsets_above_qqq": 0
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.15991405552845106,
+              "worst_cagr": 0.1488107025434473,
+              "median_drawdown": -0.3586945866032513,
+              "worst_drawdown": -0.3621645447162256,
+              "median_sharpe": 0.8822682053185367,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.13165460779992633,
+              "worst_cagr": 0.13165460779992588,
+              "median_drawdown": -0.3371726378600284,
+              "worst_drawdown": -0.3371726378600286,
+              "median_sharpe": 0.7647692726381011,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.18558982588499418,
+              "worst_cagr": 0.1855898258849935,
+              "median_drawdown": -0.3511872767702524,
+              "worst_drawdown": -0.35118727677025363,
+              "median_sharpe": 0.8643982610943599,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 2012,
+            "invested_share": 1.0,
+            "largest_weight_median": 0.03125,
+            "largest_weight_max": 0.05555555555555555,
+            "effective_names_median": 32.0,
+            "effective_names_min": 18.0,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.009549704984131093,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 2012,
+            "median": 32.0,
+            "p10": 26.0,
+            "share_below": 0.0,
+            "below": 5
+          }
+        },
+        "2024-2026": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.23793208751806227,
+              "worst_cagr": 0.21744551218197472,
+              "median_drawdown": -0.18530216763362467,
+              "worst_drawdown": -0.1955705369457288,
+              "median_sharpe": 1.3909649912456918,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 8
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.1487126905775421,
+              "worst_cagr": 0.14506160627121756,
+              "median_drawdown": -0.14721090224073874,
+              "worst_drawdown": -0.1544741639773065,
+              "median_sharpe": 1.2155922406411477,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.20409305180303594,
+              "worst_cagr": 0.20409305180303483,
+              "median_drawdown": -0.18755245583150443,
+              "worst_drawdown": -0.18755245583150493,
+              "median_sharpe": 1.270878423048412,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.24726951033194844,
+              "worst_cagr": 0.24726951033194688,
+              "median_drawdown": -0.22768307643968805,
+              "worst_drawdown": -0.22768307643968855,
+              "median_sharpe": 1.162681787252342,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 688,
+            "invested_share": 1.0,
+            "largest_weight_median": 0.02857142857142857,
+            "largest_weight_max": 0.038461538461538464,
+            "effective_names_median": 35.00000000000001,
+            "effective_names_min": 26.0,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.008077621551004716,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 688,
+            "median": 35.0,
+            "p10": 31.0,
+            "share_below": 0.0,
+            "below": 5
+          }
+        },
+        "all": {
+          "lines": {
+            "rule / point-in-time": {
+              "median_cagr": 0.1706534639226609,
+              "worst_cagr": 0.15133202319061634,
+              "median_drawdown": -0.3450675013831548,
+              "worst_drawdown": -0.37047604287925273,
+              "median_sharpe": 0.9678504270116827,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            },
+            "equal weight / point-in-time": {
+              "median_cagr": 0.14318184622325714,
+              "worst_cagr": 0.13589151688896073,
+              "median_drawdown": -0.3586945866032513,
+              "worst_drawdown": -0.3621645447162256,
+              "median_sharpe": 0.8885157966228256,
+              "offsets_above_ew_pit": 0,
+              "offsets_above_qqq": 0
+            },
+            "SPY": {
+              "median_cagr": 0.13891236349869296,
+              "worst_cagr": 0.1368691838936531,
+              "median_drawdown": -0.3371726378600285,
+              "worst_drawdown": -0.3371726378600288,
+              "median_sharpe": 0.8298299737526145,
+              "offsets_above_ew_pit": 2,
+              "offsets_above_qqq": 0
+            },
+            "QQQ": {
+              "median_cagr": 0.19310303407474338,
+              "worst_cagr": 0.19124979314721724,
+              "median_drawdown": -0.3511872767702521,
+              "worst_drawdown": -0.3511872767702535,
+              "median_sharpe": 0.9159589657298445,
+              "offsets_above_ew_pit": 20,
+              "offsets_above_qqq": 0
+            }
+          },
+          "concentration": {
+            "sessions": 2952,
+            "invested_share": 0.9146341463414634,
+            "largest_weight_median": 0.030303030303030304,
+            "largest_weight_max": 0.05555555555555555,
+            "effective_names_median": 33.0,
+            "effective_names_min": 18.0,
+            "cash_median": 0.0,
+            "cash_max": 2.220446049250313e-16,
+            "worst_single_name_day": -0.009549704984131093,
+            "worst_single_name_day_basis": "lagged-simple/2"
+          },
+          "candidates": {
+            "sessions": 2952,
+            "median": 33.0,
+            "p10": 21.100000000000023,
+            "share_below": 0.08536585365853659,
+            "below": 5
+          }
+        },
+        "paired_within_run": [
+          {
+            "cost_bps": 25.0,
+            "window": "2016-2023",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 2012,
+            "mean_daily_bp": -0.19333360355956855,
+            "hac_t": -0.2562113730602719,
+            "psr": 0.3940808024262482
+          },
+          {
+            "cost_bps": 25.0,
+            "window": "2024-2026",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 688,
+            "mean_daily_bp": 2.653154336907012,
+            "hac_t": 1.6485759183045405,
+            "psr": 0.9249000660478462
+          },
+          {
+            "cost_bps": 25.0,
+            "window": "all",
+            "line": "rule / point-in-time",
+            "against": "equal weight / point-in-time",
+            "sessions": 2941,
+            "mean_daily_bp": 0.4883995149371549,
+            "hac_t": 0.7558871950650183,
+            "psr": 0.7728021273844324
+          }
+        ]
+      },
+      "criteria": {
+        "c1": {
+          "name": "median CAGR lead >= 2.0% on both windows",
+          "lead": {
+            "2016-2023": -0.11078859564100263,
+            "2024-2026": -0.23813936195124474
+          },
+          "ok": false
+        },
+        "c2": {
+          "name": "paired daily difference NW t >= 2.0 on 2016-2023",
+          "paired": {
+            "window": "2016-2023",
+            "sessions": 2012,
+            "mean_daily_bp": -5.463405488834491,
+            "hac_t": -2.6156836376117383,
+            "sharpe": -0.05015041263720157,
+            "skew": 0.04839110405153802,
+            "kurtosis": 6.038593347892244,
+            "length": 2012,
+            "psr": 0.012458445630746606,
+            "annualised_sharpe": -0.7961131199118376
+          },
+          "ok": false
+        },
+        "c3": {
+          "name": "above the control on >= 15 of 20 offsets",
+          "above": 0,
+          "offsets": 20,
+          "ok": false
+        },
+        "c4": {
+          "name": "worst drawdown not worse by > 3%; worst single-name day not worse on either window",
+          "worst_drawdown": {
+            "arm": -0.37047604287925273,
+            "control": -0.4789669408044789
+          },
+          "worst_single_name_day": {
+            "2016-2023": {
+              "arm": -0.009549704984131093,
+              "control": -0.03324770985420486
+            },
+            "2024-2026": {
+              "arm": -0.008077621551004716,
+              "control": -0.047401821118090916
+            }
+          },
+          "ok": true
+        },
+        "c5": {
+          "name": "sessions with fewer than five A/A+ names < 5% on both windows",
+          "share_below_five": {
+            "2016-2023": 0.0,
+            "2024-2026": 0.0
+          },
+          "control": {
+            "2016-2023": 0.17296222664015903,
+            "2024-2026": 0.42877906976744184
+          },
+          "ok": true
+        },
+        "c6": {
+          "name": "deflated Sharpe of the paired difference at 457 trials >= 0.95",
+          "dsr": 0.0038836417380376798,
+          "trials": 457,
+          "trial_variance": 9.606524566057701e-06,
+          "ok": false
+        },
+        "pass": false
+      }
+    }
+  },
+  "verdict": {
+    "sector": "RECORD",
+    "flat": "RECORD",
+    "tone": "RECORD"
+  },
+  "payload_sha256": {
+    "control": "2ae1168e70ac206cfe5c714f8220885f42ca3c9cd13c5a4b5d218237d921391f",
+    "sector": "c88c9a06f7c4e36666578f2edba3fc4bbb2967b10fb50761a79cdeefddcc5495",
+    "flat": "2e43d2d78d9489a336558333b328a5d4d9cef4018e8c757debb0b3e735a456bf",
+    "tone": "10ec446f58d1517ebb84d2b01eb2e300af57711373d8291257257558b4b7b2e0"
+  }
+}
