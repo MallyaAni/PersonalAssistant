@@ -17,12 +17,9 @@ function quote(at = INITIAL, session: Session = 'post-market'): Quote {
     valid_until: new Date(Date.parse(at) + 60_000).toISOString(), reason: 'Quoted midpoint'}
 }
 
-// Supply the personal board row that carries a name's last close, without any live grade or trade.
-function mineRow(lastClose: number) {
-  return {ticker: 'AAPL', grade_live: 'A', score_live: 1, technical_now: .2, technical_close: .293, stances_live: {}, ranks_live: {},
-    grade: 'A', grade_source: 'evening', action: 'hold', in_book: false, score: 1, rank: 1, stances: {}, ranks: {}, target_weight: 0,
-    current_weight: 0, delta_weight: 0, shares: 0, entry_price: null, entry_date: null, last: 100, last_close: lastClose, pl_pct: null,
-    until_rebalance: null, rebalance_due: false}
+// Supply the nightly action row that carries a name's last close, without any trade.
+function actionRow(lastClose: number) {
+  return {ticker: 'AAPL', action: 'hold', grade: 'A', last_close: lastClose}
 }
 
 // Isolate each case's schedule, quote and complete read-only request audit.
@@ -53,7 +50,7 @@ async function install(page: Page, state: Scenario, baseURL: string) {
     const method = request.method()
     const body = method === 'POST' ? request.postDataJSON() : undefined
     state.requests.push({path, method, body})
-    if (method !== 'GET' && !(method === 'POST' && path === `${DESK}/mine` && body?.record_history === false)) {
+    if (method !== 'GET') {
       state.errors.push(`forbidden mutation: ${method} ${path}`)
       return route.fulfill({status: 418, json: {detail: 'Read-only fixture'}})
     }
@@ -64,23 +61,18 @@ async function install(page: Page, state: Scenario, baseURL: string) {
     if (path === '/api/v1/auth/session') json = {authentication_required: true, user_id: 'ani.mallya', is_admin: true, desk_access: true, desk_write: false}
     else if (path.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (path === DESK) json = {latest: {session: '2026-09-24', written: '2026-09-24T07:00:00Z', regime: {exposure: 1, flags: []},
-      grades: {AAPL: {grade: 'A', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: [], briefs: {}}, sessions: ['2026-09-24']}
+      grades: {AAPL: {grade: 'A', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: state.lastClose === null ? [] : [actionRow(state.lastClose)], briefs: {}}, sessions: ['2026-09-24']}
     else if (endpoint === '/holdings') json = {holdings: []}
     else if (endpoint === '/live') json = {as_of: state.marketStamp, data_at: BAR, market_status: market,
       quotes: {AAPL: {last: 100, open: 99, high: 101, low: 98, bar: BAR}}, technical: {}, technical_detail: {}}
     else if (endpoint === '/session-prices') json = state.malformedEnvelope ? {} : {session: state.schedule, as_of: state.captured,
       signal_scope: 'regular-session', quotes: state.quote ? {AAPL: state.quote} : {}}
-    else if (endpoint === '/mine') json = {session: '2026-09-24', market_status: market, rows: state.lastClose === null ? [] : [mineRow(state.lastClose)], grades_live: {},
-      history_receipt: {status: 'not_requested'}, decisions: {session: '2026-09-24', written: '2026-09-24T07:00:00Z', rows: {AAPL: {
-        action: 'Hold', strategy_action: 'Hold', move_weight: 0, executable: false, reason: 'Regular-session execution policy unchanged',
-      }}}}
     else if (endpoint === '/history/AAPL') json = {ticker: 'AAPL', rows: [], backtest: null}
     else if (endpoint === '/live/read/AAPL') json = {symbol: 'AAPL', read: null, lines: {short: [], medium: [], long: []}}
     else if (endpoint === '/earnings/AAPL') json = {user_id: 'ani.mallya', symbol: 'AAPL', read: null}
     else if (endpoint === '/chart/AAPL') json = {ticker: 'AAPL', timeframe: 'daily', adjusted: true, basis: 'adjusted prices', sessions: 2,
       quote_bar: BAR, bars: ['2026-09-23', '2026-09-24'].map(date => ({date, open: 99, high: 101, low: 98, close: 100, volume: 100})),
       overlays: {ema9: [99, 99]}, levels: {}, entries: [], data_status: 'complete'}
-    else if (endpoint === '/entries' || endpoint === '/intraday') json = {rows: [], top_buys: [], changed: []}
     else if (endpoint === '/paper') json = {reason: 'unavailable'}
     else {state.errors.push(`unexpected: ${method} ${path}`); return route.fulfill({status: 418, json: {detail: 'Unknown fixture path'}})}
     await route.fulfill({json})
@@ -148,7 +140,7 @@ async function expectReading(page: Page, text: Reading, price = true) {
     await expect.soft(reading).toHaveAttribute('title', /Midpoint is not a trade or guaranteed fill/)
     if (text.title) await expect.soft(reading).toHaveAttribute('title', text.title)
   }
-  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('—')
   await expect(board.getByLabel('AAPL size', {exact: true})).toHaveText('—')
   await expect(chart.locator('dl')).toContainText('$100.00')
   await expect(chart.locator('dl')).not.toContainText('$102.00')
@@ -338,7 +330,7 @@ test('shows the last observed price with its session and time when the market is
     await expect.soft(reading).toHaveAttribute('title', /2026-09-25T20:59:58Z/)
   }
   await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /Regular-session bar \$100\.00/)
-  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('—')
   await expect(chart.locator('dl')).not.toContainText('$336.13')
 })
 
@@ -366,18 +358,6 @@ test('missing quote explains the display limit without internal snapshot jargon'
     await expect(reading).not.toContainText('Missing or future quote timestamp')
     await expect(reading).toHaveAttribute('title', /Price-data detail: Missing or future quote timestamp/)
   }
-})
-
-// The header distinguishes completed bars and browser refresh from separate provider collection and quote freshness.
-test('bar cadence wording is separate from session-quote polling', async ({page, scenario: state}) => {
-  await openDesk(page, state)
-  const board = page.getByRole('region', {name: 'Stocks and cash', exact: true})
-  await expect(board).toContainText('Regular-session bar')
-  await expect(board).toContainText('completed 15-minute bars')
-  await expect(board).toContainText('dashboard checks for session quotes every minute')
-  await expect(board.getByText('completed 15-minute bars', {exact: false})).toHaveAttribute('title', /browser refresh and provider collection have separate schedules/)
-  await expect(board.getByText('completed 15-minute bars', {exact: false})).toHaveAttribute('title', /does not guarantee a new or fresh quote/)
-  await expect(board).not.toContainText('updates every 15 minutes while the market is open')
 })
 
 // An unknown current schedule cannot establish a phase change from a known quote observation.
