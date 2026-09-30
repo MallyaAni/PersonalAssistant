@@ -426,3 +426,121 @@ def test_graded_arm_and_concentration(history):
     # The CLI tag for a cap names the percent.
     assert sc.main.__doc__  # entry point exists; the tag rule is pinned below
     assert f"ew_graded_cap{round(0.15 * 100):02d}" == "ew_graded_cap15"
+
+
+# A benchmark series of zeros for every index, so the scorecard prices
+# without a store.
+def _flat_benchmarks(monkeypatch):
+    monkeypatch.setattr(
+        benchmarks,
+        "load_benchmark",
+        lambda store, symbol, sessions, **kwargs: benchmarks.BenchmarkSeries(
+            symbol,
+            True,
+            np.zeros(len(sessions)),
+            np.ones(len(sessions)),
+            np.asarray(sessions),
+        ),
+    )
+
+
+# The structure notch on the scorecard (S1g): a desk whose grades follow
+# the technical analyst's stances is run through the notched path with a
+# mask that never fires and reproduces the plain path to the bit (the
+# null test passes and the flags are put back); the real notch changes
+# the grades on this panel, so the null test is not vacuous and would
+# say FAIL; --structure-notch writes the tagged payload with the notch
+# block, the rank IC, the per-offset CAGRs, the worst drawdown and the
+# median-offset curves; --null-test without the notch is refused.
+def test_structure_notch_null_test_and_payload(history, monkeypatch, tmp_path):
+    from dataclasses import replace
+
+    from backend.agents.trading.desk import desk, technical
+
+    base = _report()
+    panel = base.panel
+    n = len(panel.tickers)
+    bull = Opinion("bull", np.tile(np.arange(n, dtype=float), (T, 1)))
+
+    # A desk whose technical stances come from the analyst, as run.
+    def fake_run(store, asof, **kwargs):
+        opinion = technical.opine(panel)
+        graded = grading.grade_stances(
+            bull.stances(), opinion.stances(), bull.stances()
+        )
+        return replace(base, graded=graded, scores=graded.as_scores())
+
+    monkeypatch.setattr(desk, "run", fake_run)
+    monkeypatch.setattr(desk, "calibrate", lambda report, horizon: ([], SimpleNamespace(
+        mean_ic=0.01 * horizon, ic_tstat=1.5, net_sharpe=0.9
+    )))
+    real_restriction = point_in_time.point_in_time
+    monkeypatch.setattr(
+        point_in_time,
+        "point_in_time",
+        lambda report, *args, **kwargs: real_restriction(report, history),
+    )
+    _flat_benchmarks(monkeypatch)
+    common = [
+        "--root", str(tmp_path), "--graded-cap", "0.10", "--costs", "10",
+        "--membership", str(history),
+    ]
+    assert sc.main([*common, "--structure-notch", "--null-test"]) == 0
+    assert technical.STRUCTURE_NOTCH is False
+    assert technical.STRUCTURE_NOTCH_NULL is False
+    # Not vacuous: the notch itself moves the grades here, and the null
+    # test reports the mismatch.
+    plain = fake_run(None, None)
+    with sc._notch_flags(True):
+        notched = fake_run(None, None)
+    assert technical.STRUCTURE_NOTCH is False
+    assert not np.array_equal(plain.graded.grades, notched.graded.grades)
+    verdict = sc.null_test(
+        plain, notched, object(), history, 1, (10.0,), sc.graded_arm(0.10)
+    )
+    assert not verdict["ok"]
+    assert not verdict["grades_and_scores_equal"]
+    assert "FAIL" in sc.render_null_test(verdict)
+    with sc._notch_flags(True, null=True):
+        null = fake_run(None, None)
+    verdict = sc.null_test(
+        plain, null, object(), history, 1, (10.0,), sc.graded_arm(0.10)
+    )
+    assert verdict["ok"]
+    assert len(verdict["lines"]) == 6
+    assert "PASS, reproduced to the bit" in sc.render_null_test(verdict)
+    # The notch payload.
+    out = tmp_path / "notch" / "notch.json"
+    arguments = [*common, "--offsets", "2", "--structure-notch", "--rank-ic"]
+    assert sc.main([*arguments, "--output", str(out)]) == 0
+    assert technical.STRUCTURE_NOTCH is False
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["arm"] == "ew_graded_cap10 + structure_notch"
+    assert payload["membership"] == str(history)
+    block = payload["structure_notch"]
+    assert block["flag"] is True
+    assert block["notched_2026"] == []
+    assert block["all"]["name_sessions_notched"] > 0
+    assert 0 < block["all"]["share"] < 1
+    assert set(payload["rank_ic"]) == {"h20", "h60"}
+    assert payload["rank_ic"]["h60"]["rank_ic"] == pytest.approx(0.6)
+    rows = [r for r in payload["rows"] if r["line"] == sc.RULE_PIT]
+    assert all(len(r["cagrs"]) == 2 for r in rows)
+    assert all(r["worst_drawdown"] <= r["median_drawdown"] for r in rows)
+    curves = payload["curves"]["10"]
+    assert curves["offset"] == 1
+    assert set(curves["lines"]) == {
+        sc.RULE_TODAY, sc.RULE_PIT, sc.EW_PIT, sc.EW_TODAY, "SPY", "QQQ"
+    }
+    assert len(curves["dates"]) == len(curves["lines"][sc.RULE_PIT]) == T - 1
+    # The default file name carries the tag; the control run has no block.
+    assert sc.main([*common, "--offsets", "1"]) == 0
+    control = json.loads(
+        (tmp_path / "desk" / "pit_scorecard_ew_graded_cap10.json").read_text()
+    )
+    assert "structure_notch" not in control
+    assert "rank_ic" not in control
+    assert "curves" in control
+    assert control["arm"] == "ew_graded_cap10"
+    with pytest.raises(SystemExit):
+        sc.main([*common, "--null-test"])

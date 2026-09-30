@@ -30,6 +30,28 @@ reads.
 
 Read-only with respect to the desk and the store; writes
 `<root>/desk/pit_scorecard.json`.
+
+The structure-rules study (`docs/research/structure-rules-plan-2026-09-30.md`,
+S1g) adds `--structure-notch`, which runs the desk with the technical
+analyst's structure notch on (`technical.STRUCTURE_NOTCH`), `--membership
+FILE` for the dated membership file the point-in-time mask reads,
+`--output FILE` for where the payload goes, `--rank-ic` to attach the graded
+score's rank IC at 20 and 60 sessions (how the analysts are measured), and
+`--null-test`, which runs the book through the notched path with a mask
+that never fires (`technical.STRUCTURE_NOTCH_NULL`) and through the plain
+path and asserts that the grades and every line's returns are the same to
+the bit at two offsets: the incumbent must be reproduced before any
+candidate is read. Every payload carries each row's per-offset CAGRs and
+worst drawdown and the median-offset daily curves of every line, so two
+runs can be paired session by session (`structure_rules.notch_verdict`).
+
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \
+        --structure-notch --null-test
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --rank-ic \
+        --output docs/research/scorecards/structure-rules/notch_control.json
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --rank-ic \
+        --structure-notch \
+        --output docs/research/scorecards/structure-rules/notch.json
 """
 
 from __future__ import annotations
@@ -38,6 +60,7 @@ import argparse
 import json
 import math
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -51,8 +74,9 @@ from backend.agents.trading.desk import (
     paper,
     point_in_time,
     simulate,
+    technical,
 )
-from backend.market import benchmarks, candidate_stats
+from backend.market import benchmarks, candidate_stats, universe
 from backend.market.universe import MARKET_INDICES
 
 FILE = "pit_scorecard.json"
@@ -295,6 +319,12 @@ def summarise(
                     "median_drawdown": _nanmedian(
                         np.array([s["drawdown"] for s in per_label[label]])
                     ),
+                    "worst_drawdown": _nanmin(
+                        np.array([s["drawdown"] for s in per_label[label]])
+                    ),
+                    # Every offset's CAGR, in offset order, so two runs can
+                    # be compared offset by offset.
+                    "cagrs": [float(c) for c in cagrs],
                     "median_sharpe": _nanmedian(
                         np.array([s["sharpe"] for s in per_label[label]])
                     ),
@@ -352,6 +382,113 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
     return out
 
 
+# Two reports priced on the same lines at the same offsets and costs,
+# compared to the bit: the null test of a new desk path is that the book
+# through it reproduces the control exactly. Returns the verdict and, per
+# (cost, offset, line), whether the dates and the returns arrays are equal
+# (NaN equal to NaN); the whole thing is `ok` only when every line is and
+# the grades and scores agree.
+def null_test(
+    report_a,
+    report_b,
+    store,
+    history_path,
+    offsets: int,
+    costs: tuple[float, ...],
+    arm=None,
+) -> dict:
+    """Return {"ok", "lines": [{cost, offset, line, dates_equal, returns_equal}]}."""
+    priced = []
+    for report in (report_a, report_b):
+        restricted, mask = point_in_time.point_in_time(report, history_path)
+        priced.append(
+            {
+                (cost, k): price_offset(
+                    report, restricted, mask, store, _since(report.panel, k), cost, arm
+                )
+                for cost in costs
+                for k in range(offsets)
+            }
+        )
+    lines = []
+    for (cost, k), curves in priced[0].items():
+        other = priced[1][(cost, k)]
+        for label, curve in curves.items():
+            a, b = curve, other[label]
+            dates_equal = bool(np.array_equal(a.dates, b.dates))
+            returns_equal = bool(
+                np.array_equal(
+                    np.asarray(a.daily, dtype=float),
+                    np.asarray(b.daily, dtype=float),
+                    equal_nan=True,
+                )
+            )
+            lines.append(
+                {
+                    "cost_bps": cost,
+                    "offset": k,
+                    "line": label,
+                    "dates_equal": dates_equal,
+                    "returns_equal": returns_equal,
+                }
+            )
+    grades_equal = bool(
+        np.array_equal(report_a.graded.grades, report_b.graded.grades)
+        and np.array_equal(report_a.scores, report_b.scores, equal_nan=True)
+    )
+    return {
+        "ok": grades_equal
+        and all(r["dates_equal"] and r["returns_equal"] for r in lines),
+        "grades_and_scores_equal": grades_equal,
+        "lines": lines,
+    }
+
+
+# The graded score's rank IC at 20 and 60 sessions (`desk.calibrate`): how
+# the analysts are measured, attached so a notched desk and the incumbent
+# can be read side by side.
+def rank_ic(report) -> dict[str, dict[str, float]]:
+    """Return {"h20": {...}, "h60": {...}} of the graded score's rank IC."""
+    from backend.agents.trading.desk import desk
+
+    out: dict[str, dict[str, float]] = {}
+    for horizon in (20, 60):
+        _, harness = desk.calibrate(report, horizon)
+        out[f"h{horizon}"] = {
+            "rank_ic": float(harness.mean_ic),
+            "ic_t": float(harness.ic_tstat),
+            "net_sharpe": float(harness.net_sharpe),
+        }
+    return out
+
+
+# What the structure notch did on the report: the (session, name) cells it
+# notched, per window, and every notched name-session from 2026 on (the
+# plan: "the names and sessions it notched in 2026", reported).
+def notch_record(report, mask: np.ndarray) -> dict[str, object]:
+    """Return the payload's "structure_notch" block."""
+    panel = report.panel
+    notched = technical.notch_mask(panel) & mask
+    dates = np.asarray(panel.dates, dtype="datetime64[D]")
+    out: dict[str, object] = {"flag": bool(technical.STRUCTURE_NOTCH)}
+    for name, (start, end) in WINDOWS.items():
+        w = point_in_time.window(dates, start, end)
+        cells = int(notched[w].sum())
+        eligible = int(mask[w].sum())
+        out[name] = {
+            "name_sessions_notched": cells,
+            "eligible_name_sessions": eligible,
+            "share": float(cells / eligible) if eligible else math.nan,
+        }
+    recent = np.flatnonzero(dates >= np.datetime64("2026-01-01"))
+    out["notched_2026"] = [
+        {"date": str(dates[t]), "ticker": str(panel.tickers[j])}
+        for t in recent
+        for j in np.flatnonzero(notched[t])
+    ]
+    return out
+
+
 # Run everything and assemble the payload; `report` is the desk's unrestricted report.
 def build(
     report, store, offsets: int, costs: tuple[float, ...], history_path=None, arm=None
@@ -376,6 +513,7 @@ def build(
             "eligible_last_session": int(members[-1]),
             "eligible_median": float(np.median(members)),
         },
+        "membership": str(history_path or universe.MEMBERSHIP_HISTORY_PATH),
         "rows": [],
         "paired": [],
         "note": (
@@ -390,6 +528,7 @@ def build(
             f"({WORST_NAME_DAY_BASIS})."
         ),
     }
+    payload["curves"] = {}
     for cost in costs:
         priced = [
             price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
@@ -397,7 +536,24 @@ def build(
         ]
         payload["rows"].extend(summarise(priced, cost))
         payload["paired"].extend(paired(priced, cost))
+        payload["curves"][f"{cost:g}"] = median_offset_curves(priced)
     return payload
+
+
+# The daily returns of every line at the median offset (the offset `paired`
+# reads), on the rule's calendar, so two payloads from different runs can
+# be paired session by session: a candidate against its control is a
+# comparison the scorecard cannot make within one run.
+def median_offset_curves(priced: list[dict[str, Curve]]) -> dict:
+    """Return {"offset", "dates", "lines": {label: [daily...]}} at the median offset."""
+    k = len(priced) // 2
+    offset = priced[k]
+    base = offset[RULE_TODAY].dates
+    return {
+        "offset": k,
+        "dates": [str(d) for d in np.asarray(base, dtype="datetime64[D]")],
+        "lines": {label: _on(base, curve).tolist() for label, curve in offset.items()},
+    }
 
 
 # The k-th panel session as a date, for `simulate.run(since=...)`.
@@ -468,15 +624,38 @@ def main(argv: list[str] | None = None) -> int:
         "(0 < cap <= 1) with its concentration statistics; writes "
         "pit_scorecard_ew_graded_cap<percent>.json",
     )
+    parser.add_argument(
+        "--structure-notch",
+        action="store_true",
+        help="run the desk with the technical analyst's structure notch on "
+        "(S1g); writes pit_scorecard_structure_notch.json",
+    )
+    parser.add_argument(
+        "--rank-ic",
+        action="store_true",
+        help="attach the graded score's rank IC at 20 and 60 sessions",
+    )
+    parser.add_argument(
+        "--membership",
+        type=Path,
+        help="the dated membership file the point-in-time mask reads "
+        "(default: the book's)",
+    )
+    parser.add_argument("--output", type=Path, help="where to write the payload")
+    parser.add_argument(
+        "--null-test",
+        action="store_true",
+        help="with --structure-notch: run the book through the notched path "
+        "with a mask that never fires and through the plain path, and assert "
+        "the grades and every line are reproduced to the bit at two offsets; "
+        "no payload",
+    )
     args = parser.parse_args(argv)
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
 
     root = Path(args.root)
     store = MarketStore(root)
-    report = desk.run(
-        store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
-    )
     arm = ARMS[args.arm] if args.arm else None
     cap_tag = None
     if args.graded_cap is not None:
@@ -484,28 +663,94 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--graded-cap must be in (0, 1]")
         arm = graded_arm(args.graded_cap)
         cap_tag = f"ew_graded_cap{round(args.graded_cap * 100):02d}"
-    payload = build(report, store, args.offsets, tuple(args.costs), arm=arm)
+    history = args.membership or universe.MEMBERSHIP_HISTORY_PATH
+    run = dict(inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation)
+    if args.null_test:
+        if not args.structure_notch:
+            parser.error("--null-test needs --structure-notch: it tests that path")
+        plain = desk.run(store, None, **run)
+        through = _desk_with_notch(desk, store, run, null=True)
+        verdict = null_test(plain, through, store, history, 2, tuple(args.costs), arm)
+        print(render_null_test(verdict))
+        return 0 if verdict["ok"] else 1
+    # The book is asked for exactly as before; only the flag turns the notch on.
+    if args.structure_notch:
+        report = _desk_with_notch(desk, store, run)
+    else:
+        report = desk.run(store, None, **run)
+    payload = build(
+        report, store, args.offsets, tuple(args.costs), history_path=history, arm=arm
+    )
     if args.graded_cap is not None:
-        restricted, mask = point_in_time.point_in_time(report)
+        restricted, mask = point_in_time.point_in_time(report, history)
         payload["cap"] = args.graded_cap
         payload["concentration"] = concentration(restricted, mask, arm(restricted, mask))
+    if args.rank_ic:
+        payload["rank_ic"] = rank_ic(report)
+    if args.structure_notch:
+        _, mask = point_in_time.point_in_time(report, history)
+        with _notch_flags(True):
+            payload["structure_notch"] = notch_record(report, mask)
     tags = [
         t
         for t, on in (
             ("signed_rotation", args.signed_rotation),
             (args.arm, args.arm),
             (cap_tag, cap_tag),
+            ("structure_notch", args.structure_notch),
         )
         if on
     ]
     payload["arm"] = " + ".join(tags) if tags else "frozen rule"
     name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
-    target = root / "desk" / name
+    target = args.output or root / "desk" / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")
     print(render(payload))
     print(f"\nwrote {target}")
     return 0
+
+
+# The technical analyst's flags set for the duration of a block and put
+# back however it ends, so a scorecard run never leaves the notch on.
+@contextmanager
+def _notch_flags(on: bool, null: bool = False):
+    """Set technical.STRUCTURE_NOTCH / STRUCTURE_NOTCH_NULL, then restore them."""
+    before = (technical.STRUCTURE_NOTCH, technical.STRUCTURE_NOTCH_NULL)
+    technical.STRUCTURE_NOTCH, technical.STRUCTURE_NOTCH_NULL = on, null
+    try:
+        yield
+    finally:
+        technical.STRUCTURE_NOTCH, technical.STRUCTURE_NOTCH_NULL = before
+
+
+# The desk run with the structure notch on (and, for the null test, its
+# mask cleared), the flags restored afterwards.
+def _desk_with_notch(desk, store, run: dict, null: bool = False):
+    """Return the desk report graded through the notched technical analyst."""
+    with _notch_flags(True, null):
+        return desk.run(store, None, **run)
+
+
+# The null test's verdict as text: one line per mismatch, or the all-clear.
+def render_null_test(verdict: dict) -> str:
+    """Return the null test as text."""
+    lines = [
+        "null test: the book through the notched path (mask cleared) against "
+        "the plain path",
+        f"  grades and scores equal: {verdict['grades_and_scores_equal']}",
+        f"  lines compared: {len(verdict['lines'])}",
+    ]
+    for row in verdict["lines"]:
+        if not (row["dates_equal"] and row["returns_equal"]):
+            lines.append(
+                f"  MISMATCH {row['cost_bps']:g} bp offset {row['offset']} "
+                f"{row['line']}: dates {row['dates_equal']}, "
+                f"returns {row['returns_equal']}"
+            )
+    passed = "PASS, reproduced to the bit" if verdict["ok"] else "FAIL"
+    lines.append(f"  verdict: {passed}")
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
