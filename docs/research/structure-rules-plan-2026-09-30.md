@@ -140,3 +140,20 @@ on the paper book's size, and S1g moves drawdown more than return.
 
 Earnings pauses, trailing intraday sells, event-conditioned exits (S2) and
 the regime gross (S3) wait for this batch.
+
+## Addendum 1 (2026-09-30, 12:50 ET, before any run): what the notch does to the grade
+
+The build showed that "cannot be A+" was loosely worded. The grading rule
+makes A+ from a bullish release with two or more votes, and fundamental,
+sentiment and value can supply those without the technical analyst. S1g
+therefore does exactly one thing: while the name is under a falling EMA21
+with lower highs, the technical stance and conviction are capped at
+neutral, so the technical vote is withdrawn. A name can still be A+ on the
+other three. The criteria are unchanged; the write-up reports how many
+notched sessions kept A+ on the other analysts.
+
+Two build conventions, recorded here: H20 requires a full 20-session
+window (younger names have no H20 level; the board answers for them as
+`structure.py` does), and the study runs on the panel's adjusted basis
+while the board compares an adjusted EMA with raw quotes, a dividend
+factor apart. S1f fills at the open when the session opens through L.
