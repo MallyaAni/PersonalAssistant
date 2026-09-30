@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { DeskLive, DeskPaperLive, DeskPaperOrder, DeskRecord } from '../../services/api'
+import type { DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskRecord, DeskStructure } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 
 // The Stock rankings board, rebuilt around one question a trader asks of it:
@@ -13,6 +13,12 @@ import { SessionPrice } from './StockBoard'
 // from the backend in one place, so this board, the ticker panel and the
 // chart cannot tell different stories. A name with no order is HOLD when the
 // account holds it and a dash when it does not.
+//
+// The Levels column is the structure the desk does not act on (S0 of the
+// trading scenarios): the 21-EMA and the 20-day high from the balancer's
+// `live.structure`, the distance to each, the EMA's slope, and a plain flag
+// when the session's first bar rejected a level. The action cell also says
+// how old the price behind the row is.
 
 // The four words a row can say, and the dash for a name the account neither
 // holds nor trades.
@@ -82,6 +88,73 @@ export const percent = (weight: number) => weight > 0 && weight < 0.001 ? '<0.1%
 
 // Shares, with the unit: 1,250 sh.
 export const shares = (qty: number) => `${qty.toLocaleString('en-US', {maximumFractionDigits: 6})} sh`
+
+// The structure the board shows and the desk does not act on: the two levels
+// the operator reads, the distance to each, the EMA's slope, a first-bar
+// rejection, and the age of the price the row was computed from. Every word
+// here describes what happened; none of it says what to do.
+
+// The board's name for each level.
+export const LEVEL_NAME: Record<DeskLevelTag['level'], string> = { ema_21: '21-EMA', high_20: '20-day high' }
+
+// A count as an ordinal: 1st, 2nd, 3rd, 4th, 11th, 12th, 13th, 21st.
+export const ordinal = (count: number): string => {
+  const tens = count % 100
+  const suffix = tens >= 11 && tens <= 13 ? 'th' : count % 10 === 1 ? 'st' : count % 10 === 2 ? 'nd' : count % 10 === 3 ? 'rd' : 'th'
+  return `${count}${suffix}`
+}
+
+// A level's price to a tenth, the way the board names it: 104.4.
+const levelPrice = (value: number) => value.toFixed(1)
+
+// The distance from a price to a level as a signed share of the level: one
+// decimal under ten percent (−3.1%), whole percent from ten up (−14%).
+export const distance = (price: number, level: number): string => {
+  const pct = (price / level - 1) * 100
+  const size = Math.abs(pct)
+  return `${pct < 0 ? '−' : '+'}${size >= 10 ? size.toFixed(0) : size.toFixed(1)}%`
+}
+
+// The row's level lines: "21-EMA 104.4 (−3.1%) ↓" and "20-day high 116.9
+// (−14%)". The distance is from `price` (the row's last price); the arrow is
+// the sign of the EMA's five-session slope. A level the balancer has not
+// computed is left out.
+export const levelLines = (structure: DeskStructure | undefined, price: number | null): string[] => {
+  if (!structure) return []
+  const away = (level: number) => price !== null && price > 0 ? ` (${distance(price, level)})` : ''
+  const lines: string[] = []
+  if (structure.ema_21 !== null && structure.ema_21 > 0) {
+    const slope = structure.ema_21_slope_5
+    const arrow = slope === null || slope === undefined ? '' : slope > 0 ? ' ↑' : slope < 0 ? ' ↓' : ' →'
+    lines.push(`${LEVEL_NAME.ema_21} ${levelPrice(structure.ema_21)}${away(structure.ema_21)}${arrow}`)
+  }
+  if (structure.high_20 !== null && structure.high_20 > 0) {
+    lines.push(`${LEVEL_NAME.high_20} ${levelPrice(structure.high_20)}${away(structure.high_20)}`)
+  }
+  return lines
+}
+
+// The flag for a first bar that reached a level from below and closed back
+// under it: "Rejected at 21-EMA 104.4 · 3rd day". Null when the session's
+// first bar did not, or did and held.
+export const levelFlag = (structure: DeskStructure | undefined): string | null => {
+  const tag = structure?.level_tag
+  if (!tag || !tag.rejected) return null
+  return `Rejected at ${LEVEL_NAME[tag.level]} ${levelPrice(tag.price)} · ${ordinal(tag.consecutive_sessions)} day`
+}
+
+// When the row's price is from and how old it is now: "as of 11:30 AM, 12
+// min ago". The instant is the balancer's (the bar's end); the age is
+// measured against the page's clock so it keeps counting between candles.
+// Null without a dated price.
+export const priceAge = (structure: DeskStructure | undefined, now: number): string | null => {
+  const at = Date.parse(structure?.price_as_of ?? '')
+  if (!Number.isFinite(at)) return null
+  const clock = new Date(at).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit'})
+  const minutes = Math.max(0, Math.round((now - at) / 60_000))
+  const ago = minutes < 1 ? 'under a minute ago' : minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ${minutes % 60} min ago`
+  return `as of ${clock}, ${ago}`
+}
 
 // The colour of each word: green buys, red sells, amber trims, grey holds.
 export const WORD_STYLE: Record<BoardWord, string> = {
@@ -405,6 +478,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Stock" column="ticker" sort={sort} onSort={onSort} />
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The desk's grade at the last close; A and A+ are in the book." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Paper-account shares and share of the account, against the policy's target." />
+            <Head label="Levels" sort={sort} onSort={onSort} title="The 21-session EMA and the 20-session high, with the distance from the last price and the EMA's five-session slope; a flag when the session's first 15-minute bar reached a level from below and closed back under it. Shown, not acted on." />
             <Head label="Paper order" sort={sort} onSort={onSort} title="Order intent or recorded outcome, not a new personal-account instruction." />
             <Head label="Size" column="size" sort={sort} onSort={onSort} title="Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity." />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
@@ -414,6 +488,10 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           const open = opened === row.ticker
           const unit = row.orders[0]?.price ?? live.quotes[row.ticker]?.last ?? null
           const mine = row.orders.length && row.orders.every(canScale) ? myShares(row.weight, myAccount, unit) : null
+          const structure = live.structure?.[row.ticker]
+          const levels = levelLines(structure, live.quotes[row.ticker]?.last ?? closes?.[row.ticker] ?? null)
+          const flag = levelFlag(structure)
+          const age = priceAge(structure, now)
           return <Fragment key={row.ticker}>
             <tr className="border-t border-black/[0.05] align-top">
               <td className="py-2 text-xs"><button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button></td>
@@ -426,9 +504,14 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 {row.held > 0 ? <>{shares(row.held)}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</> : <span className="text-[#86868b]">none</span>}
                 {row.target !== null && row.target > 0 && <div className="text-[10px] text-[#6e6e73]">target {percent(row.target)}</div>}
               </td>
+              <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`}>
+                {levels.length ? levels.map(line => <div key={line} className="whitespace-nowrap text-[#6e6e73]">{line}</div>) : <span className="text-[#86868b]">—</span>}
+                {flag && <div aria-label={`${row.ticker} level flag`} className="whitespace-nowrap font-medium text-[#1d1d1f]">{flag}</div>}
+              </td>
               <td className="max-w-56 py-2 text-xs">
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${WORD_STYLE[row.word]}`}>{row.word}</span>
                 <div aria-label={`${row.ticker} action status`} className="whitespace-normal text-[10px] text-[#6e6e73]">{row.why}</div>
+                {age && <div aria-label={`${row.ticker} price age`} className="whitespace-nowrap text-[10px] text-[#86868b]">{age}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {row.orders.length ? <>
@@ -444,7 +527,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 </> : <span className="text-[#86868b]">—</span>}
               </td>
             </tr>
-            {open && <tr><td colSpan={7} className="border-t border-black/[0.05] bg-[#f0f7ff] px-3 py-2"><div className="w-[calc(100cqw-1.5rem)] whitespace-normal">
+            {open && <tr><td colSpan={8} className="border-t border-black/[0.05] bg-[#f0f7ff] px-3 py-2"><div className="w-[calc(100cqw-1.5rem)] whitespace-normal">
               <RowDetails row={row} latest={latest} myAccount={myAccount} onOpen={onOpen} extra={extra?.(row.ticker)} />
             </div></td></tr>}
           </Fragment>

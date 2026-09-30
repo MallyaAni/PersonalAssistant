@@ -20,6 +20,11 @@ const FILLS = [
 ]
 // The two sessions of fifteen-minute bars the 15m view serves, in September (EDT).
 const SESSIONS = ['2026-09-14', '2026-09-15']
+// The balancer's structure for the name: the two levels the board draws on every
+// timeframe, the 21-EMA falling, and a first bar that reached the 21-EMA from below
+// and closed back under it, the third session at the level.
+const STRUCTURE = {AAPL: {ema_21: 104.4, ema_21_slope_5: -0.031, high_20: 116.9, price_as_of: '2026-09-24T14:00:00Z', price_age_seconds: 0,
+  level_tag: {level: 'ema_21', price: 104.4, first_bar_high: 104.3, first_bar_close: 103.1, rejected: true, consecutive_sessions: 3}}}
 
 // One session's fifteen-minute bars: the 26 regular slots from 09:30 New York
 // plus the closing-auction bar at 16:00, stamped with the EDT offset.
@@ -64,7 +69,7 @@ async function install(page: Page, frontendURL: string) {
     const fillText = CanvasRenderingContext2D.prototype.fillText
     // Preserve every production paint call while recording marker labels and the selected timeframe.
     CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
-      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY |SELL |ADD |TRIM |RESET |Grade |Saved grade|Recalculated grade)/.test(args[0])) {
+      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY |SELL |ADD |TRIM |RESET |Grade |Saved grade|Recalculated grade|21-EMA |20-day high )/.test(args[0])) {
         const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
         state.__markerDraws.push({text: args[0], timeframe})
       }
@@ -92,7 +97,7 @@ async function install(page: Page, frontendURL: string) {
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest: {session: '2026-09-24', written: '2026-09-24T00:00:00Z', regime: {exposure: 1, flags: []}, grades: {AAPL: {grade: 'B', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: [], briefs: {}}, sessions: ['2026-09-24']}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
-    else if (url.pathname === `${base}/live`) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last: 110, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}}
+    else if (url.pathname === `${base}/live`) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last: 110, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}, structure: STRUCTURE}
     else if (url.pathname === `${base}/session-prices`) json = {as_of: '2026-09-24T14:00:00Z', session: 'regular', signal_scope: 'regular-session', quotes: {}}
     else if (url.pathname === `${base}/history/AAPL`) json = history
     else if (url.pathname === `${base}/chart/AAPL` && url.searchParams.get('timeframe') === '15m') {
@@ -214,3 +219,26 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     } finally {await finish(testInfo, fixture)}
   })
 }
+
+// The board's two levels are drawn on the fifteen-minute bars as labelled horizontal lines, the
+// only daily reference the 15m view carries, and named in the chart's text exactly as the board's
+// Levels column names them; the row itself flags the rejected first bar in the same words.
+test('the chart draws the board’s levels on the fifteen-minute bars', async ({page, baseURL}, testInfo) => {
+  await page.setViewportSize({width: 1280, height: 900})
+  const fixture = await install(page, baseURL!)
+  try {
+    await page.goto('/#desk')
+    await expect(page.getByLabel('AAPL levels')).toContainText('21-EMA 104.4 (+5.4%) ↓')
+    await expect(page.getByLabel('AAPL levels')).toContainText('20-day high 116.9 (−5.9%)')
+    await expect(page.getByLabel('AAPL level flag')).toHaveText('Rejected at 21-EMA 104.4 · 3rd day')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    await expect(chart.locator('[aria-label="AAPL board levels"]')).toHaveText('Dashed lines are the board’s levels: 21-EMA 104.4 · 20-day high 116.9.')
+    await chart.getByRole('button', {name: '15m', exact: true}).click()
+    await expect(chart.locator('[aria-label="Fifteen-minute chart caption"]')).toContainText('54 bars')
+    // The level labels reach the real canvas on the 15m view.
+    await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['21-EMA 104.4', '20-day high 116.9']))
+    await expect(chart.locator('[aria-label="AAPL board levels"]')).toHaveText('Dashed lines are the board’s levels: 21-EMA 104.4 · 20-day high 116.9.')
+    await chart.screenshot({path: testInfo.outputPath('chart-15m-levels.png')})
+  } finally {await finish(testInfo, fixture)}
+})

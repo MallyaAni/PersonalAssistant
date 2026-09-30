@@ -45,6 +45,20 @@ async function scenario(page: Page, {now, plan, orders}: {now: string; plan: 'th
   const market = {exchange: 'XNYS', as_of: now, session: open ? '2026-10-01' : '2026-09-30', calendar_known: true, is_session: true, open, phase: open ? 'open' : 'post-market', opens_at: open ? '2026-10-01T13:30:00Z' : '2026-09-30T13:30:00Z', closes_at: open ? '2026-10-01T20:00:00Z' : '2026-09-30T20:00:00Z'}
   const bar = open ? '2026-10-01T14:00:00Z' : '2026-09-30T19:45:00Z'
   const quotes = Object.fromEntries(fixture.positions.map((p: {symbol: string; current_price: number}) => [p.symbol, {symbol: p.symbol, last: p.current_price, open: p.current_price, high: p.current_price, low: p.current_price, bar, as_of: now}]))
+  // The balancer's structure beside the quotes: the levels the operator reads
+  // and what the session's first bar did at them. The bar's close is the
+  // price's instant; the age is against the balancer's own clock.
+  const priced = open ? '2026-10-01T14:15:00Z' : '2026-09-30T20:00:00Z'
+  const structure = {
+    // A name under both levels, its 21-EMA falling, no tag today.
+    NVDA: {ema_21: 238.7, ema_21_slope_5: -0.031, high_20: 266.5, level_tag: null, price_as_of: priced, price_age_seconds: 300},
+    // The first bar reached the 21-EMA from below and closed back under it, the third session at it.
+    AAOI: {ema_21: 104.4, ema_21_slope_5: 0.012, high_20: 116.9, level_tag: {level: 'ema_21', price: 104.4, first_bar_high: 104.1, first_bar_close: 102.8, rejected: true, consecutive_sessions: 3}, price_as_of: priced, price_age_seconds: 300},
+    // The first bar went through the 20-day high and held above it: no flag.
+    HPE: {ema_21: 58.2, ema_21_slope_5: 0.004, high_20: 61.3, level_tag: {level: 'high_20', price: 61.3, first_bar_high: 61.9, first_bar_close: 61.6, rejected: false, consecutive_sessions: 1}, price_as_of: priced, price_age_seconds: 300},
+    // A name the store could not read: no levels, only the price's age.
+    SMCI: {ema_21: null, ema_21_slope_5: null, high_20: null, level_tag: null, price_as_of: priced, price_age_seconds: 300},
+  }
   const paper = {user_id: USER, as_of: now, equity: fixture.equity, cash: fixture.cash, day_pl: 864, day_pl_pct: .0087, pl_pct: .0002, positions: fixture.positions, orders: [], activity: {session: '2026-10-01', complete: true, fills: []}, plan: orders ? {...fixture[plan], orders} : fixture[plan]}
   await page.route('**/api/**', async route => {
     const request = route.request()
@@ -58,7 +72,7 @@ async function scenario(page: Page, {now, plan, orders}: {now: string; plan: 'th
     if (url.pathname === '/api/v1/auth/session') json = {authentication_required: true, user_id: USER, expires_at: '2026-10-02T00:00:00Z', is_admin: true, desk_access: true, desk_write: true}
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest: record(), sessions: [SESSION]}
-    else if (url.pathname === `${base}/live`) json = {as_of: now, data_at: bar, stale: false, market_status: market, quotes, technical: {}, technical_detail: {}}
+    else if (url.pathname === `${base}/live`) json = {as_of: now, data_at: bar, stale: false, market_status: market, quotes, technical: {}, technical_detail: {}, structure}
     else if (url.pathname === `${base}/session-prices`) json = {session: open ? 'regular' : 'post-market', as_of: now, signal_scope: 'regular-session', quotes: {}}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
     else if (url.pathname === `${base}/paper`) json = paper
@@ -184,6 +198,42 @@ test('the row details and the ticker panel repeat the board’s words', async ({
   await expect(card).toContainText('9 sh')
   await expect(card).toContainText('Sent 10:16 AM · market order')
   await panel.screenshot({path: testInfo.outputPath('panel-hpe.png')})
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// The Levels column is the structure the desk does not act on: each row names
+// the 21-EMA and the 20-day high with the distance from the last price and
+// the EMA's slope; a first bar that reached a level from below and closed
+// back under it is flagged in plain words with the count of sessions at the
+// level; a tag that held is not flagged; a name without levels shows a dash;
+// the action cell says how old the price behind the row is; and the ticker
+// panel names the same levels its chart draws. No word of it is an
+// instruction, and the paper account's order beside it is unchanged.
+test('the levels and a rejected first bar are shown, not acted on', async ({page}, testInfo) => {
+  await page.setViewportSize({width: 1440, height: 1000})
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('NVDA levels')).toContainText('21-EMA 238.7 (−4.4%) ↓')
+  await expect(page.getByLabel('NVDA levels')).toContainText('20-day high 266.5 (−14%)')
+  await expect(page.getByLabel('NVDA levels')).not.toContainText('Rejected')
+  await expect(page.getByLabel('AAOI levels')).toContainText('21-EMA 104.4 (−3.0%) ↑')
+  await expect(page.getByLabel('AAOI levels')).toContainText('20-day high 116.9 (−13%)')
+  await expect(page.getByLabel('AAOI level flag')).toHaveText('Rejected at 21-EMA 104.4 · 3rd day')
+  await expect(page.getByLabel('HPE levels')).toContainText('21-EMA 58.2 (+6.0%) ↑')
+  await expect(page.getByLabel('HPE levels')).toContainText('20-day high 61.3 (+0.7%)')
+  await expect(page.getByLabel('HPE level flag')).toHaveCount(0)
+  await expect(page.getByLabel('SMCI levels')).toHaveText('—')
+  await expect(page.getByLabel('AAOI price age')).toHaveText('as of 10:15 AM, 5 min ago')
+  await expect(page.getByLabel('NTAP price age')).toHaveCount(0)
+  // The flag is a description, not an instruction, and the order stands as it was.
+  expect(await page.getByLabel('AAOI level flag').textContent()).not.toMatch(/buy|sell|trim|hold/i)
+  await expect(page.getByLabel('AAOI strategy intent')).toHaveText('BUY')
+  await expect(page.getByLabel('AAOI order status')).toContainText('Level hit: the 10:15 AM close ($99.60) · sending now')
+  await page.getByRole('region', {name: 'Stocks and cash'}).screenshot({path: testInfo.outputPath('board-levels.png')})
+  await page.getByRole('button', {name: 'AAOI', exact: true}).click()
+  const panel = page.getByRole('dialog', {name: 'AAOI history'})
+  await expect(panel.getByLabel('AAOI board levels')).toHaveText('Dashed lines are the board’s levels: 21-EMA 104.4 · 20-day high 116.9.')
   expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
 })

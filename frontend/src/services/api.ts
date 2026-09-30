@@ -2430,6 +2430,36 @@ export interface DeskLive {
       long: Record<string, number>;
     }
   >;
+  // The structure the board shows and the desk does not act on, by name:
+  // written by the balancer on each candle beside the plan's rows.
+  structure?: Record<string, DeskStructure>;
+}
+
+// A level the session's first 15-minute bar reached from below: which one,
+// its price, the bar's high and close, whether the bar closed back under
+// it, and how many sessions in a row (today included) the daily high has
+// sat within 1% of the level while the close stayed under it.
+export interface DeskLevelTag {
+  level: 'ema_21' | 'high_20';
+  price: number;
+  first_bar_high: number;
+  first_bar_close: number;
+  rejected: boolean;
+  consecutive_sessions: number;
+}
+
+// The levels the operator reads, per name, from the balancer: the 21-session
+// EMA of the adjusted close up to the prior session, its change over five
+// sessions as a fraction of itself, the 20-session high, the first-bar tag,
+// and when the row's price is from (the bar's end) and how old it was at the
+// balancer's as_of. Display only; no decision reads these.
+export interface DeskStructure {
+  ema_21: number | null;
+  ema_21_slope_5: number | null;
+  high_20: number | null;
+  level_tag: DeskLevelTag | null;
+  price_as_of: string | null;
+  price_age_seconds: number | null;
 }
 
 // The person's own positions, kept beside the records, and the board
@@ -2479,6 +2509,13 @@ export interface DeskMineRow {
   last_close: number | null;
   high_20: number | null;
   stops: Record<string, number>;
+  // The balancer's structure fields (see DeskStructure), present on the
+  // persisted intraday plan's rows.
+  ema_21?: number | null;
+  ema_21_slope_5?: number | null;
+  level_tag?: DeskLevelTag | null;
+  price_as_of?: string | null;
+  price_age_seconds?: number | null;
   grade_margin: number | null;
   // The live grade's own margin, where a live read exists: "at risk" reads
   // this so the marker follows the candle, not the evening grade.

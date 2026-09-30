@@ -324,6 +324,56 @@ test('single board keeps the paper account’s cash beside its orders', async ({
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
+// The Levels column shows the structure the desk does not act on: the 21-EMA and the 20-day
+// high from the balancer's structure with the distance from the last price and the EMA's
+// slope, a plain flag when the session's first bar rejected a level (with the count of
+// sessions at it), the age of the price behind the row, and the same levels named in the
+// ticker panel. The paper account's order beside it is unchanged, and the levels move with
+// the candle that carries them.
+test('the board shows the levels the desk reads and flags a rejected first bar', async ({page}) => {
+  await page.clock.install({time: new Date('2026-09-09T14:00:10Z')})
+  const errors = observeBlockingBrowserErrors(page)
+  const latest = deskRecord()
+  let next = false
+  const bar = () => next ? '2026-09-09T14:00:00Z' : '2026-09-09T13:45:00Z'
+  const priced = () => next ? '2026-09-09T14:15:00Z' : '2026-09-09T14:00:00Z'
+  const structure = () => ({
+    // AAPL's first bar reached its 21-EMA from below and closed back under it, the second session at the level.
+    AAPL: {ema_21: 104.4, ema_21_slope_5: -0.031, high_20: 116.9, price_as_of: priced(), price_age_seconds: 10,
+      level_tag: {level: 'ema_21', price: 104.4, first_bar_high: 104.2, first_bar_close: 101.5, rejected: true, consecutive_sessions: 2}},
+    // NVDA sits under both levels with a rising EMA; its first bar reached nothing.
+    NVDA: {ema_21: next ? 126.5 : 125.0, ema_21_slope_5: 0.02, high_20: 140.0, level_tag: null, price_as_of: priced(), price_age_seconds: 10},
+  })
+  await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
+    as_of: bar(), data_at: bar(), structure: structure(),
+    quotes: Object.fromEntries(Object.keys(latest.grades).map(ticker => [ticker, {symbol: ticker, last: next ? 110 : 100, bar: bar()}])),
+  }}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.goto('/#desk')
+  await expect(page.getByLabel('AAPL levels')).toContainText('21-EMA 104.4 (−4.2%) ↓')
+  await expect(page.getByLabel('AAPL levels')).toContainText('20-day high 116.9 (−14%)')
+  await expect(page.getByLabel('AAPL level flag')).toHaveText('Rejected at 21-EMA 104.4 · 2nd day')
+  await expect(page.getByLabel('NVDA levels')).toContainText('21-EMA 125.0 (−20%) ↑')
+  await expect(page.getByLabel('NVDA levels')).toContainText('20-day high 140.0 (−29%)')
+  await expect(page.getByLabel('NVDA level flag')).toHaveCount(0)
+  // The price behind the row is the 9:45 bar's close, ten seconds old when the page opened.
+  await expect(page.getByLabel('AAPL price age')).toHaveText('as of 10:00 AM, under a minute ago')
+  // The flag describes; the order beside it says what it said.
+  expect(await page.getByLabel('AAPL level flag').textContent()).not.toMatch(/buy|sell|trim|hold/i)
+  await expect(page.getByLabel('AAPL strategy intent')).toHaveText('HOLD')
+  await expect(page.getByLabel('NVDA strategy intent')).toHaveText('BUY')
+  // The next candle carries new levels and a fresher price; the page follows it.
+  next = true
+  await page.clock.fastForward(15 * 60_000)
+  await expect(page.getByLabel('NVDA levels')).toContainText('21-EMA 126.5 (−13%) ↑')
+  await expect(page.getByLabel('AAPL price age')).toContainText('as of 10:15 AM')
+  // The ticker panel names the levels its chart draws.
+  await page.getByRole('button', {name: 'AAPL', exact: true}).first().click()
+  const dialog = page.getByRole('dialog', {name: 'AAPL history'})
+  await expect(dialog.getByLabel('AAPL board levels')).toHaveText('Dashed lines are the board’s levels: 21-EMA 104.4 · 20-day high 116.9.')
+  expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+})
+
 // An FOMC pause does not erase the book: the rule line says the FOMC risk rule is in charge,
 // the orders say when, and the rows keep their words.
 test('single board keeps its orders and holdings during FOMC', async ({page}) => {
