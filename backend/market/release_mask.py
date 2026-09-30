@@ -17,9 +17,10 @@ What goes, and to what:
   a quarter with its year, a fiscal year    [PERIOD]
   a bare quarter label                      [QUARTER]
   a bare four-digit year                    [YEAR]
-  lines carrying an email, URL or phone     removed
+  emails, URLs and phone numbers            removed
   the "About the company" boilerplate and
-  the contact trailer                       removed
+  the contact trailer                       removed, bounded by the
+                                            next heading or a cap
 
 What stays: every number. Revenue, margins, growth rates, guidance ranges
 are the content the reader is meant to score, and a masked release with
@@ -141,7 +142,7 @@ _TIME_RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
         re.compile(
             rf"\b(?:{_ORDINAL})[- ]quarter(?:\s+(?:of|for)\s+(?:the\s+)?)?"
             rf"(?:\s*(?:fiscal|FY)\s*(?:year\s*)?)?\s*{_YEAR}{_POSSESSIVE}"
-            rf"|\bQ[1-4]\s*(?:FY|fiscal\s*)?\s*(?:{_YEAR}|{_SHORT_YEAR})\b{_POSSESSIVE}"
+            rf"|\bF?Q[1-4]\s*(?:FY|fiscal\s*)?\s*(?:{_YEAR}|{_SHORT_YEAR})\b{_POSSESSIVE}"
             rf"|\b[1-4]Q\s*(?:FY)?\s*(?:{_YEAR}|\d\d)\b{_POSSESSIVE}",
             re.IGNORECASE,
         ),
@@ -166,7 +167,7 @@ _TIME_RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
     (
         "quarter",
         re.compile(
-            rf"\b(?:{_ORDINAL})[- ]quarter\b{_POSSESSIVE}|\bQ[1-4]\b|\b[1-4]Q\b",
+            rf"\b(?:{_ORDINAL})[- ]quarter\b{_POSSESSIVE}|\bF?Q[1-4]\b|\b[1-4]Q\b",
             re.IGNORECASE,
         ),
         QUARTER,
@@ -175,24 +176,40 @@ _TIME_RULES: tuple[tuple[str, re.Pattern[str], str], ...] = (
     ("year", re.compile(rf"{_YEAR}{_POSSESSIVE}"), YEAR),
 )
 
-# A line carrying a way to reach someone is dropped whole.
-_CONTACT_LINE = re.compile(
+# A way to reach someone - an email, a URL, a phone number - is removed
+# wherever it stands. The stored text is one line (`edgar.html_to_text`
+# collapses whitespace), so nothing here works by line.
+_CONTACT_TOKEN = re.compile(
     r"[\w.+-]+@[\w-]+\.[\w.-]+"
-    r"|https?://|www\.|\b[\w-]+\.(?:com|net|org|io)\b(?:/|\b)"
+    r"|https?://\S+|www\.\S+|\b[\w-]+\.(?:com|net|org|io)\b(?:/\S*)?"
     r"|\(\d{3}\)\s?\d{3}-\d{4}\b|\b\d{3}-\d{3}-\d{4}\b|\b\d{3}\.\d{3}\.\d{4}\b",
     re.IGNORECASE,
 )
-# A line that opens the contact trailer; everything from it on is dropped.
-_TRAILER_LINE = re.compile(
-    r"^\s*(?:media\s+|investor\s+|press\s+|company\s+)?"
-    r"(?:contacts?|investor\s+relations|media\s+relations|"
-    r"for\s+(?:further|more|additional)\s+information)\b",
-    re.IGNORECASE,
+# Where the "About the company" boilerplate opens, once the name is masked.
+_ABOUT_OPENER = re.compile(rf"\bAbout\s+(?:the\s+)?{re.escape(COMPANY)}")
+# Where the contact trailer opens: a capitalised Contact label, or the
+# investor-relations sign-off.
+_TRAILER_OPENER = re.compile(
+    r"\b(?:Investor|Media|Press|Company|IR)\s+(?:Relations\s+)?Contacts?\b"
+    r"|\bContacts?:"
+    r"|\bInvestor\s+Relations\b"
+    r"|\bFor\s+(?:further|more|additional)\s+information,?\s+(?:please\s+)?"
+    r"contact\b",
 )
-# A line that opens the "About the company" boilerplate.
-_ABOUT_LINE = re.compile(r"^\s*About\s+(?:the\s+)?[A-Z\[]")
-# How far into the text a trailer or boilerplate opener may sit: a
-# "Contact" in the first half is part of the release, not its tail.
+# Where a removed span ends: the next section heading, or the cap.
+_NEXT_HEADING = re.compile(
+    r"Forward[- ]Looking|Cautionary|Safe Harbor|Non-GAAP|Use of Non|"
+    r"Condensed Consolidated|CONDENSED CONSOLIDATED|Consolidated Statements?|"
+    r"CONSOLIDATED STATEMENTS?|Reconciliation|Supplemental|Source:|###|"
+    r"Conference Call|Webcast|Investor Relations|Investor Contact|"
+    r"Media Contact|Contacts?:"
+)
+# The most a removed span may run without a heading: an About paragraph
+# is a few hundred characters, a contact block fewer.
+ABOUT_MAX_CHARS = 1_500
+TRAILER_MAX_CHARS = 400
+# A trailer opener earlier than this share of the text is content ("contact
+# center revenue"), not a sign-off.
 TRAILER_FROM = 0.5
 
 
@@ -291,50 +308,47 @@ def _apply(
     return pattern.subn(replacement, text)
 
 
-# Drop the boilerplate tail: from the last "About <company>" opener or the
-# first contact-trailer opener in the second half of the text, whichever
-# comes first, to the end.
-def _cut_tail(text: str) -> tuple[str, int, int]:
-    lines = text.split("\n")
-    floor = int(len(lines) * TRAILER_FROM)
-    about = next(
-        (
-            i
-            for i in range(len(lines) - 1, floor - 1, -1)
-            if _ABOUT_LINE.match(lines[i])
-        ),
-        None,
-    )
-    trailer = next(
-        (i for i in range(floor, len(lines)) if _TRAILER_LINE.match(lines[i])), None
-    )
-    candidates = [i for i in (about, trailer) if i is not None]
-    if not candidates:
-        return text, 0, 0
-    cut = min(candidates)
-    return (
-        "\n".join(lines[:cut]).rstrip(),
-        int(about is not None and cut == about),
-        int(trailer is not None),
-    )
+# Remove a span from each opener to the next heading or the cap, whichever
+# comes first, repeating until no opener is left so a second pass finds
+# nothing. Returns the text and how many spans went.
+def _remove_spans(
+    text: str, opener: re.Pattern[str], cap: int, start_from: float = 0.0
+) -> tuple[str, int]:
+    removed = 0
+    while True:
+        floor = int(len(text) * start_from)
+        found = opener.search(text, floor)
+        if found is None:
+            return text, removed
+        head = found.start()
+        limit = min(len(text), found.end() + cap)
+        heading = _NEXT_HEADING.search(text, found.end(), limit)
+        stop = heading.start() if heading else limit
+        text = (text[:head] + " " + text[stop:]).strip()
+        text = re.sub(r"[ \t]{2,}", " ", text)
+        removed += 1
 
 
-# Drop every line that carries an email, URL or phone number.
-def _drop_contact_lines(text: str) -> tuple[str, int]:
-    kept = [line for line in text.split("\n") if not _CONTACT_LINE.search(line)]
-    return "\n".join(kept), text.count("\n") + 1 - len(kept)
+# Remove every email, URL and phone number.
+def _drop_contact_tokens(text: str) -> tuple[str, int]:
+    out, hits = _CONTACT_TOKEN.subn("", text)
+    return re.sub(r"[ \t]{2,}", " ", out), hits
 
 
-# Mask a release: identity first, so a name inside a date-like phrase is
-# still a name; then the calendar; then the boilerplate.
+# Mask a release: ways to reach someone first, then the issuer's names,
+# then the boilerplate that opens with the masked name, then the other
+# identities, then the calendar.
 def mask(text: str, issuer: MaskIssuer) -> MaskedText:
     """Return the masked text and a count of replacements per kind."""
     counts: dict[str, int] = {}
     out = text.replace("\r\n", "\n")
-    out, counts["about_section"], counts["trailer"] = _cut_tail(out)
-    out, counts["contact_line"] = _drop_contact_lines(out)
+    out, counts["contact"] = _drop_contact_tokens(out)
     names = [v for name in issuer.names for v in name_variants(name)]
     out, counts["company"] = _apply(out, _phrase_pattern(names), COMPANY)
+    out, counts["about_section"] = _remove_spans(out, _ABOUT_OPENER, ABOUT_MAX_CHARS)
+    out, counts["trailer"] = _remove_spans(
+        out, _TRAILER_OPENER, TRAILER_MAX_CHARS, TRAILER_FROM
+    )
     out, counts["ticker"] = _apply(out, _ticker_pattern(issuer.tickers), TICKER)
     out, counts["other_ticker"] = _apply(
         out, _labelled_ticker_pattern(issuer.other_tickers), rf"\g<1>{TICKER}"

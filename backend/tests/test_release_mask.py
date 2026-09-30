@@ -176,3 +176,31 @@ def test_trailer_is_cut_only_in_the_tail():
     out = mask(tail, ISSUER)
     assert "Jane Doe" not in out.text
     assert out.counts["trailer"] == 1
+
+
+# The stored text is one line (`edgar.html_to_text` collapses whitespace):
+# the About paragraph and the contact block go, bounded by the next
+# heading, and the statements and tables after them survive with their
+# numbers.
+def test_one_line_release_keeps_the_tables():
+    one_line = " ".join(RELEASE.split()) + (
+        " Forward-Looking Statements Certain statements in this press release "
+        "including statements about NVIDIA's growth are forward-looking. "
+        "NVIDIA CORPORATION CONDENSED CONSOLIDATED STATEMENTS OF INCOME "
+        "Three Months Ended July 28, 2024 Revenue $ 30,040 $ 13,507 "
+        "Net income $ 16,599"
+    )
+    out = mask(one_line, ISSUER)
+    assert "\n" not in out.text
+    assert "world leader" not in out.text
+    assert "Jankowski" not in out.text
+    assert "Forward-Looking Statements Certain statements" in out.text
+    assert "[COMPANY] growth are forward-looking" in out.text
+    assert "[COMPANY] CONDENSED CONSOLIDATED STATEMENTS OF INCOME" in out.text
+    assert "Three Months Ended [DATE] Revenue $ 30,040 $ 13,507" in out.text
+    assert "Net income $ 16,599" in out.text
+    assert out.counts["about_section"] == 1
+    assert out.counts["trailer"] == 1
+    assert out.counts["contact"] == 3
+    assert release_mask.residuals(out.text, ISSUER.names)["name"] == 0
+    assert mask(out.text, ISSUER).text == out.text
