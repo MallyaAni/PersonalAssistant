@@ -41,13 +41,22 @@ genuine crashes or classify all large moves as bad data.
 
 ## Comparators and validation
 
-Three point baselines: trailing-20 risk/volume; HAR-style ridge on 1/5/20
+Point comparators: trailing-20 risk/volume; HAR-style ridge on 1/5/20
 target-history levels; shallow LightGBM on the richer causal features. Targets
 are log values relative to trailing-20 levels. Ridge and LightGBM log forecasts
 are multiplicatively calibrated using past validation outcomes for QLIKE;
 unadjusted log errors are also reported. Add LightGBM 10th/90th quantiles for
 uncertainty. Their central point forecast is a conditional-mean estimate on
 the log scale, not a median or guaranteed expected range.
+
+Pre-run clarification (after synthetic tests, before any historical fit): add
+a same-weekday volume baseline using the previous eight occurrences of the
+next session's weekday, requiring seven observed values and otherwise falling
+back to trailing-20. Compare LightGBM with the stronger of all simple baselines.
+The optional archived CNN is compared on common RTH rows by log-MSE only; its
+legacy row provenance is preserved and it is not requalified by this comparison.
+The `/5` cap scenario uses today's recorded equity held fixed across the recent
+sample, not fictional historical `/5` orders. No parameter sweep is added.
 
 Minimum 504 training exchange sessions, 63 validation sessions, five-session
 purges on both boundaries; test/refit blocks of 126 sessions. Label end must
