@@ -142,10 +142,14 @@ def test_build_records_universe_wide_keeps_every_index_member():
     assert "Advertising" in by["TTD"][0].rule
     assert [(r.entered, r.exited) for r in by["Q"]] == [(D(2025, 11, 3), None)]
     assert any("Q@2017-11-15" in n for n in notes)
-    # NDSN entered by the table and is in the index today; IQV too. NEWCO
-    # was added after the snapshot and is a member today by the table.
-    assert [(r.entered, r.exited) for r in by["NDSN"]] == [(D(2022, 2, 15), None)]
+    # NDSN and IQV were added by the table but are not in the snapshot:
+    # renames the table lacks, dropped and reported as in the book file.
+    # NEWCO was added after the snapshot: a member by the table, with no
+    # sub-industry to name.
+    assert "NDSN" not in by and "IQV" not in by
+    assert any("NDSN: added" in n for n in notes)
     assert [(r.entered, r.exited) for r in by["NEWCO"]] == [(D(2026, 9, 21), None)]
+    assert "unclassified" in by["NEWCO"][0].rule
     assert [(r.entered, r.exited) for r in by["CRWV"]] == [(D(2026, 9, 4), None)]
     book, _ = mm.build_records(constituents, changes, overlay)
     book_index = {(r.ticker, r.entered, r.exited) for r in book if "OVERLAY" not in r.source}
