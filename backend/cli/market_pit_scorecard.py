@@ -612,7 +612,10 @@ def main(argv: list[str] | None = None) -> int:
         print(render_null_test(verdict))
         return 0 if verdict["ok"] else 1
     chosen = cohort.universe_cohort(args.universe, store) if args.universe else None
-    report = desk.run(store, None, cohort=chosen, **run)
+    # The book is asked for exactly as before; only an arm names a cohort.
+    report = desk.run(store, None, **run) if chosen is None else desk.run(
+        store, None, cohort=chosen, **run
+    )
     payload = build(report, store, args.offsets, tuple(args.costs), history_path=history, arm=arm)
     if args.graded_cap is not None:
         restricted, mask = point_in_time.point_in_time(report, history)
