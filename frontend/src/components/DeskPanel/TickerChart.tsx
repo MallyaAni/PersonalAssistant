@@ -301,8 +301,8 @@ const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], ti
       // saved/recalculated words only appear when the record says which it
       // was, and a marker never calls its own source unverified.
       text: previousSource === nextSource
-        ? nextSource ? `${nextSource} grade: ${before}→${now}` : `${before}→${now}`
-        : `${previousSource ?? 'Grade'} ${before} → ${nextSource ?? 'Grade'} ${now}`,
+        ? nextSource ? `${nextSource} grade ${before}→${now}` : `Grade ${before}→${now}`
+        : `Grade ${before} (${(previousSource ?? 'recorded').toLowerCase()})→${now} (${(nextSource ?? 'recorded').toLowerCase()})`,
       size: rows[i].said ? 2 : 1,
     })
   }
@@ -321,17 +321,20 @@ type ChartMarker = {
 
 const DECISION_BUY = '#15803d'
 const DECISION_SELL = '#b42318'
-const FILL_BLUE = '#0b5cad'
-// A redeploy fill (idle cash sent back to the targets mid-cycle) in its own
-// colour, so the legend can tell it from an entry or a rotation fill.
-const FILL_REDEPLOY = '#6d28d9'
-const DECISION_NOTE = 'decisions at the close, filled at the next open; sizes are % of equity'
+// The paper account's trades, in the board's colours: BUY green, SELL red.
+const TRADE_BUY = '#248a3d'
+const TRADE_SELL = '#b42318'
+const DECISION_NOTE = 'signals at each close; sizes are % of the account'
 // The equal-weight policy, whose add and trim are the reset's rebalance rather
 // than a sizing change: a held name's target drifts with the count of A/A+
 // names and only the twenty-session reset trades it, so the markers show
 // entries, exits and resets, and the drift between resets is not a trade.
 const EQUAL_WEIGHT_POLICY = 'graded-equal-weight/4'
-const EQUAL_WEIGHT_LEGEND = 'Buy = enters the A/A+ book at its target; Sell = leaves it; Rebalance ±% = the reset trades it. Target drift between resets is not traded and not marked. Circles are paper fills: blue an entry or rotation, purple a redeploy of idle cash.'
+const EQUAL_WEIGHT_LEGEND = 'Strategy signals: BUY = the name enters the A/A+ book at its target; SELL = it leaves the book; RESET ±% = the 20-session reset moves it back to target. Drift between resets is not a signal.'
+
+// A paper trade as the board writes it: BUY 2 @ $1,752.25.
+const tradeText = (side: string, qty: number, price: number) =>
+  `${side === 'buy' ? 'BUY' : 'SELL'} ${qty.toLocaleString('en-US')} @ $${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
 
 // A target weight as the percent of equity a trader reads it as: whole when it
 // is whole ("14%"), else to one decimal ("9.1%"), the way the board writes BUY 9.1%.
@@ -353,14 +356,14 @@ const isEqualWeight = (policy: string | null | undefined) => policy === EQUAL_WE
 // level it leads to ("Add →20%"). A hold is no marker at all, so it returns nothing.
 const decisionText = (row: DeskHistoryRow, policy?: string | null) => {
   switch (row.action) {
-    case 'buy': return `Buy ${percentText(row.target_weight)}`
-    case 'sell': return 'Sell'
+    case 'buy': return `BUY signal ${percentText(row.target_weight)}`
+    case 'sell': return 'SELL signal'
     case 'add':
     case 'trim': {
-      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'Add' : 'Trim'} →${percentText(row.target_weight)}`
+      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'ADD' : 'TRIM'} signal →${percentText(row.target_weight)}`
       const delta = row.delta_weight
-      if (typeof delta !== 'number' || !Number.isFinite(delta)) return `Rebalance →${percentText(row.target_weight)}`
-      return `Rebalance ${delta >= 0 ? '+' : '−'}${percentText(Math.abs(delta))}`
+      if (typeof delta !== 'number' || !Number.isFinite(delta)) return `RESET →${percentText(row.target_weight)}`
+      return `RESET ${delta >= 0 ? '+' : '−'}${percentText(Math.abs(delta))}`
     }
     default: return null
   }
@@ -416,9 +419,9 @@ const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], tim
     return candle ? [{
       time: stamp(candle.date),
       position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
-      color: isRedeploy(fill) ? FILL_REDEPLOY : FILL_BLUE,
+      color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL,
       shape: 'circle' as const,
-      text: `Filled ${fill.side} ${fill.qty} @ ${fill.price.toFixed(2)}${isRedeploy(fill) ? ' (redeploy)' : ''}`,
+      text: tradeText(fill.side, fill.qty, fill.price),
       size: 2,
     }] : []
   })
@@ -463,7 +466,8 @@ const intradayFillsAtMarkers = (data: DeskChart | null): ChartMarker[] =>
 // Only a payload fill with a parseable time, a side and a label is drawable.
 const drawableTimedFill = (fill: DeskChartFill) =>
   Boolean(fill) && typeof fill.time === 'string' && Number.isFinite(Date.parse(fill.time))
-  && (fill.side === 'buy' || fill.side === 'sell') && typeof fill.label === 'string' && fill.label.length > 0
+  && (fill.side === 'buy' || fill.side === 'sell')
+  && typeof fill.qty === 'number' && Number.isFinite(fill.qty) && typeof fill.price === 'number' && Number.isFinite(fill.price)
 
 // The paper account's real fills on the bar they filled in, as circles (blue,
 // or purple for a redeploy), below for a buy and above for a sell, labelled
@@ -472,9 +476,9 @@ const intradayFillMarkers = (data: DeskChart | null): ChartMarker[] =>
   (data?.timeframe === '15m' && Array.isArray(data.fills) ? data.fills : []).filter(drawableTimedFill).map(fill => ({
     time: instantStamp(fill.time),
     position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
-    color: isRedeploy(fill) ? FILL_REDEPLOY : FILL_BLUE,
+    color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL,
     shape: 'circle' as const,
-    text: fill.label, size: 2,
+    text: tradeText(fill.side, fill.qty, fill.price), size: 2,
   }))
 
 // A session as a trader writes it: the month and day, with the year only when
@@ -524,14 +528,14 @@ export const TickerChart = ({
   // beside it. When absent the chart falls back to the recorded history's
   // latest decision, which is what the board shows only when no live decision
   // exists for the record on screen.
-  suggestion?: { word: string; target: number | null } | null
+  suggestion?: { word: string; detail: string } | null
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   // How many sessions of fifteen-minute bars to load; only 15m reads it.
   const [intradaySessions, setIntradaySessions] = useState(DESK_CHART_DEFAULT_SESSIONS['15m'])
   const [showSignals, setShowSignals] = useState(true)
   const [showRecommendations, setShowRecommendations] = useState(true)
-  const [showDecisions, setShowDecisions] = useState(true)
+  const [showDecisions, setShowDecisions] = useState(false)
   const [showFills, setShowFills] = useState(true)
   const [receipts, setReceipts] = useState<ChartReceipt[]>([])
   const [receiptCursor, setReceiptCursor] = useState<string | null>(null)
@@ -661,7 +665,9 @@ export const TickerChart = ({
   const fills = useMemo(() => fillRows(history), [history])
   // The fifteen-minute layers come timed from the payload rather than dated
   // from the history file, so they are empty on daily and weekly.
-  const timedDecisions = useMemo(() => [...intradayDecisionMarkers(data), ...intradayFillsAtMarkers(data)], [data])
+  // The 15m view marks the signal on the bar it was made; where a trade fills
+  // is the paper account's own fill, drawn from the fills, never projected.
+  const timedDecisions = useMemo(() => intradayDecisionMarkers(data), [data])
   const timedFills = useMemo(() => intradayFillMarkers(data), [data])
 
   useEffect(() => {
@@ -842,11 +848,11 @@ export const TickerChart = ({
           </label>
           <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showDecisions} onChange={event => setShowDecisions(event.target.checked)} />
-            Policy buy/sell
+            Strategy signals
           </label>
           {fills.length > 0 && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />
-            Paper fills{fills.some(isRedeploy) ? ' (purple: redeploy)' : ''}
+            Paper trades
           </label>}
           {timeframe === '15m' && <div className="flex gap-1" role="group" aria-label="Chart sessions">
           {INTRADAY_SESSIONS.map((count) => (
@@ -919,7 +925,7 @@ export const TickerChart = ({
             ? <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute chart caption">
               Newest stored session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}
               {data.sessions} complete session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time, closing auction included where stored); pan or zoom for history.
-              Decisions are marked on the last bar before the close they were made at; fills on the bar the executor sends them into.
+              Trades are marked on the bar they filled in; strategy signals, when shown, on the last bar before the close they were made at.
             </p>
             : <p className="mt-1 text-[11px] text-[#6e6e73]">
             {merged.live && summary?.last.close !== null
@@ -930,16 +936,16 @@ export const TickerChart = ({
               : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>}
-          {showSignals && <p className="mt-1 text-[11px] text-[#6e6e73]" title="Dates identify trading sessions, not publication times. A or A+ meets only the grade requirement for entry; other checks still apply.">
-            Saved grades use nightly records; recalculated grades use historical data. Grade changes are not trades.
-          </p>}
-          {history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
+          <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
+            Circles are the paper account’s trades (BUY green, SELL red). Arrows are grade changes (up green, down red).{showDecisions ? ' Labelled arrows marked “signal” or “RESET” are the strategy’s decisions at each close.' : ''}
+          </p>
+          {showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {history.decision_note || DECISION_NOTE}
           </p>}
           {/* What the markers mean under the equal-weight policy, and how the
               reset sessions were found: without a clock on file no session is
               a reset, and the chart says so rather than guessing one. */}
-          {isEqualWeight(history?.policy) && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy marker legend">
+          {showDecisions && isEqualWeight(history?.policy) && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy marker legend">
             {EQUAL_WEIGHT_LEGEND}{history?.rebalance_note ? ` ${history.rebalance_note[0].toUpperCase()}${history.rebalance_note.slice(1)}.` : ''}
           </p>}
 
@@ -947,22 +953,21 @@ export const TickerChart = ({
               the policy's stance today, then the sessions it would have traded
               on, newest first. This list is the decisions, not the markers, so
               the marker checkbox leaves it in place. */}
-          {(latestDecision || suggestion) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
-            <p className="font-medium text-[#1d1d1f]">Now: {suggestion ? suggestion.word : titled(latestDecision?.action ?? 'hold')} {percentText(suggestion ? suggestion.target ?? latestDecision?.target_weight : latestDecision?.target_weight)}{suggestion ? ' · live suggestion' : ''}</p>
-            {recentDecisions.length === 0
-              ? <p>No policy buy or sell in the loaded history.</p>
-              : <ul className="mt-0.5">
-                {recentDecisions.map(row => {
-                  const price = closeOn(row.date, merged.bars, timeframe)
-                  // On 15m the list says when in the session the decision is made, since that is what the view is for.
-                  return <li key={row.date}>{sessionLabel(row.date, currentYear)} · {decisionText(row, history?.policy)}{price !== null ? ` · close $${price.toFixed(2)}` : ''}{timeframe === '15m' ? ' · decided at the close' : ''}</li>
-                })}
-              </ul>}
+          {(latestDecision || suggestion || fills.length > 0) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
+            <p className="font-medium text-[#1d1d1f]" aria-label={`${ticker} now`}>Now: {suggestion ? `${suggestion.word} · ${suggestion.detail}` : 'no paper order'}</p>
             {fills.length > 0 && <ul className="mt-1" aria-label={`${ticker} paper fills`}>
               {[...fills].reverse().slice(0, 12).map((fill, index) => (
-                <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)} · Filled {fill.side} {fill.qty} @ ${fill.price.toFixed(2)}{isRedeploy(fill) ? ' · redeploy' : ''}</li>
+                <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)} · {tradeText(fill.side, fill.qty, fill.price)}{isRedeploy(fill) ? ' · idle cash put to work' : ''}</li>
               ))}
             </ul>}
+            {showDecisions && (recentDecisions.length === 0
+              ? <p className="mt-1">No strategy signal in the loaded history.</p>
+              : <ul className="mt-1" aria-label={`${ticker} strategy signals`}>
+                {recentDecisions.map(row => {
+                  const price = closeOn(row.date, merged.bars, timeframe)
+                  return <li key={row.date}>{sessionLabel(row.date, currentYear)} · {decisionText(row, history?.policy)}{price !== null ? ` · close $${price.toFixed(2)}` : ''}</li>
+                })}
+              </ul>)}
           </div>}
 
           {personalHistory && showRecommendations && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Saved recommendation history">

@@ -57,7 +57,7 @@ POLICY = policy_v4.POLICY_VERSION
 # order anyone would place; 2.5 points is above every such reshuffle at
 # five names or more and below any real add or trim.
 ADD_TRIM_MIN = 0.025
-DECISION_NOTE = "decisions at the close, filled at the next open; sizes are % of equity"
+DECISION_NOTE = "signals at each close; sizes are % of the account"
 ACTIONS = ("buy", "sell", "add", "trim", "hold")
 
 

@@ -2799,6 +2799,49 @@ export interface DeskPaperLive {
   day_pl_pct?: number;
   positions?: { symbol: string; qty: number; market_value: number; avg_entry_price: number; current_price: number; unrealized_pl: number }[];
   orders?: { symbol: string; side: string; qty: number; status: string }[];
+  // The paper account's own orders as the board shows them, worded once by the
+  // backend (`intraday_orders.board_orders`) so board, panel and chart agree.
+  plan?: DeskPaperPlan;
+}
+
+// One paper-account order: what, how big, why, when and what has happened.
+export interface DeskPaperOrder {
+  client_order_id: string;
+  symbol: string;
+  side: 'buy' | 'sell';
+  action: 'BUY' | 'SELL' | 'TRIM';
+  qty: number;
+  price: number | null;
+  notional: number | null;
+  weight: number | null;
+  leg: string;
+  why: string;
+  reason?: string | null;
+  timing: 'dip_or_close' | 'next_open' | 'close' | 'event';
+  decided?: string | null;
+  execute_on?: string | null;
+  open?: number | null;
+  level?: number | null;
+  sent_at?: string | null;
+  sent_how?: 'market' | 'moc' | null;
+  filled_qty?: number | null;
+  filled_price?: number | null;
+  filled_at?: string | null;
+  // planned, waiting, due, sent, queued, filled, partial, held, cancelled,
+  // rejected, missed, problem.
+  state: string;
+  status: string;
+  when: string;
+}
+
+// The paper account's plan: its orders, the rule they execute on and the reset clock.
+export interface DeskPaperPlan {
+  rule: 'dip_or_close' | 'next_open';
+  rule_text?: { buy: string; sell: string };
+  orders: DeskPaperOrder[];
+  until_rebalance: number | null;
+  last_rebalance?: string | null;
+  reason?: string | null;
 }
 
 export const getDeskPaper = async (userId: string): Promise<DeskPaperLive> => {

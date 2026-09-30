@@ -19,8 +19,12 @@ apply from the next session rather than the one after, so this command:
 The balancer then sends the moved orders on the board's rule. The default is a
 dry run that prints the plan and touches nothing; `--apply` does it.
 
-    python -m backend.cli.market_paper_retime --data-dir data/market
-    python -m backend.cli.market_paper_retime --data-dir data/market --apply
+Run it on spark1 the way the nightly runs (the deploy clone, `.env` exported,
+the Alpaca paper keys in the environment), never inside the backend container,
+whose root-owned writes the nightly could not read back:
+
+    python -m backend.cli.market_paper_retime
+    python -m backend.cli.market_paper_retime --apply
 """
 
 from __future__ import annotations
@@ -32,6 +36,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.agents.trading.desk import intraday_orders, paper
+from backend.config.settings import settings
 from backend.market import entry_timing
 
 
@@ -148,7 +153,11 @@ def retime(
 def build_parser() -> argparse.ArgumentParser:
     """Return the CLI parser."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", default="data/market", help="desk data root")
+    parser.add_argument(
+        "--data-dir",
+        default=settings.MARKET_DATA_ROOT,
+        help="desk data root (the nightly's default)",
+    )
     parser.add_argument(
         "--apply", action="store_true", help="cancel and move (default: dry run)"
     )

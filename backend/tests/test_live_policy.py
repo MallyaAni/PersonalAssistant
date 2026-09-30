@@ -6,6 +6,7 @@ record carries them for every graded name, the board sizes against them,
 and a paper state planned under another policy rebalances into them once.
 """
 
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import numpy as np
@@ -14,6 +15,7 @@ import pytest
 from backend.agents.trading.desk import (
     event_risk,
     grading,
+    intraday_orders,
     live_policy,
     paper,
     policy_v4,
@@ -103,8 +105,11 @@ def test_unstamped_state_rebalances_once_into_the_active_policy(tmp_path, monkey
         def positions(self):
             return []
 
+        # Closed for the nightly; the intraday leg's session opens it.
+        is_open = False
+
         def clock(self):
-            return {"is_open": False}
+            return {"is_open": self.is_open}
 
         def _accept(self, symbol, qty, side, client_order_id):
             self.orders.append(
@@ -124,6 +129,10 @@ def test_unstamped_state_rebalances_once_into_the_active_policy(tmp_path, monkey
             return self._accept(symbol, qty, side, client_order_id)
 
         def submit_market_on_close(self, symbol, qty, side, client_order_id):
+            return self._accept(symbol, qty, side, client_order_id)
+
+        # The intraday leg's in-session market order.
+        def submit_market(self, symbol, qty, side, client_order_id):
             return self._accept(symbol, qty, side, client_order_id)
 
         def orders_since(self, since):
@@ -150,9 +159,18 @@ def test_unstamped_state_rebalances_once_into_the_active_policy(tmp_path, monkey
     assert state.policy_version == live_policy.ACTIVE
     assert state.last_rebalance == "2026-09-03"
     # The orders are the active policy's: SNDK is the one A+ name, so it is
-    # bought at the cap and nothing else is.
-    bought = {o["symbol"] for o in entry["orders"] if o["side"] == "buy"}
+    # bought at the cap and nothing else is. They are planned for the next
+    # session on the board's rule and sent then by the intraday leg (here in
+    # its close window), which fills them.
+    bought = {o["symbol"] for o in entry["planned"] if o["side"] == "buy"}
     assert bought == {"SNDK"}
+    assert entry["orders"] == []
+    broker.is_open = True
+    intraday_orders.send_due(
+        tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+    )
+    broker.is_open = False
+    assert {o["symbol"] for o in broker.orders} == {"SNDK"}
     # Stamped now: the next session is an ordinary day, not a forced rebalance.
     market_daily.paper_trade(report, tmp_path, "2026-09-04", True)
     out = capsys.readouterr().out

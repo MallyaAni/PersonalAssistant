@@ -149,14 +149,14 @@ def test_decisions_and_their_fills_are_placed_by_the_executor_rule(tmp_path):
             "date": EARLY.isoformat(),
             "action": "buy",
             "target_weight": 0.14,
-            "label": "Buy 14% decided at the close",
+            "label": "BUY signal 14% at the close",
         },
         {
             "time": "2025-12-01T15:45:00-05:00",
             "date": MON.isoformat(),
             "action": "sell",
             "target_weight": 0.0,
-            "label": "Sell decided at the close",
+            "label": "SELL signal at the close",
         },
     ]
     assert out["fills_at"] == [
@@ -165,14 +165,14 @@ def test_decisions_and_their_fills_are_placed_by_the_executor_rule(tmp_path):
             "date": MON.isoformat(),
             "action": "buy",
             "target_weight": 0.14,
-            "label": "Buy 14% fills at the open",
+            "label": "BUY signal 14% fills at the open",
         },
         {
             "time": "2025-12-02T15:45:00-05:00",
             "date": TUE.isoformat(),
             "action": "sell",
             "target_weight": 0.0,
-            "label": "Sell fills at the close",
+            "label": "SELL signal fills at the close",
         },
     ]
     # The hold row draws nothing.
@@ -246,16 +246,16 @@ def test_payload_carries_the_policy_and_the_reset_flags(tmp_path):
 # they are not whole, the way the board writes BUY 9.1%.
 def test_decision_text_is_policy_aware():
     text = chart.decision_text
-    assert text("buy", 0.0909) == "Buy 9.1%"
-    assert text("buy", 0.14) == "Buy 14%"
-    assert text("sell", 0.0) == "Sell"
+    assert text("buy", 0.0909) == "BUY signal 9.1%"
+    assert text("buy", 0.14) == "BUY signal 14%"
+    assert text("sell", 0.0) == "SELL signal"
     assert text("hold", 0.1) is None
     v4 = chart.EQUAL_WEIGHT_POLICY
-    assert text("add", 0.125, 0.025, v4) == "Rebalance +2.5%"
-    assert text("trim", 0.10, -0.025, v4) == "Rebalance \u22122.5%"
-    assert text("add", 0.20, None, v4) == "Rebalance \u219220%"
-    assert text("add", 0.20, 0.06, "some-sizing/3") == "Add \u219220%"
-    assert text("trim", 0.20, -0.06, None) == "Trim \u219220%"
+    assert text("add", 0.125, 0.025, v4) == "RESET +2.5%"
+    assert text("trim", 0.10, -0.025, v4) == "RESET \u22122.5%"
+    assert text("add", 0.20, None, v4) == "RESET \u219220%"
+    assert text("add", 0.20, 0.06, "some-sizing/3") == "ADD signal \u219220%"
+    assert text("trim", 0.20, -0.06, None) == "TRIM signal \u219220%"
 
 
 # A reset-day add in a /4 history is drawn as the rebalance it is.
@@ -271,9 +271,9 @@ def test_a_reset_add_is_labelled_as_a_rebalance(tmp_path):
         "rebalance": True,
     }
     out = chart.payload(store, tmp_path, "AAPL", 10, history)
-    assert out["decisions"][0]["label"] == "Rebalance +2.5% decided at the close"
+    assert out["decisions"][0]["label"] == "RESET +2.5% at the close"
     assert out["decisions"][0]["rebalance"] is True
-    assert out["fills_at"][0]["label"] == "Rebalance +2.5% fills at the open"
+    assert out["fills_at"][0]["label"] == "RESET +2.5% fills at the open"
 
 
 # A fill that names its plan leg carries it and says so in its label, so
@@ -306,8 +306,8 @@ def test_payload_reads_the_history_file_from_the_root(tmp_path):
     _history(tmp_path)
     out = chart.payload(store, tmp_path, "AAPL", 10, None)
     assert [d["label"] for d in out["decisions"]] == [
-        "Buy 14% decided at the close",
-        "Sell decided at the close",
+        "BUY signal 14% at the close",
+        "SELL signal at the close",
     ]
     assert chart.read_history(tmp_path, "MSFT") is None
 
@@ -324,7 +324,7 @@ def test_a_missing_session_is_reported_and_no_fill_is_moved_across_it(tmp_path):
     assert "1 exchange sessions" in out["data_reason"]
     # The buy still fills Monday (adjacent); the Monday sell's fill falls on
     # the missing Tuesday and is left out rather than drawn on Wednesday.
-    assert [f["label"] for f in out["fills_at"]] == ["Buy 14% fills at the open"]
+    assert [f["label"] for f in out["fills_at"]] == ["BUY signal 14% fills at the open"]
     # The Tuesday fill has no bars to sit on and is left out.
     assert [f["date"] for f in out["fills"]] == [MON.isoformat()]
 
@@ -403,7 +403,7 @@ def test_chart_route_serves_15m(monkeypatch, tmp_path):
     assert body["timeframe"] == "15m"
     assert body["sessions"] == 3
     assert body["sessions_requested"] == 60
-    assert body["decisions"][0]["label"] == "Buy 14% decided at the close"
+    assert body["decisions"][0]["label"] == "BUY signal 14% at the close"
     assert body["fills"][0]["label"] == "Filled buy 63 @ 224.81"
     assert missing.status_code == 404
     assert bad.status_code == 400

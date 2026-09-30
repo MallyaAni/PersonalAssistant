@@ -9,6 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
+import { TradeBoard, boardRows, dollars, percent, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -240,10 +241,15 @@ const ratings = (ranks: Record<string, number> | undefined, stances: Record<stri
 // Explain the percentile/vote shorthand without presenting the parts as individual letter grades.
 const AnalystRatings = ({ranks, stances, session}: {ranks?: Record<string, number>; stances: Record<string, number>; session: string}) => (
   <div className="mt-2 text-xs text-[#6e6e73]">
-    <p>Analyst percentiles and votes · intraday where available; otherwise {session} close</p>
     <p className="font-mono text-[11px]" title={TRIGGER_LEGEND}>{ratings(ranks, stances) || 'Analyst parts not recorded.'}</p>
-    <p className="mt-1 text-[11px]">Numbers are rounded percentiles (0–100); signs are votes, not individual letter grades or probabilities of profit. No number means no valid percentile is available. ? means the vote is missing or invalid.</p>
-    <p className="mt-1 text-[11px]">{EVENING_VOTE_CONTEXT}</p>
+    <p className="mt-1 text-[11px]">{ANALYST_MEANINGS} + for, · neutral, − against; the number is its percentile across the book.</p>
+    {/* The fine print is kept once, folded: what the numbers and votes are not. */}
+    <details className="mt-1 text-[11px]">
+      <summary className="cursor-pointer text-[#0071e3]">How to read the votes</summary>
+      <p className="mt-1">Analyst percentiles and votes · intraday where available; otherwise {session} close</p>
+      <p className="mt-1">Numbers are rounded percentiles (0–100); signs are votes, not individual letter grades or probabilities of profit. No number means no valid percentile is available. ? means the vote is missing or invalid.</p>
+      <p className="mt-1">{EVENING_VOTE_CONTEXT}</p>
+    </details>
   </div>
 )
 
@@ -348,11 +354,7 @@ const ReasonLines = ({ text }: { text: string }) => (
 const EveningAnalysis = ({grade, session, written, fundamental, ticker}: {grade: DeskGrade; session: string; written: string; fundamental: DeskRecord['fundamental']; ticker: string}) => (
   <section aria-label="Evening analysis">
     <h4 className="font-medium text-[#6e6e73]">Evening analysis · {session}</h4>
-    <p className="font-medium text-[#1d1d1f]">Recorded grade {grade.grade}</p>
-    <p className="font-mono text-[11px] text-[#6e6e73]" title={TRIGGER_LEGEND}>{triggers(grade.stances ?? {}) || 'Analyst votes not recorded.'}</p>
-    <p className="text-xs text-[#6e6e73]">Combined analyst grade. Not a current trade instruction.</p>
-    <p className="mt-1 text-[11px] text-[#6e6e73]">{ANALYST_MEANINGS}</p>
-    <p className="mt-1 text-[11px] text-[#6e6e73]">Stored readings are not a causal breakdown of the votes. {EVENING_VOTE_CONTEXT}</p>
+    <p className="font-medium text-[#1d1d1f]">Recorded grade {grade.grade} <span className="font-mono text-[11px] font-normal text-[#6e6e73]" title={`${TRIGGER_LEGEND} ${ANALYST_MEANINGS}`}>{triggers(grade.stances ?? {}) || 'Analyst votes not recorded.'}</span></p>
     {grade.reason && <ReasonLines text={grade.reason} />}
     <RecordedAnalystDates fundamental={fundamental} ticker={ticker} />
     {grade.headline && <details className="mt-2 text-xs">
@@ -951,75 +953,53 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-2xl'}`}>
     <p className="font-medium">Reading this page</p>
     <p className="mt-1 text-[#6e6e73]">
-      The board combines the published evening decision with available intraday readings.
-      Personal guidance uses your recorded positions and confirmed cash. Nothing here submits
-      an order to your brokerage account.
+      Stock rankings is the paper account&apos;s book: what it holds, what it is buying or selling, how much, and when.
+      The paper account places exactly these orders. Nothing here touches your own brokerage account.
     </p>
     <dl className="mt-3 space-y-2">
       <div>
+        <dt className="font-medium">Action</dt>
+        <dd className="text-[#6e6e73]">
+          BUY, SELL and TRIM are the paper account&apos;s orders. SELL closes the position (the grade fell below A, or the
+          name left the book); TRIM cuts it back to its target. HOLD means no order: the position stays.
+          The small line under the word says why.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-medium">Size</dt>
+        <dd className="text-[#6e6e73]">
+          Shares, dollars and the share of the paper account. Enter your account size once and every order also shows
+          the shares for your account at the same share.
+        </dd>
+      </div>
+      <div>
+        <dt className="font-medium">When</dt>
+        <dd className="text-[#6e6e73]">
+          The nightly plan decides the orders after the close. The next session, a buy goes in on the first 15-minute
+          close 1% or more under the day&apos;s open, a sell or trim on one 1% or more over it; with none, the order goes in
+          market-on-close from 3:30 PM ET. The status shows where each order is: planned, waiting for its level, sent,
+          filled.
+        </dd>
+      </div>
+      <div>
         <dt className="font-medium">Grade</dt>
         <dd className="text-[#6e6e73]">
-          A+ down to C is the combined grade from analyst votes: growth &amp; margins, price trend, earnings-release
-          tone, relative valuation (not intrinsic fair value), and which group is leading. Evening votes use persistence rules;
-          intraday readings can update price-sensitive inputs. One bearish core analyst caps a name at B.
-        </dd>
-      </div>
-      <div>
-        <dt className="font-medium">Opportunity</dt>
-        <dd className="text-[#6e6e73]">
-          Combined analyst evidence on a zero-to-ten scale, not a return forecast.
-          Check the reading timestamp and any missing analyst inputs.
-        </dd>
-      </div>
-      <div>
-        <dt className="font-medium">Strategy intent</dt>
-        <dd className="text-[#6e6e73]">
-          BUY is the strategy&apos;s intent to add; SELL is its intent to reduce; HOLD means it proposes no trade.
-          “Blocked now” means the intent is visible but is not executable with the current market evidence,
-          allocation, recorded positions, or confirmed cash.
-          Size is the currently executable change in your account allocation, not a return since the signal.
-          A dash means no trade size is available now. Open a row for the intended change and strategy target.
-          Nothing here submits an order.
-        </dd>
-      </div>
-      <div>
-        <dt className="font-medium">Selling</dt>
-        <dd className="text-[#6e6e73]">
-          A covered holding downgraded below A can receive a sell recommendation.
-          Sale proceeds are not assumed available before execution. Historical
-          comparisons use today's stock universe and do not establish future profitability.
-        </dd>
-      </div>
-      <div>
-        <dt className="font-medium">Allocation %</dt>
-        <dd className="text-[#6e6e73]">
-          Row details include the experimental allocation calculated from the displayed completed bar
-          and the adopted strategy&apos;s allocation for its next weight reset. Neither is your
-          current position, an order quantity, or a profit target. A grade alone does not guarantee
-          an allocation; selection and sizing also apply.
+          A+ down to C, from five analysts: growth &amp; margins (F), price trend (T), earnings-release tone (S), relative
+          valuation (V) and group leadership (R). A and A+ names are in the book at equal weight, up to 20% each. Grades
+          are set at the close.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Prices</dt>
         <dd className="text-[#6e6e73]">
-          Fifteen-minute IEX bars while the market is open, and the last completed bar once it closes. They are
-          bar prices, not executable bid and ask. Check the displayed bar timestamp before acting;
-          refreshing the page does not guarantee a newer market observation.
-        </dd>
-      </div>
-      <div>
-        <dt className="font-medium">What is real</dt>
-        <dd className="text-[#6e6e73]">
-          One paper account at the broker, shown as the practice account. It places real paper orders and its
-          fills are simulated broker fills. Research comparisons do not submit personal orders.
-          Your own brokerage account is never touched: after you trade it
-          yourself, use Record to tell this page what filled.
+          Fifteen-minute IEX bars while the market is open and the last completed bar once it closes: bar prices, not
+          bid and ask.
         </dd>
       </div>
     </dl>
     <p className="mt-3 text-xs text-[#6e6e73]">
-      Click a sortable column heading to sort, click a name for its history, or click the arrow beside a
-      row to see why the desk grades it that way without leaving the board.
+      Switch between Orders, Portfolio and All names above the board, click a name for its chart and history, or the
+      arrow beside a row for its orders, position and grade.
     </p>
     {onClose && (
       <button type="button" onClick={onClose} className="mt-3 text-xs text-[#0071e3] hover:underline">
@@ -1209,18 +1189,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       if (!current()) return
       setLive((previous) => ({ ...previous, stale: true, reason: 'Regular-session data refresh failed; showing last known regular data.' }))
     }
-    // Always re-read the personal plan after the candle: whenever `/desk/live`
-    // carries a new `as_of`, the timed `/4` actions may have changed with it.
-    await refreshMine(current)
-    if (!current()) return
-    try {
-      const nextIntraday = await getDeskIntraday(userId)
-      if (!current()) return
-      setIntraday(nextIntraday)
-    } catch {
-      // the persisted plan is a convenience; the live board stands
-    }
-    if (!current()) return
+    // The board is the paper account's orders; read them after the candle.
     try {
       const nextPaper = await getDeskPaper(userId)
       if (!current()) return
@@ -1311,31 +1280,26 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     return () => window.clearTimeout(timer)
   }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions, live.extended_hours])
 
-  // Refresh quote eligibility between candle updates and ignore obsolete account requests.
-  //
-  // The timed `/4` board depends on this: the backend re-reads the balancer's
-  // live.json and today's entry-timing latch on every `/desk/mine` request, so
-  // a level trigger the balancer latched reaches the page within 15 seconds
-  // while it is visible. A hidden tab skips these, and the minute `poll`
-  // (which reads `/desk/live` and then always re-reads `/desk/mine`, so a new
-  // `as_of` is followed by a fresh plan at once) keeps it within a minute;
-  // returning to the tab polls immediately.
+  // Re-read the paper account's orders every 20 seconds while the page is
+  // visible, so a level reached on the candle, the order it sends and the fill
+  // after it reach the board without waiting for the minute poll.
   useEffect(() => {
     let stopped = false
     let busy = false
-    // Keep only one quote refresh in flight and fail closed on a provider/API error.
+    // Keep one read in flight; a failed read leaves the last answer standing.
     const refresh = async () => {
       if (busy || document.hidden) return
       busy = true
       try {
-        await refreshMine(() => !stopped)
+        const next = await getDeskPaper(userId)
+        if (!stopped) { setPaperLive(next); setNow(Date.now()) }
       } catch {
-        // refreshMine exposes and fails closed on request errors.
+        // the minute poll reports an unreachable account
       } finally { busy = false }
     }
-    const timer = window.setInterval(() => void refresh(), 15_000)
+    const timer = window.setInterval(() => void refresh(), 20_000)
     return () => { stopped = true; window.clearInterval(timer) }
-  }, [userId, equity, cash, riskBudgetPct, holdings, payload?.latest?.session])
+  }, [userId])
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-[#6e6e73]">Loading the desk…</div>
@@ -1359,6 +1323,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       || (b.score_live ?? latest?.grades[b.ticker]?.score ?? -1e9) - (a.score_live ?? latest?.grades[a.ticker]?.score ?? -1e9)
       || a.ticker.localeCompare(b.ticker))
   const curve = payload.curve ?? latest?.curve
+  // Each name's close on the decision session, for the day's move on the board.
+  const closes: Record<string, number | null> = Object.fromEntries((latest?.actions ?? []).map(a => [a.ticker, a.last_close]))
   const warnings = latest?.regime.flags ?? []
   // Whether the paper book's next session is a rebalance: only then are the
   // board's target-vs-held changes executable at the next open. Otherwise
@@ -1394,7 +1360,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0}
-    holdings={holdingsReady ? holdings.length : null} eligible={eligibleNow} /> : null
+    plan={paperLive?.plan?.orders ?? null} /> : null
   // Keep a stock's diagnostics and confirmed-fill controls in its existing board expansion.
   const expandRow = (ticker: string) => {
     const g = latest?.grades?.[ticker]
@@ -1487,7 +1453,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
-            {latest && !research && <button disabled={!canWrite || !holdingsReady} title={holdingsError || undefined} onClick={() => setEditing(true)} className="text-xs text-[#0071e3] disabled:opacity-40">Positions</button>}
             {latest && <button type="button" onClick={() => setResearch(!research)} className="text-xs text-[#0071e3]">{research ? 'Back to the desk' : 'Research'}</button>}
             <button
               type="button"
@@ -1523,11 +1488,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         </button>
       </header>
 
-      {canWrite && <PersonalDecisionHistory key={userId} userId={userId} context={historyContext} decisions={decisions}
-        session={latest?.session} written={latest?.written} active={!research && !!latest}
-        displayPaused={eventPaused}
-        isCurrent={context => context.userId === userId && context.generation === accountGen.current && context.request === acceptedMineRequest.current} />}
-
       {autopsy && <AutopsyView userId={userId} onClose={() => setAutopsy(false)} />}
 
       {!latest && <GettingStarted hasRecord={false} hasPositions={holdings.length > 0} onEnterPositions={() => setEditing(true)} />}
@@ -1537,14 +1497,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {!research && <>
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
-      {mineError && <p role="alert" className="border-b border-black/[0.06] bg-red-50 px-3 py-2 text-xs text-[#b42318]">Personal guidance unavailable: {mineError} No trade is shown as executable.</p>}
       <GradeParityBanner parity={payload.grade_parity} />
-
-      <StockBoard latest={latest} live={live} grades={liveGrades} research={payload.intraday_research} coverage={payload.coverage} decisions={decisions}
-      holdings={holdingsReady ? holdings : null} broker={paperLive} event={boardEvent} now={now}
-      holdingsError={holdingsError}
-      planAction={(ticker) => planFor(ticker, decisions, latest, now).action}
-      expand={expandRow} extraNames={rows.filter(r => r.action === 'uncovered').map(r => r.ticker)} toolbar={planToolbar} trade={tradeCell} closes={Object.fromEntries(rows.map(r => [r.ticker, r.last_close]))} footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">{saveError && !editing ? <span className="text-[#b42318]">{saveError} · </span> : null}Record confirmed broker fills only. No automatic price stops.</p>} onOpen={setOpenName} />
+      <TradeBoard latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused}
+        footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">No automatic price stops. Your own brokerage account is never traded from here.</p>} />
       </div>}
       {latest && <details aria-label="Strategy details" className="rounded-xl border border-black/[0.08] bg-white p-3 text-xs"><summary className="cursor-pointer font-medium">Strategy details</summary>
       <p className="mt-2" aria-label="Recorded allocation policy">Allocation policy: {latest.targets?.policy ?? 'Not recorded'} · decision {latest.session}</p>
@@ -1553,7 +1508,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </p>
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
               {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
-                : rebalanceDue ? 'Paper weight reset due at the next open; personal signals use their own execution checks.'
+                : paperLive?.plan?.until_rebalance != null ? paperLive.plan.until_rebalance <= 1 ? 'Paper weights reset at the next plan.' : `Paper weights reset in ${paperLive.plan.until_rebalance} sessions.`
                 : countdown !== null ? `Paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
                 : 'No paper weight reset scheduled.'}
               {live.as_of && (
@@ -1614,22 +1569,24 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
 
       {latest && (
-        <details className="rounded-2xl border border-black/[0.08] bg-white" aria-label="Practice account">
+        <details className="rounded-2xl border border-black/[0.08] bg-white" aria-label="Paper account">
           <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[#1d1d1f]">
-            Practice account
-            <span className="ml-2 text-xs font-normal text-[#6e6e73]">simulated funds</span>
+            Paper account
+            <span className="ml-2 text-xs font-normal text-[#6e6e73]">history, positions and fills · simulated funds</span>
           </summary>
           <div className="space-y-3 px-4 pb-4">
-            <p aria-label="Paper account execution timing" className="text-xs text-[#6e6e73]">Scheduled paper buys: next open. Ordinary reductions: next eligible close. {timedBoard(decisions, latest) ? 'Stock-ranking actions use a separate intraday timing rule; fills and results can differ.' : 'Personal guidance uses your own recorded positions and confirmed cash.'}</p>
+            <p aria-label="Paper account execution timing" className="text-xs text-[#6e6e73]">{paperLive?.plan?.rule === 'next_open'
+              ? 'The paper account sends its buys for the next open and its sells for the next close.'
+              : 'The paper account sends the Stock rankings orders on the board’s rule: a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise market-on-close from 3:30 PM ET. FOMC risk orders go in at the open.'}</p>
             <SummaryStrip latest={latest} paperLive={paperLive} />
             <PaperAccountHistory key={userId} userId={userId} session={latest.session} />
             {paperLive && paperLive.reason === undefined && paperLive.equity !== undefined && <LivePositions paper={paperLive} equity={paperLive.equity} />}
             <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
-              <h3 className="font-semibold">Paper execution {paperLive?.as_of ? `· fetched ${marketTime(paperLive.as_of)}` : ''}</h3>
-              <p>{paperLive?.orders ? `${paperLive.orders.length} open orders` : 'Open orders unavailable'}</p>
-              {paperLive?.orders?.map((order, i) => <p key={i}>{order.side} {order.qty} {order.symbol} · {order.status}</p>)}
+              <h3 className="font-semibold">Broker orders and fills {paperLive?.as_of ? `· read ${marketTime(paperLive.as_of)}` : ''}</h3>
+              <p>{paperLive?.orders ? `${paperLive.orders.length} order${paperLive.orders.length === 1 ? '' : 's'} open at the broker` : 'Open orders unavailable'}</p>
+              {paperLive?.orders?.map((order, i) => <p key={i}>{order.side.toUpperCase()} {order.qty} {order.symbol} · {order.status}</p>)}
               <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
-              {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side} {fill.qty} {fill.symbol} at {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
+              {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side === 'buy' ? 'Bought' : 'Sold'} {fill.qty} {fill.symbol} @ {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
             </section>
           </div>
         </details>
@@ -1687,7 +1644,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <NameDetail
           compact
           userId={userId}
-          personalHistory={canWrite && !research}
+          order={latest ? boardRows(latest, paperLive).find(r => r.ticker === openName) ?? null : null}
+          personalHistory={false}
           historyGeneration={accountGen.current}
           personalReceiptId={historyContext?.userId === userId
             && historyContext.generation === accountGen.current
@@ -2850,13 +2808,12 @@ const GradeMove = ({changes, session, reads, revision}: {
 }
 
 // Summarize exchange status, active restrictions and executable personal signals.
-const TodayLine = ({exchange, event, boardEvent, orders, holdings, eligible}: {
+const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
   exchange: ReturnType<typeof exchangeState>
   event?: {decision_date: string | null} | null
   boardEvent: BoardEvent | null
   orders: number
-  holdings: number | null
-  eligible: number
+  plan: {state: string}[] | null
 }) => {
   const parts: string[] = [exchange.label]
   if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`paper FOMC target exposure ${Math.round(boardEvent.exposure * 100)}% through the ${event?.decision_date ?? 'FOMC'} decision`)
@@ -2864,16 +2821,43 @@ const TodayLine = ({exchange, event, boardEvent, orders, holdings, eligible}: {
     ? 'paper FOMC target exposure unavailable'
     : orders > 0 ? `${orders} pending paper order${orders === 1 ? '' : 's'} during FOMC recovery`
       : 'paper FOMC cycle active')
-  let action: string
-  if (eligible > 0) action = `${eligible} executable signal${eligible === 1 ? '' : 's'}.`
-  else if (holdings !== null && holdings === 0) action = 'Personal positions not recorded.'
-  else action = exchange.known ? 'No executable signals.' : 'Exchange status unavailable.'
+  // The paper account's orders by where they are, in the board's own words.
+  const count = (states: string[]) => (plan ?? []).filter(o => states.includes(o.state)).length
+  const pieces = [
+    [count(['planned', 'queued']), 'planned'],
+    [count(['waiting']), 'waiting for their level'],
+    [count(['due', 'sent']), 'sent'],
+    [count(['filled', 'partial']), 'filled'],
+    [count(['missed', 'problem', 'rejected', 'cancelled']), 'need attention'],
+  ].filter(([n]) => (n as number) > 0).map(([n, word]) => `${n} ${word}`)
+  const action = plan === null ? 'Paper orders loading.'
+    : plan.length === 0 ? 'No paper orders.'
+    : `Paper orders: ${pieces.join(' · ')}.`
   return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
     <span className="font-medium">{parts.join(' · ')}.</span> <span className="text-[#6e6e73]">{action}</span>
   </section>
 }
 
-// Separate the latest accepted grade and personal decision from the dated evening evidence and history.
+// The paper account's order for one name, in the board's own words: the word,
+// the size, why, the rule for its session and what has happened, then the
+// position against its target. Every order on the name is listed.
+const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; session: string}) => (
+  <section aria-label={`${ticker} paper order`} className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+    <h4 className="mb-1 font-medium text-[#6e6e73]">Paper account</h4>
+    <p className="text-base">
+      <span className={`font-semibold ${WORD_STYLE[row.word]}`}>{row.word}</span>
+      {row.orders.length > 0 && <span className="ml-2 text-[#1d1d1f]">{sharesText(row.qty)}{row.notional !== null ? ` · ${dollars(row.notional)}` : ''}{row.weight !== null ? ` · ${percent(row.weight)} of the account` : ''}</span>}
+    </p>
+    <p className="text-xs text-[#6e6e73]">{row.why}</p>
+    {row.orders.map(o => <div key={o.client_order_id} className="mt-2 text-xs">
+      {row.orders.length > 1 && <p className="font-medium text-[#1d1d1f]">{o.action} {sharesText(o.qty)} · {o.why}</p>}
+      <p className="text-[#1d1d1f]">{o.status}</p>
+      <p className="text-[#6e6e73]">{o.when}</p>
+    </div>)}
+    <p className="mt-2 text-xs text-[#6e6e73]">Position {row.held > 0 ? `${sharesText(row.held)}${row.heldValue !== null ? ` · ${dollars(row.heldValue)}` : ''}${row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}` : 'none'}{row.target !== null ? ` · target ${percent(row.target)}` : ''}{row.avgCost !== null ? ` · average cost ${priceText(row.avgCost)}` : ''} · grade {row.grade || '—'} at the {session} close</p>
+  </section>
+)
+
 const NameDetail = ({
   userId,
   ticker,
@@ -2891,10 +2875,14 @@ const NameDetail = ({
   personalHistory = false,
   historyGeneration = 0,
   personalReceiptId,
+  order = null,
 }: {
   userId: string
   ticker: string
   latest: NonNullable<DeskPayload['latest']>
+  // The board's row for this name: the paper account's order, position and
+  // target, worded exactly as the board words them.
+  order?: BoardRow | null
   row: DeskMineRow | null
   live: DeskLive
   liveGrades: Record<string, DeskLiveGrade>
@@ -2931,10 +2919,9 @@ const NameDetail = ({
   // timed board). The chart's "Now:" line shows it so the panel cannot tell a
   // different story from the board beside it; when there is no current decision
   // the chart falls back to the recorded history's latest row.
-  const livePlan = planFor(ticker, decisions, latest, now)
-  const liveSuggestion = livePlan.row
-    ? { word: actionPresentation(livePlan.action, livePlan.row, timedBoard(decisions, latest), now, paused).word, target: livePlan.row.target_weight ?? null }
-    : null
+  const liveSuggestion = order ? {word: order.word === '—' ? 'No order' : order.word, detail: order.orders.length
+    ? `${sharesText(order.qty)} · ${order.status}`
+    : order.held > 0 ? `${sharesText(order.held)}${order.heldWeight !== null ? ` (${percent(order.heldWeight)}` : ''}${order.target !== null && order.heldWeight !== null ? `, target ${percent(order.target)})` : order.heldWeight !== null ? ')' : ''}` : order.why} : null
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []
   // The sessions where the grade actually moved, newest first, each with
@@ -2959,6 +2946,7 @@ const NameDetail = ({
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[#1d1d1f]">
             {ticker}
+            {latest.grades?.[ticker] && <span className="ml-2 text-sm font-normal text-[#6e6e73]">grade {latest.grades[ticker].grade}</span>}
           </h3>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.1] text-[#6e6e73] hover:bg-white">
             <X size={16} />
@@ -2972,6 +2960,7 @@ const NameDetail = ({
           <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={row?.last_close} suggestion={liveSuggestion} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
+        {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
         <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
@@ -2997,9 +2986,6 @@ const NameDetail = ({
           <AnalystRatings ranks={row ? row.ranks_live ?? row.ranks : liveGrades[ticker]?.ranks_live ?? latest.grades?.[ticker]?.ranks}
             stances={(row ? row.stances_live ?? row.stances : liveGrades[ticker]?.stances_live ?? latest.grades?.[ticker]?.stances) ?? {}} session={latest.session} />
           {currentStances && <VoteChanges evening={latest.grades?.[ticker]?.stances ?? {}} current={currentStances} />}
-          <div className="mt-2 text-xs text-[#6e6e73]">
-            <DecisionCell terse ticker={ticker} decisions={decisions} latest={latest} now={now} />
-          </div>
           <p className="mt-2 text-xs text-[#6e6e73]">
             {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
             {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
