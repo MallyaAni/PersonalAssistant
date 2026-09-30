@@ -94,9 +94,7 @@ async function install(page: Page, state: Scenario, baseURL: string) {
     state.requests.push(entry)
     state.ledger.set(request, entry)
     state.lastNetworkChange = Date.now()
-    const readingMine = method === 'POST' && path === `${DESK}/mine` && body?.record_history === false
-      && Object.keys(body).every(key => ['equity', 'available_cash', 'risk_budget_pct', 'record_history'].includes(key))
-    if (method !== 'GET' && !readingMine) {
+    if (method !== 'GET') {
       state.diagnostics.forbiddenWrites.push(`${method} ${path}`)
       entry.completed = true
       return route.fulfill({status: 418, json: {detail: 'Fixture refuses this mutation'}})
@@ -114,15 +112,10 @@ async function install(page: Page, state: Scenario, baseURL: string) {
     else if (endpoint === '/session-prices') json = envelope(state)
     else if (endpoint === '/live/read/AAPL') json = {symbol: 'AAPL', read: null, lines: {short: [], medium: [], long: []}}
     else if (endpoint === '/earnings/AAPL') json = {user_id: OWNER, symbol: 'AAPL', read: null}
-    else if (readingMine) json = {session: SESSION, market_status: market(state), rows: [], grades_live: {},
-      history_receipt: {status: 'not_requested'}, decisions: {session: SESSION, written: WRITTEN, rows: {AAPL: {
-        action: 'Hold', strategy_action: 'Hold', move_weight: 0, executable: false, reason: 'Regular-session policy unchanged',
-      }}}}
     else if (endpoint === '/history/AAPL') json = {ticker: 'AAPL', rows: [], backtest: null}
     else if (endpoint === '/chart/AAPL') json = {ticker: 'AAPL', timeframe: 'daily', adjusted: true, basis: 'adjusted prices',
       sessions: 2, quote_bar: REGULAR_BAR, bars: ['2026-09-23', SESSION].map(date => ({date, open: 99, high: 101, low: 98, close: 100, volume: 100})),
       overlays: {ema9: [99, 99]}, levels: {}, entries: [], data_status: 'complete'}
-    else if (endpoint === '/entries' || endpoint === '/intraday') json = {session: SESSION, rows: [], top_buys: [], changed: []}
     else if (endpoint === '/paper') json = {reason: 'unavailable'}
     else {
       state.diagnostics.unexpectedRequests.push(`${method} ${path}`)
@@ -212,7 +205,8 @@ async function manualRefresh(page: Page) {
 // Escape a literal for use inside a RegExp source.
 const literal = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-// Assert the exact independent source/time, explicit midpoint meaning and unchanged signal price/action.
+// Assert the exact independent source/time, explicit midpoint meaning and unchanged signal price; the name
+// is neither held nor traded by the paper account, so its action is a dash with no size.
 // The chart reading spells the source and time out; the board row shows the price and its session word
 // and carries the same provenance in its hover text, whose whole content is pinned here.
 async function expectPrice(page: Page, state: Scenario, price = state.price, time = '6:00:00 PM') {
@@ -232,7 +226,7 @@ async function expectPrice(page: Page, state: Scenario, price = state.price, tim
   await expect.soft(chart.getByLabel('AAPL session price')).toContainText('Price signals use regular-session candles.')
   await expect.soft(chart.locator('dl')).toContainText('$100.00')
   await expect.soft(chart.locator('dl')).not.toContainText(`$${price.toFixed(2)}`)
-  await expect.soft(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')
+  await expect.soft(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('—')
   await expect.soft(board.getByLabel('AAPL size', {exact: true})).toHaveText('—')
   await expect.soft(board.getByLabel('AAPL displayed grade')).toContainText('A')
 }
@@ -260,7 +254,7 @@ for (const outcome of ['healthy', 'network failure', 'invalid JSON'] as const) {
     await settle(page, state)
     await expectPrice(page, state, 103, '6:01:01 PM')
     if (outcome !== 'healthy') {
-      await expect(page.getByRole('region', {name: 'Stocks and cash', exact: true})).toContainText(REGULAR_FAILURE)
+      await expect(page.getByLabel('Plan status')).toContainText(REGULAR_FAILURE)
       expect(state.diagnostics.failedRequests).toHaveLength(outcome === 'network failure' ? 1 : 0)
     }
   })
@@ -299,9 +293,9 @@ for (const outcome of ['network failure', 'invalid envelope', 'invalid JSON', 'H
       await expect.soft(reading).not.toContainText('stale')
       await expect.soft(reading).toHaveAttribute('title', /Regular-session bar \$100\.00/)
     }
-    await expect(page.getByRole('region', {name: 'Stocks and cash', exact: true})).toContainText(state.reason)
+    await expect(page.getByLabel('Plan status')).toContainText(state.reason)
     const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-    await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')
+    await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('—')
     await expect(board.getByLabel('AAPL size', {exact: true})).toHaveText('—')
     await expect(page.getByRole('region', {name: 'AAPL price chart'}).locator('dl')).toContainText('$100.00')
   })
@@ -342,34 +336,6 @@ for (const abort of [false, true]) {
     await settle(page, state)
     await expectPrice(page, state)
     expect(state.requests.slice(afterNew).filter(entry => entry.path.startsWith(DESK)), 'Obsolete optional completion starts no further desk work').toEqual([])
-  })
-
-  // Applying account inputs invalidates an in-flight optional completion without any receipt or holdings write.
-  test(`account Apply rejects an earlier session-price ${abort ? 'failure' : 'success'}`, async ({page, scenario: state}) => {
-    await openDesk(page, state)
-    const gate = hold(state, '/session-prices', {body: envelope(state, 101), abort})
-    await refreshHeld(page, state, '/session-prices')
-    await settle(page, state, true)
-    state.price = 103
-    const before = state.requests.length
-    await closeChart(page)
-    await page.getByLabel('Personal account equity', {exact: true}).fill('200000')
-    await page.getByLabel('Personal available cash', {exact: true}).fill('5000')
-    await page.getByLabel('Risk per position (%)', {exact: true}).fill('0.5')
-    await page.getByRole('button', {name: 'Apply', exact: true}).click()
-    await expect.poll(() => state.requests.slice(before).some(entry => entry.path === `${DESK}/mine`
-      && entry.completed && entry.body?.equity === 200000 && entry.body?.available_cash === 5000 && entry.body?.risk_budget_pct === .5)).toBe(true)
-    await openChart(page)
-    await settle(page, state, true)
-    await expectPrice(page, state)
-    const afterNew = state.requests.length
-    gate.release()
-    await settle(page, state)
-    await expectPrice(page, state)
-    expect(state.requests.slice(afterNew).filter(entry => entry.path.startsWith(DESK)), 'Invalidated optional completion starts no later reads or writes').toEqual([])
-    await expect(page.getByLabel('Personal account equity', {exact: true})).toHaveValue('200000')
-    await expect(page.getByLabel('Personal available cash', {exact: true})).toHaveValue('5000')
-    await expect(page.getByLabel('Risk per position (%)', {exact: true})).toHaveValue('0.5')
   })
 
   // An unmounted optional completion must not start later requests or leak its price into a newly mounted desk.
@@ -424,5 +390,5 @@ test('expired midpoint becomes stale without changing the regular signal price',
     await expect(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
   }
   await expect(page.getByRole('region', {name: 'AAPL price chart'}).locator('dl')).toContainText('$100.00')
-  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL strategy intent', {exact: true})).toHaveText('—')
 })

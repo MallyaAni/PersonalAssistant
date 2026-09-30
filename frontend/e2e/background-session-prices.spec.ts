@@ -60,9 +60,7 @@ async function install(page: Page, state: Scenario, baseURL: string) {
     const method = request.method()
     const body: Record<string, unknown> | undefined = method === 'POST' ? request.postDataJSON() : undefined
     state.requests.push({path, method, body})
-    const readingMine = method === 'POST' && path === `${DESK}/mine` && body?.record_history === false
-      && Object.keys(body).every(key => ['equity', 'available_cash', 'risk_budget_pct', 'record_history'].includes(key))
-    if (method !== 'GET' && !readingMine) {
+    if (method !== 'GET') {
       state.errors.push(`forbidden mutation: ${method} ${path}`)
       return route.fulfill({status: 418, json: {detail: 'Read-only fixture'}})
     }
@@ -81,17 +79,12 @@ async function install(page: Page, state: Scenario, baseURL: string) {
       const saved = structuredClone(state.snapshot)
       state.reads.push({snapshot: saved, browserAt: await page.evaluate(() => new Date().toISOString())})
       json = saved
-    } else if (readingMine) json = {session: SESSION, market_status: market, rows: [], grades_live: {},
-      history_receipt: {status: 'not_requested'}, decisions: {session: SESSION, written: `${SESSION}T07:00:00Z`, rows: {AAPL: {
-        action: 'Hold', strategy_action: 'Hold', move_weight: 0, executable: false, reason: 'Regular-session execution policy unchanged',
-      }}}}
-    else if (endpoint === '/history/AAPL') json = {ticker: 'AAPL', rows: [], backtest: null}
+    } else if (endpoint === '/history/AAPL') json = {ticker: 'AAPL', rows: [], backtest: null}
     else if (endpoint === '/live/read/AAPL') json = {symbol: 'AAPL', read: null, lines: {short: [], medium: [], long: []}}
     else if (endpoint === '/earnings/AAPL') json = {user_id: OWNER, symbol: 'AAPL', read: null}
     else if (endpoint === '/chart/AAPL') json = {ticker: 'AAPL', timeframe: 'daily', adjusted: true, basis: 'adjusted prices', sessions: 2,
       quote_bar: BAR, bars: ['2026-09-23', SESSION].map(date => ({date, open: 99, high: 101, low: 98, close: 100, volume: 100})),
       overlays: {ema9: [99, 99]}, levels: {}, entries: [], data_status: 'complete'}
-    else if (endpoint === '/entries' || endpoint === '/intraday') json = {rows: [], top_buys: [], changed: []}
     else if (endpoint === '/paper') json = {reason: 'unavailable'}
     else {state.errors.push(`unexpected: ${method} ${path}`); return route.fulfill({status: 418, json: {detail: 'Unknown fixture path'}})}
     await route.fulfill({json})
@@ -153,7 +146,7 @@ async function refresh(page: Page, state: Scenario) {
 async function expectBoundary(page: Page) {
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
-  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('Hold')
+  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('—')
   await expect(board.getByLabel('AAPL size', {exact: true})).toHaveText('—')
   await expect(board.getByLabel('AAPL displayed grade')).toContainText('A')
   await expect(chart.locator('dl')).toContainText('$100.00')
