@@ -1,0 +1,9 @@
+{
+  "score_rows_checked": 120,
+  "maximum_score_difference": 0,
+  "fold_boundaries_checked": 51,
+  "sampled_label_cells": 5855,
+  "missing_label_cells_checked": 145,
+  "maximum_label_difference": 0,
+  "prediction_sha256": "3c007a92c4d12e558456c034b836c62ad6635efa5c6a097d56270d8009f314b6"
+}

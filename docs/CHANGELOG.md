@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-30 — Daily volatility/volume study (research branch; not deployed)
+
+Implemented and exercised `market_daily_risk_liquidity`: read-only hashed SIP
+cubes, dated membership, overnight-gap-inclusive risk proxy, dollar-turnover
+forecast, chronological ridge/LightGBM fits, seasonal baselines and uncertainty
+audits. Clean source `f31adb89`: 86,062 rows, 17 test blocks, 81 related tests
+passed. Independent score/label verification matched exactly. Simple regression
+captures most of the volume predictability; no profitable allocation or
+execution change demonstrated. No live strategy or dashboard change. Full
+results: [daily risk/liquidity study](research/daily-risk-liquidity-results-2026-09-30.md).
+
 ## 2026-09-30 — Adaptive entry study (RECORD ×3); browser specs for the trade board; ticker-panel close fallback
 
 - `backend/market/adaptive_entry.py`, `backend/cli/market_adaptive_entry.py`:

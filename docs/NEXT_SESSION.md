@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-09-30 — Daily risk/volume study finished; no live promotion
+
+User requested implementation and testing after the ML-usefulness research.
+Branch `research/daily-risk-liquidity-20260930`, based on verified GitHub main
+`908e683`; protocol `32fce610`, verified implementation `f31adb89`. The branch
+was pushed to Spark and then GitHub from Spark. Shared main was not rewritten.
+Spark's shared main is older/divergent; routine pull was aborted cleanly.
+
+VERIFIED: 81 related tests, real CLI fit/write/readback acceptance, Ruff and diff
+checks. Actual clean-source run: 86,062 rows / 94 stocks / 17 chronological test
+blocks, 26.97 seconds on CPU. Independent audit: 120 score rows and 6,000 sampled
+label cells matched exactly, plus 51 target-fold boundary records checked.
+Full report: `docs/research/daily-risk-liquidity-results-2026-09-30.md`.
+Source hashes, fits and scores: `docs/research/scorecards/daily-risk-liquidity/`.
+Predictions stay in Spark scratch `daily-risk.06R33E/results-v1/`, not live data.
+
+RESULT: LightGBM RTH variance QLIKE improves 3.45% / 9.73% versus the best simple
+baseline, but its earlier stressed regime is worse and the archived CNN retains
+the lower log-MSE. Volume's simple regression already improves log-MAE 18.92% /
+21.65% versus trailing averages; LightGBM adds only 0.76% / 0.83%. Gap-inclusive
+five-day variance is inconsistent and its recent stressed upper-tail coverage
+fails. No learned risk-off or sizing rule is justified.
+
+Execution relevance: journal has `/4` stamp, not per-order `/5` provenance;
+65 positive fills, 51 with usable completion/forecast alignment. Hypothetically
+saving 5 bp on all recorded filled notional is $86.81 over this short journal,
+not measured alpha. `/5` cap scenario is explicitly hypothetical. Do not build
+complex scheduling from these small sizes or misstate daily volume as depth.
+
+UNVERIFIED: any return/drawdown improvement over `/5`, SPY or QQQ. No action
+policy, dashboard or deployment changed; no fresh holdout claimed. Do not
+reopen blanket volatility-sizing or expand into DL/RL merely because volume is
+predictable. The useful next boundary is a separately justified action benefit,
+not another architecture sweep on the same targets.
+
+Test environment: CPU only (`CUDA_VISIBLE_DEVICES=`), four OMP threads, one
+OpenBLAS thread; old Chronos tests use existing `HF_HOME=.../scratch/hf` with
+`HF_HUB_OFFLINE=1`. No permission or service changes were needed.
+
+Diagram impact: NONE — internal offline study in existing market-data research.
+
 ## 2026-09-30, morning — Adaptive entry: RECORD ×3; browser specs rewritten for the trade board; universe expansion prepared
 
 **Nothing live changed.** Three branches were built overnight on the

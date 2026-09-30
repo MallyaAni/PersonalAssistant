@@ -99,6 +99,28 @@ Internal refactors, bug fixes, styling, tests, and field-level implementation de
 
 ## How to verify a change
 
+### Offline daily risk and liquidity study
+
+`python -m backend.cli.market_daily_risk_liquidity --help` describes the bounded
+research command. It reads existing SIP cubes and membership without provider
+requests or cache rebuilds. Use a new `--out-dir` outside the cube directory;
+existing outputs are refused. `--paper-state` reads an optional snapshot and
+`--cnn-forecast` compares an existing archive without upgrading its provenance.
+`--smoke` is an unregistered functional check, not the historical experiment.
+
+Run `backend/tests/test_daily_risk_liquidity.py` and the existing volatility,
+day-type, session-anatomy, cube and execution suites. The optional older
+deep-intraday tests also need their already-cached Chronos weights. On Spark,
+set `CUDA_VISIBLE_DEVICES=` for CPU-only testing and `HF_HUB_OFFLINE=1` to avoid
+downloads; point `HF_HOME` at the existing scratch cache when applicable.
+
+The output carries raw predictions, quantiles, input/source hashes, per-regime
+losses and fit boundaries. Independently verify it from the repo root with
+`PYTHONPATH=. python docs/research/scorecards/daily-risk-liquidity/verify.py
+<results-dir> <cubes-dir>`. A forecast lead is never a live-promotion approval.
+Protocol and target meanings:
+[daily risk/liquidity](research/daily-risk-liquidity-plan-2026-09-30.md).
+
 ### Fundamental reporting-period policy
 
 For the explicit original-byte research mode, use
