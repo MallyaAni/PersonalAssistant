@@ -1,0 +1,23 @@
+
+=== horizon 20, in_window: 136,107 cells ===
+arm                                rank IC       t  net Sharpe  periods
+A stored tone                      +0.0368   +2.42       +0.26       93
+C chrono ridge (lambda 100)        +0.0158   +1.01       +0.52       93
+C chrono ridge (lambda 1000)       +0.0329   +2.09       +0.61       93
+  C chrono ridge (lambda 100) - A: -0.0210 (paired t -1.15)
+  C chrono ridge (lambda 1000) - A: -0.0040 (paired t -0.22)
+
+=== horizon 20, post_window: 26,438 cells ===
+arm                                rank IC       t  net Sharpe  periods
+A stored tone                      +0.0390   +1.40       +0.68       15
+C chrono ridge (lambda 100)        +0.0099   +0.23       +1.53       15
+C chrono ridge (lambda 1000)       +0.0048   +0.11       +1.18       15
+  C chrono ridge (lambda 100) - A: -0.0292 (paired t -0.71)
+  C chrono ridge (lambda 1000) - A: -0.0342 (paired t -0.82)
+
+=== criteria ===
+1 tone inflated:    {'fires': False, 'masked_drop': False, 'post_fade': False, 'b_evaluable': False, 'c_evaluable': True, 'post_evaluable': True}
+2 incumbent stands: {'fires': False, 'within_0.010': False, 'b_noise_and_c_half': False}
+3 replacement:      not run: no arm beats A in-window
+
+VERDICT: RECORD

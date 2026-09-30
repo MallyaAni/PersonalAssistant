@@ -1,0 +1,200 @@
+{"accession": "0001104659-18-049221", "answer": "{\"company\": \"[NAME] Corporation\", \"quarter\": \"Q2\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001551182-25-000033", "answer": "{\"company\": \"Eaton Corporation\", \"quarter\": \"Q3\", \"year\":  \"2024\"}"}
+{"accession": "0001596532-16-000253", "answer": "{\n  \"company\": \"Arista Networks\",\n  \"quarter\": \"Q1\",\n  \"year\":  \"2015\"\n}"}
+{"accession": "0000080420-25-000026", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Q1\", \"year\": \"Unknown\"}"}
+{"accession": "0001018724-21-000008", "answer": "{\"company\": \"Amazon\", \"quarter\": \"Q1\", \"year\": \"2021\"}"}
+{"accession": "0000813672-23-000040", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[PERIOD]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001045810-23-000225", "answer": "{\"company\": \"NVIDIA\", \"quarter\": \"Q3\", \"year\": \"2024\"}"}
+{"accession": "0001628280-24-005765", "answer": "{\"company\": \"Vertiv Holdings Co\", \"quarter\": \"Q4\", \"year\":  \"2023\"}"}
+{"accession": "0001628280-23-013042", "answer": "{\n  \"company\": \"Vertiv Holdings Co\",\n  \"quarter\": \"Q1\",\n  \"year\":  \"2024\"\n}"}
+{"accession": "0000804328-25-000084", "answer": "{\"company\": \"Qualcomm\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0000813672-16-000049", "answer": "{\n  \"company\": \"[COMPANY]\",\n  \"quarter\": \"[QUARTER]\",\n  \"year\": \"[YEAR]\"\n}"}
+{"accession": "0001441816-23-000166", "answer": "{\"company\": \"MongoDB\", \"quarter\": \"Q2\", \"year\": \"2024\"}"}
+{"accession": "0001628280-24-005031", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000814547-26-000020", "answer": "{\n  \"company\": \"Fair Isaac Corporation\",\n  \"quarter\": \"Q2\",\n  \"year\":  \"2026\"\n}"}
+{"accession": "0001018724-23-000002", "answer": "{\"company\": \"Amazon\", \"quarter\": \"Q4\", \"year\": \"2022\"}"}
+{"accession": "0000002488-15-000040", "answer": "{\n  \"company\": \"AMD\",\n  \"quarter\": \"Q2\",\n  \"year\":  \"2015\"\n}"}
+{"accession": "0001551182-25-000003", "answer": "{\"company\": \"Eaton Corporation\", \"quarter\": \"Q4\", \"year\":  \"2023\"}"}
+{"accession": "0001728949-18-000038", "answer": "{\"company\": \"QUALCOMM\", \"quarter\": \"Q2\", \"year\": \"2018\"}"}
+{"accession": "0001628280-23-002960", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001628280-24-047745", "answer": "{\"company\": \"Talen Energy\", \"quarter\": \"Q3\", \"year\":  \"2024\"}"}
+{"accession": "0000068505-25-000022", "answer": "{\"company\": \"Motorola Solutions\", \"quarter\": \"Q1\", \"year\": \"2025\"}"}
+{"accession": "0001140361-16-067150", "answer": "{\"company\": \"Modine Manufacturing Company\", \"quarter\": \"Q4\", \"year\": \"2016\"}"}
+{"accession": "0000896878-17-000047", "answer": "{\n  \"company\": \"Intuit\",\n  \"quarter\": \"Q3\",\n  \"year\": \"2018\"\n}"}
+{"accession": "0001274494-21-000022", "answer": "{\n  \"company\": \"First Solar\",\n  \"quarter\": \"Q2\",\n  \"year\":  \"2023\"\n}"}
+{"accession": "0001274494-15-000044", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[PERIOD]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000950170-25-059568", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Q1\", \"year\": \"2025\"}"}
+{"accession": "0000827054-26-000012", "answer": "{\"company\": \"Microchip Technology\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0001596532-19-000227", "answer": "{\n  \"company\": \"Arista Networks\",\n  \"quarter\": \"Q3\",\n  \"year\":  \"2023\"\n}"}
+{"accession": "0001652044-25-000087", "answer": "{\n  \"company\": \"Alphabet\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2025\"\n}"}
+{"accession": "0001441816-24-000045", "answer": "{\"company\": \"MongoDB\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0001730168-23-000062", "answer": "{\"company\": \"Broadcom\", \"quarter\": \"Q2\", \"year\": \"2024\"}"}
+{"accession": "0000950170-25-029022", "answer": "{\"company\": \"NetApp\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0000080420-21-000043", "answer": "{\"company\": \"Powell Industries\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001045810-19-000168", "answer": "{\"company\": \"AMD\", \"quarter\": \"Q3\", \"year\": \"2024\"}"}
+{"accession": "0001045810-22-000163", "answer": "{\"company\": \"NVIDIA\", \"quarter\": \"Q3\", \"year\":  \"FY2023\"}"}
+{"accession": "0000002488-25-000009", "answer": "{\"company\": \"AMD\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0001878848-26-000025", "answer": "{\"company\": \"Cipher Mining\", \"quarter\": \"Q1\", \"year\": \"2026\"}"}
+{"accession": "0001652044-17-000005", "answer": "{\"company\": \"Alphabet Inc.\", \"quarter\": \"Q4\", \"year\": \"2021\"}"}
+{"accession": "0001996810-25-000004", "answer": "{\"company\": \"GE Vernova\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0001193125-15-052800", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Q1\", \"year\": \"Unknown\"}"}
+{"accession": "0001193125-20-022088", "answer": "{\n  \"company\": \"ON Semiconductor\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2023\"\n}"}
+{"accession": "0000068505-24-000014", "answer": "{\"company\": \"Motorola Solutions\", \"quarter\": \"Q2\", \"year\": \"2023\"}"}
+{"accession": "0000723125-21-000009", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001193125-16-467737", "answer": "{\n  \"company\": \"Tyler Technologies\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2014\"\n}"}
+{"accession": "0001144204-17-039285", "answer": "{\"company\": \"FICO\", \"quarter\": \"Q3\", \"year\": \"2017\"}"}
+{"accession": "0001441816-23-000239", "answer": "{\"company\": \"MongoDB\", \"quarter\": \"Q3\", \"year\": \"2024\"}"}
+{"accession": "0001327811-22-000153", "answer": "{\n  \"company\": \"Workday\",\n  \"quarter\": \"Q2\",\n  \"year\": \"Fiscal 2023\"\n}"}
+{"accession": "0001193125-16-438421", "answer": "{\"company\": \"Apple\", \"quarter\": \"Q1\", \"year\": \"2016\"}"}
+{"accession": "0001327811-24-000089", "answer": "{\"company\": \"Workday\", \"quarter\": \"Q2\", \"year\": \"2025\"}"}
+{"accession": "0001640147-25-000177", "answer": "{\"company\": \"Snowflake\", \"quarter\": \"Q2\", \"year\": \"FY2025\"}"}
+{"accession": "0001535527-20-000004", "answer": "{\n  \"company\": \"CrowdStrike\",\n  \"quarter\": \"Q4\",\n  \"year\": \"FY2020\"\n}"}
+{"accession": "0001467373-20-000429", "answer": "{\"company\": \"Accenture\", \"quarter\": \"Q1\", \"year\": \"2021\"}"}
+{"accession": "0000950170-24-009371", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"first fiscal quarter\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001996810-25-000072", "answer": "{\"company\": \"GE Vernova\", \"quarter\": \"Q1\", \"year\": \"2025\"}"}
+{"accession": "0000080420-22-000016", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001571996-25-000096", "answer": "{\n  \"company\": \"Dell Technologies\",\n  \"quarter\": \"Q2\",\n  \"year\": \"FY2025\"\n}"}
+{"accession": "0001437749-19-007956", "answer": "{\"company\": \"[NAME] Corporation\", \"quarter\": \"Q1\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000896878-19-000172", "answer": "{\"company\": \"Intuit\", \"quarter\": \"Q1\", \"year\": \"2020\"}"}
+{"accession": "0001713683-23-000049", "answer": "{\"company\": \"Zscaler\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0000002488-19-000102", "answer": "{\n  \"company\": \"AMD\",\n  \"quarter\": \"Q2\",\n  \"year\":  \"2019\"\n}"}
+{"accession": "0001375365-19-000006", "answer": "{\"company\": \"SMART Global Holdings\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001193125-20-222468", "answer": "{\n  \"company\": \"Fabrinet\",\n  \"quarter\": \"Q4\",\n  \"year\": \"2023\"\n}"}
+{"accession": "0000002488-23-000192", "answer": "{\"company\": \"AMD\", \"quarter\": \"Q3\", \"year\":  \"2023\"}"}
+{"accession": "0001327567-25-000032", "answer": "{\n  \"company\": \"Palo Alto Networks\",\n  \"quarter\": \"Q3\",\n  \"year\": \"FY2025\"\n}"}
+{"accession": "0001628280-21-007391", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"Q4\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001650372-25-000064", "answer": "{\n  \"company\": \"Atlassian\",\n  \"quarter\": \"Q2\",\n  \"year\": \"2025\"\n}"}
+{"accession": "0000050863-18-000003", "answer": "{\n  \"company\": \"Intel\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2017\"\n}"}
+{"accession": "0001108524-18-000083", "answer": "{\"company\": \"Salesforce\", \"quarter\": \"Q3\", \"year\": \"2019\"}"}
+{"accession": "0001193125-15-393109", "answer": "{\n  \"company\": \"[COMPANY]\",\n  \"quarter\": \"[QUARTER]\",\n  \"year\": \"[YEAR]\"\n}"}
+{"accession": "0001193125-22-145674", "answer": "{\"company\": \"Lumentum Holdings Inc.\", \"quarter\": \"Q1\", \"year\": \"2022\"}"}
+{"accession": "0001193125-16-741277", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001144204-18-056810", "answer": "{\n  \"company\": \"Fair Isaac Corporation (FICO)\",\n  \"quarter\": \"Q4\",\n  \"year\": \"2018\"\n}"}
+{"accession": "0001596532-21-000351", "answer": "{\"company\": \"Arista Networks\", \"quarter\": \"Q3\", \"year\": \"2021\"}"}
+{"accession": "0001157523-24-000116", "answer": "{\n  \"company\": \"Fair Isaac Corporation (FICO)\",\n  \"quarter\": \"Q1\",\n  \"year\": \"2024\"\n}"}
+{"accession": "0001137789-22-000116", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[DATE]\"}"}
+{"accession": "0001137789-26-000084", "answer": "{\n  \"company\": \"[COMPANY]\",\n  \"quarter\": \"[QUARTER]\",\n  \"year\": \"[YEAR]\"\n}"}
+{"accession": "0000097476-25-000033", "answer": "{\"company\": \"Texas Instruments\", \"quarter\": \"Q4\", \"year\":  \"2017\"}"}
+{"accession": "0000950170-21-004947", "answer": "{\"company\": \"NetApp\", \"quarter\": \"Q2\", \"year\": \"FY2023\"}"}
+{"accession": "0001477333-20-000021", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001535527-24-000011", "answer": "{\n  \"company\": \"CrowdStrike\",\n  \"quarter\": \"Q1\",\n  \"year\": \"FY2025\"\n}"}
+{"accession": "0000319201-20-000005", "answer": "{\"company\": \"Lam Research Corporation\", \"quarter\": \"Q2\", \"year\": \"2023\"}"}
+{"accession": "0001140361-18-034831", "answer": "{\"company\": \"Modine Manufacturing Company\", \"quarter\": \"Q1\", \"year\": \"2023\"}"}
+{"accession": "0001048695-15-000006", "answer": "{\"company\": \"F5 Networks\", \"quarter\": \"Q2\", \"year\": \"2012\"}"}
+{"accession": "0001477333-25-000017", "answer": "{\n  \"company\": \"Cloudflare\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2024\"\n}"}
+{"accession": "0000827054-23-000183", "answer": "{\n  \"company\": \"Microchip Technology\",\n  \"quarter\": \"Q2\",\n  \"year\": \"2023\"\n}"}
+{"accession": "0001628280-25-047941", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[PERIOD]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000006951-16-000055", "answer": "{\n  \"company\": \"Applied Materials, Inc.\",\n  \"quarter\": \"Q4\",\n  \"year\": \"2024\"\n}"}
+{"accession": "0001373715-24-000009", "answer": "{\"company\": \"ServiceNow\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001137789-20-000055", "answer": "{\n  \"company\": \"[COMPANY]\",\n  \"quarter\": \"[QUARTER]\",\n  \"year\": \"[PERIOD]\"\n}"}
+{"accession": "0001327567-21-000037", "answer": "{\"company\": \"Palo Alto Networks\", \"quarter\": \"Q1\", \"year\": \"2023\"}"}
+{"accession": "0001769628-26-000220", "answer": "{\n  \"company\": \"CoreWeave\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2024\"\n}"}
+{"accession": "0001558370-22-005584", "answer": "{\"company\": \"IBM\", \"quarter\": \"Q1\", \"year\": \"2023\"}"}
+{"accession": "0000849399-25-000087", "answer": "{\"company\": \"NortonLifeLock\", \"quarter\": \"Q2\", \"year\": \"2022\"}"}
+{"accession": "0000950170-23-039357", "answer": "{\"company\": \"Cipher Mining\", \"quarter\": \"Q2\", \"year\":  \"2023\"}"}
+{"accession": "0001769628-25-000039", "answer": "{\"company\": \"CoreWeave\", \"quarter\": \"Q1\", \"year\": \"2025\"}"}
+{"accession": "0000827054-20-000028", "answer": "{\"company\": \"Microchip Technology\", \"quarter\": \"Q3\", \"year\": \"2020\"}"}
+{"accession": "0001835632-26-000006", "answer": "{\n  \"company\": \"Marvell Technology\",\n  \"quarter\": \"Q4\",\n  \"year\": \"FY2024\"\n}"}
+{"accession": "0001083301-23-000052", "answer": "{\"company\": \"TeraWulf\", \"quarter\": \"Q3\", \"year\":  \"2023\"}"}
+{"accession": "0000936395-18-000043", "answer": "{\"company\": \"Ciena Corporation\", \"quarter\": \"Q4\", \"year\": \"2018\"}"}
+{"accession": "0001373715-22-000329", "answer": "{\n  \"company\": \"ServiceNow\",\n  \"quarter\": \"Q3\",\n  \"year\":  \"2022\"\n}"}
+{"accession": "0000804328-22-000020", "answer": "{\"company\": \"Qualcomm\", \"quarter\": \"Q4\", \"year\": \"2022\"}"}
+{"accession": "0001104659-18-045757", "answer": "{\"company\": \"IBM\", \"quarter\": \"Q2\", \"year\": \"2018\"}"}
+{"accession": "0000002488-23-000135", "answer": "{\"company\": \"AMD\", \"quarter\": \"Q2\", \"year\":  \"2023\"}"}
+{"accession": "0001274494-21-000030", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001373715-23-000323", "answer": "{\n  \"company\": \"ServiceNow\",\n  \"quarter\": \"Q2\",\n  \"year\":  \"2023\"\n}"}
+{"accession": "0001048695-26-000063", "answer": "{\"company\": \"F5, Inc.\", \"quarter\": \"Q3\", \"year\": \"2024\"}"}
+{"accession": "0001441816-24-000185", "answer": "{\n  \"company\": \"MongoDB\",\n  \"quarter\": \"Q2\",\n  \"year\": \"2024\"\n}"}
+{"accession": "0000068505-20-000026", "answer": "{\"company\": \"Motorola Solutions\", \"quarter\": \"Q3\", \"year\": \"2020\"}"}
+{"accession": "0000813672-18-000023", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000827054-26-000002", "answer": "{\n  \"company\": \"Microchip Technology\",\n  \"quarter\": \"Q3\",\n  \"year\": \"2024\"\n}"}
+{"accession": "0000796343-15-000215", "answer": "{\n  \"company\": \"Adobe\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"FY2018\"\n}"}
+{"accession": "0001193125-21-307941", "answer": "{\"company\": \"Microsoft\", \"quarter\": \"Q1\", \"year\": \"2023\"}"}
+{"accession": "0001654954-16-002562", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"Q4\", \"year\": \"[PERIOD]\"}"}
+{"accession": "0001140361-24-027058", "answer": "{\"company\": \"Modine Manufacturing Company\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0001564590-15-002770", "answer": "{\"company\": \"Texas Instruments\", \"quarter\": \"Q1\", \"year\": \"2015\"}"}
+{"accession": "0000024741-19-000010", "answer": "{\"company\": \"Corning\", \"quarter\": \"Q4\", \"year\":  \"2018\"}"}
+{"accession": "0001327811-24-000233", "answer": "{\n  \"company\": \"Workday\",\n  \"quarter\": \"Q3\",\n  \"year\": \"FY2025\"\n}"}
+{"accession": "0001730168-24-000012", "answer": "{\"company\": \"Broadcom\", \"quarter\": \"Q1\", \"year\": \"2024\"}"}
+{"accession": "0000024741-21-000007", "answer": "{\"company\": \"Corning\", \"quarter\": \"Q4\", \"year\":  \"2020\"}"}
+{"accession": "0000769397-25-000013", "answer": "{\"company\": \"Autodesk\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0001822966-22-000092", "answer": "{\"company\": \"NuScale Power\", \"quarter\": \"Q3\", \"year\":  \"2022\"}"}
+{"accession": "0001713683-20-000188", "answer": "{\n  \"company\": \"Zscaler\",\n  \"quarter\": \"Q3\",\n  \"year\": \"2021\"\n}"}
+{"accession": "0001144879-25-000068", "answer": "{\"company\": \"Applied Digital Corporation\", \"quarter\": \"Q3\", \"year\": \"2025\"}"}
+{"accession": "0001193125-15-133355", "answer": "{\"company\": \"AMD\", \"quarter\": \"Q1\", \"year\": \"2015\"}"}
+{"accession": "0000320193-22-000107", "answer": "{\"company\": \"Apple\", \"quarter\": \"Q4\", \"year\": \"2022\"}"}
+{"accession": "0001274494-18-000009", "answer": "{\n  \"company\": \"First Solar, Inc.\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2017\"\n}"}
+{"accession": "0000827054-25-000061", "answer": "{\"company\": \"Microchip Technology\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0001193125-19-283984", "answer": "{\n  \"company\": \"Vistra Corp.\",\n  \"quarter\": \"Q3\",\n  \"year\":  \"2023\"\n}"}
+{"accession": "0000050863-15-000066", "answer": "{\"company\": \"Intel\", \"quarter\": \"Q3\", \"year\":  \"2016\"}"}
+{"accession": "0001262039-16-000082", "answer": "{\"company\": \"Fortinet\", \"quarter\": \"Q2\", \"year\": \"2023\"}"}
+{"accession": "0001628280-26-039474", "answer": "{\"company\": \"Astera Labs\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0000723125-15-000034", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001628280-24-046302", "answer": "{\"company\": \"Lumentum Holdings Inc.\", \"quarter\": \"Q2\", \"year\": \"2024\"}"}
+{"accession": "0001193125-24-131935", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[PERIOD]\", \"year\": \"[PERIOD]\"}"}
+{"accession": "0001048695-17-000020", "answer": "{\"company\": \"F5 Networks\", \"quarter\": \"Q3\", \"year\": \"2016\"}"}
+{"accession": "0000864749-21-000011", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001327811-23-000149", "answer": "{\n  \"company\": \"Workday\",\n  \"quarter\": \"Q2\",\n  \"year\": \"2024\"\n}"}
+{"accession": "0001327811-21-000173", "answer": "{\n  \"company\": \"Workday\",\n  \"quarter\": \"Q3\",\n  \"year\": \"Fiscal 2022\"\n}"}
+{"accession": "0001157523-18-001211", "answer": "{\"company\": \"Analog Devices\", \"quarter\": \"Q2\", \"year\": \"2019\"}"}
+{"accession": "0001441816-21-000046", "answer": "{\"company\": \"MongoDB\", \"quarter\": \"Q4\", \"year\": \"2021\"}"}
+{"accession": "0000723125-15-000136", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"1st\", \"year\": \"[DATE]\"}"}
+{"accession": "0001144879-24-000004", "answer": "{\"company\": \"Applied Digital\", \"quarter\": \"Q3\", \"year\": \"2024\"}"}
+{"accession": "0000002488-17-000096", "answer": "{\n  \"company\": \"AMD\",\n  \"quarter\": \"Q1\",\n  \"year\":  \"2017\"\n}"}
+{"accession": "0000813672-25-000108", "answer": "{\"company\": \"Synopsys\", \"quarter\": \"Q2\", \"year\": \"2025\"}"}
+{"accession": "0001467373-22-000283", "answer": "{\"company\": \"Accenture\", \"quarter\": \"Q4\", \"year\": \"2022\"}"}
+{"accession": "0001375365-19-000059", "answer": "{\"company\": \"COMPANY\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001728949-20-000056", "answer": "{\"company\": \"Qualcomm\", \"quarter\": \"Q3\", \"year\": \"2020\"}"}
+{"accession": "0001683168-21-001799", "answer": "{\"company\": \"[NAME]\", \"quarter\": \"[PERIOD]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000936395-19-000005", "answer": "{\"company\": \"Extreme Networks\", \"quarter\": \"Q1\", \"year\": \"2024\"}"}
+{"accession": "0001193125-17-249195", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001558370-25-008029", "answer": "{\n  \"company\": \"Modine Manufacturing Company\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"Fiscal Year 2025\"\n}"}
+{"accession": "0001048695-25-000113", "answer": "{\"company\": \"F5, Inc.\", \"quarter\": \"Q3\", \"year\": \"2024\"}"}
+{"accession": "0000024741-19-000048", "answer": "{\n  \"company\": \"Corning\",\n  \"quarter\": \"Q2\",\n  \"year\":  \"2019\"\n}"}
+{"accession": "0000050863-20-000042", "answer": "{\"company\": \"Intel\", \"quarter\": \"Q3\", \"year\":  \"2020\"}"}
+{"accession": "0000860731-22-000008", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001467373-22-000369", "answer": "{\n  \"company\": \"Accenture\",\n  \"quarter\": \"Q1\",\n  \"year\":  \"2023\"\n}"}
+{"accession": "0000080420-18-000031", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000006281-22-000246", "answer": "{\n  \"company\": \"NXP Semiconductors\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2021\"\n}"}
+{"accession": "0001206774-24-000650", "answer": "{\"company\": \"Corning\", \"quarter\": \"Q1\", \"year\": \"2024\"}"}
+{"accession": "0001413447-24-000087", "answer": "{\"company\": \"NXP Semiconductors\", \"quarter\": \"Q4\", \"year\": \"2022\"}"}
+{"accession": "0000068505-23-000025", "answer": "{\"company\": \"Motorola Solutions\", \"quarter\": \"Q2\", \"year\": \"2023\"}"}
+{"accession": "0001413447-24-000074", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Unknown\", \"year\": \"Unknown\"}"}
+{"accession": "0001664703-20-000036", "answer": "{\"company\": \"Bloom Energy\", \"quarter\": \"Q1\", \"year\":  \"2020\"}"}
+{"accession": "0001835632-23-000036", "answer": "{\n  \"company\": \"Marvell Technology\",\n  \"quarter\": \"Q2\",\n  \"year\": \"2023\"\n}"}
+{"accession": "0001652044-19-000021", "answer": "{\"company\": \"Alphabet\", \"quarter\": \"Q2\", \"year\":  \"2023\"}"}
+{"accession": "0001640147-25-000094", "answer": "{\"company\": \"Snowflake\", \"quarter\": \"Q3\", \"year\": \"2025\"}"}
+{"accession": "0000796343-24-000140", "answer": "{\n  \"company\": \"Adobe\",\n  \"quarter\": \"Q2\",\n  \"year\": \"2024\"\n}"}
+{"accession": "0001683168-23-005249", "answer": "{\"company\": \"[NAME]\", \"quarter\": \"[PERIOD]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001628280-22-027085", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001564590-21-021324", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Unknown\", \"year\": \"Unknown\"}"}
+{"accession": "0001108524-17-000003", "answer": "{\"company\": \"Salesforce\", \"quarter\": \"Q4\", \"year\": \"2017\"}"}
+{"accession": "0001408710-25-000036", "answer": "{\"company\": \"Fabrinet\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001628280-18-002900", "answer": "{\"company\": \"AimX\", \"quarter\": \"Q4\", \"year\":  \"2024\"}"}
+{"accession": "0000813672-22-000053", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000864749-25-000243", "answer": "{\n  \"company\": \"Unknown\",\n  \"quarter\": \"Q1\",\n  \"year\": \"2024\"\n}"}
+{"accession": "0000050863-17-000003", "answer": "{\"company\": \"Intel\", \"quarter\": \"Q4\", \"year\":  \"2016\"}"}
+{"accession": "0000319201-26-000014", "answer": "{\n  \"company\": \"[COMPANY]\",\n  \"quarter\": \"[QUARTER]\",\n  \"year\": \"[YEAR]\"\n}"}
+{"accession": "0001564590-17-001635", "answer": "{\"company\": \"NetApp\", \"quarter\": \"Q3\", \"year\": \"2018\"}"}
+{"accession": "0001467373-19-000128", "answer": "{\"company\": \"Accenture\", \"quarter\": \"Q2\", \"year\": \"2018\"}"}
+{"accession": "0001645590-23-000105", "answer": "{\"company\": \"Hewlett Packard Enterprise\", \"quarter\": \"Q4\", \"year\": \"2023\"}"}
+{"accession": "0001564590-21-008093", "answer": "{\n  \"company\": \"NetApp\",\n  \"quarter\": \"Q2\",\n  \"year\": \"FY2022\"\n}"}
+{"accession": "0000050863-16-000122", "answer": "{\"company\": \"Intel\", \"quarter\": \"Q1\", \"year\": \"2016\"}"}
+{"accession": "0001413447-23-000022", "answer": "{\"company\": \"NXP Semiconductors\", \"quarter\": \"Q1\", \"year\": \"2023\"}"}
+{"accession": "0000004127-25-000009", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"Q1\", \"year\": \"[YEAR]\"}"}
+{"accession": "0000796343-17-000075", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001373715-18-000153", "answer": "{\"company\": \"Workday\", \"quarter\": \"Q2\", \"year\": \"2019\"}"}
+{"accession": "0000707549-26-000033", "answer": "{\n  \"company\": \"Lam Research\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2024\"\n}"}
+{"accession": "0001193125-23-271381", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[PERIOD]\", \"year\": \"[PERIOD]\"}"}
+{"accession": "0000068505-19-000003", "answer": "{\n  \"company\": \"Motorola Solutions\",\n  \"quarter\": \"Q4\",\n  \"year\":  \"2018\"\n}"}
+{"accession": "0001104659-17-011884", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Q4\", \"year\": \"Unknown\"}"}
+{"accession": "0000950170-24-009126", "answer": "{\"company\": \"Teradyne\", \"quarter\": \"Q4\", \"year\": \"2022\"}"}
+{"accession": "0001048695-22-000005", "answer": "{\"company\": \"F5 Networks\", \"quarter\": \"Q3\", \"year\": \"2022\"}"}
+{"accession": "0000896878-16-000223", "answer": "{\"company\": \"Intuit\", \"quarter\": \"Q3\", \"year\": \"2016\"}"}
+{"accession": "0001193125-17-316068", "answer": "{\"company\": \"[COMPANY]\", \"quarter\": \"[QUARTER]\", \"year\": \"[YEAR]\"}"}
+{"accession": "0001652044-20-000031", "answer": "{\"company\": \"Alphabet Inc.\", \"quarter\": \"Q2\", \"year\": \"2020\"}"}
+{"accession": "0001645590-26-000078", "answer": "{\"company\": \"COMPANY\", \"quarter\": \"Q3\", \"year\": \"2024\"}"}
+{"accession": "0001157523-15-001170", "answer": "{\n  \"company\": \"ServiceNow\",\n  \"quarter\": \"Q1\",\n  \"year\":  \"2016\"\n}"}
+{"accession": "0000002488-26-000072", "answer": "{\"company\": \"AMD\", \"quarter\": \"Q4\", \"year\": \"2024\"}"}
+{"accession": "0000827054-19-000286", "answer": "{\n  \"company\": \"Microchip Technology\",\n  \"quarter\": \"Q2\",\n  \"year\": \"2020\"\n}"}
+{"accession": "0001193125-24-049124", "answer": "{\"company\": \"Unknown\", \"quarter\": \"Annual\", \"year\": \"Unknown\"}"}

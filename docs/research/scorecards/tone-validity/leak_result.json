@@ -1,0 +1,11 @@
+{
+  "sampled": 200,
+  "answered": 200,
+  "company_hits": 129,
+  "company_share": 0.645,
+  "year_hits": 78,
+  "year_share": 0.39,
+  "company_max": 0.05,
+  "year_max": 0.1,
+  "pass": false
+}
