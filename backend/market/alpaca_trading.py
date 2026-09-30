@@ -270,6 +270,18 @@ class AlpacaTradingClient:
             body["client_order_id"] = client_order_id
         return self._call("POST", "/orders", body)
 
+    # A whole-share market order for right now, inside the regular session:
+    # the paper account's intraday leg (`desk/intraday_orders.py`) sends one
+    # the moment the board's level is reached, or late in the close window
+    # after the market-on-close cutoff. The body is the queued-for-the-open
+    # order's (a day market order); the name says what it does at the time it
+    # is sent, which is the only difference between them.
+    def submit_market(
+        self, symbol: str, qty: int, side: str, client_order_id: str | None = None
+    ) -> dict[str, Any]:
+        """Submit a day market order that fills now in the session; return it."""
+        return self.submit_market_on_open(symbol, qty, side, client_order_id)
+
     # A whole-share market order for the next closing auction. The TIF is
     # "cls" (market-on-close); submitted after 7pm the broker queues it for
     # the next session's close, where it fills at the closing auction. A

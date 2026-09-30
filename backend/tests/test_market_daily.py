@@ -3,7 +3,7 @@
 import json
 import sys
 from dataclasses import dataclass, field, replace
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -1555,8 +1555,11 @@ class _Broker:
             if q > 0
         ]
 
+    # The nightly runs after the close; the intraday leg's test opens it.
+    is_open = False
+
     def clock(self):
-        return {"is_open": False}
+        return {"is_open": self.is_open}
 
     def _accept(self, symbol, qty, side, client_order_id):
         self.sent.append((side, symbol, qty))
@@ -1573,6 +1576,10 @@ class _Broker:
         return self._accept(symbol, qty, side, client_order_id)
 
     def submit_market_on_close(self, symbol, qty, side, client_order_id):
+        return self._accept(symbol, qty, side, client_order_id)
+
+    # The intraday leg's in-session market order.
+    def submit_market(self, symbol, qty, side, client_order_id):
         return self._accept(symbol, qty, side, client_order_id)
 
     def orders_since(self, since):
@@ -1625,7 +1632,8 @@ def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, 
     ) in out
     assert (
         "buy    100 SNDK   redeploy: cash beyond the buffer put back to its "
-        "target weights  [dry run]"
+        "target weights  [planned: sent next session on a 15-min close 1% under "
+        "the open, else at the close]"
     ) in out
     assert broker.sent == []
     assert paper.state_path(tmp_path).read_text() == before
@@ -1638,27 +1646,45 @@ def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, 
     }
 
 
-# A live session submits the redeploy as a next-open buy carrying its kind,
-# on the record's orders and the state's pending rows; the session after,
-# once the broker reports it filled, the settled row carries the kind too,
-# the fills history reads it, and the book reads fully invested but for the
-# policy's own idle share (SNDK at its 20% cap; nothing else is graded).
+# A live session writes the redeploy down for the next session and sends
+# nothing: the balancer sends it on the board's rule. The row carries its
+# kind, the board's timing and the session it executes on; the record lists
+# it as planned. In that session no 15-minute close reaches the 1% level, so
+# the close window sends it market-on-close; once the broker reports it
+# filled, the next nightly settles it with its kind, the fills history reads
+# it, and the book reads fully invested but for the policy's own idle share
+# (SNDK at its 20% cap; nothing else is graded).
 def test_a_live_redeploy_carries_its_kind_to_the_record_and_the_fills(
     tmp_path, monkeypatch, capsys
 ):
-    from backend.agents.trading.desk import decision_history, paper
+    from backend.agents.trading.desk import decision_history, intraday_orders, paper
 
     broker = _Broker(cash=90_000.0, positions={"SNDK": 100})
     _midcycle_state(tmp_path, monkeypatch, broker)
     report = _report()
     entry = market_daily.paper_trade(report, tmp_path, "2026-09-03", True)
-    assert broker.sent == [("buy", "SNDK", 100)]
-    assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["orders"]] == [
-        ("SNDK", 100, paper.REDEPLOY_KIND)
+    assert broker.sent == []
+    assert entry["orders"] == []
+    assert entry["execution_rule"] == intraday_orders.INTRADAY_TIMING
+    assert entry["planned"] == [
+        {"symbol": "SNDK", "side": "buy", "qty": 100,
+         "reason": "redeploy: cash beyond the buffer put back to its target weights",
+         "kind": paper.REDEPLOY_KIND, "execute_on": "2026-09-04"}
     ]
     state = paper.load_state(tmp_path)
     assert [row["kind"] for row in state.pending] == [paper.REDEPLOY_KIND]
+    assert [row["execution_timing"] for row in state.pending] == [
+        intraday_orders.INTRADAY_TIMING
+    ]
     assert entry["idle_cash_share"] == pytest.approx(0.8)
+    # The next session's close window (3:35 PM ET), with no trigger all day.
+    broker.is_open = True
+    sent = intraday_orders.send_due(
+        tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+    )
+    broker.is_open = False
+    assert sent == ["buy 100 SNDK (moc, close): sent"]
+    assert broker.sent == [("buy", "SNDK", 100)]
     # Filled overnight: the book holds 200 SNDK and 80,000 cash.
     broker.held["SNDK"] = 200
     broker.cash = 80_000.0
@@ -1894,3 +1920,26 @@ def test_idle_cash_share_reads_the_plan():
     assert share([], prices, 5_000.0, 100_000.0) == pytest.approx(0.05)
     assert share(orders, prices, 0.0, 100_000.0) == 0.0
     assert share([], prices, 1.0, 0.0) is None
+
+
+# The nightly puts every ordinary order on the board's clock and leaves an
+# FOMC event order (and a priority risk cut) on its own next-open timing; with
+# the switch off nothing changes. Only the intraday rows carry the session
+# they execute on, the next reviewed session after the decision.
+def test_ordinary_orders_go_on_the_boards_clock(monkeypatch):
+    from backend.agents.trading.desk import intraday_orders, paper
+
+    orders = [
+        paper.PaperOrder("AAA", "buy", 3, "rebalance to 0.083"),
+        paper.PaperOrder("BBB", "sell", 2, "fomc cut", event_id="fomc-2026-10-28"),
+        paper.PaperOrder("CCC", "sell", 1, "risk", priority="drawdown"),
+    ]
+    timed = market_daily._on_the_boards_clock(orders)
+    assert [o.execution_timing for o in timed] == [
+        intraday_orders.INTRADAY_TIMING, None, None
+    ]
+    rows = market_daily._pending_orders(timed, "2026-10-02", {"AAA": 10.0}, "2026-10-02")
+    assert rows[0]["execute_on"] == "2026-10-05"
+    assert "execute_on" not in rows[1]
+    monkeypatch.setattr(intraday_orders, "INTRADAY_EXECUTION", False)
+    assert market_daily._on_the_boards_clock(orders) == orders

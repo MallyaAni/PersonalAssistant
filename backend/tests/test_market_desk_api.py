@@ -1311,3 +1311,100 @@ async def test_the_desk_payload_carries_every_key_the_page_reads(tmp_path, monke
     # The page's record carries the prose state; a record without prose is
     # absent (or embedded, for older records that carried it inside).
     assert payload["latest"]["prose_state"] in {"absent", "embedded"}
+
+
+# The board reads the paper account's own orders from `/desk/paper`: each
+# pending order with its action, size, plain reason, rule and what the broker
+# says about it, so the board and the account can never tell two stories.
+# A broker that cannot report order status still lists the orders, with a
+# reason, rather than failing the account read.
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status_fails", [False, True])
+async def test_the_paper_plan_reaches_the_board(tmp_path, monkeypatch, status_fails):
+    from backend.agents.trading.desk import intraday_orders, paper
+    from backend.market import alpaca_trading
+
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    state = paper.PaperState(last_rebalance="2026-09-28", sessions_since_rebalance=1)
+    state.pending = [
+        {
+            "client_order_id": "anios-2026-09-29-buy-hpe-3",
+            "symbol": "HPE",
+            "side": "buy",
+            "qty": 6,
+            "session": "2026-09-29",
+            "reason": "deferred buy: the remainder cash could not pay for last session",
+            "execution_timing": intraday_orders.INTRADAY_TIMING,
+            "execute_on": "2026-09-30",
+            "execution": {"reference_price": 61.64},
+        },
+        {
+            "client_order_id": "anios-2026-09-29-sell-nvda-9",
+            "symbol": "NVDA",
+            "side": "sell",
+            "qty": 67,
+            "session": "2026-09-29",
+            "reason": "graded B; the desk wants the money elsewhere",
+            "execution_timing": intraday_orders.INTRADAY_TIMING,
+            "execute_on": "2026-09-30",
+            "execution": {"reference_price": 228.23},
+        },
+    ]
+    paper.save_state(tmp_path, state)
+
+    class Fake:
+        def account(self):
+            return alpaca_trading.Account(100000.0, 3000.0, 3000.0, 99000.0)
+
+        def positions(self):
+            return [
+                alpaca_trading.Position("NVDA", 67.0, 15291.41, 225.2, 228.23, 200.0)
+            ]
+
+        def open_orders(self):
+            return []
+
+        def fill_activity(self, session):
+            return {"session": session.isoformat(), "complete": True, "fills": []}
+
+        # The broker's answer per order id: HPE bought at the dip.
+        def orders_since(self, after):
+            if status_fails:
+                raise alpaca_trading.AlpacaTradingError("orders offline")
+            return [
+                {
+                    "client_order_id": "anios-2026-09-29-buy-hpe-3",
+                    "status": "filled",
+                    "filled_qty": "6",
+                    "filled_avg_price": "60.90",
+                    "filled_at": "2026-09-30T14:16:03Z",
+                }
+            ]
+
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: Fake())
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        body = (
+            await client.get(
+                "/api/v1/market/desk_user/desk/paper",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+        ).json()
+    plan = body["plan"]
+    assert plan["rule"] == intraday_orders.INTRADAY_TIMING
+    assert plan["until_rebalance"] == 19
+    orders = {o["symbol"]: o for o in plan["orders"]}
+    assert orders["NVDA"]["action"] == "SELL"
+    assert orders["NVDA"]["why"] == "Exit: the grade fell to B"
+    assert orders["NVDA"]["notional"] == pytest.approx(67 * 228.23)
+    assert orders["HPE"]["action"] == "BUY"
+    assert orders["HPE"]["why"] == "Finish last session's buy (cash was short)"
+    if status_fails:
+        assert plan["reason"] == "The broker's order status could not be read"
+        assert orders["HPE"]["state"] != "filled"
+    else:
+        assert plan["reason"] is None
+        assert orders["HPE"]["state"] == "filled"
+        assert orders["HPE"]["status"] == "Bought 6 @ $60.90 · 10:16 AM"
