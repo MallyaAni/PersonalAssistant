@@ -24,17 +24,40 @@ The regime analyst's basket trend still picks the weight of the fade:
 while the AI basket falls the stretch fade is the best single leg (+0.082,
 t 2.5); while it rises it is worth nothing, and the range position takes
 its place.
+
+The structure notch (S1g, `docs/research/structure-rules-plan-2026-09-30.md`)
+is a registered candidate, off by default: with `STRUCTURE_NOTCH` on, a
+name whose close is under a *falling* 21-session EMA with *lower highs*
+(`structure_panel.notch_mask`, the board's own definitions) has its stance
+and its conviction capped at neutral that session: the name loses this
+analyst's vote, and what that costs in grades is the grading rule's (an A+
+still needs the release and votes >= 2, which the other analysts can
+supply). The stance returns when either condition clears. The scores and
+the ranks are untouched, so the cross-section the
+other names are ranked in does not move. `STRUCTURE_NOTCH_NULL` runs the
+notched path with a mask that never fires, the null test the point-in-time
+scorecard's `--structure-notch --null-test` asserts reproduces the
+incumbent to the bit.
 """
+
+from dataclasses import dataclass
 
 import numpy as np
 
-from backend.agents.trading.desk.opinions import Opinion
-from backend.market import baselines, levels, technical
+from backend.agents.trading.desk import structure_panel
+from backend.agents.trading.desk.opinions import NEUTRAL, Opinion
+from backend.market import baselines, levels, stage3_features, technical
 from backend.market.panel import Panel
 
 NAME = "technical"
 MOMENTUM_SESSIONS = 120
 MOMENTUM_SKIP = 21
+# S1g, the structure notch: off until the registered study says otherwise.
+STRUCTURE_NOTCH = False
+# The null test: the notched path with a mask that never fires.
+STRUCTURE_NOTCH_NULL = False
+# The evidence key a notched session is cited under.
+NOTCH_EVIDENCE = "structure_notch"
 # Which measure plays the stretch role while the theme falls. "support" is
 # the original nearest-swing-low distance, which sawtooths as levels drop in
 # and out; "signed" keeps the level through the crossing; "band" is the
@@ -106,16 +129,52 @@ CITED = (
 # rather than the supported end. A session where nothing is finite stays at
 # zero rather than warning, and a name with no price at all keeps its NaN so
 # it is absent from the cross-section instead of ranking in it.
-def _fill_with_the_most_stretched(
-    measure: np.ndarray, close: np.ndarray
-) -> np.ndarray:
+def _fill_with_the_most_stretched(measure: np.ndarray, close: np.ndarray) -> np.ndarray:
     """Return `measure` with unreadable names set to the session's largest."""
     with np.errstate(all="ignore"):
         worst = np.max(np.where(np.isfinite(measure), measure, -np.inf), axis=1)
     worst = np.where(np.isfinite(worst), worst, 0.0)
-    return np.where(
-        np.isfinite(measure) | ~np.isfinite(close), measure, worst[:, None]
-    )
+    return np.where(np.isfinite(measure) | ~np.isfinite(close), measure, worst[:, None])
+
+
+@dataclass(frozen=True)
+class NotchedOpinion(Opinion):
+    """The technical Opinion with S1g's cap: stance and conviction at most neutral."""
+
+    # (T, N) bool: the close under a falling EMA21 with lower highs.
+    notch: np.ndarray | None = None
+
+    # The persisted stances, capped at neutral on a notched (session, name).
+    def stances(self, *args, **kwargs) -> np.ndarray:
+        """Return (T, N) stances in {-1, 0, 1} with the notch applied."""
+        held = super().stances(*args, **kwargs)
+        if self.notch is None:
+            return held
+        return np.where(self.notch, np.minimum(held, NEUTRAL), held)
+
+    # The conviction, capped at zero on a notched (session, name).
+    def conviction(self, *args, **kwargs) -> np.ndarray:
+        """Return (T, N) conviction in [-1, 1] with the notch applied."""
+        values = super().conviction(*args, **kwargs)
+        if self.notch is None:
+            return values
+        with np.errstate(invalid="ignore"):
+            return np.where(self.notch, np.minimum(values, 0.0), values)
+
+
+# S1g's mask on the panel: the adjusted close under a falling EMA21 with
+# lower highs, from the panel's adjusted closes and highs (the highs on the
+# adjusted close's basis, `stage3_features.adjusted_ohlc`); the benchmark
+# is never notched. All False under the null test.
+def notch_mask(panel: Panel) -> np.ndarray:
+    """Return the (T, N) bool mask of the sessions the structure notch fires on."""
+    if STRUCTURE_NOTCH_NULL:
+        return np.zeros(np.shape(panel.adj_close), dtype=bool)
+    _, high, _, close = stage3_features.adjusted_ohlc(panel)
+    mask = structure_panel.notch_mask(close, high)
+    if panel.benchmark in panel.tickers:
+        mask[:, panel.index(panel.benchmark)] = False
+    return mask
 
 
 # Score every name by the playbook the theme's trend selects; cite the rest.
@@ -180,4 +239,8 @@ def opine(panel: Panel, ai_trend: np.ndarray | None = None) -> Opinion:
     evidence["support_kind"] = support_kind
     evidence["resistance_level"] = resistance_level
     evidence["resistance_kind"] = resistance_kind
-    return Opinion(NAME, scores, evidence)
+    if not STRUCTURE_NOTCH:
+        return Opinion(NAME, scores, evidence)
+    notch = notch_mask(panel)
+    evidence[NOTCH_EVIDENCE] = notch.astype(float)
+    return NotchedOpinion(NAME, scores, evidence, notch=notch)
