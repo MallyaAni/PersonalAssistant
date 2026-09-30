@@ -39,13 +39,23 @@ FORMATS = ("parquet", "csv")
 # The command-line parser.
 def build_parser() -> argparse.ArgumentParser:
     """Return the argument parser."""
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--root", default="data/market")
-    parser.add_argument("--out-dir", type=Path, default=None, help="default: <root>/research/kronos")
-    parser.add_argument("--membership", type=Path, default=universe.MEMBERSHIP_HISTORY_PATH)
-    parser.add_argument("--tickers", default="", help="comma-separated book names; default: the book")
+    parser.add_argument(
+        "--out-dir", type=Path, default=None, help="default: <root>/research/kronos"
+    )
+    parser.add_argument(
+        "--membership", type=Path, default=universe.MEMBERSHIP_HISTORY_PATH
+    )
+    parser.add_argument(
+        "--tickers", default="", help="comma-separated book names; default: the book"
+    )
     parser.add_argument("--workers", type=int, default=8)
-    parser.add_argument("--since", default=str(ke.SINCE), help="first cell date (YYYY-MM-DD)")
+    parser.add_argument(
+        "--since", default=str(ke.SINCE), help="first cell date (YYYY-MM-DD)"
+    )
     parser.add_argument("--format", default="parquet", choices=FORMATS)
     return parser
 
@@ -112,7 +122,9 @@ def run(
     if args.tickers:
         chosen = {t.strip().upper() for t in args.tickers.split(",") if t.strip()}
         book = [t for t in book if t in chosen]
-    inputs = load(store, tuple(book), args.membership, desk_run, workers=args.workers, log=say)
+    inputs = load(
+        store, tuple(book), args.membership, desk_run, workers=args.workers, log=say
+    )
     tables = {
         "daily": ke.daily_table(inputs),
         "bars15": ke.bars_table(inputs),
@@ -140,7 +152,9 @@ def run(
             "names": int(frame["ticker"].nunique()) if "ticker" in frame else None,
         }
         say(f"{name}: {len(frame):,} rows -> {path}")
-    summary["coverage"] = ke.context_coverage(tables["daily"], tables["bars15"], tables["cells"])
+    summary["coverage"] = ke.context_coverage(
+        tables["daily"], tables["bars15"], tables["cells"]
+    )
     summary["inputs"] = {k: v for k, v in inputs.meta.items() if k != "cube_lines"}
     summary["seconds"] = round(time.perf_counter() - began, 1)
     target = out_dir / "kronos_export.json"

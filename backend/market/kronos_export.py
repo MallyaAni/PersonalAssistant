@@ -73,7 +73,9 @@ class Inputs:
     # The book's columns: every panel ticker but the benchmark.
     def book(self) -> list[int]:
         """Return the column indices of the book names."""
-        return [j for j, t in enumerate(self.panel.tickers) if t != self.panel.benchmark]
+        return [
+            j for j, t in enumerate(self.panel.tickers) if t != self.panel.benchmark
+        ]
 
 
 # The panel's adjusted daily bars of the book names as one long table,
@@ -150,7 +152,11 @@ def bars_table(inputs: Inputs) -> pd.DataFrame:
         if cube is None or not len(cube):
             continue
         series = lab.name_series(
-            dates, panel.close[:, j], panel.adj_close[:, j], panel.high[:, j], panel.low[:, j]
+            dates,
+            panel.close[:, j],
+            panel.adj_close[:, j],
+            panel.high[:, j],
+            panel.low[:, j],
         )
         frame = name_bars(ticker, series, cube)
         if len(frame):
@@ -193,14 +199,21 @@ def sessions_table(inputs: Inputs) -> pd.DataFrame:
 
 # A per-cell readiness count: how many cells have a full daily context (K1)
 # and a full 15-minute context through t (K2), for the summary.
-def context_coverage(daily: pd.DataFrame, bars: pd.DataFrame, cells: pd.DataFrame) -> dict[str, int]:
+def context_coverage(
+    daily: pd.DataFrame, bars: pd.DataFrame, cells: pd.DataFrame
+) -> dict[str, int]:
     """Return {"cells", "k1_full_context", "k2_full_context"}."""
     out = {"cells": int(len(cells)), "k1_full_context": 0, "k2_full_context": 0}
     if not len(cells):
         return out
     daily_count = {
-        ticker: (np.asarray(group["date"], dtype="datetime64[D]"), np.arange(1, len(group) + 1))
-        for ticker, group in daily.sort_values(["ticker", "date"]).groupby("ticker", sort=False)
+        ticker: (
+            np.asarray(group["date"], dtype="datetime64[D]"),
+            np.arange(1, len(group) + 1),
+        )
+        for ticker, group in daily.sort_values(["ticker", "date"]).groupby(
+            "ticker", sort=False
+        )
     }
     bars_count = {
         ticker: (
@@ -213,7 +226,10 @@ def context_coverage(daily: pd.DataFrame, bars: pd.DataFrame, cells: pd.DataFram
     }
     for ticker, group in cells.groupby("ticker", sort=False):
         when = np.asarray(group["date"], dtype="datetime64[D]")
-        for table, key, need in ((daily_count, "k1_full_context", DAILY_CONTEXT), (bars_count, "k2_full_context", INTRADAY_CONTEXT)):
+        for table, key, need in (
+            (daily_count, "k1_full_context", DAILY_CONTEXT),
+            (bars_count, "k2_full_context", INTRADAY_CONTEXT),
+        ):
             found = table.get(ticker)
             if found is None:
                 continue
@@ -246,9 +262,13 @@ def from_store(
     log(f"cubes: {len(cubes)} ({time.perf_counter() - began:.0f} s)")
     report = desk_run(store)
     panel = report.panel
-    log(f"desk: {len(panel.dates)} sessions x {len(panel.tickers)} names ({time.perf_counter() - began:.0f} s)")
+    log(
+        f"desk: {len(panel.dates)} sessions x {len(panel.tickers)} names ({time.perf_counter() - began:.0f} s)"
+    )
     dates = np.asarray(panel.dates, dtype="datetime64[D]")
-    member = point_in_time.eligibility(dates, tuple(panel.tickers), history_path=membership_path)
+    member = point_in_time.eligibility(
+        dates, tuple(panel.tickers), history_path=membership_path
+    )
     return Inputs(
         panel=panel,
         cubes=cubes,

@@ -50,14 +50,27 @@ def _weekdays(n, start="2020-01-06"):
 def _daily(n):
     days = _weekdays(n)
     close = 100.0 + np.arange(n)
-    return pd.DataFrame({"ticker": "AAA", "date": days, "open": close - 0.5, "high": close + 1, "low": close - 1, "close": close, "volume": 1000.0 + np.arange(n)})
+    return pd.DataFrame(
+        {
+            "ticker": "AAA",
+            "date": days,
+            "open": close - 0.5,
+            "high": close + 1,
+            "low": close - 1,
+            "close": close,
+            "volume": 1000.0 + np.arange(n),
+        }
+    )
 
 
 # The script imports with torch and the Kronos repository absent.
 def test_script_imports_without_torch():
-    assert "torch" not in sys.modules or True
     assert kf.SAMPLING == {"T": 1.0, "top_k": 0, "top_p": 0.9, "sample_count": 1}
-    assert kf.DAILY_CONTEXT == kf.INTRADAY_CONTEXT == 512 and kf.DAILY_HORIZON == 20 and kf.INTRADAY_HORIZON == 26
+    assert (
+        kf.DAILY_CONTEXT == kf.INTRADAY_CONTEXT == 512
+        and kf.DAILY_HORIZON == 20
+        and kf.INTRADAY_HORIZON == 26
+    )
 
 
 # K1: the context is the 512 rows ending at t; a cell too early is skipped.
@@ -92,7 +105,18 @@ def _bars(n):
     days = np.repeat(_weekdays(n), 26)
     slots = np.tile(np.arange(26), n)
     close = 100.0 + np.arange(n * 26) * 0.01
-    return pd.DataFrame({"ticker": "AAA", "date": days, "slot": slots, "open": close, "high": close + 0.1, "low": close - 0.1, "close": close, "volume": 1.0})
+    return pd.DataFrame(
+        {
+            "ticker": "AAA",
+            "date": days,
+            "slot": slots,
+            "open": close,
+            "high": close + 0.1,
+            "low": close - 0.1,
+            "close": close,
+            "volume": 1.0,
+        }
+    )
 
 
 # K2: the context ends at slot 25 of t and the y stamps are t+1's slots.
@@ -107,15 +131,25 @@ def test_intraday_windows_end_at_the_last_bar_of_t():
     assert w["x"].shape == (2, 512, 5)
     last = 20 * 26 - 1
     assert w["x"][0, -1, 3] == pytest.approx(100.0 + last * 0.01)
-    assert w["x_stamps"][0, -1] == days[19].astype("datetime64[m]") + np.timedelta64(15 * 60 + 45, "m")
+    assert w["x_stamps"][0, -1] == days[19].astype("datetime64[m]") + np.timedelta64(
+        15 * 60 + 45, "m"
+    )
     # 512 bars back from bar 519 is bar 8: session 0, slot 8, 11:30.
-    assert w["x_stamps"][0, 0] == days[0].astype("datetime64[m]") + np.timedelta64(11 * 60 + 30, "m")
+    assert w["x_stamps"][0, 0] == days[0].astype("datetime64[m]") + np.timedelta64(
+        11 * 60 + 30, "m"
+    )
     # y: t+1's 26 slots from 09:30 New York.
     assert w["y_stamps"].shape == (2, 26)
-    assert w["y_stamps"][0, 0] == days[20].astype("datetime64[m]") + np.timedelta64(9 * 60 + 30, "m")
-    assert w["y_stamps"][0, -1] == days[20].astype("datetime64[m]") + np.timedelta64(15 * 60 + 45, "m")
+    assert w["y_stamps"][0, 0] == days[20].astype("datetime64[m]") + np.timedelta64(
+        9 * 60 + 30, "m"
+    )
+    assert w["y_stamps"][0, -1] == days[20].astype("datetime64[m]") + np.timedelta64(
+        15 * 60 + 45, "m"
+    )
     # NaT next date: the next business day.
-    assert w["y_stamps"][1, 0].astype("datetime64[D]") == np.busday_offset(days[29], 1, roll="forward")
+    assert w["y_stamps"][1, 0].astype("datetime64[D]") == np.busday_offset(
+        days[29], 1, roll="forward"
+    )
 
 
 # The time features are minute, hour, weekday, day, month.
@@ -158,9 +192,18 @@ def test_k2_features():
     ohlc[0, 20, 1] = 104.0  # high
     ohlc[0, 25, 3] = 102.0  # close
     f = kf.k2_features(np.array([100.0]), ohlc)
-    assert f["pred_open"][0] == 101.0 and f["pred_low"][0] == 97.0 and f["pred_high"][0] == 104.0 and f["pred_close"][0] == 102.0
-    assert f["k2_low_rel_open"][0] == pytest.approx(97 / 101) and f["k2_high_rel_open"][0] == pytest.approx(104 / 101)
-    assert f["k2_low_rel_close_t"][0] == pytest.approx(0.97) and f["k2_open_rel_close_t"][0] == pytest.approx(1.01)
+    assert (
+        f["pred_open"][0] == 101.0
+        and f["pred_low"][0] == 97.0
+        and f["pred_high"][0] == 104.0
+        and f["pred_close"][0] == 102.0
+    )
+    assert f["k2_low_rel_open"][0] == pytest.approx(97 / 101) and f["k2_high_rel_open"][
+        0
+    ] == pytest.approx(104 / 101)
+    assert f["k2_low_rel_close_t"][0] == pytest.approx(0.97) and f[
+        "k2_open_rel_close_t"
+    ][0] == pytest.approx(1.01)
 
 
 # Batches cover every row once.

@@ -50,7 +50,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -96,7 +95,11 @@ def next_sessions(sessions: np.ndarray, p: int, n: int) -> np.ndarray:
 # daily table sorted by date; `cell_dates` the cells' dates; `sessions`
 # the panel's dates.
 def daily_windows(
-    daily: pd.DataFrame, cell_dates: np.ndarray, sessions: np.ndarray, context: int = DAILY_CONTEXT, horizon: int = DAILY_HORIZON
+    daily: pd.DataFrame,
+    cell_dates: np.ndarray,
+    sessions: np.ndarray,
+    context: int = DAILY_CONTEXT,
+    horizon: int = DAILY_HORIZON,
 ) -> dict[str, np.ndarray]:
     """Return {"x", "x_dates", "y_dates", "close_t", "kept"}."""
     days = np.asarray(daily["date"], dtype="datetime64[D]")
@@ -112,8 +115,18 @@ def daily_windows(
     x = values[index]
     x_dates = days[index]
     spos = np.searchsorted(sessions, cell_dates[kept])
-    y_dates = np.stack([next_sessions(sessions, int(s), horizon) for s in spos]) if len(kept) else np.zeros((0, horizon), dtype="datetime64[D]")
-    return {"x": x, "x_dates": x_dates, "y_dates": y_dates, "close_t": values[p, 3] if len(kept) else np.zeros(0), "kept": kept}
+    y_dates = (
+        np.stack([next_sessions(sessions, int(s), horizon) for s in spos])
+        if len(kept)
+        else np.zeros((0, horizon), dtype="datetime64[D]")
+    )
+    return {
+        "x": x,
+        "x_dates": x_dates,
+        "y_dates": y_dates,
+        "close_t": values[p, 3] if len(kept) else np.zeros(0),
+        "kept": kept,
+    }
 
 
 # K2's windows for one name: the (M, 512, 5) contexts of the cells whose
@@ -123,7 +136,10 @@ def daily_windows(
 # slot); `next_dates` the cells' next session dates (NaT: the next
 # business day).
 def intraday_windows(
-    bars: pd.DataFrame, cell_dates: np.ndarray, next_dates: np.ndarray, context: int = INTRADAY_CONTEXT
+    bars: pd.DataFrame,
+    cell_dates: np.ndarray,
+    next_dates: np.ndarray,
+    context: int = INTRADAY_CONTEXT,
 ) -> dict[str, np.ndarray]:
     """Return {"x", "x_stamps", "y_stamps", "close_t", "kept"}."""
     days = np.asarray(bars["date"], dtype="datetime64[D]")
@@ -136,8 +152,14 @@ def intraday_windows(
     last_rows = np.flatnonzero(slots == SLOTS - 1)
     last_days = days[last_rows]
     pos = np.searchsorted(last_days, cell_dates)
-    found = (pos < len(last_days)) & (last_days[np.minimum(pos, len(last_days) - 1)] == cell_dates)
-    end = np.where(found, last_rows[np.minimum(pos, max(len(last_rows) - 1, 0))], -1) if len(last_rows) else np.full(len(cell_dates), -1)
+    found = (pos < len(last_days)) & (
+        last_days[np.minimum(pos, len(last_days) - 1)] == cell_dates
+    )
+    end = (
+        np.where(found, last_rows[np.minimum(pos, max(len(last_rows) - 1, 0))], -1)
+        if len(last_rows)
+        else np.full(len(cell_dates), -1)
+    )
     kept = np.flatnonzero(found & (end >= context - 1))
     e = end[kept]
     offsets = np.arange(-context + 1, 1)
@@ -149,8 +171,16 @@ def intraday_windows(
     if missing.any():
         nd = nd.copy()
         nd[missing] = np.busday_offset(cell_dates[kept][missing], 1, roll="forward")
-    y_stamps = nd[:, None].astype("datetime64[m]") + SLOT_MINUTES[None, :].astype("timedelta64[m]")
-    return {"x": x, "x_stamps": x_stamps, "y_stamps": y_stamps, "close_t": values[e, 3] if len(kept) else np.zeros(0), "kept": kept}
+    y_stamps = nd[:, None].astype("datetime64[m]") + SLOT_MINUTES[None, :].astype(
+        "timedelta64[m]"
+    )
+    return {
+        "x": x,
+        "x_stamps": x_stamps,
+        "y_stamps": y_stamps,
+        "close_t": values[e, 3] if len(kept) else np.zeros(0),
+        "kept": kept,
+    }
 
 
 # The time features Kronos reads from timestamps (`calc_time_stamps`):
@@ -158,7 +188,9 @@ def intraday_windows(
 def time_features(stamps: np.ndarray) -> np.ndarray:
     """Return (M, L, 5) time stamps for (M, L) datetime64 values."""
     s = pd.DatetimeIndex(np.asarray(stamps).reshape(-1).astype("datetime64[ns]"))
-    out = np.stack([s.minute, s.hour, s.weekday, s.day, s.month], axis=-1).astype(np.float32)
+    out = np.stack([s.minute, s.hour, s.weekday, s.day, s.month], axis=-1).astype(
+        np.float32
+    )
     return out.reshape(*np.shape(stamps), 5)
 
 
@@ -241,7 +273,9 @@ def load_predictor(kronos_repo: Path, hf_dir: Path, device: str):
 
     tokenizer = KronosTokenizer.from_pretrained(str(hf_dir / "Kronos-Tokenizer-base"))
     model = Kronos.from_pretrained(str(hf_dir / "Kronos-base"))
-    predictor = KronosPredictor(model, tokenizer, device=device, max_context=MAX_CONTEXT, clip=CLIP)
+    predictor = KronosPredictor(
+        model, tokenizer, device=device, max_context=MAX_CONTEXT, clip=CLIP
+    )
     predictor.model.eval()
     predictor.tokenizer.eval()
     return predictor
@@ -249,7 +283,15 @@ def load_predictor(kronos_repo: Path, hf_dir: Path, device: str):
 
 # One batch through the model: normalise, generate, de-normalise; returns
 # (M, H, 6) predictions on the series' scale.
-def forecast_batch(predictor, x: np.ndarray, x_stamps: np.ndarray, y_stamps: np.ndarray, horizon: int, seed: int, autocast: bool) -> np.ndarray:
+def forecast_batch(
+    predictor,
+    x: np.ndarray,
+    x_stamps: np.ndarray,
+    y_stamps: np.ndarray,
+    horizon: int,
+    seed: int,
+    autocast: bool,
+) -> np.ndarray:
     """Return the de-normalised predictions of one batch."""
     import torch
 
@@ -259,9 +301,29 @@ def forecast_batch(predictor, x: np.ndarray, x_stamps: np.ndarray, y_stamps: np.
     ys = time_features(y_stamps)
     if autocast and str(predictor.device).startswith("cuda"):
         with torch.autocast("cuda", dtype=torch.bfloat16):
-            preds = predictor.generate(norm, xs, ys, horizon, SAMPLING["T"], SAMPLING["top_k"], SAMPLING["top_p"], SAMPLING["sample_count"], False)
+            preds = predictor.generate(
+                norm,
+                xs,
+                ys,
+                horizon,
+                SAMPLING["T"],
+                SAMPLING["top_k"],
+                SAMPLING["top_p"],
+                SAMPLING["sample_count"],
+                False,
+            )
     else:
-        preds = predictor.generate(norm, xs, ys, horizon, SAMPLING["T"], SAMPLING["top_k"], SAMPLING["top_p"], SAMPLING["sample_count"], False)
+        preds = predictor.generate(
+            norm,
+            xs,
+            ys,
+            horizon,
+            SAMPLING["T"],
+            SAMPLING["top_k"],
+            SAMPLING["top_p"],
+            SAMPLING["sample_count"],
+            False,
+        )
     return denormalise(np.asarray(preds, dtype=np.float64), mean, std)
 
 
@@ -278,7 +340,16 @@ def read_table(data: Path, name: str) -> pd.DataFrame:
 
 
 # K1 for one name: its windows, the batches, the output frame.
-def run_k1_name(predictor, ticker: str, daily: pd.DataFrame, cells: pd.DataFrame, sessions: np.ndarray, batch: int, seed: int, autocast: bool) -> tuple[pd.DataFrame, int]:
+def run_k1_name(
+    predictor,
+    ticker: str,
+    daily: pd.DataFrame,
+    cells: pd.DataFrame,
+    sessions: np.ndarray,
+    batch: int,
+    seed: int,
+    autocast: bool,
+) -> tuple[pd.DataFrame, int]:
     """Return (frame, cells skipped for a short context)."""
     w = daily_windows(daily, cells["date"].to_numpy(), sessions)
     kept = w["kept"]
@@ -287,17 +358,41 @@ def run_k1_name(predictor, ticker: str, daily: pd.DataFrame, cells: pd.DataFrame
         return pd.DataFrame(), skipped
     paths = np.full((len(kept), DAILY_HORIZON, 6), np.nan)
     for b, rows in enumerate(batches(len(kept), batch)):
-        paths[rows] = forecast_batch(predictor, w["x"][rows], w["x_dates"][rows], w["y_dates"][rows], DAILY_HORIZON, seed * 100_003 + b, autocast)
+        paths[rows] = forecast_batch(
+            predictor,
+            w["x"][rows],
+            w["x_dates"][rows],
+            w["y_dates"][rows],
+            DAILY_HORIZON,
+            seed * 100_003 + b,
+            autocast,
+        )
     closes = paths[:, :, 3]
     logret, mdd = k1_features(w["close_t"], closes)
-    out = pd.DataFrame({"ticker": ticker, "date": cells["date"].to_numpy()[kept], "close_t": w["close_t"], "k1_logret_20": logret, "k1_mdd": mdd})
+    out = pd.DataFrame(
+        {
+            "ticker": ticker,
+            "date": cells["date"].to_numpy()[kept],
+            "close_t": w["close_t"],
+            "k1_logret_20": logret,
+            "k1_mdd": mdd,
+        }
+    )
     for k in range(DAILY_HORIZON):
         out[f"pred_close_{k + 1:02d}"] = closes[:, k]
     return out, skipped
 
 
 # K2 for one name: its windows, the batches, the output frame.
-def run_k2_name(predictor, ticker: str, bars: pd.DataFrame, cells: pd.DataFrame, batch: int, seed: int, autocast: bool) -> tuple[pd.DataFrame, int]:
+def run_k2_name(
+    predictor,
+    ticker: str,
+    bars: pd.DataFrame,
+    cells: pd.DataFrame,
+    batch: int,
+    seed: int,
+    autocast: bool,
+) -> tuple[pd.DataFrame, int]:
     """Return (frame, cells skipped for a short context)."""
     w = intraday_windows(bars, cells["date"].to_numpy(), cells["next_date"].to_numpy())
     kept = w["kept"]
@@ -306,9 +401,24 @@ def run_k2_name(predictor, ticker: str, bars: pd.DataFrame, cells: pd.DataFrame,
         return pd.DataFrame(), skipped
     paths = np.full((len(kept), INTRADAY_HORIZON, 6), np.nan)
     for b, rows in enumerate(batches(len(kept), batch)):
-        paths[rows] = forecast_batch(predictor, w["x"][rows], w["x_stamps"][rows], w["y_stamps"][rows], INTRADAY_HORIZON, seed * 100_003 + b, autocast)
+        paths[rows] = forecast_batch(
+            predictor,
+            w["x"][rows],
+            w["x_stamps"][rows],
+            w["y_stamps"][rows],
+            INTRADAY_HORIZON,
+            seed * 100_003 + b,
+            autocast,
+        )
     ohlc = paths[:, :, :4]
-    out = pd.DataFrame({"ticker": ticker, "date": cells["date"].to_numpy()[kept], "next_date": cells["next_date"].to_numpy()[kept], "close_t": w["close_t"]})
+    out = pd.DataFrame(
+        {
+            "ticker": ticker,
+            "date": cells["date"].to_numpy()[kept],
+            "next_date": cells["next_date"].to_numpy()[kept],
+            "close_t": w["close_t"],
+        }
+    )
     for name, values in k2_features(w["close_t"], ohlc).items():
         out[name] = values
     for k in range(INTRADAY_HORIZON):
@@ -324,14 +434,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--arm", required=True, choices=ARMS)
     parser.add_argument("--data", required=True, type=Path, help="the export directory")
-    parser.add_argument("--out", required=True, type=Path, help="the forecasts directory")
-    parser.add_argument("--kronos", required=True, type=Path, help="the Kronos repository")
-    parser.add_argument("--hf", required=True, type=Path, help="the HF checkpoints directory")
+    parser.add_argument(
+        "--out", required=True, type=Path, help="the forecasts directory"
+    )
+    parser.add_argument(
+        "--kronos", required=True, type=Path, help="the Kronos repository"
+    )
+    parser.add_argument(
+        "--hf", required=True, type=Path, help="the HF checkpoints directory"
+    )
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--batch", type=int, default=256)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--tickers", default="", help="comma-separated subset (smoke)")
-    parser.add_argument("--limit", type=int, default=0, help="at most this many cells a name (smoke)")
+    parser.add_argument(
+        "--limit", type=int, default=0, help="at most this many cells a name (smoke)"
+    )
     parser.add_argument("--no-autocast", action="store_true", help="fp32 throughout")
     return parser
 
@@ -344,8 +462,14 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     cells = read_table(args.data, "cells")
     cells["date"] = pd.to_datetime(cells["date"]).to_numpy().astype("datetime64[D]")
-    cells["next_date"] = pd.to_datetime(cells["next_date"]).to_numpy().astype("datetime64[D]")
-    sessions = pd.to_datetime(read_table(args.data, "sessions")["date"]).to_numpy().astype("datetime64[D]")
+    cells["next_date"] = (
+        pd.to_datetime(cells["next_date"]).to_numpy().astype("datetime64[D]")
+    )
+    sessions = (
+        pd.to_datetime(read_table(args.data, "sessions")["date"])
+        .to_numpy()
+        .astype("datetime64[D]")
+    )
     table = read_table(args.data, "daily" if args.arm == "k1" else "bars15")
     table["date"] = pd.to_datetime(table["date"]).to_numpy().astype("datetime64[D]")
     names = sorted(cells["ticker"].unique())
@@ -354,7 +478,16 @@ def main(argv: list[str] | None = None) -> int:
         names = [n for n in names if n in chosen]
     predictor = load_predictor(args.kronos, args.hf, args.device)
     autocast = not args.no_autocast
-    record: dict[str, Any] = {"arm": args.arm, "sampling": SAMPLING, "max_context": MAX_CONTEXT, "clip": CLIP, "seed": args.seed, "batch": args.batch, "autocast": autocast, "names": {}}
+    record: dict[str, Any] = {
+        "arm": args.arm,
+        "sampling": SAMPLING,
+        "max_context": MAX_CONTEXT,
+        "clip": CLIP,
+        "seed": args.seed,
+        "batch": args.batch,
+        "autocast": autocast,
+        "names": {},
+    }
     run_path = out_dir / "_run.json"
     if run_path.exists():
         record["names"] = json.loads(run_path.read_text()).get("names", {})
@@ -371,15 +504,41 @@ def main(argv: list[str] | None = None) -> int:
         rows = table[table["ticker"] == ticker]
         started = time.perf_counter()
         if args.arm == "k1":
-            frame, skipped = run_k1_name(predictor, ticker, rows.sort_values("date"), own, sessions, args.batch, args.seed + i, autocast)
+            frame, skipped = run_k1_name(
+                predictor,
+                ticker,
+                rows.sort_values("date"),
+                own,
+                sessions,
+                args.batch,
+                args.seed + i,
+                autocast,
+            )
         else:
-            frame, skipped = run_k2_name(predictor, ticker, rows.sort_values(["date", "slot"]), own, args.batch, args.seed + i, autocast)
+            frame, skipped = run_k2_name(
+                predictor,
+                ticker,
+                rows.sort_values(["date", "slot"]),
+                own,
+                args.batch,
+                args.seed + i,
+                autocast,
+            )
         seconds = time.perf_counter() - started
         frame.to_parquet(target, index=False)
         total += len(frame)
-        record["names"][ticker] = {"cells": int(len(own)), "forecast": int(len(frame)), "skipped_short_context": int(skipped), "seconds": round(seconds, 1), "cells_per_second": round(len(frame) / seconds, 2) if seconds > 0 else None}
+        record["names"][ticker] = {
+            "cells": int(len(own)),
+            "forecast": int(len(frame)),
+            "skipped_short_context": int(skipped),
+            "seconds": round(seconds, 1),
+            "cells_per_second": round(len(frame) / seconds, 2) if seconds > 0 else None,
+        }
         run_path.write_text(json.dumps(record, indent=2))
-        print(f"{ticker}: {len(frame)} cells in {seconds:.0f} s ({len(frame) / max(seconds, 1e-9):.1f}/s), {skipped} short; {total} so far, {time.perf_counter() - began:.0f} s", flush=True)
+        print(
+            f"{ticker}: {len(frame)} cells in {seconds:.0f} s ({len(frame) / max(seconds, 1e-9):.1f}/s), {skipped} short; {total} so far, {time.perf_counter() - began:.0f} s",
+            flush=True,
+        )
     record["seconds"] = round(time.perf_counter() - began, 1)
     record["cells_forecast"] = int(sum(v["forecast"] for v in record["names"].values()))
     run_path.write_text(json.dumps(record, indent=2))

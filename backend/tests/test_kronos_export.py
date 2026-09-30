@@ -100,7 +100,11 @@ def test_daily_table_is_adjusted_and_book_only():
     assert list(daily.columns) == list(ke.DAILY_COLUMNS)
     assert set(daily["ticker"]) == set(NAMES)
     aaa = daily[daily["ticker"] == "AAA"].iloc[0]
-    assert aaa["close"] == 90.0 and aaa["open"] == 99.0 * 0.9 and aaa["high"] == 102.0 * 0.9
+    assert (
+        aaa["close"] == 90.0
+        and aaa["open"] == 99.0 * 0.9
+        and aaa["high"] == 102.0 * 0.9
+    )
     bbb = daily[daily["ticker"] == "BBB"].iloc[0]
     assert bbb["close"] == 50.0 and bbb["low"] == 48.0
 
@@ -115,7 +119,9 @@ def test_bars_table_scales_onto_the_adjusted_basis():
     first = aaa.iloc[0]
     # AAA's cube is on a 2x raw basis; the panel's adjusted close is 0.9 x close.
     assert first["close"] == pytest.approx(102.0 * 0.9)
-    assert first["high"] == pytest.approx((2 * 102.0 + 0.5) * (102.0 * 0.9) / (2 * 102.0))
+    assert first["high"] == pytest.approx(
+        (2 * 102.0 + 0.5) * (102.0 * 0.9) / (2 * 102.0)
+    )
     assert first["slot"] == 0 and aaa.iloc[25]["slot"] == 25
     assert np.asarray(aaa["date"], dtype="datetime64[D]")[0] == inputs.panel.dates[2]
 
@@ -126,27 +132,42 @@ def test_cells_table():
     since = inputs.panel.dates[3].astype(object)
     cells = ke.cells_table(inputs, since)
     assert list(cells.columns) == list(ke.CELLS_COLUMNS)
-    assert cells["date"].min().to_datetime64().astype("datetime64[D]") == inputs.panel.dates[5]
+    assert (
+        cells["date"].min().to_datetime64().astype("datetime64[D]")
+        == inputs.panel.dates[5]
+    )
     assert "SPY" not in set(cells["ticker"])
     bbb = cells[cells["ticker"] == "BBB"]
     assert set(bbb["session"]) == set(range(5, T)) - {10, 11}
     last = cells[cells["session"] == T - 1].iloc[0]
     assert pd.isna(last["next_date"])
     row = cells[(cells["session"] == 5) & (cells["ticker"] == "AAA")].iloc[0]
-    assert row["next_date"].to_datetime64().astype("datetime64[D]") == inputs.panel.dates[6] and row["grade"] == 2
+    assert (
+        row["next_date"].to_datetime64().astype("datetime64[D]")
+        == inputs.panel.dates[6]
+        and row["grade"] == 2
+    )
 
 
 # The context coverage counts full contexts: 512 daily rows (none here,
 # the panel is 40 sessions) and 512 bars (20 sessions of 26).
 def test_context_coverage_counts_full_contexts():
     inputs = _inputs()
-    daily, bars, cells = ke.daily_table(inputs), ke.bars_table(inputs), ke.cells_table(inputs, date(2024, 1, 1))
+    daily, bars, cells = (
+        ke.daily_table(inputs),
+        ke.bars_table(inputs),
+        ke.cells_table(inputs, date(2024, 1, 1)),
+    )
     cov = ke.context_coverage(daily, bars, cells)
     aaa = cells[cells["ticker"] == "AAA"]
     bbb = cells[cells["ticker"] == "BBB"]
     assert cov["cells"] == len(cells) and cov["k1_full_context"] == 0
     # AAA's cube starts at session 2, so its 20th session is 21; BBB's is 19.
-    assert cov["k2_full_context"] == int((aaa["session"] >= 21).sum()) + int((bbb["session"] >= 19).sum()) == 40
+    assert (
+        cov["k2_full_context"]
+        == int((aaa["session"] >= 21).sum()) + int((bbb["session"] >= 19).sum())
+        == 40
+    )
 
 
 # The command end to end on a stub loader, CSV format.
@@ -163,7 +184,20 @@ def test_command_writes_tables_and_summary(tmp_path):
 
     out_dir = tmp_path / "export"
     args = cli.build_parser().parse_args(
-        ["--root", str(tmp_path), "--out-dir", str(out_dir), "--membership", str(membership), "--format", "csv", "--since", "2024-01-09", "--tickers", "aaa,bbb"]
+        [
+            "--root",
+            str(tmp_path),
+            "--out-dir",
+            str(out_dir),
+            "--membership",
+            str(membership),
+            "--format",
+            "csv",
+            "--since",
+            "2024-01-09",
+            "--tickers",
+            "aaa,bbb",
+        ]
     )
     text = textio.StringIO()
     assert cli.run(args, out=text, loader=loader, desk_run=lambda store: None) == 0
@@ -171,10 +205,18 @@ def test_command_writes_tables_and_summary(tmp_path):
     assert set(summary["files"]) == set(cli.TABLES)
     for name, info in summary["files"].items():
         path = out_dir / f"{name}.csv"
-        assert path.exists() and info["sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+        assert (
+            path.exists()
+            and info["sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+        )
     cells = pd.read_csv(out_dir / "cells.csv")
-    assert summary["files"]["cells"]["rows"] == len(cells) and cells["date"].min() == "2024-01-09"
-    assert summary["contexts"] == {"daily": 512, "intraday": 512} and summary["horizons"] == {"daily": 20, "intraday": 26}
+    assert (
+        summary["files"]["cells"]["rows"] == len(cells)
+        and cells["date"].min() == "2024-01-09"
+    )
+    assert summary["contexts"] == {"daily": 512, "intraday": 512} and summary[
+        "horizons"
+    ] == {"daily": 20, "intraday": 26}
     assert summary["coverage"]["cells"] == len(cells)
     assert "stub 0 names" in text.getvalue()  # --tickers names outside the book
 
@@ -185,4 +227,7 @@ def test_bad_since_is_refused(tmp_path):
 
     args = cli.build_parser().parse_args(["--root", str(tmp_path), "--since", "nope"])
     text = textio.StringIO()
-    assert cli.run(args, out=text, loader=lambda *a, **k: None, desk_run=lambda s: None) == 2
+    assert (
+        cli.run(args, out=text, loader=lambda *a, **k: None, desk_run=lambda s: None)
+        == 2
+    )
