@@ -310,6 +310,12 @@ def summarise(
                     "median_drawdown": _nanmedian(
                         np.array([s["drawdown"] for s in per_label[label]])
                     ),
+                    "worst_drawdown": _nanmin(
+                        np.array([s["drawdown"] for s in per_label[label]])
+                    ),
+                    # Every offset's CAGR, in offset order, so two runs can
+                    # be compared offset by offset.
+                    "cagrs": [float(c) for c in cagrs],
                     "median_sharpe": _nanmedian(
                         np.array([s["sharpe"] for s in per_label[label]])
                     ),
@@ -486,6 +492,7 @@ def build(
             f"({WORST_NAME_DAY_BASIS})."
         ),
     }
+    payload["curves"] = {}
     for cost in costs:
         priced = [
             price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
@@ -493,7 +500,24 @@ def build(
         ]
         payload["rows"].extend(summarise(priced, cost))
         payload["paired"].extend(paired(priced, cost))
+        payload["curves"][f"{cost:g}"] = median_offset_curves(priced)
     return payload
+
+
+# The daily returns of every line at the median offset (the offset `paired`
+# reads), on the rule's calendar, so two payloads from different runs can
+# be paired session by session: a candidate against its control is a
+# comparison the scorecard cannot make within one run.
+def median_offset_curves(priced: list[dict[str, Curve]]) -> dict:
+    """Return {"offset", "dates", "lines": {label: [daily...]}} at the median offset."""
+    k = len(priced) // 2
+    offset = priced[k]
+    base = offset[RULE_TODAY].dates
+    return {
+        "offset": k,
+        "dates": [str(d) for d in np.asarray(base, dtype="datetime64[D]")],
+        "lines": {label: _on(base, curve).tolist() for label, curve in offset.items()},
+    }
 
 
 # The k-th panel session as a date, for `simulate.run(since=...)`.

@@ -548,3 +548,23 @@ def test_cli_null_test_and_universe_wiring(history, monkeypatch, tmp_path, capsy
     # --null-test with --universe is refused.
     with pytest.raises(SystemExit):
         sc.main(["--null-test", "--universe", "sector"])
+
+
+# The payload carries the median-offset daily curves of every line and
+# each row's per-offset CAGRs and worst drawdown, so two runs can be paired.
+def test_build_carries_curves_and_per_offset_cagrs(history, monkeypatch):
+    report = _report()
+    monkeypatch.setattr(benchmarks, "load_benchmark", _fake_benchmark(report))
+    payload = sc.build(report, object(), offsets=3, costs=(10.0,), history_path=history)
+    curves = payload["curves"]["10"]
+    assert curves["offset"] == 1
+    assert len(curves["dates"]) == len(curves["lines"][sc.RULE_PIT])
+    assert set(curves["lines"]) == {sc.RULE_TODAY, sc.RULE_PIT, sc.EW_PIT, sc.EW_TODAY, "SPY", "QQQ"}
+    daily = np.asarray(curves["lines"][sc.EW_PIT], dtype=float)
+    assert np.isfinite(daily).sum() > T // 2
+    for row in payload["rows"]:
+        assert len(row["cagrs"]) == 3
+        finite = [c for c in row["cagrs"] if c == c]
+        if finite:
+            assert row["median_cagr"] == pytest.approx(float(np.median(finite)))
+            assert row["worst_drawdown"] <= row["median_drawdown"] + 1e-12
