@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-01 — Experimental bounded execution branch
+
+User authorized implementation on a branch, not live adoption. Starting main
+`9ab75e85`; verified source checkpoint `5d5566e6` on
+`codex/bounded-execution-20261001`. No deployment or orders sent.
+
+- **VERIFIED:** `bounded-execution/1` is explicitly opt-in per paper pending
+  order. `bounded_execution.bind` requires price, decision/expiry, quote source,
+  freshness, trigger-age and spread budgets, and entry/trim/exit intent. No
+  automatic nightly binding or fitted defaults. Allocation and grades unchanged.
+- **VERIFIED:** board and dispatcher share fresh, timestamped bid/ask guards,
+  using the existing quote reader with explicit SIP/IEX identity. Stale or
+  recovered triggers cannot override price bounds. Urgent exits bypass bounce
+  timing, retaining a sell floor. Paper-only IOC transport; no market fallback.
+- **VERIFIED:** actual cash/share reservations include other batch attempts and
+  unknown responses; no assumed sale funding. Accepted requests are not fills.
+  Recovery, partial fills and blocked opportunity receipts survive reconciliation.
+- **VERIFIED:** 290 tests passed in 3.48s, covering the new bounded module and
+  existing timing, paper funding/allocation, planner, board and daily API paths.
+  Isolated Spark checkout `/home/animallya96/scratch/bounded-execution.dTUEcK`,
+  read-only mount, network disabled, test mode, image `anios-functional-tests`
+  SHA256 `c8964e1233e1142b77e6ac2b24fda67ee110a0f8e4c95482c4799d8617e17fb0`.
+  All six tested source hashes matched the branch. Five changed module/test
+  files pass Ruff; formatting and diff checks pass.
+- **FAILED (existing baseline):** whole-file API Ruff reports C901 on unchanged
+  `_desk_mine_payload` at line 677, also reproduced from starting main. The API
+  change is one quote-qualification line in `_paper_plan`; no lint rules waived.
+- **UNVERIFIED:** live provider/IOC behavior, rendered browser, deployment and
+  economic advantage. Next acceptance is an untouched forward shadow/funded
+  comparison retaining missed opportunities and partial fills, before adoption.
+  Limits can miss fills or delay exits; midpoint fills cannot be assumed.
+  Unrelated Wi-Fi watchdog files and `trader-board.bundle` remain untouched.
+
 ## 2026-10-01, 16:32 ET — LIVE: `d17f1632` (earnings coverage) on `4384ea77` (12:07 ET: 6-K classifier, data-vintage note, discovery test) and `6b85cfe0` (10:33 ET: reset sizing)
 
 Three deploys today, all through `scripts/deploy.sh` on Spark:
