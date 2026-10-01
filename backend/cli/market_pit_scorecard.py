@@ -30,6 +30,32 @@ reads.
 
 Read-only with respect to the desk and the store; writes
 `<root>/desk/pit_scorecard.json`.
+
+The tone-expiry study (`docs/research/tone-expiry-plan-2026-10-01.md`, A5)
+adds `--tone-expiry {hard,decay}`, which runs the desk with the sentiment
+analyst's stale release readings expired or decayed
+(`tone_expiry.TONE_EXPIRY`) and attaches what the arm changed and the
+paired sentiment IC (`tone_expiry_study.record`); `--sentiment-ic`, which
+attaches a run's own sentiment IC series and the desk's fingerprint (the
+control's, for the verdict); `--membership FILE` for the dated membership
+file the point-in-time mask reads, `--output FILE` for where the payload
+goes, `--rank-ic` to attach the graded score's rank IC at 20 and 60
+sessions, and `--null-test`, which runs the book through the expiry path
+with an infinite horizon (`tone_expiry.TONE_EXPIRY_NULL`) and through the
+plain path and asserts that the grades, the scores, the sentiment
+analyst's scores and every line's returns are the same to the bit at two
+offsets: the incumbent must be reproduced before any arm is read. Every
+payload carries each row's per-offset CAGRs and worst drawdown and the
+median-offset daily curves of every line, so two runs can be paired
+session by session (`tone_expiry_study.verdict`, `market_tone_expiry`).
+
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \\
+        --tone-expiry hard --null-test
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --rank-ic \\
+        --sentiment-ic --output docs/research/scorecards/tone-expiry/control.json
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --rank-ic \\
+        --sentiment-ic --tone-expiry hard \\
+        --output docs/research/scorecards/tone-expiry/hard.json
 """
 
 from __future__ import annotations
@@ -38,6 +64,7 @@ import argparse
 import json
 import math
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -52,7 +79,8 @@ from backend.agents.trading.desk import (
     point_in_time,
     simulate,
 )
-from backend.market import benchmarks, candidate_stats
+from backend.market import benchmarks, candidate_stats, tone_expiry, universe
+from backend.market import tone_expiry_study as tes
 from backend.market.universe import MARKET_INDICES
 
 FILE = "pit_scorecard.json"
@@ -295,6 +323,12 @@ def summarise(
                     "median_drawdown": _nanmedian(
                         np.array([s["drawdown"] for s in per_label[label]])
                     ),
+                    "worst_drawdown": _nanmin(
+                        np.array([s["drawdown"] for s in per_label[label]])
+                    ),
+                    # Every offset's CAGR, in offset order, so two runs can
+                    # be compared offset by offset.
+                    "cagrs": [float(c) for c in cagrs],
                     "median_sharpe": _nanmedian(
                         np.array([s["sharpe"] for s in per_label[label]])
                     ),
@@ -352,6 +386,86 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
     return out
 
 
+# Two reports priced on the same lines at the same offsets and costs,
+# compared to the bit: the null test of a new desk path is that the book
+# through it reproduces the control exactly. Returns the verdict and, per
+# (cost, offset, line), whether the dates and the returns arrays are equal
+# (NaN equal to NaN); the whole thing is `ok` only when every line is and
+# the grades and scores agree.
+def null_test(
+    report_a,
+    report_b,
+    store,
+    history_path,
+    offsets: int,
+    costs: tuple[float, ...],
+    arm=None,
+) -> dict:
+    """Return {"ok", "lines": [{cost, offset, line, dates_equal, returns_equal}]}."""
+    priced = []
+    for report in (report_a, report_b):
+        restricted, mask = point_in_time.point_in_time(report, history_path)
+        priced.append(
+            {
+                (cost, k): price_offset(
+                    report, restricted, mask, store, _since(report.panel, k), cost, arm
+                )
+                for cost in costs
+                for k in range(offsets)
+            }
+        )
+    lines = []
+    for (cost, k), curves in priced[0].items():
+        other = priced[1][(cost, k)]
+        for label, curve in curves.items():
+            a, b = curve, other[label]
+            dates_equal = bool(np.array_equal(a.dates, b.dates))
+            returns_equal = bool(
+                np.array_equal(
+                    np.asarray(a.daily, dtype=float),
+                    np.asarray(b.daily, dtype=float),
+                    equal_nan=True,
+                )
+            )
+            lines.append(
+                {
+                    "cost_bps": cost,
+                    "offset": k,
+                    "line": label,
+                    "dates_equal": dates_equal,
+                    "returns_equal": returns_equal,
+                }
+            )
+    grades_equal = bool(
+        np.array_equal(report_a.graded.grades, report_b.graded.grades)
+        and np.array_equal(report_a.scores, report_b.scores, equal_nan=True)
+    )
+    return {
+        "ok": grades_equal
+        and all(r["dates_equal"] and r["returns_equal"] for r in lines),
+        "grades_and_scores_equal": grades_equal,
+        "lines": lines,
+    }
+
+
+# The graded score's rank IC at 20 and 60 sessions (`desk.calibrate`): how
+# the analysts are measured, attached so a re-graded desk and the incumbent
+# can be read side by side.
+def rank_ic(report) -> dict[str, dict[str, float]]:
+    """Return {"h20": {...}, "h60": {...}} of the graded score's rank IC."""
+    from backend.agents.trading.desk import desk
+
+    out: dict[str, dict[str, float]] = {}
+    for horizon in (20, 60):
+        _, harness = desk.calibrate(report, horizon)
+        out[f"h{horizon}"] = {
+            "rank_ic": float(harness.mean_ic),
+            "ic_t": float(harness.ic_tstat),
+            "net_sharpe": float(harness.net_sharpe),
+        }
+    return out
+
+
 # Run everything and assemble the payload; `report` is the desk's unrestricted report.
 def build(
     report, store, offsets: int, costs: tuple[float, ...], history_path=None, arm=None
@@ -376,6 +490,7 @@ def build(
             "eligible_last_session": int(members[-1]),
             "eligible_median": float(np.median(members)),
         },
+        "membership": str(history_path or universe.MEMBERSHIP_HISTORY_PATH),
         "rows": [],
         "paired": [],
         "note": (
@@ -390,6 +505,7 @@ def build(
             f"({WORST_NAME_DAY_BASIS})."
         ),
     }
+    payload["curves"] = {}
     for cost in costs:
         priced = [
             price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
@@ -397,7 +513,24 @@ def build(
         ]
         payload["rows"].extend(summarise(priced, cost))
         payload["paired"].extend(paired(priced, cost))
+        payload["curves"][f"{cost:g}"] = median_offset_curves(priced)
     return payload
+
+
+# The daily returns of every line at the median offset (the offset `paired`
+# reads), on the rule's calendar, so two payloads from different runs can
+# be paired session by session: a candidate against its control is a
+# comparison the scorecard cannot make within one run.
+def median_offset_curves(priced: list[dict[str, Curve]]) -> dict:
+    """Return {"offset", "dates", "lines": {label: [daily...]}} at the median offset."""
+    k = len(priced) // 2
+    offset = priced[k]
+    base = offset[RULE_TODAY].dates
+    return {
+        "offset": k,
+        "dates": [str(d) for d in np.asarray(base, dtype="datetime64[D]")],
+        "lines": {label: _on(base, curve).tolist() for label, curve in offset.items()},
+    }
 
 
 # The k-th panel session as a date, for `simulate.run(since=...)`.
@@ -468,15 +601,47 @@ def main(argv: list[str] | None = None) -> int:
         "(0 < cap <= 1) with its concentration statistics; writes "
         "pit_scorecard_ew_graded_cap<percent>.json",
     )
+    parser.add_argument(
+        "--tone-expiry",
+        choices=tone_expiry.MODES,
+        help="run the desk with the sentiment analyst's overdue release readings "
+        "treated as missing (hard) or decayed to neutral (decay), study A5; "
+        "writes pit_scorecard_..._tone_expiry_<mode>.json",
+    )
+    parser.add_argument(
+        "--sentiment-ic",
+        action="store_true",
+        help="attach the sentiment analyst's own rank IC series at 20 and 60 "
+        "sessions and the desk's fingerprint (A5's control)",
+    )
+    parser.add_argument(
+        "--rank-ic",
+        action="store_true",
+        help="attach the graded score's rank IC at 20 and 60 sessions",
+    )
+    parser.add_argument(
+        "--membership",
+        type=Path,
+        help="the dated membership file the point-in-time mask reads "
+        "(default: the book's)",
+    )
+    parser.add_argument("--output", type=Path, help="where to write the payload")
+    parser.add_argument(
+        "--null-test",
+        action="store_true",
+        help="with --tone-expiry: run the book through the expiry path with an "
+        "infinite horizon and through the plain path, and assert the grades, "
+        "the scores, the sentiment analyst's scores and every line are "
+        "reproduced to the bit at two offsets; no payload",
+    )
     args = parser.parse_args(argv)
+    if args.null_test and args.tone_expiry is None:
+        parser.error("--null-test needs --tone-expiry: it tests that path")
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
 
     root = Path(args.root)
     store = MarketStore(root)
-    report = desk.run(
-        store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
-    )
     arm = ARMS[args.arm] if args.arm else None
     cap_tag = None
     if args.graded_cap is not None:
@@ -484,28 +649,207 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--graded-cap must be in (0, 1]")
         arm = graded_arm(args.graded_cap)
         cap_tag = f"ew_graded_cap{round(args.graded_cap * 100):02d}"
-    payload = build(report, store, args.offsets, tuple(args.costs), arm=arm)
+    history = args.membership or universe.MEMBERSHIP_HISTORY_PATH
+    run = dict(inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation)
+    if args.null_test:
+        return expiry_null_test(desk, store, run, history, args, arm)
+    # The book is asked for exactly as before; only the flag (None: off) ages
+    # the readings.
+    report = _desk_with_expiry(desk, store, run, args.tone_expiry)
+    payload = build(
+        report, store, args.offsets, tuple(args.costs), history_path=history, arm=arm
+    )
     if args.graded_cap is not None:
-        restricted, mask = point_in_time.point_in_time(report)
+        restricted, mask = point_in_time.point_in_time(report, history)
         payload["cap"] = args.graded_cap
         payload["concentration"] = concentration(restricted, mask, arm(restricted, mask))
+    attach_study_blocks(payload, report, store, history, args)
     tags = [
         t
         for t, on in (
             ("signed_rotation", args.signed_rotation),
             (args.arm, args.arm),
             (cap_tag, cap_tag),
+            (f"tone_expiry_{args.tone_expiry}", args.tone_expiry),
         )
         if on
     ]
     payload["arm"] = " + ".join(tags) if tags else "frozen rule"
     name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
-    target = root / "desk" / name
+    target = args.output or root / "desk" / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")
     print(render(payload))
+    if args.tone_expiry:
+        print(render_expiry(payload["tone_expiry"]))
     print(f"\nwrote {target}")
     return 0
+
+
+# The tone-expiry flags set for the duration of a block and put back
+# however it ends, so a scorecard run never leaves the expiry on.
+@contextmanager
+def _expiry_flags(mode: str | None, null: bool = False):
+    """Set tone_expiry.TONE_EXPIRY / TONE_EXPIRY_NULL, then restore them."""
+    before = (tone_expiry.TONE_EXPIRY, tone_expiry.TONE_EXPIRY_NULL)
+    tone_expiry.TONE_EXPIRY, tone_expiry.TONE_EXPIRY_NULL = mode, null
+    try:
+        yield
+    finally:
+        tone_expiry.TONE_EXPIRY, tone_expiry.TONE_EXPIRY_NULL = before
+
+
+# The desk run with the tone expiry set to `mode` (None: off, the plain
+# desk; with `null`, an infinite horizon), the flags restored afterwards.
+def _desk_with_expiry(desk, store, run: dict, mode: str | None, null: bool = False):
+    """Return the desk report graded on the (aged) release readings."""
+    with _expiry_flags(mode, null):
+        return desk.run(store, None, **run)
+
+
+# The null test of the expiry path: the plain desk and the desk through the
+# path with an infinite horizon, compared to the bit (grades, scores, every
+# line at two offsets, the sentiment analyst's scores); prints the verdict
+# and returns the exit code (0 pass, 1 fail).
+def expiry_null_test(desk, store, run: dict, history, args, arm) -> int:
+    """Run the tone-expiry null test; return the exit code."""
+    plain = desk.run(store, None, **run)
+    through = _desk_with_expiry(desk, store, run, args.tone_expiry, null=True)
+    verdict = null_test(plain, through, store, history, 2, tuple(args.costs), arm)
+    verdict.update(expiry_null(plain, through, store, args.tone_expiry))
+    verdict["ok"] = bool(verdict["ok"] and verdict["sentiment_equal"])
+    print(render_null_test(verdict))
+    return 0 if verdict["ok"] else 1
+
+
+# The study blocks a run asked for: the graded score's rank IC, the
+# sentiment analyst's own IC series with the desk's fingerprint (A5's
+# control), and the tone-expiry block of an arm run.
+def attach_study_blocks(payload: dict, report, store, history, args) -> None:
+    """Add the requested study blocks to `payload` in place."""
+    if args.rank_ic:
+        payload["rank_ic"] = rank_ic(report)
+    if args.sentiment_ic:
+        payload["sentiment_ic"] = tes.own_ic(
+            report.opinions["sentiment"].scores, report.panel, WINDOWS
+        )
+        payload["desk_fingerprint"] = tes.fingerprint(
+            report.graded.grades, report.scores
+        )
+    if args.tone_expiry:
+        payload["tone_expiry"] = expiry_block(report, store, history, args.tone_expiry)
+
+
+# The release readings, the incumbent tone block and the arm's weights on a
+# report's panel, read from the store the desk read (the newest partitions).
+def _expiry_inputs(report, store, mode: str):
+    """Return (plain tone, Ages, weights) for the report's panel."""
+    from backend.market import language
+
+    panel = report.panel
+    records = language.stored_records(store, panel.tickers, None)
+    plain_tone = language.tone_features(panel, records)
+    found = tone_expiry.ages(
+        panel.dates, panel.tickers, tone_expiry.histories(records), panel.benchmark
+    )
+    return plain_tone, found, tone_expiry.weights(found, mode)
+
+
+# What the null test adds for the expiry path: whether the sentiment
+# analyst's scores are the same to the bit, and how many readings the real
+# arm would change on this store (the null is not vacuous when it is > 0).
+def expiry_null(plain, through, store, mode: str) -> dict:
+    """Return {"tone_expiry", "sentiment_equal", "cells_the_arm_would_change"}."""
+    plain_tone, _, weight = _expiry_inputs(plain, store, mode)
+    return {
+        "tone_expiry": mode,
+        "sentiment_equal": bool(
+            np.array_equal(
+                plain.opinions["sentiment"].scores,
+                through.opinions["sentiment"].scores,
+                equal_nan=True,
+            )
+        ),
+        "cells_the_arm_would_change": int(
+            tes.changed_cells(plain_tone, weight).sum()
+        ),
+    }
+
+
+# The arm run's "tone_expiry" block: the incumbent rebuilt from the same
+# opinions with the plain sentiment analyst (`desk.assemble`, so nothing
+# but the sentiment input differs), then `tone_expiry_study.record`.
+def expiry_block(report, store, history, mode: str) -> dict:
+    """Return the payload's tone_expiry block for an arm run."""
+    from backend.agents.trading.desk import desk, sentiment
+
+    panel = report.panel
+    plain_tone, found, weight = _expiry_inputs(report, store, mode)
+    rebuilt = sentiment.opine(tone_expiry.apply(plain_tone, weight)).scores
+    opinions = {**report.opinions, sentiment.NAME: sentiment.opine(plain_tone)}
+    plain_report = desk.assemble(
+        panel,
+        report.sides,
+        opinions,
+        report.regime,
+        report.inputs,
+        fundamentals_source=report.fundamentals_source,
+    )
+    _, mask = point_in_time.point_in_time(report, history)
+    return tes.record(
+        mode, report, plain_report, plain_tone, found, weight, rebuilt, mask, WINDOWS
+    )
+
+
+# The tone-expiry block in a few lines: what the arm changed per window, the
+# paired sentiment IC, and the board's words on the last session.
+def render_expiry(block: dict) -> str:
+    """Return the tone-expiry block as text."""
+    lines = [f"\ntone expiry {block['arm']} ({block['mode']}):"]
+    if not block.get("report_matches_rule"):
+        lines.append("  WARNING: the report was not built by this rule")
+    for window, counts in block["affected"]["windows"].items():
+        book = counts["book"]
+        lines.append(
+            f"  {window}: {book['cells']} of {book['reading_cells']} book "
+            f"name-sessions with a reading changed ({_pct(book['share'])}), "
+            f"{book['names']} names"
+        )
+    for key, entry in block["sentiment_ic"].items():
+        for window, w in entry["windows"].items():
+            p = w["paired"]
+            lines.append(
+                f"  sentiment IC {key} {window}: incumbent "
+                f"{w['incumbent']['mean_ic']:+.4f}, arm {w['arm']['mean_ic']:+.4f}, "
+                f"paired {p['mean']:+.4f} (t {p['t']:+.2f}, {p['n']} periods)"
+            )
+    for entry in block["board_words"]:
+        lines.append(f"  {entry['ticker']}: {entry['words']}")
+    return "\n".join(lines)
+
+
+# The null test's verdict as text: one line per mismatch, or the all-clear.
+def render_null_test(verdict: dict) -> str:
+    """Return the null test as text."""
+    lines = [
+        "null test: the book through the tone-expiry path "
+        f"({verdict.get('tone_expiry')}, infinite horizon) against the plain path",
+        f"  grades and scores equal: {verdict['grades_and_scores_equal']}",
+        f"  sentiment analyst's scores equal: {verdict.get('sentiment_equal')}",
+        f"  readings the arm would change on this store: "
+        f"{verdict.get('cells_the_arm_would_change')}",
+        f"  lines compared: {len(verdict['lines'])}",
+    ]
+    for row in verdict["lines"]:
+        if not (row["dates_equal"] and row["returns_equal"]):
+            lines.append(
+                f"  MISMATCH {row['cost_bps']:g} bp offset {row['offset']} "
+                f"{row['line']}: dates {row['dates_equal']}, "
+                f"returns {row['returns_equal']}"
+            )
+    passed = "PASS, reproduced to the bit" if verdict["ok"] else "FAIL"
+    lines.append(f"  verdict: {passed}")
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
