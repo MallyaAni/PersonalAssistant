@@ -68,6 +68,7 @@ import numpy as np
 from backend.agents.trading.desk import point_in_time
 from backend.market import adaptive_entry as ae
 from backend.market import candidate_stats, fill_timing
+from backend.market import peer_groups as pg
 from backend.market import stage4_decisions as sd
 from backend.market import stage4_labels as lab
 from backend.market import stage4_orders as so
@@ -94,12 +95,20 @@ CANDIDATES: dict[str, tuple[str, str]] = {
     "G3": (PEER_DEFER, NOT_B),
 }
 # The plan's fixed parameters.
-K_PEERS = 5
-CORR_SESSIONS = 60
-PEER_SIGMA_SESSIONS = 20
-MIN_PRICED_PEERS = 3
+# They live in `peer_groups`, which the live desk imports too, so the rule
+# the desk would trade is the rule priced here.
+K_PEERS = pg.K_PEERS
+CORR_SESSIONS = pg.CORR_SESSIONS
+PEER_SIGMA_SESSIONS = pg.PEER_SIGMA_SESSIONS
+MIN_PRICED_PEERS = pg.MIN_PRICED_PEERS
 DIP = fill_timing.DIP
-CLOSE_THRESHOLD = math.log1p(DIP)
+CLOSE_THRESHOLD = pg.CLOSE_THRESHOLD
+# The peer-group computation, shared with the desk (`peer_groups`).
+PeerGroups = pg.PeerGroups
+log_returns = pg.log_returns
+residuals = pg.residuals
+session_peers = pg.session_peers
+peer_groups = pg.peer_groups
 # The criteria (structure-rules', stage 4's for one side).
 FLOOR_BP = sd.FLOOR_BP
 FLOOR_T = sd.FLOOR_T
@@ -141,151 +150,6 @@ assert (FLOOR_BP, FLOOR_T, DSR_GATE, OFFSETS, OFFSETS_POSITIVE, HAC_LAG) == (
 
 
 # --- the peer groups ---------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class PeerGroups:
-    """Every name's peer group on every session, computed from data on or before it."""
-
-    dates: np.ndarray  # (T,) datetime64[D]
-    tickers: tuple[str, ...]
-    members: np.ndarray  # (T, N, K) int64 panel columns, -1 where no group
-    corr: np.ndarray  # (T, N, K) residual correlation of each peer, NaN where none
-    sigma: np.ndarray  # (T, N) sigma_g: the peer group's 20-session daily std
-    has: np.ndarray  # (T, N) bool: a peer group exists at t
-
-
-# Daily log returns of a (T, N) matrix of adjusted closes: row s is
-# ln(C[s] / C[s-1]); the first row and any gap are NaN.
-def log_returns(adj_close: np.ndarray) -> np.ndarray:
-    """Return the (T, N) daily log returns."""
-    closes = np.asarray(adj_close, dtype=float)
-    out = np.full(closes.shape, np.nan)
-    with np.errstate(all="ignore"):
-        out[1:] = np.log(closes[1:] / closes[:-1])
-    return out
-
-
-# The residuals of each column of `returns` (W, N) on `market` (W,) with
-# an intercept (OLS): (r - mean r) - b (m - mean m), b the column's slope.
-def residuals(returns: np.ndarray, market: np.ndarray) -> np.ndarray:
-    """Return the (W, N) OLS residuals on the market with an intercept."""
-    r = np.asarray(returns, dtype=float)
-    m = np.asarray(market, dtype=float)
-    mc = m - m.mean()
-    rc = r - r.mean(axis=0)
-    denom = float(mc @ mc)
-    if not denom > 0:
-        return rc
-    beta = (mc @ rc) / denom
-    return rc - mc[:, None] * beta[None, :]
-
-
-# One session's peer groups from the window's returns (W, N) and the
-# market's (W,): the residual correlation of every pair of names with a
-# complete window and a non-zero residual variance, then per such name the
-# k highest among the `peer_ok` columns other than itself (ties by column),
-# when there are at least k. Returns ((N, k) columns, (N, k) correlations,
-# (N,) has a group); -1 / NaN / False elsewhere.
-def session_peers(
-    returns: np.ndarray,
-    market: np.ndarray,
-    peer_ok: np.ndarray,
-    k: int = K_PEERS,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Return (members, corr, has) for one session."""
-    r = np.asarray(returns, dtype=float)
-    n = r.shape[1]
-    members = np.full((n, k), -1, dtype=np.int64)
-    corr = np.full((n, k), np.nan)
-    has = np.zeros(n, dtype=bool)
-    m = np.asarray(market, dtype=float)
-    if not np.isfinite(m).all():
-        return members, corr, has
-    valid = np.isfinite(r).all(axis=0)
-    if not valid.any():
-        return members, corr, has
-    cols = np.flatnonzero(valid)
-    e = residuals(r[:, cols], m)
-    norm = np.sqrt((e * e).sum(axis=0))
-    keep = norm > 0
-    cols = cols[keep]
-    if len(cols) < 2:
-        return members, corr, has
-    z = e[:, keep] / norm[keep]
-    full = np.full((n, n), np.nan)
-    full[np.ix_(cols, cols)] = np.clip(z.T @ z, -1.0, 1.0)
-    candidate = np.zeros(n, dtype=bool)
-    candidate[cols] = True
-    candidate &= np.asarray(peer_ok, dtype=bool)
-    score = np.where(candidate[None, :], full, -np.inf)
-    np.fill_diagonal(score, -np.inf)
-    order = np.argsort(-score, axis=1, kind="stable")[:, :k]
-    picked = np.take_along_axis(score, order, axis=1)
-    enough = np.isfinite(picked).all(axis=1)
-    rows = np.zeros(n, dtype=bool)
-    rows[cols] = True
-    has = rows & enough
-    members[has] = order[has]
-    corr[has] = picked[has]
-    return members, corr, has
-
-
-# Every name's peer group on every session t from the (T, N) adjusted
-# closes, the market's column and the (T, N) point-in-time membership
-# (None: every name a member): the residual correlations over t-59..t, the
-# k best members at t, and sigma_g over t-19..t of the peers' equal-weight
-# daily return. The market column is never a name or a peer.
-def peer_groups(
-    dates: np.ndarray,
-    tickers: Sequence[str],
-    adj_close: np.ndarray,
-    market: int,
-    membership: np.ndarray | None = None,
-    k: int = K_PEERS,
-    window: int = CORR_SESSIONS,
-    sigma_sessions: int = PEER_SIGMA_SESSIONS,
-) -> PeerGroups:
-    """Return the PeerGroups."""
-    closes = np.asarray(adj_close, dtype=float)
-    length, n = closes.shape
-    returns = log_returns(closes)
-    mkt = returns[:, market].copy()
-    names = np.ones(n, dtype=bool)
-    names[market] = False
-    ok = (
-        np.ones((length, n), dtype=bool)
-        if membership is None
-        else np.asarray(membership, dtype=bool).copy()
-    )
-    if ok.shape != (length, n):
-        raise ValueError("membership must be on the closes' (T, N) grid")
-    ok &= names[None, :]
-    members = np.full((length, n, k), -1, dtype=np.int64)
-    corr = np.full((length, n, k), np.nan)
-    sigma = np.full((length, n), np.nan)
-    has = np.zeros((length, n), dtype=bool)
-    masked = returns.copy()
-    masked[:, market] = np.nan
-    for t in range(window, length):
-        lo = t - window + 1
-        m_t, c_t, h_t = session_peers(masked[lo : t + 1], mkt[lo : t + 1], ok[t], k)
-        members[t], corr[t], has[t] = m_t, c_t, h_t
-        if not h_t.any():
-            continue
-        recent = returns[t - sigma_sessions + 1 : t + 1]
-        group = recent[:, np.where(m_t >= 0, m_t, 0)].mean(axis=2)
-        with np.errstate(all="ignore"):
-            s = group.std(axis=0, ddof=1)
-        sigma[t] = np.where(h_t, s, np.nan)
-    return PeerGroups(
-        dates=np.asarray(dates, dtype="datetime64[D]"),
-        tickers=tuple(str(x) for x in tickers),
-        members=members,
-        corr=corr,
-        sigma=sigma,
-        has=has,
-    )
 
 
 # Each name's first-bar return of t+1 from the adjusted close of t, on the
@@ -344,10 +208,8 @@ def fire_masks(
     shape = np.shape(morning)
     if never:
         return {PEER_DEFER: np.zeros(shape, bool), PEER_CLOSE: np.zeros(shape, bool)}
-    r = np.asarray(morning, dtype=float)
-    with np.errstate(invalid="ignore"):
-        defer = np.isfinite(r) & np.isfinite(groups.sigma) & (r > groups.sigma)
-        close = np.isfinite(r) & (r > CLOSE_THRESHOLD)
+    defer = pg.defer_fires(morning, groups.sigma)
+    close = pg.close_fires(morning)
     return {PEER_DEFER: defer, PEER_CLOSE: close}
 
 
